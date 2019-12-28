@@ -1,13 +1,19 @@
 {
-    "program": {
-        "binary": "test/flutter_runner_tests"
-    },
-    "sandbox": {
-        "features": [
-            "deprecated-ambient-replace-as-executable"
-        ],
-        "services": [
-            "fuchsia.sys.Launcher"
-        ]
-    }
+  "program": {
+    "binary": "bin/app",
+    "env_vars": [
+       "ICU_TIMEZONE_FILES_DIR=/pkg/data/tzdata"
+    ]
+  },
+  "sandbox": {
+    "features": [
+      "deprecated-ambient-replace-as-executable",
+      "vulkan"
+    ],
+    "services": [
+      "fuchsia.accessibility.semantics.SemanticsManager",
+      "fuchsia.intl.PropertyProvider",
+      "fuchsia.process.Launcher"
+    ]
+  }
 }

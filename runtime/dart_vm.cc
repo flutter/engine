@@ -16,7 +16,6 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/size.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
-#include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
@@ -24,8 +23,10 @@
 #include "flutter/lib/ui/dart_ui.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_service_isolate.h"
+#include "flutter/runtime/ptrace_ios.h"
 #include "flutter/runtime/start_up.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
+#include "third_party/skia/include/core/SkExecutor.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_class_library.h"
 #include "third_party/tonic/dart_class_provider.h"
@@ -37,7 +38,7 @@
 namespace dart {
 namespace observatory {
 
-#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
+#if !OS_FUCHSIA && !FLUTTER_RELEASE
 
 // These two symbols are defined in |observatory_archive.cc| which is generated
 // by the |//third_party/dart/runtime/observatory:archive_observatory| rule.
@@ -46,8 +47,7 @@ namespace observatory {
 extern unsigned int observatory_assets_archive_len;
 extern const uint8_t* observatory_assets_archive;
 
-#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE !=
-        // FLUTTER_RUNTIME_MODE_RELEASE)
+#endif  // !OS_FUCHSIA && !FLUTTER_RELEASE
 
 }  // namespace observatory
 }  // namespace dart
@@ -72,6 +72,11 @@ static const char* kDartWriteProtectCodeArgs[] = {
     "--no_write_protect_code",
 };
 
+FML_ALLOW_UNUSED_TYPE
+static const char* kDartDisableIntegerDivisionArgs[] = {
+    "--no_use_integer_division",
+};
+
 static const char* kDartAssertArgs[] = {
     // clang-format off
     "--enable_asserts",
@@ -87,7 +92,7 @@ static const char* kDartDisableServiceAuthCodesArgs[]{
 };
 
 static const char* kDartTraceStartupArgs[]{
-    "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM",
+    "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM,API",
 };
 
 static const char* kDartEndlessTraceBufferArgs[]{
@@ -103,7 +108,7 @@ static const char* kDartFuchsiaTraceArgs[] FML_ALLOW_UNUSED_TYPE = {
 };
 
 static const char* kDartTraceStreamsArgs[] = {
-    "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM",
+    "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM,API",
 };
 
 constexpr char kFileUriPrefix[] = "file://";
@@ -141,7 +146,7 @@ bool DartFileModifiedCallback(const char* source_url, int64_t since_ms) {
 void ThreadExitCallback() {}
 
 Dart_Handle GetVMServiceAssetsArchiveCallback() {
-#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE)
+#if FLUTTER_RELEASE
   return nullptr;
 #elif OS_FUCHSIA
   fml::UniqueFD fd = fml::OpenFile("pkg/data/observatory.tar", false,
@@ -226,12 +231,10 @@ std::shared_ptr<DartVM> DartVM::Create(
     Settings settings,
     fml::RefPtr<DartSnapshot> vm_snapshot,
     fml::RefPtr<DartSnapshot> isolate_snapshot,
-    fml::RefPtr<DartSnapshot> shared_snapshot,
     std::shared_ptr<IsolateNameServer> isolate_name_server) {
-  auto vm_data = DartVMData::Create(settings,                     //
-                                    std::move(vm_snapshot),       //
-                                    std::move(isolate_snapshot),  //
-                                    std::move(shared_snapshot)    //
+  auto vm_data = DartVMData::Create(settings,                    //
+                                    std::move(vm_snapshot),      //
+                                    std::move(isolate_snapshot)  //
   );
 
   if (!vm_data) {
@@ -253,12 +256,20 @@ size_t DartVM::GetVMLaunchCount() {
 DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
                std::shared_ptr<IsolateNameServer> isolate_name_server)
     : settings_(vm_data->GetSettings()),
+      concurrent_message_loop_(fml::ConcurrentMessageLoop::Create()),
+      skia_concurrent_executor_(
+          [runner = concurrent_message_loop_->GetTaskRunner()](
+              fml::closure work) { runner->PostTask(work); }),
       vm_data_(vm_data),
       isolate_name_server_(std::move(isolate_name_server)),
       service_protocol_(std::make_shared<ServiceProtocol>()) {
   TRACE_EVENT0("flutter", "DartVMInitializer");
 
   gVMLaunchCount++;
+
+  // Setting the executor is not thread safe but Dart VM initialization is. So
+  // this call is thread-safe.
+  SkExecutor::SetDefault(&skia_concurrent_executor_);
 
   FML_DCHECK(vm_data_);
   FML_DCHECK(isolate_name_server_);
@@ -306,12 +317,24 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   }
 #endif  // !OS_FUCHSIA
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+#if !OS_IOS || TARGET_OS_SIMULATOR
   // Debug mode uses the JIT, disable code page write protection to avoid
   // memory page protection changes before and after every compilation.
   PushBackAll(&args, kDartWriteProtectCodeArgs,
               fml::size(kDartWriteProtectCodeArgs));
-#endif
+#else
+  EnsureDebuggedIOS(settings_);
+#if TARGET_CPU_ARM
+  // Tell Dart in JIT mode to not use integer division on armv7
+  // Ideally, this would be detected at runtime by Dart.
+  // TODO(dnfield): Remove this code
+  // https://github.com/dart-lang/sdk/issues/24743
+  PushBackAll(&args, kDartDisableIntegerDivisionArgs,
+              fml::size(kDartDisableIntegerDivisionArgs));
+#endif  // TARGET_CPU_ARM
+#endif  // !OS_IOS || TARGET_OS_SIMULATOR
+#endif  // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
   if (enable_asserts) {
     PushBackAll(&args, kDartAssertArgs, fml::size(kDartAssertArgs));
@@ -366,12 +389,18 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     params.vm_snapshot_data = vm_data_->GetVMSnapshot().GetDataMapping();
     params.vm_snapshot_instructions =
         vm_data_->GetVMSnapshot().GetInstructionsMapping();
-    params.create = reinterpret_cast<decltype(params.create)>(
-        DartIsolate::DartIsolateCreateCallback);
-    params.shutdown = reinterpret_cast<decltype(params.shutdown)>(
-        DartIsolate::DartIsolateShutdownCallback);
-    params.cleanup = reinterpret_cast<decltype(params.cleanup)>(
+    params.create_group = reinterpret_cast<decltype(params.create_group)>(
+        DartIsolate::DartIsolateGroupCreateCallback);
+    params.initialize_isolate =
+        reinterpret_cast<decltype(params.initialize_isolate)>(
+            DartIsolate::DartIsolateInitializeCallback);
+    params.shutdown_isolate =
+        reinterpret_cast<decltype(params.shutdown_isolate)>(
+            DartIsolate::DartIsolateShutdownCallback);
+    params.cleanup_isolate = reinterpret_cast<decltype(params.cleanup_isolate)>(
         DartIsolate::DartIsolateCleanupCallback);
+    params.cleanup_group = reinterpret_cast<decltype(params.cleanup_group)>(
+        DartIsolate::DartIsolateGroupCleanupCallback);
     params.thread_exit = ThreadExitCallback;
     params.get_service_assets = GetVMServiceAssetsArchiveCallback;
     params.entropy_source = dart::bin::GetEntropy;
@@ -388,7 +417,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     if (engine_main_enter_ts != 0) {
       Dart_TimelineEvent("FlutterEngineMainEnter",  // label
                          engine_main_enter_ts,      // timestamp0
-                         engine_main_enter_ts,      // timestamp1_or_async_id
+                         Dart_TimelineGetMicros(),  // timestamp1_or_async_id
                          Dart_Timeline_Event_Duration,  // event type
                          0,                             // argument_count
                          nullptr,                       // argument_names
@@ -418,6 +447,10 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 }
 
 DartVM::~DartVM() {
+  // Setting the executor is not thread safe but Dart VM shutdown is. So
+  // this call is thread-safe.
+  SkExecutor::SetDefault(nullptr);
+
   if (Dart_CurrentIsolate() != nullptr) {
     Dart_ExitIsolate();
   }
@@ -449,6 +482,11 @@ std::shared_ptr<ServiceProtocol> DartVM::GetServiceProtocol() const {
 
 std::shared_ptr<IsolateNameServer> DartVM::GetIsolateNameServer() const {
   return isolate_name_server_;
+}
+
+std::shared_ptr<fml::ConcurrentTaskRunner>
+DartVM::GetConcurrentWorkerTaskRunner() const {
+  return concurrent_message_loop_->GetTaskRunner();
 }
 
 }  // namespace flutter

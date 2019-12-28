@@ -4,9 +4,13 @@
 
 package io.flutter.plugin.editing;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Build;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
@@ -15,6 +19,7 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.InputMethodSubtype;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -39,15 +44,15 @@ public class TextInputPlugin {
     private boolean mRestartInputPending;
     @Nullable
     private InputConnection lastInputConnection;
-
+    @NonNull
     private PlatformViewsController platformViewsController;
+    private final boolean restartAlwaysRequired;
 
     // When true following calls to createInputConnection will return the cached lastInputConnection if the input
     // target is a platform view. See the comments on lockPlatformViewInputConnection for more details.
     private boolean isInputConnectionLocked;
 
-    // TODO(mattcarroll): change @Nullable to @NonNull once new embedding integrates PlatformViewsController (#34286).
-    public TextInputPlugin(View view, @NonNull DartExecutor dartExecutor, @Nullable PlatformViewsController platformViewsController) {
+    public TextInputPlugin(View view, @NonNull DartExecutor dartExecutor, @NonNull PlatformViewsController platformViewsController) {
         mView = view;
         mImm = (InputMethodManager) view.getContext().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
@@ -84,16 +89,21 @@ public class TextInputPlugin {
                 clearTextInputClient();
             }
         });
+
+        textInputChannel.requestExistingInputState();
+
         this.platformViewsController = platformViewsController;
-        // TODO(mattcarroll): remove if-statement once new embedding integrates PlatformViewsController (#34286).
-        if (platformViewsController != null) {
-            platformViewsController.attachTextInputPlugin(this);
-        }
+        this.platformViewsController.attachTextInputPlugin(this);
+        restartAlwaysRequired = isRestartAlwaysRequired();
     }
 
     @NonNull
     public InputMethodManager getInputMethodManager() {
         return mImm;
+    }
+
+    @VisibleForTesting Editable getEditable() {
+        return mEditable;
     }
 
     /***
@@ -127,16 +137,14 @@ public class TextInputPlugin {
      * The TextInputPlugin instance should not be used after calling this.
      */
     public void destroy() {
-        // TODO(mattcarroll): Remove if-statement once new embedding integrates PlatformViewsController (#34286).
-        if (platformViewsController != null) {
-            platformViewsController.detachTextInputPlugin();
-        }
+        platformViewsController.detachTextInputPlugin();
     }
 
     private static int inputTypeFromTextInputType(
         TextInputChannel.InputType type,
         boolean obscureText,
         boolean autocorrect,
+        boolean enableSuggestions,
         TextInputChannel.TextCapitalization textCapitalization
     ) {
         if (type.type == TextInputChannel.TextInputType.DATETIME) {
@@ -161,6 +169,8 @@ public class TextInputPlugin {
             textType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
         } else if (type.type == TextInputChannel.TextInputType.URL) {
             textType |= InputType.TYPE_TEXT_VARIATION_URI;
+        } else if (type.type == TextInputChannel.TextInputType.VISIBLE_PASSWORD) {
+            textType |= InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
         }
 
         if (obscureText) {
@@ -169,6 +179,7 @@ public class TextInputPlugin {
             textType |= InputType.TYPE_TEXT_VARIATION_PASSWORD;
         } else {
             if (autocorrect) textType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
+            if (!enableSuggestions) textType |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
         }
 
         if (textCapitalization == TextInputChannel.TextCapitalization.CHARACTERS) {
@@ -200,6 +211,7 @@ public class TextInputPlugin {
             configuration.inputType,
             configuration.obscureText,
             configuration.autocorrect,
+            configuration.enableSuggestions,
             configuration.textCapitalization
         );
         outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
@@ -265,7 +277,7 @@ public class TextInputPlugin {
         mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
     }
 
-    private void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
+    @VisibleForTesting void setTextInputClient(int client, TextInputChannel.Configuration configuration) {
         inputTarget = new InputTarget(InputTarget.Type.FRAMEWORK_CLIENT, client);
         this.configuration = configuration;
         mEditable = Editable.Factory.getInstance().newEditable("");
@@ -297,19 +309,47 @@ public class TextInputPlugin {
         }
     }
 
-    private void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
-        if (!mRestartInputPending && state.text.equals(mEditable.toString())) {
-            applyStateToSelection(state);
+    @VisibleForTesting void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
+        // Always replace the contents of mEditable if the text differs
+        if (!state.text.equals(mEditable.toString())) {
+            mEditable.replace(0, mEditable.length(), state.text);
+        }
+        // Always apply state to selection which handles updating the selection if needed.
+        applyStateToSelection(state);
+        // Use updateSelection to update imm on selection if it is not neccessary to restart.
+        if (!restartAlwaysRequired && !mRestartInputPending) {
             mImm.updateSelection(mView, Math.max(Selection.getSelectionStart(mEditable), 0),
                     Math.max(Selection.getSelectionEnd(mEditable), 0),
                     BaseInputConnection.getComposingSpanStart(mEditable),
                     BaseInputConnection.getComposingSpanEnd(mEditable));
+        // Restart if there is a pending restart or the device requires a force restart
+        // (see isRestartAlwaysRequired). Restarting will also update the selection.
         } else {
-            mEditable.replace(0, mEditable.length(), state.text);
-            applyStateToSelection(state);
             mImm.restartInput(view);
             mRestartInputPending = false;
         }
+    }
+
+    // Samsung's Korean keyboard has a bug where it always attempts to combine characters based on
+    // its internal state, ignoring if and when the cursor is moved programmatically. The same bug
+    // also causes non-korean keyboards to occasionally duplicate text when tapping in the middle
+    // of existing text to edit it.
+    //
+    // Fully restarting the IMM works around this because it flushes the keyboard's internal state
+    // and stops it from trying to incorrectly combine characters. However this also has some
+    // negative performance implications, so we don't want to apply this workaround in every case.
+    @SuppressLint("NewApi") // New API guard is inline, the linter can't see it.
+    @SuppressWarnings("deprecation")
+    private boolean isRestartAlwaysRequired() {
+        InputMethodSubtype subtype = mImm.getCurrentInputMethodSubtype();
+        // Impacted devices all shipped with Android Lollipop or newer.
+        if (subtype == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || !Build.MANUFACTURER.equals("samsung")) {
+            return false;
+        }
+        String keyboardName = Settings.Secure.getString(mView.getContext().getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
+        // The Samsung keyboard is called "com.sec.android.inputmethod/.SamsungKeypad" but look
+        // for "Samsung" just in case Samsung changes the name of the keyboard.
+        return keyboardName.contains("Samsung");
     }
 
     private void clearTextInputClient() {

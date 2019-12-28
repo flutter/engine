@@ -66,7 +66,7 @@ public class AndroidTouchProcessor {
   }
 
   // Must match the unpacking code in hooks.dart.
-  private static final int POINTER_DATA_FIELD_COUNT = 24;
+  private static final int POINTER_DATA_FIELD_COUNT = 28;
   private static final int BYTES_PER_FIELD = 8;
 
   // This value must match the value in framework's platform_view.dart.
@@ -75,6 +75,8 @@ public class AndroidTouchProcessor {
 
   @NonNull
   private final FlutterRenderer renderer;
+
+  private static final int _POINTER_BUTTON_PRIMARY = 1;
 
   /**
    * Constructs an {@code AndroidTouchProcessor} that will send touch event data
@@ -196,18 +198,32 @@ public class AndroidTouchProcessor {
     packet.putLong(pointerKind); // kind
     packet.putLong(signalKind); // signal_kind
     packet.putLong(event.getPointerId(pointerIndex)); // device
+    packet.putLong(0); // pointer_identifier, will be generated in pointer_data_packet_converter.cc.
     packet.putDouble(event.getX(pointerIndex)); // physical_x
     packet.putDouble(event.getY(pointerIndex)); // physical_y
+    packet.putDouble(0.0); // physical_delta_x, will be generated in pointer_data_packet_converter.cc.
+    packet.putDouble(0.0); // physical_delta_y, will be generated in pointer_data_packet_converter.cc.
 
+    long buttons;
     if (pointerKind == PointerDeviceKind.MOUSE) {
-      packet.putLong(event.getButtonState() & 0x1F); // buttons
+      buttons = event.getButtonState() & 0x1F;
+      // TODO(dkwingsmt): Remove this fix after implementing touchpad gestures
+      // https://github.com/flutter/flutter/issues/23604#issuecomment-524471152
+      if (buttons == 0 &&
+          event.getSource() == InputDevice.SOURCE_MOUSE &&
+          (pointerChange == PointerChange.DOWN || pointerChange == PointerChange.MOVE)) {
+        buttons = _POINTER_BUTTON_PRIMARY;
+      }
     } else if (pointerKind == PointerDeviceKind.STYLUS) {
-      packet.putLong((event.getButtonState() >> 4) & 0xF); // buttons
+      buttons = (event.getButtonState() >> 4) & 0xF;
     } else {
-      packet.putLong(0); // buttons
+      buttons = 0;
     }
+    packet.putLong(buttons); // buttons
 
     packet.putLong(0); // obscured
+
+    packet.putLong(0); // synthesized
 
     packet.putDouble(event.getPressure(pointerIndex)); // pressure
     double pressureMin = 0.0;

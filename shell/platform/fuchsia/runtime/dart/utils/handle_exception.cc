@@ -4,21 +4,21 @@
 
 #include "runtime/dart/utils/handle_exception.h"
 
-#include <string>
-
-#include <fuchsia/crash/cpp/fidl.h>
+#include <fuchsia/feedback/cpp/fidl.h>
 #include <fuchsia/mem/cpp/fidl.h>
 #include <lib/syslog/global.h>
 #include <lib/zx/vmo.h>
 #include <sys/types.h>
 #include <third_party/tonic/converter/dart_converter.h>
-#include <zircon/errors.h>
 #include <zircon/status.h>
+
+#include <string>
 
 #include "runtime/dart/utils/logging.h"
 
 namespace {
-static bool FillBuffer(const std::string& data, fuchsia::mem::Buffer* buffer) {
+static bool SetStackTrace(const std::string& data,
+                          fuchsia::feedback::RuntimeCrashReport* report) {
   uint64_t num_bytes = data.size();
   zx::vmo vmo;
 
@@ -32,25 +32,16 @@ static bool FillBuffer(const std::string& data, fuchsia::mem::Buffer* buffer) {
     }
   }
 
-  buffer->vmo = std::move(vmo);
-  buffer->size = num_bytes;
+  fuchsia::mem::Buffer buffer;
+  buffer.vmo = std::move(vmo);
+  buffer.size = num_bytes;
+  report->set_exception_stack_trace(std::move(buffer));
 
   return true;
 }
 
-template <typename T, size_t N>
-void CopyToArray(const std::string& s, std::array<T, N>* arr) {
-  const size_t max_size = arr->size();
-  auto end = s.end();
-  if (s.size() > max_size) {
-    FX_LOGF(WARNING, LOG_TAG, "truncating '%s' to %d characters", s.c_str(),
-            max_size);
-    end = s.begin() + max_size;
-  }
-  std::copy(s.begin(), end, arr->data());
-}
-
-fuchsia::crash::ManagedRuntimeException BuildException(
+fuchsia::feedback::CrashReport BuildCrashReport(
+    const std::string& component_url,
     const std::string& error,
     const std::string& stack_trace) {
   // The runtime type has already been pre-pended to the error message so we
@@ -73,29 +64,30 @@ fuchsia::crash::ManagedRuntimeException BuildException(
         error.substr(delimiter_pos + 2 /*to get rid of the leading ': '*/);
   }
 
-  // Default-initialize to initialize the underlying arrays of characters with
-  // 0s and null-terminate the strings.
-  fuchsia::crash::GenericException exception = {};
-  CopyToArray(error_type, &exception.type);
-  CopyToArray(error_message, &exception.message);
-  if (!FillBuffer(stack_trace, &exception.stack_trace)) {
+  fuchsia::feedback::RuntimeCrashReport dart_report;
+  dart_report.set_exception_type(error_type);
+  dart_report.set_exception_message(error_message);
+  if (!SetStackTrace(stack_trace, &dart_report)) {
     FX_LOG(ERROR, LOG_TAG, "Failed to convert Dart stack trace to VMO");
   }
 
-  fuchsia::crash::ManagedRuntimeException dart_exception;
-  dart_exception.set_dart(std::move(exception));
-  return dart_exception;
+  fuchsia::feedback::SpecificCrashReport specific_report;
+  specific_report.set_dart(std::move(dart_report));
+  fuchsia::feedback::CrashReport report;
+  report.set_program_name(component_url);
+  report.set_specific_report(std::move(specific_report));
+  return report;
 }
 
 }  // namespace
 
 namespace dart_utils {
 
-zx_status_t HandleIfException(std::shared_ptr<::sys::ServiceDirectory> services,
-                              const std::string& component_url,
-                              Dart_Handle result) {
+void HandleIfException(std::shared_ptr<::sys::ServiceDirectory> services,
+                       const std::string& component_url,
+                       Dart_Handle result) {
   if (!Dart_IsError(result) || !Dart_ErrorHasException(result)) {
-    return ZX_OK;
+    return;
   }
 
   const std::string error =
@@ -106,34 +98,23 @@ zx_status_t HandleIfException(std::shared_ptr<::sys::ServiceDirectory> services,
   return HandleException(services, component_url, error, stack_trace);
 }
 
-zx_status_t HandleException(std::shared_ptr<::sys::ServiceDirectory> services,
-                            const std::string& component_url,
-                            const std::string& error,
-                            const std::string& stack_trace) {
-  fuchsia::crash::ManagedRuntimeException exception =
-      BuildException(error, stack_trace);
+void HandleException(std::shared_ptr<::sys::ServiceDirectory> services,
+                     const std::string& component_url,
+                     const std::string& error,
+                     const std::string& stack_trace) {
+  fuchsia::feedback::CrashReport crash_report =
+      BuildCrashReport(component_url, error, stack_trace);
 
-  fuchsia::crash::AnalyzerSyncPtr analyzer;
-  services->Connect(analyzer.NewRequest());
-#ifndef NDEBUG
-  if (!analyzer) {
-    FX_LOG(FATAL, LOG_TAG, "Could not connect to analyzer service");
-  }
-#endif
-
-  fuchsia::crash::Analyzer_OnManagedRuntimeException_Result out_result;
-  const zx_status_t status = analyzer->OnManagedRuntimeException(
-      component_url, std::move(exception), &out_result);
-  if (status != ZX_OK) {
-    FX_LOGF(ERROR, LOG_TAG, "Failed to connect to crash analyzer: %d (%s)",
-            status, zx_status_get_string(status));
-    return ZX_ERR_INTERNAL;
-  } else if (out_result.is_err()) {
-    FX_LOGF(ERROR, LOG_TAG, "Failed to handle Dart exception: %d (%s)",
-            out_result.err(), zx_status_get_string(out_result.err()));
-    return ZX_ERR_INTERNAL;
-  }
-  return ZX_OK;
+  fuchsia::feedback::CrashReporterPtr crash_reporter =
+      services->Connect<fuchsia::feedback::CrashReporter>();
+  crash_reporter->File(
+      std::move(crash_report),
+      [](fuchsia::feedback::CrashReporter_File_Result result) {
+        if (result.is_err()) {
+          FX_LOGF(ERROR, LOG_TAG, "Failed to report Dart exception: %d (%s)",
+                  result.err(), zx_status_get_string(result.err()));
+        }
+      });
 }
 
 }  // namespace dart_utils

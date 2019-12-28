@@ -103,6 +103,77 @@ class FontWeight {
 }
 
 /// A feature tag and value that affect the selection of glyphs in a font.
+///
+/// {@tool sample}
+///
+/// This example shows usage of several OpenType font features, including
+/// Small Caps (smcp), old-style figures, fractional ligatures and stylistic
+/// sets.
+///
+/// ```dart
+///class TypePage extends StatelessWidget {
+///  // The Cardo, Milonga and Raleway Dots fonts can be downloaded from
+///  // Google Fonts (https://www.google.com/fonts).
+///
+///  final titleStyle = TextStyle(
+///    fontSize: 18,
+///    fontFeatures: [FontFeature.enable('smcp')],
+///    color: Colors.blueGrey[600],
+///  );
+///
+///  @override
+///  Widget build(BuildContext context) {
+///    return Scaffold(
+///      body: Center(
+///        child: Column(
+///          mainAxisAlignment: MainAxisAlignment.center,
+///          children: <Widget>[
+///            Spacer(flex: 5),
+///            Text('regular numbers have their place:', style: titleStyle),
+///            Text('The 1972 cup final was a 1-1 draw.',
+///                style: TextStyle(
+///                  fontFamily: 'Cardo',
+///                  fontSize: 24,
+///                )),
+///            Spacer(),
+///            Text('but old-style figures blend well with lower case:',
+///                style: titleStyle),
+///            Text('The 1972 cup final was a 1-1 draw.',
+///                style: TextStyle(
+///                    fontFamily: 'Cardo',
+///                    fontSize: 24,
+///                    fontFeatures: [FontFeature.oldstyleFigures()])),
+///            Spacer(),
+///            Divider(),
+///            Spacer(),
+///            Text('fractions look better with a custom ligature:',
+///                style: titleStyle),
+///            Text('Add 1/2 tsp of flour and stir.',
+///                style: TextStyle(
+///                    fontFamily: 'Milonga',
+///                    fontSize: 24,
+///                    fontFeatures: [FontFeature.enable('frac')])),
+///            Spacer(),
+///            Divider(),
+///            Spacer(),
+///            Text('multiple stylistic sets in one font:', style: titleStyle),
+///            Text('Raleway Dots',
+///                style: TextStyle(fontFamily: 'Raleway Dots', fontSize: 48)),
+///            Text('Raleway Dots',
+///                style: TextStyle(
+///                  fontFeatures: [FontFeature.stylisticSet(1)],
+///                  fontFamily: 'Raleway Dots',
+///                  fontSize: 48,
+///                )),
+///            Spacer(flex: 5),
+///          ],
+///        ),
+///      ),
+///    );
+///  }
+///}
+/// ```
+/// {@end-tool}
 class FontFeature {
   /// Creates a [FontFeature] object, which can be added to a [TextStyle] to
   /// change how the engine selects glyphs when rendering text.
@@ -527,7 +598,8 @@ class TextStyle {
   /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
   /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
-  /// * `height`: The height of this text span, as a multiplier of the font size.
+  /// * `height`: The height of this text span, as a multiplier of the font size. Omitting `height` will allow the line height
+  ///   to take the height as defined by the font, which may not be exactly the height of the fontSize.
   /// * `locale`: The locale used to select region-specific glyphs.
   /// * `background`: The paint drawn as a background for the text.
   /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
@@ -776,9 +848,11 @@ class ParagraphStyle {
   /// * `fontSize`: The fallback size of glyphs (in logical pixels) to
   ///   use when painting the text. This is used when there is no [TextStyle].
   ///
-  /// * `height`: The height of the spans as a multiplier of the font size. The
-  ///   fallback height to use when no height is provided in through
-  ///   [TextStyle.height].
+  /// * `height`: The fallback height of the spans as a multiplier of the font
+  ///   size. The fallback height is used when no height is provided through
+  ///   [TextStyle.height]. Omitting `height` here and in [TextStyle] will allow
+  ///   the line height to take the height as defined by the font, which may not
+  ///   be exactly the height of the `fontSize`.
   ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
@@ -962,22 +1036,24 @@ class StrutStyle {
   /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
   ///   Roboto).
   ///
-  /// * `fontFamilyFallback`: An ordered list of font family names that will be searched for when
-  ///    the font in `fontFamily` cannot be found.
+  /// * `fontFamilyFallback`: An ordered list of font family names that will be
+  ///    searched for when the font in `fontFamily` cannot be found.
   ///
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
   ///   the text.
   ///
   /// * `height`: The minimum height of the line boxes, as a multiplier of the
-  ///   font size. The lines of the paragraph will be at least `(height + leading)
-  ///   * fontSize` tall when fontSize is not null. When fontSize is null, there
-  ///   is no minimum line height. Tall glyphs due to baseline alignment or large
-  ///   [TextStyle.fontSize] may cause the actual line height after layout to be
-  ///   taller than specified here. [fontSize] must be provided for this property
-  ///   to take effect.
+  ///   font size. The lines of the paragraph will be at least
+  ///   `(height + leading) * fontSize` tall when `fontSize` is not null. Omitting
+  ///   `height` will allow the minimum line height to take the height as defined
+  ///   by the font, which may not be exactly the height of the `fontSize`. When
+  ///   `fontSize` is null, there is no minimum line height. Tall glyphs due to
+  ///   baseline alignment or large [TextStyle.fontSize] may cause the actual line
+  ///   height after layout to be taller than specified here. The `fontSize` must
+  ///   be provided for this property to take effect.
   ///
   /// * `leading`: The minimum amount of leading between lines as a multiple of
-  ///   the font size. [fontSize] must be provided for this property to take effect.
+  ///   the font size. `fontSize` must be provided for this property to take effect.
   ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
@@ -988,9 +1064,9 @@ class StrutStyle {
   /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
   ///   `(height + leading) * fontSize` tall from baseline to baseline.
   ///   [TextStyle] is no longer able to influence the line height, and any tall
-  ///   glyphs may overlap with lines above. If a [fontFamily] is specified, the
+  ///   glyphs may overlap with lines above. If a `fontFamily` is specified, the
   ///   total ascent of the first line will be the min of the `Ascent + half-leading`
-  ///   of the [fontFamily] and `(height + leading) * fontSize`. Otherwise, it
+  ///   of the `fontFamily` and `(height + leading) * fontSize`. Otherwise, it
   ///   will be determined by the Ascent + half-leading of the first text.
   StrutStyle({
     String fontFamily,
@@ -1330,6 +1406,93 @@ class TextPosition {
   }
 }
 
+/// A range of characters in a string of text.
+class TextRange {
+  /// Creates a text range.
+  ///
+  /// The [start] and [end] arguments must not be null. Both the [start] and
+  /// [end] must either be greater than or equal to zero or both exactly -1.
+  ///
+  /// The text included in the range includes the character at [start], but not
+  /// the one at [end].
+  ///
+  /// Instead of creating an empty text range, consider using the [empty]
+  /// constant.
+  const TextRange({
+    this.start,
+    this.end,
+  }) : assert(start != null && start >= -1),
+        assert(end != null && end >= -1);
+
+  /// A text range that starts and ends at offset.
+  ///
+  /// The [offset] argument must be non-null and greater than or equal to -1.
+  const TextRange.collapsed(int offset)
+      : assert(offset != null && offset >= -1),
+        start = offset,
+        end = offset;
+
+  /// A text range that contains nothing and is not in the text.
+  static const TextRange empty = TextRange(start: -1, end: -1);
+
+  /// The index of the first character in the range.
+  ///
+  /// If [start] and [end] are both -1, the text range is empty.
+  final int start;
+
+  /// The next index after the characters in this range.
+  ///
+  /// If [start] and [end] are both -1, the text range is empty.
+  final int end;
+
+  /// Whether this range represents a valid position in the text.
+  bool get isValid => start >= 0 && end >= 0;
+
+  /// Whether this range is empty (but still potentially placed inside the text).
+  bool get isCollapsed => start == end;
+
+  /// Whether the start of this range precedes the end.
+  bool get isNormalized => end >= start;
+
+  /// The text before this range.
+  String textBefore(String text) {
+    assert(isNormalized);
+    return text.substring(0, start);
+  }
+
+  /// The text after this range.
+  String textAfter(String text) {
+    assert(isNormalized);
+    return text.substring(end);
+  }
+
+  /// The text inside this range.
+  String textInside(String text) {
+    assert(isNormalized);
+    return text.substring(start, end);
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other))
+      return true;
+    if (other is! TextRange)
+      return false;
+    final TextRange typedOther = other;
+    return typedOther.start == start
+        && typedOther.end == end;
+  }
+
+  @override
+  int get hashCode => hashValues(
+    start.hashCode,
+    end.hashCode,
+  );
+
+  @override
+  String toString() => 'TextRange(start: $start, end: $end)';
+}
+
 /// Layout constraints for [Paragraph] objects.
 ///
 /// Instances of this class are typically used with [Paragraph.layout].
@@ -1436,8 +1599,8 @@ enum BoxHeightStyle {
 /// Defines various ways to horizontally bound the boxes returned by
 /// [Paragraph.getBoxesForRange].
 enum BoxWidthStyle {
-  // Provide tight bounding boxes that fit widths to the runs of each line
-  // independently.
+  /// Provide tight bounding boxes that fit widths to the runs of each line
+  /// independently.
   tight,
 
   /// Adds up to two additional boxes as needed at the beginning and/or end
@@ -1474,13 +1637,13 @@ enum PlaceholderAlignment {
   /// alignment mode.
   belowBaseline,
 
-  /// Align the top edge of the placeholder with the top edge of the font.
+  /// Align the top edge of the placeholder with the top edge of the text.
   ///
   /// When the placeholder is very tall, the extra space will hang from
   /// the top and extend through the bottom of the line.
   top,
 
-  /// Align the bottom edge of the placeholder with the top edge of the font.
+  /// Align the bottom edge of the placeholder with the bottom edge of the text.
   ///
   /// When the placeholder is very tall, the extra space will rise from the
   /// bottom and extend through the top of the line.
@@ -1491,6 +1654,112 @@ enum PlaceholderAlignment {
   /// When the placeholder is very tall, the extra space will grow equally
   /// from the top and bottom of the line.
   middle,
+}
+
+/// [LineMetrics] stores the measurements and statistics of a single line in the
+/// paragraph.
+///
+/// The measurements here are for the line as a whole, and represent the maximum
+/// extent of the line instead of per-run or per-glyph metrics. For more detailed
+/// metrics, see [TextBox] and [Paragraph.getBoxesForRange].
+///
+/// [LineMetrics] should be obtained directly from the [Paragraph.computeLineMetrics]
+/// method.
+class LineMetrics {
+  /// Creates a [LineMetrics] object with only the specified values.
+  ///
+  /// Omitted values will remain null. [Paragraph.computeLineMetrics] produces
+  /// fully defined [LineMetrics] with no null values.
+  LineMetrics({
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  });
+
+  @pragma('vm:entry-point')
+  LineMetrics._(
+    this.hardBreak,
+    this.ascent,
+    this.descent,
+    this.unscaledAscent,
+    this.height,
+    this.width,
+    this.left,
+    this.baseline,
+    this.lineNumber,
+  );
+
+  /// True if this line ends with an explicit line break (e.g. '\n') or is the end
+  /// of the paragraph. False otherwise.
+  final bool hardBreak;
+
+  /// The rise from the [baseline] as calculated from the font and style for this line.
+  ///
+  /// This is the final computed ascent and can be impacted by the strut, height, scaling,
+  /// as well as outlying runs that are very tall.
+  ///
+  /// The [ascent] is provided as a positive value, even though it is typically defined
+  /// in fonts as negative. This is to ensure the signage of operations with these
+  /// metrics directly reflects the intended signage of the value. For example,
+  /// the y coordinate of the top edge of the line is `baseline - ascent`.
+  final double ascent;
+
+  /// The drop from the [baseline] as calculated from the font and style for this line.
+  ///
+  /// This is the final computed ascent and can be impacted by the strut, height, scaling,
+  /// as well as outlying runs that are very tall.
+  ///
+  /// The y coordinate of the bottom edge of the line is `baseline + descent`.
+  final double descent;
+
+  /// The rise from the [baseline] as calculated from the font and style for this line
+  /// ignoring the [TextStyle.height].
+  ///
+  /// The [unscaledAscent] is provided as a positive value, even though it is typically
+  /// defined in fonts as negative. This is to ensure the signage of operations with
+  /// these metrics directly reflects the intended signage of the value.
+  final double unscaledAscent;
+
+  /// Total height of the line from the top edge to the bottom edge.
+  ///
+  /// This is equivalent to `round(ascent + descent)`. This value is provided
+  /// separately due to rounding causing sub-pixel differences from the unrounded
+  /// values.
+  final double height;
+
+  /// Width of the line from the left edge of the leftmost glyph to the right
+  /// edge of the rightmost glyph.
+  ///
+  /// This is not the same as the width of the pargraph.
+  ///
+  /// See also:
+  ///
+  ///  * [Paragraph.width], the max width passed in during layout.
+  ///  * [Paragraph.longestLine], the width of the longest line in the paragraph.
+  final double width;
+
+  /// The x coordinate of left edge of the line.
+  ///
+  /// The right edge can be obtained with `left + width`.
+  final double left;
+
+  /// The y coordinate of the baseline for this line from the top of the paragraph.
+  ///
+  /// The bottom edge of the paragraph up to and including this line may be obtained
+  /// through `baseline + descent`.
+  final double baseline;
+
+  /// The number of this line in the overall paragraph, with the first line being
+  /// index zero.
+  ///
+  /// For example, the first line is line 0, second line is line 1.
+  final int lineNumber;
 }
 
 /// A paragraph of text.
@@ -1597,17 +1866,45 @@ class Paragraph extends NativeFieldWrapperClass2 {
   }
   List<int> _getPositionForOffset(double dx, double dy) native 'Paragraph_getPositionForOffset';
 
-  /// Returns the [start, end] of the word at the given offset. Characters not
-  /// part of a word, such as spaces, symbols, and punctuation, have word breaks
-  /// on both sides. In such cases, this method will return [offset, offset+1].
-  /// Word boundaries are defined more precisely in Unicode Standard Annex #29
-  /// http://www.unicode.org/reports/tr29/#Word_Boundaries
-  List<int> getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
+  /// Returns the [TextRange] of the word at the given [TextPosition].
+  ///
+  /// Characters not part of a word, such as spaces, symbols, and punctuation,
+  /// have word breaks on both sides. In such cases, this method will return
+  /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
+  /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
+  TextRange getWordBoundary(TextPosition position) {
+    final List<int> boundary = _getWordBoundary(position.offset);
+    return TextRange(start: boundary[0], end: boundary[1]);
+  }
+  List<int> _getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
+
+  /// Returns the [TextRange] of the line at the given [TextPosition].
+  ///
+  /// The newline (if any) is returned as part of the range.
+  ///
+  /// Not valid until after layout.
+  ///
+  /// This can potentially be expensive, since it needs to compute the line
+  /// metrics, so use it sparingly.
+  TextRange getLineBoundary(TextPosition position) {
+    final List<int> boundary = _getLineBoundary(position.offset);
+    return TextRange(start: boundary[0], end: boundary[1]);
+  }
+  List<int> _getLineBoundary(int offset) native 'Paragraph_getLineBoundary';
 
   // Redirecting the paint function in this way solves some dependency problems
   // in the C++ code. If we straighten out the C++ dependencies, we can remove
   // this indirection.
   void _paint(Canvas canvas, double x, double y) native 'Paragraph_paint';
+
+  /// Returns the full list of [LineMetrics] that describe in detail the various
+  /// metrics of each laid out line.
+  ///
+  /// Not valid until after layout.
+  ///
+  /// This can potentially return a large amount of data, so it is not recommended
+  /// to repeatedly call this. Instead, cache the results.
+  List<LineMetrics> computeLineMetrics() native 'Paragraph_computeLineMetrics';
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.

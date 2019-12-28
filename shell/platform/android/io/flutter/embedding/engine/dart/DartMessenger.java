@@ -20,9 +20,6 @@ import io.flutter.plugin.common.BinaryMessenger;
 /**
  * Message conduit for 2-way communication between Android and Dart.
  * <p>
- * WARNING: THIS CLASS IS EXPERIMENTAL. DO NOT SHIP A DEPENDENCY ON THIS CODE.
- * IF YOU USE IT, WE WILL BREAK YOU.
- * <p>
  * See {@link BinaryMessenger}, which sends messages from Android to Dart
  * <p>
  * See {@link PlatformMessageHandler}, which handles messages to Android from Dart
@@ -116,6 +113,22 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         Log.e(TAG, "Uncaught exception in binary message reply handler", ex);
       }
     }
+  }
+
+  /**
+   * Returns the number of pending channel callback replies.
+   *
+   * <p>When sending messages to the Flutter application using {@link BinaryMessenger#send(String,
+   * ByteBuffer, io.flutter.plugin.common.BinaryMessenger.BinaryReply)}, developers can optionally
+   * specify a reply callback if they expect a reply from the Flutter application.
+   *
+   * <p>This method tracks all the pending callbacks that are waiting for response, and is supposed
+   * to be called from the main thread (as other methods). Calling from a different thread could
+   * possibly capture an indeterministic internal state, so don't do it.
+   */
+  @UiThread
+  public int getPendingChannelResponseCount() {
+    return pendingReplies.size();
   }
 
   private static class Reply implements BinaryMessenger.BinaryReply {

@@ -5,9 +5,11 @@
 assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
+import("$flutter_root/build/darwin/ios_app.gni")
 import("$flutter_root/common/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
 import("$flutter_root/shell/platform/darwin/common/framework_shared.gni")
+import("$flutter_root/testing/testing.gni")
 
 _flutter_framework_dir = "$root_out_dir/Flutter.framework"
 
@@ -30,7 +32,6 @@ _flutter_framework_headers = [
   "framework/Headers/FlutterPlatformViews.h",
   "framework/Headers/FlutterPlugin.h",
   "framework/Headers/FlutterPluginAppLifeCycleDelegate.h",
-  "framework/Headers/FlutterTexture.h",
   "framework/Headers/FlutterViewController.h",
 ]
 
@@ -41,9 +42,12 @@ shared_library("create_flutter_framework_dylib") {
 
   output_name = "Flutter"
 
+  ldflags = [ "-Wl,-install_name,@rpath/Flutter.framework/Flutter" ]
+
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterAppDelegate_Internal.h",
+    "framework/Source/FlutterBinaryMessengerRelay.mm",
     "framework/Source/FlutterCallbackCache.mm",
     "framework/Source/FlutterCallbackCache_Internal.h",
     "framework/Source/FlutterDartProject.mm",
@@ -135,7 +139,7 @@ shared_library("create_flutter_framework_dylib") {
   ]
 }
 
-copy("copy_framework_dylib") {
+copy("copy_dylib") {
   visibility = [ ":*" ]
 
   sources = [
@@ -150,39 +154,19 @@ copy("copy_framework_dylib") {
   ]
 }
 
-action("copy_dylib_and_update_framework_install_name") {
-  visibility = [ ":*" ]
-  stamp_file = "$root_out_dir/flutter_install_name_stamp"
-  script = "$flutter_root/sky/tools/change_install_name.py"
-
-  inputs = [
-    "$_flutter_framework_dir/Flutter",
-  ]
-  outputs = [
-    stamp_file,
-  ]
-
-  args = [
-    "--dylib",
-    rebase_path("$_flutter_framework_dir/Flutter"),
-    "--install_name",
-    "@rpath/Flutter.framework/Flutter",
-    "--stamp",
-    rebase_path(stamp_file),
-  ]
-
-  deps = [
-    ":copy_framework_dylib",
-  ]
-}
-
-copy("copy_framework_info_plist") {
+action("copy_framework_info_plist") {
+  script = "$flutter_root/build/copy_info_plist.py"
   visibility = [ ":*" ]
   sources = [
     "framework/Info.plist",
   ]
   outputs = [
     "$_flutter_framework_dir/Info.plist",
+  ]
+  args = [
+    rebase_path(sources[0]),
+    rebase_path(outputs[0]),
+    "--bitcode=$flutter_enable_bitcode",
   ]
 }
 
@@ -255,10 +239,32 @@ shared_library("copy_and_verify_framework_headers") {
   ]
 }
 
+test_fixtures("flutter_tests_fixtures") {
+  fixtures = []
+}
+
+ios_app("FlutterTests") {
+  testonly = true
+
+  info_plist = "FlutterTestsInfo.plist"
+
+  sources = [
+    "flutter_unittests.mm",
+  ]
+
+  libs = [ "Foundation.framework" ]
+
+  deps = [
+    ":flutter_tests_fixtures",
+    "//flutter/runtime:libdart",
+    "//flutter/testing",
+  ]
+}
+
 group("flutter_framework") {
   deps = [
     ":copy_and_verify_framework_headers",
-    ":copy_dylib_and_update_framework_install_name",
+    ":copy_dylib",
     ":copy_framework_icu",
     ":copy_framework_info_plist",
     ":copy_framework_module_map",

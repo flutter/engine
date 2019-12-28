@@ -5,13 +5,19 @@
 package io.flutter.embedding.engine.plugins.activity;
 
 import android.app.Activity;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import io.flutter.plugin.common.PluginRegistry;
 
 /**
  * Binding that gives {@link ActivityAware} plugins access to an associated {@link Activity} and
  * the {@link Activity}'s lifecycle methods.
+ * <p>
+ * To obtain an instance of an {@code ActivityPluginBinding} in a Flutter plugin, implement the
+ * {@link ActivityAware} interface. A binding is provided in {@link ActivityAware#onAttachedToActivity(ActivityPluginBinding)}
+ * and {@link ActivityAware#onReattachedToActivityForConfigChanges(ActivityPluginBinding)}.
  */
 public interface ActivityPluginBinding {
 
@@ -21,6 +27,19 @@ public interface ActivityPluginBinding {
    */
   @NonNull
   Activity getActivity();
+
+  /**
+   * Returns the {@code Lifecycle} associated with the attached {@code Activity}.
+   * <p>
+   * Use the flutter_plugin_android_lifecycle plugin to turn the returned {@code Object}
+   * into a {@code Lifecycle} object. See
+   * (https://github.com/flutter/plugins/tree/master/packages/flutter_plugin_android_lifecycle).
+   * Flutter plugins that rely on {@code Lifecycle} are forced to use the
+   * flutter_plugin_android_lifecycle plugin so that the version of the Android Lifecycle library is
+   * exposed to pub, which allows Flutter to manage different versions library over time.
+   */
+  @NonNull
+  Object getLifecycle();
 
   /**
    * Adds a listener that is invoked whenever the associated {@link Activity}'s
@@ -65,4 +84,30 @@ public interface ActivityPluginBinding {
    * Removes a listener that was added in {@link #addOnUserLeaveHintListener(PluginRegistry.UserLeaveHintListener)}.
    */
   void removeOnUserLeaveHintListener(@NonNull PluginRegistry.UserLeaveHintListener listener);
+
+  /**
+   * Adds a listener that is invoked when the associated {@code Activity} or {@code Fragment}
+   * saves and restores instance state.
+   */
+  void addOnSaveStateListener(@NonNull OnSaveInstanceStateListener listener);
+
+  /**
+   * Removes a listener that was added in {@link #addOnSaveStateListener(OnSaveInstanceStateListener)}.
+   */
+  void removeOnSaveStateListener(@NonNull OnSaveInstanceStateListener listener);
+
+  interface OnSaveInstanceStateListener {
+    /**
+     * Invoked when the associated {@code Activity} or {@code Fragment} executes
+     * {@link Activity#onSaveInstanceState(Bundle)}.
+     */
+    void onSaveInstanceState(@NonNull Bundle bundle);
+
+    /**
+     * Invoked when the associated {@code Activity} executes
+     * {@link Activity#onCreate(Bundle)} or associated {@code Fragment} executes
+     * {@code Fragment#onActivityCreated(Bundle)}.
+     */
+    void onRestoreInstanceState(@Nullable Bundle bundle);
+  }
 }

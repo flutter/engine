@@ -7,13 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D17A5C022D78FCD0057279F /* FlutterViewControllerTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D17A5BF22D78FCD0057279F /* FlutterViewControllerTest.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
+		0D1CE5D8233430F400E5D880 /* FlutterChannelsTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D1CE5D7233430F400E5D880 /* FlutterChannelsTest.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
+		0D4C3FB022DF9F5300A67C70 /* FlutterPluginAppLifeCycleDelegateTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D4C3FAF22DF9F5300A67C70 /* FlutterPluginAppLifeCycleDelegateTest.m */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
+		0D52D3BD22C566D50011DEBD /* FlutterBinaryMessengerRelayTest.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0D52D3B622C566D50011DEBD /* FlutterBinaryMessengerRelayTest.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		0D6AB6B622BB05E100EEE540 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6B522BB05E100EEE540 /* AppDelegate.m */; };
 		0D6AB6B922BB05E100EEE540 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6B822BB05E100EEE540 /* ViewController.m */; };
 		0D6AB6BC22BB05E100EEE540 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB6BA22BB05E100EEE540 /* Main.storyboard */; };
 		0D6AB6BE22BB05E200EEE540 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB6BD22BB05E200EEE540 /* Assets.xcassets */; };
 		0D6AB6C122BB05E200EEE540 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB6BF22BB05E200EEE540 /* LaunchScreen.storyboard */; };
 		0D6AB6C422BB05E200EEE540 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6C322BB05E200EEE540 /* main.m */; };
-		0D6AB6EB22BB40E700EEE540 /* FlutterEngineTest.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6E722BB40CF00EEE540 /* FlutterEngineTest.mm */; };
+		0D6AB6EB22BB40E700EEE540 /* FlutterEngineTest.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6E722BB40CF00EEE540 /* FlutterEngineTest.mm */; settings = {COMPILER_FLAGS = "-fobjc-arc"; }; };
 		0D6AB72C22BC339F00EEE540 /* libOCMock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D6AB72522BC336100EEE540 /* libOCMock.a */; };
 		0D6AB73F22BD8F0200EEE540 /* FlutterEngineConfig.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB73E22BD8F0200EEE540 /* FlutterEngineConfig.xcconfig */; };
 /* End PBXBuildFile section */
@@ -71,6 +75,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0D17A5BF22D78FCD0057279F /* FlutterViewControllerTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FlutterViewControllerTest.m; sourceTree = "<group>"; };
+		0D1CE5D7233430F400E5D880 /* FlutterChannelsTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FlutterChannelsTest.m; sourceTree = "<group>"; };
+		0D4C3FAF22DF9F5300A67C70 /* FlutterPluginAppLifeCycleDelegateTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FlutterPluginAppLifeCycleDelegateTest.m; sourceTree = "<group>"; };
+		0D52D3B622C566D50011DEBD /* FlutterBinaryMessengerRelayTest.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterBinaryMessengerRelayTest.mm; sourceTree = "<group>"; };
 		0D6AB6B122BB05E100EEE540 /* IosUnitTests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IosUnitTests.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D6AB6B422BB05E100EEE540 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		0D6AB6B522BB05E100EEE540 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -107,6 +115,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0D1CE5D62334309900E5D880 /* Source-Common */ = {
+			isa = PBXGroup;
+			children = (
+				0D1CE5D7233430F400E5D880 /* FlutterChannelsTest.m */,
+			);
+			name = "Source-Common";
+			path = ../../../../shell/platform/darwin/common/framework/Source;
+			sourceTree = "<group>";
+		};
 		0D6AB6A822BB05E100EEE540 = {
 			isa = PBXGroup;
 			children = (
@@ -145,6 +162,7 @@
 		0D6AB6CC22BB05E200EEE540 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				0D1CE5D62334309900E5D880 /* Source-Common */,
 				0D6AB71722BC336100EEE540 /* OCMock.xcodeproj */,
 				0D6AB6E622BB409F00EEE540 /* Source */,
 				0D6AB6CF22BB05E200EEE540 /* Info.plist */,
@@ -156,7 +174,10 @@
 		0D6AB6E622BB409F00EEE540 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				0D52D3B622C566D50011DEBD /* FlutterBinaryMessengerRelayTest.mm */,
 				0D6AB6E722BB40CF00EEE540 /* FlutterEngineTest.mm */,
+				0D17A5BF22D78FCD0057279F /* FlutterViewControllerTest.m */,
+				0D4C3FAF22DF9F5300A67C70 /* FlutterPluginAppLifeCycleDelegateTest.m */,
 			);
 			name = Source;
 			path = ../../../../shell/platform/darwin/ios/framework/Source;
@@ -345,8 +366,8 @@
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "TARGET_FRAMEWORKS_PATH=\"$TARGET_BUILD_DIR/../Frameworks\"\nFRAMEWORK_PATH=`find $PWD/../../../../out/$FLUTTER_ENGINE -name Flutter.framework`\ncp -R \"$FRAMEWORK_PATH\" \"$TARGET_FRAMEWORKS_PATH\"\n";
+			shellPath = "/bin/sh -x";
+			shellScript = "TARGET_FRAMEWORKS_PATH=\"$TARGET_BUILD_DIR/../Frameworks\"\nFRAMEWORK_PATH=$PROJECT_DIR/../../../../out/$FLUTTER_ENGINE/Flutter.framework\nrsync -avzh \"$FRAMEWORK_PATH\" \"$TARGET_FRAMEWORKS_PATH\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -366,6 +387,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				0D6AB6EB22BB40E700EEE540 /* FlutterEngineTest.mm in Sources */,
+				0D17A5C022D78FCD0057279F /* FlutterViewControllerTest.m in Sources */,
+				0D1CE5D8233430F400E5D880 /* FlutterChannelsTest.m in Sources */,
+				0D52D3BD22C566D50011DEBD /* FlutterBinaryMessengerRelayTest.mm in Sources */,
+				0D4C3FB022DF9F5300A67C70 /* FlutterPluginAppLifeCycleDelegateTest.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -560,6 +585,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = ../../../../out/$FLUTTER_ENGINE;
 				HEADER_SEARCH_PATHS = (
 					../../../..,
 					../../../../flutter/shell/platform/darwin/common/framework/Headers,
@@ -581,9 +607,8 @@
 					"$(PROJECT_DIR)/Tests",
 				);
 				OTHER_LDFLAGS = (
-					"-L",
-					../../../../out/$FLUTTER_ENGINE,
-					"-lFlutter",
+					"-framework",
+					Flutter,
 					"-lOCMock",
 					"-ObjC",
 				);
@@ -604,6 +629,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = ../../../../out/$FLUTTER_ENGINE;
 				HEADER_SEARCH_PATHS = (
 					../../../..,
 					../../../../flutter/shell/platform/darwin/common/framework/Headers,
@@ -625,9 +651,8 @@
 					"$(PROJECT_DIR)/Tests",
 				);
 				OTHER_LDFLAGS = (
-					"-L",
-					../../../../out/$FLUTTER_ENGINE,
-					"-lFlutter",
+					"-framework",
+					Flutter,
 					"-lOCMock",
 					"-ObjC",
 				);

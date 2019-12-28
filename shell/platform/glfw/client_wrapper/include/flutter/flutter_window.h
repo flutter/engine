@@ -80,6 +80,21 @@ class FlutterWindow {
     return FlutterDesktopWindowGetScaleFactor(window_);
   }
 
+  // Forces a specific pixel ratio for Flutter rendering, rather than one
+  // computed automatically from screen information.
+  //
+  // To clear a previously set override, pass an override value of zero.
+  void SetPixelRatioOverride(double pixel_ratio) {
+    FlutterDesktopWindowSetPixelRatioOverride(window_, pixel_ratio);
+  }
+
+  // Sets the min/max size of |flutter_window| in screen coordinates. Use
+  // kFlutterDesktopDontCare for any dimension you wish to leave unconstrained.
+  void SetSizeLimits(FlutterDesktopSize minimum_size,
+                     FlutterDesktopSize maximum_size) {
+    FlutterDesktopWindowSetSizeLimits(window_, minimum_size, maximum_size);
+  }
+
  private:
   // Handle for interacting with the C API's window.
   //

@@ -8,7 +8,6 @@
 #include <map>
 #include <set>
 
-#include <fuchsia/modular/cpp/fidl.h>
 #include <fuchsia/ui/gfx/cpp/fidl.h>
 #include <fuchsia/ui/input/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
@@ -17,6 +16,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
 #include "lib/fidl/cpp/binding.h"
 #include "lib/ui/scenic/cpp/id.h"
 
@@ -27,6 +27,7 @@ namespace flutter_runner {
 using OnMetricsUpdate = fit::function<void(const fuchsia::ui::gfx::Metrics&)>;
 using OnSizeChangeHint =
     fit::function<void(float width_change_factor, float height_change_factor)>;
+using OnEnableWireframe = fit::function<void(bool)>;
 
 // The per engine component residing on the platform thread is responsible for
 // all platform specific integrations.
@@ -36,11 +37,14 @@ using OnSizeChangeHint =
 // thread.
 class PlatformView final : public flutter::PlatformView,
                            private fuchsia::ui::scenic::SessionListener,
-                           public fuchsia::ui::input::InputMethodEditorClient {
+                           public fuchsia::ui::input::InputMethodEditorClient,
+                           public AccessibilityBridge::Delegate {
  public:
-  PlatformView(PlatformView::Delegate& delegate,
+  PlatformView(flutter::PlatformView::Delegate& delegate,
                std::string debug_label,
+               fuchsia::ui::views::ViewRef view_ref,
                flutter::TaskRunners task_runners,
+               std::shared_ptr<sys::ServiceDirectory> runner_services,
                fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
                    parent_environment_service_provider,
                fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
@@ -48,8 +52,9 @@ class PlatformView final : public flutter::PlatformView,
                fit::closure on_session_listener_error_callback,
                OnMetricsUpdate session_metrics_did_change_callback,
                OnSizeChangeHint session_size_change_hint_callback,
+               OnEnableWireframe wireframe_enabled_callback,
                zx_handle_t vsync_event_handle);
-  PlatformView(PlatformView::Delegate& delegate,
+  PlatformView(flutter::PlatformView::Delegate& delegate,
                std::string debug_label,
                flutter::TaskRunners task_runners,
                fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
@@ -60,13 +65,25 @@ class PlatformView final : public flutter::PlatformView,
 
   void UpdateViewportMetrics(const fuchsia::ui::gfx::Metrics& metrics);
 
+  // |flutter::PlatformView|
+  // |flutter_runner::AccessibilityBridge::Delegate|
+  void SetSemanticsEnabled(bool enabled) override;
+
+  // |PlatformView|
+  flutter::PointerDataDispatcherMaker GetDispatcherMaker() override;
+
  private:
   const std::string debug_label_;
+  // TODO(MI4-2490): remove once ViewRefControl is passed to Scenic and kept
+  // alive there
+  const fuchsia::ui::views::ViewRef view_ref_;
+  std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
 
   fidl::Binding<fuchsia::ui::scenic::SessionListener> session_listener_binding_;
   fit::closure session_listener_error_callback_;
   OnMetricsUpdate metrics_changed_callback_;
   OnSizeChangeHint size_change_hint_callback_;
+  OnEnableWireframe wireframe_enabled_callback_;
 
   int current_text_input_client_ = 0;
   fidl::Binding<fuchsia::ui::input::InputMethodEditorClient> ime_client_;
@@ -74,7 +91,6 @@ class PlatformView final : public flutter::PlatformView,
   fuchsia::ui::input::ImeServicePtr text_sync_service_;
 
   fuchsia::sys::ServiceProviderPtr parent_environment_service_provider_;
-  fuchsia::modular::ClipboardPtr clipboard_;
   std::unique_ptr<Surface> surface_;
   flutter::LogicalMetrics metrics_;
   fuchsia::ui::gfx::Metrics scenic_metrics_;
@@ -158,6 +174,10 @@ class PlatformView final : public flutter::PlatformView,
 
   // Channel handler for kTextInputChannel
   void HandleFlutterTextInputChannelPlatformMessage(
+      fml::RefPtr<flutter::PlatformMessage> message);
+
+  // Channel handler for kPlatformViewsChannel.
+  void HandleFlutterPlatformViewsChannelPlatformMessage(
       fml::RefPtr<flutter::PlatformMessage> message);
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);

@@ -12,18 +12,14 @@ bool GPUSurfaceGLDelegate::GLContextFBOResetAfterPresent() const {
   return false;
 }
 
-bool GPUSurfaceGLDelegate::UseOffscreenSurface() const {
-  return false;
+bool GPUSurfaceGLDelegate::SurfaceSupportsReadback() const {
+  return true;
 }
 
 SkMatrix GPUSurfaceGLDelegate::GLContextSurfaceTransformation() const {
   SkMatrix matrix;
   matrix.setIdentity();
   return matrix;
-}
-
-flutter::ExternalViewEmbedder* GPUSurfaceGLDelegate::GetExternalViewEmbedder() {
-  return nullptr;
 }
 
 GPUSurfaceGLDelegate::GLProcResolver GPUSurfaceGLDelegate::GetGLProcResolver()

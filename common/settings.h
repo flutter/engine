@@ -73,7 +73,10 @@ struct Settings {
   // libraries.
   MappingCallback dart_library_sources_kernel;
 
-  std::string application_library_path;
+  // Path to a library containing the application's compiled Dart code.
+  // This is a vector so that the embedder can provide fallback paths in
+  // case the primary path to the library can not be loaded.
+  std::vector<std::string> application_library_path;
 
   std::string application_kernel_asset;       // deprecated
   std::string application_kernel_list_asset;  // deprecated
@@ -85,11 +88,13 @@ struct Settings {
   std::vector<std::string> dart_entrypoint_args;
 
   // Isolate settings
+  bool enable_checked_mode = false;
   bool start_paused = false;
   bool trace_skia = false;
   bool trace_startup = false;
   bool trace_systrace = false;
   bool dump_skp_on_shader_compilation = false;
+  bool cache_sksl = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
@@ -101,11 +106,17 @@ struct Settings {
   std::string advisory_script_entrypoint = "main";
 
   // Observatory settings
+
+  // Whether the Dart VM service should be enabled.
   bool enable_observatory = false;
-  // Port on target will be auto selected by the OS. A message will be printed
-  // on the target with the port after it has been selected.
+
+  // The IP address to which the Dart VM service is bound.
+  std::string observatory_host;
+
+  // The port to which the Dart VM service is bound. When set to `0`, a free
+  // port will be automatically selected by the OS. A message is logged on the
+  // target indicating the URL at which the VM service can be accessed.
   uint32_t observatory_port = 0;
-  bool ipv6 = false;
 
   // Determines whether an authentication code is required to communicate with
   // the VM service.
@@ -171,6 +182,14 @@ struct Settings {
   // Callback to handle the timings of a rasterized frame. This is called as
   // soon as a frame is rasterized.
   FrameRasterizedCallback frame_rasterized_callback;
+
+  // This data will be available to the isolate immediately on launch via the
+  // Window.getPersistentIsolateData callback. This is meant for information
+  // that the isolate cannot request asynchronously (platform messages can be
+  // used for that purpose). This data is held for the lifetime of the shell and
+  // is available on isolate restarts in the the shell instance. Due to this,
+  // the buffer must be as small as possible.
+  std::shared_ptr<const fml::Mapping> persistent_isolate_data;
 
   std::string ToString() const;
 };

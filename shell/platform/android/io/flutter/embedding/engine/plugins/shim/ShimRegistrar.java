@@ -24,8 +24,8 @@ import io.flutter.view.FlutterView;
 import io.flutter.view.TextureRegistry;
 
 /**
- * A {@link PluginRegistry.Registrar} that is shimmed to use the new Android embedding and plugin
- * API behind the scenes.
+ * A {@link PluginRegistry.Registrar} that is shimmed let old plugins use the new Android embedding
+ * and plugin API behind the scenes.
  * <p>
  * Instances of {@code ShimRegistrar}s are vended internally by a {@link ShimPluginRegistry}.
  */
@@ -64,17 +64,17 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
 
   @Override
   public BinaryMessenger messenger() {
-    return pluginBinding != null ? pluginBinding.getFlutterEngine().getDartExecutor() : null;
+    return pluginBinding != null ? pluginBinding.getBinaryMessenger() : null;
   }
 
   @Override
   public TextureRegistry textures() {
-    return pluginBinding != null ? pluginBinding.getFlutterEngine().getRenderer() : null;
+    return pluginBinding != null ? pluginBinding.getTextureRegistry() : null;
   }
 
   @Override
   public PlatformViewRegistry platformViewRegistry() {
-    return null;
+    return pluginBinding != null ? pluginBinding.getPlatformViewRegistry() : null;
   }
 
   @Override
@@ -165,6 +165,7 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
     }
 
     pluginBinding = null;
+    activityPluginBinding = null;
   }
 
   @Override

@@ -8,28 +8,43 @@
 #include <fuchsia/mem/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/async/cpp/task.h>
+#include <lib/async/default.h>
 #include <lib/fdio/directory.h>
 #include <lib/fdio/namespace.h>
+#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/ui/scenic/cpp/view_token_pair.h>
+#include <lib/vfs/cpp/composed_service_dir.h>
 #include <lib/vfs/cpp/remote_dir.h>
 #include <lib/vfs/cpp/service.h>
 #include <sys/stat.h>
 #include <zircon/dlfcn.h>
 #include <zircon/status.h>
+#include <zircon/types.h>
+#include <memory>
 #include <regex>
 #include <sstream>
 
+#include "flutter/fml/mapping.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/switches.h"
+#include "lib/fdio/io.h"
 #include "runtime/dart/utils/files.h"
 #include "runtime/dart/utils/handle_exception.h"
 #include "runtime/dart/utils/tempfs.h"
 #include "runtime/dart/utils/vmo.h"
 
-#include "service_provider_dir.h"
 #include "task_observers.h"
+#include "task_runner_adapter.h"
 #include "thread.h"
+
+// TODO(kaushikiska): Use these constants from ::llcpp::fuchsia::io
+// Can read from target object.
+constexpr uint32_t OPEN_RIGHT_READABLE = 1u;
+
+// Connection can map target object executable.
+constexpr uint32_t OPEN_RIGHT_EXECUTABLE = 8u;
 
 namespace flutter_runner {
 
@@ -37,8 +52,7 @@ constexpr char kDataKey[] = "data";
 constexpr char kTmpPath[] = "/tmp";
 constexpr char kServiceRootPath[] = "/svc";
 
-std::pair<std::unique_ptr<Thread>, std::unique_ptr<Application>>
-Application::Create(
+ActiveApplication Application::Create(
     TerminationCallback termination_callback,
     fuchsia::sys::Package package,
     fuchsia::sys::StartupInfo startup_info,
@@ -57,7 +71,7 @@ Application::Create(
   });
 
   latch.Wait();
-  return {std::move(thread), std::move(application)};
+  return {.thread = std::move(thread), .application = std::move(application)};
 }
 
 static std::string DebugLabelForURL(const std::string& url) {
@@ -67,6 +81,45 @@ static std::string DebugLabelForURL(const std::string& url) {
   } else {
     return {url, found + 1};
   }
+}
+
+static std::unique_ptr<fml::FileMapping> MakeFileMapping(const char* path,
+                                                         bool executable) {
+  uint32_t flags = OPEN_RIGHT_READABLE;
+  if (executable) {
+    flags |= OPEN_RIGHT_EXECUTABLE;
+  }
+
+  int fd = 0;
+  // The returned file descriptor is compatible with standard posix operations
+  // such as close, mmap, etc. We only need to treat open/open_at specially.
+  zx_status_t status = fdio_open_fd(path, flags, &fd);
+
+  if (status != ZX_OK) {
+    return nullptr;
+  }
+
+  using Protection = fml::FileMapping::Protection;
+
+  std::initializer_list<Protection> protection_execute = {Protection::kRead,
+                                                          Protection::kExecute};
+  std::initializer_list<Protection> protection_read = {Protection::kRead};
+  auto mapping = std::make_unique<fml::FileMapping>(
+      fml::UniqueFD{fd}, executable ? protection_execute : protection_read);
+
+  if (!mapping->IsValid()) {
+    return nullptr;
+  }
+
+  return mapping;
+}
+
+// Defaults to readonly. If executable is `true`, we treat it as `read + exec`.
+static flutter::MappingCallback MakeDataFileMapping(const char* absolute_path,
+                                                    bool executable = false) {
+  return [absolute_path, executable = executable](void) {
+    return MakeFileMapping(absolute_path, executable);
+  };
 }
 
 Application::Application(
@@ -80,7 +133,8 @@ Application::Application(
       debug_label_(DebugLabelForURL(startup_info.launch_info.url)),
       application_controller_(this),
       outgoing_dir_(new vfs::PseudoDir()),
-      runner_incoming_services_(runner_incoming_services) {
+      runner_incoming_services_(runner_incoming_services),
+      weak_factory_(this) {
   application_controller_.set_error_handler(
       [this](zx_status_t status) { Kill(); });
 
@@ -90,8 +144,7 @@ Application::Application(
 
   // LaunchInfo::arguments optional.
   if (auto& arguments = launch_info.arguments) {
-    settings_ = flutter::SettingsFromCommandLine(
-        fml::CommandLineFromIterators(arguments->begin(), arguments->end()));
+    settings_.dart_entrypoint_args = arguments.value();
   }
 
   // Determine /pkg/data directory from StartupInfo.
@@ -109,7 +162,7 @@ Application::Application(
   }
 
   // Setup /tmp to be mapped to the process-local memfs.
-  dart_utils::SetupComponentTemp(fdio_ns_.get());
+  dart_utils::RunnerTemp::SetupComponent(fdio_ns_.get());
 
   // LaunchInfo::flat_namespace optional.
   for (size_t i = 0; i < startup_info.flat_namespace.paths.size(); ++i) {
@@ -159,11 +212,11 @@ Application::Application(
   // flutter_public_dir is only accessed once we receive OnOpen Event.
   // That will prevent FL-175 for public directory
   auto request = flutter_public_dir.NewRequest().TakeChannel();
-  fdio_service_connect_at(directory_ptr_.channel().get(), "public",
+  fdio_service_connect_at(directory_ptr_.channel().get(), "svc",
                           request.release());
 
-  auto service_provider_dir = std::make_unique<ServiceProviderDir>();
-  service_provider_dir->set_fallback(std::move(flutter_public_dir));
+  auto composed_service_dir = std::make_unique<vfs::ComposedServiceDir>();
+  composed_service_dir->set_fallback(std::move(flutter_public_dir));
 
   // Clone and check if client is servicing the directory.
   directory_ptr_->Clone(fuchsia::io::OPEN_FLAG_DESCRIBE |
@@ -200,7 +253,7 @@ Application::Application(
   // All launch arguments have been read. Perform service binding and
   // final settings configuration. The next call will be to create a view
   // for this application.
-  service_provider_dir->AddService(
+  composed_service_dir->AddService(
       fuchsia::ui::app::ViewProvider::Name_,
       std::make_unique<vfs::Service>(
           [this](zx::channel channel, async_dispatcher_t* dispatcher) {
@@ -209,7 +262,7 @@ Application::Application(
                           std::move(channel)));
           }));
 
-  outgoing_dir_->AddEntry("public", std::move(service_provider_dir));
+  outgoing_dir_->AddEntry("svc", std::move(composed_service_dir));
 
   // Setup the application controller binding.
   if (application_controller_request) {
@@ -217,12 +270,15 @@ Application::Application(
   }
 
   // Compare flutter_jit_runner in BUILD.gn.
-  settings_.vm_snapshot_data_path = "pkg/data/vm_snapshot_data.bin";
-  settings_.vm_snapshot_instr_path = "pkg/data/vm_snapshot_instructions.bin";
-  settings_.isolate_snapshot_data_path =
-      "pkg/data/isolate_core_snapshot_data.bin";
-  settings_.isolate_snapshot_instr_path =
-      "pkg/data/isolate_core_snapshot_instructions.bin";
+  settings_.vm_snapshot_data =
+      MakeDataFileMapping("/pkg/data/vm_snapshot_data.bin");
+  settings_.vm_snapshot_instr =
+      MakeDataFileMapping("/pkg/data/vm_snapshot_instructions.bin", true);
+
+  settings_.isolate_snapshot_data =
+      MakeDataFileMapping("/pkg/data/isolate_core_snapshot_data.bin");
+  settings_.isolate_snapshot_instr = MakeDataFileMapping(
+      "/pkg/data/isolate_core_snapshot_instructions.bin", true);
 
   {
     // Check if we can use the snapshot with the framework already loaded.
@@ -234,14 +290,15 @@ Application::Application(
                                        "app.frameworkversion",
                                        &app_framework) &&
         (runner_framework.compare(app_framework) == 0)) {
-      settings_.vm_snapshot_data_path =
-          "pkg/data/framework_vm_snapshot_data.bin";
-      settings_.vm_snapshot_instr_path =
-          "pkg/data/framework_vm_snapshot_instructions.bin";
-      settings_.isolate_snapshot_data_path =
-          "pkg/data/framework_isolate_core_snapshot_data.bin";
-      settings_.isolate_snapshot_instr_path =
-          "pkg/data/framework_isolate_core_snapshot_instructions.bin";
+      settings_.vm_snapshot_data =
+          MakeDataFileMapping("/pkg/data/framework_vm_snapshot_data.bin");
+      settings_.vm_snapshot_instr =
+          MakeDataFileMapping("/pkg/data/vm_snapshot_instructions.bin", true);
+
+      settings_.isolate_snapshot_data = MakeDataFileMapping(
+          "/pkg/data/framework_isolate_core_snapshot_data.bin");
+      settings_.isolate_snapshot_instr = MakeDataFileMapping(
+          "/pkg/data/isolate_core_snapshot_instructions.bin", true);
 
       FML_LOG(INFO) << "Using snapshot with framework for "
                     << package.resolved_url;
@@ -255,7 +312,13 @@ Application::Application(
   settings_.enable_observatory = false;
 #else
   settings_.enable_observatory = true;
+
+  // TODO(cbracken): pass this in as a param to allow 0.0.0.0, ::1, etc.
+  settings_.observatory_host = "127.0.0.1";
 #endif
+
+  // Controls whether category "skia" trace events are enabled.
+  settings_.trace_skia = true;
 
   settings_.icu_data_path = "";
 
@@ -308,22 +371,45 @@ Application::Application(
   settings_.dart_flags.push_back("--profile_period=10000");
 #endif  // defined(__aarch64__)
 
-  auto dispatcher = async_get_default_dispatcher();
-  FML_CHECK(dispatcher);
+  auto weak_application = weak_factory_.GetWeakPtr();
+  auto platform_task_runner =
+      CreateFMLTaskRunner(async_get_default_dispatcher());
   const std::string component_url = package.resolved_url;
-  settings_.unhandled_exception_callback =
-      [dispatcher, runner_incoming_services, component_url](
-          const std::string& error, const std::string& stack_trace) {
-        async::PostTask(dispatcher, [runner_incoming_services, component_url,
-                                     error, stack_trace]() {
+  settings_.unhandled_exception_callback = [weak_application,
+                                            platform_task_runner,
+                                            runner_incoming_services,
+                                            component_url](
+                                               const std::string& error,
+                                               const std::string& stack_trace) {
+    if (weak_application) {
+      // TODO(cbracken): unsafe. The above check and the PostTask below are
+      // happening on the UI thread. If the Application dtor and thread
+      // termination happen (on the platform thread) between the previous
+      // line and the next line, a crash will occur since we'll be posting
+      // to a dead thread. See Runner::OnApplicationTerminate() in
+      // runner.cc.
+      platform_task_runner->PostTask([weak_application,
+                                      runner_incoming_services, component_url,
+                                      error, stack_trace]() {
+        if (weak_application) {
           dart_utils::HandleException(runner_incoming_services, component_url,
                                       error, stack_trace);
-        });
-        // Ideally we would return whether HandleException returned ZX_OK, but
-        // short of knowing if the exception was correctly handled, we return
-        // false to have the error and stack trace printed in the logs.
-        return false;
-      };
+        } else {
+          FML_LOG(WARNING)
+              << "Exception was thrown which was not caught in Flutter app: "
+              << error;
+        }
+      });
+    } else {
+      FML_LOG(WARNING)
+          << "Exception was thrown which was not caught in Flutter app: "
+          << error;
+    }
+    // Ideally we would return whether HandleException returned ZX_OK, but
+    // short of knowing if the exception was correctly handled, we return
+    // false to have the error and stack trace printed in the logs.
+    return false;
+  };
 
   AttemptVMLaunchWithCurrentSettings(settings_);
 }
@@ -431,18 +517,9 @@ void Application::AttemptVMLaunchWithCurrentSettings(
           application_assets_directory_.get() /* /pkg/data */,
           "isolate_snapshot_instructions.bin", true));
 
-  shared_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
-      CreateWithContentsOfFile(
-          application_assets_directory_.get() /* /pkg/data */,
-          "shared_snapshot_data.bin", false),
-      CreateWithContentsOfFile(
-          application_assets_directory_.get() /* /pkg/data */,
-          "shared_snapshot_instructions.bin", true));
-
   auto vm = flutter::DartVMRef::Create(settings_,               //
                                        std::move(vm_snapshot),  //
-                                       isolate_snapshot_,       //
-                                       shared_snapshot_         //
+                                       isolate_snapshot_        //
   );
   FML_CHECK(vm) << "Mut be able to initialize the VM.";
 }
@@ -506,10 +583,11 @@ void Application::CreateView(
       *this,                         // delegate
       debug_label_,                  // thread label
       svc_,                          // Component incoming services
+      runner_incoming_services_,     // Runner incoming services
       settings_,                     // settings
       std::move(isolate_snapshot_),  // isolate snapshot
-      std::move(shared_snapshot_),   // shared snapshot
       scenic::ToViewToken(std::move(view_token)),  // view token
+      scenic::ViewRefPair::New(),                  // view ref pair
       std::move(fdio_ns_),                         // FDIO namespace
       std::move(directory_request_)                // outgoing request
       ));

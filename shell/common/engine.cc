@@ -36,37 +36,46 @@ static constexpr char kSettingsChannel[] = "flutter/settings";
 static constexpr char kIsolateChannel[] = "flutter/isolate";
 
 Engine::Engine(Delegate& delegate,
+               const PointerDataDispatcherMaker& dispatcher_maker,
                DartVM& vm,
                fml::RefPtr<const DartSnapshot> isolate_snapshot,
-               fml::RefPtr<const DartSnapshot> shared_snapshot,
                TaskRunners task_runners,
                Settings settings,
                std::unique_ptr<Animator> animator,
-               fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-               fml::WeakPtr<IOManager> io_manager)
+               fml::WeakPtr<IOManager> io_manager,
+               fml::RefPtr<SkiaUnrefQueue> unref_queue,
+               fml::WeakPtr<SnapshotDelegate> snapshot_delegate)
     : delegate_(delegate),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
-      activity_running_(false),
+      activity_running_(true),
       have_surface_(false),
+      image_decoder_(task_runners,
+                     vm.GetConcurrentWorkerTaskRunner(),
+                     io_manager),
+      task_runners_(std::move(task_runners)),
       weak_factory_(this) {
   // Runtime controller is initialized here because it takes a reference to this
   // object as its delegate. The delegate may be called in the constructor and
   // we want to be fully initilazed by that point.
   runtime_controller_ = std::make_unique<RuntimeController>(
-      *this,                                 // runtime delegate
-      &vm,                                   // VM
-      std::move(isolate_snapshot),           // isolate snapshot
-      std::move(shared_snapshot),            // shared snapshot
-      std::move(task_runners),               // task runners
-      std::move(snapshot_delegate),          // snapshot delegate
+      *this,                        // runtime delegate
+      &vm,                          // VM
+      std::move(isolate_snapshot),  // isolate snapshot
+      task_runners_,                // task runners
+      std::move(snapshot_delegate),
       std::move(io_manager),                 // io manager
+      std::move(unref_queue),                // Skia unref queue
+      image_decoder_.GetWeakPtr(),           // image decoder
       settings_.advisory_script_uri,         // advisory script uri
       settings_.advisory_script_entrypoint,  // advisory script entrypoint
       settings_.idle_notification_callback,  // idle notification callback
       settings_.isolate_create_callback,     // isolate create callback
-      settings_.isolate_shutdown_callback    // isolate shutdown callback
+      settings_.isolate_shutdown_callback,   // isolate shutdown callback
+      settings_.persistent_isolate_data      // persistent isolate data
   );
+
+  pointer_data_dispatcher_ = dispatcher_maker(*this);
 }
 
 Engine::~Engine() = default;
@@ -118,6 +127,9 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
     FML_LOG(ERROR) << "Engine run configuration was invalid.";
     return RunStatus::Failure;
   }
+
+  last_entry_point_ = configuration.GetEntrypoint();
+  last_entry_point_library_ = configuration.GetEntrypointLibrary();
 
   auto isolate_launch_status =
       PrepareAndLaunchIsolate(std::move(configuration));
@@ -216,8 +228,9 @@ void Engine::ReportTimings(std::vector<int64_t> timings) {
 }
 
 void Engine::NotifyIdle(int64_t deadline) {
+  auto trace_event = std::to_string(deadline - Dart_TimelineGetMicros());
   TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
-               std::to_string(deadline - Dart_TimelineGetMicros()).c_str());
+               trace_event.c_str());
   runtime_controller_->NotifyIdle(deadline);
 }
 
@@ -285,15 +298,20 @@ void Engine::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   }
 
   // If there's no runtime_, we may still need to set the initial route.
-  if (message->channel() == kNavigationChannel)
+  if (message->channel() == kNavigationChannel) {
     HandleNavigationPlatformMessage(std::move(message));
+    return;
+  }
+
+  FML_DLOG(WARNING) << "Dropping platform message on channel: "
+                    << message->channel();
 }
 
 bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
   const auto& data = message->data();
   std::string state(reinterpret_cast<const char*>(data.data()), data.size());
   if (state == "AppLifecycleState.paused" ||
-      state == "AppLifecycleState.suspending") {
+      state == "AppLifecycleState.detached") {
     activity_running_ = false;
     StopAnimator();
   } else if (state == "AppLifecycleState.resumed" ||
@@ -373,12 +391,12 @@ void Engine::HandleSettingsPlatformMessage(PlatformMessage* message) {
   }
 }
 
-void Engine::DispatchPointerDataPacket(const PointerDataPacket& packet,
-                                       uint64_t trace_flow_id) {
+void Engine::DispatchPointerDataPacket(
+    std::unique_ptr<PointerDataPacket> packet,
+    uint64_t trace_flow_id) {
   TRACE_EVENT0("flutter", "Engine::DispatchPointerDataPacket");
   TRACE_FLOW_STEP("flutter", "PointerEvent", trace_flow_id);
-  animator_->EnqueueTraceFlowId(trace_flow_id);
-  runtime_controller_->DispatchPointerDataPacket(packet);
+  pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
 void Engine::DispatchSemanticsAction(int id,
@@ -419,12 +437,12 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   if (!layer_tree)
     return;
 
-  SkISize frame_size = SkISize::Make(viewport_metrics_.physical_width,
-                                     viewport_metrics_.physical_height);
-  if (frame_size.isEmpty())
+  // Ensure frame dimensions are sane.
+  if (layer_tree->frame_size().isEmpty() ||
+      layer_tree->frame_physical_depth() <= 0.0f ||
+      layer_tree->frame_device_pixel_ratio() <= 0.0f)
     return;
 
-  layer_tree->set_frame_size(frame_size);
   animator_->Render(std::move(layer_tree));
 }
 
@@ -446,12 +464,24 @@ void Engine::UpdateIsolateDescription(const std::string isolate_name,
   delegate_.UpdateIsolateDescription(isolate_name, isolate_port);
 }
 
-void Engine::SetNeedsReportTimings(bool value) {
-  delegate_.SetNeedsReportTimings(value);
+void Engine::SetNeedsReportTimings(bool needs_reporting) {
+  delegate_.SetNeedsReportTimings(needs_reporting);
 }
 
 FontCollection& Engine::GetFontCollection() {
   return font_collection_;
+}
+
+void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
+                              uint64_t trace_flow_id) {
+  animator_->EnqueueTraceFlowId(trace_flow_id);
+  if (runtime_controller_) {
+    runtime_controller_->DispatchPointerDataPacket(*packet);
+  }
+}
+
+void Engine::ScheduleSecondaryVsyncCallback(const fml::closure& callback) {
+  animator_->ScheduleSecondaryVsyncCallback(callback);
 }
 
 void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
@@ -473,6 +503,14 @@ void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   }
 
   response->CompleteEmpty();
+}
+
+const std::string& Engine::GetLastEntrypoint() const {
+  return last_entry_point_;
+}
+
+const std::string& Engine::GetLastEntrypointLibrary() const {
+  return last_entry_point_library_;
 }
 
 }  // namespace flutter

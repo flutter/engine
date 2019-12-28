@@ -37,7 +37,7 @@ class SceneUpdateContext {
     virtual SkISize GetSize() const = 0;
 
     virtual void SignalWritesFinished(
-        std::function<void(void)> on_writes_committed) = 0;
+        const std::function<void(void)>& on_writes_committed) = 0;
 
     virtual scenic::Image* GetImage() = 0;
 
@@ -69,25 +69,17 @@ class SceneUpdateContext {
   class Entity {
    public:
     Entity(SceneUpdateContext& context);
-    ~Entity();
+    virtual ~Entity();
 
     SceneUpdateContext& context() { return context_; }
-    scenic::EntityNode& entity_node() { return *entity_node_ptr_; }
-    std::unique_ptr<scenic::EntityNode>& entity_node_ptr() {
-      return entity_node_ptr_;
-    }
-
-    scenic::ShapeNode& shape_node() { return *shape_node_ptr_; }
-    std::unique_ptr<scenic::ShapeNode>& shape_node_ptr() {
-      return shape_node_ptr_;
-    }
+    scenic::EntityNode& entity_node() { return entity_node_; }
+    virtual scenic::ContainerNode& embedder_node() { return entity_node_; }
 
    private:
     SceneUpdateContext& context_;
     Entity* const previous_entity_;
 
-    std::unique_ptr<scenic::EntityNode> entity_node_ptr_;
-    std::unique_ptr<scenic::ShapeNode> shape_node_ptr_;
+    scenic::EntityNode entity_node_;
   };
 
   class Transform : public Entity {
@@ -97,11 +89,17 @@ class SceneUpdateContext {
               float scale_x,
               float scale_y,
               float scale_z);
-    ~Transform();
+    ~Transform() override;
 
    private:
     float const previous_scale_x_;
     float const previous_scale_y_;
+  };
+
+  class Clip : public Entity {
+   public:
+    Clip(SceneUpdateContext& context, const SkRect& shape_bounds);
+    ~Clip() override = default;
   };
 
   class Frame : public Entity {
@@ -112,30 +110,25 @@ class SceneUpdateContext {
     Frame(SceneUpdateContext& context,
           const SkRRect& rrect,
           SkColor color,
-          float local_elevation = 0.0f,
-          float parent_elevation = 0.0f,
-          float depth = 0.0f,
+          float opacity = 1.0f,
+          float elevation = 0.0f,
           Layer* layer = nullptr);
+    ~Frame() override;
 
-    ~Frame();
-
+    scenic::ContainerNode& embedder_node() override { return opacity_node_; }
     void AddPaintLayer(Layer* layer);
 
    private:
-    const SkRRect& rrect_;
-    SkColor const color_;
+    scenic::OpacityNodeHACK opacity_node_;
+    scenic::ShapeNode shape_node_;
 
     std::vector<Layer*> paint_layers_;
-    SkRect paint_bounds_;
     Layer* layer_;
-  };
 
-  class Clip : public Entity {
-   public:
-    Clip(SceneUpdateContext& context,
-         scenic::Shape& shape,
-         const SkRect& shape_bounds);
-    ~Clip() = default;
+    SkRRect rrect_;
+    SkRect paint_bounds_;
+    SkColor color_;
+    float opacity_;
   };
 
   SceneUpdateContext(scenic::Session* session,
@@ -151,6 +144,17 @@ class SceneUpdateContext {
     metrics_ = std::move(metrics);
   }
   const fuchsia::ui::gfx::MetricsPtr& metrics() const { return metrics_; }
+
+  void set_dimensions(const SkISize& frame_physical_size,
+                      float frame_physical_depth,
+                      float frame_device_pixel_ratio) {
+    frame_physical_size_ = frame_physical_size;
+    frame_physical_depth_ = frame_physical_depth;
+    frame_device_pixel_ratio_ = frame_device_pixel_ratio;
+  }
+  const SkISize& frame_size() const { return frame_physical_size_; }
+  float frame_physical_depth() const { return frame_physical_depth_; }
+  float frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; }
 
   // TODO(chinmaygarde): This method must submit the surfaces as soon as paint
   // tasks are done. However, given that there is no support currently for
@@ -193,30 +197,32 @@ class SceneUpdateContext {
   // own the associated entity_node. If the layer pointer isn't nullptr, the
   // surface (and thus the entity_node) will be retained for that layer to
   // improve the performance.
-  void CreateFrame(std::unique_ptr<scenic::EntityNode> entity_node,
-                   std::unique_ptr<scenic::ShapeNode> shape_node,
+  void CreateFrame(scenic::EntityNode entity_node,
+                   scenic::ShapeNode shape_node,
                    const SkRRect& rrect,
                    SkColor color,
+                   float opacity,
                    const SkRect& paint_bounds,
                    std::vector<Layer*> paint_layers,
                    Layer* layer);
-  void SetShapeTextureOrColor(scenic::ShapeNode& shape_node,
-                              SkColor color,
-                              SkScalar scale_x,
-                              SkScalar scale_y,
-                              const SkRect& paint_bounds,
-                              std::vector<Layer*> paint_layers,
-                              Layer* layer,
-                              std::unique_ptr<scenic::EntityNode> entity_node);
-  void SetShapeColor(scenic::ShapeNode& shape_node, SkColor color);
-  scenic::Image* GenerateImageIfNeeded(
-      SkColor color,
-      SkScalar scale_x,
-      SkScalar scale_y,
-      const SkRect& paint_bounds,
-      std::vector<Layer*> paint_layers,
-      Layer* layer,
-      std::unique_ptr<scenic::EntityNode> entity_node);
+  void SetShapeTextureAndColor(scenic::ShapeNode& shape_node,
+                               SkColor color,
+                               SkScalar scale_x,
+                               SkScalar scale_y,
+                               const SkRect& paint_bounds,
+                               std::vector<Layer*> paint_layers,
+                               Layer* layer,
+                               scenic::EntityNode entity_node);
+  void SetMaterialColor(scenic::Material& material,
+                        SkColor color,
+                        float opacity);
+  scenic::Image* GenerateImageIfNeeded(SkColor color,
+                                       SkScalar scale_x,
+                                       SkScalar scale_y,
+                                       const SkRect& paint_bounds,
+                                       std::vector<Layer*> paint_layers,
+                                       Layer* layer,
+                                       scenic::EntityNode entity_node);
 
   Entity* top_entity_ = nullptr;
   float top_scale_x_ = 1.f;
@@ -226,6 +232,10 @@ class SceneUpdateContext {
   SurfaceProducer* const surface_producer_;
 
   fuchsia::ui::gfx::MetricsPtr metrics_;
+  SkISize frame_physical_size_;
+  float frame_physical_depth_ = 0.0f;
+  float frame_device_pixel_ratio_ =
+      1.0f;  // Ratio between logical and physical pixels.
 
   std::vector<PaintTask> paint_tasks_;
 

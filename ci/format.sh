@@ -42,7 +42,7 @@ fi;
 
 BASE_SHA="$(git fetch $UPSTREAM master > /dev/null 2>&1 && \
            (git merge-base --fork-point FETCH_HEAD HEAD || git merge-base FETCH_HEAD HEAD))"
-FILES_TO_CHECK="$(git diff $DIFF_OPTS $BASE_SHA..HEAD -- $FILETYPES)"
+FILES_TO_CHECK="$(git diff $DIFF_OPTS $BASE_SHA -- $FILETYPES)"
 
 FAILED_CHECKS=0
 for f in $FILES_TO_CHECK; do
@@ -75,4 +75,4 @@ if [[ ! -z "$TRAILING_SPACES" ]]; then
 fi
 
 # Check GN format consistency
-./ci/check_gn_format.py --dry-run true --root-directory . --gn-binary "../buildtools/$OS/gn"
+./ci/check_gn_format.py --dry-run --root-directory . --gn-binary "third_party/gn/gn"

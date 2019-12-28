@@ -11,15 +11,36 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/common/vsync_waiter_fallback.h"
+#include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/testing/testing.h"
 
 namespace flutter {
 namespace testing {
 
 ShellTest::ShellTest()
-    : native_resolver_(std::make_shared<TestDartNativeResolver>()) {}
+    : native_resolver_(std::make_shared<TestDartNativeResolver>()),
+      thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
+                   ThreadHost::Type::Platform | ThreadHost::Type::IO |
+                       ThreadHost::Type::UI | ThreadHost::Type::GPU),
+      assets_dir_(fml::OpenDirectory(GetFixturesPath(),
+                                     false,
+                                     fml::FilePermission::kRead)) {}
 
-ShellTest::~ShellTest() = default;
+void ShellTest::SendEnginePlatformMessage(
+    Shell* shell,
+    fml::RefPtr<PlatformMessage> message) {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [shell, &latch, message = std::move(message)]() {
+        if (auto engine = shell->weak_engine_) {
+          engine->HandlePlatformMessage(std::move(message));
+        }
+        latch.Signal();
+      });
+  latch.Wait();
+}
 
 void ShellTest::SetSnapshotsAndAssets(Settings& settings) {
   if (!assets_dir_.is_valid()) {
@@ -74,41 +95,113 @@ void ShellTest::PlatformViewNotifyCreated(Shell* shell) {
 void ShellTest::RunEngine(Shell* shell, RunConfiguration configuration) {
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&latch, config = std::move(configuration),
-                         engine = shell->GetEngine()]() mutable {
-        ASSERT_TRUE(engine);
-        ASSERT_EQ(engine->Run(std::move(config)), Engine::RunStatus::Success);
-        latch.Signal();
-      }));
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [shell, &latch, &configuration]() {
+        shell->RunEngine(std::move(configuration),
+                         [&latch](Engine::RunStatus run_status) {
+                           ASSERT_EQ(run_status, Engine::RunStatus::Success);
+                           latch.Signal();
+                         });
+      });
   latch.Wait();
 }
 
-void ShellTest::PumpOneFrame(Shell* shell) {
+void ShellTest::RestartEngine(Shell* shell, RunConfiguration configuration) {
+  std::promise<bool> restarted;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetUITaskRunner(),
+      [shell, &restarted, &configuration]() {
+        restarted.set_value(shell->engine_->Restart(std::move(configuration)));
+      });
+  ASSERT_TRUE(restarted.get_future().get());
+}
+
+void ShellTest::VSyncFlush(Shell* shell, bool& will_draw_new_frame) {
+  fml::AutoResetWaitableEvent latch;
+  shell->GetTaskRunners().GetPlatformTaskRunner()->PostTask(
+      [shell, &will_draw_new_frame, &latch] {
+        // The following UI task ensures that all previous UI tasks are flushed.
+        fml::AutoResetWaitableEvent ui_latch;
+        shell->GetTaskRunners().GetUITaskRunner()->PostTask(
+            [&ui_latch, &will_draw_new_frame]() {
+              will_draw_new_frame = true;
+              ui_latch.Signal();
+            });
+
+        ShellTestPlatformView* test_platform_view =
+            static_cast<ShellTestPlatformView*>(shell->GetPlatformView().get());
+        do {
+          test_platform_view->SimulateVSync();
+        } while (ui_latch.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1)));
+
+        latch.Signal();
+      });
+  latch.Wait();
+}
+
+void ShellTest::PumpOneFrame(Shell* shell,
+                             double width,
+                             double height,
+                             LayerTreeBuilder builder) {
+  PumpOneFrame(shell,
+               flutter::ViewportMetrics{1, width, height, flutter::kUnsetDepth,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+               std::move(builder));
+}
+
+void ShellTest::PumpOneFrame(Shell* shell,
+                             flutter::ViewportMetrics viewport_metrics,
+                             LayerTreeBuilder builder) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->GetEngine()]() {
-        engine->SetViewportMetrics({1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0});
-        engine->animator_->BeginFrame(fml::TimePoint::Now(),
-                                      fml::TimePoint::Now());
+      [&latch, engine = shell->weak_engine_, viewport_metrics]() {
+        engine->SetViewportMetrics(std::move(viewport_metrics));
+        const auto frame_begin_time = fml::TimePoint::Now();
+        const auto frame_end_time =
+            frame_begin_time + fml::TimeDelta::FromSecondsF(1.0 / 60.0);
+        engine->animator_->BeginFrame(frame_begin_time, frame_end_time);
         latch.Signal();
       });
   latch.Wait();
 
   latch.Reset();
   // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
-  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->GetEngine();
+  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, runtime_delegate]() {
-        auto layer_tree = std::make_unique<LayerTree>();
+      [&latch, runtime_delegate, &builder, viewport_metrics]() {
+        auto layer_tree = std::make_unique<LayerTree>(
+            SkISize::Make(viewport_metrics.physical_width,
+                          viewport_metrics.physical_height),
+            static_cast<float>(viewport_metrics.physical_depth),
+            static_cast<float>(viewport_metrics.device_pixel_ratio));
         SkMatrix identity;
         identity.setIdentity();
         auto root_layer = std::make_shared<TransformLayer>(identity);
         layer_tree->set_root_layer(root_layer);
+        if (builder) {
+          builder(root_layer);
+        }
         runtime_delegate->Render(std::move(layer_tree));
+        latch.Signal();
+      });
+  latch.Wait();
+}
+
+void ShellTest::DispatchFakePointerData(Shell* shell) {
+  auto packet = std::make_unique<PointerDataPacket>(1);
+  DispatchPointerData(shell, std::move(packet));
+}
+
+void ShellTest::DispatchPointerData(Shell* shell,
+                                    std::unique_ptr<PointerDataPacket> packet) {
+  fml::AutoResetWaitableEvent latch;
+  shell->GetTaskRunners().GetPlatformTaskRunner()->PostTask(
+      [&latch, shell, &packet]() {
+        // Goes through PlatformView to ensure packet is corrected converted.
+        shell->GetPlatformView()->DispatchPointerDataPacket(std::move(packet));
         latch.Signal();
       });
   latch.Wait();
@@ -124,6 +217,11 @@ void ShellTest::SetNeedsReportTimings(Shell* shell, bool value) {
 
 bool ShellTest::GetNeedsReportTimings(Shell* shell) {
   return shell->needs_report_timings_;
+}
+
+std::shared_ptr<txt::FontCollection> ShellTest::GetFontCollection(
+    Shell* shell) {
+  return shell->weak_engine_->GetFontCollection().GetFontCollection();
 }
 
 Settings ShellTest::CreateSettingsForFixture() {
@@ -145,46 +243,57 @@ Settings ShellTest::CreateSettingsForFixture() {
 TaskRunners ShellTest::GetTaskRunnersForFixture() {
   return {
       "test",
-      thread_host_->platform_thread->GetTaskRunner(),  // platform
-      thread_host_->gpu_thread->GetTaskRunner(),       // gpu
-      thread_host_->ui_thread->GetTaskRunner(),        // ui
-      thread_host_->io_thread->GetTaskRunner()         // io
+      thread_host_.platform_thread->GetTaskRunner(),  // platform
+      thread_host_.gpu_thread->GetTaskRunner(),       // gpu
+      thread_host_.ui_thread->GetTaskRunner(),        // ui
+      thread_host_.io_thread->GetTaskRunner()         // io
   };
 }
 
-std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings) {
-  return CreateShell(std::move(settings), GetTaskRunnersForFixture());
+std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
+                                              bool simulate_vsync) {
+  return CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                     simulate_vsync);
 }
 
 std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
-                                              TaskRunners task_runners) {
+                                              TaskRunners task_runners,
+                                              bool simulate_vsync) {
+  const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+  CreateVsyncWaiter create_vsync_waiter = [&]() {
+    if (simulate_vsync) {
+      return static_cast<std::unique_ptr<VsyncWaiter>>(
+          std::make_unique<ShellTestVsyncWaiter>(task_runners, vsync_clock));
+    } else {
+      return static_cast<std::unique_ptr<VsyncWaiter>>(
+          std::make_unique<VsyncWaiterFallback>(task_runners));
+    }
+  };
   return Shell::Create(
       task_runners, settings,
-      [](Shell& shell) {
-        return std::make_unique<ShellTestPlatformView>(shell,
-                                                       shell.GetTaskRunners());
+      [vsync_clock, &create_vsync_waiter](Shell& shell) {
+        return std::make_unique<ShellTestPlatformView>(
+            shell, shell.GetTaskRunners(), vsync_clock,
+            std::move(create_vsync_waiter));
       },
       [](Shell& shell) {
         return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
       });
 }
 
-// |testing::ThreadTest|
-void ShellTest::SetUp() {
-  ThreadTest::SetUp();
-  assets_dir_ =
-      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
-  thread_host_ = std::make_unique<ThreadHost>(
-      "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI |
-          ThreadHost::Type::GPU);
+void ShellTest::DestroyShell(std::unique_ptr<Shell> shell) {
+  DestroyShell(std::move(shell), GetTaskRunnersForFixture());
 }
 
-// |testing::ThreadTest|
-void ShellTest::TearDown() {
-  ThreadTest::TearDown();
-  assets_dir_.reset();
-  thread_host_.reset();
+void ShellTest::DestroyShell(std::unique_ptr<Shell> shell,
+                             TaskRunners task_runners) {
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(task_runners.GetPlatformTaskRunner(),
+                                    [&shell, &latch]() mutable {
+                                      shell.reset();
+                                      latch.Signal();
+                                    });
+  latch.Wait();
 }
 
 void ShellTest::AddNativeCallback(std::string name,
@@ -192,29 +301,69 @@ void ShellTest::AddNativeCallback(std::string name,
   native_resolver_->AddNativeCallback(std::move(name), callback);
 }
 
-ShellTestPlatformView::ShellTestPlatformView(PlatformView::Delegate& delegate,
-                                             TaskRunners task_runners)
-    : PlatformView(delegate, std::move(task_runners)) {}
+ShellTestPlatformView::ShellTestPlatformView(
+    PlatformView::Delegate& delegate,
+    TaskRunners task_runners,
+    std::shared_ptr<ShellTestVsyncClock> vsync_clock,
+    CreateVsyncWaiter create_vsync_waiter)
+    : PlatformView(delegate, std::move(task_runners)),
+      gl_surface_(SkISize::Make(800, 600)),
+      create_vsync_waiter_(std::move(create_vsync_waiter)),
+      vsync_clock_(vsync_clock) {}
 
 ShellTestPlatformView::~ShellTestPlatformView() = default;
 
+std::unique_ptr<VsyncWaiter> ShellTestPlatformView::CreateVSyncWaiter() {
+  return create_vsync_waiter_();
+}
+
+void ShellTestPlatformView::SimulateVSync() {
+  vsync_clock_->SimulateVSync();
+}
+
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformView::CreateRenderingSurface() {
-  return std::make_unique<GPUSurfaceSoftware>(this);
+  return std::make_unique<GPUSurfaceGL>(this, true);
 }
 
-// |GPUSurfaceSoftwareDelegate|
-sk_sp<SkSurface> ShellTestPlatformView::AcquireBackingStore(
-    const SkISize& size) {
-  SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      size.width(), size.height(), SkColorSpace::MakeSRGB());
-  return SkSurface::MakeRaster(image_info);
+// |PlatformView|
+PointerDataDispatcherMaker ShellTestPlatformView::GetDispatcherMaker() {
+  return [](DefaultPointerDataDispatcher::Delegate& delegate) {
+    return std::make_unique<SmoothPointerDataDispatcher>(delegate);
+  };
 }
 
-// |GPUSurfaceSoftwareDelegate|
-bool ShellTestPlatformView::PresentBackingStore(
-    sk_sp<SkSurface> backing_store) {
-  return true;
+// |GPUSurfaceGLDelegate|
+bool ShellTestPlatformView::GLContextMakeCurrent() {
+  return gl_surface_.MakeCurrent();
+}
+
+// |GPUSurfaceGLDelegate|
+bool ShellTestPlatformView::GLContextClearCurrent() {
+  return gl_surface_.ClearCurrent();
+}
+
+// |GPUSurfaceGLDelegate|
+bool ShellTestPlatformView::GLContextPresent() {
+  return gl_surface_.Present();
+}
+
+// |GPUSurfaceGLDelegate|
+intptr_t ShellTestPlatformView::GLContextFBO() const {
+  return gl_surface_.GetFramebuffer();
+}
+
+// |GPUSurfaceGLDelegate|
+GPUSurfaceGLDelegate::GLProcResolver ShellTestPlatformView::GetGLProcResolver()
+    const {
+  return [surface = &gl_surface_](const char* name) -> void* {
+    return surface->GetProcAddress(name);
+  };
+}
+
+// |GPUSurfaceGLDelegate|
+ExternalViewEmbedder* ShellTestPlatformView::GetExternalViewEmbedder() {
+  return nullptr;
 }
 
 }  // namespace testing
