@@ -27,9 +27,10 @@ COMPARE_TESTS = (
   (True,  '1.ttf', MATERIAL_TTF, [r'57347']),
   (True,  '1.ttf', MATERIAL_TTF, [r'0xE003']),
   (True,  '1.ttf', MATERIAL_TTF, [r'\uE003']),
-  (False, '1.ttf', MATERIAL_TTF, [r'57348']),
+  (False, '1.ttf', MATERIAL_TTF, [r'57348']), # False because different codepoint
   (True,  '2.ttf', MATERIAL_TTF, [r'0xE003', r'0xE004']),
-  (True,  '3.ttf', MATERIAL_TTF, [r'0xE003', r'0xE004', r'57347',]),
+  (True,  '2.ttf', MATERIAL_TTF, [r'0xE003', r'0xE004', r'57347',]), # Duplicated codepoint
+  (True,  '3.ttf', MATERIAL_TTF, [r'0xE003', r'0xE004', r'0xE021',]),
 )
 
 FAIL_TESTS = [
@@ -49,7 +50,7 @@ def RunCmd(cmd, **kwargs):
 
 
 def main():
-  if os.environ['GOMA_DIR']:
+  if 'GOMA_DIR' in os.environ:
     RunCmd([VPYTHON, os.path.join(os.environ['GOMA_DIR'], 'goma_ctl.py'), 'start'])
   RunCmd([VPYTHON, 'flutter/tools/gn'], cwd=SRC_DIR)
   RunCmd([AUTONINJA, '-C', 'out/host_debug', 'font-subset'], cwd=SRC_DIR)
@@ -73,8 +74,8 @@ def main():
       failures += 1
   devnull.close()
 
-  if failures > 1:
-    print('%s tests failed.' % failures)
+  if failures > 0:
+    print('%s test(s) failed.' % failures)
     return 1
 
   print('All tests passed')
