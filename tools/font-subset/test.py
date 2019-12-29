@@ -19,6 +19,8 @@ MATERIAL_TTF = os.path.join(SCRIPT_DIR, 'fixtures', 'MaterialIcons-Regular.ttf')
 IS_WINDOWS = sys.platform.startswith(('cygwin', 'win'))
 EXE = '.exe' if IS_WINDOWS else ''
 BAT = '.bat' if IS_WINDOWS else ''
+VPYTHON = 'vpython' + BAT
+AUTONINJA = 'autoninja' + BAT
 FONT_SUBSET = os.path.join(SRC_DIR, 'out', 'host_debug', 'font-subset' + EXE)
 
 COMPARE_TESTS = (
@@ -47,6 +49,10 @@ def RunCmd(cmd, **kwargs):
 
 
 def main():
+  if os.environ['GOMA_DIR']:
+    RunCmd([VPYTHON, os.path.join(os.environ['GOMA_DIR'], 'goma_ctl.py'), 'start'])
+  RunCmd([VPYTHON, 'flutter/tools/gn'], cwd=SRC_DIR)
+  RunCmd([AUTONINJA, '-C', 'out/host_debug', 'font-subset'], cwd=SRC_DIR)
   failures = 0
   for should_pass, golden_font, input_font, codepoints in COMPARE_TESTS:
     gen_ttf = os.path.join(SCRIPT_DIR, 'gen', golden_font)

@@ -22,6 +22,9 @@ roboto_font_path = os.path.join(fonts_dir, 'Roboto-Regular.ttf')
 dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 font_subset_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'font-subset')
 
+BAT = '.bat' if IsWindows() else ''
+VPYTHON = 'vpython' + BAT
+
 fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*:*GpuThreadMerger*'
 
 def RunCmd(cmd, **kwargs):
@@ -357,7 +360,7 @@ def main():
     RunEngineBenchmarks(build_dir, engine_filter)
 
   if 'engine' in types or 'font-subset' in types:
-    RunCmd(['python', 'test.py'], cwd=font_subset_dir)
+    RunCmd([VPYTHON, 'test.py'], cwd=font_subset_dir)
 
 
 if __name__ == '__main__':
