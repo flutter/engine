@@ -41,6 +41,17 @@ enum class TextDirection {
   ltr,
 };
 
+// Multiple behaviors can be applied at once with a bitwise & operator. For
+// example, disabling first and last can achieved with:
+//
+//   (kDisableFirst & kDisableLast).
+enum BoundaryLineHeightBehavior {
+  kDisableAll = 0x0,
+  kAll = 0x1 | 0x2,
+  kDisableFirst = 0x2,
+  kDisableLast = 0x1,
+};
+
 class ParagraphStyle {
  public:
   // Default TextStyle. Used in GetTextStyle() to obtain the base TextStyle to
@@ -50,7 +61,7 @@ class ParagraphStyle {
   std::string font_family = "";
   double font_size = 14;
   double height = 1;
-  size_t bounding_line_height_behavior = 1 << 0 + 1 << 1 + 1 << 2;
+  size_t bounding_line_height_behavior = BoundaryLineHeightBehavior::kAll;
   bool has_height_override = false;
 
   // Strut properties. strut_enabled must be set to true for the rest of the
