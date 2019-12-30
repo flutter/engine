@@ -753,6 +753,7 @@ Int32List _encodeParagraphStyle(
   String fontFamily,
   double fontSize,
   double height,
+  int boundingLineHeightBehavior,
   FontWeight fontWeight,
   FontStyle fontStyle,
   StrutStyle strutStyle,
@@ -780,28 +781,32 @@ Int32List _encodeParagraphStyle(
     result[0] |= 1 << 5;
     result[5] = maxLines;
   }
-  if (fontFamily != null) {
+  if (boundingLineHeightBehavior != null) {
     result[0] |= 1 << 6;
-    // Passed separately to native.
+    result[6] = boundingLineHeightBehavior;
   }
-  if (fontSize != null) {
+  if (fontFamily != null) {
     result[0] |= 1 << 7;
     // Passed separately to native.
   }
-  if (height != null) {
+  if (fontSize != null) {
     result[0] |= 1 << 8;
     // Passed separately to native.
   }
-  if (strutStyle != null) {
+  if (height != null) {
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
-  if (ellipsis != null) {
+  if (strutStyle != null) {
     result[0] |= 1 << 10;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (ellipsis != null) {
     result[0] |= 1 << 11;
+    // Passed separately to native.
+  }
+  if (locale != null) {
+    result[0] |= 1 << 12;
     // Passed separately to native.
   }
   return result;
