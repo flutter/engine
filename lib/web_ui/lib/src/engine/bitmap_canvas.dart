@@ -365,6 +365,12 @@ class BitmapCanvas extends EngineCanvas {
     imgElement.style.mixBlendMode = blendMode;
     _drawImage(imgElement, p);
     _childOverdraw = true;
+    _allocateNewCanvas();
+  }
+
+  void _allocateNewCanvas() {
+    _canvasPool.allocateCanvas(rootElement, _widthInBitmapPixels,
+        _heightInBitmapPixels, _bounds);
   }
 
   void _drawImage(html.ImageElement imgElement, ui.Offset p) {
@@ -439,6 +445,7 @@ class BitmapCanvas extends EngineCanvas {
       }
     }
     _childOverdraw = true;
+    _allocateNewCanvas();
   }
 
   void _drawTextLine(

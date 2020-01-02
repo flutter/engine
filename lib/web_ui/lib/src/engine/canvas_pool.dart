@@ -6,6 +6,7 @@ class _CanvasPool extends _SaveStackTracking {
   ContextStateHandle _contextHandle;
   bool _contextSaved = false;
   int _widthInBitmapPixels, _heightInBitmapPixels;
+  List<html.CanvasElement> _pool;
 
   html.CanvasRenderingContext2D get context {
     if (_contextHandle == null) {
@@ -20,6 +21,16 @@ class _CanvasPool extends _SaveStackTracking {
   void allocateCanvas(html.HtmlElement rootElement,
       int widthInBitmapPixels, int heightInBitmapPixels,
       ui.Rect bounds) {
+    // Allocating extra canvas items. Save current canvas so we can dispose
+    // and reply the clip/transform stack on top of new canvas.
+    bool requiresStackReplay = (_canvas != null);
+    if (requiresStackReplay){
+      _pool ??= [];
+      _pool.add(_canvas);
+      _canvas = null;
+      _context = null;
+      _contextHandle = null;
+    }
     _widthInBitmapPixels = widthInBitmapPixels;
     _heightInBitmapPixels = heightInBitmapPixels;
     // Compute the final CSS canvas size given the actual pixel count we
@@ -41,6 +52,56 @@ class _CanvasPool extends _SaveStackTracking {
       ..height = '${cssHeight}px';
     rootElement.append(_canvas);
     initializeViewport(widthInBitmapPixels, heightInBitmapPixels);
+    if (requiresStackReplay) {
+      _replayClipStack();
+    }
+  }
+
+  void _replayClipStack() {
+    // Replay save/clip stack on this canvas now.
+    html.CanvasRenderingContext2D ctx = _context;
+    int clipDepth = 0;
+    for (int saveStackIndex = 0, len = _saveStack.length; saveStackIndex < len;
+    saveStackIndex++) {
+      _SaveStackEntry saveEntry = _saveStack[saveStackIndex];
+      Matrix4 matrix4 = saveEntry.transform;
+      if (!matrix4.isIdentity()) {
+        ctx.setTransform(matrix4[0], matrix4[1], matrix4[4], matrix4[5],
+            matrix4[12], matrix4[13]);
+      }
+      final List<_SaveClipEntry> clipStack = saveEntry.clipStack;
+      if (saveEntry.clipStack != null) {
+        for (int clipCount = clipStack.length; clipDepth < clipCount; clipDepth++) {
+          _SaveClipEntry clipEntry = clipStack[clipDepth];
+          if (clipEntry.rect != null) {
+            _clipRect(ctx, clipEntry.rect);
+          } else if (clipEntry.rrect != null) {
+            _clipRRect(ctx, clipEntry.rrect);
+          } else if (clipEntry.path != null) {
+            _runPath(ctx, clipEntry.path);
+            ctx.clip();
+          }
+        }
+      }
+      ctx.save();
+    }
+    if (_currentTransform != null && !(_currentTransform.isIdentity())) {
+      ctx.setTransform(_currentTransform[0], _currentTransform[1], _currentTransform[4], _currentTransform[5],
+          _currentTransform[12], _currentTransform[13]);
+    }
+    if (_clipStack != null && _clipStack.length > clipDepth) {
+      for (int clipCount = _clipStack.length; clipDepth < clipCount; clipDepth++) {
+        _SaveClipEntry clipEntry = _clipStack[clipDepth];
+        if (clipEntry.rect != null) {
+          _clipRect(ctx, clipEntry.rect);
+        } else if (clipEntry.rrect != null) {
+          _clipRRect(ctx, clipEntry.rrect);
+        } else if (clipEntry.path != null) {
+          _runPath(ctx, clipEntry.path);
+          ctx.clip();
+        }
+      }
+    }
   }
 
   /// Configures the canvas such that its coordinate system follows the scene's
@@ -157,7 +218,10 @@ class _CanvasPool extends _SaveStackTracking {
 
   void clipRect(ui.Rect rect) {
     super.clipRect(rect);
-    html.CanvasRenderingContext2D ctx = context;
+    _clipRect(context, rect);
+  }
+
+  void _clipRect(html.CanvasRenderingContext2D ctx, ui.Rect rect) {
     ctx.beginPath();
     ctx.rect(rect.left, rect.top, rect.width, rect.height);
     ctx.clip();
@@ -165,7 +229,10 @@ class _CanvasPool extends _SaveStackTracking {
 
   void clipRRect(ui.RRect rrect) {
     super.clipRRect(rrect);
-    html.CanvasRenderingContext2D ctx = context;
+    _clipRRect(context, rrect);
+  }
+
+  void _clipRRect(html.CanvasRenderingContext2D ctx, ui.RRect rrect) {
     final ui.Path path = ui.Path()..addRRect(rrect);
     _runPath(ctx, path);
     ctx.clip();
@@ -357,6 +424,12 @@ class _CanvasPool extends _SaveStackTracking {
     if (browserEngine == BrowserEngine.webkit) {
       _canvas.width = _canvas.height = 0;
     }
+    if (_pool != null) {
+      for (html.CanvasElement c in _pool) {
+        c.remove();
+      }
+    }
+    _pool = null;
   }
 }
 
