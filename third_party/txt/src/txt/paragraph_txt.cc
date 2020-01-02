@@ -1247,10 +1247,13 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
     }
 
     // Account for bounding_line_height_behavior in parargaph_style_.
+    //
+    // Disable first line ascent modifications.
     if (line_number == 0 && !(paragraph_style_.bounding_line_height_behavior &
                               ~BoundaryLineHeightBehavior::kDisableFirst)) {
       ascent = -metrics.fAscent;
     }
+    // Disable last line descent modifications.
     if (line_number == line_limit - 1 &&
         !(paragraph_style_.bounding_line_height_behavior &
           ~BoundaryLineHeightBehavior::kDisableLast)) {
