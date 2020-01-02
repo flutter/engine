@@ -19,8 +19,11 @@ MATERIAL_TTF = os.path.join(SCRIPT_DIR, 'fixtures', 'MaterialIcons-Regular.ttf')
 IS_WINDOWS = sys.platform.startswith(('cygwin', 'win'))
 EXE = '.exe' if IS_WINDOWS else ''
 BAT = '.bat' if IS_WINDOWS else ''
-AUTONINJA = 'autoninja' + BAT
 FONT_SUBSET = os.path.join(SRC_DIR, 'out', 'host_debug', 'font-subset' + EXE)
+if not os.path.isfile(FONT_SUBSET):
+  FONT_SUBSET = os.path.join(SRC_DIR, 'out', 'host_debug_unopt', 'font-subset' + EXE)
+if not os.path.isfile(FONT_SUBSET):
+  raise Exception('Could not locate font-subset%s in host_debug or host_debug_unopt - build before running this script.' % EXE)
 
 COMPARE_TESTS = (
   (True,  '1.ttf', MATERIAL_TTF, [r'57347']),
@@ -49,10 +52,7 @@ def RunCmd(cmd, **kwargs):
 
 
 def main():
-  if 'GOMA_DIR' in os.environ:
-    RunCmd(['python', os.path.join(os.environ['GOMA_DIR'], 'goma_ctl.py'), 'start'])
-  RunCmd(['python', 'flutter/tools/gn'], cwd=SRC_DIR)
-  RunCmd([AUTONINJA, '-C', 'out/host_debug', 'font-subset'], cwd=SRC_DIR)
+  print('Using font subset binary at %s' % FONT_SUBSET)
   failures = 0
   for should_pass, golden_font, input_font, codepoints in COMPARE_TESTS:
     gen_ttf = os.path.join(SCRIPT_DIR, 'gen', golden_font)
@@ -65,13 +65,12 @@ def main():
       print('Test case %s failed.' % cmd)
       failures += 1
 
-  devnull = open(os.devnull, 'w')
-  for cmd in FAIL_TESTS:
-    print('Running test %s...' % cmd)
-    if subprocess.call(cmd, cwd=SRC_DIR, stdout=devnull, stderr=devnull) == 0:
-      print('Command %s passed, expected failure.' % cmd)
-      failures += 1
-  devnull.close()
+  with open(os.devnull, 'w') as devnull:
+    for cmd in FAIL_TESTS:
+      print('Running test %s...' % cmd)
+      if subprocess.call(cmd, cwd=SRC_DIR, stdout=devnull, stderr=devnull) == 0:
+        print('Command %s passed, expected failure.' % cmd)
+        failures += 1
 
   if failures > 0:
     print('%s test(s) failed.' % failures)
