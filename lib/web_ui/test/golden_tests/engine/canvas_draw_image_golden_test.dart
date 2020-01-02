@@ -30,7 +30,7 @@ void main() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      await matchGoldenFile('$fileName.png', region: region, maxDiffRate: 0.2, write: true);
+      await matchGoldenFile('$fileName.png', region: region, maxDiffRate: 0.2);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
