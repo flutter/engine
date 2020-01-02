@@ -760,7 +760,7 @@ Int32List _encodeParagraphStyle(
   String ellipsis,
   Locale locale,
 ) {
-  final Int32List result = Int32List(6); // also update paragraph_builder.cc
+  final Int32List result = Int32List(7); // also update paragraph_builder.cc
   if (textAlign != null) {
     result[0] |= 1 << 1;
     result[1] = textAlign.index;
@@ -874,6 +874,7 @@ class ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
+    int boundingLineHeightBehavior,
     FontWeight fontWeight,
     FontStyle fontStyle,
     StrutStyle strutStyle,
@@ -886,6 +887,7 @@ class ParagraphStyle {
          fontFamily,
          fontSize,
          height,
+         boundingLineHeightBehavior,
          fontWeight,
          fontStyle,
          strutStyle,
