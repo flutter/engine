@@ -57,6 +57,12 @@ class _CanvasPool extends _SaveStackTracking {
     }
   }
 
+  @override
+  void clear() {
+    super.clear();
+    _clearPool();
+  }
+
   void _replayClipStack() {
     // Replay save/clip stack on this canvas now.
     html.CanvasRenderingContext2D ctx = _context;
@@ -424,6 +430,10 @@ class _CanvasPool extends _SaveStackTracking {
     if (browserEngine == BrowserEngine.webkit) {
       _canvas.width = _canvas.height = 0;
     }
+    _clearPool();
+  }
+
+  void _clearPool() {
     if (_pool != null) {
       for (html.CanvasElement c in _pool) {
         c.remove();
