@@ -40,7 +40,8 @@ FAIL_TESTS = [
   [FONT_SUBSET, 'output.ttf', MATERIAL_TTF, '0xFFFFFFFF'], # Value too big.
   [FONT_SUBSET, 'output.ttf', MATERIAL_TTF, '-1'], # invalid value
   [FONT_SUBSET, 'output.ttf', MATERIAL_TTF, 'foo'], # no valid values
-  [FONT_SUBSET, 'output.ttf', MATERIAL_TTF, r'0xE003', r'0x12', r'0xE004',] # codepoint not in font
+  [FONT_SUBSET, 'output.ttf', MATERIAL_TTF, r'0xE003', r'0x12', r'0xE004',], # codepoint not in font
+  [FONT_SUBSET, 'non-existant-dir/output.ttf', MATERIAL_TTF, r'0xE003',], # dir doesn't exist
 ]
 
 def RunCmd(cmd, **kwargs):

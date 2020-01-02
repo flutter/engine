@@ -110,6 +110,13 @@ int main(int argc, char** argv) {
   std::ofstream output_font_file;
   output_font_file.open(output_file_path,
                         std::ios::out | std::ios::trunc | std::ios::binary);
+  if (!output_font_file.is_open()) {
+    std::cerr << "Failed to open output file '" << output_file_path
+              << "'. The parent directory may not exist, or the user does not "
+                 "have permission to create this file."
+              << std::endl;
+    return -1;
+  }
   output_font_file.write(data, data_length);
   output_font_file.flush();
   output_font_file.close();
