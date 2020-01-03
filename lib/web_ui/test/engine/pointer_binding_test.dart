@@ -1268,7 +1268,7 @@ void main() {
       packets.clear();
 
       // Press RMB again. In Chrome, when RMB is clicked again while the
-      // contextmenu is still active, it sends a pointerdown/mousedown event
+      // context menu is still active, it sends a pointerdown/mousedown event
       // with "buttons:0".
       glassPane.dispatchEvent(context.mouseDown(
         button: 2,
@@ -1345,7 +1345,7 @@ void main() {
       packets.clear();
 
       // Press RMB again. In Chrome, when RMB is clicked again while the
-      // contextmenu is still active, it sends a pointerdown/mousedown event
+      // context menu is still active, it sends a pointerdown/mousedown event
       // with "buttons:0".
       glassPane.dispatchEvent(context.mouseDown(
         button: 2,
@@ -1357,16 +1357,13 @@ void main() {
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.hover));
       expect(packets[0].data[0].synthesized, equals(true));
-      expect(packets[0].data[0].buttons, equals(2));
+      expect(packets[0].data[0].buttons, equals(0));
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[0].data[1].synthesized, equals(false));
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
       // Release RMB.
-      // This won't send the "up" event to the framework because the previous
-      // "down" event had "buttons:0" which means no buttons are "down". This
-      // is weird, but this is how the browser works.
       glassPane.dispatchEvent(context.mouseUp(
         button: 2,
         clientX: 20.0,
@@ -1394,7 +1391,7 @@ void main() {
       //
       // This scenario happens occasionally. I'm still not sure why, but in some
       // cases, the browser actually sends an `up` event for the RMB click even
-      // the context menu is shown.
+      // when the context menu is shown.
 
       List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
@@ -1440,7 +1437,7 @@ void main() {
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.hover));
       expect(packets[0].data[0].synthesized, equals(true));
-      expect(packets[0].data[0].buttons, equals(2));
+      expect(packets[0].data[0].buttons, equals(0));
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[0].data[1].synthesized, equals(false));
       expect(packets[0].data[1].buttons, equals(2));

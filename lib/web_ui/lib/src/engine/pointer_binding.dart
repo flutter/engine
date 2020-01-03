@@ -311,9 +311,6 @@ class _ButtonSanitizer {
     @required int button,
     @required int buttons,
   }) {
-    // TODO(flutter_web): Remove this temporary fix for right click
-    // on web platform once context gesture is implemented.
-
     // If the pointer is already down, we just send a move event with the new
     // `buttons` value.
     if (_pressedButtons != 0) {
@@ -331,7 +328,7 @@ class _ButtonSanitizer {
 
   List<_SanitizedDetails> sanitizeMoveEvent({@required int buttons}) {
     final int newPressedButtons = _htmlButtonsToFlutterButtons(buttons);
-    // This could happen when the contextmenu is active and the user clicks
+    // This could happen when the context menu is active and the user clicks
     // RMB somewhere else. The browser sends a down event with `buttons:0`.
     //
     // In this case, we keep the old `buttons` value so we don't confuse the

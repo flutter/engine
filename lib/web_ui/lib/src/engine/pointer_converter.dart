@@ -365,6 +365,7 @@ class PointerDataConverter {
             );
           }
           if (_locationHasChanged(device, physicalX, physicalY)) {
+            assert(alreadyAdded);
             // Synthesize a hover of the pointer to the down location before
             // sending the down event, if necessary.
             result.add(
@@ -375,9 +376,9 @@ class PointerDataConverter {
                 device: device,
                 physicalX: physicalX,
                 physicalY: physicalY,
-                buttons: buttons,
+                buttons: 0,
                 obscured: obscured,
-                pressure: pressure,
+                pressure: 0.0,
                 pressureMin: pressureMin,
                 pressureMax: pressureMax,
                 distance: distance,
