@@ -82,9 +82,31 @@ AccessibilityBridge::GetNodeAttributes(const flutter::SemanticsNode& node,
 fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
     const flutter::SemanticsNode& node) const {
   fuchsia::accessibility::semantics::States states;
-  if (node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
-    states.set_checked(node.HasFlag(flutter::SemanticsFlags::kIsChecked));
+
+  // Set checked state.
+  if (!node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
+    states.set_checked_state(
+        fuchsia::accessibility::semantics::CheckedState::NONE);
+  } else {
+    states.set_checked_state(
+        node.HasFlag(flutter::SemanticsFlags::kIsChecked)
+            ? fuchsia::accessibility::semantics::CheckedState::CHECKED
+            : fuchsia::accessibility::semantics::CheckedState::UNCHECKED);
   }
+
+  // Set selected state.
+  states.set_selected(node.HasFlag(flutter::SemanticsFlags::kIsSelected));
+
+  // Set hidden state.
+  states.set_hidden(node.HasFlag(flutter::SemanticsFlags::kIsHidden));
+
+  // Set value.
+  std::string value = node.value;
+  if (value.size() > fuchsia::accessibility::semantics::MAX_VALUE_SIZE) {
+    value.resize(fuchsia::accessibility::semantics::MAX_VALUE_SIZE);
+  }
+  states.set_value(value);
+
   return states;
 }
 
