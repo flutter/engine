@@ -33,7 +33,7 @@ class BitmapCanvas extends EngineCanvas {
   @override
   final html.Element rootElement = html.Element.tag('flt-canvas');
 
-  final _CanvasPool _canvasPool = _CanvasPool();
+  final _CanvasPool _canvasPool;
 
   /// The size of the paint [bounds].
   ui.Size get size => _bounds.size;
@@ -51,7 +51,7 @@ class BitmapCanvas extends EngineCanvas {
   /// These pixels are different from the logical CSS pixels. Here a pixel
   /// literally means 1 point with a RGBA color.
   int get widthInBitmapPixels => _widthInBitmapPixels;
-  int _widthInBitmapPixels;
+  final int _widthInBitmapPixels;
 
   /// The number of pixels along the width of the bitmap that the canvas element
   /// renders into.
@@ -59,7 +59,7 @@ class BitmapCanvas extends EngineCanvas {
   /// These pixels are different from the logical CSS pixels. Here a pixel
   /// literally means 1 point with a RGBA color.
   int get heightInBitmapPixels => _heightInBitmapPixels;
-  int _heightInBitmapPixels;
+  final int _heightInBitmapPixels;
 
   /// The number of pixels in the bitmap that the canvas element renders into.
   ///
@@ -93,10 +93,11 @@ class BitmapCanvas extends EngineCanvas {
   /// as the [Rect.size] of the bounds fully fit within the size used to
   /// initialize this canvas.
   BitmapCanvas(this._bounds) :
-        assert(_bounds != null) {
+        assert(_bounds != null),
+        _widthInBitmapPixels = _widthToPhysical(_bounds.width),
+        _heightInBitmapPixels = _heightToPhysical(_bounds.height),
+        _canvasPool = _CanvasPool(_widthToPhysical(_bounds.width), _heightToPhysical(_bounds.height)) {
     rootElement.style.position = 'absolute';
-    _widthInBitmapPixels = _widthToPhysical(_bounds.width);
-    _heightInBitmapPixels = _heightToPhysical(_bounds.height);
     // Adds one extra pixel to the requested size. This is to compensate for
     // _initializeViewport() snapping canvas position to 1 pixel, causing
     // painting to overflow by at most 1 pixel.
@@ -132,13 +133,13 @@ class BitmapCanvas extends EngineCanvas {
     );
   }
 
-  int _widthToPhysical(double width) {
+  static int _widthToPhysical(double width) {
     final double boundsWidth = width + 1;
     return (boundsWidth * html.window.devicePixelRatio).ceil() +
         2 * kPaddingPixels;
   }
 
-  int _heightToPhysical(double height) {
+  static int _heightToPhysical(double height) {
     final double boundsHeight = height + 1;
     return (boundsHeight * html.window.devicePixelRatio).ceil() +
         2 * kPaddingPixels;
@@ -178,7 +179,7 @@ class BitmapCanvas extends EngineCanvas {
           rethrow;
         }
       }
-      _canvasPool.initializeViewport(_widthInBitmapPixels, _heightInBitmapPixels);
+      _canvasPool.reuse();
       _setupInitialTransform();
       _canvasPool.contextHandle.reset();
     }
@@ -443,9 +444,9 @@ class BitmapCanvas extends EngineCanvas {
       if (requiresClipping) {
         restore();
       }
+      _allocateNewCanvas();
     }
     _childOverdraw = true;
-    _allocateNewCanvas();
   }
 
   void _drawTextLine(
@@ -583,6 +584,7 @@ class BitmapCanvas extends EngineCanvas {
   @override
   void endOfPaint() {
     assert(_saveCount == 0);
+    _canvasPool.endOfPaint();
   }
 }
 

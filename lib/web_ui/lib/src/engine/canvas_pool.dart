@@ -5,8 +5,11 @@ class _CanvasPool extends _SaveStackTracking {
   html.CanvasRenderingContext2D _context;
   ContextStateHandle _contextHandle;
   bool _contextSaved = false;
-  int _widthInBitmapPixels, _heightInBitmapPixels;
+  final int _widthInBitmapPixels, _heightInBitmapPixels;
   List<html.CanvasElement> _pool;
+  List<html.CanvasElement> _reusablePool;
+
+  _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
 
   html.CanvasRenderingContext2D get context {
     if (_contextHandle == null) {
@@ -31,25 +34,29 @@ class _CanvasPool extends _SaveStackTracking {
       _context = null;
       _contextHandle = null;
     }
-    _widthInBitmapPixels = widthInBitmapPixels;
-    _heightInBitmapPixels = heightInBitmapPixels;
-    // Compute the final CSS canvas size given the actual pixel count we
-    // allocated. This is done for the following reasons:
-    //
-    // * To satisfy the invariant: pixel size = css size * device pixel ratio.
-    // * To make sure that when we scale the canvas by devicePixelRatio (see
-    //   _initializeViewport below) the pixels line up.
-    final double cssWidth = widthInBitmapPixels / html.window.devicePixelRatio;
-    final double cssHeight =
-        heightInBitmapPixels / html.window.devicePixelRatio;
-    _canvas = html.CanvasElement(
-      width: widthInBitmapPixels,
-      height: heightInBitmapPixels,
-    );
-    _canvas.style
-      ..position = 'absolute'
-      ..width = '${cssWidth}px'
-      ..height = '${cssHeight}px';
+    if (_reusablePool != null && _reusablePool.isNotEmpty) {
+      _canvas = _reusablePool[0];
+      _reusablePool.removeAt(0);
+    } else {
+      // Compute the final CSS canvas size given the actual pixel count we
+      // allocated. This is done for the following reasons:
+      //
+      // * To satisfy the invariant: pixel size = css size * device pixel ratio.
+      // * To make sure that when we scale the canvas by devicePixelRatio (see
+      //   _initializeViewport below) the pixels line up.
+      final double cssWidth = widthInBitmapPixels /
+          html.window.devicePixelRatio;
+      final double cssHeight =
+          heightInBitmapPixels / html.window.devicePixelRatio;
+      _canvas = html.CanvasElement(
+        width: widthInBitmapPixels,
+        height: heightInBitmapPixels,
+      );
+      _canvas.style
+        ..position = 'absolute'
+        ..width = '${cssWidth}px'
+        ..height = '${cssHeight}px';
+    }
     rootElement.append(_canvas);
     initializeViewport(widthInBitmapPixels, heightInBitmapPixels);
     if (requiresStackReplay) {
@@ -60,7 +67,6 @@ class _CanvasPool extends _SaveStackTracking {
   @override
   void clear() {
     super.clear();
-    _clearPool();
   }
 
   void _replayClipStack() {
@@ -107,6 +113,29 @@ class _CanvasPool extends _SaveStackTracking {
           ctx.clip();
         }
       }
+    }
+  }
+
+  // Marks this pool for reuse.
+  void reuse() {
+    if (_pool != null) {
+      _pool.add(_canvas);
+      _reusablePool = _pool;
+      _canvas = _reusablePool[0];
+      _reusablePool.removeAt(0);
+      _pool = null;
+      final html.HtmlElement rootElement = _canvas.parent;
+      rootElement.append(_canvas);
+    }
+    initializeViewport(_widthInBitmapPixels, _heightInBitmapPixels);
+  }
+
+  void endOfPaint() {
+    if (_reusablePool != null) {
+      for (html.CanvasElement e in _reusablePool) {
+        e.remove();
+      }
+      _reusablePool = null;
     }
   }
 
@@ -436,6 +465,9 @@ class _CanvasPool extends _SaveStackTracking {
   void _clearPool() {
     if (_pool != null) {
       for (html.CanvasElement c in _pool) {
+        if (browserEngine == BrowserEngine.webkit) {
+          c.width = c.height = 0;
+        }
         c.remove();
       }
     }
