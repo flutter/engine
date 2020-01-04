@@ -1,4 +1,4 @@
-Signature: 71b562681ce8535932dc0026c96f9cfd
+Signature: 93e6cdfdcc1c5d8678b294102ee48655
 
 UNUSED LICENSES:
 
@@ -2970,7 +2970,6 @@ FILE: ../../../third_party/skia/modules/skresources/include/SkResources.h
 FILE: ../../../third_party/skia/modules/skresources/src/SkResources.cpp
 FILE: ../../../third_party/skia/samplecode/SampleBackdropBounds.cpp
 FILE: ../../../third_party/skia/samplecode/SampleImageFilterDAG.cpp
-FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
 FILE: ../../../third_party/skia/src/core/SkImageFilterTypes.cpp
 FILE: ../../../third_party/skia/src/core/SkImageFilterTypes.h
 FILE: ../../../third_party/skia/src/core/SkImageFilter_Base.h
