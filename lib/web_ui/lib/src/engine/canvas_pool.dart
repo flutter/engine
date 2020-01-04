@@ -1,13 +1,17 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 part of engine;
 
 class _CanvasPool extends _SaveStackTracking {
   html.CanvasElement _canvas;
   html.CanvasRenderingContext2D _context;
   ContextStateHandle _contextHandle;
-  bool _contextSaved = false;
   final int _widthInBitmapPixels, _heightInBitmapPixels;
   List<html.CanvasElement> _pool;
   List<html.CanvasElement> _reusablePool;
+  int _saveContextCount = 0;
 
   _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
 
@@ -21,22 +25,31 @@ class _CanvasPool extends _SaveStackTracking {
 
   ContextStateHandle get contextHandle => _contextHandle;
 
+  // Allocating extra canvas items. Save current canvas so we can dispose
+  // and reply the clip/transform stack on top of new canvas.
+  void allocateExtraCanvas() {
+    html.HtmlElement prevRoot = _canvas.parent;
+    assert(prevRoot != null);
+    // Place clean copy of current canvas with context stack restored and paint
+    // reset into pool.
+    _restoreContextSave();
+    _contextHandle.reset();
+    _pool ??= [];
+    _pool.add(_canvas);
+    _canvas = null;
+    _context = null;
+    _contextHandle = null;
+    allocateCanvas(prevRoot, _widthInBitmapPixels, _heightInBitmapPixels);
+    _replayClipStack();
+  }
+
   void allocateCanvas(html.HtmlElement rootElement,
-      int widthInBitmapPixels, int heightInBitmapPixels,
-      ui.Rect bounds) {
-    // Allocating extra canvas items. Save current canvas so we can dispose
-    // and reply the clip/transform stack on top of new canvas.
-    bool requiresStackReplay = (_canvas != null);
-    if (requiresStackReplay){
-      _pool ??= [];
-      _pool.add(_canvas);
-      _canvas = null;
-      _context = null;
-      _contextHandle = null;
-    }
+      int widthInBitmapPixels, int heightInBitmapPixels) {
+    bool requiresClearRect = false;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool[0];
       _reusablePool.removeAt(0);
+      requiresClearRect = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
       // allocated. This is done for the following reasons:
@@ -58,9 +71,10 @@ class _CanvasPool extends _SaveStackTracking {
         ..height = '${cssHeight}px';
     }
     rootElement.append(_canvas);
-    initializeViewport(widthInBitmapPixels, heightInBitmapPixels);
-    if (requiresStackReplay) {
-      _replayClipStack();
+    _initializeViewport(widthInBitmapPixels, heightInBitmapPixels);
+    if (requiresClearRect) {
+      // Now that the context is reset, clear old contents.
+      context.clearRect(0, 0, _widthInBitmapPixels, _heightInBitmapPixels);
     }
   }
 
@@ -96,6 +110,7 @@ class _CanvasPool extends _SaveStackTracking {
         }
       }
       ctx.save();
+      ++_saveContextCount;
     }
     if (_currentTransform != null && !(_currentTransform.isIdentity())) {
       ctx.setTransform(_currentTransform[0], _currentTransform[1], _currentTransform[4], _currentTransform[5],
@@ -118,6 +133,12 @@ class _CanvasPool extends _SaveStackTracking {
 
   // Marks this pool for reuse.
   void reuse() {
+    if (_canvas != null) {
+      _restoreContextSave();
+      _contextHandle.reset();
+      _context = null;
+      _contextHandle = null;
+    }
     if (_pool != null) {
       _pool.add(_canvas);
       _reusablePool = _pool;
@@ -127,7 +148,8 @@ class _CanvasPool extends _SaveStackTracking {
       final html.HtmlElement rootElement = _canvas.parent;
       rootElement.append(_canvas);
     }
-    initializeViewport(_widthInBitmapPixels, _heightInBitmapPixels);
+    _initializeViewport(_widthInBitmapPixels, _heightInBitmapPixels);
+    context.clearRect(0, 0, _widthInBitmapPixels, _heightInBitmapPixels);
   }
 
   void endOfPaint() {
@@ -137,19 +159,26 @@ class _CanvasPool extends _SaveStackTracking {
       }
       _reusablePool = null;
     }
+    _restoreContextSave();
   }
+
+  void _restoreContextSave() {
+    while (_saveContextCount != 0) {
+      _context.restore();
+      --_saveContextCount;
+    }
+  }
+
 
   /// Configures the canvas such that its coordinate system follows the scene's
   /// coordinate system, and the pixel ratio is applied such that CSS pixels are
   /// translated to bitmap pixels.
-  void initializeViewport(int widthInBitmapPixels, int heightInBitmapPixels) {
+  void _initializeViewport(int widthInBitmapPixels, int heightInBitmapPixels) {
     html.CanvasRenderingContext2D ctx = context;
-    if (_contextSaved) {
-      ctx.restore();
-    }
     // Save the canvas state with top-level transforms so we can undo
     // any clips later when we reuse the canvas.
     ctx.save();
+    ++_saveContextCount;
 
     // We always start with identity transform because the surrounding transform
     // is applied on the DOM elements.
@@ -158,12 +187,6 @@ class _CanvasPool extends _SaveStackTracking {
     // This scale makes sure that 1 CSS pixel is translated to the correct
     // number of bitmap pixels.
     ctx.scale(html.window.devicePixelRatio, html.window.devicePixelRatio);
-    // TODO: apply current clipstack if not first canvas.
-
-    if (_contextSaved) {
-      ctx.clearRect(0, 0, widthInBitmapPixels, heightInBitmapPixels);
-    }
-    _contextSaved = true;
   }
 
   void resetTransform() {
@@ -181,6 +204,7 @@ class _CanvasPool extends _SaveStackTracking {
   void save() {
     super.save();
     context.save();
+    ++_saveContextCount;
   }
 
   @override
@@ -188,6 +212,7 @@ class _CanvasPool extends _SaveStackTracking {
     super.restore();
     context.restore();
     contextHandle.reset();
+    --_saveContextCount;
   }
 
   @override
@@ -531,9 +556,6 @@ class ContextStateHandle {
     if (!identical(colorOrGradient, _currentFillStyle)) {
       _currentFillStyle = colorOrGradient;
       context.fillStyle = colorOrGradient;
-      if (assertionsEnabled) {
-        _currentFillStyle = context.fillStyle;
-      }
     }
   }
 

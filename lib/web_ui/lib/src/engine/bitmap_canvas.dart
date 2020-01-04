@@ -105,7 +105,7 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPositionY = _bounds.top.floor() - kPaddingPixels;
     _updateRootElementTransform();
     _canvasPool.allocateCanvas(rootElement, _widthInBitmapPixels,
-        _heightInBitmapPixels, _bounds);
+        _heightInBitmapPixels);
     _setupInitialTransform();
   }
 
@@ -366,12 +366,7 @@ class BitmapCanvas extends EngineCanvas {
     imgElement.style.mixBlendMode = blendMode;
     _drawImage(imgElement, p);
     _childOverdraw = true;
-    _allocateNewCanvas();
-  }
-
-  void _allocateNewCanvas() {
-    _canvasPool.allocateCanvas(rootElement, _widthInBitmapPixels,
-        _heightInBitmapPixels, _bounds);
+    _canvasPool.allocateExtraCanvas();
   }
 
   void _drawImage(html.ImageElement imgElement, ui.Offset p) {
@@ -444,7 +439,7 @@ class BitmapCanvas extends EngineCanvas {
       if (requiresClipping) {
         restore();
       }
-      _allocateNewCanvas();
+      _canvasPool.allocateExtraCanvas();
     }
     _childOverdraw = true;
   }
