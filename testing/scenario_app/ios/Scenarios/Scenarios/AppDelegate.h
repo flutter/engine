@@ -6,5 +6,5 @@
 #import <UIKit/UIKit.h>
 
 @interface AppDelegate : FlutterAppDelegate
-+(UIViewController*)rootViewController;
+
 @end

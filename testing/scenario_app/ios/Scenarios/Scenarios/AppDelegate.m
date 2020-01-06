@@ -22,12 +22,10 @@
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-  self.window.rootViewController = [AppDelegate rootViewController];
-  [self.window makeKeyAndVisible];
-  return [super application:application didFinishLaunchingWithOptions:launchOptions];
-}
 
-+ (UIViewController*)rootViewController {
+  // This argument is used by the XCUITest for Platform Views so that the app
+  // under test will create platform views.
+  // The launchArgsMap should match the one in the `PlatformVieGoldenTestManager`.
   NSDictionary<NSString*, NSString*>* launchArgsMap = @{
     @"--platform-view" : @"platform_view",
     @"--platform-view-multiple" : @"platform_view_multiple",
@@ -50,15 +48,18 @@
       }];
 
   if (goldenTestName) {
-    return [AppDelegate readyContextForPlatformViewTests:goldenTestName];
+    [self readyContextForPlatformViewTests:goldenTestName];
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
-    return [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
+    self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
   } else {
-    return [[UIViewController alloc] init];
+    self.window.rootViewController = [[UIViewController alloc] init];
   }
+
+  [self.window makeKeyAndVisible];
+  return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
-+ (FlutterViewController*)readyContextForPlatformViewTests:(NSString*)scenarioIdentifier {
+- (void)readyContextForPlatformViewTests:(NSString*)scenarioIdentifier {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"PlatformViewTest" project:nil];
   [engine runWithEntrypoint:nil];
 
@@ -76,7 +77,7 @@
   NSObject<FlutterPluginRegistrar>* registrar =
       [flutterViewController.engine registrarForPlugin:@"scenarios/TextPlatformViewPlugin"];
   [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
-  return flutterViewController;
+  self.window.rootViewController = flutterViewController;
 }
 
 @end

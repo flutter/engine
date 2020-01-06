@@ -31,7 +31,6 @@
 		24D47D1B230C79840069DD5E /* golden_platform_view_D211AP.png in Resources */ = {isa = PBXBuildFile; fileRef = 24D47D1A230C79840069DD5E /* golden_platform_view_D211AP.png */; };
 		24D47D1D230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 24D47D1C230CA2700069DD5E /* golden_platform_view_iPhone SE_simulator.png */; };
 		24F1FB89230B4579005ACE7C /* TextPlatformView.m in Sources */ = {isa = PBXBuildFile; fileRef = 24F1FB87230B4579005ACE7C /* TextPlatformView.m */; };
-		3DC674C223C3B51100F0D98F /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 3DC674C123C3B51100F0D98F /* SceneDelegate.m */; };
 		3DEF491223C3BE6500184216 /* golden_platform_view_clippath_iPhone 8_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 3DE09E8B23C010BC006C9851 /* golden_platform_view_clippath_iPhone 8_simulator.png */; };
 		3DEF491323C3BE6500184216 /* golden_platform_view_cliprect_iPhone 8_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 3DE09E9223C010BD006C9851 /* golden_platform_view_cliprect_iPhone 8_simulator.png */; };
 		3DEF491423C3BE6500184216 /* golden_platform_view_cliprrect_iPhone 8_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 3DE09E8C23C010BD006C9851 /* golden_platform_view_cliprrect_iPhone 8_simulator.png */; };
@@ -135,8 +134,6 @@
 		24D47D1E230CA4480069DD5E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		24F1FB87230B4579005ACE7C /* TextPlatformView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TextPlatformView.m; sourceTree = "<group>"; };
 		24F1FB88230B4579005ACE7C /* TextPlatformView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextPlatformView.h; sourceTree = "<group>"; };
-		3DC674C123C3B51100F0D98F /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
-		3DC674C323C3B51F00F0D98F /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
 		3DE09E8A23C010BC006C9851 /* golden_platform_view_multiple_background_foreground_iPhone 8_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_multiple_background_foreground_iPhone 8_simulator.png"; sourceTree = "<group>"; };
 		3DE09E8B23C010BC006C9851 /* golden_platform_view_clippath_iPhone 8_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_clippath_iPhone 8_simulator.png"; sourceTree = "<group>"; };
 		3DE09E8C23C010BD006C9851 /* golden_platform_view_cliprrect_iPhone 8_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_cliprrect_iPhone 8_simulator.png"; sourceTree = "<group>"; };
@@ -225,8 +222,6 @@
 				0A57B3BC2323C4BD00DD9521 /* ScreenBeforeFlutter.m */,
 				0A57B3BE2323C74200DD9521 /* FlutterEngine+ScenariosTest.m */,
 				0A57B3C02323C74D00DD9521 /* FlutterEngine+ScenariosTest.h */,
-				3DC674C123C3B51100F0D98F /* SceneDelegate.m */,
-				3DC674C323C3B51F00F0D98F /* SceneDelegate.h */,
 			);
 			path = Scenarios;
 			sourceTree = "<group>";
@@ -442,7 +437,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				248D76DA22E388380012F0C1 /* main.m in Sources */,
-				3DC674C223C3B51100F0D98F /* SceneDelegate.m in Sources */,
 				24F1FB89230B4579005ACE7C /* TextPlatformView.m in Sources */,
 				248D76CC22E388370012F0C1 /* AppDelegate.m in Sources */,
 				0A57B3BF2323C74200DD9521 /* FlutterEngine+ScenariosTest.m in Sources */,
