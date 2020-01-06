@@ -83,7 +83,8 @@ int main(int argc, char** argv) {
     while (std::cin >> raw_codepoint) {
       auto codepoint = ParseCodepoint(raw_codepoint);
       if (!codepoint) {
-        std::cerr << "Invalid codepoint for " << raw_codepoint << "; exiting." << std::endl;
+        std::cerr << "Invalid codepoint for " << raw_codepoint << "; exiting."
+                  << std::endl;
         return -1;
       }
       if (!hb_set_has(actual_codepoints.get(), codepoint)) {
