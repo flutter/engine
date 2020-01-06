@@ -90,11 +90,12 @@ class BitmapCanvas extends EngineCanvas {
   /// This canvas can be reused by pictures with different paint bounds as long
   /// as the [Rect.size] of the bounds fully fit within the size used to
   /// initialize this canvas.
-  BitmapCanvas(this._bounds) :
-        assert(_bounds != null),
+  BitmapCanvas(this._bounds)
+      : assert(_bounds != null),
         widthInBitmapPixels = _widthToPhysical(_bounds.width),
         heightInBitmapPixels = _heightToPhysical(_bounds.height),
-        _canvasPool = _CanvasPool(_widthToPhysical(_bounds.width), _heightToPhysical(_bounds.height)) {
+        _canvasPool = _CanvasPool(_widthToPhysical(_bounds.width),
+            _heightToPhysical(_bounds.height)) {
     rootElement.style.position = 'absolute';
     // Adds one extra pixel to the requested size. This is to compensate for
     // _initializeViewport() snapping canvas position to 1 pixel, causing
@@ -102,8 +103,8 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPositionX = _bounds.left.floor() - kPaddingPixels;
     _canvasPositionY = _bounds.top.floor() - kPaddingPixels;
     _updateRootElementTransform();
-    _canvasPool.allocateCanvas(rootElement, widthInBitmapPixels,
-        heightInBitmapPixels);
+    _canvasPool.allocateCanvas(
+        rootElement, widthInBitmapPixels, heightInBitmapPixels);
     _setupInitialTransform();
   }
 
@@ -118,12 +119,13 @@ class BitmapCanvas extends EngineCanvas {
     // transforms higher up in the stack. TODO: update for more accurate
     // positioning.
     rootElement.style.transform =
-      'translate(${_canvasPositionX}px, ${_canvasPositionY}px)';
+        'translate(${_canvasPositionX}px, ${_canvasPositionY}px)';
   }
 
   void _setupInitialTransform() {
-    final double canvasPositionCorrectionX =
-        _bounds.left - BitmapCanvas.kPaddingPixels - _canvasPositionX.toDouble();
+    final double canvasPositionCorrectionX = _bounds.left -
+        BitmapCanvas.kPaddingPixels -
+        _canvasPositionX.toDouble();
     final double canvasPositionCorrectionY =
         _bounds.top - BitmapCanvas.kPaddingPixels - _canvasPositionY.toDouble();
     // This compensates for the translate on the `rootElement`.
@@ -216,7 +218,8 @@ class BitmapCanvas extends EngineCanvas {
 
     if (paint.shader != null) {
       final EngineGradient engineShader = paint.shader;
-      final Object paintStyle = engineShader.createPaintStyle(_canvasPool.context);
+      final Object paintStyle =
+          engineShader.createPaintStyle(_canvasPool.context);
       contextHandle.fillStyle = paintStyle;
       contextHandle.strokeStyle = paintStyle;
     } else if (paint.color != null) {
@@ -371,15 +374,15 @@ class BitmapCanvas extends EngineCanvas {
 
   void _drawImage(html.ImageElement imgElement, ui.Offset p) {
     if (_canvasPool.isClipped) {
-      final List<html.Element> clipElements =
-          _clipContent(_canvasPool._clipStack, imgElement, p, _canvasPool.currentTransform);
+      final List<html.Element> clipElements = _clipContent(
+          _canvasPool._clipStack, imgElement, p, _canvasPool.currentTransform);
       for (html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
     } else {
-      final String cssTransform =
-          matrix4ToCssTransform3d(transformWithOffset(_canvasPool.currentTransform, p));
+      final String cssTransform = matrix4ToCssTransform3d(
+          transformWithOffset(_canvasPool.currentTransform, p));
       imgElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;
@@ -483,8 +486,7 @@ class BitmapCanvas extends EngineCanvas {
     if (paragraph._drawOnCanvas && _childOverdraw == false) {
       final List<EngineLineMetrics> lines = paragraph._measurementResult.lines;
 
-      final SurfacePaintData backgroundPaint =
-          paragraph._background?.paintData;
+      final SurfacePaintData backgroundPaint = paragraph._background?.paintData;
       if (backgroundPaint != null) {
         final ui.Rect rect = ui.Rect.fromLTWH(
             offset.dx, offset.dy, paragraph.width, paragraph.height);
@@ -511,15 +513,18 @@ class BitmapCanvas extends EngineCanvas {
         _drawParagraphElement(paragraph, offset);
 
     if (_canvasPool.isClipped) {
-      final List<html.Element> clipElements =
-          _clipContent(_canvasPool._clipStack, paragraphElement, offset, _canvasPool.currentTransform);
+      final List<html.Element> clipElements = _clipContent(
+          _canvasPool._clipStack,
+          paragraphElement,
+          offset,
+          _canvasPool.currentTransform);
       for (html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
     } else {
-      final String cssTransform =
-          matrix4ToCssTransform3d(transformWithOffset(_canvasPool.currentTransform, offset));
+      final String cssTransform = matrix4ToCssTransform3d(
+          transformWithOffset(_canvasPool.currentTransform, offset));
       paragraphElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;

@@ -58,8 +58,8 @@ class _CanvasPool extends _SaveStackTracking {
     _replayClipStack();
   }
 
-  void allocateCanvas(html.HtmlElement rootElement,
-      int widthInBitmapPixels, int heightInBitmapPixels) {
+  void allocateCanvas(html.HtmlElement rootElement, int widthInBitmapPixels,
+      int heightInBitmapPixels) {
     bool requiresClearRect = false;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
@@ -71,8 +71,8 @@ class _CanvasPool extends _SaveStackTracking {
       // * To satisfy the invariant: pixel size = css size * device pixel ratio.
       // * To make sure that when we scale the canvas by devicePixelRatio (see
       //   _initializeViewport below) the pixels line up.
-      final double cssWidth = widthInBitmapPixels /
-          html.window.devicePixelRatio;
+      final double cssWidth =
+          widthInBitmapPixels / html.window.devicePixelRatio;
       final double cssHeight =
           heightInBitmapPixels / html.window.devicePixelRatio;
       _canvas = html.CanvasElement(
@@ -101,8 +101,9 @@ class _CanvasPool extends _SaveStackTracking {
     // Replay save/clip stack on this canvas now.
     html.CanvasRenderingContext2D ctx = _context;
     int clipDepth = 0;
-    for (int saveStackIndex = 0, len = _saveStack.length; saveStackIndex < len;
-    saveStackIndex++) {
+    for (int saveStackIndex = 0, len = _saveStack.length;
+        saveStackIndex < len;
+        saveStackIndex++) {
       _SaveStackEntry saveEntry = _saveStack[saveStackIndex];
       Matrix4 matrix4 = saveEntry.transform;
       if (!matrix4.isIdentity()) {
@@ -111,7 +112,9 @@ class _CanvasPool extends _SaveStackTracking {
       }
       final List<_SaveClipEntry> clipStack = saveEntry.clipStack;
       if (clipStack != null) {
-        for (int clipCount = clipStack.length; clipDepth < clipCount; clipDepth++) {
+        for (int clipCount = clipStack.length;
+            clipDepth < clipCount;
+            clipDepth++) {
           _SaveClipEntry clipEntry = clipStack[clipDepth];
           if (clipEntry.rect != null) {
             _clipRect(ctx, clipEntry.rect);
@@ -127,11 +130,18 @@ class _CanvasPool extends _SaveStackTracking {
       ++_saveContextCount;
     }
     if (_currentTransform != null && !(_currentTransform.isIdentity())) {
-      ctx.setTransform(_currentTransform[0], _currentTransform[1], _currentTransform[4], _currentTransform[5],
-          _currentTransform[12], _currentTransform[13]);
+      ctx.setTransform(
+          _currentTransform[0],
+          _currentTransform[1],
+          _currentTransform[4],
+          _currentTransform[5],
+          _currentTransform[12],
+          _currentTransform[13]);
     }
     if (_clipStack != null && _clipStack.length > clipDepth) {
-      for (int clipCount = _clipStack.length; clipDepth < clipCount; clipDepth++) {
+      for (int clipCount = _clipStack.length;
+          clipDepth < clipCount;
+          clipDepth++) {
         _SaveClipEntry clipEntry = _clipStack[clipDepth];
         if (clipEntry.rect != null) {
           _clipRect(ctx, clipEntry.rect);
@@ -182,7 +192,6 @@ class _CanvasPool extends _SaveStackTracking {
       --_saveContextCount;
     }
   }
-
 
   /// Configures the canvas such that its coordinate system follows the scene's
   /// coordinate system, and the pixel ratio is applied such that CSS pixels are
@@ -260,7 +269,6 @@ class _CanvasPool extends _SaveStackTracking {
     //                a - horizontal scaling
     //
     // Source: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/transform
-
   }
 
   @override
@@ -424,8 +432,8 @@ class _CanvasPool extends _SaveStackTracking {
 
   void drawOval(ui.Rect rect, ui.PaintingStyle style) {
     context.beginPath();
-    context.ellipse(rect.center.dx, rect.center.dy, rect.width / 2, rect.height / 2,
-        0, 0, 2.0 * math.pi, false);
+    context.ellipse(rect.center.dx, rect.center.dy, rect.width / 2,
+        rect.height / 2, 0, 0, 2.0 * math.pi, false);
     contextHandle.paint(style);
   }
 
@@ -443,7 +451,7 @@ class _CanvasPool extends _SaveStackTracking {
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
     final List<CanvasShadow> shadows =
-    ElevationShadow.computeCanvasShadows(elevation, color);
+        ElevationShadow.computeCanvasShadows(elevation, color);
     if (shadows.isNotEmpty) {
       for (final CanvasShadow shadow in shadows) {
         // TODO(het): Shadows with transparent occluders are not supported
@@ -457,7 +465,8 @@ class _CanvasPool extends _SaveStackTracking {
           // which is undesirable.
           context.save();
           context.translate(shadow.offsetX, shadow.offsetY);
-          context.filter = _maskFilterToCss(ui.MaskFilter.blur(ui.BlurStyle.normal, shadow.blur));
+          context.filter = _maskFilterToCss(
+              ui.MaskFilter.blur(ui.BlurStyle.normal, shadow.blur));
           context.strokeStyle = '';
           context.fillStyle = shadow.color.toCssString();
           _runPath(context, path);
