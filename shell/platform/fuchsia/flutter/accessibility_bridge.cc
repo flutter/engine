@@ -80,8 +80,9 @@ AccessibilityBridge::GetNodeAttributes(const flutter::SemanticsNode& node,
 }
 
 fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
-    const flutter::SemanticsNode& node) const {
+    const flutter::SemanticsNode& node, size_t* additional_size) const {
   fuchsia::accessibility::semantics::States states;
+  additional_size += sizeof(fuchsia::accessibility::semantics::States);
 
   // Set checked state.
   if (!node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
@@ -101,11 +102,13 @@ fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
   states.set_hidden(node.HasFlag(flutter::SemanticsFlags::kIsHidden));
 
   // Set value.
-  std::string value = node.value;
-  if (value.size() > fuchsia::accessibility::semantics::MAX_VALUE_SIZE) {
-    value.resize(fuchsia::accessibility::semantics::MAX_VALUE_SIZE);
+  if (node.value.size() > fuchsia::accessibility::semantics::MAX_VALUE_SIZE) {
+    states.set_value(node.value.substr(0, fuchsia::accessibility::semantics::MAX_VALUE_SIZE));
+    *additional_size += fuchsia::accessibility::semantics::MAX_VALUE_SIZE;
+  } else {
+    states.set_value(node.value);
+    *additional_size += node.value.size();
   }
-  states.set_value(value);
 
   return states;
 }
@@ -213,7 +216,7 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
         .set_location(GetNodeLocation(flutter_node))
         .set_transform(GetNodeTransform(flutter_node))
         .set_attributes(GetNodeAttributes(flutter_node, &this_node_size))
-        .set_states(GetNodeStates(flutter_node))
+        .set_states(GetNodeStates(flutter_node, &this_node_size))
         .set_child_ids(child_ids);
     this_node_size +=
         kNodeIdSize * flutter_node.childrenInTraversalOrder.size();
