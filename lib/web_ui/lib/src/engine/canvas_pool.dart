@@ -370,6 +370,7 @@ class _CanvasPool extends _SaveStackTracking {
     contextHandle.blendMode = blendMode;
     contextHandle.fillStyle = color.toCssString();
     contextHandle.strokeStyle = '';
+    ctx.beginPath();
     // Fill a virtually infinite rect with the color.
     //
     // We can't use (0, 0, width, height) because the current transform can
@@ -572,6 +573,8 @@ class ContextStateHandle {
   ui.BlendMode _currentBlendMode = ui.BlendMode.srcOver;
   ui.StrokeCap _currentStrokeCap = ui.StrokeCap.butt;
   ui.StrokeJoin _currentStrokeJoin = ui.StrokeJoin.miter;
+  // Fill style and stroke style are Object since they can have a String or
+  // shader object such as a gradient.
   Object _currentFillStyle;
   Object _currentStrokeStyle;
   double _currentLineWidth = 1.0;
@@ -639,6 +642,9 @@ class ContextStateHandle {
 
   void reset() {
     context.fillStyle = '';
+    // Read back fillStyle/strokeStyle values from context so that input such
+    // as rgba(0, 0, 0, 0) is correctly compared and doesn't cause diff on
+    // setter.
     _currentFillStyle = context.fillStyle;
     context.strokeStyle = '';
     _currentStrokeStyle = context.strokeStyle;

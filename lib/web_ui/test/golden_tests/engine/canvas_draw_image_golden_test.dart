@@ -164,6 +164,27 @@ void main() async {
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
+  // Circle should below image not on top.
+  test('Paints below image', () async {
+    final RecordingCanvas rc =
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
+    rc.save();
+    Image testImage = createTestImage();
+    double testWidth = testImage.width.toDouble();
+    double testHeight = testImage.height.toDouble();
+    rc.drawCircle(
+        Offset(100, 100),
+        50.0,
+        Paint()
+          ..strokeWidth = 3
+          ..color = Color.fromARGB(128, 0, 0, 0));
+    rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
+        Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), new Paint());
+    rc.restore();
+    await _checkScreenshot(rc, 'draw_circle_below_image');
+  });
+
+  // Regression test for https://github.com/flutter/flutter/issues/44845
   // Circle should draw on top of image with clip rect.
   test('Paints on top of image with clip rect', () async {
     final RecordingCanvas rc =

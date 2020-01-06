@@ -38,7 +38,7 @@ void main() {
       underTest.apply(mockCanvas);
       // Expect nothing to be called
       expect(mockCanvas.methodCallLog.length, equals(1));
-      expect(mockCanvas.methodCallLog.toString(), contains('endOfPaint'));
+      expect(mockCanvas.methodCallLog.single.methodName, 'endOfPaint');
     });
 
     test('Inner RRect not completely inside Outer RRect', () {
@@ -47,7 +47,7 @@ void main() {
       underTest.apply(mockCanvas);
       // Expect nothing to be called
       expect(mockCanvas.methodCallLog.length, equals(1));
-      expect(mockCanvas.methodCallLog.toString(), contains('endOfPaint'));
+      expect(mockCanvas.methodCallLog.single.methodName, 'endOfPaint');
     });
 
     test('Inner RRect same as Outer RRect', () {
@@ -55,7 +55,7 @@ void main() {
       underTest.apply(mockCanvas);
       // Expect nothing to be called
       expect(mockCanvas.methodCallLog.length, equals(1));
-      expect(mockCanvas.methodCallLog.toString(), contains('endOfPaint'));
+      expect(mockCanvas.methodCallLog.single.methodName, 'endOfPaint');
     });
 
     test('negative corners in inner RRect get passed through to draw', () {
@@ -83,9 +83,9 @@ void main() {
 
     test('preserve old scuba test behavior', () {
       final RRect outer =
-      RRect.fromRectAndCorners(const Rect.fromLTRB(10, 20, 30, 40));
+          RRect.fromRectAndCorners(const Rect.fromLTRB(10, 20, 30, 40));
       final RRect inner =
-      RRect.fromRectAndCorners(const Rect.fromLTRB(12, 22, 28, 38));
+          RRect.fromRectAndCorners(const Rect.fromLTRB(12, 22, 28, 38));
 
       underTest.drawDRRect(outer, inner, somePaint);
       underTest.apply(mockCanvas);

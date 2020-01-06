@@ -71,6 +71,7 @@ class BitmapCanvas extends EngineCanvas {
   /// was created.
   final double _devicePixelRatio = html.window.devicePixelRatio;
 
+  // Compensation for [_initializeViewport] snapping canvas position to 1 pixel.
   int _canvasPositionX, _canvasPositionY;
 
   // Indicates the instructions following drawImage or drawParagraph that
