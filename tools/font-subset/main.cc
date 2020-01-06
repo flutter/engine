@@ -83,7 +83,8 @@ int main(int argc, char** argv) {
     while (std::cin >> raw_codepoint) {
       auto codepoint = ParseCodepoint(raw_codepoint);
       if (!codepoint) {
-        continue;
+        std::cerr << "Invalid codepoint for " << raw_codepoint << "; exiting." << std::endl;
+        return -1;
       }
       if (!hb_set_has(actual_codepoints.get(), codepoint)) {
         std::cerr << "Codepoint " << raw_codepoint
@@ -92,7 +93,12 @@ int main(int argc, char** argv) {
       }
       hb_set_add(desired_codepoints, codepoint);
     }
+    if (hb_set_is_empty(desired_codepoints)) {
+      std::cerr << "No codepoints specified, exiting." << std::endl;
+      return -1;
+    }
   }
+
   HarfbuzzWrappers::HbFacePtr new_face(hb_subset(font_face.get(), input.get()));
 
   if (new_face.get() == hb_face_get_empty()) {
