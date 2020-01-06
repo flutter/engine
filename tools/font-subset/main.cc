@@ -12,15 +12,15 @@
 
 #include "hb_wrappers.h"
 
-hb_codepoint_t ParseCodepoint(const char* arg) {
+hb_codepoint_t ParseCodepoint(const std::string& arg) {
   unsigned long value = 0;
   // Check for \u123, u123, otherwise let strtoul work it out.
   if (arg[0] == 'u') {
-    value = strtoul(arg + 1, nullptr, 16);
+    value = strtoul(arg.c_str() + 1, nullptr, 16);
   } else if (arg[0] == '\\' && arg[1] == 'u') {
-    value = strtoul(arg + 2, nullptr, 16);
+    value = strtoul(arg.c_str() + 2, nullptr, 16);
   } else {
-    value = strtoul(arg, nullptr, 0);
+    value = strtoul(arg.c_str(), nullptr, 0);
   }
   if (value == 0 || value > std::numeric_limits<hb_codepoint_t>::max()) {
     std::cerr << "The value '" << arg << "' (" << value
@@ -33,16 +33,16 @@ hb_codepoint_t ParseCodepoint(const char* arg) {
 
 void Usage() {
   std::cout << "Usage:" << std::endl;
-  std::cout << "font-subset <output.ttf> <input.ttf> [CODEPOINTS]" << std::endl;
+  std::cout << "font-subset <output.ttf> <input.ttf>" << std::endl;
   std::cout << std::endl;
   std::cout << "The output.ttf file will be overwritten if it exists already "
                "and the subsetting operation succeeds."
             << std::endl;
-  std::cout << "At least one code point must be specified. The code points "
-               "should be separated by spaces, and must be input as decimal "
-               "numbers (123), hexidecimal numbers (0x7B), or unicode "
-               "hexidecimal characters (\\u7B)."
+  std::cout << "Codepoints should be specified on stdin, separated by spaces, "
+               "and must be input as decimal numbers (123), hexidecimal "
+               "numbers (0x7B), or unicode hexidecimal characters (\\u7B)."
             << std::endl;
+  std::cout << "Input terminates with a newline." << std::endl;
   std::cout
       << "This program will de-duplicate codepoints if the same codepoint is "
          "specified multiple times, e.g. '123 123' will be treated as '123'."
@@ -50,7 +50,7 @@ void Usage() {
 }
 
 int main(int argc, char** argv) {
-  if (argc <= 3) {
+  if (argc != 3) {
     Usage();
     return -1;
   }
@@ -79,13 +79,14 @@ int main(int argc, char** argv) {
     hb_set_t* desired_codepoints = hb_subset_input_unicode_set(input.get());
     HarfbuzzWrappers::HbSetPtr actual_codepoints(hb_set_create());
     hb_face_collect_unicodes(font_face.get(), actual_codepoints.get());
-    for (int i = 3; i < argc; i++) {
-      auto codepoint = ParseCodepoint(argv[i]);
+    std::string raw_codepoint;
+    while (std::cin >> raw_codepoint) {
+      auto codepoint = ParseCodepoint(raw_codepoint);
       if (!codepoint) {
         continue;
       }
       if (!hb_set_has(actual_codepoints.get(), codepoint)) {
-        std::cerr << "Codepoint " << argv[i]
+        std::cerr << "Codepoint " << raw_codepoint
                   << " not found in font, aborting." << std::endl;
         return -1;
       }
