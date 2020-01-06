@@ -134,7 +134,8 @@ TEST_F(AccessibilityBridgeTest, PopulatesCheckedState) {
   // IsChecked = true
   // IsSelected = false
   // IsHidden = false
-  node0.flags = static_cast<int>(flutter::SemanticsFlags::kHasCheckedState) + static_cast<int>(flutter::SemanticsFlags::kIsChecked);
+  node0.flags |= static_cast<int>(flutter::SemanticsFlags::kHasCheckedState);
+  node0.flags |= static_cast<int>(flutter::SemanticsFlags::kIsChecked);
   node0.value = "value";
 
   accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}});

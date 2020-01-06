@@ -80,7 +80,8 @@ AccessibilityBridge::GetNodeAttributes(const flutter::SemanticsNode& node,
 }
 
 fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
-    const flutter::SemanticsNode& node, size_t* additional_size) const {
+    const flutter::SemanticsNode& node,
+    size_t* additional_size) const {
   fuchsia::accessibility::semantics::States states;
   additional_size += sizeof(fuchsia::accessibility::semantics::States);
 
@@ -103,7 +104,8 @@ fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
 
   // Set value.
   if (node.value.size() > fuchsia::accessibility::semantics::MAX_VALUE_SIZE) {
-    states.set_value(node.value.substr(0, fuchsia::accessibility::semantics::MAX_VALUE_SIZE));
+    states.set_value(node.value.substr(
+        0, fuchsia::accessibility::semantics::MAX_VALUE_SIZE));
     *additional_size += fuchsia::accessibility::semantics::MAX_VALUE_SIZE;
   } else {
     states.set_value(node.value);
