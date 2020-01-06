@@ -35,8 +35,7 @@ Animator::Animator(Delegate& delegate,
       frame_scheduled_(false),
       notify_idle_task_id_(0),
       dimension_change_pending_(false),
-      weak_factory_(this) {
-}
+      weak_factory_(this) {}
 
 Animator::~Animator() = default;
 
