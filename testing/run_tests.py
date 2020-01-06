@@ -23,7 +23,7 @@ dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 
 fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*:*GpuThreadMerger*'
 
-IS_WINDOWS = sys.platform.startswith(('cygwin', 'win'))
+IS_WIN = sys.platform.startswith(('cygwin', 'win'))
 IS_LINUX = sys.platform.startswith('linux')
 IS_MAC = sys.platform == 'darwin'
 
