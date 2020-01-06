@@ -50,16 +50,14 @@ class BitmapCanvas extends EngineCanvas {
   ///
   /// These pixels are different from the logical CSS pixels. Here a pixel
   /// literally means 1 point with a RGBA color.
-  int get widthInBitmapPixels => _widthInBitmapPixels;
-  final int _widthInBitmapPixels;
+  final int widthInBitmapPixels;
 
   /// The number of pixels along the width of the bitmap that the canvas element
   /// renders into.
   ///
   /// These pixels are different from the logical CSS pixels. Here a pixel
   /// literally means 1 point with a RGBA color.
-  int get heightInBitmapPixels => _heightInBitmapPixels;
-  final int _heightInBitmapPixels;
+  final int heightInBitmapPixels;
 
   /// The number of pixels in the bitmap that the canvas element renders into.
   ///
@@ -94,8 +92,8 @@ class BitmapCanvas extends EngineCanvas {
   /// initialize this canvas.
   BitmapCanvas(this._bounds) :
         assert(_bounds != null),
-        _widthInBitmapPixels = _widthToPhysical(_bounds.width),
-        _heightInBitmapPixels = _heightToPhysical(_bounds.height),
+        widthInBitmapPixels = _widthToPhysical(_bounds.width),
+        heightInBitmapPixels = _heightToPhysical(_bounds.height),
         _canvasPool = _CanvasPool(_widthToPhysical(_bounds.width), _heightToPhysical(_bounds.height)) {
     rootElement.style.position = 'absolute';
     // Adds one extra pixel to the requested size. This is to compensate for
@@ -104,8 +102,8 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPositionX = _bounds.left.floor() - kPaddingPixels;
     _canvasPositionY = _bounds.top.floor() - kPaddingPixels;
     _updateRootElementTransform();
-    _canvasPool.allocateCanvas(rootElement, _widthInBitmapPixels,
-        _heightInBitmapPixels);
+    _canvasPool.allocateCanvas(rootElement, widthInBitmapPixels,
+        heightInBitmapPixels);
     _setupInitialTransform();
   }
 
@@ -116,7 +114,9 @@ class BitmapCanvas extends EngineCanvas {
     // initial translation so the paint operations are positioned as expected.
     //
     // The flooring of the value is to ensure that canvas' top-left corner
-    // lands on the physical pixel.
+    // lands on the physical pixel. !This is not accurate if there are
+    // transforms higher up in the stack. TODO: update for more accurate
+    // positioning.
     rootElement.style.transform =
       'translate(${_canvasPositionX}px, ${_canvasPositionY}px)';
   }
@@ -148,8 +148,8 @@ class BitmapCanvas extends EngineCanvas {
   // Used by picture to assess if canvas is large enough to reuse as is.
   bool doesFitBounds(ui.Rect newBounds) {
     assert(newBounds != null);
-    return _widthInBitmapPixels >= _widthToPhysical(newBounds.width) &&
-        _heightInBitmapPixels >= _heightToPhysical(newBounds.height);
+    return widthInBitmapPixels >= _widthToPhysical(newBounds.width) &&
+        heightInBitmapPixels >= _heightToPhysical(newBounds.height);
   }
 
   @override
@@ -198,8 +198,8 @@ class BitmapCanvas extends EngineCanvas {
     return _devicePixelRatio == html.window.devicePixelRatio;
   }
 
-  // Returns a data URI containing a representation of the image in this
-  // canvas.
+  /// Returns a data URI containing a representation of the image in this
+  /// canvas.
   String toDataUrl() {
     return _canvasPool.toDataUrl();
   }
@@ -572,7 +572,7 @@ class BitmapCanvas extends EngineCanvas {
       restore();
       return;
     }
-    _glRenderer.drawVertices(ctx, _widthInBitmapPixels, _heightInBitmapPixels,
+    _glRenderer.drawVertices(ctx, widthInBitmapPixels, heightInBitmapPixels,
         _canvasPool.currentTransform, vertices, blendMode, paint);
   }
 

@@ -4,6 +4,21 @@
 
 part of engine;
 
+/// Allocates and caches 0 or more canvas(s) for [BitmapCanvas].
+///
+/// [BitmapCanvas] signals allocation of first canvas using allocateCanvas.
+/// When a painting command such as drawImage or drawParagraph requires
+/// multiple canvases for correct compositing, it calls allocateExtraCanvas and
+/// adds the canvas(s) to a [_pool] of active canvas(s).
+///
+/// To make sure transformations and clips are preserved correctly when a new
+/// canvas is allocated, [_CanvasPool] replays the current stack on the newly
+/// allocated canvas. It also maintains a [_saveContextCount] so that
+/// the context stack can be reinitialized to default when reused in the future.
+///
+/// On a subsequent repaint, when a Picture determines that a [BitmapCanvas]
+/// can be reused, [_CanvasPool] will move canvas(s) from pool to reusablePool
+/// to prevent reallocation.
 class _CanvasPool extends _SaveStackTracking {
   html.CanvasElement _canvas;
   html.CanvasRenderingContext2D _context;
@@ -26,7 +41,7 @@ class _CanvasPool extends _SaveStackTracking {
   ContextStateHandle get contextHandle => _contextHandle;
 
   // Allocating extra canvas items. Save current canvas so we can dispose
-  // and reply the clip/transform stack on top of new canvas.
+  // and replay the clip/transform stack on top of new canvas.
   void allocateExtraCanvas() {
     html.HtmlElement prevRoot = _canvas.parent;
     assert(prevRoot != null);
@@ -47,8 +62,7 @@ class _CanvasPool extends _SaveStackTracking {
       int widthInBitmapPixels, int heightInBitmapPixels) {
     bool requiresClearRect = false;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
-      _canvas = _reusablePool[0];
-      _reusablePool.removeAt(0);
+      _canvas = _reusablePool.removeAt(0);
       requiresClearRect = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
@@ -96,7 +110,7 @@ class _CanvasPool extends _SaveStackTracking {
             matrix4[12], matrix4[13]);
       }
       final List<_SaveClipEntry> clipStack = saveEntry.clipStack;
-      if (saveEntry.clipStack != null) {
+      if (clipStack != null) {
         for (int clipCount = clipStack.length; clipDepth < clipCount; clipDepth++) {
           _SaveClipEntry clipEntry = clipStack[clipDepth];
           if (clipEntry.rect != null) {
@@ -140,10 +154,10 @@ class _CanvasPool extends _SaveStackTracking {
       _contextHandle = null;
     }
     if (_pool != null) {
+      assert(_canvas != null);
       _pool.add(_canvas);
       _reusablePool = _pool;
-      _canvas = _reusablePool[0];
-      _reusablePool.removeAt(0);
+      _canvas = _reusablePool.removeAt(0);
       _pool = null;
       final html.HtmlElement rootElement = _canvas.parent;
       rootElement.append(_canvas);
@@ -308,12 +322,12 @@ class _CanvasPool extends _SaveStackTracking {
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     html.CanvasRenderingContext2D ctx = context;
     contextHandle.blendMode = blendMode;
+    contextHandle.fillStyle = color.toCssString();
+    contextHandle.strokeStyle = '';
     // Fill a virtually infinite rect with the color.
     //
     // We can't use (0, 0, width, height) because the current transform can
     // cause it to not fill the entire clip.
-    contextHandle.fillStyle = color.toCssString();
-    contextHandle.strokeStyle = '';
     ctx.fillRect(-10000, -10000, 20000, 20000);
   }
 
@@ -515,14 +529,12 @@ class ContextStateHandle {
   Object _currentStrokeStyle;
   double _currentLineWidth = 1.0;
   String _currentFilter = 'none';
-  bool _secondaryAttributesDirty = false;
 
   set blendMode(ui.BlendMode blendMode) {
     if (blendMode != _currentBlendMode) {
       _currentBlendMode = blendMode;
       context.globalCompositeOperation =
           _stringForBlendMode(blendMode) ?? 'source-over';
-      _secondaryAttributesDirty = true;
     }
   }
 
@@ -531,7 +543,6 @@ class ContextStateHandle {
     if (strokeCap != _currentStrokeCap) {
       _currentStrokeCap = strokeCap;
       context.lineCap = _stringForStrokeCap(strokeCap);
-      _secondaryAttributesDirty = true;
     }
   }
 
@@ -539,7 +550,6 @@ class ContextStateHandle {
     if (lineWidth != _currentLineWidth) {
       _currentLineWidth = lineWidth;
       context.lineWidth = lineWidth;
-      _secondaryAttributesDirty = true;
     }
   }
 
@@ -548,7 +558,6 @@ class ContextStateHandle {
     if (strokeJoin != _currentStrokeJoin) {
       _currentStrokeJoin = strokeJoin;
       context.lineJoin = _stringForStrokeJoin(strokeJoin);
-      _secondaryAttributesDirty = true;
     }
   }
 
@@ -570,7 +579,6 @@ class ContextStateHandle {
     if (_currentFilter != filter) {
       _currentFilter = filter;
       context.filter = filter;
-      _secondaryAttributesDirty = true;
     }
   }
 
@@ -584,8 +592,12 @@ class ContextStateHandle {
 
   void reset() {
     context.fillStyle = '';
+    // Read browser's default value to compare against when fill style is set
+    // next. Some browsers may be setting it to rgba(0,0,0,0).
     _currentFillStyle = context.fillStyle;
     context.strokeStyle = '';
+    // Read browser's default value to compare against when stroke style is set
+    // next.
     _currentStrokeStyle = context.strokeStyle;
     context.filter = 'none';
     _currentFilter = 'none';
@@ -603,6 +615,7 @@ class ContextStateHandle {
 /// Provides save stack tracking functionality to implementations of
 /// [EngineCanvas].
 class _SaveStackTracking {
+  // This vector instance should never be mutated!.
   static final Vector3 _unitZ = Vector3(0.0, 0.0, 1.0);
 
   final List<_SaveStackEntry> _saveStack = <_SaveStackEntry>[];
@@ -629,8 +642,7 @@ class _SaveStackTracking {
   Matrix4 _currentTransform = Matrix4.identity();
 
   /// Saves current clip and transform on the save stack.
-  ///
-  /// Classes that override this method must call `super.save()`.
+  @mustCallSuper
   void save() {
     _saveStack.add(_SaveStackEntry(
       transform: _currentTransform.clone(),
@@ -640,8 +652,7 @@ class _SaveStackTracking {
   }
 
   /// Restores current clip and transform from the save stack.
-  ///
-  /// Classes that override this method must call `super.restore()`.
+  @mustCallSuper
   void restore() {
     if (_saveStack.isEmpty) {
       return;
@@ -652,29 +663,25 @@ class _SaveStackTracking {
   }
 
   /// Multiplies the [currentTransform] matrix by a translation.
-  ///
-  /// Classes that override this method must call `super.translate()`.
+  @mustCallSuper
   void translate(double dx, double dy) {
     _currentTransform.translate(dx, dy);
   }
 
   /// Scales the [currentTransform] matrix.
-  ///
-  /// Classes that override this method must call `super.scale()`.
+  @mustCallSuper
   void scale(double sx, double sy) {
     _currentTransform.scale(sx, sy);
   }
 
   /// Rotates the [currentTransform] matrix.
-  ///
-  /// Classes that override this method must call `super.rotate()`.
+  @mustCallSuper
   void rotate(double radians) {
     _currentTransform.rotate(_unitZ, radians);
   }
 
   /// Skews the [currentTransform] matrix.
-  ///
-  /// Classes that override this method must call `super.skew()`.
+  @mustCallSuper
   void skew(double sx, double sy) {
     final Matrix4 skewMatrix = Matrix4.identity();
     final Float64List storage = skewMatrix.storage;
@@ -684,31 +691,27 @@ class _SaveStackTracking {
   }
 
   /// Multiplies the [currentTransform] matrix by another matrix.
-  ///
-  /// Classes that override this method must call `super.transform()`.
+  @mustCallSuper
   void transform(Float64List matrix4) {
     _currentTransform.multiply(Matrix4.fromFloat64List(matrix4));
   }
 
   /// Adds a rectangle to clipping stack.
-  ///
-  /// Classes that override this method must call `super.clipRect()`.
+  @mustCallSuper
   void clipRect(ui.Rect rect) {
     _clipStack ??= <_SaveClipEntry>[];
     _clipStack.add(_SaveClipEntry.rect(rect, _currentTransform.clone()));
   }
 
   /// Adds a round rectangle to clipping stack.
-  ///
-  /// Classes that override this method must call `super.clipRRect()`.
+  @mustCallSuper
   void clipRRect(ui.RRect rrect) {
     _clipStack ??= <_SaveClipEntry>[];
     _clipStack.add(_SaveClipEntry.rrect(rrect, _currentTransform.clone()));
   }
 
   /// Adds a path to clipping stack.
-  ///
-  /// Classes that override this method must call `super.clipPath()`.
+  @mustCallSuper
   void clipPath(ui.Path path) {
     _clipStack ??= <_SaveClipEntry>[];
     _clipStack.add(_SaveClipEntry.path(path, _currentTransform.clone()));
