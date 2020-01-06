@@ -43,6 +43,8 @@ FAIL_TESTS = [
   ([FONT_SUBSET, 'output.ttf', MATERIAL_TTF], ['0xE003', '0x12', '0xE004',]), # codepoint not in font
   ([FONT_SUBSET, 'non-existant-dir/output.ttf', MATERIAL_TTF], ['0xE003',]), # dir doesn't exist
   ([FONT_SUBSET, 'output.ttf', MATERIAL_TTF], [' ',]), # empty input
+  ([FONT_SUBSET, 'output.ttf', MATERIAL_TTF], []), # empty input
+  ([FONT_SUBSET, 'output.ttf', MATERIAL_TTF], ['']), # empty input
 ]
 
 def RunCmd(cmd, codepoints, fail=False):
