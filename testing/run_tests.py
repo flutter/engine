@@ -24,7 +24,7 @@ dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*:*GpuThreadMerger*'
 
 IS_WINDOWS = sys.platform.startswith(('cygwin', 'win'))
-IS_LINUX = sys.platform.startsWith('linux')
+IS_LINUX = sys.platform.startswith('linux')
 IS_MAC = sys.platform == 'darwin'
 
 EXE = '.exe' if IS_WIN else ''
@@ -131,7 +131,7 @@ def RunEngineBenchmarks(build_dir, filter):
 def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot):
   print("Generating snapshot for test %s" % dart_file)
 
-  dart = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart' + exe)
+  dart = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart' + EXE)
   frontend_server = os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot')
   flutter_patched_sdk = os.path.join(build_dir, 'flutter_patched_sdk')
   test_packages = os.path.join(dart_tests_dir, '.packages')
