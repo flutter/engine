@@ -220,8 +220,8 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawVertices(Vertices vertices, BlendMode blendMode,
-      SurfacePaintData paint) {
+  void drawVertices(
+      Vertices vertices, BlendMode blendMode, SurfacePaintData paint) {
     _called('drawVertices', arguments: <String, dynamic>{
       'vertices': vertices,
       'blendMode': blendMode,

@@ -85,8 +85,8 @@ class _CanvasPool extends _SaveStackTracking {
       // * To satisfy the invariant: pixel size = css size * device pixel ratio.
       // * To make sure that when we scale the canvas by devicePixelRatio (see
       //   _initializeViewport below) the pixels line up.
-      final double cssWidth = _widthInBitmapPixels /
-          html.window.devicePixelRatio;
+      final double cssWidth =
+          _widthInBitmapPixels / html.window.devicePixelRatio;
       final double cssHeight =
           _heightInBitmapPixels / html.window.devicePixelRatio;
       _canvas = html.CanvasElement(
@@ -136,14 +136,17 @@ class _CanvasPool extends _SaveStackTracking {
     translate(transform.dx, transform.dy);
   }
 
-  int _replaySingleSaveEntry(int clipDepth, Matrix4 transform, List<_SaveClipEntry> clipStack) {
+  int _replaySingleSaveEntry(
+      int clipDepth, Matrix4 transform, List<_SaveClipEntry> clipStack) {
     final html.CanvasRenderingContext2D ctx = _context;
     if (!transform.isIdentity()) {
       ctx.setTransform(transform[0], transform[1], transform[4], transform[5],
           transform[12], transform[13]);
     }
     if (clipStack != null) {
-      for (int clipCount = clipStack.length; clipDepth < clipCount; clipDepth++) {
+      for (int clipCount = clipStack.length;
+          clipDepth < clipCount;
+          clipDepth++) {
         _SaveClipEntry clipEntry = clipStack[clipDepth];
         if (clipEntry.rect != null) {
           _clipRect(ctx, clipEntry.rect);
@@ -162,11 +165,12 @@ class _CanvasPool extends _SaveStackTracking {
     // Replay save/clip stack on this canvas now.
     html.CanvasRenderingContext2D ctx = _context;
     int clipDepth = 0;
-    for (int saveStackIndex = 0, len = _saveStack.length; saveStackIndex < len;
-    saveStackIndex++) {
+    for (int saveStackIndex = 0, len = _saveStack.length;
+        saveStackIndex < len;
+        saveStackIndex++) {
       _SaveStackEntry saveEntry = _saveStack[saveStackIndex];
-      clipDepth = _replaySingleSaveEntry(clipDepth, saveEntry.transform,
-          saveEntry.clipStack);
+      clipDepth = _replaySingleSaveEntry(
+          clipDepth, saveEntry.transform, saveEntry.clipStack);
       ctx.save();
       ++_saveContextCount;
     }
@@ -206,7 +210,6 @@ class _CanvasPool extends _SaveStackTracking {
       --_saveContextCount;
     }
   }
-
 
   /// Configures the canvas such that its coordinate system follows the scene's
   /// coordinate system, and the pixel ratio is applied such that CSS pixels are
@@ -467,8 +470,8 @@ class _CanvasPool extends _SaveStackTracking {
 
   void drawOval(ui.Rect rect, ui.PaintingStyle style) {
     context.beginPath();
-    context.ellipse(rect.center.dx, rect.center.dy, rect.width / 2, rect.height / 2,
-        0, 0, 2.0 * math.pi, false);
+    context.ellipse(rect.center.dx, rect.center.dy, rect.width / 2,
+        rect.height / 2, 0, 0, 2.0 * math.pi, false);
     contextHandle.paint(style);
   }
 
@@ -486,7 +489,7 @@ class _CanvasPool extends _SaveStackTracking {
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
     final List<CanvasShadow> shadows =
-    ElevationShadow.computeCanvasShadows(elevation, color);
+        ElevationShadow.computeCanvasShadows(elevation, color);
     if (shadows.isNotEmpty) {
       for (final CanvasShadow shadow in shadows) {
         // TODO(het): Shadows with transparent occluders are not supported
@@ -500,7 +503,8 @@ class _CanvasPool extends _SaveStackTracking {
           // which is undesirable.
           context.save();
           context.translate(shadow.offsetX, shadow.offsetY);
-          context.filter = _maskFilterToCss(ui.MaskFilter.blur(ui.BlurStyle.normal, shadow.blur));
+          context.filter = _maskFilterToCss(
+              ui.MaskFilter.blur(ui.BlurStyle.normal, shadow.blur));
           context.strokeStyle = '';
           context.fillStyle = shadow.color.toCssString();
           _runPath(context, path);

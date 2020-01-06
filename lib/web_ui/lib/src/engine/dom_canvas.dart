@@ -175,8 +175,8 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   }
 
   @override
-  void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode,
-      SurfacePaintData paint) {
+  void drawVertices(
+      ui.Vertices vertices, ui.BlendMode blendMode, SurfacePaintData paint) {
     throw UnimplementedError();
   }
 
