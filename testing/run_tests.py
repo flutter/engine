@@ -193,8 +193,9 @@ def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded):
 def RunPubGet(build_dir, directory):
   print("Running 'pub get' in the tests directory %s" % dart_tests_dir)
 
+  bat = '.bat' if IsWindows() else ''
   pub_get_command = [
-    os.path.join(build_dir, 'dart-sdk', 'bin', 'pub'),
+    os.path.join(build_dir, 'dart-sdk', 'bin', 'pub' + bat),
     'get'
   ]
   RunCmd(pub_get_command, cwd=directory)
@@ -339,7 +340,6 @@ def main():
     RunCCTests(build_dir, engine_filter)
 
   if 'dart' in types:
-    assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
 
