@@ -233,6 +233,10 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
       SurfacePaintData paint) {
     // TODO(flutter_web): implement.
   }
+
+  @override
+  void endOfPaint() {
+  }
 }
 
 class _SaveElementStackEntry {

@@ -179,4 +179,9 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
       SurfacePaintData paint) {
     throw UnimplementedError();
   }
+
+  @override
+  void endOfPaint() {
+    // No reuse of elements yet to handle here. Noop.
+  }
 }
