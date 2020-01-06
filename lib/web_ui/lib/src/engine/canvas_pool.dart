@@ -20,10 +20,11 @@ part of engine;
 /// can be reused, [_CanvasPool] will move canvas(s) from pool to reusablePool
 /// to prevent reallocation.
 class _CanvasPool extends _SaveStackTracking {
-  html.CanvasElement _canvas;
   html.CanvasRenderingContext2D _context;
   ContextStateHandle _contextHandle;
   final int _widthInBitmapPixels, _heightInBitmapPixels;
+  // TODO(ferhat): Collapse _canvas,_pool,_reusablePool into single list.
+  html.CanvasElement _canvas;
   List<html.CanvasElement> _pool;
   List<html.CanvasElement> _reusablePool;
   int _saveContextCount = 0;
