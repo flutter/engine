@@ -23,6 +23,13 @@ dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
 
 fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*:*GpuThreadMerger*'
 
+IS_WINDOWS = sys.platform.startswith(('cygwin', 'win'))
+IS_LINUX = sys.platform.startsWith('linux')
+IS_MAC = sys.platform == 'darwin'
+
+EXE = '.exe' if IS_WIN else ''
+BAT = '.bat' if IS_WIN  else ''
+
 def RunCmd(cmd, **kwargs):
   try:
     print(subprocess.check_output(cmd, **kwargs))
@@ -30,31 +37,17 @@ def RunCmd(cmd, **kwargs):
     print(cpe.output)
     raise cpe
 
-def IsMac():
-  return sys.platform == 'darwin'
-
-
-def IsLinux():
-  return sys.platform.startswith('linux')
-
-
-def IsWindows():
-  return sys.platform.startswith(('cygwin', 'win'))
-
-
-def ExecutableSuffix():
-  return '.exe' if IsWindows() else ''
 
 def FindExecutablePath(path):
   if os.path.exists(path):
     return path
 
-  if IsWindows():
-    exe_path = path + '.exe'
+  if IS_WIN:
+    exe_path = path + EXE
     if os.path.exists(exe_path):
       return exe_path
 
-    bat_path = path + '.bat'
+    bat_path = path + BAT
     if os.path.exists(bat_path):
       return bat_path
 
@@ -87,7 +80,7 @@ def RunCCTests(build_dir, filter):
   RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter, shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36294
-  if not IsWindows():
+  if not IS_WIN:
     RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags)
   else:
     RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, shuffle_flags)
@@ -95,7 +88,7 @@ def RunCCTests(build_dir, filter):
     RunEngineExecutable(build_dir, 'client_wrapper_windows_unittests', filter, shuffle_flags)
 
   flow_flags = ['--gtest_filter=-PerformanceOverlayLayer.Gold']
-  if IsLinux():
+  if IS_LINUX:
     flow_flags = [
       '--golden-dir=%s' % golden_dir,
       '--font-file=%s' % roboto_font_path,
@@ -107,7 +100,7 @@ def RunCCTests(build_dir, filter):
   RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36295
-  if not IsWindows():
+  if not IS_WIN:
     RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags)
 
   RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags)
@@ -115,11 +108,11 @@ def RunCCTests(build_dir, filter):
   RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags)
 
   # These unit-tests are Objective-C and can only run on Darwin.
-  if IsMac():
+  if IS_MAC:
     RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36296
-  if IsLinux():
+  if IS_LINUX:
     RunEngineExecutable(build_dir, 'txt_unittests', filter, shuffle_flags)
 
 
@@ -130,7 +123,7 @@ def RunEngineBenchmarks(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'fml_benchmarks', filter)
 
-  if IsLinux():
+  if IS_LINUX:
     RunEngineExecutable(build_dir, 'txt_benchmarks', filter)
 
 
@@ -138,7 +131,7 @@ def RunEngineBenchmarks(build_dir, filter):
 def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot):
   print("Generating snapshot for test %s" % dart_file)
 
-  dart = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
+  dart = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart' + exe)
   frontend_server = os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot')
   flutter_patched_sdk = os.path.join(build_dir, 'flutter_patched_sdk')
   test_packages = os.path.join(dart_tests_dir, '.packages')
@@ -193,9 +186,8 @@ def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded):
 def RunPubGet(build_dir, directory):
   print("Running 'pub get' in the tests directory %s" % dart_tests_dir)
 
-  bat = '.bat' if IsWindows() else ''
   pub_get_command = [
-    os.path.join(build_dir, 'dart-sdk', 'bin', 'pub' + bat),
+    os.path.join(build_dir, 'dart-sdk', 'bin', 'pub' + BAT),
     'get'
   ]
   RunCmd(pub_get_command, cwd=directory)
@@ -205,7 +197,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
 
   ninja_command = [
-    'autoninja',
+    'autoninja' + BAT,
     '-C',
     variant_out_dir,
     'flutter/sky/packages'
@@ -218,6 +210,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
     return
 
   gn_command = [
+    'python',
     os.path.join(buildroot_dir, 'flutter', 'tools', 'gn'),
     '--runtime-mode',
     'debug',
@@ -230,7 +223,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
   ninja_command = [
-    'autoninja',
+    'autoninja' + BAT,
     '-C',
     android_out_dir,
     'flutter/shell/platform/android:robolectric_tests'
@@ -244,6 +237,7 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
 
   # Otherwise prepare the directory first, then build the test.
   gn_command = [
+    'python',
     os.path.join(buildroot_dir, 'flutter', 'tools', 'gn'),
     '--android',
     '--unoptimized',
@@ -276,7 +270,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
 
   test_class = filter if filter else 'io.flutter.FlutterTestSuite'
   command = [
-    'java',
+    'java' + EXE,
     '-Drobolectric.offline=true',
     '-Drobolectric.dependency.dir=' + robolectric_dir,
     '-classpath', ':'.join(classpath),
@@ -344,7 +338,7 @@ def main():
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
 
   if 'java' in types:
-    assert not IsWindows(), "Android engine files can't be compiled on Windows."
+    assert not IS_WIN, "Android engine files can't be compiled on Windows."
     java_filter = args.java_filter
     if ',' in java_filter or '*' in java_filter:
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
@@ -352,7 +346,7 @@ def main():
     RunJavaTests(java_filter, args.android_variant)
 
   # https://github.com/flutter/flutter/issues/36300
-  if 'benchmarks' in types and not IsWindows():
+  if 'benchmarks' in types and not IS_WIN:
     RunEngineBenchmarks(build_dir, engine_filter)
 
 
