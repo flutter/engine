@@ -81,14 +81,15 @@ int main(int argc, char** argv) {
     hb_face_collect_unicodes(font_face.get(), actual_codepoints.get());
     for (int i = 3; i < argc; i++) {
       auto codepoint = ParseCodepoint(argv[i]);
-      if (codepoint) {
-        if (!hb_set_has(actual_codepoints.get(), codepoint)) {
-          std::cerr << "Codepoint " << argv[i]
-                    << " not found in font, aborting." << std::endl;
-          return -1;
-        }
-        hb_set_add(desired_codepoints, codepoint);
+      if (!codepoint) {
+        continue;
       }
+      if (!hb_set_has(actual_codepoints.get(), codepoint)) {
+        std::cerr << "Codepoint " << argv[i]
+                  << " not found in font, aborting." << std::endl;
+        return -1;
+      }
+      hb_set_add(desired_codepoints, codepoint);
     }
   }
   HarfbuzzWrappers::HbFacePtr new_face(hb_subset(font_face.get(), input.get()));
