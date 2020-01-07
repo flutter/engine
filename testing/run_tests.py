@@ -183,16 +183,6 @@ def RunDartTest(build_dir, dart_file, verbose_dart_snapshot, multithreaded):
   print("Running test '%s' using 'flutter_tester' (%s)" % (kernel_file_name, threading))
   RunEngineExecutable(build_dir, 'flutter_tester', None, command_args)
 
-def RunPubGet(build_dir, directory):
-  print("Running 'pub get' in the tests directory %s" % dart_tests_dir)
-
-  pub_get_command = [
-    os.path.join(build_dir, 'dart-sdk', 'bin', 'pub' + BAT),
-    'get',
-    '-v',
-  ]
-  RunCmd(pub_get_command, cwd=directory)
-
 
 def EnsureDebugUnoptSkyPackagesAreBuilt():
   variant_out_dir = os.path.join(out_dir, 'host_debug_unopt')
@@ -289,7 +279,7 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   EnsureDebugUnoptSkyPackagesAreBuilt();
 
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
-  RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get', '-v'], cwd=dart_tests_dir)
+  RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get', '-v', '--trace'], cwd=dart_tests_dir)
 
   dart_tests = glob.glob('%s/*.dart' % dart_tests_dir)
 
