@@ -5959,6 +5959,7 @@ TEST_F(ParagraphTest, BoundingLineHeightBehaviorRectsParagraph) {
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 209);
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom() - boxes[0].rect.top(), 150);
 
+  // Third line. Shorter due to disabled height modifications on last descent
   boxes =
       paragraph->GetRectsForRange(12, 17, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
