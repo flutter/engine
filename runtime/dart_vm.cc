@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 
 #include <mutex>
+#include <sstream>
 #include <vector>
 
 #include "flutter/common/settings.h"
@@ -112,12 +113,9 @@ static const char* kDartTraceStreamsArgs[] = {
 };
 
 static std::string DartOldGenHeapSizeArgs(uint64_t heap_size) {
-  constexpr int32_t buffer_size = 100;
-  const char* flag = "--old_gen_heap_size=";
-  char buffer[buffer_size];
-  int result = snprintf(buffer, buffer_size, "%s%" PRId64, flag, heap_size);
-  FML_DCHECK(result >= 0 && result < buffer_size);
-  return buffer;
+  std::ostringstream oss;
+  oss << "--old_gen_heap_size=" << heap_size;
+  return oss.str();
 }
 
 constexpr char kFileUriPrefix[] = "file://";
