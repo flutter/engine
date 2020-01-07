@@ -11,6 +11,7 @@
 #include <lib/async/default.h>
 #include <lib/fdio/directory.h>
 #include <lib/fdio/namespace.h>
+#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/ui/scenic/cpp/view_token_pair.h>
 #include <lib/vfs/cpp/composed_service_dir.h>
 #include <lib/vfs/cpp/remote_dir.h>
@@ -232,7 +233,7 @@ Application::Application(
                          << "): " << zx_status_get_string(status);
           return;
         }
-        const char* other_dirs[] = {"debug", "ctrl", "diagnostics"};
+        const char* other_dirs[] = {"debug", "ctrl"};
         // add other directories as RemoteDirs.
         for (auto& dir_str : other_dirs) {
           fidl::InterfaceHandle<fuchsia::io::Directory> dir;
@@ -578,17 +579,6 @@ void Application::CreateView(
     return;
   }
 
-  // TODO(MI4-2490): remove once ViewRefControl and ViewRef come as a parameters
-  // to CreateView
-  fuchsia::ui::views::ViewRefControl view_ref_control;
-  fuchsia::ui::views::ViewRef view_ref;
-  zx_status_t status = zx::eventpair::create(
-      /*flags*/ 0u, &view_ref_control.reference, &view_ref.reference);
-  FML_DCHECK(status == ZX_OK);
-
-  status = view_ref.reference.replace(ZX_RIGHTS_BASIC, &view_ref.reference);
-  FML_DCHECK(status == ZX_OK);
-
   shell_holders_.emplace(std::make_unique<Engine>(
       *this,                         // delegate
       debug_label_,                  // thread label
@@ -597,8 +587,7 @@ void Application::CreateView(
       settings_,                     // settings
       std::move(isolate_snapshot_),  // isolate snapshot
       scenic::ToViewToken(std::move(view_token)),  // view token
-      std::move(view_ref_control),                 // view ref control
-      std::move(view_ref),                         // view ref
+      scenic::ViewRefPair::New(),                  // view ref pair
       std::move(fdio_ns_),                         // FDIO namespace
       std::move(directory_request_)                // outgoing request
       ));

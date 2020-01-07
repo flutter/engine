@@ -1,4 +1,4 @@
-Signature: f9b2d92b4ad5303bfe4b723150c05fc3
+Signature: 330b0ab58120cf6bc6744532d4b6f117
 
 UNUSED LICENSES:
 
@@ -1319,6 +1319,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/credentials_produce
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.control/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.control/pairing_options.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/constants.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/advertising_data.fidl
@@ -1472,6 +1473,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/pointer_capture.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.vectorial/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/focuser.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/view.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/view_token.fidl

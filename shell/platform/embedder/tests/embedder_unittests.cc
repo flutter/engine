@@ -3482,5 +3482,346 @@ TEST_F(EmbedderTest, ArcEndCapsAreDrawnCorrectly) {
   ASSERT_TRUE(ImageMatchesFixture("arc_end_caps.png", scene_image));
 }
 
+static void FilterMutationsByType(
+    const FlutterPlatformViewMutation** mutations,
+    size_t count,
+    FlutterPlatformViewMutationType type,
+    std::function<void(const FlutterPlatformViewMutation& mutation)> handler) {
+  if (mutations == nullptr) {
+    return;
+  }
+
+  for (size_t i = 0; i < count; ++i) {
+    const FlutterPlatformViewMutation* mutation = mutations[i];
+    if (mutation->type != type) {
+      continue;
+    }
+
+    handler(*mutation);
+  }
+}
+
+static void FilterMutationsByType(
+    const FlutterPlatformView* view,
+    FlutterPlatformViewMutationType type,
+    std::function<void(const FlutterPlatformViewMutation& mutation)> handler) {
+  return FilterMutationsByType(view->mutations, view->mutations_count, type,
+                               handler);
+}
+
+static SkMatrix GetTotalMutationTransformationMatrix(
+    const FlutterPlatformViewMutation** mutations,
+    size_t count) {
+  SkMatrix collected;
+
+  FilterMutationsByType(
+      mutations, count, kFlutterPlatformViewMutationTypeTransformation,
+      [&](const auto& mutation) {
+        collected.preConcat(SkMatrixMake(mutation.transformation));
+      });
+
+  return collected;
+}
+
+static SkMatrix GetTotalMutationTransformationMatrix(
+    const FlutterPlatformView* view) {
+  return GetTotalMutationTransformationMatrix(view->mutations,
+                                              view->mutations_count);
+}
+
+TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
+  auto& context = GetEmbedderContext();
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(400, 300));
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("scene_builder_with_clips");
+
+  const auto root_surface_transformation =
+      SkMatrix().preTranslate(0, 400).preRotate(-90, 0, 0);
+
+  context.SetRootSurfaceTransformation(root_surface_transformation);
+
+  fml::AutoResetWaitableEvent latch;
+  context.GetCompositor().SetNextPresentCallback(
+      [&](const FlutterLayer** layers, size_t layers_count) {
+        ASSERT_EQ(layers_count, 3u);
+
+        {
+          FlutterPlatformView platform_view = *layers[1]->platform_view;
+          platform_view.struct_size = sizeof(platform_view);
+          platform_view.identifier = 42;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypePlatformView;
+          layer.platform_view = &platform_view;
+          layer.size = FlutterSizeMake(300.0, 400.0);
+          layer.offset = FlutterPointMake(0.0, 0.0);
+
+          ASSERT_EQ(*layers[1], layer);
+
+          bool clip_assertions_checked = false;
+
+          // The total transformation on the stack upto the platform view.
+          const auto total_xformation =
+              GetTotalMutationTransformationMatrix(layers[1]->platform_view);
+
+          FilterMutationsByType(
+              layers[1]->platform_view,
+              kFlutterPlatformViewMutationTypeClipRect,
+              [&](const auto& mutation) {
+                FlutterRect clip = mutation.clip_rect;
+
+                // The test is only setup to supply one clip. Make sure it is
+                // the one we expect.
+                const auto rect_to_compare =
+                    SkRect::MakeLTRB(10.0, 10.0, 390, 290);
+                ASSERT_EQ(clip, FlutterRectMake(rect_to_compare));
+
+                // This maps the clip from device space into surface space.
+                SkRect mapped;
+                ASSERT_TRUE(total_xformation.mapRect(&mapped, rect_to_compare));
+                ASSERT_EQ(mapped, SkRect::MakeLTRB(10, 10, 290, 390));
+                clip_assertions_checked = true;
+              });
+
+          ASSERT_TRUE(clip_assertions_checked);
+        }
+
+        latch.Signal();
+      });
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 400;
+  event.height = 300;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  latch.Wait();
+}
+
+TEST_F(EmbedderTest, ObjectsCanBePostedViaPorts) {
+  auto& context = GetEmbedderContext();
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 1024));
+  builder.SetDartEntrypoint("objects_can_be_posted");
+
+  // Synchronously acquire the send port from the Dart end. We will be using
+  // this to send message. The Dart end will just echo those messages back to us
+  // for inspection.
+  FlutterEngineDartPort port = 0;
+  fml::AutoResetWaitableEvent event;
+  context.AddNativeCallback("SignalNativeCount",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              port = tonic::DartConverter<int64_t>::FromDart(
+                                  Dart_GetNativeArgument(args, 0));
+                              event.Signal();
+                            }));
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  event.Wait();
+  ASSERT_NE(port, 0);
+
+  using Trampoline = std::function<void(Dart_Handle message)>;
+  Trampoline trampoline;
+
+  context.AddNativeCallback("SendObjectToNativeCode",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              FML_CHECK(trampoline);
+                              auto trampoline_copy = trampoline;
+                              trampoline = nullptr;
+                              trampoline_copy(Dart_GetNativeArgument(args, 0));
+                            }));
+
+  // Check null.
+  {
+    FlutterEngineDartObject object = {};
+    object.type = kFlutterEngineDartObjectTypeNull;
+    trampoline = [&](Dart_Handle handle) {
+      ASSERT_TRUE(Dart_IsNull(handle));
+      event.Signal();
+    };
+    ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
+              kSuccess);
+    event.Wait();
+  }
+
+  // Check bool.
+  {
+    FlutterEngineDartObject object = {};
+    object.type = kFlutterEngineDartObjectTypeBool;
+    object.bool_value = true;
+    trampoline = [&](Dart_Handle handle) {
+      ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(handle));
+      event.Signal();
+    };
+    ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
+              kSuccess);
+    event.Wait();
+  }
+
+  // Check int32.
+  {
+    FlutterEngineDartObject object = {};
+    object.type = kFlutterEngineDartObjectTypeInt32;
+    object.int32_value = 1988;
+    trampoline = [&](Dart_Handle handle) {
+      ASSERT_EQ(tonic::DartConverter<int32_t>::FromDart(handle), 1988);
+      event.Signal();
+    };
+    ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
+              kSuccess);
+    event.Wait();
+  }
+
+  // Check int64.
+  {
+    FlutterEngineDartObject object = {};
+    object.type = kFlutterEngineDartObjectTypeInt64;
+    object.int64_value = 1988;
+    trampoline = [&](Dart_Handle handle) {
+      ASSERT_EQ(tonic::DartConverter<int64_t>::FromDart(handle), 1988);
+      event.Signal();
+    };
+    ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
+              kSuccess);
+    event.Wait();
+  }
+
+  // Check double.
+  {
+    FlutterEngineDartObject object = {};
+    object.type = kFlutterEngineDartObjectTypeDouble;
+    object.double_value = 1988.0;
+    trampoline = [&](Dart_Handle handle) {
+      ASSERT_DOUBLE_EQ(tonic::DartConverter<double>::FromDart(handle), 1988.0);
+      event.Signal();
+    };
+    ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
+              kSuccess);
+    event.Wait();
+  }
+
+  // Check string.
+  {
+    const char* message = "Hello. My name is Inigo Montoya.";
+    FlutterEngineDartObject object = {};
+    object.type = kFlutterEngineDartObjectTypeString;
+    object.string_value = message;
+    trampoline = [&](Dart_Handle handle) {
+      ASSERT_EQ(tonic::DartConverter<std::string>::FromDart(handle),
+                std::string{message});
+      event.Signal();
+    };
+    ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
+              kSuccess);
+    event.Wait();
+  }
+
+  // Check buffer (copied out).
+  {
+    std::vector<uint8_t> message;
+    message.resize(1988);
+
+    ASSERT_TRUE(MemsetPatternSetOrCheck(
+        message, MemsetPatternOp::kMemsetPatternOpSetBuffer));
+
+    FlutterEngineDartBuffer buffer = {};
+
+    buffer.struct_size = sizeof(buffer);
+    buffer.user_data = nullptr;
+    buffer.buffer_collect_callback = nullptr;
+    buffer.buffer = message.data();
+    buffer.buffer_size = message.size();
+
+    FlutterEngineDartObject object = {};
+    object.type = kFlutterEngineDartObjectTypeBuffer;
+    object.buffer_value = &buffer;
+    trampoline = [&](Dart_Handle handle) {
+      intptr_t length = 0;
+      Dart_ListLength(handle, &length);
+      ASSERT_EQ(length, 1988);
+      // TODO(chinmaygarde); The std::vector<uint8_t> specialization for
+      // DartConvertor in tonic is broken which is preventing the buffer
+      // being checked here. Fix tonic and strengthen this check. For now, just
+      // the buffer length is checked.
+      event.Signal();
+    };
+    ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
+              kSuccess);
+    event.Wait();
+  }
+
+  std::vector<uint8_t> message;
+  fml::AutoResetWaitableEvent buffer_released_latch;
+
+  // Check buffer (caller own buffer with zero copy transfer).
+  {
+    message.resize(1988);
+
+    ASSERT_TRUE(MemsetPatternSetOrCheck(
+        message, MemsetPatternOp::kMemsetPatternOpSetBuffer));
+
+    FlutterEngineDartBuffer buffer = {};
+
+    buffer.struct_size = sizeof(buffer);
+    buffer.user_data = &buffer_released_latch;
+    buffer.buffer_collect_callback = +[](void* user_data) {
+      reinterpret_cast<fml::AutoResetWaitableEvent*>(user_data)->Signal();
+    };
+    buffer.buffer = message.data();
+    buffer.buffer_size = message.size();
+
+    FlutterEngineDartObject object = {};
+    object.type = kFlutterEngineDartObjectTypeBuffer;
+    object.buffer_value = &buffer;
+    trampoline = [&](Dart_Handle handle) {
+      intptr_t length = 0;
+      Dart_ListLength(handle, &length);
+      ASSERT_EQ(length, 1988);
+      // TODO(chinmaygarde); The std::vector<uint8_t> specialization for
+      // DartConvertor in tonic is broken which is preventing the buffer
+      // being checked here. Fix tonic and strengthen this check. For now, just
+      // the buffer length is checked.
+      event.Signal();
+    };
+    ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
+              kSuccess);
+    event.Wait();
+  }
+
+  engine.reset();
+
+  // We cannot determine when the VM will GC objects that might have external
+  // typed data finalizers. Since we need to ensure that we correctly wired up
+  // finalizers from the embedders, we force the VM to collect all objects but
+  // just shutting it down.
+  buffer_released_latch.Wait();
+}
+
+TEST_F(EmbedderTest, CanSendLowMemoryNotification) {
+  auto& context = GetEmbedderContext();
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  auto engine = builder.LaunchEngine();
+
+  ASSERT_TRUE(engine.is_valid());
+
+  // TODO(chinmaygarde): The shell ought to have a mechanism for notification
+  // dispatch that engine subsystems can register handlers to. This would allow
+  // the raster cache and the secondary context caches to respond to
+  // notifications. Once that is in place, this test can be updated to actually
+  // ensure that the dispatched message is visible to engine subsystems.
+  ASSERT_EQ(FlutterEngineNotifyLowMemoryWarning(engine.get()), kSuccess);
+}
+
 }  // namespace testing
 }  // namespace flutter

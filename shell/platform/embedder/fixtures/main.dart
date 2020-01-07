@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:isolate';
+import 'dart:ffi';
 import 'dart:core';
 import 'dart:convert';
 
@@ -647,3 +649,26 @@ void arc_end_caps_correct() {
   };
   window.scheduleFrame();
 }
+
+@pragma('vm:entry-point')
+void scene_builder_with_clips() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushClipRect(Rect.fromLTRB(10.0, 10.0, 390.0, 290.0));
+    builder.addPlatformView(42, width: 400.0, height: 300.0);
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+
+void sendObjectToNativeCode(dynamic object) native 'SendObjectToNativeCode';
+
+@pragma('vm:entry-point')
+void objects_can_be_posted() {
+  ReceivePort port = ReceivePort();
+  port.listen((dynamic message){ sendObjectToNativeCode(message); });
+  signalNativeCount(port.sendPort.nativePort);
+}
+
