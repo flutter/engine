@@ -115,7 +115,7 @@ static std::string DartOldGenHeapSizeArgs(uint64_t heap_size) {
   constexpr int32_t buffer_size = 100;
   const char* flag = "--old_gen_heap_size=";
   char buffer[buffer_size];
-  int result = snprintf(buffer, buffer_size, "%s%lld", flag, heap_size);
+  int result = snprintf(buffer, buffer_size, "%s%" PRId64, flag, heap_size);
   FML_DCHECK(result >= 0 && result < buffer_size);
   return buffer;
 }
