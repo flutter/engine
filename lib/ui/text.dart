@@ -430,7 +430,7 @@ enum TextDecorationStyle {
 }
 
 /// Defines how the paragraph will handle the ascent of the first line and
-/// descent of the last line. These lines are referred to as "Boundary" lines.
+/// descent of the last line. These lines are referred to as "boundary" lines.
 class BoundaryLineHeightBehavior {
 
   /// Creates a new BoundaryLineHeightBehavior object.
