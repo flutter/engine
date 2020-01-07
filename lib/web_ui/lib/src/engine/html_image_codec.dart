@@ -52,7 +52,7 @@ class HtmlCodec implements ui.Codec {
     final html.ImageElement imgElement = html.ImageElement();
     // If the browser doesn't support asynchronous decoding of an image,
     // then use the `onload` event to decide when it's ready to paint to the
-    // DOM. Unfortunately, this will case the image to be decoded synchronously
+    // DOM. Unfortunately, this will cause the image to be decoded synchronously
     // on the main thread, and may cause dropped framed.
     errorSubscription = imgElement.onError.listen((html.Event event) {
       loadSubscription?.cancel();
