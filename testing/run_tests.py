@@ -188,7 +188,8 @@ def RunPubGet(build_dir, directory):
 
   pub_get_command = [
     os.path.join(build_dir, 'dart-sdk', 'bin', 'pub' + BAT),
-    'get'
+    'get',
+    '-v',
   ]
   RunCmd(pub_get_command, cwd=directory)
 
