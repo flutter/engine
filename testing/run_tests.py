@@ -289,7 +289,7 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   EnsureDebugUnoptSkyPackagesAreBuilt();
 
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
-  RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get'], cwd=dart_tests_dir)
+  RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get', '-v'], cwd=dart_tests_dir)
 
   dart_tests = glob.glob('%s/*.dart' % dart_tests_dir)
 
