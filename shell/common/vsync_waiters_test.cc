@@ -35,7 +35,7 @@ std::future<int> ShellTestVsyncClock::NextVSync() {
 
 void ShellTestVsyncWaiter::AwaitVSync() {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-  auto vsync_future = clock_.NextVSync();
+  auto vsync_future = clock_->NextVSync();
 
   auto async_wait = std::async([&vsync_future, this]() {
     vsync_future.wait();
@@ -54,6 +54,14 @@ void ShellTestVsyncWaiter::AwaitVSync() {
     task_runners_.GetPlatformTaskRunner()->PostTask([this]() {
       FireCallback(fml::TimePoint::Now(), fml::TimePoint::Now());
     });
+  });
+}
+
+void ConstantFiringVsyncWaiter::AwaitVSync() {
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+  auto async_wait = std::async([this]() {
+    task_runners_.GetPlatformTaskRunner()->PostTask(
+        [this]() { FireCallback(frame_begin_time, frame_target_time); });
   });
 }
 

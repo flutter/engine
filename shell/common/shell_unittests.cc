@@ -24,6 +24,7 @@
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
+#include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "flutter/testing/testing.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
@@ -125,8 +126,15 @@ TEST_F(ShellTest,
   auto shell = Shell::Create(
       std::move(task_runners), settings,
       [](Shell& shell) {
-        return std::make_unique<ShellTestPlatformView>(shell,
-                                                       shell.GetTaskRunners());
+        // This is unused in the platform view as we are not using the simulated
+        // vsync mechanism. We should have better DI in the tests.
+        const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+        return std::make_unique<ShellTestPlatformView>(
+            shell, shell.GetTaskRunners(), vsync_clock,
+            [task_runners = shell.GetTaskRunners()]() {
+              return static_cast<std::unique_ptr<VsyncWaiter>>(
+                  std::make_unique<VsyncWaiterFallback>(task_runners));
+            });
       },
       [](Shell& shell) {
         return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
@@ -427,10 +435,10 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("onBeginFrameMain");
 
-  int64_t begin_frame;
-  auto nativeOnBeginFrame = [&begin_frame](Dart_NativeArguments args) {
+  int64_t frame_target_time;
+  auto nativeOnBeginFrame = [&frame_target_time](Dart_NativeArguments args) {
     Dart_Handle exception = nullptr;
-    begin_frame =
+    frame_target_time =
         tonic::DartConverter<int64_t>::FromArguments(args, 0, exception);
   };
   AddNativeCallback("NativeOnBeginFrame",
@@ -447,10 +455,11 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   std::vector<FrameTiming> timings = {timing};
   CheckFrameTimings(timings, start, finish);
 
-  // Check that onBeginFrame has the same timestamp as FrameTiming's build start
+  // Check that onBeginFrame, which is the frame_target_time, is after
+  // FrameTiming's build start
   int64_t build_start =
       timing.Get(FrameTiming::kBuildStart).ToEpochDelta().ToMicroseconds();
-  ASSERT_EQ(build_start, begin_frame);
+  ASSERT_GT(frame_target_time, build_start);
   DestroyShell(std::move(shell));
 }
 
@@ -1039,67 +1048,6 @@ TEST_F(ShellTest, Screenshot) {
   ASSERT_TRUE(reference_data->equals(screenshot_future.get().data.get()));
 
   DestroyShell(std::move(shell));
-}
-
-enum class MemsetPatternOp {
-  kMemsetPatternOpSetBuffer,
-  kMemsetPatternOpCheckBuffer,
-};
-
-//------------------------------------------------------------------------------
-/// @brief      Depending on the operation, either scribbles a known pattern
-///             into the buffer or checks if that pattern is present in an
-///             existing buffer. This is a portable variant of the
-///             memset_pattern class of methods that also happen to do assert
-///             that the same pattern exists.
-///
-/// @param      buffer  The buffer
-/// @param[in]  size    The size
-/// @param[in]  op      The operation
-///
-/// @return     If the result of the operation was a success.
-///
-static bool MemsetPatternSetOrCheck(uint8_t* buffer,
-                                    size_t size,
-                                    MemsetPatternOp op) {
-  if (buffer == nullptr) {
-    return false;
-  }
-
-  auto pattern = reinterpret_cast<const uint8_t*>("dErP");
-  constexpr auto pattern_length = 4;
-
-  uint8_t* start = buffer;
-  uint8_t* p = buffer;
-
-  while ((start + size) - p >= pattern_length) {
-    switch (op) {
-      case MemsetPatternOp::kMemsetPatternOpSetBuffer:
-        memmove(p, pattern, pattern_length);
-        break;
-      case MemsetPatternOp::kMemsetPatternOpCheckBuffer:
-        if (memcmp(pattern, p, pattern_length) != 0) {
-          return false;
-        }
-        break;
-    };
-    p += pattern_length;
-  }
-
-  if ((start + size) - p != 0) {
-    switch (op) {
-      case MemsetPatternOp::kMemsetPatternOpSetBuffer:
-        memmove(p, pattern, (start + size) - p);
-        break;
-      case MemsetPatternOp::kMemsetPatternOpCheckBuffer:
-        if (memcmp(pattern, p, (start + size) - p) != 0) {
-          return false;
-        }
-        break;
-    }
-  }
-
-  return true;
 }
 
 TEST_F(ShellTest, CanConvertToAndFromMappings) {

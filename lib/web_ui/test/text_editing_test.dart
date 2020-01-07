@@ -55,15 +55,18 @@ void main() {
   tearDown(() {
     lastEditingState = null;
     lastInputAction = null;
+    cleanTextEditingElement();
+    cleanTestFlags();
+    clearBackUpDomElementIfExists();
   });
 
-  group('$DefaultTextEditingStrategy', () {
-    setUp(() {
-      editingElement = DefaultTextEditingStrategy(HybridTextEditing());
-    });
+  group('$GloballyPositionedTextEditingStrategy', () {
+    HybridTextEditing testTextEditing;
 
-    tearDown(() {
-      cleanTextEditingElement();
+    setUp(() {
+      testTextEditing = HybridTextEditing();
+      editingElement = GloballyPositionedTextEditingStrategy(testTextEditing);
+      testTextEditing.useCustomEditableElement(editingElement);
     });
 
     test('Creates element when enabled and removes it when disabled', () {
@@ -186,8 +189,7 @@ void main() {
 
       // There should be no input action.
       expect(lastInputAction, isNull);
-    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox));
+    });
 
     test('Can set editing state correctly', () {
       editingElement.enable(
@@ -243,8 +245,7 @@ void main() {
 
       // There should be no input action.
       expect(lastInputAction, isNull);
-    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox));
+    });
 
     test('Same instance can be re-enabled with different config', () {
       // Make sure there's nothing in the DOM yet.
@@ -334,17 +335,44 @@ void main() {
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
     });
+
+    test('globally positions and sizes its DOM element', () {
+      editingElement.enable(
+        singlelineConfig,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(editingElement.isEnabled, isTrue);
+
+      // No geometry should be set until setEditableSizeAndTransform is called.
+      expect(editingElement.domElement.style.transform, '');
+      expect(editingElement.domElement.style.width, '');
+      expect(editingElement.domElement.style.height, '');
+
+      testTextEditing.setEditableSizeAndTransform(EditableTextGeometry(
+        width: 13,
+        height: 12,
+        globalTransform: Matrix4.translationValues(14, 15, 0).storage,
+      ));
+
+      // setEditableSizeAndTransform calls placeElement, so expecting geometry to be applied.
+      expect(editingElement.domElement.style.transform, 'translate(14px, 15px)');
+      expect(editingElement.domElement.style.width, '13px');
+      expect(editingElement.domElement.style.height, '12px');
+    });
   });
 
-  group('$PersistentTextEditingElement', () {
+  group('$SemanticsTextEditingStrategy', () {
     InputElement testInputElement;
+    HybridTextEditing testTextEditing;
 
     setUp(() {
       testInputElement = InputElement();
+      testTextEditing = HybridTextEditing();
+      editingElement = GloballyPositionedTextEditingStrategy(testTextEditing);
     });
 
     tearDown(() {
-      cleanTextEditingElement();
       testInputElement = null;
     });
 
@@ -352,14 +380,14 @@ void main() {
       // A regular <span> shouldn't be accepted.
       final HtmlElement span = SpanElement();
       expect(
-        () => PersistentTextEditingElement(HybridTextEditing(), span),
+        () => SemanticsTextEditingStrategy(HybridTextEditing(), span),
         throwsAssertionError,
       );
     });
 
     test('Does not re-acquire focus', () {
       editingElement =
-          PersistentTextEditingElement(HybridTextEditing(), testInputElement);
+          SemanticsTextEditingStrategy(HybridTextEditing(), testInputElement);
 
       expect(document.activeElement, document.body);
 
@@ -380,7 +408,7 @@ void main() {
 
     test('Does not dispose and recreate dom elements in persistent mode', () {
       editingElement =
-          PersistentTextEditingElement(HybridTextEditing(), testInputElement);
+          SemanticsTextEditingStrategy(HybridTextEditing(), testInputElement);
 
       // The DOM element should've been eagerly created.
       expect(testInputElement, isNotNull);
@@ -417,7 +445,7 @@ void main() {
 
     test('Refocuses when setting editing state', () {
       editingElement =
-          PersistentTextEditingElement(HybridTextEditing(), testInputElement);
+          SemanticsTextEditingStrategy(HybridTextEditing(), testInputElement);
 
       document.body.append(testInputElement);
       editingElement.enable(
@@ -440,7 +468,7 @@ void main() {
     test('Works in multi-line mode', () {
       final TextAreaElement textarea = TextAreaElement();
       editingElement =
-          PersistentTextEditingElement(HybridTextEditing(), textarea);
+          SemanticsTextEditingStrategy(HybridTextEditing(), textarea);
 
       expect(editingElement.domElement, textarea);
       expect(document.activeElement, document.body);
@@ -479,6 +507,28 @@ void main() {
       // But the textarea loses focus.
       expect(document.activeElement, document.body);
     });
+
+    test('Does not position or size its DOM element', () {
+      editingElement.enable(
+        singlelineConfig,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      testTextEditing.setEditableSizeAndTransform(EditableTextGeometry(
+        height: 12,
+        width: 13,
+        globalTransform: Matrix4.translationValues(14, 15, 0).storage,
+      ));
+
+      void checkPlacementIsEmpty() {
+        expect(editingElement.domElement.style.transform, '');
+        expect(editingElement.domElement.style.width, '');
+        expect(editingElement.domElement.style.height, '');
+      }
+      checkPlacementIsEmpty();
+      editingElement.placeElement();
+      checkPlacementIsEmpty();
+    });
   });
 
   group('$HybridTextEditing', () {
@@ -486,6 +536,11 @@ void main() {
     final PlatformMessagesSpy spy = PlatformMessagesSpy();
 
     int clientId = 0;
+
+    /// Emulates sending of a message by the framework to the engine.
+    void sendFrameworkMessage(dynamic message) {
+      textEditing.channel.handleTextInput(message);
+    }
 
     /// Sends the necessary platform messages to activate a text field and show
     /// the keyboard.
@@ -499,20 +554,20 @@ void main() {
           createFlutterConfig(inputType, inputAction: inputAction),
         ],
       );
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       const MethodCall show = MethodCall('TextInput.show');
-      textEditing.handleTextInput(codec.encodeMethodCall(show));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
       return clientId;
     }
 
     void hideKeyboard() {
       const MethodCall hide = MethodCall('TextInput.hide');
-      textEditing.handleTextInput(codec.encodeMethodCall(hide));
+      sendFrameworkMessage(codec.encodeMethodCall(hide));
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
-      textEditing.handleTextInput(codec.encodeMethodCall(clearClient));
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
     }
 
     String getEditingInputMode() {
@@ -526,23 +581,22 @@ void main() {
 
     tearDown(() {
       spy.deactivate();
-      debugBrowserEngineOverride = null;
-      debugOperatingSystemOverride = null;
       if (textEditing.isEditing) {
         textEditing.stopEditing();
       }
+      textEditing = null;
     });
 
     test('setClient, show, setEditingState, hide', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       // Editing shouldn't have started yet.
       expect(document.activeElement, document.body);
 
       const MethodCall show = MethodCall('TextInput.show');
-      textEditing.handleTextInput(codec.encodeMethodCall(show));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(textEditing.editingElement.domElement, '', 0, 0);
 
@@ -552,13 +606,13 @@ void main() {
         'selectionBase': 2,
         'selectionExtent': 3,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
       checkInputEditingState(
           textEditing.editingElement.domElement, 'abcd', 2, 3);
 
       const MethodCall hide = MethodCall('TextInput.hide');
-      textEditing.handleTextInput(codec.encodeMethodCall(hide));
+      sendFrameworkMessage(codec.encodeMethodCall(hide));
 
       // Text editing should've stopped.
       expect(document.activeElement, document.body);
@@ -570,7 +624,7 @@ void main() {
     test('setClient, setEditingState, show, clearClient', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       const MethodCall setEditingState =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -578,19 +632,19 @@ void main() {
         'selectionBase': 2,
         'selectionExtent': 3,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
       // Editing shouldn't have started yet.
       expect(document.activeElement, document.body);
 
       const MethodCall show = MethodCall('TextInput.show');
-      textEditing.handleTextInput(codec.encodeMethodCall(show));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(
           textEditing.editingElement.domElement, 'abcd', 2, 3);
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
-      textEditing.handleTextInput(codec.encodeMethodCall(clearClient));
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
 
       expect(document.activeElement, document.body);
 
@@ -598,10 +652,10 @@ void main() {
       expect(spy.messages, isEmpty);
     });
 
-    test('setClient, setEditingState, show, setClient', () {
+    test('close connection on blur', () async {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       const MethodCall setEditingState =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -609,20 +663,59 @@ void main() {
         'selectionBase': 2,
         'selectionExtent': 3,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
       // Editing shouldn't have started yet.
       expect(document.activeElement, document.body);
 
       const MethodCall show = MethodCall('TextInput.show');
-      textEditing.handleTextInput(codec.encodeMethodCall(show));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'abcd', 2, 3);
+
+      // DOM element is blurred.
+      textEditing.editingElement.domElement.blur();
+
+      expect(spy.messages, hasLength(1));
+      MethodCall call = spy.messages[0];
+      spy.messages.clear();
+      expect(call.method, 'TextInputClient.onConnectionClosed');
+      expect(
+        call.arguments,
+        <dynamic>[
+          123, // Client ID
+        ],
+      );
+      // Input element is removed from DOM.
+      expect(document.getElementsByTagName('input'), hasLength(0));
+    });
+
+    test('setClient, setEditingState, show, setClient', () {
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+
+      // Editing shouldn't have started yet.
+      expect(document.activeElement, document.body);
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
       checkInputEditingState(
           textEditing.editingElement.domElement, 'abcd', 2, 3);
 
       final MethodCall setClient2 = MethodCall(
           'TextInput.setClient', <dynamic>[567, flutterSinglelineConfig]);
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient2));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient2));
 
       // Receiving another client via setClient should stop editing, hence
       // should remove the previous active element.
@@ -637,7 +730,7 @@ void main() {
     test('setClient, setEditingState, show, setEditingState, clearClient', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       const MethodCall setEditingState1 =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -645,10 +738,10 @@ void main() {
         'selectionBase': 2,
         'selectionExtent': 3,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState1));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
 
       const MethodCall show = MethodCall('TextInput.show');
-      textEditing.handleTextInput(codec.encodeMethodCall(show));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
       const MethodCall setEditingState2 =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -656,14 +749,14 @@ void main() {
         'selectionBase': 0,
         'selectionExtent': 2,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState2));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState2));
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
           textEditing.editingElement.domElement, 'xyz', 0, 2);
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
-      textEditing.handleTextInput(codec.encodeMethodCall(clearClient));
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
 
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
@@ -674,16 +767,16 @@ void main() {
         () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       final MethodCall setSizeAndTransform =
           configureSetSizeAndTransformMethodCall(150, 50,
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
-      textEditing.handleTextInput(codec.encodeMethodCall(setSizeAndTransform));
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       final MethodCall setStyle =
           configureSetStyleMethodCall(12, 'sans-serif', 4, 4, 1);
-      textEditing.handleTextInput(codec.encodeMethodCall(setStyle));
+      sendFrameworkMessage(codec.encodeMethodCall(setStyle));
 
       const MethodCall setEditingState =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -691,10 +784,10 @@ void main() {
         'selectionBase': 2,
         'selectionExtent': 3,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
       const MethodCall show = MethodCall('TextInput.show');
-      textEditing.handleTextInput(codec.encodeMethodCall(show));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
       final HtmlElement domElement = textEditing.editingElement.domElement;
 
@@ -711,7 +804,7 @@ void main() {
           '500 12px sans-serif');
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
-      textEditing.handleTextInput(codec.encodeMethodCall(clearClient));
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
 
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
@@ -722,10 +815,10 @@ void main() {
       () {
         final MethodCall setClient = MethodCall(
             'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
-        textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+        sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
         const MethodCall show = MethodCall('TextInput.show');
-        textEditing.handleTextInput(codec.encodeMethodCall(show));
+        sendFrameworkMessage(codec.encodeMethodCall(show));
 
         final MethodCall setSizeAndTransform =
             configureSetSizeAndTransformMethodCall(
@@ -736,12 +829,11 @@ void main() {
                   20.0,
                   30.0,
                 ).storage.toList());
-        textEditing
-            .handleTextInput(codec.encodeMethodCall(setSizeAndTransform));
+        sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
         final MethodCall setStyle =
             configureSetStyleMethodCall(12, 'sans-serif', 4, 4, 1);
-        textEditing.handleTextInput(codec.encodeMethodCall(setStyle));
+        sendFrameworkMessage(codec.encodeMethodCall(setStyle));
 
         const MethodCall setEditingState =
             MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -749,7 +841,7 @@ void main() {
           'selectionBase': 2,
           'selectionExtent': 3,
         });
-        textEditing.handleTextInput(codec.encodeMethodCall(setEditingState));
+        sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
         final HtmlElement domElement = textEditing.editingElement.domElement;
 
@@ -771,23 +863,23 @@ void main() {
         );
 
         const MethodCall clearClient = MethodCall('TextInput.clearClient');
-        textEditing.handleTextInput(codec.encodeMethodCall(clearClient));
+        sendFrameworkMessage(codec.encodeMethodCall(clearClient));
       },
     );
 
     test('input font set succesfully with null fontWeightIndex', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       final MethodCall setSizeAndTransform =
           configureSetSizeAndTransformMethodCall(150, 50,
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
-      textEditing.handleTextInput(codec.encodeMethodCall(setSizeAndTransform));
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       final MethodCall setStyle = configureSetStyleMethodCall(
           12, 'sans-serif', 4, null /* fontWeightIndex */, 1);
-      textEditing.handleTextInput(codec.encodeMethodCall(setStyle));
+      sendFrameworkMessage(codec.encodeMethodCall(setStyle));
 
       const MethodCall setEditingState =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -795,10 +887,10 @@ void main() {
         'selectionBase': 2,
         'selectionExtent': 3,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
       const MethodCall show = MethodCall('TextInput.show');
-      textEditing.handleTextInput(codec.encodeMethodCall(show));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
       final HtmlElement domElement = textEditing.editingElement.domElement;
 
@@ -822,7 +914,7 @@ void main() {
         () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       const MethodCall setEditingState1 =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -830,10 +922,10 @@ void main() {
         'selectionBase': 1,
         'selectionExtent': 2,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState1));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
 
       const MethodCall show = MethodCall('TextInput.show');
-      textEditing.handleTextInput(codec.encodeMethodCall(show));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
       // Check if the selection range is correct.
       checkInputEditingState(
@@ -845,7 +937,7 @@ void main() {
         'selectionBase': -1,
         'selectionExtent': -1,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState2));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState2));
 
       // The negative offset values are applied to the dom element as 0.
       checkInputEditingState(
@@ -857,7 +949,7 @@ void main() {
     test('Syncs the editing state back to Flutter', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       const MethodCall setEditingState =
           MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -865,10 +957,10 @@ void main() {
         'selectionBase': 2,
         'selectionExtent': 3,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
       const MethodCall show = MethodCall('TextInput.show');
-      textEditing.handleTextInput(codec.encodeMethodCall(show));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
       final InputElement input = textEditing.editingElement.domElement;
 
@@ -892,7 +984,12 @@ void main() {
       );
 
       input.setSelectionRange(2, 5);
-      document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
+      if (browserEngine == BrowserEngine.firefox) {
+        Event keyup = KeyboardEvent('keyup');
+        textEditing.editingElement.domElement.dispatchEvent(keyup);
+      } else {
+        document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
+      }
 
       expect(spy.messages, hasLength(1));
       call = spy.messages[0];
@@ -911,19 +1008,18 @@ void main() {
       );
 
       hideKeyboard();
-    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox));
+    });
 
     test('Multi-line mode also works', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterMultilineConfig]);
-      textEditing.handleTextInput(codec.encodeMethodCall(setClient));
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
       // Editing shouldn't have started yet.
       expect(document.activeElement, document.body);
 
       const MethodCall show = MethodCall('TextInput.show');
-      textEditing.handleTextInput(codec.encodeMethodCall(show));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
 
       final TextAreaElement textarea = textEditing.editingElement.domElement;
       checkTextAreaEditingState(textarea, '', 0, 0);
@@ -935,14 +1031,19 @@ void main() {
         'selectionBase': 2,
         'selectionExtent': 3,
       });
-      textEditing.handleTextInput(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
       checkTextAreaEditingState(textarea, 'foo\nbar', 2, 3);
 
-      // Sends the changes back to Flutter.
       textarea.value = 'something\nelse';
+
       textarea.dispatchEvent(Event.eventType('Event', 'input'));
       textarea.setSelectionRange(2, 5);
-      document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
+      if (browserEngine == BrowserEngine.firefox) {
+        textEditing.editingElement.domElement
+            .dispatchEvent(KeyboardEvent('keyup'));
+      } else {
+        document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
+      }
 
       // Two messages should've been sent. One for the 'input' event and one for
       // the 'selectionchange' event.
@@ -963,18 +1064,18 @@ void main() {
       );
 
       const MethodCall hide = MethodCall('TextInput.hide');
-      textEditing.handleTextInput(codec.encodeMethodCall(hide));
+      sendFrameworkMessage(codec.encodeMethodCall(hide));
 
       // Text editing should've stopped.
       expect(document.activeElement, document.body);
 
       // Confirm that [HybridTextEditing] didn't send any more messages.
       expect(spy.messages, isEmpty);
-    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox));
+    });
 
     test('sets correct input type in Android', () {
       debugOperatingSystemOverride = OperatingSystem.android;
+      debugBrowserEngineOverride = BrowserEngine.blink;
 
       /// During initialization [HybridTextEditing] will pick the correct
       /// text editing strategy for [OperatingSystem.android].
@@ -996,11 +1097,7 @@ void main() {
       expect(getEditingInputMode(), 'url');
 
       hideKeyboard();
-
-      debugOperatingSystemOverride = null;
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox));
+    });
 
     test('sets correct input type in iOS', () {
       debugOperatingSystemOverride = OperatingSystem.iOs;
@@ -1026,11 +1123,7 @@ void main() {
       expect(getEditingInputMode(), 'url');
 
       hideKeyboard();
-
-      debugOperatingSystemOverride = null;
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox));
+    });
 
     test('sends the correct input action as a platform message', () {
       final int clientId = showKeyboard(
@@ -1079,16 +1172,12 @@ void main() {
     EditingState _editingState;
 
     setUp(() {
-      editingElement = DefaultTextEditingStrategy(HybridTextEditing());
+      editingElement = GloballyPositionedTextEditingStrategy(HybridTextEditing());
       editingElement.enable(
         singlelineConfig,
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-    });
-
-    tearDown(() {
-      cleanTextEditingElement();
     });
 
     test('Configure input element from the editing state', () {
@@ -1225,12 +1314,29 @@ void cleanTextEditingElement() {
   }
 }
 
+void cleanTestFlags() {
+  debugBrowserEngineOverride = null;
+  debugOperatingSystemOverride = null;
+}
+
 void checkInputEditingState(
     InputElement input, String text, int start, int end) {
   expect(document.activeElement, input);
   expect(input.value, text);
   expect(input.selectionStart, start);
   expect(input.selectionEnd, end);
+}
+
+/// In case of an exception backup DOM element(s) can still stay on the DOM.
+void clearBackUpDomElementIfExists() {
+  List<Node> domElementsToRemove = List<Node>();
+  if (document.getElementsByTagName('input').length > 0) {
+    domElementsToRemove..addAll(document.getElementsByTagName('input'));
+  }
+  if (document.getElementsByTagName('textarea').length > 0) {
+    domElementsToRemove..addAll(document.getElementsByTagName('textarea'));
+  }
+  domElementsToRemove.forEach((Node n) => n.remove());
 }
 
 void checkTextAreaEditingState(

@@ -52,6 +52,9 @@ FILE: ../../../flutter/flow/layers/elevated_container_layer.cc
 FILE: ../../../flutter/flow/layers/elevated_container_layer.h
 FILE: ../../../flutter/flow/layers/fuchsia_system_composited_layer.cc
 FILE: ../../../flutter/flow/layers/fuchsia_system_composited_layer.h
+FILE: ../../../flutter/flow/layers/image_filter_layer.cc
+FILE: ../../../flutter/flow/layers/image_filter_layer.h
+FILE: ../../../flutter/flow/layers/image_filter_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/layer.cc
 FILE: ../../../flutter/flow/layers/layer.h
 FILE: ../../../flutter/flow/layers/layer_tree.cc
@@ -449,6 +452,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/shadow.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/backdrop_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/clip.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/debug_canvas_reuse_overlay.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/image_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/offset.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/opacity.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/painting.dart
@@ -533,6 +537,7 @@ FILE: ../../../flutter/runtime/test_font_data.cc
 FILE: ../../../flutter/runtime/test_font_data.h
 FILE: ../../../flutter/shell/common/animator.cc
 FILE: ../../../flutter/shell/common/animator.h
+FILE: ../../../flutter/shell/common/animator_unittests.cc
 FILE: ../../../flutter/shell/common/canvas_spy.cc
 FILE: ../../../flutter/shell/common/canvas_spy.h
 FILE: ../../../flutter/shell/common/canvas_spy_unittests.cc
@@ -571,14 +576,14 @@ FILE: ../../../flutter/shell/common/surface.cc
 FILE: ../../../flutter/shell/common/surface.h
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
-FILE: ../../../flutter/shell/common/test_vsync_waiters.cc
-FILE: ../../../flutter/shell/common/test_vsync_waiters.h
 FILE: ../../../flutter/shell/common/thread_host.cc
 FILE: ../../../flutter/shell/common/thread_host.h
 FILE: ../../../flutter/shell/common/vsync_waiter.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.h
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.cc
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.h
+FILE: ../../../flutter/shell/common/vsync_waiters_test.cc
+FILE: ../../../flutter/shell/common/vsync_waiters_test.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl.h
