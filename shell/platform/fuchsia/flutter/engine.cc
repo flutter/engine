@@ -165,6 +165,8 @@ Engine::Engine(Delegate& delegate,
 
   // Get the task runners from the managed threads. The current thread will be
   // used as the "platform" thread.
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+
   const flutter::TaskRunners task_runners(
       thread_label_,                                   // Dart thread labels
       fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
