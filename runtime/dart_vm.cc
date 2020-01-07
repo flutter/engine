@@ -112,7 +112,7 @@ static const char* kDartTraceStreamsArgs[] = {
 };
 
 static std::string DartOldGenHeapSizeArgs(uint64_t heap_size) {
-  static const int32_t buffer_size = 100;
+  constexpr int32_t buffer_size = 100;
   const char* flag = "--old_gen_heap_size=";
   char buffer[buffer_size];
   int result = snprintf(buffer, buffer_size, "%s%lld", flag, heap_size);
