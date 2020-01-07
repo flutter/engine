@@ -99,8 +99,10 @@ class EngineWindow extends ui.Window {
   /// Simulates clicking the browser's back button.
   Future<void> webOnlyBack() => _browserHistory.back();
 
+  String _defaultRouteName;
+
   @override
-  String get defaultRouteName => _browserHistory.currentPath;
+  String get defaultRouteName => _defaultRouteName ??= _browserHistory.currentPath;
 
   /// Change the strategy to use for handling browser history location.
   /// Setting this member will automatically update [_browserHistory].
