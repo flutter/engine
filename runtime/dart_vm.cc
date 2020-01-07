@@ -111,6 +111,15 @@ static const char* kDartTraceStreamsArgs[] = {
     "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM,API",
 };
 
+static std::string DartOldGenHeapSizeArgs(uint64_t heap_size) {
+  static const int32_t buffer_size = 100;
+  const char* flag = "--old_gen_heap_size=";
+  char buffer[buffer_size];
+  int result = snprintf(buffer, buffer_size, "%s%lld", flag, heap_size);
+  FML_DCHECK(result >= 0 && result < buffer_size);
+  return buffer;
+}
+
 constexpr char kFileUriPrefix[] = "file://";
 constexpr size_t kFileUriPrefixLength = sizeof(kFileUriPrefix) - 1;
 
@@ -364,6 +373,13 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 
   if (settings_.trace_startup) {
     PushBackAll(&args, kDartTraceStartupArgs, fml::size(kDartTraceStartupArgs));
+  }
+
+  std::string old_gen_heap_size_args;
+  if (settings_.old_gen_heap_size >= 0) {
+    old_gen_heap_size_args =
+        DartOldGenHeapSizeArgs(settings_.old_gen_heap_size);
+    args.push_back(old_gen_heap_size_args.c_str());
   }
 
 #if defined(OS_FUCHSIA)
