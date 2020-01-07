@@ -434,6 +434,7 @@ void main() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color(0xFF404000));
+    rc.restore();
     await _checkScreenshot(rc, 'path_with_line_and_roundrect');
   });
 }
