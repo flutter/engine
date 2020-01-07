@@ -424,6 +424,71 @@ enum TextDecorationStyle {
   wavy
 }
 
+/// Defines how the paragraph will handle the ascent of the first line and
+/// descent of the last line. These lines are referred to as "boundary" lines.
+class BoundaryLineHeightBehavior {
+
+  /// Creates a new BoundaryLineHeightBehavior object.
+  ///
+  ///  * first: When true, the [TextStyle.height] modifier will be applied to
+  ///    to the ascent of the first line. When false, the font's default ascent
+  ///    will be used.
+  ///  * last: When true, the [TextStyle.height] modifier will be applied to
+  ///    to the descent of the last line. When false, the font's default descent
+  ///    will be used.
+  BoundaryLineHeightBehavior({
+    this.first = true,
+    this.last = true,
+  });
+
+  /// Creates a new BoundaryLineHeightBehavior object from an encoded form.
+  ///
+  /// See [encode] for the creation of the encoded form.
+  BoundaryLineHeightBehavior.fromEncoded(int encoded) : first = (encoded & 0x1) > 0,
+                                                        last = (encoded & 0x2) > 0;
+
+
+  /// Whether to apply the [TextStyle.height] modifier or not to the ascent of
+  /// the first line in the paragraph.
+  ///
+  /// When true, the [TextStyle.height] modifier will be applied to to the ascent
+  /// of the first line. When false, the font's default ascent will be used and
+  /// the [TextStyle.height] will have no effect on the ascent of the first line.
+  final bool first;
+
+  /// Whether to apply the [TextStyle.height] modifier or not to the descent of
+  /// the last line in the paragraph.
+  ///
+  /// When true, the [TextStyle.height] modifier will be applied to to the descent
+  /// of the last line. When false, the font's default descent will be used and
+  /// the [TextStyle.height] will have no effect on the descent of the last line.
+  final bool last;
+
+  /// Returns an encoded int representation of this object.
+  int encode() {
+    return 0 + (first ? 1 << 0 : 0) + (last ? 1 << 1 : 0);
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other))
+      return true;
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is BoundaryLineHeightBehavior
+        && other.first == first
+        && other.second == second;
+  }
+
+  @override
+  int get hashCode {
+    return hashValues(
+      first,
+      last,
+    );
+  }
+}
+
 /// An opaque object that determines the size, position, and rendering of text.
 abstract class TextStyle {
   /// Creates a new TextStyle object.
@@ -584,7 +649,7 @@ abstract class ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
-    int boundingLineHeightBehavior,
+    BoundaryLineHeightBehavior boundaryLineHeightBehavior,
     FontWeight fontWeight,
     FontStyle fontStyle,
     StrutStyle strutStyle,
@@ -599,7 +664,7 @@ abstract class ParagraphStyle {
         fontFamily: fontFamily,
         fontSize: fontSize,
         height: height,
-        boundingLineHeightBehavior: boundingLineHeightBehavior,
+        boundaryLineHeightBehavior: boundaryLineHeightBehavior,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
         strutStyle: strutStyle,
@@ -614,7 +679,7 @@ abstract class ParagraphStyle {
         fontFamily: fontFamily,
         fontSize: fontSize,
         height: height,
-        boundingLineHeightBehavior: boundingLineHeightBehavior,
+        boundaryLineHeightBehavior: boundaryLineHeightBehavior,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
         strutStyle: strutStyle,

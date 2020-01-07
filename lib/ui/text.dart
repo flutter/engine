@@ -473,6 +473,25 @@ class BoundaryLineHeightBehavior {
   int encode() {
     return 0 + (first ? 1 << 0 : 0) + (last ? 1 << 1 : 0);
   }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other))
+      return true;
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is BoundaryLineHeightBehavior
+        && other.first == first
+        && other.second == second;
+  }
+
+  @override
+  int get hashCode {
+    return hashValues(
+      first,
+      last,
+    );
+  }
 }
 
 /// Determines if lists [a] and [b] are deep equivalent.
