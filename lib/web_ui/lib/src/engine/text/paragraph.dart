@@ -457,7 +457,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
-    int boundingLineHeightBehavior,
+    ui.BoundaryLineHeightBehavior boundaryLineHeightBehavior,
     ui.FontWeight fontWeight,
     ui.FontStyle fontStyle,
     ui.StrutStyle strutStyle,
@@ -471,7 +471,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         _fontFamily = fontFamily,
         _fontSize = fontSize,
         _height = height,
-        _boundingLineHeightBehavior = boundingLineHeightBehavior,
+        _boundaryLineHeightBehavior = boundaryLineHeightBehavior,
         // TODO(b/128317744): add support for strut style.
         _strutStyle = strutStyle,
         _ellipsis = ellipsis,
@@ -485,7 +485,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   final String _fontFamily;
   final double _fontSize;
   final double _height;
-  final int _boundingLineHeightBehavior;
+  final ui.BoundaryLineHeightBehavior _boundaryLineHeightBehavior;
   final EngineStrutStyle _strutStyle;
   final String _ellipsis;
   final ui.Locale _locale;
@@ -539,7 +539,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         _fontFamily == typedOther._fontFamily ||
         _fontSize == typedOther._fontSize ||
         _height == typedOther._height ||
-        _boundingLineHeightBehavior == typedOther._boundingLineHeightBehavior ||
+        _boundaryLineHeightBehavior == typedOther._boundaryLineHeightBehavior ||
         _ellipsis == typedOther._ellipsis ||
         _locale == typedOther._locale;
   }
@@ -560,7 +560,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
           'fontFamily: ${_fontFamily ?? "unspecified"}, '
           'fontSize: ${_fontSize != null ? _fontSize.toStringAsFixed(1) : "unspecified"}, '
           'height: ${_height != null ? "${_height.toStringAsFixed(1)}x" : "unspecified"}, '
-          'boundingLineHeightBehavior: ${_boundingLineHeightBehavior ?? "unspecified"}, '
+          'boundaryLineHeightBehavior: ${_boundaryLineHeightBehavior ?? "unspecified"}, '
           'ellipsis: ${_ellipsis != null ? "\"$_ellipsis\"" : "unspecified"}, '
           'locale: ${_locale ?? "unspecified"}'
           ')';
