@@ -477,7 +477,7 @@ class BoundaryLineHeightBehavior {
       return false;
     return other is BoundaryLineHeightBehavior
         && other.first == first
-        && other.second == second;
+        && other.last == last;
   }
 
   @override
@@ -486,6 +486,14 @@ class BoundaryLineHeightBehavior {
       first,
       last,
     );
+  }
+
+  @override
+  String toString() {
+    return 'BoundaryLineHeightBehavior('
+             'first: $first, '
+             'last: $last, '
+           ')';
   }
 }
 

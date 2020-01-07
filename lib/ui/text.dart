@@ -482,7 +482,7 @@ class BoundaryLineHeightBehavior {
       return false;
     return other is BoundaryLineHeightBehavior
         && other.first == first
-        && other.second == second;
+        && other.last == last;
   }
 
   @override
@@ -491,6 +491,14 @@ class BoundaryLineHeightBehavior {
       first,
       last,
     );
+  }
+
+  @override
+  String toString() {
+    return 'BoundaryLineHeightBehavior('
+             'first: $first, '
+             'last: $last, '
+           ')';
   }
 }
 
@@ -1001,11 +1009,13 @@ class ParagraphStyle {
              'fontWeight: ${    _encoded[0] & 0x008 == 0x008 ? FontWeight.values[_encoded[3]]    : "unspecified"}, '
              'fontStyle: ${     _encoded[0] & 0x010 == 0x010 ? FontStyle.values[_encoded[4]]     : "unspecified"}, '
              'maxLines: ${      _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
-             'fontFamily: ${    _encoded[0] & 0x040 == 0x040 ? _fontFamily                       : "unspecified"}, '
-             'fontSize: ${      _encoded[0] & 0x080 == 0x080 ? _fontSize                         : "unspecified"}, '
-             'height: ${        _encoded[0] & 0x100 == 0x100 ? "${_height}x"                     : "unspecified"}, '
-             'ellipsis: ${      _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}, '
-             'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
+             'boundaryLineHeightBehavior: ${
+                                _encoded[0] & 0x040 == 0x040 ? _encoded[6]                       : "unspecified"}, '
+             'fontFamily: ${    _encoded[0] & 0x080 == 0x080 ? _fontFamily                       : "unspecified"}, '
+             'fontSize: ${      _encoded[0] & 0x100 == 0x100 ? _fontSize                         : "unspecified"}, '
+             'height: ${        _encoded[0] & 0x200 == 0x200 ? "${_height}x"                     : "unspecified"}, '
+             'ellipsis: ${      _encoded[0] & 0x400 == 0x400 ? "\"$_ellipsis\""                  : "unspecified"}, '
+             'locale: ${        _encoded[0] & 0x800 == 0x800 ? _locale                           : "unspecified"}'
            ')';
   }
 }
