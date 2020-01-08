@@ -429,7 +429,7 @@ enum TextDecorationStyle {
   wavy
 }
 
-/// {@template flutter.dart:ui.boundaryLineHeightBehavior}
+/// {@template flutter.dart:ui.heightBehavior}
 /// Defines how the paragraph will apply [TextStyle.height] the ascent of the
 /// first line and descent of the last line.
 ///
@@ -439,9 +439,9 @@ enum TextDecorationStyle {
 /// [TextStyle.height] is applied as normal. When set to false, the font's
 /// default ascent will be used.
 /// {@endtemplate}
-class BoundaryLineHeightBehavior {
+class HeightBehavior {
 
-  /// Creates a new BoundaryLineHeightBehavior object.
+  /// Creates a new HeightBehavior object.
   ///
   ///  * applyHeightToFirstLineAscent: When true, the [TextStyle.height] modifier
   ///    will be applied to the ascent of the first line. When false, the font's
@@ -451,15 +451,15 @@ class BoundaryLineHeightBehavior {
   ///    default descent will be used.
   ///
   /// All properties default to true (height modifications applied as normal).
-  BoundaryLineHeightBehavior({
+  HeightBehavior({
     this.applyHeightToFirstLineAscent = true,
     this.applyHeightToLastLineDescent = true,
   });
 
-  /// Creates a new BoundaryLineHeightBehavior object from an encoded form.
+  /// Creates a new HeightBehavior object from an encoded form.
   ///
   /// See [encode] for the creation of the encoded form.
-  BoundaryLineHeightBehavior.fromEncoded(int encoded) : applyHeightToFirstLineAscent = (encoded & 0x1) > 0,
+  HeightBehavior.fromEncoded(int encoded) : applyHeightToFirstLineAscent = (encoded & 0x1) > 0,
                                                         applyHeightToLastLineDescent = (encoded & 0x2) > 0;
 
 
@@ -469,6 +469,8 @@ class BoundaryLineHeightBehavior {
   /// When true, the [TextStyle.height] modifier will be applied to to the ascent
   /// of the first line. When false, the font's default ascent will be used and
   /// the [TextStyle.height] will have no effect on the ascent of the first line.
+  ///
+  /// This property only has effect if a non-null [TextStyle.height] is specified.
   ///
   /// Defaults to true (height modifications applied as normal).
   final bool applyHeightToFirstLineAscent;
@@ -480,6 +482,8 @@ class BoundaryLineHeightBehavior {
   /// of the last line. When false, the font's default descent will be used and
   /// the [TextStyle.height] will have no effect on the descent of the last line.
   ///
+  /// This property only has effect if a non-null [TextStyle.height] is specified.
+  ///
   /// Defaults to true (height modifications applied as normal).
   final bool applyHeightToLastLineDescent;
 
@@ -490,11 +494,9 @@ class BoundaryLineHeightBehavior {
 
   @override
   bool operator ==(dynamic other) {
-    if (identical(this, other))
-      return true;
     if (other.runtimeType != runtimeType)
       return false;
-    return other is BoundaryLineHeightBehavior
+    return other is HeightBehavior
         && other.applyHeightToFirstLineAscent == applyHeightToLastLineDescent
         && other.applyHeightToLastLineDescent == applyHeightToLastLineDescent;
   }
@@ -509,9 +511,9 @@ class BoundaryLineHeightBehavior {
 
   @override
   String toString() {
-    return 'BoundaryLineHeightBehavior('
+    return 'HeightBehavior('
              'applyHeightToFirstLineAscent: $applyHeightToFirstLineAscent, '
-             'applyHeightToLastLineDescent: $applyHeightToLastLineDescent, '
+             'applyHeightToLastLineDescent: $applyHeightToLastLineDescent '
            ')';
   }
 }
@@ -833,6 +835,8 @@ class TextStyle {
 //
 //  - Element 5: The value of |maxLines|.
 //
+//  - Element 6: The encoded value of |heightBehavior|.
+//
 Int32List _encodeParagraphStyle(
   TextAlign textAlign,
   TextDirection textDirection,
@@ -840,7 +844,7 @@ Int32List _encodeParagraphStyle(
   String fontFamily,
   double fontSize,
   double height,
-  BoundaryLineHeightBehavior boundaryLineHeightBehavior,
+  HeightBehavior heightBehavior,
   FontWeight fontWeight,
   FontStyle fontStyle,
   StrutStyle strutStyle,
@@ -868,9 +872,9 @@ Int32List _encodeParagraphStyle(
     result[0] |= 1 << 5;
     result[5] = maxLines;
   }
-  if (boundaryLineHeightBehavior != null) {
+  if (heightBehavior != null) {
     result[0] |= 1 << 6;
-    result[6] = boundaryLineHeightBehavior.encode();
+    result[6] = heightBehavior.encode();
   }
   if (fontFamily != null) {
     result[0] |= 1 << 7;
@@ -934,6 +938,9 @@ class ParagraphStyle {
   ///   the line height to take the height as defined by the font, which may not
   ///   be exactly the height of the `fontSize`.
   ///
+  /// * `heightBehavior`: Specifies how the `height` multiplier is
+  ///   applied to ascent of the first line and the descent of the last line.
+  ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
   ///
@@ -961,7 +968,7 @@ class ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
-    BoundaryLineHeightBehavior boundaryLineHeightBehavior,
+    HeightBehavior heightBehavior,
     FontWeight fontWeight,
     FontStyle fontStyle,
     StrutStyle strutStyle,
@@ -974,7 +981,7 @@ class ParagraphStyle {
          fontFamily,
          fontSize,
          height,
-         boundaryLineHeightBehavior,
+         heightBehavior,
          fontWeight,
          fontStyle,
          strutStyle,
@@ -1023,8 +1030,9 @@ class ParagraphStyle {
              'fontWeight: ${    _encoded[0] & 0x008 == 0x008 ? FontWeight.values[_encoded[3]]    : "unspecified"}, '
              'fontStyle: ${     _encoded[0] & 0x010 == 0x010 ? FontStyle.values[_encoded[4]]     : "unspecified"}, '
              'maxLines: ${      _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
-             'boundaryLineHeightBehavior: ${
-                                _encoded[0] & 0x040 == 0x040 ? _encoded[6]                       : "unspecified"}, '
+             'heightBehavior: ${
+                                _encoded[0] & 0x040 == 0x040 ?
+                                  HeightBehavior.fromEncoded(_encoded[6]).toString() : "unspecified"}, '
              'fontFamily: ${    _encoded[0] & 0x080 == 0x080 ? _fontFamily                       : "unspecified"}, '
              'fontSize: ${      _encoded[0] & 0x100 == 0x100 ? _fontSize                         : "unspecified"}, '
              'height: ${        _encoded[0] & 0x200 == 0x200 ? "${_height}x"                     : "unspecified"}, '

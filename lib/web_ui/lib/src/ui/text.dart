@@ -426,9 +426,9 @@ enum TextDecorationStyle {
 
 /// Defines how the paragraph will handle the ascent of the first line and
 /// descent of the last line. These lines are referred to as "boundary" lines.
-class BoundaryLineHeightBehavior {
+class HeightBehavior {
 
-  /// Creates a new BoundaryLineHeightBehavior object.
+  /// Creates a new HeightBehavior object.
   ///
   ///  * first: When true, the [TextStyle.height] modifier will be applied to
   ///    to the ascent of the first line. When false, the font's default ascent
@@ -436,15 +436,15 @@ class BoundaryLineHeightBehavior {
   ///  * last: When true, the [TextStyle.height] modifier will be applied to
   ///    to the descent of the last line. When false, the font's default descent
   ///    will be used.
-  BoundaryLineHeightBehavior({
+  HeightBehavior({
     this.first = true,
     this.last = true,
   });
 
-  /// Creates a new BoundaryLineHeightBehavior object from an encoded form.
+  /// Creates a new HeightBehavior object from an encoded form.
   ///
   /// See [encode] for the creation of the encoded form.
-  BoundaryLineHeightBehavior.fromEncoded(int encoded) : first = (encoded & 0x1) > 0,
+  HeightBehavior.fromEncoded(int encoded) : first = (encoded & 0x1) > 0,
                                                         last = (encoded & 0x2) > 0;
 
 
@@ -475,7 +475,7 @@ class BoundaryLineHeightBehavior {
       return true;
     if (other.runtimeType != runtimeType)
       return false;
-    return other is BoundaryLineHeightBehavior
+    return other is HeightBehavior
         && other.first == first
         && other.last == last;
   }
@@ -490,7 +490,7 @@ class BoundaryLineHeightBehavior {
 
   @override
   String toString() {
-    return 'BoundaryLineHeightBehavior('
+    return 'HeightBehavior('
              'first: $first, '
              'last: $last, '
            ')';
@@ -657,7 +657,7 @@ abstract class ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
-    BoundaryLineHeightBehavior boundaryLineHeightBehavior,
+    HeightBehavior heightBehavior,
     FontWeight fontWeight,
     FontStyle fontStyle,
     StrutStyle strutStyle,
@@ -672,7 +672,7 @@ abstract class ParagraphStyle {
         fontFamily: fontFamily,
         fontSize: fontSize,
         height: height,
-        boundaryLineHeightBehavior: boundaryLineHeightBehavior,
+        heightBehavior: heightBehavior,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
         strutStyle: strutStyle,
@@ -687,7 +687,7 @@ abstract class ParagraphStyle {
         fontFamily: fontFamily,
         fontSize: fontSize,
         height: height,
-        boundaryLineHeightBehavior: boundaryLineHeightBehavior,
+        heightBehavior: heightBehavior,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
         strutStyle: strutStyle,

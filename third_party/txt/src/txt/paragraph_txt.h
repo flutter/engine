@@ -162,7 +162,7 @@ class ParagraphTxt : public Paragraph {
   FRIEND_TEST(ParagraphTest, FontFeaturesParagraph);
   FRIEND_TEST(ParagraphTest, GetGlyphPositionAtCoordinateSegfault);
   FRIEND_TEST(ParagraphTest, KhmerLineBreaker);
-  FRIEND_TEST(ParagraphTest, BoundaryLineHeightBehaviorRectsParagraph);
+  FRIEND_TEST(ParagraphTest, HeightBehaviorRectsParagraph);
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
