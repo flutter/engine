@@ -32,6 +32,12 @@ class SkAnimatedImage implements ui.Image {
 
   int get repetitionCount => _skAnimatedImage.callMethod('getRepetitionCount');
 
+  SkImage get currentFrameAsImage {
+    final js.JsObject _currentFrame =
+        _skAnimatedImage.callMethod('getCurrentFrame');
+    return SkImage(_currentFrame);
+  }
+
   @override
   int get width => _skAnimatedImage.callMethod('width');
 
@@ -90,14 +96,14 @@ class SkAnimatedImageCodec implements ui.Codec {
   @override
   Future<ui.FrameInfo> getNextFrame() {
     final int duration = animatedImage.decodeNextFrame();
-    return Future<ui.FrameInfo>.value(
-        AnimatedImageFrameInfo(duration, animatedImage));
+    final SkImage image = animatedImage.currentFrameAsImage;
+    return Future<ui.FrameInfo>.value(AnimatedImageFrameInfo(duration, image));
   }
 }
 
 class AnimatedImageFrameInfo implements ui.FrameInfo {
   final Duration _duration;
-  final SkAnimatedImage _image;
+  final SkImage _image;
 
   AnimatedImageFrameInfo(int duration, this._image)
       : _duration = Duration(milliseconds: duration);
