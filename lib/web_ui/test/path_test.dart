@@ -239,6 +239,7 @@ void main() {
             from: const Rect.fromLTRB(220.0, 124.1, 382.9, 300.0)));
   });
 
+  // Regression test for https://github.com/flutter/flutter/issues/46813.
   test('Should deep copy path', () {
     final SurfacePath path = SurfacePath();
     path.moveTo(25, 30);
