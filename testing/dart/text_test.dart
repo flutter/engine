@@ -26,6 +26,53 @@ void main() {
       expect(FontWeight.lerp(FontWeight.w400, null, 1), equals(FontWeight.w400));
     });
   });
+
+  group('HeightBehavior', () {
+    HeightBehavior behavior0 = HeightBehavior();
+    HeightBehavior behavior1 = HeightBehavior(
+      applyHeightToFirstAscent: false,
+      applyHeightToLastDescent: false
+    );
+    HeightBehavior behavior2 = HeightBehavior(
+      applyHeightToFirstAscent: false,
+    );
+    HeightBehavior behavior3 = HeightBehavior(
+      applyHeightToLastDescent: false
+    );
+
+    test('default constructor works', () {
+      expect(behavior0.applyHeightToFirstAscent, equals(true));
+      expect(behavior0.applyHeightToLastDescent, equals(true));
+
+      expect(behavior1.applyHeightToFirstAscent, equals(false));
+      expect(behavior1.applyHeightToLastDescent, equals(false));
+
+      expect(behavior2.applyHeightToFirstAscent, equals(true));
+      expect(behavior2.applyHeightToLastDescent, equals(false));
+    });
+
+    test('encode works', () {
+      expect(behavior0.encode(), equals(3));
+      expect(behavior1.encode(), equals(0));
+      expect(behavior2.encode(), equals(2));
+      expect(behavior3.encode(), equals(1));
+    });
+
+    test('encode works', () {
+      expect(HeightBehavior.fromEncoded(3), equals(behavior0));
+      expect(HeightBehavior.fromEncoded(0), equals(behavior1));
+      expect(HeightBehavior.fromEncoded(2), equals(behavior2));
+      expect(HeightBehavior.fromEncoded(1), equals(behavior3));
+    });
+
+    test('toString works', () {
+      expect(behavior0.toString(), equals('HeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: true)'));
+      expect(behavior1.toString(), equals('HeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: false)'));
+      expect(behavior2.toString(), equals('HeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: true)'));
+      expect(behavior3.toString(), equals('HeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: false)'));
+    });
+  });
+
   group('TextRange', () {
     test('empty ranges are correct', () {
       const TextRange range = TextRange(start: -1, end: -1);
