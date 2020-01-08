@@ -5877,7 +5877,7 @@ TEST_F(ParagraphTest, KhmerLineBreaker) {
   ASSERT_TRUE(Snapshot());
 }
 
-TEST_F(ParagraphTest, BoundingLineHeightBehaviorRectsParagraph) {
+TEST_F(ParagraphTest, BoundaryLineHeightBehaviorRectsParagraph) {
   // clang-format off
   const char* text =
       "line1\nline2\nline3";
@@ -5887,9 +5887,9 @@ TEST_F(ParagraphTest, BoundingLineHeightBehaviorRectsParagraph) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
-  paragraph_style.bounding_line_height_behavior =
-      txt::BoundaryLineHeightBehavior::kDisableFirst &
-      txt::BoundaryLineHeightBehavior::kDisableLast;
+  paragraph_style.boundary_line_height_behavior =
+      txt::BoundaryLineHeightBehavior::kDisableFirstAscent &
+      txt::BoundaryLineHeightBehavior::kDisableLastDescent;
 
   txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 

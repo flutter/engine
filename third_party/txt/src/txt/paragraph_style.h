@@ -56,8 +56,8 @@ enum class TextDirection {
 enum BoundaryLineHeightBehavior {
   kDisableAll = 0x0,
   kAll = 0x1 | 0x2,
-  kDisableFirst = 0x2,
-  kDisableLast = 0x1,
+  kDisableFirstAscent = 0x2,
+  kDisableLastDescent = 0x1,
 };
 
 class ParagraphStyle {
@@ -69,7 +69,7 @@ class ParagraphStyle {
   std::string font_family = "";
   double font_size = 14;
   double height = 1;
-  size_t bounding_line_height_behavior = BoundaryLineHeightBehavior::kAll;
+  size_t boundary_line_height_behavior = BoundaryLineHeightBehavior::kAll;
   bool has_height_override = false;
 
   // Strut properties. strut_enabled must be set to true for the rest of the

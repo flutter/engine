@@ -429,55 +429,63 @@ enum TextDecorationStyle {
   wavy
 }
 
-/// Defines how the paragraph will handle the ascent of the first line and
-/// descent of the last line. These lines are referred to as "boundary" lines.
+/// {@template flutter.dart:ui.boundaryLineHeightBehavior}
+/// Defines how the paragraph will apply [TextStyle.height] the ascent of the
+/// first line and descent of the last line.
+///
+/// These lines are referred to as "boundary" lines. The boolean value
+/// represents whether the [TextStyle.height] modifier will be applied to the
+/// corresponding metric. By default, all properties are true, and
+/// [TextStyle.height] is applied as normal. When set to false, the font's
+/// default ascent will be used.
+/// {@endtemplate}
 class BoundaryLineHeightBehavior {
 
   /// Creates a new BoundaryLineHeightBehavior object.
   ///
-  ///  * first: When true, the [TextStyle.height] modifier will be applied to
-  ///    to the ascent of the first line. When false, the font's default ascent
-  ///    will be used.
-  ///  * last: When true, the [TextStyle.height] modifier will be applied to
-  ///    to the descent of the last line. When false, the font's default descent
-  ///    will be used.
+  ///  * applyHeightToFirstLineAscent: When true, the [TextStyle.height] modifier
+  ///    will be applied to the ascent of the first line. When false, the font's
+  ///    default ascent will be used.
+  ///  * applyHeightToLastLineDescent: When true, the [TextStyle.height] modifier
+  ///    will be applied to the descent of the last line. When false, the font's
+  ///    default descent will be used.
   ///
-  /// All properties default to true (height modificaitons applied as normal).
+  /// All properties default to true (height modifications applied as normal).
   BoundaryLineHeightBehavior({
-    this.first = true,
-    this.last = true,
+    this.applyHeightToFirstLineAscent = true,
+    this.applyHeightToLastLineDescent = true,
   });
 
   /// Creates a new BoundaryLineHeightBehavior object from an encoded form.
   ///
   /// See [encode] for the creation of the encoded form.
-  BoundaryLineHeightBehavior.fromEncoded(int encoded) : first = (encoded & 0x1) > 0,
-                                                        last = (encoded & 0x2) > 0;
+  BoundaryLineHeightBehavior.fromEncoded(int encoded) : applyHeightToFirstLineAscent = (encoded & 0x1) > 0,
+                                                        applyHeightToLastLineDescent = (encoded & 0x2) > 0;
 
 
-  /// Whether to apply the [TextStyle.height] modifier or not to the ascent of
-  /// the first line in the paragraph.
+  /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
+  /// line in the paragraph.
   ///
   /// When true, the [TextStyle.height] modifier will be applied to to the ascent
   /// of the first line. When false, the font's default ascent will be used and
   /// the [TextStyle.height] will have no effect on the ascent of the first line.
   ///
-  /// Defaults to true (height modificaitons applied as normal).
-  final bool first;
+  /// Defaults to true (height modifications applied as normal).
+  final bool applyHeightToFirstLineAscent;
 
-  /// Whether to apply the [TextStyle.height] modifier or not to the descent of
-  /// the last line in the paragraph.
+  /// Whether to apply the [TextStyle.height] modifier to the descent of the last
+  /// line in the paragraph.
   ///
   /// When true, the [TextStyle.height] modifier will be applied to to the descent
   /// of the last line. When false, the font's default descent will be used and
   /// the [TextStyle.height] will have no effect on the descent of the last line.
   ///
-  /// Defaults to true (height modificaitons applied as normal).
-  final bool last;
+  /// Defaults to true (height modifications applied as normal).
+  final bool applyHeightToLastLineDescent;
 
   /// Returns an encoded int representation of this object.
   int encode() {
-    return 0 + (first ? 1 << 0 : 0) + (last ? 1 << 1 : 0);
+    return 0 + (applyHeightToFirstLineAscent ? 1 << 0 : 0) + (applyHeightToLastLineDescent ? 1 << 1 : 0);
   }
 
   @override
@@ -487,23 +495,23 @@ class BoundaryLineHeightBehavior {
     if (other.runtimeType != runtimeType)
       return false;
     return other is BoundaryLineHeightBehavior
-        && other.first == first
-        && other.last == last;
+        && other.applyHeightToFirstLineAscent == applyHeightToLastLineDescent
+        && other.applyHeightToLastLineDescent == applyHeightToLastLineDescent;
   }
 
   @override
   int get hashCode {
     return hashValues(
-      first,
-      last,
+      applyHeightToFirstLineAscent,
+      applyHeightToLastLineDescent,
     );
   }
 
   @override
   String toString() {
     return 'BoundaryLineHeightBehavior('
-             'first: $first, '
-             'last: $last, '
+             'applyHeightToFirstLineAscent: $applyHeightToFirstLineAscent, '
+             'applyHeightToLastLineDescent: $applyHeightToLastLineDescent, '
            ')';
   }
 }
