@@ -4,9 +4,12 @@
 
 import 'dart:io' as io;
 
+import 'package:args/args.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
+
+import 'environment.dart';
 
 /// The port number for debugging.
 const int kDevtoolsPort = 12345;
@@ -30,6 +33,8 @@ abstract class PlatformBinding {
         _instance = _LinuxBinding();
       } else if (io.Platform.isMacOS) {
         _instance = _MacBinding();
+      } else if (io.Platform.isWindows) {
+        _instance = _WindowsBinding();
       } else {
         throw '${io.Platform.operatingSystem} is not supported';
       }
@@ -45,10 +50,43 @@ abstract class PlatformBinding {
   String getChromeExecutablePath(io.Directory versionDir);
   String getFirefoxExecutablePath(io.Directory versionDir);
   String getFirefoxLatestVersionUrl();
+  String getSafariSystemExecutablePath();
 }
 
 const String _kBaseDownloadUrl =
     'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o';
+
+class _WindowsBinding implements PlatformBinding {
+  @override
+  int getChromeBuild(YamlMap browserLock) {
+    final YamlMap chromeMap = browserLock['chrome'];
+    return chromeMap['Win'];
+  }
+
+  @override
+  String getChromeDownloadUrl(String version) =>
+      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win%2F${version}%2Fchrome-win32.zip?alt=media';
+
+  @override
+  String getChromeExecutablePath(io.Directory versionDir) =>
+      path.join(versionDir.path, 'chrome-win32', 'chrome');
+
+  @override
+  String getFirefoxDownloadUrl(String version) =>
+      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/win64/en-US/firefox-${version}.exe';
+
+  @override
+  String getFirefoxExecutablePath(io.Directory versionDir) =>
+      path.join(versionDir.path, 'firefox', 'firefox');
+
+  @override
+  String getFirefoxLatestVersionUrl() =>
+      'https://download.mozilla.org/?product=firefox-latest&os=win&lang=en-US';
+
+  @override
+  String getSafariSystemExecutablePath() =>
+      throw UnsupportedError('Safari is not supported on Windows');
+}
 
 class _LinuxBinding implements PlatformBinding {
   @override
@@ -76,6 +114,10 @@ class _LinuxBinding implements PlatformBinding {
   @override
   String getFirefoxLatestVersionUrl() =>
       'https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US';
+
+  @override
+  String getSafariSystemExecutablePath() =>
+      throw UnsupportedError('Safari is not supported on Linux');
 }
 
 class _MacBinding implements PlatformBinding {
@@ -109,6 +151,10 @@ class _MacBinding implements PlatformBinding {
   @override
   String getFirefoxLatestVersionUrl() =>
       'https://download.mozilla.org/?product=firefox-latest&os=osx&lang=en-US';
+
+  @override
+  String getSafariSystemExecutablePath() =>
+      '/Applications/Safari.app/Contents/MacOS/Safari';
 }
 
 class BrowserInstallation {
@@ -122,6 +168,36 @@ class BrowserInstallation {
 
   /// Path the the browser executable.
   final String executable;
+}
+
+abstract class BrowserArgParser {
+  const BrowserArgParser();
+
+  /// Populate options specific to a browser to the [ArgParser].
+  void populateOptions(ArgParser argParser);
+
+  /// Populate browser with results of the arguments passed.
+  void parseOptions(ArgResults argResults);
+
+  String get version;
+}
+
+/// Provides access to the contents of the `browser_lock.yaml` file.
+class BrowserLock {
+  /// Initializes the [BrowserLock] singleton.
+  static final BrowserLock _singletonInstance = BrowserLock._();
+
+  /// The [Keyboard] singleton.
+  static BrowserLock get instance => _singletonInstance;
+
+  YamlMap _configuration = YamlMap();
+  YamlMap get configuration => _configuration;
+
+  BrowserLock._() {
+    final io.File lockFile = io.File(
+        path.join(environment.webUiRootDir.path, 'dev', 'browser_lock.yaml'));
+    this._configuration = loadYaml(lockFile.readAsStringSync());
+  }
 }
 
 /// A string sink that swallows all input.

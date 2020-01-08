@@ -4,8 +4,9 @@
   },
   "sandbox": {
     "features": [
-      "root-ssl-certificates",
+      "config-data",
       "deprecated-ambient-replace-as-executable",
+      "root-ssl-certificates",
       "vulkan"
     ],
     "services": [
@@ -16,6 +17,7 @@
       "fuchsia.feedback.CrashReporter",
       "fuchsia.fonts.Provider",
       "fuchsia.intl.PropertyProvider",
+      "fuchsia.logger.LogSink",
       "fuchsia.net.NameLookup",
       "fuchsia.netstack.Netstack",
       "fuchsia.posix.socket.Provider",

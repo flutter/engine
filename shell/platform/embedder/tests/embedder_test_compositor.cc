@@ -112,15 +112,22 @@ bool EmbedderTestCompositor::UpdateOffscrenComposition(
         break;
     };
 
+    // If the layer is not a platform view but the engine did not specify an
+    // image for the backing store, it is an error.
     if (!layer_image && layer->type != kFlutterLayerContentTypePlatformView) {
       FML_LOG(ERROR) << "Could not snapshot layer in test compositor: "
                      << *layer;
       return false;
     }
 
-    // The image rendered by Flutter already has the correct offset and
-    // transformation applied. The layers offset is meant for the platform.
-    canvas->drawImage(layer_image.get(), canvas_offset.x(), canvas_offset.y());
+    // The test could have just specified no contents to be rendered in place of
+    // a platform view. This is not an error.
+    if (layer_image) {
+      // The image rendered by Flutter already has the correct offset and
+      // transformation applied. The layers offset is meant for the platform.
+      canvas->drawImage(layer_image.get(), canvas_offset.x(),
+                        canvas_offset.y());
+    }
   }
 
   last_composition_ = surface->makeImageSnapshot();
@@ -299,19 +306,19 @@ bool EmbedderTestCompositor::CreateSoftwareRenderSurface(
 }
 
 void EmbedderTestCompositor::SetNextPresentCallback(
-    PresentCallback next_present_callback) {
+    const PresentCallback& next_present_callback) {
   FML_CHECK(!next_present_callback_);
   next_present_callback_ = next_present_callback;
 }
 
 void EmbedderTestCompositor::SetNextSceneCallback(
-    NextSceneCallback next_scene_callback) {
+    const NextSceneCallback& next_scene_callback) {
   FML_CHECK(!next_scene_callback_);
   next_scene_callback_ = next_scene_callback;
 }
 
 void EmbedderTestCompositor::SetPlatformViewRendererCallback(
-    PlatformViewRendererCallback callback) {
+    const PlatformViewRendererCallback& callback) {
   platform_view_renderer_callback_ = callback;
 }
 

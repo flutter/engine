@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#define FML_USED_ON_EMBEDDER
+
 #include "runner.h"
 
 #include <fuchsia/mem/cpp/fidl.h>
@@ -10,6 +12,8 @@
 #include <zircon/status.h>
 #include <zircon/types.h>
 
+#include <fcntl.h>
+#include <stdint.h>
 #include <sstream>
 #include <utility>
 
@@ -29,6 +33,13 @@ namespace {
 
 static constexpr char kIcuDataPath[] = "/pkg/data/icudtl.dat";
 
+// Environment variable containing the path to the directory containing the
+// timezone files.
+static constexpr char kICUTZEnv[] = "ICU_TIMEZONE_FILES_DIR";
+
+// The data directory containing ICU timezone data files.
+static constexpr char kICUTZDataDir[] = "/config/data/tzdata/icu/44/le";
+
 // Map the memory into the process and return a pointer to the memory.
 uintptr_t GetICUData(const fuchsia::mem::Buffer& icu_data) {
   uint64_t data_size = icu_data.size;
@@ -46,6 +57,33 @@ uintptr_t GetICUData(const fuchsia::mem::Buffer& icu_data) {
   return 0u;
 }
 
+// Initializes the timezone data if available.  Timezone data file in Fuchsia
+// is at a fixed directory path.  Returns true on success.  As a side effect
+// sets the value of the environment variable "ICU_TIMEZONE_FILES_DIR" to a
+// fixed value which is fuchsia-specific.
+bool InitializeTZData() {
+  // We need the ability to change the env variable for testing, so not
+  // overwriting if set.
+  setenv(kICUTZEnv, kICUTZDataDir, 0 /* No overwrite */);
+
+  const std::string tzdata_dir = getenv(kICUTZEnv);
+  // Try opening the path to check if present.  No need to verify that it is a
+  // directory since ICU loading will return an error if the TZ data path is
+  // wrong.
+  int fd = openat(AT_FDCWD, tzdata_dir.c_str(), O_RDONLY);
+  if (fd < 0) {
+    FML_LOG(INFO) << "Could not open: '" << tzdata_dir
+                  << "', proceeding without loading the timezone database: "
+                  << strerror(errno);
+    return false;
+  }
+  if (!close(fd)) {
+    FML_LOG(WARNING) << "Could not close: " << tzdata_dir << ": "
+                     << strerror(errno);
+  }
+  return true;
+}
+
 // Return value indicates if initialization was successful.
 bool InitializeICU() {
   const char* data_path = kIcuDataPath;
@@ -60,10 +98,18 @@ bool InitializeICU() {
     return false;
   }
 
+  // If the loading fails, soldier on.  The loading is optional as we don't
+  // want to crash the engine in transition.
+  InitializeTZData();
+
   // Pass the data to ICU.
   UErrorCode err = U_ZERO_ERROR;
   udata_setCommonData(reinterpret_cast<const char*>(data), &err);
-  return err == U_ZERO_ERROR;
+  if (err != U_ZERO_ERROR) {
+    FML_LOG(ERROR) << "error loading ICU data: " << err;
+    return false;
+  }
+  return true;
 }
 
 }  // namespace
@@ -84,11 +130,6 @@ static void SetProcessName() {
   zx::process::self()->set_property(ZX_PROP_NAME, name.c_str(), name.size());
 }
 
-static void SetThreadName(const std::string& thread_name) {
-  zx::thread::self()->set_property(ZX_PROP_NAME, thread_name.c_str(),
-                                   thread_name.size());
-}
-
 #if !defined(DART_PRODUCT)
 // Register native symbol information for the Dart VM's profiler.
 static void RegisterProfilerSymbols(const char* symbols_path,
@@ -102,8 +143,8 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 }
 #endif  // !defined(DART_PRODUCT)
 
-Runner::Runner(async::Loop* loop)
-    : loop_(loop), context_(sys::ComponentContext::Create()) {
+Runner::Runner(fml::MessageLoop& message_loop)
+    : message_loop_(message_loop), context_(sys::ComponentContext::Create()) {
 #if !defined(DART_PRODUCT)
   // The VM service isolate uses the process-wide namespace. It writes the
   // vm service protocol port under /tmp. The VMServiceObject exposes that
@@ -121,7 +162,7 @@ Runner::Runner(async::Loop* loop)
 
   SetProcessName();
 
-  SetThreadName("io.flutter.runner.main");
+  fml::Thread::SetCurrentThreadName("io.flutter.runner.main");
 
   context_->outgoing()->AddPublicService<fuchsia::sys::Runner>(
       std::bind(&Runner::RegisterApplication, this, std::placeholders::_1));
@@ -170,12 +211,13 @@ void Runner::StartComponent(
   // there being multiple application runner instance in the process at the same
   // time. So it is safe to use the raw pointer.
   Application::TerminationCallback termination_callback =
-      [task_runner = loop_->dispatcher(),  //
-       application_runner = this           //
+      [task_runner = message_loop_.GetTaskRunner(),  //
+       application_runner = this                     //
   ](const Application* application) {
-        async::PostTask(task_runner, [application_runner, application]() {
-          application_runner->OnApplicationTerminate(application);
-        });
+        fml::TaskRunner::RunNowOrPostTask(
+            task_runner, [application_runner, application]() {
+              application_runner->OnApplicationTerminate(application);
+            });
       };
 
   auto active_application = Application::Create(
@@ -210,28 +252,39 @@ void Runner::OnApplicationTerminate(const Application* application) {
   active_applications_.erase(application);
 
   // Post the task to destroy the application and quit its message loop.
-  async::PostTask(
-      application_thread->dispatcher(),
-      fml::MakeCopyable([instance = std::move(application_to_destroy),
-                         thread = application_thread.get()]() mutable {
-        instance.reset();
-        thread->Quit();
-      }));
+  fml::TaskRunner::RunNowOrPostTask(
+      application_thread->GetTaskRunner(),
+      fml::MakeCopyable(
+          [instance = std::move(application_to_destroy),
+           thread = application_thread.get()]() mutable { instance.reset(); }));
 
   // This works because just posted the quit task on the hosted thread.
   application_thread->Join();
 }
 
 void Runner::SetupICU() {
-  if (!InitializeICU()) {
+  // Exposes the TZ data setup for testing.  Failing here is not fatal.
+  Runner::SetupTZDataInternal();
+  if (!Runner::SetupICUInternal()) {
     FML_LOG(ERROR) << "Could not initialize ICU data.";
   }
+}
+
+// static
+bool Runner::SetupICUInternal() {
+  return InitializeICU();
+}
+
+// static
+bool Runner::SetupTZDataInternal() {
+  return InitializeTZData();
 }
 
 #if !defined(DART_PRODUCT)
 void Runner::SetupTraceObserver() {
   trace_observer_ = std::make_unique<trace::TraceObserver>();
-  trace_observer_->Start(loop_->dispatcher(), [runner = this]() {
+  FML_DCHECK(message_loop_.GetTaskRunner()->RunsTasksOnCurrentThread());
+  trace_observer_->Start(async_get_default_dispatcher(), [runner = this]() {
     if (!trace_is_category_enabled("dart:profiler")) {
       return;
     }
@@ -241,10 +294,11 @@ void Runner::SetupTraceObserver() {
     } else if (trace_state() == TRACE_STOPPING) {
       for (auto& it : runner->active_applications_) {
         fml::AutoResetWaitableEvent latch;
-        async::PostTask(it.second.thread->dispatcher(), [&]() {
-          it.second.application->WriteProfileToTrace();
-          latch.Signal();
-        });
+        fml::TaskRunner::RunNowOrPostTask(
+            it.second.thread->GetTaskRunner(), [&]() {
+              it.second.application->WriteProfileToTrace();
+              latch.Signal();
+            });
         latch.Wait();
       }
       Dart_StopProfiling();

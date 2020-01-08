@@ -101,6 +101,8 @@ source_set("ui") {
     "window/pointer_data.h",
     "window/pointer_data_packet.cc",
     "window/pointer_data_packet.h",
+    "window/pointer_data_packet_converter.cc",
+    "window/pointer_data_packet_converter.h",
     "window/viewport_metrics.cc",
     "window/viewport_metrics.h",
     "window/window.cc",
@@ -153,6 +155,8 @@ if (current_toolchain == host_toolchain) {
     fixtures = [
       "fixtures/DashInNooglerHat.jpg",
       "fixtures/Horizontal.jpg",
+      "fixtures/hello_loop_2.gif",
+      "fixtures/hello_loop_2.webp",
     ]
   }
 
@@ -161,6 +165,7 @@ if (current_toolchain == host_toolchain) {
 
     sources = [
       "painting/image_decoder_unittests.cc",
+      "window/pointer_data_packet_converter_unittests.cc",
     ]
 
     deps = [

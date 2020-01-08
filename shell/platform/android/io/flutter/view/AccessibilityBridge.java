@@ -4,6 +4,7 @@
 
 package io.flutter.view;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.database.ContentObserver;
@@ -489,6 +490,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      */
     @Override
     @SuppressWarnings("deprecation")
+    // Supressing Lint warning for new API, as we are version guarding all calls to newer APIs
+    @SuppressLint("NewApi")
     public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
         if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
             // The node is in the engine generated range, and is provided by the accessibility view embedder.
@@ -752,6 +755,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
 
         result.setSelected(semanticsNode.hasFlag(Flag.IS_SELECTED));
+
+        // Heading support
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            result.setHeading(semanticsNode.hasFlag(Flag.IS_HEADER));
+        }
 
         // Accessibility Focus
         if (accessibilityFocusedSemanticsNode != null && accessibilityFocusedSemanticsNode.id == virtualViewId) {
@@ -1369,16 +1377,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 }
                 sendAccessibilityEvent(event);
             }
-            if (object.hasFlag(Flag.IS_LIVE_REGION)) {
-                String label = object.label == null ? "" : object.label;
-                String previousLabel = object.previousLabel == null ? "" : object.label;
-                if (!label.equals(previousLabel) || !object.hadFlag(Flag.IS_LIVE_REGION)) {
-                    sendWindowContentChangeEvent(object.id);
-                }
-            } else if (object.hasFlag(Flag.IS_TEXT_FIELD) && object.didChangeLabel()
-                    && inputFocusedSemanticsNode != null && inputFocusedSemanticsNode.id == object.id) {
-                // Text fields should announce when their label changes while focused. We use a live
-                // region tag to do so, and this event triggers that update.
+            if (object.hasFlag(Flag.IS_LIVE_REGION) && object.didChangeLabel()) {
                 sendWindowContentChangeEvent(object.id);
             }
             if (accessibilityFocusedSemanticsNode != null && accessibilityFocusedSemanticsNode.id == object.id
@@ -1474,11 +1473,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         if (!accessibilityManager.isEnabled()) {
             return;
         }
-        if (viewId == ROOT_NODE_ID) {
-            rootAccessibilityView.sendAccessibilityEvent(eventType);
-        } else {
-            sendAccessibilityEvent(obtainAccessibilityEvent(viewId, eventType));
-        }
+        sendAccessibilityEvent(obtainAccessibilityEvent(viewId, eventType));
     }
 
     /**
@@ -1492,7 +1487,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         if (!accessibilityManager.isEnabled()) {
             return;
         }
-        // TODO(mattcarroll): why are we explicitly talking to the root view's parent?
+        // See https://developer.android.com/reference/android/view/View.html#sendAccessibilityEvent(int)
+        // We just want the final part at this point, since the event parameter
+        // has already been correctly populated.
         rootAccessibilityView.getParent().requestSendAccessibilityEvent(rootAccessibilityView, event);
     }
 
@@ -1543,9 +1540,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      * invoked to create an {@link AccessibilityEvent} for the {@link #rootAccessibilityView}.
      */
     private AccessibilityEvent obtainAccessibilityEvent(int virtualViewId, int eventType) {
-        if (BuildConfig.DEBUG && virtualViewId == ROOT_NODE_ID) {
-            Log.e(TAG, "VirtualView node must not be the root node.");
-        }
         AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
         event.setPackageName(rootAccessibilityView.getContext().getPackageName());
         event.setSource(rootAccessibilityView, virtualViewId);

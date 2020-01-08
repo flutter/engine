@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:isolate';
+import 'dart:ffi';
 import 'dart:core';
 import 'dart:convert';
 
@@ -197,6 +199,50 @@ void can_composite_platform_views() {
     builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
     builder.pushOffset(1.0, 2.0);
     builder.addPlatformView(42, width: 123.0, height: 456.0);
+    builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
+    builder.pop(); // offset
+    signalNativeTest(); // Signal 2
+    window.render(builder.build());
+  };
+  signalNativeTest(); // Signal 1
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_composite_platform_views_with_opacity() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+
+    // Root node
+    builder.pushOffset(1.0, 2.0);
+
+    // First sibling layer (no platform view, should be cached)
+    builder.pushOpacity(127);
+    builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
+    builder.pop();
+
+    // Second sibling layer (platform view, should not be cached)
+    builder.pushOpacity(127);
+    builder.addPlatformView(42, width: 123.0, height: 456.0);
+    builder.pop();
+
+    // Third sibling layer (no platform view, should be cached)
+    builder.pushOpacity(127);
+    builder.addPicture(Offset(2.0, 1.0), CreateSimplePicture());
+    builder.pop();
+
+    signalNativeTest(); // Signal 2
+    window.render(builder.build());
+  };
+  signalNativeTest(); // Signal 1
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void can_composite_with_opacity() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOpacity(127);
     builder.addPicture(Offset(1.0, 1.0), CreateSimplePicture());
     builder.pop(); // offset
     signalNativeTest(); // Signal 2
@@ -437,10 +483,18 @@ void verify_b141980393() {
 void can_display_platform_view_with_pixel_ratio() {
   window.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();
-    builder.pushOffset(0.0, 20.0);
+    builder.pushTransform(Float64List.fromList([
+      2.0, 0.0, 0.0, 0.0,
+      0.0, 2.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ])); // base
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
+    builder.pushOffset(0.0, 20.0); // offset
     builder.addPlatformView(42, width: 400.0, height: 280.0);
-    builder.addPicture(Offset(0.0, 0.0), CreateSimplePicture());
-    builder.pop();
+    builder.pop(); // offset
+    builder.addPicture(Offset(0.0, 0.0), CreateColoredBox(Color.fromARGB(128, 255, 0, 0), Size(400.0, 300.0)));
+    builder.pop(); // base
     window.render(builder.build());
   };
   window.scheduleFrame();
@@ -488,3 +542,133 @@ void verify_b143464703() {
   };
   window.scheduleFrame();
 }
+
+@pragma('vm:entry-point')
+void push_frames_over_and_over() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0);
+    builder.addPicture(Offset(0.0, 0.0), CreateColoredBox(Color.fromARGB(255, 128, 128, 128), Size(1024.0, 600.0)));
+    builder.pushOpacity(128);
+    builder.addPlatformView(42, width: 1024.0, height: 540.0);
+    builder.pop();
+    builder.pop();
+    window.render(builder.build());
+    signalNativeTest();
+    window.scheduleFrame();
+  };
+  window.scheduleFrame();
+}
+
+
+@pragma('vm:entry-point')
+void platform_view_mutators() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0); // base
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(800.0, 600.0)));
+
+    builder.pushOpacity(128);
+    builder.pushClipRect(Rect.fromLTWH(10.0, 10.0, 800.0 - 20.0, 600.0 - 20.0));
+    builder.pushClipRRect(RRect.fromLTRBR(10.0, 10.0, 800.0 - 10.0, 600.0 - 10.0, Radius.circular(14.0)));
+    builder.addPlatformView(42, width: 800.0, height: 600.0);
+    builder.pop(); // clip rrect
+    builder.pop(); // clip rect
+    builder.pop(); // opacity
+
+    builder.pop(); // base
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void platform_view_mutators_with_pixel_ratio() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0); // base
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
+
+    builder.pushOpacity(128);
+    builder.pushClipRect(Rect.fromLTWH(5.0, 5.0, 400.0 - 10.0, 300.0 - 10.0));
+    builder.pushClipRRect(RRect.fromLTRBR(5.0, 5.0, 400.0 - 5.0, 300.0 - 5.0, Radius.circular(7.0)));
+    builder.addPlatformView(42, width: 400.0, height: 300.0);
+    builder.pop(); // clip rrect
+    builder.pop(); // clip rect
+    builder.pop(); // opacity
+
+    builder.pop(); // base
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void empty_scene() {
+  window.onBeginFrame = (Duration duration) {
+    window.render(SceneBuilder().build());
+    signalNativeTest();
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void scene_with_no_container() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
+    window.render(builder.build());
+    signalNativeTest();
+  };
+  window.scheduleFrame();
+}
+
+Picture CreateArcEndCapsPicture() {
+  PictureRecorder baseRecorder = PictureRecorder();
+  Canvas canvas = Canvas(baseRecorder);
+
+  var style = Paint()
+    ..strokeWidth = 12.0
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.miter;
+
+  style.color = Color.fromARGB(255, 255, 0, 0);
+  canvas.drawArc(Rect.fromLTRB(0.0, 0.0, 500.0, 500.0), 1.57, 1.0, false, style);
+
+  return baseRecorder.endRecording();
+
+}
+
+@pragma('vm:entry-point')
+void arc_end_caps_correct() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.addPicture(Offset(0.0, 0.0), CreateArcEndCapsPicture());
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void scene_builder_with_clips() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushClipRect(Rect.fromLTRB(10.0, 10.0, 390.0, 290.0));
+    builder.addPlatformView(42, width: 400.0, height: 300.0);
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+
+void sendObjectToNativeCode(dynamic object) native 'SendObjectToNativeCode';
+
+@pragma('vm:entry-point')
+void objects_can_be_posted() {
+  ReceivePort port = ReceivePort();
+  port.listen((dynamic message){ sendObjectToNativeCode(message); });
+  signalNativeCount(port.sendPort.nativePort);
+}
+

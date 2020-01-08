@@ -55,7 +55,8 @@ class EngineWindow extends ui.Window {
       double windowInnerHeight;
       if (html.window.visualViewport != null) {
         windowInnerWidth = html.window.visualViewport.width * devicePixelRatio;
-        windowInnerHeight = html.window.visualViewport.height * devicePixelRatio;
+        windowInnerHeight =
+            html.window.visualViewport.height * devicePixelRatio;
       } else {
         windowInnerWidth = html.window.innerWidth * devicePixelRatio;
         windowInnerHeight = html.window.innerHeight * devicePixelRatio;
@@ -154,11 +155,15 @@ class EngineWindow extends ui.Window {
         break;
 
       case 'flutter/textinput':
-        textEditing.handleTextInput(data);
+        textEditing.channel.handleTextInput(data);
         return;
 
       case 'flutter/platform_views':
-        handlePlatformViewCall(data, callback);
+        if (experimentalUseSkia) {
+          rasterizer.viewEmbedder.handlePlatformViewCall(data, callback);
+        } else {
+          handlePlatformViewCall(data, callback);
+        }
         return;
 
       case 'flutter/accessibility':
@@ -274,19 +279,15 @@ class EngineWindow extends ui.Window {
   void render(ui.Scene scene) {
     if (experimentalUseSkia) {
       final LayerScene layerScene = scene;
-      _rasterizer.draw(layerScene.layerTree);
+      rasterizer.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene;
       domRenderer.renderScene(surfaceScene.webOnlyRootElement);
     }
   }
 
-  final Rasterizer _rasterizer = experimentalUseSkia
-      ? Rasterizer(Surface((SkCanvas canvas) {
-          domRenderer.renderScene(canvas.htmlCanvas);
-          canvas.skSurface.callMethod('flush');
-        }))
-      : null;
+  @visibleForTesting
+  Rasterizer rasterizer = experimentalUseSkia ? Rasterizer(Surface()) : null;
 }
 
 /// The window singleton.

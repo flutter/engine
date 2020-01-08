@@ -98,6 +98,19 @@ void main() async {
     await matchGoldenFile('compositing_shifted_physical_shape_clip.png', region: region);
   }, timeout: const Timeout(Duration(seconds: 10)));
 
+  test('pushImageFilter', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    builder.pushImageFilter(
+      ImageFilter.blur(sigmaX: 1, sigmaY: 3),
+    );
+    _drawTestPicture(builder);
+    builder.pop();
+
+    html.document.body.append(builder.build().webOnlyRootElement);
+
+    await matchGoldenFile('compositing_image_filter.png', region: region);
+  }, timeout: const Timeout(Duration(seconds: 10)));
+
   group('Cull rect computation', () {
     _testCullRectComputation();
   });
@@ -480,7 +493,7 @@ void _testCullRectComputation() {
 
     await matchGoldenFile('compositing_3d_rotate1.png', region: region);
 
-    final PersistedStandardPicture picture = enumeratePictures().single;
+    final PersistedStandardPicture picture = enumeratePictures().single; // ignore: unused_local_variable
     // TODO(https://github.com/flutter/flutter/issues/40395):
     //   Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500.
     // expect(
@@ -494,7 +507,7 @@ void _testCullRectComputation() {
 }
 
 void _drawTestPicture(SceneBuilder builder) {
-  final PictureRecorder recorder = PictureRecorder();
+  final EnginePictureRecorder recorder = PictureRecorder();
   final RecordingCanvas canvas =
       recorder.beginRecording(const Rect.fromLTRB(0, 0, 100, 100));
   canvas.drawCircle(
@@ -529,7 +542,7 @@ typedef PaintCallback = void Function(RecordingCanvas canvas);
 
 void drawWithBitmapCanvas(SceneBuilder builder, PaintCallback callback,
     {Rect bounds = Rect.largest}) {
-  final PictureRecorder recorder = PictureRecorder();
+  final EnginePictureRecorder recorder = PictureRecorder();
   final RecordingCanvas canvas = recorder.beginRecording(bounds);
 
   canvas.debugEnforceArbitraryPaint();

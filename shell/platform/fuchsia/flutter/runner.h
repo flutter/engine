@@ -25,13 +25,12 @@ namespace flutter_runner {
 // their own threads.
 class Runner final : public fuchsia::sys::Runner {
  public:
-  explicit Runner(async::Loop* loop);
+  explicit Runner(fml::MessageLoop& message_loop);
 
   ~Runner();
 
  private:
-  async::Loop* loop_;
-
+  fml::MessageLoop& message_loop_;
   std::unique_ptr<sys::ComponentContext> context_;
   fidl::BindingSet<fuchsia::sys::Runner> active_applications_bindings_;
   std::unordered_map<const Application*, ActiveApplication>
@@ -63,6 +62,15 @@ class Runner final : public fuchsia::sys::Runner {
 #if !defined(DART_PRODUCT)
   void SetupTraceObserver();
 #endif  // !defined(DART_PRODUCT)
+
+  // Called from SetupICU, for testing only.  Returns false on error.
+  static bool SetupICUInternal();
+  // Called from SetupICU, for testing only.  Returns false on error.
+  static bool SetupTZDataInternal();
+#if defined(FRIEND_TEST)
+  FRIEND_TEST(RunnerTest, TZData);
+  FRIEND_TEST(RunnerTZDataTest, LoadsWithoutTZDataPresent);
+#endif  // defined(FRIEND_TEST)
 
   FML_DISALLOW_COPY_AND_ASSIGN(Runner);
 };

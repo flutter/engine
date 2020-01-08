@@ -71,11 +71,11 @@ CanvasPath::CanvasPath() {}
 CanvasPath::~CanvasPath() {}
 
 int CanvasPath::getFillType() {
-  return path_.getFillType();
+  return static_cast<int>(path_.getFillType());
 }
 
 void CanvasPath::setFillType(int fill_type) {
-  path_.setFillType(static_cast<SkPath::FillType>(fill_type));
+  path_.setFillType(static_cast<SkPathFillType>(fill_type));
 }
 
 void CanvasPath::moveTo(float x, float y) {
@@ -156,9 +156,8 @@ void CanvasPath::arcToPoint(float arcEndX,
                             bool isClockwiseDirection) {
   const auto arcSize = isLargeArc ? SkPath::ArcSize::kLarge_ArcSize
                                   : SkPath::ArcSize::kSmall_ArcSize;
-  const auto direction = isClockwiseDirection
-                             ? SkPath::Direction::kCW_Direction
-                             : SkPath::Direction::kCCW_Direction;
+  const auto direction =
+      isClockwiseDirection ? SkPathDirection::kCW : SkPathDirection::kCCW;
 
   path_.arcTo(radiusX, radiusY, xAxisRotation, arcSize, direction, arcEndX,
               arcEndY);
@@ -173,9 +172,8 @@ void CanvasPath::relativeArcToPoint(float arcEndDeltaX,
                                     bool isClockwiseDirection) {
   const auto arcSize = isLargeArc ? SkPath::ArcSize::kLarge_ArcSize
                                   : SkPath::ArcSize::kSmall_ArcSize;
-  const auto direction = isClockwiseDirection
-                             ? SkPath::Direction::kCW_Direction
-                             : SkPath::Direction::kCCW_Direction;
+  const auto direction =
+      isClockwiseDirection ? SkPathDirection::kCW : SkPathDirection::kCCW;
   path_.rArcTo(radiusX, radiusY, xAxisRotation, arcSize, direction,
                arcEndDeltaX, arcEndDeltaY);
 }

@@ -23,6 +23,9 @@ GPUSurfaceMetal::GPUSurfaceMetal(GPUSurfaceDelegate* delegate,
   }
 
   layer.get().pixelFormat = MTLPixelFormatBGRA8Unorm;
+  // Flutter needs to read from the color attachment in cases where there are effects such as
+  // backdrop filters.
+  layer.get().framebufferOnly = NO;
 
   auto metal_device = fml::scoped_nsprotocol<id<MTLDevice>>([layer_.get().device retain]);
   auto metal_queue = fml::scoped_nsprotocol<id<MTLCommandQueue>>([metal_device newCommandQueue]);
@@ -149,7 +152,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
     return true;
   };
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), submit_callback);
+  return std::make_unique<SurfaceFrame>(std::move(surface), true, submit_callback);
 }
 
 // |Surface|

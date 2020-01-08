@@ -227,7 +227,7 @@ bool EmbedderEngine::ReloadSystemFonts() {
   return shell_->ReloadSystemFonts();
 }
 
-bool EmbedderEngine::PostRenderThreadTask(fml::closure task) {
+bool EmbedderEngine::PostRenderThreadTask(const fml::closure& task) {
   if (!IsValid()) {
     return false;
   }
@@ -245,6 +245,11 @@ bool EmbedderEngine::RunTask(const FlutterTask* task) {
   }
   return thread_host_->PostTask(reinterpret_cast<int64_t>(task->runner),
                                 task->task);
+}
+
+const Shell& EmbedderEngine::GetShell() const {
+  FML_DCHECK(shell_);
+  return *shell_.get();
 }
 
 }  // namespace flutter

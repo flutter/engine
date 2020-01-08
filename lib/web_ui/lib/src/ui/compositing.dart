@@ -74,6 +74,13 @@ abstract class OpacityEngineLayer implements EngineLayer {}
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 abstract class ColorFilterEngineLayer implements EngineLayer {}
 
+/// An opaque handle to an image filter engine layer.
+///
+/// Instances of this class are created by [SceneBuilder.pushImageFilter].
+///
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+abstract class ImageFilterEngineLayer implements EngineLayer {}
+
 /// An opaque handle to a backdrop filter engine layer.
 ///
 /// Instances of this class are created by [SceneBuilder.pushBackdropFilter].
@@ -117,16 +124,21 @@ abstract class SceneBuilder {
   /// This is equivalent to [pushTransform] with a matrix with only translation.
   ///
   /// See [pop] for details about the operation stack.
-  OffsetEngineLayer pushOffset(double dx, double dy,
-      {OffsetEngineLayer oldLayer});
+  OffsetEngineLayer pushOffset(
+    double dx,
+    double dy, {
+    OffsetEngineLayer oldLayer,
+  });
 
   /// Pushes a transform operation onto the operation stack.
   ///
   /// The objects are transformed by the given matrix before rasterization.
   ///
   /// See [pop] for details about the operation stack.
-  TransformEngineLayer pushTransform(Float64List matrix4,
-      {TransformEngineLayer oldLayer});
+  TransformEngineLayer pushTransform(
+    Float64List matrix4, {
+    TransformEngineLayer oldLayer,
+  });
 
   /// Pushes a rectangular clip operation onto the operation stack.
   ///
@@ -134,24 +146,33 @@ abstract class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipRectEngineLayer pushClipRect(Rect rect,
-      {Clip clipBehavior = Clip.antiAlias, ClipRectEngineLayer oldLayer});
+  ClipRectEngineLayer pushClipRect(
+    Rect rect, {
+    Clip clipBehavior = Clip.antiAlias,
+    ClipRectEngineLayer oldLayer,
+  });
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///
   /// Rasterization outside the given rounded rectangle is discarded.
   ///
   /// See [pop] for details about the operation stack.
-  ClipRRectEngineLayer pushClipRRect(RRect rrect,
-      {Clip clipBehavior, ClipRRectEngineLayer oldLayer});
+  ClipRRectEngineLayer pushClipRRect(
+    RRect rrect, {
+    Clip clipBehavior,
+    ClipRRectEngineLayer oldLayer,
+  });
 
   /// Pushes a path clip operation onto the operation stack.
   ///
   /// Rasterization outside the given path is discarded.
   ///
   /// See [pop] for details about the operation stack.
-  ClipPathEngineLayer pushClipPath(Path path,
-      {Clip clipBehavior = Clip.antiAlias, ClipPathEngineLayer oldLayer});
+  ClipPathEngineLayer pushClipPath(
+    Path path, {
+    Clip clipBehavior = Clip.antiAlias,
+    ClipPathEngineLayer oldLayer,
+  });
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -161,8 +182,11 @@ abstract class SceneBuilder {
   /// opacity).
   ///
   /// See [pop] for details about the operation stack.
-  OpacityEngineLayer pushOpacity(int alpha,
-      {Offset offset = Offset.zero, OpacityEngineLayer oldLayer});
+  OpacityEngineLayer pushOpacity(
+    int alpha, {
+    Offset offset = Offset.zero,
+    OpacityEngineLayer oldLayer,
+  });
 
   /// Pushes a color filter operation onto the operation stack.
   ///
@@ -174,8 +198,25 @@ abstract class SceneBuilder {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ColorFilterEngineLayer pushColorFilter(ColorFilter filter,
-      {ColorFilterEngineLayer oldLayer});
+  ColorFilterEngineLayer pushColorFilter(
+    ColorFilter filter, {
+    ColorFilterEngineLayer oldLayer,
+  });
+
+  /// Pushes an image filter operation onto the operation stack.
+  ///
+  /// The given filter is applied to the children's rasterization before compositing them into
+  /// the scene.
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
+  ///
+  /// See [pop] for details about the operation stack.
+  ImageFilterEngineLayer pushImageFilter(
+    ImageFilter filter, {
+    ImageFilterEngineLayer oldLayer,
+  });
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
@@ -183,8 +224,10 @@ abstract class SceneBuilder {
   /// rasterizing the given objects.
   ///
   /// See [pop] for details about the operation stack.
-  BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter,
-      {BackdropFilterEngineLayer oldLayer});
+  BackdropFilterEngineLayer pushBackdropFilter(
+    ImageFilter filter, {
+    BackdropFilterEngineLayer oldLayer,
+  });
 
   /// Pushes a shader mask operation onto the operation stack.
   ///
@@ -193,8 +236,11 @@ abstract class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   ShaderMaskEngineLayer pushShaderMask(
-      Shader shader, Rect maskRect, BlendMode blendMode,
-      {ShaderMaskEngineLayer oldLayer});
+    Shader shader,
+    Rect maskRect,
+    BlendMode blendMode, {
+    ShaderMaskEngineLayer oldLayer,
+  });
 
   /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
@@ -274,11 +320,13 @@ abstract class SceneBuilder {
   ///
   /// The texture is scaled to the given size and rasterized at the given
   /// offset.
-  void addTexture(int textureId,
-      {Offset offset = Offset.zero,
-      double width = 0.0,
-      double height = 0.0,
-      bool freeze = false});
+  void addTexture(
+    int textureId, {
+    Offset offset = Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
+    bool freeze = false,
+  });
 
   /// Adds a platform view (e.g an iOS UIView) to the scene.
   ///
@@ -305,12 +353,13 @@ abstract class SceneBuilder {
 
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.
-  void addChildScene(
-      {Offset offset = Offset.zero,
-      double width = 0.0,
-      double height = 0.0,
-      SceneHost sceneHost,
-      bool hitTestable = true});
+  void addChildScene({
+    Offset offset = Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
+    SceneHost sceneHost,
+    bool hitTestable = true,
+  });
 
   /// Sets a threshold after which additional debugging information should be
   /// recorded.
@@ -357,8 +406,15 @@ abstract class SceneBuilder {
 
   /// Set properties on the linked scene.  These properties include its bounds,
   /// as well as whether it can be the target of focus events or not.
-  void setProperties(double width, double height, double insetTop,
-      double insetRight, double insetBottom, double insetLeft, bool focusable);
+  void setProperties(
+    double width,
+    double height,
+    double insetTop,
+    double insetRight,
+    double insetBottom,
+    double insetLeft,
+    bool focusable,
+  );
 }
 
 /// A handle for the framework to hold and retain an engine layer across frames.
@@ -378,16 +434,11 @@ class SceneHost {
   ///
   /// The SceneHost takes ownership of the provided ViewHolder token.
   SceneHost(
-      dynamic viewHolderToken,
-      void Function() viewConnectedCallback,
-      void Function() viewDisconnectedCallback,
-      void Function(bool) viewStateChangedCallback);
-
-  SceneHost.fromViewHolderToken(
-      dynamic viewHolderToken,
-      void Function() viewConnectedCallback,
-      void Function() viewDisconnectedCallback,
-      void Function(bool) viewStateChangedCallback);
+    dynamic viewHolderToken,
+    void Function() viewConnectedCallback,
+    void Function() viewDisconnectedCallback,
+    void Function(bool) viewStateChangedCallback,
+  );
 
   /// Releases the resources associated with the SceneHost.
   ///
@@ -396,14 +447,15 @@ class SceneHost {
 
   /// Set properties on the linked scene.  These properties include its bounds,
   /// as well as whether it can be the target of focus events or not.
-  void setProperties(double width, double height, double insetTop,
-      double insetRight, double insetBottom, double insetLeft, bool focusable) {
-    throw UnimplementedError();
-  }
-
-  /// Set the opacity of the linked scene.  This opacity value is applied only
-  /// once, when the child scene is composited into our own.
-  void setOpacity(double opacity) {
+  void setProperties(
+    double width,
+    double height,
+    double insetTop,
+    double insetRight,
+    double insetBottom,
+    double insetLeft,
+    bool focusable,
+  ) {
     throw UnimplementedError();
   }
 }

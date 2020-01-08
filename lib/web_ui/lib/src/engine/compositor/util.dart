@@ -4,6 +4,97 @@
 
 part of engine;
 
+/// An object backed by a [js.JsObject] mapped onto a Skia C++ object in the
+/// WebAssembly heap.
+///
+/// These objects are automatically deleted when no longer used.
+///
+/// Because there is no feedback from JavaScript's GC (no destructors or
+/// finalizers), we pessimistically delete the underlying C++ object before
+/// the Dart object is garbage-collected. The current algorithm deletes objects
+/// at the end of every frame. This allows reusing the C++ objects within the
+/// frame. In the future we may add smarter strategies that will allow us to
+/// reuse C++ objects across frames.
+///
+/// The lifecycle of a C++ object is as follows:
+///
+/// - Create default: when instantiating a C++ object for a Dart object for the
+///   first time, the C++ object is populated with default data (the defaults are
+///   defined by Flutter; Skia defaults are corrected if necessary). The
+///   default object is created by [createDefault].
+/// - Zero or more cycles of delete + resurrect: when a Dart object is reused
+///   after its C++ object is deleted we create a new C++ object populated with
+///   data from the current state of the Dart object. This is done using the
+///   [resurrect] method.
+/// - Final delete: if a Dart object is never reused, it is GC'd after its
+///   underlying C++ object is deleted. This is implemented by [SkiaObjects].
+abstract class SkiaObject {
+  SkiaObject() {
+    _skiaObject = createDefault();
+    SkiaObjects.manage(this);
+  }
+
+  /// The JavaScript object that's mapped onto a Skia C++ object in the WebAssembly heap.
+  js.JsObject get skiaObject {
+    if (_skiaObject == null) {
+      _skiaObject = resurrect();
+      SkiaObjects.manage(this);
+    }
+    return _skiaObject;
+  }
+
+  /// Do not use this field outside this class. Use [skiaObject] instead.
+  js.JsObject _skiaObject;
+
+  /// Instantiates a new Skia-backed JavaScript object containing default
+  /// values.
+  ///
+  /// The object is expected to represent Flutter's defaults. If Skia uses
+  /// different defaults from those used by Flutter, this method is expected
+  /// initialize the object to Flutter's defaults.
+  js.JsObject createDefault();
+
+  /// Creates a new Skia-backed JavaScript object containing data representing
+  /// the current state of the Dart object.
+  js.JsObject resurrect();
+}
+
+/// Singleton that manages the lifecycles of [SkiaObject] instances.
+class SkiaObjects {
+  // TODO(yjbanov): some sort of LRU strategy would allow us to reuse objects
+  //                beyond a single frame.
+  @visibleForTesting
+  static final List<SkiaObject> managedObjects = () {
+    window.rasterizer.addPostFrameCallback(postFrameCleanUp);
+    return <SkiaObject>[];
+  }();
+
+  /// Starts managing the lifecycle of [object].
+  ///
+  /// The object's underlying WASM object is deleted by calling the
+  /// "delete" method when it goes out of scope.
+  ///
+  /// The current implementation deletes objects at the end of every frame.
+  static void manage(SkiaObject object) {
+    managedObjects.add(object);
+  }
+
+  /// Deletes all C++ objects created this frame.
+  static void postFrameCleanUp() {
+    if (managedObjects.isEmpty) {
+      return;
+    }
+
+    for (int i = 0; i < managedObjects.length; i++) {
+      final SkiaObject object = managedObjects[i];
+      object._skiaObject.callMethod('delete');
+      object._skiaObject = null;
+    }
+
+    managedObjects.clear();
+  }
+}
+
 js.JsObject makeSkRect(ui.Rect rect) {
   return js.JsObject(canvasKit['LTRBRect'],
       <double>[rect.left, rect.top, rect.right, rect.bottom]);
@@ -23,12 +114,66 @@ js.JsObject makeSkRRect(ui.RRect rrect) {
   });
 }
 
+ui.Rect fromSkRect(js.JsObject skRect) {
+  return ui.Rect.fromLTRB(
+    skRect['fLeft'],
+    skRect['fTop'],
+    skRect['fRight'],
+    skRect['fBottom'],
+  );
+}
+
+ui.TextPosition fromPositionWithAffinity(js.JsObject positionWithAffinity) {
+  if (positionWithAffinity['affinity'] == canvasKit['Affinity']['Upstream']) {
+    return ui.TextPosition(
+      offset: positionWithAffinity['pos'],
+      affinity: ui.TextAffinity.upstream,
+    );
+  } else {
+    assert(positionWithAffinity['affinity'] ==
+        canvasKit['Affinity']['Downstream']);
+    return ui.TextPosition(
+      offset: positionWithAffinity['pos'],
+      affinity: ui.TextAffinity.downstream,
+    );
+  }
+}
+
 js.JsArray<double> makeSkPoint(ui.Offset point) {
   final js.JsArray<double> skPoint = js.JsArray<double>();
   skPoint.length = 2;
   skPoint[0] = point.dx;
   skPoint[1] = point.dy;
   return skPoint;
+}
+
+/// Creates a point list using a typed buffer created by CanvasKit.Malloc.
+Float32List encodePointList(List<ui.Offset> points) {
+  assert(points != null);
+  final int pointCount = points.length;
+  final Float32List result = canvasKit.callMethod('Malloc', <dynamic>[js.context['Float32Array'], pointCount * 2]);
+  for (int i = 0; i < pointCount; ++i) {
+    final int xIndex = i * 2;
+    final int yIndex = xIndex + 1;
+    final ui.Offset point = points[i];
+    assert(_offsetIsValid(point));
+    result[xIndex] = point.dx;
+    result[yIndex] = point.dy;
+  }
+  return result;
+}
+
+js.JsObject makeSkPointMode(ui.PointMode pointMode) {
+  switch (pointMode) {
+    case ui.PointMode.points:
+      return canvasKit['PointMode']['Points'];
+    case ui.PointMode.lines:
+      return canvasKit['PointMode']['Lines'];
+    case ui.PointMode.polygon:
+      return canvasKit['PointMode']['Polygon'];
+    default:
+      throw StateError('Unrecognized point mode $pointMode');
+  }
 }
 
 js.JsObject makeSkBlendMode(ui.BlendMode blendMode) {
@@ -96,75 +241,6 @@ js.JsObject makeSkBlendMode(ui.BlendMode blendMode) {
   }
 }
 
-js.JsObject makeSkPaint(ui.Paint paint) {
-  final dynamic skPaint = js.JsObject(canvasKit['SkPaint']);
-
-  if (paint.shader != null) {
-    final EngineGradient engineShader = paint.shader;
-    skPaint.callMethod(
-        'setShader', <js.JsObject>[engineShader.createSkiaShader()]);
-  }
-
-  if (paint.color != null) {
-    skPaint.callMethod('setColor', <int>[paint.color.value]);
-  }
-
-  js.JsObject skPaintStyle;
-  switch (paint.style) {
-    case ui.PaintingStyle.stroke:
-      skPaintStyle = canvasKit['PaintStyle']['Stroke'];
-      break;
-    case ui.PaintingStyle.fill:
-      skPaintStyle = canvasKit['PaintStyle']['Fill'];
-      break;
-  }
-  skPaint.callMethod('setStyle', <js.JsObject>[skPaintStyle]);
-
-  js.JsObject skBlendMode = makeSkBlendMode(paint.blendMode);
-  if (skBlendMode != null) {
-    skPaint.callMethod('setBlendMode', <js.JsObject>[skBlendMode]);
-  }
-
-  skPaint.callMethod('setAntiAlias', <bool>[paint.isAntiAlias]);
-
-  if (paint.strokeWidth != 0.0) {
-    skPaint.callMethod('setStrokeWidth', <double>[paint.strokeWidth]);
-  }
-
-  if (paint.maskFilter != null) {
-    final ui.BlurStyle blurStyle = paint.maskFilter.webOnlyBlurStyle;
-    final double sigma = paint.maskFilter.webOnlySigma;
-
-    js.JsObject skBlurStyle;
-    switch (blurStyle) {
-      case ui.BlurStyle.normal:
-        skBlurStyle = canvasKit['BlurStyle']['Normal'];
-        break;
-      case ui.BlurStyle.solid:
-        skBlurStyle = canvasKit['BlurStyle']['Solid'];
-        break;
-      case ui.BlurStyle.outer:
-        skBlurStyle = canvasKit['BlurStyle']['Outer'];
-        break;
-      case ui.BlurStyle.inner:
-        skBlurStyle = canvasKit['BlurStyle']['Inner'];
-        break;
-    }
-
-    final js.JsObject skMaskFilter = canvasKit
-        .callMethod('MakeBlurMaskFilter', <dynamic>[skBlurStyle, sigma, true]);
-    skPaint.callMethod('setMaskFilter', <js.JsObject>[skMaskFilter]);
-  }
-
-  if (paint.colorFilter != null) {
-    EngineColorFilter engineFilter = paint.colorFilter;
-    SkColorFilter skFilter = engineFilter._toSkColorFilter();
-    skPaint.callMethod('setColorFilter', <js.JsObject>[skFilter.skColorFilter]);
-  }
-
-  return skPaint;
-}
-
 // Mappings from SkMatrix-index to input-index.
 const List<int> _skMatrixIndexToMatrix4Index = <int>[
   0, 4, 12, // Row 1
@@ -187,12 +263,39 @@ js.JsArray<double> makeSkMatrix(Float64List matrix4) {
   return skMatrix;
 }
 
+/// Color stops used when the framework specifies `null`.
+final js.JsArray<double> _kDefaultColorStops = () {
+  final js.JsArray<double> jsColorStops = js.JsArray<double>();
+  jsColorStops.length = 2;
+  jsColorStops[0] = 0;
+  jsColorStops[1] = 1;
+  return jsColorStops;
+}();
+
+/// Converts a list of color stops into a Skia-compatible JS array or color stops.
+///
+/// In Flutter `null` means two color stops `[0, 1]` that in Skia must be specified explicitly.
+js.JsArray<double> makeSkiaColorStops(List<double> colorStops) {
+  if (colorStops == null) {
+    return _kDefaultColorStops;
+  }
+
+  final js.JsArray<double> jsColorStops = js.JsArray<double>.from(colorStops);
+  jsColorStops.length = colorStops.length;
+  return jsColorStops;
+}
+
+// These must be kept in sync with `flow/layers/physical_shape_layer.cc`.
+const double kLightHeight = 600.0;
+const double kLightRadius = 800.0;
+
 void drawSkShadow(
   js.JsObject skCanvas,
   SkPath path,
   ui.Color color,
   double elevation,
   bool transparentOccluder,
+  double devicePixelRatio,
 ) {
   const double ambientAlpha = 0.039;
   const double spotAlpha = 0.25;
@@ -216,9 +319,10 @@ void drawSkShadow(
 
   skCanvas.callMethod('drawShadow', <dynamic>[
     path._skPath,
-    js.JsArray<double>.from(<double>[0, 0, elevation]),
-    js.JsArray<double>.from(<double>[shadowX, shadowY, 600]),
-    800,
+    js.JsArray<double>.from(<double>[0, 0, devicePixelRatio * elevation]),
+    js.JsArray<double>.from(
+        <double>[shadowX, shadowY, devicePixelRatio * kLightHeight]),
+    devicePixelRatio * kLightRadius,
     tonalColors['ambient'],
     tonalColors['spot'],
     flags,

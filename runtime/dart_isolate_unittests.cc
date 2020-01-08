@@ -109,14 +109,15 @@ class AutoIsolateShutdown {
       return;
     }
     fml::AutoResetWaitableEvent latch;
-    fml::TaskRunner::RunNowOrPostTask(runner_, [isolate = isolate_, &latch]() {
-      FML_LOG(INFO) << "Shutting down isolate.";
-      if (!isolate->Shutdown()) {
-        FML_LOG(ERROR) << "Could not shutdown isolate.";
-        FML_CHECK(false);
-      }
-      latch.Signal();
-    });
+    fml::TaskRunner::RunNowOrPostTask(
+        runner_, [isolate = std::move(isolate_), &latch]() {
+          FML_LOG(INFO) << "Shutting down isolate.";
+          if (!isolate->Shutdown()) {
+            FML_LOG(ERROR) << "Could not shutdown isolate.";
+            FML_CHECK(false);
+          }
+          latch.Signal();
+        });
     latch.Wait();
   }
 
@@ -364,6 +365,7 @@ TEST_F(DartIsolateTest, CanSaveCompilationTrace) {
 TEST_F(DartIsolateTest, CanLaunchSecondaryIsolates) {
   fml::CountDownLatch latch(3);
   fml::AutoResetWaitableEvent child_shutdown_latch;
+  fml::AutoResetWaitableEvent root_isolate_shutdown_latch;
   AddNativeCallback("NotifyNative",
                     CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments args) {
                       latch.CountDown();
@@ -376,6 +378,9 @@ TEST_F(DartIsolateTest, CanLaunchSecondaryIsolates) {
         latch.CountDown();
       })));
   auto settings = CreateSettingsForFixture();
+  settings.root_isolate_shutdown_callback = [&root_isolate_shutdown_latch]() {
+    root_isolate_shutdown_latch.Signal();
+  };
   settings.isolate_shutdown_callback = [&child_shutdown_latch]() {
     child_shutdown_latch.Signal();
   };
@@ -385,6 +390,7 @@ TEST_F(DartIsolateTest, CanLaunchSecondaryIsolates) {
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
   child_shutdown_latch.Wait();  // wait for child isolate to shutdown first
+  ASSERT_FALSE(root_isolate_shutdown_latch.IsSignaledForTest());
   latch.Wait();  // wait for last NotifyNative called by main isolate
   // root isolate will be auto-shutdown
 }

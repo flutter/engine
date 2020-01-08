@@ -11,11 +11,12 @@ ClipRectLayer::ClipRectLayer(const SkRect& clip_rect, Clip clip_behavior)
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
-ClipRectLayer::~ClipRectLayer() = default;
-
 void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect previous_cull_rect = context->cull_rect;
-  if (context->cull_rect.intersect(clip_rect_)) {
+  children_inside_clip_ = context->cull_rect.intersect(clip_rect_);
+  if (children_inside_clip_) {
+    Layer::AutoPrerollSaveLayerState save =
+        Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
     context->mutators_stack.PushClipRect(clip_rect_);
     SkRect child_paint_bounds = SkRect::MakeEmpty();
     PrerollChildren(context, matrix, &child_paint_bounds);
@@ -44,15 +45,18 @@ void ClipRectLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipRectLayer::Paint");
   FML_DCHECK(needs_painting());
 
+  if (!children_inside_clip_)
+    return;
+
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->clipRect(clip_rect_,
                                           clip_behavior_ != Clip::hardEdge);
 
-  if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
+  if (UsesSaveLayer()) {
     context.internal_nodes_canvas->saveLayer(clip_rect_, nullptr);
   }
   PaintChildren(context);
-  if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
+  if (UsesSaveLayer()) {
     context.internal_nodes_canvas->restore();
   }
 }

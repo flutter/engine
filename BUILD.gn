@@ -32,6 +32,10 @@ group("flutter") {
   ]
 
   if (current_toolchain == host_toolchain) {
+    public_deps += [ "$flutter_root/tools/font-subset" ]
+  }
+
+  if (current_toolchain == host_toolchain) {
     public_deps += [ "$flutter_root/shell/testing" ]
   }
 
@@ -73,6 +77,7 @@ group("flutter") {
       "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
       "$flutter_root/shell/platform/embedder:embedder_unittests",
       "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
+      "$flutter_root/testing:testing_unittests",
       "$flutter_root/third_party/txt:txt_unittests",
     ]
 
@@ -117,4 +122,19 @@ group("dist") {
   deps = [
     "$flutter_root/sky/dist",
   ]
+}
+
+# Fuchsia currently only supports a subset of our unit tests
+# When adding a new dep here, please also ensure the dep is added to
+# testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
+if (is_fuchsia) {
+  group("fuchsia_tests") {
+    testonly = true
+
+    deps = [
+      "$flutter_root/flow:flow_tests",
+      "$flutter_root/fml:fml_tests",
+      "$flutter_root/shell/platform/fuchsia/flutter:flutter_runner_tests",
+    ]
+  }
 }

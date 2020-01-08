@@ -92,7 +92,7 @@ static const char* kDartDisableServiceAuthCodesArgs[]{
 };
 
 static const char* kDartTraceStartupArgs[]{
-    "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM",
+    "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM,API",
 };
 
 static const char* kDartEndlessTraceBufferArgs[]{
@@ -108,7 +108,7 @@ static const char* kDartFuchsiaTraceArgs[] FML_ALLOW_UNUSED_TYPE = {
 };
 
 static const char* kDartTraceStreamsArgs[] = {
-    "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM",
+    "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM,API",
 };
 
 constexpr char kFileUriPrefix[] = "file://";
@@ -391,9 +391,14 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
         vm_data_->GetVMSnapshot().GetInstructionsMapping();
     params.create_group = reinterpret_cast<decltype(params.create_group)>(
         DartIsolate::DartIsolateGroupCreateCallback);
+    params.initialize_isolate =
+        reinterpret_cast<decltype(params.initialize_isolate)>(
+            DartIsolate::DartIsolateInitializeCallback);
     params.shutdown_isolate =
         reinterpret_cast<decltype(params.shutdown_isolate)>(
             DartIsolate::DartIsolateShutdownCallback);
+    params.cleanup_isolate = reinterpret_cast<decltype(params.cleanup_isolate)>(
+        DartIsolate::DartIsolateCleanupCallback);
     params.cleanup_group = reinterpret_cast<decltype(params.cleanup_group)>(
         DartIsolate::DartIsolateGroupCleanupCallback);
     params.thread_exit = ThreadExitCallback;
@@ -412,7 +417,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     if (engine_main_enter_ts != 0) {
       Dart_TimelineEvent("FlutterEngineMainEnter",  // label
                          engine_main_enter_ts,      // timestamp0
-                         engine_main_enter_ts,      // timestamp1_or_async_id
+                         Dart_TimelineGetMicros(),  // timestamp1_or_async_id
                          Dart_Timeline_Event_Duration,  // event type
                          0,                             // argument_count
                          nullptr,                       // argument_names

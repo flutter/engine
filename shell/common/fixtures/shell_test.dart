@@ -11,7 +11,7 @@ void main() {}
 
 void nativeReportTimingsCallback(List<int> timings) native 'NativeReportTimingsCallback';
 void nativeOnBeginFrame(int microseconds) native 'NativeOnBeginFrame';
-void nativeOnPointerDataPacket() native 'NativeOnPointerDataPacket';
+void nativeOnPointerDataPacket(List<int> sequences) native 'NativeOnPointerDataPacket';
 
 @pragma('vm:entry-point')
 void reportTimingsMain() {
@@ -36,7 +36,11 @@ void onBeginFrameMain() {
 @pragma('vm:entry-point')
 void onPointerDataPacketMain() {
   window.onPointerDataPacket = (PointerDataPacket packet) {
-    nativeOnPointerDataPacket();
+    List<int> sequence= <int>[];
+    for (PointerData data in packet.data) {
+      sequence.add(PointerChange.values.indexOf(data.change));
+    }
+    nativeOnPointerDataPacket(sequence);
   };
 }
 
@@ -117,3 +121,20 @@ void canAccessIsolateLaunchData() {
 }
 
 void notifyMessage(String string) native 'NotifyMessage';
+
+@pragma('vm:entry-point')
+void canConvertMappings() {
+  sendFixtureMapping(getFixtureMapping());
+}
+
+List<int> getFixtureMapping() native 'GetFixtureMapping';
+void sendFixtureMapping(List<int> list) native 'SendFixtureMapping';
+
+@pragma('vm:entry-point')
+void canDecompressImageFromAsset() {
+  decodeImageFromList(Uint8List.fromList(getFixtureImage()), (Image result) {
+    notifyWidthHeight(result.width, result.height);
+  });
+}
+
+List<int> getFixtureImage() native 'GetFixtureImage';

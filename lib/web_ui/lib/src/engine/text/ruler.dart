@@ -17,6 +17,7 @@ class ParagraphGeometricStyle {
     this.wordSpacing,
     this.decoration,
     this.ellipsis,
+    this.shadows,
   });
 
   final ui.FontWeight fontWeight;
@@ -29,6 +30,7 @@ class ParagraphGeometricStyle {
   final double wordSpacing;
   final String decoration;
   final String ellipsis;
+  final List<ui.Shadow> shadows;
 
   // Since all fields above are primitives, cache hashcode since ruler lookups
   // use this style as key.
@@ -86,7 +88,7 @@ class ParagraphGeometricStyle {
       result.write(DomRenderer.defaultFontSize);
     }
     result.write(' ');
-    result.write(quoteFontFamily(effectiveFontFamily));
+    result.write(canonicalizeFontFamily(effectiveFontFamily));
 
     return result.toString();
   }
@@ -203,14 +205,30 @@ class TextDimensions {
       // Rich text: deeply copy contents. This is the slow case that should be
       // avoided if fast layout performance is desired.
       final html.Element copy = from._paragraphElement.clone(true);
-      _element.children.addAll(copy.children);
+      _element.nodes.addAll(copy.nodes);
     }
   }
 
   /// Updated element style width.
-  void updateWidth(String cssWidth) {
+  void updateConstraintWidth(double width, String ellipsis) {
     _invalidateBoundsCache();
-    _element.style.width = cssWidth;
+
+    if (width.isInfinite) {
+      _element.style
+        ..width = null
+        ..whiteSpace = 'pre';
+    } else if (ellipsis != null) {
+      // Width is finite, but we don't want to let the text soft-wrap when
+      // ellipsis overflow is enabled.
+      _element.style
+        ..width = '${width}px'
+        ..whiteSpace = 'pre';
+    } else {
+      // Width is finite and there's no ellipsis overflow.
+      _element.style
+        ..width = '${width}px'
+        ..whiteSpace = 'pre-wrap';
+    }
   }
 
   void _invalidateBoundsCache() {
@@ -227,7 +245,7 @@ class TextDimensions {
   void applyStyle(ParagraphGeometricStyle style) {
     _element.style
       ..fontSize = style.fontSize != null ? '${style.fontSize.floor()}px' : null
-      ..fontFamily = quoteFontFamily(style.effectiveFontFamily)
+      ..fontFamily = canonicalizeFontFamily(style.effectiveFontFamily)
       ..fontWeight =
           style.fontWeight != null ? fontWeightToCss(style.fontWeight) : null
       ..fontStyle = style.fontStyle != null
@@ -403,6 +421,10 @@ class ParagraphRuler {
       ..border = '0'
       ..padding = '0';
 
+    if (assertionsEnabled) {
+      _singleLineHost.setAttribute('data-ruler', 'single-line');
+    }
+
     singleLineDimensions.applyStyle(style);
 
     // Force single-line (even if wider than screen) and preserve whitespaces.
@@ -424,6 +446,10 @@ class ParagraphRuler {
       ..margin = '0'
       ..border = '0'
       ..padding = '0';
+
+    if (assertionsEnabled) {
+      _minIntrinsicHost.setAttribute('data-ruler', 'min-intrinsic');
+    }
 
     minIntrinsicDimensions.applyStyle(style);
 
@@ -454,6 +480,10 @@ class ParagraphRuler {
       ..border = '0'
       ..padding = '0';
 
+    if (assertionsEnabled) {
+      _constrainedHost.setAttribute('data-ruler', 'constrained');
+    }
+
     constrainedDimensions.applyStyle(style);
     final html.CssStyleDeclaration elementStyle =
         constrainedDimensions._element.style;
@@ -461,17 +491,8 @@ class ParagraphRuler {
       ..display = 'block'
       ..overflowWrap = 'break-word';
 
-    // TODO(flutter_web): Implement the ellipsis overflow for multi-line text
-    // too. As a pre-requisite, we need to be able to programmatically find
-    // line breaks.
-    if (style.ellipsis == null) {
-      elementStyle.whiteSpace = 'pre-wrap';
-    } else {
-      // The height measurement is affected by whether the text has the ellipsis
-      // overflow property or not. This is because when ellipsis is set, we may
-      // not render all the lines, but stop at the first line that overflows.
+    if (style.ellipsis != null) {
       elementStyle
-        ..whiteSpace = 'pre'
         ..overflow = 'hidden'
         ..textOverflow = 'ellipsis';
     }
@@ -492,6 +513,10 @@ class ParagraphRuler {
       ..margin = '0'
       ..border = '0'
       ..padding = '0';
+
+    if (assertionsEnabled) {
+      _lineHeightHost.setAttribute('data-ruler', 'line-height');
+    }
 
     lineHeightDimensions.applyStyle(style);
 
@@ -577,7 +602,10 @@ class ParagraphRuler {
     // The extra 0.5 is because sometimes the browser needs slightly more space
     // than the size it reports back. When that happens the text may be wrap
     // when we thought it didn't.
-    constrainedDimensions.updateWidth('${constraints.width + 0.5}px');
+    constrainedDimensions.updateConstraintWidth(
+      constraints.width + 0.5,
+      style.ellipsis,
+    );
   }
 
   /// Returns text position in a paragraph that contains multiple
@@ -601,30 +629,45 @@ class ParagraphRuler {
       final double dx = offset.dx;
       final double dy = offset.dy;
       if (dx >= bounds.left &&
-          dy < bounds.right &&
+          dx < bounds.right &&
           dy >= bounds.top &&
           dy < bounds.bottom) {
         // We found the element bounds that contains offset.
         // Calculate text position for this node.
-        int textPosition = 0;
-        for (int nodeIndex = 0; nodeIndex < i; nodeIndex++) {
-          textPosition += textNodes[nodeIndex].text.length;
-        }
-        return textPosition;
+        return _countTextPosition(el.childNodes, textNodes[i]);
       }
     }
     return 0;
   }
 
   void _collectTextNodes(Iterable<html.Node> nodes, List<html.Node> textNodes) {
+    if (nodes.isEmpty) {
+      return;
+    }
+    final List<html.Node> childNodes = [];
     for (html.Node node in nodes) {
       if (node.nodeType == html.Node.TEXT_NODE) {
         textNodes.add(node);
       }
-      if (node.hasChildNodes()) {
-        _collectTextNodes(node.childNodes, textNodes);
+      childNodes.addAll(node.childNodes);
+    }
+    _collectTextNodes(childNodes, textNodes);
+  }
+
+  int _countTextPosition(List<html.Node> nodes, html.Node endNode) {
+    int position = 0;
+    final List<html.Node> stack = nodes.reversed.toList();
+    while (true) {
+      var node = stack.removeLast();
+      stack.addAll(node.childNodes.reversed);
+      if (node == endNode) {
+        break;
+      }
+      if (node.nodeType == html.Node.TEXT_NODE) {
+        position += node.text.length;
       }
     }
+    return position;
   }
 
   /// Performs clean-up after a measurement is done, preparing this ruler for
@@ -683,7 +726,7 @@ class ParagraphRuler {
       ..appendText(before)
       ..append(rangeSpan)
       ..appendText(after);
-    constrainedDimensions.updateWidth('${constraints.width}px');
+    constrainedDimensions.updateConstraintWidth(constraints.width, null);
 
     // Measure the rects of [rangeSpan].
     final List<html.Rectangle<num>> clientRects = rangeSpan.getClientRects();
@@ -765,7 +808,7 @@ class ParagraphRuler {
       return null;
     }
     final List<MeasurementResult> constraintCache =
-    _measurementCache[plainText];
+        _measurementCache[plainText];
     if (constraintCache == null) {
       return null;
     }
@@ -820,9 +863,9 @@ class MeasurementResult {
   /// {@macro dart.ui.paragraph.ideographicBaseline}
   final double ideographicBaseline;
 
-  /// Substrings that represent how the text should wrap into multiple lines to
-  /// satisfy [constraintWidth],
-  final List<String> lines;
+  /// The full list of [EngineLineMetrics] that describe in detail the various metrics
+  /// of each laid out line.
+  final List<EngineLineMetrics> lines;
 
   const MeasurementResult(
     this.constraintWidth, {
