@@ -5887,9 +5887,8 @@ TEST_F(ParagraphTest, HeightBehaviorRectsParagraph) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
-  paragraph_style.height_behavior =
-      txt::HeightBehavior::kDisableFirstAscent &
-      txt::HeightBehavior::kDisableLastDescent;
+  paragraph_style.height_behavior = txt::HeightBehavior::kDisableFirstAscent &
+                                    txt::HeightBehavior::kDisableLastDescent;
 
   txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
 

@@ -433,34 +433,33 @@ enum TextDecorationStyle {
 /// Defines how the paragraph will apply [TextStyle.height] the ascent of the
 /// first line and descent of the last line.
 ///
-/// These lines are referred to as "boundary" lines. The boolean value
-/// represents whether the [TextStyle.height] modifier will be applied to the
-/// corresponding metric. By default, all properties are true, and
-/// [TextStyle.height] is applied as normal. When set to false, the font's
+/// The boolean value represents whether the [TextStyle.height] modifier will
+/// be applied to the corresponding metric. By default, all properties are true,
+/// and [TextStyle.height] is applied as normal. When set to false, the font's
 /// default ascent will be used.
 /// {@endtemplate}
 class HeightBehavior {
 
   /// Creates a new HeightBehavior object.
   ///
-  ///  * applyHeightToFirstLineAscent: When true, the [TextStyle.height] modifier
+  ///  * applyHeightToFirstAscent: When true, the [TextStyle.height] modifier
   ///    will be applied to the ascent of the first line. When false, the font's
   ///    default ascent will be used.
-  ///  * applyHeightToLastLineDescent: When true, the [TextStyle.height] modifier
+  ///  * applyHeightToLastDescent: When true, the [TextStyle.height] modifier
   ///    will be applied to the descent of the last line. When false, the font's
   ///    default descent will be used.
   ///
   /// All properties default to true (height modifications applied as normal).
   HeightBehavior({
-    this.applyHeightToFirstLineAscent = true,
-    this.applyHeightToLastLineDescent = true,
+    this.applyHeightToFirstAscent = true,
+    this.applyHeightToLastDescent = true,
   });
 
   /// Creates a new HeightBehavior object from an encoded form.
   ///
   /// See [encode] for the creation of the encoded form.
-  HeightBehavior.fromEncoded(int encoded) : applyHeightToFirstLineAscent = (encoded & 0x1) > 0,
-                                                        applyHeightToLastLineDescent = (encoded & 0x2) > 0;
+  HeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) > 0,
+                                            applyHeightToLastDescent = (encoded & 0x2) > 0;
 
 
   /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
@@ -473,7 +472,7 @@ class HeightBehavior {
   /// This property only has effect if a non-null [TextStyle.height] is specified.
   ///
   /// Defaults to true (height modifications applied as normal).
-  final bool applyHeightToFirstLineAscent;
+  final bool applyHeightToFirstAscent;
 
   /// Whether to apply the [TextStyle.height] modifier to the descent of the last
   /// line in the paragraph.
@@ -485,11 +484,11 @@ class HeightBehavior {
   /// This property only has effect if a non-null [TextStyle.height] is specified.
   ///
   /// Defaults to true (height modifications applied as normal).
-  final bool applyHeightToLastLineDescent;
+  final bool applyHeightToLastDescent;
 
   /// Returns an encoded int representation of this object.
   int encode() {
-    return 0 + (applyHeightToFirstLineAscent ? 1 << 0 : 0) + (applyHeightToLastLineDescent ? 1 << 1 : 0);
+    return 0 + (applyHeightToFirstAscent ? 1 << 0 : 0) + (applyHeightToLastDescent ? 1 << 1 : 0);
   }
 
   @override
@@ -497,23 +496,23 @@ class HeightBehavior {
     if (other.runtimeType != runtimeType)
       return false;
     return other is HeightBehavior
-        && other.applyHeightToFirstLineAscent == applyHeightToLastLineDescent
-        && other.applyHeightToLastLineDescent == applyHeightToLastLineDescent;
+        && other.applyHeightToFirstAscent == applyHeightToLastDescent
+        && other.applyHeightToLastDescent == applyHeightToLastDescent;
   }
 
   @override
   int get hashCode {
     return hashValues(
-      applyHeightToFirstLineAscent,
-      applyHeightToLastLineDescent,
+      applyHeightToFirstAscent,
+      applyHeightToLastDescent,
     );
   }
 
   @override
   String toString() {
     return 'HeightBehavior('
-             'applyHeightToFirstLineAscent: $applyHeightToFirstLineAscent, '
-             'applyHeightToLastLineDescent: $applyHeightToLastLineDescent '
+             'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
+             'applyHeightToLastDescent: $applyHeightToLastDescent '
            ')';
   }
 }
