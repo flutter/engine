@@ -441,6 +441,8 @@ class BoundaryLineHeightBehavior {
   ///  * last: When true, the [TextStyle.height] modifier will be applied to
   ///    to the descent of the last line. When false, the font's default descent
   ///    will be used.
+  ///
+  /// All properties default to true (height modificaitons applied as normal).
   BoundaryLineHeightBehavior({
     this.first = true,
     this.last = true,
@@ -459,6 +461,8 @@ class BoundaryLineHeightBehavior {
   /// When true, the [TextStyle.height] modifier will be applied to to the ascent
   /// of the first line. When false, the font's default ascent will be used and
   /// the [TextStyle.height] will have no effect on the ascent of the first line.
+  ///
+  /// Defaults to true (height modificaitons applied as normal).
   final bool first;
 
   /// Whether to apply the [TextStyle.height] modifier or not to the descent of
@@ -467,6 +471,8 @@ class BoundaryLineHeightBehavior {
   /// When true, the [TextStyle.height] modifier will be applied to to the descent
   /// of the last line. When false, the font's default descent will be used and
   /// the [TextStyle.height] will have no effect on the descent of the last line.
+  ///
+  /// Defaults to true (height modificaitons applied as normal).
   final bool last;
 
   /// Returns an encoded int representation of this object.
