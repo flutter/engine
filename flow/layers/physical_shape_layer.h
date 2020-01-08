@@ -55,10 +55,6 @@ class PhysicalShapeLayer : public PhysicalShapeLayerBase {
     return clip_behavior_ == Clip::antiAliasWithSaveLayer;
   }
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
-
  private:
   SkColor shadow_color_;
   SkPath path_;
