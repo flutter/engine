@@ -50,8 +50,6 @@ class AndroidShellHolder {
   pthread_key_t thread_destruct_key_;
   uint64_t next_pointer_flow_id_ = 0;
 
-  WindowData getDefaultWindowData();
-
   static void ThreadDestructCallback(void* value);
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidShellHolder);
