@@ -28,11 +28,11 @@ void main() {
     final PlatformMessagesSpy spy = PlatformMessagesSpy();
 
     setUp(() {
-      spy.activate();
+      spy.setUp();
     });
 
     tearDown(() {
-      spy.deactivate();
+      spy.tearDown();
       strategy = null;
     });
 
