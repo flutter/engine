@@ -28,15 +28,15 @@ void main() {
   });
 
   group('HeightBehavior', () {
-    HeightBehavior behavior0 = HeightBehavior();
-    HeightBehavior behavior1 = HeightBehavior(
+    final HeightBehavior behavior0 = HeightBehavior();
+    final HeightBehavior behavior1 = HeightBehavior(
       applyHeightToFirstAscent: false,
       applyHeightToLastDescent: false
     );
-    HeightBehavior behavior2 = HeightBehavior(
+    final HeightBehavior behavior2 = HeightBehavior(
       applyHeightToFirstAscent: false,
     );
-    HeightBehavior behavior3 = HeightBehavior(
+    final HeightBehavior behavior3 = HeightBehavior(
       applyHeightToLastDescent: false
     );
 
@@ -47,8 +47,11 @@ void main() {
       expect(behavior1.applyHeightToFirstAscent, equals(false));
       expect(behavior1.applyHeightToLastDescent, equals(false));
 
-      expect(behavior2.applyHeightToFirstAscent, equals(true));
-      expect(behavior2.applyHeightToLastDescent, equals(false));
+      expect(behavior2.applyHeightToFirstAscent, equals(false));
+      expect(behavior2.applyHeightToLastDescent, equals(true));
+
+      expect(behavior3.applyHeightToFirstAscent, equals(true));
+      expect(behavior3.applyHeightToLastDescent, equals(false));
     });
 
     test('encode works', () {

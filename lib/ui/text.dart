@@ -512,7 +512,7 @@ class HeightBehavior {
   String toString() {
     return 'HeightBehavior('
              'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
-             'applyHeightToLastDescent: $applyHeightToLastDescent '
+             'applyHeightToLastDescent: $applyHeightToLastDescent'
            ')';
   }
 }
