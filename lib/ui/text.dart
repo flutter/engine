@@ -496,7 +496,7 @@ class HeightBehavior {
     if (other.runtimeType != runtimeType)
       return false;
     return other is HeightBehavior
-        && other.applyHeightToFirstAscent == applyHeightToLastDescent
+        && other.applyHeightToFirstAscent == applyHeightToFirstAscent
         && other.applyHeightToLastDescent == applyHeightToLastDescent;
   }
 
