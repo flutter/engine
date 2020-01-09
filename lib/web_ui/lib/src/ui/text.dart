@@ -443,7 +443,7 @@ class HeightBehavior {
   ///    default descent will be used.
   ///
   /// All properties default to true (height modifications applied as normal).
-  HeightBehavior({
+  const HeightBehavior({
     this.applyHeightToFirstAscent = true,
     this.applyHeightToLastDescent = true,
   });
@@ -451,7 +451,7 @@ class HeightBehavior {
   /// Creates a new HeightBehavior object from an encoded form.
   ///
   /// See [encode] for the creation of the encoded form.
-  HeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) > 0,
+  const HeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) > 0,
                                             applyHeightToLastDescent = (encoded & 0x2) > 0;
 
 
