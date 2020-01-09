@@ -1501,11 +1501,13 @@ Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
   return _fontCollection.loadFontFromList(list, fontFamily: fontFamily).then(_sendFontChangeMessage);
 }
 
+final ByteData _fontChangeMessage = engine.JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
+
 FutureOr<void> _sendFontChangeMessage(void result) async {
   if (window.onPlatformMessage != null)
     window.onPlatformMessage(
       'flutter/system',
-      engine.JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'}),
+      _fontChangeMessage,
       (_) {},
     );
 }
