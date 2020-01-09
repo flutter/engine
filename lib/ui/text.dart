@@ -430,10 +430,10 @@ enum TextDecorationStyle {
 }
 
 /// {@template flutter.dart:ui.heightBehavior}
-/// Defines how the paragraph will apply [TextStyle.height] the ascent of the
+/// Defines how the paragraph will apply [TextStyle.height] to the ascent of the
 /// first line and descent of the last line.
 ///
-/// The boolean value represents whether the [TextStyle.height] modifier will
+/// Each boolean value represents whether the [TextStyle.height] modifier will
 /// be applied to the corresponding metric. By default, all properties are true,
 /// and [TextStyle.height] is applied as normal. When set to false, the font's
 /// default ascent will be used.
