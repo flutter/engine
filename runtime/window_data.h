@@ -24,8 +24,7 @@ namespace flutter {
 /// See also:
 ///
 ///  * flutter::Shell::Create, which takes a window_data to initialize the
-///  ui.Window
-///    attached to it.
+///    ui.Window attached to it.
 struct WindowData {
   WindowData();
 

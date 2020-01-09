@@ -132,8 +132,8 @@ class Shell final : public PlatformView::Delegate,
   ///             called on the appropriate threads before this method returns.
   ///             Unlike the simpler variant of this factory method, this method
   ///             allows for specification of window data. If this is the first
-  ///             instance of a shell in the process, this
-  ///             call also bootstraps the Dart VM.
+  ///             instance of a shell in the process, this call also bootstraps
+  ///             the Dart VM.
   ///
   /// @param[in]  task_runners             The task runners
   /// @param[in]  window_data              The default data for setting up
