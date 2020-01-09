@@ -43,6 +43,7 @@ Future<int> runProcess(
     executable,
     arguments,
     workingDirectory: workingDirectory,
+    runInShell: io.Platform.isWindows,
     mode: io.ProcessStartMode.inheritStdio,
   );
   final int exitCode = await process.exitCode;
