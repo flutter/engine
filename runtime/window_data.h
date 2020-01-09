@@ -17,8 +17,9 @@ namespace flutter {
 /// The struct of platform-specific data used for initializing ui.Window.
 ///
 /// framework may request data from ui.Window before platform is properly
-/// configured. Engine this struct to set the desired default value for ui.Window
-/// when creating Shell before platform is ready to send the real data.
+/// configured. Engine this struct to set the desired default value for
+/// ui.Window when creating Shell before platform is ready to send the real
+/// data.
 ///
 /// See also:
 ///
