@@ -60,8 +60,10 @@ class TestCommand extends Command<bool> {
 
     _copyTestFontsIntoWebUi();
     await _buildHostPage();
-    if(io.Platform.isWindows) {
-      // Error on windows if not run.
+    if (io.Platform.isWindows) {
+      // On Dart 2.7 or greater, it gives an error for not
+      // recognized "pub" version and asks for "pub" get.
+      // See: https://github.com/dart-lang/sdk/issues/39738
       await _runPubGet();
     }
 
@@ -166,7 +168,9 @@ class TestCommand extends Command<bool> {
           // Not a test file at all. Skip.
           continue;
         }
-        if(!path.split(testFilePath.relativeToWebUi).contains('golden_tests')) {
+        if (!path
+            .split(testFilePath.relativeToWebUi)
+            .contains('golden_tests')) {
           unitTestFiles.add(testFilePath);
         }
       }
@@ -193,8 +197,8 @@ class TestCommand extends Command<bool> {
     );
 
     if (exitCode != 0) {
-      io.stderr.writeln(
-          'Failed to run pub get. Exited with exit code $exitCode');
+      io.stderr
+          .writeln('Failed to run pub get. Exited with exit code $exitCode');
       io.exit(1);
     }
   }
