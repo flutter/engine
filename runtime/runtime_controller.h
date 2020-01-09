@@ -41,7 +41,7 @@ class RuntimeController final : public WindowClient {
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
       const std::function<void(int64_t)>& idle_notification_callback,
-      const WindowData data,
+      const WindowData& data,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
       std::shared_ptr<const fml::Mapping> persistent_isolate_data);

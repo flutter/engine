@@ -26,7 +26,7 @@ RuntimeController::RuntimeController(
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
     const std::function<void(int64_t)>& idle_notification_callback,
-    const WindowData p_window_data,
+    const WindowData& p_window_data,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
     std::shared_ptr<const fml::Mapping> p_persistent_isolate_data)
