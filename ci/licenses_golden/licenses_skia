@@ -1,4 +1,4 @@
-Signature: f243b58edb15121502126a3c5148d875
+Signature: 2ab9d119abb778e01e87bcfd65dc2054
 
 UNUSED LICENSES:
 
@@ -2768,7 +2768,6 @@ FILE: ../../../third_party/skia/gm/nonclosedpaths.cpp
 FILE: ../../../third_party/skia/gm/offsetimagefilter.cpp
 FILE: ../../../third_party/skia/gm/ovals.cpp
 FILE: ../../../third_party/skia/gm/pathopsinverse.cpp
-FILE: ../../../third_party/skia/gm/pathopsskpclip.cpp
 FILE: ../../../third_party/skia/gm/perlinnoise.cpp
 FILE: ../../../third_party/skia/gm/pictureimagefilter.cpp
 FILE: ../../../third_party/skia/gm/polygons.cpp
