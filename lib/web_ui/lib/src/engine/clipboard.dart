@@ -7,21 +7,12 @@ part of engine;
 /// Handles clipboard related platform messages.
 class ClipboardMessageHandler {
   /// Helper to handle copy to clipboard functionality.
-  final CopyToClipboardStrategy _copyToClipboardStrategy;
+  final CopyToClipboardStrategy _copyToClipboardStrategy =
+      CopyToClipboardStrategy();
 
   /// Helper to handle copy to clipboard functionality.
-  final PasteFromClipboardStrategy _pasteFromClipboardStrategy;
-
-  ClipboardMessageHandler()
-      : this._copyToClipboardStrategy =
-            (html.window.navigator.clipboard.writeText != null)
-                ? ClipboardAPICopyStrategy()
-                : ExecCommandCopyStrategy(),
-        this._pasteFromClipboardStrategy =
-            (browserEngine == BrowserEngine.firefox ||
-                    html.window.navigator.clipboard.readText == null)
-                ? ExecCommandPasteStrategy()
-                : ClipboardAPIPasteStrategy();
+  final PasteFromClipboardStrategy _pasteFromClipboardStrategy =
+      PasteFromClipboardStrategy();
 
   /// Handles the platform message which stores the given text to the clipboard.
   void setDataMethodCall(MethodCall methodCall) {
@@ -44,6 +35,12 @@ class ClipboardMessageHandler {
 /// A concrete implementation is picked at runtime based on the available
 /// APIs and the browser.
 abstract class CopyToClipboardStrategy {
+  factory CopyToClipboardStrategy() {
+    return (html.window.navigator.clipboard.writeText != null)
+        ? ClipboardAPICopyStrategy()
+        : ExecCommandCopyStrategy();
+  }
+
   /// Places the text onto the browser Clipboard.
   void setData(String text);
 }
@@ -53,6 +50,13 @@ abstract class CopyToClipboardStrategy {
 /// A concrete implementation is picked at runtime based on the available
 /// APIs and the browser.
 abstract class PasteFromClipboardStrategy {
+  factory PasteFromClipboardStrategy() {
+    return (browserEngine == BrowserEngine.firefox ||
+            html.window.navigator.clipboard.readText == null)
+        ? ExecCommandPasteStrategy()
+        : ClipboardAPIPasteStrategy();
+  }
+
   /// Returns text from the system Clipboard.
   Future<String> getData();
 }
