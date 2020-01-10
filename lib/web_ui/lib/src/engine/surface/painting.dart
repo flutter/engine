@@ -20,8 +20,6 @@ class SurfacePaint implements ui.Paint {
     _paintData.blendMode = value;
   }
 
-  ui.BlendMode _blendMode;
-
   @override
   ui.PaintingStyle get style => _paintData.style ?? ui.PaintingStyle.fill;
 
@@ -101,9 +99,6 @@ class SurfacePaint implements ui.Paint {
 
   @override
   set invertColors(bool value) {}
-
-  @override
-  ui.Color _color = _defaultPaintColor;
 
   static const ui.Color _defaultPaintColor = ui.Color(0xFF000000);
 
@@ -292,9 +287,27 @@ class SurfacePath implements ui.Path {
   /// This copy is fast and does not require additional memory unless either
   /// the `source` path or the path returned by this constructor are modified.
   SurfacePath.from(SurfacePath source)
+      : subpaths = _deepCopy(source.subpaths);
+
+  SurfacePath._shallowCopy(SurfacePath source)
       : subpaths = List<Subpath>.from(source.subpaths);
 
   SurfacePath._clone(this.subpaths, this._fillType);
+
+  static List<Subpath> _deepCopy(List<Subpath> source) {
+    // The last sub path can potentially still be mutated by calling ops.
+    // Copy all sub paths except the last active one which needs a deep copy.
+    final List<Subpath> paths = [];
+    int len = source.length;
+    if (len != 0) {
+      --len;
+      for (int i = 0; i < len; i++) {
+        paths.add(source[i]);
+      }
+      paths.add(source[len].shift(const ui.Offset(0, 0)));
+    }
+    return paths;
+  }
 
   /// Determines how the interior of this path is calculated.
   ///
@@ -905,7 +918,7 @@ class SurfacePath implements ui.Path {
         -BitmapCanvas.kPaddingPixels.toDouble());
     _rawRecorder.drawPath(
         this, (SurfacePaint()..color = const ui.Color(0xFF000000)).paintData);
-    final bool result = _rawRecorder.ctx.isPointInPath(pointX, pointY);
+    final bool result = _rawRecorder._canvasPool.context.isPointInPath(pointX, pointY);
     _rawRecorder.dispose();
     return result;
   }

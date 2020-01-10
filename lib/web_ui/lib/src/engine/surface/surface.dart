@@ -231,9 +231,9 @@ void _debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
     ..fill();
 
   final double physicalScreenWidth =
-      html.window.innerWidth * html.window.devicePixelRatio;
+      html.window.innerWidth * EngineWindow.browserDevicePixelRatio;
   final double physicalScreenHeight =
-      html.window.innerHeight * html.window.devicePixelRatio;
+      html.window.innerHeight * EngineWindow.browserDevicePixelRatio;
   final double physicsScreenPixelCount =
       physicalScreenWidth * physicalScreenHeight;
 
@@ -402,9 +402,9 @@ void _debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
       return pixels;
     }).fold(0, (int total, int pixels) => total + pixels);
     final double physicalScreenWidth =
-        html.window.innerWidth * html.window.devicePixelRatio;
+        html.window.innerWidth * EngineWindow.browserDevicePixelRatio;
     final double physicalScreenHeight =
-        html.window.innerHeight * html.window.devicePixelRatio;
+        html.window.innerHeight * EngineWindow.browserDevicePixelRatio;
     final double physicsScreenPixelCount =
         physicalScreenWidth * physicalScreenHeight;
     final double screenPixelRatio = pixelCount / physicsScreenPixelCount;
@@ -804,7 +804,12 @@ abstract class PersistedSurface implements ui.EngineLayer {
   // Matrix only contains local transform (not chain multiplied since root).
   Matrix4 _localTransformInverse;
 
-  Matrix4 get localTransformInverse;
+  /// The inverse of the local transform that this surface applies to its children.
+  ///
+  /// The default implementation is identity transform. Concrete
+  /// implementations may override this getter to supply a different transform.
+  Matrix4 get localTransformInverse =>
+      _localTransformInverse ??= Matrix4.identity();
 
   /// Recomputes [transform] and [globalClip] fields.
   ///

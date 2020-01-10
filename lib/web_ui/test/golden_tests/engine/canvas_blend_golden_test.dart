@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
-import 'dart:math' as math;
 import 'dart:js_util' as js_util;
 
 import 'package:ui/ui.dart' hide TextStyle;
@@ -16,7 +15,6 @@ void main() async {
   const double screenWidth = 600.0;
   const double screenHeight = 800.0;
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
-  final Paint testPaint = Paint()..color = const Color(0xFFFF0000);
 
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
@@ -76,6 +74,7 @@ void main() async {
         Paint()
           ..style = PaintingStyle.fill
           ..color = const Color.fromARGB(128, 255, 0, 0));
+    rc.restore();
     await _checkScreenshot(rc, 'canvas_blend_circle_diff_color');
   });
 
@@ -111,6 +110,7 @@ void main() async {
           ..color = const Color.fromARGB(128, 255, 0, 0));
     rc.drawImage(createTestImage(), Offset(135.0, 130.0),
         Paint()..blendMode = BlendMode.multiply);
+    rc.restore();
     await _checkScreenshot(rc, 'canvas_blend_image_multiply');
   });
 }
