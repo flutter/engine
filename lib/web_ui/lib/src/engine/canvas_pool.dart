@@ -86,9 +86,9 @@ class _CanvasPool extends _SaveStackTracking {
       // * To make sure that when we scale the canvas by devicePixelRatio (see
       //   _initializeViewport below) the pixels line up.
       final double cssWidth =
-          _widthInBitmapPixels / html.window.devicePixelRatio;
+          _widthInBitmapPixels / EngineWindow.browserDevicePixelRatio;
       final double cssHeight =
-          _heightInBitmapPixels / html.window.devicePixelRatio;
+          _heightInBitmapPixels / EngineWindow.browserDevicePixelRatio;
       _canvas = html.CanvasElement(
         width: _widthInBitmapPixels,
         height: _heightInBitmapPixels,
@@ -140,7 +140,9 @@ class _CanvasPool extends _SaveStackTracking {
       int clipDepth, Matrix4 transform, List<_SaveClipEntry> clipStack) {
     final html.CanvasRenderingContext2D ctx = _context;
     if (!transform.isIdentity()) {
-      ctx.setTransform(transform[0], transform[1], transform[4], transform[5],
+      final double ratio = EngineWindow.browserDevicePixelRatio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.transform(transform[0], transform[1], transform[4], transform[5],
           transform[12], transform[13]);
     }
     if (clipStack != null) {
@@ -227,7 +229,7 @@ class _CanvasPool extends _SaveStackTracking {
 
     // This scale makes sure that 1 CSS pixel is translated to the correct
     // number of bitmap pixels.
-    ctx.scale(html.window.devicePixelRatio, html.window.devicePixelRatio);
+    ctx.scale(EngineWindow.browserDevicePixelRatio, EngineWindow.browserDevicePixelRatio);
   }
 
   void resetTransform() {
