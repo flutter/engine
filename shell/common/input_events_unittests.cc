@@ -280,7 +280,7 @@ TEST_F(ShellTest, HandlesActualIphoneXsInputEvents) {
     // TestSimulatedInputEvents.
     UnitlessTime base_latency =
         static_cast<UnitlessTime>(base_latency_f * frame_time);
-    Generator iphone_xs_generator = [frame_time, iphone_xs_times,
+    Generator iphone_xs_generator = [frame_time,
                                      base_latency](int i) {
       return base_latency +
              static_cast<UnitlessTime>(iphone_xs_times[i] * frame_time);
