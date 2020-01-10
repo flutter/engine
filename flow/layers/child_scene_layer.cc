@@ -42,6 +42,7 @@ void ChildSceneLayer::Paint(PaintContext& context) const {
 }
 
 void ChildSceneLayer::UpdateScene(SceneUpdateContext& context) {
+  TRACE_EVENT0("flutter", "ChildSceneLayer::UpdateScene");
   FML_DCHECK(needs_system_composite());
 
   auto* view_holder = ViewHolder::FromId(layer_id_);
