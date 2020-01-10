@@ -28,15 +28,15 @@ void main() {
   });
 
   group('HeightBehavior', () {
-    final HeightBehavior behavior0 = HeightBehavior();
-    final HeightBehavior behavior1 = HeightBehavior(
+    final HeightBehavior behavior0 = const HeightBehavior();
+    final HeightBehavior behavior1 = const HeightBehavior(
       applyHeightToFirstAscent: false,
       applyHeightToLastDescent: false
     );
-    final HeightBehavior behavior2 = HeightBehavior(
+    final HeightBehavior behavior2 = const HeightBehavior(
       applyHeightToFirstAscent: false,
     );
-    final HeightBehavior behavior3 = HeightBehavior(
+    final HeightBehavior behavior3 = const HeightBehavior(
       applyHeightToLastDescent: false
     );
 
@@ -62,10 +62,10 @@ void main() {
     });
 
     test('encode works', () {
-      expect(HeightBehavior.fromEncoded(3), equals(behavior0));
-      expect(HeightBehavior.fromEncoded(0), equals(behavior1));
-      expect(HeightBehavior.fromEncoded(2), equals(behavior2));
-      expect(HeightBehavior.fromEncoded(1), equals(behavior3));
+      expect(const HeightBehavior.fromEncoded(3), equals(behavior0));
+      expect(const HeightBehavior.fromEncoded(0), equals(behavior1));
+      expect(const HeightBehavior.fromEncoded(2), equals(behavior2));
+      expect(const HeightBehavior.fromEncoded(1), equals(behavior3));
     });
 
     test('toString works', () {
