@@ -28,15 +28,15 @@ void main() {
   });
 
   group('HeightBehavior', () {
-    final HeightBehavior behavior0 = const HeightBehavior();
-    final HeightBehavior behavior1 = const HeightBehavior(
+    const HeightBehavior behavior0 = HeightBehavior();
+    const HeightBehavior behavior1 = HeightBehavior(
       applyHeightToFirstAscent: false,
       applyHeightToLastDescent: false
     );
-    final HeightBehavior behavior2 = const HeightBehavior(
+    const HeightBehavior behavior2 = HeightBehavior(
       applyHeightToFirstAscent: false,
     );
-    final HeightBehavior behavior3 = const HeightBehavior(
+    const HeightBehavior behavior3 = HeightBehavior(
       applyHeightToLastDescent: false
     );
 
