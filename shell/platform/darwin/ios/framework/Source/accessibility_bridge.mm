@@ -686,7 +686,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
       FlutterPlatformViewsController* controller = GetPlatformViewsController();
       if (controller) {
         object.platformViewSemanticsContainer =
-            [[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object];
+            [[[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object] autorelease];
       }
     } else if (object.platformViewSemanticsContainer) {
       [object.platformViewSemanticsContainer release];
