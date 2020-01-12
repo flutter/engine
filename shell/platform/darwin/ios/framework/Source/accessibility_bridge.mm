@@ -478,7 +478,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     if (controller) {
       _platformView = [controller->GetPlatformViewByID(object.node.platformViewId) view];
     }
-    self.accessibilityElements = @[ _semanticsObject, _platformView ];
+    // self.accessibilityElements = @[ _semanticsObject, _platformView ];
   }
   return self;
 }
