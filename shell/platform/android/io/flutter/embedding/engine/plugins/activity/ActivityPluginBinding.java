@@ -6,6 +6,7 @@ package io.flutter.embedding.engine.plugins.activity;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -38,6 +39,7 @@ public interface ActivityPluginBinding {
    * flutter_plugin_android_lifecycle plugin so that the version of the Android Lifecycle library is
    * exposed to pub, which allows Flutter to manage different versions library over time.
    */
+  @Keep
   @NonNull
   Object getLifecycle();
 
