@@ -3234,7 +3234,7 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValidWithPixelRatio) {
           FlutterPlatformView platform_view = *layers[1]->platform_view;
           platform_view.struct_size = sizeof(platform_view);
           platform_view.identifier = 42;
-          platform_view.mutations_count = 4;
+          platform_view.mutations_count = 3;
 
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
@@ -3369,8 +3369,7 @@ TEST_F(EmbedderTest,
               case kFlutterPlatformViewMutationTypeTransformation:
                 mutation.type = kFlutterPlatformViewMutationTypeTransformation;
                 mutation.transformation =
-                    FlutterTransformationMake(SkMatrix::Concat(
-                        root_surface_transformation, SkMatrix::MakeScale(2.0)));
+                    FlutterTransformationMake(root_surface_transformation);
 
                 break;
             }
@@ -3636,7 +3635,6 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
           layer.size = FlutterSizeMake(600.0, 1024.0);
           layer.offset = FlutterPointMake(0.0, -256.0);
 
-          FML_LOG(ERROR) << (*layers[1]);
           ASSERT_EQ(*layers[1], layer);
 
           const auto** mutations = platform_view.mutations;

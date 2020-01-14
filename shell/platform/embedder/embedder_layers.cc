@@ -152,14 +152,11 @@ void EmbedderLayers::PushPlatformViewLayer(
 
     if (!mutations_array.empty()) {
       // If there are going to be any mutations, they must first take into
-      // account the transformation for the device pixel ratio and root surface
-      // transformation.
-      auto base_xformation =
-          SkMatrix::Concat(root_surface_transformation_,
-                           SkMatrix::MakeScale(device_pixel_ratio_));
-      if (!base_xformation.isIdentity()) {
+      // account the root surface transformation.
+      if (!root_surface_transformation_.isIdentity()) {
         mutations_array.push_back(
-            mutations_referenced_.emplace_back(ConvertMutation(base_xformation))
+            mutations_referenced_
+                .emplace_back(ConvertMutation(root_surface_transformation_))
                 .get());
       }
 
