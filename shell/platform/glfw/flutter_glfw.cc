@@ -531,6 +531,14 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
   args.command_line_argv = &argv[0];
   args.platform_message_callback = GLFWOnFlutterPlatformMessage;
   args.custom_task_runners = custom_task_runners;
+  // Provide path to .so in AOT configurations.
+  std::string shared_library_path = std::string();
+  shared_library_path.append(engine_properties.assets_path);
+  shared_library_path.append("/libapp.so");
+  if (FlutterEngineRunsAOTCompiledDartCode()) {
+    args.application_library_path = shared_library_path.c_str();
+  }
+
   FLUTTER_API_SYMBOL(FlutterEngine) engine = nullptr;
   auto result =
       FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config, &args, window, &engine);
