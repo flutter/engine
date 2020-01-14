@@ -20,10 +20,17 @@ class EngineWindow extends ui.Window {
     }
 
     if (experimentalUseSkia) {
-      return html.window.devicePixelRatio;
+      return browserDevicePixelRatio;
     } else {
       return 1.0;
     }
+  }
+
+  /// Returns device pixel ratio returns by browser.
+  static double get browserDevicePixelRatio {
+    double ratio = html.window.devicePixelRatio;
+    // Guard against WebOS returning 0.
+    return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
   }
 
   /// Overrides the default device pixel ratio.
@@ -150,6 +157,12 @@ class EngineWindow extends ui.Window {
             return;
           case 'SystemSound.play':
             // There are no default system sounds on web.
+            return;
+          case 'Clipboard.setData':
+            ClipboardMessageHandler().setDataMethodCall(decoded);
+            return;
+          case 'Clipboard.getData':
+            ClipboardMessageHandler().getDataMethodCall(callback);
             return;
         }
         break;
