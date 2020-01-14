@@ -140,6 +140,20 @@ class EngineWindow extends ui.Window {
   @override
   double get physicalDepth => double.maxFinite;
 
+  // Called by DomRenderer when browser languages change.
+  void _updateLocales() {
+    _locales = html.window.navigator.languages
+      .map((String locale) {
+        final parts = locale.split('-');
+        if (parts.length > 1) {
+          return ui.Locale(parts[0], parts[1]);
+        } else {
+          return ui.Locale(parts[0]);
+        }
+      })
+      .toList();
+  }
+
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
   final BrowserHistory _browserHistory = BrowserHistory();

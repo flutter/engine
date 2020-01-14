@@ -702,7 +702,6 @@ abstract class Window {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   List<Locale> get locales => _locales;
-  // TODO(flutter_web): Get the real locale from the browser.
   List<Locale> _locales = const [_enUS];
 
   /// The locale that the platform's native locale resolution system resolves to.
