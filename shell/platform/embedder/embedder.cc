@@ -543,27 +543,43 @@ void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
   };
 
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
+    bool provided_data_buffer = false;
     if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
+      provided_data_buffer = true;
       settings.vm_snapshot_data = make_mapping_callback(
           args->vm_snapshot_data, SAFE_ACCESS(args, vm_snapshot_data_size, 0));
     }
 
     if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
+      provided_data_buffer = true;
       settings.vm_snapshot_instr = make_mapping_callback(
           args->vm_snapshot_instructions,
           SAFE_ACCESS(args, vm_snapshot_instructions_size, 0));
     }
 
     if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
+      provided_data_buffer = true;
       settings.isolate_snapshot_data = make_mapping_callback(
           args->isolate_snapshot_data,
           SAFE_ACCESS(args, isolate_snapshot_data_size, 0));
     }
 
     if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
+      provided_data_buffer = true;
       settings.isolate_snapshot_instr = make_mapping_callback(
           args->isolate_snapshot_instructions,
           SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0));
+    }
+
+    if (SAFE_ACCESS(args, application_library_path, nullptr) != nullptr) {
+      if (provided_data_buffer) {
+        LOG_EMBEDDER_ERROR(
+            kInvalidArguments,
+            "Cannot provide application_library_path and data buffer args.");
+      }
+      std::string application_library_path =
+          SAFE_ACCESS(args, application_library_path, nullptr);
+      settings.application_library_path.push_back(application_library_path);
     }
   }
 

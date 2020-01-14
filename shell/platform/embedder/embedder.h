@@ -1121,6 +1121,11 @@ typedef struct {
   /// See also:
   /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
   int64_t dart_old_gen_heap_size;
+
+  /// Path to a library containing the application's compiled Dart code.
+  /// This may be provided as an alternative to the data buffers `vm_snapshot_data`,
+  /// `vm_snapshot_instructions`, `isolate_snapshot_data`, and `isolate_snapshot_instructions`.
+  const char* application_library_path;
 } FlutterProjectArgs;
 
 //------------------------------------------------------------------------------
