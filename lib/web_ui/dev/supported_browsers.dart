@@ -49,7 +49,6 @@ class SupportedBrowsers {
   final Map<String, String> supportedBrowserToPlatform = {
     'chrome': 'chrome',
     'edge': 'ie',
-    'ie': 'ie',
     'firefox': 'firefox',
     'safari': 'safari',
   };
@@ -58,8 +57,6 @@ class SupportedBrowsers {
     'chrome':
         '--configuration=${environment.webUiRootDir.path}/dart_test_chrome.yaml',
     'edge':
-        '--configuration=${environment.webUiRootDir.path}/dart_test_edge.yaml',
-    'ie':
         '--configuration=${environment.webUiRootDir.path}/dart_test_edge.yaml',
     'firefox':
         '--configuration=${environment.webUiRootDir.path}/dart_test_firefox.yaml',
