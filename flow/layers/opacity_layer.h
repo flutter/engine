@@ -25,7 +25,7 @@ class OpacityLayer : public ContainerLayer {
   // the retained rendering inefficient as a small offset change could propagate
   // to many leaf layers. Therefore we try to capture that offset here to stop
   // the propagation as repainting the OpacityLayer is expensive.
-  OpacityLayer(int alpha, const SkPoint& offset);
+  OpacityLayer(SkAlpha alpha, const SkPoint& offset);
 
   void Add(std::shared_ptr<Layer> layer) override;
 
@@ -33,14 +33,17 @@ class OpacityLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-  // TODO(chinmaygarde): Once SCN-139 is addressed, introduce a new node in the
-  // session scene hierarchy.
+#if defined(OS_FUCHSIA)
+  void UpdateScene(SceneUpdateContext& context) override;
+#endif  // defined(OS_FUCHSIA)
 
  private:
   ContainerLayer* GetChildContainer() const;
 
-  int alpha_;
+  SkAlpha alpha_;
   SkPoint offset_;
+  SkRRect frameRRect_;
+  float total_elevation_ = 0.0f;
 
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);
 };

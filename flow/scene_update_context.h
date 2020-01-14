@@ -96,18 +96,7 @@ class SceneUpdateContext {
     float const previous_scale_y_;
   };
 
-  class Shape : public Entity {
-   public:
-    Shape(SceneUpdateContext& context);
-    virtual ~Shape() = default;
-
-    scenic::ShapeNode& shape_node() { return shape_node_; }
-
-   private:
-    scenic::ShapeNode shape_node_;
-  };
-
-  class Frame : public Shape {
+  class Frame : public Entity {
    public:
     // When layer is not nullptr, the frame is associated with a layer subtree
     // rooted with that layer. The frame may then create a surface that will be
@@ -115,17 +104,22 @@ class SceneUpdateContext {
     Frame(SceneUpdateContext& context,
           const SkRRect& rrect,
           SkColor color,
+          SkAlpha opacity,
           float local_elevation = 0.0f,
           float parent_elevation = 0.0f,
           Layer* layer = nullptr);
     virtual ~Frame();
+
+    scenic::ContainerNode& embedder_node() override { return opacity_node_; }
 
     void AddPaintLayer(Layer* layer);
 
    private:
     const SkRRect rrect_;
     SkColor const color_;
+    SkAlpha const opacity_;
 
+    scenic::OpacityNodeHACK opacity_node_;
     std::vector<Layer*> paint_layers_;
     SkRect paint_bounds_;
     Layer* layer_;
@@ -204,21 +198,24 @@ class SceneUpdateContext {
   // surface (and thus the entity_node) will be retained for that layer to
   // improve the performance.
   void CreateFrame(scenic::EntityNode entity_node,
-                   scenic::ShapeNode shape_node,
                    const SkRRect& rrect,
                    SkColor color,
+                   SkAlpha opacity,
                    const SkRect& paint_bounds,
                    std::vector<Layer*> paint_layers,
                    Layer* layer);
-  void SetShapeTextureAndColor(scenic::ShapeNode& shape_node,
-                               SkColor color,
-                               SkScalar scale_x,
-                               SkScalar scale_y,
-                               const SkRect& paint_bounds,
-                               std::vector<Layer*> paint_layers,
-                               Layer* layer,
-                               scenic::EntityNode entity_node);
-  void SetShapeColor(scenic::ShapeNode& shape_node, SkColor color);
+  void SetMaterialTextureAndColor(scenic::Material& material,
+                                  SkColor color,
+                                  SkAlpha opacity,
+                                  SkScalar scale_x,
+                                  SkScalar scale_y,
+                                  const SkRect& paint_bounds,
+                                  std::vector<Layer*> paint_layers,
+                                  Layer* layer,
+                                  scenic::EntityNode entity_node);
+  void SetMaterialColor(scenic::Material& material,
+                        SkColor color,
+                        SkAlpha opacity);
   scenic::Image* GenerateImageIfNeeded(SkColor color,
                                        SkScalar scale_x,
                                        SkScalar scale_y,
