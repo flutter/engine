@@ -46,6 +46,14 @@ class SupportedBrowsers {
     'safari': Runtime.safari,
   };
 
+  final Map<String, String> supportedBrowserToPlatform = {
+    'chrome': 'chrome',
+    'edge': 'ie',
+    'ie': 'ie',
+    'firefox': 'firefox',
+    'safari': 'safari',
+  };
+
   final Map<String, String> browserToConfiguration = {
     'chrome':
         '--configuration=${environment.webUiRootDir.path}/dart_test_chrome.yaml',

@@ -288,7 +288,7 @@ class TestCommand extends Command<bool> {
       ...<String>['-r', 'compact'],
       '--concurrency=$concurrency',
       if (isDebug) '--pause-after-load',
-      '--platform= ${SupportedBrowsers.instance.supportedBrowsersToRuntimes[browser].toString()}',
+      '--platform=${SupportedBrowsers.instance.supportedBrowserToPlatform[browser]}',
       '--precompiled=${environment.webUiRootDir.path}/build',
       SupportedBrowsers.instance.browserToConfiguration[browser],
       '--',
