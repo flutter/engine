@@ -90,10 +90,12 @@ TEST_F(AccessibilityBridgeTest, DeletesChildrenTransitively) {
   flutter::SemanticsNode node1;
   node1.id = 1;
   node1.childrenInTraversalOrder = {2};
+  node1.childrenInHitTestOrder = {2};
 
   flutter::SemanticsNode node0;
   node0.id = 0;
   node0.childrenInTraversalOrder = {1};
+  node0.childrenInHitTestOrder = {1};
 
   accessibility_bridge_->AddSemanticsNodeUpdate({
       {0, node0},
@@ -112,6 +114,7 @@ TEST_F(AccessibilityBridgeTest, DeletesChildrenTransitively) {
 
   // Remove the children
   node0.childrenInTraversalOrder.clear();
+  node0.childrenInHitTestOrder.clear();
   accessibility_bridge_->AddSemanticsNodeUpdate({
       {0, node0},
   });
@@ -141,6 +144,7 @@ TEST_F(AccessibilityBridgeTest, TruncatesLargeLabel) {
       std::string(fuchsia::accessibility::semantics::MAX_LABEL_SIZE + 1, '2');
 
   node0.childrenInTraversalOrder = {1, 2};
+  node0.childrenInHitTestOrder = {1, 2};
 
   accessibility_bridge_->AddSemanticsNodeUpdate({
       {0, node0},
@@ -194,7 +198,9 @@ TEST_F(AccessibilityBridgeTest, SplitsLargeUpdates) {
       std::string(fuchsia::accessibility::semantics::MAX_LABEL_SIZE, '4');
 
   node0.childrenInTraversalOrder = {1, 2};
+  node0.childrenInHitTestOrder = {1, 2};
   node1.childrenInTraversalOrder = {3, 4};
+  node1.childrenInHitTestOrder = {3, 4};
 
   accessibility_bridge_->AddSemanticsNodeUpdate({
       {0, node0},
@@ -218,7 +224,8 @@ TEST_F(AccessibilityBridgeTest, HandlesCycles) {
   // Test that cycles don't cause fatal error.
   flutter::SemanticsNode node0;
   node0.id = 0;
-  node0.childrenInTraversalOrder.push_back(0);
+  // node0.childrenInTraversalOrder.push_back(0);
+  // node0.childrenInHitTestOrder.push_back(0);
   accessibility_bridge_->AddSemanticsNodeUpdate({
       {0, node0},
   });
@@ -231,9 +238,11 @@ TEST_F(AccessibilityBridgeTest, HandlesCycles) {
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
 
   node0.childrenInTraversalOrder = {0, 1};
+  node0.childrenInHitTestOrder = {0, 1};
   flutter::SemanticsNode node1;
   node1.id = 1;
   node1.childrenInTraversalOrder = {0};
+  node1.childrenInHitTestOrder = {0};
   accessibility_bridge_->AddSemanticsNodeUpdate({
       {0, node0},
       {1, node1},
@@ -260,12 +269,14 @@ TEST_F(AccessibilityBridgeTest, BatchesLargeMessages) {
     flutter::SemanticsNode node;
     node.id = i;
     node0.childrenInTraversalOrder.push_back(i);
+    node0.childrenInHitTestOrder.push_back(i);
     for (int32_t j = 0; j < leaf_nodes; j++) {
       flutter::SemanticsNode leaf_node;
       int id = (i * child_nodes) + ((j + 1) * leaf_nodes);
       leaf_node.id = id;
       leaf_node.label = "A relatively simple label";
       node.childrenInTraversalOrder.push_back(id);
+      node.childrenInHitTestOrder.push_back(id);
       update.insert(std::make_pair(id, std::move(leaf_node)));
     }
     update.insert(std::make_pair(i, std::move(node)));
@@ -283,6 +294,7 @@ TEST_F(AccessibilityBridgeTest, BatchesLargeMessages) {
 
   // Remove the children
   node0.childrenInTraversalOrder.clear();
+  node0.childrenInHitTestOrder.clear();
   accessibility_bridge_->AddSemanticsNodeUpdate({
       {0, node0},
   });

@@ -99,7 +99,7 @@ std::unordered_set<int32_t> AccessibilityBridge::GetDescendants(
 
     auto it = nodes_.find(id);
     if (it != nodes_.end()) {
-      auto const& node = it->second;
+      const auto& node = it->second;
       for (const auto& child : node.children_in_hit_test_order) {
         if (descendents.find(child) == descendents.end()) {
           to_process.push_back(child);
@@ -230,16 +230,20 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
   }
 
   PruneUnreachableNodes();
-  UpdateScreenRects(kRootNodeId, SkMatrix44::I());
-
+  {
+    std::unordered_set<int32_t> visited_nodes;
+    UpdateScreenRects(kRootNodeId, SkMatrix44::I(), &visited_nodes);
+  }
   tree_ptr_->UpdateSemanticNodes(std::move(nodes));
   // TODO(dnfield): Implement the callback here
   // https://bugs.fuchsia.dev/p/fuchsia/issues/detail?id=35718.
   tree_ptr_->CommitUpdates([]() {});
 }
 
-void AccessibilityBridge::UpdateScreenRects(int32_t node_id,
-                                            SkMatrix44 parent_transform) {
+void AccessibilityBridge::UpdateScreenRects(
+    int32_t node_id,
+    SkMatrix44 parent_transform,
+    std::unordered_set<int32_t>* visited_nodes) {
   auto it = nodes_.find(node_id);
   if (it == nodes_.end()) {
     FML_LOG(ERROR) << "UpdateScreenRects called on unknown node";
@@ -266,9 +270,12 @@ void AccessibilityBridge::UpdateScreenRects(int32_t node_id,
                            *std::min_element(y_vals.begin(), y_vals.end()),
                            *std::max_element(x_vals.begin(), x_vals.end()),
                            *std::max_element(y_vals.begin(), y_vals.end()));
+  visited_nodes->emplace(node_id);
 
   for (uint32_t child_id : node.children_in_hit_test_order) {
-    UpdateScreenRects(child_id, current_transform);
+    if (visited_nodes->find(child_id) == visited_nodes->end()) {
+      UpdateScreenRects(child_id, current_transform, visited_nodes);
+    }
   }
 }
 

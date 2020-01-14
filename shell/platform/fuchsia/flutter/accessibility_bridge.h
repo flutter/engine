@@ -145,7 +145,9 @@ class AccessibilityBridge
   // Updates the on-screen positions of accessibility elements.
   //
   // This should be called from Update
-  void UpdateScreenRects(int32_t node_id, SkMatrix44 parent_transform);
+  void UpdateScreenRects(int32_t node_id,
+                         SkMatrix44 parent_transform,
+                         std::unordered_set<int32_t>* visited_nodes);
 
   void GetHitNode(int32_t node_id,
                   float x,
