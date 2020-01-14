@@ -3689,7 +3689,6 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
   latch.Wait();
 }
 
-
 TEST_F(EmbedderTest, ObjectsCanBePostedViaPorts) {
   auto& context = GetEmbedderContext();
   EmbedderConfigBuilder builder(context);
