@@ -217,7 +217,6 @@ public class TextInputPluginTest {
         verify(dartExecutor, times(3)).send(channelCaptor.capture(), bufferCaptor.capture(), any(BinaryMessenger.BinaryReply.class));
         assertEquals("flutter/textinput", channelCaptor.getValue());
         verifyMethodCall(bufferCaptor.getValue(), "TextInputClient.performAction", new String[] {"0", "TextInputAction.done"});
-        connection.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_NUMPAD_ENTER));
     }
 
     @Implements(InputMethodManager.class)
