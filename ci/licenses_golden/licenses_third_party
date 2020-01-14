@@ -1,4 +1,4 @@
-Signature: 7eb3b81d765385261c0892f9047c6c87
+Signature: e0ab03ab9fdb6744f9c6ce82e2bdca42
 
 UNUSED LICENSES:
 
@@ -9043,13 +9043,11 @@ FILE: ../../../third_party/dart/runtime/vm/uri.cc
 FILE: ../../../third_party/dart/runtime/vm/uri.h
 FILE: ../../../third_party/dart/runtime/vm/uri_test.cc
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_fuchsia.cc
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/lib/js_util/dart2js/js_util_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/developer/service.dart
-FILE: ../../../third_party/dart/sdk/lib/js_util/dart2js/js_util_dart2js.dart
+FILE: ../../../third_party/dart/sdk/lib/js_util/js_util.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/devfs.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/lib/js_util/dart2js/js_util_dart2js.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/developer/service.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/js_util/dart2js/js_util_dart2js.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/js_util/js_util.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/vmservice/devfs.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
