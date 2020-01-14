@@ -224,8 +224,8 @@ TEST_F(AccessibilityBridgeTest, HandlesCycles) {
   // Test that cycles don't cause fatal error.
   flutter::SemanticsNode node0;
   node0.id = 0;
-  // node0.childrenInTraversalOrder.push_back(0);
-  // node0.childrenInHitTestOrder.push_back(0);
+  node0.childrenInTraversalOrder.push_back(0);
+  node0.childrenInHitTestOrder.push_back(0);
   accessibility_bridge_->AddSemanticsNodeUpdate({
       {0, node0},
   });
