@@ -294,4 +294,62 @@ TEST_F(AccessibilityBridgeTest, BatchesLargeMessages) {
   EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
 }
+
+TEST_F(AccessibilityBridgeTest, HitTest) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.rect.setLTRB(0, 0, 100, 100);
+
+  flutter::SemanticsNode node1;
+  node1.id = 1;
+  node1.rect.setLTRB(10, 10, 20, 20);
+
+  flutter::SemanticsNode node2;
+  node2.id = 2;
+  node2.rect.setLTRB(25, 10, 45, 20);
+
+  flutter::SemanticsNode node3;
+  node3.id = 3;
+  node3.rect.setLTRB(10, 25, 20, 45);
+
+  flutter::SemanticsNode node4;
+  node4.id = 4;
+  node4.rect.setLTRB(10, 10, 20, 20);
+  node4.transform.setTranslate(20, 20, 0);
+
+  node0.childrenInTraversalOrder = {1, 2, 3, 4};
+  node0.childrenInHitTestOrder = {1, 2, 3, 4};
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({
+      {0, node0},
+      {1, node1},
+      {2, node2},
+      {3, node3},
+      {4, node4},
+  });
+  RunLoopUntilIdle();
+
+  uint32_t hit_node_id;
+  auto callback = [&hit_node_id](fuchsia::accessibility::semantics::Hit hit) {
+    EXPECT_TRUE(hit.has_node_id());
+    hit_node_id = hit.node_id();
+  };
+
+  // Nodes are:
+  // ----------
+  // | 1   2  |
+  // | 3   4  |
+  // ----------
+
+  accessibility_bridge_->HitTest({1, 1}, callback);
+  EXPECT_EQ(hit_node_id, 0u);
+  accessibility_bridge_->HitTest({15, 15}, callback);
+  EXPECT_EQ(hit_node_id, 1u);
+  accessibility_bridge_->HitTest({30, 15}, callback);
+  EXPECT_EQ(hit_node_id, 2u);
+  accessibility_bridge_->HitTest({15, 30}, callback);
+  EXPECT_EQ(hit_node_id, 3u);
+  accessibility_bridge_->HitTest({30, 30}, callback);
+  EXPECT_EQ(hit_node_id, 4u);
+}
 }  // namespace flutter_runner_test

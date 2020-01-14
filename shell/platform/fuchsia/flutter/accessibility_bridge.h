@@ -85,6 +85,12 @@ class AccessibilityBridge
   // Notifies the bridge of a 'hover move' touch exploration event.
   zx_status_t OnHoverMove(double x, double y);
 
+  // |fuchsia::accessibility::semantics::SemanticListener|
+  void HitTest(
+      fuchsia::math::PointF local_point,
+      fuchsia::accessibility::semantics::SemanticListener::HitTestCallback
+          callback) override;
+
  private:
   struct SemanticsNode {
     int32_t id;
@@ -152,12 +158,6 @@ class AccessibilityBridge
       fuchsia::accessibility::semantics::Action action,
       fuchsia::accessibility::semantics::SemanticListener::
           OnAccessibilityActionRequestedCallback callback) override;
-
-  // |fuchsia::accessibility::semantics::SemanticListener|
-  void HitTest(
-      fuchsia::math::PointF local_point,
-      fuchsia::accessibility::semantics::SemanticListener::HitTestCallback
-          callback) override;
 
   // |fuchsia::accessibility::semantics::SemanticListener|
   void OnSemanticsModeChanged(bool enabled,
