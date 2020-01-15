@@ -409,10 +409,6 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
-  _threadHost = {threadLabel.UTF8String,  // label
-                 flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::GPU |
-                     flutter::ThreadHost::Type::IO};
-
   // Lambda captures by pointers to ObjC objects are fine here because the
   // create call is
   // synchronous.
@@ -435,12 +431,18 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     // TODO(amirh/chinmaygarde): remove this, and dynamically change the thread configuration.
     // https://github.com/flutter/flutter/issues/23975
 
+    _threadHost = {threadLabel.UTF8String,  // label
+                   flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::IO};
+
     flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
                                       fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
                                       fml::MessageLoop::GetCurrent().GetTaskRunner(),  // gpu
                                       _threadHost.ui_thread->GetTaskRunner(),          // ui
                                       _threadHost.io_thread->GetTaskRunner()           // io
     );
+
+    [self setupQualityOfService:task_runners];
+
     // Create the shell. This is a blocking operation.
     _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
                                     std::move(windowData),    // window data
@@ -449,12 +451,19 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                                     on_create_rasterizer      // rasterzier creation
     );
   } else {
+    _threadHost = {threadLabel.UTF8String,  // label
+                   flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::GPU |
+                       flutter::ThreadHost::Type::IO};
+
     flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
                                       fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
                                       _threadHost.gpu_thread->GetTaskRunner(),         // gpu
                                       _threadHost.ui_thread->GetTaskRunner(),          // ui
                                       _threadHost.io_thread->GetTaskRunner()           // io
     );
+
+    [self setupQualityOfService:task_runners];
+
     // Create the shell. This is a blocking operation.
     _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
                                     std::move(windowData),    // window data
@@ -680,6 +689,14 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(value ? true : false);
   }
   _isGpuDisabled = value;
+}
+
+- (void)setupQualityOfService:(flutter::TaskRunners&)task_runners {
+  task_runners.GetUITaskRunner()->PostTask(
+      [] { pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0); });
+
+  task_runners.GetGPUTaskRunner()->PostTask(
+      [] { pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0); });
 }
 
 @end
