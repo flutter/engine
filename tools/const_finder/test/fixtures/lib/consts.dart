@@ -14,3 +14,4 @@ void main() {
   target1.hit();
   target2.hit();
 }
+
