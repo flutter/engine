@@ -76,6 +76,7 @@ class SkImage implements ui.Image {
   }
 }
 
+/// A [Codec] that wraps an `SkAnimatedImage`.
 class SkAnimatedImageCodec implements ui.Codec {
   SkAnimatedImage animatedImage;
 
@@ -101,6 +102,7 @@ class SkAnimatedImageCodec implements ui.Codec {
   }
 }
 
+/// Data for a single frame of an animated image.
 class AnimatedImageFrameInfo implements ui.FrameInfo {
   final Duration _duration;
   final SkImage _image;
@@ -113,27 +115,4 @@ class AnimatedImageFrameInfo implements ui.FrameInfo {
 
   @override
   ui.Image get image => _image;
-}
-
-/// A [ui.Codec] backed by an `SkImage` from Skia.
-class SkImageCodec implements ui.Codec {
-  final SkImage skImage;
-
-  SkImageCodec(this.skImage);
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-  }
-
-  @override
-  int get frameCount => 1;
-
-  @override
-  Future<ui.FrameInfo> getNextFrame() {
-    return Future<ui.FrameInfo>.value(SingleFrameInfo(skImage));
-  }
-
-  @override
-  int get repetitionCount => 0;
 }
