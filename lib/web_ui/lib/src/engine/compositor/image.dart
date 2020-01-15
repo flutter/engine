@@ -28,7 +28,10 @@ class SkAnimatedImage implements ui.Image {
   int get frameCount => _skAnimatedImage.callMethod('getFrameCount');
 
   /// Decodes the next frame and returns the frame duration.
-  int decodeNextFrame() => _skAnimatedImage.callMethod('decodeNextFrame');
+  Duration decodeNextFrame() {
+    final int durationMillis = _skAnimatedImage.callMethod('decodeNextFrame');
+    return Duration(milliseconds: durationMillis);
+  }
 
   int get repetitionCount => _skAnimatedImage.callMethod('getRepetitionCount');
 
@@ -96,7 +99,7 @@ class SkAnimatedImageCodec implements ui.Codec {
 
   @override
   Future<ui.FrameInfo> getNextFrame() {
-    final int duration = animatedImage.decodeNextFrame();
+    final Duration duration = animatedImage.decodeNextFrame();
     final SkImage image = animatedImage.currentFrameAsImage;
     return Future<ui.FrameInfo>.value(AnimatedImageFrameInfo(duration, image));
   }
@@ -107,8 +110,7 @@ class AnimatedImageFrameInfo implements ui.FrameInfo {
   final Duration _duration;
   final SkImage _image;
 
-  AnimatedImageFrameInfo(int duration, this._image)
-      : _duration = Duration(milliseconds: duration);
+  AnimatedImageFrameInfo(this._duration, this._image);
 
   @override
   Duration get duration => _duration;
