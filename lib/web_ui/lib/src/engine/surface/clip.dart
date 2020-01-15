@@ -292,12 +292,14 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     final html.CssStyleDeclaration rootElementStyle = rootElement.style;
     rootElementStyle
       ..overflow = ''
-      ..transform = 'translate(${bounds.left}px, ${bounds.top}px)'
+      ..left = '${bounds.left}px'
+      ..top = '${bounds.top}px'
       ..width = '${bounds.width}px'
       ..height = '${bounds.height}px'
       ..borderRadius = '';
-    childContainer.style.transform =
-        'translate(${-bounds.left}px, ${-bounds.top}px)';
+    childContainer.style
+      ..left = '-${bounds.left}px'
+      ..top = '-${bounds.top}px';
   }
 
   @override
