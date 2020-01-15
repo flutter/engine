@@ -91,8 +91,10 @@ class ClipboardAPIPasteStrategy implements PasteFromClipboardStrategy {
 class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
   @override
   void setData(String text) {
+    // Copy content to clipboard with execCommand.
+    // See: https://developers.google.com/web/updates/2015/04/cut-and-copy-commands
     final html.TextAreaElement tempTextArea = _appendTemporaryTextArea();
-    tempTextArea.text = text;
+    tempTextArea.value = text;
 
     tempTextArea.focus();
 
