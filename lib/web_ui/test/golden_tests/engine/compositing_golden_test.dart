@@ -15,12 +15,16 @@ import 'package:web_engine_tester/golden_tester.dart';
 final Rect region = Rect.fromLTWH(0, 0, 500, 100);
 
 void main() async {
-  setUp(() {
+  setUp(() async {
     debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
     for (html.Node scene in html.document.querySelectorAll('flt-scene')) {
       scene.remove();
     }
+
+    await webOnlyInitializePlatform();
+    webOnlyFontCollection.debugRegisterTestFonts();
+    await webOnlyFontCollection.ensureFontsLoaded();
   });
 
   test('pushClipRect', () async {
@@ -531,7 +535,7 @@ void _testCullRectComputation() {
       // To reproduce blurriness we need real clipping.
       debugShowClipLayers = false;
       final Paragraph paragraph =
-          (ParagraphBuilder(ParagraphStyle())..addText('Am I blurry?')).build();
+          (ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'))..addText('Am I blurry?')).build();
       paragraph.layout(const ParagraphConstraints(width: 1000));
 
       final Rect canvasSize = Rect.fromLTRB(

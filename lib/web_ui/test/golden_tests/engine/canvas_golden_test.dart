@@ -22,8 +22,10 @@ void main() async {
     html.document.querySelector('flt-scene-host').append(testScene);
   }
 
-  setUp(() {
-    domRenderer;  // causes CSS reset to be applied to the page.
+  setUp(() async {
+    await webOnlyInitializePlatform();
+    webOnlyFontCollection.debugRegisterTestFonts();
+    await webOnlyFontCollection.ensureFontsLoaded();
   });
 
   tearDown(() {
@@ -134,7 +136,7 @@ void main() async {
   // More details: https://github.com/flutter/flutter/issues/32274
   test('renders clipped DOM text with high quality', () async {
     final Paragraph paragraph =
-        (ParagraphBuilder(ParagraphStyle())..addText('Am I blurry?')).build();
+        (ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'))..addText('Am I blurry?')).build();
     paragraph.layout(const ParagraphConstraints(width: 1000));
 
     final Rect canvasSize = Rect.fromLTRB(
