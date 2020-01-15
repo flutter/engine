@@ -5,7 +5,7 @@
 import 'package:kernel/kernel.dart' hide MapEntry;
 import 'package:meta/meta.dart';
 
-class _ConstFinder  extends RecursiveVisitor<void> {
+class _ConstFinder extends RecursiveVisitor<void> {
   _ConstFinder(
     this.kernelFilePath,
     this.targetLibraryUri,
