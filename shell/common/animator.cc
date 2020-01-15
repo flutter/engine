@@ -4,6 +4,8 @@
 
 #include "flutter/shell/common/animator.h"
 
+#include <cstring>
+
 #include "flutter/fml/trace_event.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
@@ -74,12 +76,23 @@ void Animator::SetDimensionChangePending() {
   dimension_change_pending_ = true;
 }
 
-void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
+void Animator::EnqueueTraceData(const PointerDataPacket& packet,
+                                uint64_t trace_flow_id) {
+  std::vector<PointerData> pointer_datas;
+  size_t pointer_data_count = packet.data().size() / sizeof(PointerData);
+  for (size_t i = 0; i < pointer_data_count; i++) {
+    PointerData data;
+    packet.GetPointerData(i, &data);
+    pointer_datas.push_back(data);
+  }
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
-      [self = weak_factory_.GetWeakPtr(), trace_flow_id] {
+      [self = weak_factory_.GetWeakPtr(), pointer_datas, trace_flow_id] {
         if (!self) {
           return;
+        }
+        for (const auto& data : pointer_datas) {
+          self->pointer_datas_.push_back(data);
         }
         self->trace_flow_ids_.push_back(trace_flow_id);
       });
@@ -106,6 +119,47 @@ void Animator::BeginFrame(fml::TimePoint frame_start_time,
     uint64_t trace_flow_id = trace_flow_ids_.front();
     TRACE_FLOW_END("flutter", "PointerEvent", trace_flow_id);
     trace_flow_ids_.pop_front();
+  }
+  while (!pointer_datas_.empty()) {
+    const PointerData& pointer_data = pointer_datas_.front();
+    switch (pointer_data.change) {
+      case flutter::PointerData::Change::kDown: {
+        PointerDelta delta;
+        delta.physical_x = pointer_data.physical_x;
+        delta.physical_y = pointer_data.physical_y;
+        delta.last_physical_x = pointer_data.physical_x;
+        delta.last_physical_y = pointer_data.physical_y;
+        down_pointers_[pointer_data.device] = delta;
+      } break;
+      case flutter::PointerData::Change::kCancel:
+      case flutter::PointerData::Change::kUp:
+        down_pointers_.erase(pointer_data.device);
+        break;
+      case flutter::PointerData::Change::kMove: {
+        auto it = down_pointers_.find(pointer_data.device);
+        if (it != down_pointers_.end()) {
+          it->second.physical_x = pointer_data.physical_x;
+          it->second.physical_y = pointer_data.physical_y;
+        }
+      } break;
+      default:
+        break;
+    }
+    pointer_datas_.pop_front();
+  }
+  for (auto& p : down_pointers_) {
+#if defined(OS_FUCHSIA)
+    TRACE_COUNTER("flutter", "PointerDelta", p.first, "dx",
+                  fabs(p.second.physical_x - p.second.last_physical_x), "dy",
+                  fabs(p.second.physical_y - p.second.last_physical_y));
+#else
+    FML_TRACE_COUNTER("flutter", "PointerDelta", p.first, "dx",
+                      fabs(p.second.physical_x - p.second.last_physical_x),
+                      "dy",
+                      fabs(p.second.physical_y - p.second.last_physical_y));
+#endif  //  defined(OS_FUCHSIA)
+    p.second.last_physical_x = p.second.physical_x;
+    p.second.last_physical_y = p.second.physical_y;
   }
 
   frame_scheduled_ = false;

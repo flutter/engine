@@ -68,7 +68,7 @@ class PointerDataDispatcher {
   /// @brief      Signal that `PlatformView` has a packet to be dispatched.
   ///
   /// @param[in]  packet             The `PointerDataPacket` to be dispatched.
-  /// @param[in]  trace_flow_id      The id for `Animator::EnqueueTraceFlowId`.
+  /// @param[in]  trace_flow_id      The id for `Animator::EnqueueTraceData`.
   virtual void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                               uint64_t trace_flow_id) = 0;
 

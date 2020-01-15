@@ -21,6 +21,7 @@ class PointerDataPacket {
   ~PointerDataPacket();
 
   void SetPointerData(size_t i, const PointerData& data);
+  void GetPointerData(size_t i, PointerData* data) const;
   const std::vector<uint8_t>& data() const { return data_; }
 
  private:

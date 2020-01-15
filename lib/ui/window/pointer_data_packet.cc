@@ -20,4 +20,8 @@ void PointerDataPacket::SetPointerData(size_t i, const PointerData& data) {
   memcpy(&data_[i * sizeof(PointerData)], &data, sizeof(PointerData));
 }
 
+void PointerDataPacket::GetPointerData(size_t i, PointerData* data) const {
+  memcpy(data, &data_[i * sizeof(PointerData)], sizeof(PointerData));
+}
+
 }  // namespace flutter

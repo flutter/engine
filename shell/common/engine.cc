@@ -476,7 +476,7 @@ FontCollection& Engine::GetFontCollection() {
 
 void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                               uint64_t trace_flow_id) {
-  animator_->EnqueueTraceFlowId(trace_flow_id);
+  animator_->EnqueueTraceData(*packet, trace_flow_id);
   if (runtime_controller_) {
     runtime_controller_->DispatchPointerDataPacket(*packet);
   }

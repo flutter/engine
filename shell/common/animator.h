@@ -12,6 +12,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/synchronization/semaphore.h"
 #include "flutter/fml/time/time_point.h"
+#include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/vsync_waiter.h"
@@ -75,12 +76,20 @@ class Animator final {
 
   void SetDimensionChangePending();
 
-  // Enqueue |trace_flow_id| into |trace_flow_ids_|.  The corresponding flow
-  // will be ended during the next |BeginFrame|.
-  void EnqueueTraceFlowId(uint64_t trace_flow_id);
+  // Enqueue |packet| into |pointer_datas_| and |trace_flow_id| into
+  // |trace_flow_ids_|. Pointer delta counters will be updated and
+  // the corresponding flow will be ended during the next |BeginFrame|.
+  void EnqueueTraceData(const PointerDataPacket& packet,
+                        uint64_t trace_flow_id);
 
  private:
   using LayerTreePipeline = Pipeline<flutter::LayerTree>;
+  struct PointerDelta {
+    double physical_x;
+    double physical_y;
+    double last_physical_x;
+    double last_physical_y;
+  };
 
   void BeginFrame(fml::TimePoint frame_start_time,
                   fml::TimePoint frame_target_time);
@@ -109,6 +118,8 @@ class Animator final {
   bool dimension_change_pending_;
   SkISize last_layer_tree_size_;
   std::deque<uint64_t> trace_flow_ids_;
+  std::deque<PointerData> pointer_datas_;
+  std::map<int, PointerDelta> down_pointers_;
 
   fml::WeakPtrFactory<Animator> weak_factory_;
 
