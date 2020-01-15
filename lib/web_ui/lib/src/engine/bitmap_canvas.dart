@@ -724,6 +724,15 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
           curElement, 'clip-path', 'url(#svgClip$_clipIdCounter)');
       domRenderer.setElementStyle(
           curElement, '-webkit-clip-path', 'url(#svgClip$_clipIdCounter)');
+      final ui.Rect pathBounds = entry.path.getBounds();
+      // We need to set width and height for the clipElement to cover the
+      // bounds of the path since browsers such as Safari and Edge
+      // seem to incorrectly intersect the element bounding rect with
+      // the clip path. Chrome and Firefox don't perform intersect instead they
+      // use the path itself as source of truth.
+      clipElement.style
+        ..width = '${pathBounds.right}px'
+        ..height = '${pathBounds.bottom}px';
       clipDefs.add(clipElement);
     }
     // Reverse the transform of the clipping element so children can use

@@ -240,7 +240,7 @@ String _pathToSvgClipPath(ui.Path path,
   _clipIdCounter += 1;
   final ui.Rect bounds = path.getBounds();
   final StringBuffer sb = StringBuffer();
-  sb.write('<svg width="${bounds.right}" height="${bounds.bottom}" '
+  sb.write('<svg width="0" height="0" '
       'style="position:absolute">');
   sb.write('<defs>');
 
