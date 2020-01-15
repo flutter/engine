@@ -35,7 +35,7 @@ class _ConstFinder extends RecursiveVisitor<void> {
 
   bool _matches(Class node) {
     return node.enclosingLibrary.canonicalName.name == classLibraryUri &&
-    node.name == className;
+      node.name == className;
   }
 
   @override
