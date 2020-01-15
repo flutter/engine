@@ -94,17 +94,9 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
     // Copy content to clipboard with execCommand.
     // See: https://developers.google.com/web/updates/2015/04/cut-and-copy-commands
     final html.TextAreaElement tempTextArea = _appendTemporaryTextArea();
-    // For `text` See https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
-    tempTextArea.text = text;
-
+    tempTextArea.value = text;
     tempTextArea.focus();
-
-    final html.Range range = html.document.createRange();
-    range.selectNodeContents(tempTextArea);
-    html.window.getSelection().removeAllRanges();
-    html.window.getSelection().addRange(range);
-    tempTextArea.setSelectionRange(0, 100000);
-
+    tempTextArea.select();
     try {
       final bool result = html.document.execCommand('copy');
       if (!result) {
@@ -113,7 +105,6 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
     } catch (e) {
       print('copy is not successful ${e.message}');
     } finally {
-      html.window.getSelection().removeAllRanges();
       _removeTemporaryTextArea(tempTextArea);
     }
   }
@@ -123,8 +114,8 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
     final html.CssStyleDeclaration elementStyle = tempElement.style;
     elementStyle
       ..position = 'absolute'
-      ..top = '100px'
-      ..left = '100px'
+      ..top = '-99999px'
+      ..left = '-99999px'
       ..opacity = '0'
       ..color = 'transparent'
       ..backgroundColor = 'transparent'
