@@ -94,7 +94,8 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
     // Copy content to clipboard with execCommand.
     // See: https://developers.google.com/web/updates/2015/04/cut-and-copy-commands
     final html.TextAreaElement tempTextArea = _appendTemporaryTextArea();
-    tempTextArea.value = text;
+    // For `text` See https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
+    tempTextArea.text = text;
 
     tempTextArea.focus();
 
