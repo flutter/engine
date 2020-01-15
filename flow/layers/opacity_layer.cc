@@ -147,9 +147,9 @@ void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
 
   TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
   // If we can't find an existing retained surface, create one.
-  SceneUpdateContext::Frame frame(context, frameRRect_, SK_ColorTRANSPARENT, alpha_,
-                                  kOpacityElevationWhenUsingSystemCompositor,
-                                  total_elevation_, this);
+  SceneUpdateContext::Frame frame(
+      context, frameRRect_, SK_ColorTRANSPARENT, alpha_,
+      kOpacityElevationWhenUsingSystemCompositor, total_elevation_, this);
   frame.AddPaintLayer(container);
 
   UpdateSceneChildren(context);

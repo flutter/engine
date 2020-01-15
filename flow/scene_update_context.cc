@@ -86,7 +86,6 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
                             shape_bounds.height() * 0.5f + shape_bounds.top(),
                             0.f);
 
-
   // Check whether the painted layers will be visible.
   if (paint_bounds.isEmpty() || !paint_bounds.intersects(shape_bounds))
     paint_layers.clear();
@@ -104,9 +103,8 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
     const float scale_y = ScaleY();
 
     // Apply a texture to the whole shape.
-    SetMaterialTextureAndColor(material, color, opacity, scale_x,
-                               scale_y, shape_bounds,
-                               std::move(paint_layers), layer,
+    SetMaterialTextureAndColor(material, color, opacity, scale_x, scale_y,
+                               shape_bounds, std::move(paint_layers), layer,
                                std::move(entity_node));
   }
 }
@@ -136,14 +134,13 @@ void SceneUpdateContext::SetMaterialTextureAndColor(
     // No texture was needed, so apply a solid color to the whole shape.
     SetMaterialColor(material, color, opacity);
   }
-
 }
-
 
 void SceneUpdateContext::SetMaterialColor(scenic::Material& material,
                                           SkColor color,
                                           SkAlpha opacity) {
-  const SkAlpha color_alpha = static_cast<SkAlpha>(((float) SkColorGetA(color) * (float) opacity) / 255.0f);
+  const SkAlpha color_alpha = static_cast<SkAlpha>(
+      ((float)SkColorGetA(color) * (float)opacity) / 255.0f);
   material.SetColor(SkColorGetR(color), SkColorGetG(color), SkColorGetB(color),
                     color_alpha);
 }
@@ -338,9 +335,8 @@ SceneUpdateContext::Frame::~Frame() {
   }
 
   // Add a part which represents the frame's geometry for clipping purposes
-  context().CreateFrame(std::move(entity_node()),
-                        rrect_, color_, opacity_, paint_bounds_,
-                        std::move(paint_layers_), layer_);
+  context().CreateFrame(std::move(entity_node()), rrect_, color_, opacity_,
+                        paint_bounds_, std::move(paint_layers_), layer_);
 }
 
 void SceneUpdateContext::Frame::AddPaintLayer(Layer* layer) {

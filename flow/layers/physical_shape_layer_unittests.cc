@@ -234,10 +234,10 @@ static bool ReadbackResult(PrerollContext* context,
   const SkMatrix initial_matrix = SkMatrix();
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const SkPath layer_path = SkPath().addRect(layer_bounds);
-  auto layer = std::make_shared<PhysicalShapeLayer>(SK_ColorGREEN,
-                                                    SK_ColorBLACK,
-                                                    0.0f,  // elevation
-                                                    layer_path, clip_behavior);
+  auto layer =
+      std::make_shared<PhysicalShapeLayer>(SK_ColorGREEN, SK_ColorBLACK,
+                                           0.0f,  // elevation
+                                           layer_path, clip_behavior);
   if (child != nullptr) {
     layer->Add(child);
   }
