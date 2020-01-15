@@ -36,10 +36,9 @@ class ClipboardMessageHandler {
 /// APIs and the browser.
 abstract class CopyToClipboardStrategy {
   factory CopyToClipboardStrategy() {
-    return ExecCommandCopyStrategy();
-    // return (html.window.navigator.clipboard?.writeText != null)
-    //     ? ClipboardAPICopyStrategy()
-    //     : ExecCommandCopyStrategy();
+    return (html.window.navigator.clipboard?.writeText != null)
+        ? ClipboardAPICopyStrategy()
+        : ExecCommandCopyStrategy();
   }
 
   /// Places the text onto the browser Clipboard.
@@ -96,11 +95,12 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
     tempTextArea.text = text;
 
     tempTextArea.focus();
-    // tempTextArea.select();
 
     final html.Range range = html.document.createRange();
-    range.selectNode(tempTextArea);
+    range.selectNodeContents(tempTextArea);
+    html.window.getSelection().removeAllRanges();
     html.window.getSelection().addRange(range);
+    tempTextArea.setSelectionRange(0, 100000);
 
     try {
       final bool result = html.document.execCommand('copy');
