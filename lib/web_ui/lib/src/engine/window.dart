@@ -102,7 +102,7 @@ class EngineWindow extends ui.Window {
   /// Lazily initialized when the `defaultRouteName` getter is invoked.
   ///
   /// The reason for the lazy initialization is to give enough time for the app to set [locationStrategy]
-  /// in `lib/src/ui/initialization.dart`. 
+  /// in `lib/src/ui/initialization.dart`.
   String _defaultRouteName;
 
   @override
