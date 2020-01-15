@@ -9,6 +9,6 @@ class Target {
   final int intValue;
 
   void hit() {
-    // call to prevent tree shaking.
+    print('$stringValue $intValue');
   }
 }

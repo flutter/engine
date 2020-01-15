@@ -308,7 +308,10 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
 
 def RunConstFinderTests(build_dir):
   test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'const_finder', 'test')
-  opts = [os.path.join(test_dir, 'const_finder_test.dart')]
+  opts = [
+    os.path.join(test_dir, 'const_finder_test.dart'),
+    os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
+    os.path.join(build_dir, 'flutter_patched_sdk')]
   RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=test_dir)
 
 def main():

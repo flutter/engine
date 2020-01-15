@@ -22,6 +22,7 @@ final String basePath =
     path.canonicalize(path.join(path.dirname(Platform.script.path), '..'));
 final String fixtures = path.join(basePath, 'test', 'fixtures');
 final String consts = path.join(fixtures, 'lib', 'consts.dart');
+final String dotPackages = path.join(fixtures, '.packages');
 final String constsAndNon = path.join(fixtures, 'lib', 'consts_and_non.dart');
 final String constsDill = path.join(fixtures, 'consts.dill');
 final String constsAndNonDill = path.join(fixtures, 'consts_and_non.dill');
@@ -30,9 +31,8 @@ final String constsAndNonDill = path.join(fixtures, 'consts_and_non.dill');
 // with the version of package:kernel in //third-party/dart/pkg/kernel
 final String dart = Platform.resolvedExecutable;
 final String bat = Platform.isWindows ? '.bat' : '';
-final String pub = path.join(path.dirname(dart), 'pub$bat');
 
-_checkConsts() {
+void _checkConsts() {
   print('Checking for expected constants.');
   final ConstFinder finder = ConstFinder(
     kernelFilePath: constsDill,
@@ -53,7 +53,7 @@ _checkConsts() {
   );
 }
 
-_checkNonConsts() {
+void _checkNonConsts() {
   print('Checking for non-constant instances.');
   final ConstFinder finder = ConstFinder(
     kernelFilePath: constsAndNonDill,
@@ -84,28 +84,46 @@ _checkNonConsts() {
   );
 }
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
+  if (args.length != 2) {
+    stderr.writeln('The first argument must be the path to the forntend server dill.');
+    stderr.writeln('The second argument must be the path to the flutter_patched_sdk');
+    exit(-1);
+  }
+  final String frontendServer = args[0];
+  final String sdkRoot = args[1];
   try {
-    print('Getting packages...');
-    ProcessResult result = Process.runSync(
-      pub,
-      <String>['get', '--offline'], // This doesn't retrieve any packages
-      workingDirectory: fixtures,
-    );
-    expect<int>(result.exitCode, 0);
-    print('Generating kernel fixtures...');
-    result = Process.runSync(dart, <String>[
-      '--snapshot-kind=kernel',
-      '--snapshot=$constsDill',
+    void _checkProcessResult(ProcessResult result) {
+      if (result.exitCode != 0) {
+        stdout.writeln(result.stdout);
+        stderr.writeln(result.stderr);
+      }
+      expect(result.exitCode, 0);
+    }
+
+    stdout.writeln('Generating kernel fixtures...');
+    stdout.writeln(consts);
+    _checkProcessResult(Process.runSync(dart, <String>[
+      frontendServer,
+      '--sdk-root=$sdkRoot',
+      '--target=flutter',
+      '--aot',
+      '--tfa',
+      '--packages=$dotPackages',
+      '--output-dill=$constsDill',
       consts,
-    ]);
-    expect<int>(result.exitCode, 0);
-    result = Process.runSync(dart, <String>[
-      '--snapshot-kind=kernel',
-      '--snapshot=$constsAndNonDill',
+    ]));
+
+    _checkProcessResult(Process.runSync(dart, <String>[
+      frontendServer,
+      '--sdk-root=$sdkRoot',
+      '--target=flutter',
+      '--aot',
+      '--tfa',
+      '--packages=$dotPackages',
+      '--output-dill=$constsAndNonDill',
       constsAndNon,
-    ]);
-    expect(result.exitCode, 0);
+    ]));
 
     _checkConsts();
     _checkNonConsts();
@@ -114,7 +132,7 @@ Future<void> main() async {
       File(constsDill).deleteSync();
       File(constsAndNonDill).deleteSync();
     } finally {
-      print('Tests ${exitCode == 0 ? 'succeeded' : 'failed'} - exit code: $exitCode');
+      stdout.writeln('Tests ${exitCode == 0 ? 'succeeded' : 'failed'} - exit code: $exitCode');
       exit(exitCode);
     }
   }
