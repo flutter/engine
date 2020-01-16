@@ -136,6 +136,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     }
 
     @Override
+    @TargetApi(21)
     public boolean finishComposingText() {
         boolean result = super.finishComposingText();
 
