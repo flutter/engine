@@ -101,12 +101,6 @@ Future<BrowserInstallation> getEdgeInstallation(
 ///
 /// See: https://github.com/MicrosoftEdge/edge-launcher
 class EdgeLauncher {
-  /// Url for downloading  `MicrosoftEdgeLauncher`.
-  ///
-  /// Only useful in Windows, hence not added to [PlatformBinding].
-  final String windowsEdgeLauncherDownloadUrl =
-      'https://github.com/MicrosoftEdge/edge-launcher/releases/download/$version/MicrosoftEdgeLauncher.exe';
-
   /// Path to the directory that contains `MicrosoftEdgeLauncher.exe`.
   io.Directory get launcherInstallationDir => io.Directory(
         path.join(environment.webUiDartToolDir.path, 'microsoftedgelauncher',
@@ -121,9 +115,13 @@ class EdgeLauncher {
   /// Version number launcher executable  `MicrosoftEdgeLauncher`.
   final String version;
 
-  EdgeLauncher()
-      : version =
-            BrowserLock.instance.configuration['edge']['launcher_version'];
+  /// Url for downloading  `MicrosoftEdgeLauncher`.
+  ///
+  /// Only useful in Windows, hence not added to [PlatformBinding].
+  String get windowsEdgeLauncherDownloadUrl => 
+      'https://github.com/MicrosoftEdge/edge-launcher/releases/download/$version/MicrosoftEdgeLauncher.exe';
+
+  EdgeLauncher() : version = BrowserLock.instance.configuration['edge']['launcher_version']; 
 
   /// Install the launcher if it does not exist in this system.
   void install() async {
