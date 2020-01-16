@@ -82,8 +82,8 @@ abstract class OffsetBase {
   @override
   bool operator ==(dynamic other) {
     return other is OffsetBase
-           && other._dx == _dx
-           && other._dy == _dy;
+        && other._dx == _dx
+        && other._dy == _dy;
   }
 
   @override

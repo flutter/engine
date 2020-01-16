@@ -2783,7 +2783,7 @@ class ImageFilter {
   bool operator ==(dynamic other) {
     return other is ImageFilter
         && other._type == _type
-        && _listEquals(other._data, _data)
+        && _listEquals<double>(other._data, _data)
         && other._filterQuality == _filterQuality;
   }
 
