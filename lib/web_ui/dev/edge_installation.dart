@@ -118,10 +118,12 @@ class EdgeLauncher {
   /// Url for downloading  `MicrosoftEdgeLauncher`.
   ///
   /// Only useful in Windows, hence not added to [PlatformBinding].
-  String get windowsEdgeLauncherDownloadUrl => 
+  String get windowsEdgeLauncherDownloadUrl =>
       'https://github.com/MicrosoftEdge/edge-launcher/releases/download/$version/MicrosoftEdgeLauncher.exe';
 
-  EdgeLauncher() : version = BrowserLock.instance.configuration['edge']['launcher_version']; 
+  EdgeLauncher()
+      : version =
+            BrowserLock.instance.configuration['edge']['launcher_version'];
 
   /// Install the launcher if it does not exist in this system.
   void install() async {
