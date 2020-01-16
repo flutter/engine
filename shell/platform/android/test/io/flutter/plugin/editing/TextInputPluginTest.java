@@ -277,7 +277,7 @@ public class TextInputPluginTest {
             this.cursorAnchorInfo = cursorAnchorInfo;
         }
 
-        public getLastCursorAnchorInfo() {
+        public CursorAnchorInfo getLastCursorAnchorInfo() {
             return cursorAnchorInfo;
         }
     }
