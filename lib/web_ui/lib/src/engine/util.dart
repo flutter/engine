@@ -245,7 +245,7 @@ String _pathToSvgClipPath(ui.Path path,
   sb.write('<defs>');
 
   final String clipId = 'svgClip$_clipIdCounter';
-  sb.write('<clipPath id=$clipId>');
+  sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
 
   sb.write('<path fill="#FFFFFF" d="');
   pathToSvg(path, sb, offsetX: offsetX, offsetY: offsetY);

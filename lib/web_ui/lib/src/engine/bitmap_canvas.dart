@@ -730,7 +730,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
       // seem to incorrectly intersect the element bounding rect with
       // the clip path. Chrome and Firefox don't perform intersect instead they
       // use the path itself as source of truth.
-      clipElement.style
+      curElement.style
         ..width = '${pathBounds.right}px'
         ..height = '${pathBounds.bottom}px';
       clipDefs.add(clipElement);
