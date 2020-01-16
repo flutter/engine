@@ -106,7 +106,7 @@ class EdgeLauncher {
   ///
   /// Only useful in Windows, hence not added to [PlatformBinding].
   final String windowsEdgeLauncherDownloadUrl =
-      'https://github.com/MicrosoftEdge/edge-launcher/releases/download/1.2.0.0/MicrosoftEdgeLauncher.exe';
+      'https://github.com/MicrosoftEdge/edge-launcher/releases/download/$version/MicrosoftEdgeLauncher.exe';
 
   /// Path to the directory that contains `MicrosoftEdgeLauncher.exe`.
   io.Directory get launcherInstallationDir => io.Directory(
