@@ -8,7 +8,6 @@ import 'dart:io' as io;
 import 'package:args/args.dart';
 import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
-import 'package:yaml/yaml.dart';
 
 import 'common.dart';
 import 'environment.dart';
