@@ -986,7 +986,7 @@ class Canvas {
   /// image on the canvas, such as when using sprites or zooming. It is more
   /// efficient than using clips or masks directly.
   ///
-  /// All parameters mmust not be null.
+  /// All parameters must not be null.
   ///
   /// See also:
   ///
