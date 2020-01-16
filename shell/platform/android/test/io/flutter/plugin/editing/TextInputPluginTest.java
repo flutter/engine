@@ -272,7 +272,7 @@ public class TextInputPluginTest {
             return restartCounter.get(view.hashCode(), /*defaultValue=*/0);
         }
 
-        @Override
+        @Implementation
         public void updateCursorAnchorInfo(View view, CursorAnchorInfo cursorAnchorInfo) {
             this.cursorAnchorInfo = cursorAnchorInfo;
         }
