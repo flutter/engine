@@ -8,8 +8,6 @@ import 'dart:io';
 import 'package:const_finder/const_finder.dart';
 import 'package:path/path.dart' as path;
 
-int exitCode = 0;
-
 void expect<T>(T value, T expected) {
   if (value != expected) {
     stderr.writeln('Expected: $expected');
@@ -133,7 +131,6 @@ Future<void> main(List<String> args) async {
       File(constsAndNonDill).deleteSync();
     } finally {
       stdout.writeln('Tests ${exitCode == 0 ? 'succeeded' : 'failed'} - exit code: $exitCode');
-      exit(exitCode);
     }
   }
 }

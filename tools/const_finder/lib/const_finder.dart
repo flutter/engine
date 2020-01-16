@@ -5,8 +5,8 @@
 import 'package:kernel/kernel.dart' hide MapEntry;
 import 'package:meta/meta.dart';
 
-class _ConstFinder extends RecursiveVisitor<void> {
-  _ConstFinder(
+class _ConstVisitor extends RecursiveVisitor<void> {
+  _ConstVisitor(
     this.kernelFilePath,
     this.targetLibraryUri,
     this.classLibraryUri,
@@ -41,26 +41,27 @@ class _ConstFinder extends RecursiveVisitor<void> {
   @override
   void visitConstructorInvocation(ConstructorInvocation node) {
     final Class parentClass = node.target.parent as Class;
-    if (_matches(parentClass)) {
-      nonConstantLocations.add(<String, dynamic>{
-        'file': node.location.file.toString(),
-        'line': node.location.line,
-        'column': node.location.column,
-      });
+    if (!_matches(parentClass)) {
+      super.visitConstructorInvocation(node);
     }
-    super.visitConstructorInvocation(node);
+    nonConstantLocations.add(<String, dynamic>{
+      'file': node.location.file.toString(),
+      'line': node.location.line,
+      'column': node.location.column,
+    });
   }
 
   @override
   void visitInstanceConstantReference(InstanceConstant node) {
-    if (_matches(node.classNode)) {
-      final Map<String, dynamic> instance = <String, dynamic>{};
-      for (MapEntry<Reference, Constant> kvp in node.fieldValues.entries) {
-        final PrimitiveConstant<dynamic> value = kvp.value as PrimitiveConstant<dynamic>;
-        instance[kvp.key.canonicalName.name] = value.value;
-      }
-      constantInstances.add(instance);
+    if (!_matches(node.classNode)) {
+      return;
     }
+    final Map<String, dynamic> instance = <String, dynamic>{};
+    for (MapEntry<Reference, Constant> kvp in node.fieldValues.entries) {
+      final PrimitiveConstant<dynamic> value = kvp.value as PrimitiveConstant<dynamic>;
+      instance[kvp.key.canonicalName.name] = value.value;
+    }
+    constantInstances.add(instance);
   }
 }
 
@@ -81,30 +82,30 @@ class ConstFinder {
     @required String targetLibraryUri,
     @required String classLibraryUri,
     @required String className,
-  })  : _finder = _ConstFinder(
+  })  : _visitor = _ConstVisitor(
                     kernelFilePath,
                     targetLibraryUri,
                     classLibraryUri,
                     className,
                   );
 
-  final _ConstFinder _finder;
+  final _ConstVisitor _visitor;
 
   Library _getRoot() {
-    final Component binary = loadComponentFromBinary(_finder.kernelFilePath);
+    final Component binary = loadComponentFromBinary(_visitor.kernelFilePath);
     return binary.libraries.firstWhere(
-      (Library library) => library.canonicalName.name == _finder.targetLibraryUri,
-      orElse: () => throw LibraryNotFoundException._(_finder.targetLibraryUri),
+      (Library library) => library.canonicalName.name == _visitor.targetLibraryUri,
+      orElse: () => throw LibraryNotFoundException._(_visitor.targetLibraryUri),
     );
   }
 
   /// Finds all instances
   Map<String, dynamic> findInstances() {
     final Library root = _getRoot();
-    root.visitChildren(_finder);
+    root.visitChildren(_visitor);
     return <String, dynamic>{
-      'constantInstances': _finder.constantInstances,
-      'nonConstantLocations': _finder.nonConstantLocations,
+      'constantInstances': _visitor.constantInstances,
+      'nonConstantLocations': _visitor.nonConstantLocations,
     };
   }
 }
