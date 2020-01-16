@@ -8,6 +8,7 @@ import 'dart:io' as io;
 import 'package:args/args.dart';
 import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
+import 'package:yaml/yaml.dart';
 
 import 'common.dart';
 import 'environment.dart';
@@ -94,6 +95,12 @@ Future<BrowserInstallation> getEdgeInstallation(
   }
 }
 
+/// `MicrosoftEdgeLauncher` is an executable for launching Edge.
+///
+/// It is useful for starting Edge from comand line or from a
+/// batch script.
+///
+/// See: https://github.com/MicrosoftEdge/edge-launcher
 class EdgeLauncher {
   /// Url for downloading  `MicrosoftEdgeLauncher`.
   ///
@@ -101,9 +108,10 @@ class EdgeLauncher {
   final String windowsEdgeLauncherDownloadUrl =
       'https://github.com/MicrosoftEdge/edge-launcher/releases/download/1.2.0.0/MicrosoftEdgeLauncher.exe';
 
-  /// Path to the directory contains `MicrosoftEdgeLauncher.exe`.
+  /// Path to the directory that contains `MicrosoftEdgeLauncher.exe`.
   io.Directory get launcherInstallationDir => io.Directory(
-        path.join(environment.webUiDartToolDir.path, 'microsoftedgelauncher'),
+        path.join(environment.webUiDartToolDir.path, 'microsoftedgelauncher',
+            version),
       );
 
   io.File get executable => io.File(
@@ -111,10 +119,14 @@ class EdgeLauncher {
 
   bool get isInstalled => executable.existsSync();
 
-  /// For running Edge from a batch script executable `MicrosoftEdgeLauncher`
-  /// is used.
-  /// Install it if it does not exists in this system.
-  /// See: https://github.com/MicrosoftEdge/edge-launcher
+  /// Version number launcher executable  `MicrosoftEdgeLauncher`.
+  final String version;
+
+  EdgeLauncher()
+      : version =
+            BrowserLock.instance.configuration['edge']['launcher_version'];
+
+  /// Install the launcher if it does not exist in this system.
   void install() async {
     // Checks if the  `MicrosoftEdgeLauncher` executable exists.
     if (isInstalled) {
