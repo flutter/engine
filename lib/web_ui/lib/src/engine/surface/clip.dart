@@ -88,8 +88,8 @@ class PersistedClipRect extends PersistedContainerSurface
     // the shift in the coordinate system introduced by the translation of the
     // rootElement. Clipping in Flutter has no effect on the coordinate system.
     childContainer.style
-     ..left = '${-rect.left}px'
-     ..top = '${-rect.top}px';
+      ..left = '${-rect.left}px'
+      ..top = '${-rect.top}px';
   }
 
   @override
@@ -141,8 +141,8 @@ class PersistedClipRRect extends PersistedContainerSurface
     // the shift in the coordinate system introduced by the translation of the
     // rootElement. Clipping in Flutter has no effect on the coordinate system.
     childContainer.style
-     ..left = '${-rrect.left}px'
-     ..top = '${-rrect.top}px';
+      ..left = '${-rrect.left}px'
+      ..top = '${-rrect.top}px';
   }
 
   @override
@@ -279,9 +279,11 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     }
 
     final ui.Rect pathBounds = path.getBounds();
-    final String svgClipPath =
-        _pathToSvgClipPath(path, offsetX: -pathBounds.left, offsetY: -pathBounds.top,
-            scaleX: 1.0/pathBounds.width, scaleY: 1.0/pathBounds.height);
+    final String svgClipPath = _pathToSvgClipPath(path,
+        offsetX: -pathBounds.left,
+        offsetY: -pathBounds.top,
+        scaleX: 1.0 / pathBounds.width,
+        scaleY: 1.0 / pathBounds.height);
     assert(_clipElement == null);
     _clipElement =
         html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
@@ -397,7 +399,7 @@ class PersistedClipPath extends PersistedContainerSurface
 String createSvgClipDef(html.HtmlElement element, ui.Path clipPath) {
   final ui.Rect pathBounds = clipPath.getBounds();
   final String svgClipPath = _pathToSvgClipPath(clipPath,
-      scaleX: 1.0/pathBounds.right, scaleY: 1.0/pathBounds.bottom);
+      scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom);
   domRenderer.setElementStyle(
       element, 'clip-path', 'url(#svgClip$_clipIdCounter)');
   domRenderer.setElementStyle(

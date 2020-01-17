@@ -48,7 +48,7 @@ void main() async {
   // Should clip image with oval.
   test('Clips image with oval clip path', () async {
     final engine.RecordingCanvas rc =
-    engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
+        engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     Image testImage = createTestImage();
     double testWidth = testImage.width.toDouble();
@@ -65,7 +65,7 @@ void main() async {
   // Regression test for https://github.com/flutter/flutter/issues/48683
   test('Clips triangle with oval clip path devicePixelRatio2', () async {
     final engine.RecordingCanvas rc =
-    engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
+        engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     double testWidth = 200;
     double testHeight = 150;
@@ -77,9 +77,11 @@ void main() async {
     paintPath.lineTo(testWidth, testHeight);
     paintPath.lineTo(0, testHeight);
     paintPath.close();
-    rc.drawPath(paintPath, Paint()
-        ..color = Color(0xFF00FF00)
-        ..style = PaintingStyle.fill);
+    rc.drawPath(
+        paintPath,
+        Paint()
+          ..color = Color(0xFF00FF00)
+          ..style = PaintingStyle.fill);
     rc.restore();
     await _checkScreenshot(rc, 'triangle_clipped_by_oval');
   });
@@ -87,7 +89,7 @@ void main() async {
 
 engine.HtmlImage createTestImage({int width = 200, int height = 150}) {
   html.CanvasElement canvas =
-  new html.CanvasElement(width: width, height: height);
+      new html.CanvasElement(width: width, height: height);
   html.CanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, width / 3, height);
