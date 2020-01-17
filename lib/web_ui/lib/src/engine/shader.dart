@@ -104,12 +104,12 @@ class GradientLinear extends EngineGradient {
         ctx.createLinearGradient(from.dx, from.dy, to.dx, to.dy);
     if (colorStops == null) {
       assert(colors.length == 2);
-      gradient.addColorStop(0, ui.colorToCssString(colors[0]));
-      gradient.addColorStop(1, ui.colorToCssString(colors[1]));
+      gradient.addColorStop(0, colorToCssString(colors[0]));
+      gradient.addColorStop(1, colorToCssString(colors[1]));
       return gradient;
     }
     for (int i = 0; i < colors.length; i++) {
-      gradient.addColorStop(colorStops[i], ui.colorToCssString(colors[i]));
+      gradient.addColorStop(colorStops[i], colorToCssString(colors[i]));
     }
     return gradient;
   }
@@ -118,7 +118,7 @@ class GradientLinear extends EngineGradient {
   List<dynamic> webOnlySerializeToCssPaint() {
     final List<dynamic> serializedColors = <dynamic>[];
     for (int i = 0; i < colors.length; i++) {
-      serializedColors.add(ui.colorToCssString(colors[i]));
+      serializedColors.add(colorToCssString(colors[i]));
     }
     return <dynamic>[
       1,
@@ -183,12 +183,12 @@ class GradientRadial extends EngineGradient {
         center.dx, center.dy, 0, center.dx, center.dy, radius);
     if (colorStops == null) {
       assert(colors.length == 2);
-      gradient.addColorStop(0, ui.colorToCssString(colors[0]));
-      gradient.addColorStop(1, ui.colorToCssString(colors[1]));
+      gradient.addColorStop(0, colorToCssString(colors[0]));
+      gradient.addColorStop(1, colorToCssString(colors[1]));
       return gradient;
     } else {
       for (int i = 0; i < colors.length; i++) {
-        gradient.addColorStop(colorStops[i], ui.colorToCssString(colors[i]));
+        gradient.addColorStop(colorStops[i], colorToCssString(colors[i]));
       }
     }
     return gradient;
