@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
-import 'dart:math' as math;
 import 'dart:js_util' as js_util;
 
 import 'package:ui/ui.dart' hide TextStyle;
