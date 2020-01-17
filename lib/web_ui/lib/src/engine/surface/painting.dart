@@ -909,16 +909,24 @@ class SurfacePath implements ui.Path {
           }
           return true;
         }
+        // TODO: For improved performance, handle Ellipse special case.
       }
     }
-    final ui.Size size = window.physicalSize / window.devicePixelRatio;
+    final ui.Size size = window.physicalSize;
+    // If device pixel ratio has changed we can't reuse prior raw recorder.
+    if (_rawRecorder != null && _rawRecorder._devicePixelRatio != EngineWindow.browserDevicePixelRatio) {
+      _rawRecorder = null;
+    }
     _rawRecorder ??= ui.RawRecordingCanvas(size);
     // Account for the shift due to padding.
     _rawRecorder.translate(-BitmapCanvas.kPaddingPixels.toDouble(),
         -BitmapCanvas.kPaddingPixels.toDouble());
     _rawRecorder.drawPath(
         this, (SurfacePaint()..color = const ui.Color(0xFF000000)).paintData);
-    final bool result = _rawRecorder._canvasPool.context.isPointInPath(pointX, pointY);
+    final double recorderDevicePixelRatio =
+        _rawRecorder._devicePixelRatio;
+    final bool result = _rawRecorder._canvasPool.context.isPointInPath(
+        pointX * recorderDevicePixelRatio, pointY * recorderDevicePixelRatio);
     _rawRecorder.dispose();
     return result;
   }
