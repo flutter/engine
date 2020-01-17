@@ -137,11 +137,10 @@ class InputConnectionAdaptor extends BaseInputConnection {
     }
 
     @Override
-    @TargetApi(21)
     public boolean finishComposingText() {
         boolean result = super.finishComposingText();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= 21) {
             // Update the keyboard with a reset/empty composing region. Critical on
             // Samsung keyboards to prevent punctuation duplication.
             CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();

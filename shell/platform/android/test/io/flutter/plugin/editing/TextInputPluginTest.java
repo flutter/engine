@@ -222,7 +222,6 @@ public class TextInputPluginTest {
     }
 
     @Test
-    @TargetApi(21)
     public void inputConnection_finishComposingTextUpdatesIMM() throws JSONException {
         TestImm testImm = Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
         FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
