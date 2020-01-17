@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 import 'package:test/test.dart';
-import 'package:ui/ui.dart';
+import 'dart:js_util' as js_util;
+import 'dart:html' as html;
+import 'package:ui/ui.dart' hide window;
 import 'package:ui/src/engine.dart';
 
 import 'matchers.dart';
@@ -251,5 +253,19 @@ void main() {
     expect(path2.getBounds(), const Rect.fromLTRB(25, 30, 250, 300));
     // Expect original path to stay the same.
     expect(path.getBounds(), const Rect.fromLTRB(25, 30, 100, 200));
+  });
+
+  // Regression test for https://github.com/flutter/flutter/issues/44470
+  test('Should handle contains for devicepixelratio != 1.0', () {
+    js_util.setProperty(html.window, 'devicePixelRatio', 4.0);
+    window.debugOverrideDevicePixelRatio(4.0);
+    final path = Path()
+      ..moveTo(50, 0)
+      ..lineTo(100, 100)
+      ..lineTo(0, 100)
+      ..lineTo(50, 0)
+      ..close();
+    expect(path.contains(Offset(50, 50)), isTrue);
+    js_util.setProperty(html.window, 'devicePixelRatio', 1.0);
   });
 }
