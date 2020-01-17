@@ -23,7 +23,7 @@ class HtmlCodec implements ui.Codec {
   @override
   Future<ui.FrameInfo> getNextFrame() async {
     final Completer<ui.FrameInfo> completer = Completer<ui.FrameInfo>();
-    if (_supportsDecode && false) {
+    if (_supportsDecode) {
       final html.ImageElement imgElement = html.ImageElement();
       imgElement.src = src;
       js_util.setProperty(imgElement, 'decoding', 'async');
