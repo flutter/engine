@@ -317,7 +317,6 @@ String _pathToSvgClipPath(ui.Path path,
     double scaleX = 1.0,
     double scaleY = 1.0}) {
   _clipIdCounter += 1;
-  final ui.Rect bounds = path.getBounds();
   final StringBuffer sb = StringBuffer();
   sb.write('<svg width="0" height="0" '
       'style="position:absolute">');

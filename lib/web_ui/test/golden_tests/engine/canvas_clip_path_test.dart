@@ -62,7 +62,7 @@ void main() async {
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/48683
-  test('Clips triangle with oval clip path devicePixelRatio2', () async {
+  test('Clips triangle with oval clip path', () async {
     final engine.RecordingCanvas rc =
         engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
