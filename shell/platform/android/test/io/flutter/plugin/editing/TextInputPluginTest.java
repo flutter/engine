@@ -2,6 +2,7 @@ package io.flutter.plugin.editing;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.os.Build;
 import android.provider.Settings;
 import android.util.SparseIntArray;
 import android.view.inputmethod.CursorAnchorInfo;
@@ -238,10 +239,12 @@ public class TextInputPluginTest {
 
         connection.finishComposingText();
 
-        CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
-        builder.setComposingText(-1, "");
-        CursorAnchorInfo anchorInfo = builder.build();
-        assertEquals(testImm.getLastCursorAnchorInfo(), anchorInfo);
+        if (Build.VERSION.SDK_INT >= 21) {
+            CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
+            builder.setComposingText(-1, "");
+            CursorAnchorInfo anchorInfo = builder.build();
+            assertEquals(testImm.getLastCursorAnchorInfo(), anchorInfo);
+        }
     }
 
     @Implements(InputMethodManager.class)
