@@ -1132,6 +1132,14 @@ enum BoxHeightStyle {
   ///
   /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
   includeLineSpacingBottom,
+
+  /// Calculate box heights based on the metrics of this paragraph's [StrutStyle].
+  ///
+  /// Boxes based on the strut will have consistent heights throughout the
+  /// entire paragraph.  The top edge of each line will align with the bottom
+  /// edge of the previous line.  It is possible for glyphs to extend outside
+  /// these boxes.
+  strut,
 }
 
 /// Defines various ways to horizontally bound the boxes returned by
@@ -1490,5 +1498,18 @@ abstract class ParagraphBuilder {
 /// * `fontFamily`: The family name used to identify the font in text styles.
 ///  If this is not provided, then the family name will be extracted from the font file.
 Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
-  return _fontCollection.loadFontFromList(list, fontFamily: fontFamily);
+  return _fontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
+    (_) => _sendFontChangeMessage()
+  );
+}
+
+final ByteData _fontChangeMessage = engine.JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
+
+FutureOr<void> _sendFontChangeMessage() async {
+  if (window.onPlatformMessage != null)
+    window.onPlatformMessage(
+      'flutter/system',
+      _fontChangeMessage,
+      (_) {},
+    );
 }
