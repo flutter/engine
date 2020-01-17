@@ -1,6 +1,5 @@
 package io.flutter.plugin.editing;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.provider.Settings;
