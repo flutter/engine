@@ -47,19 +47,23 @@
         }
       }];
 
-  if (goldenTestName) {
-    [self readyContextForPlatformViewTests:goldenTestName];
-  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
-    self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
-  } else {
-    self.window.rootViewController = [[UIViewController alloc] init];
-  }
+//  if (goldenTestName) {
+//    [self readyContextForPlatformViewTests:goldenTestName gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyDefault];
+//  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--block-until-touches-ended"]) {
+//    [self readyContextForPlatformViewTests:@"platform_view_covered_by_widget" gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded];
+//  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
+//    self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
+//  } else {
+//    self.window.rootViewController = [[UIViewController alloc] init];
+//  }
 
+
+  [self readyContextForPlatformViewTests:@"platform_view_covered_by_widget" gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyDefault];
   [self.window makeKeyAndVisible];
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
-- (void)readyContextForPlatformViewTests:(NSString*)scenarioIdentifier {
+- (void)readyContextForPlatformViewTests:(NSString*)scenarioIdentifier gestureRecognizersBlockingPolicy:(FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy{
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"PlatformViewTest" project:nil];
   [engine runWithEntrypoint:nil];
 
@@ -76,7 +80,7 @@
       [[TextPlatformViewFactory alloc] initWithMessenger:flutterViewController.binaryMessenger];
   NSObject<FlutterPluginRegistrar>* registrar =
       [flutterViewController.engine registrarForPlugin:@"scenarios/TextPlatformViewPlugin"];
-  [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
+  [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView" gestureRecognizersBlockingPolicy:blockingPolicy];
   self.window.rootViewController = flutterViewController;
 }
 

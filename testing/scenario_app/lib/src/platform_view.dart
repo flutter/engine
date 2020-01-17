@@ -281,6 +281,31 @@ class PlatformViewOpacityScenario extends PlatformViewScenario {
   }
 }
 
+/// Platform view covered entirely by a widget.
+class PlatformViewCoveredByWidgetScenario extends PlatformViewScenario {
+  /// Constructs a platform view covered entirely by a widget scenario
+  PlatformViewCoveredByWidgetScenario(Window window, String text, {int id = 0})
+      : super(window, text, id: id);
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder sceneBuilder = SceneBuilder();
+    sceneBuilder.pushOffset(0, 0);
+    _addPlatformViewtoScene(sceneBuilder, 6, 500, 500);
+    // final PictureRecorder recorder = PictureRecorder();
+    // final Canvas canvas = Canvas(recorder);
+    // canvas.drawRect(
+    //   const Rect.fromLTWH(0, 0, 500, 500),
+    //   Paint()..color = const Color(0xFFABCDEF),
+    // );
+    // final Picture picture = recorder.endRecording();
+    // sceneBuilder.addPicture(const Offset(0, 0), picture);
+    final Scene scene = sceneBuilder.build();
+    window.render(scene);
+    scene.dispose();
+  }
+}
+
 mixin _BasePlatformViewScenarioMixin on Scenario {
   int _textureId;
 

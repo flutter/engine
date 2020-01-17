@@ -227,6 +227,42 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
 
 #pragma mark -
 /***************************************************************************************************
+ * How the UIGestureRecognizers of a platform view should be blocked.
+ *
+ * UIGestureRecognizers of a platform views can be blocked based on the decisin made by the Flutter
+ * Framework. e.g. When an interactible widget is covering the platform view and a gesture happened
+ * on the widget, The framework may decide to block the UIGestureRecognizers that are recognized
+ * (via the gesture recognized acton ) on the platform view if any.
+ *
+ * This policy describes how the blocking process is implmented.
+ */
+typedef enum {
+  /**
+   * The flutter framwork blocks all the UIGestureRecognizers  on the platform view as soon as it
+   * thinks they should be blocked.
+   *
+   * If this pociliy is implmented, only touchesBegan for all the UIGestureRecognizers is guaranteed
+   * to be called.
+   */
+  FlutterPlatformViewGestureRecognizersBlockingPolicyEager,
+  /**
+   * The flutter framwork blocks all the UIGestureRecognizers  until the `touchesEnded` method is
+   * called for every UIGestureRecognizers on the platform view.
+   *
+   * If this pociliy is implmented, all of the `touchesBegan`, `touchesMoved`, `touchesEnded` and
+   * `touchesCancelled` on any UIGestureRecognizers are guaranteed to be called if iOS system
+   * decided to call them.
+   */
+  FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded,
+  /**
+   * The default behavior is currently set to `FlutterPlatformViewGestureBlockingPolicyEager`
+   */
+  FlutterPlatformViewGestureRecognizersBlockingPolicyDefault =
+      FlutterPlatformViewGestureRecognizersBlockingPolicyEager,
+} FlutterPlatformViewGestureRecognizersBlockingPolicy;
+
+#pragma mark -
+/***************************************************************************************************
  *Registration context for a single `FlutterPlugin`, providing a one stop shop
  *for the plugin to access contextual information and register callbacks for
  *various application events.
@@ -263,6 +299,23 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  */
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(NSString*)factoryId;
+
+/**
+ * Registers a `FlutterPlatformViewFactory` for creation of platform views.
+ *
+ * Plugins expose `UIView` for embedding in Flutter apps by registering a view factory.
+ *
+ * @param factory The view factory that will be registered.
+ * @param factoryId A unique identifier for the factory, the Dart code of the Flutter app can use
+ *   this identifier to request creation of a `UIView` by the registered factory.
+ * @param gestureBlockingPolicy How UIGestureRecognizers on the platform view is
+ * blocked.
+ *
+ */
+- (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
+                              withId:(NSString*)factoryId
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy;
 
 /**
  * Publishes a value for external use of the plugin.

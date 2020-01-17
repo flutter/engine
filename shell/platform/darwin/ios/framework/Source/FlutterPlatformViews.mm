@@ -86,8 +86,10 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
 
   FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
-       initWithEmbeddedView:embedded_view.view
-      flutterViewController:flutter_view_controller_.get()] autorelease];
+                  initWithEmbeddedView:embedded_view.view
+                 flutterViewController:flutter_view_controller_.get()
+      gestureRecognizersBlockingPolicy:gesture_recognizers_blocking_policies[viewType]]
+      autorelease];
 
   touch_interceptors_[viewId] =
       fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
@@ -149,11 +151,13 @@ void FlutterPlatformViewsController::OnRejectGesture(FlutterMethodCall* call,
 
 void FlutterPlatformViewsController::RegisterViewFactory(
     NSObject<FlutterPlatformViewFactory>* factory,
-    NSString* factoryId) {
+    NSString* factoryId,
+    FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy) {
   std::string idString([factoryId UTF8String]);
   FML_CHECK(factories_.count(idString) == 0);
   factories_[idString] =
       fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>([factory retain]);
+  gesture_recognizers_blocking_policies[idString] = gestureRecognizerBlockingPolicy;
 }
 
 void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
@@ -513,6 +517,9 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 // invoking an acceptGesture method on the platform_views channel). And this is how we allow the
 // Flutter framework to delay or prevent the embedded view from getting a touch sequence.
 @interface DelayingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
+
+@property(nonatomic) bool shouldEndInNextTouchesEnded;
+
 - (instancetype)initWithTarget:(id)target
                         action:(SEL)action
           forwardingRecognizer:(UIGestureRecognizer*)forwardingRecognizer;
@@ -535,9 +542,12 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 
 @implementation FlutterTouchInterceptingView {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
+  FlutterPlatformViewGestureRecognizersBlockingPolicy _blockingPolicy;
 }
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
-               flutterViewController:(UIViewController*)flutterViewController {
+               flutterViewController:(UIViewController*)flutterViewController
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy {
   self = [super initWithFrame:embeddedView.frame];
   if (self) {
     self.multipleTouchEnabled = YES;
@@ -554,6 +564,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
               initWithTarget:self
                       action:nil
         forwardingRecognizer:forwardingRecognizer]);
+    _blockingPolicy = blockingPolicy;
 
     [self addGestureRecognizer:_delayingRecognizer.get()];
     [self addGestureRecognizer:forwardingRecognizer];
@@ -562,11 +573,22 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 }
 
 - (void)releaseGesture {
+  NSLog(@"releaseGesture gesture");
   _delayingRecognizer.get().state = UIGestureRecognizerStateFailed;
 }
 
 - (void)blockGesture {
-  _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
+  switch (_blockingPolicy) {
+    case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
+      NSLog(@"block gesture");
+      _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
+      break;
+    case FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded:
+      _delayingRecognizer.get().shouldEndInNextTouchesEnded = YES;
+      break;
+    default:
+      break;
+  }
 }
 
 // We want the intercepting view to consume the touches and not pass the touches up to the parent
@@ -596,7 +618,9 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
   self = [super initWithTarget:target action:action];
   if (self) {
     self.delaysTouchesBegan = YES;
+    self.delaysTouchesEnded = YES;
     self.delegate = self;
+    self.shouldEndInNextTouchesEnded = NO;
     _forwardingRecognizer.reset([forwardingRecognizer retain]);
   }
   return self;
@@ -612,6 +636,14 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 - (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
     shouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer*)otherGestureRecognizer {
   return otherGestureRecognizer == self;
+}
+
+- (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+  if (self.shouldEndInNextTouchesEnded) {
+    NSLog(@"block gesture in touches ended");
+    self.state = UIGestureRecognizerStateEnded;
+    self.shouldEndInNextTouchesEnded = NO;
+  }
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
