@@ -267,9 +267,10 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       }
     }
 
-    final ui.Rect bounds = path.getBounds();
+    final ui.Rect pathBounds = path.getBounds();
     final String svgClipPath =
-        _pathToSvgClipPath(path, offsetX: -bounds.left, offsetY: -bounds.top);
+        _pathToSvgClipPath(path, offsetX: -pathBounds.left, offsetY: -pathBounds.top,
+            scaleX: 1.0/pathBounds.width, scaleY: 1.0/pathBounds.height);
     assert(_clipElement == null);
     _clipElement =
         html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
@@ -281,12 +282,12 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     final html.CssStyleDeclaration rootElementStyle = rootElement.style;
     rootElementStyle
       ..overflow = ''
-      ..transform = 'translate(${bounds.left}px, ${bounds.top}px)'
-      ..width = '${bounds.width}px'
-      ..height = '${bounds.height}px'
+      ..transform = 'translate(${pathBounds.left}px, ${pathBounds.top}px)'
+      ..width = '${pathBounds.width}px'
+      ..height = '${pathBounds.height}px'
       ..borderRadius = '';
     childContainer.style.transform =
-        'translate(${-bounds.left}px, ${-bounds.top}px)';
+        'translate(${-pathBounds.left}px, ${-pathBounds.top}px)';
   }
 
   @override
@@ -349,15 +350,11 @@ class PersistedClipPath extends PersistedContainerSurface
       }
       return;
     }
-    final String svgClipPath = _pathToSvgClipPath(clipPath);
     _clipElement?.remove();
+    final String svgClipPath = createSvgClipDef(childContainer, clipPath);
     _clipElement =
         html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
     domRenderer.append(childContainer, _clipElement);
-    domRenderer.setElementStyle(
-        childContainer, 'clip-path', 'url(#svgClip$_clipIdCounter)');
-    domRenderer.setElementStyle(
-        childContainer, '-webkit-clip-path', 'url(#svgClip$_clipIdCounter)');
   }
 
   @override
@@ -379,4 +376,24 @@ class PersistedClipPath extends PersistedContainerSurface
     _clipElement = null;
     super.discard();
   }
+}
+
+/// Creates an svg clipPath and applies it to [element].
+String createSvgClipDef(html.HtmlElement element, ui.Path clipPath) {
+  final ui.Rect pathBounds = clipPath.getBounds();
+  final String svgClipPath = _pathToSvgClipPath(clipPath,
+      scaleX: 1.0/pathBounds.right, scaleY: 1.0/pathBounds.bottom);
+  domRenderer.setElementStyle(
+      element, 'clip-path', 'url(#svgClip$_clipIdCounter)');
+  domRenderer.setElementStyle(
+      element, '-webkit-clip-path', 'url(#svgClip$_clipIdCounter)');
+  // We need to set width and height for the clipElement to cover the
+  // bounds of the path since browsers such as Safari and Edge
+  // seem to incorrectly intersect the element bounding rect with
+  // the clip path. Chrome and Firefox don't perform intersect instead they
+  // use the path itself as source of truth.
+  element.style
+    ..width = '${pathBounds.right}px'
+    ..height = '${pathBounds.bottom}px';
+  return svgClipPath;
 }

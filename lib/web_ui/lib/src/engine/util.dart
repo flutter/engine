@@ -236,7 +236,8 @@ int _clipIdCounter = 0;
 /// Calling this method updates [_clipIdCounter]. The HTML id of the generated
 /// clip is set to "svgClip${_clipIdCounter}", e.g. "svgClip123".
 String _pathToSvgClipPath(ui.Path path,
-    {double offsetX = 0, double offsetY = 0}) {
+    {double offsetX = 0, double offsetY = 0, double scaleX = 1.0,
+      double scaleY = 1.0}) {
   _clipIdCounter += 1;
   final ui.Rect bounds = path.getBounds();
   final StringBuffer sb = StringBuffer();
@@ -247,7 +248,7 @@ String _pathToSvgClipPath(ui.Path path,
   final String clipId = 'svgClip$_clipIdCounter';
   sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
 
-  sb.write('<path fill="#FFFFFF" d="');
+  sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
   pathToSvg(path, sb, offsetX: offsetX, offsetY: offsetY);
   sb.write('"></path></clipPath></defs></svg');
   return sb.toString();
