@@ -51,7 +51,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
       ..right = '0'
       ..bottom = '0'
       ..left = '0'
-      ..backgroundColor = ui.colorToCssString(color);
+      ..backgroundColor = colorToCssString(color);
     currentElement.append(box);
   }
 
@@ -105,7 +105,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
       ..transform = effectiveTransform;
 
     final String cssColor = paint.color == null ? '#000000'
-        : ui.colorToCssString(paint.color);
+        : colorToCssString(paint.color);
 
     if (paint.maskFilter != null) {
       style.filter = 'blur(${paint.maskFilter.webOnlySigma}px)';
