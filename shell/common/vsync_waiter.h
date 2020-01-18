@@ -28,7 +28,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   /// Add a secondary callback for the next vsync.
   ///
   /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback|.
-  void ScheduleSecondaryCallback(const fml::closure& callback);
+  void ScheduleSecondaryCallback(const Callback& callback);
 
   static constexpr float kUnknownRefreshRateFPS = 0.0;
 
@@ -60,7 +60,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   Callback callback_;
 
   std::mutex secondary_callback_mutex_;
-  fml::closure secondary_callback_;
+  Callback secondary_callback_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiter);
 };

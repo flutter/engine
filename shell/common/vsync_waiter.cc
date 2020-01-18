@@ -55,7 +55,7 @@ void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
   AwaitVSync();
 }
 
-void VsyncWaiter::ScheduleSecondaryCallback(const fml::closure& callback) {
+void VsyncWaiter::ScheduleSecondaryCallback(const Callback& callback) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (!callback) {
@@ -85,7 +85,7 @@ void VsyncWaiter::ScheduleSecondaryCallback(const fml::closure& callback) {
 void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
                                fml::TimePoint frame_target_time) {
   Callback callback;
-  fml::closure secondary_callback;
+  Callback secondary_callback;
 
   {
     std::scoped_lock lock(callback_mutex_);
@@ -127,7 +127,10 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
 
   if (secondary_callback) {
     task_runners_.GetUITaskRunner()->PostTaskForTime(
-        std::move(secondary_callback), frame_start_time);
+        [secondary_callback, frame_start_time, frame_target_time]() {
+          secondary_callback(frame_start_time, frame_target_time);
+        },
+        frame_start_time);
   }
 }
 

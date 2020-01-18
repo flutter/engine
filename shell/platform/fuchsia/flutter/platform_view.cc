@@ -764,9 +764,15 @@ void PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
   }
 }
 
+// Sampling offset is relative to begin frame time. If the input rate is
+// ~60hz, worst case latency is 16.667 ms. This however assumes zero
+// latency from the input driver. 3.333 ms margin is added for this.
+constexpr int64_t kSamplingOffsetUs = -20000;
+
 flutter::PointerDataDispatcherMaker PlatformView::GetDispatcherMaker() {
   return [](flutter::DefaultPointerDataDispatcher::Delegate& delegate) {
-    return std::make_unique<flutter::SmoothPointerDataDispatcher>(delegate);
+    return std::make_unique<flutter::ResamplingPointerDataDispatcher>(
+        delegate, kSamplingOffsetUs);
   };
 }
 

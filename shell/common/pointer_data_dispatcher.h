@@ -5,6 +5,10 @@
 #ifndef POINTER_DATA_DISPATCHER_H_
 #define POINTER_DATA_DISPATCHER_H_
 
+#include <deque>
+#include <map>
+
+#include "flutter/lib/ui/window/pointer_data_packet_converter.h"
 #include "flutter/runtime/runtime_controller.h"
 #include "flutter/shell/common/animator.h"
 
@@ -61,7 +65,7 @@ class PointerDataDispatcher {
     ///           This callback is used to provide the vsync signal needed by
     ///           `SmoothPointerDataDispatcher`.
     virtual void ScheduleSecondaryVsyncCallback(
-        const fml::closure& callback) = 0;
+        const VsyncWaiter::Callback& callback) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -160,6 +164,64 @@ class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
   void ScheduleSecondaryVsyncCallback();
 
   FML_DISALLOW_COPY_AND_ASSIGN(SmoothPointerDataDispatcher);
+};
+
+//------------------------------------------------------------------------------
+/// A dispatcher that re-sample pointer move changes at a fixed offset relative
+/// to frame time. This provides regular delivery of input events each frame.
+///
+/// It works as follows:
+///
+/// When `DispatchPacket` is called, pointer data is enqueued for delivery
+/// when sample time has reached the pointer event time.
+///
+/// Sample time is a fixed offset relative to the current frame time.
+/// ScheduleSecondaryVsyncCallback is used to retreive the current
+/// frame time and advance sample time.
+///
+/// Dispatcher will use events more recent than the sample time to re-sample
+/// pointer move changes. This results in smooth changes to pointer location
+/// each frame independent of the phase of input event delivery.
+class ResamplingPointerDataDispatcher : public DefaultPointerDataDispatcher {
+ public:
+  ResamplingPointerDataDispatcher(Delegate& delegate,
+                                  int64_t sampling_offset_us);
+
+  // |PointerDataDispatcer|
+  void DispatchPacket(std::unique_ptr<PointerDataPacket> packet,
+                      uint64_t trace_flow_id) override;
+
+  virtual ~ResamplingPointerDataDispatcher();
+
+ private:
+  struct PointerEvent {
+    PointerData data;
+    uint64_t trace_flow_id;
+  };
+  struct DownPointer {
+    PointerEvent last;
+    PointerEvent next;
+  };
+  const int64_t sampling_offset_us_;
+  std::deque<PointerEvent> pending_events_;
+  std::map<int, DownPointer> down_pointers_;
+  int64_t sample_time_us_ = 0;
+  bool secondary_vsync_callback_pending_ = false;
+  PointerDataPacketConverter pointer_data_packet_converter_;
+
+  fml::WeakPtrFactory<ResamplingPointerDataDispatcher> weak_factory_;
+
+  void ScheduleSecondaryVsyncCallback();
+
+  void DispatchPendingPackets();
+
+  void ConsumePendingEvents();
+
+  void UpdateDownPointers();
+
+  void DispatchMoveChanges();
+
+  FML_DISALLOW_COPY_AND_ASSIGN(ResamplingPointerDataDispatcher);
 };
 
 //--------------------------------------------------------------------------

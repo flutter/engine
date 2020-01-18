@@ -164,6 +164,7 @@ if (current_toolchain == host_toolchain) {
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",
+      "pointer_data_dispatcher_unittests.cc",
       "shell_test.cc",
       "shell_test.h",
       "shell_unittests.cc",
