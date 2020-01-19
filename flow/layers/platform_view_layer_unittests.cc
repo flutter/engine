@@ -27,7 +27,6 @@ TEST_F(PlatformViewLayerTest, NullViewEmbedderDoesntPrerollCompositeOrPaint) {
             SkRect::MakeSize(layer_size)
                 .makeOffset(layer_offset.fX, layer_offset.fY));
   EXPECT_TRUE(layer->needs_painting());
-  EXPECT_FALSE(layer->needs_system_composite());
 
   layer->Paint(paint_context());
   EXPECT_EQ(paint_context().leaf_nodes_canvas, &mock_canvas());

@@ -22,7 +22,7 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/start_up.h"
 #include "flutter/shell/common/engine.h"
-#include "flutter/shell/common/persistent_cache.h"
+#include "flutter/shell/gpu/persistent_cache.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
@@ -32,6 +32,12 @@
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
+
+#if OS_FUCHSIA
+#include <fuchsia/fonts/cpp/fidl.h>
+#include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
+#endif
 
 namespace flutter {
 
@@ -667,6 +673,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
       io_manager->NotifyResourceContextAvailable(
           platform_view->CreateResourceContext());
     }
+
     // Step 1: Next, post a task on the UI thread to tell the engine that it has
     // an output surface.
     fml::TaskRunner::RunNowOrPostTask(ui_task_runner, ui_task);
@@ -804,6 +811,7 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
   task_runners_.GetUITaskRunner()->PostTask(
       fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
                          flow_id = next_pointer_flow_id_]() mutable {
@@ -1469,14 +1477,25 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   }
 }
 
-bool Shell::ReloadSystemFonts() {
+bool Shell::ReloadSystemFonts(uintptr_t token) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   if (!engine_) {
     return false;
   }
-  engine_->GetFontCollection().GetFontCollection()->SetupDefaultFontManager();
+
+#if OS_FUCHSIA
+  if (token != 0) {
+    fuchsia::fonts::ProviderSyncPtr sync_font_provider;
+    sync_font_provider.Bind(zx::channel(static_cast<zx_handle_t>(token)));
+    engine_->GetFontCollection().GetFontCollection()->SetDefaultFontManager(
+        SkFontMgr_New_Fuchsia(std::move(sync_font_provider)));
+  } else
+#endif
+  {
+    engine_->GetFontCollection().GetFontCollection()->SetupDefaultFontManager();
+  }
   engine_->GetFontCollection().GetFontCollection()->ClearFontFamilyCache();
   // After system fonts are reloaded, we send a system channel message
   // to notify flutter framework.

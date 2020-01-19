@@ -7,7 +7,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/common/surface.h"
+#include "flutter/shell/gpu/surface.h"
 #include "flutter/shell/gpu/gpu_surface_software_delegate.h"
 
 namespace flutter {

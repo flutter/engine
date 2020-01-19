@@ -12,7 +12,7 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/surface.h"
+#include "flutter/shell/gpu/surface.h"
 
 @class CALayer;
 

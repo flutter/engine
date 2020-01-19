@@ -65,7 +65,7 @@ sk_sp<SkTextBlob> PerformanceOverlayLayer::MakeStatisticsText(
                                   SkTextEncoding::kUTF8);
 }
 
-PerformanceOverlayLayer::PerformanceOverlayLayer(uint64_t options,
+PerformanceOverlayLayer::PerformanceOverlayLayer(int64_t options,
                                                  const char* font_path)
     : options_(options) {
   if (font_path != nullptr) {

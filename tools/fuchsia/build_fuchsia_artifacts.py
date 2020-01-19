@@ -149,9 +149,11 @@ def CopyToBucket(src, dst, product=False):
   CopyToBucketWithMode(src, dst, True, product, 'dart')
 
 
-def BuildBucket(runtime_mode, arch, product):
-  out_dir = 'fuchsia_%s_%s/' % (runtime_mode, arch)
-  bucket_dir = 'flutter/%s/%s/' % (arch, runtime_mode)
+def BuildBucket(unopt, runtime_mode, arch, product):
+  unopt_str = "_unopt" if unopt else "";
+  unopt_dir = "unopt/" if unopt else "";
+  out_dir = 'fuchsia_%s%s_%s/' % (runtime_mode, unopt_str, arch)
+  bucket_dir = 'flutter/%s/%s/%s' % (arch, runtime_mode, unopt_dir)
   CopyToBucket(out_dir, bucket_dir, product)
 
 
@@ -203,14 +205,13 @@ def GetRunnerTarget(runner_type, product, aot):
 
 
 def GetTargetsToBuild(product=False):
-  targets_to_build = [
-      'flutter/shell/platform/fuchsia:fuchsia',
-  ]
+  targets_to_build = [ 'flutter/shell/platform/fuchsia' ]
   return targets_to_build
 
 
-def BuildTarget(runtime_mode, arch, product, enable_lto):
-  out_dir = 'fuchsia_%s_%s' % (runtime_mode, arch)
+def BuildTarget(unopt, runtime_mode, arch, product, enable_lto):
+  unopt_str = "_unopt" if unopt else "";
+  out_dir = 'fuchsia_%s%s_%s' % (runtime_mode, unopt_str, arch)
   flags = [
       '--fuchsia',
       '--fuchsia-cpu',
@@ -218,6 +219,9 @@ def BuildTarget(runtime_mode, arch, product, enable_lto):
       '--runtime-mode',
       runtime_mode,
   ]
+
+  if unopt:
+    flags.append('--unopt')
 
   # Always disable lto until https://github.com/flutter/flutter/issues/44841
   # gets fixed.
@@ -248,10 +252,21 @@ def main():
       '--runtime-mode',
       type=str,
       choices=['debug', 'profile', 'release', 'all'],
-      default='all')
+      default='all',
+      help='Specifies the optimization level to use when building Dart code.  "release" implies "product".')
 
   parser.add_argument(
-      '--archs', type=str, choices=['x64', 'arm64', 'all'], default='all')
+      '--unopt',
+      default=False,
+      action='store_true',
+      help='If set, builds native code without optimizations enabled.')
+
+  parser.add_argument(
+      '--archs',
+      type=str,
+      choices=['x64', 'arm64', 'all'],
+      default='all',
+      help='Specifies with processor architecture(s) to build.')
 
   parser.add_argument(
       '--no-lto',
@@ -270,6 +285,7 @@ def main():
   build_mode = args.runtime_mode
 
   archs = ['x64', 'arm64'] if args.archs == 'all' else [args.archs]
+  unopt = args.unopt
   runtime_modes = ['debug', 'profile', 'release']
   product_modes = [False, False, True]
 
@@ -281,10 +297,13 @@ def main():
       product = product_modes[i]
       if build_mode == 'all' or runtime_mode == build_mode:
         if not args.skip_build:
-          BuildTarget(runtime_mode, arch, product, enable_lto)
-        BuildBucket(runtime_mode, arch, product)
+          BuildTarget(unopt, runtime_mode, arch, product, enable_lto)
+        BuildBucket(unopt, runtime_mode, arch, product)
 
   if args.upload:
+    if args.unopt:
+      print('--upload cannot be used with --unopt.')
+      return 1
     if args.engine_version is None:
       print('--upload requires --engine-version to be specified.')
       return 1

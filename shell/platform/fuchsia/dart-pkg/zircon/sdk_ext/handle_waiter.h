@@ -7,57 +7,67 @@
 
 #include <lib/async/cpp/wait.h>
 #include <lib/zx/handle.h>
+#include <zircon/syscalls.h>
+#include <zircon/types.h>
 
-#include "flutter/fml/memory/ref_counted.h"
-#include "third_party/tonic/dart_wrappable.h"
+#include <memory>
 
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
+#include "flutter/third_party/tonic/dart_library_natives.h"
+#include "flutter/third_party/tonic/dart_persistent_value.h"
+#include "flutter/third_party/tonic/dart_wrappable.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
-namespace zircon {
-namespace dart {
+namespace zircon::dart {
 
 class Handle;
 
-class HandleWaiter : public fml::RefCountedThreadSafe<HandleWaiter>,
+class HandleWaiter : public std::enable_shared_from_this<HandleWaiter>,
                      public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
-  FML_FRIEND_REF_COUNTED_THREAD_SAFE(HandleWaiter);
-  FML_FRIEND_MAKE_REF_COUNTED(HandleWaiter);
 
  public:
-  static fml::RefPtr<HandleWaiter> Create(Handle* handle,
-                                          zx_signals_t signals,
-                                          Dart_Handle callback);
+  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
-  void Cancel();
+  static std::shared_ptr<HandleWaiter> Create(std::shared_ptr<Handle> handle,
+                                              zx_signals_t signals,
+                                              Dart_Handle callback);
+
+  HandleWaiter(const HandleWaiter&) = delete;
+  HandleWaiter(HandleWaiter&&) = delete;
+  ~HandleWaiter();
+
+  HandleWaiter& operator=(const HandleWaiter&) = delete;
+  HandleWaiter& operator=(HandleWaiter&&) = delete;
+
+  void cancel();
 
   bool is_pending() { return wait_.is_pending(); }
 
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
  private:
-  explicit HandleWaiter(Handle* handle,
+  explicit HandleWaiter(std::shared_ptr<Handle> handle,
                         zx_signals_t signals,
                         Dart_Handle callback);
-  ~HandleWaiter();
 
   void OnWaitComplete(async_dispatcher_t* dispatcher,
                       async::WaitBase* wait,
                       zx_status_t status,
                       const zx_packet_signal_t* signal);
 
-  void RetainDartWrappableReference() const override { AddRef(); }
+  // |DartWrappable|
+  void RetainDartWrappableReference() const override {
+    vm_reference_ = shared_from_this();
+  }
+  void ReleaseDartWrappableReference() const override { vm_reference_.reset(); }
 
-  void ReleaseDartWrappableReference() const override { Release(); }
+  tonic::DartPersistentValue callback_;
 
   async::WaitMethod<HandleWaiter, &HandleWaiter::OnWaitComplete> wait_;
-  Handle* handle_;
-  tonic::DartPersistentValue callback_;
+
+  mutable std::shared_ptr<const HandleWaiter> vm_reference_;
+
+  std::weak_ptr<Handle> weak_handle_;
 };
 
-}  // namespace dart
-}  // namespace zircon
+}  // namespace zircon::dart
 
 #endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_SDK_EXT_HANDLE_WAITER_H_

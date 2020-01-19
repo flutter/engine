@@ -44,6 +44,7 @@ class KernelIsolateConfiguration : public IsolateConfiguration {
   // |IsolateConfiguration|
   bool DoPrepareIsolate(DartIsolate& isolate) override {
     if (DartVM::IsRunningPrecompiledCode()) {
+      FML_LOG(ERROR) << "FAILED TO PREPARE KERNEL; ITS PRECOMPILED  ";
       return false;
     }
     return isolate.PrepareForRunningFromKernel(std::move(kernel_));
@@ -68,13 +69,19 @@ class KernelListIsolateConfiguration final : public IsolateConfiguration {
       return false;
     }
 
+    FML_LOG(ERROR) << "DoPrepareIsolate";
+
     for (size_t i = 0; i < kernel_pieces_.size(); i++) {
       bool last_piece = i + 1 == kernel_pieces_.size();
 
+      FML_LOG(ERROR) << "  Preparing: " << i;
+
       if (!isolate.PrepareForRunningFromKernel(kernel_pieces_[i].get(),
                                                last_piece)) {
+        FML_LOG(ERROR) << "  Failed: " << i;
         return false;
       }
+      FML_LOG(ERROR) << "  Prepared: " << i;
     }
 
     return true;
@@ -89,6 +96,8 @@ class KernelListIsolateConfiguration final : public IsolateConfiguration {
 static std::vector<std::string> ParseKernelListPaths(
     std::unique_ptr<fml::Mapping> kernel_list) {
   FML_DCHECK(kernel_list);
+
+  FML_LOG(ERROR) << "PasrseKernelListPaths";
 
   std::vector<std::string> kernel_pieces_paths;
 
@@ -105,6 +114,7 @@ static std::vector<std::string> ParseKernelListPaths(
     }
     std::string piece_path(&kernel_list_str[piece_path_start],
                            piece_path_end - piece_path_start);
+    FML_LOG(ERROR) << "  Pasrsed: " << piece_path;
     kernel_pieces_paths.emplace_back(std::move(piece_path));
 
     piece_path_start = piece_path_end + 1;
@@ -120,12 +130,16 @@ PrepareKernelMappings(std::vector<std::string> kernel_pieces_paths,
   FML_DCHECK(asset_manager);
   std::vector<std::future<std::unique_ptr<const fml::Mapping>>> fetch_futures;
 
+  FML_LOG(ERROR) << "PrepareKernelMappings";
+
   for (const auto& kernel_pieces_path : kernel_pieces_paths) {
     std::promise<std::unique_ptr<const fml::Mapping>> fetch_promise;
+    FML_LOG(ERROR) << "Fetching: " << kernel_pieces_path;
     fetch_futures.push_back(fetch_promise.get_future());
     auto fetch_task =
         fml::MakeCopyable([asset_manager, kernel_pieces_path,
                            fetch_promise = std::move(fetch_promise)]() mutable {
+          FML_LOG(ERROR) << "[IO] Fetched: " << kernel_pieces_path;
           fetch_promise.set_value(
               asset_manager->GetAsMapping(kernel_pieces_path));
         });

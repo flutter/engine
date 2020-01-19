@@ -15,5 +15,5 @@ class HandleWaiter extends NativeFieldWrapperClass2 {
   @pragma('vm:entry-point')
   HandleWaiter._();
 
-  void cancel() native 'HandleWaiter_Cancel';
+  void cancel() native 'HandleWaiter_cancel';
 }

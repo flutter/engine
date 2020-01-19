@@ -4,61 +4,72 @@
 
 import("//flutter/shell/config.gni")
 
-gpu_dir = "//flutter/shell/gpu"
+source_set("gpu_surface_common") {
+  sources = [
+    "gpu_surface_delegate.h",
+    "persistent_cache.cc",
+    "persistent_cache.h",
+    "surface.cc",
+    "surface.h",
+  ]
 
-gpu_common_deps = [
-  "//flutter/common",
-  "//flutter/flow",
-  "//flutter/fml",
-  "//flutter/shell/common",
-  "//third_party/skia",
-]
+  public_deps = [
+    "//flutter/assets",
+    "//flutter/flow",
+    "//flutter/fml",
+    "//flutter/shell/version",
+    "//third_party/rapidjson",
+    "//third_party/skia",
+  ]
+}
 
 source_set("gpu_surface_software") {
   sources = [
-    "$gpu_dir/gpu_surface_delegate.h",
-    "$gpu_dir/gpu_surface_software.cc",
-    "$gpu_dir/gpu_surface_software.h",
-    "$gpu_dir/gpu_surface_software_delegate.cc",
-    "$gpu_dir/gpu_surface_software_delegate.h",
+    "gpu_surface_software.cc",
+    "gpu_surface_software.h",
+    "gpu_surface_software_delegate.cc",
+    "gpu_surface_software_delegate.h",
   ]
 
-  deps = gpu_common_deps
+  public_deps = [
+    ":gpu_surface_common",
+  ]
 }
 
 source_set("gpu_surface_gl") {
   sources = [
-    "$gpu_dir/gpu_surface_delegate.h",
-    "$gpu_dir/gpu_surface_gl.cc",
-    "$gpu_dir/gpu_surface_gl.h",
-    "$gpu_dir/gpu_surface_gl_delegate.cc",
-    "$gpu_dir/gpu_surface_gl_delegate.h",
+    "gpu_surface_gl.cc",
+    "gpu_surface_gl.h",
+    "gpu_surface_gl_delegate.cc",
+    "gpu_surface_gl_delegate.h",
   ]
 
-  deps = gpu_common_deps + [ "//third_party/skia" ]
+  public_deps = [
+    ":gpu_surface_common",
+  ]
 }
 
 source_set("gpu_surface_vulkan") {
   sources = [
-    "$gpu_dir/gpu_surface_delegate.h",
-    "$gpu_dir/gpu_surface_vulkan.cc",
-    "$gpu_dir/gpu_surface_vulkan.h",
-    "$gpu_dir/gpu_surface_vulkan_delegate.cc",
-    "$gpu_dir/gpu_surface_vulkan_delegate.h",
+    "gpu_surface_vulkan.cc",
+    "gpu_surface_vulkan.h",
+    "gpu_surface_vulkan_delegate.cc",
+    "gpu_surface_vulkan_delegate.h",
   ]
 
-  deps = gpu_common_deps + [
-           "//third_party/skia",
-           "//flutter/vulkan",
-         ]
+  public_deps = [
+    ":gpu_surface_common",
+    "//flutter/vulkan",
+  ]
 }
 
 source_set("gpu_surface_metal") {
   sources = [
-    "$gpu_dir/gpu_surface_delegate.h",
-    "$gpu_dir/gpu_surface_metal.h",
-    "$gpu_dir/gpu_surface_metal.mm",
+    "gpu_surface_metal.h",
+    "gpu_surface_metal.mm",
   ]
 
-  deps = gpu_common_deps + [ "//third_party/skia" ]
+  public_deps = [
+    ":gpu_surface_common",
+  ]
 }

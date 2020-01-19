@@ -19,9 +19,6 @@ namespace flutter {
 ///
 class EmbedderTaskRunner final : public fml::TaskRunner {
  public:
-  //----------------------------------------------------------------------------
-  /// @brief      A
-  ///
   struct DispatchTable {
     //--------------------------------------------------------------------------
     /// Delegates responsibility of deferred task execution to the embedder.

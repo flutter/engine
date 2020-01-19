@@ -31,11 +31,9 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer* container = GetChildContainer();
   FML_DCHECK(!container->layers().empty());  // OpacityLayer can't be a leaf.
 
-  const bool parent_is_opaque = context->is_opaque;
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
 
-  context->is_opaque = parent_is_opaque && (alpha_ == SK_AlphaOPAQUE);
   context->mutators_stack.PushTransform(
       SkMatrix::MakeTrans(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
@@ -44,18 +42,15 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer::Preroll(context, child_matrix);
   context->mutators_stack.Pop();
   context->mutators_stack.Pop();
-  context->is_opaque = parent_is_opaque;
 
-  {
-    set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
-    if (!context->has_platform_view && context->raster_cache &&
-        SkRect::Intersects(context->cull_rect, paint_bounds())) {
-      SkMatrix ctm = child_matrix;
+  set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
+  if (!context->has_platform_view && context->raster_cache &&
+      SkRect::Intersects(context->cull_rect, paint_bounds())) {
+    SkMatrix ctm = child_matrix;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-      ctm = RasterCache::GetIntegralTransCTM(ctm);
+    ctm = RasterCache::GetIntegralTransCTM(ctm);
 #endif
-      context->raster_cache->Prepare(context, container, ctm);
-    }
+    context->raster_cache->Prepare(context, container, ctm);
   }
 }
 
@@ -98,17 +93,6 @@ void OpacityLayer::Paint(PaintContext& context) const {
       Layer::AutoSaveLayer::Create(context, saveLayerBounds, &paint);
   PaintChildren(context);
 }
-
-#if defined(OS_FUCHSIA)
-
-void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
-  float saved_alpha = context.alphaf();
-  context.set_alphaf(context.alphaf() * (alpha_ / 255.f));
-  ContainerLayer::UpdateScene(context);
-  context.set_alphaf(saved_alpha);
-}
-
-#endif  // defined(OS_FUCHSIA)
 
 ContainerLayer* OpacityLayer::GetChildContainer() const {
   FML_DCHECK(layers().size() == 1);

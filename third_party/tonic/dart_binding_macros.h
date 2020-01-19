@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef LIB_TONIC_DART_BINDING_MACROS_H_
-#define LIB_TONIC_DART_BINDING_MACROS_H_
+#ifndef FLUTTER_THIRD_PARTY_TONIC_DART_BINDING_MACROS_H_
+#define FLUTTER_THIRD_PARTY_TONIC_DART_BINDING_MACROS_H_
 
 #include "tonic/dart_args.h"
 
@@ -21,11 +21,9 @@
   {#CLASS "_" #METHOD, CLASS##_##METHOD,    \
    tonic::IndicesForSignature<decltype(&CLASS::METHOD)>::count + 1, true},
 
-#define DART_REGISTER_NATIVE_STATIC(CLASS, METHOD)                           \
-  {                                                                          \
-#CLASS "_" #METHOD, CLASS##_##METHOD,                                    \
-        tonic::IndicesForSignature < decltype(&CLASS::METHOD)> ::count, true \
-  }
+#define DART_REGISTER_NATIVE_STATIC(CLASS, METHOD) \
+  {#CLASS "_" #METHOD, CLASS##_##METHOD,           \
+   tonic::IndicesForSignature<decltype(&CLASS::METHOD)>::count, true},
 
 #define DART_BIND_ALL(CLASS, FOR_EACH)                              \
   FOR_EACH(DART_NATIVE_CALLBACK)                                    \
@@ -33,4 +31,4 @@
     natives->Register({FOR_EACH(DART_REGISTER_NATIVE)});            \
   }
 
-#endif  // LIB_TONIC_DART_BINDING_MACROS_H_
+#endif  // FLUTTER_THIRD_PARTY_TONIC_DART_BINDING_MACROS_H_

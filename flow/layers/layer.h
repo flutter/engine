@@ -27,14 +27,6 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
-#if defined(OS_FUCHSIA)
-
-#include "flutter/flow/scene_update_context.h"  //nogncheck
-#include "lib/ui/scenic/cpp/resources.h"        //nogncheck
-#include "lib/ui/scenic/cpp/session.h"          //nogncheck
-
-#endif  // defined(OS_FUCHSIA)
-
 namespace flutter {
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
@@ -58,19 +50,11 @@ struct PrerollContext {
   const bool checkerboard_offscreen_layers;
 
   // These allow us to make use of the scene metrics during Preroll.
-  float frame_physical_depth;
   float frame_device_pixel_ratio;
 
-  // These allow us to track properties like elevation, opacity, and the
-  // prescence of a platform view during Preroll.
-  float total_elevation = 0.0f;
+  // These allow us to track properties like the prescence of a platform view
+  // during Preroll.
   bool has_platform_view = false;
-  bool is_opaque = true;
-#if defined(OS_FUCHSIA)
-  // True if, during the traversal so far, we have seen a child_scene_layer.
-  // Informs whether a layer needs to be system composited.
-  bool child_scene_layer_exists_below = false;
-#endif  // defined(OS_FUCHSIA)
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -79,8 +63,6 @@ class Layer {
  public:
   Layer();
   virtual ~Layer();
-
-  virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
 
   // Used during Preroll by layers that employ a saveLayer to manage the
   // PrerollContext settings with values affected by the saveLayer mechanism.
@@ -130,7 +112,6 @@ class Layer {
     const bool checkerboard_offscreen_layers;
 
     // These allow us to make use of the scene metrics during Paint.
-    float frame_physical_depth;
     float frame_device_pixel_ratio;
   };
 
@@ -160,20 +141,10 @@ class Layer {
     const SkRect bounds_;
   };
 
+  virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
   virtual void Paint(PaintContext& context) const = 0;
 
-#if defined(OS_FUCHSIA)
-  // Updates the system composited scene.
-  virtual void UpdateScene(SceneUpdateContext& context);
-#endif
-
-  bool needs_system_composite() const { return needs_system_composite_; }
-  void set_needs_system_composite(bool value) {
-    needs_system_composite_ = value;
-  }
-
   const SkRect& paint_bounds() const { return paint_bounds_; }
-
   // This must be set by the time Preroll() returns otherwise the layer will
   // be assumed to have empty paint bounds (paints no content).
   void set_paint_bounds(const SkRect& paint_bounds) {
@@ -187,9 +158,6 @@ class Layer {
  private:
   SkRect paint_bounds_;
   uint64_t unique_id_;
-  bool needs_system_composite_;
-
-  static uint64_t NextUniqueID();
 
   FML_DISALLOW_COPY_AND_ASSIGN(Layer);
 };

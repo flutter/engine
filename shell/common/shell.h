@@ -33,7 +33,7 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/common/surface.h"
+#include "flutter/shell/gpu/surface.h"
 
 namespace flutter {
 
@@ -329,7 +329,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @return     Returns if shell reloads system fonts successfully.
   ///
-  bool ReloadSystemFonts();
+  bool ReloadSystemFonts(uintptr_t token = 0);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to get the last error from the Dart UI

@@ -17,9 +17,7 @@ class Handle extends NativeFieldWrapperClass2 {
   factory Handle.invalid() {
     return _createInvalid();
   }
-  static Handle _createInvalid() native 'Handle_CreateInvalid';
-
-  int get _handle native 'Handle_handle';
+  static Handle _createInvalid() native 'Handle_createInvalid';
 
   @override
   String toString() => 'Handle($_handle)';
@@ -32,12 +30,14 @@ class Handle extends NativeFieldWrapperClass2 {
   int get hashCode => _handle.hashCode;
 
   // Common handle operations.
-  bool get isValid native 'Handle_is_valid';
-  int close() native 'Handle_Close';
-  HandleWaiter asyncWait(int signals, AsyncWaitCallback callback)
-      native 'Handle_AsyncWait';
+  bool get isValid native 'Handle_isValid';
+  int get _handle native 'Handle_handle';
 
-  Handle duplicate(int rights) native 'Handle_Duplicate';
+  int close() native 'Handle_close';
+  Handle duplicate(int rights) native 'Handle_duplicate';
+
+  HandleWaiter asyncWait(int signals, AsyncWaitCallback callback)
+      native 'Handle_asyncWait';
 }
 
 @pragma('vm:entry-point')

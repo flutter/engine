@@ -18,7 +18,7 @@ namespace testing {
 class LayerTreeTest : public CanvasTest {
  public:
   LayerTreeTest()
-      : layer_tree_(SkISize::Make(64, 64), 100.0f, 1.0f),
+      : layer_tree_(SkISize::Make(64, 64), 1.0f),
         compositor_context_(fml::kDefaultFrameBudget),
         root_transform_(SkMatrix::MakeTrans(1.0f, 1.0f)),
         scoped_frame_(compositor_context_.AcquireFrame(nullptr,
@@ -113,9 +113,6 @@ TEST_F(LayerTreeTest, Multiple) {
   EXPECT_TRUE(mock_layer1->needs_painting());
   EXPECT_TRUE(mock_layer2->needs_painting());
   EXPECT_TRUE(layer->needs_painting());
-  EXPECT_FALSE(mock_layer1->needs_system_composite());
-  EXPECT_FALSE(mock_layer2->needs_system_composite());
-  EXPECT_FALSE(layer->needs_system_composite());
   EXPECT_EQ(mock_layer1->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer2->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
@@ -149,9 +146,6 @@ TEST_F(LayerTreeTest, MultipleWithEmpty) {
   EXPECT_TRUE(mock_layer1->needs_painting());
   EXPECT_FALSE(mock_layer2->needs_painting());
   EXPECT_TRUE(layer->needs_painting());
-  EXPECT_FALSE(mock_layer1->needs_system_composite());
-  EXPECT_FALSE(mock_layer2->needs_system_composite());
-  EXPECT_FALSE(layer->needs_system_composite());
   EXPECT_EQ(mock_layer1->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer2->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);
@@ -169,8 +163,7 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
   const SkPaint child_paint1(SkColors::kGray);
   const SkPaint child_paint2(SkColors::kGreen);
   auto mock_layer1 = std::make_shared<MockLayer>(
-      child_path1, child_paint1, false /* fake_has_platform_view */,
-      true /* fake_needs_system_composite */);
+      child_path1, child_paint1, false /* fake_has_platform_view */);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer = std::make_shared<ContainerLayer>();
   layer->Add(mock_layer1);
@@ -186,9 +179,6 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
   EXPECT_TRUE(mock_layer1->needs_painting());
   EXPECT_TRUE(mock_layer2->needs_painting());
   EXPECT_TRUE(layer->needs_painting());
-  EXPECT_TRUE(mock_layer1->needs_system_composite());
-  EXPECT_FALSE(mock_layer2->needs_system_composite());
-  EXPECT_TRUE(layer->needs_system_composite());
   EXPECT_EQ(mock_layer1->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer2->parent_matrix(), root_transform());
   EXPECT_EQ(mock_layer1->parent_cull_rect(), kGiantRect);

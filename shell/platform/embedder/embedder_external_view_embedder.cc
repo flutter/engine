@@ -13,9 +13,12 @@
 namespace flutter {
 
 EmbedderExternalViewEmbedder::EmbedderExternalViewEmbedder(
+    const EmbedderRenderTargetCache::IsRenderTargetAvailableCallback&
+        is_render_target_available_callback,
     const CreateRenderTargetCallback& create_render_target_callback,
     const PresentCallback& present_callback)
-    : create_render_target_callback_(create_render_target_callback),
+    : is_render_target_available_callback_(is_render_target_available_callback),
+      create_render_target_callback_(create_render_target_callback),
       present_callback_(present_callback) {
   FML_DCHECK(create_render_target_callback_);
   FML_DCHECK(present_callback_);
@@ -132,7 +135,8 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context,
                                                SkCanvas* background_canvas) {
   auto [matched_render_targets, pending_keys] =
-      render_target_cache_.GetExistingTargetsInCache(pending_views_);
+      render_target_cache_.GetExistingTargetsInCache(
+          pending_views_, is_render_target_available_callback_);
 
   // This is where unused render targets will be collected. Control may flow to
   // the embedder. Here, the embedder has the opportunity to trample on the
@@ -205,7 +209,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context,
     }
   }
 
-  // We are going to be transferring control back over to the embedder there the
+  // We are going to be transferring control back over to the embedder where the
   // context may be trampled upon again. Flush all operations to the underlying
   // rendering API.
   //
@@ -251,7 +255,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context,
     presented_layers.InvokePresentCallback(present_callback_);
   }
 
-  // See why this is necessary in the comment where this collection in realized.
+  // See why this is necessary in the comment where this collection is realized.
   //
   // @warning: Embedder may trample on our OpenGL context here.
   deferred_cleanup_render_targets.clear();

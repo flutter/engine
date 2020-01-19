@@ -252,7 +252,8 @@ TEST_F(EmbedderTest, CanReloadSystemFonts) {
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 
-  auto result = FlutterEngineReloadSystemFonts(engine.get());
+  // TODO(dworsham): Broken on Fuchsia
+  auto result = FlutterEngineReloadSystemFonts(engine.get(), 0);
   ASSERT_EQ(result, kSuccess);
 }
 

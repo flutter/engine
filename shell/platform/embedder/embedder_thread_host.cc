@@ -118,78 +118,76 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
     return nullptr;
   }
 
-  // The UI and IO threads are always created by the engine and the embedder has
-  // no opportunity to specify task runners for the same.
-  //
-  // If/when more task runners are exposed, this mask will need to be updated.
-  uint64_t engine_thread_host_mask =
-      ThreadHost::Type::UI | ThreadHost::Type::IO;
+  // The engine will create any threads left unspecified by the embedder.
+  std::set<fml::RefPtr<EmbedderTaskRunner>> embedder_task_runners;
+  uint64_t engine_thread_host_mask = 0;
 
-  auto platform_task_runner_pair = CreateEmbedderTaskRunner(
+  auto [platform_valid, platform_task_runner] = CreateEmbedderTaskRunner(
       SAFE_ACCESS(custom_task_runners, platform_task_runner, nullptr));
-  auto render_task_runner_pair = CreateEmbedderTaskRunner(
+  auto [render_valid, render_task_runner] = CreateEmbedderTaskRunner(
       SAFE_ACCESS(custom_task_runners, render_task_runner, nullptr));
+  auto [ui_valid, ui_task_runner] = CreateEmbedderTaskRunner(
+      SAFE_ACCESS(custom_task_runners, ui_task_runner, nullptr));
+  auto [io_valid, io_task_runner] = CreateEmbedderTaskRunner(
+      SAFE_ACCESS(custom_task_runners, io_task_runner, nullptr));
 
-  if (!platform_task_runner_pair.first || !render_task_runner_pair.first) {
-    // User error while supplying a custom task runner. Return an invalid thread
-    // host. This will abort engine initialization. Don't fallback to defaults
-    // if the user wanted to specify a task runner but just messed up instead.
+  if (!platform_valid || !render_valid || !ui_valid || !io_valid) {
+    // One or more custom task runner specifications contained a user error.
+    // Return an invalid thread host, which will abort engine initialization.
+    // Don't fallback to defaults if the user wanted to specify a task runner
+    // but just messed up instead.
     return nullptr;
   }
 
-  // If the embedder has not supplied a GPU task runner, one needs to be
-  // created.
-  if (!render_task_runner_pair.second) {
-    engine_thread_host_mask |= ThreadHost::Type::GPU;
-  }
-
+  // TODO(dworsham): Ask chinmay why this matters.  iOS?
   // If both the platform task runner and the GPU task runner are specified and
   // have the same identifier, store only one.
-  if (platform_task_runner_pair.second && render_task_runner_pair.second) {
-    if (platform_task_runner_pair.second->GetEmbedderIdentifier() ==
-        render_task_runner_pair.second->GetEmbedderIdentifier()) {
-      render_task_runner_pair.second = platform_task_runner_pair.second;
-    }
+  // if (platform_task_runner && render_task_runner) {
+  //   if (platform_task_runner->GetEmbedderIdentifier() ==
+  //       render_task_runner->GetEmbedderIdentifier()) {
+  //     render_task_runner = platform_task_runner;
+  //   }
+  // }
+
+  // If the embedder has not supplied any task runners, they need to be created.
+  // The current thread will be used in the case of the platform task runner.
+  if (platform_task_runner) {
+    embedder_task_runners.insert(platform_task_runner);
+  }
+  if (!ui_task_runner) {
+    engine_thread_host_mask |= ThreadHost::Type::UI;
+  } else {
+    embedder_task_runners.insert(ui_task_runner);
+  }
+  if (!io_task_runner) {
+    engine_thread_host_mask |= ThreadHost::Type::IO;
+  } else {
+    embedder_task_runners.insert(io_task_runner);
+  }
+  if (!render_task_runner) {
+    engine_thread_host_mask |= ThreadHost::Type::Raster;
+  } else {
+    embedder_task_runners.insert(render_task_runner);
   }
 
   // Create a thread host with just the threads that need to be managed by the
   // engine. The embedder has provided the rest.
   ThreadHost thread_host(kFlutterThreadName, engine_thread_host_mask);
-
-  // If the embedder has supplied a platform task runner, use that. If not, use
-  // the current thread task runner.
-  auto platform_task_runner = platform_task_runner_pair.second
-                                  ? static_cast<fml::RefPtr<fml::TaskRunner>>(
-                                        platform_task_runner_pair.second)
-                                  : GetCurrentThreadTaskRunner();
-
-  // If the embedder has supplied a GPU task runner, use that. If not, use the
-  // one from our thread host.
-  auto render_task_runner = render_task_runner_pair.second
-                                ? static_cast<fml::RefPtr<fml::TaskRunner>>(
-                                      render_task_runner_pair.second)
-                                : thread_host.raster_thread->GetTaskRunner();
-
   flutter::TaskRunners task_runners(
       kFlutterThreadName,
-      platform_task_runner,                    // platform
-      render_task_runner,                      // raster
-      thread_host.ui_thread->GetTaskRunner(),  // ui (always engine managed)
-      thread_host.io_thread->GetTaskRunner()   // io (always engine managed)
-  );
+      platform_task_runner
+          ? static_cast<fml::RefPtr<fml::TaskRunner>>(platform_task_runner)
+          : GetCurrentThreadTaskRunner(),
+      render_task_runner
+          ? static_cast<fml::RefPtr<fml::TaskRunner>>(render_task_runner)
+          : thread_host.raster_thread->GetTaskRunner(),
+      ui_task_runner ? static_cast<fml::RefPtr<fml::TaskRunner>>(ui_task_runner)
+                     : thread_host.ui_thread->GetTaskRunner(),
+      io_task_runner ? static_cast<fml::RefPtr<fml::TaskRunner>>(io_task_runner)
+                     : thread_host.io_thread->GetTaskRunner());
 
   if (!task_runners.IsValid()) {
     return nullptr;
-  }
-
-  std::set<fml::RefPtr<EmbedderTaskRunner>> embedder_task_runners;
-
-  if (platform_task_runner_pair.second) {
-    embedder_task_runners.insert(platform_task_runner_pair.second);
-  }
-
-  if (render_task_runner_pair.second) {
-    embedder_task_runners.insert(render_task_runner_pair.second);
   }
 
   auto embedder_host = std::make_unique<EmbedderThreadHost>(
@@ -208,7 +206,7 @@ std::unique_ptr<EmbedderThreadHost>
 EmbedderThreadHost::CreateEngineManagedThreadHost() {
   // Create a thread host with the current thread as the platform thread and all
   // other threads managed.
-  ThreadHost thread_host(kFlutterThreadName, ThreadHost::Type::GPU |
+  ThreadHost thread_host(kFlutterThreadName, ThreadHost::Type::Raster |
                                                  ThreadHost::Type::IO |
                                                  ThreadHost::Type::UI);
 

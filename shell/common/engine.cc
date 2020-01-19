@@ -270,15 +270,15 @@ void Engine::OnOutputSurfaceDestroyed() {
 void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
   bool dimensions_changed =
       viewport_metrics_.physical_height != metrics.physical_height ||
-      viewport_metrics_.physical_width != metrics.physical_width ||
-      viewport_metrics_.physical_depth != metrics.physical_depth;
+      viewport_metrics_.physical_width != metrics.physical_width;
   viewport_metrics_ = metrics;
   runtime_controller_->SetViewportMetrics(viewport_metrics_);
   if (animator_) {
     if (dimensions_changed)
       animator_->SetDimensionChangePending();
-    if (have_surface_)
+    if (have_surface_) {
       ScheduleFrame();
+    }
   }
 }
 
@@ -462,7 +462,6 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
 
   // Ensure frame dimensions are sane.
   if (layer_tree->frame_size().isEmpty() ||
-      layer_tree->frame_physical_depth() <= 0.0f ||
       layer_tree->frame_device_pixel_ratio() <= 0.0f)
     return;
 

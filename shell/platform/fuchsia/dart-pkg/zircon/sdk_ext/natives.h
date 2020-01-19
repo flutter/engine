@@ -5,12 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_SDK_EXT_NATIVES_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_SDK_EXT_NATIVES_H_
 
-namespace zircon {
-namespace dart {
+namespace zircon::dart {
 
 void Initialize();
 
-}  // namespace dart
-}  // namespace zircon
+}  // namespace zircon::dart
 
 #endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_SDK_EXT_NATIVES_H_

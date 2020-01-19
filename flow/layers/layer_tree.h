@@ -20,9 +20,7 @@ namespace flutter {
 
 class LayerTree {
  public:
-  LayerTree(const SkISize& frame_size,
-            float frame_physical_depth,
-            float frame_device_pixel_ratio);
+  LayerTree(const SkISize& frame_size, float frame_device_pixel_ratio);
 
   // Perform a preroll pass on the tree and return information about
   // the tree that affects rendering this frame.
@@ -34,11 +32,7 @@ class LayerTree {
   bool Preroll(CompositorContext::ScopedFrame& frame,
                bool ignore_raster_cache = false);
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context,
-                   scenic::ContainerNode& container);
-#endif
-
+  // Recursively paint all of the tree's Layer's into the frame.
   void Paint(CompositorContext::ScopedFrame& frame,
              bool ignore_raster_cache = false) const;
 
@@ -51,7 +45,6 @@ class LayerTree {
   }
 
   const SkISize& frame_size() const { return frame_size_; }
-  float frame_physical_depth() const { return frame_physical_depth_; }
   float frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; }
 
   void RecordBuildTime(fml::TimePoint build_start, fml::TimePoint target_time);
@@ -87,7 +80,6 @@ class LayerTree {
   fml::TimePoint build_finish_;
   fml::TimePoint target_time_;
   SkISize frame_size_ = SkISize::MakeEmpty();  // Physical pixels.
-  float frame_physical_depth_;
   float frame_device_pixel_ratio_ = 1.0f;  // Logical / Physical pixels ratio.
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;

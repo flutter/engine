@@ -15,8 +15,8 @@ class ImageFilterLayer : public ContainerLayer {
  public:
   ImageFilterLayer(sk_sp<SkImageFilter> filter);
 
+  // |Layer|
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
 
  private:

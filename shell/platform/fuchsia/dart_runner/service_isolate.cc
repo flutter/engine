@@ -2,58 +2,55 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "service_isolate.h"
+#include "flutter/shell/platform/fuchsia/dart_runner/service_isolate.h"
 
-#include "runtime/dart/utils/inlines.h"
+#include <lib/fidl/cpp/interface_handle.h>
+#include <lib/fidl/cpp/interface_request.h>
+
+#include "flutter/shell/platform/fuchsia/dart_runner/builtin_libraries.h"
+#include "flutter/shell/platform/fuchsia/utils/logging.h"
+#include "flutter/shell/platform/fuchsia/utils/mapped_resource.h"
+#include "flutter/third_party/tonic/converter/dart_converter.h"
+#include "flutter/third_party/tonic/dart_library_natives.h"
+#include "flutter/third_party/tonic/dart_state.h"
+#include "flutter/third_party/tonic/typed_data/typed_list.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
-#include "third_party/tonic/converter/dart_converter.h"
-#include "third_party/tonic/dart_library_natives.h"
-#include "third_party/tonic/dart_microtask_queue.h"
-#include "third_party/tonic/dart_state.h"
-#include "third_party/tonic/typed_data/typed_list.h"
-
-#include "builtin_libraries.h"
-#include "dart_component_controller.h"
-#include "logging.h"
 
 namespace dart_runner {
 namespace {
 
-dart_utils::ElfSnapshot elf_snapshot;                     // AOT snapshot
-dart_utils::MappedResource mapped_isolate_snapshot_data;  // JIT snapshot
-dart_utils::MappedResource
-    mapped_isolate_snapshot_instructions;  // JIT snapshot
+#define SHUTDOWN_ON_ERROR(function, handle)             \
+  if (Dart_IsError(handle)) {                           \
+    *error = strdup(Dart_GetError(handle));             \
+    FX_LOG(ERROR) << function << " failed: " << *error; \
+    Dart_ExitScope();                                   \
+    Dart_ShutdownIsolate();                             \
+    return nullptr;                                     \
+  }
+
+fx::ElfSnapshot elf_snapshot;                             // AOT snapshot
+fx::MappedResource mapped_isolate_snapshot_data;          // JIT snapshot
+fx::MappedResource mapped_isolate_snapshot_instructions;  // JIT snapshot
 tonic::DartLibraryNatives* service_natives = nullptr;
 
 Dart_NativeFunction GetNativeFunction(Dart_Handle name,
                                       int argument_count,
                                       bool* auto_setup_scope) {
-  dart_utils::Check(service_natives, LOG_TAG);
+  FX_CHECK(service_natives);
+
   return service_natives->GetNativeFunction(name, argument_count,
                                             auto_setup_scope);
 }
 
 const uint8_t* GetSymbol(Dart_NativeFunction native_function) {
-  dart_utils::Check(service_natives, LOG_TAG);
+  FX_CHECK(service_natives);
+
   return service_natives->GetSymbol(native_function);
 }
 
-#define SHUTDOWN_ON_ERROR(handle)           \
-  if (Dart_IsError(handle)) {               \
-    *error = strdup(Dart_GetError(handle)); \
-    FX_LOG(ERROR, LOG_TAG, *error);         \
-    Dart_ExitScope();                       \
-    Dart_ShutdownIsolate();                 \
-    return nullptr;                         \
-  }
+void NotifyServerState(Dart_NativeArguments args) {}
 
-void NotifyServerState(Dart_NativeArguments args) {
-  // NOP.
-}
-
-void Shutdown(Dart_NativeArguments args) {
-  // NOP.
-}
+void Shutdown(Dart_NativeArguments args) {}
 
 void EmbedderInformationCallback(Dart_EmbedderInformation* info) {
   info->version = DART_EMBEDDER_INFORMATION_CURRENT_VERSION;
@@ -102,17 +99,17 @@ Dart_Isolate CreateServiceIsolate(const char* uri,
       "/pkg/data/isolate_core_snapshot_instructions.bin";
 #endif
 
-    if (!dart_utils::MappedResource::LoadFromNamespace(
-            nullptr, snapshot_data_path, mapped_isolate_snapshot_data)) {
+    if (!fx::MappedResource::LoadFromNamespace(nullptr, snapshot_data_path,
+                                               mapped_isolate_snapshot_data)) {
       *error = strdup("Failed to load snapshot for service isolate");
-      FX_LOG(ERROR, LOG_TAG, *error);
+      FX_LOG(ERROR) << *error;
       return nullptr;
     }
-    if (!dart_utils::MappedResource::LoadFromNamespace(
+    if (!fx::MappedResource::LoadFromNamespace(
             nullptr, snapshot_instructions_path,
             mapped_isolate_snapshot_instructions, true /* executable */)) {
       *error = strdup("Failed to load snapshot for service isolate");
-      FX_LOG(ERROR, LOG_TAG, *error);
+      FX_LOG(ERROR) << *error;
       return nullptr;
     }
 
@@ -127,7 +124,7 @@ Dart_Isolate CreateServiceIsolate(const char* uri,
       uri, DART_VM_SERVICE_ISOLATE_NAME, vmservice_data, vmservice_instructions,
       nullptr /* flags */, state, state, error);
   if (!isolate) {
-    FX_LOGF(ERROR, LOG_TAG, "Dart_CreateIsolateGroup failed: %s", *error);
+    FX_LOG(ERROR) << "Dart_CreateIsolateGroup failed: " << *error;
     return nullptr;
   }
 
@@ -144,62 +141,68 @@ Dart_Isolate CreateServiceIsolate(const char* uri,
 
   Dart_Handle library =
       Dart_LookupLibrary(Dart_NewStringFromCString("dart:vmservice_io"));
-  SHUTDOWN_ON_ERROR(library);
+  SHUTDOWN_ON_ERROR("Dart_LookupLibrary", library);
   Dart_Handle result = Dart_SetRootLibrary(library);
-  SHUTDOWN_ON_ERROR(result);
+  SHUTDOWN_ON_ERROR("Dart_SetRootLibrary", result);
   result = Dart_SetNativeResolver(library, GetNativeFunction, GetSymbol);
-  SHUTDOWN_ON_ERROR(result);
+  SHUTDOWN_ON_ERROR("Dart_SetNativeResolver", result);
 
   // _ip = '127.0.0.1'
   result = Dart_SetField(library, Dart_NewStringFromCString("_ip"),
                          Dart_NewStringFromCString("127.0.0.1"));
-  SHUTDOWN_ON_ERROR(result);
+  SHUTDOWN_ON_ERROR("Dart_SetField _ip", result);
 
   // _port = 0
   result = Dart_SetField(library, Dart_NewStringFromCString("_port"),
                          Dart_NewInteger(0));
-  SHUTDOWN_ON_ERROR(result);
+  SHUTDOWN_ON_ERROR("Dart_SetField _port", result);
 
   // _autoStart = true
   result = Dart_SetField(library, Dart_NewStringFromCString("_autoStart"),
                          Dart_NewBoolean(true));
-  SHUTDOWN_ON_ERROR(result);
+  SHUTDOWN_ON_ERROR("Dart_SetField _autoStart", result);
 
   // _originCheckDisabled = false
   result =
       Dart_SetField(library, Dart_NewStringFromCString("_originCheckDisabled"),
                     Dart_NewBoolean(false));
-  SHUTDOWN_ON_ERROR(result);
+  SHUTDOWN_ON_ERROR("Dart_SetField _originCheckDisabled", result);
 
   // _authCodesDisabled = false
   result =
       Dart_SetField(library, Dart_NewStringFromCString("_authCodesDisabled"),
                     Dart_NewBoolean(false));
-  SHUTDOWN_ON_ERROR(result);
+  SHUTDOWN_ON_ERROR("Dart_SetField _authCodesDisabled", result);
 
-  InitBuiltinLibrariesForIsolate(std::string(uri), nullptr, fileno(stdout),
-                                 fileno(stderr), nullptr, zx::channel(), true);
+  InitBuiltinLibraries(std::string(uri), nullptr,
+                       fidl::InterfaceHandle<fuchsia::sys::Environment>(),
+                       fidl::InterfaceRequest<fuchsia::io::Directory>(),
+                       fileno(stdout), fileno(stderr), true);
 
   // Make runnable.
   Dart_ExitScope();
   Dart_ExitIsolate();
   *error = Dart_IsolateMakeRunnable(isolate);
   if (*error != nullptr) {
-    FX_LOG(ERROR, LOG_TAG, *error);
+    FX_LOG(ERROR) << "Dart_IsolateMakeRunnable failed: " << *error;
     Dart_EnterIsolate(isolate);
     Dart_ShutdownIsolate();
+
     return nullptr;
   }
+
   return isolate;
-}  // namespace dart_runner
+}
 
 Dart_Handle GetVMServiceAssetsArchiveCallback() {
-  dart_utils::MappedResource observatory_tar;
-  if (!dart_utils::MappedResource::LoadFromNamespace(
+  fx::MappedResource observatory_tar;
+  if (!fx::MappedResource::LoadFromNamespace(
           nullptr, "/pkg/data/observatory.tar", observatory_tar)) {
-    FX_LOG(ERROR, LOG_TAG, "Failed to load Observatory assets");
+    FX_LOG(ERROR) << "Failed to load Observatory assets";
+
     return nullptr;
   }
+
   // TODO(rmacnak): Should we avoid copying the tar? Or does the service
   // library not hold onto it anyway?
   return tonic::DartConverter<tonic::Uint8List>::ToDart(

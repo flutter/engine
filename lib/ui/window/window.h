@@ -15,21 +15,8 @@
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/dart_persistent_value.h"
-
-namespace tonic {
-class DartLibraryNatives;
-
-// So tonice::ToDart<std::vector<int64_t>> returns List<int> instead of
-// List<dynamic>.
-template <>
-struct DartListFactory<int64_t> {
-  static Dart_Handle NewList(intptr_t length) {
-    return Dart_NewListOf(Dart_CoreType_Int, length);
-  }
-};
-
-}  // namespace tonic
 
 namespace flutter {
 class FontCollection;

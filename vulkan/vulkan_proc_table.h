@@ -116,6 +116,8 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
 #endif  // OS_ANDROID
 #if OS_FUCHSIA
   DEFINE_PROC(GetMemoryZirconHandleFUCHSIA);
+  DEFINE_PROC(GetMemoryZirconHandlePropertiesFUCHSIA);
+  DEFINE_PROC(GetSemaphoreZirconHandleFUCHSIA);
   DEFINE_PROC(ImportSemaphoreZirconHandleFUCHSIA);
 #endif  // OS_FUCHSIA
 

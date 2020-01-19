@@ -6,6 +6,7 @@
 #define LIB_CONVERTER_TONIC_DART_CONVERTER_H_
 
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "third_party/dart/runtime/include/dart_api.h"
@@ -63,8 +64,45 @@ struct DartConverter<bool> {
 ////////////////////////////////////////////////////////////////////////////////
 // Numbers
 
+// Unsigned integers
+// TODO(dworsham): Dart doesn't support unsigned integers as return values or
+// parameters, so we don't expose that here.
 template <typename T>
-struct DartConverterInteger {
+struct DartConverter<
+    T,
+    typename std::enable_if<std::is_integral<T>::value &&
+                            std::is_unsigned<T>::value>::type> {
+  static Dart_Handle ToDart(T val) { return Dart_NewIntegerFromUint64(val); }
+
+  static void SetReturnValue(Dart_NativeArguments args, T val) {
+    int64_t new_val = static_cast<int64_t>(val);
+    TONIC_CHECK(new_val >= 0);
+    Dart_SetIntegerReturnValue(args, new_val);
+  }
+
+  static T FromDart(Dart_Handle handle) {
+    uint64_t result = 0;
+    Dart_IntegerToUint64(handle, &result);
+    return static_cast<T>(result);
+  }
+
+  static T FromArguments(Dart_NativeArguments args,
+                         int index,
+                         Dart_Handle& exception) {
+    int64_t result = 0;
+    Dart_GetNativeIntegerArgument(args, index, &result);
+    TONIC_CHECK(result >= 0);
+
+    return static_cast<T>(result);
+  }
+};
+
+// Signed integers
+template <typename T>
+struct DartConverter<
+    T,
+    typename std::enable_if<std::is_integral<T>::value &&
+                            !std::is_unsigned<T>::value>::type> {
   static Dart_Handle ToDart(T val) { return Dart_NewInteger(val); }
 
   static void SetReturnValue(Dart_NativeArguments args, T val) {
@@ -86,59 +124,11 @@ struct DartConverterInteger {
   }
 };
 
-template <>
-struct DartConverter<int> : public DartConverterInteger<int> {};
-
-template <>
-struct DartConverter<long int> : public DartConverterInteger<long int> {};
-
-template <>
-struct DartConverter<unsigned> : public DartConverterInteger<unsigned> {};
-
-template <>
-struct DartConverter<long long> : public DartConverterInteger<long long> {};
-
-template <>
-struct DartConverter<unsigned long>
-    : public DartConverterInteger<unsigned long> {};
-
-template <>
-struct DartConverter<unsigned long long> {
-  // TODO(abarth): The Dart VM API doesn't yet have an entry-point for
-  // an unsigned 64-bit type. We will need to add a Dart API for
-  // constructing an integer from uint64_t.
-  //
-  // (In the meantime, we have asserts below to check that we're never
-  // converting values that have the 64th bit set.)
-
-  static Dart_Handle ToDart(unsigned long long val) {
-    TONIC_DCHECK(val <= 0x7fffffffffffffffLL);
-    return Dart_NewInteger(static_cast<int64_t>(val));
-  }
-
-  static void SetReturnValue(Dart_NativeArguments args,
-                             unsigned long long val) {
-    TONIC_DCHECK(val <= 0x7fffffffffffffffLL);
-    Dart_SetIntegerReturnValue(args, val);
-  }
-
-  static unsigned long long FromDart(Dart_Handle handle) {
-    int64_t result = 0;
-    Dart_IntegerToInt64(handle, &result);
-    return result;
-  }
-
-  static unsigned long long FromArguments(Dart_NativeArguments args,
-                                          int index,
-                                          Dart_Handle& exception) {
-    int64_t result = 0;
-    Dart_GetNativeIntegerArgument(args, index, &result);
-    return result;
-  }
-};
-
+// Floating point
 template <typename T>
-struct DartConverterFloatingPoint {
+struct DartConverter<
+    T,
+    typename std::enable_if<std::is_floating_point<T>::value>::type> {
   static Dart_Handle ToDart(T val) { return Dart_NewDouble(val); }
 
   static void SetReturnValue(Dart_NativeArguments args, T val) {
@@ -148,7 +138,7 @@ struct DartConverterFloatingPoint {
   static T FromDart(Dart_Handle handle) {
     double result = 0;
     Dart_DoubleValue(handle, &result);
-    return result;
+    return static_cast<T>(result);
   }
 
   static T FromArguments(Dart_NativeArguments args,
@@ -156,15 +146,9 @@ struct DartConverterFloatingPoint {
                          Dart_Handle& exception) {
     double result = 0;
     Dart_GetNativeDoubleArgument(args, index, &result);
-    return result;
+    return static_cast<T>(result);
   }
 };
-
-template <>
-struct DartConverter<float> : public DartConverterFloatingPoint<float> {};
-
-template <>
-struct DartConverter<double> : public DartConverterFloatingPoint<double> {};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Enum Classes
@@ -284,9 +268,22 @@ struct DartListFactory {
   static Dart_Handle NewList(intptr_t length) { return Dart_NewList(length); }
 };
 
+// Integers
+// TODO(dworsham): Dart doesn't support unsigned integers as a CoreType here so
+// we don't expose them.
+template <typename T>
+struct DartListFactory<
+    T,
+    typename std::enable_if<std::is_integral<T>::value &&
+                            !std::is_unsigned<T>::value>::type> {
+  static Dart_Handle NewList(size_t length) {
+    return Dart_NewListOf(Dart_CoreType_Int, length);
+  }
+};
+
 template <>
 struct DartListFactory<std::string> {
-  static Dart_Handle NewList(intptr_t length) {
+  static Dart_Handle NewList(size_t length) {
     return Dart_NewListOf(Dart_CoreType_String, length);
   }
 };

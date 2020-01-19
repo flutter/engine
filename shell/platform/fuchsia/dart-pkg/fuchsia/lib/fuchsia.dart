@@ -59,7 +59,7 @@ class MxStartupInfo {
   }
 }
 
-void _setReturnCode(int returnCode) native 'SetReturnCode';
+void _setReturnCode(int returnCode) native 'setReturnCode';
 
 void exit(int returnCode) {
   _setReturnCode(returnCode);

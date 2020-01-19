@@ -40,6 +40,11 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   /// @brief      Creates an external view embedder used by the generic embedder
   ///             API.
   ///
+  /// @param[in]  is_render_target_available_callback
+  ///                                     The render target callback used to
+  ///                                     check availability of a given render
+  ///                                     render target. If unavailable, a new
+  ///                                     render target is created.
   /// @param[in]  create_render_target_callback
   ///                                     The render target callback used to
   ///                                     request the render target for a layer.
@@ -49,6 +54,8 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   ///                                     embedder for presentation.
   ///
   EmbedderExternalViewEmbedder(
+      const EmbedderRenderTargetCache::IsRenderTargetAvailableCallback&
+          is_render_target_available_callback,
       const CreateRenderTargetCallback& create_render_target_callback,
       const PresentCallback& present_callback);
 
@@ -98,6 +105,8 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   SkCanvas* GetRootCanvas() override;
 
  private:
+  const EmbedderRenderTargetCache::IsRenderTargetAvailableCallback
+      is_render_target_available_callback_;
   const CreateRenderTargetCallback create_render_target_callback_;
   const PresentCallback present_callback_;
   SurfaceTransformationCallback surface_transformation_callback_;

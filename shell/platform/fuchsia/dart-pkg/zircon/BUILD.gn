@@ -2,15 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+assert(is_fuchsia)
+
 import("//build/fuchsia/sdk.gni")
+import("//flutter/common/config.gni")
 
-config("zircon_config") {
-  include_dirs = [ "." ]
-}
-
-source_set("zircon") {
-  public_configs = [ ":zircon_config" ]
-
+source_set_maybe_product("zircon") {
   sources = [
     "sdk_ext/handle.cc",
     "sdk_ext/handle.h",
@@ -22,12 +19,17 @@ source_set("zircon") {
     "sdk_ext/system.h",
   ]
 
-  deps = [
+  public_deps = [
     "$fuchsia_sdk_root/pkg:async-cpp",
-    "$fuchsia_sdk_root/pkg:async-loop-cpp",
-    "$fuchsia_sdk_root/pkg:fdio",
     "$fuchsia_sdk_root/pkg:zx",
-    "//flutter/fml",
-    "//flutter/third_party/tonic",
+    "//flutter/third_party/tonic",  # TODO(dworsham): Figure out ownership
+    "//third_party/dart/runtime:dart_api",
   ]
+
+  deps = [
+    "$fuchsia_sdk_root/pkg:async-default",
+    "$fuchsia_sdk_root/pkg:fdio",
+  ]
+
+  product_deps = [ "//flutter/shell/platform/fuchsia/utils:utils" ]
 }

@@ -122,43 +122,40 @@ class System extends NativeFieldWrapperClass2 {
 
   // Channel operations.
   static HandlePairResult channelCreate([int options = 0])
-      native 'System_ChannelCreate';
+      native 'System_channelCreate';
   static HandleResult channelFromFile(String path)
-      native 'System_ChannelFromFile';
-  static int connectToService(String path, Handle channel)
-    native 'System_ConnectToService';
+      native 'System_channelFromFile';
   static int channelWrite(Handle channel, ByteData data, List<Handle> handles)
-      native 'System_ChannelWrite';
+      native 'System_channelWrite';
   static ReadResult channelQueryAndRead(Handle channel)
-      native 'System_ChannelQueryAndRead';
+      native 'System_channelQueryAndRead';
+  static int connectToService(String path, Handle channel)
+    native 'System_connectToService';
+
+  // Clock operations.
+  static int clockGet(int clockId) native 'System_clockGet';
 
   // Eventpair operations.
   static HandlePairResult eventpairCreate([int options = 0])
-      native 'System_EventpairCreate';
+      native 'System_eventpairCreate';
 
   // Socket operations.
   static HandlePairResult socketCreate([int options = 0])
-      native 'System_SocketCreate';
+      native 'System_socketCreate';
   static WriteResult socketWrite(Handle socket, ByteData data, int options)
-      native 'System_SocketWrite';
+      native 'System_socketWrite';
   static ReadResult socketRead(Handle socket, int size)
-      native 'System_SocketRead';
+      native 'System_socketRead';
 
   // Vmo operations.
   static HandleResult vmoCreate(int size, [int options = 0])
-      native 'System_VmoCreate';
-  static FromFileResult vmoFromFile(String path) native 'System_VmoFromFile';
-  static GetSizeResult vmoGetSize(Handle vmo) native 'System_VmoGetSize';
-  static int vmoSetSize(Handle vmo, int size) native 'System_VmoSetSize';
+      native 'System_vmoCreate';
+  static FromFileResult vmoFromFile(String path) native 'System_vmoFromFile';
+  static GetSizeResult vmoGetSize(Handle vmo) native 'System_vmoGetSize';
+  static int vmoSetSize(Handle vmo, int size) native 'System_vmoSetSize';
   static int vmoWrite(Handle vmo, int offset, ByteData bytes)
-      native 'System_VmoWrite';
+      native 'System_vmoWrite';
   static ReadResult vmoRead(Handle vmo, int offset, int size)
-      native 'System_VmoRead';
-  static MapResult vmoMap(Handle vmo) native 'System_VmoMap';
-
-  // Time operations.
-  static int clockGet(int clockId) native 'System_ClockGet';
-
-  // TODO(edcoyne): Remove this, it is required to safely do an API transition across repos.
-  static int reboot() { return -2; /*ZX_ERR_NOT_SUPPORTED*/ }
+      native 'System_vmoRead';
+  static MapResult vmoMap(Handle vmo) native 'System_vmoMap';
 }

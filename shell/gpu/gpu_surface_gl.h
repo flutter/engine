@@ -8,10 +8,9 @@
 #include <functional>
 #include <memory>
 
-#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/common/surface.h"
+#include "flutter/shell/gpu/surface.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 

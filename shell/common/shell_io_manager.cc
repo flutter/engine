@@ -6,7 +6,7 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/message_loop.h"
-#include "flutter/shell/common/persistent_cache.h"
+#include "flutter/shell/gpu/persistent_cache.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 namespace flutter {

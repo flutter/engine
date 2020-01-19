@@ -41,7 +41,8 @@ AndroidShellHolder::AndroidShellHolder(
   if (is_background_view) {
     thread_host_ = {thread_label, ThreadHost::Type::UI};
   } else {
-    thread_host_ = {thread_label, ThreadHost::Type::UI | ThreadHost::Type::GPU |
+    thread_host_ = {thread_label, ThreadHost::Type::UI |
+                                      ThreadHost::Type::Raster |
                                       ThreadHost::Type::IO};
   }
 

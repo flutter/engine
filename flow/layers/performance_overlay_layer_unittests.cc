@@ -39,7 +39,7 @@ static std::string GetGoldenFilePath(int refresh_rate, bool is_new) {
   std::stringstream ss;
   // This unit test should only be run on Linux (not even on Mac since it's a
   // golden test). Hence we don't have to worry about the "/" vs. "\".
-  ss << flutter::GetGoldenDir() << "/"
+  ss << GetGoldenDir() << "/"
      << "performance_overlay_gold_" << refresh_rate << "fps"
      << (is_new ? "_new" : "") << ".png";
   return ss.str();
@@ -49,8 +49,7 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
   std::string golden_file_path = GetGoldenFilePath(refresh_rate, false);
   std::string new_golden_file_path = GetGoldenFilePath(refresh_rate, true);
 
-  flutter::Stopwatch mock_stopwatch(
-      fml::RefreshRateToFrameBudget(refresh_rate));
+  Stopwatch mock_stopwatch(fml::RefreshRateToFrameBudget(refresh_rate));
   for (int i = 0; i < size(kMockedTimes); ++i) {
     mock_stopwatch.SetLapTime(
         fml::TimeDelta::FromMilliseconds(kMockedTimes[i]));
@@ -61,19 +60,17 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
 
   ASSERT_TRUE(surface != nullptr);
 
-  flutter::TextureRegistry unused_texture_registry;
-  flutter::Layer::PaintContext paintContext = {
+  TextureRegistry unused_texture_registry;
+  Layer::PaintContext paintContext = {
       nullptr,        surface->getCanvas(),    nullptr, nullptr, mock_stopwatch,
       mock_stopwatch, unused_texture_registry, nullptr, false};
 
   // Specify font file to ensure the same font across different operation
   // systems.
-  flutter::PerformanceOverlayLayer layer(
-      flutter::kDisplayRasterizerStatistics |
-          flutter::kVisualizeRasterizerStatistics |
-          flutter::kDisplayEngineStatistics |
-          flutter::kVisualizeEngineStatistics,
-      flutter::GetFontFile().c_str());
+  PerformanceOverlayLayer layer(
+      kDisplayRasterizerStatistics | kVisualizeRasterizerStatistics |
+          kDisplayEngineStatistics | kVisualizeEngineStatistics,
+      GetFontFile().c_str());
   layer.set_paint_bounds(SkRect::MakeWH(1000, 400));
   surface->getCanvas()->clear(SK_ColorTRANSPARENT);
   layer.Paint(paintContext);

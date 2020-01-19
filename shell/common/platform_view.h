@@ -18,7 +18,7 @@
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
-#include "flutter/shell/common/surface.h"
+#include "flutter/shell/gpu/surface.h"
 #include "flutter/shell/common/vsync_waiter.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrContext.h"

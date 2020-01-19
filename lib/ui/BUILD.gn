@@ -6,7 +6,7 @@ import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
 
-source_set("ui") {
+source_set_maybe_product("ui") {
   sources = [
     "compositing/scene.cc",
     "compositing/scene.h",
@@ -116,7 +116,6 @@ source_set("ui") {
     "//flutter/fml",
     "//flutter/runtime:test_font",
     "//flutter/third_party/tonic",
-    "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
   ]
@@ -129,18 +128,10 @@ source_set("ui") {
     defines = [ "FLUTTER_ENABLE_SKSHAPER" ]
   }
 
-  if (is_fuchsia) {
-    sources += [
-      "compositing/scene_host.cc",
-      "compositing/scene_host.h",
-    ]
-
-    deps += [
-      "$fuchsia_sdk_root/pkg:async-cpp",
-      "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
-      "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
-    ]
-  }
+  product_deps = [
+    "//flutter/lib/io:io",
+    "//third_party/dart/runtime/bin:dart_io_api",
+  ]
 }
 
 if (current_toolchain == host_toolchain) {

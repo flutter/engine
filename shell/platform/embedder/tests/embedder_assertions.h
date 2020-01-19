@@ -65,6 +65,20 @@ inline bool operator==(const FlutterOpenGLFramebuffer& a,
          a.destruction_callback == b.destruction_callback;
 }
 
+inline bool operator==(const FlutterVulkanImage& a,
+                       const FlutterVulkanImage& b) {
+  return a.memory_handle == b.memory_handle &&
+         a.image_handle == b.image_handle && a.memory_size == b.memory_size &&
+         a.tiling == b.tiling && a.layout == b.layout && a.format == b.format &&
+         a.user_data == b.user_data &&
+         a.destruction_callback == b.destruction_callback;
+}
+
+inline bool operator==(const FlutterVulkanSwapchain& a,
+                       const FlutterVulkanSwapchain& b) {
+  return a.user_data == b.user_data;
+}
+
 inline bool operator==(const FlutterOpenGLBackingStore& a,
                        const FlutterOpenGLBackingStore& b) {
   if (!(a.type == b.type)) {
@@ -76,6 +90,22 @@ inline bool operator==(const FlutterOpenGLBackingStore& a,
       return a.texture == b.texture;
     case kFlutterOpenGLTargetTypeFramebuffer:
       return a.framebuffer == b.framebuffer;
+  }
+
+  return false;
+}
+
+inline bool operator==(const FlutterVulkanBackingStore& a,
+                       const FlutterVulkanBackingStore& b) {
+  if (!(a.type == b.type)) {
+    return false;
+  }
+
+  switch (a.type) {
+    case kFlutterVulkanTargetTypeImage:
+      return a.image == b.image;
+    case kFlutterVulkanTargetTypeSwapchain:
+      return a.swapchain == b.swapchain;
   }
 
   return false;
@@ -98,6 +128,8 @@ inline bool operator==(const FlutterBackingStore& a,
   switch (a.type) {
     case kFlutterBackingStoreTypeOpenGL:
       return a.open_gl == b.open_gl;
+    case kFlutterBackingStoreTypeVulkan:
+      return a.vulkan == b.vulkan;
     case kFlutterBackingStoreTypeSoftware:
       return a.software == b.software;
   }
@@ -214,6 +246,8 @@ inline std::string FlutterBackingStoreTypeToString(
   switch (type) {
     case kFlutterBackingStoreTypeOpenGL:
       return "kFlutterBackingStoreTypeOpenGL";
+    case kFlutterBackingStoreTypeVulkan:
+      return "kFlutterBackingStoreTypeVulkan";
     case kFlutterBackingStoreTypeSoftware:
       return "kFlutterBackingStoreTypeSoftware";
   }
@@ -234,6 +268,23 @@ inline std::ostream& operator<<(std::ostream& out,
              << item.target << std::dec << " Name: " << item.name
              << " User Data: " << item.user_data << " Destruction Callback: "
              << reinterpret_cast<void*>(item.destruction_callback);
+}
+
+inline std::ostream& operator<<(std::ostream& out,
+                                const FlutterVulkanImage& item) {
+  return out << "(FlutterVulkanImage) Memory: 0x" << std::hex
+             << item.memory_handle << " Image: 0x" << std::hex
+             << item.image_handle << " Size (bytes): " << std::dec
+             << item.memory_size << " Tiling: " << item.tiling
+             << " Layout: " << item.layout << " Format: " << item.format
+             << " User Data: " << item.user_data << " Destruction Callback: "
+             << reinterpret_cast<void*>(item.destruction_callback);
+}
+
+inline std::ostream& operator<<(std::ostream& out,
+                                const FlutterVulkanSwapchain& item) {
+  return out << "(FlutterVulkanSwapchain)"
+             << " User Data: " << item.user_data;
 }
 
 inline std::string FlutterPlatformViewMutationTypeToString(
@@ -299,6 +350,17 @@ inline std::string FlutterOpenGLTargetTypeToString(
   return "Unknown";
 }
 
+inline std::string FlutterVulkanTargetTypeToString(
+    FlutterVulkanTargetType type) {
+  switch (type) {
+    case kFlutterVulkanTargetTypeImage:
+      return "kFlutterVulkanTargetTypeImage";
+    case kFlutterVulkanTargetTypeSwapchain:
+      return "kFlutterVulkanTargetTypeSwapchain";
+  }
+  return "Unknown";
+}
+
 inline std::ostream& operator<<(std::ostream& out,
                                 const FlutterOpenGLBackingStore& item) {
   out << "(FlutterOpenGLBackingStore) Type: "
@@ -309,6 +371,21 @@ inline std::ostream& operator<<(std::ostream& out,
       break;
     case kFlutterOpenGLTargetTypeFramebuffer:
       out << item.framebuffer;
+      break;
+  }
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out,
+                                const FlutterVulkanBackingStore& item) {
+  out << "(FlutterVulkanBackingStore) Type: "
+      << FlutterVulkanTargetTypeToString(item.type) << " ";
+  switch (item.type) {
+    case kFlutterVulkanTargetTypeImage:
+      out << item.image;
+      break;
+    case kFlutterVulkanTargetTypeSwapchain:
+      out << item.swapchain;
       break;
   }
   return out;
@@ -333,7 +410,9 @@ inline std::ostream& operator<<(std::ostream& out,
     case kFlutterBackingStoreTypeOpenGL:
       out << backing_store.open_gl;
       break;
-
+    case kFlutterBackingStoreTypeVulkan:
+      out << backing_store.vulkan;
+      break;
     case kFlutterBackingStoreTypeSoftware:
       out << backing_store.software;
       break;

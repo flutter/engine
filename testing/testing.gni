@@ -92,10 +92,10 @@ template("dart_snapshot_kernel") {
       rebase_path(snapshot_depfile),
     ]
 
-    if (flutter_runtime_mode == "release" ||
-        flutter_runtime_mode == "jit_release") {
-      args += [ "-Ddart.vm.product=true" ]
-    }
+    # if (flutter_runtime_mode == "release" ||
+    #     flutter_runtime_mode == "jit_release") {
+    #   args += [ "-Ddart.vm.product=true" ]
+    # }
 
     if (is_aot_test) {
       args += [

@@ -142,13 +142,17 @@ struct DartConverter<
 // adopts a raw pointer to that type.
 
 template <template <typename T> class PTR, typename T>
-struct DartConverter<PTR<T>> {
+struct DartConverter<
+    PTR<T>,
+    typename std::enable_if<
+        std::is_convertible<T*, const DartWrappable*>::value &&
+        !std::is_same<PTR<T>, std::shared_ptr<T>>::value>::type> {
   static Dart_Handle ToDart(const PTR<T>& val) {
     return DartConverter<T*>::ToDart(val.get());
   }
 
   static PTR<T> FromDart(Dart_Handle handle) {
-    return DartConverter<T*>::FromDart(handle);
+    return PTR<T>(DartConverter<T*>::FromDart(handle));
   }
 
   static PTR<T> FromArguments(Dart_NativeArguments args,
@@ -161,6 +165,41 @@ struct DartConverter<PTR<T>> {
 
   static void SetReturnValue(Dart_NativeArguments args,
                              const PTR<T>& val,
+                             bool auto_scope = true) {
+    DartConverter<T*>::SetReturnValue(args, val.get());
+  }
+};
+
+// Support for std::shared_ptr and std::enable_shared_from_this
+template <typename T>
+struct DartConverter<
+    std::shared_ptr<T>,
+    typename std::enable_if<
+        std::is_convertible<T*, const DartWrappable*>::value &&
+        std::is_convertible<T*, const std::enable_shared_from_this<T>*>::
+            value>::type> {
+  static Dart_Handle ToDart(const std::shared_ptr<T>& val) {
+    return DartConverter<T*>::ToDart(val.get());
+  }
+
+  static std::shared_ptr<T> FromDart(Dart_Handle handle) {
+    auto* native_value = DartConverter<T*>::FromDart(handle);
+
+    return native_value->shared_from_this();
+  }
+
+  static std::shared_ptr<T> FromArguments(Dart_NativeArguments args,
+                                          int index,
+                                          Dart_Handle& exception,
+                                          bool auto_scope = true) {
+    auto* native_args =
+        DartConverter<T*>::FromArguments(args, index, exception, auto_scope);
+
+    return native_args->shared_from_this();
+  }
+
+  static void SetReturnValue(Dart_NativeArguments args,
+                             const std::shared_ptr<T>& val,
                              bool auto_scope = true) {
     DartConverter<T*>::SetReturnValue(args, val.get());
   }

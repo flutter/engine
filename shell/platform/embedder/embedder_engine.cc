@@ -5,7 +5,7 @@
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/shell/platform/embedder/vsync_waiter_embedder.h"
+#include "flutter/shell/platform/embedder/embedder_vsync_waiter.h"
 
 namespace flutter {
 
@@ -215,16 +215,16 @@ bool EmbedderEngine::OnVsyncEvent(intptr_t baton,
     return false;
   }
 
-  return VsyncWaiterEmbedder::OnEmbedderVsync(baton, frame_start_time,
+  return EmbedderVsyncWaiter::OnEmbedderVsync(baton, frame_start_time,
                                               frame_target_time);
 }
 
-bool EmbedderEngine::ReloadSystemFonts() {
+bool EmbedderEngine::ReloadSystemFonts(uintptr_t token) {
   if (!IsValid()) {
     return false;
   }
 
-  return shell_->ReloadSystemFonts();
+  return shell_->ReloadSystemFonts(token);
 }
 
 bool EmbedderEngine::PostRenderThreadTask(const fml::closure& task) {

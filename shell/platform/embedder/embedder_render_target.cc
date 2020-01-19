@@ -14,9 +14,6 @@ EmbedderRenderTarget::EmbedderRenderTarget(FlutterBackingStore backing_store,
     : backing_store_(backing_store),
       render_surface_(std::move(render_surface)),
       on_release_(on_release) {
-  // TODO(38468): The optimization to elide backing store updates between frames
-  // has not been implemented yet.
-  backing_store_.did_update = true;
   FML_DCHECK(render_surface_);
 }
 

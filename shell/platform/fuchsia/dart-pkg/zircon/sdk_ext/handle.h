@@ -5,85 +5,80 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_SDK_EXT_HANDLE_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_SDK_EXT_HANDLE_H_
 
+#include <lib/zx/handle.h>
 #include <zircon/syscalls.h>
+#include <zircon/types.h>
 
+#include <memory>
 #include <vector>
 
-#include "flutter/fml/memory/ref_counted.h"
-#include "handle_waiter.h"
+#include "flutter/third_party/tonic/converter/dart_converter.h"
+#include "flutter/third_party/tonic/dart_library_natives.h"
+#include "flutter/third_party/tonic/dart_persistent_value.h"
+#include "flutter/third_party/tonic/dart_wrappable.h"
 #include "third_party/dart/runtime/include/dart_api.h"
-#include "third_party/tonic/dart_library_natives.h"
-#include "third_party/tonic/dart_wrappable.h"
-#include "third_party/tonic/typed_data/dart_byte_data.h"
 
-namespace zircon {
-namespace dart {
-/**
- * Handle is the native peer of a Dart object (Handle in dart:zircon)
- * that holds an zx_handle_t. It tracks active waiters on handle too.
- */
-class Handle : public fml::RefCountedThreadSafe<Handle>,
+namespace zircon::dart {
+
+class HandleWaiter;
+
+// Handle is the native peer of a Dart object (Handle in dart:zircon)
+// that holds an zx_handle_t. It tracks active waiters on handle too.
+class Handle : public std::enable_shared_from_this<Handle>,
                public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
-  FML_FRIEND_REF_COUNTED_THREAD_SAFE(Handle);
-  FML_FRIEND_MAKE_REF_COUNTED(Handle);
 
  public:
-  ~Handle();
-
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
-  static fml::RefPtr<Handle> Create(zx_handle_t handle);
-  static fml::RefPtr<Handle> Create(zx::handle handle) {
-    return Create(handle.release());
-  }
+  static std::shared_ptr<Handle> createInvalid();
 
-  static fml::RefPtr<Handle> Unwrap(Dart_Handle handle) {
-    return fml::RefPtr<Handle>(
-        tonic::DartConverter<zircon::dart::Handle*>::FromDart(handle));
-  }
+  static std::shared_ptr<Handle> Create(zx_handle_t handle);
+  static std::shared_ptr<Handle> Create(zx::handle handle);
+  static std::shared_ptr<Handle> Unwrap(Dart_Handle handle);
 
-  static Dart_Handle CreateInvalid();
+  Handle(const Handle&) = delete;
+  Handle(Handle&&) = delete;
+  ~Handle();
 
-  zx_handle_t ReleaseHandle();
+  Handle& operator=(const Handle&) = delete;
+  Handle& operator=(Handle&&) = delete;
 
-  bool is_valid() const { return handle_ != ZX_HANDLE_INVALID; }
+  zx_handle_t handle() const { return handle_.get(); }
+  bool isValid() const { return handle_.is_valid(); }
 
-  zx_handle_t handle() const { return handle_; }
+  zx_status_t close();
 
-  zx_status_t Close();
+  std::shared_ptr<Handle> duplicate(zx_rights_t rights);
+  std::shared_ptr<HandleWaiter> asyncWait(zx_signals_t signals,
+                                          Dart_Handle callback);
 
-  fml::RefPtr<HandleWaiter> AsyncWait(zx_signals_t signals,
-                                      Dart_Handle callback);
+  zx::handle ReleaseHandle();
 
-  void ReleaseWaiter(HandleWaiter* waiter);
-
-  Dart_Handle Duplicate(uint32_t rights);
-
-  void ScheduleCallback(tonic::DartPersistentValue callback,
-                        zx_status_t status,
-                        const zx_packet_signal_t* signal);
+  void ReleaseWaiter(std::shared_ptr<HandleWaiter> waiter);
 
  private:
-  explicit Handle(zx_handle_t handle);
+  explicit Handle(zx::handle handle);
 
-  void RetainDartWrappableReference() const override { AddRef(); }
+  // |DartWrappable|
+  void RetainDartWrappableReference() const override {
+    vm_reference_ = shared_from_this();
+  }
+  void ReleaseDartWrappableReference() const override { vm_reference_.reset(); }
 
-  void ReleaseDartWrappableReference() const override { Release(); }
-
-  zx_handle_t handle_;
-
-  std::vector<HandleWaiter*> waiters_;
-
-  // Some cached persistent handles to make running handle wait completers
-  // faster.
+  // Some cached persistent handles so handle wait completers are faster.
+  tonic::DartPersistentValue on_wait_completer_type_;
   tonic::DartPersistentValue async_lib_;
   tonic::DartPersistentValue closure_string_;
-  tonic::DartPersistentValue on_wait_completer_type_;
   tonic::DartPersistentValue schedule_microtask_string_;
+
+  std::vector<std::shared_ptr<HandleWaiter>> waiters_;
+
+  mutable std::shared_ptr<const Handle> vm_reference_;
+
+  zx::handle handle_;
 };
 
-}  // namespace dart
-}  // namespace zircon
+}  // namespace zircon::dart
 
 #endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_SDK_EXT_HANDLE_H_

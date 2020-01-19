@@ -19,7 +19,6 @@
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_test.h"
@@ -28,6 +27,7 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
+#include "flutter/shell/gpu/persistent_cache.h"
 #include "flutter/shell/version/version.h"
 #include "flutter/testing/testing.h"
 #include "rapidjson/writer.h"
@@ -73,7 +73,7 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::GPU |
+                         ThreadHost::Type::Platform | ThreadHost::Type::Raster |
                              ThreadHost::Type::IO | ThreadHost::Type::UI);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
@@ -121,7 +121,7 @@ TEST_F(ShellTest,
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(
       "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::GPU | ThreadHost::Type::IO | ThreadHost::Type::UI);
+      ThreadHost::Type::Raster | ThreadHost::Type::IO | ThreadHost::Type::UI);
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),

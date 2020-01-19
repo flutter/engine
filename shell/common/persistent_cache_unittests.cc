@@ -13,7 +13,7 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/log_settings.h"
 #include "flutter/fml/unique_fd.h"
-#include "flutter/shell/common/persistent_cache.h"
+#include "flutter/shell/gpu/persistent_cache.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/testing/testing.h"

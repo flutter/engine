@@ -9,7 +9,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/surface.h"
+#include "flutter/shell/gpu/surface.h"
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 

@@ -8,18 +8,18 @@
 
 namespace tonic {
 
+DartList::DartList() {
+  dart_handle_ = Dart_Null();
+  size_ = 0;
+  is_valid_ = false;
+}
+
 DartList::DartList(Dart_Handle dart_handle) : dart_handle_(dart_handle) {
   TONIC_DCHECK(Dart_IsList(dart_handle_));
 
   intptr_t length;
   is_valid_ = !LogIfError(Dart_ListLength(dart_handle_, &length));
   size_ = length;
-}
-
-DartList::DartList() {
-  dart_handle_ = Dart_Null();
-  size_ = 0;
-  is_valid_ = false;
 }
 
 DartList::DartList(DartList&& other)

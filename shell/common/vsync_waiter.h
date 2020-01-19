@@ -40,7 +40,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   // On some backends, the |FireCallback| needs to be made from a static C
   // method.
   friend class VsyncWaiterAndroid;
-  friend class VsyncWaiterEmbedder;
+  friend class EmbedderVsyncWaiter;
 
   const TaskRunners task_runners_;
 

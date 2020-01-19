@@ -2,29 +2,59 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "handle_waiter.h"
+#include "flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle_waiter.h"
 
 #include <lib/async/default.h>
 
-#include "handle.h"
-#include "third_party/tonic/converter/dart_converter.h"
-#include "third_party/tonic/dart_args.h"
-#include "third_party/tonic/dart_binding_macros.h"
-#include "third_party/tonic/dart_library_natives.h"
-#include "third_party/tonic/dart_message_handler.h"
-#include "third_party/tonic/dart_microtask_queue.h"
-#include "third_party/tonic/logging/dart_invoke.h"
+#include "flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle.h"
+#include "flutter/shell/platform/fuchsia/utils/logging.h"
+#include "flutter/third_party/tonic/dart_binding_macros.h"
 
-using tonic::DartInvokeField;
-using tonic::DartState;
-using tonic::ToDart;
+namespace zircon::dart {
+namespace {
 
-namespace zircon {
-namespace dart {
+void InvokeCallback(tonic::DartPersistentValue callback,
+                    zx_status_t status,
+                    const zx_packet_signal_t* signal) {
+  auto state = callback.dart_state().lock();
+  FX_DCHECK(state.get());
+
+  tonic::DartState::Scope scope(state);
+
+  // Put the closure invocation on the microtask queue.
+  Dart_Handle zircon_lib = Dart_LookupLibrary(tonic::ToDart("dart:zircon"));
+  FX_DCHECK(!tonic::LogIfError(zircon_lib));
+
+  Dart_Handle owc_type =
+      Dart_GetClass(zircon_lib, tonic::ToDart("_OnWaitCompleteClosure"));
+  FX_DCHECK(!tonic::LogIfError(owc_type));
+
+  FX_DCHECK(!callback.is_empty());
+  std::vector<Dart_Handle> owc_args{callback.Release(), tonic::ToDart(status),
+                                    tonic::ToDart(signal->observed)};
+  Dart_Handle owc =
+      Dart_New(owc_type, Dart_Null(), owc_args.size(), owc_args.data());
+  FX_DCHECK(!tonic::LogIfError(owc));
+
+  Dart_Handle closure = Dart_GetField(owc, tonic::ToDart("_closure"));
+  FX_DCHECK(!tonic::LogIfError(closure));
+
+  // TODO(issue#tbd): Use tonic::DartMicrotaskQueue::ScheduleMicrotask()
+  // instead when tonic::tonic::DartState gets a microtask queue field.
+  Dart_Handle async_lib = Dart_LookupLibrary(tonic::ToDart("dart:async"));
+  FX_DCHECK(!tonic::LogIfError(async_lib));
+  std::vector<Dart_Handle> sm_args{closure};
+  Dart_Handle sm_result =
+      Dart_Invoke(async_lib, tonic::ToDart("scheduleMicrotask"), sm_args.size(),
+                  sm_args.data());
+  FX_DCHECK(!tonic::LogIfError(sm_result));
+}
+
+}  // namespace
 
 IMPLEMENT_WRAPPERTYPEINFO(zircon, HandleWaiter);
 
-#define FOR_EACH_BINDING(V) V(HandleWaiter, Cancel)
+#define FOR_EACH_BINDING(V) V(HandleWaiter, cancel)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -32,90 +62,63 @@ void HandleWaiter::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-fml::RefPtr<HandleWaiter> HandleWaiter::Create(Handle* handle,
-                                               zx_signals_t signals,
-                                               Dart_Handle callback) {
-  return fml::MakeRefCounted<HandleWaiter>(handle, signals, callback);
+std::shared_ptr<HandleWaiter> HandleWaiter::Create(
+    std::shared_ptr<Handle> handle,
+    zx_signals_t signals,
+    Dart_Handle callback) {
+  return std::shared_ptr<HandleWaiter>(
+      new HandleWaiter(handle, signals, callback));
 }
 
-HandleWaiter::HandleWaiter(Handle* handle,
+HandleWaiter::HandleWaiter(std::shared_ptr<Handle> handle,
                            zx_signals_t signals,
                            Dart_Handle callback)
-    : wait_(this, handle->handle(), signals),
-      handle_(handle),
-      callback_(DartState::Current(), callback) {
-  FML_CHECK(handle_ != nullptr);
-  FML_CHECK(handle_->is_valid());
+    : callback_(tonic::DartState::Current(), callback),
+      wait_(this, handle->handle(), signals),
+      weak_handle_(handle) {
+  FX_CHECK(handle->isValid());
 
   zx_status_t status = wait_.Begin(async_get_default_dispatcher());
-  FML_DCHECK(status == ZX_OK);
+  FX_DCHECK(status == ZX_OK);
 }
 
 HandleWaiter::~HandleWaiter() {
-  Cancel();
+  cancel();
 }
 
-void HandleWaiter::Cancel() {
-  FML_DCHECK(wait_.is_pending() == !!handle_);
-  if (handle_) {
+void HandleWaiter::cancel() {
+  auto locked_handle = weak_handle_.lock();
+  if (locked_handle) {
+    FX_DCHECK(locked_handle->isValid());
+    FX_DCHECK(wait_.is_pending());
+
     // Cancel the wait.
     wait_.Cancel();
+    weak_handle_.reset();
+    FX_DCHECK(!wait_.is_pending());
 
-    // Release this object from the handle and clear handle_.
-    handle_->ReleaseWaiter(this);
-    handle_ = nullptr;
+    // Remove this waiter from the handle.
+    // WARNING: Might delete this.
+    locked_handle->ReleaseWaiter(shared_from_this());
   }
-  FML_DCHECK(!wait_.is_pending());
 }
 
 void HandleWaiter::OnWaitComplete(async_dispatcher_t* dispatcher,
                                   async::WaitBase* wait,
                                   zx_status_t status,
                                   const zx_packet_signal_t* signal) {
-  FML_DCHECK(handle_);
+  auto locked_handle = weak_handle_.lock();
+  if (locked_handle) {
+    FX_DCHECK(locked_handle->isValid());
+    FX_DCHECK(!callback_.is_empty());
 
-  FML_DCHECK(!callback_.is_empty());
+    InvokeCallback(std::move(callback_), status, signal);
+    weak_handle_.reset();
 
-  // Hold a reference to this object.
-  fml::RefPtr<HandleWaiter> ref(this);
-
-  // Remove this waiter from the handle.
-  handle_->ReleaseWaiter(this);
-
-  // Clear handle_.
-  handle_ = nullptr;
-
-  auto state = callback_.dart_state().lock();
-  FML_DCHECK(state);
-  DartState::Scope scope(state);
-
-  // Put the closure invocation on the microtask queue.
-  Dart_Handle zircon_lib = Dart_LookupLibrary(ToDart("dart:zircon"));
-  FML_DCHECK(!tonic::LogIfError(zircon_lib));
-
-  Dart_Handle owc_type =
-      Dart_GetClass(zircon_lib, ToDart("_OnWaitCompleteClosure"));
-  FML_DCHECK(!tonic::LogIfError(owc_type));
-
-  FML_DCHECK(!callback_.is_empty());
-  std::vector<Dart_Handle> owc_args{callback_.Release(), ToDart(status),
-                                    ToDart(signal->observed)};
-  Dart_Handle owc =
-      Dart_New(owc_type, Dart_Null(), owc_args.size(), owc_args.data());
-  FML_DCHECK(!tonic::LogIfError(owc));
-
-  Dart_Handle closure = Dart_GetField(owc, ToDart("_closure"));
-  FML_DCHECK(!tonic::LogIfError(closure));
-
-  // TODO(issue#tbd): Use tonic::DartMicrotaskQueue::ScheduleMicrotask()
-  // instead when tonic::DartState gets a microtask queue field.
-  Dart_Handle async_lib = Dart_LookupLibrary(ToDart("dart:async"));
-  FML_DCHECK(!tonic::LogIfError(async_lib));
-  std::vector<Dart_Handle> sm_args{closure};
-  Dart_Handle sm_result = Dart_Invoke(async_lib, ToDart("scheduleMicrotask"),
-                                      sm_args.size(), sm_args.data());
-  FML_DCHECK(!tonic::LogIfError(sm_result));
+    // Remove this waiter from the handle.
+    // WARNING: Might delete this.
+    locked_handle->ReleaseWaiter(shared_from_this());
+  }
 }
 
-}  // namespace dart
-}  // namespace zircon
+}  // namespace zircon::dart

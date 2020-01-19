@@ -16,14 +16,14 @@ namespace flutter {
 struct ThreadHost {
   enum Type {
     Platform = 1 << 0,
-    UI = 1 << 1,
-    GPU = 1 << 2,
+    Raster = 1 << 1,
+    UI = 1 << 2,
     IO = 1 << 3,
   };
 
   std::unique_ptr<fml::Thread> platform_thread;
-  std::unique_ptr<fml::Thread> ui_thread;
   std::unique_ptr<fml::Thread> raster_thread;
+  std::unique_ptr<fml::Thread> ui_thread;
   std::unique_ptr<fml::Thread> io_thread;
 
   ThreadHost();

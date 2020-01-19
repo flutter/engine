@@ -12,7 +12,6 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
 
@@ -74,7 +73,7 @@ class EmbedderEngine {
                     fml::TimePoint frame_start_time,
                     fml::TimePoint frame_target_time);
 
-  bool ReloadSystemFonts();
+  bool ReloadSystemFonts(uintptr_t token);
 
   bool PostRenderThreadTask(const fml::closure& task);
 

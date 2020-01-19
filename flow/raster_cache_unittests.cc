@@ -25,13 +25,13 @@ sk_sp<SkPicture> GetSamplePicture() {
 }  // namespace
 
 TEST(RasterCache, SimpleInitialization) {
-  flutter::RasterCache cache;
+  RasterCache cache;
   ASSERT_TRUE(true);
 }
 
 TEST(RasterCache, ThresholdIsRespected) {
   size_t threshold = 2;
-  flutter::RasterCache cache(threshold);
+  RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
 
@@ -65,7 +65,7 @@ TEST(RasterCache, ThresholdIsRespected) {
 
 TEST(RasterCache, AccessThresholdOfZeroDisablesCaching) {
   size_t threshold = 0;
-  flutter::RasterCache cache(threshold);
+  RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
 
@@ -103,7 +103,7 @@ TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZero) {
 
 TEST(RasterCache, SweepsRemoveUnusedFrames) {
   size_t threshold = 1;
-  flutter::RasterCache cache(threshold);
+  RasterCache cache(threshold);
 
   SkMatrix matrix = SkMatrix::I();
 

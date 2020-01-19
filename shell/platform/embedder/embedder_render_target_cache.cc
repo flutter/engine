@@ -13,7 +13,8 @@ EmbedderRenderTargetCache::~EmbedderRenderTargetCache() = default;
 std::pair<EmbedderRenderTargetCache::RenderTargets,
           EmbedderExternalView::ViewIdentifierSet>
 EmbedderRenderTargetCache::GetExistingTargetsInCache(
-    const EmbedderExternalView::PendingViews& pending_views) {
+    const EmbedderExternalView::PendingViews& pending_views,
+    const IsRenderTargetAvailableCallback& is_render_target_available) {
   RenderTargets resolved_render_targets;
   EmbedderExternalView::ViewIdentifierSet unmatched_identifiers;
 
@@ -22,17 +23,27 @@ EmbedderRenderTargetCache::GetExistingTargetsInCache(
     if (!external_view->HasEngineRenderedContents()) {
       continue;
     }
+
     auto& compatible_targets =
         cached_render_targets_[external_view->CreateRenderTargetDescriptor()];
-    if (compatible_targets.size() == 0) {
-      unmatched_identifiers.insert(view.first);
-    } else {
+    while (!compatible_targets.empty()) {
       std::unique_ptr<EmbedderRenderTarget> target =
           std::move(compatible_targets.top());
       compatible_targets.pop();
-      resolved_render_targets[view.first] = std::move(target);
+
+      if (!is_render_target_available ||
+          is_render_target_available(target.get())) {
+        resolved_render_targets[view.first] = std::move(target);
+        break;
+      }
+    }
+
+    if (resolved_render_targets.find(view.first) ==
+        resolved_render_targets.end()) {
+      unmatched_identifiers.insert(view.first);
     }
   }
+
   return {std::move(resolved_render_targets), std::move(unmatched_identifiers)};
 }
 

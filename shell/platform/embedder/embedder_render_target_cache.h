@@ -17,7 +17,7 @@ namespace flutter {
 
 //------------------------------------------------------------------------------
 /// @brief      A cache used to reference render targets that are owned by the
-///             embedder but needed by th engine to render a frame.
+///             embedder but needed by the engine to render a frame.
 ///
 class EmbedderRenderTargetCache {
  public:
@@ -25,6 +25,8 @@ class EmbedderRenderTargetCache {
 
   ~EmbedderRenderTargetCache();
 
+  using IsRenderTargetAvailableCallback =
+      std::function<bool(const EmbedderRenderTarget* render_target)>;
   using RenderTargets =
       std::unordered_map<EmbedderExternalView::ViewIdentifier,
                          std::unique_ptr<EmbedderRenderTarget>,
@@ -33,7 +35,8 @@ class EmbedderRenderTargetCache {
 
   std::pair<RenderTargets, EmbedderExternalView::ViewIdentifierSet>
   GetExistingTargetsInCache(
-      const EmbedderExternalView::PendingViews& pending_views);
+      const EmbedderExternalView::PendingViews& pending_views,
+      const IsRenderTargetAvailableCallback& is_render_target_available);
 
   std::set<std::unique_ptr<EmbedderRenderTarget>>
   ClearAllRenderTargetsInCache();

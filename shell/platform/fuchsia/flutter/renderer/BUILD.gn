@@ -1,0 +1,53 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_fuchsia)
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/common/config.gni")
+
+source_set_maybe_product("renderer") {
+  sources = [
+    "scenic_accessibility_bridge.cc",
+    "scenic_accessibility_bridge.h",
+    "scenic_platform_bridge.cc",
+    "scenic_platform_bridge.h",
+    "scenic_session.cc",
+    "scenic_session.h",
+    "scenic_view.cc",
+    "scenic_view.h",
+    "scenic_window.cc",
+    "scenic_window.h",
+  ]
+
+  public_deps = [
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.views",
+    "$fuchsia_sdk_root/pkg:scenic_cpp",
+    "$fuchsia_sdk_root/pkg:zx",
+  ]
+
+  deps = [
+    "$fuchsia_sdk_root/fidl:fuchsia.accessibility.semantics",
+    "$fuchsia_sdk_root/fidl:fuchsia.images",
+    "$fuchsia_sdk_root/fidl:fuchsia.io",
+    "$fuchsia_sdk_root/fidl:fuchsia.math",
+    "$fuchsia_sdk_root/fidl:fuchsia.sys",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.input",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
+    "$fuchsia_sdk_root/pkg:sys_cpp",
+    "$fuchsia_sdk_root/pkg:trace",
+    "//flutter/shell/platform/embedder:embedder_api",
+    "//flutter/shell/platform/fuchsia/flutter:renderer_api",
+    "//flutter/third_party/tonic",
+    "//third_party/dart/runtime:dart_api",
+    "//third_party/rapidjson",
+  ]
+
+  product_deps = [
+    "//flutter/shell/platform/fuchsia/dart-pkg/zircon:zircon",
+    "//flutter/shell/platform/fuchsia/utils:utils",
+  ]
+}

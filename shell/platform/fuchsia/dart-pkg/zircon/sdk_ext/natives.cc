@@ -2,35 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "natives.h"
-
-#include <zircon/syscalls.h>
-
-#include <stdio.h>
-#include <string.h>
+#include "flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/natives.h"
 
 #include <memory>
-#include <vector>
 
-#include "handle.h"
-#include "handle_waiter.h"
-#include "system.h"
+#include "flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle.h"
+#include "flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle_waiter.h"
+#include "flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/system.h"
+#include "flutter/shell/platform/fuchsia/utils/logging.h"
+#include "flutter/third_party/tonic/dart_class_library.h"
+#include "flutter/third_party/tonic/dart_class_provider.h"
+#include "flutter/third_party/tonic/dart_library_natives.h"
+#include "flutter/third_party/tonic/dart_state.h"
+#include "flutter/third_party/tonic/logging/dart_error.h"
 #include "third_party/dart/runtime/include/dart_api.h"
-#include "third_party/tonic/dart_binding_macros.h"
-#include "third_party/tonic/dart_class_library.h"
-#include "third_party/tonic/dart_class_provider.h"
-#include "third_party/tonic/dart_library_natives.h"
-#include "third_party/tonic/dart_state.h"
-#include "third_party/tonic/logging/dart_invoke.h"
-#include "third_party/tonic/typed_data/typed_list.h"
 
-using tonic::ToDart;
-
-namespace zircon {
-namespace dart {
+namespace zircon::dart {
 namespace {
 
-static tonic::DartLibraryNatives* g_natives;
+tonic::DartLibraryNatives* g_natives;
 
 tonic::DartLibraryNatives* InitNatives() {
   tonic::DartLibraryNatives* natives = new tonic::DartLibraryNatives();
@@ -49,8 +39,8 @@ Dart_NativeFunction NativeLookup(Dart_Handle name,
   if (Dart_IsError(result)) {
     Dart_PropagateError(result);
   }
-  FML_DCHECK(function_name != nullptr);
-  FML_DCHECK(auto_setup_scope != nullptr);
+  FX_DCHECK(function_name != nullptr);
+  FX_DCHECK(auto_setup_scope != nullptr);
   *auto_setup_scope = true;
   if (!g_natives)
     g_natives = InitNatives();
@@ -66,18 +56,17 @@ const uint8_t* NativeSymbol(Dart_NativeFunction native_function) {
 }  // namespace
 
 void Initialize() {
-  Dart_Handle library = Dart_LookupLibrary(ToDart("dart:zircon"));
-  FML_CHECK(!tonic::LogIfError(library));
+  Dart_Handle library = Dart_LookupLibrary(tonic::ToDart("dart:zircon"));
+  FX_CHECK(!tonic::LogIfError(library));
   Dart_Handle result = Dart_SetNativeResolver(
       library, zircon::dart::NativeLookup, zircon::dart::NativeSymbol);
-  FML_CHECK(!tonic::LogIfError(result));
+  FX_CHECK(!tonic::LogIfError(result));
 
   auto dart_state = tonic::DartState::Current();
-  std::unique_ptr<tonic::DartClassProvider> zircon_class_provider(
-      new tonic::DartClassProvider(dart_state, "dart:zircon"));
+  auto zircon_class_provider =
+      std::make_unique<tonic::DartClassProvider>(dart_state, "dart:zircon");
   dart_state->class_library().add_provider("zircon",
                                            std::move(zircon_class_provider));
 }
 
-}  // namespace dart
-}  // namespace zircon
+}  // namespace zircon::dart

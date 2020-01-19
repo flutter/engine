@@ -76,3 +76,55 @@ if (is_ios || is_mac) {
   ]
   flutter_cflags_objcc = flutter_cflags_objc
 }
+
+template("source_set_maybe_product") {
+  assert(defined(invoker.product_deps), "The product_deps must be specified.")
+
+  product_suffix = "_product"
+  srcs = []
+  if (defined(invoker.sources)) {
+    srcs += invoker.sources
+  }
+  pub_cfgs = []
+  if (defined(invoker.public_configs)) {
+    pub_cfgs += invoker.public_configs
+  }
+  priv_cfgs = []
+  if (defined(invoker.configs)) {
+    priv_cfgs += invoker.configs
+  }
+  pub_deps = []
+  pub_deps_product = []
+  if (defined(invoker.public_deps)) {
+    pub_deps += invoker.public_deps
+    pub_deps_product += invoker.public_deps
+  }
+  foreach(product_dep, invoker.product_deps) {
+    pub_deps += [ product_dep ]
+    pub_deps_product += [ product_dep + product_suffix ]
+  }
+  priv_deps = []
+  if (defined(invoker.deps)) {
+    priv_deps += invoker.deps
+  }
+
+  source_set(target_name) {
+    sources = srcs
+
+    public_configs = pub_cfgs
+    configs += priv_cfgs
+
+    public_deps = pub_deps
+    deps = priv_deps
+  }
+
+  source_set(target_name + product_suffix) {
+    sources = srcs
+
+    public_configs = pub_cfgs
+    configs += priv_cfgs
+
+    public_deps = pub_deps_product
+    deps = priv_deps
+  }
+}

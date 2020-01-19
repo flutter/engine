@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 if (is_fuchsia) {
-  import("//build/fuchsia/sdk.gni")
   import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 }
 import("//flutter/testing/testing.gni")
@@ -75,23 +74,6 @@ source_set("flow") {
     "//flutter/fml",
     "//third_party/skia",
   ]
-
-  if (is_fuchsia) {
-    sources += [
-      "layers/child_scene_layer.cc",
-      "layers/child_scene_layer.h",
-      "scene_update_context.cc",
-      "scene_update_context.h",
-      "view_holder.cc",
-      "view_holder.h",
-    ]
-
-    public_deps += [
-      "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
-      "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
-      "$fuchsia_sdk_root/pkg:scenic_cpp",
-    ]
-  }
 }
 
 test_fixtures("flow_fixtures") {

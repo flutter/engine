@@ -12,18 +12,6 @@ if (is_fuchsia) {
   import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 }
 
-config("vulkan_config") {
-  if (is_fuchsia) {
-    include_dirs = [ "$fuchsia_sdk_root/vulkan/include" ]
-  } else {
-    include_dirs = [ "//third_party/vulkan/src" ]
-  }
-
-  if (is_fuchsia) {
-    defines = [ "VK_USE_PLATFORM_FUCHSIA=1" ]
-  }
-}
-
 # Template to generate a dart embedder resource.cc file.
 # Required invoker inputs:
 #   String output (name of output file)
@@ -77,7 +65,7 @@ template("dart_embedder_resources") {
   }
 }
 
-source_set("common") {
+source_set_maybe_product("common") {
   sources = [
     "animator.cc",
     "animator.h",
@@ -87,8 +75,6 @@ source_set("common") {
     "engine.h",
     "isolate_configuration.cc",
     "isolate_configuration.h",
-    "persistent_cache.cc",
-    "persistent_cache.h",
     "pipeline.cc",
     "pipeline.h",
     "platform_view.cc",
@@ -105,8 +91,6 @@ source_set("common") {
     "shell_io_manager.h",
     "skia_event_tracer_impl.cc",
     "skia_event_tracer_impl.h",
-    "surface.cc",
-    "surface.h",
     "switches.cc",
     "switches.h",
     "thread_host.cc",
@@ -122,20 +106,27 @@ source_set("common") {
     "//flutter/common",
     "//flutter/flow",
     "//flutter/fml",
-    "//flutter/lib/ui",
-    "//flutter/runtime",
     "//third_party/dart/runtime:dart_api",
     "//third_party/skia",
   ]
 
   public_deps = [
+    "//flutter/shell/gpu:gpu_surface_common",
     "//flutter/shell/version",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
-    "//third_party/rapidjson",
   ]
 
   public_configs = [ "//flutter:config" ]
+
+  if (is_fuchsia) {
+    deps += [ "$fuchsia_sdk_root/fidl:fuchsia.fonts" ]
+  }
+
+  product_deps = [
+    "//flutter/runtime:runtime",
+    "//flutter/lib/ui:ui",
+  ]
 }
 
 template("shell_host_executable") {

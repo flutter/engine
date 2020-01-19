@@ -2,235 +2,323 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "component.h"
+#include "flutter/shell/platform/fuchsia/flutter/component.h"
 
-#include <dlfcn.h>
-#include <fuchsia/mem/cpp/fidl.h>
-#include <lib/async-loop/cpp/loop.h>
+#include <fcntl.h>
+#include <fuchsia/fonts/cpp/fidl.h>
+#include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/async/cpp/task.h>
 #include <lib/async/default.h>
 #include <lib/fdio/directory.h>
-#include <lib/fdio/namespace.h>
-#include <lib/ui/scenic/cpp/view_token_pair.h>
+#include <lib/fdio/io.h>
+#include <lib/fidl/cpp/interface_handle.h>
+#include <lib/trace/event.h>
 #include <lib/vfs/cpp/composed_service_dir.h>
 #include <lib/vfs/cpp/remote_dir.h>
 #include <lib/vfs/cpp/service.h>
-#include <sys/stat.h>
-#include <zircon/dlfcn.h>
+#include <lib/zx/time.h>
 #include <zircon/status.h>
 #include <zircon/types.h>
-#include <memory>
-#include <regex>
-#include <sstream>
 
-#include "flutter/fml/mapping.h"
-#include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/fml/unique_fd.h"
-#include "flutter/runtime/dart_vm_lifecycle.h"
-#include "flutter/shell/common/switches.h"
-#include "lib/fdio/io.h"
-#include "runtime/dart/utils/files.h"
-#include "runtime/dart/utils/handle_exception.h"
-#include "runtime/dart/utils/mapped_resource.h"
-#include "runtime/dart/utils/tempfs.h"
-#include "runtime/dart/utils/vmo.h"
+#include <utility>
 
-#include "task_observers.h"
-#include "task_runner_adapter.h"
-#include "thread.h"
-
-// TODO(kaushikiska): Use these constants from ::llcpp::fuchsia::io
-// Can read from target object.
-constexpr uint32_t OPEN_RIGHT_READABLE = 1u;
-
-// Connection can map target object executable.
-constexpr uint32_t OPEN_RIGHT_EXECUTABLE = 8u;
+#include "flutter/shell/platform/fuchsia/dart-pkg/fuchsia/sdk_ext/fuchsia.h"
+#include "flutter/shell/platform/fuchsia/utils/files.h"
+// TODO(dworsham)
+// #include
+// "flutter/shell/platform/fuchsia/utils/handle_exception.h"
+#include "flutter/shell/platform/fuchsia/utils/logging.h"
+#include "flutter/shell/platform/fuchsia/utils/mapped_resource.h"
+#include "flutter/shell/platform/fuchsia/utils/tempfs.h"
+#include "flutter/third_party/tonic/converter/dart_converter.h"
+#include "flutter/third_party/tonic/logging/dart_error.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
 namespace flutter_runner {
+namespace {
 
 constexpr char kDataKey[] = "data";
 constexpr char kTmpPath[] = "/tmp";
-constexpr char kServiceRootPath[] = "/svc";
+constexpr char kIcuDataPath[] = "/pkg/data/icudtl.dat";
 
-ActiveApplication Application::Create(
-    TerminationCallback termination_callback,
-    fuchsia::sys::Package package,
-    fuchsia::sys::StartupInfo startup_info,
-    std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
-    fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
-  std::unique_ptr<Thread> thread = std::make_unique<Thread>();
-  std::unique_ptr<Application> application;
+void ConfigureCurrentIsolate(
+    fidl::InterfaceHandle<fuchsia::sys::Environment> environment,
+    fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
+    fdio_ns_t* component_ns,
+    Renderer* renderer) {
+  fuchsia::dart::Initialize(std::move(environment),
+                            std::move(directory_request));
 
-  fml::AutoResetWaitableEvent latch;
-  async::PostTask(thread->dispatcher(), [&]() mutable {
-    application.reset(
-        new Application(std::move(termination_callback), std::move(package),
-                        std::move(startup_info), runner_incoming_services,
-                        std::move(controller)));
-    latch.Signal();
+  // Allow the |Renderer| to register any Dart hooks.
+  renderer->ConfigureCurrentIsolate();
+
+  // Tell dart:zircon about the FDIO namespace configured for this instance.
+  Dart_Handle zircon_lib = Dart_LookupLibrary(tonic::ToDart("dart:zircon"));
+  FX_CHECK(!tonic::LogIfError(zircon_lib));
+
+  Dart_Handle namespace_type =
+      Dart_GetType(zircon_lib, tonic::ToDart("_Namespace"), 0, nullptr);
+  FX_CHECK(!tonic::LogIfError(namespace_type));
+
+  Dart_Handle set_result =
+      Dart_SetField(namespace_type,               //
+                    tonic::ToDart("_namespace"),  //
+                    tonic::ToDart(reinterpret_cast<intptr_t>(component_ns)));
+  FX_CHECK(!tonic::LogIfError(set_result));
+
+  // Grab the dart:io lib.
+  Dart_Handle io_lib = Dart_LookupLibrary(tonic::ToDart("dart:io"));
+  FX_CHECK(!tonic::LogIfError(io_lib));
+
+  // Disable dart:io exit()
+  Dart_Handle embedder_config_type =
+      Dart_GetType(io_lib, tonic::ToDart("_EmbedderConfig"), 0, nullptr);
+  FX_CHECK(!tonic::LogIfError(embedder_config_type));
+
+  Dart_Handle set_result2 = Dart_SetField(
+      embedder_config_type, tonic::ToDart("_mayExit"), Dart_False());
+  FX_CHECK(!tonic::LogIfError(set_result2));
+
+  // Tell dart:io about the FDIO namespace configured for this instance.
+  Dart_Handle namespace_type2 =
+      Dart_GetType(io_lib, tonic::ToDart("_Namespace"), 0, nullptr);
+  FX_CHECK(!tonic::LogIfError(namespace_type2));
+
+  Dart_Handle namespace_args[] = {
+      Dart_NewInteger(reinterpret_cast<intptr_t>(component_ns)),
+  };
+  Dart_Handle invoke_result = Dart_Invoke(
+      namespace_type2, tonic::ToDart("_setupNamespace"), 1, namespace_args);
+  FX_CHECK(!tonic::LogIfError(invoke_result));
+}
+
+// TODO(dworsham)
+// void CreateCompilationTrace(Dart_Isolate isolate) {
+//   Dart_EnterIsolate(isolate);
+
+//   {
+//     Dart_EnterScope();
+//     uint8_t* trace = nullptr;
+//     intptr_t trace_length = 0;
+//     Dart_Handle result = Dart_SaveCompilationTrace(&trace, &trace_length);
+//     tonic::LogIfError(result);
+
+//     for (intptr_t start = 0; start < trace_length;) {
+//       intptr_t end = start;
+//       while ((end < trace_length) && trace[end] != '\n')
+//         end++;
+
+//       std::string line(reinterpret_cast<char*>(&trace[start]), end - start);
+//       FX_LOGF(INFO, FX_LOG_TAG, "compilation-trace: %s", line.c_str());
+
+//       start = end + 1;
+//     }
+
+//     Dart_ExitScope();
+//   }
+
+//   // Re-enter Dart scope to release the compilation trace's memory.
+
+//   {
+//     Dart_EnterScope();
+//     uint8_t* feedback = nullptr;
+//     intptr_t feedback_length = 0;
+//     Dart_Handle result = Dart_SaveTypeFeedback(&feedback, &feedback_length);
+//     tonic::LogIfError(result);
+//     const std::string kTypeFeedbackFile = "/data/dart_type_feedback.bin";
+//     if (fx::WriteFile(kTypeFeedbackFile,
+//                               reinterpret_cast<const char*>(feedback),
+//                               feedback_length)) {
+//       FX_LOGF(INFO, FX_LOG_TAG, "Dart type feedback written to %s",
+//       kTypeFeedbackFile.c_str());
+//     } else {
+//       FX_LOGF(ERROR, FX_LOG_TAG, "Could not write Dart type feedback to %s",
+//       kTypeFeedbackFile.c_str());
+//     }
+//     Dart_ExitScope();
+//   }
+
+//   Dart_ExitIsolate();
+// }
+
+}  // namespace
+
+std::unique_ptr<Component, Component::Deleter> Component::Create(
+    Context component_context) {
+  // Destroy the component on its platform thread, synchronously.
+  Component::Deleter deleter = [](Component* component) {
+    ThreadHost component_threads = std::move(component->threads_);
+
+    // Destroy the component and the thread on the appropriate thread.  There
+    // is no need for a |TaskBarrier| because the |Join| serves as one.
+    async::PostTask(component_threads.platform_thread.dispatcher(),
+                    [component]() { delete component; });
+    component_threads.platform_thread.Join();  // This will post a Quit() task.
+  };
+
+  // Create the component on its new platform thread, synchronously.
+  std::unique_ptr<Component, Component::Deleter> component;
+  ThreadHost component_threads(component_context.debug_label);
+  component_threads.platform_thread.TaskBarrier([&]() {
+    component = std::unique_ptr<Component, Component::Deleter>(
+        new Component(std::move(component_context),
+                      std::move(component_threads)),
+        std::move(deleter));
   });
 
-  latch.Wait();
-  return {.thread = std::move(thread), .application = std::move(application)};
+  return component;
 }
 
-static std::string DebugLabelForURL(const std::string& url) {
-  auto found = url.rfind("/");
-  if (found == std::string::npos) {
-    return url;
-  } else {
-    return {url, found + 1};
-  }
+Component::Component(Context component_context, ThreadHost threads)
+    : threads_(std::move(threads)),
+      controller_binding_(this,
+                          std::move(component_context.controller_request)),
+      component_url_(std::move(component_context.component_url)),
+      debug_label_(std::move(component_context.debug_label)),
+      incoming_services_(std::move(component_context.incoming_services)),
+      renderer_(component_context.renderer_factory_callback(Renderer::Context{
+          .dispatch_table = Renderer::DispatchTable{
+              .window_metrics_callback =
+                  [this](const FlutterWindowMetricsEvent* event) {
+                    auto status =
+                        FlutterEngineSendWindowMetricsEvent(engine_, event);
+                    FX_DCHECK(status == kSuccess);
+                  },
+              .pointer_event_callback =
+                  [this](const FlutterPointerEvent* events,
+                         size_t events_count) {
+                    auto status = FlutterEngineSendPointerEvent(engine_, events,
+                                                                events_count);
+                    FX_DCHECK(status == kSuccess);
+                  },
+              .platform_message_callback =
+                  [this](const FlutterPlatformMessage* message) {
+                    auto status =
+                        FlutterEngineSendPlatformMessage(engine_, message);
+                    FX_DCHECK(status == kSuccess);
+                  },
+              .platform_message_response_callback =
+                  [this](const FlutterPlatformMessageResponseHandle* response) {
+                    auto status = FlutterEngineSendPlatformMessageResponse(
+                        engine_, response, nullptr, 0);
+                    FX_DCHECK(status == kSuccess);
+                  },
+              .update_semantics_enabled_callback =
+                  [this](bool enabled) {
+                    auto status =
+                        FlutterEngineUpdateSemanticsEnabled(engine_, enabled);
+                    FX_DCHECK(status == kSuccess);
+                  },
+              .update_accessibility_features_callback =
+                  [this](FlutterAccessibilityFeature features) {
+                    auto status = FlutterEngineUpdateAccessibilityFeatures(
+                        engine_, features);
+                    FX_DCHECK(status == kSuccess);
+                  },
+              .semantics_action_callback =
+                  [this](uint64_t id,
+                         FlutterSemanticsAction action,
+                         const uint8_t* data,
+                         size_t data_length) {
+                    auto status = FlutterEngineDispatchSemanticsAction(
+                        engine_, id, action, data, data_length);
+                    FX_DCHECK(status == kSuccess);
+                  },
+              .get_current_time_callback = FlutterEngineGetCurrentTime,
+              .vsync_callback =
+                  [this](intptr_t baton,
+                         uint64_t previous_vsync,
+                         uint64_t next_vsync) {
+                    auto status = FlutterEngineOnVsync(
+                        engine_, baton, previous_vsync, next_vsync);
+                    FX_DCHECK(status == kSuccess);
+                  },
+              .error_callback = std::bind(&Component::Kill, this),
+          },
+          .debug_label = debug_label_,
+          .incoming_services = incoming_services_,
+          .input_dispatcher = threads_.platform_thread.dispatcher(),
+          .raster_dispatcher = threads_.gpu_thread.dispatcher(),
+      })),
+      termination_callback_(std::move(component_context.termination_callback)) {
+  flutter_directory_.set_error_handler([this](zx_status_t status) {
+    FX_LOG(ERROR) << "Interface error for fuchsia::io::Directory: "
+                  << zx_status_get_string(status);
+    Kill();
+  });
+  controller_binding_.set_error_handler([this](zx_status_t status) {
+    FX_LOG(ERROR)
+        << "Interface error (binding) for fuchsia::sys::ComponentController: "
+        << zx_status_get_string(status);
+    Kill();
+  });
+
+  // Create a new namespace to serve as / for this component and setup this
+  // component's /tmp to map to the process-local memfs.
+  zx_status_t create_status = fdio_ns_create(&component_namespace_);
+  FX_DCHECK(create_status == ZX_OK);
+  fx::RunnerTemp::SetupComponent(component_namespace_);
+
+  SetupOutgoingDirectory();
+  ParseStartupInfo(std::move(component_context.startup_info));
+  LaunchFlutter();
 }
 
-static std::unique_ptr<fml::FileMapping> MakeFileMapping(const char* path,
-                                                         bool executable) {
-  uint32_t flags = OPEN_RIGHT_READABLE;
-  if (executable) {
-    flags |= OPEN_RIGHT_EXECUTABLE;
+Component::~Component() {
+  FX_DCHECK(engine_ == nullptr);  // Engine should not be active.
+
+  if (assets_directory_ != -1) {
+    close(assets_directory_);
   }
 
-  int fd = 0;
-  // The returned file descriptor is compatible with standard posix operations
-  // such as close, mmap, etc. We only need to treat open/open_at specially.
-  zx_status_t status = fdio_open_fd(path, flags, &fd);
-
-  if (status != ZX_OK) {
-    return nullptr;
-  }
-
-  using Protection = fml::FileMapping::Protection;
-
-  std::initializer_list<Protection> protection_execute = {Protection::kRead,
-                                                          Protection::kExecute};
-  std::initializer_list<Protection> protection_read = {Protection::kRead};
-  auto mapping = std::make_unique<fml::FileMapping>(
-      fml::UniqueFD{fd}, executable ? protection_execute : protection_read);
-
-  if (!mapping->IsValid()) {
-    return nullptr;
-  }
-
-  return mapping;
+  zx_status_t status = fdio_ns_destroy(component_namespace_);
+  FX_DCHECK(status == ZX_OK);
 }
 
-// Defaults to readonly. If executable is `true`, we treat it as `read + exec`.
-static flutter::MappingCallback MakeDataFileMapping(const char* absolute_path,
-                                                    bool executable = false) {
-  return [absolute_path, executable = executable](void) {
-    return MakeFileMapping(absolute_path, executable);
-  };
+#if !defined(DART_PRODUCT)
+void Component::WriteProfileToTrace() const {
+  // Dump the trace on the platform thread, synchronously.
+  threads_.platform_thread.TaskBarrier([]() {
+    // TODO(dworsham)
+    // Dart_Port main_port = shell_->GetEngine()->GetUIIsolateMainPort();
+    // char* error = NULL;
+    // bool success = Dart_WriteProfileToTimeline(main_port, &error);
+    // if (!success) {
+    //   FX_LOGF(ERROR, FX_LOG_TAG, "Failed to write Dart profile for %s to
+    //   trace: %s", component_url_.c_str(), error); free(error);
+    // }
+  });
 }
 
-Application::Application(
-    TerminationCallback termination_callback,
-    fuchsia::sys::Package package,
-    fuchsia::sys::StartupInfo startup_info,
-    std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
-    fidl::InterfaceRequest<fuchsia::sys::ComponentController>
-        application_controller_request)
-    : termination_callback_(std::move(termination_callback)),
-      debug_label_(DebugLabelForURL(startup_info.launch_info.url)),
-      application_controller_(this),
-      outgoing_dir_(new vfs::PseudoDir()),
-      runner_incoming_services_(runner_incoming_services),
-      weak_factory_(this) {
-  application_controller_.set_error_handler(
-      [this](zx_status_t status) { Kill(); });
+#endif  // !defined(DART_PRODUCT)
 
-  FML_DCHECK(fdio_ns_.is_valid());
-  // LaunchInfo::url non-optional.
-  auto& launch_info = startup_info.launch_info;
+void Component::Kill() {
+  TerminateFlutter();
 
-  // LaunchInfo::arguments optional.
-  if (auto& arguments = launch_info.arguments) {
-    settings_.dart_entrypoint_args = arguments.value();
-  }
+  controller_binding_.events().OnTerminated(
+      last_return_code_.second, fuchsia::sys::TerminationReason::EXITED);
 
-  // Determine /pkg/data directory from StartupInfo.
-  std::string data_path;
-  for (size_t i = 0; i < startup_info.program_metadata->size(); ++i) {
-    auto pg = startup_info.program_metadata->at(i);
-    if (pg.key.compare(kDataKey) == 0) {
-      data_path = "pkg/" + pg.value;
-    }
-  }
-  if (data_path.empty()) {
-    FML_DLOG(ERROR) << "Could not find a /pkg/data directory for "
-                    << package.resolved_url;
-    return;
-  }
+  // WARNING: May collect `this`.
+  termination_callback_(this);
+}
 
-  // Setup /tmp to be mapped to the process-local memfs.
-  dart_utils::RunnerTemp::SetupComponent(fdio_ns_.get());
+void Component::Detach() {
+  controller_binding_.set_error_handler(nullptr);
+}
 
-  // LaunchInfo::flat_namespace optional.
-  for (size_t i = 0; i < startup_info.flat_namespace.paths.size(); ++i) {
-    const auto& path = startup_info.flat_namespace.paths.at(i);
-    if (path == kTmpPath) {
-      continue;
-    }
-
-    zx::channel dir;
-    if (path == kServiceRootPath) {
-      svc_ = std::make_unique<sys::ServiceDirectory>(
-          std::move(startup_info.flat_namespace.directories.at(i)));
-      dir = svc_->CloneChannel().TakeChannel();
-    } else {
-      dir = std::move(startup_info.flat_namespace.directories.at(i));
-    }
-
-    zx_handle_t dir_handle = dir.release();
-    if (fdio_ns_bind(fdio_ns_.get(), path.data(), dir_handle) != ZX_OK) {
-      FML_DLOG(ERROR) << "Could not bind path to namespace: " << path;
-      zx_handle_close(dir_handle);
-    }
-  }
-
-  application_directory_.reset(fdio_ns_opendir(fdio_ns_.get()));
-  FML_DCHECK(application_directory_.is_valid());
-
-  application_assets_directory_.reset(openat(
-      application_directory_.get(), data_path.c_str(), O_RDONLY | O_DIRECTORY));
-
-  // TODO: LaunchInfo::out.
-
-  // TODO: LaunchInfo::err.
-
-  // LaunchInfo::service_request optional.
-  if (launch_info.directory_request) {
-    outgoing_dir_->Serve(fuchsia::io::OPEN_RIGHT_READABLE |
-                             fuchsia::io::OPEN_RIGHT_WRITABLE |
-                             fuchsia::io::OPEN_FLAG_DIRECTORY,
-                         std::move(launch_info.directory_request));
-  }
-
-  directory_request_ = directory_ptr_.NewRequest();
-
-  fidl::InterfaceHandle<fuchsia::io::Directory> flutter_public_dir;
+void Component::SetupOutgoingDirectory() {
+  // Check if client is servicing the component directory before adding debug
+  // directories to the outgoing directory.
   // TODO(anmittal): when fixing enumeration using new c++ vfs, make sure that
   // flutter_public_dir is only accessed once we receive OnOpen Event.
-  // That will prevent FL-175 for public directory
-  auto request = flutter_public_dir.NewRequest().TakeChannel();
-  fdio_service_connect_at(directory_ptr_.channel().get(), "svc",
-                          request.release());
-
-  auto composed_service_dir = std::make_unique<vfs::ComposedServiceDir>();
-  composed_service_dir->set_fallback(std::move(flutter_public_dir));
-
-  // Clone and check if client is servicing the directory.
-  directory_ptr_->Clone(fuchsia::io::OPEN_FLAG_DESCRIBE |
-                            fuchsia::io::OPEN_RIGHT_READABLE |
-                            fuchsia::io::OPEN_RIGHT_WRITABLE,
-                        cloned_directory_ptr_.NewRequest());
-
-  cloned_directory_ptr_.events().OnOpen =
+  // That will prevent FL-175 for public directory.
+  flutter_directory_.events().OnOpen =
       [this](zx_status_t status, std::unique_ptr<fuchsia::io::NodeInfo> info) {
-        cloned_directory_ptr_.Unbind();
+        // component_directory.events().OnOpen = nullptr;  // TODO(dworsham)
         if (status != ZX_OK) {
-          FML_LOG(ERROR) << "could not bind out directory for flutter app("
-                         << debug_label_
-                         << "): " << zx_status_get_string(status);
+          FX_LOG(ERROR) << "Could not bind out directory for flutter app ("
+                        << debug_label_
+                        << "): " << zx_status_get_string(status);
           return;
         }
         const char* other_dirs[] = {"debug", "ctrl", "diagnostics"};
@@ -238,387 +326,492 @@ Application::Application(
         for (auto& dir_str : other_dirs) {
           fidl::InterfaceHandle<fuchsia::io::Directory> dir;
           auto request = dir.NewRequest().TakeChannel();
-          auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
-                                                dir_str, request.release());
+          auto status = fdio_service_connect_at(
+              flutter_directory_.channel().get(), dir_str, request.release());
           if (status == ZX_OK) {
-            outgoing_dir_->AddEntry(
+            outgoing_directory_.AddEntry(
                 dir_str, std::make_unique<vfs::RemoteDir>(dir.TakeChannel()));
           } else {
-            FML_LOG(ERROR) << "could not add out directory entry(" << dir_str
-                           << ") for flutter app(" << debug_label_
-                           << "): " << zx_status_get_string(status);
+            FX_LOG(ERROR) << "Could not add out directory entry '" << dir_str
+                          << "' for flutter app (" << debug_label_
+                          << "): " << zx_status_get_string(status);
           }
         }
       };
 
-  cloned_directory_ptr_.set_error_handler(
-      [this](zx_status_t status) { cloned_directory_ptr_.Unbind(); });
+  // Create the service directory that the Flutter Engine will use to expose its
+  // outgoing services.
+  fidl::InterfaceHandle<fuchsia::io::Directory> flutter_service_dir;
+  fdio_service_connect_at(
+      flutter_directory_.channel().get(), "svc",
+      flutter_service_dir.NewRequest().TakeChannel().release());
 
-  // TODO: LaunchInfo::additional_services optional.
+  // Overlay the |Renderer|'s outgoing services on top of the Flutter Engine's
+  // services.
+  auto composed_service_dir = std::make_unique<vfs::ComposedServiceDir>();
+  composed_service_dir->set_fallback(std::move(flutter_service_dir));
+  renderer_->BindServices(
+      [&composed_service_dir](const std::string& name,
+                              std::unique_ptr<vfs::Service> service) {
+        composed_service_dir->AddService(name, std::move(service));
+      });
 
-  // All launch arguments have been read. Perform service binding and
-  // final settings configuration. The next call will be to create a view
-  // for this application.
-  composed_service_dir->AddService(
-      fuchsia::ui::app::ViewProvider::Name_,
-      std::make_unique<vfs::Service>(
-          [this](zx::channel channel, async_dispatcher_t* dispatcher) {
-            shells_bindings_.AddBinding(
-                this, fidl::InterfaceRequest<fuchsia::ui::app::ViewProvider>(
-                          std::move(channel)));
-          }));
+  // Provide the virtual directory as the |Component|'s outgoing services.
+  outgoing_directory_.AddEntry("svc", std::move(composed_service_dir));
+}
 
-  outgoing_dir_->AddEntry("svc", std::move(composed_service_dir));
+void Component::ParseStartupInfo(fuchsia::sys::StartupInfo startup_info) {
+  auto& launch_info = startup_info.launch_info;
 
-  // Setup the application controller binding.
-  if (application_controller_request) {
-    application_controller_.Bind(std::move(application_controller_request));
+  // StartupInfo: program_metadata non-optional.
+  for (size_t i = 0; i < startup_info.program_metadata->size(); ++i) {
+    auto pg = startup_info.program_metadata->at(i);
+    if (pg.key.compare(kDataKey) == 0) {
+      assets_path_ = "pkg/" + pg.value;
+    }
+  }
+  if (assets_path_.empty()) {
+    FX_LOG(ERROR) << "Could not find a package data directory for "
+                  << component_url_;
+    return;
   }
 
-  // Compare flutter_jit_runner in BUILD.gn.
-  settings_.vm_snapshot_data =
-      MakeDataFileMapping("/pkg/data/vm_snapshot_data.bin");
-  settings_.vm_snapshot_instr =
-      MakeDataFileMapping("/pkg/data/vm_snapshot_instructions.bin", true);
+  // StartupInfo::flat_namespace optional.
+  for (size_t i = 0; i < startup_info.flat_namespace.paths.size(); ++i) {
+    const auto& path = startup_info.flat_namespace.paths.at(i);
+    if (path == kTmpPath) {
+      continue;
+    }
 
-  settings_.isolate_snapshot_data =
-      MakeDataFileMapping("/pkg/data/isolate_core_snapshot_data.bin");
-  settings_.isolate_snapshot_instr = MakeDataFileMapping(
-      "/pkg/data/isolate_core_snapshot_instructions.bin", true);
-
-  {
-    // Check if we can use the snapshot with the framework already loaded.
-    std::string runner_framework;
-    std::string app_framework;
-    if (dart_utils::ReadFileToString("pkg/data/runner.frameworkversion",
-                                     &runner_framework) &&
-        dart_utils::ReadFileToStringAt(application_assets_directory_.get(),
-                                       "app.frameworkversion",
-                                       &app_framework) &&
-        (runner_framework.compare(app_framework) == 0)) {
-      settings_.vm_snapshot_data =
-          MakeDataFileMapping("/pkg/data/framework_vm_snapshot_data.bin");
-      settings_.vm_snapshot_instr =
-          MakeDataFileMapping("/pkg/data/vm_snapshot_instructions.bin", true);
-
-      settings_.isolate_snapshot_data = MakeDataFileMapping(
-          "/pkg/data/framework_isolate_core_snapshot_data.bin");
-      settings_.isolate_snapshot_instr = MakeDataFileMapping(
-          "/pkg/data/isolate_core_snapshot_instructions.bin", true);
-
-      FML_LOG(INFO) << "Using snapshot with framework for "
-                    << package.resolved_url;
-    } else {
-      FML_LOG(INFO) << "Using snapshot without framework for "
-                    << package.resolved_url;
+    zx_handle_t dir_handle =
+        startup_info.flat_namespace.directories.at(i).release();
+    if (fdio_ns_bind(component_namespace_, path.data(), dir_handle) != ZX_OK) {
+      FX_DLOG(ERROR) << "Could not bind path to namespace: " << path;
+      zx_handle_close(dir_handle);
     }
   }
 
-#if defined(DART_PRODUCT)
-  settings_.enable_observatory = false;
-#else
-  settings_.enable_observatory = true;
+  // LaunchInfo::arguments optional.
+  if (launch_info.arguments) {
+    for (auto& argument : launch_info.arguments.value()) {
+      dart_entrypoint_args_.push_back(argument);
+    }
+  }
 
-  // TODO(cbracken): pass this in as a param to allow 0.0.0.0, ::1, etc.
-  settings_.observatory_host = "127.0.0.1";
-#endif
+  // TODO: LaunchInfo::out.
 
-  // Controls whether category "skia" trace events are enabled.
-  settings_.trace_skia = true;
+  // TODO: LaunchInfo::err.
 
-  settings_.icu_data_path = "";
+  // LaunchInfo::directory_request optional.
+  if (launch_info.directory_request) {
+    outgoing_directory_.Serve(fuchsia::io::OPEN_RIGHT_READABLE |
+                                  fuchsia::io::OPEN_RIGHT_WRITABLE |
+                                  fuchsia::io::OPEN_FLAG_DIRECTORY,
+                              std::move(launch_info.directory_request));
+  }
 
-  settings_.assets_dir = application_assets_directory_.get();
+  // TODO: LaunchInfo::additional_services optional.
 
-  // Compare flutter_jit_app in flutter_app.gni.
-  settings_.application_kernel_list_asset = "app.dilplist";
+  // Open the assets directory in order to load AOT or JIT snapshots.
+  {
+    int component_directory = fdio_ns_opendir(component_namespace_);
+    if (component_directory != -1) {
+      assets_directory_ = openat(component_directory, assets_path_.c_str(),
+                                 O_RDONLY | O_DIRECTORY);
+      FX_DCHECK(assets_directory_ != -1)
+          << "Failed to open component assets directory.";
+    } else {
+      FX_DCHECK(false) << "Failed to open root component directory.";
+    }
+    close(component_directory);
+  }
 
-  settings_.log_tag = debug_label_ + std::string{"(flutter)"};
+  // Load the snapshots.
+  if (FlutterEngineRunsAOTCompiledDartCode() &&
+      aot_snapshot_.Load(assets_directory_, "app_aot_snapshot.so")) {
+    const uint8_t* vm_data = aot_snapshot_.VmData();
+    const uint8_t* vm_instructions = aot_snapshot_.VmInstrs();
+    const uint8_t* isolate_data = aot_snapshot_.IsolateData();
+    const uint8_t* isolate_instructions = aot_snapshot_.IsolateInstrs();
+    if (vm_data == nullptr || vm_instructions == nullptr ||
+        isolate_data == nullptr || isolate_instructions == nullptr) {
+      FX_LOG(FATAL) << "ELF snapshot missing AOT symbols.";
+    }
+    vm_snapshot_data_mapping_ = fx::MappedResource(vm_data, 0);
+    vm_snapshot_instructions_mapping_ = fx::MappedResource(vm_instructions, 0);
+    isolate_snapshot_data_mapping_ = fx::MappedResource(isolate_data, 0);
+    isolate_snapshot_instructions_mapping_ =
+        fx::MappedResource(isolate_instructions, 0);
+  } else {
+    // Check if we can use the snapshot with the framework already loaded.
+    std::string runner_framework;
+    std::string app_framework;
+    std::string framework_prefix = "";
+    if (fx::ReadFileToString("/pkg/data/runner.frameworkversion",
+                             &runner_framework) &&
+        fx::ReadFileToStringAt(assets_directory_, "app.frameworkversion",
+                               &app_framework) &&
+        (runner_framework.compare(app_framework) == 0)) {
+      FX_LOG(INFO) << "Using snapshot with framework for " << component_url_;
 
+      framework_prefix = "framework_";
+    } else {
+      FX_LOG(INFO) << "Using snapshot without framework for " << component_url_;
+    }
+    vm_snapshot_data_mapping_ = fx::MappedResource::MakeFileMapping(
+        nullptr, "/pkg/data/" + framework_prefix + "vm_snapshot_data.bin");
+    isolate_snapshot_data_mapping_ = fx::MappedResource::MakeFileMapping(
+        nullptr,
+        "/pkg/data/" + framework_prefix + "isolate_core_snapshot_data.bin");
+    vm_snapshot_instructions_mapping_ = fx::MappedResource::MakeFileMapping(
+        nullptr, "/pkg/data/vm_snapshot_instructions.bin", true);
+    isolate_snapshot_instructions_mapping_ =
+        fx::MappedResource::MakeFileMapping(
+            nullptr, "/pkg/data/isolate_core_snapshot_instructions.bin", true);
+  }
+
+  if (!FlutterEngineRunsAOTCompiledDartCode()) {
+    // The interpreter is enabled unconditionally in JIT mode. If an app is
+    // built for debugging (that is, with no bytecode), the VM will fall back on
+    // ASTs.
+    dart_flags_.push_back("--enable_interpreter");
+  }
+
+  // Scale back CPU profiler sampling period on ARM64 to avoid overloading
+  // the tracing engine.
+#if defined(__aarch64__)
+  dart_flags_.push_back("--profile_period=10000");
+#endif  // defined(__aarch64__)
+
+  // TODO(FL-117): Re-enable causal async stack traces when this issue is
+  // addressed.
+  dart_flags_.push_back("--no_causal_async_stacks");
+
+  // Disable code collection as it interferes with JIT code warmup
+  // by decreasing usage counters and flushing code which is still useful.
+  dart_flags_.push_back("--no-collect_code");
+
+  // Don't collect CPU samples from Dart VM C++ code.
+  dart_flags_.push_back("--no_profile_vm");
+}
+
+void Component::LaunchFlutter() {
+  FlutterTaskRunnerDescription embedder_platform_task_runner = {
+      .struct_size = sizeof(FlutterTaskRunnerDescription),
+      .user_data = this,
+      .runs_task_on_current_thread_callback = [](void* user_data) -> bool {
+        Component* component = static_cast<Component*>(user_data);
+        FX_DCHECK(component);
+
+        return component->threads_.platform_thread.dispatcher() ==
+               async_get_default_dispatcher();
+      },
+      .post_task_callback =
+          [](FlutterTask task, uint64_t target_time, void* user_data) {
+            Component* component = static_cast<Component*>(user_data);
+            FX_DCHECK(component);
+
+            async::PostTaskForTime(
+                component->threads_.platform_thread.dispatcher(),
+                [component, task = std::move(task)]() {
+                  FlutterEngineRunTask(component->engine_, &task);
+                },
+                zx::time(target_time));  // TODO(dworsham): Sign mismatch here
+                                         // seems dangerous
+          },
+      .identifier = 0,
+  };
+  FlutterTaskRunnerDescription embedder_render_task_runner = {
+      .struct_size = sizeof(FlutterTaskRunnerDescription),
+      .user_data = this,
+      .runs_task_on_current_thread_callback = [](void* user_data) -> bool {
+        Component* component = static_cast<Component*>(user_data);
+        FX_DCHECK(component);
+
+        return component->threads_.gpu_thread.dispatcher() ==
+               async_get_default_dispatcher();
+      },
+      .post_task_callback =
+          [](FlutterTask task, uint64_t target_time, void* user_data) {
+            Component* component = static_cast<Component*>(user_data);
+            FX_DCHECK(component);
+
+            async::PostTaskForTime(
+                component->threads_.gpu_thread.dispatcher(),
+                [component, task = std::move(task)]() {
+                  FlutterEngineRunTask(component->engine_, &task);
+                },
+                zx::time(target_time));  // TODO(dworsham): Sign mismatch here
+                                         // seems dangerous
+          },
+      .identifier = 1,
+  };
+
+  FlutterCustomTaskRunners embedder_custom_task_runners = {
+      .struct_size = sizeof(FlutterCustomTaskRunners),
+      .platform_task_runner = &embedder_platform_task_runner,
+      .render_task_runner = &embedder_render_task_runner,
+      .ui_task_runner = nullptr,  // TODO(dworsham)
+      .io_task_runner = nullptr,  // TODO(dworsham)
+  };
+
+  FlutterCompositor embedder_compositor_callbacks = {
+      .struct_size = sizeof(FlutterCompositor),
+      .user_data = renderer_.get(),
+      .create_backing_store_callback =
+          [](const FlutterBackingStoreConfig* layer_config,
+             FlutterBackingStore* backing_store_out, void* user_data) {
+            TRACE_DURATION("flutter", "FlutterCompositorCreateBackingStore");
+            Renderer* renderer = static_cast<Renderer*>(user_data);
+            FX_DCHECK(renderer);
+
+            return renderer->CreateBackingStore(layer_config,
+                                                backing_store_out);
+          },
+      .collect_backing_store_callback =
+          [](const FlutterBackingStore* backing_store, void* user_data) {
+            TRACE_DURATION("flutter", "FlutterCompositorCollectBackingStore");
+            Renderer* renderer = static_cast<Renderer*>(user_data);
+            FX_DCHECK(renderer);
+
+            return renderer->CollectBackingStore(backing_store);
+          },
+      .present_layers_callback =
+          [](const FlutterLayer** layers, size_t layer_count, void* user_data) {
+            TRACE_DURATION("flutter", "FlutterCompositorPresentLayers");
+            Renderer* renderer = static_cast<Renderer*>(user_data);
+            FX_DCHECK(renderer);
+
+            return renderer->PresentLayers(layers, layer_count);
+          },
+      .backing_store_available_callback =
+          [](const FlutterBackingStore* backing_store, void* user_data) {
+            TRACE_DURATION("flutter",
+                           "FlutterCompositorIsBackingStoreAvailable");
+            Renderer* renderer = static_cast<Renderer*>(user_data);
+            FX_DCHECK(renderer);
+
+            return renderer->IsBackingStoreAvailable(backing_store);
+          }};
+
+  FlutterProjectArgs embedder_args;
+  std::string log_tag = debug_label_ + "(flutter)";
+  std::vector<const char*> dart_flags_holder(dart_flags_.size());
+  std::vector<const char*> dart_entrypoint_args_holder(
+      dart_entrypoint_args_.size());
+  embedder_args.struct_size = sizeof(FlutterProjectArgs);
+  embedder_args.assets_path = assets_path_.c_str();
+  embedder_args.assets_dir = assets_directory_;
+  embedder_args.main_path__unused__ = nullptr;
+  embedder_args.packages_path__unused__ = nullptr;
+  embedder_args.icu_data_path = kIcuDataPath;
+  embedder_args.command_line_argc = 0;
+  embedder_args.command_line_argv = nullptr;
+  embedder_args.platform_message_callback =
+      [](const FlutterPlatformMessage* message, void* user_data) {
+        Component* component = static_cast<Component*>(user_data);
+        FX_DCHECK(component);
+
+        component->renderer_->PlatformMessageResponse(message);
+      };
+  embedder_args.application_kernel_list_asset =
+      "app.dilplist";  // TODO(dworsham)
+  embedder_args.vm_snapshot_data = vm_snapshot_data_mapping_.address();
+  embedder_args.vm_snapshot_data_size = vm_snapshot_data_mapping_.size();
+  embedder_args.vm_snapshot_instructions =
+      vm_snapshot_instructions_mapping_.address();
+  embedder_args.vm_snapshot_instructions_size =
+      vm_snapshot_instructions_mapping_.size();
+  embedder_args.isolate_snapshot_data =
+      isolate_snapshot_data_mapping_.address();
+  embedder_args.isolate_snapshot_data_size =
+      isolate_snapshot_data_mapping_.size();
+  embedder_args.isolate_snapshot_instructions =
+      isolate_snapshot_instructions_mapping_.address();
+  embedder_args.isolate_snapshot_instructions_size =
+      isolate_snapshot_instructions_mapping_.size();
+  embedder_args.dart_flags_count = 0;
+  for (auto& flag : dart_flags_) {
+    dart_flags_holder[embedder_args.dart_flags_count++] = flag.c_str();
+  }
+  embedder_args.dart_entrypoint_args = dart_entrypoint_args_holder.data();
+  embedder_args.dart_entrypoint_args_count = 0;
+  for (auto& argument : dart_entrypoint_args_) {
+    dart_entrypoint_args_holder[embedder_args.dart_entrypoint_args_count++] =
+        argument.c_str();
+  }
+  embedder_args.dart_entrypoint_args = dart_entrypoint_args_holder.data();
+  embedder_args.trace_skia = true;  // This controls whether category "skia"
+                                    // trace events are enabled.
   // No asserts in debug or release product.
   // No asserts in release with flutter_profile=true (non-product)
   // Yes asserts in non-product debug.
 #if !defined(DART_PRODUCT) && (!defined(FLUTTER_PROFILE) || !defined(NDEBUG))
   // Debug mode
-  settings_.disable_dart_asserts = false;
+  embedder_args.disable_dart_asserts = false;
 #else
   // Release mode
-  settings_.disable_dart_asserts = true;
+  embedder_args.disable_dart_asserts = true;
 #endif
+  embedder_args.advisory_script_uri = debug_label_.c_str();
+  embedder_args.advisory_script_entrypoint = debug_label_.c_str();
+#if defined(DART_PRODUCT)
+  embedder_args.enable_observatory = false;
+#else
+  embedder_args.enable_observatory = true;
 
-  settings_.task_observer_add =
-      std::bind(&CurrentMessageLoopAddAfterTaskObserver, std::placeholders::_1,
-                std::placeholders::_2);
+  // TODO(cbracken): pass this in as a param to allow 0.0.0.0, ::1, etc.
+  embedder_args.observatory_host = "127.0.0.1";
+  embedder_args.observatory_port = 0;
+#endif
+  embedder_args.root_isolate_create_callback = [](void* user_data) {
+    Component* component = static_cast<Component*>(user_data);
+    FX_DCHECK(component);
 
-  settings_.task_observer_remove = std::bind(
-      &CurrentMessageLoopRemoveAfterTaskObserver, std::placeholders::_1);
+    FX_DLOG(INFO) << "Main isolate for engine '" << component->debug_label_
+                  << "' was started.";
+    fidl::InterfaceHandle<fuchsia::sys::Environment> environment;
+    // TODO(dworsham): This was component_incoming_services_.  Is that OK?
+    // The component gets launched in the runner's environment so this should
+    // be equivalent...except authors of Dart components no longer have to
+    // include fuchsia.sys.Environment in their cmx for....reasons.
+    component->incoming_services_->Connect(environment.NewRequest());
+    ConfigureCurrentIsolate(
+        std::move(environment), component->flutter_directory_.NewRequest(),
+        component->component_namespace_, component->renderer_.get());
+    // TODO(dworsham)
+    // const intptr_t kCompilationTraceDelayInSeconds = 0;
+    // if (kCompilationTraceDelayInSeconds != 0) {
+    //   Dart_Isolate isolate = Dart_CurrentIsolate();
+    //   FX_CHECK(isolate);
+    //   shell_->GetTaskRunners().GetUITaskRunner()->PostDelayedTask(
+    //       [engine = shell_->GetEngine(), isolate]() {
+    //         if (!engine) {
+    //           return;
+    //         }
+    //         CreateCompilationTrace(isolate);
+    //       },
+    //       kCompilationTraceDelayInSeconds * 1,000,000,000);
+    // }
+  };
+  embedder_args.root_isolate_shutdown_callback = [](void* user_data) {
+    Component* component = static_cast<Component*>(user_data);
+    FX_DCHECK(component);
 
-  // TODO(FL-117): Re-enable causal async stack traces when this issue is
-  // addressed.
-  settings_.dart_flags = {"--no_causal_async_stacks"};
+    FX_DLOG(INFO) << "Main isolate for engine '" << component->debug_label_
+                  << "' shutting down.";
 
-  // Disable code collection as it interferes with JIT code warmup
-  // by decreasing usage counters and flushing code which is still useful.
-  settings_.dart_flags.push_back("--no-collect_code");
+    // Will collect the component.
+    component->Kill();
+  };
+  embedder_args.update_semantics_node_callback =
+      [](const FlutterSemanticsNode* update, void* user_data) {
+        Component* component = static_cast<Component*>(user_data);
+        FX_DCHECK(component);
 
-  if (!flutter::DartVM::IsRunningPrecompiledCode()) {
-    // The interpreter is enabled unconditionally in JIT mode. If an app is
-    // built for debugging (that is, with no bytecode), the VM will fall back on
-    // ASTs.
-    settings_.dart_flags.push_back("--enable_interpreter");
-  }
+        component->renderer_->UpdateSemanticsNode(update);
+      };
+  embedder_args.update_semantics_custom_action_callback =
+      [](const FlutterSemanticsCustomAction* action, void* user_data) {
+        Component* component = static_cast<Component*>(user_data);
+        FX_DCHECK(component);
 
-  // Don't collect CPU samples from Dart VM C++ code.
-  settings_.dart_flags.push_back("--no_profile_vm");
+        component->renderer_->UpdateSemanticsCustomAction(action);
+      };
+  embedder_args.persistent_cache_path = nullptr;
+  embedder_args.is_persistent_cache_read_only = true;
+  embedder_args.vsync_callback = [](void* user_data, intptr_t baton) {
+    Component* component = static_cast<Component*>(user_data);
+    FX_DCHECK(component);
 
-  // Scale back CPU profiler sampling period on ARM64 to avoid overloading
-  // the tracing engine.
-#if defined(__aarch64__)
-  settings_.dart_flags.push_back("--profile_period=10000");
-#endif  // defined(__aarch64__)
+    component->renderer_->AwaitVsync(baton);
+  };
+  embedder_args.custom_dart_entrypoint = nullptr;
+  embedder_args.custom_task_runners = &embedder_custom_task_runners;
+  embedder_args.shutdown_dart_vm_when_done = false;
+  embedder_args.unhandled_exception_callback =
+      [](void* user_data, const char* error, const char* stack_trace) -> bool {
+    Component* component = static_cast<Component*>(user_data);
+    FX_DCHECK(component);
 
-  auto weak_application = weak_factory_.GetWeakPtr();
-  auto platform_task_runner =
-      CreateFMLTaskRunner(async_get_default_dispatcher());
-  const std::string component_url = package.resolved_url;
-  settings_.unhandled_exception_callback = [weak_application,
-                                            platform_task_runner,
-                                            runner_incoming_services,
-                                            component_url](
-                                               const std::string& error,
-                                               const std::string& stack_trace) {
-    if (weak_application) {
-      // TODO(cbracken): unsafe. The above check and the PostTask below are
-      // happening on the UI thread. If the Application dtor and thread
-      // termination happen (on the platform thread) between the previous
-      // line and the next line, a crash will occur since we'll be posting
-      // to a dead thread. See Runner::OnApplicationTerminate() in
-      // runner.cc.
-      platform_task_runner->PostTask([weak_application,
-                                      runner_incoming_services, component_url,
-                                      error, stack_trace]() {
-        if (weak_application) {
-          dart_utils::HandleException(runner_incoming_services, component_url,
-                                      error, stack_trace);
-        } else {
-          FML_LOG(WARNING)
-              << "Exception was thrown which was not caught in Flutter app: "
-              << error;
-        }
-      });
-    } else {
-      FML_LOG(WARNING)
-          << "Exception was thrown which was not caught in Flutter app: "
-          << error;
-    }
+    FX_LOG(ERROR) << "UNHANDLED EXCEPTION: " << error << " " << std::endl
+                  << stack_trace;
+    // TODO(dworsham)
+    // Also not thread-safe :(
+    // async::PostTask(component->platform_thread_.dispatcher(),
+    //     [embedder, error, stack_trace]() {
+    //       fx::HandleException(embedder->runner_incoming_services_,
+    //       embedder->component_url_, error, stack_trace);
+    //     });
+
     // Ideally we would return whether HandleException returned ZX_OK, but
     // short of knowing if the exception was correctly handled, we return
     // false to have the error and stack trace printed in the logs.
     return false;
   };
+  embedder_args.verbose_logging = true;
+  embedder_args.log_tag = log_tag.c_str();
+  embedder_args.compositor = &embedder_compositor_callbacks;
+  embedder_args.dart_old_gen_heap_size = -1;
 
-  AttemptVMLaunchWithCurrentSettings(settings_);
+  // FlutterRendererConfig embedder_renderer_config({
+  //     .type = kVulkan,
+  //     .vulkan =
+  //         {
+  //             .struct_size = sizeof(FlutterVulkanRendererConfig),
+  //         },
+  // });
+
+  FlutterRendererConfig embedder_renderer_config({
+      .type = kSoftware,
+      .software =
+          {
+              .struct_size = sizeof(FlutterSoftwareRendererConfig),
+              .surface_present_callback =
+                  [](void* user_data, const void* allocation, size_t row_bytes,
+                     size_t height) -> bool {
+                FX_LOG(ERROR) << "SOFTWARE SURFACE PRESENT";
+                FX_DCHECK(false);
+
+                return true;
+              },
+          },
+  });
+
+  // Create the Flutter engine.
+  auto init_result =
+      FlutterEngineInitialize(FLUTTER_ENGINE_VERSION, &embedder_renderer_config,
+                              &embedder_args, this, &engine_);
+  FX_DCHECK(init_result == kSuccess);
+
+  // Run the Flutter engine now that everything is ready to go.
+  auto run_result = FlutterEngineRunInitialized(engine_);
+  FX_DCHECK(run_result == kSuccess);
+
+  // Connect to the system font provider and set the engine's default font
+  // manager, now that it has been created.
+  fuchsia::fonts::ProviderSyncPtr sync_font_provider;
+  incoming_services_->Connect(sync_font_provider.NewRequest());
+  auto reload_fonts_result = FlutterEngineReloadSystemFonts(
+      engine_, static_cast<uintptr_t>(
+                   sync_font_provider.Unbind().TakeChannel().release()));
+  FX_DCHECK(reload_fonts_result == kSuccess);
 }
 
-Application::~Application() = default;
-
-const std::string& Application::GetDebugLabel() const {
-  return debug_label_;
-}
-
-class FileInNamespaceBuffer final : public fml::Mapping {
- public:
-  FileInNamespaceBuffer(int namespace_fd, const char* path, bool executable)
-      : address_(nullptr), size_(0) {
-    fuchsia::mem::Buffer buffer;
-    if (!dart_utils::VmoFromFilenameAt(namespace_fd, path, executable,
-                                       &buffer)) {
-      return;
-    }
-    if (buffer.size == 0) {
-      return;
-    }
-
-    uint32_t flags = ZX_VM_PERM_READ;
-    if (executable) {
-      flags |= ZX_VM_PERM_EXECUTE;
-    }
-    uintptr_t addr;
-    zx_status_t status =
-        zx::vmar::root_self()->map(0, buffer.vmo, 0, buffer.size, flags, &addr);
-    if (status != ZX_OK) {
-      FML_LOG(FATAL) << "Failed to map " << path << ": "
-                     << zx_status_get_string(status);
-    }
-
-    address_ = reinterpret_cast<void*>(addr);
-    size_ = buffer.size;
-  }
-
-  ~FileInNamespaceBuffer() {
-    if (address_ != nullptr) {
-      zx::vmar::root_self()->unmap(reinterpret_cast<uintptr_t>(address_),
-                                   size_);
-      address_ = nullptr;
-      size_ = 0;
-    }
-  }
-
-  // |fml::Mapping|
-  const uint8_t* GetMapping() const override {
-    return reinterpret_cast<const uint8_t*>(address_);
-  }
-
-  // |fml::Mapping|
-  size_t GetSize() const override { return size_; }
-
- private:
-  void* address_;
-  size_t size_;
-
-  FML_DISALLOW_COPY_AND_ASSIGN(FileInNamespaceBuffer);
-};
-
-std::unique_ptr<fml::Mapping> CreateWithContentsOfFile(int namespace_fd,
-                                                       const char* file_path,
-                                                       bool executable) {
-  FML_TRACE_EVENT("flutter", "LoadFile", "path", file_path);
-  auto source = std::make_unique<FileInNamespaceBuffer>(namespace_fd, file_path,
-                                                        executable);
-  return source->GetMapping() == nullptr ? nullptr : std::move(source);
-}
-
-void Application::AttemptVMLaunchWithCurrentSettings(
-    const flutter::Settings& settings) {
-  if (!flutter::DartVM::IsRunningPrecompiledCode()) {
-    // We will be initializing the VM lazily in this case.
-    return;
-  }
-
-  // Compare with flutter_aot_app in flutter_app.gni.
-  fml::RefPtr<flutter::DartSnapshot> vm_snapshot;
-
-  std::shared_ptr<dart_utils::ElfSnapshot> snapshot =
-      std::make_shared<dart_utils::ElfSnapshot>();
-  if (snapshot->Load(application_assets_directory_.get(),
-                     "app_aot_snapshot.so")) {
-    const uint8_t* isolate_data = snapshot->IsolateData();
-    const uint8_t* isolate_instructions = snapshot->IsolateInstrs();
-    const uint8_t* vm_data = snapshot->VmData();
-    const uint8_t* vm_instructions = snapshot->VmInstrs();
-    if (isolate_data == nullptr || isolate_instructions == nullptr ||
-        vm_data == nullptr || vm_instructions == nullptr) {
-      FML_LOG(FATAL) << "ELF snapshot missing AOT symbols.";
-      return;
-    }
-    auto hold_snapshot = [snapshot](const uint8_t* _, size_t __) {};
-    vm_snapshot = fml::MakeRefCounted<flutter::DartSnapshot>(
-        std::make_shared<fml::NonOwnedMapping>(vm_data, 0, hold_snapshot),
-        std::make_shared<fml::NonOwnedMapping>(vm_instructions, 0,
-                                               hold_snapshot));
-    isolate_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
-        std::make_shared<fml::NonOwnedMapping>(isolate_data, 0, hold_snapshot),
-        std::make_shared<fml::NonOwnedMapping>(isolate_instructions, 0,
-                                               hold_snapshot));
-  } else {
-    vm_snapshot = fml::MakeRefCounted<flutter::DartSnapshot>(
-        CreateWithContentsOfFile(
-            application_assets_directory_.get() /* /pkg/data */,
-            "vm_snapshot_data.bin", false),
-        CreateWithContentsOfFile(
-            application_assets_directory_.get() /* /pkg/data */,
-            "vm_snapshot_instructions.bin", true));
-
-    isolate_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
-        CreateWithContentsOfFile(
-            application_assets_directory_.get() /* /pkg/data */,
-            "isolate_snapshot_data.bin", false),
-        CreateWithContentsOfFile(
-            application_assets_directory_.get() /* /pkg/data */,
-            "isolate_snapshot_instructions.bin", true));
-  }
-
-  auto vm = flutter::DartVMRef::Create(settings_,               //
-                                       std::move(vm_snapshot),  //
-                                       isolate_snapshot_        //
-  );
-  FML_CHECK(vm) << "Mut be able to initialize the VM.";
-}
-
-// |fuchsia::sys::ComponentController|
-void Application::Kill() {
-  application_controller_.events().OnTerminated(
-      last_return_code_.second, fuchsia::sys::TerminationReason::EXITED);
-
-  termination_callback_(this);
-  // WARNING: Don't do anything past this point as this instance may have been
-  // collected.
-}
-
-// |fuchsia::sys::ComponentController|
-void Application::Detach() {
-  application_controller_.set_error_handler(nullptr);
-}
-
-// |flutter::Engine::Delegate|
-void Application::OnEngineTerminate(const Engine* shell_holder) {
-  auto found = std::find_if(shell_holders_.begin(), shell_holders_.end(),
-                            [shell_holder](const auto& holder) {
-                              return holder.get() == shell_holder;
-                            });
-
-  if (found == shell_holders_.end()) {
-    return;
-  }
-
+void Component::TerminateFlutter() {
+  // TODO(dworsham)
   // We may launch multiple shell in this application. However, we will
   // terminate when the last shell goes away. The error code return to the
   // application controller will be the last isolate that had an error.
-  auto return_code = shell_holder->GetEngineReturnCode();
-  if (return_code.first) {
-    last_return_code_ = return_code;
-  }
+  // auto return_code = std::pair<true,
+  // 0>();//shell_holder->GetEngineReturnCode(); if (return_code.first) {
+  //   last_return_code_ = return_code;
+  // }
 
-  shell_holders_.erase(found);
-
-  if (shell_holders_.size() == 0) {
-    Kill();
-    // WARNING: Don't do anything past this point because the delegate may have
-    // collected this instance via the termination callback.
-  }
+  // Destroy the Flutter engine now that nothing else depends on it.
+  auto shutdown_result = FlutterEngineShutdown(engine_);
+  FX_DCHECK(shutdown_result == kSuccess);
+  engine_ = nullptr;
 }
-
-// |fuchsia::ui::app::ViewProvider|
-void Application::CreateView(
-    zx::eventpair view_token,
-    fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> incoming_services,
-    fidl::InterfaceHandle<fuchsia::sys::ServiceProvider> outgoing_services) {
-  if (!svc_) {
-    FML_DLOG(ERROR)
-        << "Component incoming services was invalid when attempting to "
-           "create a shell for a view provider request.";
-    return;
-  }
-
-  shell_holders_.emplace(std::make_unique<Engine>(
-      *this,                         // delegate
-      debug_label_,                  // thread label
-      svc_,                          // Component incoming services
-      runner_incoming_services_,     // Runner incoming services
-      settings_,                     // settings
-      std::move(isolate_snapshot_),  // isolate snapshot
-      scenic::ToViewToken(std::move(view_token)),  // view token
-      std::move(fdio_ns_),                         // FDIO namespace
-      std::move(directory_request_)                // outgoing request
-      ));
-}
-
-#if !defined(DART_PRODUCT)
-void Application::WriteProfileToTrace() const {
-  for (const auto& engine : shell_holders_) {
-    engine->WriteProfileToTrace();
-  }
-}
-#endif  // !defined(DART_PRODUCT)
 
 }  // namespace flutter_runner

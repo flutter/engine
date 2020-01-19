@@ -8,23 +8,28 @@ import("//flutter/shell/platform/embedder/embedder.gni")
 import("//flutter/testing/testing.gni")
 
 shell_gpu_configuration("embedder_gpu_configuration") {
+  enable_vulkan = shell_enable_vulkan
+  enable_gl = shell_enable_gl
+  enable_metal = shell_enable_metal
   enable_software = true
-  enable_vulkan = false
-  enable_gl = true
-  enable_metal = false
 }
 
 _framework_binary_subpath = "Versions/A/FlutterEmbedder"
+
+source_set("embedder_api") {
+  sources = [
+    "embedder.h",
+  ]
+}
 
 # Template for the embedder build. Used to allow building it multiple times with
 # different flags.
 template("embedder_source_set") {
   forward_variables_from(invoker, "*")
 
-  source_set(target_name) {
+  source_set_maybe_product(target_name) {
     sources = [
       "embedder.cc",
-      "embedder.h",
       "embedder_engine.cc",
       "embedder_engine.h",
       "embedder_external_texture_gl.cc",
@@ -39,6 +44,8 @@ template("embedder_source_set") {
       "embedder_layers.h",
       "embedder_platform_message_response.cc",
       "embedder_platform_message_response.h",
+      "embedder_platform_view.cc",
+      "embedder_platform_view.h",
       "embedder_render_target.cc",
       "embedder_render_target.h",
       "embedder_render_target_cache.cc",
@@ -46,18 +53,18 @@ template("embedder_source_set") {
       "embedder_safe_access.h",
       "embedder_surface.cc",
       "embedder_surface.h",
-      "embedder_surface_gl.cc",
-      "embedder_surface_gl.h",
       "embedder_surface_software.cc",
       "embedder_surface_software.h",
       "embedder_task_runner.cc",
       "embedder_task_runner.h",
       "embedder_thread_host.cc",
       "embedder_thread_host.h",
-      "platform_view_embedder.cc",
-      "platform_view_embedder.h",
-      "vsync_waiter_embedder.cc",
-      "vsync_waiter_embedder.h",
+      "embedder_vsync_waiter.cc",
+      "embedder_vsync_waiter.h",
+    ]
+
+    public_deps = [
+      ":embedder_api",
     ]
 
     deps = [
@@ -66,15 +73,40 @@ template("embedder_source_set") {
       "//flutter/common",
       "//flutter/flow",
       "//flutter/fml",
-      "//flutter/lib/ui",
-      "//flutter/runtime:libdart",
-      "//flutter/shell/common",
       "//flutter/third_party/tonic",
-      "//third_party/dart/runtime/bin:dart_io_api",
       "//third_party/skia",
     ]
 
     public_configs += [ "//flutter:config" ]
+
+    defines = []
+
+    if (shell_enable_gl) {
+      sources += [
+        "embedder_surface_gl.cc",
+        "embedder_surface_gl.h",
+      ]
+
+      defines += [ "SHELL_ENABLE_GL" ]
+    }
+
+    if (shell_enable_vulkan) {
+      sources += [
+        "embedder_surface_vulkan.cc",
+        "embedder_surface_vulkan.h",
+      ]
+
+      deps += [ "//flutter/vulkan" ]
+
+      defines += [ "SHELL_ENABLE_VULKAN" ]
+    }
+
+    product_deps = [
+      "//flutter/shell/common:common",
+      "//flutter/lib/ui:ui",
+      "//third_party/dart/runtime/bin:dart_io_api",
+      "//flutter/runtime:libdart",
+    ]
   }
 }
 

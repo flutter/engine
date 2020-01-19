@@ -23,7 +23,7 @@ ShellTest::ShellTest()
     : native_resolver_(std::make_shared<TestDartNativeResolver>()),
       thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
                    ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                       ThreadHost::Type::UI | ThreadHost::Type::GPU),
+                       ThreadHost::Type::UI | ThreadHost::Type::Raster),
       assets_dir_(fml::OpenDirectory(GetFixturesPath(),
                                      false,
                                      fml::FilePermission::kRead)),
@@ -127,8 +127,8 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double height,
                              LayerTreeBuilder builder) {
   PumpOneFrame(shell,
-               flutter::ViewportMetrics{1, width, height, flutter::kUnsetDepth,
-                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+               flutter::ViewportMetrics{1, width, height, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0},
                std::move(builder));
 }
 
@@ -158,7 +158,6 @@ void ShellTest::PumpOneFrame(Shell* shell,
         auto layer_tree = std::make_unique<LayerTree>(
             SkISize::Make(viewport_metrics.physical_width,
                           viewport_metrics.physical_height),
-            static_cast<float>(viewport_metrics.physical_depth),
             static_cast<float>(viewport_metrics.device_pixel_ratio));
         SkMatrix identity;
         identity.setIdentity();

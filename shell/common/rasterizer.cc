@@ -4,7 +4,7 @@
 
 #include "flutter/shell/common/rasterizer.h"
 
-#include "flutter/shell/common/persistent_cache.h"
+#include "flutter/shell/gpu/persistent_cache.h"
 
 #include <utility>
 
@@ -24,32 +24,13 @@ namespace flutter {
 // used within this interval.
 static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
-// TODO(dnfield): Remove this once internal embedders have caught up.
-static Rasterizer::DummyDelegate dummy_delegate_;
-Rasterizer::Rasterizer(
-    TaskRunners task_runners,
-    std::unique_ptr<flutter::CompositorContext> compositor_context)
-    : Rasterizer(dummy_delegate_,
-                 std::move(task_runners),
-                 std::move(compositor_context)) {}
-
 Rasterizer::Rasterizer(Delegate& delegate, TaskRunners task_runners)
-    : Rasterizer(delegate,
-                 std::move(task_runners),
-                 std::make_unique<flutter::CompositorContext>(
-                     delegate.GetFrameBudget())) {}
-
-Rasterizer::Rasterizer(
-    Delegate& delegate,
-    TaskRunners task_runners,
-    std::unique_ptr<flutter::CompositorContext> compositor_context)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
-      compositor_context_(std::move(compositor_context)),
+      compositor_context_(
+          std::make_unique<CompositorContext>(delegate.GetFrameBudget())),
       user_override_resource_cache_bytes_(false),
-      weak_factory_(this) {
-  FML_DCHECK(compositor_context_);
-}
+      weak_factory_(this) {}
 
 Rasterizer::~Rasterizer() = default;
 
@@ -68,13 +49,15 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
                              user_override_resource_cache_bytes_);
   }
   compositor_context_->OnGrContextCreated();
-  if (surface_->GetExternalViewEmbedder()) {
-    const auto platform_id =
-        task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
-    const auto gpu_id = task_runners_.GetRasterTaskRunner()->GetTaskQueueId();
-    raster_thread_merger_ =
-        fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
-  }
+  // TODO(dworsham)
+  // if (surface_->GetExternalViewEmbedder()) {
+  //   const auto platform_id =
+  //       task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
+  //   const auto gpu_id =
+  //   task_runners_.GetRasterTaskRunner()->GetTaskQueueId();
+  //   raster_thread_merger_ =
+  //       fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
+  // }
 }
 
 void Rasterizer::Teardown() {
@@ -96,11 +79,11 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   context->freeGpuResources();
 }
 
-flutter::TextureRegistry* Rasterizer::GetTextureRegistry() {
+TextureRegistry* Rasterizer::GetTextureRegistry() {
   return &compositor_context_->texture_registry();
 }
 
-flutter::LayerTree* Rasterizer::GetLastLayerTree() {
+LayerTree* Rasterizer::GetLastLayerTree() {
   return last_layer_tree_.get();
 }
 
@@ -111,7 +94,7 @@ void Rasterizer::DrawLastLayerTree() {
   DrawToSurface(*last_layer_tree_);
 }
 
-void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
+void Rasterizer::Draw(fml::RefPtr<Pipeline<LayerTree>> pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -121,7 +104,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
   RasterStatus raster_status = RasterStatus::kFailed;
-  Pipeline<flutter::LayerTree>::Consumer consumer =
+  Pipeline<LayerTree>::Consumer consumer =
       [&](std::unique_ptr<LayerTree> layer_tree) {
         raster_status = DoDraw(std::move(layer_tree));
       };
@@ -279,10 +262,7 @@ RasterStatus Rasterizer::DoDraw(
     persistent_cache->DumpSkp(*screenshot.data);
   }
 
-  // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish when
-  // Rasterizer::DoDraw finishes. Future work is needed to adapt the timestamp
-  // for Fuchsia to capture SceneUpdateContext::ExecutePaintTasks.
-  const auto raster_finish_time = fml::TimePoint::Now();
+  auto raster_finish_time = fml::TimePoint::Now();
   timing.Set(FrameTiming::kRasterFinish, raster_finish_time);
   delegate_.OnFrameRasterized(timing);
 
@@ -338,7 +318,7 @@ RasterStatus Rasterizer::DoDraw(
   return raster_status;
 }
 
-RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
+RasterStatus Rasterizer::DrawToSurface(LayerTree& layer_tree) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
@@ -381,36 +361,46 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       frame->supports_readback(),   // surface supports pixel reads
       raster_thread_merger_         // thread merger
   );
+  if (!compositor_frame) {
+    return RasterStatus::kFailed;
+  }
 
-  if (compositor_frame) {
-    RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
-    if (raster_status == RasterStatus::kFailed) {
-      return raster_status;
-    }
-    if (external_view_embedder != nullptr) {
-      external_view_embedder->SubmitFrame(surface_->GetContext(),
-                                          root_surface_canvas);
-      // The external view embedder may mutate the root surface canvas while
-      // submitting the frame.
-      // Therefore, submit the final frame after asking the external view
-      // embedder to submit the frame.
-      frame->Submit();
-      external_view_embedder->FinishFrame();
-    } else {
-      frame->Submit();
-    }
-
-    FireNextFrameCallbackIfPresent();
-
-    if (surface_->GetContext()) {
-      TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
-      surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
-    }
-
+  RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
+  if (raster_status == RasterStatus::kFailed) {
     return raster_status;
   }
 
-  return RasterStatus::kFailed;
+  if (external_view_embedder != nullptr) {
+    bool embedder_submit_status = external_view_embedder->SubmitFrame(
+        surface_->GetContext(), root_surface_canvas);
+    if (!embedder_submit_status) {
+      return RasterStatus::kFailed;
+    }
+
+    // The external view embedder may mutate the root surface canvas while
+    // submitting the frame.
+    // Therefore, submit the final frame after asking the external view
+    // embedder to submit the frame.
+    bool frame_submit_status = frame->Submit();
+    external_view_embedder->FinishFrame();
+
+    if (!frame_submit_status) {
+      return RasterStatus::kFailed;
+    }
+  } else {
+    if (!frame->Submit()) {
+      return RasterStatus::kFailed;
+    }
+  }
+
+  FireNextFrameCallbackIfPresent();
+
+  if (surface_->GetContext()) {
+    TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
+    surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
+  }
+
+  return raster_status;
 }
 
 static sk_sp<SkData> SerializeTypeface(SkTypeface* typeface, void* ctx) {
@@ -418,8 +408,8 @@ static sk_sp<SkData> SerializeTypeface(SkTypeface* typeface, void* ctx) {
 }
 
 static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
-    flutter::LayerTree* tree,
-    flutter::CompositorContext& compositor_context) {
+    LayerTree* tree,
+    CompositorContext& compositor_context) {
   FML_DCHECK(tree != nullptr);
   SkPictureRecorder recorder;
   recorder.beginRecording(
@@ -461,8 +451,8 @@ static sk_sp<SkSurface> CreateSnapshotSurface(GrContext* surface_context,
 }
 
 static sk_sp<SkData> ScreenshotLayerTreeAsImage(
-    flutter::LayerTree* tree,
-    flutter::CompositorContext& compositor_context,
+    LayerTree* tree,
+    CompositorContext& compositor_context,
     GrContext* surface_context,
     bool compressed) {
   // Attempt to create a snapshot surface depending on whether we have access to
@@ -482,14 +472,9 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
-  // We want to ensure we call the base method for
-  // CompositorContext::AcquireFrame instead of the platform-specific method.
-  // Specifically, Fuchsia's CompositorContext handles the rendering surface
-  // itself which means that we will still continue to render to the onscreen
-  // surface if we don't call the base method.
-  auto frame = compositor_context.flutter::CompositorContext::AcquireFrame(
-      surface_context, canvas, nullptr, root_surface_transformation, false,
-      true, nullptr);
+  auto frame = compositor_context.AcquireFrame(surface_context, canvas, nullptr,
+                                               root_surface_transformation,
+                                               false, true, nullptr);
   canvas->clear(SK_ColorTRANSPARENT);
   frame->Raster(*tree, true);
   canvas->flush();

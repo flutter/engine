@@ -2,57 +2,60 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "runner.h"
-
-#include <fuchsia/mem/cpp/fidl.h>
-#include <lib/async/cpp/task.h>
-#include <lib/trace-engine/instrumentation.h>
-#include <zircon/status.h>
-#include <zircon/types.h>
+#include "flutter/shell/platform/fuchsia/flutter/runner.h"
 
 #include <fcntl.h>
-#include <stdint.h>
-#include <sstream>
-#include <utility>
+#include <lib/async/cpp/task.h>
+#include <lib/trace/event.h>
+#include <unistd.h>
 
-#include "flutter/fml/make_copyable.h"
-#include "flutter/lib/ui/text/font_collection.h"
-#include "flutter/runtime/dart_vm.h"
-#include "lib/sys/cpp/component_context.h"
-#include "runtime/dart/utils/files.h"
-#include "runtime/dart/utils/vmo.h"
-#include "runtime/dart/utils/vmservice_object.h"
-#include "third_party/icu/source/common/unicode/udata.h"
-#include "third_party/skia/include/core/SkGraphics.h"
+#include <cstring>  // For strerror
+
+#include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/fuchsia/utils/logging.h"
+#include "flutter/shell/platform/fuchsia/utils/thread.h"
+
+#if !defined(DART_PRODUCT)
+#include "flutter/shell/platform/fuchsia/utils/files.h"
+#include "flutter/shell/platform/fuchsia/utils/vmservice_object.h"
+#include "third_party/dart/runtime/include/dart_api.h"
+#endif  // !defined(DART_PRODUCT)
 
 namespace flutter_runner {
-
 namespace {
-
-static constexpr char kIcuDataPath[] = "/pkg/data/icudtl.dat";
 
 // Environment variable containing the path to the directory containing the
 // timezone files.
-static constexpr char kICUTZEnv[] = "ICU_TIMEZONE_FILES_DIR";
+constexpr char kICUTZEnv[] = "ICU_TIMEZONE_FILES_DIR";
 
 // The data directory containing ICU timezone data files.
-static constexpr char kICUTZDataDir[] = "/config/data/tzdata/icu/44/le";
+constexpr char kICUTZDataDir[] = "/config/data/tzdata/icu/44/le";
 
-// Map the memory into the process and return a pointer to the memory.
-uintptr_t GetICUData(const fuchsia::mem::Buffer& icu_data) {
-  uint64_t data_size = icu_data.size;
-  if (data_size > std::numeric_limits<size_t>::max())
-    return 0u;
-
-  uintptr_t data = 0u;
-  zx_status_t status = zx::vmar::root_self()->map(
-      0, icu_data.vmo, 0, static_cast<size_t>(data_size), ZX_VM_PERM_READ,
-      &data);
-  if (status == ZX_OK) {
-    return data;
+#if !defined(DART_PRODUCT)
+// Register native symbol information for the Dart VM's profiler.
+void RegisterProfilerSymbols(const char* symbols_path, const char* dso_name) {
+  std::string* symbols = new std::string();
+  if (fx::ReadFileToString(symbols_path, symbols)) {
+    Dart_AddSymbols(dso_name, symbols->data(), symbols->size());
+  } else {
+    FX_LOG(ERROR) << "Failed to load " << symbols_path;
   }
+}
+#endif  // !defined(DART_PRODUCT)
 
-  return 0u;
+void SetMainThreadAndProcessName() {
+#if defined(DART_PRODUCT)
+  std::string runner_type = "io.flutter.product_runner";
+#else
+  std::string runner_type = "io.flutter.runner";
+#endif
+
+  if (FlutterEngineRunsAOTCompiledDartCode()) {
+    fx::Thread::SetProcessName(runner_type + ".aot");
+  } else {
+    fx::Thread::SetProcessName(runner_type + ".jit");
+  }
+  fx::Thread::SetCurrentThreadName(runner_type + ".main");
 }
 
 // Initializes the timezone data if available.  Timezone data file in Fuchsia
@@ -70,243 +73,234 @@ bool InitializeTZData() {
   // wrong.
   int fd = openat(AT_FDCWD, tzdata_dir.c_str(), O_RDONLY);
   if (fd < 0) {
-    FML_LOG(INFO) << "Could not open: '" << tzdata_dir
-                  << "', proceeding without loading the timezone database: "
-                  << strerror(errno);
+    FX_LOG(ERROR) << "Could not open '" << tzdata_dir.c_str()
+                  << "', error: " << strerror(errno)
+                  << "; proceeding without loading the timezone database.";
     return false;
   }
-  if (close(fd)) {
-    FML_LOG(WARNING) << "Could not close: " << tzdata_dir << ": "
-                     << strerror(errno);
+  if (!close(fd)) {
+    FX_LOG(WARNING) << "Could not close '" << tzdata_dir.c_str()
+                    << "', error: " << strerror(errno) << ".";
   }
   return true;
 }
 
-// Return value indicates if initialization was successful.
-bool InitializeICU() {
-  const char* data_path = kIcuDataPath;
-
-  fuchsia::mem::Buffer icu_data;
-  if (!dart_utils::VmoFromFilename(data_path, false, &icu_data)) {
-    return false;
+std::string DebugLabelForURL(const std::string& url) {
+  auto found = url.rfind("/");
+  if (found == std::string::npos) {
+    return url;
+  } else {
+    return {url, found + 1};
   }
-
-  uintptr_t data = GetICUData(icu_data);
-  if (!data) {
-    return false;
-  }
-
-  // If the loading fails, soldier on.  The loading is optional as we don't
-  // want to crash the engine in transition.
-  InitializeTZData();
-
-  // Pass the data to ICU.
-  UErrorCode err = U_ZERO_ERROR;
-  udata_setCommonData(reinterpret_cast<const char*>(data), &err);
-  if (err != U_ZERO_ERROR) {
-    FML_LOG(ERROR) << "error loading ICU data: " << err;
-    return false;
-  }
-  return true;
 }
 
 }  // namespace
 
-static void SetProcessName() {
-  std::stringstream stream;
-#if defined(DART_PRODUCT)
-  stream << "io.flutter.product_runner.";
-#else
-  stream << "io.flutter.runner.";
-#endif
-  if (flutter::DartVM::IsRunningPrecompiledCode()) {
-    stream << "aot";
-  } else {
-    stream << "jit";
-  }
-  const auto name = stream.str();
-  zx::process::self()->set_property(ZX_PROP_NAME, name.c_str(), name.size());
-}
-
-static void SetThreadName(const std::string& thread_name) {
-  zx::thread::self()->set_property(ZX_PROP_NAME, thread_name.c_str(),
-                                   thread_name.size());
-}
-
+Runner::Runner(Renderer::FactoryCallback renderer_factory, async::Loop* loop)
+    : renderer_factory_(std::move(renderer_factory)),
+      runner_context_(sys::ComponentContext::Create()),
+      loop_(loop) {
 #if !defined(DART_PRODUCT)
-// Register native symbol information for the Dart VM's profiler.
-static void RegisterProfilerSymbols(const char* symbols_path,
-                                    const char* dso_name) {
-  std::string* symbols = new std::string();
-  if (dart_utils::ReadFileToString(symbols_path, symbols)) {
-    Dart_AddSymbols(dso_name, symbols->data(), symbols->size());
-  } else {
-    FML_LOG(ERROR) << "Failed to load " << symbols_path;
-  }
-}
-#endif  // !defined(DART_PRODUCT)
+  StartTraceObserver();
 
-Runner::Runner(async::Loop* loop)
-    : loop_(loop), context_(sys::ComponentContext::Create()) {
-#if !defined(DART_PRODUCT)
   // The VM service isolate uses the process-wide namespace. It writes the
   // vm service protocol port under /tmp. The VMServiceObject exposes that
   // port number to The Hub.
-  context_->outgoing()->debug_dir()->AddEntry(
-      dart_utils::VMServiceObject::kPortDirName,
-      std::make_unique<dart_utils::VMServiceObject>());
+  runner_context_->outgoing()->debug_dir()->AddEntry(
+      fx::VMServiceObject::kPortDirName,
+      std::make_unique<fx::VMServiceObject>());
 
-  SetupTraceObserver();
-#endif  // !defined(DART_PRODUCT)
-
-  SkGraphics::Init();
-
-  SetupICU();
-
-  SetProcessName();
-
-  SetThreadName("io.flutter.runner.main");
-
-  context_->outgoing()->AddPublicService<fuchsia::sys::Runner>(
-      std::bind(&Runner::RegisterApplication, this, std::placeholders::_1));
-
-#if !defined(DART_PRODUCT)
-  if (Dart_IsPrecompiledRuntime()) {
-    RegisterProfilerSymbols("pkg/data/flutter_aot_runner.dartprofilersymbols",
+  if (FlutterEngineRunsAOTCompiledDartCode()) {
+    RegisterProfilerSymbols("/pkg/data/flutter_aot_runner.dartprofilersymbols",
                             "");
   } else {
-    RegisterProfilerSymbols("pkg/data/flutter_jit_runner.dartprofilersymbols",
+    RegisterProfilerSymbols("/pkg/data/flutter_jit_runner.dartprofilersymbols",
                             "");
   }
 #endif  // !defined(DART_PRODUCT)
+
+  SetMainThreadAndProcessName();
+
+  InitializeTZData();
+
+  runner_context_->outgoing()->AddPublicService<fuchsia::sys::Runner>(
+      [this](fidl::InterfaceRequest<fuchsia::sys::Runner> request) {
+        runner_bindings_.AddBinding(this, std::move(request));
+      });
+
+  //   // Connect to the intl property provider.  If the connection fails, the
+  //   // initialization of the engine will simply proceed, printing a warning
+  //   // message.  The engine will be fully functional, except that the user's
+  //   // locale preferences would not be communicated to flutter engine.
+  //   {
+  //     intl_property_provider_.set_error_handler([](zx_status_t status) {
+  //       FX_LOG(WARNING) << "Failed to connect to " <<
+  //       fuchsia::intl::PropertyProvider::Name_ << ": "
+  //                       << zx_status_get_string(status) << "This is not a
+  //                       fatal error, but the "
+  //                       << "user locale preferences will not be forwarded to
+  //                       Flutter apps.";
+  //     });
+
+  //     // Note that we're using the runner's services, not the component's.
+  //     // Flutter locales should be updated regardless of whether the
+  //     component has
+  //     // direct access to the fuchsia.intl.PropertyProvider service.
+  //     ZX_ASSERT(runner_incoming_services->Connect(
+  //                   intl_property_provider_.NewRequest()) == ZX_OK);
+
+  //     auto get_profile_callback = [this](const fuchsia::intl::Profile&
+  //     profile) {
+  //       if (!profile.has_locales()) {
+  //         FX_LOG(WARNING) << "Got intl Profile without locales";
+  //       }
+
+  //       FX_VLOG(-1) << "Sending LocalizationPlatformMessage";
+  //       std::vector<FlutterLocale> locales_holder(profile.locales().size());
+  //       std::vector<const FlutterLocale*> locales;
+  //       for (const auto& locale_id : profile.locales()) {
+  //         UErrorCode error_code = U_ZERO_ERROR;
+  //         icu::Locale icu_locale =
+  //             icu::Locale::forLanguageTag(locale_id.id, error_code);
+  //         if (U_FAILURE(error_code)) {
+  //           FX_LOG(ERROR) << "Error parsing locale ID " <<  locale_id.id;
+  //           continue;
+  //         }
+
+  //         std::string country =
+  //             icu_locale.getCountry() != nullptr ? icu_locale.getCountry() :
+  //             "";
+  //         std::string script =
+  //             icu_locale.getScript() != nullptr ? icu_locale.getScript() :
+  //             "";
+  //         std::string variant =
+  //             icu_locale.getVariant() != nullptr ? icu_locale.getVariant() :
+  //             "";
+  //         // ICU4C capitalizes the variant for backward compatibility, even
+  //         though
+  //         // the preferred form is lowercase.  So we lowercase here.
+  //         std::transform(begin(variant), end(variant), begin(variant),
+  //                        [](unsigned char c) { return std::tolower(c); });
+
+  //         FlutterLocale locale = {
+  //             .struct_size = sizeof(FlutterLocale),
+  //             .language_code = icu_locale.getLanguage(),
+  //             .country_code = country.c_str(),
+  //             .script_code = script.c_str(),
+  //             .variant_code = variant.c_str(),
+  //         };
+  //         locales_holder.emplace_back(std::move(locale));
+  //         locales.push_back(&locales_holder.back());
+  //       }
+
+  //       FlutterEngineUpdateLocales(this, locales.data(), locales.size());
+  //     };
+
+  //     FX_VLOG(-1) << "Requesting intl Profile";
+
+  //     // Make the initial request
+  //     intl_property_provider_->GetProfile(get_profile_callback);
+
+  //     // And register for changes
+  //     intl_property_provider_.events().OnChange =
+  //         [this, get_profile_callback]() {
+  //           FX_VLOG(-1) << fuchsia::intl::PropertyProvider::Name_
+  //                       << ": OnChange";
+  //           intl_property_provider_->GetProfile(get_profile_callback);
+  //         };
+  //   }
+
+  FX_DLOG(INFO) << "Flutter runner services initialized.";
 }
 
 Runner::~Runner() {
-  context_->outgoing()->RemovePublicService<fuchsia::sys::Runner>();
+  FX_DLOG(INFO) << "Flutter runner services stopped.";
+
+  runner_context_->outgoing()->RemovePublicService<fuchsia::sys::Runner>();
 
 #if !defined(DART_PRODUCT)
-  trace_observer_->Stop();
+  StopTraceObserver();
 #endif  // !defined(DART_PRODUCT)
-}
-
-void Runner::RegisterApplication(
-    fidl::InterfaceRequest<fuchsia::sys::Runner> request) {
-  active_applications_bindings_.AddBinding(this, std::move(request));
 }
 
 void Runner::StartComponent(
     fuchsia::sys::Package package,
     fuchsia::sys::StartupInfo startup_info,
-    fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
+    fidl::InterfaceRequest<fuchsia::sys::ComponentController>
+        component_controller) {
   // TRACE_DURATION currently requires that the string data does not change
-  // in the traced scope. Since |package| gets moved in the Application::Create
-  // call below, we cannot ensure that |package.resolved_url| does not move or
-  // change, so we make a copy to pass to TRACE_DURATION.
+  // in the traced scope. Since |package.resolved_url| gets moved in the Create
+  // call below, we make a copy to pass to TRACE_DURATION.
   // TODO(PT-169): Remove this copy when TRACE_DURATION reads string arguments
   // eagerly.
   std::string url_copy = package.resolved_url;
-  TRACE_EVENT1("flutter", "StartComponent", "url", url_copy.c_str());
-  // Notes on application termination: Application typically terminate on the
-  // thread on which they were created. This usually means the thread was
-  // specifically created to host the application. But we want to ensure that
-  // access to the active applications collection is made on the same thread. So
-  // we capture the runner in the termination callback. There is no risk of
-  // there being multiple application runner instance in the process at the same
-  // time. So it is safe to use the raw pointer.
-  Application::TerminationCallback termination_callback =
-      [task_runner = loop_->dispatcher(),  //
-       application_runner = this           //
-  ](const Application* application) {
-        async::PostTask(task_runner, [application_runner, application]() {
-          application_runner->OnApplicationTerminate(application);
-        });
-      };
+  TRACE_DURATION("flutter", "StartComponent", "url", url_copy.c_str());
 
-  auto active_application = Application::Create(
-      std::move(termination_callback),  // termination callback
-      std::move(package),               // application package
-      std::move(startup_info),          // startup info
-      context_->svc(),                  // runner incoming services
-      std::move(controller)             // controller request
-  );
+  Component::Context component_context = {
+      .startup_info = std::move(startup_info),
+      .debug_label = DebugLabelForURL(package.resolved_url),
+      .component_url = std::move(package.resolved_url),
+      .controller_request = std::move(component_controller),
+      .incoming_services = runner_context_->svc(),
+      .renderer_factory_callback = renderer_factory_,
+      .termination_callback =
+          std::bind(&Runner::OnComponentTerminate, this, std::placeholders::_1),
+  };
 
-  auto key = active_application.application.get();
-  active_applications_[key] = std::move(active_application);
+  // Create a new component (synchronously on its own thread) and add it to the
+  // list of active components.
+  components_.emplace_back(Component::Create(std::move(component_context)));
 }
 
-void Runner::OnApplicationTerminate(const Application* application) {
-  auto app = active_applications_.find(application);
-  if (app == active_applications_.end()) {
-    FML_LOG(INFO)
-        << "The remote end of the application runner tried to terminate an "
-           "application that has already been terminated, possibly because we "
-           "initiated the termination";
-    return;
-  }
-  auto& active_application = app->second;
+void Runner::OnComponentTerminate(const Component* component) {
+  // The runner must remove the component on the runner's thread, but this
+  // callback is fired from the component's platform thread.  Post a task to
+  // the runner's thread to take care of things.
+  async::PostTask(loop_->dispatcher(), [this, component]() {
+    auto found_component =
+        std::find_if(components_.begin(), components_.end(),
+                     [component](const auto& active_component) -> bool {
+                       return component == active_component.get();
+                     });
+    if (found_component == components_.end()) {
+      FX_LOG(ERROR)
+          << "The remote end of the component runner tried to terminate an "
+             "component that has already been terminated, possibly because we "
+             "initiated the termination.";
+      return;
+    }
 
-  // Grab the items out of the entry because we will have to rethread the
-  // destruction.
-  auto application_to_destroy = std::move(active_application.application);
-  auto application_thread = std::move(active_application.thread);
-
-  // Delegate the entry.
-  active_applications_.erase(application);
-
-  // Post the task to destroy the application and quit its message loop.
-  async::PostTask(
-      application_thread->dispatcher(),
-      fml::MakeCopyable([instance = std::move(application_to_destroy),
-                         thread = application_thread.get()]() mutable {
-        instance.reset();
-        thread->Quit();
-      }));
-
-  // This works because just posted the quit task on the hosted thread.
-  application_thread->Join();
-}
-
-void Runner::SetupICU() {
-  // Exposes the TZ data setup for testing.  Failing here is not fatal.
-  Runner::SetupTZDataInternal();
-  if (!Runner::SetupICUInternal()) {
-    FML_LOG(ERROR) << "Could not initialize ICU data.";
-  }
-}
-
-// static
-bool Runner::SetupICUInternal() {
-  return InitializeICU();
-}
-
-// static
-bool Runner::SetupTZDataInternal() {
-  return InitializeTZData();
+    // Delete the list entry by swapping it with the back and popping.  The
+    // component will destroy itself synchronously on its platform thread.
+    FX_DCHECK(!components_.empty());
+    if (components_.size() > 1) {
+      std::swap(*found_component, components_.back());
+    }
+    components_.pop_back();
+  });
 }
 
 #if !defined(DART_PRODUCT)
-void Runner::SetupTraceObserver() {
-  trace_observer_ = std::make_unique<trace::TraceObserver>();
-  trace_observer_->Start(loop_->dispatcher(), [runner = this]() {
+void Runner::StartTraceObserver() {
+  trace_observer_.Start(loop_->dispatcher(), [this]() {
     if (!trace_is_category_enabled("dart:profiler")) {
       return;
     }
     if (trace_state() == TRACE_STARTED) {
-      runner->prolonged_context_ = trace_acquire_prolonged_context();
+      prolonged_context_ = trace_acquire_prolonged_context();
       Dart_StartProfiling();
     } else if (trace_state() == TRACE_STOPPING) {
-      for (auto& it : runner->active_applications_) {
-        fml::AutoResetWaitableEvent latch;
-        async::PostTask(it.second.thread->dispatcher(), [&]() {
-          it.second.application->WriteProfileToTrace();
-          latch.Signal();
-        });
-        latch.Wait();
+      for (auto& component : components_) {
+        component->WriteProfileToTrace();
       }
       Dart_StopProfiling();
-      trace_release_prolonged_context(runner->prolonged_context_);
+      trace_release_prolonged_context(prolonged_context_);
     }
   });
+}
+
+void Runner::StopTraceObserver() {
+  trace_observer_.Stop();
 }
 #endif  // !defined(DART_PRODUCT)
 

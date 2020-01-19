@@ -2,28 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "dart_runner.h"
+#include "flutter/shell/platform/fuchsia/dart_runner/dart_runner.h"
 
-#include <errno.h>
 #include <lib/async-loop/loop.h>
 #include <lib/async/default.h>
-#include <lib/syslog/global.h>
-#include <sys/stat.h>
+#include <lib/trace/event.h>
 #include <zircon/status.h>
 #include <zircon/syscalls.h>
-#include <memory>
-#include <thread>
-#include <utility>
 
-#include "dart_component_controller.h"
-#include "flutter/fml/trace_event.h"
-#include "logging.h"
-#include "runtime/dart/utils/inlines.h"
-#include "runtime/dart/utils/vmservice_object.h"
-#include "service_isolate.h"
+#include <iterator>  // For std::size
+#include <string>
+#include <thread>
+
+#include "flutter/shell/platform/fuchsia/dart_runner/dart_component_controller.h"
+#include "flutter/shell/platform/fuchsia/dart_runner/service_isolate.h"
+#include "flutter/shell/platform/fuchsia/utils/logging.h"
+#include "flutter/shell/platform/fuchsia/utils/vmservice_object.h"
+#include "flutter/third_party/tonic/dart_microtask_queue.h"
+#include "flutter/third_party/tonic/dart_state.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
-#include "third_party/tonic/dart_microtask_queue.h"
-#include "third_party/tonic/dart_state.h"
 
 #if defined(AOT_RUNTIME)
 extern "C" uint8_t _kDartVmSnapshotData[];
@@ -138,17 +135,16 @@ DartRunner::DartRunner() : context_(sys::ComponentContext::Create()) {
   // vm service protocol port under /tmp. The VMServiceObject exposes that
   // port number to The Hub.
   context_->outgoing()->debug_dir()->AddEntry(
-      dart_utils::VMServiceObject::kPortDirName,
-      std::make_unique<dart_utils::VMServiceObject>());
+      fx::VMServiceObject::kPortDirName,
+      std::make_unique<fx::VMServiceObject>());
 
 #endif  // !defined(DART_PRODUCT)
 
   dart::bin::BootstrapDartIo();
 
-  char* error =
-      Dart_SetVMFlags(dart_utils::ArraySize(kDartVMArgs), kDartVMArgs);
+  char* error = Dart_SetVMFlags(std::size(kDartVMArgs), kDartVMArgs);
   if (error) {
-    FX_LOGF(FATAL, LOG_TAG, "Dart_SetVMFlags failed: %s", error);
+    FX_LOG(FATAL) << "Dart_SetVMFlags failed: " << error;
   }
 
   Dart_InitializeParams params = {};
@@ -157,14 +153,14 @@ DartRunner::DartRunner() : context_(sys::ComponentContext::Create()) {
   params.vm_snapshot_data = ::_kDartVmSnapshotData;
   params.vm_snapshot_instructions = ::_kDartVmSnapshotInstructions;
 #else
-  if (!dart_utils::MappedResource::LoadFromNamespace(
+  if (!fx::MappedResource::LoadFromNamespace(
           nullptr, "/pkg/data/vm_snapshot_data.bin", vm_snapshot_data_)) {
-    FX_LOG(FATAL, LOG_TAG, "Failed to load vm snapshot data");
+    FX_LOG(FATAL) << "Failed to load vm snapshot data";
   }
-  if (!dart_utils::MappedResource::LoadFromNamespace(
+  if (!fx::MappedResource::LoadFromNamespace(
           nullptr, "/pkg/data/vm_snapshot_instructions.bin",
           vm_snapshot_instructions_, true /* executable */)) {
-    FX_LOG(FATAL, LOG_TAG, "Failed to load vm snapshot instructions");
+    FX_LOG(FATAL) << "Failed to load vm snapshot instructions";
   }
   params.vm_snapshot_data = vm_snapshot_data_.address();
   params.vm_snapshot_instructions = vm_snapshot_instructions_.address();
@@ -178,13 +174,13 @@ DartRunner::DartRunner() : context_(sys::ComponentContext::Create()) {
 #endif
   error = Dart_Initialize(&params);
   if (error)
-    FX_LOGF(FATAL, LOG_TAG, "Dart_Initialize failed: %s", error);
+    FX_LOG(FATAL) << "Dart_Initialize failed: " << error;
 }
 
 DartRunner::~DartRunner() {
   char* error = Dart_Cleanup();
   if (error)
-    FX_LOGF(FATAL, LOG_TAG, "Dart_Cleanup failed: %s", error);
+    FX_LOG(FATAL) << "Dart_Cleanup failed: " << error;
 }
 
 void DartRunner::StartComponent(
@@ -198,7 +194,7 @@ void DartRunner::StartComponent(
   // TODO(PT-169): Remove this copy when TRACE_DURATION reads string arguments
   // eagerly.
   std::string url_copy = package.resolved_url;
-  TRACE_EVENT1("dart", "StartComponent", "url", url_copy.c_str());
+  TRACE_DURATION("dart", "StartComponent", "url", url_copy.c_str());
   std::thread thread(RunApplication, this, std::move(package),
                      std::move(startup_info), context_->svc(),
                      std::move(controller));

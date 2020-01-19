@@ -15,8 +15,8 @@ class BackdropFilterLayer : public ContainerLayer {
  public:
   BackdropFilterLayer(sk_sp<SkImageFilter> filter);
 
+  // |Layer|
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
 
  private:

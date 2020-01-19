@@ -11,13 +11,20 @@ import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
 
 template("runner") {
-  assert(defined(invoker.product), "The parameter 'product' must be defined")
-  assert(defined(invoker.output_name),
-         "The parameter 'output_name' must be defined")
+  assert(defined(invoker.output_name), "dart_runner must define output_name")
+  assert(defined(invoker.product), "dart_runner must define product")
 
   invoker_output_name = invoker.output_name
-  extra_defines = invoker.extra_defines
-  extra_deps = invoker.extra_deps
+
+  extra_deps = []
+  if (defined(invoker.extra_deps)) {
+    extra_deps += invoker.extra_deps
+  }
+
+  extra_defines = [ "LOG_TAG=dart-runner" ]
+  if (defined(invoker.extra_defines)) {
+    extra_defines += invoker.extra_defines
+  }
 
   executable(target_name) {
     output_name = invoker_output_name
@@ -29,7 +36,6 @@ template("runner") {
       "dart_component_controller.h",
       "dart_runner.cc",
       "dart_runner.h",
-      "logging.h",
       "main.cc",
       "service_isolate.cc",
       "service_isolate.h",
@@ -40,33 +46,34 @@ template("runner") {
     dart_deps = []
     if (!invoker.product) {
       dart_deps += [
+        "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
+        "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+        "//flutter/shell/platform/fuchsia/utils",
         "//third_party/dart/runtime/bin:dart_io_api",
-        "//flutter/shell/platform/fuchsia/runtime/dart/utils:utils",
       ]
     } else {
       dart_deps += [
+        "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia:fuchsia_product",
+        "//flutter/shell/platform/fuchsia/dart-pkg/zircon:zircon_product",
+        "//flutter/shell/platform/fuchsia/utils:utils_product",
         "//third_party/dart/runtime/bin:dart_io_api_product",
-        "//flutter/shell/platform/fuchsia/runtime/dart/utils:utils_product",
       ]
     }
 
     deps = [
-             "//flutter/common",
-             "//flutter/fml",
-             "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
-             "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
-             "$fuchsia_sdk_root/pkg:async",
+             "$fuchsia_sdk_root/fidl:fuchsia.io",
+             "$fuchsia_sdk_root/fidl:fuchsia.sys",
              "$fuchsia_sdk_root/pkg:async-cpp",
              "$fuchsia_sdk_root/pkg:async-default",
-             "$fuchsia_sdk_root/pkg:async-loop",
              "$fuchsia_sdk_root/pkg:async-loop-cpp",
              "$fuchsia_sdk_root/pkg:async-loop-default",
+             "$fuchsia_sdk_root/pkg:fdio",
              "$fuchsia_sdk_root/pkg:fidl_cpp",
              "$fuchsia_sdk_root/pkg:sys_cpp",
-             "$fuchsia_sdk_root/pkg:syslog",
              "$fuchsia_sdk_root/pkg:trace",
              "$fuchsia_sdk_root/pkg:trace-provider-so",
              "$fuchsia_sdk_root/pkg:vfs_cpp",
+             "$fuchsia_sdk_root/pkg:zx",
              "//flutter/third_party/tonic",
            ] + dart_deps + extra_deps
   }
@@ -136,7 +143,7 @@ template("aot_runner_package") {
     if (!invoker.product) {
       deps += [
         "vmservice:vmservice_snapshot",
-        "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_aot_runner",
+        "//flutter/shell/platform/fuchsia/build:dart_aot_runner_profiler_symbols",
 
         # TODO(kaushikiska): Figure out how to get the profiler symbols for `libdart_precompiled_runtime`
         # "//topaz/runtime/dart/profiler_symbols:libdart_precompiled_runtime",
@@ -164,7 +171,7 @@ template("aot_runner_package") {
               "/vmservice_snapshot.so")
       dart_profiler_symbols = rebase_path(
               get_label_info(
-                  "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_aot_runner",
+                  "//flutter/shell/platform/fuchsia/build:dart_aot_runner_profiler_symbols",
                   "target_gen_dir") + "/dart_aot_runner.dartprofilersymbols")
 
       inputs = [
@@ -206,7 +213,7 @@ template("jit_runner_package") {
 
     if (!invoker.product) {
       deps += [
-        "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_jit_runner",
+        "//flutter/shell/platform/fuchsia/build:dart_jit_runner_profiler_symbols",
         observatory_target,
       ]
     }
@@ -249,7 +256,7 @@ template("jit_runner_package") {
         {
           path = rebase_path(
                   get_label_info(
-                      "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_jit_runner",
+                      "//flutter/shell/platform/fuchsia/build:dart_jit_runner_profiler_symbols",
                       "target_gen_dir") + "/dart_jit_runner.dartprofilersymbols")
           dest = "dart_jit_runner.dartprofilersymbols"
         },

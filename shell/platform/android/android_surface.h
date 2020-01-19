@@ -11,7 +11,7 @@
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/common/surface.h"
+#include "flutter/shell/gpu/surface.h"
 #include "flutter/shell/platform/android/android_native_window.h"
 #include "third_party/skia/include/core/SkSize.h"
 

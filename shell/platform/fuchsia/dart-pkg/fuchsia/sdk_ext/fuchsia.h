@@ -5,16 +5,21 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_FUCHSIA_SDK_EXT_FUCHSIA_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_FUCHSIA_SDK_EXT_FUCHSIA_H_
 
+#include <fuchsia/io/cpp/fidl.h>
 #include <fuchsia/sys/cpp/fidl.h>
+#include <lib/fidl/cpp/interface_handle.h>
+#include <lib/fidl/cpp/interface_request.h>
+#include <lib/zx/channel.h>
+#include <lib/zx/event.h>
 
-namespace fuchsia {
-namespace dart {
+#include <optional>
 
-void Initialize(fidl::InterfaceHandle<fuchsia::sys::Environment> environment,
-                zx::channel directory_request,
-                std::optional<zx::eventpair> view_ref);
+namespace fuchsia::dart {
 
-}  // namespace dart
-}  // namespace fuchsia
+void Initialize(
+    fidl::InterfaceHandle<fuchsia::sys::Environment> environment,
+    fidl::InterfaceRequest<fuchsia::io::Directory> directory_request);
+
+}  // namespace fuchsia::dart
 
 #endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_FUCHSIA_SDK_EXT_FUCHSIA_H_

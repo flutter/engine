@@ -59,12 +59,9 @@ Dart_Handle IsolateNameServerNatives::RemovePortNameMapping(
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK_STATIC)
 
-#define DART_REGISTER_NATIVE_STATIC_(CLASS, METHOD) \
-  DART_REGISTER_NATIVE_STATIC(CLASS, METHOD),
-
 void IsolateNameServerNatives::RegisterNatives(
     tonic::DartLibraryNatives* natives) {
-  natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE_STATIC_)});
+  natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE_STATIC)});
 }
 
 }  // namespace flutter

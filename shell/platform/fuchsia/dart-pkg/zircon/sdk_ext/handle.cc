@@ -2,173 +2,137 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "handle.h"
+#include "flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle.h"
 
 #include <algorithm>
 
-#include "third_party/tonic/dart_binding_macros.h"
-#include "third_party/tonic/dart_class_library.h"
+#include "flutter/shell/platform/fuchsia/dart-pkg/zircon/sdk_ext/handle_waiter.h"
+#include "flutter/shell/platform/fuchsia/utils/logging.h"
+#include "flutter/third_party/tonic/dart_binding_macros.h"
 
-using tonic::ToDart;
-
-namespace zircon {
-namespace dart {
+namespace zircon::dart {
 
 IMPLEMENT_WRAPPERTYPEINFO(zircon, Handle);
 
-Handle::Handle(zx_handle_t handle) : handle_(handle) {
-  tonic::DartState* state = tonic::DartState::Current();
-  FML_DCHECK(state);
-  Dart_Handle zircon_lib = Dart_LookupLibrary(ToDart("dart:zircon"));
-  FML_DCHECK(!tonic::LogIfError(zircon_lib));
-
-  Dart_Handle on_wait_completer_type =
-      Dart_GetClass(zircon_lib, ToDart("_OnWaitCompleteClosure"));
-  FML_DCHECK(!tonic::LogIfError(on_wait_completer_type));
-  on_wait_completer_type_.Set(state, on_wait_completer_type);
-
-  Dart_Handle async_lib = Dart_LookupLibrary(ToDart("dart:async"));
-  FML_DCHECK(!tonic::LogIfError(async_lib));
-  async_lib_.Set(state, async_lib);
-
-  Dart_Handle closure_string = ToDart("_closure");
-  FML_DCHECK(!tonic::LogIfError(closure_string));
-  closure_string_.Set(state, closure_string);
-
-  Dart_Handle schedule_microtask_string = ToDart("scheduleMicrotask");
-  FML_DCHECK(!tonic::LogIfError(schedule_microtask_string));
-  schedule_microtask_string_.Set(state, schedule_microtask_string);
-}
-
-Handle::~Handle() {
-  if (is_valid()) {
-    zx_status_t status = Close();
-    FML_DCHECK(status == ZX_OK);
-  }
-}
-
-fml::RefPtr<Handle> Handle::Create(zx_handle_t handle) {
-  return fml::MakeRefCounted<Handle>(handle);
-}
-
-Dart_Handle Handle::CreateInvalid() {
-  return ToDart(Create(ZX_HANDLE_INVALID));
-}
-
-zx_handle_t Handle::ReleaseHandle() {
-  FML_DCHECK(is_valid());
-
-  zx_handle_t handle = handle_;
-  handle_ = ZX_HANDLE_INVALID;
-  while (waiters_.size()) {
-    // HandleWaiter::Cancel calls Handle::ReleaseWaiter which removes the
-    // HandleWaiter from waiters_.
-    FML_DCHECK(waiters_.back()->is_pending());
-    waiters_.back()->Cancel();
-  }
-
-  FML_DCHECK(!is_valid());
-
-  return handle;
-}
-
-zx_status_t Handle::Close() {
-  if (is_valid()) {
-    zx_handle_t handle = ReleaseHandle();
-    return zx_handle_close(handle);
-  }
-  return ZX_ERR_BAD_HANDLE;
-}
-
-fml::RefPtr<HandleWaiter> Handle::AsyncWait(zx_signals_t signals,
-                                            Dart_Handle callback) {
-  if (!is_valid()) {
-    FML_LOG(WARNING) << "Attempt to wait on an invalid handle.";
-    return nullptr;
-  }
-
-  fml::RefPtr<HandleWaiter> waiter =
-      HandleWaiter::Create(this, signals, callback);
-  waiters_.push_back(waiter.get());
-
-  return waiter;
-}
-
-void Handle::ReleaseWaiter(HandleWaiter* waiter) {
-  FML_DCHECK(waiter);
-  auto iter = std::find(waiters_.cbegin(), waiters_.cend(), waiter);
-  FML_DCHECK(iter != waiters_.cend());
-  FML_DCHECK(*iter == waiter);
-  waiters_.erase(iter);
-}
-
-Dart_Handle Handle::Duplicate(uint32_t rights) {
-  if (!is_valid()) {
-    return ToDart(Create(ZX_HANDLE_INVALID));
-  }
-
-  zx_handle_t out_handle;
-  zx_status_t status = zx_handle_duplicate(handle_, rights, &out_handle);
-  if (status != ZX_OK) {
-    return ToDart(Create(ZX_HANDLE_INVALID));
-  }
-  return ToDart(Create(out_handle));
-}
-
-void Handle::ScheduleCallback(tonic::DartPersistentValue callback,
-                              zx_status_t status,
-                              const zx_packet_signal_t* signal) {
-  auto state = callback.dart_state().lock();
-  FML_DCHECK(state);
-  tonic::DartState::Scope scope(state);
-
-  // Make a new _OnWaitCompleteClosure(callback, status, signal->observed).
-  FML_DCHECK(!callback.is_empty());
-  std::vector<Dart_Handle> constructor_args{callback.Release(), ToDart(status),
-                                            ToDart(signal->observed)};
-  Dart_Handle on_wait_complete_closure =
-      Dart_New(on_wait_completer_type_.Get(), Dart_Null(),
-               constructor_args.size(), constructor_args.data());
-  FML_DCHECK(!tonic::LogIfError(on_wait_complete_closure));
-
-  // The _callback field contains the thunk:
-  // () => callback(status, signal->observed)
-  Dart_Handle closure =
-      Dart_GetField(on_wait_complete_closure, closure_string_.Get());
-  FML_DCHECK(!tonic::LogIfError(closure));
-
-  // Put the thunk on the microtask queue by calling scheduleMicrotask().
-  std::vector<Dart_Handle> sm_args{closure};
-  Dart_Handle sm_result =
-      Dart_Invoke(async_lib_.Get(), schedule_microtask_string_.Get(),
-                  sm_args.size(), sm_args.data());
-  FML_DCHECK(!tonic::LogIfError(sm_result));
-}
-
-// clang-format: off
-
-#define FOR_EACH_STATIC_BINDING(V) V(Handle, CreateInvalid)
+#define FOR_EACH_STATIC_BINDING(V) V(Handle, createInvalid)
 
 #define FOR_EACH_BINDING(V) \
   V(Handle, handle)         \
-  V(Handle, is_valid)       \
-  V(Handle, Close)          \
-  V(Handle, AsyncWait)      \
-  V(Handle, Duplicate)
-
-// clang-format: on
-
-// Tonic is missing a comma.
-#define DART_REGISTER_NATIVE_STATIC_(CLASS, METHOD) \
-  DART_REGISTER_NATIVE_STATIC(CLASS, METHOD),
+  V(Handle, isValid)        \
+  V(Handle, close)          \
+  V(Handle, duplicate)      \
+  V(Handle, asyncWait)
 
 FOR_EACH_STATIC_BINDING(DART_NATIVE_CALLBACK_STATIC)
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
 void Handle::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({FOR_EACH_STATIC_BINDING(DART_REGISTER_NATIVE_STATIC_)
+  natives->Register({FOR_EACH_STATIC_BINDING(DART_REGISTER_NATIVE_STATIC)
                          FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-}  // namespace dart
-}  // namespace zircon
+std::shared_ptr<Handle> Handle::createInvalid() {
+  return Create(zx::handle());
+}
+
+std::shared_ptr<Handle> Handle::Create(zx_handle_t handle) {
+  return Create(zx::handle(handle));
+}
+
+std::shared_ptr<Handle> Handle::Create(zx::handle handle) {
+  return std::shared_ptr<Handle>(new Handle(std::move(handle)));
+}
+
+std::shared_ptr<Handle> Handle::Unwrap(Dart_Handle handle) {
+  auto* unwrapped = tonic::DartConverter<Handle*>::FromDart(handle);
+  return unwrapped->shared_from_this();
+}
+
+Handle::Handle(zx::handle handle) : handle_(std::move(handle)) {
+  tonic::DartState* state = tonic::DartState::Current();
+  FX_DCHECK(state);
+  Dart_Handle zircon_lib = Dart_LookupLibrary(tonic::ToDart("dart:zircon"));
+  FX_DCHECK(!tonic::LogIfError(zircon_lib));
+
+  Dart_Handle on_wait_completer_type =
+      Dart_GetClass(zircon_lib, tonic::ToDart("_OnWaitCompleteClosure"));
+  FX_DCHECK(!tonic::LogIfError(on_wait_completer_type));
+  on_wait_completer_type_.Set(state, on_wait_completer_type);
+
+  Dart_Handle async_lib = Dart_LookupLibrary(tonic::ToDart("dart:async"));
+  FX_DCHECK(!tonic::LogIfError(async_lib));
+  async_lib_.Set(state, async_lib);
+
+  Dart_Handle closure_string = tonic::ToDart("_closure");
+  FX_DCHECK(!tonic::LogIfError(closure_string));
+  closure_string_.Set(state, closure_string);
+}
+
+Handle::~Handle() {
+  if (isValid()) {
+    zx_status_t status = close();
+    FX_DCHECK(status == ZX_OK);
+  }
+}
+
+zx_status_t Handle::close() {
+  handle_.reset();
+  return ZX_OK;
+}
+
+std::shared_ptr<Handle> Handle::duplicate(zx_rights_t rights) {
+  if (!isValid()) {
+    return createInvalid();
+  }
+
+  zx::handle out_handle;
+  zx_status_t status = handle_.duplicate(rights, &out_handle);
+  if (status != ZX_OK) {
+    return createInvalid();
+  }
+  return Create(std::move(out_handle));
+}
+
+std::shared_ptr<HandleWaiter> Handle::asyncWait(zx_signals_t signals,
+                                                Dart_Handle callback) {
+  if (!isValid()) {
+    FX_LOG(WARNING) << "Attempt to wait on an invalid handle.";
+    return nullptr;
+  }
+
+  std::shared_ptr<HandleWaiter> waiter =
+      HandleWaiter::Create(shared_from_this(), signals, callback);
+  waiters_.push_back(waiter);
+
+  return waiter;
+}
+
+zx::handle Handle::ReleaseHandle() {
+  FX_DCHECK(isValid());
+
+  zx::handle handle;
+  std::swap(handle, handle_);
+
+  while (waiters_.size()) {
+    // HandleWaiter::Cancel calls Handle::ReleaseWaiter which removes the
+    // HandleWaiter from waiters_.
+    FX_DCHECK(waiters_.back()->is_pending());
+    waiters_.back()->cancel();
+  }
+
+  FX_DCHECK(!isValid());
+
+  return handle;
+}
+
+void Handle::ReleaseWaiter(std::shared_ptr<HandleWaiter> waiter) {
+  FX_DCHECK(waiter.get());
+
+  auto iter = std::find(waiters_.begin(), waiters_.end(), waiter);
+  FX_DCHECK(iter != waiters_.end());
+  FX_DCHECK(*iter == waiter);
+
+  waiters_.erase(iter);
+}
+
+}  // namespace zircon::dart
