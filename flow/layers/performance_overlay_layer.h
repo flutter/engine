@@ -29,6 +29,7 @@ class PerformanceOverlayLayer : public Layer {
   explicit PerformanceOverlayLayer(uint64_t options,
                                    const char* font_path = nullptr);
 
+  // |Layer|
   void Paint(PaintContext& context) const override;
 
  private:

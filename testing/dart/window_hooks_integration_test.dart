@@ -46,7 +46,6 @@ void main() {
 
     double oldDPR;
     Size oldSize;
-    double oldDepth;
     WindowPadding oldPadding;
     WindowPadding oldInsets;
     WindowPadding oldSystemGestureInsets;
@@ -54,7 +53,6 @@ void main() {
     setUp(() {
       oldDPR = window.devicePixelRatio;
       oldSize = window.physicalSize;
-      oldDepth = window.physicalDepth;
       oldPadding = window.viewPadding;
       oldInsets = window.viewInsets;
       oldSystemGestureInsets = window.systemGestureInsets;
@@ -76,7 +74,6 @@ void main() {
         oldDPR,                         // DPR
         oldSize.width,                  // width
         oldSize.height,                 // height
-        oldDepth,                       // depth
         oldPadding.top,                 // padding top
         oldPadding.right,               // padding right
         oldPadding.bottom,              // padding bottom
@@ -361,7 +358,6 @@ void main() {
       expect(window.viewInsets.bottom, 0.0);
       expect(window.viewPadding.bottom, 40.0);
       expect(window.padding.bottom, 40.0);
-      expect(window.physicalDepth, 100.0);
       expect(window.systemGestureInsets.bottom, 0.0);
 
       _updateWindowMetrics(
@@ -386,7 +382,6 @@ void main() {
       expect(window.viewInsets.bottom, 400.0);
       expect(window.viewPadding.bottom, 40.0);
       expect(window.padding.bottom, 0.0);
-      expect(window.physicalDepth, 100.0);
       expect(window.systemGestureInsets.bottom, 44.0);
     });
   });

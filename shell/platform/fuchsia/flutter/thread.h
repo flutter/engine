@@ -2,44 +2,36 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_THREAD_H_
-#define FLUTTER_SHELL_PLATFORM_FUCHSIA_THREAD_H_
-
-#include <pthread.h>
-
-#include <functional>
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_THREAD_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_THREAD_H_
 
 #include <lib/async-loop/cpp/loop.h>
-#include <lib/async/default.h>
+#include <lib/async/dispatcher.h>
 
-#include "flutter/fml/macros.h"
+#include <memory>
+#include <thread>
 
 namespace flutter_runner {
 
 class Thread {
  public:
   Thread();
-
   ~Thread();
-
-  void Quit();
-
-  bool Join();
-
-  bool IsValid() const;
+  Thread(const Thread&) = delete;
+  Thread& operator=(const Thread&) = delete;
 
   async_dispatcher_t* dispatcher() const;
 
+  void Quit();
+
+  void Join();
+
  private:
-  bool valid_;
-  pthread_t thread_;
-  std::unique_ptr<async::Loop> loop_;
-
-  void Main();
-
-  FML_DISALLOW_COPY_AND_ASSIGN(Thread);
+  async::Loop loop_;
+  std::thread thread_;
+  bool joined_ = false;
 };
 
 }  // namespace flutter_runner
 
-#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_THREAD_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_THREAD_H_

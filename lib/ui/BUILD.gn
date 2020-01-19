@@ -130,23 +130,6 @@ source_set("ui") {
   if (flutter_enable_skshaper) {
     defines = [ "FLUTTER_ENABLE_SKSHAPER" ]
   }
-
-  if (is_fuchsia) {
-    sources += [
-      "compositing/scene_host.cc",
-      "compositing/scene_host.h",
-    ]
-
-    if (using_fuchsia_sdk) {
-      deps += [
-        "$fuchsia_sdk_root/pkg:async-cpp",
-        "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
-        "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
-      ]
-    } else {
-      deps += [ "//topaz/public/dart-pkg/zircon" ]
-    }
-  }
 }
 
 if (current_toolchain == host_toolchain) {

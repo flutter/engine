@@ -790,22 +790,12 @@ class SceneHost extends NativeFieldWrapperClass2 {
     void Function() viewConnectedCallback,
     void Function() viewDisconnectedCallback,
     void Function(bool) viewStateChangedCallback,
-  ) {
-    _constructor(
-        viewHolderToken, viewConnectedCallback, viewDisconnectedCallback, viewStateChangedCallback);
-  }
-
-  void _constructor(
-    dynamic viewHolderToken,
-    void Function() viewConnectedCallback,
-    void Function() viewDisconnectedCallback,
-    void Function(bool) viewStateChangedCallbac,
-  ) native 'SceneHost_constructor';
+  ) {}
 
   /// Releases the resources associated with the SceneHost.
   ///
   /// After calling this function, the SceneHost cannot be used further.
-  void dispose() native 'SceneHost_dispose';
+  void dispose() {}
 
   /// Set properties on the linked scene.  These properties include its bounds,
   /// as well as whether it can be the target of focus events or not.
@@ -817,5 +807,5 @@ class SceneHost extends NativeFieldWrapperClass2 {
     double insetBottom,
     double insetLeft,
     bool focusable,
-  ) native 'SceneHost_setProperties';
+  ) {}
 }

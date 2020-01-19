@@ -22,10 +22,6 @@
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-#if defined(OS_FUCHSIA)
-#include "flutter/lib/ui/compositing/scene_host.h"
-#endif
-
 namespace flutter {
 
 class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
@@ -64,8 +60,6 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                                              int shadowColor,
                                              int clipBehavior);
 
-  void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
-
   void pop();
 
   void addPerformanceOverlay(uint64_t enabledOptions,
@@ -89,14 +83,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                        double height,
                        int64_t viewId);
 
-#if defined(OS_FUCHSIA)
-  void addChildScene(double dx,
-                     double dy,
-                     double width,
-                     double height,
-                     SceneHost* sceneHost,
-                     bool hitTestable);
-#endif
+  void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
 
   void setRasterizerTracingThreshold(uint32_t frameInterval);
   void setCheckerboardRasterCacheImages(bool checkerboard);

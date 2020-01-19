@@ -35,7 +35,7 @@ source_set("gpu_surface_gl") {
     "$gpu_dir/gpu_surface_gl_delegate.h",
   ]
 
-  deps = gpu_common_deps + [ "//third_party/skia" ]
+  deps = gpu_common_deps
 }
 
 source_set("gpu_surface_vulkan") {
@@ -60,5 +60,5 @@ source_set("gpu_surface_metal") {
     "$gpu_dir/gpu_surface_metal.mm",
   ]
 
-  deps = gpu_common_deps + [ "//third_party/skia" ]
+  deps = gpu_common_deps
 }

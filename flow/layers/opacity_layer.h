@@ -27,23 +27,18 @@ class OpacityLayer : public ContainerLayer {
   // the propagation as repainting the OpacityLayer is expensive.
   OpacityLayer(SkAlpha alpha, const SkPoint& offset);
 
+  // |ContainerLayer|
   void Add(std::shared_ptr<Layer> layer) override;
 
+  // |Layer|
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
-
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
 
  private:
   ContainerLayer* GetChildContainer() const;
 
   SkAlpha alpha_;
   SkPoint offset_;
-  SkRRect frameRRect_;
-  float total_elevation_ = 0.0f;
 
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);
 };

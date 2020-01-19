@@ -22,7 +22,6 @@ void _updateWindowMetrics(
   double devicePixelRatio,
   double width,
   double height,
-  double depth,
   double viewPaddingTop,
   double viewPaddingRight,
   double viewPaddingBottom,
@@ -39,7 +38,6 @@ void _updateWindowMetrics(
   window
     .._devicePixelRatio = devicePixelRatio
     .._physicalSize = Size(width, height)
-    .._physicalDepth = depth
     .._viewPadding = WindowPadding._(
         top: viewPaddingTop,
         right: viewPaddingRight,

@@ -29,6 +29,10 @@ extern "C" {
 
 #define FLUTTER_ENGINE_VERSION 1
 
+typedef void (*VoidCallback)(void* /* user data */);
+typedef bool (*BoolCallback)(void* /* user data */);
+typedef uint32_t (*UIntCallback)(void* /* user data */);
+
 typedef enum {
   kSuccess = 0,
   kInvalidLibraryVersion,
@@ -39,6 +43,7 @@ typedef enum {
 typedef enum {
   kOpenGL,
   kSoftware,
+  kVulkan,
 } FlutterRendererType;
 
 /// Additional accessibility features that may be enabled by the platform.
@@ -207,7 +212,7 @@ typedef struct {
   double pers2;
 } FlutterTransformation;
 
-typedef void (*VoidCallback)(void* /* user data */);
+typedef FlutterTransformation (*TransformationCallback)(void* /* user data */);
 
 typedef enum {
   /// Specifies an OpenGL texture target type. Textures are specified using
@@ -258,19 +263,12 @@ typedef struct {
   VoidCallback destruction_callback;
 } FlutterOpenGLFramebuffer;
 
-typedef bool (*BoolCallback)(void* /* user data */);
-typedef FlutterTransformation (*TransformationCallback)(void* /* user data */);
-typedef uint32_t (*UIntCallback)(void* /* user data */);
-typedef bool (*SoftwareSurfacePresentCallback)(void* /* user data */,
-                                               const void* /* allocation */,
-                                               size_t /* row bytes */,
-                                               size_t /* height */);
-typedef void* (*ProcResolver)(void* /* user data */, const char* /* name */);
 typedef bool (*TextureFrameCallback)(void* /* user data */,
                                      int64_t /* texture identifier */,
                                      size_t /* width */,
                                      size_t /* height */,
                                      FlutterOpenGLTexture* /* texture out */);
+typedef void* (*ProcResolver)(void* /* user data */, const char* /* name */);
 typedef void (*VsyncCallback)(void* /* user data */, intptr_t /* baton */);
 
 typedef struct {
@@ -311,6 +309,54 @@ typedef struct {
   TextureFrameCallback gl_external_texture_frame_callback;
 } FlutterOpenGLRendererConfig;
 
+typedef enum {
+  /// Specifies a Vulkan image target type. Images are specified using
+  /// the FlutterVulkanImage struct.
+  kFlutterVulkanTargetTypeImage,
+  /// Specifies a Vulkan swapchain target type. Swapchains are specified using
+  /// the FlutterVulkanSwapchain struct.
+  kFlutterVulkanTargetTypeSwapchain,
+} FlutterVulkanTargetType;
+
+typedef struct {
+  /// VkMemory backing the allocated texture.
+  intptr_t memory_handle;
+  /// VkImage for the allocated texture.
+  intptr_t image_handle;
+  /// Amount of memory in bytes consumed by the allocated texture.
+  uint64_t memory_size;
+  /// The image tiling (example VK_IMAGE_TILING_LINEAR).
+  uint32_t tiling;
+  /// The image layout (example VK_IMAGE_LAYOUT_GENERAL).
+  uint32_t layout;
+  /// The image format (example VK_FORMAT_R8G8B8A8_UNORM).
+  uint32_t format;
+  /// User data to be returned on the invocation of the destruction callback.
+  void* user_data;
+  /// Callback invoked (on an engine managed thread) that asks the embedder to
+  /// collect the image.
+  VoidCallback destruction_callback;
+  /// Width of the image.
+  size_t width;
+  /// Height of the image.
+  size_t height;
+} FlutterVulkanImage;
+
+typedef struct {
+  /// User data to be returned on the invocation of the destruction callback.
+  void* user_data;
+} FlutterVulkanSwapchain;
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterVulkanRendererConfig).
+  size_t struct_size;
+} FlutterVulkanRendererConfig;
+
+typedef bool (*SoftwareSurfacePresentCallback)(void* /* user data */,
+                                               const void* /* allocation */,
+                                               size_t /* row bytes */,
+                                               size_t /* height */);
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterSoftwareRendererConfig).
   size_t struct_size;
@@ -325,6 +371,7 @@ typedef struct {
   FlutterRendererType type;
   union {
     FlutterOpenGLRendererConfig open_gl;
+    FlutterVulkanRendererConfig vulkan;
     FlutterSoftwareRendererConfig software;
   };
 } FlutterRendererConfig;
@@ -655,36 +702,6 @@ typedef struct {
   const FlutterTaskRunnerDescription* render_task_runner;
 } FlutterCustomTaskRunners;
 
-typedef struct {
-  /// The type of the OpenGL backing store. Currently, it can either be a
-  /// texture or a framebuffer.
-  FlutterOpenGLTargetType type;
-  union {
-    /// A texture for Flutter to render into.
-    FlutterOpenGLTexture texture;
-    /// A framebuffer for Flutter to render into. The embedder must ensure that
-    /// the framebuffer is complete.
-    FlutterOpenGLFramebuffer framebuffer;
-  };
-} FlutterOpenGLBackingStore;
-
-typedef struct {
-  /// A pointer to the raw bytes of the allocation described by this software
-  /// backing store.
-  const void* allocation;
-  /// The number of bytes in a single row of the allocation.
-  size_t row_bytes;
-  /// The number of rows in the allocation.
-  size_t height;
-  /// A baton that is not interpreted by the engine in any way. It will be given
-  /// back to the embedder in the destruction callback below. Embedder resources
-  /// may be associated with this baton.
-  void* user_data;
-  /// The callback invoked by the engine when it no longer needs this backing
-  /// store.
-  VoidCallback destruction_callback;
-} FlutterSoftwareBackingStore;
-
 typedef enum {
   /// Indicates that the Flutter application requested that an opacity be
   /// applied to the platform view.
@@ -736,12 +753,57 @@ typedef struct {
   const FlutterPlatformViewMutation** mutations;
 } FlutterPlatformView;
 
+typedef struct {
+  /// The type of the OpenGL backing store. Currently, it can either be a
+  /// texture or a framebuffer.
+  FlutterOpenGLTargetType type;
+  union {
+    /// A texture for Flutter to render into.
+    FlutterOpenGLTexture texture;
+    /// A framebuffer for Flutter to render into. The embedder must ensure that
+    /// the framebuffer is complete.
+    FlutterOpenGLFramebuffer framebuffer;
+  };
+} FlutterOpenGLBackingStore;
+
+typedef struct {
+  /// The type of the Vulkan backing store. Currently, it can either be a
+  /// regular image or a swapchain image.
+  FlutterVulkanTargetType type;
+  union {
+    /// A VkImage for Flutter to render into.
+    FlutterVulkanImage image;
+    /// A swapchain image for Flutter to render into.
+    FlutterVulkanSwapchain swapchain;
+  };
+} FlutterVulkanBackingStore;
+
+typedef struct {
+  /// A pointer to the raw bytes of the allocation described by this software
+  /// backing store.
+  const void* allocation;
+  /// The number of bytes in a single row of the allocation.
+  size_t row_bytes;
+  /// The number of rows in the allocation.
+  size_t height;
+  /// A baton that is not interpreted by the engine in any way. It will be given
+  /// back to the embedder in the destruction callback below. Embedder resources
+  /// may be associated with this baton.
+  void* user_data;
+  /// The callback invoked by the engine when it no longer needs this backing
+  /// store.
+  VoidCallback destruction_callback;
+} FlutterSoftwareBackingStore;
+
 typedef enum {
   /// Specifies an OpenGL backing store. Can either be an OpenGL texture or
   /// framebuffer.
   kFlutterBackingStoreTypeOpenGL,
   /// Specified an software allocation for Flutter to render into using the CPU.
   kFlutterBackingStoreTypeSoftware,
+  /// Specifies a Vulkan backing store. Can either be a VkImage or a swapchain
+  /// image.
+  kFlutterBackingStoreTypeVulkan,
 } FlutterBackingStoreType;
 
 typedef struct {
@@ -761,6 +823,8 @@ typedef struct {
     FlutterOpenGLBackingStore open_gl;
     /// The description of the software backing store.
     FlutterSoftwareBackingStore software;
+    /// The description of the Vulkan backing store.
+    FlutterVulkanBackingStore vulkan;
   };
 } FlutterBackingStore;
 
@@ -959,16 +1023,25 @@ typedef enum {
 typedef void (*FlutterNativeThreadCallback)(FlutterNativeThreadType type,
                                             void* user_data);
 
+/// A calllback made by the engine in response to an unhandled Dart exception.
+typedef bool (*UnhandledExceptionCallback)(void* /* user_data */,
+                                           const char* /* error */,
+                                           const char* /* stack trace */);
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterProjectArgs).
   size_t struct_size;
   /// The path to the Flutter assets directory containing project assets. The
-  /// string can be collected after the call to `FlutterEngineRun` returns. The
-  /// string must be NULL terminated.
+  /// string can be collected after the call to `FlutterEngineInitialize` or
+  /// `FlutterEngineRun` returns. The string must be NULL terminated.
   const char* assets_path;
+  /// A file descriptor pointing to the Flutter assets directory containing
+  /// project assets.  If this descriptor is valid (non-negative), it will be
+  /// preferred over assets_path.
+  int assets_dir;
   /// The path to the Dart file containing the `main` entry point.
-  /// The string can be collected after the call to `FlutterEngineRun` returns.
-  /// The string must be NULL terminated.
+  /// The string can be collected after the call to `FlutterEngineInitialize`
+  /// or `FlutterEngineRun` returns.  The string must be NULL terminated.
   ///
   /// @deprecated     As of Dart 2, running from Dart source is no longer
   ///                 supported. Dart code should now be compiled to kernel form
@@ -977,8 +1050,8 @@ typedef struct {
   ///                 stability.
   const char* main_path__unused__;
   /// The path to the `.packages` file for the project. The string can be
-  /// collected after the call to `FlutterEngineRun` returns. The string must be
-  /// NULL terminated.
+  /// collected after the call to `FlutterEngineInitialize` or
+  /// `FlutterEngineRun` returns. The string must be NULL terminated.
   ///
   /// @deprecated    As of Dart 2, running from Dart source is no longer
   ///                supported. Dart code should now be compiled to kernel form
@@ -987,14 +1060,14 @@ typedef struct {
   ///                stability.
   const char* packages_path__unused__;
   /// The path to the `icudtl.dat` file for the project. The string can be
-  /// collected after the call to `FlutterEngineRun` returns. The string must
-  /// be NULL terminated.
+  /// collected after the call to `FlutterEngineInitialize` or
+  /// `FlutterEngineRun` returns. The string must be NULL terminated.
   const char* icu_data_path;
   /// The command line argument count used to initialize the project.
   int command_line_argc;
   /// The command line arguments used to initialize the project. The strings can
-  /// be collected after the call to `FlutterEngineRun` returns. The strings
-  /// must be `NULL` terminated.
+  /// be collected after the call to `FlutterEngineInitialize` or
+  /// `FlutterEngineRun` returns. The strings must be `NULL` terminated.
   ///
   /// @attention     The first item in the command line (if specified at all) is
   ///                interpreted as the executable name. So if an engine flag
@@ -1013,6 +1086,10 @@ typedef struct {
   /// callback will be invoked on the thread on which the `FlutterEngineRun`
   /// call is made.
   FlutterPlatformMessageCallback platform_message_callback;
+  /// The kernel binary used in JIT operation.
+  const char* application_kernel_asset;
+  /// The kernel list used in JIT operation.  Only used if application_kernel_asset isn't set.
+  const char* application_kernel_list_asset;
   /// The VM snapshot data buffer used in AOT operation. This buffer must be
   /// mapped in as read-only. For more information refer to the documentation on
   /// the Wiki at
@@ -1045,9 +1122,41 @@ typedef struct {
   /// The size of the isolate snapshot instructions buffer. If
   /// isolate_snapshot_instructions is a symbol reference, 0 may be passed here.
   size_t isolate_snapshot_instructions_size;
+  /// Configuration flags passed to the DartVM.  The strings can be collected
+  /// after the call to `FlutterEngineInitialize` or `FlutterEngineRun` returns.
+  /// The strings must be `NULL` terminated.
+  const char* const* dart_flags;
+  /// Count of the Dart configuration flags.
+  size_t dart_flags_count;
+  /// Arguments passed to Dart's entrypoint function.  The strings can be
+  /// collected after the call to `FlutterEngineInitialize` or
+  /// `FlutterEngineRun` returns. The strings must be `NULL` terminated.
+  const char* const* dart_entrypoint_args;
+  /// Count of the entrypoint args.
+  size_t dart_entrypoint_args_count;
+  /// Whether to trace skia events or not.
+  bool trace_skia;
+  /// Whether to disable asserts in dart code or not.
+  bool disable_dart_asserts;
+  /// The advisory URI for the script to be run.
+  const char* advisory_script_uri;
+  /// The entrypoint for the script to be run.
+  const char* advisory_script_entrypoint;
+  /// Whether to enable observatory or not.
+  bool enable_observatory;
+  /// IP address to bind the observatory service at.  The string can be
+  /// collected after the call to `FlutterEngineInitialize` or
+  /// `FlutterEngineRun` returns. The string must be `NULL` terminated.
+  const char* observatory_host;
+  /// Port to bind the observatory service at.  Specifying 0 will cause the
+  /// engine to choose a port at random.
+  uint32_t observatory_port;
   /// The callback invoked by the engine in root isolate scope. Called
   /// immediately after the root isolate has been created and marked runnable.
   VoidCallback root_isolate_create_callback;
+  /// The callback invoked by the engine in root isolate scope. Called
+  /// immediately before the root isolate is destroyed.
+  VoidCallback root_isolate_shutdown_callback;
   /// The callback invoked by the engine in order to give the embedder the
   /// chance to respond to semantics node updates from the Dart application.
   /// Semantics node updates are sent in batches terminated by a 'batch end'
@@ -1072,8 +1181,8 @@ typedef struct {
   /// Flutter application (such as compiled shader programs used by Skia).
   /// This is optional.  The string must be NULL terminated.
   ///
-  // This is different from the cache-path-dir argument defined in switches.h,
-  // which is used in `flutter::Settings` as `temp_directory_path`.
+  /// This is different from the cache-path-dir argument defined in switches.h,
+  /// which is used in `flutter::Settings` as `temp_directory_path`.
   const char* persistent_cache_path;
 
   /// If true, the engine would only read the existing cache, but not write new
@@ -1123,6 +1232,18 @@ typedef struct {
   /// wish to shutdown the Dart VM when the last engine is terminated in the
   /// process should opt into this behavior by setting this flag to true.
   bool shutdown_dart_vm_when_done;
+
+  /// A callback given to the embedder to react to unhandled exceptions in the
+  /// running Flutter application. This callback is made on an internal engine
+  /// managed thread and embedders must re-thread as necessary. Performing
+  /// blocking calls in this callback will cause applications to jank.
+  UnhandledExceptionCallback unhandled_exception_callback;
+
+  /// Whether to turn on verbose logging for the engine or not.
+  bool verbose_logging;
+
+  /// Tag to use when logging messages to the system log.
+  const char* log_tag;
 
   /// Typically, Flutter renders the layer hierarchy into a single root surface.
   /// However, when embedders need to interleave their own contents within the

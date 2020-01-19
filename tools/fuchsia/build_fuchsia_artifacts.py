@@ -150,8 +150,8 @@ def CopyToBucket(src, dst, product=False):
 
 
 def BuildBucket(runtime_mode, arch, product):
-  out_dir = 'fuchsia_%s_%s/' % (runtime_mode, arch)
-  bucket_dir = 'flutter/%s/%s/' % (arch, runtime_mode)
+  out_dir = 'fuchsia_%s_unopt_%s/' % (runtime_mode, arch)
+  bucket_dir = 'flutter/%s/%s/unopt/' % (arch, runtime_mode)
   CopyToBucket(out_dir, bucket_dir, product)
 
 
@@ -210,8 +210,9 @@ def GetTargetsToBuild(product=False):
 
 
 def BuildTarget(runtime_mode, arch, product, enable_lto):
-  out_dir = 'fuchsia_%s_%s' % (runtime_mode, arch)
+  out_dir = 'fuchsia_%s_unopt_%s' % (runtime_mode, arch)
   flags = [
+      '--unopt',
       '--fuchsia',
       '--fuchsia-cpu',
       arch,

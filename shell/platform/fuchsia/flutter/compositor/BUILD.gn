@@ -1,0 +1,51 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_fuchsia)
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/common/config.gni")
+
+source_set("compositor") {
+  sources = [
+    #"scenic_accessibility_bridge.cc",
+    #"scenic_accessibility_bridge.h",
+    #"scenic_input_handler.cc",
+    #"scenic_input_handler.h",
+    #"scenic_session.cc",
+    #"scenic_session.h",
+    #"scenic_view_controller.cc",
+    #"scenic_view_controller.h",
+    "scenic_window.cc",
+    "scenic_window.h",
+    "scenic_window_manager.cc",
+    "scenic_window_manager.h",
+  ]
+
+  # The use of these dependencies is temporary and will be moved behind the
+  # embedder API.
+  flutter_legacy_deps = [ "//flutter/fml" ]
+
+  public_deps = [
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.views",
+    "$fuchsia_sdk_root/pkg:scenic_cpp",
+    "$fuchsia_sdk_root/pkg:zx",
+  ]
+
+  deps = [
+    "//flutter/shell/platform/embedder:api",
+    "//third_party/rapidjson",
+    "//third_party/skia",
+    "$fuchsia_sdk_root/fidl:fuchsia.accessibility.semantics",
+    "$fuchsia_sdk_root/fidl:fuchsia.images",
+    "$fuchsia_sdk_root/fidl:fuchsia.io",
+    "$fuchsia_sdk_root/fidl:fuchsia.math",
+    "$fuchsia_sdk_root/fidl:fuchsia.sys",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.input",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
+    "$fuchsia_sdk_root/pkg:sys_cpp",
+  ] + flutter_legacy_deps
+}

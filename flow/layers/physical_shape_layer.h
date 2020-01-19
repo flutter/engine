@@ -27,29 +27,20 @@ class PhysicalShapeLayer : public ContainerLayer {
                          bool transparentOccluder,
                          SkScalar dpr);
 
+  // |Layer|
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
 
   bool UsesSaveLayer() const {
     return clip_behavior_ == Clip::antiAliasWithSaveLayer;
   }
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
-
-  float total_elevation() const { return total_elevation_; }
-
  private:
+  SkPath path_;
   SkColor color_;
   SkColor shadow_color_;
-  float elevation_ = 0.0f;
-  float total_elevation_ = 0.0f;
-  SkPath path_;
-  bool isRect_;
-  SkRRect frameRRect_;
   Clip clip_behavior_;
+  float elevation_ = 0.0f;
 };
 
 }  // namespace flutter

@@ -39,6 +39,8 @@ source_set("vulkan") {
     "vulkan_interface.h",
     "vulkan_native_surface.cc",
     "vulkan_native_surface.h",
+    "vulkan_native_surface_embedder.cc",
+    "vulkan_native_surface_embedder.h",
     "vulkan_proc_table.cc",
     "vulkan_proc_table.h",
     "vulkan_surface.cc",

@@ -40,14 +40,12 @@ done
 # TODO(gw280): Enable tests using JIT runner
 
 ./fuchsia_ctl -d $device_name test \
-    -f flutter_aot_runner-0.far    \
     -f flutter_runner_tests-0.far  \
     -t flutter_runner_tests
 
 ./fuchsia_ctl -d $device_name test \
-    -f flutter_aot_runner-0.far    \
-    -f flutter_runner_scenic_tests-0.far  \
-    -t flutter_runner_scenic_tests
+    -f flow_tests-0.far  \
+    -t flow_tests
 
 # TODO(https://github.com/flutter/flutter/issues/50032) Enable after the
 # Fuchsia message loop migration is complete.

@@ -47,8 +47,7 @@ class CompositorContext {
                 bool instrumentation_enabled,
                 bool surface_supports_readback,
                 fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
-
-    virtual ~ScopedFrame();
+    ~ScopedFrame();
 
     SkCanvas* canvas() { return canvas_; }
 
@@ -64,8 +63,7 @@ class CompositorContext {
 
     GrContext* gr_context() const { return gr_context_; }
 
-    virtual RasterStatus Raster(LayerTree& layer_tree,
-                                bool ignore_raster_cache);
+    RasterStatus Raster(LayerTree& layer_tree, bool ignore_raster_cache);
 
    private:
     CompositorContext& context_;
@@ -81,10 +79,9 @@ class CompositorContext {
   };
 
   CompositorContext(fml::Milliseconds frame_budget = fml::kDefaultFrameBudget);
+  ~CompositorContext();
 
-  virtual ~CompositorContext();
-
-  virtual std::unique_ptr<ScopedFrame> AcquireFrame(
+  std::unique_ptr<ScopedFrame> AcquireFrame(
       GrContext* gr_context,
       SkCanvas* canvas,
       ExternalViewEmbedder* view_embedder,

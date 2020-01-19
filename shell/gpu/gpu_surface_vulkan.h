@@ -21,7 +21,6 @@ class GPUSurfaceVulkan : public Surface {
   GPUSurfaceVulkan(GPUSurfaceVulkanDelegate* delegate,
                    std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
                    bool render_to_surface);
-
   ~GPUSurfaceVulkan() override;
 
   // |Surface|
@@ -42,6 +41,11 @@ class GPUSurfaceVulkan : public Surface {
  private:
   vulkan::VulkanWindow window_;
   GPUSurfaceVulkanDelegate* delegate_;
+
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface. This is a
+  // hack to make avoid allocating resources for the root surface when an
+  // external view embedder is present.
   const bool render_to_surface_;
 
   fml::WeakPtrFactory<GPUSurfaceVulkan> weak_factory_;

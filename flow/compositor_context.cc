@@ -68,7 +68,7 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 }
 
 RasterStatus CompositorContext::ScopedFrame::Raster(
-    flutter::LayerTree& layer_tree,
+    LayerTree& layer_tree,
     bool ignore_raster_cache) {
   bool root_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();

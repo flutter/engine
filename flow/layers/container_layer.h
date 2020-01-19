@@ -16,11 +16,9 @@ class ContainerLayer : public Layer {
 
   virtual void Add(std::shared_ptr<Layer> layer);
 
+  // |Layer|
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
 
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
 
@@ -29,13 +27,6 @@ class ContainerLayer : public Layer {
                        const SkMatrix& child_matrix,
                        SkRect* child_paint_bounds);
   void PaintChildren(PaintContext& context) const;
-
-#if defined(OS_FUCHSIA)
-  void UpdateSceneChildren(SceneUpdateContext& context);
-#endif  // defined(OS_FUCHSIA)
-
-  // For OpacityLayer to restructure to have a single child.
-  void ClearChildren() { layers_.clear(); }
 
  private:
   std::vector<std::shared_ptr<Layer>> layers_;

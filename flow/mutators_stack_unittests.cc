@@ -47,7 +47,7 @@ TEST(MutatorsStack, PushClipPath) {
   SkPath path;
   stack.PushClipPath(path);
   auto iter = stack.Bottom();
-  ASSERT_TRUE(iter->get()->GetType() == flutter::MutatorType::clip_path);
+  ASSERT_TRUE(iter->get()->GetType() == MutatorType::clip_path);
   ASSERT_TRUE(iter->get()->GetPath() == path);
 }
 
@@ -214,8 +214,8 @@ TEST(Mutator, Equality) {
   ASSERT_TRUE(mutator3 == otherMutator3);
 
   SkPath path;
-  flutter::Mutator mutator4 = flutter::Mutator(path);
-  flutter::Mutator otherMutator4 = flutter::Mutator(path);
+  Mutator mutator4 = Mutator(path);
+  Mutator otherMutator4 = Mutator(path);
   ASSERT_TRUE(mutator4 == otherMutator4);
   ASSERT_FALSE(mutator2 == mutator);
   int alpha = 240;
