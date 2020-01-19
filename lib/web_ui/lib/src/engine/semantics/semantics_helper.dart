@@ -127,7 +127,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
   @override
   bool tryEnableSemantics(html.Event event) {
     if (_schedulePlaceholderRemoval) {
-      _semanticsPlaceholder.remove();
+      if (_semanticsPlaceholder != null) _semanticsPlaceholder.remove();
       _semanticsPlaceholder = null;
       semanticsActivationTimer = null;
       return true;
@@ -258,7 +258,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       final bool removeNow =
           (browserEngine != BrowserEngine.webkit || event.type == 'touchend');
       if (removeNow) {
-        _semanticsPlaceholder.remove();
+        if (_semanticsPlaceholder != null) _semanticsPlaceholder.remove();
         _semanticsPlaceholder = null;
         semanticsActivationTimer = null;
       }
