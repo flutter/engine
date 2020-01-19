@@ -5,11 +5,12 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_VSYNC_RECORDER_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_VSYNC_RECORDER_H_
 
+#include <fuchsia/images/cpp/fidl.h>
+
 #include <optional>
 
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
-#include "lib/ui/scenic/cpp/session.h"
 
 namespace flutter_runner {
 

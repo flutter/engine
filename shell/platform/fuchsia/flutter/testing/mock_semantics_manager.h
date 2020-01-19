@@ -2,21 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TOPAZ_RUNTIME_FLUTTER_RUNNER_PLATFORM_VIEW_FAKES_H_
-#define TOPAZ_RUNTIME_FLUTTER_RUNNER_PLATFORM_VIEW_FAKES_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_TESTING_MOCK_SEMANTICS_MANAGER_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_TESTING_MOCK_SEMANTICS_MANAGER_H_
 
 #include <fuchsia/accessibility/semantics/cpp/fidl.h>
 
 namespace flutter_runner_test {
-using fuchsia::accessibility::semantics::SemanticsManager;
 
 class MockSemanticsManager
-    : public SemanticsManager,
+    : public fuchsia::accessibility::semantics::SemanticsManager,
       public fuchsia::accessibility::semantics::SemanticTree {
  public:
   MockSemanticsManager() : tree_binding_(this) {}
 
-  // |fuchsia::accessibility::semantics::SemanticsManager|:
+  // |fuchsia::accessibility::semantics::SemanticsManager|
   void RegisterViewForSemantics(
       fuchsia::ui::views::ViewRef view_ref,
       fidl::InterfaceHandle<fuchsia::accessibility::semantics::SemanticListener>
@@ -27,8 +26,9 @@ class MockSemanticsManager
     has_view_ref_ = true;
   }
 
-  fidl::InterfaceRequestHandler<SemanticsManager> GetHandler(
-      async_dispatcher_t* dispatcher) {
+  fidl::InterfaceRequestHandler<
+      fuchsia::accessibility::semantics::SemanticsManager>
+  GetHandler(async_dispatcher_t* dispatcher) {
     return bindings_.GetHandler(this, dispatcher);
   }
 
@@ -91,19 +91,20 @@ class MockSemanticsManager
   }
 
  private:
-  bool has_view_ref_ = false;
-  fidl::BindingSet<SemanticsManager> bindings_;
-  fidl::Binding<SemanticTree> tree_binding_;
+  fidl::BindingSet<fuchsia::accessibility::semantics::SemanticsManager>
+      bindings_;
+  fidl::Binding<fuchsia::accessibility::semantics::SemanticTree> tree_binding_;
 
   std::vector<fuchsia::accessibility::semantics::Node> last_updated_nodes_;
-  bool update_overflowed_;
+  std::vector<uint32_t> last_deleted_node_ids_;
   int update_count_;
   int delete_count_;
-  bool delete_overflowed_;
-  std::vector<uint32_t> last_deleted_node_ids_;
   int commit_count_;
+  bool update_overflowed_;
+  bool delete_overflowed_;
+  bool has_view_ref_ = false;
 };
 
 }  // namespace flutter_runner_test
 
-#endif  // TOPAZ_RUNTIME_FLUTTER_RUNNER_PLATFORM_VIEW_FAKES_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_TESTING_MOCK_SEMANTICS_MANAGER_H_

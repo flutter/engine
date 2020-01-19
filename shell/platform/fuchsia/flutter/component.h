@@ -47,7 +47,7 @@ struct ActiveApplication {
   ~ActiveApplication() = default;
 };
 
-// Represents an instance of a Flutter application that contains one of more
+// Represents an instance of a Flutter application that contains one or more
 // Flutter engine instances.
 class Application final : public Engine::Delegate,
                           public fuchsia::sys::ComponentController,

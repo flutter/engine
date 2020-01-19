@@ -17,32 +17,11 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
                                        float elevation,
                                        const SkPath& path,
                                        Clip clip_behavior)
-    : color_(color),
+    : path_(path),
+      color_(color),
       shadow_color_(shadow_color),
-      elevation_(elevation),
-      path_(path),
-      isRect_(false),
-      clip_behavior_(clip_behavior) {
-  SkRect rect;
-  if (path.isRect(&rect)) {
-    isRect_ = true;
-    frameRRect_ = SkRRect::MakeRect(rect);
-  } else if (path.isRRect(&frameRRect_)) {
-    isRect_ = frameRRect_.isRect();
-  } else if (path.isOval(&rect)) {
-    // isRRect returns false for ovals, so we need to explicitly check isOval
-    // as well.
-    frameRRect_ = SkRRect::MakeOval(rect);
-  } else {
-    // Scenic currently doesn't provide an easy way to create shapes from
-    // arbitrary paths.
-    // For shapes that cannot be represented as a rounded rectangle we
-    // default to use the bounding rectangle.
-    // TODO(amirh): fix this once we have a way to create a Scenic shape from
-    // an SkPath.
-    frameRRect_ = SkRRect::MakeRect(path.getBounds());
-  }
-}
+      clip_behavior_(clip_behavior),
+      elevation_(elevation) {}
 
 void PhysicalShapeLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
@@ -50,61 +29,19 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
 
-  context->total_elevation += elevation_;
-  total_elevation_ = context->total_elevation;
   SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
-  context->total_elevation -= elevation_;
 
   if (elevation_ == 0) {
     set_paint_bounds(path_.getBounds());
   } else {
-#if defined(OS_FUCHSIA)
-    // Let the system compositor draw all shadows for us.
-    set_needs_system_composite(true);
-#else
     // We will draw the shadow in Paint(), so add some margin to the paint
     // bounds to leave space for the shadow. We fill this whole region and clip
     // children to it so we don't need to join the child paint bounds.
     set_paint_bounds(ComputeShadowBounds(path_.getBounds(), elevation_,
                                          context->frame_device_pixel_ratio));
-#endif  // defined(OS_FUCHSIA)
   }
 }
-
-#if defined(OS_FUCHSIA)
-
-void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
-  FML_DCHECK(needs_system_composite());
-  TRACE_EVENT0("flutter", "PhysicalShapeLayer::UpdateScene");
-
-  // Retained rendering: speedup by reusing a retained entity node if possible.
-  // When an entity node is reused, no paint layer is added to the frame so we
-  // won't call PhysicalShapeLayer::Paint.
-  LayerRasterCacheKey key(unique_id(), context.Matrix());
-  if (context.HasRetainedNode(key)) {
-    TRACE_EVENT_INSTANT0("flutter", "retained layer cache hit");
-    const scenic::EntityNode& retained_node = context.GetRetainedNode(key);
-    FML_DCHECK(context.top_entity());
-    FML_DCHECK(retained_node.session() == context.session());
-    context.top_entity()->entity_node().AddChild(retained_node);
-    return;
-  }
-
-  TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
-  // If we can't find an existing retained surface, create one.
-  SceneUpdateContext::Frame frame(context, frameRRect_, color_, SK_AlphaOPAQUE,
-                                  elevation_, total_elevation_, this);
-  for (auto& layer : layers()) {
-    if (layer->needs_painting()) {
-      frame.AddPaintLayer(layer.get());
-    }
-  }
-
-  UpdateSceneChildren(context);
-}
-
-#endif  // defined(OS_FUCHSIA)
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");

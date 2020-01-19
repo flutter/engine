@@ -15,7 +15,7 @@
 #include <memory>
 
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "flutter/shell/platform/fuchsia/flutter/flutter_runner_fakes.h"
+#include "flutter/shell/platform/fuchsia/flutter/testing/mock_semantics_manager.h"
 
 namespace flutter_runner_test {
 

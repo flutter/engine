@@ -32,10 +32,6 @@
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/logging/dart_error.h"
 
-#if defined(OS_FUCHSIA)
-#include "flutter/lib/ui/compositing/scene_host.h"
-#endif
-
 using tonic::ToDart;
 
 namespace flutter {
@@ -94,9 +90,6 @@ void DartUI::InitForGlobal() {
     SemanticsUpdateBuilder::RegisterNatives(g_natives);
     Vertices::RegisterNatives(g_natives);
     Window::RegisterNatives(g_natives);
-#if defined(OS_FUCHSIA)
-    SceneHost::RegisterNatives(g_natives);
-#endif
 
     // Secondary isolates do not provide UI-related APIs.
     g_natives_secondary = new tonic::DartLibraryNatives();

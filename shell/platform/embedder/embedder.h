@@ -39,6 +39,7 @@ typedef enum {
 typedef enum {
   kOpenGL,
   kSoftware,
+  kVulkan,
 } FlutterRendererType;
 
 /// Additional accessibility features that may be enabled by the platform.
@@ -321,11 +322,50 @@ typedef struct {
   SoftwareSurfacePresentCallback surface_present_callback;
 } FlutterSoftwareRendererConfig;
 
+typedef enum {
+  /// Specifies a Vulkan image target type. Images are specified using
+  /// the FlutterVulkanImage struct.
+  kFlutterVulkanTargetTypeImage,
+  /// Specifies a Vulkan swapchain target type. Swapchains are specified using
+  /// the FlutterVulkanSwapchain struct.
+  kFlutterVulkanTargetTypeSwapchain,
+} FlutterVulkanTargetType;
+
+typedef struct {
+  /// The image format (example GL_RGBA8).
+  uint32_t format;
+  /// User data to be returned on the invocation of the destruction callback.
+  void* user_data;
+  /// Callback invoked (on an engine managed thread) that asks the embedder to
+  /// collect the image.
+  VoidCallback destruction_callback;
+  /// Width of the image.
+  size_t width;
+  /// Height of the image.
+  size_t height;
+} FlutterVulkanImage;
+
+typedef struct {
+  /// User data to be returned on the invocation of the destruction callback.
+  void* user_data;
+} FlutterVulkanSwapchain;
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterVulkanRendererConfig).
+  size_t struct_size;
+  /// The callback presented to the embedder to present a fully populated buffer
+  /// to the user. The pixel format of the buffer is the native 32-bit RGBA
+  /// format. The buffer is owned by the Flutter engine and must be copied in
+  /// this callback if needed.
+  BoolCallback surface_present_callback;
+} FlutterVulkanRendererConfig;
+
 typedef struct {
   FlutterRendererType type;
   union {
     FlutterOpenGLRendererConfig open_gl;
     FlutterSoftwareRendererConfig software;
+    FlutterVulkanRendererConfig vulkan;
   };
 } FlutterRendererConfig;
 
@@ -685,6 +725,18 @@ typedef struct {
   VoidCallback destruction_callback;
 } FlutterSoftwareBackingStore;
 
+typedef struct {
+  /// The type of the Vulkan backing store. Currently, it can either be a
+  /// regular image or a swapchain image.
+  FlutterVulkanTargetType type;
+  union {
+    /// A VkImage for Flutter to render into.
+    FlutterVulkanImage image;
+    /// A swapchain image for Flutter to render into.
+    FlutterVulkanSwapchain swapchain;
+  };
+} FlutterVulkanBackingStore;
+
 typedef enum {
   /// Indicates that the Flutter application requested that an opacity be
   /// applied to the platform view.
@@ -742,6 +794,9 @@ typedef enum {
   kFlutterBackingStoreTypeOpenGL,
   /// Specified an software allocation for Flutter to render into using the CPU.
   kFlutterBackingStoreTypeSoftware,
+  /// Specifies a Vulkan backing store. Can either be a VkImage or a swapchain
+  /// image.
+  kFlutterBackingStoreTypeVulkan,
 } FlutterBackingStoreType;
 
 typedef struct {
@@ -761,6 +816,8 @@ typedef struct {
     FlutterOpenGLBackingStore open_gl;
     /// The description of the software backing store.
     FlutterSoftwareBackingStore software;
+    /// The description of the Vulkan backing store.
+    FlutterVulkanBackingStore vulkan;
   };
 } FlutterBackingStore;
 

@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
 import("$flutter_root/common/config.gni")
 import("$flutter_root/testing/testing.gni")
 
@@ -129,23 +128,6 @@ source_set("ui") {
 
   if (flutter_enable_skshaper) {
     defines = [ "FLUTTER_ENABLE_SKSHAPER" ]
-  }
-
-  if (is_fuchsia) {
-    sources += [
-      "compositing/scene_host.cc",
-      "compositing/scene_host.h",
-    ]
-
-    if (using_fuchsia_sdk) {
-      deps += [
-        "$flutter_root/shell/platform/fuchsia/dart-pkg/fuchsia",
-        "$flutter_root/shell/platform/fuchsia/dart-pkg/zircon",
-        "$fuchsia_sdk_root/pkg:async-cpp",
-      ]
-    } else {
-      deps += [ "//topaz/public/dart-pkg/zircon" ]
-    }
   }
 }
 

@@ -76,6 +76,22 @@ static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
 #define LOG_EMBEDDER_ERROR(code, reason) \
   LogEmbedderError(code, reason, #code, __FUNCTION__, __FILE__, __LINE__)
 
+#if SHELL_ENABLE_GL
+#if OS_LINUX || OS_WIN
+static void* DefaultGLProcResolver(const char* name) {
+  static fml::RefPtr<fml::NativeLibrary> proc_library =
+#if OS_LINUX
+      fml::NativeLibrary::CreateForCurrentProcess();
+#elif OS_WIN  // OS_LINUX
+      fml::NativeLibrary::Create("opengl32.dll");
+#endif        // OS_WIN
+  return static_cast<void*>(
+      const_cast<uint8_t*>(proc_library->ResolveSymbol(name)));
+}
+#endif  // OS_LINUX || OS_WIN
+#endif  // SHELL_ENABLE_GL
+
+#if SHELL_ENABLE_GL
 static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
   if (config->type != kOpenGL) {
     return false;
@@ -92,7 +108,24 @@ static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
 
   return true;
 }
+#endif  // SHELL_ENABLE_GL
 
+#if SHELL_ENABLE_VULKAN
+static bool IsVulkanRendererConfigValid(const FlutterRendererConfig* config) {
+  if (config->type != kVulkan) {
+    return false;
+  }
+
+  const FlutterVulkanRendererConfig* vulkan_config = &config->vulkan;
+
+  if (SAFE_ACCESS(vulkan_config, surface_present_callback, nullptr) ==
+      nullptr) {
+    return false;
+  }
+
+  return true;
+}
+#endif  // SHELL_ENABLE_VULKAN
 static bool IsSoftwareRendererConfigValid(const FlutterRendererConfig* config) {
   if (config->type != kSoftware) {
     return false;
@@ -115,29 +148,27 @@ static bool IsRendererValid(const FlutterRendererConfig* config) {
 
   switch (config->type) {
     case kOpenGL:
+#if SHELL_ENABLE_GL
       return IsOpenGLRendererConfigValid(config);
+#else
+      FML_NOTIMPLEMENTED();
+      return false;
+#endif  // SHELL_ENABLE_GL
+    case kVulkan:
+#if SHELL_ENABLE_VULKAN
+      return IsVulkanRendererConfigValid(config);
+#else
+      FML_NOTIMPLEMENTED();
+      return false;
+#endif  // SHELL_ENABLE_VULKAN
     case kSoftware:
       return IsSoftwareRendererConfigValid(config);
-    default:
-      return false;
   }
 
   return false;
 }
 
-#if OS_LINUX || OS_WIN
-static void* DefaultGLProcResolver(const char* name) {
-  static fml::RefPtr<fml::NativeLibrary> proc_library =
-#if OS_LINUX
-      fml::NativeLibrary::CreateForCurrentProcess();
-#elif OS_WIN  // OS_LINUX
-      fml::NativeLibrary::Create("opengl32.dll");
-#endif        // OS_WIN
-  return static_cast<void*>(
-      const_cast<uint8_t*>(proc_library->ResolveSymbol(name)));
-}
-#endif  // OS_LINUX || OS_WIN
-
+#if SHELL_ENABLE_GL
 static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
@@ -236,6 +267,44 @@ InferOpenGLPlatformViewCreationCallback(
         );
       });
 }
+#endif  // SHELL_ENABLE_GL
+
+#if SHELL_ENABLE_VULKAN
+static flutter::Shell::CreateCallback<flutter::PlatformView>
+InferVulkanPlatformViewCreationCallback(
+    const FlutterRendererConfig* config,
+    void* user_data,
+    flutter::PlatformViewEmbedder::PlatformDispatchTable
+        platform_dispatch_table,
+    std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
+        external_view_embedder) {
+  if (config->type != kVulkan) {
+    return nullptr;
+  }
+
+  /*auto software_present_backing_store =
+      [ptr = config->vulkan.surface_present_callback, user_data](
+          const void* allocation, size_t row_bytes, size_t height) -> bool {
+    return ptr(user_data, allocation, row_bytes, height);
+  };*/
+
+  flutter::EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table =
+      {};
+
+  return fml::MakeCopyable(
+      [vulkan_dispatch_table, platform_dispatch_table,
+       external_view_embedder =
+           std::move(external_view_embedder)](flutter::Shell& shell) mutable {
+        return std::make_unique<flutter::PlatformViewEmbedder>(
+            shell,                             // delegate
+            shell.GetTaskRunners(),            // task runners
+            vulkan_dispatch_table,             // vulkan dispatch table
+            platform_dispatch_table,           // platform dispatch table
+            std::move(external_view_embedder)  // external view embedder
+        );
+      });
+}
+#endif  // SHELL_ENABLE_VULKAN
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferSoftwarePlatformViewCreationCallback(
@@ -288,19 +357,31 @@ InferPlatformViewCreationCallback(
 
   switch (config->type) {
     case kOpenGL:
+#if SHELL_ENABLE_GL
       return InferOpenGLPlatformViewCreationCallback(
           config, user_data, platform_dispatch_table,
           std::move(external_view_embedder));
+#else
+      FML_NOTIMPLEMENTED();
+      return nullptr;
+#endif  // SHELL_ENABLE_GL
+    case kVulkan:
+#if SHELL_ENABLE_VULKAN
+      return InferVulkanPlatformViewCreationCallback(
+          config, user_data, platform_dispatch_table,
+          std::move(external_view_embedder));
+#else
+      FML_NOTIMPLEMENTED();
+      return nullptr;
+#endif  // SHELL_ENABLE_VULKAN
     case kSoftware:
       return InferSoftwarePlatformViewCreationCallback(
           config, user_data, platform_dispatch_table,
           std::move(external_view_embedder));
-    default:
-      return nullptr;
   }
-  return nullptr;
 }
 
+#if SHELL_ENABLE_GL
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrContext* context,
     const FlutterBackingStoreConfig& config,
@@ -340,7 +421,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   return surface;
 }
+#endif  // SHELL_ENABLE_GL
 
+#if SHELL_ENABLE_GL
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrContext* context,
     const FlutterBackingStoreConfig& config,
@@ -379,6 +462,27 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   }
   return surface;
 }
+#endif  // SHELL_ENABLE_GL
+
+#if SHELL_ENABLE_VULKAN
+static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
+    GrContext* context,
+    const FlutterBackingStoreConfig& config,
+    const FlutterVulkanImage* image) {
+  FML_DCHECK(false) << "surface_from_image called";
+  return nullptr;
+}
+#endif  // SHELL_ENABLE_VULKAN
+
+#if SHELL_ENABLE_VULKAN
+static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
+    GrContext* context,
+    const FlutterBackingStoreConfig& config,
+    const FlutterVulkanSwapchain* swapchain) {
+  FML_DCHECK(false) << "surface_from_swapchain called";
+  return nullptr;
+}
+#endif  // SHELL_ENABLE_VULKAN
 
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrContext* context,
@@ -458,6 +562,7 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
 
   switch (backing_store.type) {
     case kFlutterBackingStoreTypeOpenGL:
+#if SHELL_ENABLE_GL
       switch (backing_store.open_gl.type) {
         case kFlutterOpenGLTargetTypeTexture:
           render_surface = MakeSkSurfaceFromBackingStore(
@@ -468,6 +573,25 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
               context, config, &backing_store.open_gl.framebuffer);
           break;
       }
+#else
+      FML_NOTIMPLEMENTED();
+#endif  // SHELL_ENABLE_GL
+      break;
+    case kFlutterBackingStoreTypeVulkan:
+#if SHELL_ENABLE_VULKAN
+      switch (backing_store.vulkan.type) {
+        case kFlutterVulkanTargetTypeImage:
+          render_surface = MakeSkSurfaceFromBackingStore(
+              context, config, &backing_store.vulkan.image);
+          break;
+        case kFlutterVulkanTargetTypeSwapchain:
+          render_surface = MakeSkSurfaceFromBackingStore(
+              context, config, &backing_store.vulkan.swapchain);
+          break;
+      }
+#else
+      FML_NOTIMPLEMENTED();
+#endif  // SHELL_ENABLE_VULKAN
       break;
     case kFlutterBackingStoreTypeSoftware:
       render_surface = MakeSkSurfaceFromBackingStore(context, config,
@@ -839,6 +963,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   // platform view jump table.
   flutter::EmbedderExternalTextureGL::ExternalTextureCallback
       external_texture_callback;
+#if SHELL_ENABLE_GL
   if (config->type == kOpenGL) {
     const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
     if (SAFE_ACCESS(open_gl_config, gl_external_texture_frame_callback,
@@ -893,6 +1018,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
       };
     }
   }
+#endif  // SHELL_ENABLE_GL
 
   auto thread_host =
       flutter::EmbedderThreadHost::CreateEmbedderOrEngineManagedThreadHost(

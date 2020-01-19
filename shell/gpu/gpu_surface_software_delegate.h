@@ -5,8 +5,7 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_DELEGATE_H_
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_DELEGATE_H_
 
-#include "flutter/flow/embedded_views.h"
-#include "flutter/fml/macros.h"
+#include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -24,9 +23,9 @@ namespace flutter {
 /// @see        |IOSurfaceSoftware|, |AndroidSurfaceSoftware|,
 ///             |EmbedderSurfaceSoftware|.
 ///
-class GPUSurfaceSoftwareDelegate {
+class GPUSurfaceSoftwareDelegate : public GPUSurfaceDelegate {
  public:
-  virtual ~GPUSurfaceSoftwareDelegate();
+  ~GPUSurfaceSoftwareDelegate() override;
 
   //----------------------------------------------------------------------------
   /// @brief      Called when the GPU surface needs a new buffer to render a new
@@ -49,17 +48,8 @@ class GPUSurfaceSoftwareDelegate {
   ///
   virtual bool PresentBackingStore(sk_sp<SkSurface> backing_store) = 0;
 
-  //----------------------------------------------------------------------------
-  /// @brief      Gets the view embedder that controls how the Flutter layer
-  ///             hierarchy split into multiple chunks should be composited back
-  ///             on-screen. This field is optional and the Flutter rasterizer
-  ///             will render into a single on-screen surface if this call
-  ///             returns a null external view embedder.
-  ///
-  /// @return     The external view embedder, or, null if Flutter is rendering
-  ///             into a single on-screen surface.
-  ///
-  virtual ExternalViewEmbedder* GetExternalViewEmbedder() = 0;
+  // |GPUSurfaceDelegate|
+  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 };
 
 }  // namespace flutter

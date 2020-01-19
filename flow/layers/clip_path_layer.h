@@ -13,17 +13,13 @@ class ClipPathLayer : public ContainerLayer {
  public:
   ClipPathLayer(const SkPath& clip_path, Clip clip_behavior = Clip::antiAlias);
 
+  // |Layer|
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
 
   bool UsesSaveLayer() const {
     return clip_behavior_ == Clip::antiAliasWithSaveLayer;
   }
-
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
 
  private:
   SkPath clip_path_;

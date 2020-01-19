@@ -8,10 +8,10 @@ import("$flutter_root/shell/platform/embedder/embedder.gni")
 import("$flutter_root/testing/testing.gni")
 
 shell_gpu_configuration("embedder_gpu_configuration") {
-  enable_software = true
-  enable_vulkan = false
-  enable_gl = true
+  enable_vulkan = shell_enable_vulkan
+  enable_gl = shell_enable_gl
   enable_metal = false
+  enable_software = true
 }
 
 _framework_binary_subpath = "Versions/A/FlutterEmbedder"
@@ -41,8 +41,6 @@ template("embedder_source_set") {
       "embedder_safe_access.h",
       "embedder_surface.cc",
       "embedder_surface.h",
-      "embedder_surface_gl.cc",
-      "embedder_surface_gl.h",
       "embedder_surface_software.cc",
       "embedder_surface_software.h",
       "embedder_task_runner.cc",
@@ -70,6 +68,28 @@ template("embedder_source_set") {
     ]
 
     public_configs += [ "$flutter_root:config" ]
+
+    defines = []
+
+    if (shell_enable_gl) {
+      sources += [
+        "embedder_surface_gl.cc",
+        "embedder_surface_gl.h",
+      ]
+
+      defines += [ "SHELL_ENABLE_GL" ]
+    }
+
+    if (shell_enable_vulkan) {
+      sources += [
+        "embedder_surface_vulkan.cc",
+        "embedder_surface_vulkan.h",
+      ]
+
+      deps += [ "$flutter_root/vulkan" ]
+
+      defines += [ "SHELL_ENABLE_VULKAN" ]
+    }
   }
 }
 

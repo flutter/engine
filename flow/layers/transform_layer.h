@@ -9,19 +9,13 @@
 
 namespace flutter {
 
-// Be careful that SkMatrix's default constructor doesn't initialize the matrix
-// at all. Hence |set_transform| must be called with an initialized SkMatrix.
 class TransformLayer : public ContainerLayer {
  public:
   TransformLayer(const SkMatrix& transform);
 
+  // |Layer|
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
-
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
 
  private:
   SkMatrix transform_;

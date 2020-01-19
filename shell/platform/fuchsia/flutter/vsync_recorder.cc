@@ -7,7 +7,6 @@
 #include <mutex>
 
 namespace flutter_runner {
-
 namespace {
 
 std::mutex g_mutex;

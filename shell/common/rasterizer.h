@@ -69,31 +69,6 @@ class Rasterizer final : public SnapshotDelegate {
     virtual fml::Milliseconds GetFrameBudget() = 0;
   };
 
-  // TODO(dnfield): remove once embedders have caught up.
-  class DummyDelegate : public Delegate {
-    void OnFrameRasterized(const FrameTiming&) override {}
-    fml::Milliseconds GetFrameBudget() override {
-      return fml::kDefaultFrameBudget;
-    }
-  };
-
-  //----------------------------------------------------------------------------
-  /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
-  ///             be created on the GPU task runner. Rasterizers are currently
-  ///             only created by the shell. Usually, the shell also sets itself
-  ///             up as the rasterizer delegate. But, this constructor sets up a
-  ///             dummy rasterizer delegate.
-  ///
-  //  TODO(chinmaygarde): The rasterizer does not use the task runners for
-  //  anything other than thread checks. Remove the same as an argument.
-  ///
-  /// @param[in]  task_runners        The task runners used by the shell.
-  /// @param[in]  compositor_context  The compositor context used to hold all
-  ///                                 the GPU state used by the rasterizer.
-  ///
-  Rasterizer(TaskRunners task_runners,
-             std::unique_ptr<flutter::CompositorContext> compositor_context);
-
   //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
   ///             be created on the GPU task runner. Rasterizers are currently
@@ -107,24 +82,6 @@ class Rasterizer final : public SnapshotDelegate {
   /// @param[in]  task_runners        The task runners used by the shell.
   ///
   Rasterizer(Delegate& delegate, TaskRunners task_runners);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
-  ///             be created on the GPU task runner. Rasterizers are currently
-  ///             only created by the shell (which also sets itself up as the
-  ///             rasterizer delegate).
-  ///
-  //  TODO(chinmaygarde): The rasterizer does not use the task runners for
-  //  anything other than thread checks. Remove the same as an argument.
-  ///
-  /// @param[in]  delegate            The rasterizer delegate.
-  /// @param[in]  task_runners        The task runners used by the shell.
-  /// @param[in]  compositor_context  The compositor context used to hold all
-  ///                                 the GPU state used by the rasterizer.
-  ///
-  Rasterizer(Delegate& delegate,
-             TaskRunners task_runners,
-             std::unique_ptr<flutter::CompositorContext> compositor_context);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the GPU task
@@ -190,7 +147,7 @@ class Rasterizer final : public SnapshotDelegate {
   /// @return     A pointer to the last layer or `nullptr` if this rasterizer
   ///             has never rendered a frame.
   ///
-  flutter::LayerTree* GetLastLayerTree();
+  LayerTree* GetLastLayerTree();
 
   //----------------------------------------------------------------------------
   /// @brief      Draws a last layer tree to the render surface. This may seem
@@ -216,7 +173,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   /// @return     A pointer to the external texture registry.
   ///
-  flutter::TextureRegistry* GetTextureRegistry();
+  TextureRegistry* GetTextureRegistry();
 
   //----------------------------------------------------------------------------
   /// @brief      Takes the next item from the layer tree pipeline and executes
@@ -247,7 +204,7 @@ class Rasterizer final : public SnapshotDelegate {
   /// @param[in]  pipeline  The layer tree pipeline to take the next layer tree
   ///                       to render from.
   ///
-  void Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline);
+  void Draw(fml::RefPtr<Pipeline<LayerTree>> pipeline);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously
@@ -362,9 +319,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   /// @return     The compositor context used by this rasterizer.
   ///
-  flutter::CompositorContext* compositor_context() {
-    return compositor_context_.get();
-  }
+  CompositorContext* compositor_context() { return compositor_context_.get(); }
 
   //----------------------------------------------------------------------------
   /// @brief      Skia has no notion of time. To work around the performance
@@ -409,13 +364,13 @@ class Rasterizer final : public SnapshotDelegate {
   Delegate& delegate_;
   TaskRunners task_runners_;
   std::unique_ptr<Surface> surface_;
-  std::unique_ptr<flutter::CompositorContext> compositor_context_;
+  std::unique_ptr<CompositorContext> compositor_context_;
   // This is the last successfully rasterized layer tree.
-  std::unique_ptr<flutter::LayerTree> last_layer_tree_;
+  std::unique_ptr<LayerTree> last_layer_tree_;
   // Set when we need attempt to rasterize the layer tree again. This layer_tree
   // has not successfully rasterized. This can happen due to the change in the
   // thread configuration. This will be inserted to the front of the pipeline.
-  std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
+  std::unique_ptr<LayerTree> resubmitted_layer_tree_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
@@ -433,9 +388,9 @@ class Rasterizer final : public SnapshotDelegate {
       SkISize size,
       std::function<void(SkCanvas*)> draw_callback);
 
-  RasterStatus DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
+  RasterStatus DoDraw(std::unique_ptr<LayerTree> layer_tree);
 
-  RasterStatus DrawToSurface(flutter::LayerTree& layer_tree);
+  RasterStatus DrawToSurface(LayerTree& layer_tree);
 
   void FireNextFrameCallbackIfPresent();
 

@@ -10,13 +10,13 @@
 
 #include <fuchsia/sys/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
+#include <lib/fidl/cpp/binding_set.h>
 #include <lib/sys/cpp/component_context.h>
 #include <lib/trace-engine/instrumentation.h>
 #include <lib/trace/observer.h>
 
 #include "component.h"
 #include "flutter/fml/macros.h"
-#include "lib/fidl/cpp/binding_set.h"
 #include "runtime/dart/utils/vmservice_object.h"
 
 namespace flutter_runner {

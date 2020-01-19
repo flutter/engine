@@ -8,7 +8,6 @@
 #include <functional>
 #include <memory>
 
-#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/surface.h"

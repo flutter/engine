@@ -87,6 +87,9 @@ bool VulkanProcTable::SetupInstanceProcAddresses(
   ACQUIRE_PROC(DestroySurfaceKHR, handle);
   ACQUIRE_PROC(CreateAndroidSurfaceKHR, handle);
 #endif  // OS_ANDROID
+#if OS_FUCHSIA
+  ACQUIRE_PROC(CreateImagePipeSurfaceFUCHSIA, handle);
+#endif  // OS_FUCHSIA
 
   // The debug report functions are optional. We don't want proc acquisition to
   // fail here because the optional methods were not present (since ACQUIRE_PROC
@@ -138,6 +141,8 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
 #endif  // OS_ANDROID
 #if OS_FUCHSIA
   ACQUIRE_PROC(GetMemoryZirconHandleFUCHSIA, handle);
+  ACQUIRE_PROC(GetMemoryZirconHandlePropertiesFUCHSIA, handle);
+  ACQUIRE_PROC(GetSemaphoreZirconHandleFUCHSIA, handle);
   ACQUIRE_PROC(ImportSemaphoreZirconHandleFUCHSIA, handle);
 #endif  // OS_FUCHSIA
   device_ = {handle, nullptr};

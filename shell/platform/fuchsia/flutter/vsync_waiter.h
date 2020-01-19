@@ -24,8 +24,8 @@ class VsyncWaiter final : public flutter::VsyncWaiter {
       const fml::TimeDelta presentation_interval);
 
   VsyncWaiter(std::string debug_label,
-              zx_handle_t session_present_handle,
-              flutter::TaskRunners task_runners);
+              flutter::TaskRunners task_runners,
+              zx_handle_t session_present_handle);
 
   ~VsyncWaiter() override;
 

@@ -18,6 +18,7 @@ class TextureLayer : public Layer {
                int64_t texture_id,
                bool freeze);
 
+  // |Layer|
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
 

@@ -17,7 +17,8 @@
 namespace vulkan {
 
 VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
-                           std::unique_ptr<VulkanNativeSurface> native_surface)
+                           std::unique_ptr<VulkanNativeSurface> native_surface,
+                           bool render_to_surface)
     : valid_(false), vk(std::move(proc_table)) {
   if (!vk || !vk->HasAcquiredMandatoryProcAddresses()) {
     FML_DLOG(INFO) << "Proc table has not acquired mandatory proc addresses.";
@@ -38,7 +39,6 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
 
   application_ = std::make_unique<VulkanApplication>(*vk, "Flutter",
                                                      std::move(extensions));
-
   if (!application_->IsValid() || !vk->AreInstanceProcsSetup()) {
     // Make certain the application instance was created and it setup the
     // instance proc table entries.
@@ -47,9 +47,7 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
   }
 
   // Create the device.
-
   logical_device_ = application_->AcquireFirstCompatibleLogicalDevice();
-
   if (logical_device_ == nullptr || !logical_device_->IsValid() ||
       !vk->AreDeviceProcsSetup()) {
     // Make certain the device was created and it setup the device proc table
@@ -58,25 +56,27 @@ VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
     return;
   }
 
-  // Create the logical surface from the native platform surface.
+  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
+  // external view embedder may want to render to the root surface.
+  if (!render_to_surface) {
+    return;
+  }
 
+  // Create the logical surface from the native platform surface.
   surface_ = std::make_unique<VulkanSurface>(*vk, *application_,
                                              std::move(native_surface));
-
   if (!surface_->IsValid()) {
     FML_DLOG(INFO) << "Vulkan surface is invalid.";
     return;
   }
 
   // Create the Skia GrContext.
-
   if (!CreateSkiaGrContext()) {
     FML_DLOG(INFO) << "Could not create Skia context.";
     return;
   }
 
   // Create the swapchain.
-
   if (!RecreateSwapchain()) {
     FML_DLOG(INFO) << "Could not setup the swapchain initially.";
     return;
@@ -133,9 +133,10 @@ bool VulkanWindow::CreateSkiaBackendContext(GrVkBackendContext* context) {
   context->fQueue = logical_device_->GetQueueHandle();
   context->fGraphicsQueueIndex = logical_device_->GetGraphicsQueueIndex();
   context->fMinAPIVersion = application_->GetAPIVersion();
-  context->fExtensions = kKHR_surface_GrVkExtensionFlag |
-                         kKHR_swapchain_GrVkExtensionFlag |
-                         surface_->GetNativeSurface().GetSkiaExtensionName();
+  context->fExtensions =
+      kKHR_surface_GrVkExtensionFlag |
+      kKHR_swapchain_GrVkExtensionFlag;  // kKHR_swapchain_GrVkExtensionFlag |
+  // surface_->GetNativeSurface().GetSkiaExtensionName();
   context->fFeatures = skia_features;
   context->fGetProc = std::move(getProc);
   context->fOwnsInstanceAndDevice = false;

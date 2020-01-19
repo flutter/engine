@@ -13,6 +13,7 @@
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 #include "flutter/shell/platform/embedder/embedder_surface_software.h"
+#include "flutter/shell/platform/embedder/embedder_surface_vulkan.h"
 #include "flutter/shell/platform/embedder/vsync_waiter_embedder.h"
 
 namespace flutter {
@@ -49,6 +50,14 @@ class PlatformViewEmbedder final : public PlatformView {
       PlatformView::Delegate& delegate,
       flutter::TaskRunners task_runners,
       EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
+      PlatformDispatchTable platform_dispatch_table,
+      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+
+  // Create a platform view that sets up a Vulkan rasterizer.
+  PlatformViewEmbedder(
+      PlatformView::Delegate& delegate,
+      flutter::TaskRunners task_runners,
+      EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table,
       PlatformDispatchTable platform_dispatch_table,
       std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 

@@ -32,6 +32,18 @@ PlatformViewEmbedder::PlatformViewEmbedder(
           std::move(external_view_embedder))),
       platform_dispatch_table_(platform_dispatch_table) {}
 
+PlatformViewEmbedder::PlatformViewEmbedder(
+    PlatformView::Delegate& delegate,
+    flutter::TaskRunners task_runners,
+    EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table,
+    PlatformDispatchTable platform_dispatch_table,
+    std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
+    : PlatformView(delegate, std::move(task_runners)),
+      embedder_surface_(std::make_unique<EmbedderSurfaceVulkan>(
+          vulkan_dispatch_table,
+          std::move(external_view_embedder))),
+      platform_dispatch_table_(platform_dispatch_table) {}
+
 PlatformViewEmbedder::~PlatformViewEmbedder() = default;
 
 void PlatformViewEmbedder::UpdateSemantics(
@@ -64,7 +76,6 @@ void PlatformViewEmbedder::HandlePlatformMessage(
       std::move(message));
 }
 
-// |PlatformView|
 std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
   if (embedder_surface_ == nullptr) {
     FML_LOG(ERROR) << "Embedder surface was null.";
@@ -73,7 +84,6 @@ std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
   return embedder_surface_->CreateGPUSurface();
 }
 
-// |PlatformView|
 sk_sp<GrContext> PlatformViewEmbedder::CreateResourceContext() const {
   if (embedder_surface_ == nullptr) {
     FML_LOG(ERROR) << "Embedder surface was null.";
@@ -82,7 +92,6 @@ sk_sp<GrContext> PlatformViewEmbedder::CreateResourceContext() const {
   return embedder_surface_->CreateResourceContext();
 }
 
-// |PlatformView|
 std::unique_ptr<VsyncWaiter> PlatformViewEmbedder::CreateVSyncWaiter() {
   if (!platform_dispatch_table_.vsync_callback) {
     // Superclass implementation creates a timer based fallback.

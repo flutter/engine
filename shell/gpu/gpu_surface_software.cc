@@ -5,6 +5,7 @@
 #include "flutter/shell/gpu/gpu_surface_software.h"
 
 #include <memory>
+
 #include "flutter/fml/logging.h"
 
 namespace flutter {

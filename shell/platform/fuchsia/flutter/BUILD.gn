@@ -6,20 +6,12 @@ assert(is_fuchsia)
 
 import("//build/fuchsia/sdk.gni")
 import("$flutter_root/common/config.gni")
-import("$flutter_root/shell/gpu/gpu.gni")
 import("$flutter_root/testing/testing.gni")
 import("$flutter_root/tools/fuchsia/dart.gni")
 import("$flutter_root/tools/fuchsia/fuchsia_archive.gni")
 import("$flutter_root/tools/fuchsia/fuchsia_libs.gni")
 import("$flutter_root/vulkan/config.gni")
 import("engine_flutter_runner.gni")
-
-shell_gpu_configuration("fuchsia_gpu_configuration") {
-  enable_software = false
-  enable_gl = false
-  enable_vulkan = true
-  enable_metal = false
-}
 
 # Things that explicitly being excluded:
 # 1. Kernel snapshot framework mode.
@@ -50,8 +42,8 @@ flutter_runner("jit") {
   }
 
   extra_deps = [
-                 "//third_party/dart/runtime:libdart_jit",
-                 "//third_party/dart/runtime/platform:libdart_platform_jit",
+                #  "//third_party/dart/runtime:libdart_jit",
+                # "//third_party/dart/runtime/platform:libdart_platform_jit",
                ] + flutter_tool_deps
 }
 
@@ -66,8 +58,8 @@ flutter_runner("jit_product") {
   }
 
   extra_deps = [
-    "//third_party/dart/runtime:libdart_jit_product",
-    "//third_party/dart/runtime/platform:libdart_platform_jit_product",
+  #  "//third_party/dart/runtime:libdart_jit_product",
+  #  "//third_party/dart/runtime/platform:libdart_platform_jit_product",
   ]
 }
 
@@ -85,8 +77,8 @@ flutter_runner("aot") {
   }
 
   extra_deps = [
-    "//third_party/dart/runtime:libdart_precompiled_runtime",
-    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
+  #  "//third_party/dart/runtime:libdart_precompiled_runtime",
+  #  "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
   ]
 }
 
@@ -101,8 +93,8 @@ flutter_runner("aot_product") {
   }
 
   extra_deps = [
-    "//third_party/dart/runtime:libdart_precompiled_runtime_product",
-    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime_product",
+  #  "//third_party/dart/runtime:libdart_precompiled_runtime_product",
+  #  "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime_product",
   ]
 }
 
@@ -298,19 +290,14 @@ executable("flutter_runner_unittests") {
     "accessibility_bridge.cc",
     "accessibility_bridge.h",
     "accessibility_bridge_unittest.cc",
-    "flutter_runner_fakes.h",
     "fuchsia_intl.cc",
     "fuchsia_intl.h",
     "fuchsia_intl_unittest.cc",
     "logging.h",
-    "platform_view.cc",
-    "platform_view.h",
-    "platform_view_unittest.cc",
     "runner.cc",
     "runner.h",
     "runner_unittest.cc",
-    "surface.cc",
-    "surface.h",
+    "testing/mock_semantics_manager.h",
     "vsync_recorder.cc",
     "vsync_recorder.h",
     "vsync_waiter.cc",
@@ -333,6 +320,7 @@ executable("flutter_runner_unittests") {
     "//flutter/lib/ui",
     "//flutter/runtime",
     "//flutter/shell/common",
+    "//flutter/shell/platform/embedder",
     "//flutter/shell/platform/fuchsia/runtime/dart/utils",
     "//flutter/testing",
     "//third_party/dart/runtime:libdart_jit",
@@ -390,17 +378,17 @@ fuchsia_archive("flutter_runner_tests") {
     },
     {
       path = rebase_path(
-              "$flutter_root/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/metaZones.res")
+              "$flutter_root/shell/platform/fuchsia/flutter/testing/tzdata/2019a/44/le/metaZones.res")
       dest = "tzdata/metaZones.res"
     },
     {
       path = rebase_path(
-              "$flutter_root/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/timezoneTypes.res")
+              "$flutter_root/shell/platform/fuchsia/flutter/testing/tzdata/2019a/44/le/timezoneTypes.res")
       dest = "tzdata/timezoneTypes.res"
     },
     {
       path = rebase_path(
-              "$flutter_root/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/zoneinfo64.res")
+              "$flutter_root/shell/platform/fuchsia/flutter/testing/tzdata/2019a/44/le/zoneinfo64.res")
       dest = "tzdata/zoneinfo64.res"
     },
   ]

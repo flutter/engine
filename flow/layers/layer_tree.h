@@ -34,11 +34,7 @@ class LayerTree {
   bool Preroll(CompositorContext::ScopedFrame& frame,
                bool ignore_raster_cache = false);
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context,
-                   scenic::ContainerNode& container);
-#endif
-
+  // Recursively paint all of the tree's Layer's into the frame.
   void Paint(CompositorContext::ScopedFrame& frame,
              bool ignore_raster_cache = false) const;
 
