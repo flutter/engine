@@ -1,4 +1,4 @@
-Signature: 7a46a9ca65870e6282d94142adcc7c53
+Signature: 9687c02503c4d5b3117f08d09295dfbb
 
 UNUSED LICENSES:
 
@@ -8456,7 +8456,6 @@ FILE: ../../../third_party/dart/runtime/vm/timeline.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_analysis.cc
 FILE: ../../../third_party/dart/runtime/vm/timeline_analysis.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_test.cc
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/lib/js/dart2js/js_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/developer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/classes.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart
@@ -9082,9 +9081,7 @@ FILE: ../../../third_party/dart/runtime/vm/uri.cc
 FILE: ../../../third_party/dart/runtime/vm/uri.h
 FILE: ../../../third_party/dart/runtime/vm/uri_test.cc
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_fuchsia.cc
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/lib/js_util/dart2js/js_util_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/developer/service.dart
-FILE: ../../../third_party/dart/sdk/lib/js_util/dart2js/js_util_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/js_util/js_util.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/devfs.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/developer/service.dart
@@ -9410,7 +9407,6 @@ FILE: ../../../third_party/dart/sdk/lib/io/secure_socket.dart
 FILE: ../../../third_party/dart/sdk/lib/io/socket.dart
 FILE: ../../../third_party/dart/sdk/lib/io/stdio.dart
 FILE: ../../../third_party/dart/sdk/lib/io/string_transformer.dart
-FILE: ../../../third_party/dart/sdk/lib/js/dart2js/js_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/js/js.dart
 FILE: ../../../third_party/dart/sdk/lib/math/jenkins_smi_hash.dart
 FILE: ../../../third_party/dart/sdk/lib/math/point.dart
