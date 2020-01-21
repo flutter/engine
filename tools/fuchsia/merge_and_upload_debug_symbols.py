@@ -67,7 +67,6 @@ def ProcessCIPDPackage(upload, cipd_yaml, engine_version, out_dir, target_arch):
   while tries in range(num_tries):
     try:
       subprocess.check_call(command, cwd=_packaging_dir)
-      success = True
       break
     except subprocess.CalledProcessError:
       print('Failed %s times' % tries + 1)
