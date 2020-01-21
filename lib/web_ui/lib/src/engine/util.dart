@@ -421,6 +421,7 @@ String canonicalizeFontFamily(String fontFamily) {
   return '"$fontFamily", $_fallbackFontFamily, sans-serif';
 }
 
+/// Converts a list of [Offset] to a typed array of floats.
 Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
   if (offsetList == null) {
     return null;
