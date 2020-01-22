@@ -34,7 +34,6 @@ void _checkConsts() {
   print('Checking for expected constants.');
   final ConstFinder finder = ConstFinder(
     kernelFilePath: constsDill,
-    targetLibraryUri: 'package:const_finder_fixtures/consts.dart',
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
     className: 'Target',
   );
@@ -55,7 +54,6 @@ void _checkNonConsts() {
   print('Checking for non-constant instances.');
   final ConstFinder finder = ConstFinder(
     kernelFilePath: constsAndNonDill,
-    targetLibraryUri: 'package:const_finder_fixtures/consts_and_non.dart',
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
     className: 'Target',
   );
