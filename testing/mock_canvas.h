@@ -60,14 +60,6 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
     SkMatrix44 matrix;
   };
 
-  struct ScaleData {
-    SkPoint scale;
-  };
-
-  struct TranslateData {
-    SkPoint translation;
-  };
-
   struct SetMatrixData {
     SkMatrix matrix;
   };
@@ -123,8 +115,6 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
                                     RestoreData,
                                     ConcatMatrixData,
                                     ConcatMatrix44Data,
-                                    ScaleData,
-                                    TranslateData,
                                     SetMatrixData,
                                     DrawRectData,
                                     DrawPathData,
@@ -292,14 +282,6 @@ extern bool operator==(const MockCanvas::ConcatMatrix44Data& a,
                        const MockCanvas::ConcatMatrix44Data& b);
 extern std::ostream& operator<<(std::ostream& os,
                                 const MockCanvas::ConcatMatrix44Data& data);
-extern bool operator==(const MockCanvas::ScaleData& a,
-                       const MockCanvas::ScaleData& b);
-extern std::ostream& operator<<(std::ostream& os,
-                                const MockCanvas::ScaleData& data);
-extern bool operator==(const MockCanvas::TranslateData& a,
-                       const MockCanvas::TranslateData& b);
-extern std::ostream& operator<<(std::ostream& os,
-                                const MockCanvas::TranslateData& data);
 extern bool operator==(const MockCanvas::SetMatrixData& a,
                        const MockCanvas::SetMatrixData& b);
 extern std::ostream& operator<<(std::ostream& os,
