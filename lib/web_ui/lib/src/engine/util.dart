@@ -59,11 +59,71 @@ String matrix4ToCssTransform3d(Matrix4 matrix) {
   return float64ListToCssTransform3d(matrix.storage);
 }
 
-/// Returns `true` is the [matrix] describes an identity transformation.
-bool isIdentityFloat64ListTransform(Float64List matrix) {
+/// Applies a transform to the [element].
+///
+/// There are several ways to transform an element. This function chooses
+/// between CSS "transform", "left", "top" or no transform, depending on the
+/// [matrix4] and the current device's screen properties. This function
+/// attempts to avoid issues with text blurriness on low pixel density screens.
+///
+/// See also:
+///  * https://github.com/flutter/flutter/issues/32274
+///  * https://bugs.chromium.org/p/chromium/issues/detail?id=1040222
+void setElementTransform(html.Element element, Float64List matrix4) {
+  final TransformKind transformKind = transformKindOf(matrix4);
+
+  // On low device-pixel ratio screens using CSS "transform" causes text blurriness
+  // at least on Blink browsers. We therefore prefer using CSS "left" and "top" instead.
+  final bool isHighDevicePixelRatioScreen =
+      EngineWindow.browserDevicePixelRatio > 1.0;
+
+  if (transformKind == TransformKind.complex || isHighDevicePixelRatioScreen) {
+    final String cssTransform = float64ListToCssTransform3d(matrix4);
+    element.style
+      ..transformOrigin = '0 0 0'
+      ..transform = cssTransform
+      ..top = null
+      ..left = null;
+  } else if (transformKind == TransformKind.translation2d) {
+    final double ty = matrix4[13];
+    final double tx = matrix4[12];
+    element.style
+      ..transformOrigin = null
+      ..transform = null
+      ..left = '${tx}px'
+      ..top = '${ty}px';
+  } else {
+    assert(transformKind == TransformKind.identity);
+    element.style
+      ..transformOrigin = null
+      ..transform = null
+      ..left = null
+      ..top = null;
+  }
+}
+
+/// The kind of effect a transform matrix performs.
+enum TransformKind {
+  /// No effect.
+  identity,
+
+  /// A translation along either X or Y axes, or both.
+  translation2d,
+
+  /// All other kinds of transforms.
+  complex,
+}
+
+/// Detects the kind of transform the [matrix] performs.
+TransformKind transformKindOf(Float64List matrix) {
   assert(matrix.length == 16);
   final Float64List m = matrix;
-  return m[0] == 1.0 &&
+  final double ty = m[13];
+  final double tx = m[12];
+
+  // If matrix contains scaling, rotation, z translation or
+  // perspective transform, it is not considered simple.
+  final bool isSimpleTransform = m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[2] == 0.0 &&
       m[3] == 0.0 &&
@@ -75,10 +135,26 @@ bool isIdentityFloat64ListTransform(Float64List matrix) {
       m[9] == 0.0 &&
       m[10] == 1.0 &&
       m[11] == 0.0 &&
-      m[12] == 0.0 &&
-      m[13] == 0.0 &&
-      m[14] == 0.0 &&
+      // m[12] - x translation is simple
+      // m[13] - y translation is simple
+      m[14] == 0.0 && // z translation is NOT simple
       m[15] == 1.0;
+
+  if (!isSimpleTransform) {
+    return TransformKind.complex;
+  }
+
+  if (ty != 0.0 || tx != 0.0) {
+    return TransformKind.translation2d;
+  }
+
+  return TransformKind.identity;
+}
+
+/// Returns `true` is the [matrix] describes an identity transformation.
+bool isIdentityFloat64ListTransform(Float64List matrix) {
+  assert(matrix.length == 16);
+  return transformKindOf(matrix) == TransformKind.identity;
 }
 
 /// Converts [matrix] to CSS transform value.
@@ -236,21 +312,57 @@ int _clipIdCounter = 0;
 /// Calling this method updates [_clipIdCounter]. The HTML id of the generated
 /// clip is set to "svgClip${_clipIdCounter}", e.g. "svgClip123".
 String _pathToSvgClipPath(ui.Path path,
-    {double offsetX = 0, double offsetY = 0}) {
+    {double offsetX = 0,
+    double offsetY = 0,
+    double scaleX = 1.0,
+    double scaleY = 1.0}) {
   _clipIdCounter += 1;
-  final ui.Rect bounds = path.getBounds();
   final StringBuffer sb = StringBuffer();
-  sb.write('<svg width="${bounds.right}" height="${bounds.bottom}" '
+  sb.write('<svg width="0" height="0" '
       'style="position:absolute">');
   sb.write('<defs>');
 
   final String clipId = 'svgClip$_clipIdCounter';
-  sb.write('<clipPath id=$clipId>');
+  sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
 
-  sb.write('<path fill="#FFFFFF" d="');
+  sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
   pathToSvg(path, sb, offsetX: offsetX, offsetY: offsetY);
   sb.write('"></path></clipPath></defs></svg');
   return sb.toString();
+}
+
+/// Converts color to a css compatible attribute value.
+String colorToCssString(ui.Color color) {
+  if (color == null) {
+    return null;
+  }
+  final int value = color.value;
+  if ((0xff000000 & value) == 0xff000000) {
+    return _colorToCssStringRgbOnly(color);
+  } else {
+    final double alpha = ((value >> 24) & 0xFF) / 255.0;
+    final StringBuffer sb = StringBuffer();
+    sb.write('rgba(');
+    sb.write(((value >> 16) & 0xFF).toString());
+    sb.write(',');
+    sb.write(((value >> 8) & 0xFF).toString());
+    sb.write(',');
+    sb.write((value & 0xFF).toString());
+    sb.write(',');
+    sb.write(alpha.toString());
+    sb.write(')');
+    return sb.toString();
+  }
+}
+
+/// Returns the CSS value of this color without the alpha component.
+///
+/// This is useful when painting shadows as on the Web shadow opacity combines
+/// with the paint opacity.
+String _colorToCssStringRgbOnly(ui.Color color) {
+  final int value = color.value;
+  final String paddedValue = '00000${value.toRadixString(16)}';
+  return '#${paddedValue.substring(paddedValue.length - 6)}';
 }
 
 /// Determines if the (dynamic) exception passed in is a NS_ERROR_FAILURE
@@ -307,4 +419,18 @@ String canonicalizeFontFamily(String fontFamily) {
     return fontFamily;
   }
   return '"$fontFamily", $_fallbackFontFamily, sans-serif';
+}
+
+/// Converts a list of [Offset] to a typed array of floats.
+Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
+  if (offsetList == null) {
+    return null;
+  }
+  final int length = offsetList.length;
+  final floatList = Float32List(length * 2);
+  for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
+    floatList[destIndex] = offsetList[i].dx;
+    floatList[destIndex + 1] = offsetList[i].dy;
+  }
+  return floatList;
 }

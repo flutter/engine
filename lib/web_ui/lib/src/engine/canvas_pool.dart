@@ -229,7 +229,8 @@ class _CanvasPool extends _SaveStackTracking {
 
     // This scale makes sure that 1 CSS pixel is translated to the correct
     // number of bitmap pixels.
-    ctx.scale(EngineWindow.browserDevicePixelRatio, EngineWindow.browserDevicePixelRatio);
+    ctx.scale(EngineWindow.browserDevicePixelRatio,
+        EngineWindow.browserDevicePixelRatio);
   }
 
   void resetTransform() {
@@ -370,7 +371,7 @@ class _CanvasPool extends _SaveStackTracking {
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     html.CanvasRenderingContext2D ctx = context;
     contextHandle.blendMode = blendMode;
-    contextHandle.fillStyle = color.toCssString();
+    contextHandle.fillStyle = colorToCssString(color);
     contextHandle.strokeStyle = '';
     ctx.beginPath();
     // Fill a virtually infinite rect with the color.
@@ -395,6 +396,38 @@ class _CanvasPool extends _SaveStackTracking {
     ctx.moveTo(p1.dx, p1.dy);
     ctx.lineTo(p2.dx, p2.dy);
     ctx.stroke();
+  }
+
+  void drawPoints(ui.PointMode pointMode, Float32List points, double radius) {
+    html.CanvasRenderingContext2D ctx = context;
+    final int len = points.length;
+    switch (pointMode) {
+      case ui.PointMode.points:
+        for (int i = 0; i < len; i += 2) {
+          final double x = points[i];
+          final double y = points[i + 1];
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, 2.0 * math.pi);
+          ctx.fill();
+        }
+        break;
+      case ui.PointMode.lines:
+        ctx.beginPath();
+        for (int i = 0; i < (len - 2); i += 4) {
+          ctx.moveTo(points[i], points[i + 1]);
+          ctx.lineTo(points[i + 2], points[i + 3]);
+          ctx.stroke();
+        }
+        break;
+      case ui.PointMode.polygon:
+        ctx.beginPath();
+        ctx.moveTo(points[0], points[1]);
+        for (int i = 2; i < len; i += 2) {
+          ctx.lineTo(points[i], points[i + 1]);
+        }
+        ctx.stroke();
+        break;
+    }
   }
 
   /// 'Runs' the given [path] by applying all of its commands to the canvas.
@@ -509,7 +542,7 @@ class _CanvasPool extends _SaveStackTracking {
           context.filter = _maskFilterToCss(
               ui.MaskFilter.blur(ui.BlurStyle.normal, shadow.blur));
           context.strokeStyle = '';
-          context.fillStyle = shadow.color.toCssString();
+          context.fillStyle = colorToCssString(shadow.color);
           _runPath(context, path);
           context.fill();
           context.restore();
@@ -525,9 +558,9 @@ class _CanvasPool extends _SaveStackTracking {
           context.save();
           context.filter = 'none';
           context.strokeStyle = '';
-          context.fillStyle = shadow.color.toCssString();
+          context.fillStyle = colorToCssString(shadow.color);
           context.shadowBlur = shadow.blur;
-          context.shadowColor = shadow.color.withAlpha(0xff).toCssString();
+          context.shadowColor = colorToCssString(shadow.color.withAlpha(0xff));
           context.shadowOffsetX = shadow.offsetX;
           context.shadowOffsetY = shadow.offsetY;
           _runPath(context, path);

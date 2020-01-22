@@ -89,7 +89,8 @@ class SurfacePaint implements ui.Paint {
       _paintData = _paintData.clone();
       _frozen = false;
     }
-    _paintData.color = value.runtimeType == ui.Color ? value : ui.Color(value.value);
+    _paintData.color =
+        value.runtimeType == ui.Color ? value : ui.Color(value.value);
   }
 
   @override
@@ -286,8 +287,7 @@ class SurfacePath implements ui.Path {
   ///
   /// This copy is fast and does not require additional memory unless either
   /// the `source` path or the path returned by this constructor are modified.
-  SurfacePath.from(SurfacePath source)
-      : subpaths = _deepCopy(source.subpaths);
+  SurfacePath.from(SurfacePath source) : subpaths = _deepCopy(source.subpaths);
 
   SurfacePath._shallowCopy(SurfacePath source)
       : subpaths = List<Subpath>.from(source.subpaths);
@@ -418,8 +418,8 @@ class SurfacePath implements ui.Path {
   void relativeCubicTo(
       double x1, double y1, double x2, double y2, double x3, double y3) {
     _ensurePathStarted();
-    _commands.add(BezierCurveTo(x1 + _currentX, y1 + _currentY,
-        x2 + _currentX, y2 + _currentY, x3 + _currentX, y3 + _currentY));
+    _commands.add(BezierCurveTo(x1 + _currentX, y1 + _currentY, x2 + _currentX,
+        y2 + _currentY, x3 + _currentX, y3 + _currentY));
     _setCurrentPoint(x3 + _currentX, y3 + _currentY);
   }
 
@@ -431,7 +431,7 @@ class SurfacePath implements ui.Path {
   @override
   void conicTo(double x1, double y1, double x2, double y2, double w) {
     final List<ui.Offset> quads =
-    Conic(_currentX, _currentY, x1, y1, x2, y2, w).toQuads();
+        Conic(_currentX, _currentY, x1, y1, x2, y2, w).toQuads();
     final int len = quads.length;
     for (int i = 1; i < len; i += 2) {
       quadraticBezierTo(
@@ -504,12 +504,12 @@ class SurfacePath implements ui.Path {
   /// as reference for implementation.
   @override
   void arcToPoint(
-      ui.Offset arcEnd, {
-        ui.Radius radius = ui.Radius.zero,
-        double rotation = 0.0,
-        bool largeArc = false,
-        bool clockwise = true,
-      }) {
+    ui.Offset arcEnd, {
+    ui.Radius radius = ui.Radius.zero,
+    double rotation = 0.0,
+    bool largeArc = false,
+    bool clockwise = true,
+  }) {
     assert(offsetIsValid(arcEnd));
     assert(radiusIsValid(radius));
     // _currentX, _currentY are the coordinates of start point on path,
@@ -631,15 +631,16 @@ class SurfacePath implements ui.Path {
   /// describe an arc.
   @override
   void relativeArcToPoint(
-      ui.Offset arcEndDelta, {
-        ui.Radius radius = ui.Radius.zero,
-        double rotation = 0.0,
-        bool largeArc = false,
-        bool clockwise = true,
-      }) {
+    ui.Offset arcEndDelta, {
+    ui.Radius radius = ui.Radius.zero,
+    double rotation = 0.0,
+    bool largeArc = false,
+    bool clockwise = true,
+  }) {
     assert(offsetIsValid(arcEndDelta));
     assert(radiusIsValid(radius));
-    arcToPoint(ui.Offset(_currentX + arcEndDelta.dx, _currentY + arcEndDelta.dy),
+    arcToPoint(
+        ui.Offset(_currentX + arcEndDelta.dx, _currentY + arcEndDelta.dy),
         radius: radius,
         rotation: rotation,
         largeArc: largeArc,
@@ -652,8 +653,7 @@ class SurfacePath implements ui.Path {
   void addRect(ui.Rect rect) {
     assert(rectIsValid(rect));
     _openNewSubpath(rect.left, rect.top);
-    _commands
-        .add(RectCommand(rect.left, rect.top, rect.width, rect.height));
+    _commands.add(RectCommand(rect.left, rect.top, rect.width, rect.height));
   }
 
   /// Adds a new subpath that consists of a curve that forms the
@@ -767,7 +767,8 @@ class SurfacePath implements ui.Path {
     }
   }
 
-  void _addPathWithMatrix(SurfacePath path, double dx, double dy, Float64List matrix) {
+  void _addPathWithMatrix(
+      SurfacePath path, double dx, double dy, Float64List matrix) {
     final Matrix4 transform = Matrix4.fromFloat64List(matrix);
     transform.translate(dx, dy);
     subpaths.addAll(path.transform(transform.storage).subpaths);
@@ -866,59 +867,81 @@ class SurfacePath implements ui.Path {
           if (pointX < rRect.left || pointX > rRect.right) {
             return false;
           }
-          if (pointX < (rRect.left + rRect.tlRadiusX) &&
-              pointY < (rRect.top + rRect.tlRadiusY)) {
+          final double rRectWidth = rRect.width;
+          final double rRectHeight = rRect.height;
+          final double tlRadiusX = math.min(rRect.tlRadiusX, rRectWidth / 2.0);
+          final double tlRadiusY = math.min(rRect.tlRadiusY, rRectHeight / 2.0);
+          if (pointX < (rRect.left + tlRadiusX) &&
+              pointY < (rRect.top + tlRadiusY)) {
             // Top left corner
             return _ellipseContains(
                 pointX,
                 pointY,
-                rRect.left + rRect.tlRadiusX,
-                rRect.top + rRect.tlRadiusY,
-                rRect.tlRadiusX,
-                rRect.tlRadiusY);
-          } else if (pointX >= (rRect.right - rRect.trRadiusX) &&
-              pointY < (rRect.top + rRect.trRadiusY)) {
+                rRect.left + tlRadiusX,
+                rRect.top + tlRadiusY,
+                tlRadiusX,
+                tlRadiusY);
+          }
+          final double trRadiusX = math.min(rRect.trRadiusX, rRectWidth / 2.0);
+          final double trRadiusY = math.min(rRect.trRadiusY, rRectHeight / 2.0);
+          if (pointX >= (rRect.right - trRadiusX) &&
+              pointY < (rRect.top + trRadiusY)) {
             // Top right corner
             return _ellipseContains(
                 pointX,
                 pointY,
-                rRect.right - rRect.trRadiusX,
-                rRect.top + rRect.trRadiusY,
-                rRect.trRadiusX,
-                rRect.trRadiusY);
-          } else if (pointX >= (rRect.right - rRect.brRadiusX) &&
-              pointY >= (rRect.bottom - rRect.brRadiusY)) {
+                rRect.right - trRadiusX,
+                rRect.top + trRadiusY,
+                trRadiusX,
+                trRadiusY);
+          }
+          final double brRadiusX = math.min(rRect.brRadiusX, rRectWidth / 2.0);
+          final double brRadiusY = math.min(rRect.brRadiusY, rRectHeight / 2.0);
+          if (pointX >= (rRect.right - brRadiusX) &&
+              pointY >= (rRect.bottom - brRadiusY)) {
             // Bottom right corner
             return _ellipseContains(
                 pointX,
                 pointY,
-                rRect.right - rRect.brRadiusX,
-                rRect.bottom - rRect.brRadiusY,
-                rRect.trRadiusX,
-                rRect.trRadiusY);
-          } else if (pointX < (rRect.left + rRect.blRadiusX) &&
-              pointY >= (rRect.bottom - rRect.blRadiusY)) {
+                rRect.right - brRadiusX,
+                rRect.bottom - brRadiusY,
+                trRadiusX,
+                trRadiusY);
+          }
+          final double blRadiusX = math.min(rRect.blRadiusX, rRectWidth / 2.0);
+          final double blRadiusY = math.min(rRect.blRadiusY, rRectHeight / 2.0);
+          if (pointX < (rRect.left + blRadiusX) &&
+              pointY >= (rRect.bottom - blRadiusY)) {
             // Bottom left corner
             return _ellipseContains(
                 pointX,
                 pointY,
-                rRect.left + rRect.blRadiusX,
-                rRect.bottom - rRect.blRadiusY,
-                rRect.trRadiusX,
-                rRect.trRadiusY);
+                rRect.left + blRadiusX,
+                rRect.bottom - blRadiusY,
+                trRadiusX,
+                trRadiusY);
           }
           return true;
         }
+        // TODO: For improved performance, handle Ellipse special case.
       }
     }
-    final ui.Size size = window.physicalSize / window.devicePixelRatio;
+    final ui.Size size = window.physicalSize;
+    // If device pixel ratio has changed we can't reuse prior raw recorder.
+    if (_rawRecorder != null &&
+        _rawRecorder._devicePixelRatio !=
+            EngineWindow.browserDevicePixelRatio) {
+      _rawRecorder = null;
+    }
     _rawRecorder ??= ui.RawRecordingCanvas(size);
     // Account for the shift due to padding.
     _rawRecorder.translate(-BitmapCanvas.kPaddingPixels.toDouble(),
         -BitmapCanvas.kPaddingPixels.toDouble());
     _rawRecorder.drawPath(
         this, (SurfacePaint()..color = const ui.Color(0xFF000000)).paintData);
-    final bool result = _rawRecorder._canvasPool.context.isPointInPath(pointX, pointY);
+    final double recorderDevicePixelRatio = _rawRecorder._devicePixelRatio;
+    final bool result = _rawRecorder._canvasPool.context.isPointInPath(
+        pointX * recorderDevicePixelRatio, pointY * recorderDevicePixelRatio);
     _rawRecorder.dispose();
     return result;
   }
