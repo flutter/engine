@@ -14,4 +14,11 @@ void main() {
   final Target target3 = Target('3', 3); // should be tree shaken out.
   target1.hit();
   target2.hit();
+
+  const IgnoreMe ignoreMe = IgnoreMe(); // Should be ignored.
+  print(ignoreMe);
+}
+
+class IgnoreMe {
+  const IgnoreMe();
 }
