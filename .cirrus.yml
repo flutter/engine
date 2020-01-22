@@ -134,7 +134,7 @@ task:
     # Cirrus is somehow not picking up the environment variables set in the VM image.
     PATH: "c:/depot_tools;c:/MinGit/cmd;$PATH"
     DEPOT_TOOLS_WIN_TOOLCHAIN: 0
-    GYP_MSVS_OVERRIDE_PATH: "c:/Program Files (x86)/Microsoft Visual Studio/2017/Community"
+    GYP_MSVS_OVERRIDE_PATH: "c:/Program Files (x86)/Microsoft Visual Studio/2019/Community"
     ENGINE_PATH: "c:/flutter/engine"
   setup_script: |
     REM robocopy can return 1 for successful copy; suppress its error code.
