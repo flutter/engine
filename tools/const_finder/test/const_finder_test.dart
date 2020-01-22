@@ -42,8 +42,11 @@ void _checkConsts() {
     jsonEncode(finder.findInstances()),
     jsonEncode(<String, dynamic>{
       'constantInstances': <Map<String, dynamic>>[
-        <String, dynamic>{'stringValue': '1', 'intValue': 1},
-        <String, dynamic>{'stringValue': '2', 'intValue': 2}
+        <String, dynamic>{'stringValue': '1', 'intValue': 1, 'targetValue': null},
+        <String, dynamic>{'stringValue': '4', 'intValue': 4, 'targetValue': null},
+        <String, dynamic>{'stringValue': '2', 'intValue': 2},
+        <String, dynamic>{'stringValue': '6', 'intValue': 6, 'targetValue': null},
+        <String, dynamic>{'stringValue': '7', 'intValue': 7, 'targetValue': null},
       ],
       'nonConstantLocations': <dynamic>[],
     }),
@@ -62,7 +65,9 @@ void _checkNonConsts() {
     jsonEncode(finder.findInstances()),
     jsonEncode(<String, dynamic>{
       'constantInstances': <dynamic>[
-        <String, dynamic>{'stringValue': '1', 'intValue': 1}
+        <String, dynamic>{'stringValue': '1', 'intValue': 1, 'targetValue': null},
+        <String, dynamic>{'stringValue': '6', 'intValue': 6, 'targetValue': null},
+        <String, dynamic>{'stringValue': '7', 'intValue': 7, 'targetValue': null},
       ],
       'nonConstantLocations': <dynamic>[
         <String, dynamic>{
@@ -72,7 +77,12 @@ void _checkNonConsts() {
         },
         <String, dynamic>{
           'file': 'file://$fixtures/lib/consts_and_non.dart',
-          'line': 14,
+          'line': 15,
+          'column': 26
+        },
+        <String, dynamic>{
+          'file': 'file://$fixtures/lib/consts_and_non.dart',
+          'line': 17,
           'column': 26
         },
       ]
