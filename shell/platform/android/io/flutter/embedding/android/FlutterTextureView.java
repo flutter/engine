@@ -196,5 +196,6 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
 
     flutterRenderer.stopRenderingToSurface();
     renderSurface.release();
+    renderSurface = null;
   }
 }
