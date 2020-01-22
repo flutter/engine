@@ -256,13 +256,13 @@ void AccessibilityBridge::UpdateScreenRects(
 
   const auto& rect = node.rect;
   FML_LOG(ERROR) << "nodeid: " << node_id;
-  SkMScalar quad[] = {
+  SkScalar quad[] = {
       rect.left(),  rect.top(),     //
       rect.right(), rect.top(),     //
       rect.right(), rect.bottom(),  //
       rect.left(),  rect.bottom(),  //
   };
-  SkMScalar dst[4 * 4];
+  SkScalar dst[4 * 4];
   current_transform.map2(quad, 4, dst);
   node.screen_rect.setLTRB(dst[0], dst[1], dst[8], dst[9]);
   node.screen_rect.sort();
