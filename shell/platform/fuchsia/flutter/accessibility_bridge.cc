@@ -247,6 +247,7 @@ void AccessibilityBridge::UpdateScreenRects(
   auto it = nodes_.find(node_id);
   if (it == nodes_.end()) {
     FML_LOG(ERROR) << "UpdateScreenRects called on unknown node";
+    return;
   }
   auto& node = it->second;
   const auto& current_transform = parent_transform * node.transform;
