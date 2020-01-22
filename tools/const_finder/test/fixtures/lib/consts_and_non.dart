@@ -5,6 +5,8 @@
 // ignore_for_file: prefer_const_constructors
 import 'dart:core';
 
+import 'package:const_finder_fixtures_package/package.dart';
+
 import 'target.dart';
 
 void main() {
@@ -28,6 +30,8 @@ void main() {
   print(ignoreMe);
   print(ignoreMe2);
   print(ignoreMe3);
+
+  createNonConstTargetInPackage();
 }
 
 class IgnoreMe {

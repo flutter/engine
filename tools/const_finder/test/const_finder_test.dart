@@ -50,6 +50,7 @@ void _checkConsts() {
         <String, dynamic>{'stringValue': '10', 'intValue': 10, 'targetValue': null},
         <String, dynamic>{'stringValue': '9', 'intValue': 9},
         <String, dynamic>{'stringValue': '7', 'intValue': 7, 'targetValue': null},
+        <String, dynamic>{'stringValue': 'package', 'intValue':-1, 'targetValue': null},
       ],
       'nonConstantLocations': <dynamic>[],
     }),
@@ -78,19 +79,24 @@ void _checkNonConsts() {
       'nonConstantLocations': <dynamic>[
         <String, dynamic>{
           'file': 'file://$fixtures/lib/consts_and_non.dart',
-          'line': 12,
-          'column': 26
-        },
-        <String, dynamic>{
-          'file': 'file://$fixtures/lib/consts_and_non.dart',
-          'line': 15,
-          'column': 26
+          'line': 14,
+          'column': 26,
         },
         <String, dynamic>{
           'file': 'file://$fixtures/lib/consts_and_non.dart',
           'line': 17,
-          'column': 26
+          'column': 26,
         },
+        <String, dynamic>{
+          'file': 'file://$fixtures/lib/consts_and_non.dart',
+          'line': 19,
+          'column': 26,
+        },
+        <String, dynamic>{
+          'file': 'file://$fixtures/pkg/package.dart',
+          'line': 10,
+          'column': 25,
+        }
       ]
     }),
   );
