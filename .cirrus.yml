@@ -159,9 +159,9 @@ task:
     - name: build_and_test_web_windows_edge
       compile_host_script: |
         cd %ENGINE_PATH%/src
-        python flutter/tools/gn --unoptimized --full-dart-sdk
+        python flutter/tools/gn --runtime-mode debug --unoptimized --full-dart-sdk
         ninja -C out/host_debug_unopt
-      test_web_engine_firefox_script: |
+      test_web_engine_edge_script: |
         cd %ENGINE_PATH%/src/flutter/web_sdk/web_engine_tester
         %ENGINE_PATH%/src/out/host_debug_unopt/dart-sdk/bin/pub get
         cd %ENGINE_PATH%/src/flutter/lib/web_ui
