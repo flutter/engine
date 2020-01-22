@@ -17,7 +17,13 @@ void main() {
   blah(const Target('6', 6, null));
 
   const IgnoreMe ignoreMe = IgnoreMe(Target('7', 7, null)); // IgnoreMe is ignored but 7 is not.
+  // ignore: prefer_const_constructors
+  final IgnoreMe ignoreMe2 = IgnoreMe(const Target('8', 8, null));
+  // ignore: prefer_const_constructors
+  final IgnoreMe ignoreMe3 = IgnoreMe(const Target('9', 9, Target('10', 10, null)));
   print(ignoreMe);
+  print(ignoreMe2);
+  print(ignoreMe3);
 }
 
 class IgnoreMe {

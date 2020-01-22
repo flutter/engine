@@ -46,6 +46,9 @@ void _checkConsts() {
         <String, dynamic>{'stringValue': '4', 'intValue': 4, 'targetValue': null},
         <String, dynamic>{'stringValue': '2', 'intValue': 2},
         <String, dynamic>{'stringValue': '6', 'intValue': 6, 'targetValue': null},
+        <String, dynamic>{'stringValue': '8', 'intValue': 8, 'targetValue': null},
+        <String, dynamic>{'stringValue': '10', 'intValue': 10, 'targetValue': null},
+        <String, dynamic>{'stringValue': '9', 'intValue': 9},
         <String, dynamic>{'stringValue': '7', 'intValue': 7, 'targetValue': null},
       ],
       'nonConstantLocations': <dynamic>[],
@@ -67,6 +70,9 @@ void _checkNonConsts() {
       'constantInstances': <dynamic>[
         <String, dynamic>{'stringValue': '1', 'intValue': 1, 'targetValue': null},
         <String, dynamic>{'stringValue': '6', 'intValue': 6, 'targetValue': null},
+        <String, dynamic>{'stringValue': '8', 'intValue': 8, 'targetValue': null},
+        <String, dynamic>{'stringValue': '10', 'intValue': 10, 'targetValue': null},
+        <String, dynamic>{'stringValue': '9', 'intValue': 9},
         <String, dynamic>{'stringValue': '7', 'intValue': 7, 'targetValue': null},
       ],
       'nonConstantLocations': <dynamic>[
