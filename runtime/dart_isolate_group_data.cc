@@ -59,6 +59,7 @@ const fml::closure& DartIsolateGroupData::GetIsolateShutdownCallback() const {
 
 void DartIsolateGroupData::SetChildIsolatePreparer(
     const ChildIsolatePreparer& value) {
+  std::scoped_lock lock(child_isolate_preparer_mutex_);
   child_isolate_preparer_ = value;
 }
 
