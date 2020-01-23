@@ -1250,13 +1250,13 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
     //
     // Disable first line ascent modifications.
     if (line_number == 0 && !(paragraph_style_.height_behavior &
-                              ~HeightBehavior::kDisableFirstAscent)) {
+                              ~TextHeightBehavior::kDisableFirstAscent)) {
       ascent = -metrics.fAscent;
     }
     // Disable last line descent modifications.
     if (line_number == line_limit - 1 &&
         !(paragraph_style_.height_behavior &
-          ~HeightBehavior::kDisableLastDescent)) {
+          ~TextHeightBehavior::kDisableLastDescent)) {
       descent = metrics.fDescent;
     }
 

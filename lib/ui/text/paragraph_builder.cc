@@ -75,7 +75,7 @@ const int psTextDirectionIndex = 2;
 const int psFontWeightIndex = 3;
 const int psFontStyleIndex = 4;
 const int psMaxLinesIndex = 5;
-const int psHeightBehaviorIndex = 6;
+const int psTextHeightBehaviorIndex = 6;
 const int psFontFamilyIndex = 7;
 const int psFontSizeIndex = 8;
 const int psHeightIndex = 9;
@@ -91,7 +91,7 @@ const int psMaxLinesMask = 1 << psMaxLinesIndex;
 const int psFontFamilyMask = 1 << psFontFamilyIndex;
 const int psFontSizeMask = 1 << psFontSizeIndex;
 const int psHeightMask = 1 << psHeightIndex;
-const int psHeightBehaviorMask = 1 << psHeightBehaviorIndex;
+const int psTextHeightBehaviorMask = 1 << psTextHeightBehaviorIndex;
 const int psStrutStyleMask = 1 << psStrutStyleIndex;
 const int psEllipsisMask = 1 << psEllipsisIndex;
 const int psLocaleMask = 1 << psLocaleIndex;
@@ -267,8 +267,8 @@ ParagraphBuilder::ParagraphBuilder(
     style.has_height_override = true;
   }
 
-  if (mask & psHeightBehaviorMask) {
-    style.height_behavior = encoded[psHeightBehaviorIndex];
+  if (mask & psTextHeightBehaviorMask) {
+    style.height_behavior = encoded[psTextHeightBehaviorIndex];
   }
 
   if (mask & psStrutStyleMask) {

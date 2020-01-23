@@ -27,16 +27,16 @@ void main() {
     });
   });
 
-  group('HeightBehavior', () {
-    const HeightBehavior behavior0 = HeightBehavior();
-    const HeightBehavior behavior1 = HeightBehavior(
+  group('TextHeightBehavior', () {
+    const TextHeightBehavior behavior0 = TextHeightBehavior();
+    const TextHeightBehavior behavior1 = TextHeightBehavior(
       applyHeightToFirstAscent: false,
       applyHeightToLastDescent: false
     );
-    const HeightBehavior behavior2 = HeightBehavior(
+    const TextHeightBehavior behavior2 = TextHeightBehavior(
       applyHeightToFirstAscent: false,
     );
-    const HeightBehavior behavior3 = HeightBehavior(
+    const TextHeightBehavior behavior3 = TextHeightBehavior(
       applyHeightToLastDescent: false
     );
 
@@ -62,17 +62,17 @@ void main() {
     });
 
     test('encode works', () {
-      expect(const HeightBehavior.fromEncoded(3), equals(behavior0));
-      expect(const HeightBehavior.fromEncoded(0), equals(behavior1));
-      expect(const HeightBehavior.fromEncoded(2), equals(behavior2));
-      expect(const HeightBehavior.fromEncoded(1), equals(behavior3));
+      expect(const TextHeightBehavior.fromEncoded(3), equals(behavior0));
+      expect(const TextHeightBehavior.fromEncoded(0), equals(behavior1));
+      expect(const TextHeightBehavior.fromEncoded(2), equals(behavior2));
+      expect(const TextHeightBehavior.fromEncoded(1), equals(behavior3));
     });
 
     test('toString works', () {
-      expect(behavior0.toString(), equals('HeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: true)'));
-      expect(behavior1.toString(), equals('HeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: false)'));
-      expect(behavior2.toString(), equals('HeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: true)'));
-      expect(behavior3.toString(), equals('HeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: false)'));
+      expect(behavior0.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: true)'));
+      expect(behavior1.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: false)'));
+      expect(behavior2.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: true)'));
+      expect(behavior3.toString(), equals('TextHeightBehavior(applyHeightToFirstAscent: true, applyHeightToLastDescent: false)'));
     });
   });
 

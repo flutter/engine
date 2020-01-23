@@ -53,7 +53,7 @@ enum class TextDirection {
 // example, disabling first and last can achieved with:
 //
 //   (kDisableFirst & kDisableLast).
-enum HeightBehavior {
+enum TextHeightBehavior {
   kDisableAll = 0x0,
   kAll = 0x1 | 0x2,
   kDisableFirstAscent = 0x2,
@@ -69,7 +69,7 @@ class ParagraphStyle {
   std::string font_family = "";
   double font_size = 14;
   double height = 1;
-  size_t height_behavior = HeightBehavior::kAll;
+  size_t height_behavior = TextHeightBehavior::kAll;
   bool has_height_override = false;
 
   // Strut properties. strut_enabled must be set to true for the rest of the
