@@ -458,8 +458,8 @@ class TextHeightBehavior {
   /// Creates a new TextHeightBehavior object from an encoded form.
   ///
   /// See [encode] for the creation of the encoded form.
-  const TextHeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) > 0,
-                                                      applyHeightToLastDescent = (encoded & 0x2) > 0;
+  const TextHeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) == 0,
+                                                      applyHeightToLastDescent = (encoded & 0x2) == 0;
 
 
   /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
@@ -488,7 +488,7 @@ class TextHeightBehavior {
 
   /// Returns an encoded int representation of this object.
   int encode() {
-    return 0 + (applyHeightToFirstAscent ? 1 << 0 : 0) + (applyHeightToLastDescent ? 1 << 1 : 0);
+    return 0 + (applyHeightToFirstAscent ? 0 : 1 << 0) + (applyHeightToLastDescent ? 0 : 1 << 1);
   }
 
   @override

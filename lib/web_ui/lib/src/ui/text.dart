@@ -431,9 +431,9 @@ enum TextDecorationStyle {
 /// be applied to the corresponding metric. By default, all properties are true,
 /// and [TextStyle.height] is applied as normal. When set to false, the font's
 /// default ascent will be used.
-class HeightBehavior {
+class TextHeightBehavior {
 
-  /// Creates a new HeightBehavior object.
+  /// Creates a new TextHeightBehavior object.
   ///
   ///  * applyHeightToFirstAscent: When true, the [TextStyle.height] modifier
   ///    will be applied to the ascent of the first line. When false, the font's
@@ -443,16 +443,16 @@ class HeightBehavior {
   ///    default descent will be used.
   ///
   /// All properties default to true (height modifications applied as normal).
-  const HeightBehavior({
+  const TextHeightBehavior({
     this.applyHeightToFirstAscent = true,
     this.applyHeightToLastDescent = true,
   });
 
-  /// Creates a new HeightBehavior object from an encoded form.
+  /// Creates a new TextHeightBehavior object from an encoded form.
   ///
   /// See [encode] for the creation of the encoded form.
-  const HeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) > 0,
-                                                  applyHeightToLastDescent = (encoded & 0x2) > 0;
+  const TextHeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) == 0,
+                                                      applyHeightToLastDescent = (encoded & 0x2) == 0;
 
 
   /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
@@ -481,15 +481,15 @@ class HeightBehavior {
 
   /// Returns an encoded int representation of this object.
   int encode() {
-    return 0 + (applyHeightToFirstAscent ? 1 << 0 : 0) + (applyHeightToLastDescent ? 1 << 1 : 0);
+    return 0 + (applyHeightToFirstAscent ? 0 : 1 << 0) + (applyHeightToLastDescent ? 0 : 1 << 1);
   }
 
   @override
   bool operator ==(dynamic other) {
     if (other.runtimeType != runtimeType)
       return false;
-    return other is HeightBehavior
-        && other.applyHeightToFirstAscent == applyHeightToLastDescent
+    return other is TextHeightBehavior
+        && other.applyHeightToFirstAscent == applyHeightToFirstAscent
         && other.applyHeightToLastDescent == applyHeightToLastDescent;
   }
 
@@ -503,7 +503,7 @@ class HeightBehavior {
 
   @override
   String toString() {
-    return 'HeightBehavior('
+    return 'TextHeightBehavior('
              'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
              'applyHeightToLastDescent: $applyHeightToLastDescent'
            ')';

@@ -41,7 +41,7 @@ enum class TextDirection {
   ltr,
 };
 
-// Allows disabling height adjustments to first first line's ascent and the
+// Allows disabling height adjustments to first line's ascent and the
 // last line's descent. If disabled, the line will use the default font
 // metric provided ascent/descent and ParagraphStyle.height will not take
 // effect.
@@ -54,10 +54,10 @@ enum class TextDirection {
 //
 //   (kDisableFirst & kDisableLast).
 enum TextHeightBehavior {
-  kDisableAll = 0x0,
-  kAll = 0x1 | 0x2,
-  kDisableFirstAscent = 0x2,
-  kDisableLastDescent = 0x1,
+  kAll = 0x0,
+  kDisableFirstAscent = 0x1,
+  kDisableLastDescent = 0x2,
+  kDisableAll = 0x1 | 0x2,
 };
 
 class ParagraphStyle {
