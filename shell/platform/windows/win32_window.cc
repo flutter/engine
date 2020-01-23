@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/windows/win32_window.h"
+#include <iostream>
 
 namespace flutter {
 
@@ -17,12 +18,6 @@ void Win32Window::InitializeChild(const char* title,
                                   unsigned int height) {
   Destroy();
   std::wstring converted_title = NarrowToWide(title);
-
-  // Set DPI awareness for all Windows versions. This call has to be made before
-  // the HWND is created.
-  if (!dpi_helper_->SetDpiAwareness()) {
-    OutputDebugString(L"Failed to set DPI awareness");
-  }
 
   WNDCLASS window_class = RegisterWindowClass(converted_title);
 
@@ -80,17 +75,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                      reinterpret_cast<LONG_PTR>(cs->lpCreateParams));
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
-
-    if (that->dpi_helper_->IsPerMonitorV2Available()) {
-      // Since the application is running in Per-monitor V2 mode, turn on
-      // automatic titlebar scaling
-      BOOL result = that->dpi_helper_->EnableNonClientDpiScaling(window);
-      if (result != TRUE) {
-        OutputDebugString(L"Failed to enable non-client area autoscaling");
-      }
-    }
     that->current_dpi_ = that->dpi_helper_->GetDpi(window);
-
     that->window_handle_ = window;
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     return that->MessageHandler(window, message, wparam, lparam);

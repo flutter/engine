@@ -18,39 +18,27 @@ class Win32DpiHelper {
 
   ~Win32DpiHelper();
 
-  // Check if Windows Per Monitor V2 DPI scaling functionality is available on
-  // current system.
-  bool IsPerMonitorV2Available();
-
-  // Wrapper for OS functionality to turn on automatic window non-client scaling
-  BOOL EnableNonClientDpiScaling(HWND);
-
-  // Wrapper for OS functionality to return the DPI for |HWND| if Per Monitor V2
-  // awareness has been set. Otherwise, returns the DPI for the System.
+  // Returns the current DPI. Supports all DPI awareness modes, and is backward
+  // compatible down to Windows Vista.
   UINT GetDpi(HWND);
 
-  // Sets the DPI awareness for the application. For versions >= Windows 1703,
-  // use Per Monitor V2. For any older versions, use System.
-  //
-  // This call is overriden if DPI awareness is stated in the application
-  // manifest.
-  BOOL SetDpiAwareness();
-
  private:
-  using EnableNonClientDpiScaling_ = BOOL __stdcall(HWND);
   using GetDpiForWindow_ = UINT __stdcall(HWND);
-  using SetProcessDpiAwarenessContext_ = BOOL __stdcall(DPI_AWARENESS_CONTEXT);
-  using SetProcessDpiAware_ = BOOL __stdcall();
-  using GetDpiForSystem_ = UINT __stdcall();
+  using GetDpiForMonitor_ = HRESULT __stdcall(HMONITOR hmonitor,
+                                              MONITOR_DPI_TYPE dpiType,
+                                              UINT* dpiX,
+                                              UINT* dpiY);
+  using MonitorFromWindow_ = HMONITOR __stdcall(HWND hwnd, DWORD dwFlags);
 
-  EnableNonClientDpiScaling_* enable_non_client_dpi_scaling_ = nullptr;
   GetDpiForWindow_* get_dpi_for_window_ = nullptr;
-  SetProcessDpiAwarenessContext_* set_process_dpi_awareness_context_ = nullptr;
-  SetProcessDpiAware_* set_process_dpi_aware_ = nullptr;
-  GetDpiForSystem_* get_dpi_for_system_ = nullptr;
+  GetDpiForMonitor_* get_dpi_for_monitor_ = nullptr;
+  MonitorFromWindow_* monitor_from_window_ = nullptr;
 
   HMODULE user32_module_ = nullptr;
-  bool permonitorv2_supported_ = false;
+  HMODULE shlib_module_ = nullptr;
+  bool dpi_for_window_supported_ = false;
+  bool dpi_for_monitor_supported_ = false;
+  UINT default_dpi_ = 96;
 };
 
 }  // namespace flutter

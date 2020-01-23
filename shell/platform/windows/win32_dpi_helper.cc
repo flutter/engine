@@ -13,64 +13,56 @@ bool AssignProcAddress(HMODULE comBaseModule, const char* name, T*& outProc) {
 }  // namespace
 
 Win32DpiHelper::Win32DpiHelper() {
-  // TODO ensure that this helper works correctly on downlevel builds.
   user32_module_ = LoadLibraryA("User32.dll");
   if (user32_module_ == nullptr) {
     return;
   }
-  if (!AssignProcAddress(user32_module_, "EnableNonClientDpiScaling",
-                         enable_non_client_dpi_scaling_)) {
+  shlib_module_ = LoadLibraryA("Shcore.dll");
+  if (shlib_module_ == nullptr) {
     return;
   }
 
-  if (!AssignProcAddress(user32_module_, "GetDpiForWindow",
-                         get_dpi_for_window_)) {
-    return;
+  if (AssignProcAddress(user32_module_, "GetDpiForWindow",
+                        get_dpi_for_window_)) {
+    dpi_for_window_supported_ = true;
   }
 
-  if (!AssignProcAddress(user32_module_, "SetProcessDpiAwarenessContext",
-                         set_process_dpi_awareness_context_)) {
-    return;
+  if (AssignProcAddress(shlib_module_, "GetDpiForMonitor",
+                        get_dpi_for_monitor_) &&
+      AssignProcAddress(user32_module_, "MonitorFromWindow",
+                        monitor_from_window_)) {
+    dpi_for_monitor_supported_ = true;
   }
-  permonitorv2_supported_ = true;
 }
 
 Win32DpiHelper::~Win32DpiHelper() {
   if (user32_module_ != nullptr) {
     FreeLibrary(user32_module_);
   }
-}
-
-BOOL Win32DpiHelper::SetDpiAwareness() {
-  if (permonitorv2_supported_) {
-    return set_process_dpi_awareness_context_(
-        DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-
-  } else {
-    AssignProcAddress(user32_module_, "GetDpiForSystem", get_dpi_for_system_);
-    AssignProcAddress(user32_module_, "SetProcessDpiAware",
-                      set_process_dpi_aware_);
-
-    return set_process_dpi_aware_();
+  if (shlib_module_ != nullptr) {
+    FreeLibrary(shlib_module_);
   }
-}
-
-bool Win32DpiHelper::IsPerMonitorV2Available() {
-  return permonitorv2_supported_;
-}
-
-BOOL Win32DpiHelper::EnableNonClientDpiScaling(HWND hwnd) {
-  if (!permonitorv2_supported_) {
-    return false;
-  }
-  return enable_non_client_dpi_scaling_(hwnd);
 }
 
 UINT Win32DpiHelper::GetDpi(HWND hwnd) {
-  if (permonitorv2_supported_) {
+  // GetDpiForWindow returns the DPI for any awareness mode. If not available, fallback to a
+  // per monitor, system, or default DPI.
+  if (dpi_for_window_supported_) {
     return get_dpi_for_window_(hwnd);
+  } else if (dpi_for_monitor_supported_) {
+    HMONITOR monitor = monitor_from_window_(hwnd, MONITOR_DEFAULTTONEAREST);
+    UINT dpi_x = 0, dpi_y = 0;
+    HRESULT result =
+        get_dpi_for_monitor_(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
+    if (result == S_OK) {
+      return dpi_x;
+    }
+  } else {
+    HDC hdc = GetDC(hwnd);
+    UINT dpi = GetDeviceCaps(hdc, LOGPIXELSX);
+    ReleaseDC(hwnd, hdc);
+    return dpi;
   }
-  return get_dpi_for_system_();
+  return default_dpi_;
 }
-
 }  // namespace flutter
