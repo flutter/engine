@@ -49,10 +49,10 @@ enum class TextDirection {
 // The default behavior is kAll where height adjustments are enabled for all
 // lines.
 //
-// Multiple behaviors can be applied at once with a bitwise & operator. For
+// Multiple behaviors can be applied at once with a bitwise | operator. For
 // example, disabling first and last can achieved with:
 //
-//   (kDisableFirst & kDisableLast).
+//   (kDisableFirst | kDisableLast).
 enum TextHeightBehavior {
   kAll = 0x0,
   kDisableFirstAscent = 0x1,

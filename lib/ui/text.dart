@@ -488,7 +488,7 @@ class TextHeightBehavior {
 
   /// Returns an encoded int representation of this object.
   int encode() {
-    return 0 + (applyHeightToFirstAscent ? 0 : 1 << 0) + (applyHeightToLastDescent ? 0 : 1 << 1);
+    return (applyHeightToFirstAscent ? 0 : 1 << 0) | (applyHeightToLastDescent ? 0 : 1 << 1);
   }
 
   @override
