@@ -10,16 +10,16 @@
 
 namespace flutter {
 
-// A helper class for abstracting various Windows DPI related functions across
-// Windows OS versions.
+/// A helper class for abstracting various Windows DPI related functions across
+/// Windows OS versions.
 class Win32DpiHelper {
  public:
   Win32DpiHelper();
 
   ~Win32DpiHelper();
 
-  // Returns the current DPI. Supports all DPI awareness modes, and is backward
-  // compatible down to Windows Vista.
+  /// Returns the current DPI. Supports all DPI awareness modes, and is backward
+  /// compatible down to Windows Vista.
   UINT GetDpi(HWND);
 
  private:
