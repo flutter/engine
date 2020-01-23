@@ -518,8 +518,13 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 // Flutter framework to delay or prevent the embedded view from getting a touch sequence.
 @interface DelayingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
 
+// Indicates that if the `DelayingGestureRecognizer`'s state should be set to
+// `UIGestureRecognizerStateEnded` during next `touchesEnded` call.
 @property(nonatomic) bool shouldEndInNextTouchesEnded;
-@property(nonatomic) bool touchedEnded;
+
+// Indicates that the `DelayingGestureRecognizer`'s `touchesEnded` has been invoked without
+// setting the state to `UIGestureRecognizerStateEnded`.
+@property(nonatomic) bool touchedEndedWithoutBlocking;
 
 - (instancetype)initWithTarget:(id)target
                         action:(SEL)action
@@ -582,10 +587,11 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
   switch (_blockingPolicy) {
     case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
       NSLog(@"block gesture");
+      // We block all other gesture recognizers immediately in this policy.
       _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
       break;
     case FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded:
-      if (_delayingRecognizer.get().touchedEnded) {
+      if (_delayingRecognizer.get().touchedEndedWithoutBlocking) {
         // If touchesEnded of the `DelayingGesureRecognizer` has been already invoked,
         // we want to set the state of the `DelayingGesureRecognizer` to
         // `UIGestureRecognizerStateEnded` as soon as possible.
@@ -632,7 +638,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
     self.delaysTouchesEnded = YES;
     self.delegate = self;
     self.shouldEndInNextTouchesEnded = NO;
-    self.touchedEnded = NO;
+    self.touchedEndedWithoutBlocking = NO;
     _forwardingRecognizer.reset([forwardingRecognizer retain]);
   }
   return self;
@@ -651,7 +657,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 }
 
 - (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
-  self.touchedEnded = NO;
+  self.touchedEndedWithoutBlocking = NO;
   [super touchesBegan:touches withEvent:event];
 }
 
@@ -662,7 +668,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
     self.shouldEndInNextTouchesEnded = NO;
     return;
   }
-  self.touchedEnded = YES;
+  self.touchedEndedWithoutBlocking = YES;
   [super touchesEnded:touches withEvent:event];
 }
 

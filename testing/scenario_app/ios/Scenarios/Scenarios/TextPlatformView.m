@@ -32,10 +32,6 @@
 
 @end
 
-@interface TextPlatformView ()
-
-@end
-
 @implementation TextPlatformView {
   int64_t _viewId;
   UITextView* _textView;
