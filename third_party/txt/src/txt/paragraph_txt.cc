@@ -1246,16 +1246,16 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
       descent = (metrics.fDescent + metrics.fLeading / 2);
     }
 
-    // Account for height_behavior in paragraph_style_.
+    // Account for text_height_behavior in paragraph_style_.
     //
     // Disable first line ascent modifications.
-    if (line_number == 0 && paragraph_style_.height_behavior &
+    if (line_number == 0 && paragraph_style_.text_height_behavior &
                                 TextHeightBehavior::kDisableFirstAscent) {
       ascent = -metrics.fAscent;
     }
     // Disable last line descent modifications.
     if (line_number == line_limit - 1 &&
-        paragraph_style_.height_behavior &
+        paragraph_style_.text_height_behavior &
             TextHeightBehavior::kDisableLastDescent) {
       descent = metrics.fDescent;
     }

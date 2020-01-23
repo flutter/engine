@@ -69,7 +69,7 @@ class ParagraphStyle {
   std::string font_family = "";
   double font_size = 14;
   double height = 1;
-  size_t height_behavior = TextHeightBehavior::kAll;
+  size_t text_height_behavior = TextHeightBehavior::kAll;
   bool has_height_override = false;
 
   // Strut properties. strut_enabled must be set to true for the rest of the

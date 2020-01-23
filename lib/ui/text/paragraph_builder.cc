@@ -268,7 +268,7 @@ ParagraphBuilder::ParagraphBuilder(
   }
 
   if (mask & psTextHeightBehaviorMask) {
-    style.height_behavior = encoded[psTextHeightBehaviorIndex];
+    style.text_height_behavior = encoded[psTextHeightBehaviorIndex];
   }
 
   if (mask & psStrutStyleMask) {
