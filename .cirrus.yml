@@ -136,6 +136,7 @@ task:
     DEPOT_TOOLS_WIN_TOOLCHAIN: 0
     GYP_MSVS_OVERRIDE_PATH: "c:/Program Files (x86)/Microsoft Visual Studio/2017/Community"
     ENGINE_PATH: "c:/flutter/engine"
+    GYP_MSVS_VERSION: 2017
   setup_script: |
     REM robocopy can return 1 for successful copy; suppress its error code.
     REM move somehow doesn't work as it complains that the file is being used by another process.
@@ -159,8 +160,7 @@ task:
     - name: build_and_test_web_windows_edge
       compile_host_script: |
         cd %ENGINE_PATH%/src
-        python flutter/tools/gn --runtime-mode debug --unoptimized --full-dart-sdk
-        ninja -C out/host_debug_unopt
+        python.exe %ENGINE_PATH%/src/third_party/dart/tools/make_version.py --quiet
       test_web_engine_edge_script: |
         cd %ENGINE_PATH%/src/flutter/web_sdk/web_engine_tester
         %ENGINE_PATH%/src/out/host_debug_unopt/dart-sdk/bin/pub get
