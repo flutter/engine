@@ -165,13 +165,6 @@ void PlatformView::OnPropertiesChanged(
   FlushViewportMetrics();
 }
 
-// TODO(SCN-975): Re-enable.
-// void PlatformView::ConnectSemanticsProvider(
-//     fuchsia::ui::viewsv1token::ViewToken token) {
-//   semantics_bridge_.SetupEnvironment(
-//       token.value, parent_environment_service_provider_.get());
-// }
-
 void PlatformView::UpdateViewportMetrics(
     const fuchsia::ui::gfx::Metrics& metrics) {
   metrics_.scale = metrics.scale_x;
@@ -758,6 +751,14 @@ void PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
     }
 
     wireframe_enabled_callback_(enable->value.GetBool());
+  } else if (method->value == "View.getRef") {
+      fuchsia::ui::views::ViewRef dart_view_ref;
+      uint8_t* dart_data = reinterpret_cast<uint8_t*>(&dart_view_ref);
+      view_ref_.Clone(&dart_view_ref);
+
+      std::vector<uint8_t> response_data = std::vector<uint8_t>(dart_data, dart_data + sizeof(dart_view_ref));
+      message->response()->Complete(
+          std::make_unique<fml::DataMapping>(std::move(response_data)));
   } else {
     FML_DLOG(ERROR) << "Unknown " << message->channel() << " method "
                     << method->value.GetString();
