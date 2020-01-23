@@ -452,7 +452,7 @@ class HeightBehavior {
   ///
   /// See [encode] for the creation of the encoded form.
   const HeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) > 0,
-                                            applyHeightToLastDescent = (encoded & 0x2) > 0;
+                                                  applyHeightToLastDescent = (encoded & 0x2) > 0;
 
 
   /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
