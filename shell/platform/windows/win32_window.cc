@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/windows/win32_window.h"
-#include <iostream>
 
 namespace flutter {
 

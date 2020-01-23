@@ -45,8 +45,8 @@ Win32DpiHelper::~Win32DpiHelper() {
 }
 
 UINT Win32DpiHelper::GetDpi(HWND hwnd) {
-  // GetDpiForWindow returns the DPI for any awareness mode. If not available, fallback to a
-  // per monitor, system, or default DPI.
+  // GetDpiForWindow returns the DPI for any awareness mode. If not available,
+  // fallback to a per monitor, system, or default DPI.
   if (dpi_for_window_supported_) {
     return get_dpi_for_window_(hwnd);
   } else if (dpi_for_monitor_supported_) {
