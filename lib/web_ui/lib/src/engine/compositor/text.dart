@@ -25,7 +25,7 @@ class SkParagraphStyle implements ui.ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
-    ui.HeightBehavior heightBehavior,
+    ui.TextHeightBehavior textHeightBehavior,
     ui.FontWeight fontWeight,
     ui.FontStyle fontStyle,
     ui.StrutStyle strutStyle,
@@ -39,7 +39,7 @@ class SkParagraphStyle implements ui.ParagraphStyle {
       fontFamily,
       fontSize,
       height,
-      heightBehavior,
+      textHeightBehavior,
       fontWeight,
       fontStyle,
       ellipsis,
@@ -87,7 +87,7 @@ class SkParagraphStyle implements ui.ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
-    ui.HeightBehavior heightBehavior,
+    ui.TextHeightBehavior textHeightBehavior,
     ui.FontWeight fontWeight,
     ui.FontStyle fontStyle,
     String ellipsis,
@@ -132,8 +132,8 @@ class SkParagraphStyle implements ui.ParagraphStyle {
       skParagraphStyle['heightMultiplier'] = height;
     }
 
-    if (heightBehavior != null) {
-      skParagraphStyle['heightBehavior'] = heightBehavior.encode();
+    if (textHeightBehavior != null) {
+      skParagraphStyle['textHeightBehavior'] = textHeightBehavior.encode();
     }
 
     if (maxLines != null) {
