@@ -45,7 +45,7 @@ class DartIsolateGroupData {
 
   const std::string& GetAdvisoryScriptEntrypoint() const;
 
-  const ChildIsolatePreparer& GetChildIsolatePreparer() const;
+  ChildIsolatePreparer GetChildIsolatePreparer() const;
 
   const fml::closure& GetIsolateCreateCallback() const;
 
@@ -58,7 +58,7 @@ class DartIsolateGroupData {
   const fml::RefPtr<const DartSnapshot> isolate_snapshot_;
   const std::string advisory_script_uri_;
   const std::string advisory_script_entrypoint_;
-  std::mutex child_isolate_preparer_mutex_;
+  mutable std::mutex child_isolate_preparer_mutex_;
   ChildIsolatePreparer child_isolate_preparer_;
   const fml::closure isolate_create_callback_;
   const fml::closure isolate_shutdown_callback_;
