@@ -50,9 +50,9 @@ enum class TextDirection {
 // lines.
 //
 // Multiple behaviors can be applied at once with a bitwise | operator. For
-// example, disabling first and last can achieved with:
+// example, disabling first ascent and last descent can achieved with:
 //
-//   (kDisableFirst | kDisableLast).
+//   (kDisableFirstAscent | kDisableLastDescent).
 enum TextHeightBehavior {
   kAll = 0x0,
   kDisableFirstAscent = 0x1,
