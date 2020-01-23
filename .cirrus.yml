@@ -158,6 +158,10 @@ task:
         python flutter/tools/gn --runtime-mode debug
         ninja -C out/host_debug
     - name: build_and_test_web_windows_edge
+      compile_host_script: |
+        cd %ENGINE_PATH%/src
+        python flutter/tools/gn --runtime-mode debug --unoptimized
+        ninja -C out/host_debug_unopt
       test_web_engine_edge_script: |
         cd %ENGINE_PATH%/src/flutter/web_sdk/web_engine_tester
         pub get
