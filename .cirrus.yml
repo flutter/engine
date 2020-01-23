@@ -160,7 +160,7 @@ task:
     - name: build_and_test_web_windows_edge
       compile_host_script: |
         cd %ENGINE_PATH%/src
-        python.exe %ENGINE_PATH%/src/third_party/dart/tools/make_version.py --quiet
+        python %ENGINE_PATH%/src/third_party/dart/tools/make_version.py --quiet
       test_web_engine_edge_script: |
         cd %ENGINE_PATH%/src/flutter/web_sdk/web_engine_tester
         %ENGINE_PATH%/src/out/host_debug_unopt/dart-sdk/bin/pub get
