@@ -519,6 +519,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 @interface DelayingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
 
 @property(nonatomic) bool shouldEndInNextTouchesEnded;
+@property(nonatomic) bool touchedEnded;
 
 - (instancetype)initWithTarget:(id)target
                         action:(SEL)action
@@ -584,7 +585,17 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
       _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
       break;
     case FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded:
-      _delayingRecognizer.get().shouldEndInNextTouchesEnded = YES;
+      if (_delayingRecognizer.get().touchedEnded) {
+        // If touchesEnded of the `DelayingGesureRecognizer` has been already invoked,
+        // we want to set the state of the `DelayingGesureRecognizer` to
+        // `UIGestureRecognizerStateEnded` as soon as possible.
+        _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
+      } else {
+        // If touchesEnded of the `DelayingGesureRecognizer` has not been invoked,
+        // We will set a flag to notify the `DelayingGesureRecognizer` to set the state to
+        // `UIGestureRecognizerStateEnded` when touchesEnded is called.
+        _delayingRecognizer.get().shouldEndInNextTouchesEnded = YES;
+      }
       break;
     default:
       break;
@@ -621,6 +632,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
     self.delaysTouchesEnded = YES;
     self.delegate = self;
     self.shouldEndInNextTouchesEnded = NO;
+    self.touchedEnded = NO;
     _forwardingRecognizer.reset([forwardingRecognizer retain]);
   }
   return self;
@@ -638,12 +650,20 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
   return otherGestureRecognizer == self;
 }
 
+- (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+  self.touchedEnded = NO;
+  [super touchesBegan:touches withEvent:event];
+}
+
 - (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
   if (self.shouldEndInNextTouchesEnded) {
     NSLog(@"block gesture in touches ended");
     self.state = UIGestureRecognizerStateEnded;
     self.shouldEndInNextTouchesEnded = NO;
+    return;
   }
+  self.touchedEnded = YES;
+  [super touchesEnded:touches withEvent:event];
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {

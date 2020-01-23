@@ -32,7 +32,7 @@
 
 @end
 
-@interface TextPlatformView()
+@interface TextPlatformView ()
 
 @end
 
