@@ -132,7 +132,7 @@ task:
     disk: 50
   env:
     # Cirrus is somehow not picking up the environment variables set in the VM image.
-    PATH: "c:/depot_tools;c:/MinGit/cmd;$PATH"
+    PATH: "c:/depot_tools;c:/MinGit/cmd;c:/flutter/engine/src/out/host_debug_unopt/dart-sdk/bin/;$PATH"
     DEPOT_TOOLS_WIN_TOOLCHAIN: 0
     GYP_MSVS_OVERRIDE_PATH: "c:/Program Files (x86)/Microsoft Visual Studio/2017/Community"
     ENGINE_PATH: "c:/flutter/engine"
@@ -158,13 +158,9 @@ task:
         python flutter/tools/gn --runtime-mode debug
         ninja -C out/host_debug
     - name: build_and_test_web_windows_edge
-      compile_host_script: |
-        cd %ENGINE_PATH%/src
-        python %ENGINE_PATH%/src/third_party/dart/tools/make_version.py --quiet
       test_web_engine_edge_script: |
         cd %ENGINE_PATH%/src/flutter/web_sdk/web_engine_tester
-        %ENGINE_PATH%/src/out/host_debug_unopt/dart-sdk/bin/pub get
+        pub get
         cd %ENGINE_PATH%/src/flutter/lib/web_ui
-        %ENGINE_PATH%/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        SET DART="%ENGINE_PATH%/src/out/host_debug_unopt/dart-sdk/bin/dart"
-        %DART% dev/edge_launcher_installation_test.dart
+        pub get
+        dart dev/edge_launcher_installation_test.dart
