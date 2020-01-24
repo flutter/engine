@@ -163,8 +163,6 @@ task:
         python flutter/tools/gn --runtime-mode debug --unoptimized
         ninja -C out/host_debug_unopt
       test_web_engine_edge_script: |
-        cd %ENGINE_PATH%/src/flutter/web_sdk/web_engine_tester
-        pub --trace get
         cd %ENGINE_PATH%/src/flutter/lib/web_ui
         pub --trace get
         dart dev/edge_launcher_installation_test.dart
