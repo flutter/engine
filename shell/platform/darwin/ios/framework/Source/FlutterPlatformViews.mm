@@ -579,14 +579,12 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 }
 
 - (void)releaseGesture {
-  NSLog(@"releaseGesture gesture");
   _delayingRecognizer.get().state = UIGestureRecognizerStateFailed;
 }
 
 - (void)blockGesture {
   switch (_blockingPolicy) {
     case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
-      NSLog(@"block gesture");
       // We block all other gesture recognizers immediately in this policy.
       _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
       break;
@@ -663,12 +661,11 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 
 - (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
   if (self.shouldEndInNextTouchesEnded) {
-    NSLog(@"block gesture in touches ended");
     self.state = UIGestureRecognizerStateEnded;
     self.shouldEndInNextTouchesEnded = NO;
-    return;
+  } else {
+    self.touchedEndedWithoutBlocking = YES;
   }
-  self.touchedEndedWithoutBlocking = YES;
   [super touchesEnded:touches withEvent:event];
 }
 

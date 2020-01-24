@@ -229,27 +229,27 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
 /***************************************************************************************************
  * How the UIGestureRecognizers of a platform view should be blocked.
  *
- * UIGestureRecognizers of a platform views can be blocked based on the decisin made by the Flutter
- * Framework. e.g. When an interactible widget is covering the platform view and a gesture happened
- * on the widget, The framework may decide to block the UIGestureRecognizers that are recognized
- * (via the gesture recognized acton ) on the platform view if any.
+ * UIGestureRecognizers of a platform views can be blocked based on the decisions made by the
+ * Flutter Framework. e.g. When an interact-able widget is covering the platform view and a gesture
+ * happened on the widget, The framework may decide to block the UIGestureRecognizers that are
+ * recognized (via the gesture recognized acton ) on the platform view if any.
  *
- * This policy describes how the blocking process is implmented.
+ * This policy describes how the blocking process is implemented.
  */
 typedef enum {
   /**
-   * The flutter framwork blocks all the UIGestureRecognizers  on the platform view as soon as it
-   * thinks they should be blocked.
+   * The flutter framework blocks all the UIGestureRecognizers on the platform view as soon as it
+   * decides they should be blocked.
    *
-   * If this pociliy is implmented, only touchesBegan for all the UIGestureRecognizers is guaranteed
+   * If this policy is implemented, only touchesBegan for all the UIGestureRecognizers is guaranteed
    * to be called.
    */
   FlutterPlatformViewGestureRecognizersBlockingPolicyEager,
   /**
-   * The flutter framwork blocks all the UIGestureRecognizers  until the `touchesEnded` method is
+   * The flutter framework blocks all the UIGestureRecognizers until the `touchesEnded` method is
    * called for every UIGestureRecognizers on the platform view.
    *
-   * If this pociliy is implmented, all of the `touchesBegan`, `touchesMoved`, `touchesEnded` and
+   * If this policy is implemented, all of the `touchesBegan`, `touchesMoved`, `touchesEnded` and
    * `touchesCancelled` on any UIGestureRecognizers are guaranteed to be called if iOS system
    * decided to call them.
    */
@@ -308,7 +308,7 @@ typedef enum {
  * @param factory The view factory that will be registered.
  * @param factoryId A unique identifier for the factory, the Dart code of the Flutter app can use
  *   this identifier to request creation of a `UIView` by the registered factory.
- * @param gestureBlockingPolicy How UIGestureRecognizers on the platform view is
+ * @param gestureBlockingPolicy How UIGestureRecognizers on the platform views are
  * blocked.
  *
  */

@@ -47,7 +47,6 @@
     _textView = [[UITextView alloc] initWithFrame:CGRectMake(50.0, 50.0, 250.0, 100.0)];
     _textView.textColor = UIColor.blueColor;
     _textView.backgroundColor = UIColor.lightGrayColor;
-    _textView.userInteractionEnabled = YES;
     [_textView setFont:[UIFont systemFontOfSize:52]];
     _textView.text = args;
   }
