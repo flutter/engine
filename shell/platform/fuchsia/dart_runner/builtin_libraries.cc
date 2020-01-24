@@ -103,9 +103,12 @@ void InitBuiltinLibrariesForIsolate(
     zx::channel directory_request,
     bool service_isolate) {
   // dart:fuchsia --------------------------------------------------------------
+  // dart runner doesn't care about scenic view ref.
+  zx::eventpair dummy_view_ref;
   if (!service_isolate) {
     fuchsia::dart::Initialize(std::move(environment),
-                              std::move(directory_request));
+                              std::move(directory_request),
+                              std::move(dummy_view_ref));
   }
 
   // dart:fuchsia.builtin ------------------------------------------------------

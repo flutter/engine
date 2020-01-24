@@ -18,6 +18,9 @@ Handle _environment;
 @pragma('vm:entry-point')
 Handle _outgoingServices;
 
+@pragma('vm:entry-point')
+Handle _viewRef;
+
 class MxStartupInfo {
   // TODO: refactor Handle to a Channel
   static Handle takeEnvironment() {
@@ -38,6 +41,16 @@ class MxStartupInfo {
     }
     Handle handle = _outgoingServices;
     _outgoingServices = null;
+    return handle;
+  }
+
+  static Handle takeViewRef() {
+    if (_viewRef == null && Platform.isFuchsia) {
+      throw Exception(
+          'Attempting to call takeViewRef more than once per process');
+    }
+    Handle handle = _viewRef;
+    _viewRef = null;
     return handle;
   }
 }
