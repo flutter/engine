@@ -17,20 +17,33 @@ class ClipboardMessageHandler {
   /// Handles the platform message which stores the given text to the clipboard.
   void setDataMethodCall(
       MethodCall methodCall, ui.PlatformMessageResponseCallback callback) {
-    _copyToClipboardStrategy.setData(methodCall.arguments['text']).then((_) {
-      const MethodCodec codec = JSONMethodCodec();
-      callback(codec.encodeSuccessEnvelope(true));
-    }).catchError((error) => print('Could not copy text: $error'));
+    const MethodCodec codec = JSONMethodCodec();
+    _copyToClipboardStrategy
+        .setData(methodCall.arguments['text'])
+        .then((bool success) {
+      if (success) {
+        callback(codec.encodeSuccessEnvelope(true));
+      } else {
+        callback(codec.encodeErrorEnvelope(
+            code: 'copy_fail', message: 'Clipboard.setData failed'));
+      }
+    }).catchError((_) {
+      callback(codec.encodeErrorEnvelope(
+          code: 'copy_fail', message: 'Clipboard.setData failed'));
+    });
   }
 
   /// Handles the platform message which retrieves text data from the clipboard.
   void getDataMethodCall(ui.PlatformMessageResponseCallback callback) {
+    const MethodCodec codec = JSONMethodCodec();
     _pasteFromClipboardStrategy.getData().then((String data) {
-      const MethodCodec codec = JSONMethodCodec();
       final Map<String, dynamic> map = {'text': data};
       callback(codec.encodeSuccessEnvelope(map));
-    }).catchError(
-        (error) => print('Could not get text from clipboard: $error'));
+    }).catchError((error) {
+      print('Could not get text from clipboard: $error');
+      callback(codec.encodeErrorEnvelope(
+          code: 'paste_fail', message: 'Clipboard.getData failed'));
+    });
   }
 }
 
@@ -46,7 +59,11 @@ abstract class CopyToClipboardStrategy {
   }
 
   /// Places the text onto the browser Clipboard.
-  Future<void> setData(String text);
+  ///
+  /// Returns `true` for a successful action.
+  ///
+  /// Returns `false` for an uncessful action or when there is an excaption.
+  Future<bool> setData(String text);
 }
 
 /// Provides functionality for reading text from clipboard.
@@ -71,10 +88,14 @@ abstract class PasteFromClipboardStrategy {
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API
 class ClipboardAPICopyStrategy implements CopyToClipboardStrategy {
   @override
-  Future<void> setData(String text) async {
-    await html.window.navigator.clipboard
-        .writeText(text)
-        .catchError((error) => print('Could not copy text: $error'));
+  Future<bool> setData(String text) async {
+    try {
+      await html.window.navigator.clipboard.writeText(text);
+    } catch (e) {
+      print('copy is not successful ${e.message}');
+      return Future.value(false);
+    }
+    return Future.value(true);
   }
 }
 
@@ -94,28 +115,29 @@ class ClipboardAPIPasteStrategy implements PasteFromClipboardStrategy {
 /// Provides a fallback strategy for browsers which does not support ClipboardAPI.
 class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
   @override
-  Future<void> setData(String text) {
-    // In Flutter, platform messages are exchanged between threads so the
-    // messages and responses have to be exchanged asynchronously. We simulate
-    // that by adding a zero-length delay to the reply.
-    return Future.delayed(Duration.zero).then((_) {
-      // Copy content to clipboard with execCommand.
-      // See: https://developers.google.com/web/updates/2015/04/cut-and-copy-commands
-      final html.TextAreaElement tempTextArea = _appendTemporaryTextArea();
-      tempTextArea.value = text;
-      tempTextArea.focus();
-      tempTextArea.select();
-      try {
-        final bool result = html.document.execCommand('copy');
-        if (!result) {
-          print('copy is not successful');
-        }
-      } catch (e) {
-        print('copy is not successful ${e.message}');
-      } finally {
-        _removeTemporaryTextArea(tempTextArea);
+  Future<bool> setData(String text) {
+    return Future.value(_setDataSync(text));
+  }
+
+  bool _setDataSync(String text) {
+    // Copy content to clipboard with execCommand.
+    // See: https://developers.google.com/web/updates/2015/04/cut-and-copy-commands
+    final html.TextAreaElement tempTextArea = _appendTemporaryTextArea();
+    tempTextArea.value = text;
+    tempTextArea.focus();
+    tempTextArea.select();
+    bool result = false;
+    try {
+      result = html.document.execCommand('copy');
+      if (!result) {
+        print('copy is not successful');
       }
-    });
+    } catch (e) {
+      print('copy is not successful ${e.message}');
+    } finally {
+      _removeTemporaryTextArea(tempTextArea);
+    }
+    return result;
   }
 
   html.TextAreaElement _appendTemporaryTextArea() {
