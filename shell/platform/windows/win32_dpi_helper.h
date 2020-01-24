@@ -38,7 +38,6 @@ class Win32DpiHelper {
   HMODULE shlib_module_ = nullptr;
   bool dpi_for_window_supported_ = false;
   bool dpi_for_monitor_supported_ = false;
-  UINT default_dpi_ = 96;
 };
 
 }  // namespace flutter

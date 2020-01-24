@@ -4,6 +4,8 @@ namespace flutter {
 
 namespace {
 
+constexpr UINT kDefaultDpi = 96;
+
 template <typename T>
 bool AssignProcAddress(HMODULE comBaseModule, const char* name, T*& outProc) {
   outProc = reinterpret_cast<T*>(GetProcAddress(comBaseModule, name));
@@ -17,14 +19,16 @@ Win32DpiHelper::Win32DpiHelper() {
   if (user32_module_ == nullptr) {
     return;
   }
-  shlib_module_ = LoadLibraryA("Shcore.dll");
-  if (shlib_module_ == nullptr) {
-    return;
-  }
 
   if (AssignProcAddress(user32_module_, "GetDpiForWindow",
                         get_dpi_for_window_)) {
     dpi_for_window_supported_ = true;
+    return;
+  }
+
+  shlib_module_ = LoadLibraryA("Shcore.dll");
+  if (shlib_module_ == nullptr) {
+    return;
   }
 
   if (AssignProcAddress(shlib_module_, "GetDpiForMonitor",
@@ -49,20 +53,19 @@ UINT Win32DpiHelper::GetDpi(HWND hwnd) {
   // fallback to a per monitor, system, or default DPI.
   if (dpi_for_window_supported_) {
     return get_dpi_for_window_(hwnd);
-  } else if (dpi_for_monitor_supported_) {
+  }
+
+  if (dpi_for_monitor_supported_) {
     HMONITOR monitor = monitor_from_window_(hwnd, MONITOR_DEFAULTTONEAREST);
     UINT dpi_x = 0, dpi_y = 0;
     HRESULT result =
         get_dpi_for_monitor_(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
-    if (result == S_OK) {
-      return dpi_x;
-    }
-  } else {
-    HDC hdc = GetDC(hwnd);
-    UINT dpi = GetDeviceCaps(hdc, LOGPIXELSX);
-    ReleaseDC(hwnd, hdc);
-    return dpi;
+    return SUCCEEDED(result) ? dpi_x : kDefaultDpi;
   }
-  return default_dpi_;
+
+  HDC hdc = GetDC(hwnd);
+  UINT dpi = GetDeviceCaps(hdc, LOGPIXELSX);
+  ReleaseDC(hwnd, hdc);
+  return dpi;
 }
 }  // namespace flutter
