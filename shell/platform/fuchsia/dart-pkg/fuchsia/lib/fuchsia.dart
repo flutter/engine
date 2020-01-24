@@ -23,6 +23,7 @@ Handle _viewRef;
 
 class MxStartupInfo {
   // TODO: refactor Handle to a Channel
+  // https://github.com/flutter/flutter/issues/49439
   static Handle takeEnvironment() {
     if (_outgoingServices == null && Platform.isFuchsia) {
       throw Exception(
@@ -34,6 +35,7 @@ class MxStartupInfo {
   }
 
   // TODO: refactor Handle to a Channel
+  // https://github.com/flutter/flutter/issues/49439
   static Handle takeOutgoingServices() {
     if (_outgoingServices == null && Platform.isFuchsia) {
       throw Exception(
@@ -44,6 +46,8 @@ class MxStartupInfo {
     return handle;
   }
 
+  // TODO: refactor Handle to a ViewRef
+  // https://github.com/flutter/flutter/issues/49439
   static Handle takeViewRef() {
     if (_viewRef == null && Platform.isFuchsia) {
       throw Exception(
