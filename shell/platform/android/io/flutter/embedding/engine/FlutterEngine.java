@@ -142,33 +142,6 @@ public class FlutterEngine {
   }
 
   /**
-   * Constructs a new {@code FlutterEngine}.
-   * <p>
-   * A new {@code FlutterEngine} does not execute any Dart code automatically. See
-   * {@link #getDartExecutor()} and {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}
-   * to begin executing Dart code within this {@code FlutterEngine}.
-   * <p>
-   * A new {@code FlutterEngine} will not display any UI until a
-   * {@link RenderSurface} is registered. See
-   * {@link #getRenderer()} and {@link FlutterRenderer#startRenderingToSurface(RenderSurface)}.
-   * <p>
-   * Set {@code automaticallyRegisterPlugins} to control whether or not the instance is created with
-   * all plugins attached. See {@link #getPlugins()}.
-   * <p>
-   * A new {@code FlutterEngine} does come with all default system channels attached.
-   * <p>
-   * The first {@code FlutterEngine} instance constructed per process will also load the Flutter
-   * native library and start a Dart VM.
-   * <p>
-   * In order to pass Dart VM initialization arguments (see {@link io.flutter.embedding.engine.FlutterShellArgs})
-   * when creating the VM, manually set the initialization arguments by calling {@link FlutterLoader#startInitialization(Context)}
-   * and {@link FlutterLoader#ensureInitializationComplete(Context, String[])}.
-   */
-  public FlutterEngine(@NonNull Context context, boolean automaticallyRegisterPlugins) {
-    this(context, FlutterLoader.getInstance(), new FlutterJNI(), null, automaticallyRegisterPlugins);
-  }
-
-  /**
    * Same as {@link #FlutterEngine(Context)} with added support for passing Dart
    * VM arguments.
    * <p>
@@ -177,6 +150,17 @@ public class FlutterEngine {
   public FlutterEngine(@NonNull Context context, @Nullable String[] dartVmArgs) {
     this(context, FlutterLoader.getInstance(), new FlutterJNI(), dartVmArgs, true);
   }
+
+  /**
+   * Same as {@link #FlutterEngine(Context)} with added support for passing Dart
+   * VM arguments and avoiding automatic plugin registration.
+   * <p>
+   * If the Dart VM has already started, the given arguments will have no effect.
+   */
+  public FlutterEngine(@NonNull Context context, @Nullable String[] dartVmArgs, boolean automaticallyRegisterPlugins) {
+    this(context, FlutterLoader.getInstance(), new FlutterJNI(), dartVmArgs, automaticallyRegisterPlugins);
+  }
+
 
   /**
    * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[])} but with no Dart

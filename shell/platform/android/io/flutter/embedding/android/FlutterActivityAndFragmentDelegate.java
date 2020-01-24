@@ -225,7 +225,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     // FlutterView.
     Log.v(TAG, "No preferred FlutterEngine was provided. Creating a new FlutterEngine for"
         + " this FlutterFragment.");
-    flutterEngine = new FlutterEngine(host.getContext(), /*automaticallyRegisterPlugins=*/true);
+    flutterEngine = new FlutterEngine(host.getContext(), host.getFlutterShellArgs().toArray(), /*automaticallyRegisterPlugins=*/false);
     isFlutterEngineFromHost = false;
   }
 
