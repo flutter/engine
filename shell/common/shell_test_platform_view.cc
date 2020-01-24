@@ -13,14 +13,8 @@ std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::Create(
     TaskRunners task_runners,
     std::shared_ptr<ShellTestVsyncClock> vsync_clock,
     CreateVsyncWaiter create_vsync_waiter) {
-#if OS_FUCHSIA
-  return std::make_unique<ShellTestPlatformViewVulkan>(
-      delegate, task_runners, vsync_clock, create_vsync_waiter);
-
-#else
   return std::make_unique<ShellTestPlatformViewGL>(
       delegate, task_runners, vsync_clock, create_vsync_waiter);
-#endif
 }
 
 }  // namespace testing
