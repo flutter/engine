@@ -7,11 +7,10 @@ part of engine;
 /// Handles clipboard related platform messages.
 class ClipboardMessageHandler {
   /// Helper to handle copy to clipboard functionality.
-  final CopyToClipboardStrategy _copyToClipboardStrategy =
-      CopyToClipboardStrategy();
+  CopyToClipboardStrategy _copyToClipboardStrategy = CopyToClipboardStrategy();
 
   /// Helper to handle copy to clipboard functionality.
-  final PasteFromClipboardStrategy _pasteFromClipboardStrategy =
+  PasteFromClipboardStrategy _pasteFromClipboardStrategy =
       PasteFromClipboardStrategy();
 
   /// Handles the platform message which stores the given text to the clipboard.
@@ -44,6 +43,15 @@ class ClipboardMessageHandler {
       callback(codec.encodeErrorEnvelope(
           code: 'paste_fail', message: 'Clipboard.getData failed'));
     });
+  }
+
+  /// Methods used by tests.
+  set pasteFromClipboardStrategy(PasteFromClipboardStrategy strategy) {
+    _pasteFromClipboardStrategy = strategy;
+  }
+
+  set copyToClipboardStrategy(CopyToClipboardStrategy strategy) {
+    _copyToClipboardStrategy = strategy;
   }
 }
 
