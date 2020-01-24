@@ -12,7 +12,7 @@ final Float64List identityTransform = Matrix4.identity().storage;
 final Float64List xTranslation = (Matrix4.identity()..translate(10)).storage;
 final Float64List yTranslation = (Matrix4.identity()..translate(0, 10)).storage;
 final Float64List zTranslation = (Matrix4.identity()..translate(0, 0, 10)).storage;
-final Float64List scaleAndTransform2d = (Matrix4.identity()..scale(2, 3)..translate(4, 5, 0)).storage;
+final Float64List scaleAndTransform2d = (Matrix4.identity()..scale(2, 3, 1)..translate(4, 5, 0)).storage;
 
 void main() {
   test('transformKindOf and isIdentityFloat64ListTransform identify matrix kind', () {
