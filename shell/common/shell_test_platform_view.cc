@@ -3,12 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/common/shell_test_platform_view.h"
-
-#if OS_FUCHSIA
-#include "flutter/shell/common/shell_test_platform_view_vulkan.h"
-#else
 #include "flutter/shell/common/shell_test_platform_view_gl.h"
-#endif
 
 namespace flutter {
 namespace testing {
