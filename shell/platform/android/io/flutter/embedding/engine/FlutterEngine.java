@@ -157,10 +157,12 @@ public class FlutterEngine {
    * <p>
    * If the Dart VM has already started, the given arguments will have no effect.
    */
-  public FlutterEngine(@NonNull Context context, @Nullable String[] dartVmArgs, boolean automaticallyRegisterPlugins) {
+  public FlutterEngine(
+      @NonNull Context context,
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins) {
     this(context, FlutterLoader.getInstance(), new FlutterJNI(), dartVmArgs, automaticallyRegisterPlugins);
   }
-
 
   /**
    * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[])} but with no Dart
