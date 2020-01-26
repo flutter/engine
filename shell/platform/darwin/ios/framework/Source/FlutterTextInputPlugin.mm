@@ -45,6 +45,109 @@ static UITextAutocapitalizationType ToUITextAutoCapitalizationType(NSDictionary*
   return UITextAutocapitalizationTypeNone;
 }
 
+@available(iOS 10.0, *)
+static UITextContentType ToUITextContentType(NSDictionary* type) {
+    NSString* contentType = type[@"textContentType"];
+    
+    if ([contentType isEqualToString:@"TextContent.name"])
+      return UITextContentTypeName;
+    
+    if ([contentType isEqualToString:@"TextContent.namePrefix"])
+      return UITextContentTypeNamePrefix;
+    
+    if ([contentType isEqualToString:@"TextContent.middleName"])
+         return UITextContentTypeMiddleName;
+    
+    if ([contentType isEqualToString:@"TextContent.familyName"])
+         return UITextContentTypeFamilyName;
+    
+    if ([contentType isEqualToString:@"TextContent.nameSuffix"])
+         return UITextContentTypeNameSuffix;
+    
+    if ([contentType isEqualToString:@"TextContent.nickname"])
+         return UITextContentTypeNickname;
+    
+    if ([contentType isEqualToString:@"TextContent.jobTitle"])
+         return UITextContentTypeJobTitle;
+    
+    if ([contentType isEqualToString:@"TextContent.organizationName"])
+         return UITextContentTypeOrganizationName;
+    
+    if ([contentType isEqualToString:@"TextContent.location"])
+         return UITextContentTypeLocation;
+    
+    if ([contentType isEqualToString:@"TextContent.fullStreetAddress"])
+         return UITextContentTypeFullStreetAddress;
+    
+    if ([contentType isEqualToString:@"TextContent.addressLine1"])
+         return UITextContentTypeAddressLine1;
+    
+    if ([contentType isEqualToString:@"TextContent.addressLine2"])
+         return UITextContentTypeAddressLine2;
+    
+    if ([contentType isEqualToString:@"TextContent.addressCity"])
+         return UITextContentTypeAddressCity;
+    
+    if ([contentType isEqualToString:@"TextContent.addressState"])
+         return UITextContentTypeAddressState;
+    
+    if ([contentType isEqualToString:@"TextContent.addressCityAndState"])
+         return UITextContentTypeAddressCityAndState;
+    
+    if ([contentType isEqualToString:@"TextContent.sublocality"])
+         return UITextContentTypeSublocality;
+    
+    if ([contentType isEqualToString:@"TextContent.countryName"])
+         return UITextContentTypeCountryName;
+    
+    if ([contentType isEqualToString:@"TextContent.postalCode"])
+         return UITextContentTypePostalCode;
+    
+    if ([contentType isEqualToString:@"TextContent.telephoneNumber"])
+         return UITextContentTypeTelephoneNumber;
+    
+    if ([contentType isEqualToString:@"TextContent.emailAddress"])
+         return UITextContentTypeEmailAddress;
+    
+    if ([contentType isEqualToString:@"TextContent.url"])
+         return UITextContentTypeURL;
+    
+    if ([contentType isEqualToString:@"TextContent.creditCardNumber"])
+         return UITextContentTypeCreditCardNumber;
+    
+    if ([contentType isEqualToString:@"TextContent.username"]) {
+      if (@available(iOS 11.0, *)) {
+        return UITextContentTypeUsername;
+      } else {
+        return UITextContentTypeEmailAddress;
+      }
+    }
+    
+    if ([contentType isEqualToString:@"TextContent.password"]) {
+      if (@available(iOS 11.0, *)) {
+        return UITextContentTypePassword;
+      } else {
+        return nil;
+      }
+    }
+    
+    if ([contentType isEqualToString:@"TextContent.newPassword"]) {
+      if (@available(iOS 12.0, *)) {
+        return UITextContentTypeNewPassword;
+      } else {
+        return nil;
+      }
+    }
+    
+    if ([contentType isEqualToString:@"TextContent.oneTimeCode"]) {
+      if (@available(iOS 12.0, *)) {
+        return UITextContentTypeOneTimeCode;
+      } else {
+        return nil;
+      }
+    }
+}
+
 static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   // Where did the term "unspecified" come from? iOS has a "default" and Android
   // has "unspecified." These 2 terms seem to mean the same thing but we need
@@ -154,6 +257,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
 @property(nonatomic) UITextAutocorrectionType autocorrectionType;
 @property(nonatomic) UITextSpellCheckingType spellCheckingType;
+@property(nonatomic) UITextContentType textContentType API_AVAILABLE(ios(10.0));
 @property(nonatomic) BOOL enablesReturnKeyAutomatically;
 @property(nonatomic) UIKeyboardAppearance keyboardAppearance;
 @property(nonatomic) UIKeyboardType keyboardType;
@@ -770,6 +874,9 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   _activeView.keyboardType = ToUIKeyboardType(inputType);
   _activeView.returnKeyType = ToUIReturnKeyType(configuration[@"inputAction"]);
   _activeView.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
+  if (@available(iOS 10.0, *)) {
+    _activeView.textContentType = ToUITextContentType(configuration);
+  }
   if (@available(iOS 11.0, *)) {
     NSString* smartDashesType = configuration[@"smartDashesType"];
     // This index comes from the SmartDashesType enum in the framework.
