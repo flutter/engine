@@ -45,8 +45,7 @@ static UITextAutocapitalizationType ToUITextAutoCapitalizationType(NSDictionary*
   return UITextAutocapitalizationTypeNone;
 }
 
-@available(iOS 10.0, *)
-static UITextContentType ToUITextContentType(NSDictionary* type) {
+static UITextContentType ToUITextContentType(NSDictionary* type) API_AVAILABLE(ios(10.0)) {
     NSString* contentType = type[@"textContentType"];
     
     if ([contentType isEqualToString:@"TextContent.name"])
@@ -56,70 +55,70 @@ static UITextContentType ToUITextContentType(NSDictionary* type) {
       return UITextContentTypeNamePrefix;
     
     if ([contentType isEqualToString:@"TextContent.middleName"])
-         return UITextContentTypeMiddleName;
+      return UITextContentTypeMiddleName;
     
     if ([contentType isEqualToString:@"TextContent.familyName"])
-         return UITextContentTypeFamilyName;
+      return UITextContentTypeFamilyName;
     
     if ([contentType isEqualToString:@"TextContent.nameSuffix"])
-         return UITextContentTypeNameSuffix;
+      return UITextContentTypeNameSuffix;
     
     if ([contentType isEqualToString:@"TextContent.nickname"])
-         return UITextContentTypeNickname;
+      return UITextContentTypeNickname;
     
     if ([contentType isEqualToString:@"TextContent.jobTitle"])
-         return UITextContentTypeJobTitle;
+      return UITextContentTypeJobTitle;
     
     if ([contentType isEqualToString:@"TextContent.organizationName"])
-         return UITextContentTypeOrganizationName;
+      return UITextContentTypeOrganizationName;
     
     if ([contentType isEqualToString:@"TextContent.location"])
-         return UITextContentTypeLocation;
+      return UITextContentTypeLocation;
     
     if ([contentType isEqualToString:@"TextContent.fullStreetAddress"])
-         return UITextContentTypeFullStreetAddress;
+      return UITextContentTypeFullStreetAddress;
     
     if ([contentType isEqualToString:@"TextContent.addressLine1"])
-         return UITextContentTypeAddressLine1;
+      return UITextContentTypeStreetAddressLine1;
     
     if ([contentType isEqualToString:@"TextContent.addressLine2"])
-         return UITextContentTypeAddressLine2;
+      return UITextContentTypeStreetAddressLine2;
     
     if ([contentType isEqualToString:@"TextContent.addressCity"])
-         return UITextContentTypeAddressCity;
+      return UITextContentTypeAddressCity;
     
     if ([contentType isEqualToString:@"TextContent.addressState"])
-         return UITextContentTypeAddressState;
+      return UITextContentTypeAddressState;
     
     if ([contentType isEqualToString:@"TextContent.addressCityAndState"])
-         return UITextContentTypeAddressCityAndState;
+      return UITextContentTypeAddressCityAndState;
     
     if ([contentType isEqualToString:@"TextContent.sublocality"])
-         return UITextContentTypeSublocality;
+      return UITextContentTypeSublocality;
     
     if ([contentType isEqualToString:@"TextContent.countryName"])
-         return UITextContentTypeCountryName;
+      return UITextContentTypeCountryName;
     
     if ([contentType isEqualToString:@"TextContent.postalCode"])
-         return UITextContentTypePostalCode;
+      return UITextContentTypePostalCode;
     
     if ([contentType isEqualToString:@"TextContent.telephoneNumber"])
-         return UITextContentTypeTelephoneNumber;
+      return UITextContentTypeTelephoneNumber;
     
     if ([contentType isEqualToString:@"TextContent.emailAddress"])
-         return UITextContentTypeEmailAddress;
+      return UITextContentTypeEmailAddress;
     
     if ([contentType isEqualToString:@"TextContent.url"])
-         return UITextContentTypeURL;
+      return UITextContentTypeURL;
     
     if ([contentType isEqualToString:@"TextContent.creditCardNumber"])
-         return UITextContentTypeCreditCardNumber;
+      return UITextContentTypeCreditCardNumber;
     
     if ([contentType isEqualToString:@"TextContent.username"]) {
       if (@available(iOS 11.0, *)) {
         return UITextContentTypeUsername;
       } else {
-        return UITextContentTypeEmailAddress;
+        return nil;
       }
     }
     
@@ -146,6 +145,8 @@ static UITextContentType ToUITextContentType(NSDictionary* type) {
         return nil;
       }
     }
+    
+    return nil;
 }
 
 static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
@@ -257,7 +258,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
 @property(nonatomic) UITextAutocorrectionType autocorrectionType;
 @property(nonatomic) UITextSpellCheckingType spellCheckingType;
-@property(nonatomic) UITextContentType textContentType API_AVAILABLE(ios(10.0));
+@property(nonatomic, copy) UITextContentType textContentType API_AVAILABLE(ios(10.0));
 @property(nonatomic) BOOL enablesReturnKeyAutomatically;
 @property(nonatomic) UIKeyboardAppearance keyboardAppearance;
 @property(nonatomic) UIKeyboardType keyboardType;
