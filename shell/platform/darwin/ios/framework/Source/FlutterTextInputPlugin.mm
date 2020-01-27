@@ -52,20 +52,14 @@ static UITextContentType ToUITextContentType(NSDictionary* type) API_AVAILABLE(i
       return UITextContentTypeName;
     if ([contentType isEqualToString:@"TextContentType.namePrefix"])
       return UITextContentTypeNamePrefix;
+    if ([contentType isEqualToString:@"TextContentType.givenName"])
+      return UITextContentTypeGivenName;
     if ([contentType isEqualToString:@"TextContentType.middleName"])
       return UITextContentTypeMiddleName;
     if ([contentType isEqualToString:@"TextContentType.familyName"])
       return UITextContentTypeFamilyName;
     if ([contentType isEqualToString:@"TextContentType.nameSuffix"])
       return UITextContentTypeNameSuffix;
-    if ([contentType isEqualToString:@"TextContentType.nickname"])
-      return UITextContentTypeNickname;
-    if ([contentType isEqualToString:@"TextContentType.jobTitle"])
-      return UITextContentTypeJobTitle;
-    if ([contentType isEqualToString:@"TextContentType.organizationName"])
-      return UITextContentTypeOrganizationName;
-    if ([contentType isEqualToString:@"TextContentType.location"])
-      return UITextContentTypeLocation;
     if ([contentType isEqualToString:@"TextContentType.fullStreetAddress"])
       return UITextContentTypeFullStreetAddress;
     if ([contentType isEqualToString:@"TextContentType.addressLine1"])
@@ -76,10 +70,6 @@ static UITextContentType ToUITextContentType(NSDictionary* type) API_AVAILABLE(i
       return UITextContentTypeAddressCity;
     if ([contentType isEqualToString:@"TextContentType.addressState"])
       return UITextContentTypeAddressState;
-    if ([contentType isEqualToString:@"TextContentType.addressCityAndState"])
-      return UITextContentTypeAddressCityAndState;
-    if ([contentType isEqualToString:@"TextContentType.sublocality"])
-      return UITextContentTypeSublocality;
     if ([contentType isEqualToString:@"TextContentType.countryName"])
       return UITextContentTypeCountryName;
     if ([contentType isEqualToString:@"TextContentType.postalCode"])

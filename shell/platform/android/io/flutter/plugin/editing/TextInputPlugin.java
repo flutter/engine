@@ -230,6 +230,12 @@ public class TextInputPlugin {
             outAttrs.actionId = enterAction;
         }
         outAttrs.imeOptions |= enterAction;
+        
+        String autofillHintValue = configuration.textContentType.hintConstantValue();
+        if (autofillHintValue != null) {
+          String[] autofillHints = {autofillHintValue};
+          view.setAutofillHints(autofillHints);
+        }
 
         InputConnectionAdaptor connection = new InputConnectionAdaptor(
             view,
