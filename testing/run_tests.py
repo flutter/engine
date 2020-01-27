@@ -20,8 +20,9 @@ golden_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'resources')
 fonts_dir = os.path.join(buildroot_dir, 'flutter', 'third_party', 'txt', 'third_party', 'fonts')
 roboto_font_path = os.path.join(fonts_dir, 'Roboto-Regular.ttf')
 dart_tests_dir = os.path.join(buildroot_dir, 'flutter', 'testing', 'dart',)
+font_subset_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'font-subset')
 
-fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*:*GpuThreadMerger*'
+fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*'
 
 def RunCmd(cmd, **kwargs):
   try:
@@ -102,7 +103,8 @@ def RunCCTests(build_dir, filter):
     ]
   RunEngineExecutable(build_dir, 'flow_unittests', filter, flow_flags + shuffle_flags)
 
-  RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + shuffle_flags)
+  # TODO(44614): Re-enable after https://github.com/flutter/flutter/issues/44614 has been addressed.
+  # RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + shuffle_flags)
 
   RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
 
@@ -305,8 +307,16 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
       RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, True)
       RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, False)
 
+def RunConstFinderTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'const_finder', 'test')
+  opts = [
+    os.path.join(test_dir, 'const_finder_test.dart'),
+    os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
+    os.path.join(build_dir, 'flutter_patched_sdk')]
+  RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=test_dir)
+
 def main():
-  parser = argparse.ArgumentParser();
+  parser = argparse.ArgumentParser()
 
   parser.add_argument('--variant', dest='variant', action='store',
       default='host_debug_unopt', help='The engine build variant to run the tests for.');
@@ -326,7 +336,7 @@ def main():
   args = parser.parse_args()
 
   if args.type == 'all':
-    types = ['engine', 'dart', 'benchmarks', 'java']
+    types = ['engine', 'dart', 'benchmarks', 'java', 'font-subset']
   else:
     types = args.type.split(',')
 
@@ -342,6 +352,7 @@ def main():
     assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
+    RunConstFinderTests(build_dir)
 
   if 'java' in types:
     assert not IsWindows(), "Android engine files can't be compiled on Windows."
@@ -354,6 +365,9 @@ def main():
   # https://github.com/flutter/flutter/issues/36300
   if 'benchmarks' in types and not IsWindows():
     RunEngineBenchmarks(build_dir, engine_filter)
+
+  if 'engine' in types or 'font-subset' in types:
+    RunCmd(['python', 'test.py'], cwd=font_subset_dir)
 
 
 if __name__ == '__main__':

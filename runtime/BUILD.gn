@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/dart/runtime/bin/vmservice/vmservice_sources.gni")
 import("$flutter_root/common/config.gni")
 import("$flutter_root/testing/testing.gni")
 
@@ -68,6 +67,8 @@ source_set("runtime") {
     "skia_concurrent_executor.h",
     "start_up.cc",
     "start_up.h",
+    "window_data.cc",
+    "window_data.h",
   ]
 
   deps = [
@@ -78,11 +79,11 @@ source_set("runtime") {
     "$flutter_root/fml",
     "$flutter_root/lib/io",
     "$flutter_root/lib/ui",
+    "$flutter_root/third_party/tonic",
     "$flutter_root/third_party/txt",
     "//third_party/dart/runtime:dart_api",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
-    "//third_party/tonic",
   ]
 
   # On Windows the engine finds the Dart snapshot data through symbols
@@ -145,8 +146,8 @@ source_set("runtime_unittests_common") {
     "$flutter_root/lib/snapshot",
     "$flutter_root/shell/common",
     "$flutter_root/testing:dart",
+    "$flutter_root/third_party/tonic",
     "//third_party/skia",
-    "//third_party/tonic",
   ]
 }
 

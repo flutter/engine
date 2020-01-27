@@ -8,7 +8,6 @@ import android.app.Activity;
 import android.arch.lifecycle.Lifecycle;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -742,13 +741,6 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     delegate.onLowMemory();
   }
 
-  @NonNull
-  private Context getContextCompat() {
-    return Build.VERSION.SDK_INT >= 23
-      ? getContext()
-      : getActivity();
-  }
-
   /**
    * {@link FlutterActivityAndFragmentDelegate.Host} method that is used by
    * {@link FlutterActivityAndFragmentDelegate} to obtain Flutter shell arguments when
@@ -908,7 +900,7 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     FragmentActivity attachedActivity = getActivity();
     if (attachedActivity instanceof FlutterEngineProvider) {
       // Defer to the Activity that owns us to provide a FlutterEngine.
-      Log.d(TAG, "Deferring to attached Activity to provide a FlutterEngine.");
+      Log.v(TAG, "Deferring to attached Activity to provide a FlutterEngine.");
       FlutterEngineProvider flutterEngineProvider = (FlutterEngineProvider) attachedActivity;
       flutterEngine = flutterEngineProvider.provideFlutterEngine(getContext());
     }

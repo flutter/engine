@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 
 #include <mutex>
+#include <sstream>
 #include <vector>
 
 #include "flutter/common/settings.h"
@@ -110,6 +111,12 @@ static const char* kDartFuchsiaTraceArgs[] FML_ALLOW_UNUSED_TYPE = {
 static const char* kDartTraceStreamsArgs[] = {
     "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM,API",
 };
+
+static std::string DartOldGenHeapSizeArgs(uint64_t heap_size) {
+  std::ostringstream oss;
+  oss << "--old_gen_heap_size=" << heap_size;
+  return oss.str();
+}
 
 constexpr char kFileUriPrefix[] = "file://";
 constexpr size_t kFileUriPrefixLength = sizeof(kFileUriPrefix) - 1;
@@ -366,7 +373,15 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     PushBackAll(&args, kDartTraceStartupArgs, fml::size(kDartTraceStartupArgs));
   }
 
-#if defined(OS_FUCHSIA)
+  std::string old_gen_heap_size_args;
+  if (settings_.old_gen_heap_size >= 0) {
+    old_gen_heap_size_args =
+        DartOldGenHeapSizeArgs(settings_.old_gen_heap_size);
+    args.push_back(old_gen_heap_size_args.c_str());
+  }
+
+#if defined(OS_FUCHSIA) && \
+    (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_PROFILE)
   PushBackAll(&args, kDartFuchsiaTraceArgs, fml::size(kDartFuchsiaTraceArgs));
   PushBackAll(&args, kDartTraceStreamsArgs, fml::size(kDartTraceStreamsArgs));
 #endif
@@ -487,6 +502,10 @@ std::shared_ptr<IsolateNameServer> DartVM::GetIsolateNameServer() const {
 std::shared_ptr<fml::ConcurrentTaskRunner>
 DartVM::GetConcurrentWorkerTaskRunner() const {
   return concurrent_message_loop_->GetTaskRunner();
+}
+
+std::shared_ptr<fml::ConcurrentMessageLoop> DartVM::GetConcurrentMessageLoop() {
+  return concurrent_message_loop_;
 }
 
 }  // namespace flutter

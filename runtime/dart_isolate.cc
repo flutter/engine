@@ -294,9 +294,11 @@ bool DartIsolate::PrepareForRunningFromPrecompiledCode() {
     return false;
   }
 
-  GetIsolateGroupData().SetChildIsolatePreparer([](DartIsolate* isolate) {
-    return isolate->PrepareForRunningFromPrecompiledCode();
-  });
+  if (GetIsolateGroupData().GetChildIsolatePreparer() == nullptr) {
+    GetIsolateGroupData().SetChildIsolatePreparer([](DartIsolate* isolate) {
+      return isolate->PrepareForRunningFromPrecompiledCode();
+    });
+  }
 
   const fml::closure& isolate_create_callback =
       GetIsolateGroupData().GetIsolateCreateCallback();
@@ -814,7 +816,7 @@ bool DartIsolate::InitializeIsolate(
   // also a root isolate) by the utility routines in the VM. However, secondary
   // isolates will be run by the VM if they are marked as runnable.
   if (!embedder_isolate->IsRootIsolate()) {
-    const ChildIsolatePreparer& child_isolate_preparer =
+    auto child_isolate_preparer =
         embedder_isolate->GetIsolateGroupData().GetChildIsolatePreparer();
     FML_DCHECK(child_isolate_preparer);
     if (!child_isolate_preparer(embedder_isolate.get())) {

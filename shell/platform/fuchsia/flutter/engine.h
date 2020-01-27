@@ -11,13 +11,12 @@
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/sys/cpp/service_directory.h>
-#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/zx/event.h>
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/common/thread_host.h"
 #include "isolate_configurator.h"
-#include "thread.h"
 
 namespace flutter_runner {
 
@@ -37,7 +36,6 @@ class Engine final {
          flutter::Settings settings,
          fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
          fuchsia::ui::views::ViewToken view_token,
-         scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request);
   ~Engine();
@@ -53,8 +51,8 @@ class Engine final {
  private:
   Delegate& delegate_;
   const std::string thread_label_;
+  flutter::ThreadHost thread_host_;
   flutter::Settings settings_;
-  std::array<std::unique_ptr<Thread>, 3> threads_;
   std::unique_ptr<IsolateConfigurator> isolate_configurator_;
   std::unique_ptr<flutter::Shell> shell_;
   zx::event vsync_event_;

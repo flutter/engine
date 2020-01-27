@@ -3234,7 +3234,7 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValidWithPixelRatio) {
           FlutterPlatformView platform_view = *layers[1]->platform_view;
           platform_view.struct_size = sizeof(platform_view);
           platform_view.identifier = 42;
-          platform_view.mutations_count = 4;
+          platform_view.mutations_count = 3;
 
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
@@ -3369,8 +3369,7 @@ TEST_F(EmbedderTest,
               case kFlutterPlatformViewMutationTypeTransformation:
                 mutation.type = kFlutterPlatformViewMutationTypeTransformation;
                 mutation.transformation =
-                    FlutterTransformationMake(SkMatrix::Concat(
-                        root_surface_transformation, SkMatrix::MakeScale(2.0)));
+                    FlutterTransformationMake(root_surface_transformation);
 
                 break;
             }
@@ -3606,6 +3605,88 @@ TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
   latch.Wait();
 }
 
+TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
+  auto& context = GetEmbedderContext();
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(1024, 600));
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("scene_builder_with_complex_clips");
+
+  const auto root_surface_transformation =
+      SkMatrix().preTranslate(0, 1024).preRotate(-90, 0, 0);
+
+  context.SetRootSurfaceTransformation(root_surface_transformation);
+
+  fml::AutoResetWaitableEvent latch;
+  context.GetCompositor().SetNextPresentCallback(
+      [&](const FlutterLayer** layers, size_t layers_count) {
+        ASSERT_EQ(layers_count, 3u);
+
+        {
+          FlutterPlatformView platform_view = *layers[1]->platform_view;
+          platform_view.struct_size = sizeof(platform_view);
+          platform_view.identifier = 42;
+
+          FlutterLayer layer = {};
+          layer.struct_size = sizeof(layer);
+          layer.type = kFlutterLayerContentTypePlatformView;
+          layer.platform_view = &platform_view;
+          layer.size = FlutterSizeMake(600.0, 1024.0);
+          layer.offset = FlutterPointMake(0.0, -256.0);
+
+          ASSERT_EQ(*layers[1], layer);
+
+          const auto** mutations = platform_view.mutations;
+
+          ASSERT_EQ(mutations[0]->type,
+                    kFlutterPlatformViewMutationTypeTransformation);
+          ASSERT_EQ(SkMatrixMake(mutations[0]->transformation),
+                    root_surface_transformation);
+
+          ASSERT_EQ(mutations[1]->type,
+                    kFlutterPlatformViewMutationTypeClipRect);
+          ASSERT_EQ(SkRectMake(mutations[1]->clip_rect),
+                    SkRect::MakeLTRB(0.0, 0.0, 1024.0, 600.0));
+
+          ASSERT_EQ(mutations[2]->type,
+                    kFlutterPlatformViewMutationTypeTransformation);
+          ASSERT_EQ(SkMatrixMake(mutations[2]->transformation),
+                    SkMatrix::MakeTrans(512.0, 0.0));
+
+          ASSERT_EQ(mutations[3]->type,
+                    kFlutterPlatformViewMutationTypeClipRect);
+          ASSERT_EQ(SkRectMake(mutations[3]->clip_rect),
+                    SkRect::MakeLTRB(0.0, 0.0, 512.0, 600.0));
+
+          ASSERT_EQ(mutations[4]->type,
+                    kFlutterPlatformViewMutationTypeTransformation);
+          ASSERT_EQ(SkMatrixMake(mutations[4]->transformation),
+                    SkMatrix::MakeTrans(-256.0, 0.0));
+
+          ASSERT_EQ(mutations[5]->type,
+                    kFlutterPlatformViewMutationTypeClipRect);
+          ASSERT_EQ(SkRectMake(mutations[5]->clip_rect),
+                    SkRect::MakeLTRB(0.0, 0.0, 1024.0, 600.0));
+        }
+
+        latch.Signal();
+      });
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 400;
+  event.height = 300;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  latch.Wait();
+}
+
 TEST_F(EmbedderTest, ObjectsCanBePostedViaPorts) {
   auto& context = GetEmbedderContext();
   EmbedderConfigBuilder builder(context);
@@ -3821,6 +3902,138 @@ TEST_F(EmbedderTest, CanSendLowMemoryNotification) {
   // notifications. Once that is in place, this test can be updated to actually
   // ensure that the dispatched message is visible to engine subsystems.
   ASSERT_EQ(FlutterEngineNotifyLowMemoryWarning(engine.get()), kSuccess);
+}
+
+TEST_F(EmbedderTest, CanPostTaskToAllNativeThreads) {
+  UniqueEngine engine;
+  size_t worker_count = 0;
+  fml::AutoResetWaitableEvent sync_latch;
+
+  // One of the threads that the callback will be posted to is the platform
+  // thread. So we cannot wait for assertions to complete on the platform
+  // thread. Create a new thread to manage the engine instance and wait for
+  // assertions on the test thread.
+  auto platform_task_runner = CreateNewThread("platform_thread");
+
+  platform_task_runner->PostTask([&]() {
+    auto& context = GetEmbedderContext();
+
+    EmbedderConfigBuilder builder(context);
+    builder.SetSoftwareRendererConfig();
+
+    engine = builder.LaunchEngine();
+
+    ASSERT_TRUE(engine.is_valid());
+
+    worker_count = ToEmbedderEngine(engine.get())
+                       ->GetShell()
+                       .GetDartVM()
+                       ->GetConcurrentMessageLoop()
+                       ->GetWorkerCount();
+
+    sync_latch.Signal();
+  });
+
+  sync_latch.Wait();
+
+  ASSERT_GT(worker_count, 4u /* three base threads plus workers */);
+  const auto engine_threads_count = worker_count + 4u;
+
+  struct Captures {
+    // Waits the adequate number of callbacks to fire.
+    fml::CountDownLatch latch;
+
+    // Ensures that the expect number of distinct threads were serviced.
+    std::set<std::thread::id> thread_ids;
+
+    size_t platform_threads_count = 0;
+    size_t render_threads_count = 0;
+    size_t ui_threads_count = 0;
+    size_t worker_threads_count = 0;
+
+    Captures(size_t count) : latch(count) {}
+  };
+
+  Captures captures(engine_threads_count);
+
+  platform_task_runner->PostTask([&]() {
+    ASSERT_EQ(FlutterEnginePostCallbackOnAllNativeThreads(
+                  engine.get(),
+                  [](FlutterNativeThreadType type, void* baton) {
+                    auto captures = reinterpret_cast<Captures*>(baton);
+
+                    switch (type) {
+                      case kFlutterNativeThreadTypeRender:
+                        captures->render_threads_count++;
+                        break;
+                      case kFlutterNativeThreadTypeWorker:
+                        captures->worker_threads_count++;
+                        break;
+                      case kFlutterNativeThreadTypeUI:
+                        captures->ui_threads_count++;
+                        break;
+                      case kFlutterNativeThreadTypePlatform:
+                        captures->platform_threads_count++;
+                        break;
+                    }
+
+                    captures->thread_ids.insert(std::this_thread::get_id());
+                    captures->latch.CountDown();
+                  },
+                  &captures),
+              kSuccess);
+  });
+
+  captures.latch.Wait();
+  ASSERT_EQ(captures.thread_ids.size(), engine_threads_count);
+  ASSERT_EQ(captures.platform_threads_count, 1u);
+  ASSERT_EQ(captures.render_threads_count, 1u);
+  ASSERT_EQ(captures.ui_threads_count, 1u);
+  ASSERT_EQ(captures.worker_threads_count, worker_count + 1u /* for IO */);
+
+  platform_task_runner->PostTask([&]() {
+    engine.reset();
+    sync_latch.Signal();
+  });
+  sync_latch.Wait();
+
+  // The engine should have already been destroyed on the platform task runner.
+  ASSERT_FALSE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest, CanPostTaskToAllNativeThreadsRecursively) {
+  EmbedderConfigBuilder builder(GetEmbedderContext());
+
+  builder.SetSoftwareRendererConfig();
+
+  static std::mutex engine_mutex;
+  static UniqueEngine engine;
+  static fml::AutoResetWaitableEvent event;
+
+  std::unique_lock engine_lock(engine_mutex);
+  engine.reset();
+  engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  ASSERT_EQ(FlutterEnginePostCallbackOnAllNativeThreads(
+                engine.get(),
+                [](FlutterNativeThreadType type, void* baton) {
+                  // This should deadlock if the task mutex acquisition is
+                  // busted.
+                  std::scoped_lock engine_lock_inner(engine_mutex);
+                  if (engine.is_valid()) {
+                    ASSERT_EQ(FlutterEnginePostCallbackOnAllNativeThreads(
+                                  engine.get(),
+                                  [](FlutterNativeThreadType type,
+                                     void* baton) { event.Signal(); },
+                                  nullptr),
+                              kSuccess);
+                  }
+                },
+                &engine),
+            kSuccess);
+  engine_lock.unlock();
+  event.Wait();
+  engine.reset();
 }
 
 }  // namespace testing

@@ -29,12 +29,13 @@ class EngineLineMetrics implements ui.LineMetrics {
     this.unscaledAscent,
     this.height,
     @required this.width,
-    this.left,
+    @required this.left,
     this.baseline,
     @required this.lineNumber,
   })  : assert(text != null),
         assert(hardBreak != null),
         assert(width != null),
+        assert(left != null),
         assert(lineNumber != null && lineNumber >= 0);
 
   /// The textual content representing this line.
@@ -456,6 +457,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
+    ui.TextHeightBehavior textHeightBehavior,
     ui.FontWeight fontWeight,
     ui.FontStyle fontStyle,
     ui.StrutStyle strutStyle,
@@ -469,6 +471,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         _fontFamily = fontFamily,
         _fontSize = fontSize,
         _height = height,
+        _textHeightBehavior = textHeightBehavior,
         // TODO(b/128317744): add support for strut style.
         _strutStyle = strutStyle,
         _ellipsis = ellipsis,
@@ -482,6 +485,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   final String _fontFamily;
   final double _fontSize;
   final double _height;
+  final ui.TextHeightBehavior _textHeightBehavior;
   final EngineStrutStyle _strutStyle;
   final String _ellipsis;
   final ui.Locale _locale;
@@ -535,6 +539,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         _fontFamily == typedOther._fontFamily ||
         _fontSize == typedOther._fontSize ||
         _height == typedOther._height ||
+        _textHeightBehavior == typedOther._textHeightBehavior ||
         _ellipsis == typedOther._ellipsis ||
         _locale == typedOther._locale;
   }
@@ -555,6 +560,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
           'fontFamily: ${_fontFamily ?? "unspecified"}, '
           'fontSize: ${_fontSize != null ? _fontSize.toStringAsFixed(1) : "unspecified"}, '
           'height: ${_height != null ? "${_height.toStringAsFixed(1)}x" : "unspecified"}, '
+          'textHeightBehavior: ${_textHeightBehavior ?? "unspecified"}, '
           'ellipsis: ${_ellipsis != null ? "\"$_ellipsis\"" : "unspecified"}, '
           'locale: ${_locale ?? "unspecified"}'
           ')';
@@ -1281,7 +1287,7 @@ void _applyTextStyleToElement({
   if (previousStyle == null) {
     final ui.Color color = style._foreground?.color ?? style._color;
     if (color != null) {
-      cssStyle.color = color.toCssString();
+      cssStyle.color = colorToCssString(color);
     }
     if (style._fontSize != null) {
       cssStyle.fontSize = '${style._fontSize.floor()}px';
@@ -1321,7 +1327,7 @@ void _applyTextStyleToElement({
     if (style._color != previousStyle._color ||
         style._foreground != previousStyle._foreground) {
       final ui.Color color = style._foreground?.color ?? style._color;
-      cssStyle.color = color?.toCssString();
+      cssStyle.color = colorToCssString(color);
     }
 
     if (style._fontSize != previousStyle._fontSize) {
@@ -1365,7 +1371,7 @@ void _applyTextStyleToElement({
         cssStyle.textDecoration = textDecoration;
         final ui.Color decorationColor = style._decorationColor;
         if (decorationColor != null) {
-          cssStyle.textDecorationColor = decorationColor.toCssString();
+          cssStyle.textDecorationColor = colorToCssString(decorationColor);
         }
       }
     }
@@ -1388,7 +1394,7 @@ String _shadowListToCss(List<ui.Shadow> shadows) {
     }
     ui.Shadow shadow = shadows[i];
     sb.write('${shadow.offset.dx}px ${shadow.offset.dy}px '
-        '${shadow.blurRadius}px ${shadow.color.toCssString()}');
+        '${shadow.blurRadius}px ${colorToCssString(shadow.color)}');
   }
   return sb.toString();
 }
@@ -1404,12 +1410,12 @@ void _applyTextBackgroundToElement({
   if (previousStyle == null) {
     if (newBackground != null) {
       domRenderer.setElementStyle(
-          element, 'background-color', newBackground.color.toCssString());
+          element, 'background-color', colorToCssString(newBackground.color));
     }
   } else {
     if (newBackground != previousStyle._background) {
       domRenderer.setElementStyle(
-          element, 'background-color', newBackground.color?.toCssString());
+          element, 'background-color', colorToCssString(newBackground.color));
     }
   }
 }

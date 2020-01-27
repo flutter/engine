@@ -2,9 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#define FML_USED_ON_EMBEDDER
+
 #include "engine.h"
 
 #include <lib/async/cpp/task.h>
+#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <zircon/status.h>
 #include <sstream>
 
@@ -18,9 +21,7 @@
 #include "fuchsia_intl.h"
 #include "platform_view.h"
 #include "runtime/dart/utils/files.h"
-#include "task_runner_adapter.h"
 #include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
-#include "thread.h"
 
 namespace flutter_runner {
 
@@ -55,22 +56,19 @@ Engine::Engine(Delegate& delegate,
                flutter::Settings settings,
                fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
                fuchsia::ui::views::ViewToken view_token,
-               scenic::ViewRefPair view_ref_pair,
                UniqueFDIONS fdio_ns,
                fidl::InterfaceRequest<fuchsia::io::Directory> directory_request)
     : delegate_(delegate),
       thread_label_(std::move(thread_label)),
+      thread_host_(thread_label_ + ".",
+                   flutter::ThreadHost::Type::IO |
+                       flutter::ThreadHost::Type::UI |
+                       flutter::ThreadHost::Type::GPU),
       settings_(std::move(settings)),
       weak_factory_(this) {
   if (zx::event::create(0, &vsync_event_) != ZX_OK) {
     FML_DLOG(ERROR) << "Could not create the vsync event.";
     return;
-  }
-
-  // Launch the threads that will be used to run the shell. These threads will
-  // be joined in the destructor.
-  for (auto& thread : threads_) {
-    thread.reset(new Thread());
   }
 
   // Set up the session connection.
@@ -113,8 +111,13 @@ Engine::Engine(Delegate& delegate,
         });
       };
 
+  auto view_ref_pair = scenic::ViewRefPair::New();
   fuchsia::ui::views::ViewRef view_ref;
   view_ref_pair.view_ref.Clone(&view_ref);
+
+  fuchsia::ui::views::ViewRef dart_view_ref;
+  view_ref_pair.view_ref.Clone(&dart_view_ref);
+  zx::eventpair dart_view_ref_event_pair(std::move(dart_view_ref.reference));
 
   // Setup the callback that will instantiate the platform view.
   flutter::Shell::CreateCallback<flutter::PlatformView>
@@ -167,12 +170,14 @@ Engine::Engine(Delegate& delegate,
 
   // Get the task runners from the managed threads. The current thread will be
   // used as the "platform" thread.
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+
   const flutter::TaskRunners task_runners(
-      thread_label_,  // Dart thread labels
-      CreateFMLTaskRunner(async_get_default_dispatcher()),  // platform
-      CreateFMLTaskRunner(threads_[0]->dispatcher()),       // gpu
-      CreateFMLTaskRunner(threads_[1]->dispatcher()),       // ui
-      CreateFMLTaskRunner(threads_[2]->dispatcher())        // io
+      thread_label_,                                   // Dart thread labels
+      fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
+      thread_host_.gpu_thread->GetTaskRunner(),        // gpu
+      thread_host_.ui_thread->GetTaskRunner(),         // ui
+      thread_host_.io_thread->GetTaskRunner()          // io
   );
 
   // Setup the callback that will instantiate the rasterizer.
@@ -235,6 +240,7 @@ Engine::Engine(Delegate& delegate,
     TRACE_EVENT0("flutter", "CreateShell");
     shell_ = flutter::Shell::Create(
         task_runners,                 // host task runners
+        flutter::WindowData(),        // default window data
         settings_,                    // shell launch settings
         std::move(isolate_snapshot),  // isolate snapshot
         on_create_platform_view,      // platform view create callback
@@ -255,9 +261,10 @@ Engine::Engine(Delegate& delegate,
     svc->Connect(environment.NewRequest());
 
     isolate_configurator_ = std::make_unique<IsolateConfigurator>(
-        std::move(fdio_ns),              //
-        std::move(environment),          //
-        directory_request.TakeChannel()  //
+        std::move(fdio_ns),                  //
+        std::move(environment),              //
+        directory_request.TakeChannel(),     //
+        std::move(dart_view_ref_event_pair)  //
     );
   }
 
@@ -352,12 +359,6 @@ Engine::Engine(Delegate& delegate,
 
 Engine::~Engine() {
   shell_.reset();
-  for (const auto& thread : threads_) {
-    thread->Quit();
-  }
-  for (const auto& thread : threads_) {
-    thread->Join();
-  }
 }
 
 std::pair<bool, uint32_t> Engine::GetEngineReturnCode() const {

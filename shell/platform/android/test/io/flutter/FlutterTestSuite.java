@@ -13,11 +13,13 @@ import io.flutter.embedding.android.FlutterAndroidComponentTest;
 import io.flutter.embedding.android.FlutterFragmentTest;
 import io.flutter.embedding.android.FlutterViewTest;
 import io.flutter.embedding.engine.FlutterEngineCacheTest;
+import io.flutter.embedding.engine.FlutterEnginePluginRegistryTest;
 import io.flutter.embedding.engine.FlutterJNITest;
 import io.flutter.embedding.engine.RenderingComponentTest;
 import io.flutter.embedding.engine.plugins.shim.ShimPluginRegistryTest;
 import io.flutter.embedding.engine.renderer.FlutterRendererTest;
 import io.flutter.embedding.engine.systemchannels.PlatformChannelTest;
+import io.flutter.external.FlutterLaunchTests;
 import io.flutter.plugin.common.StandardMessageCodecTest;
 import io.flutter.plugin.editing.TextInputPluginTest;
 import io.flutter.plugin.platform.SingleViewPresentationTest;
@@ -34,9 +36,11 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
     FlutterActivityTest.class,
     FlutterAndroidComponentTest.class,
     FlutterEngineCacheTest.class,
+    FlutterEnginePluginRegistryTest.class,
     FlutterEngineTest.class,
     FlutterFragmentTest.class,
     FlutterJNITest.class,
+    FlutterLaunchTests.class,
     FlutterShellArgsTest.class,
     FlutterRendererTest.class,
     FlutterViewTest.class,
