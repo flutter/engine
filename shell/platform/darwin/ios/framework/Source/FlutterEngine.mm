@@ -426,35 +426,19 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
         return std::make_unique<flutter::Rasterizer>(shell, shell.GetTaskRunners());
       };
 
-  if (flutter::IsIosEmbeddedViewsPreviewEnabled()) {
-    flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
-                                      fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
-                                      _threadHost.gpu_thread->GetTaskRunner(),         // gpu
-                                      _threadHost.ui_thread->GetTaskRunner(),          // ui
-                                      _threadHost.io_thread->GetTaskRunner()           // io
-    );
-    // Create the shell. This is a blocking operation.
-    _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
-                                    std::move(windowData),    // window data
-                                    std::move(settings),      // settings
-                                    on_create_platform_view,  // platform view creation
-                                    on_create_rasterizer      // rasterzier creation
-    );
-  } else {
-    flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
-                                      fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
-                                      _threadHost.gpu_thread->GetTaskRunner(),         // gpu
-                                      _threadHost.ui_thread->GetTaskRunner(),          // ui
-                                      _threadHost.io_thread->GetTaskRunner()           // io
-    );
-    // Create the shell. This is a blocking operation.
-    _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
-                                    std::move(windowData),    // window data
-                                    std::move(settings),      // settings
-                                    on_create_platform_view,  // platform view creation
-                                    on_create_rasterizer      // rasterzier creation
-    );
-  }
+  flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
+                                    fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
+                                    _threadHost.gpu_thread->GetTaskRunner(),         // gpu
+                                    _threadHost.ui_thread->GetTaskRunner(),          // ui
+                                    _threadHost.io_thread->GetTaskRunner()           // io
+  );
+  // Create the shell. This is a blocking operation.
+  _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
+                                  std::move(windowData),    // window data
+                                  std::move(settings),      // settings
+                                  on_create_platform_view,  // platform view creation
+                                  on_create_rasterizer      // rasterzier creation
+  );
 
   if (_shell == nullptr) {
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
