@@ -4023,7 +4023,9 @@ TEST_F(EmbedderTest, CanPostTaskToAllNativeThreadsRecursively) {
                   if (engine.is_valid()) {
                     ASSERT_EQ(FlutterEnginePostCallbackOnAllNativeThreads(
                                   engine.get(),
-                                  [](auto, auto) { event.Signal(); }, nullptr),
+                                  [](FlutterNativeThreadType type,
+                                     void* baton) { event.Signal(); },
+                                  nullptr),
                               kSuccess);
                   }
                 },
