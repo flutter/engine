@@ -60,6 +60,7 @@ static const std::string gDartFlagsWhitelist[] = {
     "--lazy_async_stacks",
     "--trace-reload",
     "--trace-reload-verbose",
+    "--enable-service-port-fallback",
 };
 // clang-format on
 
