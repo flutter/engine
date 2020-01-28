@@ -313,11 +313,9 @@ bool DartComponentController::CreateIsolate(
   // Create the isolate from the snapshot.
   char* error = nullptr;
 
-  // TODO(dart_runner): Pass if we start using tonic's loader.
-  intptr_t namespace_fd = -1;
   // Freed in IsolateShutdownCallback.
   auto state = new std::shared_ptr<tonic::DartState>(new tonic::DartState(
-      namespace_fd, [this](Dart_Handle result) { MessageEpilogue(result); }));
+      [this](Dart_Handle result) { MessageEpilogue(result); }));
 
   isolate_ = Dart_CreateIsolateGroup(
       url_.c_str(), label_.c_str(), isolate_snapshot_data,

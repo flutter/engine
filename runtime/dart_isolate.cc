@@ -23,7 +23,6 @@
 #include "third_party/tonic/dart_class_provider.h"
 #include "third_party/tonic/dart_message_handler.h"
 #include "third_party/tonic/dart_state.h"
-#include "third_party/tonic/file_loader/file_loader.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"

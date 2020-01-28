@@ -37,8 +37,7 @@ class DartState : public std::enable_shared_from_this<DartState> {
     DartApiScope api_scope_;
   };
 
-  DartState(int dirfd = -1,
-            std::function<void(Dart_Handle)> message_epilogue = nullptr);
+  DartState(std::function<void(Dart_Handle)> message_epilogue = nullptr);
   virtual ~DartState();
 
   static DartState* From(Dart_Isolate isolate);
@@ -51,7 +50,6 @@ class DartState : public std::enable_shared_from_this<DartState> {
 
   DartClassLibrary& class_library() { return *class_library_; }
   DartMessageHandler& message_handler() { return *message_handler_; }
-  FileLoader& file_loader() { return *file_loader_; }
 
   void MessageEpilogue(Dart_Handle message_result) {
     if (message_epilogue_) {
@@ -72,7 +70,6 @@ class DartState : public std::enable_shared_from_this<DartState> {
   Dart_Isolate isolate_;
   std::unique_ptr<DartClassLibrary> class_library_;
   std::unique_ptr<DartMessageHandler> message_handler_;
-  std::unique_ptr<FileLoader> file_loader_;
   std::function<void(Dart_Handle)> message_epilogue_;
   std::function<void(uint32_t)> set_return_code_callback_;
   bool has_set_return_code_;

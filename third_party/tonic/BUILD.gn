@@ -37,7 +37,6 @@ source_set("tonic") {
   public_deps = [
     "common",
     "converter",
-    "file_loader",
     "logging",
     "scopes",
     "typed_data",

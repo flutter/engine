@@ -7,7 +7,6 @@
 #include "tonic/converter/dart_converter.h"
 #include "tonic/dart_class_library.h"
 #include "tonic/dart_message_handler.h"
-#include "tonic/file_loader/file_loader.h"
 
 namespace tonic {
 
@@ -19,12 +18,10 @@ DartState::Scope::Scope(std::shared_ptr<DartState> dart_state)
 
 DartState::Scope::~Scope() {}
 
-DartState::DartState(int dirfd,
-                     std::function<void(Dart_Handle)> message_epilogue)
+DartState::DartState(std::function<void(Dart_Handle)> message_epilogue)
     : isolate_(nullptr),
       class_library_(new DartClassLibrary),
       message_handler_(new DartMessageHandler()),
-      file_loader_(new FileLoader(dirfd)),
       message_epilogue_(message_epilogue),
       has_set_return_code_(false) {}
 
@@ -65,11 +62,5 @@ void DartState::SetReturnCodeCallback(std::function<void(uint32_t)> callback) {
 }
 
 void DartState::DidSetIsolate() {}
-
-Dart_Handle DartState::HandleLibraryTag(Dart_LibraryTag tag,
-                                        Dart_Handle library,
-                                        Dart_Handle url) {
-  return Current()->file_loader().HandleLibraryTag(tag, library, url);
-}
 
 }  // namespace tonic
