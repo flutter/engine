@@ -1,4 +1,4 @@
-Signature: a51fb65ecf43a09a84bdd92c44203943
+Signature: 8be91e1cc8d7fd1aca441cac2ff1601f
 
 UNUSED LICENSES:
 
@@ -5626,6 +5626,8 @@ FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/ShapeLayer
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/TrimPaths.cpp
 FILE: ../../../third_party/skia/samplecode/Sample3D.cpp
 FILE: ../../../third_party/skia/src/core/SkCanvasMatrix.h
+FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.cpp
+FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.h
 FILE: ../../../third_party/skia/src/core/SkM44.cpp
 FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathParser.cpp
