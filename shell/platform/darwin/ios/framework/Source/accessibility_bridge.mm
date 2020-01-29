@@ -265,6 +265,16 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 - (NSString*)accessibilityValue {
   if (![self isAccessibilityBridgeAlive])
     return nil;
+
+  if ([self node].HasFlag(flutter::SemanticsFlags::kHasToggledState) || 
+      [self node].HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
+    if ([self node].HasFlag(flutter::SemanticsFlags::kIsToggled) ||
+        [self node].HasFlag(flutter::SemanticsFlags::kIsChecked)) {
+      return @"1";
+    } else {
+      return @"0";
+    }
+  }
   if ([self node].value.empty())
     return nil;
   return @([self node].value.data());
@@ -423,10 +433,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
       [self node].HasAction(flutter::SemanticsAction::kDecrease)) {
     traits |= UIAccessibilityTraitAdjustable;
   }
-  // TODO(jonahwilliams): switches should have a value of "on" or "off"
-  if ([self node].HasFlag(flutter::SemanticsFlags::kIsSelected) ||
-      [self node].HasFlag(flutter::SemanticsFlags::kIsToggled) ||
-      [self node].HasFlag(flutter::SemanticsFlags::kIsChecked)) {
+  if ([self node].HasFlag(flutter::SemanticsFlags::kHasToggledState) || 
+      [self node].HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
+    traits |= UIAccessibilityTraitButton;
+  }
+  if ([self node].HasFlag(flutter::SemanticsFlags::kIsSelected)) {
     traits |= UIAccessibilityTraitSelected;
   }
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsButton)) {
