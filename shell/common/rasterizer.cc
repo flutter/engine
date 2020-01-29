@@ -138,12 +138,12 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // between successive tries.
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
-      task_runners_.GetGPUTaskRunner()->PostTask(
+      task_runners_.GetGPUTaskRunner()->PostTaskForTime(
           [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
             if (weak_this) {
               weak_this->Draw(pipeline);
             }
-          });
+          }, resubmitted_time_target_);
       break;
     }
     default:
@@ -231,12 +231,33 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
                               });
 }
 
+fml::TimePoint Rasterizer::DetermineRasterizationTime(LayerTree& layer_tree) {
+  fml::TimePoint start = layer_tree.build_start();
+  if (start < last_render_finish_) {
+    fml::TimePoint target = layer_tree.build_target();
+    fml::TimePoint now = fml::TimePoint::Now();
+    if (target > now) {
+      return target;
+    }
+    return now + (target - start);
+  }
+  return start;
+}
+
 RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<flutter::LayerTree> layer_tree) {
   FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
 
   if (!layer_tree || !surface_) {
     return RasterStatus::kFailed;
+  }
+
+  fml::TimePoint when = DetermineRasterizationTime(*layer_tree);
+  if (when > layer_tree->build_start()) {
+    FML_LOG(INFO) << "Rescheduling";
+    resubmitted_layer_tree_ = std::move(layer_tree);
+    resubmitted_time_target_ = when;
+    return RasterStatus::kResubmit;
   }
 
   FrameTiming timing;
@@ -252,6 +273,7 @@ RasterStatus Rasterizer::DoDraw(
     last_layer_tree_ = std::move(layer_tree);
   } else if (raster_status == RasterStatus::kResubmit) {
     resubmitted_layer_tree_ = std::move(layer_tree);
+    resubmitted_time_target_ = fml::TimePoint::Now();
     return raster_status;
   }
 
@@ -265,7 +287,8 @@ RasterStatus Rasterizer::DoDraw(
   // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish when
   // Rasterizer::DoDraw finishes. Future work is needed to adapt the timestamp
   // for Fuchsia to capture SceneUpdateContext::ExecutePaintTasks.
-  timing.Set(FrameTiming::kRasterFinish, fml::TimePoint::Now());
+  last_render_finish_ = fml::TimePoint::Now();
+  timing.Set(FrameTiming::kRasterFinish, last_render_finish_);
   delegate_.OnFrameRasterized(timing);
 
   // Pipeline pressure is applied from a couple of places:
