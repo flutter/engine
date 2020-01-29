@@ -266,6 +266,10 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   if (![self isAccessibilityBridgeAlive])
     return nil;
 
+  if (![self node].value.empty()) {
+    return @([self node].value.data());
+  }
+
   if ([self node].HasFlag(flutter::SemanticsFlags::kHasToggledState) || 
       [self node].HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
     if ([self node].HasFlag(flutter::SemanticsFlags::kIsToggled) ||
@@ -275,9 +279,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
       return @"0";
     }
   }
-  if ([self node].value.empty())
-    return nil;
-  return @([self node].value.data());
+
+  return nil;
 }
 
 - (CGRect)accessibilityFrame {
