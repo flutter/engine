@@ -28,10 +28,10 @@ void main() {
   });
 
   group('ParagraphStyle', () {
-    final ParagraphStyle ps0 = PargraphStyle(textDirection: TextDirection.ltr, fontSize: 14.0);
-    final ParagraphStyle ps1 = PargraphStyle(textDirection: TextDirection.rtl, fontSize: 14.0);
-    final ParagraphStyle ps2 = PargraphStyle(textAlign: TextAlign.center, fontWeight: FontWeight.w800, fontSize: 10.0, height: 100.0);
-    final ParagraphStyle ps3 = PargraphStyle(fontWeight: FontWeight.w700, fontSize: 12.0, height: 123.0));
+    final ParagraphStyle ps0 = ParagraphStyle(textDirection: TextDirection.ltr, fontSize: 14.0);
+    final ParagraphStyle ps1 = ParagraphStyle(textDirection: TextDirection.rtl, fontSize: 14.0);
+    final ParagraphStyle ps2 = ParagraphStyle(textAlign: TextAlign.center, fontWeight: FontWeight.w800, fontSize: 10.0, height: 100.0);
+    final ParagraphStyle ps3 = ParagraphStyle(fontWeight: FontWeight.w700, fontSize: 12.0, height: 123.0);
 
     test('toString works', () {
       expect(ps0.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.ltr, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, ellipsis: unspecified, locale: unspecified)'));
