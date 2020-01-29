@@ -21,6 +21,8 @@
 #include <lib/trace-engine/context.h>
 #include <lib/trace-engine/instrumentation.h>
 
+#endif  // defined(OS_FUCHSIA)
+
 // Skia's copy of these flags are defined in a private header, so, as is
 // commonly done with "trace_event_common.h" values, copy them inline here (see
 // https://cs.chromium.org/chromium/src/base/trace_event/common/trace_event_common.h?l=1102-1110&rcl=239b85aeb3a6c07b33b5f162cd0ae8128eabf44d).
@@ -35,13 +37,10 @@
 #define TRACE_VALUE_TYPE_COPY_STRING (static_cast<unsigned char>(7))
 #define TRACE_VALUE_TYPE_CONVERTABLE (static_cast<unsigned char>(8))
 
-#endif  // defined(OS_FUCHSIA)
-
 namespace flutter {
 
 namespace {
 
-#if defined(OS_FUCHSIA)
 template <class T, class U>
 inline T BitCast(const U& u) {
   static_assert(sizeof(T) == sizeof(U));
@@ -50,7 +49,11 @@ inline T BitCast(const U& u) {
   memcpy(&t, &u, sizeof(t));
   return t;
 }
-#endif
+
+union SkiaTraceValueUnion {
+  bool as_bool;
+  uint64_t as_uint;
+};
 
 }  // namespace
 
@@ -183,22 +186,67 @@ class FlutterEventTracer : public SkEventTracer {
     trace_release_context(trace_context);
 
 #else   // defined(OS_FUCHSIA)
+    std::vector<const char*> arg_names;
+    std::vector<std::string> arg_values;
+    for (int i = 0; i < num_args; i++) {
+      arg_names.push_back(p_arg_names[i]);
+      const uint8_t arg_type = p_arg_types[i];
+      const uint64_t arg_value = p_arg_values[i];
+      switch (arg_type) {
+        case TRACE_VALUE_TYPE_BOOL: {
+          SkiaTraceValueUnion value = {.as_uint = p_arg_values[i]};
+          arg_values.push_back(std::to_string(value.as_bool));
+          break;
+        }
+        case TRACE_VALUE_TYPE_UINT:
+          arg_values.push_back(std::to_string(arg_value));
+          break;
+        case TRACE_VALUE_TYPE_INT:
+          arg_values.push_back(std::to_string(BitCast<int64_t>(arg_value)));
+          break;
+        case TRACE_VALUE_TYPE_DOUBLE:
+          arg_values.push_back(std::to_string(BitCast<double>(arg_value)));
+          break;
+        case TRACE_VALUE_TYPE_POINTER:
+          arg_values.push_back(std::to_string(BitCast<uintptr_t>(arg_value)));
+          break;
+        case TRACE_VALUE_TYPE_STRING:
+        case TRACE_VALUE_TYPE_COPY_STRING:
+          arg_values.push_back(reinterpret_cast<const char*>(arg_value));
+          break;
+        case TRACE_VALUE_TYPE_CONVERTABLE:
+          arg_values.push_back("");
+          break;
+        default:
+          arg_values.push_back("");
+          break;
+      }
+    }
+
     switch (phase) {
       case TRACE_EVENT_PHASE_BEGIN:
       case TRACE_EVENT_PHASE_COMPLETE:
-        fml::tracing::TraceEvent0(kSkiaTag, name);
+        fml::tracing::TraceTimelineEvent(kSkiaTag, name, 0,
+                                         Dart_Timeline_Event_Begin, arg_names,
+                                         arg_values);
         break;
       case TRACE_EVENT_PHASE_END:
         fml::tracing::TraceEventEnd(name);
         break;
       case TRACE_EVENT_PHASE_INSTANT:
-        fml::tracing::TraceEventInstant0(kSkiaTag, name);
+        fml::tracing::TraceTimelineEvent(kSkiaTag, name, 0,
+                                         Dart_Timeline_Event_Instant, arg_names,
+                                         arg_values);
         break;
       case TRACE_EVENT_PHASE_ASYNC_BEGIN:
-        fml::tracing::TraceEventAsyncBegin0(kSkiaTag, name, id);
+        fml::tracing::TraceTimelineEvent(kSkiaTag, name, id,
+                                         Dart_Timeline_Event_Async_Begin,
+                                         arg_names, arg_values);
         break;
       case TRACE_EVENT_PHASE_ASYNC_END:
-        fml::tracing::TraceEventAsyncEnd0(kSkiaTag, name, id);
+        fml::tracing::TraceTimelineEvent(kSkiaTag, name, id,
+                                         Dart_Timeline_Event_Async_End,
+                                         arg_names, arg_values);
         break;
       default:
         break;
