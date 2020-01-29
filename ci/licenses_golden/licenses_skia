@@ -1,4 +1,4 @@
-Signature: a51fb65ecf43a09a84bdd92c44203943
+Signature: f3a249baaa5edd8c55bea9e6a36c8836
 
 UNUSED LICENSES:
 
@@ -5606,6 +5606,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/3d.cpp
 FILE: ../../../third_party/skia/gm/bicubic.cpp
 FILE: ../../../third_party/skia/gm/compressed_textures.cpp
+FILE: ../../../third_party/skia/gm/skbug_9819.cpp
 FILE: ../../../third_party/skia/gm/strokerect_anisotropic.cpp
 FILE: ../../../third_party/skia/include/private/SkM44.h
 FILE: ../../../third_party/skia/modules/skottie/src/Adapter.h
@@ -5624,8 +5625,11 @@ FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Repeater.c
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/RoundCorners.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/ShapeLayer.h
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/TrimPaths.cpp
+FILE: ../../../third_party/skia/modules/skshaper/src/SkShaper_coretext.cpp
 FILE: ../../../third_party/skia/samplecode/Sample3D.cpp
 FILE: ../../../third_party/skia/src/core/SkCanvasMatrix.h
+FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.cpp
+FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.h
 FILE: ../../../third_party/skia/src/core/SkM44.cpp
 FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathParser.cpp
