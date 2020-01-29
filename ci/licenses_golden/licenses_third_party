@@ -1,4 +1,4 @@
-Signature: e936724fefea8314b39c29cf43df4d3c
+Signature: a0cf18cc6fee0856673e6995e053ae2f
 
 UNUSED LICENSES:
 
@@ -7621,8 +7621,6 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/slot_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/type_propagator_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/typed_data_aot_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/yield_position_test.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_fingerprints.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_fingerprints.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier.cc
@@ -7755,7 +7753,24 @@ LIBRARY: dart
 ORIGIN: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart
+FILE: ../../../third_party/dart/benchmarks/TypedDataDuplicate/dart/TypedDataDuplicate.dart
 FILE: ../../../third_party/dart/runtime/observatory/bin/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/call.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/call.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/callback.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/callback.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/frame_rebase.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/frame_rebase.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/marshaller.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/marshaller.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_calling_convention.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_calling_convention.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_representation.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_representation.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.h
 FILE: ../../../third_party/dart/runtime/vm/field_table.cc
 FILE: ../../../third_party/dart/runtime/vm/field_table.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
@@ -20455,36 +20470,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
-LIBRARY: node-source-map-support
-ORIGIN: ../../../third_party/dart/third_party/node-source-map-support/LICENSE.md
-TYPE: LicenseType.mit
-FILE: ../../../third_party/dart/third_party/node-source-map-support/browser-source-map-support.js
-FILE: ../../../third_party/dart/third_party/node-source-map-support/source-map-support.js
-----------------------------------------------------------------------------------------------------
-The MIT License (MIT)
-
-Copyright (c) 2014 Evan Wallace
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-====================================================================================================
-
-====================================================================================================
 LIBRARY: observatory_pub_packages
 LIBRARY: pkg
 ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/comparators.dart + ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/LICENSE
@@ -22310,6 +22295,205 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: tonic
+ORIGIN: ../../../third_party/tonic/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/tonic/common/build_config.h
+FILE: ../../../third_party/tonic/converter/dart_converter.cc
+FILE: ../../../third_party/tonic/converter/dart_converter.h
+FILE: ../../../third_party/tonic/dart_message_handler.cc
+FILE: ../../../third_party/tonic/dart_message_handler.h
+FILE: ../../../third_party/tonic/dart_microtask_queue.cc
+FILE: ../../../third_party/tonic/dart_microtask_queue.h
+FILE: ../../../third_party/tonic/dart_sticky_error.cc
+FILE: ../../../third_party/tonic/dart_sticky_error.h
+FILE: ../../../third_party/tonic/file_loader/file_loader.cc
+FILE: ../../../third_party/tonic/file_loader/file_loader.h
+FILE: ../../../third_party/tonic/filesystem/filesystem/eintr_wrapper.h
+FILE: ../../../third_party/tonic/filesystem/filesystem/file.cc
+FILE: ../../../third_party/tonic/filesystem/filesystem/file.h
+FILE: ../../../third_party/tonic/filesystem/filesystem/path.h
+FILE: ../../../third_party/tonic/filesystem/filesystem/path_posix.cc
+FILE: ../../../third_party/tonic/logging/dart_error.cc
+FILE: ../../../third_party/tonic/logging/dart_error.h
+FILE: ../../../third_party/tonic/logging/dart_invoke.cc
+FILE: ../../../third_party/tonic/logging/dart_invoke.h
+FILE: ../../../third_party/tonic/parsers/packages_map.cc
+FILE: ../../../third_party/tonic/parsers/packages_map.h
+FILE: ../../../third_party/tonic/scopes/dart_api_scope.h
+FILE: ../../../third_party/tonic/scopes/dart_isolate_scope.cc
+FILE: ../../../third_party/tonic/scopes/dart_isolate_scope.h
+FILE: ../../../third_party/tonic/typed_data/dart_byte_data.h
+FILE: ../../../third_party/tonic/typed_data/int32_list.h
+FILE: ../../../third_party/tonic/typed_data/uint8_list.h
+----------------------------------------------------------------------------------------------------
+Copyright 2016 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: tonic
+ORIGIN: ../../../third_party/tonic/common/log.cc + ../../../third_party/tonic/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/tonic/common/log.cc
+FILE: ../../../third_party/tonic/common/log.h
+FILE: ../../../third_party/tonic/common/macros.h
+----------------------------------------------------------------------------------------------------
+Copyright 2018 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: tonic
+ORIGIN: ../../../third_party/tonic/file_loader/file_loader_fuchsia.cc + ../../../third_party/tonic/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/tonic/dart_list.cc
+FILE: ../../../third_party/tonic/dart_list.h
+FILE: ../../../third_party/tonic/file_loader/file_loader_fuchsia.cc
+FILE: ../../../third_party/tonic/file_loader/file_loader_posix.cc
+FILE: ../../../third_party/tonic/file_loader/file_loader_win.cc
+FILE: ../../../third_party/tonic/filesystem/filesystem/path_win.cc
+FILE: ../../../third_party/tonic/filesystem/filesystem/portable_unistd.h
+FILE: ../../../third_party/tonic/platform/platform_utils.h
+FILE: ../../../third_party/tonic/platform/platform_utils_posix.cc
+FILE: ../../../third_party/tonic/platform/platform_utils_win.cc
+----------------------------------------------------------------------------------------------------
+Copyright 2017 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: tonic
+ORIGIN: ../../../third_party/tonic/typed_data/dart_byte_data.cc + ../../../third_party/tonic/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/tonic/dart_args.h
+FILE: ../../../third_party/tonic/dart_binding_macros.h
+FILE: ../../../third_party/tonic/dart_class_library.cc
+FILE: ../../../third_party/tonic/dart_class_library.h
+FILE: ../../../third_party/tonic/dart_class_provider.cc
+FILE: ../../../third_party/tonic/dart_class_provider.h
+FILE: ../../../third_party/tonic/dart_library_natives.cc
+FILE: ../../../third_party/tonic/dart_library_natives.h
+FILE: ../../../third_party/tonic/dart_persistent_value.cc
+FILE: ../../../third_party/tonic/dart_persistent_value.h
+FILE: ../../../third_party/tonic/dart_state.cc
+FILE: ../../../third_party/tonic/dart_state.h
+FILE: ../../../third_party/tonic/dart_wrappable.cc
+FILE: ../../../third_party/tonic/dart_wrappable.h
+FILE: ../../../third_party/tonic/dart_wrapper_info.h
+FILE: ../../../third_party/tonic/typed_data/dart_byte_data.cc
+FILE: ../../../third_party/tonic/typed_data/float32_list.cc
+FILE: ../../../third_party/tonic/typed_data/float32_list.h
+FILE: ../../../third_party/tonic/typed_data/float64_list.cc
+FILE: ../../../third_party/tonic/typed_data/float64_list.h
+FILE: ../../../third_party/tonic/typed_data/int32_list.cc
+FILE: ../../../third_party/tonic/typed_data/uint8_list.cc
+----------------------------------------------------------------------------------------------------
+Copyright 2015 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: trace_event
 ORIGIN: ../../../third_party/angle/src/third_party/trace_event/trace_event.h + ../../../LICENSE
 TYPE: LicenseType.bsd
@@ -23324,4 +23508,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 365
+Total license count: 368
