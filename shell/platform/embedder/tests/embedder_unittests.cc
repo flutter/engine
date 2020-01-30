@@ -3904,5 +3904,107 @@ TEST_F(EmbedderTest, CanSendLowMemoryNotification) {
   ASSERT_EQ(FlutterEngineNotifyLowMemoryWarning(engine.get()), kSuccess);
 }
 
+TEST_F(EmbedderTest, CanPostTaskToAllNativeThreads) {
+  UniqueEngine engine;
+  size_t worker_count = 0;
+  fml::AutoResetWaitableEvent sync_latch;
+
+  // One of the threads that the callback will be posted to is the platform
+  // thread. So we cannot wait for assertions to complete on the platform
+  // thread. Create a new thread to manage the engine instance and wait for
+  // assertions on the test thread.
+  auto platform_task_runner = CreateNewThread("platform_thread");
+
+  platform_task_runner->PostTask([&]() {
+    auto& context = GetEmbedderContext();
+
+    EmbedderConfigBuilder builder(context);
+    builder.SetSoftwareRendererConfig();
+
+    engine = builder.LaunchEngine();
+
+    ASSERT_TRUE(engine.is_valid());
+
+    worker_count = ToEmbedderEngine(engine.get())
+                       ->GetShell()
+                       .GetDartVM()
+                       ->GetConcurrentMessageLoop()
+                       ->GetWorkerCount();
+
+    sync_latch.Signal();
+  });
+
+  sync_latch.Wait();
+
+  const auto engine_threads_count = worker_count + 4u;
+
+  struct Captures {
+    // Waits the adequate number of callbacks to fire.
+    fml::CountDownLatch latch;
+
+    // This class will be accessed from multiple threads concurrently to track
+    // thread specific information that is later checked. All updates to fields
+    // in this struct must be made with this mutex acquired.
+
+    std::mutex captures_mutex;
+    // Ensures that the expect number of distinct threads were serviced.
+    std::set<std::thread::id> thread_ids;
+
+    size_t platform_threads_count = 0;
+    size_t render_threads_count = 0;
+    size_t ui_threads_count = 0;
+    size_t worker_threads_count = 0;
+
+    Captures(size_t count) : latch(count) {}
+  };
+
+  Captures captures(engine_threads_count);
+
+  platform_task_runner->PostTask([&]() {
+    ASSERT_EQ(FlutterEnginePostCallbackOnAllNativeThreads(
+                  engine.get(),
+                  [](FlutterNativeThreadType type, void* baton) {
+                    auto captures = reinterpret_cast<Captures*>(baton);
+                    {
+                      std::scoped_lock lock(captures->captures_mutex);
+                      switch (type) {
+                        case kFlutterNativeThreadTypeRender:
+                          captures->render_threads_count++;
+                          break;
+                        case kFlutterNativeThreadTypeWorker:
+                          captures->worker_threads_count++;
+                          break;
+                        case kFlutterNativeThreadTypeUI:
+                          captures->ui_threads_count++;
+                          break;
+                        case kFlutterNativeThreadTypePlatform:
+                          captures->platform_threads_count++;
+                          break;
+                      }
+                      captures->thread_ids.insert(std::this_thread::get_id());
+                    }
+                    captures->latch.CountDown();
+                  },
+                  &captures),
+              kSuccess);
+  });
+
+  captures.latch.Wait();
+  ASSERT_EQ(captures.thread_ids.size(), engine_threads_count);
+  ASSERT_EQ(captures.platform_threads_count, 1u);
+  ASSERT_EQ(captures.render_threads_count, 1u);
+  ASSERT_EQ(captures.ui_threads_count, 1u);
+  ASSERT_EQ(captures.worker_threads_count, worker_count + 1u /* for IO */);
+
+  platform_task_runner->PostTask([&]() {
+    engine.reset();
+    sync_latch.Signal();
+  });
+  sync_latch.Wait();
+
+  // The engine should have already been destroyed on the platform task runner.
+  ASSERT_FALSE(engine.is_valid());
+}
+
 }  // namespace testing
 }  // namespace flutter
