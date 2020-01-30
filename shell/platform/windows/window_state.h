@@ -12,6 +12,7 @@
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/shell/platform/windows/win32_dpi_helper.h"
 #include "flutter/shell/platform/windows/win32_task_runner.h"
 
 struct flutter::Win32FlutterWindow;
@@ -27,6 +28,8 @@ struct FlutterDesktopViewControllerState {
 
   // The window handle given to API clients.
   std::unique_ptr<FlutterDesktopView> view_wrapper;
+
+  std::unique_ptr<flutter::Win32DpiHelper> dpi_helper;
 };
 
 // Opaque reference for the native windows itself. This is separate from the

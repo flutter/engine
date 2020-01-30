@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
+#include <iostream>
+
 namespace flutter {
 
 Win32Window::Win32Window() {}
@@ -75,6 +77,9 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
     that->current_dpi_ = that->dpi_helper_->GetDpi(window);
+    std::cerr << "Current dpi" << std::endl;
+    std::cerr << that->current_dpi_ << std::endl;
+
     that->window_handle_ = window;
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     return that->MessageHandler(window, message, wparam, lparam);
@@ -268,6 +273,8 @@ Win32Window::HandleDpiChange(HWND hwnd,
     // hence call function to get DPI if needed.
     if (uDpi == 0) {
       uDpi = dpi_helper_->GetDpi(hwnd);
+       std::cerr << "New dpi" << std::endl;
+    std::cerr << uDpi << std::endl;
     }
     current_dpi_ = uDpi;
     window->OnDpiScale(uDpi);

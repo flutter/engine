@@ -57,4 +57,7 @@ FlutterDesktopPluginRegistrarRef FlutterViewController::GetRegistrarForPlugin(
   return FlutterDesktopGetPluginRegistrar(controller_, plugin_name.c_str());
 }
 
+  UINT FlutterViewController::GetViewDpi() {
+    return FlutterDesktopViewGetDpiForView(controller_, view()->GetNativeWindow());
+  }
 }  // namespace flutter
