@@ -14,6 +14,75 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+/// A proxy class for SemanticsObject and UISwitch.  For most Accessibility and
+/// SemanticsObject methods it delegates to the semantics object, otherwise it
+/// sends messages to the UISwitch.
+@interface FlutterSwitchSemanticsObject : UISwitch
+@end
+
+@implementation FlutterSwitchSemanticsObject {
+  SemanticsObject* _semanticsObject;
+}
+
+- (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject {
+  self = [super init];
+  if (self) {
+    _semanticsObject = [semanticsObject retain];
+  }
+  return self;
+}
+
+-(void)dealloc {
+  [_semanticsObject release];
+  [super dealloc];
+}
+
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
+  NSMethodSignature *result = [super methodSignatureForSelector:sel];
+  if (!result) {
+    result = [_semanticsObject methodSignatureForSelector:sel];
+  }
+  return result;
+}
+
+- (void)forwardInvocation:(NSInvocation *)anInvocation {
+  [anInvocation setTarget:_semanticsObject];
+  [anInvocation invoke];
+}
+
+- (CGRect)accessibilityFrame {
+  return [_semanticsObject accessibilityFrame];
+}
+
+- (id)accessibilityContainer {
+  return [_semanticsObject accessibilityContainer];
+}
+
+- (NSString*)accessibilityLabel {
+  return [_semanticsObject accessibilityLabel];
+}
+
+- (NSString*)accessibilityHint {
+  return [_semanticsObject accessibilityHint];
+}
+
+- (NSString*)accessibilityValue {
+  if ([_semanticsObject node].HasFlag(flutter::SemanticsFlags::kIsToggled) ||
+      [_semanticsObject node].HasFlag(flutter::SemanticsFlags::kIsChecked)) {
+    self.on = YES;
+  } else {
+    self.on = NO;
+  }
+
+  if (![_semanticsObject isAccessibilityBridgeAlive]) {
+    return nil;
+  } else {
+    return [super accessibilityValue];
+  }
+}
+
+@end
+
 namespace {
 
 constexpr int32_t kRootNodeId = 0;
@@ -779,6 +848,13 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
         !node.HasFlag(flutter::SemanticsFlags::kIsReadOnly)) {
       // Text fields are backed by objects that implement UITextInput.
       object = [[[TextInputSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid] autorelease];
+    } else if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
+               node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
+      SemanticsObject* delegateObject = [[FlutterSemanticsObject alloc] initWithBridge:GetWeakPtr()
+                                                                                   uid:uid];
+      object = (SemanticsObject*)[[[FlutterSwitchSemanticsObject alloc]
+          initWithSemanticsObject:delegateObject] autorelease];
+      [delegateObject release];
     } else {
       object = [[[FlutterSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid] autorelease];
     }
