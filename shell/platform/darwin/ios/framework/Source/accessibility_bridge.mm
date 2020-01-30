@@ -14,6 +14,37 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+namespace {
+
+constexpr int32_t kRootNodeId = 0;
+
+flutter::SemanticsAction GetSemanticsActionForScrollDirection(
+    UIAccessibilityScrollDirection direction) {
+  // To describe the vertical scroll direction, UIAccessibilityScrollDirection uses the
+  // direction the scroll bar moves in and SemanticsAction uses the direction the finger
+  // moves in. However, the horizontal scroll direction matches the SemanticsAction direction.
+  // That is way the following maps vertical opposite of the SemanticsAction, but the horizontal
+  // maps directly.
+  switch (direction) {
+    case UIAccessibilityScrollDirectionRight:
+    case UIAccessibilityScrollDirectionPrevious:  // TODO(abarth): Support RTL using
+                                                  // _node.textDirection.
+      return flutter::SemanticsAction::kScrollRight;
+    case UIAccessibilityScrollDirectionLeft:
+    case UIAccessibilityScrollDirectionNext:  // TODO(abarth): Support RTL using
+                                              // _node.textDirection.
+      return flutter::SemanticsAction::kScrollLeft;
+    case UIAccessibilityScrollDirectionUp:
+      return flutter::SemanticsAction::kScrollDown;
+    case UIAccessibilityScrollDirectionDown:
+      return flutter::SemanticsAction::kScrollUp;
+  }
+  FML_DCHECK(false);  // Unreachable
+  return flutter::SemanticsAction::kScrollUp;
+}
+
+}  // namespace
+
 /// A proxy class for SemanticsObject and UISwitch.  For most Accessibility and
 /// SemanticsObject methods it delegates to the semantics object, otherwise it
 /// sends messages to the UISwitch.
@@ -81,38 +112,8 @@
   }
 }
 
-@end
+@end  // FlutterSwitchSemanticsObject
 
-namespace {
-
-constexpr int32_t kRootNodeId = 0;
-
-flutter::SemanticsAction GetSemanticsActionForScrollDirection(
-    UIAccessibilityScrollDirection direction) {
-  // To describe the vertical scroll direction, UIAccessibilityScrollDirection uses the
-  // direction the scroll bar moves in and SemanticsAction uses the direction the finger
-  // moves in. However, the horizontal scroll direction matches the SemanticsAction direction.
-  // That is way the following maps vertical opposite of the SemanticsAction, but the horizontal
-  // maps directly.
-  switch (direction) {
-    case UIAccessibilityScrollDirectionRight:
-    case UIAccessibilityScrollDirectionPrevious:  // TODO(abarth): Support RTL using
-                                                  // _node.textDirection.
-      return flutter::SemanticsAction::kScrollRight;
-    case UIAccessibilityScrollDirectionLeft:
-    case UIAccessibilityScrollDirectionNext:  // TODO(abarth): Support RTL using
-                                              // _node.textDirection.
-      return flutter::SemanticsAction::kScrollLeft;
-    case UIAccessibilityScrollDirectionUp:
-      return flutter::SemanticsAction::kScrollDown;
-    case UIAccessibilityScrollDirectionDown:
-      return flutter::SemanticsAction::kScrollUp;
-  }
-  FML_DCHECK(false);  // Unreachable
-  return flutter::SemanticsAction::kScrollUp;
-}
-
-}  // namespace
 
 @implementation FlutterCustomAccessibilityAction {
 }
