@@ -25,8 +25,6 @@ struct SceneHostBindingKey {
                       const std::string isolate_service_id) {
     this->koid = koid;
     this->isolate_service_id = isolate_service_id;
-    FML_LOG(ERROR) << "SceneHostBindingKey koid:: " << koid
-                   << ", isolate: " << isolate_service_id;
   }
 
   bool operator==(const SceneHostBindingKey& other) const {
