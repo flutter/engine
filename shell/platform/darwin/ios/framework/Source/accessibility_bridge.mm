@@ -339,6 +339,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     return @([self node].value.data());
   }
 
+  // FlutterSwitchSemanticsObject should supercede these conditionals.
   if ([self node].HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
       [self node].HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
     if ([self node].HasFlag(flutter::SemanticsFlags::kIsToggled) ||
@@ -505,6 +506,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
       [self node].HasAction(flutter::SemanticsAction::kDecrease)) {
     traits |= UIAccessibilityTraitAdjustable;
   }
+  // FlutterSwitchSemanticsObject should supercede these conditionals.
   if ([self node].HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
       [self node].HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
     traits |= UIAccessibilityTraitButton;
