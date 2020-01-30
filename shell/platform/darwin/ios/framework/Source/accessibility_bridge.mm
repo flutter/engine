@@ -63,20 +63,20 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return self;
 }
 
--(void)dealloc {
+- (void)dealloc {
   [_semanticsObject release];
   [super dealloc];
 }
 
-- (NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
-  NSMethodSignature *result = [super methodSignatureForSelector:sel];
+- (NSMethodSignature*)methodSignatureForSelector:(SEL)sel {
+  NSMethodSignature* result = [super methodSignatureForSelector:sel];
   if (!result) {
     result = [_semanticsObject methodSignatureForSelector:sel];
   }
   return result;
 }
 
-- (void)forwardInvocation:(NSInvocation *)anInvocation {
+- (void)forwardInvocation:(NSInvocation*)anInvocation {
   [anInvocation setTarget:_semanticsObject];
   [anInvocation invoke];
 }
@@ -113,7 +113,6 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 @end  // FlutterSwitchSemanticsObject
-
 
 @implementation FlutterCustomAccessibilityAction {
 }
