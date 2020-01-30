@@ -61,7 +61,6 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
   if (self.isCoallescing) {
     return;
   }
-  NSLog(@"aaclarke start coallescing");
   self.isCoallescing = YES;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, seconds * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
     if (self.isTriggered) {
@@ -69,7 +68,6 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
     }
     self.isTriggered = NO;
     self.isCoallescing = NO;
-    NSLog(@"aaclarke stop coallescing");
   });
 }
 @end // FlutterCoalescer
@@ -881,13 +879,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
   // bottom padding.
   _viewportMetrics.physical_view_inset_bottom = bottom * scale;
-  NSLog(@"bottom inset:%f", _viewportMetrics.physical_view_inset_bottom);
   [self updateViewportMetrics];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
   _viewportMetrics.physical_view_inset_bottom = 0;
-  NSLog(@"bottom inset:%f", _viewportMetrics.physical_view_inset_bottom);
   [self updateViewportMetrics];
 }
 
