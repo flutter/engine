@@ -27,6 +27,53 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
 
+/// Class to coallesce calls for a period of time.
+@interface FlutterCoallescer : NSObject
+@property (nonatomic, assign) BOOL isTriggered;
+@property (nonatomic, assign) BOOL isCoallescing;
+@property (nonatomic, copy) dispatch_block_t block;
+@end
+
+@implementation FlutterCoallescer 
+-(instancetype)initWithBlock:(dispatch_block_t)block {
+  self = [super init];
+  if (self) {
+    self.block = block;
+  }
+  return self;
+}
+
+- (void)dealloc {
+  [_block release];
+  [super dealloc];
+}
+
+-(void)trigger {
+  if (_isCoallescing) {
+    _isTriggered = YES;
+  } else {
+    _isTriggered = NO;
+    _block();
+  }
+}
+
+-(void)coallesceForSeconds:(double)seconds {
+  if (self.isCoallescing) {
+    return;
+  }
+  NSLog(@"aaclarke start coallescing");
+  self.isCoallescing = YES;
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, seconds * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    if (self.isTriggered) {
+      self.block();
+    }
+    self.isTriggered = NO;
+    self.isCoallescing = NO;
+    NSLog(@"aaclarke stop coallescing");
+  });
+}
+@end // FlutterCoallescer
+
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
@@ -64,6 +111,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
   NSMutableSet<NSNumber*>* _ongoingTouches;
+  fml::scoped_nsobject<FlutterCoallescer> _updateViewportMetrics;
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -147,6 +195,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   _statusBarStyle = UIStatusBarStyleDefault;
 
   [self setupNotificationCenterObservers];
+
+  __block FlutterViewController* blockSelf = self;
+  _updateViewportMetrics.reset([[FlutterCoallescer alloc] initWithBlock:^{
+    [blockSelf updateViewportMetricsImplementation];
+  }]);
 }
 
 - (FlutterEngine*)engine {
@@ -557,6 +610,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
+  [_updateViewportMetrics coallesceForSeconds:0.5];
 }
 
 // Make this transition only while this current view controller is visible.
@@ -741,6 +795,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
+  [_updateViewportMetrics trigger];
+}
+
+- (void)updateViewportMetricsImplementation {
   [_engine.get() updateViewportMetrics:_viewportMetrics];
 }
 
@@ -764,7 +822,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   _viewportMetrics.physical_height = viewSize.height * scale;
 
   [self updateViewportPadding];
-  [self updateViewportMetrics];
+  [self updateViewportMetricsImplementation];
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
@@ -818,11 +876,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
   // bottom padding.
   _viewportMetrics.physical_view_inset_bottom = bottom * scale;
+  NSLog(@"bottom inset:%f", _viewportMetrics.physical_view_inset_bottom);
   [self updateViewportMetrics];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
   _viewportMetrics.physical_view_inset_bottom = 0;
+  NSLog(@"bottom inset:%f", _viewportMetrics.physical_view_inset_bottom);
   [self updateViewportMetrics];
 }
 
