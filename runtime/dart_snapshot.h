@@ -42,27 +42,6 @@ namespace flutter {
 class DartSnapshot : public fml::RefCountedThreadSafe<DartSnapshot> {
  public:
   //----------------------------------------------------------------------------
-  /// The symbol name of the heap data of the core snapshot in a dynamic library
-  /// or currently loaded process.
-  ///
-  static const char* kVMDataSymbol;
-  //----------------------------------------------------------------------------
-  /// The symbol name of the instructions data of the core snapshot in a dynamic
-  /// library or currently loaded process.
-  ///
-  static const char* kVMInstructionsSymbol;
-  //----------------------------------------------------------------------------
-  /// The symbol name of the heap data of the isolate snapshot in a dynamic
-  /// library or currently loaded process.
-  ///
-  static const char* kIsolateDataSymbol;
-  //----------------------------------------------------------------------------
-  /// The symbol name of the instructions data of the isolate snapshot in a
-  /// dynamic library or currently loaded process.
-  ///
-  static const char* kIsolateInstructionsSymbol;
-
-  //----------------------------------------------------------------------------
   /// @brief      From the fields present in the given settings object, infer
   ///             the core snapshot.
   ///

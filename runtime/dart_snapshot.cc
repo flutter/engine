@@ -14,12 +14,6 @@
 
 namespace flutter {
 
-const char* DartSnapshot::kVMDataSymbol = "kDartVmSnapshotData";
-const char* DartSnapshot::kVMInstructionsSymbol = "kDartVmSnapshotInstructions";
-const char* DartSnapshot::kIsolateDataSymbol = "kDartIsolateSnapshotData";
-const char* DartSnapshot::kIsolateInstructionsSymbol =
-    "kDartIsolateSnapshotInstructions";
-
 // On Windows and Android (in debug mode) the engine finds the Dart snapshot
 // data through symbols that are statically linked into the executable.
 // On other platforms this data is obtained by a dynamic symbol lookup.
@@ -102,7 +96,7 @@ static std::shared_ptr<const fml::Mapping> ResolveVMData(
       settings.vm_snapshot_data,          // embedder_mapping_callback
       settings.vm_snapshot_data_path,     // file_path
       settings.application_library_path,  // native_library_path
-      DartSnapshot::kVMDataSymbol,        // native_library_symbol_name
+      kVmSnapshotDataCSymbol,             // native_library_symbol_name
       false                               // is_executable
   );
 #endif  // DART_SNAPSHOT_STATIC_LINK
@@ -114,11 +108,11 @@ static std::shared_ptr<const fml::Mapping> ResolveVMInstructions(
   return std::make_unique<fml::NonOwnedMapping>(kDartVmSnapshotInstructions, 0);
 #else   // DART_SNAPSHOT_STATIC_LINK
   return SearchMapping(
-      settings.vm_snapshot_instr,           // embedder_mapping_callback
-      settings.vm_snapshot_instr_path,      // file_path
-      settings.application_library_path,    // native_library_path
-      DartSnapshot::kVMInstructionsSymbol,  // native_library_symbol_name
-      true                                  // is_executable
+      settings.vm_snapshot_instr,         // embedder_mapping_callback
+      settings.vm_snapshot_instr_path,    // file_path
+      settings.application_library_path,  // native_library_path
+      kVmSnapshotInstructionsCSymbol,     // native_library_symbol_name
+      true                                // is_executable
   );
 #endif  // DART_SNAPSHOT_STATIC_LINK
 }
@@ -132,7 +126,7 @@ static std::shared_ptr<const fml::Mapping> ResolveIsolateData(
       settings.isolate_snapshot_data,       // embedder_mapping_callback
       settings.isolate_snapshot_data_path,  // file_path
       settings.application_library_path,    // native_library_path
-      DartSnapshot::kIsolateDataSymbol,     // native_library_symbol_name
+      kIsolateSnapshotDataCSymbol,          // native_library_symbol_name
       false                                 // is_executable
   );
 #endif  // DART_SNAPSHOT_STATIC_LINK
@@ -145,11 +139,11 @@ static std::shared_ptr<const fml::Mapping> ResolveIsolateInstructions(
       kDartIsolateSnapshotInstructions, 0);
 #else   // DART_SNAPSHOT_STATIC_LINK
   return SearchMapping(
-      settings.isolate_snapshot_instr,           // embedder_mapping_callback
-      settings.isolate_snapshot_instr_path,      // file_path
-      settings.application_library_path,         // native_library_path
-      DartSnapshot::kIsolateInstructionsSymbol,  // native_library_symbol_name
-      true                                       // is_executable
+      settings.isolate_snapshot_instr,       // embedder_mapping_callback
+      settings.isolate_snapshot_instr_path,  // file_path
+      settings.application_library_path,     // native_library_path
+      kIsolateSnapshotInstructionsCSymbol,   // native_library_symbol_name
+      true                                   // is_executable
   );
 #endif  // DART_SNAPSHOT_STATIC_LINK
 }
