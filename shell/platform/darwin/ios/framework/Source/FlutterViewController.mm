@@ -30,7 +30,7 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
 /// Class to coalesce calls for a period of time.
 @interface FlutterCoalescer : NSObject
 @property(nonatomic, assign) BOOL isTriggered;
-@property(nonatomic, assign) BOOL isCoallescing;
+@property(nonatomic, assign) BOOL isCoalescing;
 @property(nonatomic, copy) dispatch_block_t block;
 @end
 
@@ -49,7 +49,7 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
 }
 
 - (void)trigger {
-  if (_isCoallescing) {
+  if (_isCoalescing) {
     _isTriggered = YES;
   } else {
     _isTriggered = NO;
@@ -58,17 +58,17 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
 }
 
 - (void)coalesceForSeconds:(double)seconds {
-  if (self.isCoallescing) {
+  if (self.isCoalescing) {
     return;
   }
-  self.isCoallescing = YES;
+  self.isCoalescing = YES;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, seconds * NSEC_PER_SEC),
                  dispatch_get_main_queue(), ^{
                    if (self.isTriggered) {
                      self.block();
                    }
                    self.isTriggered = NO;
-                   self.isCoallescing = NO;
+                   self.isCoalescing = NO;
                  });
 }
 @end  // FlutterCoalescer
