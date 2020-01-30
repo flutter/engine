@@ -29,13 +29,13 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
 
 /// Class to coalesce calls for a period of time.
 @interface FlutterCoalescer : NSObject
-@property (nonatomic, assign) BOOL isTriggered;
-@property (nonatomic, assign) BOOL isCoallescing;
-@property (nonatomic, copy) dispatch_block_t block;
+@property(nonatomic, assign) BOOL isTriggered;
+@property(nonatomic, assign) BOOL isCoallescing;
+@property(nonatomic, copy) dispatch_block_t block;
 @end
 
 @implementation FlutterCoalescer
--(instancetype)initWithBlock:(dispatch_block_t)block {
+- (instancetype)initWithBlock:(dispatch_block_t)block {
   self = [super init];
   if (self) {
     self.block = block;
@@ -48,7 +48,7 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
   [super dealloc];
 }
 
--(void)trigger {
+- (void)trigger {
   if (_isCoallescing) {
     _isTriggered = YES;
   } else {
@@ -57,20 +57,21 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
   }
 }
 
--(void)coalesceForSeconds:(double)seconds {
+- (void)coalesceForSeconds:(double)seconds {
   if (self.isCoallescing) {
     return;
   }
   self.isCoallescing = YES;
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, seconds * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-    if (self.isTriggered) {
-      self.block();
-    }
-    self.isTriggered = NO;
-    self.isCoallescing = NO;
-  });
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, seconds * NSEC_PER_SEC),
+                 dispatch_get_main_queue(), ^{
+                   if (self.isTriggered) {
+                     self.block();
+                   }
+                   self.isTriggered = NO;
+                   self.isCoallescing = NO;
+                 });
 }
-@end // FlutterCoalescer
+@end  // FlutterCoalescer
 
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
