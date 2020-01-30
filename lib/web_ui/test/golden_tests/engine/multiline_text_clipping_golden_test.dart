@@ -116,7 +116,7 @@ void drawQuickBrownFox(RecordingCanvas canvas) {
         textStyle: TextStyle(
           color: const Color(0xFF000000),
           decoration: TextDecoration.none,
-          fontFamily: 'Arial',
+          fontFamily: 'Roboto',
           fontSize: 30,
           background: Paint()..color = const Color.fromRGBO(50, 255, 50, 1.0),
         ),
