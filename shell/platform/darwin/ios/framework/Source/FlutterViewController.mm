@@ -27,14 +27,14 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
 
-/// Class to coallesce calls for a period of time.
-@interface FlutterCoallescer : NSObject
+/// Class to coalesce calls for a period of time.
+@interface FlutterCoalescer : NSObject
 @property (nonatomic, assign) BOOL isTriggered;
 @property (nonatomic, assign) BOOL isCoallescing;
 @property (nonatomic, copy) dispatch_block_t block;
 @end
 
-@implementation FlutterCoallescer 
+@implementation FlutterCoalescer
 -(instancetype)initWithBlock:(dispatch_block_t)block {
   self = [super init];
   if (self) {
@@ -57,7 +57,7 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
   }
 }
 
--(void)coallesceForSeconds:(double)seconds {
+-(void)coalesceForSeconds:(double)seconds {
   if (self.isCoallescing) {
     return;
   }
@@ -72,7 +72,7 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
     NSLog(@"aaclarke stop coallescing");
   });
 }
-@end // FlutterCoallescer
+@end // FlutterCoalescer
 
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
@@ -111,7 +111,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
   NSMutableSet<NSNumber*>* _ongoingTouches;
-  fml::scoped_nsobject<FlutterCoallescer> _updateViewportMetrics;
+  // Coalescer that filters out superfluous keyboard notifications when the app
+  // is being foregrounded.
+  fml::scoped_nsobject<FlutterCoalescer> _updateViewportMetrics;
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -197,7 +199,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [self setupNotificationCenterObservers];
 
   __block FlutterViewController* blockSelf = self;
-  _updateViewportMetrics.reset([[FlutterCoallescer alloc] initWithBlock:^{
+  _updateViewportMetrics.reset([[FlutterCoalescer alloc] initWithBlock:^{
     [blockSelf updateViewportMetricsImplementation];
   }]);
 }
@@ -610,7 +612,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
-  [_updateViewportMetrics coallesceForSeconds:0.5];
+  [_updateViewportMetrics coalesceForSeconds:0.5];
 }
 
 // Make this transition only while this current view controller is visible.
@@ -798,6 +800,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_updateViewportMetrics trigger];
 }
 
+/// The direct implementation of updateViewportMetrics, it doesn't conform to
+/// the coalescing logic when foregrounding the app.  Most calls should be
+/// directed to [updateViewportMetrics].
 - (void)updateViewportMetricsImplementation {
   [_engine.get() updateViewportMetrics:_viewportMetrics];
 }
