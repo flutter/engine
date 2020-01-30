@@ -17,6 +17,8 @@ void main() async {
     viewportSize: const Size(600, 600),
   );
 
+  setUpStableTestFonts();
+
   void paintTest(EngineCanvas canvas, PaintTest painter) {
     final RecordingCanvas recordingCanvas =
         RecordingCanvas(const Rect.fromLTWH(0, 0, 600, 600));
