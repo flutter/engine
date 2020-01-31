@@ -78,9 +78,7 @@ UINT Win32DpiHelper::GetDpi(HWND hwnd) {
   if (IsDpiPerMonitorSupported()) {
     std::cerr << "monitor\n";
 
-    DWORD monitor_flag =
-        hwnd == nullptr ? MONITOR_DEFAULTTOPRIMARY : MONITOR_DEFAULTTONEAREST;
-    HMONITOR monitor = monitor_from_window_(hwnd, monitor_flag);
+    HMONITOR monitor = monitor_from_window_(hwnd, MONITOR_DEFAULTTONEAREST);
     UINT dpi_x = 0, dpi_y = 0;
     HRESULT result =
         get_dpi_for_monitor_(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);

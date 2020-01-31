@@ -51,8 +51,6 @@ class FlutterViewController : public PluginRegistry {
   FlutterViewController& operator=(FlutterViewController const&) = delete;
 
   FlutterView* view() { return view_.get(); }
-  UINT GetViewDpi();
-
 
   // Processes any pending events in the Flutter engine, and returns the
   // nanosecond delay until the next scheduled event (or  max, if none).

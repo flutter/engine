@@ -184,8 +184,9 @@ HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
   return view->window->GetWindowHandle();
 }
 
-UINT FlutterDesktopViewGetDpiForView(FlutterDesktopViewControllerRef controller, HWND hwnd) {
-  return controller->dpi_helper->GetDpi(hwnd);
+UINT FlutterDesktopViewGetDpiForView(HWND hwnd) {
+  static flutter::Win32DpiHelper* dpi_helper = new flutter::Win32DpiHelper();
+  return dpi_helper->GetDpi(hwnd);
 }
 
 FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,

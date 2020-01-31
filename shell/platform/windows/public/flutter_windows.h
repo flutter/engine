@@ -76,7 +76,8 @@ FlutterDesktopProcessMessages(FlutterDesktopViewControllerRef controller);
 
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
-FLUTTER_EXPORT UINT FlutterDesktopViewGetDpiForView(FlutterDesktopViewControllerRef controller, HWND hwnd);
+
+FLUTTER_EXPORT UINT FlutterDesktopViewGetDpiForView(HWND hwnd);
 
 // Runs an instance of a headless Flutter engine.
 //
