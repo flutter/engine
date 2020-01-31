@@ -4,11 +4,16 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
+#include "dpi_utils.h"
 #include <iostream>
 
 namespace flutter {
 
-Win32Window::Win32Window() {}
+Win32Window::Win32Window() {
+   current_dpi_ = GetDpiForView(nullptr);
+    std::cerr << "Current dpi" << std::endl;
+    std::cerr << current_dpi_ << std::endl;
+}
 
 Win32Window::~Win32Window() {
   Destroy();
@@ -76,9 +81,6 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                      reinterpret_cast<LONG_PTR>(cs->lpCreateParams));
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
-    that->current_dpi_ = that->dpi_helper_->GetDpi(window);
-    std::cerr << "Current dpi" << std::endl;
-    std::cerr << that->current_dpi_ << std::endl;
 
     that->window_handle_ = window;
   } else if (Win32Window* that = GetThisFromHandle(window)) {
@@ -272,7 +274,7 @@ Win32Window::HandleDpiChange(HWND hwnd,
     // The DPI is only passed for DPI change messages on top level windows,
     // hence call function to get DPI if needed.
     if (uDpi == 0) {
-      uDpi = dpi_helper_->GetDpi(hwnd);
+      uDpi = GetDpiForView(hwnd);
        std::cerr << "New dpi" << std::endl;
     std::cerr << uDpi << std::endl;
     }

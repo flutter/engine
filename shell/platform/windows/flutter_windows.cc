@@ -19,7 +19,7 @@
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
-#include "flutter/shell/platform/windows/win32_dpi_helper.h"
+#include "flutter/shell/platform/windows/dpi_utils.h"
 #include "flutter/shell/platform/windows/win32_flutter_window.h"
 #include "flutter/shell/platform/windows/win32_task_runner.h"
 #include "flutter/shell/platform/windows/window_state.h"
@@ -150,7 +150,6 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
   }
   state->view->SetState(engine_state->engine);
   state->engine_state = std::move(engine_state);
-  state->dpi_helper = std::make_unique<flutter::Win32DpiHelper>();
   return state;
 }
 
@@ -185,9 +184,13 @@ HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
 }
 
 UINT FlutterDesktopViewGetDpiForView(HWND hwnd) {
-  static flutter::Win32DpiHelper* dpi_helper = new flutter::Win32DpiHelper();
-  return dpi_helper->GetDpi(hwnd);
+  return flutter::GetDpiForView(hwnd);
 }
+
+ BOOL FlutterDesktopEnableNonClientDpiScaling(HWND hwnd) {
+   return flutter::EnableNonClientDpiScaling(hwnd);
+ }
+
 
 FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
                                                 const char* icu_data_path,

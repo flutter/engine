@@ -78,6 +78,7 @@ FlutterDesktopProcessMessages(FlutterDesktopViewControllerRef controller);
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
 
 FLUTTER_EXPORT UINT FlutterDesktopViewGetDpiForView(HWND hwnd);
+FLUTTER_EXPORT BOOL FlutterDesktopEnableNonClientDpiScaling(HWND hwnd);
 
 // Runs an instance of a headless Flutter engine.
 //
