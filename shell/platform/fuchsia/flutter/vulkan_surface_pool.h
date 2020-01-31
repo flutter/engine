@@ -55,7 +55,7 @@ class VulkanSurfacePool final {
     // If |is_pending| is true, the |vk_surface| is still under painting
     // (similar to those in |pending_surfaces_|) so we can't recycle the
     // |vk_surface| yet.
-    bool is_pending;
+    uint32_t is_pending = 0;
     std::unique_ptr<VulkanSurface> vk_surface;
   };
 

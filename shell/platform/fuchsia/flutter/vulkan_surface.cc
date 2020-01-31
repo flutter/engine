@@ -475,6 +475,16 @@ void VulkanSurface::Reset() {
         << "Could not reset fences. The surface is no longer valid.";
   }
 
+
+  if (zx::event::create(0, &release_event_) != ZX_OK) {
+    FML_LOG(ERROR) << "could not relesae fence";
+  }
+
+  wait_.Cancel();
+  wait_.set_object(release_event_.get());
+  wait_.set_trigger(ZX_EVENT_SIGNALED);
+
+
   VkFence fence = command_buffer_fence_;
 
   if (command_buffer_) {

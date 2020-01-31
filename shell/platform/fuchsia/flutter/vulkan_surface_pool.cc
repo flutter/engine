@@ -39,10 +39,10 @@ std::unique_ptr<VulkanSurface> VulkanSurfacePool::AcquireSurface(
     return nullptr;
   }
 
-  if (!surface->FlushSessionAcquireAndReleaseEvents()) {
-    FML_DLOG(ERROR) << "Could not flush acquire/release events for buffer.";
-    return nullptr;
-  }
+  //if (!surface->FlushSessionAcquireAndReleaseEvents()) {
+  //  FML_DLOG(ERROR) << "Could not flush acquire/release events for buffer.";
+  //  return nullptr;
+  //}
 
   return surface;
 }
@@ -145,6 +145,8 @@ void VulkanSurfacePool::SubmitSurface(
     auto insert_iterator = retained_surfaces_.insert(std::make_pair(
         retained_key, RetainedSurface({true, std::move(vulkan_surface)})));
     if (insert_iterator.second) {
+      insert_iterator.first->second.is_pending++;
+      insert_iterator.first->second.vk_surface->FlushSessionAcquireAndReleaseEvents();
       insert_iterator.first->second.vk_surface->SignalWritesFinished(std::bind(
           &VulkanSurfacePool::SignalRetainedReady, this, retained_key));
     }
@@ -155,6 +157,7 @@ void VulkanSurfacePool::SubmitSurface(
         std::move(vulkan_surface)  // value
         ));
     if (insert_iterator.second) {
+      insert_iterator.first->second->FlushSessionAcquireAndReleaseEvents();
       insert_iterator.first->second->SignalWritesFinished(std::bind(
           &VulkanSurfacePool::RecyclePendingSurface, this, surface_key));
     }
@@ -215,7 +218,7 @@ void VulkanSurfacePool::RecycleRetainedSurface(
   }
 
   // The surface should not be pending.
-  FML_DCHECK(!it->second.is_pending);
+  FML_DCHECK(it->second.is_pending == 0);
 
   auto surface_to_recycle = std::move(it->second.vk_surface);
   retained_surfaces_.erase(it);
@@ -223,7 +226,7 @@ void VulkanSurfacePool::RecycleRetainedSurface(
 }
 
 void VulkanSurfacePool::SignalRetainedReady(flutter::LayerRasterCacheKey key) {
-  retained_surfaces_[key].is_pending = false;
+  retained_surfaces_[key].is_pending--;
 }
 
 void VulkanSurfacePool::AgeAndCollectOldBuffers() {
@@ -269,7 +272,7 @@ void VulkanSurfacePool::AgeAndCollectOldBuffers() {
   // recycle all retained surfaces that are not pending.
   std::vector<flutter::LayerRasterCacheKey> recycle_keys;
   for (auto& [key, retained_surface] : retained_surfaces_) {
-    if (retained_surface.is_pending ||
+    if (retained_surface.is_pending != 0 ||
         retained_surface.vk_surface->IsUsedInRetainedRendering()) {
       // Reset the flag for the next frame
       retained_surface.vk_surface->ResetIsUsedInRetainedRendering();
