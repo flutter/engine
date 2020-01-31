@@ -2,8 +2,6 @@
 
 #include <ShellScalingApi.h>
 
-#include <iostream>
-
 namespace flutter {
 
 namespace {
@@ -29,6 +27,9 @@ class Win32DpiHelper {
   /// Returns the current DPI. Supports all DPI awareness modes, and is backward
   /// compatible down to Windows Vista.
   UINT GetDpi(HWND);
+
+  /// Enables scaling of non-client UI (scrolling bars, title bars, etc). Only
+  /// supported or Per-Monitor V1 DPI awareness mode.
   BOOL EnableNonClientDpiScaling(HWND hwnd);
 
  private:
@@ -94,8 +95,6 @@ BOOL Win32DpiHelper::IsDpiPerWindowSupportedForWindow(HWND hwnd) {
     return false;
   }
   DPI_AWARENESS_CONTEXT context = get_window_dpi_awareness_context_(hwnd);
-  std::cerr << context << std::endl;
-
   bool is_v2 = are_dpi_awareness_contexts_equal(
       context, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
   if (!is_v2) {
@@ -123,7 +122,6 @@ BOOL Win32DpiHelper::IsDpiPerMonitorSupported() {
 
 BOOL Win32DpiHelper::EnableNonClientDpiScaling(HWND hwnd) {
   if (enable_non_client_dpi_scaling_ == nullptr) {
-    std::cerr << "Not loaded\n";
     return false;
   }
   return enable_non_client_dpi_scaling_(hwnd);
@@ -131,23 +129,19 @@ BOOL Win32DpiHelper::EnableNonClientDpiScaling(HWND hwnd) {
 
 UINT Win32DpiHelper::GetDpi(HWND hwnd) {
   // GetDpiForWindow returns the DPI for any awareness mode. If not available,
-  // fallback to a per monitor, system, or default DPI.
+  // or no |hwnd| is provided. fallback to a per monitor, system, or default
+  // DPI.
   if (IsDpiPerWindowSupportedForWindow(hwnd) && hwnd != nullptr) {
-    std::cerr << "v2\n";
     return get_dpi_for_window_(hwnd);
   }
 
   if (IsDpiPerMonitorSupported()) {
-    std::cerr << "monitor\n";
-
     HMONITOR monitor = monitor_from_window_(hwnd, MONITOR_DEFAULTTONEAREST);
     UINT dpi_x = 0, dpi_y = 0;
     HRESULT result =
         get_dpi_for_monitor_(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
     return SUCCEEDED(result) ? dpi_x : kDefaultDpi;
   }
-  std::cerr << "system\n";
-
   HDC hdc = GetDC(hwnd);
   UINT dpi = GetDeviceCaps(hdc, LOGPIXELSX);
   ReleaseDC(hwnd, hdc);
@@ -166,5 +160,4 @@ UINT GetDpiForView(HWND hwnd) {
 BOOL EnableNonClientDpiScaling(HWND hwnd) {
   return GetHelper()->EnableNonClientDpiScaling(hwnd);
 }
-
 }  // namespace flutter

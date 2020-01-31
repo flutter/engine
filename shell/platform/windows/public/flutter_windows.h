@@ -8,11 +8,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "Windows.h"
 #include "flutter_export.h"
 #include "flutter_messenger.h"
 #include "flutter_plugin_registrar.h"
-
-#include "Windows.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -77,7 +76,13 @@ FlutterDesktopProcessMessages(FlutterDesktopViewControllerRef controller);
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
 
+// Gets the DPI for a given |hwnd|, depending on the supported APIs per
+// windows version and DPI awareness mode. If nullptr is passed, returns the DPI
+// of the nearest monitor.
 FLUTTER_EXPORT UINT FlutterDesktopViewGetDpiForView(HWND hwnd);
+
+// Use only for apps that support Per-Monitor V1 awereness mode. Not necessary
+// for Per-Monitor V2.
 FLUTTER_EXPORT BOOL FlutterDesktopEnableNonClientDpiScaling(HWND hwnd);
 
 // Runs an instance of a headless Flutter engine.
