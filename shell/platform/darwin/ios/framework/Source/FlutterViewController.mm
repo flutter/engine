@@ -28,6 +28,9 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
 
 /// Class to coalesce calls for a period of time.
+///
+/// This is used to filter out the conflicting notifications that can get sent
+/// in rapid succession when the app gets foregrounded.
 @interface FlutterCoalescer : NSObject
 @property(nonatomic, assign) BOOL isTriggered;
 @property(nonatomic, assign) BOOL isCoalescing;
