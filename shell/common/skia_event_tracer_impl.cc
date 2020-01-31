@@ -53,6 +53,7 @@ inline T BitCast(const U& u) {
 union SkiaTraceValueUnion {
   bool as_bool;
   uint64_t as_uint;
+  const void* as_pointer;
 };
 
 }  // namespace
@@ -187,38 +188,45 @@ class FlutterEventTracer : public SkEventTracer {
 
 #else   // defined(OS_FUCHSIA)
     std::vector<const char*> arg_names;
+    arg_names.reserve(num_args);
     std::vector<std::string> arg_values;
+    arg_values.reserve(num_args);
     for (int i = 0; i < num_args; i++) {
       arg_names.push_back(p_arg_names[i]);
       const uint8_t arg_type = p_arg_types[i];
       const uint64_t arg_value = p_arg_values[i];
       switch (arg_type) {
         case TRACE_VALUE_TYPE_BOOL: {
-          SkiaTraceValueUnion value = {.as_uint = p_arg_values[i]};
-          arg_values.push_back(std::to_string(value.as_bool));
+          SkiaTraceValueUnion value;
+          value.as_uint = arg_value;
+          arg_values.emplace_back(std::to_string(value.as_bool));
           break;
         }
         case TRACE_VALUE_TYPE_UINT:
-          arg_values.push_back(std::to_string(arg_value));
+          arg_values.emplace_back(std::to_string(arg_value));
           break;
         case TRACE_VALUE_TYPE_INT:
-          arg_values.push_back(std::to_string(BitCast<int64_t>(arg_value)));
+          arg_values.emplace_back(std::to_string(BitCast<int64_t>(arg_value)));
           break;
         case TRACE_VALUE_TYPE_DOUBLE:
-          arg_values.push_back(std::to_string(BitCast<double>(arg_value)));
+          arg_values.emplace_back(std::to_string(BitCast<double>(arg_value)));
           break;
-        case TRACE_VALUE_TYPE_POINTER:
-          arg_values.push_back(std::to_string(BitCast<uintptr_t>(arg_value)));
+        case TRACE_VALUE_TYPE_POINTER: {
+          SkiaTraceValueUnion value;
+          value.as_uint = arg_value;
+          arg_values.emplace_back(
+              std::to_string(reinterpret_cast<uintptr_t>(value.as_pointer)));
           break;
+        }
         case TRACE_VALUE_TYPE_STRING:
         case TRACE_VALUE_TYPE_COPY_STRING:
-          arg_values.push_back(reinterpret_cast<const char*>(arg_value));
+          arg_values.emplace_back(reinterpret_cast<const char*>(arg_value));
           break;
         case TRACE_VALUE_TYPE_CONVERTABLE:
-          arg_values.push_back("");
+          arg_values.emplace_back("");
           break;
         default:
-          arg_values.push_back("");
+          arg_values.emplace_back("");
           break;
       }
     }
