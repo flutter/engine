@@ -53,24 +53,31 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
     _isTriggered = YES;
   } else {
     _isTriggered = NO;
-    _block();
+    if (_block) {
+      _block();
+    }
   }
 }
 
 - (void)coalesceForSeconds:(double)seconds {
-  if (self.isCoalescing) {
+  if (self.isCoalescing || !self.block) {
     return;
   }
   self.isCoalescing = YES;
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, seconds * NSEC_PER_SEC),
                  dispatch_get_main_queue(), ^{
-                   if (self.isTriggered) {
+                   if (self.isTriggered && self.block) {
                      self.block();
                    }
                    self.isTriggered = NO;
                    self.isCoalescing = NO;
                  });
 }
+
+- (void)invalidate {
+  self.block = nil;
+}
+
 @end  // FlutterCoalescer
 
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
@@ -585,6 +592,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                     userInfo:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_ongoingTouches release];
+  [_updateViewportMetrics invalidate];
   [super dealloc];
 }
 
