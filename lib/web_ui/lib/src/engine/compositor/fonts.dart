@@ -76,6 +76,6 @@ class SkiaFontCollection {
   Future<ByteBuffer> _getArrayBuffer(dynamic fetchResult) {
     return fetchResult.arrayBuffer().then<ByteBuffer>((x) => x as ByteBuffer);
   }
-  
+
   js.JsObject skFontMgr;
 }
