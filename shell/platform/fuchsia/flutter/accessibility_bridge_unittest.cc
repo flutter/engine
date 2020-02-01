@@ -23,7 +23,13 @@ class AccessibilityBridgeTestDelegate
     : public flutter_runner::AccessibilityBridge::Delegate {
  public:
   void SetSemanticsEnabled(bool enabled) override { enabled_ = enabled; }
+  void DispatchSemanticsAction(int32_t node_id,
+                               flutter::SemanticsAction action) override {
+    actions.push_back(std::make_pair(node_id, action));
+  }
+
   bool enabled() { return enabled_; }
+  std::vector<std::pair<int32_t, flutter::SemanticsAction>> actions;
 
  private:
   bool enabled_;
