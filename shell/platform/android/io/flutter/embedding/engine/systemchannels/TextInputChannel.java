@@ -287,7 +287,7 @@ public class TextInputChannel {
           InputType.fromJson(json.getJSONObject("inputType")),
           inputAction,
           json.isNull("actionLabel") ? null : json.getString("actionLabel"),
-          json.isNull("textContentType") ? null : TextContentType.fromValue(json.getString("textContentType"))
+          json.isNull("textContentType") ? null : TextContentType.fromJson(json.getJSONObject("textContentType"))
       );
     }
 
@@ -412,91 +412,20 @@ public class TextInputChannel {
   }
 
   /**
-   * Types of text content for auto-full functionality
+   * Types of text content for auto-fill functionality
    */
-  public enum TextContentType {
-    NAME("TextContentType.name"),
-    NAME_PREFIX("TextContentType.namePrefix"),
-    GIVEN_NAME("TextContentType.givenName"),
-    MIDDLE_NAME("TextContentType.middleName"),
-    FAMILY_NAME("TextContentType.familyName"),
-    NAME_SUFFIX("TextContentType.nameSuffix"),
-    FULL_STREET_ADDRESS("TextContentType.fullStreetAddress"),
-    ADDRESS_LINE_1("TextContentType.addressLine1"),
-    ADDRESS_LINE_2("TextContentType.addressLine2"),
-    ADDRESS_CITY("TextContentType.addressCity"),
-    ADDRESS_STATE("TextContentType.addressState"),
-    COUNTRY_NAME("TextContentType.countryName"),
-    POSTAL_CODE("TextContentType.postalCode"),
-    TELEPHONE_NUMBER("TextContentType.telephoneNumber"),
-    EMAIL_ADDRESS("TextContentType.emailAddress"),
-    CREDIT_CARD_NUMBER("TextContentType.creditCardNumber"),
-    USERNAME("TextContentType.username"),
-    PASSWORD("TextContentType.password"),
-    NEW_PASSWORD("TextContentType.newPassword"),
-    ONE_TIME_CODE("TextContentType.oneTimeCode");
-
-    static TextContentType fromValue(@NonNull String encodedName) throws NoSuchFieldException {
-      for (TextContentType textContentType : TextContentType.values()) {
-        if (textContentType.encodedName.equals(encodedName)) {
-          return textContentType;
-        }
-      }
-      throw new NoSuchFieldException("No such TextContentType: " + encodedName);
+  public static class TextContentType {
+    @NonNull
+    public static TextContentType fromJson(@NonNull JSONObject json) throws JSONException, NoSuchFieldException {
+      return new InputType(
+          TextInputType.fromValue(json.getString("rawValue")));
     }
 
     @NonNull
-    private final String encodedName;
+    public final rawValue type;
 
-    TextContentType(@NonNull String encodedName) {
-      this.encodedName = encodedName;
-    }
-
-    public String hintConstantValue() {
-      switch (this) {
-        case NAME:
-        return "personName";
-        case NAME_PREFIX:
-        return "personNamePrefix";
-        case GIVEN_NAME:
-        return "personGivenName";
-        case MIDDLE_NAME:
-        return "personMiddleName";
-        case FAMILY_NAME:
-        return "personFamilyName";
-        case NAME_SUFFIX:
-        return "personNameSuffix";
-        case FULL_STREET_ADDRESS:
-        return "postalAddress";
-        case ADDRESS_LINE_1:
-        return "streetAddress";
-        case ADDRESS_LINE_2:
-        return "extendedAddress";
-        case ADDRESS_CITY:
-        return "addressLocality";
-        case ADDRESS_STATE:
-        return "addressRegion";
-        case COUNTRY_NAME:
-        return "addressCountry";
-        case POSTAL_CODE:
-        return "postalCode";
-        case TELEPHONE_NUMBER:
-        return "phoneNumber";
-        case EMAIL_ADDRESS:
-        return "emailAddress";
-        case CREDIT_CARD_NUMBER:
-        return "creditCardNumber";
-        case USERNAME:
-        return "username";
-        case PASSWORD:
-        return "password";
-        case NEW_PASSWORD:
-        return "newPassword";
-        case ONE_TIME_CODE:
-        return "smsOTPCode";
-      }
-
-      return null;
+    public TextContentType(@NonNull String rawValue) {
+      this.rawValue = rawValue;
     }
   }
 

@@ -231,7 +231,7 @@ public class TextInputPlugin {
         }
         outAttrs.imeOptions |= enterAction;
         
-        String autofillHintValue = configuration.textContentType.hintConstantValue();
+        String autofillHintValue = configuration.textContentType.rawValue;
         if (autofillHintValue != null) {
           String[] autofillHints = {autofillHintValue};
           view.setAutofillHints(autofillHints);
