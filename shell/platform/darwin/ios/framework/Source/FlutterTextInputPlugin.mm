@@ -878,6 +878,9 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     _activeView.textContentType = ToUITextContentType(configuration);
     _activeView.passwordRules = ToTextInputPasswordRules(configuration);
   }
+  if (@available(iOS 12.0, *)) {
+    _activeView.passwordRules = ToTextInputPasswordRules(configuration);
+  }
   [_activeView setTextInputClient:client];
   [_activeView reloadInputViews];
 }
