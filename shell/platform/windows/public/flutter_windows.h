@@ -8,10 +8,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "Windows.h"
 #include "flutter_export.h"
 #include "flutter_messenger.h"
 #include "flutter_plugin_registrar.h"
+
+#include "Windows.h"
 
 #if defined(__cplusplus)
 extern "C" {

@@ -56,4 +56,5 @@ FlutterDesktopPluginRegistrarRef FlutterViewController::GetRegistrarForPlugin(
   }
   return FlutterDesktopGetPluginRegistrar(controller_, plugin_name.c_str());
 }
+
 }  // namespace flutter
