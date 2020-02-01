@@ -4,14 +4,12 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
-#include <iostream>
-
 #include "dpi_utils.h"
 
 namespace flutter {
 
 Win32Window::Win32Window() {
-  // Calling GetDpiForView with no HNWD returns the DPI from the nearest
+  // Calling GetDpiForHWND with no HNWD returns the DPI from the nearest
   // monitor, which is the best option as an initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the WM_DPICHANGED message.
   current_dpi_ = GetDpiForHWND(nullptr);
