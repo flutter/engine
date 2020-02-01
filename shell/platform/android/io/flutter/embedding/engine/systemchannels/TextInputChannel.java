@@ -422,7 +422,7 @@ public class TextInputChannel {
     }
 
     @NonNull
-    public final rawValue type;
+    public final String rawValue;
 
     public TextContentType(@NonNull String rawValue) {
       this.rawValue = rawValue;
