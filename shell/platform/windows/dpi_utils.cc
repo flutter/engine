@@ -25,7 +25,8 @@ class Win32DpiHelper {
   ~Win32DpiHelper();
 
   /// Returns the current DPI. Supports all DPI awareness modes, and is backward
-  /// compatible down to Windows Vista.
+  /// compatible down to Windows Vista. If |hwnd| is nullptr, returns the DPI
+  /// for the nearest monitor is available. Otherwise, returns the system's DPI.
   UINT GetDpi(HWND);
 
   /// Enables scaling of non-client UI (scrolling bars, title bars, etc). Only

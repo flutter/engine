@@ -9,7 +9,13 @@
 
 namespace flutter {
 
+/// Returns the current DPI. Supports all DPI awareness modes, and is backward
+/// compatible down to Windows Vista. If |hwnd| is nullptr, returns the DPI for
+/// the nearest monitor is available. Otherwise, returns the system's DPI.
 UINT GetDpiForHWND(HWND hwnd);
+
+/// Enables scaling of non-client UI (scrolling bars, title bars, etc). Only
+/// supported on Per-Monitor V1 DPI awareness mode.
 BOOL EnableNonClientDpiScaling(HWND hwnd);
 
 }  // namespace flutter
