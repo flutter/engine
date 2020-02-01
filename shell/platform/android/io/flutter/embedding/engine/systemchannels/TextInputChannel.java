@@ -417,8 +417,7 @@ public class TextInputChannel {
   public static class TextContentType {
     @NonNull
     public static TextContentType fromJson(@NonNull JSONObject json) throws JSONException, NoSuchFieldException {
-      return new InputType(
-          TextInputType.fromValue(json.getString("rawValue")));
+      return new TextContentType(json.getString("rawValue"));
     }
 
     @NonNull

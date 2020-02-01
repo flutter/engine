@@ -109,19 +109,9 @@ static UITextContentType ToUITextContentType(NSDictionary* type) API_AVAILABLE(i
     }
   }
 
-  // If we don't have a known match, try and cast it
-  return (UITextContentType)contentType;
-}
-
-static UITextInputPasswordRules* ToTextInputPasswordRules(NSDictionary* type)
-    API_AVAILABLE(ios(12.0)) {
-  NSDictionary* contentTypeDictionary = type[@"textContentType"];
-  NSString* passwordRulesDescriptor = contentTypeDictionary[@"newPasswordRulesDescriptor"];
-  if (passwordRulesDescriptor.length > 0) {
-    return [UITextInputPasswordRules passwordRulesWithDescriptor:passwordRulesDescriptor];
-  }
-
-  return nil;
+  // If we don't have a known match, try and cast it from the raw value
+  NSString* rawValue = contentTypeDictionary[@"rawValue"];
+  return (UITextContentType)rawValue;
 }
 
 static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
@@ -876,9 +866,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
                                        : UITextAutocorrectionTypeDefault;
   if (@available(iOS 10.0, *)) {
     _activeView.textContentType = ToUITextContentType(configuration);
-  }
-  if (@available(iOS 12.0, *)) {
-    _activeView.passwordRules = ToTextInputPasswordRules(configuration);
   }
   [_activeView setTextInputClient:client];
   [_activeView reloadInputViews];
