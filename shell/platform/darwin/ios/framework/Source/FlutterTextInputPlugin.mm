@@ -47,7 +47,7 @@ static UITextAutocapitalizationType ToUITextAutoCapitalizationType(NSDictionary*
 
 static UITextContentType ToUITextContentType(NSDictionary* type) API_AVAILABLE(ios(10.0)) {
   NSDictionary* contentTypeDictionary = type[@"textContentType"];
-  NSString *contentType = contentTypeDictionary[@"name"];
+  NSString* contentType = contentTypeDictionary[@"name"];
 
   if ([contentType isEqualToString:@"TextContentType.personName"])
     return UITextContentTypeName;
@@ -89,22 +89,19 @@ static UITextContentType ToUITextContentType(NSDictionary* type) API_AVAILABLE(i
     } else {
       return nil;
     }
-  }
-  else if ([contentType isEqualToString:@"TextContentType.password"]) {
+  } else if ([contentType isEqualToString:@"TextContentType.password"]) {
     if (@available(iOS 11.0, *)) {
       return UITextContentTypePassword;
     } else {
       return nil;
     }
-  }
-  else if ([contentType isEqualToString:@"TextContentType.newPassword"]) {
+  } else if ([contentType isEqualToString:@"TextContentType.newPassword"]) {
     if (@available(iOS 12.0, *)) {
       return UITextContentTypeNewPassword;
     } else {
       return nil;
     }
-  }
-  else if ([contentType isEqualToString:@"TextContentType.smsOTPCode"]) {
+  } else if ([contentType isEqualToString:@"TextContentType.smsOTPCode"]) {
     if (@available(iOS 12.0, *)) {
       return UITextContentTypeOneTimeCode;
     } else {
@@ -112,8 +109,19 @@ static UITextContentType ToUITextContentType(NSDictionary* type) API_AVAILABLE(i
     }
   }
 
-  //If we don't have a known match, try and cast it
-  return (UITextContentType) contentType;
+  // If we don't have a known match, try and cast it
+  return (UITextContentType)contentType;
+}
+
+static UITextInputPasswordRules* ToTextInputPasswordRules(NSDictionary* type)
+    API_AVAILABLE(ios(12.0)) {
+  NSDictionary* contentTypeDictionary = type[@"textContentType"];
+  NSString* passwordRulesDescriptor = contentTypeDictionary[@"newPasswordRulesDescriptor"];
+  if (passwordRulesDescriptor.length > 0) {
+    return [UITextInputPasswordRules passwordRulesWithDescriptor:passwordRulesDescriptor];
+  }
+
+  return nil;
 }
 
 static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
@@ -868,6 +876,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
                                        : UITextAutocorrectionTypeDefault;
   if (@available(iOS 10.0, *)) {
     _activeView.textContentType = ToUITextContentType(configuration);
+    _activeView.passwordRules = ToTextInputPasswordRules(configuration);
   }
   [_activeView setTextInputClient:client];
   [_activeView reloadInputViews];
