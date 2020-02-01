@@ -46,64 +46,65 @@ static UITextAutocapitalizationType ToUITextAutoCapitalizationType(NSDictionary*
 }
 
 static UITextContentType ToUITextContentType(NSDictionary* type) API_AVAILABLE(ios(10.0)) {
-  NSString* contentType = type[@"textContentType"];
+  NSDictionary* contentTypeDictionary = type[@"textContentType"];
+  NSString *contentType = contentTypeDictionary[@"name"];
 
-  if ([contentType isEqualToString:@"TextContentType.name"])
+  if ([contentType isEqualToString:@"TextContentType.personName"])
     return UITextContentTypeName;
-  if ([contentType isEqualToString:@"TextContentType.namePrefix"])
+  else if ([contentType isEqualToString:@"TextContentType.personNamePrefix"])
     return UITextContentTypeNamePrefix;
-  if ([contentType isEqualToString:@"TextContentType.givenName"])
+  else if ([contentType isEqualToString:@"TextContentType.personGivenName"])
     return UITextContentTypeGivenName;
-  if ([contentType isEqualToString:@"TextContentType.middleName"])
+  else if ([contentType isEqualToString:@"TextContentType.personMiddleName"])
     return UITextContentTypeMiddleName;
-  if ([contentType isEqualToString:@"TextContentType.familyName"])
+  else if ([contentType isEqualToString:@"TextContentType.personFamilyName"])
     return UITextContentTypeFamilyName;
-  if ([contentType isEqualToString:@"TextContentType.nameSuffix"])
+  else if ([contentType isEqualToString:@"TextContentType.personNameSuffix"])
     return UITextContentTypeNameSuffix;
-  if ([contentType isEqualToString:@"TextContentType.fullStreetAddress"])
+  else if ([contentType isEqualToString:@"TextContentType.postalAddress"])
     return UITextContentTypeFullStreetAddress;
-  if ([contentType isEqualToString:@"TextContentType.addressLine1"])
+  else if ([contentType isEqualToString:@"TextContentType.streetAddress"])
     return UITextContentTypeStreetAddressLine1;
-  if ([contentType isEqualToString:@"TextContentType.addressLine2"])
+  else if ([contentType isEqualToString:@"TextContentType.extendedAddress"])
     return UITextContentTypeStreetAddressLine2;
-  if ([contentType isEqualToString:@"TextContentType.addressCity"])
+  else if ([contentType isEqualToString:@"TextContentType.addressLocality"])
     return UITextContentTypeAddressCity;
-  if ([contentType isEqualToString:@"TextContentType.addressState"])
+  else if ([contentType isEqualToString:@"TextContentType.addressRegion"])
     return UITextContentTypeAddressState;
-  if ([contentType isEqualToString:@"TextContentType.countryName"])
+  else if ([contentType isEqualToString:@"TextContentType.addressCountry"])
     return UITextContentTypeCountryName;
-  if ([contentType isEqualToString:@"TextContentType.postalCode"])
+  else if ([contentType isEqualToString:@"TextContentType.postalCode"])
     return UITextContentTypePostalCode;
-  if ([contentType isEqualToString:@"TextContentType.telephoneNumber"])
+  else if ([contentType isEqualToString:@"TextContentType.phoneNumber"])
     return UITextContentTypeTelephoneNumber;
-  if ([contentType isEqualToString:@"TextContentType.emailAddress"])
+  else if ([contentType isEqualToString:@"TextContentType.emailAddress"])
     return UITextContentTypeEmailAddress;
-  if ([contentType isEqualToString:@"TextContentType.url"])
+  else if ([contentType isEqualToString:@"TextContentType.url"])
     return UITextContentTypeURL;
-  if ([contentType isEqualToString:@"TextContentType.creditCardNumber"])
+  else if ([contentType isEqualToString:@"TextContentType.creditCardNumber"])
     return UITextContentTypeCreditCardNumber;
-  if ([contentType isEqualToString:@"TextContentType.username"]) {
+  else if ([contentType isEqualToString:@"TextContentType.username"]) {
     if (@available(iOS 11.0, *)) {
       return UITextContentTypeUsername;
     } else {
       return nil;
     }
   }
-  if ([contentType isEqualToString:@"TextContentType.password"]) {
+  else if ([contentType isEqualToString:@"TextContentType.password"]) {
     if (@available(iOS 11.0, *)) {
       return UITextContentTypePassword;
     } else {
       return nil;
     }
   }
-  if ([contentType isEqualToString:@"TextContentType.newPassword"]) {
+  else if ([contentType isEqualToString:@"TextContentType.newPassword"]) {
     if (@available(iOS 12.0, *)) {
       return UITextContentTypeNewPassword;
     } else {
       return nil;
     }
   }
-  if ([contentType isEqualToString:@"TextContentType.oneTimeCode"]) {
+  else if ([contentType isEqualToString:@"TextContentType.smsOTPCode"]) {
     if (@available(iOS 12.0, *)) {
       return UITextContentTypeOneTimeCode;
     } else {
@@ -111,7 +112,8 @@ static UITextContentType ToUITextContentType(NSDictionary* type) API_AVAILABLE(i
     }
   }
 
-  return nil;
+  //If we don't have a known match, try and cast it
+  return (UITextContentType) contentType;
 }
 
 static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
