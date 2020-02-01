@@ -9,7 +9,7 @@
 
 namespace flutter {
 
-UINT GetDpiForView(HWND hwnd);
+UINT GetDpiForHWND(HWND hwnd);
 BOOL EnableNonClientDpiScaling(HWND hwnd);
 
 }  // namespace flutter

@@ -79,7 +79,7 @@ FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
 // Gets the DPI for a given |hwnd|, depending on the supported APIs per
 // windows version and DPI awareness mode. If nullptr is passed, returns the DPI
 // of the nearest monitor.
-FLUTTER_EXPORT UINT FlutterDesktopViewGetDpiForView(HWND hwnd);
+FLUTTER_EXPORT UINT FlutterDesktopViewGetDpiForHWND(HWND hwnd);
 
 // Use only for apps that support Per-Monitor V1 awereness mode. Not necessary
 // for Per-Monitor V2.
