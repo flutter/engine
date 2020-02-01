@@ -558,7 +558,7 @@ TEST_F(AccessibilityBridgeTest, Actions) {
 
   accessibility_bridge_->OnAccessibilityActionRequested(
       0u, fuchsia::accessibility::semantics::Action::SHOW_ON_SCREEN,
-      unhandled_callback);
+      handled_callback);
   EXPECT_EQ(accessibility_delegate_.actions.size(), 3u);
   EXPECT_EQ(accessibility_delegate_.actions.back(),
             std::make_pair(0, flutter::SemanticsAction::kShowOnScreen));
