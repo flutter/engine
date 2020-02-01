@@ -93,6 +93,13 @@ class AccessibilityBridge
       fuchsia::accessibility::semantics::SemanticListener::HitTestCallback
           callback) override;
 
+  // |fuchsia::accessibility::semantics::SemanticListener|
+  void OnAccessibilityActionRequested(
+      uint32_t node_id,
+      fuchsia::accessibility::semantics::Action action,
+      fuchsia::accessibility::semantics::SemanticListener::
+          OnAccessibilityActionRequestedCallback callback) override;
+
  private:
   // Holds only the fields we need for hit testing.
   // In particular, it adds a screen_rect field to flutter::SemanticsNode.
@@ -175,13 +182,6 @@ class AccessibilityBridge
   std::optional<flutter::SemanticsAction> GetFlutterSemanticsAction(
       fuchsia::accessibility::semantics::Action fuchsia_action,
       uint32_t node_id);
-
-  // |fuchsia::accessibility::semantics::SemanticListener|
-  void OnAccessibilityActionRequested(
-      uint32_t node_id,
-      fuchsia::accessibility::semantics::Action action,
-      fuchsia::accessibility::semantics::SemanticListener::
-          OnAccessibilityActionRequestedCallback callback) override;
 
   // |fuchsia::accessibility::semantics::SemanticListener|
   void OnSemanticsModeChanged(bool enabled,

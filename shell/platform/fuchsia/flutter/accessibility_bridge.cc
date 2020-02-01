@@ -347,6 +347,14 @@ void AccessibilityBridge::OnAccessibilityActionRequested(
     fuchsia::accessibility::semantics::Action action,
     fuchsia::accessibility::semantics::SemanticListener::
         OnAccessibilityActionRequestedCallback callback) {
+  if (nodes_.find(node_id) == nodes_.end()) {
+    FML_LOG(ERROR) << "Attempted to send accessibility action "
+                   << static_cast<int32_t>(action)
+                   << " to unkonwn node id: " << node_id;
+    callback(false);
+    return;
+  }
+
   std::optional<flutter::SemanticsAction> flutter_action =
       GetFlutterSemanticsAction(action, node_id);
   if (!flutter_action.has_value()) {

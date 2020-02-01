@@ -56,6 +56,7 @@ class AccessibilityBridgeTest : public testing::Test {
         /*flags*/ 0u, &view_ref_control_.reference, &view_ref_.reference);
     EXPECT_EQ(status, ZX_OK);
 
+    accessibility_delegate_.actions.clear();
     accessibility_bridge_ =
         std::make_unique<flutter_runner::AccessibilityBridge>(
             accessibility_delegate_, services_provider_.service_directory(),
@@ -511,5 +512,60 @@ TEST_F(AccessibilityBridgeTest, HitTest) {
   EXPECT_EQ(hit_node_id, 3u);
   accessibility_bridge_->HitTest({30, 30}, callback);
   EXPECT_EQ(hit_node_id, 4u);
+}
+
+TEST_F(AccessibilityBridgeTest, Actions) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+
+  flutter::SemanticsNode node1;
+  node1.id = 1;
+
+  node0.childrenInTraversalOrder = {1};
+  node0.childrenInHitTestOrder = {1};
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({
+      {0, node0},
+      {1, node1},
+  });
+  RunLoopUntilIdle();
+
+  auto handled_callback = [](bool handled) { EXPECT_TRUE(handled); };
+  auto unhandled_callback = [](bool handled) { EXPECT_FALSE(handled); };
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      0u, fuchsia::accessibility::semantics::Action::DEFAULT, handled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 1u);
+  EXPECT_EQ(accessibility_delegate_.actions.back(),
+            std::make_pair(0, flutter::SemanticsAction::kTap));
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      0u, fuchsia::accessibility::semantics::Action::SECONDARY,
+      handled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 2u);
+  EXPECT_EQ(accessibility_delegate_.actions.back(),
+            std::make_pair(0, flutter::SemanticsAction::kLongPress));
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      0u, fuchsia::accessibility::semantics::Action::SET_FOCUS,
+      unhandled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 2u);
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      0u, fuchsia::accessibility::semantics::Action::SET_VALUE,
+      unhandled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 2u);
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      0u, fuchsia::accessibility::semantics::Action::SHOW_ON_SCREEN,
+      unhandled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 3u);
+  EXPECT_EQ(accessibility_delegate_.actions.back(),
+            std::make_pair(0, flutter::SemanticsAction::kShowOnScreen));
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      2u, fuchsia::accessibility::semantics::Action::DEFAULT,
+      unhandled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 3u);
 }
 }  // namespace flutter_runner_test
