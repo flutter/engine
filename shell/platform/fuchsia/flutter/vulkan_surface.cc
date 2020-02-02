@@ -447,6 +447,7 @@ bool VulkanSurface::FlushSessionAcquireAndReleaseEvents() {
   session_->EnqueueAcquireFence(std::move(acquire));
   session_->EnqueueReleaseFence(std::move(release));
   age_ = 0;
+  is_pending_ = true;
   return true;
 }
 
@@ -465,6 +466,31 @@ void VulkanSurface::SignalWritesFinished(
                     "compositor.");
 
   pending_on_writes_committed_ = on_writes_committed;
+}
+
+void VulkanSurface::ResetReleaseFence() {
+  // Create a new release fence, since previous ones might be used for in-flight frames.
+  // TODO(): Use a pool of release events
+  wait_.Cancel();
+  release_event_.reset();
+  if (zx::event::create(0, &release_event_) != ZX_OK) {
+    FML_LOG(ERROR) << "Failed to reset release fence";
+    return;
+  }
+  release_event_.signal(ZX_EVENT_SIGNALED, 0u);
+  wait_.set_object(release_event_.get());
+  wait_.set_trigger(ZX_EVENT_SIGNALED);
+  wait_.Begin(async_get_default_dispatcher());
+
+  zx::event release;
+
+  if (
+      release_event_.duplicate(ZX_RIGHT_SAME_RIGHTS, &release) != ZX_OK) {
+    FML_LOG(ERROR) << "Failed to reset release fence while duplicating";
+    return;
+  }
+  session_->EnqueueReleaseFence(std::move(release));
+  is_pending_ = true;
 }
 
 void VulkanSurface::Reset() {
@@ -511,6 +537,15 @@ void VulkanSurface::OnHandleReady(async_dispatcher_t* dispatcher,
   if (status != ZX_OK)
     return;
   FML_DCHECK(signal->observed & ZX_EVENT_SIGNALED);
+
+  // Double-check the current release fence is signalled
+  zx_signals_t pending = 0u;
+  release_event_.wait_one(ZX_EVENT_SIGNALED, zx::time(), &pending);
+  if ((pending & ZX_EVENT_SIGNALED) == 0u) {
+    return;
+  }
+
+  is_pending_ = false;
   Reset();
 }
 

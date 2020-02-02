@@ -85,6 +85,8 @@ class VulkanSurface final
     return acquire_semaphore_;
   }
 
+  bool is_pending() { return is_pending_; }
+
   vulkan::VulkanCommandBuffer* GetCommandBuffer(
       const vulkan::VulkanHandle<VkCommandPool>& pool) {
     if (!command_buffer_)
@@ -135,6 +137,7 @@ class VulkanSurface final
   // retained surface directly. Hence Flutter can't modify the surface during
   // retained rendering.
   const scenic::EntityNode& GetRetainedNode() {
+    ResetReleaseFence();
     used_in_retained_rendering_ = true;
     return *retained_node_;
   }
@@ -175,6 +178,7 @@ class VulkanSurface final
 
   bool PushSessionImageSetupOps(scenic::Session* session);
 
+  void ResetReleaseFence();
   void Reset();
 
   vulkan::VulkanHandle<VkSemaphore> SemaphoreFromEvent(
@@ -200,6 +204,7 @@ class VulkanSurface final
   int size_history_index_ = 0;
   size_t age_ = 0;
   bool valid_ = false;
+  bool is_pending_ = false;
 
   flutter::LayerRasterCacheKey retained_key_ = {0, SkMatrix::MakeScale(1, 1)};
   std::unique_ptr<scenic::EntityNode> retained_node_ = nullptr;

@@ -270,7 +270,8 @@ void VulkanSurfacePool::AgeAndCollectOldBuffers() {
   std::vector<flutter::LayerRasterCacheKey> recycle_keys;
   for (auto& [key, retained_surface] : retained_surfaces_) {
     if (retained_surface.is_pending ||
-        retained_surface.vk_surface->IsUsedInRetainedRendering()) {
+        retained_surface.vk_surface->IsUsedInRetainedRendering() ||
+        retained_surface.vk_surface->is_pending()) {
       // Reset the flag for the next frame
       retained_surface.vk_surface->ResetIsUsedInRetainedRendering();
     } else {
