@@ -6,6 +6,7 @@
 
 #import <objc/message.h>
 
+#import "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputModel.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
@@ -113,7 +114,7 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
     [self updateEditState];
   } else {
     handled = NO;
-    NSLog(@"Unhandled text input method '%@'", method);
+    FML_DLOG(WARNING) << "Unhandled text input method '" << method.UTF8String << "'";
   }
   result(handled ? nil : FlutterMethodNotImplemented);
 }
