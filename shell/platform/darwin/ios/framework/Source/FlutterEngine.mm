@@ -122,6 +122,13 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 }
 
 - (void)dealloc {
+  [_pluginPublications enumerateKeysAndObjectsUsingBlock:^(id key, id object, BOOL* stop) {
+    if ([object respondsToSelector:@selector(detachFromEngineForRegistrar:)]) {
+      NSObject<FlutterPluginRegistrar>* registrar = [self registrarForPlugin:key];
+      [object detachFromEngineForRegistrar:registrar];
+    }
+  }];
+
   [_labelPrefix release];
   [_pluginPublications release];
   _binaryMessenger.parent = nil;
