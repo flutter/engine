@@ -80,10 +80,80 @@ task:
       test_framework_script: |
         cd $FRAMEWORK_PATH/flutter/packages/flutter
         ../../bin/flutter test --local-engine=host_debug_unopt
-      # Run Flutter framework tests against the web engine.
-      test_framework_web_script: |
-        cd $FRAMEWORK_PATH/flutter/packages/flutter
-        ../../bin/flutter test --platform=chrome --local-engine=host_debug_unopt
+
+    # PLEASE KEEP THESE WEB TEST SHARDS IN SYNC WITH THEIR COUNTERPARTS IN flutter/flutter's CIRRUS CONFIG.
+    - name: web_tests-0-linux
+      only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
+      environment:
+        # As of October 2019, the Web shards needed more than 6G of RAM.
+        CPU: 2
+        MEMORY: 8G
+      script:
+        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+
+    - name: web_tests-1-linux
+      only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
+      environment:
+        # As of October 2019, the Web shards needed more than 6G of RAM.
+        CPU: 2
+        MEMORY: 8G
+      script:
+        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+
+    - name: web_tests-2-linux
+      only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
+      environment:
+        # As of October 2019, the Web shards needed more than 6G of RAM.
+        CPU: 2
+        MEMORY: 8G
+      script:
+        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+
+    - name: web_tests-3-linux
+      only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
+      environment:
+        # As of October 2019, the Web shards needed more than 6G of RAM.
+        CPU: 2
+        MEMORY: 8G
+      script:
+        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+
+    - name: web_tests-4-linux
+      only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
+      environment:
+        # As of October 2019, the Web shards needed more than 6G of RAM.
+        CPU: 2
+        MEMORY: 8G
+      script:
+        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+
+    - name: web_tests-5-linux
+      only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
+      environment:
+        # As of October 2019, the Web shards needed more than 6G of RAM.
+        CPU: 2
+        MEMORY: 8G
+      script:
+        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+
+    - name: web_tests-6-linux
+      only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
+      environment:
+        # As of October 2019, the Web shards needed more than 6G of RAM.
+        CPU: 2
+        MEMORY: 8G
+      script:
+        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+
+    - name: web_tests-7_last-linux # last Web shard must end with _last
+      only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
+      environment:
+        # As of October 2019, the Web shards needed more than 6G of RAM.
+        CPU: 2
+        MEMORY: 8G
+      script:
+        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+
     - name: build_and_test_web_linux_firefox
       compile_host_script: |
         cd $ENGINE_PATH/src
