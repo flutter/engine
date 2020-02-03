@@ -10,8 +10,8 @@ constexpr UINT kDefaultDpi = 96;
 
 template <typename T>
 
-/// Retrieves a function named |name| from a given module in |comBaseModule|
-/// into |outProc|. Returns a bool indicating whether the function was found.
+/// Retrieves a function |name| from a given |comBaseModule| into |outProc|.
+/// Returns a bool indicating whether the function was found.
 bool AssignProcAddress(HMODULE comBaseModule, const char* name, T*& outProc) {
   outProc = reinterpret_cast<T*>(GetProcAddress(comBaseModule, name));
   return *outProc != nullptr;
