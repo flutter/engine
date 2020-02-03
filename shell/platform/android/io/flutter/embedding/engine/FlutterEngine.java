@@ -112,6 +112,8 @@ public class FlutterEngine {
       for (EngineLifecycleListener lifecycleListener : engineLifecycleListeners) {
         lifecycleListener.onPreEngineRestart();
       }
+
+      platformViewsController.onPreEngineRestart();
     }
   };
 
@@ -191,8 +193,29 @@ public class FlutterEngine {
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins
   ) {
+    this(
+        context,
+        flutterLoader,
+        flutterJNI,
+        new PlatformViewsController(),
+        dartVmArgs,
+        automaticallyRegisterPlugins
+    );
+  }
+
+  /**
+   * Fully configurable {@code FlutterEngine} constructor.
+   */
+  public FlutterEngine(
+      @NonNull Context context,
+      @NonNull FlutterLoader flutterLoader,
+      @NonNull FlutterJNI flutterJNI,
+      @NonNull PlatformViewsController platformViewsController,
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins
+  ) {
     this.flutterJNI = flutterJNI;
-    flutterLoader.startInitialization(context);
+    flutterLoader.startInitialization(context.getApplicationContext());
     flutterLoader.ensureInitializationComplete(context, dartVmArgs);
 
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
@@ -214,7 +237,7 @@ public class FlutterEngine {
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
-    platformViewsController = new PlatformViewsController();
+    this.platformViewsController = platformViewsController;
 
     this.pluginRegistry = new FlutterEnginePluginRegistry(
       context.getApplicationContext(),
