@@ -1,4 +1,4 @@
-Signature: 526c93f69ef5567a69cdf8daf7124e22
+Signature: b47a2e0b85d0f0730a965160e75f46a8
 
 UNUSED LICENSES:
 
@@ -3014,6 +3014,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/vdso/stream.fidl
 FILE: ../../../fuchsia/sdk/linux/arch/x64/vdso/stream.fidl
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/power.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/update.dart
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/connection_options.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/device.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/device_watcher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/stream.fidl
