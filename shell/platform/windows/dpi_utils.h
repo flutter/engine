@@ -14,9 +14,9 @@ namespace flutter {
 /// the nearest monitor is available. Otherwise, returns the system's DPI.
 UINT GetDpiForHWND(HWND hwnd);
 
-/// Enables scaling of non-client UI (scrolling bars, title bars, etc). Only
-/// supported on Per-Monitor V1 DPI awareness mode.
-BOOL EnableNonClientDpiScaling(HWND hwnd);
+/// Returns the DPI of a given monitor. Defaults to 96 if the API is not
+/// available.
+UINT GetDpiForMonitor(HMONITOR monitor);
 
 }  // namespace flutter
 

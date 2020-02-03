@@ -9,12 +9,13 @@ namespace {
 constexpr UINT kDefaultDpi = 96;
 
 template <typename T>
+
+/// Retrieves a function named |name| from a given module in |comBaseModule|
+/// into |outProc|. Returns a bool indicating whether the function was found.
 bool AssignProcAddress(HMODULE comBaseModule, const char* name, T*& outProc) {
   outProc = reinterpret_cast<T*>(GetProcAddress(comBaseModule, name));
   return *outProc != nullptr;
 }
-
-}  // namespace
 
 /// A helper class for abstracting various Windows DPI related functions across
 /// Windows OS versions.
@@ -27,11 +28,11 @@ class Win32DpiHelper {
   /// Returns the current DPI. Supports all DPI awareness modes, and is backward
   /// compatible down to Windows Vista. If |hwnd| is nullptr, returns the DPI
   /// for the nearest monitor is available. Otherwise, returns the system's DPI.
-  UINT GetDpi(HWND);
+  UINT GetDpiForWindow(HWND);
 
-  /// Enables scaling of non-client UI (scrolling bars, title bars, etc). Only
-  /// supported on Per-Monitor V1 DPI awareness mode.
-  BOOL EnableNonClientDpiScaling(HWND hwnd);
+  /// Returns the DPI of a given monitor. Defaults to 96 if the API is not
+  /// available.
+  UINT GetDpiForMonitor(HMONITOR);
 
  private:
   using GetDpiForWindow_ = UINT __stdcall(HWND);
@@ -60,11 +61,8 @@ Win32DpiHelper::Win32DpiHelper() {
     return;
   }
 
-  dpi_for_window_supported_ =
-      (AssignProcAddress(user32_module_, "GetDpiForWindow",
-                         get_dpi_for_window_) &&
-       AssignProcAddress(user32_module_, "EnableNonClientDpiScaling",
-                         enable_non_client_dpi_scaling_));
+  dpi_for_window_supported_ = (AssignProcAddress(
+      user32_module_, "GetDpiForWindow", get_dpi_for_window_));
   dpi_for_monitor_supported_ =
       (AssignProcAddress(shlib_module_, "GetDpiForMonitor",
                          get_dpi_for_monitor_) &&
@@ -81,27 +79,17 @@ Win32DpiHelper::~Win32DpiHelper() {
   }
 }
 
-BOOL Win32DpiHelper::EnableNonClientDpiScaling(HWND hwnd) {
-  if (enable_non_client_dpi_scaling_ == nullptr) {
-    return false;
-  }
-  return enable_non_client_dpi_scaling_(hwnd);
-}
-
-UINT Win32DpiHelper::GetDpi(HWND hwnd) {
+UINT Win32DpiHelper::GetDpiForWindow(HWND hwnd) {
   // GetDpiForWindow returns the DPI for any awareness mode. If not available,
-  // or no |hwnd| is provided. fallback to a per monitor, system, or default
+  // or no |hwnd| is provided, fallback to a per monitor, system, or default
   // DPI.
   if (dpi_for_window_supported_ && hwnd != nullptr) {
     return get_dpi_for_window_(hwnd);
   }
 
   if (dpi_for_monitor_supported_) {
-    HMONITOR monitor = monitor_from_window_(hwnd, MONITOR_DEFAULTTONEAREST);
-    UINT dpi_x = 0, dpi_y = 0;
-    HRESULT result =
-        get_dpi_for_monitor_(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
-    return SUCCEEDED(result) ? dpi_x : kDefaultDpi;
+    HMONITOR monitor = monitor_from_window_(hwnd, MONITOR_DEFAULTTOPRIMARY);
+    return GetDpiForMonitor(monitor);
   }
   HDC hdc = GetDC(hwnd);
   UINT dpi = GetDeviceCaps(hdc, LOGPIXELSX);
@@ -109,16 +97,27 @@ UINT Win32DpiHelper::GetDpi(HWND hwnd) {
   return dpi;
 }
 
+UINT Win32DpiHelper::GetDpiForMonitor(HMONITOR monitor) {
+  if (dpi_for_monitor_supported_) {
+    UINT dpi_x = 0, dpi_y = 0;
+    HRESULT result =
+        get_dpi_for_monitor_(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
+    return SUCCEEDED(result) ? dpi_x : kDefaultDpi;
+  }
+  return kDefaultDpi;
+}
+
 Win32DpiHelper* GetHelper() {
   static Win32DpiHelper* dpi_helper = new Win32DpiHelper();
   return dpi_helper;
 }
+}  // namespace
 
 UINT GetDpiForHWND(HWND hwnd) {
-  return GetHelper()->GetDpi(hwnd);
+  return GetHelper()->GetDpiForWindow(hwnd);
 }
 
-BOOL EnableNonClientDpiScaling(HWND hwnd) {
-  return GetHelper()->EnableNonClientDpiScaling(hwnd);
+UINT GetDpiForMonitor(HMONITOR monitor) {
+  return GetHelper()->GetDpiForMonitor(monitor);
 }
 }  // namespace flutter

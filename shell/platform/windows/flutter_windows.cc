@@ -187,8 +187,8 @@ UINT FlutterDesktopViewGetDpiForHWND(HWND hwnd) {
   return flutter::GetDpiForHWND(hwnd);
 }
 
-BOOL FlutterDesktopEnableNonClientDpiScaling(HWND hwnd) {
-  return flutter::EnableNonClientDpiScaling(hwnd);
+FLUTTER_EXPORT UINT FlutterDesktopViewGetDpiForMonitor(HMONITOR monitor) {
+  return flutter::GetDpiForMonitor(monitor);
 }
 
 FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
