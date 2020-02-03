@@ -843,6 +843,8 @@ void AccessibilityBridge::DispatchSemanticsAction(int32_t uid,
 static void ReplaceSemanticsObject(SemanticsObject* oldObject,
                                    SemanticsObject* newObject,
                                    NSMutableDictionary<NSNumber*, SemanticsObject*>* objects) {
+  // `newObject` should represent the same id as `oldObject`.
+  assert(oldObject.node.id == newObject.node.id);
   NSNumber* nodeId = @(oldObject.node.id);
   NSUInteger positionInChildlist = [oldObject.parent.children indexOfObject:oldObject];
   SemanticsObject* parent = oldObject.parent;
@@ -892,9 +894,9 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
           DidFlagChange(object.node, node, flutter::SemanticsFlags::kIsReadOnly) ||
           DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasCheckedState) ||
           DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasToggledState)) {
-        // The node changed its type from text field to something else, or vice versa. In this
-        // case, we cannot reuse the existing SemanticsObject implementation. Instead, we replace
-        // it with a new instance.
+        // The node changed its type. In this case, we cannot reuse the existing
+        // SemanticsObject implementation. Instead, we replace it with a new
+        // instance.
         SemanticsObject* newSemanticsObject = CreateObject(node, GetWeakPtr());
         ReplaceSemanticsObject(object, newSemanticsObject, objects_.get());
         object = newSemanticsObject;
