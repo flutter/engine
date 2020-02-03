@@ -254,7 +254,7 @@ bool IsDirectory(const fml::UniqueFD& directory) {
 
 bool IsDirectory(const fml::UniqueFD& base_directory, const char* path) {
   std::string full_path = GetFullHandlePath(base_directory) + "\\" + path;
-  return ::GetFileAttributes(ConvertToWString(full_path.c_str()).c_str()) &
+  return ::GetFileAttributes(StringToWideString(full_path).c_str()) &
          FILE_ATTRIBUTE_DIRECTORY;
 }
 
@@ -266,7 +266,7 @@ bool IsFile(const std::string& path) {
 }
 
 bool UnlinkDirectory(const char* path) {
-  if (!::RemoveDirectory(ConvertToWString(path).c_str())) {
+  if (!::RemoveDirectory(StringToWideString(path).c_str())) {
     FML_DLOG(ERROR) << "Could not remove directory: '" << path << "'. "
                     << GetLastErrorMessage();
     return false;
@@ -285,7 +285,7 @@ bool UnlinkDirectory(const fml::UniqueFD& base_directory, const char* path) {
 }
 
 bool UnlinkFile(const char* path) {
-  if (!::DeleteFile(ConvertToWString(path).c_str())) {
+  if (!::DeleteFile(StringToWideString(path).c_str())) {
     FML_DLOG(ERROR) << "Could not remove file: '" << path << "'. "
                     << GetLastErrorMessage();
     return false;
