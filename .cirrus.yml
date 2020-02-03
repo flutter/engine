@@ -80,6 +80,10 @@ task:
       test_framework_script: |
         cd $FRAMEWORK_PATH/flutter/packages/flutter
         ../../bin/flutter test --local-engine=host_debug_unopt
+      # Run Flutter framework tests against the web engine.
+      test_framework_web_script: |
+        cd $FRAMEWORK_PATH/flutter/packages/flutter
+        ../../bin/flutter test --platform=chrome --local-engine=host_debug_unopt
     - name: build_and_test_web_linux_firefox
       compile_host_script: |
         cd $ENGINE_PATH/src
