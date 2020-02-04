@@ -229,10 +229,19 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
   }
 
   @override
-  void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode,
-      SurfacePaintData paint) {
+  void drawVertices(
+      ui.Vertices vertices, ui.BlendMode blendMode, SurfacePaintData paint) {
     // TODO(flutter_web): implement.
   }
+
+  @override
+  void drawPoints(ui.PointMode pointMode, Float32List points,
+      double strokeWidth, ui.Color color) {
+    // TODO(flutter_web): implement.
+  }
+
+  @override
+  void endOfPaint() {}
 }
 
 class _SaveElementStackEntry {

@@ -112,6 +112,8 @@ public class FlutterEngine {
       for (EngineLifecycleListener lifecycleListener : engineLifecycleListeners) {
         lifecycleListener.onPreEngineRestart();
       }
+
+      platformViewsController.onPreEngineRestart();
     }
   };
 
@@ -126,8 +128,7 @@ public class FlutterEngine {
    * {@link RenderSurface} is registered. See
    * {@link #getRenderer()} and {@link FlutterRenderer#startRenderingToSurface(RenderSurface)}.
    * <p>
-   * A new {@code FlutterEngine} does not come with any Flutter plugins attached. To attach plugins,
-   * see {@link #getPlugins()}.
+   * A new {@code FlutterEngine} automatically attaches all plugins. See {@link #getPlugins()}.
    * <p>
    * A new {@code FlutterEngine} does come with all default system channels attached.
    * <p>
@@ -150,6 +151,19 @@ public class FlutterEngine {
    */
   public FlutterEngine(@NonNull Context context, @Nullable String[] dartVmArgs) {
     this(context, FlutterLoader.getInstance(), new FlutterJNI(), dartVmArgs, true);
+  }
+
+  /**
+   * Same as {@link #FlutterEngine(Context)} with added support for passing Dart
+   * VM arguments and avoiding automatic plugin registration.
+   * <p>
+   * If the Dart VM has already started, the given arguments will have no effect.
+   */
+  public FlutterEngine(
+      @NonNull Context context,
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins) {
+    this(context, FlutterLoader.getInstance(), new FlutterJNI(), dartVmArgs, automaticallyRegisterPlugins);
   }
 
   /**
@@ -179,8 +193,29 @@ public class FlutterEngine {
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins
   ) {
+    this(
+        context,
+        flutterLoader,
+        flutterJNI,
+        new PlatformViewsController(),
+        dartVmArgs,
+        automaticallyRegisterPlugins
+    );
+  }
+
+  /**
+   * Fully configurable {@code FlutterEngine} constructor.
+   */
+  public FlutterEngine(
+      @NonNull Context context,
+      @NonNull FlutterLoader flutterLoader,
+      @NonNull FlutterJNI flutterJNI,
+      @NonNull PlatformViewsController platformViewsController,
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins
+  ) {
     this.flutterJNI = flutterJNI;
-    flutterLoader.startInitialization(context);
+    flutterLoader.startInitialization(context.getApplicationContext());
     flutterLoader.ensureInitializationComplete(context, dartVmArgs);
 
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
@@ -202,7 +237,7 @@ public class FlutterEngine {
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
-    platformViewsController = new PlatformViewsController();
+    this.platformViewsController = platformViewsController;
 
     this.pluginRegistry = new FlutterEnginePluginRegistry(
       context.getApplicationContext(),
@@ -262,7 +297,7 @@ public class FlutterEngine {
    * This {@code FlutterEngine} instance should be discarded after invoking this method.
    */
   public void destroy() {
-    Log.d(TAG, "Destroying.");
+    Log.v(TAG, "Destroying.");
     // The order that these things are destroyed is important.
     pluginRegistry.destroy();
     dartExecutor.onDetachedFromJNI();

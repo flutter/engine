@@ -66,8 +66,15 @@ abstract class EngineCanvas {
 
   void drawParagraph(EngineParagraph paragraph, ui.Offset offset);
 
-  void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode,
-      SurfacePaintData paint);
+  void drawVertices(
+      ui.Vertices vertices, ui.BlendMode blendMode, SurfacePaintData paint);
+
+  void drawPoints(ui.PointMode pointMode, Float32List points,
+      double strokeWidth, ui.Color color);
+
+  /// Extension of Canvas API to mark the end of a stream of painting commands
+  /// to enable re-use/dispose optimizations.
+  void endOfPaint();
 }
 
 /// Adds an [offset] transformation to a [transform] matrix and returns the
@@ -258,10 +265,10 @@ html.Element _drawParagraphElement(
     ..width = '${paragraph.width}px';
 
   if (transform != null) {
-    paragraphStyle
-      ..transformOrigin = '0 0 0'
-      ..transform =
-          matrix4ToCssTransform3d(transformWithOffset(transform, offset));
+    setElementTransform(
+      paragraphElement,
+      transformWithOffset(transform, offset).storage,
+    );
   }
 
   final ParagraphGeometricStyle style = paragraph._geometricStyle;

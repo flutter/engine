@@ -20,10 +20,17 @@ class EngineWindow extends ui.Window {
     }
 
     if (experimentalUseSkia) {
-      return html.window.devicePixelRatio;
+      return browserDevicePixelRatio;
     } else {
       return 1.0;
     }
+  }
+
+  /// Returns device pixel ratio returns by browser.
+  static double get browserDevicePixelRatio {
+    double ratio = html.window.devicePixelRatio;
+    // Guard against WebOS returning 0.
+    return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
   }
 
   /// Overrides the default device pixel ratio.
@@ -40,11 +47,24 @@ class EngineWindow extends ui.Window {
 
   @override
   ui.Size get physicalSize {
+    if (_physicalSize?.value == null) {
+      _computePhysicalSize();
+    }
+    assert(_physicalSize != null);
+    assert(_physicalSize.value != null);
+    return _physicalSize.value;
+  }
+
+  /// Computes the physical size of the screen from [html.window].
+  ///
+  /// This function is expensive. It triggers browser layout if there are
+  /// pending DOM writes.
+  void _computePhysicalSize() {
     bool override = false;
 
     assert(() {
       if (webOnlyDebugPhysicalSizeOverride != null) {
-        _physicalSize = webOnlyDebugPhysicalSizeOverride;
+        _physicalSize = FrameReference<ui.Size>(webOnlyDebugPhysicalSizeOverride);
         override = true;
       }
       return true;
@@ -61,23 +81,15 @@ class EngineWindow extends ui.Window {
         windowInnerWidth = html.window.innerWidth * devicePixelRatio;
         windowInnerHeight = html.window.innerHeight * devicePixelRatio;
       }
-      if (windowInnerWidth != _lastKnownWindowInnerWidth ||
-          windowInnerHeight != _lastKnownWindowInnerHeight) {
-        _lastKnownWindowInnerWidth = windowInnerWidth;
-        _lastKnownWindowInnerHeight = windowInnerHeight;
-        _physicalSize = ui.Size(
-          windowInnerWidth,
-          windowInnerHeight,
-        );
-      }
+      _physicalSize = FrameReference<ui.Size>(ui.Size(
+        windowInnerWidth,
+        windowInnerHeight,
+      ));
     }
-
-    return _physicalSize;
   }
 
-  ui.Size _physicalSize = ui.Size.zero;
-  double _lastKnownWindowInnerWidth = -1;
-  double _lastKnownWindowInnerHeight = -1;
+  /// Lazily populated and cleared at the end of the frame.
+  FrameReference<ui.Size> _physicalSize;
 
   /// Overrides the value of [physicalSize] in tests.
   ui.Size webOnlyDebugPhysicalSizeOverride;
@@ -92,8 +104,14 @@ class EngineWindow extends ui.Window {
   /// Simulates clicking the browser's back button.
   Future<void> webOnlyBack() => _browserHistory.back();
 
+  /// Lazily initialized when the `defaultRouteName` getter is invoked.
+  ///
+  /// The reason for the lazy initialization is to give enough time for the app to set [locationStrategy]
+  /// in `lib/src/ui/initialization.dart`.
+  String _defaultRouteName;
+
   @override
-  String get defaultRouteName => _browserHistory.currentPath;
+  String get defaultRouteName => _defaultRouteName ??= _browserHistory.currentPath;
 
   /// Change the strategy to use for handling browser history location.
   /// Setting this member will automatically update [_browserHistory].
@@ -151,16 +169,22 @@ class EngineWindow extends ui.Window {
           case 'SystemSound.play':
             // There are no default system sounds on web.
             return;
+          case 'Clipboard.setData':
+            ClipboardMessageHandler().setDataMethodCall(decoded, callback);
+            return;
+          case 'Clipboard.getData':
+            ClipboardMessageHandler().getDataMethodCall(callback);
+            return;
         }
         break;
 
       case 'flutter/textinput':
-        textEditing.handleTextInput(data);
+        textEditing.channel.handleTextInput(data);
         return;
 
       case 'flutter/platform_views':
         if (experimentalUseSkia) {
-          _rasterizer.viewEmbedder.handlePlatformViewCall(data, callback);
+          rasterizer.viewEmbedder.handlePlatformViewCall(data, callback);
         } else {
           handlePlatformViewCall(data, callback);
         }
@@ -279,15 +303,15 @@ class EngineWindow extends ui.Window {
   void render(ui.Scene scene) {
     if (experimentalUseSkia) {
       final LayerScene layerScene = scene;
-      _rasterizer.draw(layerScene.layerTree);
+      rasterizer.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene;
       domRenderer.renderScene(surfaceScene.webOnlyRootElement);
     }
   }
 
-  final Rasterizer _rasterizer =
-      experimentalUseSkia ? Rasterizer(Surface()) : null;
+  @visibleForTesting
+  Rasterizer rasterizer = experimentalUseSkia ? Rasterizer(Surface()) : null;
 }
 
 /// The window singleton.

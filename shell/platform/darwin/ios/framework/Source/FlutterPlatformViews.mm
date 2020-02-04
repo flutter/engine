@@ -258,7 +258,7 @@ UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_
   // If there were not enough existing clip views, add more.
   while (clipIndex < number_of_clips) {
     ChildClippingView* clippingView =
-        [[ChildClippingView alloc] initWithFrame:flutter_view_.get().bounds];
+        [[[ChildClippingView alloc] initWithFrame:flutter_view_.get().bounds] autorelease];
     [clippingView addSubview:head];
     head = clippingView;
     clipIndex++;
@@ -375,7 +375,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   for (int64_t view_id : composition_order_) {
     auto contextSwitch = ConstructRendererContextSwitchIfAvailable();
 
-    EnsureOverlayInitialized(view_id, std::move(gl_context), gr_context);
+    EnsureOverlayInitialized(view_id, gl_context, gr_context);
     auto frame = overlays_[view_id]->surface->AcquireFrame(frame_size_);
     // If frame is null, AcquireFrame already printed out an error message.
     if (frame) {
@@ -474,8 +474,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
     if (overlays_.count(overlay_id) != 0) {
       return;
     }
-    fml::scoped_nsobject<FlutterOverlayView> overlay_view(
-        [[[FlutterOverlayView alloc] init] retain]);
+    fml::scoped_nsobject<FlutterOverlayView> overlay_view([[FlutterOverlayView alloc] init]);
     overlay_view.get().frame = flutter_view_.get().bounds;
     overlay_view.get().autoresizingMask =
         (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
@@ -500,7 +499,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
   }
   auto contentsScale = flutter_view_.get().layer.contentsScale;
   fml::scoped_nsobject<FlutterOverlayView> overlay_view(
-      [[[FlutterOverlayView alloc] initWithContentsScale:contentsScale] retain]);
+      [[FlutterOverlayView alloc] initWithContentsScale:contentsScale]);
   overlay_view.get().frame = flutter_view_.get().bounds;
   overlay_view.get().autoresizingMask =
       (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);

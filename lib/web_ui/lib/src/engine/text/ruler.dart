@@ -629,30 +629,45 @@ class ParagraphRuler {
       final double dx = offset.dx;
       final double dy = offset.dy;
       if (dx >= bounds.left &&
-          dy < bounds.right &&
+          dx < bounds.right &&
           dy >= bounds.top &&
           dy < bounds.bottom) {
         // We found the element bounds that contains offset.
         // Calculate text position for this node.
-        int textPosition = 0;
-        for (int nodeIndex = 0; nodeIndex < i; nodeIndex++) {
-          textPosition += textNodes[nodeIndex].text.length;
-        }
-        return textPosition;
+        return _countTextPosition(el.childNodes, textNodes[i]);
       }
     }
     return 0;
   }
 
   void _collectTextNodes(Iterable<html.Node> nodes, List<html.Node> textNodes) {
+    if (nodes.isEmpty) {
+      return;
+    }
+    final List<html.Node> childNodes = [];
     for (html.Node node in nodes) {
       if (node.nodeType == html.Node.TEXT_NODE) {
         textNodes.add(node);
       }
-      if (node.hasChildNodes()) {
-        _collectTextNodes(node.childNodes, textNodes);
+      childNodes.addAll(node.childNodes);
+    }
+    _collectTextNodes(childNodes, textNodes);
+  }
+
+  int _countTextPosition(List<html.Node> nodes, html.Node endNode) {
+    int position = 0;
+    final List<html.Node> stack = nodes.reversed.toList();
+    while (true) {
+      var node = stack.removeLast();
+      stack.addAll(node.childNodes.reversed);
+      if (node == endNode) {
+        break;
+      }
+      if (node.nodeType == html.Node.TEXT_NODE) {
+        position += node.text.length;
       }
     }
+    return position;
   }
 
   /// Performs clean-up after a measurement is done, preparing this ruler for
@@ -800,7 +815,9 @@ class ParagraphRuler {
     final int len = constraintCache.length;
     for (int i = 0; i < len; i++) {
       final MeasurementResult item = constraintCache[i];
-      if (item.constraintWidth == constraints.width) {
+      if (item.constraintWidth == constraints.width &&
+          item.textAlign == paragraph._textAlign &&
+          item.textDirection == paragraph._textDirection) {
         return item;
       }
     }
@@ -852,7 +869,13 @@ class MeasurementResult {
   /// of each laid out line.
   final List<EngineLineMetrics> lines;
 
-  const MeasurementResult(
+  /// The text align value of the paragraph.
+  final ui.TextAlign textAlign;
+
+  /// The text direction of the paragraph.
+  final ui.TextDirection textDirection;
+
+  MeasurementResult(
     this.constraintWidth, {
     @required this.isSingleLine,
     @required this.width,
@@ -864,6 +887,8 @@ class MeasurementResult {
     @required this.alphabeticBaseline,
     @required this.ideographicBaseline,
     @required this.lines,
+    @required textAlign,
+    @required textDirection,
   })  : assert(constraintWidth != null),
         assert(isSingleLine != null),
         assert(width != null),
@@ -872,5 +897,7 @@ class MeasurementResult {
         assert(minIntrinsicWidth != null),
         assert(maxIntrinsicWidth != null),
         assert(alphabeticBaseline != null),
-        assert(ideographicBaseline != null);
+        assert(ideographicBaseline != null),
+        this.textAlign = textAlign ?? ui.TextAlign.start,
+        this.textDirection = textDirection ?? ui.TextDirection.ltr;
 }

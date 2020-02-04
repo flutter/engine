@@ -15,12 +15,17 @@ namespace flutter_runner {
 SessionConnection::SessionConnection(
     std::string debug_label,
     fuchsia::ui::views::ViewToken view_token,
+    scenic::ViewRefPair view_ref_pair,
     fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
     fml::closure session_error_callback,
     zx_handle_t vsync_event_handle)
     : debug_label_(std::move(debug_label)),
       session_wrapper_(session.Bind(), nullptr),
-      root_view_(&session_wrapper_, std::move(view_token.value), debug_label),
+      root_view_(&session_wrapper_,
+                 std::move(view_token),
+                 std::move(view_ref_pair.control_ref),
+                 std::move(view_ref_pair.view_ref),
+                 debug_label),
       root_node_(&session_wrapper_),
       surface_producer_(
           std::make_unique<VulkanSurfaceProducer>(&session_wrapper_)),
@@ -30,10 +35,6 @@ SessionConnection::SessionConnection(
       [callback = session_error_callback](zx_status_t status) { callback(); });
 
   session_wrapper_.SetDebugName(debug_label_);
-
-  // TODO(SCN-975): Re-enable.
-  //   view_->GetToken(std::bind(&PlatformView::ConnectSemanticsProvider, this,
-  //                             std::placeholders::_1));
 
   root_view_.AddChild(root_node_);
   root_node_.SetEventMask(fuchsia::ui::gfx::kMetricsEventMask |
@@ -63,14 +64,14 @@ void SessionConnection::Present(
     ToggleSignal(vsync_event_handle_, false);
   } else {
     PresentSession();
-
-    // Execute paint tasks and signal fences.
-    auto surfaces_to_submit = scene_update_context_.ExecutePaintTasks(frame);
-
-    // Tell the surface producer that a present has occurred so it can perform
-    // book-keeping on buffer caches.
-    surface_producer_->OnSurfacesPresented(std::move(surfaces_to_submit));
   }
+
+  // Execute paint tasks and signal fences.
+  auto surfaces_to_submit = scene_update_context_.ExecutePaintTasks(frame);
+
+  // Tell the surface producer that a present has occurred so it can perform
+  // book-keeping on buffer caches.
+  surface_producer_->OnSurfacesPresented(std::move(surfaces_to_submit));
 }
 
 void SessionConnection::OnSessionSizeChangeHint(float width_change_factor,
