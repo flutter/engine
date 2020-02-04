@@ -88,8 +88,18 @@ task:
         # As of October 2019, the Web shards needed more than 6G of RAM.
         CPU: 2
         MEMORY: 8G
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --unoptimized --full-dart-sdk
+        ninja -C out/host_debug_unopt
+      fetch_framework_script: |
+        mkdir -p $FRAMEWORK_PATH
+        cd $FRAMEWORK_PATH
+        git clone https://github.com/flutter/flutter.git
+        cd flutter
+        bin/flutter update-packages --local-engine=host_debug_unopt
       script:
-        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+        - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
 
     - name: web_tests-1-linux
       only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
@@ -97,8 +107,18 @@ task:
         # As of October 2019, the Web shards needed more than 6G of RAM.
         CPU: 2
         MEMORY: 8G
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --unoptimized --full-dart-sdk
+        ninja -C out/host_debug_unopt
+      fetch_framework_script: |
+        mkdir -p $FRAMEWORK_PATH
+        cd $FRAMEWORK_PATH
+        git clone https://github.com/flutter/flutter.git
+        cd flutter
+        bin/flutter update-packages --local-engine=host_debug_unopt
       script:
-        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+        - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
 
     - name: web_tests-2-linux
       only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
@@ -106,8 +126,18 @@ task:
         # As of October 2019, the Web shards needed more than 6G of RAM.
         CPU: 2
         MEMORY: 8G
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --unoptimized --full-dart-sdk
+        ninja -C out/host_debug_unopt
+      fetch_framework_script: |
+        mkdir -p $FRAMEWORK_PATH
+        cd $FRAMEWORK_PATH
+        git clone https://github.com/flutter/flutter.git
+        cd flutter
+        bin/flutter update-packages --local-engine=host_debug_unopt
       script:
-        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+        - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
 
     - name: web_tests-3-linux
       only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
@@ -115,8 +145,18 @@ task:
         # As of October 2019, the Web shards needed more than 6G of RAM.
         CPU: 2
         MEMORY: 8G
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --unoptimized --full-dart-sdk
+        ninja -C out/host_debug_unopt
+      fetch_framework_script: |
+        mkdir -p $FRAMEWORK_PATH
+        cd $FRAMEWORK_PATH
+        git clone https://github.com/flutter/flutter.git
+        cd flutter
+        bin/flutter update-packages --local-engine=host_debug_unopt
       script:
-        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+        - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
 
     - name: web_tests-4-linux
       only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
@@ -124,8 +164,18 @@ task:
         # As of October 2019, the Web shards needed more than 6G of RAM.
         CPU: 2
         MEMORY: 8G
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --unoptimized --full-dart-sdk
+        ninja -C out/host_debug_unopt
+      fetch_framework_script: |
+        mkdir -p $FRAMEWORK_PATH
+        cd $FRAMEWORK_PATH
+        git clone https://github.com/flutter/flutter.git
+        cd flutter
+        bin/flutter update-packages --local-engine=host_debug_unopt
       script:
-        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+        - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
 
     - name: web_tests-5-linux
       only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
@@ -133,8 +183,18 @@ task:
         # As of October 2019, the Web shards needed more than 6G of RAM.
         CPU: 2
         MEMORY: 8G
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --unoptimized --full-dart-sdk
+        ninja -C out/host_debug_unopt
+      fetch_framework_script: |
+        mkdir -p $FRAMEWORK_PATH
+        cd $FRAMEWORK_PATH
+        git clone https://github.com/flutter/flutter.git
+        cd flutter
+        bin/flutter update-packages --local-engine=host_debug_unopt
       script:
-        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+        - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
 
     - name: web_tests-6-linux
       only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
@@ -142,8 +202,18 @@ task:
         # As of October 2019, the Web shards needed more than 6G of RAM.
         CPU: 2
         MEMORY: 8G
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --unoptimized --full-dart-sdk
+        ninja -C out/host_debug_unopt
+      fetch_framework_script: |
+        mkdir -p $FRAMEWORK_PATH
+        cd $FRAMEWORK_PATH
+        git clone https://github.com/flutter/flutter.git
+        cd flutter
+        bin/flutter update-packages --local-engine=host_debug_unopt
       script:
-        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+        - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
 
     - name: web_tests-7_last-linux # last Web shard must end with _last
       only_if: "changesInclude('.cirrus.yml', 'lib/web_ui/**', 'web_sdk/**') || $CIRRUS_PR == ''"
@@ -151,8 +221,18 @@ task:
         # As of October 2019, the Web shards needed more than 6G of RAM.
         CPU: 2
         MEMORY: 8G
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --unoptimized --full-dart-sdk
+        ninja -C out/host_debug_unopt
+      fetch_framework_script: |
+        mkdir -p $FRAMEWORK_PATH
+        cd $FRAMEWORK_PATH
+        git clone https://github.com/flutter/flutter.git
+        cd flutter
+        bin/flutter update-packages --local-engine=host_debug_unopt
       script:
-        - dart --enable-asserts $FRAMEWORK_PATH/dev/bots/test.dart
+        - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
 
     - name: build_and_test_web_linux_firefox
       compile_host_script: |
