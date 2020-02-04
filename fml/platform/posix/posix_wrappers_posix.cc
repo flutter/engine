@@ -9,7 +9,7 @@
 namespace fml {
 
 char* strdup(const char* str1) {
-  return strdup(str1);
+  return ::strdup(str1);
 }
 
 }  // namespace fml
