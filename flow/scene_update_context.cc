@@ -244,6 +244,7 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
     : Entity(context),
       previous_scale_x_(context.top_scale_x_),
       previous_scale_y_(context.top_scale_y_) {
+  entity_node().SetLabel("flutter::Transform");
   if (!transform.isIdentity()) {
     // TODO(SCN-192): The perspective and shear components in the matrix
     // are not handled correctly.
@@ -277,6 +278,7 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
     : Entity(context),
       previous_scale_x_(context.top_scale_x_),
       previous_scale_y_(context.top_scale_y_) {
+  entity_node().SetLabel("flutter::Transform");
   if (scale_x != 1.f || scale_y != 1.f || scale_z != 1.f) {
     entity_node().SetScale(scale_x, scale_y, scale_z);
     context.top_scale_x_ *= scale_x;
@@ -293,6 +295,7 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
                                  const SkRRect& rrect,
                                  SkColor color,
                                  SkAlpha opacity,
+                                 std::string label,
                                  float local_elevation,
                                  float world_elevation,
                                  Layer* layer)
@@ -318,6 +321,7 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
   if (local_elevation != 0.0) {
     entity_node().SetTranslation(0.f, 0.f, -local_elevation);
   }
+  entity_node().SetLabel(label);
   entity_node().AddChild(opacity_node_);
   opacity_node_.SetOpacity(opacity_ / 255.0f);
 }
@@ -348,6 +352,7 @@ void SceneUpdateContext::Frame::AddPaintLayer(Layer* layer) {
 SceneUpdateContext::Clip::Clip(SceneUpdateContext& context,
                                const SkRect& shape_bounds)
     : Entity(context) {
+  entity_node().SetLabel("flutter::Clip");
   SetEntityNodeClipPlanes(entity_node(), shape_bounds);
 }
 
