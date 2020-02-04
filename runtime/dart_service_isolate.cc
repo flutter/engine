@@ -197,9 +197,9 @@ bool DartServiceIsolate::Startup(std::string server_ip,
       Dart_SetField(library, Dart_NewStringFromCString("_authCodesDisabled"),
                     Dart_NewBoolean(disable_service_auth_codes));
   SHUTDOWN_ON_ERROR(result);
-  result =
-      Dart_SetField(library, Dart_NewStringFromCString("_enableServicePortFallback"),
-                    Dart_NewBoolean(enable_service_port_fallback));
+  result = Dart_SetField(
+      library, Dart_NewStringFromCString("_enableServicePortFallback"),
+      Dart_NewBoolean(enable_service_port_fallback));
   return true;
 }
 
