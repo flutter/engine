@@ -36,7 +36,7 @@ class Win32FlutterWindow : public Win32Window {
   ~Win32FlutterWindow();
 
   static FlutterDesktopViewControllerRef
-  Win32FlutterWindow::CreateWin32FlutterWindow(int width, int height);
+  CreateWin32FlutterWindow(int width, int height);
 
   // |Win32Window|
   void OnDpiScale(unsigned int dpi) override;
@@ -66,7 +66,7 @@ class Win32FlutterWindow : public Win32Window {
   void OnScroll(double delta_x, double delta_y) override;
 
   // |Win32Window|
-  void OnClose();
+  void OnClose() override;
 
   // |Win32Window|
   void OnFontChange() override;
