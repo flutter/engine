@@ -183,11 +183,11 @@ HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
   return view->window->GetWindowHandle();
 }
 
-UINT FlutterDesktopViewGetDpiForHWND(HWND hwnd) {
+UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
   return flutter::GetDpiForHWND(hwnd);
 }
 
-FLUTTER_EXPORT UINT FlutterDesktopViewGetDpiForMonitor(HMONITOR monitor) {
+UINT FlutterDesktopGetDpiForMonitor(HMONITOR monitor) {
   return flutter::GetDpiForMonitor(monitor);
 }
 

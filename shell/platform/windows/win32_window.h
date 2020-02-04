@@ -11,7 +11,6 @@
 #include <memory>
 #include <string>
 
-
 namespace flutter {
 
 // Struct holding the mouse state. The engine doesn't keep track of which mouse
