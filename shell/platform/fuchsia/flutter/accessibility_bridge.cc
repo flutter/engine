@@ -286,30 +286,32 @@ AccessibilityBridge::GetFlutterSemanticsAction(
     fuchsia::accessibility::semantics::Action fuchsia_action,
     uint32_t node_id) {
   switch (fuchsia_action) {
-    /// The default action associated with the element.
+    // The default action associated with the element.
     case fuchsia::accessibility::semantics::Action::DEFAULT:
       return flutter::SemanticsAction::kTap;
-    /// The secondary action associated with the element. This may correspond to
-    /// a long press (touchscreens) or right click (mouse).
+    // The secondary action associated with the element. This may correspond to
+    // a long press (touchscreens) or right click (mouse).
     case fuchsia::accessibility::semantics::Action::SECONDARY:
       return flutter::SemanticsAction::kLongPress;
-    /// Set (input/non-accessibility) focus on this element.
+    // Set (input/non-accessibility) focus on this element.
     case fuchsia::accessibility::semantics::Action::SET_FOCUS:
       FML_DLOG(WARNING)
           << "Unsupported action SET_FOCUS sent for accessibility node "
           << node_id;
       return {};
-    /// Set the element's value.
+    // Set the element's value.
     case fuchsia::accessibility::semantics::Action::SET_VALUE:
       FML_DLOG(WARNING)
           << "Unsupported action SET_VALUE sent for accessibility node "
           << node_id;
       return {};
-    /// Scroll node to make it visible.
+    // Scroll node to make it visible.
     case fuchsia::accessibility::semantics::Action::SHOW_ON_SCREEN:
       return flutter::SemanticsAction::kShowOnScreen;
     default:
-      FML_DCHECK(false);
+      FML_DLOG(WARNING) << "Unexpected action "
+                        << static_cast<int32_t>(fuchsia_action)
+                        << " sent for accessibility node " << node_id;
       return {};
   }
 }
