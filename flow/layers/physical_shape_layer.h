@@ -42,6 +42,10 @@ class PhysicalShapeLayer : public ContainerLayer {
   float total_elevation() const { return total_elevation_; }
 
  private:
+#if defined(OS_FUCHSIA)
+  bool needs_scenic_surface_ = false;
+  bool children_need_system_compositing_ = false;
+#endif
   SkColor color_;
   SkColor shadow_color_;
   float elevation_ = 0.0f;

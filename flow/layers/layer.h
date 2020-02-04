@@ -66,6 +66,11 @@ struct PrerollContext {
   float total_elevation = 0.0f;
   bool has_platform_view = false;
   bool is_opaque = true;
+#if defined(OS_FUCHSIA)
+  // True if, at the given moment in Preroll, a ChildSceneLayer has been
+  // previously traversed.
+  bool child_scene_layer_exists_below = false;
+#endif
 };
 
 // Represents a single composited layer. Created on the UI thread but then

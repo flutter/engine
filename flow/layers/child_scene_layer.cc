@@ -21,6 +21,8 @@ void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ChildSceneLayer::Preroll");
   set_needs_system_composite(true);
 
+  context->child_scene_layer_exists_below = true;
+
   // An alpha "hole punch" is required if the frame behind us is not opaque.
   if (!context->is_opaque) {
     set_paint_bounds(

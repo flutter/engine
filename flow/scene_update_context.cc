@@ -4,6 +4,7 @@
 
 #include "flutter/flow/scene_update_context.h"
 
+#include <cfloat>
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/fml/trace_event.h"
@@ -72,14 +73,13 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
   // and possibly for its texture.
   // TODO(SCN-137): Need to be able to express the radii as vectors.
   scenic::ShapeNode shape_node(session());
-  scenic::RoundedRectangle shape(
-      session_,                                      // session
-      rrect.width(),                                 // width
-      rrect.height(),                                // height
-      rrect.radii(SkRRect::kUpperLeft_Corner).x(),   // top_left_radius
-      rrect.radii(SkRRect::kUpperRight_Corner).x(),  // top_right_radius
-      rrect.radii(SkRRect::kLowerRight_Corner).x(),  // bottom_right_radius
-      rrect.radii(SkRRect::kLowerLeft_Corner).x()    // bottom_left_radius
+  scenic::RoundedRectangle shape(session_,        // session
+                                 rrect.width(),   // width
+                                 rrect.height(),  // height
+                                 0.f,             // top_left_radius
+                                 0.f,             // top_right_radius
+                                 0.f,             // bottom_right_radius
+                                 0.f              // bottom_left_radius
   );
   shape_node.SetShape(shape);
   shape_node.SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
@@ -222,6 +222,7 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
     surfaces_to_submit.emplace_back(std::move(task.surface));
   }
   paint_tasks_.clear();
+  scenic_elevation_ = 0.f;
   return surfaces_to_submit;
 }
 
@@ -249,9 +250,11 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
     // are not handled correctly.
     MatrixDecomposition decomposition(transform);
     if (decomposition.IsValid()) {
+      // Scenic elevation is calculated independently based on z order,
+      // so do not modify the z translation.
       entity_node().SetTranslation(decomposition.translation().x(),  //
                                    decomposition.translation().y(),  //
-                                   -decomposition.translation().z()  //
+                                   0.f
       );
 
       entity_node().SetScale(decomposition.scale().x(),  //
@@ -315,11 +318,12 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
     const float parent_elevation = world_elevation - local_elevation;
     local_elevation = depth - parent_elevation;
   }
-  if (local_elevation != 0.0) {
-    entity_node().SetTranslation(0.f, 0.f, -local_elevation);
-  }
+  // Simply increase the Scenic elevation by 10 everytime a frame is created,
+  // so that the elevation matches the z order.
+  entity_node().SetTranslation(0.f, 0.f, -context.scenic_elevation_);
+  context.scenic_elevation_ += 10;
   entity_node().AddChild(opacity_node_);
-  opacity_node_.SetOpacity(opacity_ / 255.0f);
+  opacity_node_.SetOpacity(std::min(1 - FLT_EPSILON, opacity_ / 255.0f));
 }
 
 SceneUpdateContext::Frame::~Frame() {

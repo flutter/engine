@@ -180,6 +180,11 @@ class SceneUpdateContext {
     return surface_producer_->GetRetainedNode(key);
   }
 
+  // The elevation to assign to the next created Frame. This gets incremented
+  // everytime a new Frame is created, so that each new Frame is on top of the
+  // previous frames.
+  float scenic_elevation_ = 0.f;
+
  private:
   struct PaintTask {
     std::unique_ptr<SurfaceProducerSurface> surface;
