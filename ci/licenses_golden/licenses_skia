@@ -1,4 +1,4 @@
-Signature: 2867cf3b5f97ab36a41629c7cf80fd1d
+Signature: 36875dca0b44ca56ffdb6a9227249afb
 
 UNUSED LICENSES:
 
@@ -1881,9 +1881,9 @@ FILE: ../../../third_party/skia/gm/smallarc.cpp
 FILE: ../../../third_party/skia/gm/stroketext.cpp
 FILE: ../../../third_party/skia/gm/surface.cpp
 FILE: ../../../third_party/skia/gm/tallstretchedbitmaps.cpp
+FILE: ../../../third_party/skia/gm/texelsubset.cpp
 FILE: ../../../third_party/skia/gm/textblob.cpp
 FILE: ../../../third_party/skia/gm/textblobshader.cpp
-FILE: ../../../third_party/skia/gm/texturedomaineffect.cpp
 FILE: ../../../third_party/skia/gm/tiledscaledbitmap.cpp
 FILE: ../../../third_party/skia/gm/variedtext.cpp
 FILE: ../../../third_party/skia/gm/yuvtorgbeffect.cpp
@@ -3729,7 +3729,6 @@ FILE: ../../../third_party/skia/modules/skottie/gm/ExternalProperties.cpp
 FILE: ../../../third_party/skia/modules/skottie/gm/SkottieGM.cpp
 FILE: ../../../third_party/skia/modules/skottie/include/Skottie.h
 FILE: ../../../third_party/skia/modules/skottie/src/Skottie.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/SkottieAnimator.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieValue.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieValue.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGDraw.h
@@ -5613,6 +5612,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/3d.cpp
 FILE: ../../../third_party/skia/gm/bicubic.cpp
 FILE: ../../../third_party/skia/gm/compressed_textures.cpp
+FILE: ../../../third_party/skia/gm/exoticformats.cpp
 FILE: ../../../third_party/skia/gm/skbug_9819.cpp
 FILE: ../../../third_party/skia/gm/strokerect_anisotropic.cpp
 FILE: ../../../third_party/skia/include/private/SkM44.h
@@ -5621,6 +5621,7 @@ FILE: ../../../third_party/skia/modules/skottie/src/Animator.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Animator.h
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.h
+FILE: ../../../third_party/skia/modules/skottie/src/Path.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Transform.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Transform.h
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Ellipse.cpp
