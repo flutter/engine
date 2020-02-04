@@ -21,6 +21,15 @@ part of dart.ui;
 /// JPEG, PNG, GIF, Animated GIF, WebP, Animated WebP, BMP, and WBMP
 /// {@endtemplate}
 
+// TODO(dnfield): remove this after migration is complete: https://github.com/flutter/flutter/issues/50070
+// ignore_for_file: deprecated_member_use_from_same_package
+/// Controls whether [Color.lerp], [Gradient.linear], [Gradient.radial], and
+/// [Gradient.sweep] interpolate colors in premultiplied space or not.
+///
+/// This flag is used only for temporary migration purposes.
+@Deprecated('This flag only exists for temporary migration purposes and should not be used')
+bool interpolateColorsInPremul = false;
+
 bool _rectIsValid(Rect rect) {
   assert(rect != null, 'Rect argument was null.');
   assert(!rect.hasNaN, 'Rect argument contained a NaN value.');
@@ -264,11 +273,22 @@ class Color {
       return _scaleAlpha(b, t);
     if (b == null)
       return _scaleAlpha(a, 1.0 - t);
+
+    double opacityT = t;
+    if (interpolateColorsInPremul && (a.alpha != 255 || b.alpha != 255)) {
+      final double aOpacityAtT = (1 - t) * a.opacity;
+      final double bOpacityAtT = t * b.opacity;
+      final double combinedOpacityAtT = aOpacityAtT + bOpacityAtT;
+      opacityT = combinedOpacityAtT > 0
+        ? bOpacityAtT / combinedOpacityAtT
+        : 0.0;
+    }
+
     return Color.fromARGB(
       lerpDouble(a.alpha, b.alpha, t).toInt().clamp(0, 255) as int,
-      lerpDouble(a.red, b.red, t).toInt().clamp(0, 255) as int,
-      lerpDouble(a.green, b.green, t).toInt().clamp(0, 255) as int,
-      lerpDouble(a.blue, b.blue, t).toInt().clamp(0, 255) as int,
+      lerpDouble(a.red, b.red, opacityT).toInt().clamp(0, 255) as int,
+      lerpDouble(a.green, b.green, opacityT).toInt().clamp(0, 255) as int,
+      lerpDouble(a.blue, b.blue, opacityT).toInt().clamp(0, 255) as int,
     );
   }
 
@@ -3031,9 +3051,9 @@ class Gradient extends Shader {
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
-    _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
+    _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4, interpolateColorsInPremul);
   }
-  void _initLinear(Float32List endPoints, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4) native 'Gradient_initLinear';
+  void _initLinear(Float32List endPoints, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4, bool interpolateColorsInPremul) native 'Gradient_initLinear';
 
   /// Creates a radial gradient centered at `center` that ends at `radius`
   /// distance from the center.
@@ -3072,7 +3092,7 @@ class Gradient extends Shader {
     TileMode tileMode = TileMode.clamp,
     Float64List matrix4,
     Offset focal,
-    double focalRadius = 0.0
+    double focalRadius = 0.0,
   ]) : assert(_offsetIsValid(center)),
        assert(colors != null),
        assert(tileMode != null),
@@ -3087,15 +3107,15 @@ class Gradient extends Shader {
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
     if (focal == null || (focal == center && focalRadius == 0.0)) {
       _constructor();
-      _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
+      _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4, interpolateColorsInPremul);
     } else {
       assert(center != Offset.zero || focal != Offset.zero); // will result in exception(s) in Skia side
       _constructor();
-      _initConical(focal.dx, focal.dy, focalRadius, center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
+      _initConical(focal.dx, focal.dy, focalRadius, center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4, interpolateColorsInPremul);
     }
   }
-  void _initRadial(double centerX, double centerY, double radius, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4) native 'Gradient_initRadial';
-  void _initConical(double startX, double startY, double startRadius, double endX, double endY, double endRadius, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4) native 'Gradient_initTwoPointConical';
+  void _initRadial(double centerX, double centerY, double radius, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4, bool interpolateColorsInPremul) native 'Gradient_initRadial';
+  void _initConical(double startX, double startY, double startRadius, double endX, double endY, double endRadius, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4, bool interpolateColorsInPremul) native 'Gradient_initTwoPointConical';
 
   /// Creates a sweep gradient centered at `center` that starts at `startAngle`
   /// and ends at `endAngle`.
@@ -3143,9 +3163,9 @@ class Gradient extends Shader {
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
-    _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer, tileMode.index, startAngle, endAngle, matrix4);
+    _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer, tileMode.index, startAngle, endAngle, matrix4, interpolateColorsInPremul);
   }
-  void _initSweep(double centerX, double centerY, Int32List colors, Float32List colorStops, int tileMode, double startAngle, double endAngle, Float64List matrix) native 'Gradient_initSweep';
+  void _initSweep(double centerX, double centerY, Int32List colors, Float32List colorStops, int tileMode, double startAngle, double endAngle, Float64List matrix, bool interpolateColorsInPremul) native 'Gradient_initSweep';
 
   static void _validateColorStops(List<Color> colors, List<double> colorStops) {
     if (colorStops == null) {

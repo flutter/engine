@@ -4,6 +4,15 @@
 
 part of ui;
 
+// TODO(dnfield): remove this after migration is complete: https://github.com/flutter/flutter/issues/50070
+// ignore_for_file: deprecated_member_use_from_same_package
+/// Controls whether [Color.lerp], [Gradient.linear], [Gradient.radial], and
+/// [Gradient.sweep] interpolate colors in premultiplied space or not.
+///
+/// This flag is used only for temporary migration purposes.
+@Deprecated('This flag only exists for temporary migration purposes and should not be used')
+bool interpolateColorsInPremul = false;
+
 // ignore: unused_element, Used in Shader assert.
 bool _offsetIsValid(Offset offset) {
   assert(offset != null, 'Offset argument was null.');
@@ -180,11 +189,21 @@ class Color {
     if (b == null) {
       return _scaleAlpha(a, 1.0 - t);
     }
+    double opacityT = t;
+    if (interpolateColorsInPremul && (a.alpha != 255 || b.alpha != 255)) {
+      final double aOpacityAtT = (1 - t) * a.opacity;
+      final double bOpacityAtT = t * b.opacity;
+      final double combinedOpacityAtT = aOpacityAtT + bOpacityAtT;
+      opacityT = combinedOpacityAtT > 0
+        ? bOpacityAtT / combinedOpacityAtT
+        : 0.0;
+    }
+
     return Color.fromARGB(
-      lerpDouble(a.alpha, b.alpha, t).toInt().clamp(0, 255),
-      lerpDouble(a.red, b.red, t).toInt().clamp(0, 255),
-      lerpDouble(a.green, b.green, t).toInt().clamp(0, 255),
-      lerpDouble(a.blue, b.blue, t).toInt().clamp(0, 255),
+      lerpDouble(a.alpha, b.alpha, t).toInt().clamp(0, 255) as int,
+      lerpDouble(a.red, b.red, opacityT).toInt().clamp(0, 255) as int,
+      lerpDouble(a.green, b.green, opacityT).toInt().clamp(0, 255) as int,
+      lerpDouble(a.blue, b.blue, opacityT).toInt().clamp(0, 255) as int,
     );
   }
 

@@ -43,7 +43,8 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
                                 const tonic::Int32List& colors,
                                 const tonic::Float32List& color_stops,
                                 SkTileMode tile_mode,
-                                const tonic::Float64List& matrix4) {
+                                const tonic::Float64List& matrix4,
+                                bool interpolate_colors_in_premul) {
   FML_DCHECK(end_points.num_elements() == 4);
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
@@ -62,7 +63,11 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
   set_shader(UIDartState::CreateGPUObject(SkGradientShader::MakeLinear(
       reinterpret_cast<const SkPoint*>(end_points.data()),
       reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
-      colors.num_elements(), tile_mode, 0, has_matrix ? &sk_matrix : nullptr)));
+      colors.num_elements(), tile_mode,
+      interpolate_colors_in_premul
+          ? SkGradientShader::Flags::kInterpolateColorsInPremul_Flag
+          : 0,
+      has_matrix ? &sk_matrix : nullptr)));
 }
 
 void CanvasGradient::initRadial(double center_x,
@@ -71,7 +76,8 @@ void CanvasGradient::initRadial(double center_x,
                                 const tonic::Int32List& colors,
                                 const tonic::Float32List& color_stops,
                                 SkTileMode tile_mode,
-                                const tonic::Float64List& matrix4) {
+                                const tonic::Float64List& matrix4,
+                                bool interpolate_colors_in_premul) {
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
 
@@ -87,7 +93,11 @@ void CanvasGradient::initRadial(double center_x,
   set_shader(UIDartState::CreateGPUObject(SkGradientShader::MakeRadial(
       SkPoint::Make(center_x, center_y), radius,
       reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
-      colors.num_elements(), tile_mode, 0, has_matrix ? &sk_matrix : nullptr)));
+      colors.num_elements(), tile_mode,
+      interpolate_colors_in_premul
+          ? SkGradientShader::Flags::kInterpolateColorsInPremul_Flag
+          : 0,
+      has_matrix ? &sk_matrix : nullptr)));
 }
 
 void CanvasGradient::initSweep(double center_x,
@@ -97,7 +107,8 @@ void CanvasGradient::initSweep(double center_x,
                                SkTileMode tile_mode,
                                double start_angle,
                                double end_angle,
-                               const tonic::Float64List& matrix4) {
+                               const tonic::Float64List& matrix4,
+                               bool interpolate_colors_in_premul) {
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
 
@@ -113,7 +124,10 @@ void CanvasGradient::initSweep(double center_x,
   set_shader(UIDartState::CreateGPUObject(SkGradientShader::MakeSweep(
       center_x, center_y, reinterpret_cast<const SkColor*>(colors.data()),
       color_stops.data(), colors.num_elements(), tile_mode,
-      start_angle * 180.0 / M_PI, end_angle * 180.0 / M_PI, 0,
+      start_angle * 180.0 / M_PI, end_angle * 180.0 / M_PI,
+      interpolate_colors_in_premul
+          ? SkGradientShader::Flags::kInterpolateColorsInPremul_Flag
+          : 0,
       has_matrix ? &sk_matrix : nullptr)));
 }
 
@@ -126,7 +140,8 @@ void CanvasGradient::initTwoPointConical(double start_x,
                                          const tonic::Int32List& colors,
                                          const tonic::Float32List& color_stops,
                                          SkTileMode tile_mode,
-                                         const tonic::Float64List& matrix4) {
+                                         const tonic::Float64List& matrix4,
+                                         bool interpolate_colors_in_premul) {
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
 
@@ -143,7 +158,11 @@ void CanvasGradient::initTwoPointConical(double start_x,
       SkPoint::Make(start_x, start_y), start_radius,
       SkPoint::Make(end_x, end_y), end_radius,
       reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
-      colors.num_elements(), tile_mode, 0, has_matrix ? &sk_matrix : nullptr)));
+      colors.num_elements(), tile_mode,
+      interpolate_colors_in_premul
+          ? SkGradientShader::Flags::kInterpolateColorsInPremul_Flag
+          : 0,
+      has_matrix ? &sk_matrix : nullptr)));
 }
 
 CanvasGradient::CanvasGradient() = default;

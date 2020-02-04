@@ -32,15 +32,16 @@ class CanvasGradient : public Shader {
                   const tonic::Int32List& colors,
                   const tonic::Float32List& color_stops,
                   SkTileMode tile_mode,
-                  const tonic::Float64List& matrix4);
-
+                  const tonic::Float64List& matrix4,
+                  bool interpolate_colors_in_premul);
   void initRadial(double center_x,
                   double center_y,
                   double radius,
                   const tonic::Int32List& colors,
                   const tonic::Float32List& color_stops,
                   SkTileMode tile_mode,
-                  const tonic::Float64List& matrix4);
+                  const tonic::Float64List& matrix4,
+                  bool interpolate_colors_in_premul);
 
   void initSweep(double center_x,
                  double center_y,
@@ -49,7 +50,8 @@ class CanvasGradient : public Shader {
                  SkTileMode tile_mode,
                  double start_angle,
                  double end_angle,
-                 const tonic::Float64List& matrix4);
+                 const tonic::Float64List& matrix4,
+                 bool interpolate_colors_in_premul);
 
   void initTwoPointConical(double start_x,
                            double start_y,
@@ -60,7 +62,8 @@ class CanvasGradient : public Shader {
                            const tonic::Int32List& colors,
                            const tonic::Float32List& color_stops,
                            SkTileMode tile_mode,
-                           const tonic::Float64List& matrix4);
+                           const tonic::Float64List& matrix4,
+                           bool interpolate_colors_in_premul);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

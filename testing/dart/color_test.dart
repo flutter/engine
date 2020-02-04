@@ -55,7 +55,9 @@ void main() {
     expect(const NotAColor(123), equals(const NotAColor(123)));
   });
 
-  test('Color.lerp', () {
+  test('Color.lerp - no premul', () {
+    final bool previousValue = interpolateColorsInPremul;
+    interpolateColorsInPremul = false;
     expect(
       Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), 0.0),
       const Color(0x00000000),
@@ -76,6 +78,33 @@ void main() {
       Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), 1.1),
       const Color(0xFFFFFFFF),
     );
+    interpolateColorsInPremul = previousValue;
+  });
+
+  test('Color.lerp - premul', () {
+    final bool previousValue = interpolateColorsInPremul;
+    interpolateColorsInPremul = true;
+    expect(
+      Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), 0.0),
+      const Color(0x00000000),
+    );
+    expect(
+      Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), 0.5),
+      const Color(0x7FFFFFFF),
+    );
+    expect(
+      Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), 1.0),
+      const Color(0xFFFFFFFF),
+    );
+    expect(
+      Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), -0.1),
+      const Color(0x00000000),
+    );
+    expect(
+      Color.lerp(const Color(0x00000000), const Color(0xFFFFFFFF), 1.1),
+      const Color(0xFFFFFFFF),
+    );
+    interpolateColorsInPremul = previousValue;
   });
 
   test('Color.alphaBlend', () {
