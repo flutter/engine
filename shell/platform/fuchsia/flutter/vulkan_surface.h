@@ -134,9 +134,9 @@ class VulkanSurface final
   // |EntityNode| associated with the retained surface instead of using the
   // retained surface directly. Hence Flutter can't modify the surface during
   // retained rendering.
-  const scenic::EntityNode& GetRetainedNode() {
+  scenic::EntityNode* GetRetainedNode() {
     used_in_retained_rendering_ = true;
-    return *retained_node_;
+    return retained_node_.get();
   }
 
   // Check whether the retained surface (and its associated |EntityNode|) is
