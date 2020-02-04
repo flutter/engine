@@ -1,4 +1,4 @@
-Signature: d4172921f48473fbb848a21f0ec3b6da
+Signature: 12295aedef8792d26b66a9a33247a037
 
 UNUSED LICENSES:
 
@@ -7755,6 +7755,8 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart
 FILE: ../../../third_party/dart/benchmarks/TypedDataDuplicate/dart/TypedDataDuplicate.dart
 FILE: ../../../third_party/dart/runtime/observatory/bin/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/call.cc
@@ -7771,6 +7773,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_representation.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_representation.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.h
+FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
+FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
 FILE: ../../../third_party/dart/runtime/vm/field_table.cc
 FILE: ../../../third_party/dart/runtime/vm/field_table.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
