@@ -202,7 +202,7 @@ void main() async {
     );
     // Above the first line.
     expect(
-      paragraph.getPositionForOffset(Offset(0, -5)),
+      paragraph.getPositionForOffset(Offset(0, -15)),
       TextPosition(offset: 0, affinity: TextAffinity.downstream),
     );
     // At the end of the first line.

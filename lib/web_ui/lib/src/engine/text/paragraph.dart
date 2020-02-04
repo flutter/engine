@@ -383,6 +383,14 @@ class EngineParagraph implements ui.Paragraph {
       return getPositionForMultiSpanOffset(offset);
     }
 
+    // [offset] is above all the lines.
+    if (offset.dy < 0) {
+      return ui.TextPosition(
+        offset: 0,
+        affinity: ui.TextAffinity.downstream,
+      );
+    }
+
     final int lineNumber = offset.dy ~/ _measurementResult.lineHeight;
 
     // [offset] is below all the lines.
