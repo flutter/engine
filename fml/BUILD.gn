@@ -202,6 +202,9 @@ source_set("fml") {
       "platform/win/paths_win.cc",
       "platform/win/wstring_conversion.h",
     ]
+
+    # For wstring_conversion. See issue #50053.
+    defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
   } else {
     sources += [
       "platform/posix/file_posix.cc",
