@@ -43,8 +43,8 @@ source_set("flutter_windows_source") {
   sources = [
     "angle_surface_manager.cc",
     "angle_surface_manager.h",
-    "dpi_utils.h",
     "dpi_utils.cc",
+    "dpi_utils.h",
     "flutter_windows.cc",
     "key_event_handler.cc",
     "key_event_handler.h",
