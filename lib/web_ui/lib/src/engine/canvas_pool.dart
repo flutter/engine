@@ -252,7 +252,9 @@ class _CanvasPool extends _SaveStackTracking {
     // We always start with identity transform because the surrounding transform
     // is applied on the DOM elements.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, _widthInBitmapPixels, _heightInBitmapPixels);
+    if (clearCanvas) {
+      ctx.clearRect(0, 0, _widthInBitmapPixels, _heightInBitmapPixels);
+    }
 
     // This scale makes sure that 1 CSS pixel is translated to the correct
     // number of bitmap pixels.
