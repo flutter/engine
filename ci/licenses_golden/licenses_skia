@@ -1,4 +1,4 @@
-Signature: f3a249baaa5edd8c55bea9e6a36c8836
+Signature: 5f58c1c91491a7ae19349347e7718f09
 
 UNUSED LICENSES:
 
@@ -1259,8 +1259,8 @@ FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Debian9-Cl
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Debian9-Clang-NUC5PPYH-GPU-IntelHD405-x86_64-Release-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Debian9-Clang-NUC7i5BNK-GPU-IntelIris640-x86_64-Debug-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacBook10.1-GPU-IntelHD615-x86_64-Debug-All-CommandBuffer.json
-FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacBook10.1-GPU-IntelHD615-x86_64-Release-All-Metal.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacBook10.1-GPU-IntelHD615-x86_64-Release-All-NativeFonts.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacBookPro11.5-CPU-AVX2-x86_64-Debug-All-PDF.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacBookPro11.5-CPU-AVX2-x86_64-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacBookPro11.5-GPU-RadeonHD8870M-x86_64-Debug-All-Metal.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Mac10.13-Clang-MacMini7.1-GPU-IntelIris5100-x86_64-Debug-All-CommandBuffer.json
@@ -1881,9 +1881,9 @@ FILE: ../../../third_party/skia/gm/smallarc.cpp
 FILE: ../../../third_party/skia/gm/stroketext.cpp
 FILE: ../../../third_party/skia/gm/surface.cpp
 FILE: ../../../third_party/skia/gm/tallstretchedbitmaps.cpp
+FILE: ../../../third_party/skia/gm/texelsubset.cpp
 FILE: ../../../third_party/skia/gm/textblob.cpp
 FILE: ../../../third_party/skia/gm/textblobshader.cpp
-FILE: ../../../third_party/skia/gm/texturedomaineffect.cpp
 FILE: ../../../third_party/skia/gm/tiledscaledbitmap.cpp
 FILE: ../../../third_party/skia/gm/variedtext.cpp
 FILE: ../../../third_party/skia/gm/yuvtorgbeffect.cpp
@@ -3362,7 +3362,6 @@ FILE: ../../../third_party/skia/include/utils/SkTextUtils.h
 FILE: ../../../third_party/skia/infra/cts/run_testlab.go
 FILE: ../../../third_party/skia/modules/skottie/gm/3dgm.cpp
 FILE: ../../../third_party/skia/modules/skottie/include/SkottieProperty.h
-FILE: ../../../third_party/skia/modules/skottie/src/SkottieAdapter.h
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieJson.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieJson.h
 FILE: ../../../third_party/skia/modules/skottie/src/SkottiePriv.h
@@ -3730,7 +3729,6 @@ FILE: ../../../third_party/skia/modules/skottie/gm/ExternalProperties.cpp
 FILE: ../../../third_party/skia/modules/skottie/gm/SkottieGM.cpp
 FILE: ../../../third_party/skia/modules/skottie/include/Skottie.h
 FILE: ../../../third_party/skia/modules/skottie/src/Skottie.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/SkottieAnimator.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieValue.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieValue.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGDraw.h
@@ -5127,8 +5125,6 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpEffect.cp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpRedEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpRedEffect.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrCoverShader.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrCoverShader.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrGpuTessellationPathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrGpuTessellationPathRenderer.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStencilPathShader.cpp
@@ -5229,8 +5225,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/docs/examples/BlendModes.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/docs/examples/50_percent_gray.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/docs/examples/50_percent_gray.cpp
+FILE: ../../../third_party/skia/docs/examples/50_percent_srgb.cpp
 FILE: ../../../third_party/skia/docs/examples/BlendModes.cpp
 FILE: ../../../third_party/skia/docs/examples/ChromeMDRefreshTab.cpp
 FILE: ../../../third_party/skia/docs/examples/ChromeMDRefreshTabs.cpp
@@ -5273,6 +5271,7 @@ FILE: ../../../third_party/skia/docs/examples/bug5252.cpp
 FILE: ../../../third_party/skia/docs/examples/bug583299.cpp
 FILE: ../../../third_party/skia/docs/examples/bug6495.cpp
 FILE: ../../../third_party/skia/docs/examples/bug7573.cpp
+FILE: ../../../third_party/skia/docs/examples/bug7573_1.cpp
 FILE: ../../../third_party/skia/docs/examples/bug767834.cpp
 FILE: ../../../third_party/skia/docs/examples/bugoftheday.cpp
 FILE: ../../../third_party/skia/docs/examples/checker_board.cpp
@@ -5299,6 +5298,7 @@ FILE: ../../../third_party/skia/docs/examples/draw_text_fails.cpp
 FILE: ../../../third_party/skia/docs/examples/draw_vertices.cpp
 FILE: ../../../third_party/skia/docs/examples/drawarcs.cpp
 FILE: ../../../third_party/skia/docs/examples/example3ps.cpp
+FILE: ../../../third_party/skia/docs/examples/f16.cpp
 FILE: ../../../third_party/skia/docs/examples/f16to8888busted.cpp
 FILE: ../../../third_party/skia/docs/examples/f16to8888drawImageBug.cpp
 FILE: ../../../third_party/skia/docs/examples/failing_example.cpp
@@ -5309,6 +5309,7 @@ FILE: ../../../third_party/skia/docs/examples/fluttershadow.cpp
 FILE: ../../../third_party/skia/docs/examples/gamma_mask_filter.cpp
 FILE: ../../../third_party/skia/docs/examples/getLocalBounds_broken.cpp
 FILE: ../../../third_party/skia/docs/examples/getLocalBounds_working.cpp
+FILE: ../../../third_party/skia/docs/examples/gpu4444diff.cpp
 FILE: ../../../third_party/skia/docs/examples/gpu8888diff.cpp
 FILE: ../../../third_party/skia/docs/examples/gpuconicbug.cpp
 FILE: ../../../third_party/skia/docs/examples/homogeneous.cpp
@@ -5339,6 +5340,7 @@ FILE: ../../../third_party/skia/docs/examples/rotations.cpp
 FILE: ../../../third_party/skia/docs/examples/setimagefilter.cpp
 FILE: ../../../third_party/skia/docs/examples/shader.cpp
 FILE: ../../../third_party/skia/docs/examples/shader_alphaimage.cpp
+FILE: ../../../third_party/skia/docs/examples/shapes.cpp
 FILE: ../../../third_party/skia/docs/examples/shapes_with_motion.cpp
 FILE: ../../../third_party/skia/docs/examples/skbug6031.cpp
 FILE: ../../../third_party/skia/docs/examples/skbug_237_drawImageRect.cpp
@@ -5382,6 +5384,7 @@ FILE: ../../../third_party/skia/docs/examples/subset_example.cpp
 FILE: ../../../third_party/skia/docs/examples/sum_path_effect.cpp
 FILE: ../../../third_party/skia/docs/examples/sweep_gradient_talk_1.cpp
 FILE: ../../../third_party/skia/docs/examples/sweep_gradient_talk_2.cpp
+FILE: ../../../third_party/skia/docs/examples/sweep_gradient_talk_4.cpp
 FILE: ../../../third_party/skia/docs/examples/sweep_gradient_talk_lots.cpp
 FILE: ../../../third_party/skia/docs/examples/text_only.cpp
 FILE: ../../../third_party/skia/docs/examples/text_rendering.cpp
@@ -5390,6 +5393,9 @@ FILE: ../../../third_party/skia/docs/examples/unexpected_setAlphaType.cpp
 FILE: ../../../third_party/skia/docs/examples/upscale_checkerboard.cpp
 FILE: ../../../third_party/skia/docs/examples/weird_RRect_bug.cpp
 FILE: ../../../third_party/skia/docs/examples/zero_off_dashing.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrFillPathShader.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrFillPathShader.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathShader.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC.
 
@@ -5604,8 +5610,10 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/3d.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/3d.cpp
+FILE: ../../../third_party/skia/gm/bc1_transparency.cpp
 FILE: ../../../third_party/skia/gm/bicubic.cpp
 FILE: ../../../third_party/skia/gm/compressed_textures.cpp
+FILE: ../../../third_party/skia/gm/exoticformats.cpp
 FILE: ../../../third_party/skia/gm/skbug_9819.cpp
 FILE: ../../../third_party/skia/gm/strokerect_anisotropic.cpp
 FILE: ../../../third_party/skia/include/private/SkM44.h
@@ -5614,9 +5622,11 @@ FILE: ../../../third_party/skia/modules/skottie/src/Animator.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Animator.h
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.h
+FILE: ../../../third_party/skia/modules/skottie/src/Path.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Transform.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Transform.h
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Ellipse.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/FillStroke.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Gradient.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/MergePaths.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Polystar.cpp

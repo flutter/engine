@@ -603,6 +603,8 @@ FILE: ../../../flutter/shell/gpu/gpu_surface_software_delegate.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_software_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan.h
+FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.cc
+FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.h
 FILE: ../../../flutter/shell/platform/android/AndroidManifest.xml
 FILE: ../../../flutter/shell/platform/android/android_context_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_context_gl.h
@@ -1025,6 +1027,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/extract_far.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/framework_shim.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/libraries.json
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/logging.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/loop.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/loop.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/main.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_product_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_runtime
@@ -1032,6 +1036,7 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_product_r
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_product_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_runner.cmx
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_runner_scenic_tests.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_runner_tests.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_runner_tzdata_tests.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/jit_product_runtime
@@ -1047,6 +1052,12 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/session_connection.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/session_connection.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_observers.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/thread.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/unique_fdio_ns.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_recorder.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_recorder.h
