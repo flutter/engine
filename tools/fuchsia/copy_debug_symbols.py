@@ -91,7 +91,7 @@ def main():
 
   success = False
   # Multiple processes may be trying to create the same directory.
-  #TODO(dnfield): use exist_ok when we upgrade to python 3, rather than try
+  # TODO(dnfield): use exist_ok when we upgrade to python 3, rather than try
   try:
     os.makedirs(dbg_prefix_base)
   except OSError as e:
