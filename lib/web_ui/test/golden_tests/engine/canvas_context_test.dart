@@ -29,7 +29,7 @@ void main() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      await matchGoldenFile('$fileName.png', region: region, write:true);
+      await matchGoldenFile('$fileName.png', region: region);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -75,12 +75,12 @@ void main() async {
 
   test('Should restore clip path', () async {
     final engine.RecordingCanvas rc =
-    engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
+        engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     final Paint goodPaint = Paint()
-      ..color = Color(0xFF00FF00)
+      ..color = Color(0x8000FF00)
       ..style = PaintingStyle.fill;
     final Paint badPaint = Paint()
-      ..color = Color(0xFF00FF00)
+      ..color = Color(0xFFFF0000)
       ..style = PaintingStyle.fill;
     rc.save();
     final Path ovalPath = Path();
@@ -90,7 +90,7 @@ void main() async {
     rc.save();
     rc.restore();
     // The rectangle should be clipped against oval.
-    rc.drawRect(Rect.fromLTWH(0, 0, 200, 200), badPaint);
+    rc.drawRect(Rect.fromLTWH(0, 0, 300, 300), badPaint);
     rc.restore();
     // The rectangle should paint without clipping since we restored
     // context.

@@ -132,8 +132,8 @@ class _CanvasPool extends _SaveStackTracking {
     translate(transform.dx, transform.dy);
   }
 
-  int _replaySingleSaveEntry(
-      int clipDepth, Matrix4 prevTransform, Matrix4 transform, List<_SaveClipEntry> clipStack) {
+  int _replaySingleSaveEntry(int clipDepth, Matrix4 prevTransform,
+      Matrix4 transform, List<_SaveClipEntry> clipStack) {
     final html.CanvasRenderingContext2D ctx = _context;
     if (clipStack != null) {
       for (int clipCount = clipStack.length;
@@ -141,17 +141,23 @@ class _CanvasPool extends _SaveStackTracking {
           clipDepth++) {
         _SaveClipEntry clipEntry = clipStack[clipDepth];
         Matrix4 clipTimeTransform = clipEntry.currentTransform;
+        // If transform for entry recording change since last element, update.
+        // Comparing only matrix3 elements since Canvas API restricted.
         if (clipTimeTransform[0] != prevTransform[0] ||
             clipTimeTransform[1] != prevTransform[1] ||
             clipTimeTransform[4] != prevTransform[4] ||
             clipTimeTransform[5] != prevTransform[5] ||
             clipTimeTransform[12] != prevTransform[12] ||
-            clipTimeTransform[13] != prevTransform[13]
-          ) {
+            clipTimeTransform[13] != prevTransform[13]) {
           final double ratio = EngineWindow.browserDevicePixelRatio;
           ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-          ctx.transform(clipTimeTransform[0], clipTimeTransform[1], clipTimeTransform[4], clipTimeTransform[5],
-              clipTimeTransform[12], clipTimeTransform[13]);
+          ctx.transform(
+              clipTimeTransform[0],
+              clipTimeTransform[1],
+              clipTimeTransform[4],
+              clipTimeTransform[5],
+              clipTimeTransform[12],
+              clipTimeTransform[13]);
           prevTransform = clipTimeTransform;
         }
         if (clipEntry.rect != null) {
@@ -164,6 +170,8 @@ class _CanvasPool extends _SaveStackTracking {
         }
       }
     }
+    // If transform was changed between last clip operation and save call,
+    // update.
     if (transform[0] != prevTransform[0] ||
         transform[1] != prevTransform[1] ||
         transform[4] != prevTransform[4] ||
@@ -193,7 +201,8 @@ class _CanvasPool extends _SaveStackTracking {
       ctx.save();
       ++_saveContextCount;
     }
-    _replaySingleSaveEntry(clipDepth, prevTransform, _currentTransform, _clipStack);
+    _replaySingleSaveEntry(
+        clipDepth, prevTransform, _currentTransform, _clipStack);
   }
 
   // Marks this pool for reuse.
@@ -283,7 +292,6 @@ class _CanvasPool extends _SaveStackTracking {
 
   @override
   void translate(double dx, double dy) {
-    //var testContext = context;
     super.translate(dx, dy);
     if (_canvas != null) {
       context.translate(dx, dy);

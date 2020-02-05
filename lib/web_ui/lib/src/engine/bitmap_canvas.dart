@@ -655,8 +655,6 @@ String _stringForBlendMode(ui.BlendMode blendMode) {
       return 'color';
     case ui.BlendMode.luminosity:
       return 'luminosity';
-    case ui.BlendMode.clear:
-      return 'clear';
     default:
       throw UnimplementedError(
           'Flutter Web does not support the blend mode: $blendMode');
