@@ -75,7 +75,6 @@ class _CanvasPool extends _SaveStackTracking {
 
   void _createCanvas() {
     bool requiresClearRect = false;
-    print('-- alloc canvas');
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
       requiresClearRect = true;
@@ -102,14 +101,8 @@ class _CanvasPool extends _SaveStackTracking {
     _rootElement.append(_canvas);
     _context = _canvas.context2D;
     _contextHandle = ContextStateHandle(_context);
-    _initializeViewport();
-    if (requiresClearRect) {
-      // Now that the context is reset, clear old contents.
-      _context.clearRect(0, 0, _widthInBitmapPixels, _heightInBitmapPixels);
-    }
-    print('[[[start replay');
+    _initializeViewport(requiresClearRect);
     _replayClipStack();
-    print('[[[end replay');
   }
 
   @override
@@ -160,17 +153,12 @@ class _CanvasPool extends _SaveStackTracking {
           ctx.transform(clipTimeTransform[0], clipTimeTransform[1], clipTimeTransform[4], clipTimeTransform[5],
               clipTimeTransform[12], clipTimeTransform[13]);
           prevTransform = clipTimeTransform;
-          print('rply:: transform clip to (${prevTransform[0]}, ${prevTransform[1]}, ${prevTransform[4]}, ${prevTransform[5]},'
-              ' ${prevTransform[12]}, ${prevTransform[13]})');
         }
         if (clipEntry.rect != null) {
           _clipRect(ctx, clipEntry.rect);
-          print('rply:: clipRect(${clipEntry.rect.left}, ${clipEntry.rect.top}, ${clipEntry.rect.width}, ${clipEntry.rect.height})');
         } else if (clipEntry.rrect != null) {
-          print('rply:: clipRRect');
           _clipRRect(ctx, clipEntry.rrect);
         } else if (clipEntry.path != null) {
-          print('rply:: clipPath');
           _runPath(ctx, clipEntry.path);
           ctx.clip();
         }
@@ -186,8 +174,6 @@ class _CanvasPool extends _SaveStackTracking {
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ctx.transform(transform[0], transform[1], transform[4], transform[5],
           transform[12], transform[13]);
-      print('rply:: Setting transform to (${transform[0]}, ${transform[1]}, ${transform[4]}, ${transform[5]},'
-          ' ${transform[12]}, ${transform[13]})');
     }
     return clipDepth;
   }
@@ -204,7 +190,6 @@ class _CanvasPool extends _SaveStackTracking {
       clipDepth = _replaySingleSaveEntry(
           clipDepth, prevTransform, saveEntry.transform, saveEntry.clipStack);
       prevTransform = saveEntry.transform;
-      print('rply:: save');
       ctx.save();
       ++_saveContextCount;
     }
@@ -236,7 +221,6 @@ class _CanvasPool extends _SaveStackTracking {
       _reusablePool = null;
     }
     _restoreContextSave();
-    print('CanvasPool:: -------------------------EOP');
   }
 
   void _restoreContextSave() {
@@ -249,7 +233,7 @@ class _CanvasPool extends _SaveStackTracking {
   /// Configures the canvas such that its coordinate system follows the scene's
   /// coordinate system, and the pixel ratio is applied such that CSS pixels are
   /// translated to bitmap pixels.
-  void _initializeViewport() {
+  void _initializeViewport(bool clearCanvas) {
     html.CanvasRenderingContext2D ctx = context;
     // Save the canvas state with top-level transforms so we can undo
     // any clips later when we reuse the canvas.
@@ -259,6 +243,7 @@ class _CanvasPool extends _SaveStackTracking {
     // We always start with identity transform because the surrounding transform
     // is applied on the DOM elements.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, _widthInBitmapPixels, _heightInBitmapPixels);
 
     // This scale makes sure that 1 CSS pixel is translated to the correct
     // number of bitmap pixels.
@@ -279,7 +264,6 @@ class _CanvasPool extends _SaveStackTracking {
 
   @override
   void save() {
-    print('CanvasPool:: Save');
     super.save();
     if (_canvas != null) {
       context.save();
@@ -289,7 +273,6 @@ class _CanvasPool extends _SaveStackTracking {
 
   @override
   void restore() {
-    print('CanvasPool:: Restore');
     super.restore();
     if (_canvas != null) {
       context.restore();
@@ -301,7 +284,6 @@ class _CanvasPool extends _SaveStackTracking {
   @override
   void translate(double dx, double dy) {
     //var testContext = context;
-    print('CanvasPool:: Translate($dx, $dy)');
     super.translate(dx, dy);
     if (_canvas != null) {
       context.translate(dx, dy);
@@ -310,7 +292,6 @@ class _CanvasPool extends _SaveStackTracking {
 
   @override
   void scale(double sx, double sy) {
-    print('CanvasPool:: Scale($sx, $sy)');
     super.scale(sx, sy);
     if (_canvas != null) {
       context.scale(sx, sy);
@@ -372,7 +353,6 @@ class _CanvasPool extends _SaveStackTracking {
   }
 
   void clipRect(ui.Rect rect) {
-    print('CanvasPool:: Clip(${rect.left}, ${rect.top}, ${rect.width}, ${rect.height})');
     super.clipRect(rect);
     if (_canvas != null) {
       _clipRect(context, rect);
@@ -399,7 +379,6 @@ class _CanvasPool extends _SaveStackTracking {
   }
 
   void clipPath(ui.Path path) {
-    print('CanvasPool:: ClipPath');
     super.clipPath(path);
     if (_canvas != null) {
       html.CanvasRenderingContext2D ctx = context;
@@ -558,7 +537,6 @@ class _CanvasPool extends _SaveStackTracking {
   }
 
   void drawPath(ui.Path path, ui.PaintingStyle style) {
-    print('CanvasPool:: DrawPath');
     _runPath(context, path);
     contextHandle.paint(style);
   }
