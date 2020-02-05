@@ -26,11 +26,13 @@ def Touch(fname):
 
 
 def GetBuildIdParts(exec_path, read_elf):
-  sha1_pattern = re.compile(r'[0-9a-zA-Z]{40}')
+  sha1_pattern = re.compile(r'[0-9a-zA-Z]+')
   file_out = subprocess.check_output([read_elf, '-n', exec_path])
   build_id_line = file_out.splitlines()[-1].split()
-  if build_id_line[0] != 'Build' or build_id_line[1] != 'ID:' or not sha1_pattern.match(build_id_line[-1]):
-    raise Exception('Expected the last line of llvm-readelf to match "Build ID <SHA-1>" Got: %s' % file_out)
+  if (build_id_line[0] != 'Build' or
+      build_id_line[1] != 'ID:' or
+      not sha1_pattern.match(build_id_line[-1]):
+    raise Exception('Expected the last line of llvm-readelf to match "Build ID <Hex String>" Got: %s' % file_out)
 
   build_id = build_id_line[-1]
   return {
