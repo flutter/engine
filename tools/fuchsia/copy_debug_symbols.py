@@ -30,8 +30,9 @@ def GetBuildIdParts(exec_path, read_elf):
   file_out = subprocess.check_output([read_elf, '-n', exec_path])
   build_id_line = file_out.splitlines()[-1].split()
   if (build_id_line[0] != 'Build' or
-      build_id_line[1] != 'ID:' or
-      not sha1_pattern.match(build_id_line[-1]):
+      build_id_line[1] != 'ID:' or not
+      sha1_pattern.match(build_id_line[-1]) or not
+      len(build_id_line[-1]) > 2):
     raise Exception('Expected the last line of llvm-readelf to match "Build ID <Hex String>" Got: %s' % file_out)
 
   build_id = build_id_line[-1]
