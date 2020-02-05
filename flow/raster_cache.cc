@@ -231,13 +231,25 @@ RasterCacheResult RasterCache::Get(const SkPicture& picture,
                                    const SkMatrix& ctm) const {
   PictureRasterCacheKey cache_key(picture.uniqueID(), ctm);
   auto it = picture_cache_.find(cache_key);
-  return it == picture_cache_.end() ? RasterCacheResult() : it->second.image;
+  if (it == picture_cache_.end()) {
+    return RasterCacheResult();
+  }
+  Entry& entry = const_cast<Entry&>(it->second);
+  entry.access_count = ClampSize(entry.access_count + 1, 0, access_threshold_);
+  entry.used_this_frame = true;
+  return entry.image;
 }
 
 RasterCacheResult RasterCache::Get(Layer* layer, const SkMatrix& ctm) const {
   LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
   auto it = layer_cache_.find(cache_key);
-  return it == layer_cache_.end() ? RasterCacheResult() : it->second.image;
+  if (it == layer_cache_.end()) {
+    return RasterCacheResult();
+  }
+  Entry& entry = const_cast<Entry&>(it->second);
+  entry.access_count = ClampSize(entry.access_count + 1, 0, access_threshold_);
+  entry.used_this_frame = true;
+  return entry.image;
 }
 
 void RasterCache::SweepAfterFrame() {
