@@ -295,6 +295,7 @@ TEST_F(AccessibilityBridgeTest, TruncatesLargeValue) {
       std::string(fuchsia::accessibility::semantics::MAX_VALUE_SIZE + 1, '2');
 
   node0.childrenInTraversalOrder = {1, 2};
+  node0.childrenInHitTestOrder = {1, 2};
 
   accessibility_bridge_->AddSemanticsNodeUpdate({
       {0, node0},
