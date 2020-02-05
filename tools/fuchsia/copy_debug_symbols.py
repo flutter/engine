@@ -26,8 +26,13 @@ def Touch(fname):
 
 
 def GetBuildIdParts(exec_path, read_elf):
+  sha1_pattern = re.compile(r'[0-9a-zA-Z]{40}')
   file_out = subprocess.check_output([read_elf, '-n', exec_path])
-  build_id = file_out.splitlines()[-1].split()[-1]
+  build_id_line = file_out.splitlines()[-1].split()
+  if build_id_line[0] != 'Build' or build_id_line[1] != 'ID:' or not sha1_pattern.match(build_id_line[-1]):
+    raise Exception('Expected the last line of llvm-readelf to match "Build ID <SHA-1>" Got: %s' % file_out)
+
+  build_id = build_id_line[-1]
   return {
       'build_id': build_id,
       'prefix_dir': build_id[:2],
@@ -86,7 +91,13 @@ def main():
 
   success = False
   # Multiple processes may be trying to create the same directory.
-  os.makedirs(dbg_prefix_base, exist_ok=True)
+  #TODO(dnfield): use exist_ok when we upgrade to python 3, rather than try
+  try:
+    os.makedirs(dbg_prefix_base)
+  except OSError as e:
+    if e.errono != errno.EEXIST:
+      raise
+
   if not os.path.exists(dbg_prefix_base):
     print 'Unable to create directory: %s.' % dbg_prefix_base
     return 1
