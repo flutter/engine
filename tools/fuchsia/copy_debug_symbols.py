@@ -26,7 +26,7 @@ def Touch(fname):
 
 
 def GetBuildIdParts(exec_path, read_elf):
-  sha1_pattern = re.compile(r'[0-9a-zA-Z]+')
+  sha1_pattern = re.compile(r'[0-9a-fA-F]+')
   file_out = subprocess.check_output([read_elf, '-n', exec_path])
   build_id_line = file_out.splitlines()[-1].split()
   if (build_id_line[0] != 'Build' or
