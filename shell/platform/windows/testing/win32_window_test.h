@@ -15,7 +15,11 @@ class Win32WindowTest : public Win32Window {
   Win32WindowTest();
   ~Win32WindowTest();
 
+  // Wrapper for GetCurrentDPI() which is a protected method.
   UINT GetDpi();
+
+  // Returns a bool whether OnFontChange() was called.
+  bool OnFontChangeWasCalled();
 
   // |Win32Window|
   void OnDpiScale(unsigned int dpi) override;
@@ -51,6 +55,8 @@ class Win32WindowTest : public Win32Window {
   void OnFontChange() override;
 
  private:
+   bool on_font_change_called_ = false;
+
   FML_DISALLOW_COPY_AND_ASSIGN(Win32WindowTest);
 };
 

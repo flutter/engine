@@ -31,10 +31,18 @@ void Win32WindowTest::OnScroll(double delta_x, double delta_y) {}
 
 void Win32WindowTest::OnClose() {}
 
-void Win32WindowTest::OnFontChange() {}
+void Win32WindowTest::OnFontChange() {
+  std::cerr << "Getting called ======\n";
+  on_font_change_called_ = true;
+}
 
 UINT Win32WindowTest::GetDpi() {
   return GetCurrentDPI();
+}
+
+bool Win32WindowTest::OnFontChangeWasCalled() {
+  std::cerr << "on font changed called====s\n";
+  return on_font_change_called_;
 }
 
 }  // namespace testing
