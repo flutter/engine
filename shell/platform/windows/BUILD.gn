@@ -113,9 +113,9 @@ executable("flutter_windows_unittests") {
   sources = [
     "testing/win32_flutter_window_test.cc",
     "testing/win32_flutter_window_test.h",
-    "testing/win32_window_unittest.cc",
-    "testing/win32_window_unittest.h",
-    "win32_window_unittest.cc",
+    "testing/win32_window_test.cc",
+    "testing/win32_window_test.h",
+    "win32_window_unittests.cc",
     "win32_flutter_window_unittests.cc",
   ]
 

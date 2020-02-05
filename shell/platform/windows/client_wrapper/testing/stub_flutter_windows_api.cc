@@ -78,13 +78,6 @@ HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef controller) {
   return reinterpret_cast<HWND>(-1);
 }
 
-UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
-  if (s_stub_implementation) {
-    return s_stub_implementation->GetDpiForHWND();
-  }
-  return 0;
-}
-
 FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
                                                 const char* icu_data_path,
                                                 const char** arguments,

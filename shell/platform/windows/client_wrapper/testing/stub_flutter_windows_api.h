@@ -49,9 +49,6 @@ class StubFlutterWindowsApi {
   // Called for FlutterDesktopViewGetHWND.
   virtual HWND ViewGetHWND() { return reinterpret_cast<HWND>(1); }
 
-  // Called for FlutterDesktopGetDpiForHWND.
-  virtual UINT GetDpiForHWND() { return 1; }
-
   // Called for FlutterDesktopRunEngine.
   virtual FlutterDesktopEngineRef RunEngine(const char* assets_path,
                                             const char* icu_data_path,
