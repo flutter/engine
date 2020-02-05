@@ -218,7 +218,7 @@ class SkTextStyle implements ui.TextStyle {
     }
     List<String> fontFamilies = <String>[fontFamily];
     if (fontFamilyFallback != null) {
-      fontFamilies.addAll(fontFamilies);
+      fontFamilies.addAll(fontFamilyFallback);
     }
 
     style['fontFamilies'] = fontFamilies;
@@ -343,6 +343,10 @@ class SkParagraph implements ui.Paragraph {
     ui.BoxHeightStyle boxHeightStyle: ui.BoxHeightStyle.tight,
     ui.BoxWidthStyle boxWidthStyle: ui.BoxWidthStyle.tight,
   }) {
+    if (start < 0 || end < 0) {
+      return const <ui.TextBox>[];
+    }
+
     js.JsObject heightStyle;
     switch (boxHeightStyle) {
       case ui.BoxHeightStyle.tight:

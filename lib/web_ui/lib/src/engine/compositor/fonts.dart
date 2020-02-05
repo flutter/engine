@@ -7,8 +7,10 @@ part of engine;
 const String _robotoUrl =
     'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
+/// Manages the fonts used in the Skia-based backend.
 class SkiaFontCollection {
   final List<Future<ByteBuffer>> _loadingFontBuffers = <Future<ByteBuffer>>[];
+  final List<Uint8List> _dynamicallyLoadedFonts = <Uint8List>[];
 
   final Set<String> registeredFamilies = <String>{};
 
@@ -17,7 +19,16 @@ class SkiaFontCollection {
         (await Future.wait<ByteBuffer>(_loadingFontBuffers))
             .map((ByteBuffer buffer) => buffer.asUint8List())
             .toList();
+    fontBuffers.addAll(_dynamicallyLoadedFonts);
     skFontMgr = canvasKit['SkFontMgr'].callMethod('FromData', fontBuffers);
+  }
+
+  Future<void> loadFontFromList(Uint8List list, {String fontFamily}) async {
+    _dynamicallyLoadedFonts.add(list);
+    if (fontFamily != null) {
+      registeredFamilies.add(fontFamily);
+    }
+    await ensureFontsLoaded();
   }
 
   Future<void> registerFonts(AssetManager assetManager) async {
