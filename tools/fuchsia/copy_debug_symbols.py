@@ -26,10 +26,8 @@ def Touch(fname):
 
 
 def GetBuildIdParts(exec_path, read_elf):
-  file_out = subprocess.check_output(
-      [read_elf, '--hex-dump=.note.gnu.build-id', exec_path])
-  second_line = file_out.splitlines()[-1].split()
-  build_id = second_line[1] + second_line[2]
+  file_out = subprocess.check_output([read_elf, '-n', exec_path])
+  build_id = file_out.splitlines()[-1].split()[-1]
   return {
       'build_id': build_id,
       'prefix_dir': build_id[:2],
@@ -87,18 +85,9 @@ def main():
   dbg_prefix_base = os.path.join(args.dest, parts['prefix_dir'])
 
   success = False
-  for _ in range(3):
-    try:
-      if not os.path.exists(dbg_prefix_base):
-        os.makedirs(dbg_prefix_base)
-      success = True
-      break
-    except OSError as error:
-      print 'Failed to create dir %s, error: %s. sleeping...' % (
-          dbg_prefix_base, error)
-      time.sleep(3)
-
-  if not success:
+  # Multiple processes may be trying to create the same directory.
+  os.makedirs(dbg_prefix_base, exist_ok=True)
+  if not os.path.exists(dbg_prefix_base):
     print 'Unable to create directory: %s.' % dbg_prefix_base
     return 1
 
