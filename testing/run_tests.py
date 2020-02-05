@@ -357,7 +357,6 @@ def main():
       default=False, help='Show extra dart snapshot logging.')
 
   args = parser.parse_args()
-  print args, '====='
 
   if args.type == 'all':
     types = ['engine', 'dart', 'benchmarks', 'java', 'font-subset']

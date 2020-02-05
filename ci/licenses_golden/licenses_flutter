@@ -1121,11 +1121,12 @@ FILE: ../../../flutter/shell/platform/windows/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.h
+FILE: ../../../flutter/shell/platform/windows/win32_flutter_window_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/win32_task_runner.cc
 FILE: ../../../flutter/shell/platform/windows/win32_task_runner.h
 FILE: ../../../flutter/shell/platform/windows/win32_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_window.h
-FILE: ../../../flutter/shell/platform/windows/win32_flutter_window_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/win32_window_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/window_state.h
 FILE: ../../../flutter/shell/version/version.cc
 FILE: ../../../flutter/shell/version/version.h
