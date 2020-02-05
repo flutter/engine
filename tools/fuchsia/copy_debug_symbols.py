@@ -98,7 +98,7 @@ def main():
   try:
     os.makedirs(dbg_prefix_base)
   except OSError as e:
-    if e.errono != errno.EEXIST:
+    if e.errno != errno.EEXIST:
       raise
 
   if not os.path.exists(dbg_prefix_base):
