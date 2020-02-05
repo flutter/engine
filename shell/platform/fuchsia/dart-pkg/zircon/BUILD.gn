@@ -28,6 +28,6 @@ source_set("zircon") {
     "$fuchsia_sdk_root/pkg:fdio",
     "$fuchsia_sdk_root/pkg:zx",
     "//flutter/fml",
-    "//third_party/tonic",
+    "//flutter/third_party/tonic",
   ]
 }

@@ -294,9 +294,11 @@ bool DartIsolate::PrepareForRunningFromPrecompiledCode() {
     return false;
   }
 
-  GetIsolateGroupData().SetChildIsolatePreparer([](DartIsolate* isolate) {
-    return isolate->PrepareForRunningFromPrecompiledCode();
-  });
+  if (GetIsolateGroupData().GetChildIsolatePreparer() == nullptr) {
+    GetIsolateGroupData().SetChildIsolatePreparer([](DartIsolate* isolate) {
+      return isolate->PrepareForRunningFromPrecompiledCode();
+    });
+  }
 
   const fml::closure& isolate_create_callback =
       GetIsolateGroupData().GetIsolateCreateCallback();
@@ -506,7 +508,6 @@ bool DartIsolate::Run(const std::string& entrypoint_name,
   }
 
   phase_ = Phase::Running;
-  FML_DLOG(INFO) << "New isolate is in the running state.";
 
   if (on_run) {
     on_run();
@@ -538,7 +539,6 @@ bool DartIsolate::RunFromLibrary(const std::string& library_name,
   }
 
   phase_ = Phase::Running;
-  FML_DLOG(INFO) << "New isolate is in the running state.";
 
   if (on_run) {
     on_run();
@@ -586,7 +586,6 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
   const auto& settings = vm_data->GetSettings();
 
   if (!settings.enable_observatory) {
-    FML_DLOG(INFO) << "Observatory is disabled.";
     return nullptr;
   }
 
@@ -626,7 +625,9 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           tonic::DartState::HandleLibraryTag,  // embedder library tag handler
           false,  //  disable websocket origin check
           settings.disable_service_auth_codes,  // disable VM service auth codes
-          error                                 // error (out)
+          settings.enable_service_port_fallback,  // enable fallback to port 0
+                                                  // when bind fails.
+          error                                   // error (out)
           )) {
     // Error is populated by call to startup.
     FML_DLOG(ERROR) << *error;
@@ -814,7 +815,7 @@ bool DartIsolate::InitializeIsolate(
   // also a root isolate) by the utility routines in the VM. However, secondary
   // isolates will be run by the VM if they are marked as runnable.
   if (!embedder_isolate->IsRootIsolate()) {
-    const ChildIsolatePreparer& child_isolate_preparer =
+    auto child_isolate_preparer =
         embedder_isolate->GetIsolateGroupData().GetChildIsolatePreparer();
     FML_DCHECK(child_isolate_preparer);
     if (!child_isolate_preparer(embedder_isolate.get())) {
@@ -832,9 +833,6 @@ void DartIsolate::DartIsolateShutdownCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateShutdownCallback");
-  FML_DLOG(INFO) << "DartIsolateShutdownCallback"
-                 << " isolate_group_data " << isolate_group_data
-                 << " isolate_data " << isolate_data;
   isolate_data->get()->OnShutdownCallback();
 }
 
@@ -842,9 +840,6 @@ void DartIsolate::DartIsolateShutdownCallback(
 void DartIsolate::DartIsolateGroupCleanupCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateGroupCleanupCallback");
-  FML_DLOG(INFO) << "DartIsolateGroupCleanupCallback isolate_data "
-                 << isolate_data;
-
   delete isolate_data;
 }
 
@@ -853,9 +848,6 @@ void DartIsolate::DartIsolateCleanupCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateCleanupCallback");
-
-  FML_DLOG(INFO) << "DartIsolateCleanupCallback cleaned up isolate_data "
-                 << isolate_data;
   delete isolate_data;
 }
 

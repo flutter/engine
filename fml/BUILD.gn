@@ -4,9 +4,9 @@
 
 if (is_fuchsia) {
   import("//build/fuchsia/sdk.gni")
-  import("$flutter_root/tools/fuchsia/fuchsia_archive.gni")
+  import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 }
-import("$flutter_root/testing/testing.gni")
+import("//flutter/testing/testing.gni")
 
 source_set("fml") {
   sources = [
@@ -96,8 +96,8 @@ source_set("fml") {
   configs += [ "//third_party/icu:icu_config" ]
 
   public_configs = [
-    "$flutter_root:config",
-    "$flutter_root/common:flutter_config",
+    "//flutter:config",
+    "//flutter/common:flutter_config",
   ]
 
   libs = []
@@ -175,6 +175,7 @@ source_set("fml") {
         "$fuchsia_sdk_root/pkg:async-loop-cpp",
         "$fuchsia_sdk_root/pkg:async-loop-default",
         "$fuchsia_sdk_root/pkg:trace",
+        "$fuchsia_sdk_root/pkg:trace-engine",
         "$fuchsia_sdk_root/pkg:zx",
       ]
     } else {
@@ -183,6 +184,7 @@ source_set("fml") {
         "//zircon/public/lib/async-loop-cpp",
         "//zircon/public/lib/async-loop-default",
         "//zircon/public/lib/trace",
+        "//zircon/public/lib/trace-engine",
         "//zircon/public/lib/zx",
       ]
     }
@@ -223,9 +225,6 @@ executable("fml_unittests") {
     "gpu_thread_merger_unittests.cc",
     "memory/ref_counted_unittest.cc",
     "memory/weak_ptr_unittest.cc",
-    "message_loop_task_queues_merge_unmerge_unittests.cc",
-    "message_loop_task_queues_unittests.cc",
-    "message_unittests.cc",
     "paths_unittests.cc",
     "platform/darwin/string_range_sanitization_unittests.mm",
     "synchronization/count_down_latch_unittests.cc",
@@ -239,20 +238,29 @@ executable("fml_unittests") {
     "time/time_unittest.cc",
   ]
 
-  # TODO(gw280): Figure out why these tests don't work currently on Fuchsia
+  # TODO(https://github.com/flutter/flutter/issues/50032) Enable after the
+  # Fuchsia message loop migration is complete.
   if (!is_fuchsia) {
     sources += [
-      "file_unittest.cc",
+      "message_loop_task_queues_merge_unmerge_unittests.cc",
+      "message_loop_task_queues_unittests.cc",
       "message_loop_unittests.cc",
+      "message_unittests.cc",
     ]
+  }
+
+  # TODO(https://github.com/flutter/flutter/issues/50031):
+  # Figure out why these tests don't work currently on Fuchsia
+  if (!is_fuchsia) {
+    sources += [ "file_unittest.cc" ]
   }
 
   deps = [
     ":fml_fixtures",
-    "$flutter_root/fml",
-    "$flutter_root/fml/dart",
-    "$flutter_root/runtime:libdart",
-    "$flutter_root/testing",
+    "//flutter/fml",
+    "//flutter/fml/dart",
+    "//flutter/runtime:libdart",
+    "//flutter/testing",
   ]
 
   if (is_fuchsia && using_fuchsia_sdk) {
@@ -278,8 +286,8 @@ executable("fml_benchmarks") {
   ]
 
   deps = [
-    "$flutter_root/benchmarking",
-    "$flutter_root/fml",
-    "$flutter_root/runtime:libdart",
+    "//flutter/benchmarking",
+    "//flutter/fml",
+    "//flutter/runtime:libdart",
   ]
 }

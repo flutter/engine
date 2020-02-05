@@ -231,9 +231,9 @@ void _debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
     ..fill();
 
   final double physicalScreenWidth =
-      html.window.innerWidth * html.window.devicePixelRatio;
+      html.window.innerWidth * EngineWindow.browserDevicePixelRatio;
   final double physicalScreenHeight =
-      html.window.innerHeight * html.window.devicePixelRatio;
+      html.window.innerHeight * EngineWindow.browserDevicePixelRatio;
   final double physicsScreenPixelCount =
       physicalScreenWidth * physicalScreenHeight;
 
@@ -402,9 +402,9 @@ void _debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
       return pixels;
     }).fold(0, (int total, int pixels) => total + pixels);
     final double physicalScreenWidth =
-        html.window.innerWidth * html.window.devicePixelRatio;
+        html.window.innerWidth * EngineWindow.browserDevicePixelRatio;
     final double physicalScreenHeight =
-        html.window.innerHeight * html.window.devicePixelRatio;
+        html.window.innerHeight * EngineWindow.browserDevicePixelRatio;
     final double physicsScreenPixelCount =
         physicalScreenWidth * physicalScreenHeight;
     final double screenPixelRatio = pixelCount / physicsScreenPixelCount;
@@ -741,7 +741,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
     //                `false` for children. Or, which might be cleaner, we could
     //                split this method into two methods. One method will detach
     //                the DOM, and the second method will disassociate the
-    //                surface from the the DOM and release it irrespective of
+    //                surface from the DOM and release it irrespective of
     //                whether the DOM itself gets detached or not.
     rootElement.remove();
     rootElement = null;

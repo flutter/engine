@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 import 'package:test/test.dart';
-import 'package:ui/ui.dart';
+import 'dart:js_util' as js_util;
+import 'dart:html' as html;
+import 'package:ui/ui.dart' hide window;
 import 'package:ui/src/engine.dart';
 
 import 'matchers.dart';
@@ -237,5 +239,63 @@ void main() {
         within<Rect>(
             distance: 0.1,
             from: const Rect.fromLTRB(220.0, 124.1, 382.9, 300.0)));
+  });
+
+  // Regression test for https://github.com/flutter/flutter/issues/46813.
+  test('Should deep copy path', () {
+    final SurfacePath path = SurfacePath();
+    path.moveTo(25, 30);
+    path.lineTo(100, 200);
+    expect(path.getBounds(), const Rect.fromLTRB(25, 30, 100, 200));
+
+    final SurfacePath path2 = SurfacePath.from(path);
+    path2.lineTo(250, 300);
+    expect(path2.getBounds(), const Rect.fromLTRB(25, 30, 250, 300));
+    // Expect original path to stay the same.
+    expect(path.getBounds(), const Rect.fromLTRB(25, 30, 100, 200));
+  });
+
+  // Regression test for https://github.com/flutter/flutter/issues/44470
+  test('Should handle contains for devicepixelratio != 1.0', () {
+    js_util.setProperty(html.window, 'devicePixelRatio', 4.0);
+    window.debugOverrideDevicePixelRatio(4.0);
+    final path = Path()
+      ..moveTo(50, 0)
+      ..lineTo(100, 100)
+      ..lineTo(0, 100)
+      ..lineTo(50, 0)
+      ..close();
+    expect(path.contains(Offset(50, 50)), isTrue);
+    js_util.setProperty(html.window, 'devicePixelRatio', 1.0);
+    window.debugOverrideDevicePixelRatio(1.0);
+    // TODO: Investigate failure on CI. Locally this passes.
+    // [Exception... "Failure"  nsresult: "0x80004005 (NS_ERROR_FAILURE)"
+  }, skip: browserEngine == BrowserEngine.firefox);
+
+  // Path contains should handle case where invalid RRect with large
+  // corner radius is used for hit test. Use case is a RenderPhysicalShape
+  // with a clipper that contains RRect of width/height 50 but corner radius
+  // of 100.
+  //
+  // Regression test for https://github.com/flutter/flutter/issues/48887
+  test('Should hit test correctly for malformed rrect', () {
+    // Correctly formed rrect.
+    final path1 = Path()
+      ..addRRect(RRect.fromLTRBR(50, 50, 100, 100, Radius.circular(20)));
+    expect(path1.contains(Offset(75, 75)), isTrue);
+    expect(path1.contains(Offset(52, 75)), isTrue);
+    expect(path1.contains(Offset(50, 50)), isFalse);
+    expect(path1.contains(Offset(100, 50)), isFalse);
+    expect(path1.contains(Offset(100, 100)), isFalse);
+    expect(path1.contains(Offset(50, 100)), isFalse);
+
+    final path2 = Path()
+      ..addRRect(RRect.fromLTRBR(50, 50, 100, 100, Radius.circular(100)));
+    expect(path2.contains(Offset(75, 75)), isTrue);
+    expect(path2.contains(Offset(52, 75)), isTrue);
+    expect(path2.contains(Offset(50, 50)), isFalse);
+    expect(path2.contains(Offset(100, 50)), isFalse);
+    expect(path2.contains(Offset(100, 100)), isFalse);
+    expect(path2.contains(Offset(50, 100)), isFalse);
   });
 }

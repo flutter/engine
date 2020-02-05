@@ -37,7 +37,6 @@ import io.flutter.embedding.engine.plugins.lifecycle.HiddenLifecycleReference;
 import io.flutter.embedding.engine.plugins.service.ServiceAware;
 import io.flutter.embedding.engine.plugins.service.ServiceControlSurface;
 import io.flutter.embedding.engine.plugins.service.ServicePluginBinding;
-import io.flutter.plugin.platform.PlatformViewsController;
 
 class FlutterEnginePluginRegistry implements PluginRegistry,
     ActivityControlSurface,
@@ -106,7 +105,7 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
   }
 
   public void destroy() {
-    Log.d(TAG, "Destroying.");
+    Log.v(TAG, "Destroying.");
     // Detach from any Android component that we may currently be attached to, e.g., Activity, Service,
     // BroadcastReceiver, ContentProvider. This must happen before removing all plugins so that the
     // plugins have an opportunity to clean up references as a result of component detachment.
@@ -118,6 +117,12 @@ class FlutterEnginePluginRegistry implements PluginRegistry,
 
   @Override
   public void add(@NonNull FlutterPlugin plugin) {
+    if (has(plugin.getClass())) {
+      Log.w(TAG, "Attempted to register plugin (" + plugin +") but it was "
+          + "already registered with this FlutterEngine (" + flutterEngine + ").");
+      return;
+    }
+
     Log.v(TAG, "Adding plugin: " + plugin);
     // Add the plugin to our generic set of plugins and notify the plugin
     // that is has been attached to an engine.
