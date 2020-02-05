@@ -55,7 +55,7 @@ class Win32WindowTest : public Win32Window {
   void OnFontChange() override;
 
  private:
-   bool on_font_change_called_ = false;
+  bool on_font_change_called_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Win32WindowTest);
 };
