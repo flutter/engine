@@ -92,7 +92,6 @@ def main():
   parts = GetBuildIdParts(args.exec_path, args.read_elf)
   dbg_prefix_base = os.path.join(args.dest, parts['prefix_dir'])
 
-  success = False
   # Multiple processes may be trying to create the same directory.
   # TODO(dnfield): use exist_ok when we upgrade to python 3, rather than try
   try:
