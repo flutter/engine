@@ -422,8 +422,9 @@ class SkParagraph implements ui.Paragraph {
     // TODO(het): Remove this once https://bugs.chromium.org/p/skia/issues/detail?id=9874
     //            is fixed.
     double width;
+    const double largeFiniteWidth = 1000000;
     if (constraints.width.isInfinite) {
-      width = 1000000;
+      width = largeFiniteWidth;
     } else {
       width = constraints.width;
     }
