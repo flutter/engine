@@ -21,7 +21,7 @@ declare_args() {
   flutter_runtime_mode = "debug"
 
   # Whether to use the Skia text shaper module
-  flutter_enable_skshaper = false
+  flutter_enable_skshaper = true
 
   # A copy of the enable_bitcode flag from build/toolchain/clang.gni.
   # This needs to be mirrored here because build/toolchain/clang.gni does
