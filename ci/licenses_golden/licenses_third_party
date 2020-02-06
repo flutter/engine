@@ -1,4 +1,4 @@
-Signature: d5e9bd72c17a7fa0003170ac337e5223
+Signature: 2288bb9848c16183208a44cae01b0bf8
 
 UNUSED LICENSES:
 
@@ -7796,8 +7796,10 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/marshaller.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/marshaller.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_calling_convention.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_calling_convention.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_representation.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_representation.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_location.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_location.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.h
 FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
@@ -8696,12 +8698,10 @@ FILE: ../../../third_party/dart/runtime/vm/timeline_linux.cc
 FILE: ../../../third_party/dart/runtime/vm/zone_text_buffer.cc
 FILE: ../../../third_party/dart/runtime/vm/zone_text_buffer.h
 FILE: ../../../third_party/dart/sdk/lib/_http/overrides.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/cli_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/custom_hash_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/identity_hash_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/linked_hash_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/profile.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/cli_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/cli_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/namespace_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/sync_socket_patch.dart
@@ -8718,12 +8718,10 @@ FILE: ../../../third_party/dart/sdk/lib/io/overrides.dart
 FILE: ../../../third_party/dart/sdk/lib/io/sync_socket.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/named_lookup.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_http/overrides.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/cli_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/custom_hash_map.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/identity_hash_map.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/linked_hash_map.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/profile.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/cli_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/bin/cli_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/bin/namespace_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/bin/sync_socket_patch.dart
