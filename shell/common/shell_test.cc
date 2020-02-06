@@ -25,7 +25,8 @@ ShellTest::ShellTest()
                        ThreadHost::Type::UI | ThreadHost::Type::GPU),
       assets_dir_(fml::OpenDirectory(GetFixturesPath(),
                                      false,
-                                     fml::FilePermission::kRead)) {}
+                                     fml::FilePermission::kRead)),
+      aot_symbols_(LoadELFSymbolFromFixturesIfNeccessary()) {}
 
 void ShellTest::SendEnginePlatformMessage(
     Shell* shell,
@@ -52,26 +53,7 @@ void ShellTest::SetSnapshotsAndAssets(Settings& settings) {
   // In JIT execution, all snapshots are present within the binary itself and
   // don't need to be explicitly suppiled by the embedder.
   if (DartVM::IsRunningPrecompiledCode()) {
-    settings.vm_snapshot_data = [this]() {
-      return fml::FileMapping::CreateReadOnly(assets_dir_, "vm_snapshot_data");
-    };
-
-    settings.isolate_snapshot_data = [this]() {
-      return fml::FileMapping::CreateReadOnly(assets_dir_,
-                                              "isolate_snapshot_data");
-    };
-
-    if (DartVM::IsRunningPrecompiledCode()) {
-      settings.vm_snapshot_instr = [this]() {
-        return fml::FileMapping::CreateReadExecute(assets_dir_,
-                                                   "vm_snapshot_instr");
-      };
-
-      settings.isolate_snapshot_instr = [this]() {
-        return fml::FileMapping::CreateReadExecute(assets_dir_,
-                                                   "isolate_snapshot_instr");
-      };
-    }
+    PrepareSettingsForAOTWithSymbols(settings, aot_symbols_);
   } else {
     settings.application_kernels = [this]() {
       std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
@@ -272,9 +254,10 @@ std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
   return Shell::Create(
       task_runners, settings,
       [vsync_clock, &create_vsync_waiter](Shell& shell) {
-        return ShellTestPlatformView::Create(shell, shell.GetTaskRunners(),
-                                             vsync_clock,
-                                             std::move(create_vsync_waiter));
+        return ShellTestPlatformView::Create(
+            shell, shell.GetTaskRunners(), vsync_clock,
+            std::move(create_vsync_waiter),
+            ShellTestPlatformView::BackendType::kDefaultBackend);
       },
       [](Shell& shell) {
         return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
