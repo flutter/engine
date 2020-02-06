@@ -170,6 +170,10 @@ bool RasterCache::Prepare(GrContext* context,
                           SkColorSpace* dst_color_space,
                           bool is_complex,
                           bool will_change) {
+  // Disabling caching when access_threshold is zero is historic behavior.
+  if (access_threshold_ == 0) {
+    return false;
+  }
   if (picture_cached_this_frame_ >= picture_cache_limit_per_frame_) {
     return false;
   }
