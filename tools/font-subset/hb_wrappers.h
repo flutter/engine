@@ -5,6 +5,7 @@
 #ifndef HB_WRAPPERS_H_
 #define HB_WRAPPERS_H_
 
+#include <memory>
 #include <hb-subset.h>
 
 namespace HarfbuzzWrappers {
