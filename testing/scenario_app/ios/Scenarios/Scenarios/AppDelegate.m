@@ -48,7 +48,17 @@
       }];
 
   if (goldenTestName) {
-    [self readyContextForPlatformViewTests:goldenTestName];
+    [self
+        readyContextForPlatformViewTests:goldenTestName
+        gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
+  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--gesture"]) {
+    FlutterPlatformViewGestureRecognizersBlockingPolicy policy =
+        FlutterPlatformViewGestureRecognizersBlockingPolicyEager;
+    if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--until-touches-ended"]) {
+      policy = FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded;
+    }
+    [self readyContextForPlatformViewTests:@"platform_view_touch"
+          gestureRecognizersBlockingPolicy:policy];
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
     self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
   } else {
@@ -59,7 +69,9 @@
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
-- (void)readyContextForPlatformViewTests:(NSString*)scenarioIdentifier {
+- (void)readyContextForPlatformViewTests:(NSString*)scenarioIdentifier
+        gestureRecognizersBlockingPolicy:
+            (FlutterPlatformViewGestureRecognizersBlockingPolicy)policy {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"PlatformViewTest" project:nil];
   [engine runWithEntrypoint:nil];
 
@@ -76,7 +88,9 @@
       [[TextPlatformViewFactory alloc] initWithMessenger:flutterViewController.binaryMessenger];
   NSObject<FlutterPluginRegistrar>* registrar =
       [flutterViewController.engine registrarForPlugin:@"scenarios/TextPlatformViewPlugin"];
-  [registrar registerViewFactory:textPlatformViewFactory withId:@"scenarios/textPlatformView"];
+  [registrar registerViewFactory:textPlatformViewFactory
+                                withId:@"scenarios/textPlatformView"
+      gestureRecognizersBlockingPolicy:policy];
   self.window.rootViewController = flutterViewController;
 }
 
