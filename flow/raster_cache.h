@@ -51,7 +51,7 @@ class RasterCache {
   static constexpr int kDefaultPictureCacheLimitPerFrame = 3;
 
   explicit RasterCache(
-      size_t access_threshold = 3,
+      size_t access_threshold = 1,
       size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame);
 
   static SkIRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {

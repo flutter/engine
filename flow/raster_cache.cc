@@ -189,10 +189,8 @@ bool RasterCache::Prepare(GrContext* context,
 
   PictureRasterCacheKey cache_key(picture->uniqueID(), transformation_matrix);
 
+  // Creates an entry, if not present prior.
   Entry& entry = picture_cache_[cache_key];
-  entry.access_count++;
-  entry.used_this_frame = true;
-
   if (entry.access_count < access_threshold_) {
     // Frame threshold has not yet been reached.
     return false;
