@@ -9,8 +9,6 @@ Win32WindowTest::~Win32WindowTest() = default;
 
 void Win32WindowTest::OnDpiScale(unsigned int dpi){};
 
-// When DesktopWindow notifies that a WM_Size message has come in
-// lets FlutterEngine know about the new size.
 void Win32WindowTest::OnResize(unsigned int width, unsigned int height) {}
 
 void Win32WindowTest::OnPointerMove(double x, double y) {}
@@ -29,16 +27,8 @@ void Win32WindowTest::OnScroll(double delta_x, double delta_y) {}
 
 void Win32WindowTest::OnClose() {}
 
-void Win32WindowTest::OnFontChange() {
-  on_font_change_called_ = true;
-}
-
 UINT Win32WindowTest::GetDpi() {
   return GetCurrentDPI();
-}
-
-bool Win32WindowTest::OnFontChangeWasCalled() {
-  return on_font_change_called_;
 }
 
 }  // namespace testing
