@@ -118,10 +118,6 @@ Win32Window::MessageHandler(HWND hwnd,
       case kWmDpiChangedBeforeParent:
         return HandleDpiChange(window_handle_, wparam, lparam, false);
         break;
-      case WM_DESTROY:
-        window->OnClose();
-        return 0;
-        break;
       case WM_SIZE:
         width = LOWORD(lparam);
         height = HIWORD(lparam);
@@ -254,7 +250,6 @@ void Win32Window::Destroy() {
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
   }
-
   UnregisterClass(window_class_name_.c_str(), nullptr);
 }
 

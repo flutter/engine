@@ -4,7 +4,7 @@
 
 namespace flutter {
 
-// the Windows DPI system is based on this
+// The Windows DPI system is based on this
 // constant for machines running at 100% scaling.
 constexpr int base_dpi = 96;
 
@@ -15,7 +15,6 @@ Win32FlutterWindow::Win32FlutterWindow(int width, int height) {
 
 Win32FlutterWindow::~Win32FlutterWindow() {
   DestroyRenderSurface();
-  Win32Window::Destroy();
 }
 
 FlutterDesktopViewControllerRef Win32FlutterWindow::CreateWin32FlutterWindow(
@@ -177,9 +176,7 @@ void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
   }
 }
 
-void Win32FlutterWindow::OnClose() {
-  messageloop_running_ = false;
-}
+void Win32FlutterWindow::OnClose() {}
 
 void Win32FlutterWindow::OnFontChange() {
   if (engine_ == nullptr) {
@@ -365,5 +362,4 @@ void Win32FlutterWindow::DestroyRenderSurface() {
   }
   render_surface = EGL_NO_SURFACE;
 }
-
 }  // namespace flutter

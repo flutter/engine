@@ -35,7 +35,7 @@ struct MouseState {
 class Win32Window {
  public:
   Win32Window();
-  ~Win32Window();
+  virtual ~Win32Window();
 
   // Initializes as a child window with size using |width| and |height| and
   // |title| to identify the windowclass.  Does not show window, window must be
@@ -43,9 +43,6 @@ class Win32Window {
   void InitializeChild(const char* title,
                        unsigned int width,
                        unsigned int height);
-
-  // Release OS resources asociated with window.
-  virtual void Destroy();
 
   HWND GetWindowHandle();
 
@@ -148,6 +145,9 @@ class Win32Window {
   void SetMouseButtons(uint64_t buttons) { mouse_state_.buttons = buttons; }
 
  private:
+  // Release OS resources asociated with window.
+  void Destroy();
+
   // Activates tracking for a "mouse leave" event.
   void TrackMouseLeaveEvent(HWND hwnd);
 
