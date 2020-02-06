@@ -9,7 +9,7 @@
 namespace flutter {
 
 Win32Window::Win32Window() {
-  // Calling GetDpiForHWND with no HNWD returns the DPI from the nearest
+  // Calling GetDpiForHWND with no HNWD returns the DPI from the primary
   // monitor, which is the best option as an initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the WM_DPICHANGED message.
   current_dpi_ = GetDpiForHWND(nullptr);
@@ -81,7 +81,6 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                      reinterpret_cast<LONG_PTR>(cs->lpCreateParams));
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
-
     that->window_handle_ = window;
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     return that->MessageHandler(window, message, wparam, lparam);
