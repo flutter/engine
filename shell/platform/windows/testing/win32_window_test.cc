@@ -27,6 +27,8 @@ void Win32WindowTest::OnScroll(double delta_x, double delta_y) {}
 
 void Win32WindowTest::OnClose() {}
 
+void Win32WindowTest::OnFontChange() {}
+
 UINT Win32WindowTest::GetDpi() {
   return GetCurrentDPI();
 }
