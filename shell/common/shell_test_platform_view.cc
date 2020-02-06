@@ -20,7 +20,8 @@ std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::Create(
     std::shared_ptr<ShellTestVsyncClock> vsync_clock,
     CreateVsyncWaiter create_vsync_waiter,
     BackendType backend) {
-  // TODO(gw280): Make this fully runtime configurable
+  // TODO(gw280): https://github.com/flutter/flutter/issues/50298
+  // Make this fully runtime configurable
   switch (backend) {
     case BackendType::kDefaultBackend:
 #ifdef SHELL_ENABLE_GL
