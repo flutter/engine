@@ -176,8 +176,6 @@ void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
   }
 }
 
-void Win32FlutterWindow::OnClose() {}
-
 void Win32FlutterWindow::OnFontChange() {
   if (engine_ == nullptr) {
     return;
