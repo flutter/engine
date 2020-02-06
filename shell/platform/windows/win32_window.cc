@@ -244,6 +244,7 @@ void Win32Window::Destroy() {
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
   }
+
   UnregisterClass(window_class_name_.c_str(), nullptr);
 }
 
