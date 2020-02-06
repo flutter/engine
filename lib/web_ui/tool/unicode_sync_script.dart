@@ -113,6 +113,7 @@ class WordBreakPropertiesSyncer extends PropertiesSyncer {
 // Source:
 // ${header.join('\n// ')}
 
+// @dart = 2.6
 part of engine;
 
 CharProperty getCharProperty(String text, int index) {
