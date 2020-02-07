@@ -46,9 +46,6 @@ class Win32WindowTest : public Win32Window {
   void OnScroll(double delta_x, double delta_y) override;
 
   // |Win32Window|
-  void OnClose() override;
-
-  // |Win32Window|
   void OnFontChange() override;
 
  private:

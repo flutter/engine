@@ -25,8 +25,6 @@ void Win32WindowTest::OnKey(int key, int scancode, int action, int mods) {}
 
 void Win32WindowTest::OnScroll(double delta_x, double delta_y) {}
 
-void Win32WindowTest::OnClose() {}
-
 void Win32WindowTest::OnFontChange() {}
 
 UINT Win32WindowTest::GetDpi() {
