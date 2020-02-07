@@ -436,6 +436,17 @@ deps = {
      'dep_type': 'cipd',
    },
 
+   'src/third_party/android_tools/google-java-format': {
+     'packages': [
+       {
+        'package': 'flutter/android/google-java-format',
+        'version': 'version:1.7'
+       }
+     ],
+     'condition': 'download_android_deps',
+     'dep_type': 'cipd',
+   },
+
   'src/third_party/android_tools/sdk/build-tools': {
      'packages': [
        {
