@@ -290,12 +290,16 @@ class PlatformViewForTouchIOSScenario extends Scenario
   /// Creates the PlatformView scenario.
   ///
   /// The [window] parameter must not be null.
-  PlatformViewForTouchIOSScenario(Window window, String text, {int id = 0, bool accept})
+  PlatformViewForTouchIOSScenario(Window window, String text, {int id = 0, bool accept, bool rejectUntilTouchesEnded = false})
       : assert(window != null),
        _accept = accept,
       _viewId = id,
         super(window) {
-    createPlatformView(window, text, id);
+    if (rejectUntilTouchesEnded) {
+      createPlatformView(window, text, id, viewType: 'scenarios/textPlatformView_blockPolicyUntilTouchesEnded');
+    } else {
+      createPlatformView(window, text, id);
+    }
   }
 
   @override
@@ -346,7 +350,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
   /// It prepare a TextPlatformView so it can be added to the SceneBuilder in `onBeginFrame`.
   /// Call this method in the constructor of the platform view related scenarios
   /// to perform necessary set up.
-  void createPlatformView(Window window, String text, int id) {
+  void createPlatformView(Window window, String text, int id, {String viewType = 'scenarios/textPlatformView'}) {
     const int _valueInt32 = 3;
     const int _valueFloat64 = 6;
     const int _valueString = 7;
@@ -370,8 +374,8 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
       'viewType'.length,
       ...utf8.encode('viewType'),
       _valueString,
-      'scenarios/textPlatformView'.length,
-      ...utf8.encode('scenarios/textPlatformView'),
+      viewType.length,
+      ...utf8.encode(viewType),
       if (Platform.isAndroid) ...<int>[
         _valueString,
         'width'.length,

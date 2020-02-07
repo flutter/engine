@@ -18,7 +18,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 - (void)testRejectPolicyUtilTouchesEnded {
   XCUIApplication* app = [[XCUIApplication alloc] init];
-  app.launchArguments = @[ @"--gesture-reject", @"--until-touches-ended" ];
+  app.launchArguments = @[ @"--gesture-reject-after-touches-ended" ];
   [app launch];
 
   NSPredicate* predicateToFindPlatformView =
@@ -49,7 +49,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 - (void)testRejectPolicyEager {
   XCUIApplication* app = [[XCUIApplication alloc] init];
-  app.launchArguments = @[ @"--gesture-reject" ];
+  app.launchArguments = @[ @"--gesture-reject-eager" ];
   [app launch];
 
   NSPredicate* predicateToFindPlatformView =
