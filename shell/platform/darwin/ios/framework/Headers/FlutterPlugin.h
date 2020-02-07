@@ -293,7 +293,7 @@ typedef enum {
 /**
  * Registers a `FlutterPlatformViewFactory` for creation of platform views.
  *
- * Plugins expose `UIView` for embedding in Flutter apps by registering a view factory.
+ * Plugins can expose a `UIView` for embedding in Flutter apps by registering a view factory.
  *
  * @param factory The view factory that will be registered.
  * @param factoryId A unique identifier for the factory, the Dart code of the Flutter app can use
