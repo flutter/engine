@@ -86,7 +86,13 @@ UINT Win32DpiHelper::GetDpiForWindow(HWND hwnd) {
   }
 
   if (dpi_for_monitor_supported_) {
-    HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
+    HMONITOR monitor;
+    if (hwnd == nullptr) {
+      const POINT target_point = {static_cast<LONG>(0), static_cast<LONG>(0)};
+      monitor = MonitorFromPoint(target_point, MONITOR_DEFAULTTOPRIMARY);
+    } else {
+      monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
+    }
     return GetDpiForMonitor(monitor);
   }
   HDC hdc = GetDC(hwnd);
