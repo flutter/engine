@@ -227,21 +227,17 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
 
 #pragma mark -
 /***************************************************************************************************
- * How the UIGestureRecognizers of a platform view should be blocked.
+ * How the UIGestureRecognizers of a platform view are blocked.
  *
- * UIGestureRecognizers of a platform views can be blocked based on the decisions made by the
- * Flutter Framework. e.g. When an interact-able widget is covering the platform view and a gesture
- * happened on the widget, The framework may decide to block the UIGestureRecognizers that are
- * recognized (via the gesture recognized acton ) on the platform view if any.
- *
- * This policy determines how Flutter blocks a platform view's UIGestureRecognizers.
+ * UIGestureRecognizers of platform views can be blocked based on decisions made by the
+ * Flutter Framework (e.g. When an interact-able widget is covering the platform view).
  */
 typedef enum {
   /**
    * Flutter blocks all the UIGestureRecognizers on the platform view as soon as it
    * decides they should be blocked.
    *
-   * With this policy, only touchesBegan for all the UIGestureRecognizers is guaranteed
+   * With this policy, only the `touchesBegan` method for all the UIGestureRecognizers is guaranteed
    * to be called.
    */
   FlutterPlatformViewGestureRecognizersBlockingPolicyEager,
