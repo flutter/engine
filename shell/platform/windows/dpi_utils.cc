@@ -1,12 +1,15 @@
 #include "dpi_utils.h"
 
-#include <ShellScalingApi.h>
-
 namespace flutter {
 
 namespace {
 
 constexpr UINT kDefaultDpi = 96;
+
+// This is the MDT_EFFECTIVE_DPI value from MONITOR_DPI_TYPE, an enum declared
+// in ShellScalingApi.h. Replicating here to avoid importing the library
+// directly.
+constexpr UINT kEffectiveDpiMonitorType = 0;
 
 template <typename T>
 
@@ -37,7 +40,7 @@ class Win32DpiHelper {
  private:
   using GetDpiForWindow_ = UINT __stdcall(HWND);
   using GetDpiForMonitor_ = HRESULT __stdcall(HMONITOR hmonitor,
-                                              MONITOR_DPI_TYPE dpiType,
+                                              UINT dpiType,
                                               UINT* dpiX,
                                               UINT* dpiY);
   using MonitorFromWindow_ = HMONITOR __stdcall(HWND hwnd, DWORD dwFlags);
@@ -101,7 +104,7 @@ UINT Win32DpiHelper::GetDpiForMonitor(HMONITOR monitor) {
   if (dpi_for_monitor_supported_) {
     UINT dpi_x = 0, dpi_y = 0;
     HRESULT result =
-        get_dpi_for_monitor_(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
+        get_dpi_for_monitor_(monitor, kEffectiveDpiMonitorType, &dpi_x, &dpi_y);
     return SUCCEEDED(result) ? dpi_x : kDefaultDpi;
   }
   return kDefaultDpi;
