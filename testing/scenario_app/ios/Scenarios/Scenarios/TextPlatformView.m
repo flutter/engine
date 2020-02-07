@@ -13,7 +13,8 @@
 
 @interface TestTapGestureRecognizer : UITapGestureRecognizer
 
-@property(weak, nonatomic) NSObject<TestGestureRecognizerDelegate>* testTapGestureRecognizerDelegate;
+@property(weak, nonatomic)
+    NSObject<TestGestureRecognizerDelegate>* testTapGestureRecognizerDelegate;
 
 @end
 
