@@ -440,7 +440,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/google-java-format',
-        'version': 'version:1.7'
+        'version': 'version:1.7-1'
        }
      ],
      # We want to be able to format these as part of CI, and the CI step that
