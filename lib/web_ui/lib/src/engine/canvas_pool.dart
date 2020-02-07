@@ -105,6 +105,10 @@ class _CanvasPool extends _SaveStackTracking {
       // top. Setting z-index to any negative value works around the bug.
       // This workaround only works with the first canvas. If more than
       // one element have negative z-index, the bug is triggered again.
+      //
+      // Possible Blink bugs that are causing this:
+      // * https://bugs.chromium.org/p/chromium/issues/detail?id=370604
+      // * https://bugs.chromium.org/p/chromium/issues/detail?id=586601
       final bool isFirstChildElement = _rootElement.firstChild == null;
       if (isFirstChildElement) {
         _canvas.style.zIndex = '-1';
