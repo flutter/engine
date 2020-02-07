@@ -27,8 +27,7 @@ List<int> _to64(num value) {
 }
 
 /// A simple platform view.
-class PlatformViewScenario extends Scenario
-    with _BasePlatformViewScenarioMixin {
+class PlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [window] parameter must not be null.
@@ -49,8 +48,7 @@ class PlatformViewScenario extends Scenario
 }
 
 /// Builds a scene with 2 platform views.
-class MultiPlatformViewScenario extends Scenario
-    with _BasePlatformViewScenarioMixin {
+class MultiPlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [window] parameter must not be null.
@@ -86,13 +84,11 @@ class MultiPlatformViewScenario extends Scenario
 /// Renders a frame with 2 platform views covered by a flutter drawn rectangle,
 /// when the app goes to the background and comes back to the foreground renders a new frame
 /// with the 2 platform views but without the flutter drawn rectangle.
-class MultiPlatformViewBackgroundForegroundScenario extends Scenario
-    with _BasePlatformViewScenarioMixin {
+class MultiPlatformViewBackgroundForegroundScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [window] parameter must not be null.
-  MultiPlatformViewBackgroundForegroundScenario(Window window,
-      {this.firstId, this.secondId})
+  MultiPlatformViewBackgroundForegroundScenario(Window window, {this.firstId, this.secondId})
       : assert(window != null),
         super(window) {
     createPlatformView(window, 'platform view 1', firstId);
@@ -158,16 +154,15 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
 
   @override
   void onPlatformMessage(
-    String name,
-    ByteData data,
-    PlatformMessageResponseCallback callback,
-  ) {
+      String name,
+      ByteData data,
+      PlatformMessageResponseCallback callback,
+      ) {
     if (name != 'flutter/lifecycle') {
       return;
     }
     final String message = utf8.decode(data.buffer.asUint8List());
-    if (_lastLifecycleState == 'AppLifecycleState.inactive' &&
-        message == 'AppLifecycleState.resumed') {
+    if (_lastLifecycleState == 'AppLifecycleState.inactive' && message == 'AppLifecycleState.resumed') {
       _nextFrame = _secondFrame;
       window.scheduleFrame();
     }
@@ -177,8 +172,7 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
 }
 
 /// Platform view with clip rect.
-class PlatformViewClipRectScenario extends Scenario
-    with _BasePlatformViewScenarioMixin {
+class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Constructs a platform view with clip rect scenario.
   PlatformViewClipRectScenario(Window window, String text, {int id = 0})
       : assert(window != null),
@@ -414,22 +408,18 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     );
   }
 
-  void _addPlatformViewtoScene(
-      SceneBuilder sceneBuilder, int viewId, double width, double height) {
+  void _addPlatformViewtoScene(SceneBuilder sceneBuilder, int viewId, double width, double height) {
     if (Platform.isIOS) {
       sceneBuilder.addPlatformView(viewId, width: width, height: height);
     } else if (Platform.isAndroid && _textureId != null) {
-      sceneBuilder.addTexture(_textureId,
-          offset: const Offset(150, 300), width: width, height: height);
+      sceneBuilder.addTexture(_textureId, offset: const Offset(150, 300), width: width, height: height);
     } else {
-      throw UnsupportedError(
-          'Platform ${Platform.operatingSystem} is not supported');
+      throw UnsupportedError('Platform ${Platform.operatingSystem} is not supported');
     }
   }
 
   // Add a platform view and a picture to the scene, then finish the `sceneBuilder`.
-  void finishBuilderByAddingPlatformViewAndPicture(
-      SceneBuilder sceneBuilder, int viewId) {
+  void finishBuilderByAddingPlatformViewAndPicture(SceneBuilder sceneBuilder, int viewId) {
     _addPlatformViewtoScene(sceneBuilder, viewId, 500, 500);
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
