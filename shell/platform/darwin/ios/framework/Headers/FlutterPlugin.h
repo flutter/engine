@@ -234,31 +234,25 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  * happened on the widget, The framework may decide to block the UIGestureRecognizers that are
  * recognized (via the gesture recognized acton ) on the platform view if any.
  *
- * This policy describes how the blocking process is implemented.
+ * This policy determines how Flutter blocks a platform view's UIGestureRecognizers.
  */
 typedef enum {
   /**
-   * The flutter framework blocks all the UIGestureRecognizers on the platform view as soon as it
+   * Flutter blocks all the UIGestureRecognizers on the platform view as soon as it
    * decides they should be blocked.
    *
-   * If this policy is implemented, only touchesBegan for all the UIGestureRecognizers is guaranteed
+   * With this policy, only touchesBegan for all the UIGestureRecognizers is guaranteed
    * to be called.
    */
   FlutterPlatformViewGestureRecognizersBlockingPolicyEager,
   /**
-   * The flutter framework blocks all the UIGestureRecognizers until the `touchesEnded` method is
-   * called for every UIGestureRecognizers on the platform view.
+   * Flutter blocks the platform view's UIGestureRecognizers from recognizing only after
+   * touchesEnded was invoked.
    *
-   * If this policy is implemented, all of the `touchesBegan`, `touchesMoved`, `touchesEnded` and
-   * `touchesCancelled` on any UIGestureRecognizers are guaranteed to be called if iOS system
-   * decided to call them.
+   * This results in the platform view's UIGestureRecognizers seeing the entire touch sequence,
+   * but never recognizing the gesture (and never invoking actions).
    */
   FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded,
-  /**
-   * The default behavior is currently set to `FlutterPlatformViewGestureBlockingPolicyEager`
-   */
-  FlutterPlatformViewGestureRecognizersBlockingPolicyDefault =
-      FlutterPlatformViewGestureRecognizersBlockingPolicyEager,
 } FlutterPlatformViewGestureRecognizersBlockingPolicy;
 
 #pragma mark -

@@ -292,14 +292,16 @@ class PlatformViewForTouchIOSScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
 
   int _viewId;
+  bool _accept;
   /// Creates the PlatformView scenario.
   ///
   /// The [window] parameter must not be null.
-  PlatformViewForTouchIOSScenario(Window window, String text, {int id = 0})
+  PlatformViewForTouchIOSScenario(Window window, String text, {int id = 0, bool accept})
       : assert(window != null),
+       _accept = accept,
+      _viewId = id,
         super(window) {
     createPlatformView(window, text, id);
-    _viewId = id;
   }
 
   @override
@@ -313,7 +315,10 @@ class PlatformViewForTouchIOSScenario extends Scenario
   @override
   void onPointerDataPacket(PointerDataPacket packet) {
     if (packet.data.first.change == PointerChange.add) {
-          const String method = 'acceptGesture';
+    String method = 'rejectGesture';
+    if (_accept) {
+      method = 'acceptGesture';
+    }
     const int _valueString = 7;
     const int _valueInt32 = 3;
     const int _valueMap = 13;
@@ -348,7 +353,6 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
   /// Call this method in the constructor of the platform view related scenarios
   /// to perform necessary set up.
   void createPlatformView(Window window, String text, int id) {
-    print('create $id');
     const int _valueInt32 = 3;
     const int _valueFloat64 = 6;
     const int _valueString = 7;

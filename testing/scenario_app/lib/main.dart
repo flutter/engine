@@ -26,7 +26,8 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
   'platform_view_multiple_background_foreground': MultiPlatformViewBackgroundForegroundScenario(window, firstId: 8, secondId: 9),
   'poppable_screen': PoppableScreenScenario(window),
   'platform_view_rotate': PlatformViewScenario(window, 'Rotate Platform View', id: 10),
-  'platform_view_touch': PlatformViewForTouchIOSScenario(window, 'platform view touch', id: 11),
+  'platform_view_touch_reject': PlatformViewForTouchIOSScenario(window, 'platform view touch', id: 11, accept: false),
+  'platform_view_touch_accept': PlatformViewForTouchIOSScenario(window, 'platform view touch', id: 11, accept: true),
 };
 
 Scenario _currentScenario = _scenarios['animated_color_square'];

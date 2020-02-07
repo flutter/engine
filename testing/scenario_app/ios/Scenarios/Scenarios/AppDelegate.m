@@ -51,14 +51,18 @@
     [self
         readyContextForPlatformViewTests:goldenTestName
         gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
-  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--gesture"]) {
+  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--gesture-reject"]) {
     FlutterPlatformViewGestureRecognizersBlockingPolicy policy =
         FlutterPlatformViewGestureRecognizersBlockingPolicyEager;
     if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--until-touches-ended"]) {
       policy = FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded;
     }
-    [self readyContextForPlatformViewTests:@"platform_view_touch"
+    [self readyContextForPlatformViewTests:@"platform_view_touch_reject"
           gestureRecognizersBlockingPolicy:policy];
+  } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--gesture-accept"]) {
+    [self readyContextForPlatformViewTests:@"platform_view_touch_accept"
+          gestureRecognizersBlockingPolicy:
+              FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded];
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
     self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
   } else {

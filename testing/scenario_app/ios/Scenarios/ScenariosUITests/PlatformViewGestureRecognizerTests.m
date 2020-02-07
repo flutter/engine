@@ -13,25 +13,12 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewGestureRecognizerTests
 
 - (void)setUp {
-  // Put setup code here. This method is called before the invocation of each test method in the
-  // class.
-
-  // In UI tests it is usually best to stop immediately when a failure occurs.
   self.continueAfterFailure = NO;
-
-  // In UI tests it’s important to set the initial state - such as interface orientation - required
-  // for your tests before they run. The setUp method is a good place to do this.
 }
 
-- (void)tearDown {
-  // Put teardown code here. This method is called after the invocation of each test method in the
-  // class.
-}
-
-- (void)testExample {
-  // UI tests must launch the application that they test.
+- (void)testRejcectPolicyUtilTouchesEnded {
   XCUIApplication* app = [[XCUIApplication alloc] init];
-  app.launchArguments = @[ @"--gesture", @"--accept", @"--until-touches-ended" ];
+  app.launchArguments = @[ @"--gesture-reject", @"--until-touches-ended" ];
   [app launch];
 
   NSPredicate* predicateToFindPlatformView =
@@ -40,8 +27,73 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
         XCUIElement* element = evaluatedObject;
         return [element.identifier isEqualToString:@"platform_view"];
       }];
-  XCUIElement* platformView =
-      [app.otherElements elementMatchingPredicate:predicateToFindPlatformView];
+  XCUIElement* platformView = [app.textViews elementMatchingPredicate:predicateToFindPlatformView];
+  if (![platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
+    NSLog(@"%@", app.debugDescription);
+    XCTFail(@"Failed due to not able to find any platformView with %@ seconds",
+            @(kSecondsToWaitForPlatformView));
+  }
+
+  XCTAssertNotNil(platformView);
+  XCTAssertEqualObjects(platformView.label, @"");
+
+  NSPredicate* predicate =
+      [NSPredicate predicateWithFormat:@"label == %@", @"-gestureTouchesBegan-gestureTouchesEnded"];
+  XCTNSPredicateExpectation* expection =
+      [[XCTNSPredicateExpectation alloc] initWithPredicate:predicate object:platformView];
+
+  [platformView tap];
+  [self waitForExpectations:@[ expection ] timeout:kSecondsToWaitForPlatformView];
+  XCTAssertEqualObjects(platformView.label, @"-gestureTouchesBegan-gestureTouchesEnded");
+}
+
+- (void)testRejcectPolicyEager {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments = @[ @"--gesture-reject" ];
+  [app launch];
+
+  NSPredicate* predicateToFindPlatformView =
+      [NSPredicate predicateWithBlock:^BOOL(id _Nullable evaluatedObject,
+                                            NSDictionary<NSString*, id>* _Nullable bindings) {
+        XCUIElement* element = evaluatedObject;
+        return [element.identifier isEqualToString:@"platform_view"];
+      }];
+  XCUIElement* platformView = [app.textViews elementMatchingPredicate:predicateToFindPlatformView];
+  if (![platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
+    NSLog(@"%@", app.debugDescription);
+    XCTFail(@"Failed due to not able to find any platformView with %@ seconds",
+            @(kSecondsToWaitForPlatformView));
+  }
+
+  XCTAssertNotNil(platformView);
+  XCTAssertEqualObjects(platformView.label, @"");
+
+  NSPredicate* predicate =
+      [NSPredicate predicateWithBlock:^BOOL(id _Nullable evaluatedObject,
+                                            NSDictionary<NSString*, id>* _Nullable bindings) {
+        XCUIElement* view = (XCUIElement*)evaluatedObject;
+        return [view.label containsString:@"-gestureTouchesBegan"];
+      }];
+  XCTNSPredicateExpectation* expection =
+      [[XCTNSPredicateExpectation alloc] initWithPredicate:predicate object:platformView];
+
+  [platformView tap];
+  [self waitForExpectations:@[ expection ] timeout:kSecondsToWaitForPlatformView];
+  XCTAssertTrue([platformView.label containsString:@"-gestureTouchesBegan"]);
+}
+
+- (void)testAccept {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments = @[ @"--gesture-accept" ];
+  [app launch];
+
+  NSPredicate* predicateToFindPlatformView =
+      [NSPredicate predicateWithBlock:^BOOL(id _Nullable evaluatedObject,
+                                            NSDictionary<NSString*, id>* _Nullable bindings) {
+        XCUIElement* element = evaluatedObject;
+        return [element.identifier isEqualToString:@"platform_view"];
+      }];
+  XCUIElement* platformView = [app.textViews elementMatchingPredicate:predicateToFindPlatformView];
   if (![platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView]) {
     NSLog(@"%@", app.debugDescription);
     XCTFail(@"Failed due to not able to find any platformView with %@ seconds",
