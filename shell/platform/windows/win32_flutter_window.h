@@ -35,8 +35,8 @@ class Win32FlutterWindow : public Win32Window {
 
   virtual ~Win32FlutterWindow();
 
-  static FlutterDesktopViewControllerRef
-  Win32FlutterWindow::CreateWin32FlutterWindow(int width, int height);
+  static FlutterDesktopViewControllerRef CreateWin32FlutterWindow(int width,
+                                                                  int height);
 
   // |Win32Window|
   void OnDpiScale(unsigned int dpi) override;
