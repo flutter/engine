@@ -16,7 +16,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
   self.continueAfterFailure = NO;
 }
 
-- (void)testRejcectPolicyUtilTouchesEnded {
+- (void)testRejectPolicyUtilTouchesEnded {
   XCUIApplication* app = [[XCUIApplication alloc] init];
   app.launchArguments = @[ @"--gesture-reject", @"--until-touches-ended" ];
   [app launch];
@@ -47,7 +47,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
   XCTAssertEqualObjects(platformView.label, @"-gestureTouchesBegan-gestureTouchesEnded");
 }
 
-- (void)testRejcectPolicyEager {
+- (void)testRejectPolicyEager {
   XCUIApplication* app = [[XCUIApplication alloc] init];
   app.launchArguments = @[ @"--gesture-reject" ];
   [app launch];
