@@ -158,8 +158,11 @@ bool isIdentityFloat64ListTransform(Float64List matrix) {
 
 /// Converts [matrix] to CSS transform 2D matrix value.
 ///
-/// The [matrix] must not be a complex transforma, but one of 2D-only
-/// transforms.
+/// The [matrix] must not be a [TransformKind.complex] transform, because CSS
+/// `matrix` can only express 2D transforms. [TransformKind.identity] is
+/// permitted. However, it is inefficient to construct a matrix for an identity
+/// transform. Consider removing the CSS `transform` property from elements
+/// that apply identity transform.
 String float64ListToCssTransform2d(Float64List matrix) {
   assert (transformKindOf(matrix) != TransformKind.complex);
   return 'matrix(${matrix[0]},${matrix[1]},${matrix[4]},${matrix[5]},${matrix[12]},${matrix[13]})';
