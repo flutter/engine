@@ -443,7 +443,10 @@ deps = {
         'version': 'version:1.7'
        }
      ],
-     'condition': 'download_android_deps',
+     # We want to be able to format these as part of CI, and the CI step that
+     # checks formatting runs without downloading the rest of the Android build
+     # tooling. Therefore unlike all the other Android-related tools, we want to
+     # download this every time.
      'dep_type': 'cipd',
    },
 
