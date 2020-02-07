@@ -31,4 +31,5 @@ TEST(StringRangeSanitizationTest, CanHandleUnicodeRange) {
 
 TEST(StringRangeSanitizationTest, HandlesEndOfRange) {
   EXPECT_EQ(fml::RangeForCharacterAtIndex(@"1234", 4).location, 4UL);
+  EXPECT_EQ(fml::RangeForCharacterAtIndex(@"1234", 4).length, 0UL);
 }
