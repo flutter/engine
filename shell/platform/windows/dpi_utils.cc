@@ -43,12 +43,10 @@ class Win32DpiHelper {
                                               UINT dpiType,
                                               UINT* dpiX,
                                               UINT* dpiY);
-  using MonitorFromWindow_ = HMONITOR __stdcall(HWND hwnd, DWORD dwFlags);
   using EnableNonClientDpiScaling_ = BOOL __stdcall(HWND hwnd);
 
   GetDpiForWindow_* get_dpi_for_window_ = nullptr;
   GetDpiForMonitor_* get_dpi_for_monitor_ = nullptr;
-  MonitorFromWindow_* monitor_from_window_ = nullptr;
   EnableNonClientDpiScaling_* enable_non_client_dpi_scaling_ = nullptr;
 
   HMODULE user32_module_ = nullptr;
@@ -66,11 +64,8 @@ Win32DpiHelper::Win32DpiHelper() {
 
   dpi_for_window_supported_ = (AssignProcAddress(
       user32_module_, "GetDpiForWindow", get_dpi_for_window_));
-  dpi_for_monitor_supported_ =
-      (AssignProcAddress(shlib_module_, "GetDpiForMonitor",
-                         get_dpi_for_monitor_) &&
-       AssignProcAddress(user32_module_, "MonitorFromWindow",
-                         monitor_from_window_));
+  dpi_for_monitor_supported_ = AssignProcAddress(
+      shlib_module_, "GetDpiForMonitor", get_dpi_for_monitor_);
 }
 
 Win32DpiHelper::~Win32DpiHelper() {
@@ -91,7 +86,7 @@ UINT Win32DpiHelper::GetDpiForWindow(HWND hwnd) {
   }
 
   if (dpi_for_monitor_supported_) {
-    HMONITOR monitor = monitor_from_window_(hwnd, MONITOR_DEFAULTTOPRIMARY);
+    HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
     return GetDpiForMonitor(monitor);
   }
   HDC hdc = GetDC(hwnd);
