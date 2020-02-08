@@ -399,7 +399,7 @@ final class AccessibilityViewEmbedder {
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (!(o instanceof ViewAndId)) return false;
       ViewAndId viewAndId = (ViewAndId) o;
       return id == viewAndId.id && view.equals(viewAndId.view);
     }
