@@ -20,7 +20,7 @@ part of engine;
 /// are only valid until the next one is obtained.
 class SurfacePathMetrics extends IterableBase<ui.PathMetric> implements ui.PathMetrics {
   SurfacePathMetrics._(SurfacePath path, bool forceClosed)
-      : _iterator = SurfacePathMetricIterator._(SurfacePathMetric._(path, forceClosed));
+      : _iterator = SurfacePathMetricIterator._(_SurfacePathMeasure(path, forceClosed));
 
   final SurfacePathMetricIterator _iterator;
 
@@ -28,74 +28,30 @@ class SurfacePathMetrics extends IterableBase<ui.PathMetric> implements ui.PathM
   Iterator<ui.PathMetric> get iterator => _iterator;
 }
 
-/// Tracks iteration from one segment of a path to the next for measurement.
-class SurfacePathMetricIterator implements Iterator<ui.PathMetric> {
-  SurfacePathMetricIterator._(this._pathMetric);
-
-  SurfacePathMetric _pathMetric;
-  bool _firstTime = true;
-
-  @override
-  SurfacePathMetric get current =>
-      _firstTime ? null : _pathMetric._segments.isEmpty ? null : _pathMetric;
-
-  @override
-  bool moveNext() {
-    // PathMetric isn't a normal iterable - it's already initialized to its
-    // first Path.  Should only call _moveNext when done with the first one.
-    if (_firstTime == true) {
-      _firstTime = false;
-      return _pathMetric._segments.isNotEmpty;
-    } else if (_pathMetric?._moveNext() == true) {
-      return true;
-    }
-    _pathMetric = null;
-    return false;
+/// Maintains a single instance of computed segments for set of PathMetric
+/// objects exposed through iterator.
+class _SurfacePathMeasure {
+  _SurfacePathMeasure(this._path, this.forceClosed) {
+    _currentContourIndex = -1; // nextContour will increment this to the zero based index.
+    _buildSegments();
   }
-}
 
-// Maximum range value used in curve subdivision using Casteljau algorithm.
-const int _kMaxTValue = 0x3FFFFFFF;
-// Distance at which we stop subdividing cubic and quadratic curves.
-const double _fTolerance = 0.5;
+  int _currentContourIndex;
+  int get currentContourIndex => _currentContourIndex;
 
-/// Utilities for measuring a [Path] and extracting subpaths.
-///
-/// Iterate over the object returned by [Path.computeMetrics] to obtain
-/// [PathMetric] objects.
-///
-/// Once created, metrics will only be valid while the iterator is at the given
-/// contour. When the next contour's [PathMetric] is obtained, this object
-/// becomes invalid.
-///
-/// Implementation is based on
-/// https://github.com/google/skia/blob/master/src/core/SkContourMeasure.cpp
-/// to maintain consistency with native platforms.
-class SurfacePathMetric implements ui.PathMetric {
   final SurfacePath _path;
-  final bool _forceClosed;
-
   // If the contour ends with a call to [Path.close] (which may
   // have been implied when using [Path.addRect])
-  bool _isClosed;
+  final bool forceClosed;
   // Iterator index into [Path.subPaths]
   int _subPathIndex = 0;
   List<_PathSegment> _segments;
   double _contourLength;
 
-  /// Create a new empty [Path] object.
-  SurfacePathMetric._(this._path, this._forceClosed) {
-    _buildSegments();
+  double length(int contourIndex) {
+    assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+    return _segments[contourIndex].distance;
   }
-
-  @override
-  int get contourIndex {
-    throw UnimplementedError('contourIndex is not implemented in the HTML backend');
-  }
-
-  /// Return the total length of the current contour.
-  @override
-  double get length => _contourLength;
 
   /// Computes the position of hte current contour at the given offset, and the
   /// angle of the path at that point.
@@ -107,9 +63,8 @@ class SurfacePathMetric implements ui.PathMetric {
   /// Returns null if the contour has zero [length].
   ///
   /// The distance is clamped to the [length] of the current contour.
-  @override
-  ui.Tangent getTangentForOffset(double distance) {
-    final Float32List posTan = _getPosTan(distance);
+  ui.Tangent getTangentForOffset(int contourIndex, double distance) {
+    final Float32List posTan = _getPosTan(contourIndex, distance);
     // first entry == 0 indicates that Skia returned false
     if (posTan[0] == 0.0) {
       return null;
@@ -119,26 +74,21 @@ class SurfacePathMetric implements ui.PathMetric {
     }
   }
 
-  Float32List _getPosTan(double distance) => throw UnimplementedError();
+  //!!!! TODO
+  Float32List _getPosTan(int contourIndex, double distance) => throw UnimplementedError();
 
-  /// Given a start and stop distance, return the intervening segment(s).
-  ///
-  /// `start` and `end` are pinned to legal values (0..[length])
-  /// Returns null if the segment is 0 length or `start` > `stop`.
-  /// Begin the segment with a moveTo if `startWithMoveTo` is true.
-  @override
-  SurfacePath extractPath(double start, double end, {bool startWithMoveTo = true}) =>
-      throw UnimplementedError();
+  bool isClosed(int contourIndex) => throw UnimplementedError();
 
-  /// Whether the contour is closed.
-  ///
-  /// Returns true if the contour ends with a call to [Path.close] (which may
-  /// have been implied when using [Path.addRect]) or if `forceClosed` was
-  /// specified as true in the call to [Path.computeMetrics].  Returns false
-  /// otherwise.
-  @override
-  bool get isClosed {
-    return _isClosed;
+  // Move to the next contour in the path.
+  //
+  // A path can have a next contour if [Path.moveTo] was called after drawing began.
+  // Return true if one exists, or false.
+  bool _nextContour() {
+    final bool next = _nativeNextContour();
+    if (next) {
+      _currentContourIndex++;
+    }
+    return next;
   }
 
   // Move to the next contour in the path.
@@ -151,7 +101,7 @@ class SurfacePathMetric implements ui.PathMetric {
   // [Iterator.current]. In this case, the [PathMetric] is valid before
   // calling `_moveNext` - `_moveNext` should be called after the first
   // iteration is done instead of before.
-  bool _moveNext() {
+  bool _nativeNextContour() {
     if (_subPathIndex == (_path.subpaths.length - 1)) {
       return false;
     }
@@ -160,6 +110,12 @@ class SurfacePathMetric implements ui.PathMetric {
     return true;
   }
 
+  ui.Path extractPath(int contourIndex, double start, double end,
+      {bool startWithMoveTo = true}) {
+    throw UnimplementedError();
+  }
+
+  bool _isClosed;
   void _buildSegments() {
     _segments = <_PathSegment>[];
     _isClosed = false;
@@ -316,7 +272,7 @@ class SurfacePathMetric implements ui.PathMetric {
           throw UnimplementedError('Unknown path command $command');
       }
     }
-    if (!_isClosed && _forceClosed && _segments.isNotEmpty) {
+    if (!_isClosed && forceClosed && _segments.isNotEmpty) {
       _PathSegment firstSegment = _segments.first;
       lineToHandler(firstSegment.points[0], firstSegment.points[1]);
     }
@@ -511,6 +467,111 @@ class SurfacePathMetric implements ui.PathMetric {
       y0 = targetPointY;
     }
     result.distance = distance;
+  }
+}
+
+/// Tracks iteration from one segment of a path to the next for measurement.
+class SurfacePathMetricIterator implements Iterator<ui.PathMetric> {
+  SurfacePathMetricIterator._(this._pathMeasure) : assert(_pathMeasure != null);
+
+  SurfacePathMetric _pathMetric;
+  _SurfacePathMeasure _pathMeasure;
+  bool _firstTime = true;
+
+  @override
+  SurfacePathMetric get current => _pathMetric;
+
+  @override
+  bool moveNext() {
+    if (_pathMeasure._nextContour()) {
+      _pathMetric = SurfacePathMetric._(_pathMeasure);
+      return true;
+    }
+    _pathMetric = null;
+    return false;
+  }
+}
+
+// Maximum range value used in curve subdivision using Casteljau algorithm.
+const int _kMaxTValue = 0x3FFFFFFF;
+// Distance at which we stop subdividing cubic and quadratic curves.
+const double _fTolerance = 0.5;
+
+/// Utilities for measuring a [Path] and extracting sub-paths.
+///
+/// Iterate over the object returned by [Path.computeMetrics] to obtain
+/// [PathMetric] objects. Callers that want to randomly access elements or
+/// iterate multiple times should use `path.computeMetrics().toList()`, since
+/// [PathMetrics] does not memoize.
+///
+/// Once created, the metrics are only valid for the path as it was specified
+/// when [Path.computeMetrics] was called. If additional contours are added or
+/// any contours are updated, the metrics need to be recomputed. Previously
+/// created metrics will still refer to a snapshot of the path at the time they
+/// were computed, rather than to the actual metrics for the new mutations to
+/// the path.
+///
+/// Implementation is based on
+/// https://github.com/google/skia/blob/master/src/core/SkContourMeasure.cpp
+/// to maintain consistency with native platforms.
+class SurfacePathMetric implements ui.PathMetric {
+
+  SurfacePathMetric._(this._measure)
+      : assert(_measure != null),
+        length = _measure.length(_measure.currentContourIndex),
+        isClosed = _measure.isClosed(_measure.currentContourIndex),
+        contourIndex = _measure.currentContourIndex;
+
+  /// Return the total length of the current contour.
+  @override
+  final double length;
+
+  /// Whether the contour is closed.
+  ///
+  /// Returns true if the contour ends with a call to [Path.close] (which may
+  /// have been implied when using methods like [Path.addRect]) or if
+  /// `forceClosed` was specified as true in the call to [Path.computeMetrics].
+  /// Returns false otherwise.
+  final bool isClosed;
+
+  /// The zero-based index of the contour.
+  ///
+  /// [Path] objects are made up of zero or more contours. The first contour is
+  /// created once a drawing command (e.g. [Path.lineTo]) is issued. A
+  /// [Path.moveTo] command after a drawing command may create a new contour,
+  /// although it may not if optimizations are applied that determine the move
+  /// command did not actually result in moving the pen.
+  ///
+  /// This property is only valid with reference to its original iterator and
+  /// the contours of the path at the time the path's metrics were computed. If
+  /// additional contours were added or existing contours updated, this metric
+  /// will be invalid for the current state of the path.
+  final int contourIndex;
+
+  final _SurfacePathMeasure _measure;
+
+  /// Computes the position of the current contour at the given offset, and the
+  /// angle of the path at that point.
+  ///
+  /// For example, calling this method with a distance of 1.41 for a line from
+  /// 0.0,0.0 to 2.0,2.0 would give a point 1.0,1.0 and the angle 45 degrees
+  /// (but in radians).
+  ///
+  /// Returns null if the contour has zero [length].
+  ///
+  /// The distance is clamped to the [length] of the current contour.
+  @override
+  ui.Tangent getTangentForOffset(double distance) {
+    return _measure.getTangentForOffset(contourIndex, distance);
+  }
+
+  /// Given a start and stop distance, return the intervening segment(s).
+  ///
+  /// `start` and `end` are pinned to legal values (0..[length])
+  /// Returns null if the segment is 0 length or `start` > `stop`.
+  /// Begin the segment with a moveTo if `startWithMoveTo` is true.
+  ui.Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
+    return _measure.extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
   }
 
   @override
