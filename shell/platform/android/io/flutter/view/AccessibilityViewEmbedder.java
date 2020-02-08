@@ -364,7 +364,7 @@ final class AccessibilityViewEmbedder {
       MotionEvent.PointerCoords originCoords = new MotionEvent.PointerCoords();
       event.getPointerCoords(i, originCoords);
 
-      pointerCoords[i] = new MotionEvent.PointerCoords((originCoords));
+      pointerCoords[i] = new MotionEvent.PointerCoords(originCoords);
       pointerCoords[i].x -= displayBounds.left;
       pointerCoords[i].y -= displayBounds.top;
     }

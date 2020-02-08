@@ -105,7 +105,7 @@ void MessageLoopTaskQueues::GetTasksToRunNow(
     if (top.GetTargetTime() > now) {
       break;
     }
-    invocations.emplace_back(std::move(top.GetTask()));
+    invocations.emplace_back(top.GetTask());
     queue_entries_.at(top_queue)->delayed_tasks.pop();
     if (type == FlushType::kSingle) {
       break;
