@@ -1118,6 +1118,7 @@ FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/plu
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/plugin_registrar_windows_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/dpi_utils.cc
 FILE: ../../../flutter/shell/platform/windows/dpi_utils.h
+FILE: ../../../flutter/shell/platform/windows/dpi_utils_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows.cc
 FILE: ../../../flutter/shell/platform/windows/key_event_handler.cc
 FILE: ../../../flutter/shell/platform/windows/key_event_handler.h

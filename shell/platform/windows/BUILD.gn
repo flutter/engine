@@ -109,6 +109,7 @@ executable("flutter_windows_unittests") {
   testonly = true
 
   sources = [
+    "dpi_utils_unittests.cc",
     "testing/win32_flutter_window_test.cc",
     "testing/win32_flutter_window_test.h",
     "testing/win32_window_test.cc",
