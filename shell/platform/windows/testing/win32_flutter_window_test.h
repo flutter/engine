@@ -10,6 +10,7 @@
 namespace flutter {
 namespace testing {
 
+/// Test class for Win32FlutterWindow.
 class Win32FlutterWindowTest : public Win32FlutterWindow {
  public:
   Win32FlutterWindowTest(int width, int height);

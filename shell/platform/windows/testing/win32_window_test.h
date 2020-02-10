@@ -10,6 +10,8 @@
 namespace flutter {
 namespace testing {
 
+/// Test class for the Win32Window base class. Used to access protected methods
+/// for testing.
 class Win32WindowTest : public Win32Window {
  public:
   Win32WindowTest();

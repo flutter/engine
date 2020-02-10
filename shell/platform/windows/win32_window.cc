@@ -12,9 +12,7 @@ Win32Window::Win32Window() {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
-  const POINT target_point = {static_cast<LONG>(0), static_cast<LONG>(0)};
-  HMONITOR monitor = MonitorFromPoint(target_point, MONITOR_DEFAULTTOPRIMARY);
-  current_dpi_ = GetDpiForMonitor(monitor);
+  current_dpi_ = GetDpiForHWND(nullptr);
 }
 
 Win32Window::~Win32Window() {

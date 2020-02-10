@@ -56,16 +56,14 @@ class Win32DpiHelper {
 };
 
 Win32DpiHelper::Win32DpiHelper() {
-  user32_module_ = LoadLibraryA("User32.dll");
-  shlib_module_ = LoadLibraryA("Shcore.dll");
-  if (shlib_module_ == nullptr && user32_module_ == nullptr) {
-    return;
+  if ((user32_module_ = LoadLibraryA("User32.dll")) != nullptr) {
+    dpi_for_window_supported_ = (AssignProcAddress(
+        user32_module_, "GetDpiForWindow", get_dpi_for_window_));
   }
-
-  dpi_for_window_supported_ = (AssignProcAddress(
-      user32_module_, "GetDpiForWindow", get_dpi_for_window_));
-  dpi_for_monitor_supported_ = AssignProcAddress(
-      shlib_module_, "GetDpiForMonitor", get_dpi_for_monitor_);
+  if ((shlib_module_ = LoadLibraryA("Shcore.dll")) != nullptr) {
+    dpi_for_monitor_supported_ = AssignProcAddress(
+        shlib_module_, "GetDpiForMonitor", get_dpi_for_monitor_);
+  }
 }
 
 Win32DpiHelper::~Win32DpiHelper() {
@@ -88,7 +86,7 @@ UINT Win32DpiHelper::GetDpiForWindow(HWND hwnd) {
   if (dpi_for_monitor_supported_) {
     HMONITOR monitor;
     if (hwnd == nullptr) {
-      const POINT target_point = {static_cast<LONG>(0), static_cast<LONG>(0)};
+      const POINT target_point = {0, 0};
       monitor = MonitorFromPoint(target_point, MONITOR_DEFAULTTOPRIMARY);
     } else {
       monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
@@ -106,7 +104,9 @@ UINT Win32DpiHelper::GetDpiForMonitor(HMONITOR monitor) {
     UINT dpi_x = 0, dpi_y = 0;
     HRESULT result =
         get_dpi_for_monitor_(monitor, kEffectiveDpiMonitorType, &dpi_x, &dpi_y);
-    return SUCCEEDED(result) ? dpi_x : kDefaultDpi;
+    if (SUCCEEDED(result)) {
+      return dpi_x;
+    }
   }
   return kDefaultDpi;
 }
