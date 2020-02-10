@@ -5,8 +5,8 @@ namespace flutter {
 namespace testing {
 
 TEST(DpiUtilsTest, NonZero) {
-  ASSERT_GT(GetDpiForHWND(nullptr),0);
-  ASSERT_GT(GetDpiForMonitor(nullptr),0);
+  ASSERT_GT(GetDpiForHWND(nullptr), 0);
+  ASSERT_GT(GetDpiForMonitor(nullptr), 0);
 };
 
 TEST(DpiUtilsTest, EqualDpis) {
