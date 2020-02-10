@@ -4,6 +4,8 @@
 
 part of engine;
 
+const double kEpsilon = 0.000000001;
+
 /// An iterable collection of [PathMetric] objects describing a [Path].
 ///
 /// A [PathMetrics] object is created by using the [Path.computeMetrics] method,
@@ -33,24 +35,26 @@ class SurfacePathMetrics extends IterableBase<ui.PathMetric> implements ui.PathM
 class _SurfacePathMeasure {
   _SurfacePathMeasure(this._path, this.forceClosed) {
     _currentContourIndex = -1; // nextContour will increment this to the zero based index.
-    _buildSegments();
   }
+
+  final SurfacePath _path;
+  final List<_PathContourMeasure> _contours = [];
+
+  // If the contour ends with a call to [Path.close] (which may
+  // have been implied when using [Path.addRect])
+  final bool forceClosed;
 
   int _currentContourIndex;
   int get currentContourIndex => _currentContourIndex;
 
-  final SurfacePath _path;
-  // If the contour ends with a call to [Path.close] (which may
-  // have been implied when using [Path.addRect])
-  final bool forceClosed;
   // Iterator index into [Path.subPaths]
   int _subPathIndex = 0;
-  List<_PathSegment> _segments;
-  double _contourLength;
+  _PathContourMeasure _contourMeasure;
 
   double length(int contourIndex) {
-    assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
-    return _segments[contourIndex].distance;
+    assert(contourIndex <=
+        currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+    return _contours[contourIndex].length;
   }
 
   /// Computes the position of hte current contour at the given offset, and the
@@ -64,20 +68,10 @@ class _SurfacePathMeasure {
   ///
   /// The distance is clamped to the [length] of the current contour.
   ui.Tangent getTangentForOffset(int contourIndex, double distance) {
-    final Float32List posTan = _getPosTan(contourIndex, distance);
-    // first entry == 0 indicates that Skia returned false
-    if (posTan[0] == 0.0) {
-      return null;
-    } else {
-      return ui.Tangent(
-          ui.Offset(posTan[1], posTan[2]), ui.Offset(posTan[3], posTan[4]));
-    }
+    return _contours[contourIndex].getTangentForOffset(distance);
   }
 
-  //!!!! TODO
-  Float32List _getPosTan(int contourIndex, double distance) => throw UnimplementedError();
-
-  bool isClosed(int contourIndex) => throw UnimplementedError();
+  bool isClosed(int contourIndex) => _contours[contourIndex].isClosed;
 
   // Move to the next contour in the path.
   //
@@ -106,28 +100,88 @@ class _SurfacePathMeasure {
       return false;
     }
     ++_subPathIndex;
-    _buildSegments();
+    _contourMeasure = _PathContourMeasure(_path.subpaths[_subPathIndex], forceClosed);
+    _contours.add(_contourMeasure);
     return true;
   }
 
   ui.Path extractPath(int contourIndex, double start, double end,
       {bool startWithMoveTo = true}) {
+    _contours[contourIndex].extractPath(start, end, startWithMoveTo);
+  }
+}
+
+/// Builds segments for a single contour to measure distance, compute tangent
+/// and extract a sub path.
+class _PathContourMeasure {
+  _PathContourMeasure(this.subPath, this.forceClosed) {
+    _buildSegments();
+  }
+
+  final List<_PathSegment> _segments = [];
+
+  final Subpath subPath;
+  final bool forceClosed;
+  double get length => _contourLength;
+  bool get isClosed => _isClosed;
+
+  double _contourLength = 0.0;
+  bool _isClosed = false;
+
+  ui.Tangent getTangentForOffset(double distance) {
+    if (distance.isNaN) {
+      return null;
+    }
+    // Pin distance to legal range.
+    if (distance < 0.0) {
+      distance = 0.0;
+    } else if (distance > _contourLength) {
+      distance = _contourLength;
+    }
+
+    // Binary search through segments to find segment at distance.
+    if (_segments.isEmpty) {
+      return null;
+    }
+    int lo = 0;
+    int hi = _segments.length - 1;
+    while (lo < hi) {
+      int mid = (lo + hi) >> 1;
+      if (_segments[mid].distance < distance) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    if (_segments[hi].distance < distance) {
+      hi++;
+    }
+    return _getPosTan(hi, distance);
+  }
+
+  ui.Tangent _getPosTan(int segmentIndex, double distance) {
+    _PathSegment segment = _segments[segmentIndex];
+    // Compute distance to segment. Since distance is cumulative to find
+    // t = 0..1 on the segment, we need to calculate start distance using prior
+    // segment.
+    final double startDistance = segmentIndex == 0 ? 0 : _segments[segmentIndex - 1].distance;
+    final double totalDistance = segment.distance - startDistance;
+    final double t = totalDistance < kEpsilon ? 0 :
+        (distance - startDistance) / totalDistance;
+    return segment.computeTangent(t);
+  }
+
+  ui.Path extractPath(double start, double end, bool startWithMoveTo) {
     throw UnimplementedError();
   }
 
-  bool _isClosed;
   void _buildSegments() {
-    _segments = <_PathSegment>[];
+    assert(_segments.isEmpty, '_buildSegments should be called once');
     _isClosed = false;
     double distance = 0.0;
     bool haveSeenMoveTo = false;
 
-    if (_path.subpaths.isEmpty) {
-      _contourLength = 0;
-      return;
-    }
-    final Subpath subpath = _path.subpaths[_subPathIndex];
-    final List<PathCommand> commands = subpath.commands;
+    final List<PathCommand> commands = subPath.commands;
     double currentX = 0.0, currentY = 0.0;
     final Function lineToHandler = (double x, double y) {
       final double dx = currentX - x;
@@ -585,10 +639,109 @@ class _EllipseSegmentResult {
   _EllipseSegmentResult();
 }
 
+// Given a vector dx, dy representing slope, normalize and return as [ui.Offset].
+ui.Offset _normalizeSlope(double dx, double dy) {
+  final double length = math.sqrt(dx * dx + dy * dy);
+  return length < kEpsilon ? ui.Offset(0.0, 0.0) : ui.Offset(dx / length, dy / length);
+}
+
 class _PathSegment {
   _PathSegment(this.segmentType, this.distance, this.points);
 
   final int segmentType;
   final double distance;
   final List<double> points;
+
+  ui.Tangent computeTangent(double t) {
+    switch (segmentType) {
+      case PathCommandTypes.lineTo:
+        // Simple line. Position is simple interpolation from start to end point.
+        final double xAtDistance = (points[2] * t) + (points[0] * (1.0 - t));
+        final double yAtDistance = (points[3] * t) + (points[1] * (1.0 - t));
+        return ui.Tangent(ui.Offset(xAtDistance, yAtDistance),
+            _normalizeSlope(points[2] - points[0], points[3] - points[1]));
+      case PathCommandTypes.bezierCurveTo:
+        return tangentForCubicAt(t, points[0], points[1], points[2], points[3], points[4], points[5], points[6], points[7]);
+      case PathCommandTypes.quadraticCurveTo:
+        return tangentForQuadAt(t, points[0], points[1], points[2], points[3], points[4], points[5]);
+      default:
+        throw UnsupportedError('Invalid segment type');
+    }
+  }
+
+  ui.Tangent tangentForQuadAt(double t, double x0, double y0, double x1, double y1, double x2, double y2) {
+    assert(t >= 0 && t <= 1);
+    final _SkQuadCoefficients _quadEval = _SkQuadCoefficients(x0, y0, x1, y1, x2, y2);
+    final ui.Offset pos = ui.Offset(_quadEval.evalX(t), _quadEval.evalY(t));
+    // Derivative of quad curve is 2(b - a + (a - 2b + c)t).
+    // If control point is at start or end point, this yields 0 for t = 0 and
+    // t = 1. In that case use the quad end points to compute tangent instead
+    // of derivative.
+    final ui.Offset tangentVector =
+     ((t == 0 && x0 == x1 && y0 == y1) || (t == 0 && x1 == x2 && y1 == y2))
+      ? _normalizeSlope(x2 - x0, y2 - y0)
+      : _normalizeSlope(2 * ((x2 - x0) * t + (x1 - x0)), 2 * ((y2 - y0) * t + (y1 - y0)));
+    return ui.Tangent(pos, tangentVector);
+  }
+
+  ui.Tangent tangentForCubicAt(double t, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3) {
+    assert(t >= 0 && t <= 1);
+    final _SkCubicCoefficients _cubicEval = _SkCubicCoefficients(x0, y0, x1, y1, x2, y2, x3, y3);
+    final ui.Offset pos = ui.Offset(_cubicEval.evalX(t), _cubicEval.evalY(t));
+    // Derivative of cubic is zero when t = 0 or 1 and adjacent control point
+    // is on the start or end point of curve. Use the other control point
+    // to compute the tangent or if both control points are on end points
+    // use end points for tangent.
+    final bool tAtZero = t == 0;
+    ui.Offset tangentVector;
+    if ((tAtZero && x0 == x1 && y0 == y1) || (t == 1 && x2 == x3 && y2 == y3)) {
+      double dx = tAtZero ? x2 - x0 : x3 - x1;
+      double dy = tAtZero ? y2 - y0 : y3 - y1;
+      if (dx == 0 && dy == 0) {
+        dx = x3 - x0;
+        dy = y3 - y0;
+      }
+      tangentVector = _normalizeSlope(dx, dy);
+    } else {
+      final double ax = x3 + (3 * (x1 - x2)) - x0;
+      final double ay = y3 + (3 * (y1 - y2)) - y0;
+      final double bx = 2 * (x2 - (2 * x1) + x0);
+      final double by = 2 * (y2 - (2 * y1) + y0);
+      final double cx = x1 - x0;
+      final double cy = y1 - y0;
+      final double tx = (ax * t + bx) * t + cx;
+      final double ty = (ay * t + by) * t + cy;
+      tangentVector = _normalizeSlope(tx, ty);
+    }
+  }
+}
+
+/// Evaluates A * t^2 + B * t + C = 0 for quadratic curve.
+class _SkQuadCoefficients {
+  _SkQuadCoefficients(double x0, double y0, double x1, double y1, double x2, double y2)
+      : cx = x0, cy = y0, bx = 2 * (x1 - x0), by = 2 * (y1 - y0),
+        ax = x2 - (2 * x1) + x0, ay = y2 - (2 * y1) + y0;
+  final double ax, ay, bx, by, cx, cy;
+
+  double evalX(double t) => (ax * t + bx) * t + cx;
+
+  double evalY(double t) => (ay * t + by) * t + cy;
+}
+
+// Evaluates A * t^3 + B * t^2 + Ct + D = 0 for cubic curve.
+class _SkCubicCoefficients {
+  final double ax, ay, bx, by, cx, cy, dx, dy;
+  _SkCubicCoefficients(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3) :
+      ax = x3 + (3 * (x1 - x2)) - x0,
+      ay = y3 + (3 * (y1 - y2)) - y0,
+      bx = 3 * (x2 - (2 * x1) + x0),
+      by = 3 * (y2 - (2 * y1) + y0),
+      cx = 3 * (x1 - x0),
+      cy = 3 * (y1 - y0),
+      dx = x0,
+      dy = y0;
+
+  double evalX(double t) => (((ax * t + bx) * t) + cx) * t + dx;
+
+  double evalY(double t) => (((ay * t + by) * t) + cy) * t + dy;
 }
