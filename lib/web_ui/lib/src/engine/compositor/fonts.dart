@@ -14,10 +14,12 @@ const String _robotoUrl =
 
 /// Manages the fonts used in the Skia-based backend.
 class SkiaFontCollection {
-  final List<Future<_RegisteredFont>> _unloadedAssetFonts =
+  /// Fonts that have been registered but haven't been loaded yet.
+  final List<Future<_RegisteredFont>> _unloadedFonts =
       <Future<_RegisteredFont>>[];
-  final List<_RegisteredFont> _assetFonts = <_RegisteredFont>[];
-  final List<_RegisteredFont> _dynamicallyLoadedFonts = <_RegisteredFont>[];
+
+  /// Fonts which have been registered and loaded.
+  final List<_RegisteredFont> _registeredFonts = <_RegisteredFont>[];
 
   /// A mapping from the name a font was registered with, to the family name
   /// embedded in the font's bytes (the font's "actual" name).
@@ -32,19 +34,29 @@ class SkiaFontCollection {
   final Set<String> registeredFamilies = <String>{};
 
   Future<void> ensureFontsLoaded() async {
-    if (_unloadedAssetFonts.isNotEmpty) {
-      _assetFonts.addAll(
-          (await Future.wait(_unloadedAssetFonts)).where((x) => x != null));
-      _unloadedAssetFonts.clear();
-    }
-    List<_RegisteredFont> registeredFonts = <_RegisteredFont>[
-      ..._assetFonts,
-      ..._dynamicallyLoadedFonts,
-    ];
+    await _loadFonts();
+    _computeFontFamilyOverrides();
 
+    final List<Uint8List> fontBuffers =
+        _registeredFonts.map<Uint8List>((f) => f.bytes).toList();
+
+    skFontMgr = canvasKit['SkFontMgr'].callMethod('FromData', fontBuffers);
+  }
+
+  /// Loads all of the unloaded fonts in [_unloadedFonts] and adds them
+  /// to [_registeredFonts].
+  Future<void> _loadFonts() async {
+    if (_unloadedFonts.isEmpty) return;
+
+    final List<_RegisteredFont> loadedFonts = await Future.wait(_unloadedFonts);
+    _registeredFonts.addAll(loadedFonts.where((x) => x != null));
+    _unloadedFonts.clear();
+  }
+
+  void _computeFontFamilyOverrides() {
     fontFamilyOverrides.clear();
 
-    for (_RegisteredFont font in registeredFonts) {
+    for (_RegisteredFont font in _registeredFonts) {
       if (fontFamilyOverrides.containsKey(font.flutterFamily)) {
         if (fontFamilyOverrides[font.flutterFamily] != font.actualFamily) {
           html.window.console.warn('Fonts in family ${font.flutterFamily} '
@@ -57,11 +69,6 @@ class SkiaFontCollection {
         fontFamilyOverrides[font.flutterFamily] = font.actualFamily;
       }
     }
-
-    final List<Uint8List> fontBuffers =
-        registeredFonts.map<Uint8List>((f) => f.bytes).toList();
-
-    skFontMgr = canvasKit['SkFontMgr'].callMethod('FromData', fontBuffers);
   }
 
   Future<void> loadFontFromList(Uint8List list, {String fontFamily}) async {
@@ -82,8 +89,7 @@ class SkiaFontCollection {
 
     registeredFamilies.add(fontFamily);
 
-    _dynamicallyLoadedFonts
-        .add(_RegisteredFont(list, fontFamily, actualFamily));
+    _registeredFonts.add(_RegisteredFont(list, fontFamily, actualFamily));
     await ensureFontsLoaded();
   }
 
@@ -123,7 +129,7 @@ class SkiaFontCollection {
       for (dynamic fontAssetItem in fontAssets) {
         final Map<String, dynamic> fontAsset = fontAssetItem;
         final String asset = fontAsset['asset'];
-        _unloadedAssetFonts
+        _unloadedFonts
             .add(_registerFont(assetManager.getAssetUrl(asset), family));
       }
     }
@@ -133,7 +139,7 @@ class SkiaFontCollection {
     /// Roboto to match Android.
     if (!registeredFamilies.contains('Roboto')) {
       // Download Roboto and add it to the font buffers.
-      _unloadedAssetFonts.add(_registerFont(_robotoUrl, 'Roboto'));
+      _unloadedFonts.add(_registerFont(_robotoUrl, 'Roboto'));
     }
   }
 
