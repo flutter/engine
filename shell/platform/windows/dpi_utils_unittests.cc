@@ -11,7 +11,6 @@ TEST(DpiUtilsTest, NonZero) {
 
 TEST(DpiUtilsTest, EqualDpis) {
   ASSERT_EQ(GetDpiForHWND(nullptr), GetDpiForMonitor(nullptr));
-  ASSERT_EQ(GetDpiForHWND(nullptr), 96);
 };
 
 }  // namespace testing
