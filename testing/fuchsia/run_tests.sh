@@ -49,11 +49,22 @@ done
     -f flutter_runner_scenic_tests-0.far  \
     -t flutter_runner_scenic_tests
 
+# TODO(https://github.com/flutter/flutter/issues/50032) Enable after the
+# Fuchsia message loop migration is complete.
 ./fuchsia_ctl -d $device_name test \
     -f fml_tests-0.far  \
-    -t fml_tests
+    -t fml_tests \
+    -a "--gtest_filter=-MessageLoop*:Message*:FileTest*"
 
 ./fuchsia_ctl -d $device_name test \
     -f flow_tests-0.far  \
     -t flow_tests
 
+./fuchsia_ctl -d $device_name test \
+    -f runtime_tests-0.far  \
+    -t runtime_tests
+
+./fuchsia_ctl -d $device_name test \
+    -f shell_tests-0.far  \
+    -t shell_tests \
+    -a "--gtest_filter=-ShellTest.HandlesActualIphoneXsInputEvents:ShellTest.CacheSkSLWorks:ShellTest.SetResourceCacheSize*:ShellTest.Screenshot:ShellTest.WaitForFirstFrameTimeout"

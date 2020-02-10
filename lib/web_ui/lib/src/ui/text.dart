@@ -1190,8 +1190,8 @@ enum BoxHeightStyle {
   /// guarantee that the boxes will cover the entire vertical height of the line
   /// when there is additional line spacing.
   ///
-  /// See [RectHeightStyle.includeLineSpacingTop], [RectHeightStyle.includeLineSpacingMiddle],
-  /// and [RectHeightStyle.includeLineSpacingBottom] for styles that will cover
+  /// See [BoxHeightStyle.includeLineSpacingTop], [BoxHeightStyle.includeLineSpacingMiddle],
+  /// and [BoxHeightStyle.includeLineSpacingBottom] for styles that will cover
   /// the entire line.
   max,
 
@@ -1213,7 +1213,7 @@ enum BoxHeightStyle {
   ///
   /// The line spacing will be added to the top of the box.
   ///
-  /// {@macro flutter.dart:ui.rectHeightStyle.includeLineSpacing}
+  /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
   includeLineSpacingTop,
 
   /// Extends the bottom edge of the bounds to fully cover any line spacing.
@@ -1588,9 +1588,15 @@ abstract class ParagraphBuilder {
 /// * `fontFamily`: The family name used to identify the font in text styles.
 ///  If this is not provided, then the family name will be extracted from the font file.
 Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
-  return _fontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
-    (_) => _sendFontChangeMessage()
-  );
+  if (engine.experimentalUseSkia) {
+    return engine.skiaFontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
+        (_) => _sendFontChangeMessage()
+    );
+  } else {
+    return _fontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
+      (_) => _sendFontChangeMessage()
+    );
+  }
 }
 
 final ByteData _fontChangeMessage = engine.JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
