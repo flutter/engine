@@ -234,15 +234,16 @@ import java.util.Arrays;
   /**
    * Invoke this method from {@code Activity#onCreate(Bundle)} to create the content {@code View},
    * or from {@code Fragment#onCreateView(LayoutInflater, ViewGroup, Bundle)}.
-   * <p>
-   * {@code inflater} and {@code container} may be null when invoked from an {@code Activity}.
-   * <p>
-   * This method:
+   *
+   * <p>{@code inflater} and {@code container} may be null when invoked from an {@code Activity}.
+   *
+   * <p>This method:
+   *
    * <ol>
-   *   <li>creates a new {@link FlutterView} in a {@code View} hierarchy</li>
-   *   <li>adds a {@link FlutterUiDisplayListener} to it</li>
-   *   <li>attaches a {@link FlutterEngine} to the new {@link FlutterView}</li>
-   *   <li>returns the new {@code View} hierarchy</li>
+   *   <li>creates a new {@link FlutterView} in a {@code View} hierarchy
+   *   <li>adds a {@link FlutterUiDisplayListener} to it
+   *   <li>attaches a {@link FlutterEngine} to the new {@link FlutterView}
+   *   <li>returns the new {@code View} hierarchy
    * </ol>
    */
   @NonNull
@@ -288,7 +289,7 @@ import java.util.Arrays;
    * <p>
    *
    * <ol>
-   *   <li>Begins executing Dart code, if it is not already executing.</li>
+   *   <li>Begins executing Dart code, if it is not already executing.
    * </ol>
    */
   void onStart() {
