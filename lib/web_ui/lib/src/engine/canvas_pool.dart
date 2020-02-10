@@ -98,21 +98,21 @@ class _CanvasPool extends _SaveStackTracking {
         ..position = 'absolute'
         ..width = '${cssWidth}px'
         ..height = '${cssHeight}px';
+    }
 
-      // When the picture has a 90-degree transform and clip in its
-      // ancestor layers, it triggers a bug in Blink and Webkit browsers
-      // that results in canvas obscuring text that should be painted on
-      // top. Setting z-index to any negative value works around the bug.
-      // This workaround only works with the first canvas. If more than
-      // one element have negative z-index, the bug is triggered again.
-      //
-      // Possible Blink bugs that are causing this:
-      // * https://bugs.chromium.org/p/chromium/issues/detail?id=370604
-      // * https://bugs.chromium.org/p/chromium/issues/detail?id=586601
-      final bool isFirstChildElement = _rootElement.firstChild == null;
-      if (isFirstChildElement) {
-        _canvas.style.zIndex = '-1';
-      }
+    // When the picture has a 90-degree transform and clip in its
+    // ancestor layers, it triggers a bug in Blink and Webkit browsers
+    // that results in canvas obscuring text that should be painted on
+    // top. Setting z-index to any negative value works around the bug.
+    // This workaround only works with the first canvas. If more than
+    // one element have negative z-index, the bug is triggered again.
+    //
+    // Possible Blink bugs that are causing this:
+    // * https://bugs.chromium.org/p/chromium/issues/detail?id=370604
+    // * https://bugs.chromium.org/p/chromium/issues/detail?id=586601
+    final bool isFirstChildElement = _rootElement.firstChild == null;
+    if (isFirstChildElement) {
+      _canvas.style.zIndex = '-1';
     }
     _rootElement.append(_canvas);
     _context = _canvas.context2D;

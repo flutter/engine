@@ -417,3 +417,19 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
   }
   return floatList;
 }
+
+/// Apply this function to container elements in the HTML render tree (this is
+/// not relevant to semantics tree).
+///
+/// On WebKit browsers this will apply `z-order: 0` to ensure that clips are
+/// applied correctly. Otherwise, the browser will refuse to clip its contents.
+///
+/// Other possible fixes that were rejected:
+///
+/// * Use 3D transform instead of 2D: this does not work because it causes text
+///   blurriness: https://github.com/flutter/flutter/issues/32274
+void applyWebkitClipFix(html.Element containerElement) {
+  if (browserEngine == BrowserEngine.webkit) {
+    containerElement.style.zIndex = '0';
+  }
+}

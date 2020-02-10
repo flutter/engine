@@ -705,6 +705,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
     final _SaveClipEntry entry = clipStack[clipIndex];
     final html.HtmlElement newElement = html.DivElement();
     newElement.style.position = 'absolute';
+    applyWebkitClipFix(newElement);
     if (root == null) {
       root = newElement;
     } else {
