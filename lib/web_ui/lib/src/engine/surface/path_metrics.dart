@@ -119,6 +119,8 @@ class _PathContourMeasure {
   }
 
   final List<_PathSegment> _segments = [];
+  // Allocate buffer large enough for returning cubic curve chop result.
+  static final Float32List _buffer = Float32List(4 * 2);
 
   final Subpath subPath;
   final bool forceClosed;
@@ -227,7 +229,24 @@ class _PathContourMeasure {
   // Chops the segment at startT and endT and writes it to output [path].
   void _outputSegmentTo(_PathSegment segment, double startT, double stopT,
       ui.Path path) {
-    throw UnimplementedError();
+    final List<double> points = segment.points;
+    switch(segment.segmentType) {
+      case PathCommandTypes.lineTo:
+        final double toX = (points[2] * stopT) + (points[0] * (1.0 - stopT));
+        final double toY = (points[3] * stopT) + (points[1] * (1.0 - stopT));
+        path.lineTo(toX, toY);
+        break;
+      case PathCommandTypes.bezierCurveTo:
+        _chopCubicAt(points, startT, stopT, _buffer);
+        path.cubicTo(_buffer[2], _buffer[3], _buffer[4], _buffer[5], _buffer[6], _buffer[7]);
+        break;
+      case PathCommandTypes.quadraticCurveTo:
+        _chopQuadAt(points, startT, stopT, _buffer);
+        path.quadraticBezierTo(_buffer[2], _buffer[3], _buffer[4], _buffer[5]);
+        break;
+      default:
+        throw UnsupportedError('Invalid segment type');
+    }
   }
 
   void _buildSegments() {
@@ -811,4 +830,141 @@ class _SkCubicCoefficients {
   double evalX(double t) => (((ax * t + bx) * t) + cx) * t + dx;
 
   double evalY(double t) => (((ay * t + by) * t) + cy) * t + dy;
+}
+
+/// Chops cubic spline at startT and stopT, writes result to buffer.
+void _chopCubicAt(List<double> points, double startT, double stopT,
+    Float32List buffer) {
+  assert(startT != 0 || stopT != 0);
+  final double p3y = points[7];
+  final double p0x = points[0];
+  final double p0y = points[1];
+  final double p1x = points[2];
+  final double p1y = points[3];
+  final double p2x = points[4];
+  final double p2y = points[5];
+  final double p3x = points[6];
+  // If startT == 0 chop at end point and return curve.
+  final bool chopStart = startT != 0;
+  final double t = chopStart ? startT : stopT;
+
+  final double ab1x = p0x * (1 - t) + p1x * t;
+  final double ab1y = p0y * (1 - t) + p1y * t;
+  final double bc1x = p1x * (1 - t) + p2x * t;
+  final double bc1y = p1y * (1 - t) + p2y * t;
+  final double cd1x = p2x * (1 - t) + p3x * t;
+  final double cd1y = p2y * (1 - t) + p3y * t;
+  final double abc1x = ab1x * (1 - t) + bc1x * t;
+  final double abc1y = ab1y * (1 - t) + bc1y * t;
+  final double bcd1x = bc1x * (1 - t) + cd1x * t;
+  final double bcd1y = bc1y * (1 - t) + cd1y * t;
+  final double abcd1x = abc1x * (1 - t) + bcd1x * t;
+  final double abcd1y = abc1y * (1 - t) + bcd1y * t;
+  if (!chopStart) {
+    // Return left side of curve.
+    buffer[0] = p0x;
+    buffer[1] = p0y;
+    buffer[2] = ab1x;
+    buffer[3] = ab1y;
+    buffer[4] = abc1x;
+    buffer[5] = abc1y;
+    buffer[6] = abcd1x;
+    buffer[7] = abcd1y;
+    return;
+  }
+  if (stopT == 1) {
+    // Return right side of curve.
+    buffer[0] = abcd1x;
+    buffer[1] = abcd1y;
+    buffer[2] = bcd1x;
+    buffer[3] = bcd1y;
+    buffer[4] = cd1x;
+    buffer[5] = cd1y;
+    buffer[6] = p3x;
+    buffer[7] = p3y;
+    return;
+  }
+  // We chopped at startT, now the right hand side of curve is at
+  // abcd1, bcd1, cd1, p3x, p3y. Chop this part using endT;
+  final double endT = (stopT - startT) / (1 - startT);
+  final double ab2x = abcd1x * (1 - endT) + bcd1x * endT;
+  final double ab2y = abcd1y * (1 - endT) + bcd1y * endT;
+  final double bc2x = bcd1x * (1 - endT) + cd1x * endT;
+  final double bc2y = bcd1y * (1 - endT) + cd1y * endT;
+  final double cd2x = cd1x * (1 - endT) + p3x * endT;
+  final double cd2y = cd1y * (1 - endT) + p3y * endT;
+  final double abc2x = ab2x * (1 - endT) + bc2x * endT;
+  final double abc2y = ab2y * (1 - endT) + bc2y * endT;
+  final double bcd2x = bc2x * (1 - endT) + cd2x * endT;
+  final double bcd2y = bc2y * (1 - endT) + cd2y * endT;
+  final double abcd2x = abc2x * (1 - endT) + bcd2x * endT;
+  final double abcd2y = abc2y * (1 - endT) + bcd2y * endT;
+  buffer[0] = abcd1x;
+  buffer[1] = abcd1y;
+  buffer[2] = ab2x;
+  buffer[3] = ab2y;
+  buffer[4] = abc2x;
+  buffer[5] = abc2y;
+  buffer[6] = abcd2x;
+  buffer[7] = abcd2y;
+}
+
+/// Chops quadratic curve at startT and stopT and writes result to buffer.
+void _chopQuadAt(List<double> points, double startT, double stopT,
+    Float32List buffer) {
+    assert(startT != 0 || stopT != 0);
+    final double p2y = points[5];
+    final double p0x = points[0];
+    final double p0y = points[1];
+    final double p1x = points[2];
+    final double p1y = points[3];
+    final double p2x = points[4];
+
+    // If startT == 0 chop at end point and return curve.
+    final bool chopStart = startT != 0;
+    final double t = chopStart ? startT : stopT;
+
+    final double ab1x = p0x * (1 - t) + p1x * t;
+    final double ab1y = p0y * (1 - t) + p1y * t;
+    final double bc1x = p1x * (1 - t) + p2x * t;
+    final double bc1y = p1y * (1 - t) + p2y * t;
+    final double abc1x = ab1x * (1 - t) + bc1x * t;
+    final double abc1y = ab1y * (1 - t) + bc1y * t;
+    if (!chopStart) {
+      // Return left side of curve.
+      buffer[0] = p0x;
+      buffer[1] = p0y;
+      buffer[2] = ab1x;
+      buffer[3] = ab1y;
+      buffer[4] = abc1x;
+      buffer[5] = abc1y;
+      return;
+    }
+    if (stopT == 1) {
+      // Return right side of curve.
+      buffer[0] = abc1x;
+      buffer[1] = abc1y;
+      buffer[2] = bc1x;
+      buffer[3] = bc1y;
+      buffer[4] = p2x;
+      buffer[5] = p2y;
+      return;
+    }
+    // We chopped at startT, now the right hand side of curve is at
+    // abc1x, abc1y, bc1x, bc1y, p2x, p2y
+    final double endT = (stopT - startT) / (1 - startT);
+    final double ab2x = abc1x * (1 - endT) + bc1x * endT;
+    final double ab2y = abc1y * (1 - endT) + bc1y * endT;
+    final double bc2x = bc1x * (1 - endT) + p2x * endT;
+    final double bc2y = bc1y * (1 - endT) + p2y * endT;
+    final double abc2x = ab2x * (1 - endT) + bc2x * endT;
+    final double abc2y = ab2y * (1 - endT) + bc2y * endT;
+
+    buffer[0] = abc1x;
+    buffer[1] = abc1y;
+    buffer[2] = ab2x;
+    buffer[3] = ab2y;
+    buffer[4] = abc2x;
+    buffer[5] = abc2y;
+  }
 }
