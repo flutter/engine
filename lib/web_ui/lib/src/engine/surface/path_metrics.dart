@@ -129,8 +129,17 @@ class _PathContourMeasure {
   bool _isClosed = false;
 
   ui.Tangent getTangentForOffset(double distance) {
-    if (distance.isNaN) {
+    final segmentIndex = _segmentIndexAtDistance(distance);
+    if (segmentIndex == -1) {
       return null;
+    }
+    return _getPosTan(segmentIndex, distance);
+  }
+
+  // Returns segment at [distance].
+  int _segmentIndexAtDistance(double distance) {
+    if (distance.isNaN) {
+      return -1;
     }
     // Pin distance to legal range.
     if (distance < 0.0) {
@@ -141,7 +150,7 @@ class _PathContourMeasure {
 
     // Binary search through segments to find segment at distance.
     if (_segments.isEmpty) {
-      return null;
+      return -1;
     }
     int lo = 0;
     int hi = _segments.length - 1;
@@ -156,10 +165,10 @@ class _PathContourMeasure {
     if (_segments[hi].distance < distance) {
       hi++;
     }
-    return _getPosTan(hi, distance);
+    return hi;
   }
 
-  ui.Tangent _getPosTan(int segmentIndex, double distance) {
+  _SurfaceTangent _getPosTan(int segmentIndex, double distance) {
     _PathSegment segment = _segments[segmentIndex];
     // Compute distance to segment. Since distance is cumulative to find
     // t = 0..1 on the segment, we need to calculate start distance using prior
@@ -171,7 +180,53 @@ class _PathContourMeasure {
     return segment.computeTangent(t);
   }
 
-  ui.Path extractPath(double start, double end, bool startWithMoveTo) {
+  ui.Path extractPath(double startDistance, double stopDistance, bool startWithMoveTo) {
+    if (startDistance < 0) {
+      startDistance = 0;
+    }
+    if (stopDistance > _contourLength) {
+      stopDistance = _contourLength;
+    }
+    if (startDistance > stopDistance || _segments.isEmpty) {
+      return null;
+    }
+    final ui.Path path = ui.Path();
+    int startSegmentIndex = _segmentIndexAtDistance(startDistance);
+    int stopSegmentIndex = _segmentIndexAtDistance(stopDistance);
+    if (startSegmentIndex == 0 || stopSegmentIndex == 0) {
+      return null;
+    }
+    int currentSegmentIndex = startSegmentIndex;
+    _PathSegment seg = _segments[currentSegmentIndex];
+    final _SurfaceTangent startTangent = _getPosTan(startSegmentIndex, startDistance);
+    if (startWithMoveTo) {
+      final ui.Offset startPosition = startTangent.position;
+      path.moveTo(startPosition.dx, startPosition.dy);
+    }
+    final _SurfaceTangent stopTangent = _getPosTan(stopSegmentIndex, stopDistance);
+    double startT = startTangent.t;
+    final double stopT = stopTangent.t;
+    if (startSegmentIndex == stopSegmentIndex) {
+      // We only have a single segment that covers the complete distance.
+      _outputSegmentTo(seg, startT, stopT, path);
+    } else {
+      do {
+        // Write this segment from startT to end (t = 1.0).
+        _outputSegmentTo(seg, startT, 1.0, path);
+        // Move to next segment until we hit stop segment.
+        ++currentSegmentIndex;
+        seg = _segments[currentSegmentIndex];
+        startT = 0;
+      } while(currentSegmentIndex != stopSegmentIndex);
+      // Final write last segment from t=0.0 to t=stopT.
+      _outputSegmentTo(seg, 0.0, stopT, path);
+    }
+    return path;
+  }
+
+  // Chops the segment at startT and endT and writes it to output [path].
+  void _outputSegmentTo(_PathSegment segment, double startT, double stopT,
+      ui.Path path) {
     throw UnimplementedError();
   }
 
@@ -645,6 +700,17 @@ ui.Offset _normalizeSlope(double dx, double dy) {
   return length < kEpsilon ? ui.Offset(0.0, 0.0) : ui.Offset(dx / length, dy / length);
 }
 
+class _SurfaceTangent extends ui.Tangent {
+  const _SurfaceTangent(ui.Offset position, ui.Offset vector, this.t)
+      : assert(position != null),
+        assert(vector != null),
+        assert(t != null),
+        super(position, vector);
+
+  // Normalized distance of tangent point from start of a contour.
+  final double t;
+}
+
 class _PathSegment {
   _PathSegment(this.segmentType, this.distance, this.points);
 
@@ -652,14 +718,14 @@ class _PathSegment {
   final double distance;
   final List<double> points;
 
-  ui.Tangent computeTangent(double t) {
+  _SurfaceTangent computeTangent(double t) {
     switch (segmentType) {
       case PathCommandTypes.lineTo:
         // Simple line. Position is simple interpolation from start to end point.
         final double xAtDistance = (points[2] * t) + (points[0] * (1.0 - t));
         final double yAtDistance = (points[3] * t) + (points[1] * (1.0 - t));
-        return ui.Tangent(ui.Offset(xAtDistance, yAtDistance),
-            _normalizeSlope(points[2] - points[0], points[3] - points[1]));
+        return _SurfaceTangent(ui.Offset(xAtDistance, yAtDistance),
+            _normalizeSlope(points[2] - points[0], points[3] - points[1]), t);
       case PathCommandTypes.bezierCurveTo:
         return tangentForCubicAt(t, points[0], points[1], points[2], points[3], points[4], points[5], points[6], points[7]);
       case PathCommandTypes.quadraticCurveTo:
@@ -669,7 +735,7 @@ class _PathSegment {
     }
   }
 
-  ui.Tangent tangentForQuadAt(double t, double x0, double y0, double x1, double y1, double x2, double y2) {
+  _SurfaceTangent tangentForQuadAt(double t, double x0, double y0, double x1, double y1, double x2, double y2) {
     assert(t >= 0 && t <= 1);
     final _SkQuadCoefficients _quadEval = _SkQuadCoefficients(x0, y0, x1, y1, x2, y2);
     final ui.Offset pos = ui.Offset(_quadEval.evalX(t), _quadEval.evalY(t));
@@ -681,10 +747,10 @@ class _PathSegment {
      ((t == 0 && x0 == x1 && y0 == y1) || (t == 0 && x1 == x2 && y1 == y2))
       ? _normalizeSlope(x2 - x0, y2 - y0)
       : _normalizeSlope(2 * ((x2 - x0) * t + (x1 - x0)), 2 * ((y2 - y0) * t + (y1 - y0)));
-    return ui.Tangent(pos, tangentVector);
+    return _SurfaceTangent(pos, tangentVector, t);
   }
 
-  ui.Tangent tangentForCubicAt(double t, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3) {
+  _SurfaceTangent tangentForCubicAt(double t, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3) {
     assert(t >= 0 && t <= 1);
     final _SkCubicCoefficients _cubicEval = _SkCubicCoefficients(x0, y0, x1, y1, x2, y2, x3, y3);
     final ui.Offset pos = ui.Offset(_cubicEval.evalX(t), _cubicEval.evalY(t));
@@ -713,6 +779,7 @@ class _PathSegment {
       final double ty = (ay * t + by) * t + cy;
       tangentVector = _normalizeSlope(tx, ty);
     }
+    return _SurfaceTangent(pos, tangentVector, t);
   }
 }
 
