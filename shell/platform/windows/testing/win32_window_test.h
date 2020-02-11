@@ -4,7 +4,6 @@
 
 #include <windowsx.h>
 
-#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/windows/win32_window.h"
 
 namespace flutter {
@@ -15,7 +14,11 @@ namespace testing {
 class Win32WindowTest : public Win32Window {
  public:
   Win32WindowTest();
-  ~Win32WindowTest();
+  virtual ~Win32WindowTest();
+
+  // Prevent copying.
+  Win32WindowTest(Win32WindowTest const&) = delete;
+  Win32WindowTest& operator=(Win32WindowTest const&) = delete;
 
   // Wrapper for GetCurrentDPI() which is a protected method.
   UINT GetDpi();
@@ -49,9 +52,6 @@ class Win32WindowTest : public Win32Window {
 
   // |Win32Window|
   void OnFontChange() override;
-
- private:
-  FML_DISALLOW_COPY_AND_ASSIGN(Win32WindowTest);
 };
 
 }  // namespace testing

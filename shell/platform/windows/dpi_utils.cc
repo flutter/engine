@@ -85,11 +85,8 @@ UINT Win32DpiHelper::GetDpiForWindow(HWND hwnd) {
   }
 
   if (dpi_for_monitor_supported_) {
-    HMONITOR monitor;
-    if (hwnd == nullptr) {
-      const POINT target_point = {0, 0};
-      monitor = MonitorFromPoint(target_point, MONITOR_DEFAULTTOPRIMARY);
-    } else {
+    HMONITOR monitor = nullptr;
+    if (hwnd != nullptr) {
       monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
     }
     return GetDpiForMonitor(monitor);
@@ -102,6 +99,10 @@ UINT Win32DpiHelper::GetDpiForWindow(HWND hwnd) {
 
 UINT Win32DpiHelper::GetDpiForMonitor(HMONITOR monitor) {
   if (dpi_for_monitor_supported_) {
+    if (monitor == nullptr) {
+      const POINT target_point = {0, 0};
+      monitor = MonitorFromPoint(target_point, MONITOR_DEFAULTTOPRIMARY);
+    }
     UINT dpi_x = 0, dpi_y = 0;
     HRESULT result =
         get_dpi_for_monitor_(monitor, kEffectiveDpiMonitorType, &dpi_x, &dpi_y);
@@ -110,7 +111,7 @@ UINT Win32DpiHelper::GetDpiForMonitor(HMONITOR monitor) {
     }
   }
   return kDefaultDpi;
-}
+}  // namespace
 
 Win32DpiHelper* GetHelper() {
   static Win32DpiHelper* dpi_helper = new Win32DpiHelper();

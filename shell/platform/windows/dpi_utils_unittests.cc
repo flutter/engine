@@ -1,3 +1,5 @@
+#include <windows.h>
+
 #include "flutter/shell/platform/windows/dpi_utils.h"
 #include "gtest/gtest.h"
 
@@ -9,8 +11,10 @@ TEST(DpiUtilsTest, NonZero) {
   ASSERT_GT(GetDpiForMonitor(nullptr), 0);
 };
 
-TEST(DpiUtilsTest, EqualDpis) {
-  ASSERT_EQ(GetDpiForHWND(nullptr), GetDpiForMonitor(nullptr));
+TEST(DpiUtilsTest, NullHwndUsesPrimaryMonitor) {
+  const POINT target_point = {0, 0};
+  HMONITOR monitor = MonitorFromPoint(target_point, MONITOR_DEFAULTTOPRIMARY);
+  ASSERT_EQ(GetDpiForHWND(nullptr), GetDpiForMonitor(monitor));
 };
 
 }  // namespace testing
