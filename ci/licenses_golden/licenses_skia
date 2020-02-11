@@ -1,4 +1,4 @@
-Signature: e0e7c6616ccb14e1cca4213728e682cf
+Signature: 1a33ce85e6a5e1daa8245e0591feb442
 
 UNUSED LICENSES:
 
@@ -5687,6 +5687,8 @@ FILE: ../../../third_party/skia/src/core/SkM44.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.h
 FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathParser.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathParser.h
 ----------------------------------------------------------------------------------------------------

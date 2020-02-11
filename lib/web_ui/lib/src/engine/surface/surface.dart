@@ -639,6 +639,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
     assert(rootElement == null);
     assert(isCreated);
     rootElement = createElement();
+    applyWebkitClipFix(rootElement);
     if (_debugExplainSurfaceStats) {
       _surfaceStatsFor(this).allocatedDomNodeCount++;
     }

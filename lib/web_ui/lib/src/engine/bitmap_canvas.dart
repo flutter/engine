@@ -372,8 +372,8 @@ class BitmapCanvas extends EngineCanvas {
         _children.add(clipElement);
       }
     } else {
-      final String cssTransform = matrix4ToCssTransform3d(
-          transformWithOffset(_canvasPool.currentTransform, p));
+      final String cssTransform = float64ListToCssTransform(
+          transformWithOffset(_canvasPool.currentTransform, p).storage);
       imgElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;
@@ -706,6 +706,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
     final _SaveClipEntry entry = clipStack[clipIndex];
     final html.HtmlElement newElement = html.DivElement();
     newElement.style.position = 'absolute';
+    applyWebkitClipFix(newElement);
     if (root == null) {
       root = newElement;
     } else {
