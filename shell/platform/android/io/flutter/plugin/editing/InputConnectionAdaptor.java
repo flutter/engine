@@ -148,7 +148,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
         // Update the keyboard with a reset/empty composing region. Critical on
         // Samsung keyboards to prevent punctuation duplication.
         CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
-        builder.setComposingText(/*composingTextStart*/-1, /*composingText*/"");
+        builder.setComposingText(/*composingTextStart*/ -1, /*composingText*/ "");
         CursorAnchorInfo anchorInfo = builder.build();
         mImm.updateCursorAnchorInfo(mFlutterView, anchorInfo);
       }
@@ -165,7 +165,12 @@ class InputConnectionAdaptor extends BaseInputConnection {
       // We only do this if the proper selection will be restored later, eg, when mBatchCount is 0.
       if (mBatchCount == 0) {
         mImm.updateSelection(
-            mFlutterView, /*selStart*/-1, /*selEnd*/-1, /*candidatesStart*/-1, /*candidatesEnd*/-1);
+            mFlutterView,
+            -1, /*selStart*/
+            -1, /*selEnd*/
+            -1, /*candidatesStart*/
+            -1, /*candidatesEnd*/
+        );
       }
     }
 
