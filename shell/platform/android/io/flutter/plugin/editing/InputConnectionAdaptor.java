@@ -221,12 +221,12 @@ class InputConnectionAdaptor extends BaseInputConnection {
         int newSel = Math.min(selStart + 1, mEditable.length());
         setSelection(newSel, newSel);
         return true;
-      } else if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER
-          || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER) {
-        performEditorAction(mEditorInfo.imeOptions & EditorInfo.IME_MASK_ACTION);
-        return true;
       } else {
         // Enter a character.
+        if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER
+            || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+          performEditorAction(mEditorInfo.imeOptions & EditorInfo.IME_MASK_ACTION);
+        }
         int character = event.getUnicodeChar();
         if (character != 0) {
           int selStart = Math.max(0, Selection.getSelectionStart(mEditable));
