@@ -40,9 +40,6 @@ dartdevc:
     _js_helper:
       uri: "../dart-sdk/lib/_internal/js_dev_runtime/private/js_helper.dart"
 
-    _js_mirrors:
-      uri: "../dart-sdk/lib/_internal/js_dev_runtime/private/js_mirrors.dart"
-
     _js_primitives:
       uri: "../dart-sdk/lib/_internal/js_dev_runtime/private/js_primitives.dart"
 
@@ -82,11 +79,6 @@ dartdevc:
       patches: "../dart-sdk/lib/_internal/js_dev_runtime/patch/isolate_patch.dart"
       supported: false
 
-    mirrors:
-      uri: "../dart-sdk/lib/mirrors/mirrors.dart"
-      patches: "../dart-sdk/lib/_internal/js_dev_runtime/patch/mirrors_patch.dart"
-      supported: false
-
     math:
       uri: "../dart-sdk/lib/math/math.dart"
       patches: "../dart-sdk/lib/_internal/js_dev_runtime/patch/math_patch.dart"
@@ -105,10 +97,11 @@ dartdevc:
       uri: "../dart-sdk/lib/indexed_db/dart2js/indexed_db_dart2js.dart"
 
     js:
-      uri: "../dart-sdk/lib/_internal/js_dev_runtime/lib/js/dart2js/js_dart2js.dart"
+      uri: "../dart-sdk/lib/js/js.dart"
+      patches: "../dart-sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart"    
 
     js_util:
-      uri: "../dart-sdk/lib/_internal/js_dev_runtime/lib/js_util/dart2js/js_util_dart2js.dart"
+      uri: "../dart-sdk/lib/js_util/js_util.dart"
 
     svg:
       uri: "../dart-sdk/lib/svg/dart2js/svg_dart2js.dart"
@@ -179,23 +172,19 @@ dart2js:
       supported: false
 
     js:
-      uri: "../dart-sdk/lib/js/dart2js/js_dart2js.dart"
+      uri: "../dart-sdk/lib/js/js.dart"
+      patches: "../dart-sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart"    
 
     _js:
       uri: "../dart-sdk/lib/js/_js.dart"
       patches: "../dart-sdk/lib/js/_js_client.dart"
 
     js_util:
-      uri: "../dart-sdk/lib/js_util/dart2js/js_util_dart2js.dart"
+      uri: "../dart-sdk/lib/js_util/js_util.dart"
 
     math:
       uri: "../dart-sdk/lib/math/math.dart"
       patches: "../dart-sdk/lib/_internal/js_runtime/lib/math_patch.dart"
-
-    mirrors:
-      uri: "../dart-sdk/lib/mirrors/mirrors.dart"
-      patches: "../dart-sdk/lib/_internal/js_runtime/lib/mirrors_patch_cfe.dart"
-      supported: false
 
     typed_data:
       uri: "../dart-sdk/lib/typed_data/typed_data.dart"

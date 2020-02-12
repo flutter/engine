@@ -234,6 +234,17 @@ class EngineParagraph implements ui.Paragraph {
 
   @override
   void layout(ui.ParagraphConstraints constraints) {
+    // When constraint width has a decimal place, we floor it to avoid getting
+    // a layout width that's higher than the constraint width.
+    //
+    // For example, if constraint width is `30.8` and the text has a width of
+    // `30.5` then the TextPainter in the framework will ceil the `30.5` width
+    // which will result in a width of `40.0` that's higher than the constraint
+    // width.
+    constraints = ui.ParagraphConstraints(
+      width: constraints.width.floorToDouble(),
+    );
+
     if (constraints == _lastUsedConstraints) {
       return;
     }
@@ -367,17 +378,61 @@ class EngineParagraph implements ui.Paragraph {
 
   @override
   ui.TextPosition getPositionForOffset(ui.Offset offset) {
-    if (_plainText == null) {
+    final List<EngineLineMetrics> lines = _measurementResult.lines;
+    if (lines == null) {
       return getPositionForMultiSpanOffset(offset);
     }
+
+    // [offset] is above all the lines.
+    if (offset.dy < 0) {
+      return ui.TextPosition(
+        offset: 0,
+        affinity: ui.TextAffinity.downstream,
+      );
+    }
+
+    final int lineNumber = offset.dy ~/ _measurementResult.lineHeight;
+
+    // [offset] is below all the lines.
+    if (lineNumber >= lines.length) {
+      return ui.TextPosition(
+        offset: _plainText.length,
+        affinity: ui.TextAffinity.upstream,
+      );
+    }
+
+    final EngineLineMetrics lineMetrics = lines[lineNumber];
+    final double lineLeft = lineMetrics.left;
+    final double lineRight = lineLeft + lineMetrics.width;
+
+    // [offset] is to the left of the line.
+    if (offset.dx <= lineLeft) {
+      return ui.TextPosition(
+        offset: lineMetrics.startIndex,
+        affinity: ui.TextAffinity.downstream,
+      );
+    }
+
+    // [offset] is to the right of the line.
+    if (offset.dx >= lineRight) {
+      return ui.TextPosition(
+        offset: lineMetrics.endIndex,
+        affinity: ui.TextAffinity.upstream,
+      );
+    }
+
+    // If we reach here, it means the [offset] is somewhere within the line. The
+    // code below will do a binary search to find where exactly the [offset]
+    // falls within the line.
+
     final double dx = offset.dx - _alignOffset;
     final TextMeasurementService instance = _measurementService;
 
-    int low = 0;
-    int high = _plainText.length;
+    int low = lineMetrics.startIndex;
+    int high = lineMetrics.endIndex;
     do {
       final int current = (low + high) ~/ 2;
-      final double width = instance.measureSubstringWidth(this, 0, current);
+      final double width = instance.measureSubstringWidth(this, lineMetrics.startIndex, current);
       if (width < dx) {
         low = current;
       } else if (width > dx) {
@@ -392,8 +447,8 @@ class EngineParagraph implements ui.Paragraph {
       return ui.TextPosition(offset: high, affinity: ui.TextAffinity.upstream);
     }
 
-    final double lowWidth = instance.measureSubstringWidth(this, 0, low);
-    final double highWidth = instance.measureSubstringWidth(this, 0, high);
+    final double lowWidth = instance.measureSubstringWidth(this, lineMetrics.startIndex, low);
+    final double highWidth = instance.measureSubstringWidth(this, lineMetrics.startIndex, high);
 
     if (dx - lowWidth < highWidth - dx) {
       // The offset is closer to the low index.
@@ -457,6 +512,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
+    ui.TextHeightBehavior textHeightBehavior,
     ui.FontWeight fontWeight,
     ui.FontStyle fontStyle,
     ui.StrutStyle strutStyle,
@@ -470,6 +526,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         _fontFamily = fontFamily,
         _fontSize = fontSize,
         _height = height,
+        _textHeightBehavior = textHeightBehavior,
         // TODO(b/128317744): add support for strut style.
         _strutStyle = strutStyle,
         _ellipsis = ellipsis,
@@ -483,6 +540,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   final String _fontFamily;
   final double _fontSize;
   final double _height;
+  final ui.TextHeightBehavior _textHeightBehavior;
   final EngineStrutStyle _strutStyle;
   final String _ellipsis;
   final ui.Locale _locale;
@@ -536,13 +594,27 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         _fontFamily == typedOther._fontFamily ||
         _fontSize == typedOther._fontSize ||
         _height == typedOther._height ||
+        _textHeightBehavior == typedOther._textHeightBehavior ||
         _ellipsis == typedOther._ellipsis ||
         _locale == typedOther._locale;
   }
 
   @override
-  int get hashCode =>
-      ui.hashValues(_fontFamily, _fontSize, _height, _ellipsis, _locale);
+  int get hashCode {
+    return ui.hashValues(
+      _textAlign,
+      _textDirection,
+      _fontWeight,
+      _fontStyle,
+      _maxLines,
+      _fontFamily,
+      _fontSize,
+      _height,
+      _textHeightBehavior,
+      _ellipsis,
+      _locale
+    );
+  }
 
   @override
   String toString() {
@@ -553,6 +625,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
           'fontWeight: ${_fontWeight ?? "unspecified"}, '
           'fontStyle: ${_fontStyle ?? "unspecified"}, '
           'maxLines: ${_maxLines ?? "unspecified"}, '
+          'textHeightBehavior: ${_textHeightBehavior ?? "unspecified"}, '
           'fontFamily: ${_fontFamily ?? "unspecified"}, '
           'fontSize: ${_fontSize != null ? _fontSize.toStringAsFixed(1) : "unspecified"}, '
           'height: ${_height != null ? "${_height.toStringAsFixed(1)}x" : "unspecified"}, '
@@ -1282,7 +1355,7 @@ void _applyTextStyleToElement({
   if (previousStyle == null) {
     final ui.Color color = style._foreground?.color ?? style._color;
     if (color != null) {
-      cssStyle.color = color.toCssString();
+      cssStyle.color = colorToCssString(color);
     }
     if (style._fontSize != null) {
       cssStyle.fontSize = '${style._fontSize.floor()}px';
@@ -1322,7 +1395,7 @@ void _applyTextStyleToElement({
     if (style._color != previousStyle._color ||
         style._foreground != previousStyle._foreground) {
       final ui.Color color = style._foreground?.color ?? style._color;
-      cssStyle.color = color?.toCssString();
+      cssStyle.color = colorToCssString(color);
     }
 
     if (style._fontSize != previousStyle._fontSize) {
@@ -1366,7 +1439,7 @@ void _applyTextStyleToElement({
         cssStyle.textDecoration = textDecoration;
         final ui.Color decorationColor = style._decorationColor;
         if (decorationColor != null) {
-          cssStyle.textDecorationColor = decorationColor.toCssString();
+          cssStyle.textDecorationColor = colorToCssString(decorationColor);
         }
       }
     }
@@ -1389,7 +1462,7 @@ String _shadowListToCss(List<ui.Shadow> shadows) {
     }
     ui.Shadow shadow = shadows[i];
     sb.write('${shadow.offset.dx}px ${shadow.offset.dy}px '
-        '${shadow.blurRadius}px ${shadow.color.toCssString()}');
+        '${shadow.blurRadius}px ${colorToCssString(shadow.color)}');
   }
   return sb.toString();
 }
@@ -1405,12 +1478,12 @@ void _applyTextBackgroundToElement({
   if (previousStyle == null) {
     if (newBackground != null) {
       domRenderer.setElementStyle(
-          element, 'background-color', newBackground.color.toCssString());
+          element, 'background-color', colorToCssString(newBackground.color));
     }
   } else {
     if (newBackground != previousStyle._background) {
       domRenderer.setElementStyle(
-          element, 'background-color', newBackground.color?.toCssString());
+          element, 'background-color', colorToCssString(newBackground.color));
     }
   }
 }

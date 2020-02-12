@@ -638,6 +638,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
     assert(rootElement == null);
     assert(isCreated);
     rootElement = createElement();
+    applyWebkitClipFix(rootElement);
     if (_debugExplainSurfaceStats) {
       _surfaceStatsFor(this).allocatedDomNodeCount++;
     }
@@ -741,7 +742,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
     //                `false` for children. Or, which might be cleaner, we could
     //                split this method into two methods. One method will detach
     //                the DOM, and the second method will disassociate the
-    //                surface from the the DOM and release it irrespective of
+    //                surface from the DOM and release it irrespective of
     //                whether the DOM itself gets detached or not.
     rootElement.remove();
     rootElement = null;

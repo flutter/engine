@@ -472,19 +472,17 @@ class Locale {
   bool operator ==(dynamic other) {
     if (identical(this, other))
       return true;
-    if (other is! Locale)
-      return false;
-    final Locale typedOther = other;
-    return languageCode == typedOther.languageCode
-        && scriptCode == typedOther.scriptCode
-        && countryCode == typedOther.countryCode;
+    return other is Locale
+        && other.languageCode == languageCode
+        && other.scriptCode == scriptCode
+        && other.countryCode == countryCode;
   }
 
   @override
   int get hashCode => hashValues(languageCode, scriptCode, countryCode);
 
-  static Locale cachedLocale;
-  static String cachedLocaleString;
+  static Locale _cachedLocale;
+  static String _cachedLocaleString;
 
   /// Returns a string representing the locale.
   ///
@@ -493,11 +491,11 @@ class Locale {
   /// purposes only. For parseable results, use [toLanguageTag] instead.
   @override
   String toString() {
-    if (!identical(cachedLocale, this)) {
-      cachedLocale = this;
-      cachedLocaleString = _rawToString('_');
+    if (!identical(_cachedLocale, this)) {
+      _cachedLocale = this;
+      _cachedLocaleString = _rawToString('_');
     }
-    return cachedLocaleString;
+    return _cachedLocaleString;
   }
 
   /// Returns a syntactically valid Unicode BCP47 Locale Identifier.
@@ -1260,8 +1258,8 @@ class AccessibilityFeatures {
   bool operator ==(dynamic other) {
     if (other.runtimeType != runtimeType)
       return false;
-    final AccessibilityFeatures typedOther = other;
-    return _index == typedOther._index;
+    return other is AccessibilityFeatures
+        && other._index == _index;
   }
 
   @override

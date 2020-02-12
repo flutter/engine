@@ -8,7 +8,7 @@ import 'package:ui/ui.dart';
 import 'package:test/test.dart';
 
 void testEachMeasurement(String description, VoidCallback body, {bool skip}) {
-  test(description, () async {
+  test('$description (dom measurement)', () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
       return body();
@@ -56,7 +56,9 @@ void main() async {
         closeTo(paragraph.alphabeticBaseline * kAhemBaselineRatio, 3.0),
       );
     }
-  });
+  },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: browserEngine == BrowserEngine.webkit);
 
   testEachMeasurement('predictably lays out a multi-line paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -83,7 +85,9 @@ void main() async {
         closeTo(paragraph.alphabeticBaseline * kAhemBaselineRatio, 3.0),
       );
     }
-  });
+  },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: browserEngine == BrowserEngine.webkit);
 
   testEachMeasurement('predictably lays out a single-line rich paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -105,7 +109,9 @@ void main() async {
       expect(paragraph.maxIntrinsicWidth, fontSize * 10.0);
     }
   }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      skip: (browserEngine == BrowserEngine.firefox));
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: (browserEngine == BrowserEngine.firefox ||
+          browserEngine == BrowserEngine.webkit));
 
   testEachMeasurement('predictably lays out a multi-line rich paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -128,7 +134,155 @@ void main() async {
       expect(paragraph.maxIntrinsicWidth, fontSize * 16.0);
     }
   }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      skip: (browserEngine == BrowserEngine.firefox));
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: (browserEngine == BrowserEngine.firefox ||
+          browserEngine == BrowserEngine.webkit));
+
+  testEachMeasurement('getPositionForOffset single-line', () {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+      textDirection: TextDirection.ltr,
+    ));
+    builder.addText('abcd efg');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 1000));
+
+    // At the beginning of the line.
+    expect(
+      paragraph.getPositionForOffset(Offset(0, 5)),
+      TextPosition(offset: 0, affinity: TextAffinity.downstream),
+    );
+    // Below the line.
+    expect(
+      paragraph.getPositionForOffset(Offset(0, 12)),
+      TextPosition(offset: 8, affinity: TextAffinity.upstream),
+    );
+    // Above the line.
+    expect(
+      paragraph.getPositionForOffset(Offset(0, -5)),
+      TextPosition(offset: 0, affinity: TextAffinity.downstream),
+    );
+    // At the end of the line.
+    expect(
+      paragraph.getPositionForOffset(Offset(80, 5)),
+      TextPosition(offset: 8, affinity: TextAffinity.upstream),
+    );
+    // On the left side of "b".
+    expect(
+      paragraph.getPositionForOffset(Offset(14, 5)),
+      TextPosition(offset: 1, affinity: TextAffinity.downstream),
+    );
+    // On the right side of "b".
+    expect(
+      paragraph.getPositionForOffset(Offset(16, 5)),
+      TextPosition(offset: 2, affinity: TextAffinity.upstream),
+    );
+  });
+
+  test('getPositionForOffset multi-line', () {
+    // [Paragraph.getPositionForOffset] for multi-line text doesn't work well
+    // with dom-based measurement.
+    TextMeasurementService.enableExperimentalCanvasImplementation = true;
+    TextMeasurementService.initialize(rulerCacheCapacity: 2);
+
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+      textDirection: TextDirection.ltr,
+    ));
+    builder.addText('abcd\n');
+    builder.addText('abcdefg\n');
+    builder.addText('ab');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 1000));
+
+    // First line: "abcd\n"
+
+    // At the beginning of the first line.
+    expect(
+      paragraph.getPositionForOffset(Offset(0, 5)),
+      TextPosition(offset: 0, affinity: TextAffinity.downstream),
+    );
+    // Above the first line.
+    expect(
+      paragraph.getPositionForOffset(Offset(0, -15)),
+      TextPosition(offset: 0, affinity: TextAffinity.downstream),
+    );
+    // At the end of the first line.
+    expect(
+      paragraph.getPositionForOffset(Offset(50, 5)),
+      TextPosition(offset: 5, affinity: TextAffinity.upstream),
+    );
+    // On the left side of "b" in the first line.
+    expect(
+      paragraph.getPositionForOffset(Offset(14, 5)),
+      TextPosition(offset: 1, affinity: TextAffinity.downstream),
+    );
+    // On the right side of "b" in the first line.
+    expect(
+      paragraph.getPositionForOffset(Offset(16, 5)),
+      TextPosition(offset: 2, affinity: TextAffinity.upstream),
+    );
+
+    // Second line: "abcdefg\n"
+
+    // At the beginning of the second line.
+    expect(
+      paragraph.getPositionForOffset(Offset(0, 15)),
+      TextPosition(offset: 5, affinity: TextAffinity.downstream),
+    );
+    // At the end of the second line.
+    expect(
+      paragraph.getPositionForOffset(Offset(100, 15)),
+      TextPosition(offset: 13, affinity: TextAffinity.upstream),
+    );
+    // On the left side of "e" in the second line.
+    expect(
+      paragraph.getPositionForOffset(Offset(44, 15)),
+      TextPosition(offset: 9, affinity: TextAffinity.downstream),
+    );
+    // On the right side of "e" in the second line.
+    expect(
+      paragraph.getPositionForOffset(Offset(46, 15)),
+      TextPosition(offset: 10, affinity: TextAffinity.upstream),
+    );
+
+    // Last (third) line: "ab"
+
+    // At the beginning of the last line.
+    expect(
+      paragraph.getPositionForOffset(Offset(0, 25)),
+      TextPosition(offset: 13, affinity: TextAffinity.downstream),
+    );
+    // At the end of the last line.
+    expect(
+      paragraph.getPositionForOffset(Offset(40, 25)),
+      TextPosition(offset: 15, affinity: TextAffinity.upstream),
+    );
+    // Below the last line.
+    expect(
+      paragraph.getPositionForOffset(Offset(0, 32)),
+      TextPosition(offset: 15, affinity: TextAffinity.upstream),
+    );
+    // On the left side of "b" in the last line.
+    expect(
+      paragraph.getPositionForOffset(Offset(12, 25)),
+      TextPosition(offset: 14, affinity: TextAffinity.downstream),
+    );
+    // On the right side of "a" in the last line.
+    expect(
+      paragraph.getPositionForOffset(Offset(9, 25)),
+      TextPosition(offset: 14, affinity: TextAffinity.upstream),
+    );
+
+    TextMeasurementService.clearCache();
+    TextMeasurementService.enableExperimentalCanvasImplementation = false;
+  });
 
   testEachMeasurement('getBoxesForRange returns a box', () {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -151,7 +305,9 @@ void main() async {
         TextDirection.rtl,
       ),
     );
-  });
+  },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: browserEngine == BrowserEngine.webkit);
 
   testEachMeasurement(
       'getBoxesForRange return empty list for zero-length range', () {
@@ -256,4 +412,22 @@ void main() async {
     TextMeasurementService.clearCache();
     TextMeasurementService.enableExperimentalCanvasImplementation = false;
   });
+
+  testEachMeasurement('width should be a whole integer', () {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+      textDirection: TextDirection.ltr,
+    ));
+    builder.addText('abc');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 30.8));
+
+    expect(paragraph.width, 30);
+    expect(paragraph.height, 10);
+  },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: browserEngine == BrowserEngine.webkit);
 }

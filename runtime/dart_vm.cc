@@ -286,9 +286,6 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   FML_DCHECK(isolate_name_server_);
   FML_DCHECK(service_protocol_);
 
-  FML_DLOG(INFO) << "Attempting Dart VM launch for mode: "
-                 << (IsRunningPrecompiledCode() ? "AOT" : "Interpreter");
-
   {
     TRACE_EVENT0("flutter", "dart::bin::BootstrapDartIo");
     dart::bin::BootstrapDartIo();
@@ -388,7 +385,8 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     args.push_back(old_gen_heap_size_args.c_str());
   }
 
-#if defined(OS_FUCHSIA)
+#if defined(OS_FUCHSIA) && \
+    (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_PROFILE)
   PushBackAll(&args, kDartFuchsiaTraceArgs, fml::size(kDartFuchsiaTraceArgs));
   PushBackAll(&args, kDartTraceStreamsArgs, fml::size(kDartTraceStreamsArgs));
 #endif
@@ -463,9 +461,6 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     Dart_SetDartLibrarySourcesKernel(dart_library_sources->GetMapping(),
                                      dart_library_sources->GetSize());
   }
-
-  FML_DLOG(INFO) << "New Dart VM instance created. Instance count: "
-                 << gVMLaunchCount;
 }
 
 DartVM::~DartVM() {
@@ -485,9 +480,6 @@ DartVM::~DartVM() {
       << "Could not cleanly shut down the Dart VM. Error: \"" << result
       << "\".";
   free(result);
-
-  FML_DLOG(INFO) << "Dart VM instance destroyed. Instance count: "
-                 << gVMLaunchCount;
 }
 
 std::shared_ptr<const DartVMData> DartVM::GetVMData() const {
@@ -509,6 +501,10 @@ std::shared_ptr<IsolateNameServer> DartVM::GetIsolateNameServer() const {
 std::shared_ptr<fml::ConcurrentTaskRunner>
 DartVM::GetConcurrentWorkerTaskRunner() const {
   return concurrent_message_loop_->GetTaskRunner();
+}
+
+std::shared_ptr<fml::ConcurrentMessageLoop> DartVM::GetConcurrentMessageLoop() {
+  return concurrent_message_loop_;
 }
 
 }  // namespace flutter
