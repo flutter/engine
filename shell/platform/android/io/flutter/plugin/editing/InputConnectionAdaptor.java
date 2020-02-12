@@ -144,6 +144,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     // duplication.
     if (mIsSamsung) {
       if (Build.VERSION.SDK_INT >= 21) {
+        // Samsung keyboards don't clear the composing region on finishComposingText.
         // Update the keyboard with a reset/empty composing region. Critical on
         // Samsung keyboards to prevent punctuation duplication.
         CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
