@@ -56,9 +56,7 @@ void main() async {
         closeTo(paragraph.alphabeticBaseline * kAhemBaselineRatio, 3.0),
       );
     }
-  },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-      skip: browserEngine == BrowserEngine.webkit);
+  });
 
   testEachMeasurement('predictably lays out a multi-line paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -85,9 +83,7 @@ void main() async {
         closeTo(paragraph.alphabeticBaseline * kAhemBaselineRatio, 3.0),
       );
     }
-  },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-      skip: browserEngine == BrowserEngine.webkit);
+  });
 
   testEachMeasurement('predictably lays out a single-line rich paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -305,9 +301,7 @@ void main() async {
         TextDirection.rtl,
       ),
     );
-  },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-      skip: browserEngine == BrowserEngine.webkit);
+  });
 
   testEachMeasurement(
       'getBoxesForRange return empty list for zero-length range', () {
@@ -427,7 +421,5 @@ void main() async {
 
     expect(paragraph.width, 30);
     expect(paragraph.height, 10);
-  },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-      skip: browserEngine == BrowserEngine.webkit);
+  });
 }
