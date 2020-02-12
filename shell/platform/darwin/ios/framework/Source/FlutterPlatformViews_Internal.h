@@ -7,6 +7,7 @@
 
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/lib/ui/painting/flutter_rtree.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
@@ -62,11 +63,12 @@ struct FlutterPlatformViewLayer {
                            std::unique_ptr<IOSSurface> ios_surface,
                            std::unique_ptr<Surface> surface);
 
-  ~FlutterPlatformViewLayer();
+  ~FlutterPlatformViewLayer() = default;
 
   fml::scoped_nsobject<UIView> overlay_view;
   std::unique_ptr<IOSSurface> ios_surface;
   std::unique_ptr<Surface> surface;
+  bool did_submit_last_frame;
 
   // The GrContext that is currently used by the overlay surfaces.
   // We track this to know when the GrContext for the Flutter app has changed
@@ -74,11 +76,31 @@ struct FlutterPlatformViewLayer {
   GrContext* gr_context;
 };
 
+class FlutterPlatformViewLayerPool {
+ public:
+  FlutterPlatformViewLayerPool() = default;
+  ~FlutterPlatformViewLayerPool() = default;
+
+  // Gets a view layer from an internal pool.
+  // If no availble, it allocates a new layer.
+  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrContext* gr_context,
+                                                     std::shared_ptr<IOSContext> ios_context);
+
+  std::vector<std::shared_ptr<FlutterPlatformViewLayer>> GetUnusedLayers();
+
+  // Makes all the layers in the pool available for reuse.
+  void RecycleLayers();
+
+ private:
+  size_t available_layer_index_ = 0;
+  std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layer_;
+};
+
 class FlutterPlatformViewsController {
  public:
   FlutterPlatformViewsController();
 
-  ~FlutterPlatformViewsController();
+  ~FlutterPlatformViewsController() = default;
 
   void SetFlutterView(UIView* flutter_view);
 
@@ -117,6 +139,16 @@ class FlutterPlatformViewsController {
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
  private:
+  static const size_t kMaxLayerAllocations = 2;
+
+  using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
+
+  // The pool of reusable view layers.
+  std::unique_ptr<FlutterPlatformViewLayerPool> layer_pool_;
+  std::map<int64_t, sk_sp<FlutterRTree>> platform_views_bbh_;
+  std::map<int64_t, EmbeddedViewParams> platform_views_params_;
+  std::map<int64_t, std::unique_ptr<SkPictureRecorder>> platform_views_recorder_;
+
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;
   fml::scoped_nsobject<UIViewController> flutter_view_controller_;
@@ -163,19 +195,12 @@ class FlutterPlatformViewsController {
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies;
 
-  std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
-
   void OnCreate(FlutterMethodCall* call, FlutterResult& result);
   void OnDispose(FlutterMethodCall* call, FlutterResult& result);
   void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
-
-  void DetachUnusedLayers();
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
-  void EnsureOverlayInitialized(int64_t overlay_id,
-                                std::shared_ptr<IOSContext> ios_context,
-                                GrContext* gr_context);
 
   // This will return true after pre-roll if any of the embedded views
   // have mutated for last layer tree.
@@ -214,6 +239,18 @@ class FlutterPlatformViewsController {
   // After each clip operation, we update the head to the super view of the current head.
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
+
+  // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
+  // the picture on the layer's canvas.
+  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrContext* gr_context,
+                                                     std::shared_ptr<IOSContext> ios_context,
+                                                     sk_sp<SkPicture> picture,
+                                                     SkRect rect);
+  // Removes overlay views and platform views that aren't needed in the current frame.
+  void RemoveUnusedLayers();
+  // Appends the overlay views and platform view and sets their z index based on the composition
+  // order.
+  void BringLayersIntoView(LayersMap layer_map);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

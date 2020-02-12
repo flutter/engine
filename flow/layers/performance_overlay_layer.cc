@@ -84,17 +84,29 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
   SkScalar y = paint_bounds().y() + padding;
   SkScalar width = paint_bounds().width() - (padding * 2);
   SkScalar height = paint_bounds().height() / 2;
-  SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
+  SkAutoCanvasRestore save(context.background_canvas, true);
 
   VisualizeStopWatch(
-      *context.leaf_nodes_canvas, context.raster_time, x, y, width,
+      *context.background_canvas, context.raster_time, x, y, width,
       height - padding, options_ & kVisualizeRasterizerStatistics,
       options_ & kDisplayRasterizerStatistics, "GPU", font_path_);
 
-  VisualizeStopWatch(*context.leaf_nodes_canvas, context.ui_time, x, y + height,
+  VisualizeStopWatch(*context.background_canvas, context.ui_time, x, y + height,
                      width, height - padding,
                      options_ & kVisualizeEngineStatistics,
                      options_ & kDisplayEngineStatistics, "UI", font_path_);
+
+  if (context.leaf_nodes_canvas != nullptr) {
+    VisualizeStopWatch(
+        *context.leaf_nodes_canvas, context.raster_time, x, y, width,
+        height - padding, options_ & kVisualizeRasterizerStatistics,
+        options_ & kDisplayRasterizerStatistics, "GPU", font_path_);
+
+    VisualizeStopWatch(*context.leaf_nodes_canvas, context.ui_time, x,
+                       y + height, width, height - padding,
+                       options_ & kVisualizeEngineStatistics,
+                       options_ & kDisplayEngineStatistics, "UI", font_path_);
+  }
 }
 
 }  // namespace flutter
