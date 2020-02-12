@@ -386,7 +386,8 @@ public class TextInputPluginTest {
     connection.finishComposingText();
     testImm.setTrackSelection(false);
 
-    List<Integer> expectedSelectionValues = Arrays.asList(0, 0, -1, -1, -1, -1, -1, -1, 0, 0, -1, -1);
+    List<Integer> expectedSelectionValues =
+        Arrays.asList(0, 0, -1, -1, -1, -1, -1, -1, 0, 0, -1, -1);
     assertEquals(testImm.getSelectionUpdateValues(), expectedSelectionValues);
   }
 
@@ -399,7 +400,7 @@ public class TextInputPluginTest {
     private boolean trackSelection = false;
 
     public TestImm() {
-        selectionUpdateValues = new ArrayList<Integer>();
+      selectionUpdateValues = new ArrayList<Integer>();
     }
 
     @Implementation
@@ -429,11 +430,7 @@ public class TextInputPluginTest {
     // We simply store the values to verify later.
     @Implementation
     public void updateSelection(
-        View view,
-        int selStart, 
-        int selEnd, 
-        int candidatesStart, 
-        int candidatesEnd) {
+        View view, int selStart, int selEnd, int candidatesStart, int candidatesEnd) {
       if (trackSelection) {
         this.selectionUpdateValues.add(selStart);
         this.selectionUpdateValues.add(selEnd);
@@ -444,12 +441,12 @@ public class TextInputPluginTest {
 
     // only track values when enabled via this.
     public void setTrackSelection(boolean val) {
-        trackSelection = val;
+      trackSelection = val;
     }
 
     // Returns true if the last updateSelection call passed the following values.
     public ArrayList<Integer> getSelectionUpdateValues() {
-        return selectionUpdateValues;
+      return selectionUpdateValues;
     }
 
     public CursorAnchorInfo getLastCursorAnchorInfo() {
