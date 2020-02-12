@@ -279,9 +279,6 @@ public class FlutterAndroidComponentTest {
     public void onFlutterTextureViewCreated(@NonNull FlutterTextureView flutterTextureView) {}
 
     @Override
-    public void onFlutterViewCreated(@NonNull FlutterView flutterView) {}
-
-    @Override
     public void onFlutterUiDisplayed() {}
 
     @Override
