@@ -223,7 +223,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(customMockHost.getRenderMode()).thenReturn(RenderMode.texture);
 
     // Create the real object that we're testing.
-    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(customMockHost);
+    FlutterActivityAndFragmentDelegate delegate =
+        new FlutterActivityAndFragmentDelegate(customMockHost);
 
     // --- Execute the behavior under test ---
     delegate.onAttach(RuntimeEnvironment.application);

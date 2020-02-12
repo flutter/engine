@@ -782,21 +782,19 @@ public class FlutterActivity extends Activity
 
   /**
    * {@link FlutterActivityAndFragmentDelegate.Host} method that is used by {@link
-   * FlutterActivityAndFragmentDelegate} to obtain the desired {@link RenderMode} that
-   * should be used when instantiating a {@link FlutterView}.
+   * FlutterActivityAndFragmentDelegate} to obtain the desired {@link RenderMode} that should be
+   * used when instantiating a {@link FlutterView}.
    */
   @NonNull
   @Override
   public RenderMode getRenderMode() {
-    return getBackgroundMode() == BackgroundMode.opaque
-        ? RenderMode.surface
-        : RenderMode.texture;
+    return getBackgroundMode() == BackgroundMode.opaque ? RenderMode.surface : RenderMode.texture;
   }
 
   /**
    * {@link FlutterActivityAndFragmentDelegate.Host} method that is used by {@link
-   * FlutterActivityAndFragmentDelegate} to obtain the desired {@link TransparencyMode}
-   * that should be used when instantiating a {@link FlutterView}.
+   * FlutterActivityAndFragmentDelegate} to obtain the desired {@link TransparencyMode} that should
+   * be used when instantiating a {@link FlutterView}.
    */
   @NonNull
   @Override
