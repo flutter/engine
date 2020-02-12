@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 import android.content.Intent;
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
-import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.android.RenderMode;
 import io.flutter.embedding.android.RobolectricFlutterActivity;
 import io.flutter.embedding.android.TransparencyMode;

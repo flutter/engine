@@ -253,14 +253,15 @@ import java.util.Arrays;
     ensureAlive();
 
     if (host.getRenderMode() == RenderMode.surface) {
-      FlutterSurfaceView flutterSurfaceView = new FlutterSurfaceView(host.getActivity(), host.getTransparencyMode() == TransparencyMode.transparent);
+      FlutterSurfaceView flutterSurfaceView =
+          new FlutterSurfaceView(
+              host.getActivity(), host.getTransparencyMode() == TransparencyMode.transparent);
 
       // Allow our host to customize FlutterSurfaceView, if desired.
       host.onFlutterSurfaceViewCreated(flutterSurfaceView);
 
       // Create the FlutterView that owns the FlutterSurfaceView.
-      flutterView =
-          new FlutterView(host.getActivity(), flutterSurfaceView);
+      flutterView = new FlutterView(host.getActivity(), flutterSurfaceView);
     } else {
       FlutterTextureView flutterTextureView = new FlutterTextureView(host.getActivity());
 
@@ -268,8 +269,7 @@ import java.util.Arrays;
       host.onFlutterTextureViewCreated(flutterTextureView);
 
       // Create the FlutterView that owns the FlutterTextureView.
-      flutterView =
-          new FlutterView(host.getActivity(), flutterTextureView);
+      flutterView = new FlutterView(host.getActivity(), flutterTextureView);
     }
 
     // Add listener to be notified when Flutter renders its first frame.
@@ -722,15 +722,15 @@ import java.util.Arrays;
     String getInitialRoute();
 
     /**
-     * Returns the {@link RenderMode} used by the {@link FlutterView} that displays the
-     * {@link FlutterEngine}'s content.
+     * Returns the {@link RenderMode} used by the {@link FlutterView} that displays the {@link
+     * FlutterEngine}'s content.
      */
     @NonNull
     RenderMode getRenderMode();
 
     /**
-     * Returns the {@link TransparencyMode} used by the {@link FlutterView} that
-     * displays the {@link FlutterEngine}'s content.
+     * Returns the {@link TransparencyMode} used by the {@link FlutterView} that displays the {@link
+     * FlutterEngine}'s content.
      */
     @NonNull
     TransparencyMode getTransparencyMode();

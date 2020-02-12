@@ -400,9 +400,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   protected FlutterFragment createFlutterFragment() {
     BackgroundMode backgroundMode = getBackgroundMode();
     RenderMode renderMode =
-        backgroundMode == BackgroundMode.opaque
-            ? RenderMode.surface
-            : RenderMode.texture;
+        backgroundMode == BackgroundMode.opaque ? RenderMode.surface : RenderMode.texture;
     TransparencyMode transparencyMode =
         backgroundMode == BackgroundMode.opaque
             ? TransparencyMode.opaque
