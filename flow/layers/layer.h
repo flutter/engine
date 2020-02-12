@@ -114,8 +114,11 @@ class Layer {
     // and applies the operations to all canvases.
     // The leaf_nodes_canvas is the "current" canvas and is used by leaf
     // layers.
+    // The background_canvas is the default canvas used by all leaf
+    // layers.
     SkCanvas* internal_nodes_canvas;
     SkCanvas* leaf_nodes_canvas;
+    SkCanvas* background_canvas;
     GrContext* gr_context;
     ExternalViewEmbedder* view_embedder;
     const Stopwatch& raster_time;

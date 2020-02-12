@@ -147,6 +147,7 @@ void RasterCache::Prepare(PrerollContext* context,
           internal_nodes_canvas.addCanvas(canvas);
           Layer::PaintContext paintContext = {
               (SkCanvas*)&internal_nodes_canvas,
+              nullptr,
               canvas,
               context->gr_context,
               nullptr,
