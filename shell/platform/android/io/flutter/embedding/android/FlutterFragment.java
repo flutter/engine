@@ -978,11 +978,6 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
     // Hook for subclasses.
   }
 
-  @Override
-  public void onFlutterViewCreated(@NonNull FlutterView flutterView) {
-    // Hook for subclasses.
-  }
-
   /**
    * Invoked after the {@link FlutterView} within this {@code FlutterFragment} starts rendering
    * pixels to the screen.

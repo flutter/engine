@@ -928,11 +928,6 @@ public class FlutterActivity extends Activity
   }
 
   @Override
-  public void onFlutterViewCreated(@NonNull FlutterView flutterView) {
-    // Hook for subclasses.
-  }
-
-  @Override
   public void onFlutterUiDisplayed() {
     // Notifies Android that we're fully drawn so that performance metrics can be collected by
     // Flutter performance tests.

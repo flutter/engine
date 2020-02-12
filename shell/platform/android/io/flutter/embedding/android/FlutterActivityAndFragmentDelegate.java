@@ -275,9 +275,6 @@ import java.util.Arrays;
     // Add listener to be notified when Flutter renders its first frame.
     flutterView.addOnFirstFrameRenderedListener(flutterUiDisplayListener);
 
-    // Allow our host to customize FlutterView, if desired.
-    host.onFlutterViewCreated(flutterView);
-
     flutterSplashView = new FlutterSplashView(host.getContext());
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
       flutterSplashView.setId(View.generateViewId());
@@ -801,19 +798,6 @@ import java.util.Arrays;
      * or make assumptions about relationships with other {@code View}s.
      */
     void onFlutterTextureViewCreated(@NonNull FlutterTextureView flutterTextureView);
-
-    /**
-     * Invoked by this delegate when the {@link FlutterView} that renders the Flutter UI is
-     * initially instantiated.
-     *
-     * <p>{@link FlutterView} internally owns the {@link FlutterSurfaceView} or {@link
-     * FlutterTextureView} that renders a Flutter UI.
-     *
-     * <p>This method is invoked before the given {@link FlutterView} is attached to the {@code
-     * View} hierarchy. Implementers should not attempt to climb the {@code View} hierarchy or make
-     * assumptions about relationships with other {@code View}s.
-     */
-    void onFlutterViewCreated(@NonNull FlutterView flutterView);
 
     /** Invoked by this delegate when its {@link FlutterView} starts painting pixels. */
     void onFlutterUiDisplayed();
