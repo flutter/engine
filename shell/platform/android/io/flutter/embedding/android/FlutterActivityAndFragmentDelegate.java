@@ -251,9 +251,32 @@ import java.util.Arrays;
       LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     Log.v(TAG, "Creating FlutterView.");
     ensureAlive();
-    flutterView =
-        new FlutterView(host.getActivity(), host.getRenderMode(), host.getTransparencyMode());
+
+    if (host.getRenderMode() == RenderMode.surface) {
+      FlutterSurfaceView flutterSurfaceView = new FlutterSurfaceView(host.getActivity(), host.getTransparencyMode() == TransparencyMode.transparent);
+
+      // Allow our host to customize FlutterSurfaceView, if desired.
+      host.onFlutterSurfaceViewCreated(flutterSurfaceView);
+
+      // Create the FlutterView that owns the FlutterSurfaceView.
+      flutterView =
+          new FlutterView(host.getActivity(), flutterSurfaceView);
+    } else {
+      FlutterTextureView flutterTextureView = new FlutterTextureView(host.getActivity());
+
+      // Allow our host to customize FlutterSurfaceView, if desired.
+      host.onFlutterTextureViewCreated(flutterTextureView);
+
+      // Create the FlutterView that owns the FlutterTextureView.
+      flutterView =
+          new FlutterView(host.getActivity(), flutterTextureView);
+    }
+
+    // Add listener to be notified when Flutter renders its first frame.
     flutterView.addOnFirstFrameRenderedListener(flutterUiDisplayListener);
+
+    // Allow our host to customize FlutterView, if desired.
+    host.onFlutterViewCreated(flutterView);
 
     flutterSplashView = new FlutterSplashView(host.getContext());
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -702,18 +725,18 @@ import java.util.Arrays;
     String getInitialRoute();
 
     /**
-     * Returns the {@link FlutterView.RenderMode} used by the {@link FlutterView} that displays the
+     * Returns the {@link RenderMode} used by the {@link FlutterView} that displays the
      * {@link FlutterEngine}'s content.
      */
     @NonNull
-    FlutterView.RenderMode getRenderMode();
+    RenderMode getRenderMode();
 
     /**
-     * Returns the {@link FlutterView.TransparencyMode} used by the {@link FlutterView} that
+     * Returns the {@link TransparencyMode} used by the {@link FlutterView} that
      * displays the {@link FlutterEngine}'s content.
      */
     @NonNull
-    FlutterView.TransparencyMode getTransparencyMode();
+    TransparencyMode getTransparencyMode();
 
     @Nullable
     SplashScreen provideSplashScreen();
@@ -748,6 +771,49 @@ import java.util.Arrays;
      * {@link Activity}, allowing plugins to interact with it.
      */
     boolean shouldAttachEngineToActivity();
+
+    /**
+     * Invoked by this delegate when the {@link FlutterSurfaceView} that renders the Flutter UI is
+     * initially instantiated.
+     *
+     * <p>This method is only invoked if the {@link
+     * io.flutter.embedding.android.FlutterView.RenderMode} is set to {@link
+     * io.flutter.embedding.android.FlutterView.RenderMode#surface}. Otherwise, {@link
+     * #onFlutterTextureViewCreated(FlutterTextureView)} is invoked.
+     *
+     * <p>This method is invoked before the given {@link FlutterSurfaceView} is attached to the
+     * {@code View} hierarchy. Implementers should not attempt to climb the {@code View} hierarchy
+     * or make assumptions about relationships with other {@code View}s.
+     */
+    void onFlutterSurfaceViewCreated(@NonNull FlutterSurfaceView flutterSurfaceView);
+
+    /**
+     * Invoked by this delegate when the {@link FlutterTextureView} that renders the Flutter UI is
+     * initially instantiated.
+     *
+     * <p>This method is only invoked if the {@link
+     * io.flutter.embedding.android.FlutterView.RenderMode} is set to {@link
+     * io.flutter.embedding.android.FlutterView.RenderMode#texture}. Otherwise, {@link
+     * #onFlutterSurfaceViewCreated(FlutterSurfaceView)} is invoked.
+     *
+     * <p>This method is invoked before the given {@link FlutterTextureView} is attached to the
+     * {@code View} hierarchy. Implementers should not attempt to climb the {@code View} hierarchy
+     * or make assumptions about relationships with other {@code View}s.
+     */
+    void onFlutterTextureViewCreated(@NonNull FlutterTextureView flutterTextureView);
+
+    /**
+     * Invoked by this delegate when the {@link FlutterView} that renders the Flutter UI is
+     * initially instantiated.
+     *
+     * <p>{@link FlutterView} internally owns the {@link FlutterSurfaceView} or {@link
+     * FlutterTextureView} that renders a Flutter UI.
+     *
+     * <p>This method is invoked before the given {@link FlutterView} is attached to the {@code
+     * View} hierarchy. Implementers should not attempt to climb the {@code View} hierarchy or make
+     * assumptions about relationships with other {@code View}s.
+     */
+    void onFlutterViewCreated(@NonNull FlutterView flutterView);
 
     /** Invoked by this delegate when its {@link FlutterView} starts painting pixels. */
     void onFlutterUiDisplayed();

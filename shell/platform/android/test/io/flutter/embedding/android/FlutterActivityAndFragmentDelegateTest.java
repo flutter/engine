@@ -58,8 +58,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(mockHost.getDartEntrypointFunctionName()).thenReturn("main");
     when(mockHost.getAppBundlePath()).thenReturn("/fake/path");
     when(mockHost.getInitialRoute()).thenReturn("/");
-    when(mockHost.getRenderMode()).thenReturn(FlutterView.RenderMode.surface);
-    when(mockHost.getTransparencyMode()).thenReturn(FlutterView.TransparencyMode.transparent);
+    when(mockHost.getRenderMode()).thenReturn(RenderMode.surface);
+    when(mockHost.getTransparencyMode()).thenReturn(TransparencyMode.transparent);
     when(mockHost.provideFlutterEngine(any(Context.class))).thenReturn(mockFlutterEngine);
     when(mockHost.shouldAttachEngineToActivity()).thenReturn(true);
     when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
