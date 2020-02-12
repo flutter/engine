@@ -169,8 +169,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
             -1, /*selStart*/
             -1, /*selEnd*/
             -1, /*candidatesStart*/
-            -1 /*candidatesEnd*/
-        );
+            -1 /*candidatesEnd*/);
       }
     }
 
