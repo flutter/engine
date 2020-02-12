@@ -34,7 +34,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
   private final Layout mLayout;
 
   // Used to determine if Samsung-specific hacks should be applied.
-  private final boolean mIsSamsung;
+  private final boolean isSamsung;
 
   @SuppressWarnings("deprecation")
   public InputConnectionAdaptor(
@@ -63,7 +63,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
             false);
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
 
-    mIsSamsung = isSamsung();
+    isSamsung = isSamsung();
   }
 
   // Send the current state of the editable to Flutter.
@@ -142,13 +142,13 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
     // Apply Samsung hacks. Samsung caches composing region data strangely, causing text
     // duplication.
-    if (mIsSamsung) {
+    if (isSamsung) {
       if (Build.VERSION.SDK_INT >= 21) {
         // Samsung keyboards don't clear the composing region on finishComposingText.
         // Update the keyboard with a reset/empty composing region. Critical on
         // Samsung keyboards to prevent punctuation duplication.
         CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
-        builder.setComposingText(-1, "");
+        builder.setComposingText(/*composingTextStart*/-1, /*composingText*/"");
         CursorAnchorInfo anchorInfo = builder.build();
         mImm.updateCursorAnchorInfo(mFlutterView, anchorInfo);
       }
@@ -164,7 +164,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
       //
       // We only do this if the proper selection will be restored later, eg, when mBatchCount is 0.
       if (mBatchCount == 0) {
-        mImm.updateSelection(mFlutterView, -1, -1, -1, -1);
+        mImm.updateSelection(
+            mFlutterView, /*selStart*/-1, /*selEnd*/-1, /*candidatesStart*/-1, /*candidatesEnd*/-1);
       }
     }
 
