@@ -140,7 +140,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean finishComposingText() {
     boolean result = super.finishComposingText();
 
-    // Apply Samsung hacks. Samsung caches composing region data strangely, causing text duplication.
+    // Apply Samsung hacks. Samsung caches composing region data strangely, causing text
+    // duplication.
     if (mIsSamsung) {
       if (Build.VERSION.SDK_INT >= 21) {
         // Update the keyboard with a reset/empty composing region. Critical on
@@ -157,7 +158,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
       // Temporarily indicate to the IME that the composing region selection should be reset.
       // The correct selection is then immediately set properly in the updateEditingState() call
       // in this method. This is a hack to trigger Samsung keyboard's internal cache to clear.
-      // This prevents duplication on keyboard hide+show. See https://github.com/flutter/flutter/issues/31512
+      // This prevents duplication on keyboard hide+show. See
+      // https://github.com/flutter/flutter/issues/31512
       //
       // We only do this if the proper selection will be restored later, eg, when mBatchCount is 0.
       if (mBatchCount == 0) {
