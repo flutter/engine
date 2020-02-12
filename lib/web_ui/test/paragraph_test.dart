@@ -191,7 +191,7 @@ void main() async {
     builder.addText('abcdefg\n');
     builder.addText('ab');
     final Paragraph paragraph = builder.build();
-    paragraph.layout(const ParagraphConstraints(width: 1000));
+    paragraph.layout(const ParagraphConstraints(width: 100));
 
     // First line: "abcd\n"
 
@@ -208,7 +208,7 @@ void main() async {
     // At the end of the first line.
     expect(
       paragraph.getPositionForOffset(Offset(50, 5)),
-      TextPosition(offset: 5, affinity: TextAffinity.upstream),
+      TextPosition(offset: 4, affinity: TextAffinity.upstream),
     );
     // On the left side of "b" in the first line.
     expect(
@@ -232,7 +232,7 @@ void main() async {
     // At the end of the second line.
     expect(
       paragraph.getPositionForOffset(Offset(100, 15)),
-      TextPosition(offset: 13, affinity: TextAffinity.upstream),
+      TextPosition(offset: 12, affinity: TextAffinity.upstream),
     );
     // On the left side of "e" in the second line.
     expect(
@@ -255,7 +255,7 @@ void main() async {
     );
     // At the end of the last line.
     expect(
-      paragraph.getPositionForOffset(Offset(40, 25)),
+      paragraph.getPositionForOffset(Offset(100, 25)),
       TextPosition(offset: 15, affinity: TextAffinity.upstream),
     );
     // Below the last line.
