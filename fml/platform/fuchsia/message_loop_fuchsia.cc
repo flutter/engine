@@ -10,10 +10,9 @@
 
 namespace fml {
 
-MessageLoopFuchsia::MessageLoopFuchsia()
-  : running_(false) {
+MessageLoopFuchsia::MessageLoopFuchsia() : running_(false) {
   auto status = zx_timer_create(0, ZX_CLOCK_MONOTONIC, &timer_);
-  FML_DCHECK(status == ZX_OK);
+  FML_CHECK(status == ZX_OK);
 }
 
 MessageLoopFuchsia::~MessageLoopFuchsia() = default;
@@ -21,21 +20,28 @@ MessageLoopFuchsia::~MessageLoopFuchsia() = default;
 void MessageLoopFuchsia::Run() {
   zx_signals_t observed;
   running_ = true;
-  while (running_) {
-    auto status = zx_object_wait_one(timer_, ZX_TIMER_SIGNALED, ZX_TIME_INFINITE, &observed);
 
-    if (status == ZX_OK) {
-      RunExpiredTasksNow();
+  while (running_) {
+    auto status = zx_object_wait_one(timer_, ZX_TIMER_SIGNALED,
+                                     ZX_TIME_INFINITE, &observed);
+    FML_CHECK(observed == ZX_TIMER_SCHEDULED ||
+              observed == ZX_SIGNAL_HANDLE_CLOSED);
+
+    RunExpiredTasksNow();
+
+    // This handles the case where the loop is terminated using zx APIs.
+    if (status == ZX_ERR_CANCELED) {
+      running_ = false;
     }
   }
 }
 
 void MessageLoopFuchsia::Terminate() {
   running_ = false;
+  zx_handle_close(timer_);
 }
 
 void MessageLoopFuchsia::WakeUp(fml::TimePoint time_point) {
-
   fml::TimePoint now = fml::TimePoint::Now();
   zx_duration_t delay = 0;
   if (time_point > now) {
@@ -43,7 +49,7 @@ void MessageLoopFuchsia::WakeUp(fml::TimePoint time_point) {
   }
   auto due_time = zx_deadline_after(delay);
   auto status = zx_timer_set(timer_, due_time, ZX_TIMER_SLACK_CENTER);
-  FML_DCHECK(status == ZX_OK);
+  FML_CHECK(status == ZX_OK);
 }
 
 }  // namespace fml
