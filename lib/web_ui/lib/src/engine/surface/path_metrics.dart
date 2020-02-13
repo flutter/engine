@@ -873,18 +873,18 @@ void _chopCubicAt(
   final bool chopStart = startT != 0;
   final double t = chopStart ? startT : stopT;
 
-  final double ab1x = p0x * (1 - t) + p1x * t;
-  final double ab1y = p0y * (1 - t) + p1y * t;
-  final double bc1x = p1x * (1 - t) + p2x * t;
-  final double bc1y = p1y * (1 - t) + p2y * t;
-  final double cd1x = p2x * (1 - t) + p3x * t;
-  final double cd1y = p2y * (1 - t) + p3y * t;
-  final double abc1x = ab1x * (1 - t) + bc1x * t;
-  final double abc1y = ab1y * (1 - t) + bc1y * t;
-  final double bcd1x = bc1x * (1 - t) + cd1x * t;
-  final double bcd1y = bc1y * (1 - t) + cd1y * t;
-  final double abcd1x = abc1x * (1 - t) + bcd1x * t;
-  final double abcd1y = abc1y * (1 - t) + bcd1y * t;
+  final double ab1x = _interpolate(p0x, p1x, t);
+  final double ab1y = _interpolate(p0y, p1y, t);
+  final double bc1x = _interpolate(p1x, p2x, t);
+  final double bc1y = _interpolate(p1y, p2y, t);
+  final double cd1x = _interpolate(p2x, p3x, t);
+  final double cd1y = _interpolate(p2y, p3y, t);
+  final double abc1x = _interpolate(ab1x, bc1x, t);
+  final double abc1y = _interpolate(ab1y, bc1y, t);
+  final double bcd1x = _interpolate(bc1x, cd1x, t);
+  final double bcd1y = _interpolate(bc1y, cd1y, t);
+  final double abcd1x = _interpolate(abc1x, bcd1x, t);
+  final double abcd1y = _interpolate(abc1y, bcd1y, t);
   if (!chopStart) {
     // Return left side of curve.
     buffer[0] = p0x;
@@ -912,18 +912,18 @@ void _chopCubicAt(
   // We chopped at startT, now the right hand side of curve is at
   // abcd1, bcd1, cd1, p3x, p3y. Chop this part using endT;
   final double endT = (stopT - startT) / (1 - startT);
-  final double ab2x = abcd1x * (1 - endT) + bcd1x * endT;
-  final double ab2y = abcd1y * (1 - endT) + bcd1y * endT;
-  final double bc2x = bcd1x * (1 - endT) + cd1x * endT;
-  final double bc2y = bcd1y * (1 - endT) + cd1y * endT;
-  final double cd2x = cd1x * (1 - endT) + p3x * endT;
-  final double cd2y = cd1y * (1 - endT) + p3y * endT;
-  final double abc2x = ab2x * (1 - endT) + bc2x * endT;
-  final double abc2y = ab2y * (1 - endT) + bc2y * endT;
-  final double bcd2x = bc2x * (1 - endT) + cd2x * endT;
-  final double bcd2y = bc2y * (1 - endT) + cd2y * endT;
-  final double abcd2x = abc2x * (1 - endT) + bcd2x * endT;
-  final double abcd2y = abc2y * (1 - endT) + bcd2y * endT;
+  final double ab2x = _interpolate(abcd1x, bcd1x, endT);
+  final double ab2y = _interpolate(abcd1y, bcd1y, endT);
+  final double bc2x = _interpolate(bcd1x, cd1x, endT);
+  final double bc2y = _interpolate(bcd1y, cd1y, endT);
+  final double cd2x = _interpolate(cd1x, p3x, endT);
+  final double cd2y = _interpolate(cd1y, p3y, endT);
+  final double abc2x = _interpolate(ab2x, bc2x, endT);
+  final double abc2y = _interpolate(ab2y, bc2y, endT);
+  final double bcd2x = _interpolate(bc2x, cd2x, endT);
+  final double bcd2y = _interpolate(bc2y, cd2y, endT);
+  final double abcd2x = _interpolate(abc2x, bcd2x, endT);
+  final double abcd2y = _interpolate(abc2y, bcd2y, endT);
   buffer[0] = abcd1x;
   buffer[1] = abcd1y;
   buffer[2] = ab2x;
@@ -949,12 +949,12 @@ void _chopQuadAt(
   final bool chopStart = startT != 0;
   final double t = chopStart ? startT : stopT;
 
-  final double ab1x = p0x * (1 - t) + p1x * t;
-  final double ab1y = p0y * (1 - t) + p1y * t;
-  final double bc1x = p1x * (1 - t) + p2x * t;
-  final double bc1y = p1y * (1 - t) + p2y * t;
-  final double abc1x = ab1x * (1 - t) + bc1x * t;
-  final double abc1y = ab1y * (1 - t) + bc1y * t;
+  final double ab1x = _interpolate(p0x, p1x, t);
+  final double ab1y = _interpolate(p0y, p1y, t);
+  final double bc1x = _interpolate(p1x, p2x, t);
+  final double bc1y = _interpolate(p1y, p2y, t);
+  final double abc1x = _interpolate(ab1x, bc1x, t);
+  final double abc1y = _interpolate(ab1y, bc1y, t);
   if (!chopStart) {
     // Return left side of curve.
     buffer[0] = p0x;
@@ -978,12 +978,12 @@ void _chopQuadAt(
   // We chopped at startT, now the right hand side of curve is at
   // abc1x, abc1y, bc1x, bc1y, p2x, p2y
   final double endT = (stopT - startT) / (1 - startT);
-  final double ab2x = abc1x * (1 - endT) + bc1x * endT;
-  final double ab2y = abc1y * (1 - endT) + bc1y * endT;
-  final double bc2x = bc1x * (1 - endT) + p2x * endT;
-  final double bc2y = bc1y * (1 - endT) + p2y * endT;
-  final double abc2x = ab2x * (1 - endT) + bc2x * endT;
-  final double abc2y = ab2y * (1 - endT) + bc2y * endT;
+  final double ab2x = _interpolate(abc1x, bc1x, endT);
+  final double ab2y = _interpolate(abc1y, bc1y, endT);
+  final double bc2x = _interpolate(bc1x, p2x, endT);
+  final double bc2y = _interpolate(bc1y, p2y, endT);
+  final double abc2x = _interpolate(ab2x, bc2x, endT);
+  final double abc2y = _interpolate(ab2y, bc2y, endT);
 
   buffer[0] = abc1x;
   buffer[1] = abc1y;
@@ -992,3 +992,6 @@ void _chopQuadAt(
   buffer[4] = abc2x;
   buffer[5] = abc2y;
 }
+
+double _interpolate(double startValue, double endValue, double t)
+    => (startValue * (1 - t)) + endValue * t;
