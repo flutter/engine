@@ -20,9 +20,11 @@ const double kEpsilon = 0.000000001;
 ///
 /// When iterating across a [PathMetrics]' contours, the [PathMetric] objects
 /// are only valid until the next one is obtained.
-class SurfacePathMetrics extends IterableBase<ui.PathMetric> implements ui.PathMetrics {
+class SurfacePathMetrics extends IterableBase<ui.PathMetric>
+    implements ui.PathMetrics {
   SurfacePathMetrics._(SurfacePath path, bool forceClosed)
-      : _iterator = SurfacePathMetricIterator._(_SurfacePathMeasure(path, forceClosed));
+      : _iterator =
+            SurfacePathMetricIterator._(_SurfacePathMeasure(path, forceClosed));
 
   final SurfacePathMetricIterator _iterator;
 
@@ -34,7 +36,8 @@ class SurfacePathMetrics extends IterableBase<ui.PathMetric> implements ui.PathM
 /// objects exposed through iterator.
 class _SurfacePathMeasure {
   _SurfacePathMeasure(this._path, this.forceClosed) {
-    _currentContourIndex = -1; // nextContour will increment this to the zero based index.
+    _currentContourIndex =
+        -1; // nextContour will increment this to the zero based index.
   }
 
   final SurfacePath _path;
@@ -52,8 +55,8 @@ class _SurfacePathMeasure {
   _PathContourMeasure _contourMeasure;
 
   double length(int contourIndex) {
-    assert(contourIndex <=
-        currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+    assert(contourIndex <= currentContourIndex,
+        'Iterator must be advanced before index $contourIndex can be used.');
     return _contours[contourIndex].length;
   }
 
@@ -100,7 +103,8 @@ class _SurfacePathMeasure {
       return false;
     }
     ++_subPathIndex;
-    _contourMeasure = _PathContourMeasure(_path.subpaths[_subPathIndex], forceClosed);
+    _contourMeasure =
+        _PathContourMeasure(_path.subpaths[_subPathIndex], forceClosed);
     _contours.add(_contourMeasure);
     return true;
   }
@@ -175,14 +179,17 @@ class _PathContourMeasure {
     // Compute distance to segment. Since distance is cumulative to find
     // t = 0..1 on the segment, we need to calculate start distance using prior
     // segment.
-    final double startDistance = segmentIndex == 0 ? 0 : _segments[segmentIndex - 1].distance;
+    final double startDistance =
+        segmentIndex == 0 ? 0 : _segments[segmentIndex - 1].distance;
     final double totalDistance = segment.distance - startDistance;
-    final double t = totalDistance < kEpsilon ? 0 :
-        (distance - startDistance) / totalDistance;
+    final double t = totalDistance < kEpsilon
+        ? 0
+        : (distance - startDistance) / totalDistance;
     return segment.computeTangent(t);
   }
 
-  ui.Path extractPath(double startDistance, double stopDistance, bool startWithMoveTo) {
+  ui.Path extractPath(
+      double startDistance, double stopDistance, bool startWithMoveTo) {
     if (startDistance < 0) {
       startDistance = 0;
     }
@@ -200,12 +207,14 @@ class _PathContourMeasure {
     }
     int currentSegmentIndex = startSegmentIndex;
     _PathSegment seg = _segments[currentSegmentIndex];
-    final _SurfaceTangent startTangent = _getPosTan(startSegmentIndex, startDistance);
+    final _SurfaceTangent startTangent =
+        _getPosTan(startSegmentIndex, startDistance);
     if (startWithMoveTo) {
       final ui.Offset startPosition = startTangent.position;
       path.moveTo(startPosition.dx, startPosition.dy);
     }
-    final _SurfaceTangent stopTangent = _getPosTan(stopSegmentIndex, stopDistance);
+    final _SurfaceTangent stopTangent =
+        _getPosTan(stopSegmentIndex, stopDistance);
     double startT = startTangent.t;
     final double stopT = stopTangent.t;
     if (startSegmentIndex == stopSegmentIndex) {
@@ -219,7 +228,7 @@ class _PathContourMeasure {
         ++currentSegmentIndex;
         seg = _segments[currentSegmentIndex];
         startT = 0;
-      } while(currentSegmentIndex != stopSegmentIndex);
+      } while (currentSegmentIndex != stopSegmentIndex);
       // Final write last segment from t=0.0 to t=stopT.
       _outputSegmentTo(seg, 0.0, stopT, path);
     }
@@ -227,10 +236,10 @@ class _PathContourMeasure {
   }
 
   // Chops the segment at startT and endT and writes it to output [path].
-  void _outputSegmentTo(_PathSegment segment, double startT, double stopT,
-      ui.Path path) {
+  void _outputSegmentTo(
+      _PathSegment segment, double startT, double stopT, ui.Path path) {
     final List<double> points = segment.points;
-    switch(segment.segmentType) {
+    switch (segment.segmentType) {
       case PathCommandTypes.lineTo:
         final double toX = (points[2] * stopT) + (points[0] * (1.0 - stopT));
         final double toY = (points[3] * stopT) + (points[1] * (1.0 - stopT));
@@ -238,7 +247,8 @@ class _PathContourMeasure {
         break;
       case PathCommandTypes.bezierCurveTo:
         _chopCubicAt(points, startT, stopT, _buffer);
-        path.cubicTo(_buffer[2], _buffer[3], _buffer[4], _buffer[5], _buffer[6], _buffer[7]);
+        path.cubicTo(_buffer[2], _buffer[3], _buffer[4], _buffer[5], _buffer[6],
+            _buffer[7]);
         break;
       case PathCommandTypes.quadraticCurveTo:
         _chopQuadAt(points, startT, stopT, _buffer);
@@ -266,8 +276,8 @@ class _PathContourMeasure {
       // actually made it larger, since a very small delta might be > 0, but
       // still have no effect on distance (if distance >>> delta).
       if (distance > prevDistance) {
-        _segments.add(_PathSegment(PathCommandTypes.lineTo, distance,
-            [currentX, currentY, x, y]));
+        _segments.add(_PathSegment(
+            PathCommandTypes.lineTo, distance, [currentX, currentY, x, y]));
       }
       currentX = x;
       currentY = y;
@@ -467,10 +477,10 @@ class _PathContourMeasure {
       final double abcdX = (abcX + bcdX) / 2;
       final double abcdY = (abcY + bcdY) / 2;
       final int tHalf = (tMin + tMax) >> 1;
-      distance = _computeCubicSegments(
-          x0, y0, abX, abY, abcX, abcY, abcdX, abcdY, distance, tMin, tHalf, segments);
-      distance = _computeCubicSegments(
-          abcdX, abcdY, bcdX, bcdY, cdX, cdY, x3, y3, distance, tHalf, tMax, segments);
+      distance = _computeCubicSegments(x0, y0, abX, abY, abcX, abcY, abcdX,
+          abcdY, distance, tMin, tHalf, segments);
+      distance = _computeCubicSegments(abcdX, abcdY, bcdX, bcdY, cdX, cdY, x3,
+          y3, distance, tHalf, tMax, segments);
     } else {
       final double dx = x0 - x3;
       final double dy = y0 - y3;
@@ -478,8 +488,8 @@ class _PathContourMeasure {
       final double prevDistance = distance;
       distance += startToEndDistance;
       if (distance > prevDistance) {
-        segments.add(_PathSegment(PathCommandTypes.bezierCurveTo,
-            distance, <double>[x0, y0, x1, y1, x2, y2, x3, y3]));
+        segments.add(_PathSegment(PathCommandTypes.bezierCurveTo, distance,
+            <double>[x0, y0, x1, y1, x2, y2, x3, y3]));
       }
     }
     return distance;
@@ -520,8 +530,8 @@ class _PathContourMeasure {
       final double prevDistance = distance;
       distance += startToEndDistance;
       if (distance > prevDistance) {
-        _segments.add(_PathSegment(PathCommandTypes.quadraticCurveTo,
-            distance, <double>[x0, y0, x1, y1, x2, y2]));
+        _segments.add(_PathSegment(PathCommandTypes.quadraticCurveTo, distance,
+            <double>[x0, y0, x1, y1, x2, y2]));
       }
     }
     return distance;
@@ -643,7 +653,6 @@ const double _fTolerance = 0.5;
 /// https://github.com/google/skia/blob/master/src/core/SkContourMeasure.cpp
 /// to maintain consistency with native platforms.
 class SurfacePathMetric implements ui.PathMetric {
-
   SurfacePathMetric._(this._measure)
       : assert(_measure != null),
         length = _measure.length(_measure.currentContourIndex),
@@ -699,7 +708,8 @@ class SurfacePathMetric implements ui.PathMetric {
   /// Returns null if the segment is 0 length or `start` > `stop`.
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
   ui.Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
-    return _measure.extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
+    return _measure.extractPath(contourIndex, start, end,
+        startWithMoveTo: startWithMoveTo);
   }
 
   @override
@@ -716,7 +726,9 @@ class _EllipseSegmentResult {
 // Given a vector dx, dy representing slope, normalize and return as [ui.Offset].
 ui.Offset _normalizeSlope(double dx, double dy) {
   final double length = math.sqrt(dx * dx + dy * dy);
-  return length < kEpsilon ? ui.Offset(0.0, 0.0) : ui.Offset(dx / length, dy / length);
+  return length < kEpsilon
+      ? ui.Offset(0.0, 0.0)
+      : ui.Offset(dx / length, dy / length);
 }
 
 class _SurfaceTangent extends ui.Tangent {
@@ -746,32 +758,39 @@ class _PathSegment {
         return _SurfaceTangent(ui.Offset(xAtDistance, yAtDistance),
             _normalizeSlope(points[2] - points[0], points[3] - points[1]), t);
       case PathCommandTypes.bezierCurveTo:
-        return tangentForCubicAt(t, points[0], points[1], points[2], points[3], points[4], points[5], points[6], points[7]);
+        return tangentForCubicAt(t, points[0], points[1], points[2], points[3],
+            points[4], points[5], points[6], points[7]);
       case PathCommandTypes.quadraticCurveTo:
-        return tangentForQuadAt(t, points[0], points[1], points[2], points[3], points[4], points[5]);
+        return tangentForQuadAt(t, points[0], points[1], points[2], points[3],
+            points[4], points[5]);
       default:
         throw UnsupportedError('Invalid segment type');
     }
   }
 
-  _SurfaceTangent tangentForQuadAt(double t, double x0, double y0, double x1, double y1, double x2, double y2) {
+  _SurfaceTangent tangentForQuadAt(double t, double x0, double y0, double x1,
+      double y1, double x2, double y2) {
     assert(t >= 0 && t <= 1);
-    final _SkQuadCoefficients _quadEval = _SkQuadCoefficients(x0, y0, x1, y1, x2, y2);
+    final _SkQuadCoefficients _quadEval =
+        _SkQuadCoefficients(x0, y0, x1, y1, x2, y2);
     final ui.Offset pos = ui.Offset(_quadEval.evalX(t), _quadEval.evalY(t));
     // Derivative of quad curve is 2(b - a + (a - 2b + c)t).
     // If control point is at start or end point, this yields 0 for t = 0 and
     // t = 1. In that case use the quad end points to compute tangent instead
     // of derivative.
-    final ui.Offset tangentVector =
-     ((t == 0 && x0 == x1 && y0 == y1) || (t == 0 && x1 == x2 && y1 == y2))
-      ? _normalizeSlope(x2 - x0, y2 - y0)
-      : _normalizeSlope(2 * ((x2 - x0) * t + (x1 - x0)), 2 * ((y2 - y0) * t + (y1 - y0)));
+    final ui.Offset tangentVector = ((t == 0 && x0 == x1 && y0 == y1) ||
+            (t == 0 && x1 == x2 && y1 == y2))
+        ? _normalizeSlope(x2 - x0, y2 - y0)
+        : _normalizeSlope(
+            2 * ((x2 - x0) * t + (x1 - x0)), 2 * ((y2 - y0) * t + (y1 - y0)));
     return _SurfaceTangent(pos, tangentVector, t);
   }
 
-  _SurfaceTangent tangentForCubicAt(double t, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3) {
+  _SurfaceTangent tangentForCubicAt(double t, double x0, double y0, double x1,
+      double y1, double x2, double y2, double x3, double y3) {
     assert(t >= 0 && t <= 1);
-    final _SkCubicCoefficients _cubicEval = _SkCubicCoefficients(x0, y0, x1, y1, x2, y2, x3, y3);
+    final _SkCubicCoefficients _cubicEval =
+        _SkCubicCoefficients(x0, y0, x1, y1, x2, y2, x3, y3);
     final ui.Offset pos = ui.Offset(_cubicEval.evalX(t), _cubicEval.evalY(t));
     // Derivative of cubic is zero when t = 0 or 1 and adjacent control point
     // is on the start or end point of curve. Use the other control point
@@ -804,9 +823,14 @@ class _PathSegment {
 
 /// Evaluates A * t^2 + B * t + C = 0 for quadratic curve.
 class _SkQuadCoefficients {
-  _SkQuadCoefficients(double x0, double y0, double x1, double y1, double x2, double y2)
-      : cx = x0, cy = y0, bx = 2 * (x1 - x0), by = 2 * (y1 - y0),
-        ax = x2 - (2 * x1) + x0, ay = y2 - (2 * y1) + y0;
+  _SkQuadCoefficients(
+      double x0, double y0, double x1, double y1, double x2, double y2)
+      : cx = x0,
+        cy = y0,
+        bx = 2 * (x1 - x0),
+        by = 2 * (y1 - y0),
+        ax = x2 - (2 * x1) + x0,
+        ay = y2 - (2 * y1) + y0;
   final double ax, ay, bx, by, cx, cy;
 
   double evalX(double t) => (ax * t + bx) * t + cx;
@@ -817,15 +841,16 @@ class _SkQuadCoefficients {
 // Evaluates A * t^3 + B * t^2 + Ct + D = 0 for cubic curve.
 class _SkCubicCoefficients {
   final double ax, ay, bx, by, cx, cy, dx, dy;
-  _SkCubicCoefficients(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3) :
-      ax = x3 + (3 * (x1 - x2)) - x0,
-      ay = y3 + (3 * (y1 - y2)) - y0,
-      bx = 3 * (x2 - (2 * x1) + x0),
-      by = 3 * (y2 - (2 * y1) + y0),
-      cx = 3 * (x1 - x0),
-      cy = 3 * (y1 - y0),
-      dx = x0,
-      dy = y0;
+  _SkCubicCoefficients(double x0, double y0, double x1, double y1, double x2,
+      double y2, double x3, double y3)
+      : ax = x3 + (3 * (x1 - x2)) - x0,
+        ay = y3 + (3 * (y1 - y2)) - y0,
+        bx = 3 * (x2 - (2 * x1) + x0),
+        by = 3 * (y2 - (2 * y1) + y0),
+        cx = 3 * (x1 - x0),
+        cy = 3 * (y1 - y0),
+        dx = x0,
+        dy = y0;
 
   double evalX(double t) => (((ax * t + bx) * t) + cx) * t + dx;
 
@@ -833,8 +858,8 @@ class _SkCubicCoefficients {
 }
 
 /// Chops cubic spline at startT and stopT, writes result to buffer.
-void _chopCubicAt(List<double> points, double startT, double stopT,
-    Float32List buffer) {
+void _chopCubicAt(
+    List<double> points, double startT, double stopT, Float32List buffer) {
   assert(startT != 0 || stopT != 0);
   final double p3y = points[7];
   final double p0x = points[0];
@@ -910,8 +935,8 @@ void _chopCubicAt(List<double> points, double startT, double stopT,
 }
 
 /// Chops quadratic curve at startT and stopT and writes result to buffer.
-void _chopQuadAt(List<double> points, double startT, double stopT,
-    Float32List buffer) {
+void _chopQuadAt(
+    List<double> points, double startT, double stopT, Float32List buffer) {
   assert(startT != 0 || stopT != 0);
   final double p2y = points[5];
   final double p0x = points[0];

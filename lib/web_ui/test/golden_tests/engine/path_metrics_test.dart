@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' hide TextStyle;
 import 'package:ui/src/engine.dart';
 import 'package:test/test.dart';
+import '../../matchers.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
@@ -22,7 +23,7 @@ void main() async {
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
-        bool write = false}) async {
+      bool write = false}) async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
     rc.apply(engineCanvas);
 
@@ -46,10 +47,57 @@ void main() async {
     await webOnlyFontCollection.ensureFontsLoaded();
   });
 
+  test('Should calculate tangent on line', () async {
+    final Path path = Path();
+    path.moveTo(50, 130);
+    path.lineTo(150, 20);
+
+    PathMetric metric = path.computeMetrics().first;
+    Tangent t = metric.getTangentForOffset(50.0);
+    expect(t.position.dx, within(from: 83.633, distance: 0.01));
+    expect(t.position.dy, within(from: 93.0, distance: 0.01));
+    expect(t.vector.dx, within(from: 0.672, distance: 0.01));
+    expect(t.vector.dy, within(from: -0.739, distance: 0.01));
+  });
+
+  test('Should calculate tangent on cubic curve', () async {
+    final Path path = Path();
+    double p0x = 150;
+    double p0y = 20;
+    double p1x = 240;
+    double p1y = 120;
+    double p2x = 320;
+    double p2y = 25;
+    path.moveTo(150, 20);
+    path.quadraticBezierTo(p1x, p1y, p2x, p2y);
+    PathMetric metric = path.computeMetrics().first;
+    Tangent t = metric.getTangentForOffset(50.0);
+    expect(t.position.dx, within(from: 187.25, distance: 0.01));
+    expect(t.position.dy, within(from: 53.33, distance: 0.01));
+    expect(t.vector.dx, within(from: 0.82, distance: 0.01));
+    expect(t.vector.dy, within(from: 0.56, distance: 0.01));
+  });
+
+  test('Should calculate tangent on quadratic curve', () async {
+    final Path path = Path();
+    double p0x = 150;
+    double p0y = 20;
+    double p1x = 320;
+    double p1y = 25;
+    path.moveTo(150, 20);
+    path.quadraticBezierTo(p0x, p0y, p1x, p1y);
+    PathMetric metric = path.computeMetrics().first;
+    Tangent t = metric.getTangentForOffset(50.0);
+    expect(t.position.dx, within(from: 199.82, distance: 0.01));
+    expect(t.position.dy, within(from: 21.46, distance: 0.01));
+    expect(t.vector.dx, within(from: 0.99, distance: 0.01));
+    expect(t.vector.dy, within(from: 0.02, distance: 0.01));
+  });
+
   // Test for extractPath to draw 5 pixel length dashed line using quad curve.
   test('Should draw dashed line on quadratic curve.', () async {
     final RecordingCanvas rc =
-      RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
 
     final Paint paint = Paint()
       ..style = PaintingStyle.stroke
@@ -69,7 +117,7 @@ void main() async {
     double p1y = 120;
     double p2x = 320;
     double p2y = 25;
-    path.quadraticBezierTo(p1x, p1y, p2x , p2y);
+    path.quadraticBezierTo(p1x, p1y, p2x, p2y);
 
     rc.drawPath(path, paint);
 
@@ -90,7 +138,8 @@ void main() async {
       while (distance < measurePath.length * t1) {
         final double length = kDashLength;
         if (draw) {
-          dashedPath.addPath(measurePath.extractPath(distance, distance + length),
+          dashedPath.addPath(
+              measurePath.extractPath(distance, distance + length),
               Offset.zero);
         }
         distance += length;
@@ -104,7 +153,7 @@ void main() async {
   // Test for extractPath to draw 5 pixel length dashed line using cubic curve.
   test('Should draw dashed line on cubic curve.', () async {
     final RecordingCanvas rc =
-      RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
 
     final Paint paint = Paint()
       ..style = PaintingStyle.stroke
@@ -126,7 +175,7 @@ void main() async {
     double p2y = 130;
     double p3x = 320;
     double p3y = 25;
-    path.cubicTo(p1x, p1y, p2x , p2y, p3x, p3y);
+    path.cubicTo(p1x, p1y, p2x, p2y, p3x, p3y);
 
     rc.drawPath(path, paint);
 
@@ -147,7 +196,8 @@ void main() async {
       while (distance < measurePath.length * t1) {
         final double length = kDashLength;
         if (draw) {
-          dashedPath.addPath(measurePath.extractPath(distance, distance + length),
+          dashedPath.addPath(
+              measurePath.extractPath(distance, distance + length),
               Offset.zero);
         }
         distance += length;
