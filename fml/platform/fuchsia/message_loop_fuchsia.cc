@@ -24,7 +24,7 @@ void MessageLoopFuchsia::Run() {
   while (running_) {
     auto status = zx_object_wait_one(timer_, ZX_TIMER_SIGNALED,
                                      ZX_TIME_INFINITE, &observed);
-    FML_CHECK(observed == ZX_TIMER_SCHEDULED ||
+    FML_CHECK(observed == ZX_TIMER_SIGNALED ||
               observed == ZX_SIGNAL_HANDLE_CLOSED);
 
     RunExpiredTasksNow();
