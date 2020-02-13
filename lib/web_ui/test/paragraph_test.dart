@@ -57,7 +57,9 @@ void main() async {
         closeTo(paragraph.alphabeticBaseline * kAhemBaselineRatio, 3.0),
       );
     }
-  });
+  },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: browserEngine == BrowserEngine.webkit);
 
   testEachMeasurement('predictably lays out a multi-line paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -84,7 +86,9 @@ void main() async {
         closeTo(paragraph.alphabeticBaseline * kAhemBaselineRatio, 3.0),
       );
     }
-  });
+  },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: browserEngine == BrowserEngine.webkit);
 
   testEachMeasurement('predictably lays out a single-line rich paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -106,7 +110,9 @@ void main() async {
       expect(paragraph.maxIntrinsicWidth, fontSize * 10.0);
     }
   }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      skip: (browserEngine == BrowserEngine.firefox));
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: (browserEngine == BrowserEngine.firefox ||
+          browserEngine == BrowserEngine.webkit));
 
   testEachMeasurement('predictably lays out a multi-line rich paragraph', () {
     for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
@@ -129,7 +135,9 @@ void main() async {
       expect(paragraph.maxIntrinsicWidth, fontSize * 16.0);
     }
   }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      skip: (browserEngine == BrowserEngine.firefox));
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: (browserEngine == BrowserEngine.firefox ||
+          browserEngine == BrowserEngine.webkit));
 
   testEachMeasurement('getPositionForOffset single-line', () {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -192,7 +200,7 @@ void main() async {
     builder.addText('abcdefg\n');
     builder.addText('ab');
     final Paragraph paragraph = builder.build();
-    paragraph.layout(const ParagraphConstraints(width: 1000));
+    paragraph.layout(const ParagraphConstraints(width: 100));
 
     // First line: "abcd\n"
 
@@ -209,7 +217,7 @@ void main() async {
     // At the end of the first line.
     expect(
       paragraph.getPositionForOffset(Offset(50, 5)),
-      TextPosition(offset: 5, affinity: TextAffinity.upstream),
+      TextPosition(offset: 4, affinity: TextAffinity.upstream),
     );
     // On the left side of "b" in the first line.
     expect(
@@ -222,7 +230,6 @@ void main() async {
       TextPosition(offset: 2, affinity: TextAffinity.upstream),
     );
 
-
     // Second line: "abcdefg\n"
 
     // At the beginning of the second line.
@@ -233,7 +240,7 @@ void main() async {
     // At the end of the second line.
     expect(
       paragraph.getPositionForOffset(Offset(100, 15)),
-      TextPosition(offset: 13, affinity: TextAffinity.upstream),
+      TextPosition(offset: 12, affinity: TextAffinity.upstream),
     );
     // On the left side of "e" in the second line.
     expect(
@@ -246,7 +253,6 @@ void main() async {
       TextPosition(offset: 10, affinity: TextAffinity.upstream),
     );
 
-
     // Last (third) line: "ab"
 
     // At the beginning of the last line.
@@ -256,7 +262,7 @@ void main() async {
     );
     // At the end of the last line.
     expect(
-      paragraph.getPositionForOffset(Offset(40, 25)),
+      paragraph.getPositionForOffset(Offset(100, 25)),
       TextPosition(offset: 15, affinity: TextAffinity.upstream),
     );
     // Below the last line.
@@ -300,7 +306,9 @@ void main() async {
         TextDirection.rtl,
       ),
     );
-  });
+  },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: browserEngine == BrowserEngine.webkit);
 
   testEachMeasurement(
       'getBoxesForRange return empty list for zero-length range', () {
@@ -420,5 +428,7 @@ void main() async {
 
     expect(paragraph.width, 30);
     expect(paragraph.height, 10);
-  });
+  },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+      skip: browserEngine == BrowserEngine.webkit);
 }

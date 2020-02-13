@@ -655,8 +655,10 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/Flutt
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSurfaceView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterTextureView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/RenderMode.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreen.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreenProvider.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/TransparencyMode.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngine.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineCache.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEnginePluginRegistry.java
@@ -1116,6 +1118,9 @@ FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flu
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_view_controller.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/plugin_registrar_windows.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/plugin_registrar_windows_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/dpi_utils.cc
+FILE: ../../../flutter/shell/platform/windows/dpi_utils.h
+FILE: ../../../flutter/shell/platform/windows/dpi_utils_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows.cc
 FILE: ../../../flutter/shell/platform/windows/key_event_handler.cc
 FILE: ../../../flutter/shell/platform/windows/key_event_handler.h
@@ -1125,10 +1130,9 @@ FILE: ../../../flutter/shell/platform/windows/platform_handler.h
 FILE: ../../../flutter/shell/platform/windows/public/flutter_windows.h
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.h
-FILE: ../../../flutter/shell/platform/windows/win32_dpi_helper.cc
-FILE: ../../../flutter/shell/platform/windows/win32_dpi_helper.h
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.h
+FILE: ../../../flutter/shell/platform/windows/win32_flutter_window_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/win32_task_runner.cc
 FILE: ../../../flutter/shell/platform/windows/win32_task_runner.h
 FILE: ../../../flutter/shell/platform/windows/win32_window.cc
