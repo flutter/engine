@@ -15,7 +15,9 @@ MessageLoopFuchsia::MessageLoopFuchsia() : running_(false) {
   FML_CHECK(status == ZX_OK);
 }
 
-MessageLoopFuchsia::~MessageLoopFuchsia() = default;
+MessageLoopFuchsia::~MessageLoopFuchsia() {
+  zx_handle_close(timer_);
+}
 
 void MessageLoopFuchsia::Run() {
   zx_signals_t observed;
@@ -38,16 +40,10 @@ void MessageLoopFuchsia::Run() {
 
 void MessageLoopFuchsia::Terminate() {
   running_ = false;
-  zx_handle_close(timer_);
 }
 
 void MessageLoopFuchsia::WakeUp(fml::TimePoint time_point) {
-  fml::TimePoint now = fml::TimePoint::Now();
-  zx_duration_t delay = 0;
-  if (time_point > now) {
-    delay = (time_point - now).ToNanoseconds();
-  }
-  auto due_time = zx_deadline_after(delay);
+  zx_time_t due_time = time_point.ToEpochDelta().ToNanoseconds();
   auto status = zx_timer_set(timer_, due_time, ZX_TIMER_SLACK_CENTER);
   FML_CHECK(status == ZX_OK);
 }
