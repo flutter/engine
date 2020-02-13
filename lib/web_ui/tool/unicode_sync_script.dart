@@ -16,6 +16,7 @@
 // ```
 //
 // Then we could lazily build the lookup instance on demand.
+// @dart = 2.6
 import 'dart:io';
 import 'package:path/path.dart' as path;
 
