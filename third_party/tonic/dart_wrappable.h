@@ -20,6 +20,12 @@ namespace tonic {
 // exposed to Dart code as an interface.
 class DartWrappable {
  public:
+  enum DartNativeFields {
+    kPeerIndex,  // Must be first to work with Dart_GetNativeReceiver.
+    kWrapperInfoIndex,
+    kNumberOfNativeFields,
+  };
+
   DartWrappable() : dart_wrapper_(nullptr) {}
 
   // Subclasses that wish to expose a new interface must override this function

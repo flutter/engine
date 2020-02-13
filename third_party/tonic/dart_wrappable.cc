@@ -25,10 +25,9 @@ Dart_Handle DartWrappable::CreateDartWrapper(DartState* dart_state) {
   Dart_Handle wrapper = Dart_New(type, Dart_Null(), 0, nullptr);
   TONIC_DCHECK(!LogIfError(wrapper));
 
-  // Must set peer first to work with Dart_GetNativeReceiver.
-  Dart_Handle res = Dart_SetNativeInstanceField(wrapper, 0, reinterpret_cast<intptr_t>(this));
+  Dart_Handle res = Dart_SetNativeInstanceField(wrapper, kPeerIndex, reinterpret_cast<intptr_t>(this));
   TONIC_DCHECK(!LogIfError(res));
-  res = Dart_SetNativeInstanceField(wrapper, 1, reinterpret_cast<intptr_t>(&info));
+  res = Dart_SetNativeInstanceField(wrapper, kWrapperInfoIndex, reinterpret_cast<intptr_t>(&info));
   TONIC_DCHECK(!LogIfError(res));
 
   this->RetainDartWrappableReference();  // Balanced in FinalizeDartWrapper.
