@@ -59,7 +59,7 @@ done
 ./fuchsia_ctl -d $device_name test \
     -f fml_tests-0.far  \
     -t fml_tests \
-    -a "--gtest_filter=-MessageLoop*:Message*:FileTest*"
+    -a "--gtest_filter=-FileTest*"
 
 ./fuchsia_ctl -d $device_name test \
     -f flow_tests-0.far  \
@@ -72,5 +72,5 @@ done
 ./fuchsia_ctl -d $device_name test \
     -f shell_tests-0.far  \
     -t shell_tests \
-    -a "--gtest_filter=-ShellTest.HandlesActualIphoneXsInputEvents:ShellTest.CacheSkSLWorks:ShellTest.SetResourceCacheSize*:ShellTest.Screenshot:ShellTest.WaitForFirstFrameTimeout"
+    -a "--gtest_filter=-ShellTest.CacheSkSLWorks:ShellTest.SetResourceCacheSize*:ShellTest.Screenshot"
 
