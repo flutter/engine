@@ -58,7 +58,9 @@ void MessageLoopFuchsia::Terminate() {
 
 void MessageLoopFuchsia::WakeUp(fml::TimePoint time_point) {
   zx::time due_time(time_point.ToEpochDelta().ToNanoseconds());
-  auto status = timer_.set(due_time, zx::duration(1));
+  auto status = timer_.set(due_time,        // due time
+                           zx::duration(0)  // slack
+  );
   FML_CHECK(status == ZX_OK);
 }
 
