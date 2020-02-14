@@ -36,8 +36,8 @@ class SurfacePathMetrics extends IterableBase<ui.PathMetric>
 /// objects exposed through iterator.
 class _SurfacePathMeasure {
   _SurfacePathMeasure(this._path, this.forceClosed) {
-    _currentContourIndex =
-        -1; // nextContour will increment this to the zero based index.
+    // nextContour will increment this to the zero based index.
+    _currentContourIndex = -1;
   }
 
   final SurfacePath _path;
@@ -124,7 +124,8 @@ class _PathContourMeasure {
 
   final List<_PathSegment> _segments = [];
   // Allocate buffer large enough for returning cubic curve chop result.
-  static final Float32List _buffer = Float32List(4 * 2);
+  // 2 floats for each coordinate x (start, end & control point 1 & 2).
+  static final Float32List _buffer = Float32List(8);
 
   final Subpath subPath;
   final bool forceClosed;
@@ -779,7 +780,7 @@ class _PathSegment {
     // t = 1. In that case use the quad end points to compute tangent instead
     // of derivative.
     final ui.Offset tangentVector = ((t == 0 && x0 == x1 && y0 == y1) ||
-            (t == 0 && x1 == x2 && y1 == y2))
+            (t == 1 && x1 == x2 && y1 == y2))
         ? _normalizeSlope(x2 - x0, y2 - y0)
         : _normalizeSlope(
             2 * ((x2 - x0) * t + (x1 - x0)), 2 * ((y2 - y0) * t + (y1 - y0)));
@@ -993,5 +994,7 @@ void _chopQuadAt(
   buffer[5] = abc2y;
 }
 
+// Interpolate between two doubles (Not using lerpDouble here since it null
+// checks and treats values as 0).
 double _interpolate(double startValue, double endValue, double t)
     => (startValue * (1 - t)) + endValue * t;
