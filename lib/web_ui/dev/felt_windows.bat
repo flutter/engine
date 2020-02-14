@@ -57,7 +57,7 @@ IF %orTempValue%==0 (
 :: TODO(nurhan): The batch script does not support snanphot option.
 :: Support snapshot option.
 CALL :installdeps
-%DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %*
+%DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* --browser=edge
 
 EXIT /B 0
 

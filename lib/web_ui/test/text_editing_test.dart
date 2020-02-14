@@ -306,7 +306,9 @@ void main() {
         keyCode: _kReturnKeyCode,
       );
       expect(lastInputAction, 'TextInputAction.done');
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: browserEngine == BrowserEngine.edge);
 
     test('Does not trigger input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
@@ -356,7 +358,8 @@ void main() {
       ));
 
       // setEditableSizeAndTransform calls placeElement, so expecting geometry to be applied.
-      expect(editingElement.domElement.style.transform, 'matrix(1, 0, 0, 1, 14, 15)');
+      expect(editingElement.domElement.style.transform,
+          'matrix(1, 0, 0, 1, 14, 15)');
       expect(editingElement.domElement.style.width, '13px');
       expect(editingElement.domElement.style.height, '12px');
     });
@@ -1163,7 +1166,9 @@ void main() {
         call.arguments,
         <dynamic>[clientId, 'TextInputAction.next'],
       );
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: browserEngine == BrowserEngine.edge);
 
     test('does not send input action in multi-line mode', () {
       showKeyboard(
