@@ -159,7 +159,9 @@ void _testEngineSemanticsOwner() {
 </sem>''');
 
     semantics().semanticsEnabled = false;
-  });
+  },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      skip: browserEngine == BrowserEngine.edge);
 
   test('clears semantics tree when disabled', () {
     expect(semantics().debugSemanticsTree, isEmpty);
@@ -576,7 +578,9 @@ void _testHorizontalScrolling() {
     expect(scrollable.scrollLeft, 0);
 
     semantics().semanticsEnabled = false;
-  });
+  },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      skip: browserEngine == BrowserEngine.edge);
 
   test('scrollable node dispatches scroll events', () async {
     final SemanticsActionLogger logger = SemanticsActionLogger();

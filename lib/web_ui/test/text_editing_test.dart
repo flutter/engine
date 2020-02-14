@@ -409,7 +409,9 @@ void main() {
       editingElement.disable();
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
 
     test('Does not dispose and recreate dom elements in persistent mode', () {
       editingElement =
@@ -448,7 +450,9 @@ void main() {
       expect(document.activeElement, document.body);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
 
     test('Refocuses when setting editing state', () {
       editingElement =
@@ -472,7 +476,9 @@ void main() {
       editingElement.disable();
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
 
     test('Works in multi-line mode', () {
       final TextAreaElement textarea = TextAreaElement();
@@ -517,7 +523,9 @@ void main() {
       expect(document.activeElement, document.body);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
 
     test('Does not position or size its DOM element', () {
       editingElement.enable(
@@ -703,7 +711,9 @@ void main() {
       expect(document.getElementsByTagName('input'), hasLength(0));
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
 
     test('setClient, setEditingState, show, setClient', () {
       final MethodCall setClient = MethodCall(

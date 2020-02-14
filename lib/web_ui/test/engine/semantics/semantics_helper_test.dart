@@ -63,7 +63,9 @@ void main() {
           desktopSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, true);
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+        skip: browserEngine == BrowserEngine.edge);
 
     test(
         'Relevants events targeting placeholder should not be forwarded to the framework',
