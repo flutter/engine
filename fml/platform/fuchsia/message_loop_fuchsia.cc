@@ -10,26 +10,37 @@
 
 namespace fml {
 
-MessageLoopFuchsia::MessageLoopFuchsia() : running_(false) {
-  auto status = zx_timer_create(0, ZX_CLOCK_MONOTONIC, &timer_);
+MessageLoopFuchsia::MessageLoopFuchsia()
+  : loop_(&kAsyncLoopConfigAttachToCurrentThread),
+    running_(false) {
+  auto status = zx_timer_create(ZX_TIMER_SLACK_LATE, ZX_CLOCK_MONOTONIC, &timer_);
+  FML_CHECK(status == ZX_OK);
+  timer_wait_ = new async::Wait(timer_, ZX_TIMER_SIGNALED);
+
+  auto wait_handler = [&](async_dispatcher_t* dispatcher,
+                        async::Wait* wait,
+                        zx_status_t status,
+                        const zx_packet_signal_t* signal
+                    ) {
+    RunExpiredTasksNow();
+    wait->Begin(loop_.dispatcher());
+  };
+
+  timer_wait_->set_handler(wait_handler);
+  status = timer_wait_->Begin(loop_.dispatcher());
   FML_CHECK(status == ZX_OK);
 }
 
 MessageLoopFuchsia::~MessageLoopFuchsia() {
+  delete timer_wait_;
   zx_handle_close(timer_);
 }
 
 void MessageLoopFuchsia::Run() {
-  zx_signals_t observed;
   running_ = true;
 
   while (running_) {
-    auto status = zx_object_wait_one(timer_, ZX_TIMER_SIGNALED,
-                                     ZX_TIME_INFINITE, &observed);
-    FML_CHECK(observed == ZX_TIMER_SIGNALED ||
-              observed == ZX_SIGNAL_HANDLE_CLOSED);
-
-    RunExpiredTasksNow();
+    auto status = loop_.Run(zx::time::infinite(), true);
 
     // This handles the case where the loop is terminated using zx APIs.
     if (status == ZX_ERR_CANCELED) {
@@ -44,7 +55,7 @@ void MessageLoopFuchsia::Terminate() {
 
 void MessageLoopFuchsia::WakeUp(fml::TimePoint time_point) {
   zx_time_t due_time = time_point.ToEpochDelta().ToNanoseconds();
-  auto status = zx_timer_set(timer_, due_time, ZX_TIMER_SLACK_CENTER);
+  auto status = zx_timer_set(timer_, due_time, ZX_TIMER_SLACK_LATE);
   FML_CHECK(status == ZX_OK);
 }
 

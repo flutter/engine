@@ -9,6 +9,8 @@
 #include "flutter/fml/message_loop_impl.h"
 
 #include <zircon/syscalls.h>
+#include <lib/async/cpp/wait.h>
+#include <lib/async-loop/cpp/loop.h>
 
 namespace fml {
 
@@ -25,6 +27,10 @@ class MessageLoopFuchsia : public MessageLoopImpl {
   void WakeUp(fml::TimePoint time_point) override;
 
   zx_handle_t timer_;
+
+  async::Wait* timer_wait_;
+  async::Loop loop_;
+
   bool running_;
 
   FML_FRIEND_MAKE_REF_COUNTED(MessageLoopFuchsia);
