@@ -41,18 +41,16 @@ class Safari extends Browser {
       // to open Safari for a given URL. In summary they provide a new instance
       // to open, that instance to wait for opening the url until Safari launches,
       // provide Safari bundles identifier.
-      // For more details run `man open` on MacOS.
-      // TODO(nurhan): explore implementing this part using Apple Script or
-      // MacOS native APIs such as LSLaunchURLSpec. In the current solution there is
-      // no way of closing Safari after opening with open command.
+      // The details copied from `man open` on MacOS.
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50809
       var process = await Process.start(installation.executable, [
-        '-F',
-        '-W',
-        '-n',
-        '-b',
-        'com.apple.Safari',
+        '-F', // Open a fresh application with no persistant state.
+        '-W', // Open to wait until the applications it opens.
+        '-n', // Open a new instance of the application.
+        '-b', // Specifies the bundle identifier for the application to use.
+        'com.apple.Safari', // Bundle identifier for Safari.
         '${url.toString()}'
-      ] /* args */);
+      ]);
 
       return process;
     });
