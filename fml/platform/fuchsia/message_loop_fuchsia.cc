@@ -19,13 +19,14 @@ MessageLoopFuchsia::MessageLoopFuchsia()
   auto wait_handler = [this](async_dispatcher_t* dispatcher, async::Wait* wait,
                              zx_status_t status,
                              const zx_packet_signal_t* signal) {
+    if (status == ZX_ERR_CANCELED) {
+      return;
+    }
+    FML_CHECK(signal->observed & ZX_TIMER_SIGNALED);
     timer_.cancel();
     RunExpiredTasksNow();
-    if (status != ZX_ERR_CANCELED) {
-      FML_CHECK(signal->observed & ZX_TIMER_SIGNALED);
-      auto result = wait->Begin(loop_.dispatcher());
-      FML_CHECK(result == ZX_OK);
-    }
+    auto result = wait->Begin(loop_.dispatcher());
+    FML_CHECK(result == ZX_OK);
   };
 
   timer_wait_->set_handler(wait_handler);
@@ -39,7 +40,9 @@ void MessageLoopFuchsia::Run() {
   running_ = true;
 
   while (running_) {
-    auto status = loop_.Run(zx::time::infinite(), true);
+    auto status = loop_.Run(zx::time::infinite(),  // timeout
+                            true                   // run once
+    );
 
     // This handles the case where the loop is terminated using zx APIs.
     if (status == ZX_ERR_CANCELED) {
