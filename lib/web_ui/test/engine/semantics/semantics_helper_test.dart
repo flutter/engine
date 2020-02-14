@@ -151,7 +151,7 @@ void main() {
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox ||
-            browserEngine == BrowserEngine.webkit));
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+        skip: browserEngine != BrowserEngine.blink);
   });
 }
