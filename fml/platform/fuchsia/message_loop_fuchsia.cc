@@ -6,24 +6,26 @@
 
 #include <lib/async-loop/default.h>
 #include <lib/async/cpp/task.h>
-#include <lib/zx/time.h>
 
 namespace fml {
 
 MessageLoopFuchsia::MessageLoopFuchsia()
-  : loop_(&kAsyncLoopConfigAttachToCurrentThread),
-    running_(false) {
-  auto status = zx_timer_create(ZX_TIMER_SLACK_LATE, ZX_CLOCK_MONOTONIC, &timer_);
+    : loop_(&kAsyncLoopConfigAttachToCurrentThread), running_(false) {
+  auto status =
+      zx::timer::create(ZX_TIMER_SLACK_LATE, ZX_CLOCK_MONOTONIC, &timer_);
   FML_CHECK(status == ZX_OK);
-  timer_wait_ = new async::Wait(timer_, ZX_TIMER_SIGNALED);
+  timer_wait_ = std::make_unique<async::Wait>(timer_.get(), ZX_TIMER_SIGNALED);
 
-  auto wait_handler = [&](async_dispatcher_t* dispatcher,
-                        async::Wait* wait,
-                        zx_status_t status,
-                        const zx_packet_signal_t* signal
-                    ) {
+  auto wait_handler = [this](async_dispatcher_t* dispatcher, async::Wait* wait,
+                             zx_status_t status,
+                             const zx_packet_signal_t* signal) {
+    FML_CHECK(signal->observed & ZX_TIMER_SIGNALED);
+    timer_.cancel();
     RunExpiredTasksNow();
-    wait->Begin(loop_.dispatcher());
+    if (running_) {
+      auto result = wait->Begin(loop_.dispatcher());
+      FML_CHECK(result == ZX_OK);
+    }
   };
 
   timer_wait_->set_handler(wait_handler);
@@ -31,10 +33,7 @@ MessageLoopFuchsia::MessageLoopFuchsia()
   FML_CHECK(status == ZX_OK);
 }
 
-MessageLoopFuchsia::~MessageLoopFuchsia() {
-  delete timer_wait_;
-  zx_handle_close(timer_);
-}
+MessageLoopFuchsia::~MessageLoopFuchsia() = default;
 
 void MessageLoopFuchsia::Run() {
   running_ = true;
@@ -51,11 +50,12 @@ void MessageLoopFuchsia::Run() {
 
 void MessageLoopFuchsia::Terminate() {
   running_ = false;
+  WakeUp(fml::TimePoint::Now());
 }
 
 void MessageLoopFuchsia::WakeUp(fml::TimePoint time_point) {
-  zx_time_t due_time = time_point.ToEpochDelta().ToNanoseconds();
-  auto status = zx_timer_set(timer_, due_time, ZX_TIMER_SLACK_LATE);
+  zx::time due_time(time_point.ToEpochDelta().ToNanoseconds());
+  auto status = timer_.set(due_time, zx::duration(1));
   FML_CHECK(status == ZX_OK);
 }
 

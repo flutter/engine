@@ -331,17 +331,17 @@ TEST(MessageLoop, TIME_SENSITIVE(WakeUpTimersAreSingletons)) {
       [&]() {
         auto delta = fml::TimePoint::Now() - begin;
         auto ms = delta.ToMillisecondsF();
-        ASSERT_GE(ms, 18);
-        ASSERT_LE(ms, 22);
+        ASSERT_GE(ms, 20);
+        ASSERT_LE(ms, 24);
 
         loop_impl->Terminate();
       },
-      fml::TimePoint::Now() + t1);
+      begin + t1);
 
   // Call WakeUp manually to change the WakeUp time to the future. If the
   // timer is correctly set up to be rearmed instead of a new timer scheduled,
   // the above task will be executed at t2 instead of t1 now.
-  loop_impl->WakeUp(fml::TimePoint::Now() + t2);
+  loop_impl->WakeUp(begin + t2);
 
   loop_impl->Run();
 }
