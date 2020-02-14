@@ -26,9 +26,9 @@ class AssetManager {
 
   String getAssetUrl(String asset) {
     if (Uri.parse(asset).hasScheme) {
-      return asset;
+      return Uri.encodeFull(asset);
     }
-    return (_baseUrl ?? '') + '$assetsDir/$asset';
+    return Uri.encodeFull((_baseUrl ?? '') + '$assetsDir/$asset');
   }
 
   Future<ByteData> load(String asset) async {
