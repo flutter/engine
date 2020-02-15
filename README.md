@@ -1,5 +1,6 @@
 Flutter Engine
 ==============
+[![Build Status - Cirrus][]][Build status]
 
 Flutter is Google's mobile app SDK for crafting high-quality native interfaces
 in record time. Flutter works with existing code, is used by developers and
