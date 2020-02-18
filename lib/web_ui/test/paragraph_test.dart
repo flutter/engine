@@ -440,9 +440,11 @@ void main() async {
     final Paragraph paragraph = builder.build();
     paragraph.layout(const ParagraphConstraints(width: 100));
 
-    // In the dom-based measurement, there will be some discrepancies around
-    // line ends.
-    final isDom = !TextMeasurementService.enableExperimentalCanvasImplementation;
+    // In the dom-based measurement (except Firefox), there will be some
+    // discrepancies around line ends.
+    final isDiscrepancyExpected =
+      !TextMeasurementService.enableExperimentalCanvasImplementation &&
+          browserEngine != BrowserEngine.firefox;
 
     // First line: "abcd\n"
 
@@ -494,7 +496,8 @@ void main() async {
       paragraph.getBoxesForRange(2, 5),
       <TextBox>[
         TextBox.fromLTRBD(20.0, 0.0, 40.0, 10.0, TextDirection.ltr),
-        if (isDom) TextBox.fromLTRBD(40.0, 0.0, 40.0, 10.0, TextDirection.ltr),
+        if (isDiscrepancyExpected)
+          TextBox.fromLTRBD(40.0, 0.0, 40.0, 10.0, TextDirection.ltr),
       ],
     );
 
@@ -529,7 +532,8 @@ void main() async {
       paragraph.getBoxesForRange(10, 13),
       <TextBox>[
         TextBox.fromLTRBD(50.0, 10.0, 70.0, 20.0, TextDirection.ltr),
-        if (isDom) TextBox.fromLTRBD(70.0, 10.0, 70.0, 20.0, TextDirection.ltr),
+        if (isDiscrepancyExpected)
+          TextBox.fromLTRBD(70.0, 10.0, 70.0, 20.0, TextDirection.ltr),
       ],
     );
 
@@ -568,7 +572,8 @@ void main() async {
       paragraph.getBoxesForRange(2, 8),
       <TextBox>[
         TextBox.fromLTRBD(20.0, 0.0, 40.0, 10.0, TextDirection.ltr),
-        if (isDom) TextBox.fromLTRBD(40.0, 0.0, 40.0, 10.0, TextDirection.ltr),
+        if (isDiscrepancyExpected)
+          TextBox.fromLTRBD(40.0, 0.0, 40.0, 10.0, TextDirection.ltr),
         TextBox.fromLTRBD(0.0, 10.0, 30.0, 20.0, TextDirection.ltr),
       ],
     );
@@ -587,9 +592,11 @@ void main() async {
       paragraph.getBoxesForRange(3, 14),
       <TextBox>[
         TextBox.fromLTRBD(30.0, 0.0, 40.0, 10.0, TextDirection.ltr),
-        if (isDom) TextBox.fromLTRBD(40.0, 0.0, 40.0, 10.0, TextDirection.ltr),
+        if (isDiscrepancyExpected)
+          TextBox.fromLTRBD(40.0, 0.0, 40.0, 10.0, TextDirection.ltr),
         TextBox.fromLTRBD(0.0, 10.0, 70.0, 20.0, TextDirection.ltr),
-        if (isDom) TextBox.fromLTRBD(70.0, 10.0, 70.0, 20.0, TextDirection.ltr),
+        if (isDiscrepancyExpected)
+          TextBox.fromLTRBD(70.0, 10.0, 70.0, 20.0, TextDirection.ltr),
         TextBox.fromLTRBD(0.0, 20.0, 10.0, 30.0, TextDirection.ltr),
       ],
     );
@@ -599,9 +606,11 @@ void main() async {
       paragraph.getBoxesForRange(0, 13),
       <TextBox>[
         TextBox.fromLTRBD(0.0, 0.0, 40.0, 10.0, TextDirection.ltr),
-        if (isDom) TextBox.fromLTRBD(40.0, 0.0, 40.0, 10.0, TextDirection.ltr),
+        if (isDiscrepancyExpected)
+          TextBox.fromLTRBD(40.0, 0.0, 40.0, 10.0, TextDirection.ltr),
         TextBox.fromLTRBD(0.0, 10.0, 70.0, 20.0, TextDirection.ltr),
-        if (isDom) TextBox.fromLTRBD(70.0, 10.0, 70.0, 20.0, TextDirection.ltr),
+        if (isDiscrepancyExpected)
+          TextBox.fromLTRBD(70.0, 10.0, 70.0, 20.0, TextDirection.ltr),
       ],
     );
 
@@ -610,9 +619,11 @@ void main() async {
       paragraph.getBoxesForRange(0, 15),
       <TextBox>[
         TextBox.fromLTRBD(0.0, 0.0, 40.0, 10.0, TextDirection.ltr),
-        if (isDom) TextBox.fromLTRBD(40.0, 0.0, 40.0, 10.0, TextDirection.ltr),
+        if (isDiscrepancyExpected)
+          TextBox.fromLTRBD(40.0, 0.0, 40.0, 10.0, TextDirection.ltr),
         TextBox.fromLTRBD(0.0, 10.0, 70.0, 20.0, TextDirection.ltr),
-        if (isDom) TextBox.fromLTRBD(70.0, 10.0, 70.0, 20.0, TextDirection.ltr),
+        if (isDiscrepancyExpected)
+          TextBox.fromLTRBD(70.0, 10.0, 70.0, 20.0, TextDirection.ltr),
         TextBox.fromLTRBD(0.0, 20.0, 20.0, 30.0, TextDirection.ltr),
       ],
     );
