@@ -99,7 +99,7 @@ void main() {
     expect(parent.innerHtml, '<a></a><b></b><c></c><d></d>');
   });
 
-  test('inneheight/innerWidth are equal to visualViewport height and width',
+  test('innerHeight/innerWidth are equal to visualViewport height and width',
       () {
     if (html.window.visualViewport != null) {
       expect(html.window.visualViewport.width, html.window.innerWidth);
