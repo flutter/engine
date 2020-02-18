@@ -78,13 +78,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
   if (self) {
     _viewOpaque = YES;
     _engine.reset([engine retain]);
-    _engineNeedsLaunch = NO;
+    _engineNeedsLaunch = YES;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _ongoingTouches = [[NSMutableSet alloc] init];
 
     [self performCommonViewControllerInitialization];
-    [engine setViewController:self];
   }
 
   return self;
