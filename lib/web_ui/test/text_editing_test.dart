@@ -307,7 +307,9 @@ void main() {
         keyCode: _kReturnKeyCode,
       );
       expect(lastInputAction, 'TextInputAction.done');
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: browserEngine == BrowserEngine.edge);
 
     test('Does not trigger input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
@@ -357,7 +359,8 @@ void main() {
       ));
 
       // setEditableSizeAndTransform calls placeElement, so expecting geometry to be applied.
-      expect(editingElement.domElement.style.transform, 'matrix(1, 0, 0, 1, 14, 15)');
+      expect(editingElement.domElement.style.transform,
+          'matrix(1, 0, 0, 1, 14, 15)');
       expect(editingElement.domElement.style.width, '13px');
       expect(editingElement.domElement.style.height, '12px');
     });
@@ -407,7 +410,9 @@ void main() {
       editingElement.disable();
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
 
     test('Does not dispose and recreate dom elements in persistent mode', () {
       editingElement =
@@ -446,7 +451,9 @@ void main() {
       expect(document.activeElement, document.body);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
 
     test('Refocuses when setting editing state', () {
       editingElement =
@@ -470,7 +477,9 @@ void main() {
       editingElement.disable();
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
 
     test('Works in multi-line mode', () {
       final TextAreaElement textarea = TextAreaElement();
@@ -515,7 +524,9 @@ void main() {
       expect(document.activeElement, document.body);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
 
     test('Does not position or size its DOM element', () {
       editingElement.enable(
@@ -701,7 +712,9 @@ void main() {
       expect(document.getElementsByTagName('input'), hasLength(0));
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-        skip: browserEngine == BrowserEngine.webkit);
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: (browserEngine == BrowserEngine.webkit ||
+            browserEngine == BrowserEngine.edge));
 
     test('setClient, setEditingState, show, setClient', () {
       final MethodCall setClient = MethodCall(
@@ -1164,7 +1177,9 @@ void main() {
         call.arguments,
         <dynamic>[clientId, 'TextInputAction.next'],
       );
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+        skip: browserEngine == BrowserEngine.edge);
 
     test('does not send input action in multi-line mode', () {
       showKeyboard(

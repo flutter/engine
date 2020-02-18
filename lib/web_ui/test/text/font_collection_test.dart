@@ -37,7 +37,9 @@ void main() {
 
         expect(fontFamilyList.length, equals(1));
         expect(fontFamilyList.first, 'Ahem');
-      });
+      },
+          // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+          skip: browserEngine == BrowserEngine.edge);
 
       test('Register Asset with white space in the family name', () async {
         final String _testFontFamily = "Ahem ahem ahem";
@@ -53,7 +55,9 @@ void main() {
 
         expect(fontFamilyList.length, equals(1));
         expect(fontFamilyList.first, 'Ahem ahem ahem');
-      });
+      },
+          // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+          skip: browserEngine == BrowserEngine.edge);
 
       test('Register Asset with capital case letters', () async {
         final String _testFontFamily = "AhEm";
@@ -69,7 +73,9 @@ void main() {
 
         expect(fontFamilyList.length, equals(1));
         expect(fontFamilyList.first, 'AhEm');
-      });
+      },
+          // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+          skip: browserEngine == BrowserEngine.edge);
     });
 
     group('fonts with special characters', () {
@@ -93,7 +99,9 @@ void main() {
           expect(fontFamilyList.length, equals(1));
           expect(fontFamilyList.first, '\"/Ahem\"');
         }
-      });
+      },
+          // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+          skip: browserEngine == BrowserEngine.edge);
 
       test('Register Asset twice with exclamation mark', () async {
         final String _testFontFamily = 'Ahem!!ahem';
@@ -115,7 +123,9 @@ void main() {
           expect(fontFamilyList.length, equals(1));
           expect(fontFamilyList.first, '\"Ahem!!ahem\"');
         }
-      });
+      },
+          // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+          skip: browserEngine == BrowserEngine.edge);
 
       test('Register Asset twice with comma', () async {
         final String _testFontFamily = 'Ahem ,ahem';
@@ -137,7 +147,9 @@ void main() {
           expect(fontFamilyList.length, equals(1));
           expect(fontFamilyList.first, '\"Ahem ,ahem\"');
         }
-      });
+      },
+          // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+          skip: browserEngine == BrowserEngine.edge);
 
       test('Register Asset twice with a digit at the start of a token',
           () async {
@@ -160,7 +172,9 @@ void main() {
           expect(fontFamilyList.length, equals(1));
           expect(fontFamilyList.first, '\"Ahem 1998\"');
         }
-      });
+      },
+          // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+          skip: browserEngine == BrowserEngine.edge);
     });
   });
 }

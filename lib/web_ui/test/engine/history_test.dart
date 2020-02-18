@@ -57,7 +57,9 @@ void main() {
 
       // The flutter entry is the current entry.
       expect(strategy.currentEntry, flutterEntry);
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        skip: browserEngine == BrowserEngine.edge);
 
     test('browser back button pops routes correctly', () async {
       strategy =
@@ -91,7 +93,9 @@ void main() {
       // The url of the current entry (flutter entry) should go back to /home.
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        skip: browserEngine == BrowserEngine.edge);
 
     test('multiple browser back clicks', () async {
       strategy =
@@ -152,7 +156,9 @@ void main() {
       // 3. The active entry doesn't belong to our history anymore because we
       // navigated past it.
       expect(strategy.currentEntryIndex, -1);
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        skip: browserEngine == BrowserEngine.edge);
 
     test('handle user-provided url', () async {
       strategy =
@@ -191,7 +197,9 @@ void main() {
       expect(strategy.currentEntryIndex, 1);
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        skip: browserEngine == BrowserEngine.edge);
 
     test('user types unknown url', () async {
       strategy =
@@ -213,7 +221,9 @@ void main() {
       expect(strategy.currentEntryIndex, 1);
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        skip: browserEngine == BrowserEngine.edge);
   });
 }
 
