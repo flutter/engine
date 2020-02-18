@@ -75,7 +75,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
   TRACE_EVENT0("flutter", "EmbedderExternalView::Render");
 
   FML_DCHECK(HasEngineRenderedContents())
-      << "Unnecessary asked to render into a render target when there was "
+      << "Unnecessarily asked to render into a render target when there was "
          "nothing to render.";
 
   auto picture = recorder_->finishRecordingAsPicture();

@@ -86,7 +86,7 @@ SkCanvas* EmbedderExternalViewEmbedder::GetRootCanvas() {
     FML_DLOG(WARNING)
         << "No root canvas could be found. This is extremely unlikely and "
            "indicates that the external view embedder did not receive the "
-           "notification to being the frame.";
+           "notification to begin the frame.";
     return nullptr;
   }
   return found->second->GetCanvas();
