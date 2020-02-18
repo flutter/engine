@@ -396,18 +396,26 @@ class EngineParagraph implements ui.Paragraph {
   }
 
   ui.TextBox _getBoxForLine(EngineLineMetrics line, int start, int end) {
-    final double left = start <= line.startIndex
+    final double widthBeforeBox = start <= line.startIndex
       ? 0.0
       : _measurementService.measureSubstringWidth(this, line.startIndex, start);
-    final double right = end >= line.endIndexWithoutNewlines
+    final double widthAfterBox = end >= line.endIndexWithoutNewlines
       ? 0.0
       : _measurementService.measureSubstringWidth(this, end, line.endIndexWithoutNewlines);
 
     final double top = line.lineNumber * _lineHeight;
+
+    //               |<------------------ line.width ------------------>|
+    // |-------------|------------------|-------------|-----------------|
+    // |<-line.left->|<-widthBeforeBox->|<-box width->|<-widthAfterBox->|
+    // |-------------|------------------|-------------|-----------------|
+    //
+    //                                   ^^^^^^^^^^^^^
+    //                          This is the box we want to return.
     return ui.TextBox.fromLTRBD(
-      left + line.left,
+      line.left + widthBeforeBox,
       top,
-      line.width + line.left - right,
+      line.left + line.width - widthAfterBox,
       top + _lineHeight,
       _textDirection,
     );
