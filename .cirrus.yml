@@ -5,7 +5,7 @@ web_shard_template: &WEB_SHARD_TEMPLATE
   environment:
     # As of October 2019, the Web shards needed more than 6G of RAM.
     CPU: 2
-    MEMORY: 8G
+    MEMORY: 10G
   compile_host_script: |
     cd $ENGINE_PATH/src
     ./flutter/tools/gn --unoptimized --full-dart-sdk
