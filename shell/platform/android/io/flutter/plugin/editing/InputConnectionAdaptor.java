@@ -222,13 +222,14 @@ class InputConnectionAdaptor extends BaseInputConnection {
         int newSel = Math.min(selStart + 1, mEditable.length());
         setSelection(newSel, newSel);
         return true;
-      // When the enter key is pressed on a non-multiline field, consider it a
-      // submit instead of a newline.
+        // When the enter key is pressed on a non-multiline field, consider it a
+        // submit instead of a newline.
       } else if ((event.getKeyCode() == KeyEvent.KEYCODE_ENTER
-        || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER)
-        && mEditorInfo.inputType != (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE)) {
-          performEditorAction(mEditorInfo.imeOptions & EditorInfo.IME_MASK_ACTION);
-          return true;
+              || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER)
+          && mEditorInfo.inputType
+              != (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE)) {
+        performEditorAction(mEditorInfo.imeOptions & EditorInfo.IME_MASK_ACTION);
+        return true;
       } else {
         // Enter a character.
         int character = event.getUnicodeChar();
