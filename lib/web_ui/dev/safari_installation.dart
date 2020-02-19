@@ -112,5 +112,6 @@ Future<void> printSafariVersion(StringSink infoLog) async {
     final String versionLine = listOfResults[locationForSafariVersion];
     final String version = versionLine.substring(versionLine.indexOf(':')+2);
     infoLog.writeln('Safari version in use $version.');
+    print('Safari version in use $version.');
   }
 }
