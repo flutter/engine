@@ -90,29 +90,31 @@ Future<void> printSafariVersion(StringSink infoLog) async {
   } else {
     final String output = safariVersionResult.stdout;
 
-    // The output is information about all the applications.
-    final List<String> listOfResults = output.split('\n');
+    print('output from system_profiler: $output');
 
-    // Find the line which contains version info for Safari.
-    int locationForSafariVersion = 0;
-    bool safariFound = false;
-    for (int i=0; i<listOfResults.length; i++) {
-      if (safariFound) {
-        if (listOfResults[i].contains('Version:')) {
-          locationForSafariVersion = i;
-          break;
-        }
-      }
-      if (listOfResults[i].contains('Safari:')) {
-        safariFound = true;
-      }
-    }
+    // // The output is information about all the applications.
+    // final List<String> listOfResults = output.split('\n');
 
-    // The version line should look like: `Version:  13.0.5.`
-    final String versionLine = listOfResults[locationForSafariVersion];
-    print('Safari version in use $versionLine.');
-    //final String version = versionLine.substring(versionLine.indexOf(':')+2);
-    infoLog.writeln('Safari version in use $versionLine.');
-    //print('Safari version in use $version.');
+    // // Find the line which contains version info for Safari.
+    // int locationForSafariVersion = 0;
+    // bool safariFound = false;
+    // for (int i=0; i<listOfResults.length; i++) {
+    //   if (safariFound) {
+    //     if (listOfResults[i].contains('Version:')) {
+    //       locationForSafariVersion = i;
+    //       break;
+    //     }
+    //   }
+    //   if (listOfResults[i].contains('Safari:')) {
+    //     safariFound = true;
+    //   }
+    // }
+
+    // // The version line should look like: `Version:  13.0.5.`
+    // final String versionLine = listOfResults[locationForSafariVersion];
+    // print('Safari version in use $versionLine.');
+    // //final String version = versionLine.substring(versionLine.indexOf(':')+2);
+    // infoLog.writeln('Safari version in use $versionLine.');
+    // //print('Safari version in use $version.');
   }
 }
