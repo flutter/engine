@@ -63,6 +63,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
+  BOOL _isAttchedView;
   NSMutableSet<NSNumber*>* _ongoingTouches;
 }
 
@@ -448,6 +449,13 @@ typedef enum UIAccessibilityContrast : NSInteger {
     [_engine.get() launchEngine:nil libraryURI:nil];
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
+  }
+
+  if (!_isAttchedView) {
+    FML_DCHECK([_engine.get() viewController] != nil)
+      << "FlutterViewController::viewWillAppear:AttachView ViewController was nil";
+    [_engine.get() attachView];
+    _isAttchedView = YES;
   }
 
   // Send platform settings to Flutter, e.g., platform brightness.

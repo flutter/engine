@@ -204,6 +204,10 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   }
 }
 
+- (void)attachView {
+  self.iosPlatformView->attachView();
+}
+
 - (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
   if (observer != _flutterViewControllerWillDeallocObserver) {
     if (_flutterViewControllerWillDeallocObserver) {
