@@ -21,7 +21,6 @@ import io.flutter.plugin.editing.InputConnectionAdaptorTest;
 import io.flutter.plugin.editing.TextInputPluginTest;
 import io.flutter.plugin.platform.PlatformPluginTest;
 import io.flutter.plugin.platform.SingleViewPresentationTest;
-import io.flutter.util.FakeKeyEvent;
 import io.flutter.util.PreconditionsTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -35,7 +34,6 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
 @SuiteClasses({
   // FlutterActivityAndFragmentDelegateTest.class, //TODO(mklim): Fix and re-enable this
   DartExecutorTest.class,
-  FakeKeyEvent.class,
   FlutterActivityTest.class,
   FlutterAndroidComponentTest.class,
   FlutterEngineCacheTest.class,
