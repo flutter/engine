@@ -281,8 +281,8 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
 TEST_F(ShellTest, WhitelistedDartVMFlag) {
   const std::vector<fml::CommandLine::Option> options = {
       fml::CommandLine::Option("dart-flags",
-          "--lazy_async_stacks,--no-causal_async_stacks,"
-          "--max_profile_depth 1,--random_seed 42")};
+                               "--lazy_async_stacks,--no-causal_async_stacks,"
+                               "--max_profile_depth 1,--random_seed 42")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
