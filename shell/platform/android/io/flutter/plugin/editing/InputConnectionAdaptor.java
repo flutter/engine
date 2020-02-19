@@ -226,8 +226,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
         // submit instead of a newline.
       } else if ((event.getKeyCode() == KeyEvent.KEYCODE_ENTER
               || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER)
-          && mEditorInfo.inputType
-              != (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE)) {
+          && (InputType.TYPE_TEXT_FLAG_MULTI_LINE & mEditorInfo.inputType) == 0) {
         performEditorAction(mEditorInfo.imeOptions & EditorInfo.IME_MASK_ACTION);
         return true;
       } else {
