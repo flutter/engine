@@ -17,6 +17,7 @@ import android.content.res.AssetManager;
 import android.os.Build;
 import android.provider.Settings;
 import android.text.Editable;
+import android.text.InputType;
 import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.view.View;
@@ -61,6 +62,7 @@ public class InputConnectionAdaptorTest {
     Editable mEditable = Editable.Factory.getInstance().newEditable("");
     Editable spyEditable = spy(mEditable);
     EditorInfo outAttrs = new EditorInfo();
+    outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
 
     InputConnectionAdaptor inputConnectionAdaptor = new InputConnectionAdaptor(
       testView,
