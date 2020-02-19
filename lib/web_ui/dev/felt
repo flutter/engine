@@ -53,6 +53,19 @@ install_deps() {
   (cd "$FLUTTER_DIR/web_sdk/web_engine_tester"; $PUB_PATH get)
 }
 
+if [ ! -z "`hostnamectl | grep Linux`" ]
+then
+  echo "Running on Linux"
+  echo `google-chrome --version`
+else
+   MAC_OS=`system_profiler SPSoftwareDataType | grep Mac`
+   if [[ $MAC_OS == *"Mac"* ]]
+   then
+     SAFARI_V=`system_profiler SPApplicationsDataType | grep Safari: -A 2`
+     echo "Running on Mac using $SAFARI_V"
+   fi
+fi
+
 if [[ "$FELT_USE_SNAPSHOT" == "false" || "$FELT_USE_SNAPSHOT" == "0" ]]; then
   echo "[Snapshot mode: off]"
   # Running without snapshot means there is high likelyhood of local changes. In
@@ -78,4 +91,3 @@ else
 
   $DART_SDK_DIR/bin/dart --packages="$WEB_UI_DIR/.packages" "$SNAPSHOT_PATH" $@
 fi
-
