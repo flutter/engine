@@ -280,12 +280,14 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   }) {
     assert(_matrix4IsValid(matrix4));
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushTransform'));
-    final TransformEngineLayer layer = TransformEngineLayer._(_pushTransform(matrix4));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushTransform(engineLayer, matrix4);
+    final TransformEngineLayer layer = TransformEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  EngineLayer _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform';
+  void _pushTransform(EngineLayer layer, Float64List matrix4) native 'SceneBuilder_pushTransform';
 
   /// Pushes an offset operation onto the operation stack.
   ///
@@ -302,12 +304,14 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     OffsetEngineLayer oldLayer,
   }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushOffset'));
-    final OffsetEngineLayer layer = OffsetEngineLayer._(_pushOffset(dx, dy));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushOffset(engineLayer, dx, dy);
+    final OffsetEngineLayer layer = OffsetEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  EngineLayer _pushOffset(double dx, double dy) native 'SceneBuilder_pushOffset';
+  void _pushOffset(EngineLayer layer, double dx, double dy) native 'SceneBuilder_pushOffset';
 
   /// Pushes a rectangular clip operation onto the operation stack.
   ///
@@ -327,13 +331,14 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipRect'));
-    final ClipRectEngineLayer layer = ClipRectEngineLayer._(
-        _pushClipRect(rect.left, rect.right, rect.top, rect.bottom, clipBehavior.index));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushClipRect(engineLayer, rect.left, rect.right, rect.top, rect.bottom, clipBehavior.index);
+    final ClipRectEngineLayer layer = ClipRectEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  EngineLayer _pushClipRect(double left, double right, double top, double bottom, int clipBehavior)
+  void _pushClipRect(EngineLayer engineLayer, double left, double right, double top, double bottom, int clipBehavior)
       native 'SceneBuilder_pushClipRect';
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
@@ -354,13 +359,14 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipRRect'));
-    final ClipRRectEngineLayer layer =
-        ClipRRectEngineLayer._(_pushClipRRect(rrect._value32, clipBehavior.index));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushClipRRect(engineLayer, rrect._value32, clipBehavior.index);
+    final ClipRRectEngineLayer layer = ClipRRectEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  EngineLayer _pushClipRRect(Float32List rrect, int clipBehavior)
+  void _pushClipRRect(EngineLayer layer, Float32List rrect, int clipBehavior)
       native 'SceneBuilder_pushClipRRect';
 
   /// Pushes a path clip operation onto the operation stack.
@@ -381,13 +387,14 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipPath'));
-    final ClipPathEngineLayer layer =
-        ClipPathEngineLayer._(_pushClipPath(path, clipBehavior.index));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushClipPath(engineLayer, path, clipBehavior.index);
+    final ClipPathEngineLayer layer = ClipPathEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  EngineLayer _pushClipPath(Path path, int clipBehavior) native 'SceneBuilder_pushClipPath';
+  void _pushClipPath(EngineLayer layer, Path path, int clipBehavior) native 'SceneBuilder_pushClipPath';
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -407,13 +414,15 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     OpacityEngineLayer oldLayer,
   }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushOpacity'));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushOpacity(engineLayer, alpha, offset.dx, offset.dy);
     final OpacityEngineLayer layer =
-        OpacityEngineLayer._(_pushOpacity(alpha, offset.dx, offset.dy));
+        OpacityEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  EngineLayer _pushOpacity(int alpha, double dx, double dy) native 'SceneBuilder_pushOpacity';
+  void _pushOpacity(EngineLayer layer, int alpha, double dx, double dy) native 'SceneBuilder_pushOpacity';
 
   /// Pushes a color filter operation onto the operation stack.
   ///
@@ -769,7 +778,13 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.
-  Scene build() native 'SceneBuilder_build';
+  Scene build() {
+    final Scene scene = Scene._();
+    _build(scene);
+    return scene;
+  }
+
+  void _build(Scene scene) native 'SceneBuilder_build';
 }
 
 /// (Fuchsia-only) Hosts content provided by another application.

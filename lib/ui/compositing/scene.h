@@ -29,6 +29,12 @@ class Scene : public RefCountedDartWrappable<Scene> {
                                    bool checkerboardRasterCacheImages,
                                    bool checkerboardOffscreenLayers);
 
+  static void create(Dart_Handle scene_handle,
+                     std::shared_ptr<flutter::Layer> rootLayer,
+                     uint32_t rasterizerTracingThreshold,
+                     bool checkerboardRasterCacheImages,
+                     bool checkerboardOffscreenLayers);
+
   std::unique_ptr<flutter::LayerTree> takeLayerTree();
 
   Dart_Handle toImage(uint32_t width,

@@ -38,17 +38,24 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   }
   ~SceneBuilder() override;
 
-  fml::RefPtr<EngineLayer> pushTransform(tonic::Float64List& matrix4);
-  fml::RefPtr<EngineLayer> pushOffset(double dx, double dy);
-  fml::RefPtr<EngineLayer> pushClipRect(double left,
-                                        double right,
-                                        double top,
-                                        double bottom,
-                                        int clipBehavior);
-  fml::RefPtr<EngineLayer> pushClipRRect(const RRect& rrect, int clipBehavior);
-  fml::RefPtr<EngineLayer> pushClipPath(const CanvasPath* path,
-                                        int clipBehavior);
-  fml::RefPtr<EngineLayer> pushOpacity(int alpha, double dx = 0, double dy = 0);
+  void pushTransform(Dart_Handle layer_handle, tonic::Float64List& matrix4);
+  void pushOffset(Dart_Handle layer_handle, double dx, double dy);
+  void pushClipRect(Dart_Handle layer_handle,
+                    double left,
+                    double right,
+                    double top,
+                    double bottom,
+                    int clipBehavior);
+  void pushClipRRect(Dart_Handle layer_handle,
+                     const RRect& rrect,
+                     int clipBehavior);
+  void pushClipPath(Dart_Handle layer_handle,
+                    const CanvasPath* path,
+                    int clipBehavior);
+  void pushOpacity(Dart_Handle layer_handle,
+                   int alpha,
+                   double dx = 0,
+                   double dy = 0);
   fml::RefPtr<EngineLayer> pushColorFilter(const ColorFilter* color_filter);
   fml::RefPtr<EngineLayer> pushImageFilter(const ImageFilter* image_filter);
   fml::RefPtr<EngineLayer> pushBackdropFilter(ImageFilter* filter);
@@ -102,7 +109,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   void setCheckerboardRasterCacheImages(bool checkerboard);
   void setCheckerboardOffscreenLayers(bool checkerboard);
 
-  fml::RefPtr<Scene> build();
+  void build(Dart_Handle scene_handle);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

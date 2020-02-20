@@ -35,6 +35,17 @@ fml::RefPtr<Scene> Scene::create(std::shared_ptr<flutter::Layer> rootLayer,
       checkerboardRasterCacheImages, checkerboardOffscreenLayers);
 }
 
+void Scene::create(Dart_Handle scene_handle,
+                   std::shared_ptr<flutter::Layer> rootLayer,
+                   uint32_t rasterizerTracingThreshold,
+                   bool checkerboardRasterCacheImages,
+                   bool checkerboardOffscreenLayers) {
+  auto scene = fml::MakeRefCounted<Scene>(
+      std::move(rootLayer), rasterizerTracingThreshold,
+      checkerboardRasterCacheImages, checkerboardOffscreenLayers);
+  scene->ClaimDartHandle(std::move(scene_handle));
+}
+
 Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
