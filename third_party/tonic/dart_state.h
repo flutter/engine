@@ -49,7 +49,8 @@ class DartState : public std::enable_shared_from_this<DartState> {
   Dart_Isolate isolate() { return isolate_; }
   void SetIsolate(Dart_Isolate isolate);
 
-  // TODO(dnfield): delete this https://github.com/flutter/flutter/issues/50997
+  // TODO(https://github.com/flutter/flutter/issues/50997): Work around until we
+  // drop the need for Dart_New in tonic.
   Dart_PersistentHandle private_constructor_name() {
     return private_constructor_name_.Get();
   }
