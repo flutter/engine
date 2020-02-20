@@ -4158,7 +4158,13 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   /// and the canvas objects are invalid and cannot be used further.
   ///
   /// Returns null if the PictureRecorder is not associated with a canvas.
-  Picture endRecording() native 'PictureRecorder_endRecording';
+  Picture endRecording() {
+    final Picture picture = Picture._();
+    _endRecording(picture);
+    return picture;
+  }
+
+  void _endRecording(Picture picture) native 'PictureRecorder_endRecording';
 }
 
 /// A single shadow.

@@ -36,6 +36,26 @@ Dart_Handle DartWrappable::CreateDartWrapper(DartState* dart_state) {
   return wrapper;
 }
 
+void DartWrappable::ClaimDartHandle(Dart_Handle wrapper) {
+  TONIC_DCHECK(!dart_wrapper_);
+  TONIC_CHECK(!LogIfError(wrapper));
+
+  const DartWrapperInfo& info = GetDartWrapperInfo();
+
+  intptr_t native_fields[kNumberOfNativeFields];
+  native_fields[kPeerIndex] = reinterpret_cast<intptr_t>(this);
+  native_fields[kWrapperInfoIndex] = reinterpret_cast<intptr_t>(&info);
+
+  TONIC_CHECK(!LogIfError(Dart_SetNativeInstanceField(
+      wrapper, kPeerIndex, reinterpret_cast<intptr_t>(this))));
+  TONIC_CHECK(!LogIfError(Dart_SetNativeInstanceField(
+      wrapper, kWrapperInfoIndex, reinterpret_cast<intptr_t>(&info))));
+
+  this->RetainDartWrappableReference();  // Balanced in FinalizeDartWrapper.
+  dart_wrapper_ = Dart_NewWeakPersistentHandle(
+      wrapper, this, GetAllocationSize(), &FinalizeDartWrapper);
+}
+
 void DartWrappable::AssociateWithDartWrapper(Dart_NativeArguments args) {
   TONIC_DCHECK(!dart_wrapper_);
 

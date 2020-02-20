@@ -44,6 +44,7 @@ class DartWrappable {
   virtual void ReleaseDartWrappableReference() const = 0;
 
   Dart_Handle CreateDartWrapper(DartState* dart_state);
+  void ClaimDartHandle(Dart_Handle wrappable);
   void AssociateWithDartWrapper(Dart_NativeArguments args);
   void ClearDartWrapper();  // Warning: Might delete this.
   Dart_WeakPersistentHandle dart_wrapper() const { return dart_wrapper_; }
