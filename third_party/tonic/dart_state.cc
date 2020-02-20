@@ -39,7 +39,8 @@ void DartState::SetIsolate(Dart_Isolate isolate) {
 
   private_constructor_name_.Clear();
   Dart_EnterScope();
-  private_constructor_name_.Set(this, Dart_NewPersistentHandle(Dart_NewStringFromCString("_")));
+  private_constructor_name_.Set(
+      this, Dart_NewPersistentHandle(Dart_NewStringFromCString("_")));
   Dart_ExitScope();
 
   DidSetIsolate();

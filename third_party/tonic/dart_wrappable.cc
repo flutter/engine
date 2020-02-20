@@ -23,7 +23,8 @@ Dart_Handle DartWrappable::CreateDartWrapper(DartState* dart_state) {
   Dart_PersistentHandle type = dart_state->class_library().GetClass(info);
   TONIC_DCHECK(!LogIfError(type));
 
-  Dart_Handle wrapper = Dart_New(type, dart_state->private_constructor_name(), 0, nullptr);
+  Dart_Handle wrapper =
+      Dart_New(type, dart_state->private_constructor_name(), 0, nullptr);
 
   TONIC_DCHECK(!LogIfError(wrapper));
 
