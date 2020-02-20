@@ -25,6 +25,10 @@ void main() {
     EngineSemanticsOwner.debugResetSemantics();
   });
 
+  tearDown(() {
+    clearSemanticsDomElementIfExists();
+  });
+
   group(EngineSemanticsOwner, () {
     _testEngineSemanticsOwner();
   });
@@ -1351,4 +1355,14 @@ class SemanticsActionLogger {
       });
     };
   }
+}
+
+/// In case of an exception semantics DOM element(s) can still stay on the DOM.
+void clearSemanticsDomElementIfExists() {
+  List<html.Node> domElementsToRemove = List<html.Node>();
+  if (html.document.getElementsByTagName('flt-semantics').length > 0) {
+    domElementsToRemove
+      ..addAll(html.document.getElementsByTagName('flt-semantics'));
+  }
+  domElementsToRemove.forEach((html.Node n) => n.remove());
 }
