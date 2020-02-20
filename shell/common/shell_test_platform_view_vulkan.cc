@@ -39,7 +39,8 @@ PointerDataDispatcherMaker ShellTestPlatformViewVulkan::GetDispatcherMaker() {
   };
 }
 
-// TODO(gw280): This code was forked from vulkan_window.cc specifically for shell_test.
+// TODO(gw280): This code was forked from vulkan_window.cc specifically for
+// shell_test.
 //              We need to merge this functionality back into //vulkan.
 //              https://github.com/flutter/flutter/issues/51132
 ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
