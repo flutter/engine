@@ -14,8 +14,13 @@ namespace flutter {
 
 class SingleFrameCodec : public Codec {
  public:
-  SingleFrameCodec(ImageDecoder::ImageDescriptor descriptor);
-
+  static fml::RefPtr<SingleFrameCodec> Create(
+      Dart_Handle codec_handle,
+      ImageDecoder::ImageDescriptor descriptor) {
+    auto codec = fml::MakeRefCounted<SingleFrameCodec>(std::move(descriptor));
+    codec->ClaimDartHandle(std::move(codec_handle));
+    return codec;
+  }
   ~SingleFrameCodec() override;
 
   // |Codec|
@@ -25,12 +30,15 @@ class SingleFrameCodec : public Codec {
   int repetitionCount() const override;
 
   // |Codec|
-  Dart_Handle getNextFrame(Dart_Handle args) override;
+  Dart_Handle getNextFrame(Dart_Handle image_handle,
+                           Dart_Handle codec_handle,
+                           Dart_Handle args) override;
 
   // |DartWrappable|
   size_t GetAllocationSize() override;
 
  private:
+  SingleFrameCodec(ImageDecoder::ImageDescriptor descriptor);
   enum class Status { kNew, kInProgress, kComplete };
   Status status_;
   ImageDecoder::ImageDescriptor descriptor_;

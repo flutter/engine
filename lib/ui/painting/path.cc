@@ -20,7 +20,7 @@ namespace flutter {
 typedef CanvasPath Path;
 
 static void Path_constructor(Dart_NativeArguments args) {
-  DartCallConstructor(&CanvasPath::Create, args);
+  DartCallConstructor(&CanvasPath::CreateNew, args);
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
@@ -263,12 +263,12 @@ bool CanvasPath::contains(double x, double y) {
 }
 
 void CanvasPath::shift(Dart_Handle path_handle, double dx, double dy) {
-  fml::RefPtr<CanvasPath> path = CanvasPath::Claim(std::move(path_handle));
+  fml::RefPtr<CanvasPath> path = CanvasPath::Create(std::move(path_handle));
   path_.offset(dx, dy, &path->path_);
 }
 
 void CanvasPath::transform(Dart_Handle path_handle, tonic::Float64List& matrix4) {
-  fml::RefPtr<CanvasPath> path = CanvasPath::Claim(std::move(path_handle));
+  fml::RefPtr<CanvasPath> path = CanvasPath::Create(std::move(path_handle));
   path_.transform(ToSkMatrix(matrix4), &path->path_);
   matrix4.Release();
 }
@@ -288,7 +288,7 @@ bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
 }
 
 void CanvasPath::clone(Dart_Handle path_handle) {
-  fml::RefPtr<CanvasPath> path = CanvasPath::Claim(std::move(path_handle));
+  fml::RefPtr<CanvasPath> path = CanvasPath::Create(std::move(path_handle));
   // per Skia docs, this will create a fast copy
   // data is shared until the source path or dest path are mutated
   path->path_ = path_;

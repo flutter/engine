@@ -25,10 +25,11 @@ class Scene extends NativeFieldWrapperClass2 {
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
-    return _futurize((_Callback<Image> callback) => _toImage(width, height, callback));
+    final Image image = Image._();
+    return _futurize((_Callback<Image> callback) => _toImage(image, width, height, callback));
   }
 
-  String _toImage(int width, int height, _Callback<Image> callback) native 'Scene_toImage';
+  String _toImage(Image image, int width, int height, _Callback<Image> callback) native 'Scene_toImage';
 
   /// Releases the resources used by this scene.
   ///

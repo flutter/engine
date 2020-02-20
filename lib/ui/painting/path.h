@@ -23,20 +23,20 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
  public:
   ~CanvasPath() override;
-  static fml::RefPtr<CanvasPath> Create() {
+  static fml::RefPtr<CanvasPath> CreateNew(Dart_Handle path_handle) {
     return fml::MakeRefCounted<CanvasPath>();
   }
 
-  static fml::RefPtr<CanvasPath> ClaimFrom(Dart_Handle path_handle,
-                                            const SkPath& src) {
-    fml::RefPtr<CanvasPath> path = CanvasPath::Claim(std::move(path_handle));
-    path->path_ = src;
+  static fml::RefPtr<CanvasPath> Create(Dart_Handle path_handle) {
+    auto path = fml::MakeRefCounted<CanvasPath>();
+    path->ClaimDartHandle(std::move(path_handle));
     return path;
   }
 
-  static fml::RefPtr<CanvasPath> Claim(Dart_Handle path_handle) {
-    auto path = fml::MakeRefCounted<CanvasPath>();
-    path->ClaimDartHandle(std::move(path_handle));
+  static fml::RefPtr<CanvasPath> CreateFrom(Dart_Handle path_handle,
+                                            const SkPath& src) {
+    fml::RefPtr<CanvasPath> path = CanvasPath::Create(std::move(path_handle));
+    path->path_ = src;
     return path;
   }
 

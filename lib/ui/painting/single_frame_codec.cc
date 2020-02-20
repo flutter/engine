@@ -23,7 +23,9 @@ int SingleFrameCodec::repetitionCount() const {
   return 0;
 }
 
-Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
+Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
+                                           Dart_Handle frame_handle,
+                                           Dart_Handle callback_handle) {
   if (!Dart_IsClosure(callback_handle)) {
     return tonic::ToDart("Callback must be a function");
   }
@@ -57,7 +59,9 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   fml::RefPtr<SingleFrameCodec>* raw_codec_ref =
       new fml::RefPtr<SingleFrameCodec>(this);
 
-  decoder->Decode(descriptor_, [raw_codec_ref](auto image) {
+  decoder->Decode(descriptor_, [image_handle = std::move(image_handle),
+                                frame_handle = std::move(frame_handle),
+                                raw_codec_ref](auto image) {
     std::unique_ptr<fml::RefPtr<SingleFrameCodec>> codec_ref(raw_codec_ref);
     fml::RefPtr<SingleFrameCodec> codec(std::move(*codec_ref));
 
@@ -66,18 +70,16 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
     if (!state) {
       // This is probably because the isolate has been terminated before the
       // image could be decoded.
-
       return;
     }
 
     tonic::DartState::Scope scope(state.get());
 
     if (image.get()) {
-      auto canvas_image = fml::MakeRefCounted<CanvasImage>();
+      auto canvas_image = CanvasImage::Create(std::move(image_handle));
       canvas_image->set_image(std::move(image));
-
-      codec->cached_frame_ = fml::MakeRefCounted<FrameInfo>(
-          std::move(canvas_image), 0 /* duration */);
+      codec->cached_frame_ = FrameInfo::Create(
+          std::move(frame_handle), std::move(canvas_image), 0 /* duration */);
     }
 
     // The cached frame is now available and should be returned to any future
@@ -85,9 +87,8 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
     codec->status_ = Status::kComplete;
 
     // Invoke any callbacks that were provided before the frame was decoded.
-    Dart_Handle frame = tonic::ToDart(codec->cached_frame_);
     for (const DartPersistentValue& callback : codec->pending_callbacks_) {
-      tonic::DartInvoke(callback.value(), {frame});
+      tonic::DartInvoke(callback.value(), {Dart_True()});
     }
     codec->pending_callbacks_.clear();
   });

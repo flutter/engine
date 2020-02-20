@@ -40,14 +40,16 @@ Picture::Picture(flutter::SkiaGPUObject<SkPicture> picture)
 
 Picture::~Picture() = default;
 
-Dart_Handle Picture::toImage(uint32_t width,
+Dart_Handle Picture::toImage(Dart_Handle image_handle,
+                             uint32_t width,
                              uint32_t height,
                              Dart_Handle raw_image_callback) {
   if (!picture_.get()) {
     return tonic::ToDart("Picture is null");
   }
 
-  return RasterizeToImage(picture_.get(), width, height, raw_image_callback);
+  return RasterizeToImage(std::move(image_handle), picture_.get(), width,
+                          height, raw_image_callback);
 }
 
 void Picture::dispose() {
@@ -62,7 +64,8 @@ size_t Picture::GetAllocationSize() {
   }
 }
 
-Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
+Dart_Handle Picture::RasterizeToImage(Dart_Handle image_handle,
+                                      sk_sp<SkPicture> picture,
                                       uint32_t width,
                                       uint32_t height,
                                       Dart_Handle raw_image_callback) {
@@ -89,7 +92,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
 
   auto picture_bounds = SkISize::Make(width, height);
 
-  auto ui_task = fml::MakeCopyable([image_callback, unref_queue](
+  auto ui_task = fml::MakeCopyable([image_handle = std::move(image_handle),
+                                    image_callback, unref_queue](
                                        sk_sp<SkImage> raster_image) mutable {
     auto dart_state = image_callback->dart_state().lock();
     if (!dart_state) {
@@ -103,7 +107,7 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
       return;
     }
 
-    auto dart_image = CanvasImage::Create();
+    auto dart_image = CanvasImage::Create(std::move(image_handle));
     dart_image->set_image({std::move(raster_image), std::move(unref_queue)});
     auto* raw_dart_image = tonic::ToDart(std::move(dart_image));
 

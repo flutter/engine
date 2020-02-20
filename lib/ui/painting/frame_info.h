@@ -15,6 +15,14 @@ class FrameInfo final : public RefCountedDartWrappable<FrameInfo> {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  static fml::RefPtr<FrameInfo> Create(Dart_Handle frame_handle,
+                                       fml::RefPtr<CanvasImage> image,
+                                       int durationMillis) {
+    auto frame_info =
+        fml::MakeRefCounted<FrameInfo>(std::move(image), durationMillis);
+    frame_info->ClaimDartHandle(std::move(frame_handle));
+    return frame_info;
+  }
   int durationMillis() { return durationMillis_; }
   fml::RefPtr<CanvasImage> image() { return image_; }
 

@@ -24,11 +24,6 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
  public:
   ~Scene() override;
-  static fml::RefPtr<Scene> create(std::shared_ptr<flutter::Layer> rootLayer,
-                                   uint32_t rasterizerTracingThreshold,
-                                   bool checkerboardRasterCacheImages,
-                                   bool checkerboardOffscreenLayers);
-
   static void create(Dart_Handle scene_handle,
                      std::shared_ptr<flutter::Layer> rootLayer,
                      uint32_t rasterizerTracingThreshold,
@@ -37,7 +32,8 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   std::unique_ptr<flutter::LayerTree> takeLayerTree();
 
-  Dart_Handle toImage(uint32_t width,
+  Dart_Handle toImage(Dart_Handle image_handle,
+                      uint32_t width,
                       uint32_t height,
                       Dart_Handle image_callback);
 

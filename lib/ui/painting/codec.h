@@ -30,7 +30,9 @@ class Codec : public RefCountedDartWrappable<Codec> {
 
   virtual int repetitionCount() const = 0;
 
-  virtual Dart_Handle getNextFrame(Dart_Handle callback_handle) = 0;
+  virtual Dart_Handle getNextFrame(Dart_Handle image_handle,
+                                   Dart_Handle frame_handle,
+                                   Dart_Handle callback_handle) = 0;
 
   void dispose();
 

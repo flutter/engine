@@ -12,8 +12,13 @@ namespace flutter {
 
 class MultiFrameCodec : public Codec {
  public:
-  MultiFrameCodec(std::unique_ptr<SkCodec> codec);
-
+  static fml::RefPtr<MultiFrameCodec> Create(Dart_Handle codec_handle,
+                                             std::unique_ptr<SkCodec> codec) {
+    auto multi_frame_codec =
+        fml::MakeRefCounted<MultiFrameCodec>(std::move(codec));
+    multi_frame_codec->ClaimDartHandle(std::move(codec_handle));
+    return multi_frame_codec;
+  }
   ~MultiFrameCodec() override;
 
   // |Codec|
@@ -23,9 +28,12 @@ class MultiFrameCodec : public Codec {
   int repetitionCount() const override;
 
   // |Codec|
-  Dart_Handle getNextFrame(Dart_Handle args) override;
+  Dart_Handle getNextFrame(Dart_Handle image_handle,
+                           Dart_Handle frame_handle,
+                           Dart_Handle args) override;
 
  private:
+  MultiFrameCodec(std::unique_ptr<SkCodec> codec);
   const std::unique_ptr<SkCodec> codec_;
   const int frameCount_;
   const int repetitionCount_;
@@ -39,6 +47,8 @@ class MultiFrameCodec : public Codec {
   sk_sp<SkImage> GetNextFrameImage(fml::WeakPtr<GrContext> resourceContext);
 
   void GetNextFrameAndInvokeCallback(
+      Dart_Handle image_handle,
+      Dart_Handle frame_handle,
       std::unique_ptr<DartPersistentValue> callback,
       fml::RefPtr<fml::TaskRunner> ui_task_runner,
       fml::WeakPtr<GrContext> resourceContext,

@@ -145,13 +145,14 @@ static std::variant<ImageDecoder::ImageInfo, std::string> ConvertImageInfo(
 }
 
 static void InstantiateImageCodec(Dart_NativeArguments args) {
-  Dart_Handle callback_handle = Dart_GetNativeArgument(args, 1);
+  Dart_Handle codec_handle = Dart_GetNativeArgument(args, 0);
+  Dart_Handle callback_handle = Dart_GetNativeArgument(args, 2);
   if (!Dart_IsClosure(callback_handle)) {
     Dart_SetReturnValue(args, tonic::ToDart("Callback must be a function"));
     return;
   }
 
-  Dart_Handle image_info_handle = Dart_GetNativeArgument(args, 2);
+  Dart_Handle image_info_handle = Dart_GetNativeArgument(args, 3);
 
   std::optional<ImageDecoder::ImageInfo> image_info;
 
@@ -171,7 +172,7 @@ static void InstantiateImageCodec(Dart_NativeArguments args) {
   {
     Dart_Handle exception = nullptr;
     tonic::Uint8List list =
-        tonic::DartConverter<tonic::Uint8List>::FromArguments(args, 0,
+        tonic::DartConverter<tonic::Uint8List>::FromArguments(args, 1,
                                                               exception);
     if (exception) {
       Dart_SetReturnValue(args, exception);
@@ -191,9 +192,9 @@ static void InstantiateImageCodec(Dart_NativeArguments args) {
   }
 
   const int targetWidth =
-      tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 3));
-  const int targetHeight =
       tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 4));
+  const int targetHeight =
+      tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 5));
 
   std::unique_ptr<SkCodec> codec;
   bool single_frame;
@@ -208,8 +209,6 @@ static void InstantiateImageCodec(Dart_NativeArguments args) {
     single_frame = codec->getFrameCount() == 1;
   }
 
-  fml::RefPtr<Codec> ui_codec;
-
   if (single_frame) {
     ImageDecoder::ImageDescriptor descriptor;
     descriptor.decompressed_image_info = image_info;
@@ -222,12 +221,13 @@ static void InstantiateImageCodec(Dart_NativeArguments args) {
     }
     descriptor.data = std::move(buffer);
 
-    ui_codec = fml::MakeRefCounted<SingleFrameCodec>(std::move(descriptor));
+    SingleFrameCodec::Create(std::move(codec_handle), std::move(descriptor));
   } else {
-    ui_codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(codec));
+    MultiFrameCodec::Create(std::move(codec_handle), std::move(codec));
   }
 
-  tonic::DartInvoke(callback_handle, {ToDart(ui_codec)});
+  tonic::DartInvoke(callback_handle, {Dart_True()});
+  Dart_SetReturnValue(args, Dart_Null());
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Codec);
@@ -246,7 +246,7 @@ void Codec::dispose() {
 
 void Codec::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
-      {"instantiateImageCodec", InstantiateImageCodec, 5, true},
+      {"instantiateImageCodec", InstantiateImageCodec, 6, true},
   });
   natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
