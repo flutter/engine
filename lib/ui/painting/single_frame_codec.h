@@ -6,8 +6,8 @@
 #define FLUTTER_LIB_UI_PAINTING_SINGLE_FRAME_CODEC_H_
 
 #include "flutter/fml/macros.h"
+#include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/codec.h"
-#include "flutter/lib/ui/painting/frame_info.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 
 namespace flutter {
@@ -31,7 +31,6 @@ class SingleFrameCodec : public Codec {
 
   // |Codec|
   Dart_Handle getNextFrame(Dart_Handle image_handle,
-                           Dart_Handle codec_handle,
                            Dart_Handle args) override;
 
   // |DartWrappable|
@@ -42,7 +41,7 @@ class SingleFrameCodec : public Codec {
   enum class Status { kNew, kInProgress, kComplete };
   Status status_;
   ImageDecoder::ImageDescriptor descriptor_;
-  fml::RefPtr<FrameInfo> cached_frame_;
+  size_t cached_frame_image_size_;
   std::vector<DartPersistentValue> pending_callbacks_;
 
   FML_FRIEND_MAKE_REF_COUNTED(SingleFrameCodec);

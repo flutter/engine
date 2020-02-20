@@ -20,8 +20,11 @@ MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec)
 MultiFrameCodec::~MultiFrameCodec() = default;
 
 static void InvokeNextFrameCallback(
-    fml::RefPtr<FrameInfo> frameInfo,
+    sk_sp<SkImage> skImage,
+    Dart_Handle image_handle,
     std::unique_ptr<DartPersistentValue> callback,
+    fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
+    SkCodec::FrameInfo skFrameInfo,
     size_t trace_id) {
   std::shared_ptr<tonic::DartState> dart_state = callback->dart_state().lock();
   if (!dart_state) {
@@ -30,10 +33,15 @@ static void InvokeNextFrameCallback(
     return;
   }
   tonic::DartState::Scope scope(dart_state);
-  if (!frameInfo) {
-    tonic::DartInvoke(callback->value(), {Dart_Null()});
+
+  if (skImage) {
+    fml::RefPtr<CanvasImage> image =
+        CanvasImage::Create(std::move(image_handle));
+    image->set_image({skImage, std::move(unref_queue)});
+    tonic::DartInvoke(callback->value(),
+                      {tonic::ToDart(skFrameInfo.fDuration)});
   } else {
-    tonic::DartInvoke(callback->value(), {Dart_True()});
+    tonic::DartInvoke(callback->value(), {Dart_Null()});
   }
 }
 
@@ -130,33 +138,30 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
 
 void MultiFrameCodec::GetNextFrameAndInvokeCallback(
     Dart_Handle image_handle,
-    Dart_Handle frame_handle,
     std::unique_ptr<DartPersistentValue> callback,
     fml::RefPtr<fml::TaskRunner> ui_task_runner,
     fml::WeakPtr<GrContext> resourceContext,
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
     size_t trace_id) {
-  fml::RefPtr<FrameInfo> frameInfo = NULL;
   sk_sp<SkImage> skImage = GetNextFrameImage(resourceContext);
+  SkCodec::FrameInfo skFrameInfo;
   if (skImage) {
-    fml::RefPtr<CanvasImage> image =
-        CanvasImage::Create(std::move(image_handle));
-    image->set_image({skImage, std::move(unref_queue)});
-    SkCodec::FrameInfo skFrameInfo;
     codec_->getFrameInfo(nextFrameIndex_, &skFrameInfo);
-    frameInfo = FrameInfo::Create(std::move(frame_handle), std::move(image),
-                                  skFrameInfo.fDuration);
   }
   nextFrameIndex_ = (nextFrameIndex_ + 1) % frameCount_;
 
   ui_task_runner->PostTask(fml::MakeCopyable(
-      [callback = std::move(callback), frameInfo, trace_id]() mutable {
-        InvokeNextFrameCallback(frameInfo, std::move(callback), trace_id);
+      [skImage = std::move(skImage), callback = std::move(callback),
+       image_handle = std::move(image_handle),
+       unref_queue = std::move(unref_queue),
+       skFrameInfo = std::move(skFrameInfo), trace_id]() mutable {
+        InvokeNextFrameCallback(std::move(skImage), std::move(image_handle),
+                                std::move(callback), std::move(unref_queue),
+                                std::move(skFrameInfo), trace_id);
       }));
 }
 
 Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle image_handle,
-                                          Dart_Handle frame_handle,
                                           Dart_Handle callback_handle) {
   static size_t trace_counter = 1;
   const size_t trace_id = trace_counter++;
@@ -171,16 +176,14 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle image_handle,
 
   task_runners.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
       [image_handle = std::move(image_handle),
-       frame_handle = std::move(frame_handle),
        callback = std::make_unique<DartPersistentValue>(
            tonic::DartState::Current(), callback_handle),
        this, trace_id, ui_task_runner = task_runners.GetUITaskRunner(),
        io_manager = dart_state->GetIOManager()]() mutable {
         GetNextFrameAndInvokeCallback(
-            std::move(image_handle), std::move(frame_handle),
-            std::move(callback), std::move(ui_task_runner),
-            io_manager->GetResourceContext(), io_manager->GetSkiaUnrefQueue(),
-            trace_id);
+            std::move(image_handle), std::move(callback),
+            std::move(ui_task_runner), io_manager->GetResourceContext(),
+            io_manager->GetSkiaUnrefQueue(), trace_id);
       }));
 
   return Dart_Null();

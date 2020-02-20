@@ -44,10 +44,6 @@ void DartWrappable::ClaimDartHandle(Dart_Handle wrapper) {
 
   const DartWrapperInfo& info = GetDartWrapperInfo();
 
-  intptr_t native_fields[kNumberOfNativeFields];
-  native_fields[kPeerIndex] = reinterpret_cast<intptr_t>(this);
-  native_fields[kWrapperInfoIndex] = reinterpret_cast<intptr_t>(&info);
-
   TONIC_CHECK(!LogIfError(Dart_SetNativeInstanceField(
       wrapper, kPeerIndex, reinterpret_cast<intptr_t>(this))));
   TONIC_CHECK(!LogIfError(Dart_SetNativeInstanceField(

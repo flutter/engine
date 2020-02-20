@@ -4,7 +4,6 @@
 
 #include "flutter/lib/ui/painting/single_frame_codec.h"
 
-#include "flutter/lib/ui/painting/frame_info.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
@@ -24,15 +23,13 @@ int SingleFrameCodec::repetitionCount() const {
 }
 
 Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
-                                           Dart_Handle frame_handle,
                                            Dart_Handle callback_handle) {
   if (!Dart_IsClosure(callback_handle)) {
     return tonic::ToDart("Callback must be a function");
   }
 
   if (status_ == Status::kComplete) {
-    tonic::DartInvoke(callback_handle, {tonic::ToDart(cached_frame_)});
-    return Dart_Null();
+    return tonic::ToDart("Dart callers are responsible for caching the frame callback information");
   }
 
   // This has to be valid because this method is called from Dart.
@@ -60,7 +57,6 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
       new fml::RefPtr<SingleFrameCodec>(this);
 
   decoder->Decode(descriptor_, [image_handle = std::move(image_handle),
-                                frame_handle = std::move(frame_handle),
                                 raw_codec_ref](auto image) {
     std::unique_ptr<fml::RefPtr<SingleFrameCodec>> codec_ref(raw_codec_ref);
     fml::RefPtr<SingleFrameCodec> codec(std::move(*codec_ref));
@@ -78,8 +74,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
     if (image.get()) {
       auto canvas_image = CanvasImage::Create(std::move(image_handle));
       canvas_image->set_image(std::move(image));
-      codec->cached_frame_ = FrameInfo::Create(
-          std::move(frame_handle), std::move(canvas_image), 0 /* duration */);
+      codec->cached_frame_image_size_ = canvas_image->GetAllocationSize();
     }
 
     // The cached frame is now available and should be returned to any future
@@ -88,7 +83,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
 
     // Invoke any callbacks that were provided before the frame was decoded.
     for (const DartPersistentValue& callback : codec->pending_callbacks_) {
-      tonic::DartInvoke(callback.value(), {Dart_True()});
+      tonic::DartInvoke(callback.value(), {tonic::ToDart(0)});
     }
     codec->pending_callbacks_.clear();
   });
@@ -105,10 +100,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
 size_t SingleFrameCodec::GetAllocationSize() {
   const auto& data = descriptor_.data;
   const auto data_byte_size = data ? data->size() : 0;
-  const auto frame_byte_size = (cached_frame_ && cached_frame_->image())
-                                   ? cached_frame_->image()->GetAllocationSize()
-                                   : 0;
-  return data_byte_size + frame_byte_size + sizeof(this);
+  return data_byte_size + cached_frame_image_size_ + sizeof(this);
 }
 
 }  // namespace flutter

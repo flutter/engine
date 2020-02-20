@@ -5,8 +5,11 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_MUTLI_FRAME_CODEC_H_
 #define FLUTTER_LIB_UI_PAINTING_MUTLI_FRAME_CODEC_H_
 
+#include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/painting/codec.h"
+#include "flutter/lib/ui/painting/image.h"
 
 namespace flutter {
 
@@ -28,9 +31,7 @@ class MultiFrameCodec : public Codec {
   int repetitionCount() const override;
 
   // |Codec|
-  Dart_Handle getNextFrame(Dart_Handle image_handle,
-                           Dart_Handle frame_handle,
-                           Dart_Handle args) override;
+  Dart_Handle getNextFrame(Dart_Handle image_handle, Dart_Handle args) override;
 
  private:
   MultiFrameCodec(std::unique_ptr<SkCodec> codec);
@@ -48,7 +49,6 @@ class MultiFrameCodec : public Codec {
 
   void GetNextFrameAndInvokeCallback(
       Dart_Handle image_handle,
-      Dart_Handle frame_handle,
       std::unique_ptr<DartPersistentValue> callback,
       fml::RefPtr<fml::TaskRunner> ui_task_runner,
       fml::WeakPtr<GrContext> resourceContext,

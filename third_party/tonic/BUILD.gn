@@ -42,6 +42,7 @@ source_set("tonic") {
     "scopes",
     "typed_data",
     "//third_party/dart/runtime:dart_api",
+    "//flutter/fml"
   ]
 
   public_configs = [ ":config" ]

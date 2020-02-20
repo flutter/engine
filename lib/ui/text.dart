@@ -2194,7 +2194,13 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   ///
   /// After calling this function, the paragraph builder object is invalid and
   /// cannot be used further.
-  Paragraph build() native 'ParagraphBuilder_build';
+  Paragraph build() {
+    final Paragraph paragraph = Paragraph._();
+    _build(paragraph);
+    return paragraph;
+  }
+
+  void _build(Paragraph paragraph) native 'ParagraphBuilder_build';
 }
 
 /// Loads a font from a buffer and makes it available for rendering text.

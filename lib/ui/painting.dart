@@ -1635,22 +1635,19 @@ typedef ImageDecoderCallback = void Function(Image result);
 ///
 /// To obtain an instance of the [FrameInfo] interface, see
 /// [Codec.getNextFrame].
-@pragma('vm:entry-point')
-class FrameInfo extends NativeFieldWrapperClass2 {
+class FrameInfo {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///
   /// To obtain an instance of the [FrameInfo] interface, see
   /// [Codec.getNextFrame].
-  @pragma('vm:entry-point')
-  FrameInfo._();
+  FrameInfo._(int durationMilliseconds, this.image) : duration = Duration(milliseconds: durationMilliseconds);
 
   /// The duration this frame should be shown.
-  Duration get duration => Duration(milliseconds: _durationMillis);
-  int get _durationMillis native 'FrameInfo_durationMillis';
+  final Duration duration;
 
   /// The [Image] object for this frame.
-  Image get image native 'FrameInfo_image';
+  final Image image;
 }
 
 /// A handle to an image codec.
@@ -1680,24 +1677,33 @@ class Codec extends NativeFieldWrapperClass2 {
   /// * -1 for infinity repetitions.
   int get repetitionCount native 'Codec_repetitionCount';
 
+  FrameInfo _cachedFrame;
+
   /// Fetches the next animation frame.
   ///
   /// Wraps back to the first frame after returning the last frame.
   ///
   /// The returned future can complete with an error if the decoding has failed.
   Future<FrameInfo> getNextFrame() async {
+    if (_cachedFrame != null && frameCount == 1) {
+      return _cachedFrame;
+    }
     final Image image = Image._();
-    final FrameInfo frameInfo = FrameInfo._();
-    await _futurize((_Callback<bool> callback) => _getNextFrame(image, frameInfo, callback));
-    return frameInfo;
+    final int durationMilliseconds = await _futurize((_Callback<int> callback) => _getNextFrame(image, callback));
+
+    return _cachedFrame = FrameInfo._(durationMilliseconds, image);
   }
 
   /// Returns an error message on failure, null on success.
-  String _getNextFrame(Image image, FrameInfo frameInfo, _Callback<bool> callback) native 'Codec_getNextFrame';
+  String _getNextFrame(Image image, _Callback<int> callback) native 'Codec_getNextFrame';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  void dispose() native 'Codec_dispose';
+  void dispose() {
+    _cachedFrame = null;
+    _dispose();
+  }
+  void _dispose() native 'Codec_dispose';
 }
 
 /// Instantiates an image codec [Codec] object.
