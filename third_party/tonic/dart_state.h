@@ -49,6 +49,11 @@ class DartState : public std::enable_shared_from_this<DartState> {
   Dart_Isolate isolate() { return isolate_; }
   void SetIsolate(Dart_Isolate isolate);
 
+  // TODO(dnfield): delete this https://github.com/flutter/flutter/issues/50997
+  Dart_PersistentHandle private_constructor_name() {
+    return private_constructor_name_.Get();
+  }
+
   DartClassLibrary& class_library() { return *class_library_; }
   DartMessageHandler& message_handler() { return *message_handler_; }
   FileLoader& file_loader() { return *file_loader_; }
@@ -70,6 +75,7 @@ class DartState : public std::enable_shared_from_this<DartState> {
 
  private:
   Dart_Isolate isolate_;
+  DartPersistentValue private_constructor_name_;
   std::unique_ptr<DartClassLibrary> class_library_;
   std::unique_ptr<DartMessageHandler> message_handler_;
   std::unique_ptr<FileLoader> file_loader_;
