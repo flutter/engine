@@ -183,10 +183,12 @@ class RecordingCanvas {
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    _hasArbitraryPaint = true;
-    _didDraw = true;
-    _paintBounds.grow(_paintBounds.maxPaintBounds);
-    _commands.add(PaintDrawColor(color, blendMode));
+    drawRect(
+        _paintBounds.maxPaintBounds,
+        ui.Paint()
+          ..color = color
+          ..style = ui.PaintingStyle.fill
+          ..blendMode = blendMode);
   }
 
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaint paint) {
@@ -315,6 +317,21 @@ class RecordingCanvas {
   }
 
   void drawPath(ui.Path path, SurfacePaint paint) {
+    if (paint.shader == null) {
+      // For Rect/RoundedRect paths use drawRect/drawRRect code paths for
+      // DomCanvas optimization.
+      SurfacePath sPath = path;
+      final ui.Rect rect = sPath.webOnlyPathAsRect;
+      if (rect != null) {
+        drawRect(rect, paint);
+        return;
+      }
+      final ui.RRect rrect = sPath.webOnlyPathAsRoundedRect;
+      if (rrect != null) {
+        drawRRect(rrect, paint);
+        return;
+      }
+    }
     _hasArbitraryPaint = true;
     _didDraw = true;
     ui.Rect pathBounds = path.getBounds();
