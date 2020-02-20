@@ -1892,14 +1892,20 @@ class Path extends NativeFieldWrapperClass2 {
   Path() { _constructor(); }
   void _constructor() native 'Path_constructor';
 
+  /// Avoids creating a new native backing for the path for methods that will
+  /// create it later, such as [Path.from], [shift] and [transform].
+  Path._();
+
   /// Creates a copy of another [Path].
   ///
   /// This copy is fast and does not require additional memory unless either
   /// the `source` path or the path returned by this constructor are modified.
   factory Path.from(Path source) {
-    return source._clone();
+    final Path clonedPath = Path._();
+    source._clone(clonedPath);
+    return clonedPath;
   }
-  Path _clone() native 'Path_clone';
+  void _clone(Path path) native 'Path_clone';
 
   /// Determines how the interior of this path is calculated.
   ///
@@ -2162,17 +2168,21 @@ class Path extends NativeFieldWrapperClass2 {
   /// sub-path translated by the given offset.
   Path shift(Offset offset) {
     assert(_offsetIsValid(offset));
-    return _shift(offset.dx, offset.dy);
+    final Path path = Path._();
+    _shift(path, offset.dx, offset.dy);
+    return path;
   }
-  Path _shift(double dx, double dy) native 'Path_shift';
+  void _shift(Path path, double dx, double dy) native 'Path_shift';
 
   /// Returns a copy of the path with all the segments of every
   /// sub-path transformed by the given matrix.
   Path transform(Float64List matrix4) {
     assert(_matrix4IsValid(matrix4));
-    return _transform(matrix4);
+    final Path path = Path._();
+    _transform(path, matrix4);
+    return path;
   }
-  Path _transform(Float64List matrix4) native 'Path_transform';
+  void _transform(Path path, Float64List matrix4) native 'Path_transform';
 
   /// Computes the bounding rectangle for this path.
   ///
@@ -2448,9 +2458,11 @@ class _PathMeasure extends NativeFieldWrapperClass2 {
 
   Path extractPath(int contourIndex, double start, double end, {bool startWithMoveTo = true}) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
-    return _extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
+    final Path path = Path._();
+    _extractPath(path, contourIndex, start, end, startWithMoveTo: startWithMoveTo);
+    return path;
   }
-  Path _extractPath(int contourIndex, double start, double end, {bool startWithMoveTo = true}) native 'PathMeasure_getSegment';
+  void _extractPath(Path path, int contourIndex, double start, double end, {bool startWithMoveTo = true}) native 'PathMeasure_getSegment';
 
   bool isClosed(int contourIndex) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');

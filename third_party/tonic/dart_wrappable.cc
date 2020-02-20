@@ -4,6 +4,7 @@
 
 #include "tonic/dart_wrappable.h"
 
+#include "fml/logging.h"
 #include "tonic/dart_class_library.h"
 #include "tonic/dart_state.h"
 #include "tonic/dart_wrapper_info.h"
@@ -16,6 +17,7 @@ DartWrappable::~DartWrappable() {
 }
 
 Dart_Handle DartWrappable::CreateDartWrapper(DartState* dart_state) {
+  FML_DLOG(ERROR) << "NO TOUCHY";
   TONIC_DCHECK(!dart_wrapper_);
   const DartWrapperInfo& info = GetDartWrapperInfo();
 

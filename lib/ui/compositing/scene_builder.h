@@ -56,20 +56,24 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                    int alpha,
                    double dx = 0,
                    double dy = 0);
-  fml::RefPtr<EngineLayer> pushColorFilter(const ColorFilter* color_filter);
-  fml::RefPtr<EngineLayer> pushImageFilter(const ImageFilter* image_filter);
-  fml::RefPtr<EngineLayer> pushBackdropFilter(ImageFilter* filter);
-  fml::RefPtr<EngineLayer> pushShaderMask(Shader* shader,
-                                          double maskRectLeft,
-                                          double maskRectRight,
-                                          double maskRectTop,
-                                          double maskRectBottom,
-                                          int blendMode);
-  fml::RefPtr<EngineLayer> pushPhysicalShape(const CanvasPath* path,
-                                             double elevation,
-                                             int color,
-                                             int shadowColor,
-                                             int clipBehavior);
+  void pushColorFilter(Dart_Handle layer_handle,
+                       const ColorFilter* color_filter);
+  void pushImageFilter(Dart_Handle layer_handle,
+                       const ImageFilter* image_filter);
+  void pushBackdropFilter(Dart_Handle layer_handle, ImageFilter* filter);
+  void pushShaderMask(Dart_Handle layer_handle,
+                      Shader* shader,
+                      double maskRectLeft,
+                      double maskRectRight,
+                      double maskRectTop,
+                      double maskRectBottom,
+                      int blendMode);
+  void pushPhysicalShape(Dart_Handle layer_handle,
+                         const CanvasPath* path,
+                         double elevation,
+                         int color,
+                         int shadowColor,
+                         int clipBehavior);
 
   void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
 

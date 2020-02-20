@@ -147,56 +147,59 @@ void SceneBuilder::pushOpacity(Dart_Handle layer_handle,
   auto layer =
       std::make_shared<flutter::OpacityLayer>(alpha, SkPoint::Make(dx, dy));
   PushLayer(layer);
-  EngineLayer::MakeRetained(layer_handle, layer);
+  EngineLayer::MakeRetained(std::move(layer_handle), layer);
 }
 
-fml::RefPtr<EngineLayer> SceneBuilder::pushColorFilter(
-    const ColorFilter* color_filter) {
+void SceneBuilder::pushColorFilter(Dart_Handle layer_handle,
+                                   const ColorFilter* color_filter) {
   auto layer =
       std::make_shared<flutter::ColorFilterLayer>(color_filter->filter());
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  EngineLayer::MakeRetained(std::move(layer_handle), layer);
 }
 
-fml::RefPtr<EngineLayer> SceneBuilder::pushImageFilter(
-    const ImageFilter* image_filter) {
+void SceneBuilder::pushImageFilter(Dart_Handle layer_handle,
+                                   const ImageFilter* image_filter) {
   auto layer =
       std::make_shared<flutter::ImageFilterLayer>(image_filter->filter());
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  EngineLayer::MakeRetained(std::move(layer_handle), layer);
 }
 
-fml::RefPtr<EngineLayer> SceneBuilder::pushBackdropFilter(ImageFilter* filter) {
+void SceneBuilder::pushBackdropFilter(Dart_Handle layer_handle,
+                                      ImageFilter* filter) {
   auto layer = std::make_shared<flutter::BackdropFilterLayer>(filter->filter());
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  EngineLayer::MakeRetained(std::move(layer_handle), layer);
 }
 
-fml::RefPtr<EngineLayer> SceneBuilder::pushShaderMask(Shader* shader,
-                                                      double maskRectLeft,
-                                                      double maskRectRight,
-                                                      double maskRectTop,
-                                                      double maskRectBottom,
-                                                      int blendMode) {
+void SceneBuilder::pushShaderMask(Dart_Handle layer_handle,
+                                  Shader* shader,
+                                  double maskRectLeft,
+                                  double maskRectRight,
+                                  double maskRectTop,
+                                  double maskRectBottom,
+                                  int blendMode) {
   SkRect rect = SkRect::MakeLTRB(maskRectLeft, maskRectTop, maskRectRight,
                                  maskRectBottom);
   auto layer = std::make_shared<flutter::ShaderMaskLayer>(
       shader->shader(), rect, static_cast<SkBlendMode>(blendMode));
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  EngineLayer::MakeRetained(std::move(layer_handle), layer);
 }
 
-fml::RefPtr<EngineLayer> SceneBuilder::pushPhysicalShape(const CanvasPath* path,
-                                                         double elevation,
-                                                         int color,
-                                                         int shadow_color,
-                                                         int clipBehavior) {
+void SceneBuilder::pushPhysicalShape(Dart_Handle layer_handle,
+                                     const CanvasPath* path,
+                                     double elevation,
+                                     int color,
+                                     int shadow_color,
+                                     int clipBehavior) {
   auto layer = std::make_shared<flutter::PhysicalShapeLayer>(
       static_cast<SkColor>(color), static_cast<SkColor>(shadow_color),
       static_cast<float>(elevation), path->path(),
       static_cast<flutter::Clip>(clipBehavior));
   PushLayer(layer);
-  return EngineLayer::MakeRetained(layer);
+  EngineLayer::MakeRetained(std::move(layer_handle), layer);
 }
 
 void SceneBuilder::addRetained(fml::RefPtr<EngineLayer> retainedLayer) {
@@ -282,9 +285,9 @@ void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
 void SceneBuilder::build(Dart_Handle scene_handle) {
   FML_DCHECK(layer_stack_.size() >= 1);
 
-  Scene::create(std::move(scene_handle), layer_stack_[0], rasterizer_tracing_threshold_,
-                checkerboard_raster_cache_images_,
-                checkerboard_offscreen_layers_);
+  Scene::create(
+      std::move(scene_handle), layer_stack_[0], rasterizer_tracing_threshold_,
+      checkerboard_raster_cache_images_, checkerboard_offscreen_layers_);
   ClearDartWrapper();  // may delete this object.
 }
 
