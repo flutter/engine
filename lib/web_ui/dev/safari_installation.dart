@@ -82,6 +82,16 @@ Future<BrowserInstallation> getOrInstallSafari(
 /// Since differnt Safari versions can create different results for tests,
 /// it is useful to log this information for debug purposes.
 Future<void> printSafariVersion(StringSink infoLog) async {
+  // make sure system profiler exists under usr/sbin
+  final io.ProcessResult which =
+    await io.Process.run('which', <String>['system_profiler']);
+
+  if(which.exitCode !=0) {
+    infoLog.writeln('which not available');
+  } else {
+    print('system profiler location ${which.stdout}');
+  }
+
   final io.ProcessResult safariVersionResult =
     await io.Process.run('system_profiler', <String>['SPApplicationsDataType']);
 
@@ -90,25 +100,30 @@ Future<void> printSafariVersion(StringSink infoLog) async {
   } else {
     final String output = safariVersionResult.stdout;
 
-    print('output from system_profiler: $output');
+    print('output from system_profiler: ${output.length}');
 
-    // // The output is information about all the applications.
-    // final List<String> listOfResults = output.split('\n');
+    // The output is information about all the applications.
+    final List<String> listOfResults = output.split('\n');
 
-    // // Find the line which contains version info for Safari.
-    // int locationForSafariVersion = 0;
-    // bool safariFound = false;
-    // for (int i=0; i<listOfResults.length; i++) {
-    //   if (safariFound) {
-    //     if (listOfResults[i].contains('Version:')) {
-    //       locationForSafariVersion = i;
-    //       break;
-    //     }
-    //   }
-    //   if (listOfResults[i].contains('Safari:')) {
-    //     safariFound = true;
-    //   }
-    // }
+    // Find the line which contains version info for Safari.
+    int locationForSafariVersion = 0;
+    bool safariFound = false;
+    String safariInfo ='';
+    for (int i=0; i<listOfResults.length; i++) {
+      // if (safariFound) {
+      //   if (listOfResults[i].contains('Version:')) {
+      //     locationForSafariVersion = i;
+      //     break;
+      //   }
+      // }
+      if (listOfResults[i].contains('Safari:')) {
+        // safariFound = true;
+        safariInfo = safariInfo + listOfResults[i];
+      }
+    }
+
+    print('any safari related info: ${safariInfo}');
+
 
     // // The version line should look like: `Version:  13.0.5.`
     // final String versionLine = listOfResults[locationForSafariVersion];
