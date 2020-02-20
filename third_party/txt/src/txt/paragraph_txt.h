@@ -192,6 +192,14 @@ class ParagraphTxt : public Paragraph {
   // Stores the result of Layout().
   std::vector<PaintRecord> records_;
 
+  // Values for adjust the underline lineThrough and overline, in the case of
+  // multiple fonts.
+  SkScalar underline_y_offset_;
+  SkScalar line_through_y_offset_;
+  SkScalar overline_y_offset_;
+  SkScalar underline_thickness_;
+  SkScalar strikeout_thickness_;
+
   bool did_exceed_max_lines_;
 
   // Strut metrics of zero will have no effect on the layout.
@@ -383,6 +391,9 @@ class ParagraphTxt : public Paragraph {
   void PaintDecorations(SkCanvas* canvas,
                         const PaintRecord& record,
                         SkPoint base_offset);
+  // adjust values for the underline lineThrough and overline, in the case of
+  // multiple fonts.
+  void AdjustDecorationValues();
 
   // Computes the beziers for a wavy decoration. The results will be
   // applied to path.
