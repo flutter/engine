@@ -4170,7 +4170,7 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
     return picture;
   }
 
-  void _endRecording(Picture picture) native 'PictureRecorder_endRecording';
+  void _endRecording(Picture outPicture) native 'PictureRecorder_endRecording';
 }
 
 /// A single shadow.
