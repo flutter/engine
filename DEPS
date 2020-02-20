@@ -137,7 +137,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'd14f3c708fb132381f7053b4ee9e628be915ed96',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'c36bb971b4c11cd9136989ad5052d6f31521723d',
 
    # Fuchsia compatibility
    #
@@ -521,8 +521,8 @@ deps = {
   'src/buildtools/{host_os}-x64/clang': {
     'packages': [
       {
-        'package': 'fuchsia/clang/${{platform}}',
-        'version': 'git_revision:de39621f0f03f20633bdfa50bde97a3908bf6e98'
+        'package': 'fuchsia/third_party/clang/${{platform}}',
+        'version': 'git_revision:7e9747b50bcb1be28d4a3236571e8050835497a6'
       }
     ],
     'condition': 'host_os == "mac" or host_os == "linux"',
@@ -545,8 +545,8 @@ deps = {
    'src/fuchsia/toolchain/mac': {
      'packages': [
        {
-        'package': 'fuchsia/clang/mac-amd64',
-        'version': 'OzTZOKkICT0yD82Dbx0jvVn5hN5eOSi6ByVTDseE7i0C'
+        'package': 'fuchsia/third_party/clang/mac-amd64',
+        'version': 'git_revision:7e9747b50bcb1be28d4a3236571e8050835497a6'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -565,8 +565,8 @@ deps = {
    'src/fuchsia/toolchain/linux': {
      'packages': [
        {
-        'package': 'fuchsia/clang/linux-amd64',
-        'version': 'OT6p30bQQhyCzRSy7xPsSbZ88J3PWOnneenkMZ0j7kIC'
+        'package': 'fuchsia/third_party/clang/linux-amd64',
+        'version': 'git_revision:7e9747b50bcb1be28d4a3236571e8050835497a6'
        }
      ],
      'condition': 'host_os == "linux"',
