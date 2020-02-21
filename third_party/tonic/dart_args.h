@@ -227,7 +227,6 @@ void DartCallConstructor(Sig func, Dart_NativeArguments args) {
     wrappable = decoder.DispatchCtor(func);
   }
 
-
   Dart_Handle wrapper = Dart_GetNativeArgument(args, 0);
   TONIC_CHECK(!LogIfError(wrapper));
 
