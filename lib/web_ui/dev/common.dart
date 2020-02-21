@@ -90,7 +90,7 @@ class _WindowsBinding implements PlatformBinding {
       throw UnsupportedError('Safari is not supported on Windows');
 
   @override
-  String getCommandToRunEdge() => 'MicrosoftEdgeLauncher';
+  String getCommandToRunEdge() => 'microsoftedgelauncher\\MicrosoftEdgeLauncher.exe';
 }
 
 class _LinuxBinding implements PlatformBinding {
