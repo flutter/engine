@@ -23,9 +23,9 @@ final List<BitmapCanvas> _recycledCanvases = <BitmapCanvas>[];
 void _reduceCanvasMemoryUsage() {
   final int canvasCount = _recycledCanvases.length;
   for (int i = 0; i < canvasCount; i++) {
-    final BitmapCanvas removedCanvas = _recycledCanvases.removeAt(0);
-    removedCanvas.dispose();
+    _recycledCanvases[i].dispose();
   }
+  _recycledCanvases.clear();
 }
 
 /// A request to repaint a canvas.
@@ -299,8 +299,8 @@ class PersistedStandardPicture extends PersistedPicture {
 
       final bool fits = candidate.doesFitBounds(bounds);
       final bool isSmaller = candidatePixelCount < lastPixelCount;
-      // If we are about to reuse a huge canvas compared to what we need,
-      // skip candidate since we will be waiting
+      // [isTooSmall] is used to make sure that a small picture doesn't
+      // reuse and hold onto memory of a large canvas.
       final bool isTooSmall = isSmaller &&
           requestedPixelCount > 1 &&
           (candidatePixelCount / requestedPixelCount) > 10;
