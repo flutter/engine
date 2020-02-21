@@ -25,10 +25,6 @@ void main() {
     EngineSemanticsOwner.debugResetSemantics();
   });
 
-  tearDown(() {
-    clearSemanticsDomElementIfExists();
-  });
-
   group(EngineSemanticsOwner, () {
     _testEngineSemanticsOwner();
   });
@@ -400,8 +396,10 @@ void _testVerticalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.webkit ||
+          browserEngine == BrowserEngine.edge);
 
   test('scrollable node with children has a container node', () async {
     semantics()
@@ -436,8 +434,10 @@ void _testVerticalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.webkit ||
+          browserEngine == BrowserEngine.edge);
 
   test('scrollable node dispatches scroll events', () async {
     final StreamController<int> idLogController = StreamController<int>();
@@ -548,8 +548,10 @@ void _testHorizontalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.webkit ||
+          browserEngine == BrowserEngine.edge);
 
   test('scrollable node with children has a container node', () async {
     semantics()
@@ -584,8 +586,10 @@ void _testHorizontalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.webkit ||
+          browserEngine == BrowserEngine.edge);
 
   test('scrollable node dispatches scroll events', () async {
     final SemanticsActionLogger logger = SemanticsActionLogger();
@@ -1355,14 +1359,4 @@ class SemanticsActionLogger {
       });
     };
   }
-}
-
-/// In case of an exception semantics DOM element(s) can still stay on the DOM.
-void clearSemanticsDomElementIfExists() {
-  List<html.Node> domElementsToRemove = List<html.Node>();
-  if (html.document.getElementsByTagName('flt-semantics').length > 0) {
-    domElementsToRemove
-      ..addAll(html.document.getElementsByTagName('flt-semantics'));
-  }
-  domElementsToRemove.forEach((html.Node n) => n.remove());
 }
