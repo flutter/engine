@@ -37,7 +37,7 @@ class MethodChannel {
                 const MethodCodec<T>* codec)
       : messenger_(messenger), name_(name), codec_(codec) {}
 
-  ~MethodChannel() = default;
+  ~MethodChannel() { messenger_->SetMessageHandler(name_, nullptr); }
 
   // Prevent copying.
   MethodChannel(MethodChannel const&) = delete;
