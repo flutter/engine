@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+@TestOn('vm && linux')
+
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
