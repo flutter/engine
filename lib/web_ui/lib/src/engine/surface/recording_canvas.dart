@@ -183,12 +183,8 @@ class RecordingCanvas {
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    drawRect(
-        _paintBounds.maxPaintBounds,
-        ui.Paint()
-          ..color = color
-          ..style = ui.PaintingStyle.fill
-          ..blendMode = blendMode);
+    _paintBounds.grow(_paintBounds.maxPaintBounds);
+    _commands.add(PaintDrawColor(color, blendMode));
   }
 
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaint paint) {

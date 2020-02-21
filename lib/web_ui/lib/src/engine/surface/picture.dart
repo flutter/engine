@@ -286,7 +286,6 @@ class PersistedStandardPicture extends PersistedPicture {
     final ui.Size canvasSize = bounds.size;
     BitmapCanvas bestRecycledCanvas;
     double lastPixelCount = double.infinity;
-    final double requestedPixelCount = bounds.width * bounds.height;
     for (int i = 0; i < _recycledCanvases.length; i++) {
       final BitmapCanvas candidate = _recycledCanvases[i];
       if (!candidate.isReusable()) {
@@ -299,19 +298,22 @@ class PersistedStandardPicture extends PersistedPicture {
 
       final bool fits = candidate.doesFitBounds(bounds);
       final bool isSmaller = candidatePixelCount < lastPixelCount;
-      // [isTooSmall] is used to make sure that a small picture doesn't
-      // reuse and hold onto memory of a large canvas.
-      final bool isTooSmall = isSmaller &&
-          requestedPixelCount > 1 &&
-          (candidatePixelCount / requestedPixelCount) > 10;
-      if (fits && isSmaller && !isTooSmall) {
-        bestRecycledCanvas = candidate;
-        lastPixelCount = candidatePixelCount;
-        final bool fitsExactly = candidateSize.width == canvasSize.width &&
-            candidateSize.height == canvasSize.height;
-        if (fitsExactly) {
-          // No need to keep looking any more.
-          break;
+      if (fits && isSmaller) {
+        // [isTooSmall] is used to make sure that a small picture doesn't
+        // reuse and hold onto memory of a large canvas.
+        final double requestedPixelCount = bounds.width * bounds.height;
+        final bool isTooSmall = isSmaller &&
+            requestedPixelCount > 1 &&
+            (candidatePixelCount / requestedPixelCount) > 4;
+        if (!isTooSmall) {
+          bestRecycledCanvas = candidate;
+          lastPixelCount = candidatePixelCount;
+          final bool fitsExactly = candidateSize.width == canvasSize.width &&
+              candidateSize.height == canvasSize.height;
+          if (fitsExactly) {
+            // No need to keep looking any more.
+            break;
+          }
         }
       }
     }
