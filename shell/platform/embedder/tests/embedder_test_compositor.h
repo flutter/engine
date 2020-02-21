@@ -53,6 +53,9 @@ class EmbedderTestCompositor {
   ///
   void SetNextPresentCallback(const PresentCallback& next_present_callback);
 
+  void SetPresentCallback(const PresentCallback& present_callback,
+                          bool one_shot);
+
   using NextSceneCallback = std::function<void(sk_sp<SkImage> image)>;
   void SetNextSceneCallback(const NextSceneCallback& next_scene_callback);
 
@@ -75,7 +78,8 @@ class EmbedderTestCompositor {
   sk_sp<GrContext> context_;
   RenderTargetType type_ = RenderTargetType::kOpenGLFramebuffer;
   PlatformViewRendererCallback platform_view_renderer_callback_;
-  PresentCallback next_present_callback_;
+  bool present_callback_is_one_shot_ = false;
+  PresentCallback present_callback_;
   NextSceneCallback next_scene_callback_;
   sk_sp<SkImage> last_composition_;
   size_t backing_stores_created_ = 0;

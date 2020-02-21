@@ -36,7 +36,8 @@ class EmbedderRenderTargetCache {
 
   void ClearAllRenderTargetsInCache();
 
-  void CacheRenderTarget(std::unique_ptr<EmbedderRenderTarget> target);
+  void CacheRenderTarget(EmbedderExternalView::ViewIdentifier view_identifier,
+                         std::unique_ptr<EmbedderRenderTarget> target);
 
   size_t GetCachedTargetsCount() const;
 

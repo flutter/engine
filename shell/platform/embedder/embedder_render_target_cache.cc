@@ -41,13 +41,14 @@ void EmbedderRenderTargetCache::ClearAllRenderTargetsInCache() {
 }
 
 void EmbedderRenderTargetCache::CacheRenderTarget(
+    EmbedderExternalView::ViewIdentifier view_identifier,
     std::unique_ptr<EmbedderRenderTarget> target) {
   if (target == nullptr) {
     return;
   }
   auto surface = target->GetRenderSurface();
-  EmbedderExternalView::RenderTargetDescriptor desc{
-      SkISize::Make(surface->width(), surface->height())};
+  auto desc = EmbedderExternalView::RenderTargetDescriptor{
+      view_identifier, SkISize::Make(surface->width(), surface->height())};
   cached_render_targets_[desc].push(std::move(target));
 }
 

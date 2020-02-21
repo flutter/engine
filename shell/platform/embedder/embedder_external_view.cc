@@ -39,7 +39,7 @@ EmbedderExternalView::~EmbedderExternalView() = default;
 
 EmbedderExternalView::RenderTargetDescriptor
 EmbedderExternalView::CreateRenderTargetDescriptor() const {
-  return {render_surface_size_};
+  return {view_identifier_, render_surface_size_};
 }
 
 SkCanvas* EmbedderExternalView::GetCanvas() const {

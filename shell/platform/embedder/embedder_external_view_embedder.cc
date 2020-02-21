@@ -249,7 +249,8 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
   // Hold all rendered layers in the render target cache for one frame to see if
   // they may be reused next frame.
   for (auto& render_target : matched_render_targets) {
-    render_target_cache_.CacheRenderTarget(std::move(render_target.second));
+    render_target_cache_.CacheRenderTarget(render_target.first,
+                                           std::move(render_target.second));
   }
 
   return true;

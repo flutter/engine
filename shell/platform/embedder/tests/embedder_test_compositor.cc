@@ -172,9 +172,11 @@ bool EmbedderTestCompositor::Present(const FlutterLayer** layers,
 
   // If the test has asked to access the layers and renderers being presented.
   // Access the same and present it to the test for its test assertions.
-  if (next_present_callback_) {
-    auto callback = next_present_callback_;
-    next_present_callback_ = nullptr;
+  if (present_callback_) {
+    auto callback = present_callback_;
+    if (present_callback_is_one_shot_) {
+      present_callback_ = nullptr;
+    }
     callback(layers, layers_count);
   }
 
@@ -317,8 +319,15 @@ bool EmbedderTestCompositor::CreateSoftwareRenderSurface(
 
 void EmbedderTestCompositor::SetNextPresentCallback(
     const PresentCallback& next_present_callback) {
-  FML_CHECK(!next_present_callback_);
-  next_present_callback_ = next_present_callback;
+  SetPresentCallback(next_present_callback, true);
+}
+
+void EmbedderTestCompositor::SetPresentCallback(
+    const PresentCallback& present_callback,
+    bool one_shot) {
+  FML_CHECK(!present_callback_);
+  present_callback_ = present_callback;
+  present_callback_is_one_shot_ = one_shot;
 }
 
 void EmbedderTestCompositor::SetNextSceneCallback(

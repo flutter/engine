@@ -4132,5 +4132,74 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreRecycled) {
   ASSERT_EQ(context.GetCompositor().GetBackingStoresCollectedCount(), 10u);
 }
 
+TEST_F(EmbedderTest, CompositorRenderTargetsAreInStableOrder) {
+  auto& context = GetEmbedderContext();
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetOpenGLRendererConfig(SkISize::Make(300, 200));
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("render_targets_are_recycled");
+  context.GetCompositor().SetRenderTargetType(
+      EmbedderTestCompositor::RenderTargetType::kOpenGLTexture);
+
+  fml::CountDownLatch latch(2);
+
+  context.AddNativeCallback("SignalNativeTest",
+                            CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                              latch.CountDown();
+                            }));
+
+  size_t frame_count = 0;
+  std::vector<void*> first_frame_backing_store_user_data;
+  context.GetCompositor().SetPresentCallback(
+      [&](const FlutterLayer** layers, size_t layers_count) {
+        ASSERT_EQ(layers_count, 20u);
+
+        if (first_frame_backing_store_user_data.size() == 0u) {
+          for (size_t i = 0; i < layers_count; ++i) {
+            if (layers[i]->type == kFlutterLayerContentTypeBackingStore) {
+              first_frame_backing_store_user_data.push_back(
+                  layers[i]->backing_store->user_data);
+            }
+          }
+          return;
+        }
+
+        ASSERT_EQ(first_frame_backing_store_user_data.size(), 10u);
+
+        frame_count++;
+        std::vector<void*> backing_store_user_data;
+        for (size_t i = 0; i < layers_count; ++i) {
+          if (layers[i]->type == kFlutterLayerContentTypeBackingStore) {
+            backing_store_user_data.push_back(
+                layers[i]->backing_store->user_data);
+          }
+        }
+
+        ASSERT_EQ(backing_store_user_data.size(), 10u);
+
+        ASSERT_EQ(first_frame_backing_store_user_data, backing_store_user_data);
+
+        if (frame_count == 20) {
+          latch.CountDown();
+        }
+      },
+      false  // one shot
+  );
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 300;
+  event.height = 200;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  latch.Wait();
+}
+
 }  // namespace testing
 }  // namespace flutter

@@ -47,20 +47,28 @@ class EmbedderExternalView {
   };
 
   struct RenderTargetDescriptor {
-    SkISize surface_size = SkISize::MakeEmpty();
+    ViewIdentifier view_identifier;
+    SkISize surface_size;
+
+    RenderTargetDescriptor(ViewIdentifier p_view_identifier,
+                           SkISize p_surface_size)
+        : view_identifier(p_view_identifier), surface_size(p_surface_size) {}
 
     struct Hash {
       constexpr std::size_t operator()(
           const RenderTargetDescriptor& desc) const {
         return fml::HashCombine(desc.surface_size.width(),
-                                desc.surface_size.height());
+                                desc.surface_size.height(),
+                                ViewIdentifier::Hash{}(desc.view_identifier));
       }
     };
 
     struct Equal {
       bool operator()(const RenderTargetDescriptor& lhs,
                       const RenderTargetDescriptor& rhs) const {
-        return lhs.surface_size == rhs.surface_size;
+        return lhs.surface_size == rhs.surface_size &&
+               ViewIdentifier::Equal{}(lhs.view_identifier,
+                                       rhs.view_identifier);
       }
     };
   };
