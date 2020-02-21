@@ -674,7 +674,7 @@ class BrowserManager {
       completer.completeError(error, stackTrace);
     });
 
-    return completer.future.timeout(Duration(seconds: 30), onTimeout: () {
+    return completer.future.timeout(Duration(minutes: 2), onTimeout: () {
       browser.close();
       throw Exception('Timed out waiting for ${runtime.name} to connect.');
     });
@@ -691,6 +691,7 @@ class BrowserManager {
   /// Creates a new BrowserManager that communicates with [browser] over
   /// [webSocket].
   BrowserManager._(this._browser, this._runtime, WebSocketChannel webSocket) {
+    print('Browser manager created for ${_runtime.name}');
     // The duration should be short enough that the debugging console is open as
     // soon as the user is done setting breakpoints, but long enough that a test
     // doing a lot of synchronous work doesn't trigger a false positive.
@@ -709,6 +710,7 @@ class BrowserManager {
     _channel = MultiChannel(
         webSocket.cast<String>().transform(jsonDocument).changeStream((stream) {
       return stream.map((message) {
+        print('received message from browser');
         if (!_closed) _timer.reset();
         for (var controller in _controllers) {
           controller.setDebugging(false);
