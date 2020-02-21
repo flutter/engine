@@ -733,14 +733,20 @@ class ParagraphRuler {
     final List<html.Rectangle<num>> clientRects = rangeSpan.getClientRects();
     final List<ui.TextBox> boxes = <ui.TextBox>[];
 
+    final double maxLinesLimit = style.maxLines == null
+        ? double.infinity
+        : style.maxLines * lineHeightDimensions.height;
+
     for (html.Rectangle<num> rect in clientRects) {
-      boxes.add(ui.TextBox.fromLTRBD(
-        rect.left + alignOffset,
-        rect.top,
-        rect.right + alignOffset,
-        rect.bottom,
-        textDirection,
-      ));
+      if (rect.top < maxLinesLimit) {
+        boxes.add(ui.TextBox.fromLTRBD(
+          rect.left + alignOffset,
+          rect.top,
+          rect.right + alignOffset,
+          rect.bottom,
+          textDirection,
+        ));
+      }
     }
 
     // Cleanup after measuring the boxes.
