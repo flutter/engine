@@ -1148,8 +1148,10 @@ void _testTappable() {
 
     semantics().semanticsEnabled = false;
   },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.webkit ||
+          browserEngine == BrowserEngine.edge);
 }
 
 void _testImage() {
