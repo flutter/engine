@@ -36,8 +36,18 @@ EmbedderRenderTargetCache::GetExistingTargetsInCache(
   return {std::move(resolved_render_targets), std::move(unmatched_identifiers)};
 }
 
-void EmbedderRenderTargetCache::ClearAllRenderTargetsInCache() {
+std::set<std::unique_ptr<EmbedderRenderTarget>>
+EmbedderRenderTargetCache::ClearAllRenderTargetsInCache() {
+  std::set<std::unique_ptr<EmbedderRenderTarget>> cleared_targets;
+  for (auto& targets : cached_render_targets_) {
+    auto& targets_stack = targets.second;
+    while (!targets_stack.empty()) {
+      cleared_targets.emplace(std::move(targets_stack.top()));
+      targets_stack.pop();
+    }
+  }
   cached_render_targets_.clear();
+  return cleared_targets;
 }
 
 void EmbedderRenderTargetCache::CacheRenderTarget(

@@ -137,12 +137,16 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
   // the embedder. Here, the embedder has the opportunity to trample on the
   // OpenGL context.
   //
-  // We tell the render target cache to clear its unused entries before
-  // allocating new ones. This collection step before allocating new render
-  // targets ameliorates peak memory usage within the frame.
+  // For optimum performance, we should tell the render target cache to clear
+  // its unused entries before allocating new ones. This collection step before
+  // allocating new render targets ameliorates peak memory usage within the
+  // frame. But, this causes an issue in a known internal embedder. To work
+  // around this issue while that embedder migrates, collection of render
+  // targets is deferred after the presentation.
   //
   // @warning: Embedder may trample on our OpenGL context here.
-  render_target_cache_.ClearAllRenderTargetsInCache();
+  auto deferred_cleanup_render_targets =
+      render_target_cache_.ClearAllRenderTargetsInCache();
 
   for (const auto& pending_key : pending_keys) {
     const auto& external_view = pending_views_.at(pending_key);
@@ -246,8 +250,13 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
     presented_layers.InvokePresentCallback(present_callback_);
   }
 
-  // Hold all rendered layers in the render target cache for one frame to see if
-  // they may be reused next frame.
+  // See why this is necessary in the comment where this collection in realized.
+  //
+  // @warning: Embedder may trample on our OpenGL context here.
+  deferred_cleanup_render_targets.clear();
+
+  // Hold all rendered layers in the render target cache for one frame to
+  // see if they may be reused next frame.
   for (auto& render_target : matched_render_targets) {
     render_target_cache_.CacheRenderTarget(render_target.first,
                                            std::move(render_target.second));

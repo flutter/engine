@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_RENDER_TARGET_CACHE_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_RENDER_TARGET_CACHE_H_
 
+#include <set>
 #include <stack>
 #include <tuple>
 #include <unordered_map>
@@ -34,7 +35,8 @@ class EmbedderRenderTargetCache {
   GetExistingTargetsInCache(
       const EmbedderExternalView::PendingViews& pending_views);
 
-  void ClearAllRenderTargetsInCache();
+  std::set<std::unique_ptr<EmbedderRenderTarget>>
+  ClearAllRenderTargetsInCache();
 
   void CacheRenderTarget(EmbedderExternalView::ViewIdentifier view_identifier,
                          std::unique_ptr<EmbedderRenderTarget> target);
