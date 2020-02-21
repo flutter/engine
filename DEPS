@@ -71,7 +71,7 @@ vars = {
   'dart_mustache_tag': '5e81b12215566dbe2473b2afd01a8a8aedd56ad9',
   'dart_oauth2_tag': '1.2.1',
   'dart_observatory_pub_packages_rev': '0894122173b0f98eb08863a7712e78407d4477bc',
-  'dart_package_config_tag': '3401e2897b3cf46e64966e2ba19ed7032501cf41',
+  'dart_package_config_tag': '87a8b5184020ebcc13b34ee95dde58f851b68ca3',
   'dart_package_resolver_tag': '1.0.10',
   'dart_path_tag': '1.6.2',
   'dart_pedantic_tag': 'v1.8.0',
