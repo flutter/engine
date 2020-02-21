@@ -520,7 +520,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     // using the original event.
     if (js_util.hasProperty(event, 'getCoalescedEvents')) {
       final List<html.PointerEvent> coalescedEvents =
-          event.getCoalescedEvents();
+          event.getCoalescedEvents().cast<html.PointerEvent>();
       // Some events don't perform coalescing, so they return an empty list. In
       // that case, we also fallback to using the original event.
       if (coalescedEvents.isNotEmpty) {
