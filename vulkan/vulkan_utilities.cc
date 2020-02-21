@@ -10,14 +10,22 @@
 
 namespace vulkan {
 
+static bool sValidationLayersEnabled = false;
+
 bool IsDebuggingEnabled() {
 #ifndef NDEBUG
   return true;
-#elif defined(VULKAN_VALIDATION_LAYERS_ENABLED)
-  return true;
 #else
-  return false;
+  return ValidationLayersEnabled();
 #endif
+}
+
+void SetValidationLayersEnabled(bool enabled) {
+  sValidationLayersEnabled = enabled;
+}
+
+bool ValidationLayersEnabled() {
+  return sValidationLayersEnabled;
 }
 
 // Whether to show Vulkan validation layer info messages in addition
@@ -36,7 +44,7 @@ bool ValidationErrorsFatal() {
 static std::vector<std::string> InstanceOrDeviceLayersToEnable(
     const VulkanProcTable& vk,
     VkPhysicalDevice physical_device) {
-  if (!IsDebuggingEnabled()) {
+  if (!ValidationLayersEnabled()) {
     return {};
   }
 

@@ -15,6 +15,8 @@
 namespace vulkan {
 
 bool IsDebuggingEnabled();
+void SetValidationLayersEnabled(bool enabled);
+bool ValidationLayersEnabled();
 bool ValidationLayerInfoMessagesEnabled();
 bool ValidationErrorsFatal();
 
