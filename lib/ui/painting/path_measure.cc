@@ -98,17 +98,17 @@ tonic::Float32List CanvasPathMeasure::getPosTan(int contour_index,
 }
 
 void CanvasPathMeasure::getSegment(Dart_Handle path_handle,
-                                                      int contour_index,
-                                                      float start_d,
-                                                      float stop_d,
-                                                      bool start_with_move_to) {
+                                   int contour_index,
+                                   float start_d,
+                                   float stop_d,
+                                   bool start_with_move_to) {
   if (static_cast<std::vector<sk_sp<SkContourMeasure>>::size_type>(
           contour_index) >= measures_.size()) {
     CanvasPath::Create(path_handle);
   }
   SkPath dst;
-  bool success =
-      measures_[contour_index]->getSegment(start_d, stop_d, &dst, start_with_move_to);
+  bool success = measures_[contour_index]->getSegment(start_d, stop_d, &dst,
+                                                      start_with_move_to);
   if (!success) {
     CanvasPath::Create(path_handle);
   } else {
