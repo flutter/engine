@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/src/engine.dart';
 
@@ -1137,7 +1138,7 @@ void main() async {
 
 /// Shortcut to avoid many line wraps in the tests above.
 EngineLineMetrics line(
-  String text,
+  String displayText,
   int startIndex,
   int endIndex, {
   double width,
@@ -1146,7 +1147,7 @@ EngineLineMetrics line(
   double left,
 }) {
   return EngineLineMetrics.withText(
-    text,
+    displayText,
     startIndex: startIndex,
     endIndex: endIndex,
     hardBreak: hardBreak,

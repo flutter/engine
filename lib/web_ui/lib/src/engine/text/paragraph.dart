@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 class EngineLineMetrics implements ui.LineMetrics {
@@ -15,13 +16,13 @@ class EngineLineMetrics implements ui.LineMetrics {
     this.left,
     this.baseline,
     this.lineNumber,
-  })  : text = null,
+  })  : displayText = null,
         startIndex = -1,
         endIndex = -1,
         endIndexWithoutNewlines = -1;
 
   EngineLineMetrics.withText(
-    this.text, {
+    this.displayText, {
     @required this.startIndex,
     @required this.endIndex,
     @required this.endIndexWithoutNewlines,
@@ -34,7 +35,7 @@ class EngineLineMetrics implements ui.LineMetrics {
     @required this.left,
     this.baseline,
     @required this.lineNumber,
-  })  : assert(text != null),
+  })  : assert(displayText != null),
         assert(startIndex != null),
         assert(endIndex != null),
         assert(endIndexWithoutNewlines != null),
@@ -43,8 +44,8 @@ class EngineLineMetrics implements ui.LineMetrics {
         assert(left != null),
         assert(lineNumber != null && lineNumber >= 0);
 
-  /// The textual content representing this line.
-  final String text;
+  /// The text to be rendered on the screen representing this line.
+  final String displayText;
 
   /// The index (inclusive) in the text where this line begins.
   final int startIndex;
@@ -88,7 +89,7 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   @override
   int get hashCode => ui.hashValues(
-        text,
+        displayText,
         startIndex,
         endIndex,
         hardBreak,
@@ -112,7 +113,7 @@ class EngineLineMetrics implements ui.LineMetrics {
       return false;
     }
     final EngineLineMetrics typedOther = other;
-    return text == typedOther.text &&
+    return displayText == typedOther.displayText &&
         startIndex == typedOther.startIndex &&
         endIndex == typedOther.endIndex &&
         hardBreak == typedOther.hardBreak &&
@@ -207,12 +208,6 @@ class EngineParagraph implements ui.Paragraph {
         }
       }
       return maxWidth;
-    }
-
-    // In the single-line case, the longest line is equal to the maximum
-    // intrinsic width of the paragraph.
-    if (_measurementResult.isSingleLine) {
-      return _measurementResult.maxIntrinsicWidth;
     }
 
     // If we don't have any line metrics information, there's no way to know the

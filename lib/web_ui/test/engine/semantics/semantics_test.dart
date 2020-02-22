@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
+@TestOn('vm && linux')
+// TODO(nurhan): https://github.com/flutter/flutter/issues/50590
+
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
@@ -395,8 +399,10 @@ void _testVerticalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.webkit ||
+          browserEngine == BrowserEngine.edge);
 
   test('scrollable node with children has a container node', () async {
     semantics()
@@ -431,8 +437,10 @@ void _testVerticalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.webkit ||
+          browserEngine == BrowserEngine.edge);
 
   test('scrollable node dispatches scroll events', () async {
     final StreamController<int> idLogController = StreamController<int>();
@@ -543,8 +551,10 @@ void _testHorizontalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.webkit ||
+          browserEngine == BrowserEngine.edge);
 
   test('scrollable node with children has a container node', () async {
     semantics()
@@ -579,8 +589,10 @@ void _testHorizontalScrolling() {
 
     semantics().semanticsEnabled = false;
   },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.webkit ||
+          browserEngine == BrowserEngine.edge);
 
   test('scrollable node dispatches scroll events', () async {
     final SemanticsActionLogger logger = SemanticsActionLogger();
@@ -1139,8 +1151,10 @@ void _testTappable() {
 
     semantics().semanticsEnabled = false;
   },
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: browserEngine == BrowserEngine.edge);
+      skip: browserEngine == BrowserEngine.webkit ||
+          browserEngine == BrowserEngine.edge);
 }
 
 void _testImage() {

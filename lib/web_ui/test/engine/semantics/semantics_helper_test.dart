@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:ui/src/engine.dart';
@@ -58,11 +59,14 @@ void main() {
 
       expect(shouldForwardToFramework, true);
 
-      event = html.PointerEvent('pointermove');
-      shouldForwardToFramework =
-          desktopSemanticsEnabler.tryEnableSemantics(event);
+      // Pointer events are not defined in webkit.
+      if (browserEngine != BrowserEngine.webkit) {
+        event = html.PointerEvent('pointermove');
+        shouldForwardToFramework =
+            desktopSemanticsEnabler.tryEnableSemantics(event);
 
-      expect(shouldForwardToFramework, true);
+        expect(shouldForwardToFramework, true);
+      }
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
         skip: browserEngine == BrowserEngine.edge);

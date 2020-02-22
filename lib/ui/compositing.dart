@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 /// An opaque object representing a composited scene.
@@ -339,7 +340,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     return layer;
   }
 
-  void _pushClipRect(EngineLayer engineLayer, double left, double right, double top, double bottom, int clipBehavior)
+  void _pushClipRect(EngineLayer outEngineLayer, double left, double right, double top, double bottom, int clipBehavior)
       native 'SceneBuilder_pushClipRect';
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
@@ -476,7 +477,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     return layer;
   }
 
-  void _pushImageFilter(EngineLayer engineLayer, _ImageFilter filter) native 'SceneBuilder_pushImageFilter';
+  void _pushImageFilter(EngineLayer outEngineLayer, _ImageFilter filter) native 'SceneBuilder_pushImageFilter';
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
@@ -500,7 +501,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     return layer;
   }
 
-  void _pushBackdropFilter(EngineLayer engineLayer, _ImageFilter filter) native 'SceneBuilder_pushBackdropFilter';
+  void _pushBackdropFilter(EngineLayer outEngineLayer, _ImageFilter filter) native 'SceneBuilder_pushBackdropFilter';
 
   /// Pushes a shader mask operation onto the operation stack.
   ///
@@ -583,7 +584,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     return layer;
   }
 
-  EngineLayer _pushPhysicalShape(EngineLayer engineLayer, Path path, double elevation, int color, int shadowColor,
+  EngineLayer _pushPhysicalShape(EngineLayer outEngineLayer, Path path, double elevation, int color, int shadowColor,
       int clipBehavior) native 'SceneBuilder_pushPhysicalShape';
 
   /// Ends the effect of the most recently pushed operation.
@@ -807,7 +808,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     return scene;
   }
 
-  void _build(Scene scene) native 'SceneBuilder_build';
+  void _build(Scene outScene) native 'SceneBuilder_build';
 }
 
 /// (Fuchsia-only) Hosts content provided by another application.

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 // Some methods in this file assert that their arguments are not null. These
@@ -1917,7 +1918,7 @@ class Path extends NativeFieldWrapperClass2 {
     source._clone(clonedPath);
     return clonedPath;
   }
-  void _clone(Path path) native 'Path_clone';
+  void _clone(Path outPath) native 'Path_clone';
 
   /// Determines how the interior of this path is calculated.
   ///
@@ -2184,7 +2185,7 @@ class Path extends NativeFieldWrapperClass2 {
     _shift(path, offset.dx, offset.dy);
     return path;
   }
-  void _shift(Path path, double dx, double dy) native 'Path_shift';
+  void _shift(Path outPath, double dx, double dy) native 'Path_shift';
 
   /// Returns a copy of the path with all the segments of every
   /// sub-path transformed by the given matrix.
@@ -2194,7 +2195,7 @@ class Path extends NativeFieldWrapperClass2 {
     _transform(path, matrix4);
     return path;
   }
-  void _transform(Path path, Float64List matrix4) native 'Path_transform';
+  void _transform(Path outPath, Float64List matrix4) native 'Path_transform';
 
   /// Computes the bounding rectangle for this path.
   ///
@@ -2474,7 +2475,7 @@ class _PathMeasure extends NativeFieldWrapperClass2 {
     _extractPath(path, contourIndex, start, end, startWithMoveTo: startWithMoveTo);
     return path;
   }
-  void _extractPath(Path path, int contourIndex, double start, double end, {bool startWithMoveTo = true}) native 'PathMeasure_getSegment';
+  void _extractPath(Path outPath, int contourIndex, double start, double end, {bool startWithMoveTo = true}) native 'PathMeasure_getSegment';
 
   bool isClosed(int contourIndex) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
@@ -4189,7 +4190,7 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
     return picture;
   }
 
-  void _endRecording(Picture picture) native 'PictureRecorder_endRecording';
+  void _endRecording(Picture outPicture) native 'PictureRecorder_endRecording';
 }
 
 /// A single shadow.
