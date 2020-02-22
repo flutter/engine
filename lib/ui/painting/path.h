@@ -29,13 +29,13 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
   static fml::RefPtr<CanvasPath> Create(Dart_Handle path_handle) {
     auto path = fml::MakeRefCounted<CanvasPath>();
-    path->ClaimDartHandle(std::move(path_handle));
+    path->AssociateWithDartWrapper(path_handle);
     return path;
   }
 
   static fml::RefPtr<CanvasPath> CreateFrom(Dart_Handle path_handle,
                                             const SkPath& src) {
-    fml::RefPtr<CanvasPath> path = CanvasPath::Create(std::move(path_handle));
+    fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
     path->path_ = src;
     return path;
   }

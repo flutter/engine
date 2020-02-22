@@ -220,9 +220,9 @@ static void InstantiateImageCodec(Dart_NativeArguments args) {
     }
     descriptor.data = std::move(buffer);
 
-    SingleFrameCodec::Create(std::move(codec_handle), std::move(descriptor));
+    SingleFrameCodec::Create(codec_handle, std::move(descriptor));
   } else {
-    MultiFrameCodec::Create(std::move(codec_handle), std::move(codec));
+    MultiFrameCodec::Create(codec_handle, std::move(codec));
   }
 
   tonic::DartInvoke(callback_handle, {Dart_True()});

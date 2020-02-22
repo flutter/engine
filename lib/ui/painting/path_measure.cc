@@ -104,15 +104,15 @@ void CanvasPathMeasure::getSegment(Dart_Handle path_handle,
                                                       bool start_with_move_to) {
   if (static_cast<std::vector<sk_sp<SkContourMeasure>>::size_type>(
           contour_index) >= measures_.size()) {
-    CanvasPath::Create(std::move(path_handle));
+    CanvasPath::Create(path_handle);
   }
   SkPath dst;
   bool success =
       measures_[contour_index]->getSegment(start_d, stop_d, &dst, start_with_move_to);
   if (!success) {
-    CanvasPath::Create(std::move(path_handle));
+    CanvasPath::Create(path_handle);
   } else {
-    CanvasPath::CreateFrom(std::move(path_handle), dst);
+    CanvasPath::CreateFrom(path_handle, dst);
   }
 }
 

@@ -27,7 +27,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
       Dart_Handle paragraph_handle,
       std::unique_ptr<txt::Paragraph> txt_paragraph) {
     auto paragraph = fml::MakeRefCounted<Paragraph>(std::move(txt_paragraph));
-    paragraph->ClaimDartHandle(std::move(paragraph_handle));
+    paragraph->AssociateWithDartWrapper(paragraph_handle);
   }
 
   ~Paragraph() override;

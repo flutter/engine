@@ -56,7 +56,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
   fml::RefPtr<SingleFrameCodec>* raw_codec_ref =
       new fml::RefPtr<SingleFrameCodec>(this);
 
-  decoder->Decode(descriptor_, [image_handle = std::move(image_handle),
+  decoder->Decode(descriptor_, [image_handle,
                                 raw_codec_ref](auto image) {
     std::unique_ptr<fml::RefPtr<SingleFrameCodec>> codec_ref(raw_codec_ref);
     fml::RefPtr<SingleFrameCodec> codec(std::move(*codec_ref));
@@ -72,7 +72,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
     tonic::DartState::Scope scope(state.get());
 
     if (image.get()) {
-      auto canvas_image = CanvasImage::Create(std::move(image_handle));
+      auto canvas_image = CanvasImage::Create(image_handle);
       canvas_image->set_image(std::move(image));
       codec->cached_frame_image_size_ = canvas_image->GetAllocationSize();
     }

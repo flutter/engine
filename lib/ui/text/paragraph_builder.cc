@@ -494,7 +494,7 @@ Dart_Handle ParagraphBuilder::addPlaceholder(double width,
 }
 
 void ParagraphBuilder::build(Dart_Handle paragraph_handle) {
-  Paragraph::Create(std::move(paragraph_handle), m_paragraphBuilder->Build());
+  Paragraph::Create(paragraph_handle, m_paragraphBuilder->Build());
 }
 
 }  // namespace flutter

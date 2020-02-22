@@ -18,7 +18,7 @@ class SingleFrameCodec : public Codec {
       Dart_Handle codec_handle,
       ImageDecoder::ImageDescriptor descriptor) {
     auto codec = fml::MakeRefCounted<SingleFrameCodec>(std::move(descriptor));
-    codec->ClaimDartHandle(std::move(codec_handle));
+    codec->AssociateWithDartWrapper(codec_handle);
     return codec;
   }
   ~SingleFrameCodec() override;

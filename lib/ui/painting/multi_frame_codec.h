@@ -19,7 +19,7 @@ class MultiFrameCodec : public Codec {
                                              std::unique_ptr<SkCodec> codec) {
     auto multi_frame_codec =
         fml::MakeRefCounted<MultiFrameCodec>(std::move(codec));
-    multi_frame_codec->ClaimDartHandle(std::move(codec_handle));
+    multi_frame_codec->AssociateWithDartWrapper(codec_handle);
     return multi_frame_codec;
   }
   ~MultiFrameCodec() override;
