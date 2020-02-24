@@ -737,16 +737,26 @@ class ParagraphRuler {
         ? double.infinity
         : style.maxLines * lineHeightDimensions.height;
 
+    html.Rectangle<num> previousRect;
     for (html.Rectangle<num> rect in clientRects) {
-      if (rect.top < maxLinesLimit) {
-        boxes.add(ui.TextBox.fromLTRBD(
-          rect.left + alignOffset,
-          rect.top,
-          rect.right + alignOffset,
-          rect.bottom,
-          textDirection,
-        ));
+      // If [rect] is an empty box on the same line as the previous box, don't
+      // include it in the result.
+      if (rect.top == previousRect?.top && rect.left == rect.right) {
+        continue;
       }
+      // As soon as we go beyond [maxLines], stop adding boxes.
+      if (rect.top >= maxLinesLimit) {
+        break;
+      }
+
+      boxes.add(ui.TextBox.fromLTRBD(
+        rect.left + alignOffset,
+        rect.top,
+        rect.right + alignOffset,
+        rect.bottom,
+        textDirection,
+      ));
+      previousRect = rect;
     }
 
     // Cleanup after measuring the boxes.
