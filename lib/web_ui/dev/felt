@@ -53,8 +53,8 @@ install_deps() {
   (cd "$FLUTTER_DIR/web_sdk/web_engine_tester"; $PUB_PATH get)
 }
 
-MAC_OS=`system_profiler SPSoftwareDataType | grep Mac`
-if [[ $MAC_OS == *"Mac"* ]]
+KERNEL_NAME=`uname`
+if [[ $KERNEL_NAME == *"Darwin"* ]]
 then
      echo "Running on MacOS. Increase the user limits"
      ulimit -n 10000
