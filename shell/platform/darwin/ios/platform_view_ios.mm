@@ -74,16 +74,15 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
 }
 
 void PlatformViewIOS::attachView() {
-  if (owner_controller_) {
-    ios_surface_ =
-        [static_cast<FlutterView*>(owner_controller_.get().view) createSurface:gl_context_];
-    FML_DCHECK(ios_surface_ != nullptr);
+  FML_DCHECK(owner_controller_);
+  ios_surface_ =
+      [static_cast<FlutterView*>(owner_controller_.get().view) createSurface:gl_context_];
+  FML_DCHECK(ios_surface_ != nullptr);
 
-    if (accessibility_bridge_) {
-      accessibility_bridge_.reset(
-          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                  [owner_controller_.get() platformViewsController]));
-    }
+  if (accessibility_bridge_) {
+    accessibility_bridge_.reset(
+        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
+                                [owner_controller_.get() platformViewsController]));
   }
 }
 
