@@ -63,7 +63,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
-  BOOL _isViewAttached;
   NSMutableSet<NSNumber*>* _ongoingTouches;
 }
 
@@ -442,7 +441,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 #pragma mark - UIViewController lifecycle notifications
 
--(void)viewDidLoad {
+- (void)viewDidLoad {
   TRACE_EVENT0("flutter", "viewDidLoad");
 
   if (_engineNeedsLaunch) {
@@ -452,12 +451,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   }
 
   FML_DCHECK([_engine.get() viewController] != nil)
-  << "FlutterViewController::viewWillAppear:AttachView ViewController was nil";
+      << "FlutterViewController::viewWillAppear:AttachView ViewController was nil";
   [_engine.get() attachView];
 
   [super viewDidLoad];
 }
-
 
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");

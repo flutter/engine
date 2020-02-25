@@ -63,14 +63,14 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
                                                        accessibility_bridge_.reset();
                                                        owner_controller_.reset();
                                                      }] retain]);
-    
-    if (owner_controller_ && [owner_controller_.get() isViewLoaded]) {
-      this->attachView();
-    }
-    // Do not call `NotifyCreated()` here - let FlutterViewController take care
-    // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
-    // it can occasionally get invoked before the viewport is sized resulting in
-    // a framebuffer that will not be able to completely attach.
+
+  if (owner_controller_ && [owner_controller_.get() isViewLoaded]) {
+    this->attachView();
+  }
+  // Do not call `NotifyCreated()` here - let FlutterViewController take care
+  // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
+  // it can occasionally get invoked before the viewport is sized resulting in
+  // a framebuffer that will not be able to completely attach.
 }
 
 void PlatformViewIOS::attachView() {
