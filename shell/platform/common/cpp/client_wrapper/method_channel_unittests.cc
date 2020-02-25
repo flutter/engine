@@ -58,7 +58,8 @@ TEST(MethodChannelTest, Registration) {
   channel.SetMethodCallHandler(
       [&callback_called, method_name](const auto& call, auto result) {
         callback_called = true;
-        // Ensure that the wrapper recieved a correctly decoded call and a result.
+        // Ensure that the wrapper recieved a correctly decoded call and a
+        // result.
         EXPECT_EQ(call.method_name(), method_name);
         EXPECT_NE(result, nullptr);
       });
