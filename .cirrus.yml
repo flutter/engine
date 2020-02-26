@@ -13,7 +13,7 @@ web_shard_template: &WEB_SHARD_TEMPLATE
   fetch_framework_script: |
     cd $ENGINE_PATH/src
     ./flutter/tools/clone_flutter.sh
-    cd ../..
+    cd ../../../..
     bin/flutter update-packages --local-engine=host_debug_unopt
   script:
     - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
