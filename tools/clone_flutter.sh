@@ -1,12 +1,18 @@
 #!/bin/bash
 set -e
 
+
 echo "Framework path: $FRAMEWORK_PATH"
 
+# Go to the engine git repo to get the date of the latest commit.
+cd $ENGINE_PATH/src/flutter
 # Get latest commit's time for the engine repo.
 # Use date based on local time otherwise timezones might get mixed.
 LATEST_COMMIT_TIME_ENGINE=`git log -1 --date=local --format="%ad"`
 echo "Latest commit time on engine found as $LATEST_COMMIT_TIME_ENGINE"
+
+# Do rest of the task in the root directory
+cd ~
 mkdir -p $FRAMEWORK_PATH
 cd $FRAMEWORK_PATH
 # Clone the Flutter Framework.

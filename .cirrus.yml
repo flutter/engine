@@ -11,18 +11,7 @@ web_shard_template: &WEB_SHARD_TEMPLATE
     ./flutter/tools/gn --unoptimized --full-dart-sdk
     ninja -C out/host_debug_unopt
   fetch_framework_script: |
-    echo "Framework path: $FRAMEWORK_PATH"
-    cd $ENGINE_PATH/src/flutter
-    LATEST_COMMIT_TIME_ENGINE=`git log -1 --date=local --format="%ad"`
-    echo "Latest commit time on engine found as $LATEST_COMMIT_TIME_ENGINE"
-    cd ~
-    mkdir -p $FRAMEWORK_PATH
-    cd $FRAMEWORK_PATH
-    git clone https://github.com/flutter/flutter.git
-    cd flutter
-    COMMIT_NO=`git log --before="$LATEST_COMMIT_TIME_ENGINE" -n 1 | grep commit | cut -d ' ' -f2`
-    echo "Using the flutter/flutter commit $COMMIT_NO";
-    git reset --hard $COMMIT_NO
+    ./$ENGINE_PATH/src/flutter/tools/clone_flutter.sh
     bin/flutter update-packages --local-engine=host_debug_unopt
   script:
     - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
