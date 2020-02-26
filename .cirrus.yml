@@ -12,8 +12,10 @@ web_shard_template: &WEB_SHARD_TEMPLATE
     ninja -C out/host_debug_unopt
   fetch_framework_script: |
     echo "Framework path: $FRAMEWORK_PATH"
+    cd $ENGINE_PATH/src/flutter
     LATEST_COMMIT_TIME_ENGINE=`git log -1 --date=local --format="%ad"`
     echo "Latest commit time on engine found as $LATEST_COMMIT_TIME_ENGINE"
+    cd ~
     mkdir -p $FRAMEWORK_PATH
     cd $FRAMEWORK_PATH
     git clone https://github.com/flutter/flutter.git
