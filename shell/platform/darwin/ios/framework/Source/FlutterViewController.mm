@@ -125,6 +125,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // Coalescer that filters out superfluous keyboard notifications when the app
   // is being foregrounded.
   fml::scoped_nsobject<FlutterCoalescer> _updateViewportMetrics;
+  fml::scoped_nsobject<UIScrollView> _scrollView;
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -331,31 +332,24 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
   [self installSplashScreenViewIfNecessary];
-  if (@available(iOS 13, *)) {
-    // This is a workaround on iOS 13 and higher.  There isn't a way to get touches on the status
-    // bar to trigger scrolling to the top of a scroll view.  We place a UIScrollView underneath
-    // the status bar with a content offset so we can get those events.
-    // See also: https://github.com/flutter/flutter/issues/35050
-    UIScrollView* scrollView = [[UIScrollView alloc] init];
-    scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-    // The color shouldn't matter since it is underneath the status bar.
-    scrollView.backgroundColor = [UIColor colorWithRed:255 green:255 blue:255 alpha:255];
-    // Alpha can't be completely zero, otherwise we won't get events.  The scroll view should be
-    // obscured by the status bar so this shouldn't matter.
-    scrollView.alpha = 0.1f;
-    scrollView.delegate = self;
-    // This is an arbitrary small size.
-    scrollView.contentSize = CGSizeMake(10, 10);
-    scrollView.opaque = NO;
-    // This is an arbitrary offset that is not CGPointZero.
-    scrollView.contentOffset = CGPointMake(10, 10);
-    [self.view addSubview:scrollView];
-    UIStatusBarManager* manager =
-        [UIApplication sharedApplication].keyWindow.windowScene.statusBarManager;
-    CGRect statusBarFrame = manager.statusBarFrame;
-    scrollView.frame = CGRectMake(0, 0, statusBarFrame.size.width, statusBarFrame.size.height);
-    [scrollView release];
-  }
+  // This is a workaround on iOS 13 and higher.  There isn't a way to get touches on the status
+  // bar to trigger scrolling to the top of a scroll view.  We place a UIScrollView underneath
+  // the status bar with a content offset so we can get those events.
+  // See also: https://github.com/flutter/flutter/issues/35050
+  UIScrollView* scrollView = [[UIScrollView alloc] init];
+  scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+  // The color shouldn't matter since it is underneath the status bar.
+  scrollView.backgroundColor = UIColor.whiteColor;
+  // Alpha can't be completely zero, otherwise we won't get events.  The scroll view should be
+  // obscured by the status bar so this shouldn't matter.
+  scrollView.delegate = self;
+  // This is an arbitrary small size.
+  scrollView.contentSize = CGSizeMake(10, 10);
+  // This is an arbitrary offset that is not CGPointZero.
+  scrollView.contentOffset = CGPointMake(10, 10);
+  scrollView.bounds = CGRectMake(0, -10, 0, 10);
+  [self.view addSubview:scrollView];
+  _scrollView.reset(scrollView);
 }
 
 static void sendFakeTouchEvent(FlutterEngine* engine,
@@ -884,6 +878,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGSize viewSize = self.view.bounds.size;
   CGFloat scale = [UIScreen mainScreen].scale;
 
+  _scrollView.get().bounds = CGRectMake(0.0, -10.0, viewSize.width, 0);
+
   // First time since creation that the dimensions of its view is known.
   bool firstViewBoundsUpdate = !_viewportMetrics.physical_width;
   _viewportMetrics.device_pixel_ratio = scale;
@@ -1192,48 +1188,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
   } else {
     return @"normal";
-  }
-}
-
-#pragma mark - Status Bar touch event handling
-
-// Standard iOS status bar height in points.
-constexpr CGFloat kStandardStatusBarHeight = 20.0;
-
-- (void)handleStatusBarTouches:(UIEvent*)event {
-  if (@available(iOS 13, *)) {
-    // This call shouldn't be happening as of iOS 13, to be safe we ignore it,
-    // scrollViewShouldScrollToTop: will handle this functionality.
-    // See also: https://github.com/flutter/flutter/issues/35050
-    return;
-  }
-  CGFloat standardStatusBarHeight = kStandardStatusBarHeight;
-  if (@available(iOS 11, *)) {
-    standardStatusBarHeight = self.view.safeAreaInsets.top;
-  }
-
-  // If the status bar is double-height, don't handle status bar taps. iOS
-  // should open the app associated with the status bar.
-  CGRect statusBarFrame = [UIApplication sharedApplication].statusBarFrame;
-  if (statusBarFrame.size.height != standardStatusBarHeight) {
-    return;
-  }
-
-  // If we detect a touch in the status bar, synthesize a fake touch begin/end.
-  for (UITouch* touch in event.allTouches) {
-    if (touch.phase == UITouchPhaseBegan && touch.tapCount > 0) {
-      CGPoint windowLoc = [touch locationInView:nil];
-      CGPoint screenLoc = [touch.window convertPoint:windowLoc toWindow:nil];
-      if (CGRectContainsPoint(statusBarFrame, screenLoc)) {
-        NSSet* statusbarTouches = [NSSet setWithObject:touch];
-
-        flutter::PointerData::Change change = flutter::PointerData::Change::kDown;
-        [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change];
-        change = flutter::PointerData::Change::kUp;
-        [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change];
-        return;
-      }
-    }
   }
 }
 
