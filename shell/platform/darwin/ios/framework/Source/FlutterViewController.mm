@@ -338,15 +338,14 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // See also: https://github.com/flutter/flutter/issues/35050
   UIScrollView* scrollView = [[UIScrollView alloc] init];
   scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-  // The color shouldn't matter since it is underneath the status bar.
+  // The color shouldn't matter since it is offscreen.
   scrollView.backgroundColor = UIColor.whiteColor;
-  // Alpha can't be completely zero, otherwise we won't get events.  The scroll view should be
-  // obscured by the status bar so this shouldn't matter.
   scrollView.delegate = self;
   // This is an arbitrary small size.
   scrollView.contentSize = CGSizeMake(10, 10);
   // This is an arbitrary offset that is not CGPointZero.
   scrollView.contentOffset = CGPointMake(10, 10);
+  // This is some aribrary place offscreen.
   scrollView.bounds = CGRectMake(0, -10, 0, 10);
   [self.view addSubview:scrollView];
   _scrollView.reset(scrollView);
