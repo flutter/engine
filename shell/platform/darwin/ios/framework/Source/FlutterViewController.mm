@@ -877,6 +877,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGSize viewSize = self.view.bounds.size;
   CGFloat scale = [UIScreen mainScreen].scale;
 
+  // Purposefully place this offscreen.
   _scrollView.get().bounds = CGRectMake(0.0, -10.0, viewSize.width, 0);
 
   // First time since creation that the dimensions of its view is known.
