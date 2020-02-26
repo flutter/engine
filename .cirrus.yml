@@ -11,7 +11,7 @@ web_shard_template: &WEB_SHARD_TEMPLATE
     ./flutter/tools/gn --unoptimized --full-dart-sdk
     ninja -C out/host_debug_unopt
   fetch_framework_script: |
-    ./clone_flutter.sh
+    ./flutter/tools/clone_flutter.sh
     bin/flutter update-packages --local-engine=host_debug_unopt
   script:
     - dart --enable-asserts $FRAMEWORK_PATH/flutter/dev/bots/test.dart --local-engine=host_debug_unopt
