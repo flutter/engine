@@ -147,9 +147,8 @@ static void InitDartIO(Dart_Handle builtin_library,
   Dart_Handle network_profiling_type =
       Dart_GetType(io_lib, ToDart("_NetworkProfiling"), 0, nullptr);
   PropagateIfError(network_profiling_type);
-  result =
-      Dart_Invoke(network_profiling_type,
-                  ToDart("_registerServiceExtension"), 0, nullptr);
+  result = Dart_Invoke(network_profiling_type,
+                       ToDart("_registerServiceExtension"), 0, nullptr);
   PropagateIfError(result);
 }
 
