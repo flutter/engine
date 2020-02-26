@@ -6,6 +6,11 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "flutter/lib/ui/painting/multi_frame_codec.h"
+#include "flutter/runtime/dart_vm.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
+#include "flutter/testing/elf_loader.h"
+#include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
 #include "flutter/testing/thread_test.h"
@@ -14,7 +19,56 @@
 namespace flutter {
 namespace testing {
 
-using ImageDecoderFixtureTest = ThreadTest;
+class ImageDecoderFixtureTest : public ThreadTest {
+ public:
+  ImageDecoderFixtureTest()
+      : native_resolver_(std::make_shared<TestDartNativeResolver>()),
+        assets_dir_(fml::OpenDirectory(GetFixturesPath(),
+                                       false,
+                                       fml::FilePermission::kRead)),
+        aot_symbols_(LoadELFSymbolFromFixturesIfNeccessary()) {}
+
+  Settings CreateSettingsForFixture() {
+    Settings settings;
+    settings.leak_vm = false;
+    settings.task_observer_add = [](intptr_t, fml::closure) {};
+    settings.task_observer_remove = [](intptr_t) {};
+    settings.isolate_create_callback = [this]() {
+      native_resolver_->SetNativeResolverForIsolate();
+    };
+    SetSnapshotsAndAssets(settings);
+    return settings;
+  }
+
+ private:
+  std::shared_ptr<TestDartNativeResolver> native_resolver_;
+  fml::UniqueFD assets_dir_;
+  ELFAOTSymbols aot_symbols_;
+
+  void SetSnapshotsAndAssets(Settings& settings) {
+    if (!assets_dir_.is_valid()) {
+      return;
+    }
+
+    settings.assets_dir = assets_dir_.get();
+
+    // In JIT execution, all snapshots are present within the binary itself and
+    // don't need to be explicitly supplied by the embedder. In AOT, these
+    // snapshots will be present in the application AOT dylib.
+    if (DartVM::IsRunningPrecompiledCode()) {
+      PrepareSettingsForAOTWithSymbols(settings, aot_symbols_);
+    } else {
+      settings.application_kernels = [this]() {
+        std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
+        kernel_mappings.emplace_back(
+            fml::FileMapping::CreateReadOnly(assets_dir_, "kernel_blob.bin"));
+        return kernel_mappings;
+      };
+    }
+  }
+
+  FML_DISALLOW_COPY_AND_ASSIGN(ImageDecoderFixtureTest);
+};
 
 class TestIOManager final : public IOManager {
  public:
@@ -555,6 +609,123 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   assert_image(decode(300, 100));
   assert_image(decode(300, {}));
   assert_image(decode({}, 100));
+}
+
+TEST_F(ImageDecoderFixtureTest,
+       MultiFrameCodecCanBeCollectedBeforeIOTasksFinish) {
+  auto settings = CreateSettingsForFixture();
+  settings.leak_vm = false;
+  settings.enable_observatory = false;
+  auto vm_ref = DartVMRef::Create(settings);
+  auto vm_data = vm_ref.GetVMData();
+
+  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
+
+  ASSERT_TRUE(gif_mapping);
+
+  auto gif_codec = SkCodec::MakeFromData(gif_mapping);
+  ASSERT_TRUE(gif_codec);
+
+  auto loop = fml::ConcurrentMessageLoop::Create();
+  TaskRunners runners(GetCurrentTestName(),         // label
+                      CreateNewThread("platform"),  // platform
+                      CreateNewThread("gpu"),       // gpu
+                      CreateNewThread("ui"),        // ui
+                      CreateNewThread("io")         // io
+  );
+
+  fml::AutoResetWaitableEvent latch;
+  fml::AutoResetWaitableEvent io_latch;
+  std::unique_ptr<TestIOManager> io_manager;
+  std::unique_ptr<ImageDecoder> image_decoder;
+
+  // Setup the IO manager.
+  runners.GetIOTaskRunner()->PostTask([&]() {
+    io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
+    latch.Signal();
+  });
+  latch.Wait();
+
+  auto isolate_weak = DartIsolate::CreateRootIsolate(
+      vm_data->GetSettings(),             // settings
+      vm_data->GetIsolateSnapshot(),      // isolate_snapshot
+      runners,                            // task_runners
+      {},                                 // window
+      {},                                 // snapshot_delegate
+      io_manager->GetWeakIOManager(),     // io_manager
+      {},                                 // unref_queue
+      {},                                 // image_decoder
+      "main.dart",                        // advisory_script_uri
+      "main",                             // advisory_script_entrypoint
+      nullptr,                            // flags
+      settings.isolate_create_callback,   // isolate create callback
+      settings.isolate_shutdown_callback  // isolate shutdown callback
+  );
+
+  auto isolate = isolate_weak.lock();
+
+  // Setup the image decoder.
+  runners.GetUITaskRunner()->PostTask([&]() {
+    image_decoder = std::make_unique<ImageDecoder>(
+        runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
+
+    latch.Signal();
+  });
+  latch.Wait();
+
+  // Latch the IO task runner.
+  runners.GetIOTaskRunner()->PostTask([&]() { io_latch.Wait(); });
+
+  runners.GetUITaskRunner()->PostTask([&]() {
+    fml::RefPtr<MultiFrameCodec> codec;
+
+    Dart_EnterIsolate(isolate->isolate());
+    Dart_EnterScope();
+
+    Dart_Handle core_lib = Dart_LookupLibrary(Dart_NewStringFromCString("dart:core"));
+    EXPECT_FALSE(Dart_IsError(core_lib));
+    Dart_Handle object_type = Dart_GetType(core_lib, Dart_NewStringFromCString("Object"), 0, nullptr);
+    EXPECT_FALSE(Dart_IsError(object_type));
+    Dart_Handle object = Dart_New(object_type, Dart_EmptyString(), 0, nullptr);
+    EXPECT_FALSE(Dart_IsError(object));
+    Dart_Handle closure = Dart_GetField(object, Dart_NewStringFromCString("toString"));
+    EXPECT_FALSE(Dart_IsError(closure));
+    EXPECT_TRUE(Dart_IsClosure(closure));
+
+    codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_codec));
+    FML_DLOG(ERROR) << "1";
+    codec->getNextFrame(closure);
+
+    FML_DLOG(ERROR) << "2";
+
+    codec = nullptr;
+    FML_DLOG(ERROR) << "3";
+
+    Dart_ExitScope();
+    Dart_ExitIsolate();
+
+    EXPECT_FALSE(codec);
+
+    io_latch.Signal();
+    FML_DLOG(ERROR) << "4";
+
+    latch.Signal();
+  });
+  latch.Wait();
+
+  // Destroy the IO manager
+  runners.GetIOTaskRunner()->PostTask([&]() {
+    io_manager.reset();
+    latch.Signal();
+  });
+  latch.Wait();
+
+  // Destroy the image decoder
+  runners.GetUITaskRunner()->PostTask([&]() {
+    image_decoder.reset();
+    latch.Signal();
+  });
+  latch.Wait();
 }
 
 }  // namespace testing

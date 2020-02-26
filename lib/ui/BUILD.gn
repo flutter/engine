@@ -173,8 +173,14 @@ if (current_toolchain == host_toolchain) {
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/common",
+      "//flutter/fml",
+      "//flutter/lib/snapshot",
+      "//flutter/runtime",
+      "//flutter/shell/common",
       "//flutter/testing:dart",
       "//flutter/testing:opengl",
+      "//flutter/third_party/tonic",
+      "//third_party/dart/runtime/bin:elf_loader",
     ]
   }
 }
