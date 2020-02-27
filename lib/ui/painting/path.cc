@@ -267,7 +267,8 @@ void CanvasPath::shift(Dart_Handle path_handle, double dx, double dy) {
   path_.offset(dx, dy, &path->path_);
 }
 
-void CanvasPath::transform(Dart_Handle path_handle, tonic::Float64List& matrix4) {
+void CanvasPath::transform(Dart_Handle path_handle,
+                           tonic::Float64List& matrix4) {
   fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
   path_.transform(ToSkMatrix(matrix4), &path->path_);
   matrix4.Release();
