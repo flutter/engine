@@ -111,6 +111,7 @@ template("flutter_runner") {
 
     deps = [
              "$fuchsia_sdk_root/fidl:fuchsia.accessibility.semantics",
+             "$fuchsia_sdk_root/fidl:fuchsia.component.runner",
              "$fuchsia_sdk_root/fidl:fuchsia.fonts",
              "$fuchsia_sdk_root/fidl:fuchsia.images",
              "$fuchsia_sdk_root/fidl:fuchsia.intl",
