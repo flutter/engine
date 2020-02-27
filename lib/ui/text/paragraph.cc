@@ -94,13 +94,15 @@ void Paragraph::paint(Canvas* canvas, double x, double y) {
   m_paragraph->Paint(sk_canvas, x, y);
 }
 
-static tonic::Float32List EncodeTextBoxes(const std::vector<txt::Paragraph::TextBox>& boxes) {
+static tonic::Float32List EncodeTextBoxes(
+    const std::vector<txt::Paragraph::TextBox>& boxes) {
   // Layout:
   // First value is the number of values.
   // Then there are boxes.size() groups of 5 which are LTRBD, where D is the
   // text direction index.
   auto count = boxes.size() * 5;
-  tonic::Float32List result(Dart_NewTypedData(Dart_TypedData_kFloat32, 1 + count));
+  tonic::Float32List result(
+      Dart_NewTypedData(Dart_TypedData_kFloat32, 1 + count));
   result[0] = count;
   for (unsigned long i = 0; i < boxes.size(); i++) {
     auto position = (i * 5) + 1;
@@ -172,7 +174,8 @@ tonic::Float64List Paragraph::computeLineMetrics() {
   // Then there are boxes.size() groups of 9 which are the line metrics
   // properties
   auto count = metrics.size() * 9;
-  tonic::Float64List result(Dart_NewTypedData(Dart_TypedData_kFloat64, 1 + count));
+  tonic::Float64List result(
+      Dart_NewTypedData(Dart_TypedData_kFloat64, 1 + count));
   result[0] = count;
   for (unsigned long i = 0; i < metrics.size(); i++) {
     auto position = (i * 9) + 1;
