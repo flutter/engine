@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Generic callback signature, used by [_futurize].
@@ -54,62 +55,121 @@ String matrix4ToCssTransform(Matrix4 matrix) {
   return float64ListToCssTransform(matrix.storage);
 }
 
+/// Applies a transform to the [element].
+///
+/// See [float64ListToCssTransform] for details on how the CSS value is chosen.
+void setElementTransform(html.Element element, Float64List matrix4) {
+  element.style
+    ..transformOrigin = '0 0 0'
+    ..transform = float64ListToCssTransform(matrix4);
+}
+
 /// Converts [matrix] to CSS transform value.
-String matrix4ToCssTransform3d(Matrix4 matrix) {
-  return float64ListToCssTransform3d(matrix.storage);
+///
+/// To avoid blurry text on some screens this function uses a 2D CSS transform
+/// if it detects that [matrix] is a 2D transform. Otherwise, it uses a 3D CSS
+/// transform.
+///
+/// See also:
+///  * https://github.com/flutter/flutter/issues/32274
+///  * https://bugs.chromium.org/p/chromium/issues/detail?id=1040222
+String float64ListToCssTransform(Float64List matrix) {
+  assert(matrix.length == 16);
+  final TransformKind transformKind = transformKindOf(matrix);
+  if (transformKind == TransformKind.transform2d) {
+    return float64ListToCssTransform2d(matrix);
+  } else if (transformKind == TransformKind.complex) {
+    return float64ListToCssTransform3d(matrix);
+  } else {
+    assert(transformKind == TransformKind.identity);
+    return null;
+  }
+}
+
+/// The kind of effect a transform matrix performs.
+enum TransformKind {
+  /// No effect.
+  ///
+  /// We do not want to set any CSS properties in this case.
+  identity,
+
+  /// A transform that contains only 2d scale, rotation, and translation.
+  ///
+  /// We prefer to use "matrix" instead of "matrix3d" in this case.
+  transform2d,
+
+  /// All other kinds of transforms.
+  ///
+  /// In this case we will use "matrix3d".
+  complex,
+}
+
+/// Detects the kind of transform the [matrix] performs.
+TransformKind transformKindOf(Float64List matrix) {
+  assert(matrix.length == 16);
+  final Float64List m = matrix;
+
+  // If matrix contains scaling, rotation, z translation or
+  // perspective transform, it is not considered simple.
+  final bool isSimple2dTransform =
+      m[15] == 1.0 &&  // start reading from the last element to eliminate range checks in subsequent reads.
+      m[14] == 0.0 && // z translation is NOT simple
+      // m[13] - y translation is simple
+      // m[12] - x translation is simple
+      m[11] == 0.0 &&
+      m[10] == 1.0 &&
+      m[9] == 0.0 &&
+      m[8] == 0.0 &&
+      m[7] == 0.0 &&
+      m[6] == 0.0 &&
+      // m[5] - scale y is simple
+      // m[4] - 2D rotation is simple
+      m[3] == 0.0 &&
+      m[2] == 0.0;
+      // m[1] - 2D rotation is simple
+      // m[0] - scale x is simple
+
+  if (!isSimple2dTransform) {
+    return TransformKind.complex;
+  }
+
+  // From this point on we're sure the transform is 2D, but we don't know if
+  // it's identity or not. To check, we need to look at the remaining elements
+  // that were not checked above.
+  final bool isIdentityTransform =
+      m[0] == 1.0 &&
+      m[1] == 0.0 &&
+      m[4] == 0.0 &&
+      m[5] == 1.0 &&
+      m[12] == 0.0 &&
+      m[13] == 0.0;
+
+  if (isIdentityTransform) {
+    return TransformKind.identity;
+  } else {
+    return TransformKind.transform2d;
+  }
 }
 
 /// Returns `true` is the [matrix] describes an identity transformation.
 bool isIdentityFloat64ListTransform(Float64List matrix) {
   assert(matrix.length == 16);
-  final Float64List m = matrix;
-  return m[0] == 1.0 &&
-      m[1] == 0.0 &&
-      m[2] == 0.0 &&
-      m[3] == 0.0 &&
-      m[4] == 0.0 &&
-      m[5] == 1.0 &&
-      m[6] == 0.0 &&
-      m[7] == 0.0 &&
-      m[8] == 0.0 &&
-      m[9] == 0.0 &&
-      m[10] == 1.0 &&
-      m[11] == 0.0 &&
-      m[12] == 0.0 &&
-      m[13] == 0.0 &&
-      m[14] == 0.0 &&
-      m[15] == 1.0;
+  return transformKindOf(matrix) == TransformKind.identity;
 }
 
-/// Converts [matrix] to CSS transform value.
-String float64ListToCssTransform(Float64List matrix) {
-  assert(matrix.length == 16);
-  final Float64List m = matrix;
-  if (m[0] == 1.0 &&
-      m[1] == 0.0 &&
-      m[2] == 0.0 &&
-      m[3] == 0.0 &&
-      m[4] == 0.0 &&
-      m[5] == 1.0 &&
-      m[6] == 0.0 &&
-      m[7] == 0.0 &&
-      m[8] == 0.0 &&
-      m[9] == 0.0 &&
-      m[10] == 1.0 &&
-      m[11] == 0.0 &&
-      // 12 can be anything
-      // 13 can be anything
-      m[14] == 0.0 &&
-      m[15] == 1.0) {
-    final double tx = m[12];
-    final double ty = m[13];
-    return 'translate(${tx}px, ${ty}px)';
-  } else {
-    return 'matrix3d(${m[0]},${m[1]},${m[2]},${m[3]},${m[4]},${m[5]},${m[6]},${m[7]},${m[8]},${m[9]},${m[10]},${m[11]},${m[12]},${m[13]},${m[14]},${m[15]})';
-  }
+/// Converts [matrix] to CSS transform 2D matrix value.
+///
+/// The [matrix] must not be a [TransformKind.complex] transform, because CSS
+/// `matrix` can only express 2D transforms. [TransformKind.identity] is
+/// permitted. However, it is inefficient to construct a matrix for an identity
+/// transform. Consider removing the CSS `transform` property from elements
+/// that apply identity transform.
+String float64ListToCssTransform2d(Float64List matrix) {
+  assert (transformKindOf(matrix) != TransformKind.complex);
+  return 'matrix(${matrix[0]},${matrix[1]},${matrix[4]},${matrix[5]},${matrix[12]},${matrix[13]})';
 }
 
-/// Converts [matrix] to CSS transform value.
+/// Converts [matrix] to a 3D CSS transform value.
 String float64ListToCssTransform3d(Float64List matrix) {
   assert(matrix.length == 16);
   final Float64List m = matrix;
@@ -236,21 +296,57 @@ int _clipIdCounter = 0;
 /// Calling this method updates [_clipIdCounter]. The HTML id of the generated
 /// clip is set to "svgClip${_clipIdCounter}", e.g. "svgClip123".
 String _pathToSvgClipPath(ui.Path path,
-    {double offsetX = 0, double offsetY = 0}) {
+    {double offsetX = 0,
+    double offsetY = 0,
+    double scaleX = 1.0,
+    double scaleY = 1.0}) {
   _clipIdCounter += 1;
-  final ui.Rect bounds = path.getBounds();
   final StringBuffer sb = StringBuffer();
-  sb.write('<svg width="${bounds.right}" height="${bounds.bottom}" '
+  sb.write('<svg width="0" height="0" '
       'style="position:absolute">');
   sb.write('<defs>');
 
   final String clipId = 'svgClip$_clipIdCounter';
-  sb.write('<clipPath id=$clipId>');
+  sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
 
-  sb.write('<path fill="#FFFFFF" d="');
+  sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
   pathToSvg(path, sb, offsetX: offsetX, offsetY: offsetY);
   sb.write('"></path></clipPath></defs></svg');
   return sb.toString();
+}
+
+/// Converts color to a css compatible attribute value.
+String colorToCssString(ui.Color color) {
+  if (color == null) {
+    return null;
+  }
+  final int value = color.value;
+  if ((0xff000000 & value) == 0xff000000) {
+    return _colorToCssStringRgbOnly(color);
+  } else {
+    final double alpha = ((value >> 24) & 0xFF) / 255.0;
+    final StringBuffer sb = StringBuffer();
+    sb.write('rgba(');
+    sb.write(((value >> 16) & 0xFF).toString());
+    sb.write(',');
+    sb.write(((value >> 8) & 0xFF).toString());
+    sb.write(',');
+    sb.write((value & 0xFF).toString());
+    sb.write(',');
+    sb.write(alpha.toString());
+    sb.write(')');
+    return sb.toString();
+  }
+}
+
+/// Returns the CSS value of this color without the alpha component.
+///
+/// This is useful when painting shadows as on the Web shadow opacity combines
+/// with the paint opacity.
+String _colorToCssStringRgbOnly(ui.Color color) {
+  final int value = color.value;
+  final String paddedValue = '00000${value.toRadixString(16)}';
+  return '#${paddedValue.substring(paddedValue.length - 6)}';
 }
 
 /// Determines if the (dynamic) exception passed in is a NS_ERROR_FAILURE
@@ -307,4 +403,34 @@ String canonicalizeFontFamily(String fontFamily) {
     return fontFamily;
   }
   return '"$fontFamily", $_fallbackFontFamily, sans-serif';
+}
+
+/// Converts a list of [Offset] to a typed array of floats.
+Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
+  if (offsetList == null) {
+    return null;
+  }
+  final int length = offsetList.length;
+  final floatList = Float32List(length * 2);
+  for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
+    floatList[destIndex] = offsetList[i].dx;
+    floatList[destIndex + 1] = offsetList[i].dy;
+  }
+  return floatList;
+}
+
+/// Apply this function to container elements in the HTML render tree (this is
+/// not relevant to semantics tree).
+///
+/// On WebKit browsers this will apply `z-order: 0` to ensure that clips are
+/// applied correctly. Otherwise, the browser will refuse to clip its contents.
+///
+/// Other possible fixes that were rejected:
+///
+/// * Use 3D transform instead of 2D: this does not work because it causes text
+///   blurriness: https://github.com/flutter/flutter/issues/32274
+void applyWebkitClipFix(html.Element containerElement) {
+  if (browserEngine == BrowserEngine.webkit) {
+    containerElement.style.zIndex = '0';
+  }
 }

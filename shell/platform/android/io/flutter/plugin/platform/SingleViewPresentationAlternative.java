@@ -58,10 +58,11 @@ class SingleViewPresentationAlternative {
     // Contains views that were added directly to the window manager (e.g android.widget.PopupWindow).
     private FakeWindowViewGroup fakeWindowViewGroup;
 
-    private final PlatformViewFactory viewFactory;
+    container = new FrameLayout(getContext());
 
-    // A reference to the current accessibility bridge to which accessibility events will be delegated.
-    private final AccessibilityEventsDelegate accessibilityEventsDelegate;
+    // Our base mContext has already been wrapped with an IMM cache at instantiation time, but
+    // we want to wrap it again here to also return state.windowManagerHandler.
+    Context context = new PresentationContext(getContext(), state.windowManagerHandler);
 
     private final OnFocusChangeListener focusChangeListener;
 
@@ -207,186 +208,154 @@ class SingleViewPresentationAlternative {
 		}
     }
 
-    /** Answers calls for {@link InputMethodManager} with an instance cached at creation time. */
-    // TODO(mklim): This caches the IMM at construction time and won't pick up any changes. In rare
-    // cases where the FlutterView changes windows this will return an outdated instance. This
-    // should be fixed to instead defer returning the IMM to something that know's FlutterView's
-    // true Context.
-    private static class ImmContext extends ContextWrapper {
-        private @NonNull
-        final InputMethodManager inputMethodManager;
+    @Override
+    public Context createDisplayContext(Display display) {
+      Context displayContext = super.createDisplayContext(display);
+      return new ImmContext(displayContext, inputMethodManager);
+    }
+  }
 
-        ImmContext(Context base) {
-            this(base, /*inputMethodManager=*/null);
-        }
+  /** Proxies a Context replacing the WindowManager with our custom instance. */
+  // TODO(mklim): This caches the IMM at construction time and won't pick up any changes. In rare
+  // cases where the FlutterView changes windows this will return an outdated instance. This
+  // should be fixed to instead defer returning the IMM to something that know's FlutterView's
+  // true Context.
+  private static class PresentationContext extends ContextWrapper {
+    private @NonNull final WindowManagerHandler windowManagerHandler;
+    private @Nullable WindowManager windowManager;
 
-        private ImmContext(Context base, @Nullable InputMethodManager inputMethodManager) {
-            super(base);
-            this.inputMethodManager = inputMethodManager != null ? inputMethodManager : (InputMethodManager) base.getSystemService(INPUT_METHOD_SERVICE);
-        }
-
-        @Override
-        public Object getSystemService(String name) {
-            if (INPUT_METHOD_SERVICE.equals(name)) {
-                return inputMethodManager;
-            }
-            return super.getSystemService(name);
-        }
-
-        @Override
-        public Context createDisplayContext(Display display) {
-            Context displayContext = super.createDisplayContext(display);
-            return new ImmContext(displayContext, inputMethodManager);
-        }
+    PresentationContext(Context base, @NonNull WindowManagerHandler windowManagerHandler) {
+      super(base);
+      this.windowManagerHandler = windowManagerHandler;
     }
 
-    /** Proxies a Context replacing the WindowManager with our custom instance. */
-    // TODO(mklim): This caches the IMM at construction time and won't pick up any changes. In rare
-    // cases where the FlutterView changes windows this will return an outdated instance. This
-    // should be fixed to instead defer returning the IMM to something that know's FlutterView's
-    // true Context.
-    private static class PresentationContext extends ContextWrapper {
-        private @NonNull
-        final WindowManagerHandler windowManagerHandler;
-        private @Nullable
-        WindowManager windowManager;
-
-        PresentationContext(Context base, @NonNull WindowManagerHandler windowManagerHandler) {
-            super(base);
-            this.windowManagerHandler = windowManagerHandler;
-        }
-
-        @Override
-        public Object getSystemService(String name) {
-            if (WINDOW_SERVICE.equals(name)) {
-                return getWindowManager();
-            }
-            return super.getSystemService(name);
-        }
-
-        private WindowManager getWindowManager() {
-            if (windowManager == null) {
-                windowManager = windowManagerHandler.getWindowManager();
-            }
-            return windowManager;
-        }
+    @Override
+    public Object getSystemService(String name) {
+      if (WINDOW_SERVICE.equals(name)) {
+        return getWindowManager();
+      }
+      return super.getSystemService(name);
     }
 
-    /*
-     * A dynamic proxy handler for a WindowManager with custom overrides.
-     *
-     * The presentation's window manager delegates all calls to the default window manager.
-     * WindowManager#addView calls triggered by views that are attached to the virtual display are crashing
-     * (see: https://github.com/flutter/flutter/issues/20714). This was triggered when selecting text in an embedded
-     * WebView (as the selection handles are implemented as popup windows).
-     *
-     * This dynamic proxy overrides the addView, removeView, removeViewImmediate, and updateViewLayout methods
-     * to prevent these crashes.
-     *
-     * This will be more efficient as a static proxy that's not using reflection, but as the engine is currently
-     * not being built against the latest Android SDK we cannot override all relevant method.
-     * Tracking issue for upgrading the engine's Android sdk: https://github.com/flutter/flutter/issues/20717
-     */
-    static class WindowManagerHandler implements InvocationHandler {
-        private static final String TAG = "PlatformViewsController";
+    private WindowManager getWindowManager() {
+      if (windowManager == null) {
+        windowManager = windowManagerHandler.getWindowManager();
+      }
+      return windowManager;
+    }
+  }
 
-        private final WindowManager delegate;
-        FakeWindowViewGroup fakeWindowRootView;
+  /*
+   * A dynamic proxy handler for a WindowManager with custom overrides.
+   *
+   * The presentation's window manager delegates all calls to the default window manager.
+   * WindowManager#addView calls triggered by views that are attached to the virtual display are crashing
+   * (see: https://github.com/flutter/flutter/issues/20714). This was triggered when selecting text in an embedded
+   * WebView (as the selection handles are implemented as popup windows).
+   *
+   * This dynamic proxy overrides the addView, removeView, removeViewImmediate, and updateViewLayout methods
+   * to prevent these crashes.
+   *
+   * This will be more efficient as a static proxy that's not using reflection, but as the engine is currently
+   * not being built against the latest Android SDK we cannot override all relevant method.
+   * Tracking issue for upgrading the engine's Android sdk: https://github.com/flutter/flutter/issues/20717
+   */
+  static class WindowManagerHandler implements InvocationHandler {
+    private static final String TAG = "PlatformViewsController";
 
-        WindowManagerHandler(WindowManager delegate, FakeWindowViewGroup fakeWindowViewGroup) {
-            this.delegate = delegate;
-            fakeWindowRootView = fakeWindowViewGroup;
-        }
+    private final WindowManager delegate;
+    FakeWindowViewGroup fakeWindowRootView;
 
-        public WindowManager getWindowManager() {
-            return (WindowManager) Proxy.newProxyInstance(
-                    WindowManager.class.getClassLoader(),
-                    new Class<?>[] { WindowManager.class },
-                    this
-            );
-        }
-
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            switch (method.getName()) {
-                case "addView":
-                    addView(args);
-                    return null;
-                case "removeView":
-                    removeView(args);
-                    return null;
-                case "removeViewImmediate":
-                    removeViewImmediate(args);
-                    return null;
-                case "updateViewLayout":
-                    updateViewLayout(args);
-                    return null;
-            }
-            try {
-                return method.invoke(delegate, args);
-            } catch (InvocationTargetException e) {
-                throw e.getCause();
-            }
-        }
-
-        private void addView(Object[] args) {
-            if (fakeWindowRootView == null) {
-                Log.w(TAG, "Embedded view called addView while detached from presentation");
-                return;
-            }
-            View view = (View) args[0];
-            WindowManager.LayoutParams layoutParams = (WindowManager.LayoutParams) args[1];
-            fakeWindowRootView.addView(view, layoutParams);
-        }
-
-        private void removeView(Object[] args) {
-            if (fakeWindowRootView == null) {
-                Log.w(TAG, "Embedded view called removeView while detached from presentation");
-                return;
-            }
-            View view = (View) args[0];
-            fakeWindowRootView.removeView(view);
-        }
-
-        private void removeViewImmediate(Object[] args) {
-            if (fakeWindowRootView == null) {
-                Log.w(TAG, "Embedded view called removeViewImmediate while detached from presentation");
-                return;
-            }
-            View view = (View) args[0];
-            view.clearAnimation();
-            fakeWindowRootView.removeView(view);
-        }
-
-        private void updateViewLayout(Object[] args) {
-            if (fakeWindowRootView == null) {
-                Log.w(TAG, "Embedded view called updateViewLayout while detached from presentation");
-                return;
-            }
-            View view = (View) args[0];
-            WindowManager.LayoutParams layoutParams = (WindowManager.LayoutParams) args[1];
-            fakeWindowRootView.updateViewLayout(view, layoutParams);
-        }
+    WindowManagerHandler(WindowManager delegate, FakeWindowViewGroup fakeWindowViewGroup) {
+      this.delegate = delegate;
+      fakeWindowRootView = fakeWindowViewGroup;
     }
 
-    private static class AccessibilityDelegatingFrameLayout extends FrameLayout {
-        private final AccessibilityEventsDelegate accessibilityEventsDelegate;
-        private final View embeddedView;
+    public WindowManager getWindowManager() {
+      return (WindowManager)
+          Proxy.newProxyInstance(
+              WindowManager.class.getClassLoader(), new Class<?>[] {WindowManager.class}, this);
+    }
 
-        public AccessibilityDelegatingFrameLayout(
-                Context context,
-                AccessibilityEventsDelegate accessibilityEventsDelegate,
-                View embeddedView
-        ) {
-            super(context);
-            this.accessibilityEventsDelegate = accessibilityEventsDelegate;
-            this.embeddedView = embeddedView;
-        }
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      switch (method.getName()) {
+        case "addView":
+          addView(args);
+          return null;
+        case "removeView":
+          removeView(args);
+          return null;
+        case "removeViewImmediate":
+          removeViewImmediate(args);
+          return null;
+        case "updateViewLayout":
+          updateViewLayout(args);
+          return null;
+      }
+      try {
+        return method.invoke(delegate, args);
+      } catch (InvocationTargetException e) {
+        throw e.getCause();
+      }
+    }
 
-        @Override
-        public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
-            return accessibilityEventsDelegate.requestSendAccessibilityEvent(embeddedView, child, event);
-        }
+    private void addView(Object[] args) {
+      if (fakeWindowRootView == null) {
+        Log.w(TAG, "Embedded view called addView while detached from presentation");
+        return;
+      }
+      View view = (View) args[0];
+      WindowManager.LayoutParams layoutParams = (WindowManager.LayoutParams) args[1];
+      fakeWindowRootView.addView(view, layoutParams);
+    }
+
+    private void removeView(Object[] args) {
+      if (fakeWindowRootView == null) {
+        Log.w(TAG, "Embedded view called removeView while detached from presentation");
+        return;
+      }
+      View view = (View) args[0];
+      fakeWindowRootView.removeView(view);
+    }
+
+    private void removeViewImmediate(Object[] args) {
+      if (fakeWindowRootView == null) {
+        Log.w(TAG, "Embedded view called removeViewImmediate while detached from presentation");
+        return;
+      }
+      View view = (View) args[0];
+      view.clearAnimation();
+      fakeWindowRootView.removeView(view);
+    }
+
+    private void updateViewLayout(Object[] args) {
+      if (fakeWindowRootView == null) {
+        Log.w(TAG, "Embedded view called updateViewLayout while detached from presentation");
+        return;
+      }
+      View view = (View) args[0];
+      WindowManager.LayoutParams layoutParams = (WindowManager.LayoutParams) args[1];
+      fakeWindowRootView.updateViewLayout(view, layoutParams);
+    }
+  }
+
+  private static class AccessibilityDelegatingFrameLayout extends FrameLayout {
+    private final AccessibilityEventsDelegate accessibilityEventsDelegate;
+    private final View embeddedView;
+
+    public AccessibilityDelegatingFrameLayout(
+        Context context,
+        AccessibilityEventsDelegate accessibilityEventsDelegate,
+        View embeddedView) {
+      super(context);
+      this.accessibilityEventsDelegate = accessibilityEventsDelegate;
+      this.embeddedView = embeddedView;
+    }
+
+    @Override
+    public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
+      return accessibilityEventsDelegate.requestSendAccessibilityEvent(embeddedView, child, event);
     }
 
 }

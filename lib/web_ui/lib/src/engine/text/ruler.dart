@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Contains the subset of [ui.ParagraphStyle] properties that affect layout.
@@ -732,7 +733,22 @@ class ParagraphRuler {
     final List<html.Rectangle<num>> clientRects = rangeSpan.getClientRects();
     final List<ui.TextBox> boxes = <ui.TextBox>[];
 
+    final double maxLinesLimit = style.maxLines == null
+        ? double.infinity
+        : style.maxLines * lineHeightDimensions.height;
+
+    html.Rectangle<num> previousRect;
     for (html.Rectangle<num> rect in clientRects) {
+      // If [rect] is an empty box on the same line as the previous box, don't
+      // include it in the result.
+      if (rect.top == previousRect?.top && rect.left == rect.right) {
+        continue;
+      }
+      // As soon as we go beyond [maxLines], stop adding boxes.
+      if (rect.top >= maxLinesLimit) {
+        break;
+      }
+
       boxes.add(ui.TextBox.fromLTRBD(
         rect.left + alignOffset,
         rect.top,
@@ -740,6 +756,7 @@ class ParagraphRuler {
         rect.bottom,
         textDirection,
       ));
+      previousRect = rect;
     }
 
     // Cleanup after measuring the boxes.
@@ -815,7 +832,9 @@ class ParagraphRuler {
     final int len = constraintCache.length;
     for (int i = 0; i < len; i++) {
       final MeasurementResult item = constraintCache[i];
-      if (item.constraintWidth == constraints.width) {
+      if (item.constraintWidth == constraints.width &&
+          item.textAlign == paragraph._textAlign &&
+          item.textDirection == paragraph._textDirection) {
         return item;
       }
     }
@@ -867,7 +886,13 @@ class MeasurementResult {
   /// of each laid out line.
   final List<EngineLineMetrics> lines;
 
-  const MeasurementResult(
+  /// The text align value of the paragraph.
+  final ui.TextAlign textAlign;
+
+  /// The text direction of the paragraph.
+  final ui.TextDirection textDirection;
+
+  MeasurementResult(
     this.constraintWidth, {
     @required this.isSingleLine,
     @required this.width,
@@ -879,6 +904,8 @@ class MeasurementResult {
     @required this.alphabeticBaseline,
     @required this.ideographicBaseline,
     @required this.lines,
+    @required textAlign,
+    @required textDirection,
   })  : assert(constraintWidth != null),
         assert(isSingleLine != null),
         assert(width != null),
@@ -887,5 +914,7 @@ class MeasurementResult {
         assert(minIntrinsicWidth != null),
         assert(maxIntrinsicWidth != null),
         assert(alphabeticBaseline != null),
-        assert(ideographicBaseline != null);
+        assert(ideographicBaseline != null),
+        this.textAlign = textAlign ?? ui.TextAlign.start,
+        this.textDirection = textDirection ?? ui.TextDirection.ltr;
 }

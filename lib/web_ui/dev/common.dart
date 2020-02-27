@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:io' as io;
 
 import 'package:args/args.dart';
@@ -50,7 +51,8 @@ abstract class PlatformBinding {
   String getChromeExecutablePath(io.Directory versionDir);
   String getFirefoxExecutablePath(io.Directory versionDir);
   String getFirefoxLatestVersionUrl();
-  String getSafariSystemExecutablePath();
+  String getMacApplicationLauncher();
+  String getCommandToRunEdge();
 }
 
 const String _kBaseDownloadUrl =
@@ -84,8 +86,11 @@ class _WindowsBinding implements PlatformBinding {
       'https://download.mozilla.org/?product=firefox-latest&os=win&lang=en-US';
 
   @override
-  String getSafariSystemExecutablePath() =>
+  String getMacApplicationLauncher() =>
       throw UnsupportedError('Safari is not supported on Windows');
+
+  @override
+  String getCommandToRunEdge() => 'MicrosoftEdgeLauncher';
 }
 
 class _LinuxBinding implements PlatformBinding {
@@ -116,8 +121,12 @@ class _LinuxBinding implements PlatformBinding {
       'https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US';
 
   @override
-  String getSafariSystemExecutablePath() =>
+  String getMacApplicationLauncher() =>
       throw UnsupportedError('Safari is not supported on Linux');
+
+  @override
+  String getCommandToRunEdge() =>
+      throw UnsupportedError('Edge is not supported on Linux');
 }
 
 class _MacBinding implements PlatformBinding {
@@ -153,8 +162,11 @@ class _MacBinding implements PlatformBinding {
       'https://download.mozilla.org/?product=firefox-latest&os=osx&lang=en-US';
 
   @override
-  String getSafariSystemExecutablePath() =>
-      '/Applications/Safari.app/Contents/MacOS/Safari';
+  String getMacApplicationLauncher() => 'open';
+
+  @override
+  String getCommandToRunEdge() =>
+      throw UnimplementedError('Tests for Edge are not implemented for MacOS.');
 }
 
 class BrowserInstallation {
@@ -166,7 +178,7 @@ class BrowserInstallation {
   /// Browser version.
   final String version;
 
-  /// Path the the browser executable.
+  /// Path the browser executable.
   final String executable;
 }
 

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 /// Signature of callbacks that have no arguments and return no data.
@@ -472,19 +473,17 @@ class Locale {
   bool operator ==(dynamic other) {
     if (identical(this, other))
       return true;
-    if (other is! Locale)
-      return false;
-    final Locale typedOther = other;
-    return languageCode == typedOther.languageCode
-        && scriptCode == typedOther.scriptCode
-        && countryCode == typedOther.countryCode;
+    return other is Locale
+        && other.languageCode == languageCode
+        && other.scriptCode == scriptCode
+        && other.countryCode == countryCode;
   }
 
   @override
   int get hashCode => hashValues(languageCode, scriptCode, countryCode);
 
-  static Locale cachedLocale;
-  static String cachedLocaleString;
+  static Locale _cachedLocale;
+  static String _cachedLocaleString;
 
   /// Returns a string representing the locale.
   ///
@@ -493,11 +492,11 @@ class Locale {
   /// purposes only. For parseable results, use [toLanguageTag] instead.
   @override
   String toString() {
-    if (!identical(cachedLocale, this)) {
-      cachedLocale = this;
-      cachedLocaleString = _rawToString('_');
+    if (!identical(_cachedLocale, this)) {
+      _cachedLocale = this;
+      _cachedLocaleString = _rawToString('_');
     }
-    return cachedLocaleString;
+    return _cachedLocaleString;
   }
 
   /// Returns a syntactically valid Unicode BCP47 Locale Identifier.
@@ -1213,6 +1212,7 @@ class AccessibilityFeatures {
   static const int _kDisableAnimationsIndex = 1 << 2;
   static const int _kBoldTextIndex = 1 << 3;
   static const int _kReduceMotionIndex = 1 << 4;
+  static const int _kHighContrastIndex = 1 << 5;
 
   // A bitfield which represents each enabled feature.
   final int _index;
@@ -1240,6 +1240,11 @@ class AccessibilityFeatures {
   /// Only supported on iOS.
   bool get reduceMotion => _kReduceMotionIndex & _index != 0;
 
+  /// The platform is requesting that UI be rendered with darker colors.
+  ///
+  /// Only supported on iOS.
+  bool get highContrast => _kHighContrastIndex & _index != 0;
+
   @override
   String toString() {
     final List<String> features = <String>[];
@@ -1253,6 +1258,8 @@ class AccessibilityFeatures {
       features.add('boldText');
     if (reduceMotion)
       features.add('reduceMotion');
+    if (highContrast)
+      features.add('highContrast');
     return 'AccessibilityFeatures$features';
   }
 
@@ -1260,8 +1267,8 @@ class AccessibilityFeatures {
   bool operator ==(dynamic other) {
     if (other.runtimeType != runtimeType)
       return false;
-    final AccessibilityFeatures typedOther = other;
-    return _index == typedOther._index;
+    return other is AccessibilityFeatures
+        && other._index == _index;
   }
 
   @override

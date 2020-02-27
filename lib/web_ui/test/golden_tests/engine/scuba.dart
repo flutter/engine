@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:html' as html;
 
@@ -45,12 +46,12 @@ class EngineScubaTester {
   Future<void> diffScreenshot(
     String fileName, {
     ui.Rect region,
-    double maxDiffRate,
+    double maxDiffRatePercent,
   }) async {
     await matchGoldenFile(
       '$fileName.png',
       region: region ?? viewportRegion,
-      maxDiffRate: maxDiffRate,
+      maxDiffRatePercent: maxDiffRatePercent,
     );
   }
 
@@ -62,7 +63,7 @@ class EngineScubaTester {
     EngineCanvas canvas,
     String fileName, {
     ui.Rect region,
-    double maxDiffRate,
+    double maxDiffRatePercent,
   }) async {
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');
@@ -76,7 +77,7 @@ class EngineScubaTester {
       await diffScreenshot(
         screenshotName,
         region: region,
-        maxDiffRate: maxDiffRate,
+        maxDiffRatePercent: maxDiffRatePercent,
       );
     } finally {
       // The page is reused across tests, so remove the element after taking the
@@ -132,7 +133,7 @@ void testEachCanvas(String description, CanvasTest body,
 
 final ui.TextStyle _defaultTextStyle = ui.TextStyle(
   color: const ui.Color(0xFF000000),
-  fontFamily: 'Arial',
+  fontFamily: 'Roboto',
   fontSize: 14,
 );
 
@@ -148,4 +149,14 @@ ui.Paragraph paragraph(
   builder.addText(text);
   builder.pop();
   return builder.build()..layout(ui.ParagraphConstraints(width: maxWidth));
+}
+
+/// Configures the test to use bundled Roboto and Ahem fonts to avoid golden
+/// screenshot differences due to differences in the preinstalled system fonts.
+void setUpStableTestFonts() {
+  setUp(() async {
+    await ui.webOnlyInitializePlatform();
+    ui.webOnlyFontCollection.debugRegisterTestFonts();
+    await ui.webOnlyFontCollection.ensureFontsLoaded();
+  });
 }

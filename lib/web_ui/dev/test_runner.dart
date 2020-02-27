@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:io' as io;
 
@@ -60,6 +61,12 @@ class TestCommand extends Command<bool> {
 
     _copyTestFontsIntoWebUi();
     await _buildHostPage();
+    if (io.Platform.isWindows) {
+      // On Dart 2.7 or greater, it gives an error for not
+      // recognized "pub" version and asks for "pub" get.
+      // See: https://github.com/dart-lang/sdk/issues/39738
+      await _runPubGet();
+    }
 
     final List<FilePath> targets =
         this.targets.map((t) => FilePath.fromCwd(t)).toList();
@@ -162,7 +169,9 @@ class TestCommand extends Command<bool> {
           // Not a test file at all. Skip.
           continue;
         }
-        if(!path.split(testFilePath.relativeToWebUi).contains('golden_tests')) {
+        if (!path
+            .split(testFilePath.relativeToWebUi)
+            .contains('golden_tests')) {
           unitTestFiles.add(testFilePath);
         }
       }
@@ -175,6 +184,22 @@ class TestCommand extends Command<bool> {
   void _checkExitCode() {
     if (io.exitCode != 0) {
       io.stderr.writeln('Process exited with exit code ${io.exitCode}.');
+      io.exit(1);
+    }
+  }
+
+  Future<void> _runPubGet() async {
+    final int exitCode = await runProcess(
+      environment.pubExecutable,
+      <String>[
+        'get',
+      ],
+      workingDirectory: environment.webUiRootDir.path,
+    );
+
+    if (exitCode != 0) {
+      io.stderr
+          .writeln('Failed to run pub get. Exited with exit code $exitCode');
       io.exit(1);
     }
   }
@@ -226,9 +251,7 @@ class TestCommand extends Command<bool> {
   }
 
   Future<void> _buildTests({List<FilePath> targets}) async {
-    final int exitCode = await runProcess(
-      environment.pubExecutable,
-      <String>[
+    List<String> arguments = <String>[
         'run',
         'build_runner',
         'build',
@@ -240,7 +263,10 @@ class TestCommand extends Command<bool> {
             '--build-filter=${path.relativeToWebUi}.js',
             '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
           ],
-      ],
+      ];
+    final int exitCode = await runProcess(
+      environment.pubExecutable,
+      arguments,
       workingDirectory: environment.webUiRootDir.path,
     );
 
@@ -263,7 +289,7 @@ class TestCommand extends Command<bool> {
       ...<String>['-r', 'compact'],
       '--concurrency=$concurrency',
       if (isDebug) '--pause-after-load',
-      '--platform=$browser',
+      '--platform=${SupportedBrowsers.instance.supportedBrowserToPlatform[browser]}',
       '--precompiled=${environment.webUiRootDir.path}/build',
       SupportedBrowsers.instance.browserToConfiguration[browser],
       '--',

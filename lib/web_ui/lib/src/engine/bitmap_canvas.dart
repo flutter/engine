@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// A raw HTML canvas that is directly written to.
@@ -69,7 +70,7 @@ class BitmapCanvas extends EngineCanvas {
 
   /// Keeps track of what device pixel ratio was used when this [BitmapCanvas]
   /// was created.
-  final double _devicePixelRatio = html.window.devicePixelRatio;
+  final double _devicePixelRatio = EngineWindow.browserDevicePixelRatio;
 
   // Compensation for [_initializeViewport] snapping canvas position to 1 pixel.
   int _canvasPositionX, _canvasPositionY;
@@ -84,6 +85,13 @@ class BitmapCanvas extends EngineCanvas {
   // to be used to composite correctly. In practice this is very rare
   // with Widgets but CustomPainter(s) can hit this code path.
   bool _childOverdraw = false;
+
+  /// Forces text to be drawn using HTML rather than bitmap.
+  ///
+  /// Use this for tests only.
+  set debugChildOverdraw(bool value) {
+    _childOverdraw = value;
+  }
 
   /// Allocates a canvas with enough memory to paint a picture within the given
   /// [bounds].
@@ -136,13 +144,13 @@ class BitmapCanvas extends EngineCanvas {
 
   static int _widthToPhysical(double width) {
     final double boundsWidth = width + 1;
-    return (boundsWidth * html.window.devicePixelRatio).ceil() +
+    return (boundsWidth * EngineWindow.browserDevicePixelRatio).ceil() +
         2 * kPaddingPixels;
   }
 
   static int _heightToPhysical(double height) {
     final double boundsHeight = height + 1;
-    return (boundsHeight * html.window.devicePixelRatio).ceil() +
+    return (boundsHeight * EngineWindow.browserDevicePixelRatio).ceil() +
         2 * kPaddingPixels;
   }
 
@@ -180,7 +188,7 @@ class BitmapCanvas extends EngineCanvas {
   /// * [PersistedStandardPicture._recycleCanvas] which also uses this method
   ///   for the same reason.
   bool isReusable() {
-    return _devicePixelRatio == html.window.devicePixelRatio;
+    return _devicePixelRatio == EngineWindow.browserDevicePixelRatio;
   }
 
   /// Returns a data URI containing a representation of the image in this
@@ -206,7 +214,7 @@ class BitmapCanvas extends EngineCanvas {
       contextHandle.fillStyle = paintStyle;
       contextHandle.strokeStyle = paintStyle;
     } else if (paint.color != null) {
-      final String colorString = paint.color.toCssString();
+      final String colorString = colorToCssString(paint.color);
       contextHandle.fillStyle = colorString;
       contextHandle.strokeStyle = colorString;
     } else {
@@ -364,8 +372,8 @@ class BitmapCanvas extends EngineCanvas {
         _children.add(clipElement);
       }
     } else {
-      final String cssTransform = matrix4ToCssTransform3d(
-          transformWithOffset(_canvasPool.currentTransform, p));
+      final String cssTransform = float64ListToCssTransform(
+          transformWithOffset(_canvasPool.currentTransform, p).storage);
       imgElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform;
@@ -387,7 +395,6 @@ class BitmapCanvas extends EngineCanvas {
         !requiresClipping) {
       drawImage(image, dst.topLeft, paint);
     } else {
-      _applyPaint(paint);
       final html.Element imgElement = htmlImage.cloneImageElement();
       final ui.BlendMode blendMode = paint.blendMode;
       imgElement.style.mixBlendMode = _stringForBlendMode(blendMode);
@@ -437,9 +444,10 @@ class BitmapCanvas extends EngineCanvas {
     double y,
   ) {
     html.CanvasRenderingContext2D ctx = _canvasPool.context;
+    x += line.left;
     final double letterSpacing = style.letterSpacing;
     if (letterSpacing == null || letterSpacing == 0.0) {
-      ctx.fillText(line.text, x, y);
+      ctx.fillText(line.displayText, x, y);
     } else {
       // When letter-spacing is set, we go through a more expensive code path
       // that renders each character separately with the correct spacing
@@ -451,9 +459,9 @@ class BitmapCanvas extends EngineCanvas {
       // would put 5px before each letter and 5px after it, but on the web, we
       // put no spacing before the letter and 10px after it. This is how the DOM
       // does it.
-      final int len = line.text.length;
+      final int len = line.displayText.length;
       for (int i = 0; i < len; i++) {
-        final String char = line.text[i];
+        final String char = line.displayText[i];
         ctx.fillText(char, x, y);
         x += letterSpacing + ctx.measureText(char).width;
       }
@@ -482,11 +490,10 @@ class BitmapCanvas extends EngineCanvas {
       }
       _applyPaint(paragraph._paint.paintData);
 
-      final double x = offset.dx + paragraph._alignOffset;
       double y = offset.dy + paragraph.alphabeticBaseline;
       final int len = lines.length;
       for (int i = 0; i < len; i++) {
-        _drawTextLine(style, lines[i], x, y);
+        _drawTextLine(style, lines[i], offset.dx, y);
         y += paragraph._lineHeight;
       }
       return;
@@ -506,11 +513,10 @@ class BitmapCanvas extends EngineCanvas {
         _children.add(clipElement);
       }
     } else {
-      final String cssTransform = matrix4ToCssTransform3d(
-          transformWithOffset(_canvasPool.currentTransform, offset));
-      paragraphElement.style
-        ..transformOrigin = '0 0 0'
-        ..transform = cssTransform;
+      setElementTransform(
+        paragraphElement,
+        transformWithOffset(_canvasPool.currentTransform, offset).storage,
+      );
       rootElement.append(paragraphElement);
     }
     _children.add(paragraphElement);
@@ -555,13 +561,32 @@ class BitmapCanvas extends EngineCanvas {
       final ui.Color color = paint.color ?? ui.Color(0xFF000000);
       _canvasPool.contextHandle
         ..fillStyle = null
-        ..strokeStyle = color.toCssString();
+        ..strokeStyle = colorToCssString(color);
       _glRenderer.drawHairline(ctx, positions);
       restore();
       return;
     }
     _glRenderer.drawVertices(ctx, _widthInBitmapPixels, _heightInBitmapPixels,
         _canvasPool.currentTransform, vertices, blendMode, paint);
+  }
+
+  @override
+  void drawPoints(ui.PointMode pointMode, Float32List points,
+      double strokeWidth, ui.Color color) {
+    ContextStateHandle contextHandle = _canvasPool.contextHandle;
+    contextHandle
+      ..lineWidth = strokeWidth
+      ..blendMode = ui.BlendMode.srcOver
+      ..strokeCap = ui.StrokeCap.round
+      ..strokeJoin = ui.StrokeJoin.round
+      ..filter = '';
+    final String cssColor = colorToCssString(color);
+    if (pointMode == ui.PointMode.points) {
+      contextHandle.fillStyle = cssColor;
+    } else {
+      contextHandle.strokeStyle = cssColor;
+    }
+    _canvasPool.drawPoints(pointMode, points, strokeWidth / 2.0);
   }
 
   @override
@@ -680,6 +705,8 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
   for (int clipIndex = 0; clipIndex < len; clipIndex++) {
     final _SaveClipEntry entry = clipStack[clipIndex];
     final html.HtmlElement newElement = html.DivElement();
+    newElement.style.position = 'absolute';
+    applyWebkitClipFix(newElement);
     if (root == null) {
       root = newElement;
     } else {
@@ -695,10 +722,9 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
         ..translate(clipOffsetX, clipOffsetY);
       curElement.style
         ..overflow = 'hidden'
-        ..transform = matrix4ToCssTransform3d(newClipTransform)
-        ..transformOrigin = '0 0 0'
         ..width = '${rect.right - clipOffsetX}px'
         ..height = '${rect.bottom - clipOffsetY}px';
+      setElementTransform(curElement, newClipTransform.storage);
     } else if (entry.rrect != null) {
       final ui.RRect roundRect = entry.rrect;
       final String borderRadius =
@@ -711,19 +737,14 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
       curElement.style
         ..borderRadius = borderRadius
         ..overflow = 'hidden'
-        ..transform = matrix4ToCssTransform3d(newClipTransform)
-        ..transformOrigin = '0 0 0'
         ..width = '${roundRect.right - clipOffsetX}px'
         ..height = '${roundRect.bottom - clipOffsetY}px';
+      setElementTransform(curElement, newClipTransform.storage);
     } else if (entry.path != null) {
       curElement.style.transform = matrix4ToCssTransform(newClipTransform);
-      final String svgClipPath = _pathToSvgClipPath(entry.path);
+      String svgClipPath = createSvgClipDef(curElement, entry.path);
       final html.Element clipElement =
           html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
-      domRenderer.setElementStyle(
-          curElement, 'clip-path', 'url(#svgClip$_clipIdCounter)');
-      domRenderer.setElementStyle(
-          curElement, '-webkit-clip-path', 'url(#svgClip$_clipIdCounter)');
       clipDefs.add(clipElement);
     }
     // Reverse the transform of the clipping element so children can use
@@ -731,26 +752,22 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
     // TODO(flutter_web): When we have more than a single clip element,
     // reduce number of div nodes by merging (multiplying transforms).
     final html.Element reverseTransformDiv = html.DivElement();
-    reverseTransformDiv.style
-      ..transform =
-          _cssTransformAtOffset(newClipTransform.clone()..invert(), 0, 0)
-      ..transformOrigin = '0 0 0';
+    reverseTransformDiv.style.position = 'absolute';
+    setElementTransform(
+      reverseTransformDiv,
+      (newClipTransform.clone()..invert()).storage,
+    );
     curElement.append(reverseTransformDiv);
     curElement = reverseTransformDiv;
   }
 
   root.style.position = 'absolute';
   domRenderer.append(curElement, content);
-  content.style
-    ..transformOrigin = '0 0 0'
-    ..transform = _cssTransformAtOffset(currentTransform, offset.dx, offset.dy);
+  setElementTransform(
+    content,
+    transformWithOffset(currentTransform, offset).storage,
+  );
   return <html.Element>[root]..addAll(clipDefs);
-}
-
-String _cssTransformAtOffset(
-    Matrix4 transform, double offsetX, double offsetY) {
-  return matrix4ToCssTransform3d(
-      transformWithOffset(transform, ui.Offset(offsetX, offsetY)));
 }
 
 String _maskFilterToCss(ui.MaskFilter maskFilter) {

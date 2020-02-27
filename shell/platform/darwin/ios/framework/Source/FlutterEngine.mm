@@ -29,17 +29,19 @@
 
 NSString* const FlutterDefaultDartEntrypoint = nil;
 
+@interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
+@property(nonatomic, assign) FlutterEngine* flutterEngine;
+- (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine;
+@end
+
 @interface FlutterEngine () <FlutterTextInputDelegate, FlutterBinaryMessenger>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
+@property(nonatomic, readonly) NSMutableDictionary<NSString*, FlutterEngineRegistrar*>* registrars;
 
 @property(nonatomic, readwrite, copy) NSString* isolateId;
 @property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
-@end
-
-@interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
-- (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine;
 @end
 
 @implementation FlutterEngine {
@@ -98,6 +100,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     _dartProject.reset([project retain]);
 
   _pluginPublications = [NSMutableDictionary new];
+  _registrars = [[NSMutableDictionary alloc] init];
   _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
 
   _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
@@ -122,7 +125,24 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 }
 
 - (void)dealloc {
+  /// Notify plugins of dealloc.  This should happen first in dealloc since the
+  /// plugins may be talking to things like the binaryMessenger.
+  [_pluginPublications enumerateKeysAndObjectsUsingBlock:^(id key, id object, BOOL* stop) {
+    if ([object respondsToSelector:@selector(detachFromEngineForRegistrar:)]) {
+      NSObject<FlutterPluginRegistrar>* registrar = self.registrars[key];
+      [object detachFromEngineForRegistrar:registrar];
+    }
+  }];
+
+  /// nil out weak references.
+  [_registrars
+      enumerateKeysAndObjectsUsingBlock:^(id key, FlutterEngineRegistrar* registrar, BOOL* stop) {
+        registrar.flutterEngine = nil;
+      }];
+
+  [_labelPrefix release];
   [_pluginPublications release];
+  [_registrars release];
   _binaryMessenger.parent = nil;
   [_binaryMessenger release];
 
@@ -388,6 +408,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   static size_t shellCount = 1;
 
   auto settings = [_dartProject.get() settings];
+  auto windowData = [_dartProject.get() defaultWindowData];
 
   if (libraryURI) {
     FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
@@ -441,6 +462,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     );
     // Create the shell. This is a blocking operation.
     _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
+                                    std::move(windowData),    // window data
                                     std::move(settings),      // settings
                                     on_create_platform_view,  // platform view creation
                                     on_create_rasterizer      // rasterzier creation
@@ -454,6 +476,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     );
     // Create the shell. This is a blocking operation.
     _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
+                                    std::move(windowData),    // window data
                                     std::move(settings),      // settings
                                     on_create_platform_view,  // platform view creation
                                     on_create_rasterizer      // rasterzier creation
@@ -643,7 +666,10 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
   self.pluginPublications[pluginKey] = [NSNull null];
-  return [[[FlutterEngineRegistrar alloc] initWithPlugin:pluginKey flutterEngine:self] autorelease];
+  FlutterEngineRegistrar* result = [[FlutterEngineRegistrar alloc] initWithPlugin:pluginKey
+                                                                    flutterEngine:self];
+  self.registrars[pluginKey] = result;
+  return [result autorelease];
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {
@@ -682,20 +708,18 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 
 @implementation FlutterEngineRegistrar {
   NSString* _pluginKey;
-  FlutterEngine* _flutterEngine;
 }
 
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
-  _pluginKey = [pluginKey retain];
-  _flutterEngine = [flutterEngine retain];
+  _pluginKey = [pluginKey copy];
+  _flutterEngine = flutterEngine;
   return self;
 }
 
 - (void)dealloc {
   [_pluginKey release];
-  [_flutterEngine release];
   [super dealloc];
 }
 
@@ -737,7 +761,17 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(NSString*)factoryId {
-  [_flutterEngine platformViewsController] -> RegisterViewFactory(factory, factoryId);
+  [self registerViewFactory:factory
+                                withId:factoryId
+      gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
+}
+
+- (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
+                              withId:(NSString*)factoryId
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy {
+  [_flutterEngine platformViewsController] -> RegisterViewFactory(factory, factoryId,
+                                                                  gestureRecognizersBlockingPolicy);
 }
 
 @end

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 final bool _supportsDecode = js_util.getProperty(
         js_util.getProperty(
@@ -136,6 +137,11 @@ class HtmlImage implements ui.Image {
     }
   }
 
+  // TODO(het): Support this for asset images and images generated from
+  // `Picture`s.
   /// Returns an error message on failure, null on success.
-  String _toByteData(int format, Callback<Uint8List> callback) => null;
+  String _toByteData(int format, Callback<Uint8List> callback) {
+    callback(null);
+    return 'Image.toByteData is not supported in Flutter for Web';
+  }
 }

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 _GlRenderer _glRenderer;
@@ -617,8 +618,8 @@ class _OffscreenCanvas {
           height: heightInPixels,
         );
         _glCanvas.className = 'gl-canvas';
-        final double cssWidth = widthInPixels / html.window.devicePixelRatio;
-        final double cssHeight = heightInPixels / html.window.devicePixelRatio;
+        final double cssWidth = widthInPixels / EngineWindow.browserDevicePixelRatio;
+        final double cssHeight = heightInPixels / EngineWindow.browserDevicePixelRatio;
         _glCanvas.style
           ..position = 'absolute'
           ..width = '${cssWidth}px'

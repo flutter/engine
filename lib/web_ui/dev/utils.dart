@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:io' as io;
 
@@ -43,6 +44,9 @@ Future<int> runProcess(
     executable,
     arguments,
     workingDirectory: workingDirectory,
+    // Running the process in a system shell for Windows. Otherwise
+    // the process is not able to get Dart from path.
+    runInShell: io.Platform.isWindows,
     mode: io.ProcessStartMode.inheritStdio,
   );
   final int exitCode = await process.exitCode;

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// When set to true, all platform messages will be printed to the console.
@@ -20,10 +21,17 @@ class EngineWindow extends ui.Window {
     }
 
     if (experimentalUseSkia) {
-      return html.window.devicePixelRatio;
+      return browserDevicePixelRatio;
     } else {
       return 1.0;
     }
+  }
+
+  /// Returns device pixel ratio returns by browser.
+  static double get browserDevicePixelRatio {
+    double ratio = html.window.devicePixelRatio;
+    // Guard against WebOS returning 0.
+    return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
   }
 
   /// Overrides the default device pixel ratio.
@@ -40,6 +48,18 @@ class EngineWindow extends ui.Window {
 
   @override
   ui.Size get physicalSize {
+    if (_physicalSize == null) {
+      _computePhysicalSize();
+    }
+    assert(_physicalSize != null);
+    return _physicalSize;
+  }
+
+  /// Computes the physical size of the screen from [html.window].
+  ///
+  /// This function is expensive. It triggers browser layout if there are
+  /// pending DOM writes.
+  void _computePhysicalSize() {
     bool override = false;
 
     assert(() {
@@ -61,23 +81,15 @@ class EngineWindow extends ui.Window {
         windowInnerWidth = html.window.innerWidth * devicePixelRatio;
         windowInnerHeight = html.window.innerHeight * devicePixelRatio;
       }
-      if (windowInnerWidth != _lastKnownWindowInnerWidth ||
-          windowInnerHeight != _lastKnownWindowInnerHeight) {
-        _lastKnownWindowInnerWidth = windowInnerWidth;
-        _lastKnownWindowInnerHeight = windowInnerHeight;
-        _physicalSize = ui.Size(
-          windowInnerWidth,
-          windowInnerHeight,
-        );
-      }
+      _physicalSize = ui.Size(
+        windowInnerWidth,
+        windowInnerHeight,
+      );
     }
-
-    return _physicalSize;
   }
 
-  ui.Size _physicalSize = ui.Size.zero;
-  double _lastKnownWindowInnerWidth = -1;
-  double _lastKnownWindowInnerHeight = -1;
+  /// Lazily populated and cleared at the end of the frame.
+  ui.Size _physicalSize;
 
   /// Overrides the value of [physicalSize] in tests.
   ui.Size webOnlyDebugPhysicalSizeOverride;
@@ -92,8 +104,14 @@ class EngineWindow extends ui.Window {
   /// Simulates clicking the browser's back button.
   Future<void> webOnlyBack() => _browserHistory.back();
 
+  /// Lazily initialized when the `defaultRouteName` getter is invoked.
+  ///
+  /// The reason for the lazy initialization is to give enough time for the app to set [locationStrategy]
+  /// in `lib/src/ui/initialization.dart`.
+  String _defaultRouteName;
+
   @override
-  String get defaultRouteName => _browserHistory.currentPath;
+  String get defaultRouteName => _defaultRouteName ??= _browserHistory.currentPath;
 
   /// Change the strategy to use for handling browser history location.
   /// Setting this member will automatically update [_browserHistory].
@@ -151,6 +169,12 @@ class EngineWindow extends ui.Window {
           case 'SystemSound.play':
             // There are no default system sounds on web.
             return;
+          case 'Clipboard.setData':
+            ClipboardMessageHandler().setDataMethodCall(decoded, callback);
+            return;
+          case 'Clipboard.getData':
+            ClipboardMessageHandler().getDataMethodCall(callback);
+            return;
         }
         break;
 
@@ -176,6 +200,7 @@ class EngineWindow extends ui.Window {
         final MethodCall decoded = codec.decodeMethodCall(data);
         final Map<String, dynamic> message = decoded.arguments;
         switch (decoded.method) {
+          case 'routeUpdated':
           case 'routePushed':
           case 'routeReplaced':
             _browserHistory.setRouteName(message['routeName']);

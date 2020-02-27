@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 class DomRenderer {
@@ -215,7 +216,7 @@ class DomRenderer {
         ..name = 'theme-color';
       html.document.head.append(theme);
     }
-    theme.content = color.toCssString();
+    theme.content = colorToCssString(color);
   }
 
   static const String defaultFontStyle = 'normal';
@@ -343,7 +344,7 @@ flt-glass-pane * {
     setElementStyle(bodyElement, 'touch-action', 'none');
 
     // These are intentionally outrageous font parameters to make sure that the
-    // apps fully specifies their text styles.
+    // apps fully specify their text styles.
     setElementStyle(bodyElement, 'font', defaultCssFont);
     setElementStyle(bodyElement, 'color', 'red');
 
@@ -471,6 +472,7 @@ flt-glass-pane * {
 
   /// Called immediately after browser window metrics change.
   void _metricsDidChange(html.Event event) {
+    window._computePhysicalSize();
     if (ui.window.onMetricsChanged != null) {
       ui.window.onMetricsChanged();
     }

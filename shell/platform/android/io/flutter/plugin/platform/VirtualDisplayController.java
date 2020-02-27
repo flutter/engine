@@ -4,18 +4,17 @@
 
 package io.flutter.plugin.platform;
 
+import static android.view.View.OnFocusChangeListener;
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import io.flutter.view.TextureRegistry;
-
-import static android.view.View.OnFocusChangeListener;
 
 @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
 class VirtualDisplayController {
@@ -114,6 +113,8 @@ class VirtualDisplayController {
 
         textureEntry.release();
     }
+    presentation.getView().onFlutterViewDetached();
+  }
 
     /**
      * See {@link PlatformView#onFlutterViewAttached(View)}
@@ -124,6 +125,8 @@ class VirtualDisplayController {
         }
         presentationAlternative.getView().onFlutterViewAttached(flutterView);
     }
+    presentation.getView().onInputConnectionLocked();
+  }
 
     /**
      * See {@link PlatformView#onFlutterViewDetached()}
@@ -156,35 +159,20 @@ class VirtualDisplayController {
         return platformView.getView();
     }
 
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    static class OneTimeOnDrawListener implements ViewTreeObserver.OnDrawListener {
-        static void schedule(View view, Runnable runnable) {
-            OneTimeOnDrawListener listener = new OneTimeOnDrawListener(view, runnable);
-            view.getViewTreeObserver().addOnDrawListener(listener);
-        }
-
-        final View mView;
-        Runnable mOnDrawRunnable;
-
-        OneTimeOnDrawListener(View view, Runnable onDrawRunnable) {
-            this.mView = view;
-            this.mOnDrawRunnable = onDrawRunnable;
-        }
-
-        @Override
-        public void onDraw() {
-            if (mOnDrawRunnable == null) {
-                return;
+    @Override
+    public void onDraw() {
+      if (mOnDrawRunnable == null) {
+        return;
+      }
+      mOnDrawRunnable.run();
+      mOnDrawRunnable = null;
+      mView.post(
+          new Runnable() {
+            @Override
+            public void run() {
+              mView.getViewTreeObserver().removeOnDrawListener(OneTimeOnDrawListener.this);
             }
-            mOnDrawRunnable.run();
-            mOnDrawRunnable = null;
-            mView.post(new Runnable() {
-                @Override
-                public void run() {
-                    mView.getViewTreeObserver().removeOnDrawListener(OneTimeOnDrawListener.this);
-                }
-            });
-        }
+          });
     }
+  }
 }
-

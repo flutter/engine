@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 library engine;
 
 import 'dart:async';
@@ -24,6 +25,7 @@ part 'engine/bitmap_canvas.dart';
 part 'engine/browser_detection.dart';
 part 'engine/browser_location.dart';
 part 'engine/canvas_pool.dart';
+part 'engine/clipboard.dart';
 part 'engine/color_filter.dart';
 part 'engine/compositor/canvas.dart';
 part 'engine/compositor/canvas_kit_canvas.dart';
