@@ -1,10 +1,6 @@
 package io.flutter.plugin.platform;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-
+import android.annotation.TargetApi; 
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.graphics.Rect;
@@ -16,12 +12,35 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.View.OnFocusChangeListener;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
-import static android.content.Context.WINDOW_SERVICE;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
+import static android.content.Context.WINDOW_SERVICE;
+import static android.view.View.OnFocusChangeListener;
+
+/*
+ * A presentation used for hosting a single Android view in a virtual display.
+ *
+ * This presentation overrides the WindowManager's addView/removeView/updateViewLayout methods, such that views added
+ * directly to the WindowManager are added as part of the presentation's view hierarchy (to fakeWindowViewGroup).
+ *
+ * The view hierarchy for the presentation is as following:
+ *
+ *          rootView
+ *         /         \
+ *        /           \
+ *       /             \
+ *   container       state.fakeWindowViewGroup
+ *      |
+ *   EmbeddedView
+ */
+@Keep
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 
 class SingleViewPresentationAlternative {
     
