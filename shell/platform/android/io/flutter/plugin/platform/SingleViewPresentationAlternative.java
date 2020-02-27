@@ -1,18 +1,13 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 package io.flutter.plugin.platform;
 
-import android.annotation.TargetApi;
-import android.app.Presentation;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.graphics.Rect;
-import android.graphics.drawable.ColorDrawable;
-import android.os.Build;
-import android.os.Bundle;
-import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -21,55 +16,28 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.View.OnFocusChangeListener;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
-
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-
-import static android.content.Context.INPUT_METHOD_SERVICE;
 import static android.content.Context.WINDOW_SERVICE;
-import static android.view.View.OnFocusChangeListener;
 
-/*
- * A presentation used for hosting a single Android view in a virtual display.
- *
- * This presentation overrides the WindowManager's addView/removeView/updateViewLayout methods, such that views added
- * directly to the WindowManager are added as part of the presentation's view hierarchy (to fakeWindowViewGroup).
- *
- * The view hierarchy for the presentation is as following:
- *
- *          rootView
- *         /         \
- *        /           \
- *       /             \
- *   container       state.fakeWindowViewGroup
- *      |
- *   EmbeddedView
- */
-@Keep
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-class SingleViewPresentation extends Presentation {
 
-    /*
-     * When an embedded view is resized in Flutterverse we move the Android view to a new virtual display
-     * that has the new size. This class keeps the presentation state that moves with the view to the presentation of
-     * the new virtual display.
-     */
-    static class PresentationState {
-        // The Android view we are embedding in the Flutter app.
-        private PlatformView platformView;
+class SingleViewPresentationAlternative {
+    
+    private Context context;
+    
+    private ViewDrawingRerouter viewDrawingRerouter;
+    
+    // The Android view we are embedding in the Flutter app.
+    private PlatformView platformView;
 
-        // The InvocationHandler for a WindowManager proxy. This is essentially the custom window manager for the
-        // presentation.
-        private WindowManagerHandler windowManagerHandler;
+    // The InvocationHandler for a WindowManager proxy. This is essentially the custom window manager for the
+    // presentation.
+    private WindowManagerHandler windowManagerHandler;
 
-        // Contains views that were added directly to the window manager (e.g android.widget.PopupWindow).
-        private FakeWindowViewGroup fakeWindowViewGroup;
-    }
+    // Contains views that were added directly to the window manager (e.g android.widget.PopupWindow).
+    private FakeWindowViewGroup fakeWindowViewGroup;
 
     private final PlatformViewFactory viewFactory;
 
@@ -93,92 +61,58 @@ class SingleViewPresentation extends Presentation {
     // Contains the embedded platform view (platformView.getView()) when it is attached to the presentation.
     private FrameLayout container;
 
-    private PresentationState state;
-
     private boolean startFocused = false;
 
-    /**
-     * Creates a presentation that will use the view factory to create a new
-     * platform view in the presentation's onCreate, and attach it.
-     */
-    public SingleViewPresentation(
-            Context outerContext,
-            Display display,
-            PlatformViewFactory viewFactory,
-            AccessibilityEventsDelegate accessibilityEventsDelegate,
-            int viewId,
-            Object createParams,
-            OnFocusChangeListener focusChangeListener
+
+
+    public SingleViewPresentationAlternative(
+        Context outerContext,
+        ViewDrawingRerouter viewDrawingRerouter,
+        PlatformViewFactory viewFactory,
+        AccessibilityEventsDelegate accessibilityEventsDelegate,
+        int viewId,
+        Object createParams,
+        OnFocusChangeListener focusChangeListener
     ) {
-        super(new ImmContext(outerContext), display);
+        this.context = new ImmContext(outerContext);
+
+        this.viewDrawingRerouter = viewDrawingRerouter;
         this.viewFactory = viewFactory;
         this.accessibilityEventsDelegate = accessibilityEventsDelegate;
         this.viewId = viewId;
         this.createParams = createParams;
         this.focusChangeListener = focusChangeListener;
-        state = new PresentationState();
-        getWindow().setFlags(
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-        );
     }
 
+    public void init() {
 
-    /**
-     * Creates a presentation that will attach an already existing view as
-     * its root view.
-     *
-     * <p>The display's density must match the density of the context used
-     * when the view was created.
-     */
-    public SingleViewPresentation(
-            Context outerContext,
-            Display display,
-            AccessibilityEventsDelegate accessibilityEventsDelegate,
-            PresentationState state,
-            OnFocusChangeListener focusChangeListener,
-            boolean startFocused
-    ) {
-        super(new ImmContext(outerContext), display);
-        this.accessibilityEventsDelegate = accessibilityEventsDelegate;
-        viewFactory = null;
-        this.state = state;
-        this.focusChangeListener = focusChangeListener;
-        getWindow().setFlags(
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-        );
-        this.startFocused = startFocused;
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        // This makes sure we preserve alpha for the VD's content.
-        getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
-        if (state.fakeWindowViewGroup == null) {
-            state.fakeWindowViewGroup = new FakeWindowViewGroup(getContext());
+        if (fakeWindowViewGroup == null) {
+            fakeWindowViewGroup = new FakeWindowViewGroup(getContext());
         }
-        if (state.windowManagerHandler == null) {
+        if (windowManagerHandler == null) {
             WindowManager windowManagerDelegate = (WindowManager) getContext().getSystemService(WINDOW_SERVICE);
-            state.windowManagerHandler = new WindowManagerHandler(windowManagerDelegate, state.fakeWindowViewGroup);
+            windowManagerHandler = new WindowManagerHandler(windowManagerDelegate, fakeWindowViewGroup);
         }
 
         container = new FrameLayout(getContext());
 
         // Our base mContext has already been wrapped with an IMM cache at instantiation time, but
         // we want to wrap it again here to also return state.windowManagerHandler.
-        Context context = new PresentationContext(getContext(), state.windowManagerHandler);
+        Context context = new PresentationContext(getContext(), windowManagerHandler);
 
-        if (state.platformView == null) {
-            state.platformView = viewFactory.create(context, viewId, createParams);
+        if (platformView == null) {
+            platformView = viewFactory.create(context, viewId, createParams);
         }
 
-        View embeddedView = state.platformView.getView();
+        if(viewDrawingRerouter == null) {
+            viewDrawingRerouter = viewDrawingRerouter;
+        }
+
+        View embeddedView = platformView.getView();
         container.addView(embeddedView);
         rootView = new AccessibilityDelegatingFrameLayout(getContext(), accessibilityEventsDelegate, embeddedView);
         rootView.addView(container);
-        rootView.addView(state.fakeWindowViewGroup);
+        rootView.addView(fakeWindowViewGroup);
 
         embeddedView.setOnFocusChangeListener(focusChangeListener);
         rootView.setFocusableInTouchMode(true);
@@ -187,22 +121,24 @@ class SingleViewPresentation extends Presentation {
         } else {
             rootView.requestFocus();
         }
-        setContentView(rootView);
+        viewDrawingRerouter.setContentView(rootView);
     }
 
-    public PresentationState detachState() {
-        container.removeAllViews();
-        rootView.removeAllViews();
-        return state;
+    private Context getContext() {
+        return context;
     }
 
-    public PlatformView getView() {
-        if (state.platformView == null)
-            return null;
-        return state.platformView;
+
+	public PlatformView getView() {
+		return platformView;
+    }
+    
+    public void dispose() {
+        viewDrawingRerouter.setContentView(null);
     }
 
-    /*
+
+        /*
      * A view group that implements the same layout protocol that exist between the WindowManager and its direct
      * children.
      *
@@ -247,6 +183,9 @@ class SingleViewPresentation extends Presentation {
         private static int atMost(int measureSpec) {
             return MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(measureSpec), MeasureSpec.AT_MOST);
         }
+
+		public void addView(View view, LayoutParams layoutParams) {
+		}
     }
 
     /** Answers calls for {@link InputMethodManager} with an instance cached at creation time. */
@@ -430,4 +369,5 @@ class SingleViewPresentation extends Presentation {
             return accessibilityEventsDelegate.requestSendAccessibilityEvent(embeddedView, child, event);
         }
     }
+
 }

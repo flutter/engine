@@ -17,7 +17,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-
+import android.widget.FrameLayout;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
@@ -70,6 +70,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // it is associated with(e.g if a platform view creates other views in the same virtual display.
     private final HashMap<Context, View> contextToPlatformView;
 
+    private FrameLayout platformViewsContainer;
+
     private final PlatformViewsChannel.PlatformViewsHandler channelHandler = new PlatformViewsChannel.PlatformViewsHandler() {
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
         @Override
@@ -110,6 +112,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     physicalWidth,
                     physicalHeight,
                     request.viewId,
+                    platformViewsContainer,
                     createParams,
                     (view, hasFocus) -> {
                         if (hasFocus) {
@@ -283,6 +286,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                             "attach was called while the PlatformViewsController was already attached."
             );
         }
+        this.platformViewsContainer = new FrameLayout(context);
         this.context = context;
         this.textureRegistry = textureRegistry;
         platformViewsChannel = new PlatformViewsChannel(dartExecutor);
@@ -310,7 +314,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
      */
     public void attachToView(@NonNull View flutterView) {
         this.flutterView = flutterView;
-
+        
+        ((FrameLayout )flutterView).addView(platformViewsContainer,0);
         // Inform all existing platform views that they are now associated with
         // a Flutter View.
         for (VirtualDisplayController controller : vdControllers.values()) {
@@ -326,8 +331,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
      * from the previously attached {@code View}.
      */
     public void detachFromView() {
+        ((FrameLayout )flutterView).removeView(platformViewsContainer);
         this.flutterView = null;
-
+        
         // Inform all existing platform views that they are no longer associated with
         // a Flutter View.
         for (VirtualDisplayController controller : vdControllers.values()) {
