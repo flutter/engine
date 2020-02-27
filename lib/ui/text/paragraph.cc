@@ -94,28 +94,40 @@ void Paragraph::paint(Canvas* canvas, double x, double y) {
   m_paragraph->Paint(sk_canvas, x, y);
 }
 
-std::vector<TextBox> Paragraph::getRectsForRange(unsigned start,
-                                                 unsigned end,
-                                                 unsigned boxHeightStyle,
-                                                 unsigned boxWidthStyle) {
-  std::vector<TextBox> result;
-  std::vector<txt::Paragraph::TextBox> boxes = m_paragraph->GetRectsForRange(
-      start, end, static_cast<txt::Paragraph::RectHeightStyle>(boxHeightStyle),
-      static_cast<txt::Paragraph::RectWidthStyle>(boxWidthStyle));
-  for (const txt::Paragraph::TextBox& box : boxes) {
-    result.emplace_back(box.rect, static_cast<TextDirection>(box.direction));
+static tonic::Float32List EncodeTextBoxes(const std::vector<txt::Paragraph::TextBox>& boxes) {
+  // Layout:
+  // First value is the number of values.
+  // Then there are boxes.size() groups of 5 which are LTRBD, where D is the
+  // text direction index.
+  auto count = boxes.size() * 5;
+  tonic::Float32List result(Dart_NewTypedData(Dart_TypedData_kFloat32, 1 + count));
+  result[0] = count;
+  for (unsigned long i = 0; i < boxes.size(); i++) {
+    auto position = (i * 5) + 1;
+    const txt::Paragraph::TextBox& box = boxes[i];
+    result[position + 0] = box.rect.fLeft;
+    result[position + 1] = box.rect.fTop;
+    result[position + 2] = box.rect.fRight;
+    result[position + 3] = box.rect.fBottom;
+    result[position + 4] = static_cast<float>(box.direction);
   }
   return result;
 }
 
-std::vector<TextBox> Paragraph::getRectsForPlaceholders() {
-  std::vector<TextBox> result;
+tonic::Float32List Paragraph::getRectsForRange(unsigned start,
+                                               unsigned end,
+                                               unsigned boxHeightStyle,
+                                               unsigned boxWidthStyle) {
+  std::vector<txt::Paragraph::TextBox> boxes = m_paragraph->GetRectsForRange(
+      start, end, static_cast<txt::Paragraph::RectHeightStyle>(boxHeightStyle),
+      static_cast<txt::Paragraph::RectWidthStyle>(boxWidthStyle));
+  return EncodeTextBoxes(boxes);
+}
+
+tonic::Float32List Paragraph::getRectsForPlaceholders() {
   std::vector<txt::Paragraph::TextBox> boxes =
       m_paragraph->GetRectsForPlaceholders();
-  for (const txt::Paragraph::TextBox& box : boxes) {
-    result.emplace_back(box.rect, static_cast<TextDirection>(box.direction));
-  }
-  return result;
+  return EncodeTextBoxes(boxes);
 }
 
 Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
@@ -152,14 +164,33 @@ Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
   return result;
 }
 
-std::vector<LineMetrics> Paragraph::computeLineMetrics() {
-  std::vector<LineMetrics> result;
+tonic::Float64List Paragraph::computeLineMetrics() {
   std::vector<txt::LineMetrics> metrics = m_paragraph->GetLineMetrics();
-  for (txt::LineMetrics& line : metrics) {
-    result.emplace_back(&line.hard_break, &line.ascent, &line.descent,
-                        &line.unscaled_ascent, &line.height, &line.width,
-                        &line.left, &line.baseline, &line.line_number);
+
+  // Layout:
+  // First value is the number of values.
+  // Then there are boxes.size() groups of 9 which are the line metrics
+  // properties
+  auto count = metrics.size() * 9;
+  tonic::Float64List result(Dart_NewTypedData(Dart_TypedData_kFloat64, 1 + count));
+  result[0] = count;
+  for (unsigned long i = 0; i < metrics.size(); i++) {
+    auto position = (i * 9) + 1;
+    const txt::LineMetrics& line = metrics[i];
+    result[position + 0] = static_cast<float>(line.hard_break);
+    result[position + 1] = line.ascent;
+    result[position + 2] = line.descent;
+    result[position + 3] = line.unscaled_ascent;
+    // We add then round to get the height. The
+    // definition of height here is different
+    // than the one in LibTxt.
+    result[position + 4] = round(line.ascent + line.descent);
+    result[position + 5] = line.width;
+    result[position + 6] = line.left;
+    result[position + 7] = line.baseline;
+    result[position + 8] = static_cast<double>(line.line_number);
   }
+
   return result;
 }
 
