@@ -9,6 +9,7 @@
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
+#include "flutter/testing/dart_isolate_runner.h"
 #include "flutter/testing/elf_loader.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
@@ -637,7 +638,6 @@ TEST_F(ImageDecoderFixtureTest,
   fml::AutoResetWaitableEvent latch;
   fml::AutoResetWaitableEvent io_latch;
   std::unique_ptr<TestIOManager> io_manager;
-  std::unique_ptr<ImageDecoder> image_decoder;
 
   // Setup the IO manager.
   runners.GetIOTaskRunner()->PostTask([&]() {
@@ -646,68 +646,41 @@ TEST_F(ImageDecoderFixtureTest,
   });
   latch.Wait();
 
-  auto isolate_weak = DartIsolate::CreateRootIsolate(
-      vm_data->GetSettings(),             // settings
-      vm_data->GetIsolateSnapshot(),      // isolate_snapshot
-      runners,                            // task_runners
-      {},                                 // window
-      {},                                 // snapshot_delegate
-      io_manager->GetWeakIOManager(),     // io_manager
-      {},                                 // unref_queue
-      {},                                 // image_decoder
-      "main.dart",                        // advisory_script_uri
-      "main",                             // advisory_script_entrypoint
-      nullptr,                            // flags
-      settings.isolate_create_callback,   // isolate create callback
-      settings.isolate_shutdown_callback  // isolate shutdown callback
-  );
-
-  auto isolate = isolate_weak.lock();
-
-  // Setup the image decoder.
-  runners.GetUITaskRunner()->PostTask([&]() {
-    image_decoder = std::make_unique<ImageDecoder>(
-        runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
-
-    latch.Signal();
-  });
-  latch.Wait();
+  auto isolate =
+      RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
+                           GetFixturesPath(), io_manager->GetWeakIOManager());
 
   // Latch the IO task runner.
   runners.GetIOTaskRunner()->PostTask([&]() { io_latch.Wait(); });
 
   runners.GetUITaskRunner()->PostTask([&]() {
+    fml::AutoResetWaitableEvent isolate_latch;
     fml::RefPtr<MultiFrameCodec> codec;
+    EXPECT_TRUE(isolate->RunInIsolateScope([&]() -> bool {
+      Dart_Handle library = Dart_LookupLibrary(Dart_NewStringFromCString(
+          "package:engine_root/ui/fixtures/ui_test.dart"));
+      if (Dart_IsError(library)) {
+        isolate_latch.Signal();
+        return false;
+      }
+      Dart_Handle closure =
+          Dart_GetField(library, Dart_NewStringFromCString("frameCallback"));
+      if (Dart_IsError(closure) || !Dart_IsClosure(closure)) {
+        isolate_latch.Signal();
+        return false;
+      }
 
-    Dart_EnterIsolate(isolate->isolate());
-    Dart_EnterScope();
-
-    Dart_Handle core_lib = Dart_LookupLibrary(Dart_NewStringFromCString("dart:core"));
-    EXPECT_FALSE(Dart_IsError(core_lib));
-    Dart_Handle object_type = Dart_GetType(core_lib, Dart_NewStringFromCString("Object"), 0, nullptr);
-    EXPECT_FALSE(Dart_IsError(object_type));
-    Dart_Handle object = Dart_New(object_type, Dart_EmptyString(), 0, nullptr);
-    EXPECT_FALSE(Dart_IsError(object));
-    Dart_Handle closure = Dart_GetField(object, Dart_NewStringFromCString("toString"));
-    EXPECT_FALSE(Dart_IsError(closure));
-    EXPECT_TRUE(Dart_IsClosure(closure));
-
-    codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_codec));
-    FML_DLOG(ERROR) << "1";
-    codec->getNextFrame(closure);
-
-    FML_DLOG(ERROR) << "2";
-
-    codec = nullptr;
-    FML_DLOG(ERROR) << "3";
-
-    Dart_ExitScope();
-    Dart_ExitIsolate();
+      codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_codec));
+      codec->getNextFrame(closure);
+      codec = nullptr;
+      isolate_latch.Signal();
+      return true;
+    }));
+    isolate_latch.Wait();
 
     EXPECT_FALSE(codec);
 
     io_latch.Signal();
-    FML_DLOG(ERROR) << "4";
 
     latch.Signal();
   });
@@ -716,13 +689,6 @@ TEST_F(ImageDecoderFixtureTest,
   // Destroy the IO manager
   runners.GetIOTaskRunner()->PostTask([&]() {
     io_manager.reset();
-    latch.Signal();
-  });
-  latch.Wait();
-
-  // Destroy the image decoder
-  runners.GetUITaskRunner()->PostTask([&]() {
-    image_decoder.reset();
     latch.Signal();
   });
   latch.Wait();
