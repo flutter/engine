@@ -2,6 +2,12 @@
 set -e
 
 
+if [ -z $ENGINE_PATH ]
+then
+  echo "This script is aimed to be run on CI environments. Do not run locally."
+  exit 1
+fi
+
 # Go to the engine git repo to get the date of the latest commit.
 cd $ENGINE_PATH/src/flutter
 # Get latest commit's time for the engine repo.
@@ -21,4 +27,3 @@ cd flutter
 COMMIT_NO=`git log --before="$LATEST_COMMIT_TIME_ENGINE" -n 1 | grep commit | cut -d ' ' -f2`
 echo "Using the flutter/flutter commit $COMMIT_NO";
 git reset --hard $COMMIT_NO
-
