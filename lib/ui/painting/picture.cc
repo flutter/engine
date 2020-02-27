@@ -48,8 +48,8 @@ Dart_Handle Picture::toImage(Dart_Handle image_handle,
     return tonic::ToDart("Picture is null");
   }
 
-  return RasterizeToImage(image_handle, picture_.get(), width,
-                          height, raw_image_callback);
+  return RasterizeToImage(image_handle, picture_.get(), width, height,
+                          raw_image_callback);
 }
 
 void Picture::dispose() {
@@ -92,8 +92,7 @@ Dart_Handle Picture::RasterizeToImage(Dart_Handle image_handle,
 
   auto picture_bounds = SkISize::Make(width, height);
 
-  auto ui_task = fml::MakeCopyable([image_handle,
-                                    image_callback, unref_queue](
+  auto ui_task = fml::MakeCopyable([image_handle, image_callback, unref_queue](
                                        sk_sp<SkImage> raster_image) mutable {
     auto dart_state = image_callback->dart_state().lock();
     if (!dart_state) {

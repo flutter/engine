@@ -179,9 +179,9 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle image_handle,
        this, trace_id, ui_task_runner = task_runners.GetUITaskRunner(),
        io_manager = dart_state->GetIOManager()]() mutable {
         GetNextFrameAndInvokeCallback(
-            image_handle, std::move(callback),
-            std::move(ui_task_runner), io_manager->GetResourceContext(),
-            io_manager->GetSkiaUnrefQueue(), trace_id);
+            image_handle, std::move(callback), std::move(ui_task_runner),
+            io_manager->GetResourceContext(), io_manager->GetSkiaUnrefQueue(),
+            trace_id);
       }));
 
   return Dart_Null();

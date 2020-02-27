@@ -29,7 +29,9 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
   }
 
   if (status_ == Status::kComplete) {
-    return tonic::ToDart("Dart callers are responsible for caching the frame callback information");
+    return tonic::ToDart(
+        "Dart callers are responsible for caching the frame callback "
+        "information");
   }
 
   // This has to be valid because this method is called from Dart.
@@ -56,8 +58,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
   fml::RefPtr<SingleFrameCodec>* raw_codec_ref =
       new fml::RefPtr<SingleFrameCodec>(this);
 
-  decoder->Decode(descriptor_, [image_handle,
-                                raw_codec_ref](auto image) {
+  decoder->Decode(descriptor_, [image_handle, raw_codec_ref](auto image) {
     std::unique_ptr<fml::RefPtr<SingleFrameCodec>> codec_ref(raw_codec_ref);
     fml::RefPtr<SingleFrameCodec> codec(std::move(*codec_ref));
 
