@@ -8,6 +8,9 @@ then
   exit 1
 fi
 
+# Go to the engine git repo to get the date of the latest commit.
+cd $ENGINE_PATH/src/flutter
+
 # Special handling of release branches.
 BRANCH_NAME=`git branch | grep '*'`
 echo "$BRANCH_NAME"
@@ -22,8 +25,6 @@ then
   ON_RELEASE_BRANCH=true
 fi
 
-# Go to the engine git repo to get the date of the latest commit.
-cd $ENGINE_PATH/src/flutter
 # Get latest commit's time for the engine repo.
 # Use date based on local time otherwise timezones might get mixed.
 LATEST_COMMIT_TIME_ENGINE=`git log -1 --date=local --format="%ad"`
