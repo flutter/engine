@@ -21,7 +21,8 @@ class SemanticsUpdate : public RefCountedDartWrappable<SemanticsUpdate> {
 
  public:
   ~SemanticsUpdate() override;
-  static fml::RefPtr<SemanticsUpdate> create(
+  static void create(
+      Dart_Handle semantics_update_handle,
       SemanticsNodeUpdates nodes,
       CustomAccessibilityActionUpdates actions);
 
