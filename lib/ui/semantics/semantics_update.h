@@ -21,10 +21,9 @@ class SemanticsUpdate : public RefCountedDartWrappable<SemanticsUpdate> {
 
  public:
   ~SemanticsUpdate() override;
-  static void create(
-      Dart_Handle semantics_update_handle,
-      SemanticsNodeUpdates nodes,
-      CustomAccessibilityActionUpdates actions);
+  static void create(Dart_Handle semantics_update_handle,
+                     SemanticsNodeUpdates nodes,
+                     CustomAccessibilityActionUpdates actions);
 
   SemanticsNodeUpdates takeNodes();
 

@@ -48,7 +48,8 @@ void DartWrappable::FinalizeDartWrapper(void* isolate_callback_data,
                                         void* peer) {
   DartWrappable* wrappable = reinterpret_cast<DartWrappable*>(peer);
   wrappable->dart_wrapper_ = nullptr;
-  wrappable->ReleaseDartWrappableReference();  // Balanced in AssociateWithDartWrapper.
+  wrappable->ReleaseDartWrappableReference();  // Balanced in
+                                               // AssociateWithDartWrapper.
 }
 
 size_t DartWrappable::GetAllocationSize() {
