@@ -30,9 +30,7 @@ void CanvasImage::RegisterNatives(tonic::DartLibraryNatives* natives) {
 
 CanvasImage::CanvasImage() = default;
 
-CanvasImage::~CanvasImage() {
-  FML_DLOG(ERROR) << "Image dtor";
-}
+CanvasImage::~CanvasImage() = default;
 
 Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
   return EncodeImage(this, format, callback);

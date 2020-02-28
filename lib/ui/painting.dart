@@ -1747,7 +1747,7 @@ Future<Codec> instantiateImageCodec(Uint8List list, {
 /// If both are equal to [_kDoNotResizeDimension], then the image maintains its real size.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Codec codec, Uint8List list, _Callback<bool> callback, _ImageInfo imageInfo, int targetWidth, int targetHeight)
+String _instantiateImageCodec(Codec outCodec, Uint8List list, _Callback<bool> callback, _ImageInfo imageInfo, int targetWidth, int targetHeight)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -4138,16 +4138,17 @@ class Picture extends NativeFieldWrapperClass2 {
   ///
   /// Although the image is returned synchronously, the picture is actually
   /// rasterized the first time the image is drawn and then cached.
-  Future<Image> toImage(int width, int height) {
+  Future<Image> toImage(int width, int height) async {
     if (width <= 0 || height <= 0)
       throw Exception('Invalid image dimensions.');
     final Image image = Image._();
-    return _futurize(
-      (_Callback<Image> callback) => _toImage(image, width, height, callback)
+    await _futurize(
+      (_Callback<bool> callback) => _toImage(image, width, height, callback)
     );
+    return image;
   }
 
-  String _toImage(Image image, int width, int height, _Callback<Image> callback) native 'Picture_toImage';
+  String _toImage(Image outImage, int width, int height, _Callback<bool> callback) native 'Picture_toImage';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.

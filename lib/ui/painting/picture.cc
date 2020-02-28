@@ -77,6 +77,8 @@ Dart_Handle Picture::RasterizeToImage(Dart_Handle image_handle,
     return tonic::ToDart("Image dimensions for scene were invalid.");
   }
 
+  auto canvas_image = CanvasImage::Create(image_handle);
+
   auto* dart_state = UIDartState::Current();
   tonic::DartPersistentValue* image_callback =
       new tonic::DartPersistentValue(dart_state, raw_image_callback);
@@ -92,7 +94,7 @@ Dart_Handle Picture::RasterizeToImage(Dart_Handle image_handle,
 
   auto picture_bounds = SkISize::Make(width, height);
 
-  auto ui_task = fml::MakeCopyable([image_handle, image_callback, unref_queue](
+  auto ui_task = fml::MakeCopyable([canvas_image, image_callback, unref_queue](
                                        sk_sp<SkImage> raster_image) mutable {
     auto dart_state = image_callback->dart_state().lock();
     if (!dart_state) {
@@ -103,15 +105,14 @@ Dart_Handle Picture::RasterizeToImage(Dart_Handle image_handle,
 
     if (!raster_image) {
       tonic::DartInvoke(image_callback->Get(), {Dart_Null()});
+      delete image_callback;
       return;
     }
 
-    auto dart_image = CanvasImage::Create(image_handle);
-    dart_image->set_image({std::move(raster_image), std::move(unref_queue)});
-    auto* raw_dart_image = tonic::ToDart(std::move(dart_image));
+    canvas_image->set_image({std::move(raster_image), std::move(unref_queue)});
 
     // All done!
-    tonic::DartInvoke(image_callback->Get(), {raw_dart_image});
+    tonic::DartInvoke(image_callback->Get(), {Dart_True()});
 
     // image_callback is associated with the Dart isolate and must be deleted
     // on the UI thread

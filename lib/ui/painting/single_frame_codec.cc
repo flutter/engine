@@ -75,7 +75,6 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle image_handle,
     tonic::DartState::Scope scope(state.get());
 
     if (image.get()) {
-      FML_DLOG(ERROR) << "Here?";
       canvas_image->set_image(std::move(image));
       codec->cached_frame_image_size_ = canvas_image->GetAllocationSize();
     }
