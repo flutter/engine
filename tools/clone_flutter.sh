@@ -9,7 +9,7 @@ then
 fi
 
 # Special handling of release branches.
-BRANCH_NAME=`git branch | grep '*'
+BRANCH_NAME=`git branch | grep '*'`
 echo "$BRANCH_NAME"
 
 ENGINE_BRANCH_NAME=`git branch | grep '*' | cut -d ' ' '-f2'`
