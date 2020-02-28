@@ -17,6 +17,7 @@ class SingleFrameCodec : public Codec {
   static fml::RefPtr<SingleFrameCodec> Create(
       Dart_Handle codec_handle,
       ImageDecoder::ImageDescriptor descriptor) {
+    FML_DLOG(ERROR) << "SFC Create";
     auto codec = fml::MakeRefCounted<SingleFrameCodec>(std::move(descriptor));
     codec->AssociateWithDartWrapper(codec_handle);
     return codec;
@@ -30,7 +31,8 @@ class SingleFrameCodec : public Codec {
   int repetitionCount() const override;
 
   // |Codec|
-  Dart_Handle getNextFrame(Dart_Handle image_handle, Dart_Handle args) override;
+  Dart_Handle getNextFrame(Dart_Handle image_handle,
+                           Dart_Handle callback_handle) override;
 
   // |DartWrappable|
   size_t GetAllocationSize() override;

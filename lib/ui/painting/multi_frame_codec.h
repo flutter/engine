@@ -17,6 +17,7 @@ class MultiFrameCodec : public Codec {
  public:
   static fml::RefPtr<MultiFrameCodec> Create(Dart_Handle codec_handle,
                                              std::unique_ptr<SkCodec> codec) {
+    FML_DLOG(ERROR) << "MFC Create";
     auto multi_frame_codec =
         fml::MakeRefCounted<MultiFrameCodec>(std::move(codec));
     multi_frame_codec->AssociateWithDartWrapper(codec_handle);
@@ -48,7 +49,7 @@ class MultiFrameCodec : public Codec {
   sk_sp<SkImage> GetNextFrameImage(fml::WeakPtr<GrContext> resourceContext);
 
   void GetNextFrameAndInvokeCallback(
-      Dart_Handle image_handle,
+      fml::RefPtr<CanvasImage> canvas_image,
       std::unique_ptr<DartPersistentValue> callback,
       fml::RefPtr<fml::TaskRunner> ui_task_runner,
       fml::WeakPtr<GrContext> resourceContext,

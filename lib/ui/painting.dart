@@ -1690,13 +1690,14 @@ class Codec extends NativeFieldWrapperClass2 {
       return _cachedFrame;
     }
     final Image image = Image._();
+    print('About to call _futureize with image');
     final int durationMilliseconds = await _futurize((_Callback<int> callback) => _getNextFrame(image, callback));
-
+    print(image);
     return _cachedFrame = FrameInfo._(durationMilliseconds, image);
   }
 
   /// Returns an error message on failure, null on success.
-  String _getNextFrame(Image image, _Callback<int> callback) native 'Codec_getNextFrame';
+  String _getNextFrame(Image outImage, _Callback<int> callback) native 'Codec_getNextFrame';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
