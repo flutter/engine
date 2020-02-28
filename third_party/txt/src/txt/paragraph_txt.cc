@@ -1430,7 +1430,7 @@ void ParagraphTxt::PaintDecorations(SkCanvas* canvas,
 
   double width = record.GetRunWidth();
 
-  SkScalar underline_thickness;
+  double underline_thickness;
   if ((metrics.fFlags &
        SkFontMetrics::FontMetricsFlags::kUnderlineThicknessIsValid_Flag) &&
       metrics.fUnderlineThickness > 0) {
@@ -1444,8 +1444,8 @@ void ParagraphTxt::PaintDecorations(SkCanvas* canvas,
                        record.style().decoration_thickness_multiplier);
 
   SkPoint record_offset = base_offset + record.offset();
-  SkScalar x = record_offset.x() + record.x_start();
-  SkScalar y = record_offset.y();
+  double x = record_offset.x() + record.x_start();
+  double y = record_offset.y();
 
   // Setup the decorations.
   switch (record.style().decoration_style) {
@@ -1643,8 +1643,8 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     // Per-line metrics for max and min coordinates for left and right boxes.
     // These metrics cannot be calculated in layout generically because of
     // selections that do not cover the whole line.
-    SkScalar max_right = FLT_MIN;
-    SkScalar min_left = FLT_MAX;
+    double max_right = FLT_MIN;
+    double min_left = FLT_MAX;
   };
 
   std::map<size_t, LineBoxMetrics> line_box_metrics;
@@ -1666,8 +1666,8 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
       continue;
 
     double baseline = line_metrics_[run.line_number].baseline;
-    SkScalar top = baseline + run.font_metrics.fAscent;
-    SkScalar bottom = baseline + run.font_metrics.fDescent;
+    double top = baseline + run.font_metrics.fAscent;
+    double bottom = baseline + run.font_metrics.fDescent;
 
     if (run.placeholder_run !=
         nullptr) {  // Use inline placeholder size as height.
@@ -1680,7 +1680,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     min_line = std::min(run.line_number, min_line);
 
     // Calculate left and right.
-    SkScalar left, right;
+    double left, right;
     if (run.code_units.start >= start && run.code_units.end <= end) {
       left = run.x_pos.start;
       right = run.x_pos.end;
@@ -1689,16 +1689,16 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
       right = SK_ScalarMin;
       for (const GlyphPosition& gp : run.positions) {
         if (gp.code_units.start >= start && gp.code_units.end <= end) {
-          left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
-          right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
+          left = std::min(left, static_cast<double>(gp.x_pos.start));
+          right = std::max(right, static_cast<double>(gp.x_pos.end));
         } else if (gp.code_units.end == end) {
           // Calculate left and right when we are at
           // the last position of a combining character.
           glyph_length = (gp.code_units.end - gp.code_units.start) - 1;
           if (gp.code_units.start ==
               std::max<size_t>(0, (start - glyph_length))) {
-            left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
-            right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
+            left = std::min(left, static_cast<double>(gp.x_pos.start));
+            right = std::max(right, static_cast<double>(gp.x_pos.end));
           }
         }
       }
@@ -1732,15 +1732,15 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     if (line_box_metrics.find(line_number) == line_box_metrics.end()) {
       if (line.end_index != line.end_including_newline &&
           line.end_index >= start && line.end_including_newline <= end) {
-        SkScalar x = line_widths_[line_number];
+        double x = line_widths_[line_number];
         // Move empty box to center if center aligned and is an empty line.
         if (x == 0 && !isinf(width_) &&
             paragraph_style_.effective_align() == TextAlign::center) {
           x = width_ / 2;
         }
-        SkScalar top =
+        double top =
             (line_number > 0) ? line_metrics_[line_number - 1].height : 0;
-        SkScalar bottom = line_metrics_[line_number].height;
+        double bottom = line_metrics_[line_number].height;
         line_box_metrics[line_number].boxes.emplace_back(
             SkRect::MakeLTRB(x, top, x, bottom), TextDirection::ltr);
       }
@@ -1788,13 +1788,13 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
       }
     } else if (rect_height_style ==
                RectHeightStyle::kIncludeLineSpacingMiddle) {
-      SkScalar adjusted_bottom = line.baseline + line.descent;
+      double adjusted_bottom = line.baseline + line.descent;
       if (kv.first < line_metrics_.size() - 1) {
         adjusted_bottom += (line_metrics_[kv.first + 1].ascent -
                             line_metrics_[kv.first + 1].unscaled_ascent) /
                            2;
       }
-      SkScalar adjusted_top = line.baseline - line.unscaled_ascent;
+      double adjusted_top = line.baseline - line.unscaled_ascent;
       if (kv.first != 0) {
         adjusted_top -= (line.ascent - line.unscaled_ascent) / 2;
       }
@@ -1805,9 +1805,9 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
       }
     } else if (rect_height_style == RectHeightStyle::kIncludeLineSpacingTop) {
       for (const Paragraph::TextBox& box : kv.second.boxes) {
-        SkScalar adjusted_top = kv.first == 0
-                                    ? line.baseline - line.unscaled_ascent
-                                    : line.baseline - line.ascent;
+        double adjusted_top = kv.first == 0
+                                  ? line.baseline - line.unscaled_ascent
+                                  : line.baseline - line.ascent;
         boxes.emplace_back(
             SkRect::MakeLTRB(box.rect.fLeft, adjusted_top, box.rect.fRight,
                              line.baseline + line.descent),
@@ -1816,7 +1816,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     } else if (rect_height_style ==
                RectHeightStyle::kIncludeLineSpacingBottom) {
       for (const Paragraph::TextBox& box : kv.second.boxes) {
-        SkScalar adjusted_bottom = line.baseline + line.descent;
+        double adjusted_bottom = line.baseline + line.descent;
         if (kv.first < line_metrics_.size() - 1) {
           adjusted_bottom += -line.unscaled_ascent + line.ascent;
         }
@@ -1935,8 +1935,8 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForPlaceholders() {
     // Per-line metrics for max and min coordinates for left and right boxes.
     // These metrics cannot be calculated in layout generically because of
     // selections that do not cover the whole line.
-    SkScalar max_right = FLT_MIN;
-    SkScalar min_left = FLT_MAX;
+    double max_right = FLT_MIN;
+    double min_left = FLT_MAX;
   };
 
   std::vector<Paragraph::TextBox> boxes;
@@ -1945,8 +1945,8 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForPlaceholders() {
   for (const CodeUnitRun& run : inline_placeholder_code_unit_runs_) {
     // Check to see if we are finished.
     double baseline = line_metrics_[run.line_number].baseline;
-    SkScalar top = baseline + run.font_metrics.fAscent;
-    SkScalar bottom = baseline + run.font_metrics.fDescent;
+    double top = baseline + run.font_metrics.fAscent;
+    double bottom = baseline + run.font_metrics.fDescent;
 
     if (run.placeholder_run !=
         nullptr) {  // Use inline placeholder size as height.
@@ -1956,7 +1956,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForPlaceholders() {
     }
 
     // Calculate left and right.
-    SkScalar left, right;
+    double left, right;
     left = run.x_pos.start;
     right = run.x_pos.end;
 
