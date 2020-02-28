@@ -9,6 +9,9 @@ then
 fi
 
 # Special handling of release branches.
+BRANCH_NAME=`git branch | grep '*'
+echo "$BRANCH_NAME"
+
 ENGINE_BRANCH_NAME=`git branch | grep '*' | cut -d ' ' '-f2'`
 versionregex="v[[:digit:]]+\.{1}"
 ON_RELEASE_BRANCH=false
