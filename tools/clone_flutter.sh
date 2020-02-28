@@ -2,7 +2,9 @@
 set -e
 set -x
 
-if [ -z $ENGINE_PATH ]
+echo "is cirrus ci: $CIRRUS_CI"
+
+if [[ -z $ENGINE_PATH ]]
 then
   echo "This script is aimed to be run on CI environments. Do not run locally."
   exit 1
@@ -12,8 +14,8 @@ fi
 cd $ENGINE_PATH/src/flutter
 
 # Special handling of release branches.
-ENGINE_BRANCH_NAME=`git branch | grep '*' | cut -d ' ' '-f2'`
-versionregex="v[[:digit:]]+\.{1}"
+ENGINE_BRANCH_NAME=`git branch | grep '*' | cut -d ' ' -f2`
+versionregex="^v[[:digit:]]+\."
 ON_RELEASE_BRANCH=false
 echo "Engine on branch $ENGINE_BRANCH_NAME"
 if [[ $ENGINE_BRANCH_NAME =~ $versionregex ]]
@@ -35,7 +37,7 @@ cd $FRAMEWORK_PATH
 git clone https://github.com/flutter/flutter.git
 cd flutter
 
-FRAMEWORK_BRANCH_NAME=`git branch | grep '*' | cut -d ' ' '-f2'`
+FRAMEWORK_BRANCH_NAME=`git branch | grep '*' | cut -d ' ' -f2`
 if [[ "$ON_RELEASE_BRANCH" = true && ENGINE_BRANCH_NAME != FRAMEWORK_BRANCH_NAME ]]
 then
   echo "For a release framework and engine should be on the same version."
