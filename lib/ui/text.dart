@@ -1819,6 +1819,39 @@ class LineMetrics {
   ///
   /// For example, the first line is line 0, second line is line 1.
   final int lineNumber;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is LineMetrics
+        && other.hardBreak == hardBreak
+        && other.ascent == ascent
+        && other.descent == descent
+        && other.unscaledAscent == unscaledAscent
+        && other.height == height
+        && other.width == width
+        && other.left == left
+        && other.baseline == baseline
+        && other.lineNumber == lineNumber;
+  }
+
+  @override
+  int get hashCode => hashValues(hardBreak, ascent, descent, unscaledAscent, height, width, left, baseline, lineNumber);
+
+  @override
+  String toString() {
+    return 'LineMetrics(hardBreak: $hardBreak, '
+                       'ascent: $ascent, '
+                       'descent: $descent, '
+                       'unscaledAscent: $unscaledAscent, '
+                       'height: $height, '
+                       'width: $width, '
+                       'left: $left, '
+                       'baseline: $baseline, '
+                       'lineNumber: $lineNumber)';
+  }
 }
 
 /// A paragraph of text.
@@ -1891,15 +1924,16 @@ class Paragraph extends NativeFieldWrapperClass2 {
   void _layout(double width) native 'Paragraph_layout';
 
   List<TextBox> _decodeTextBoxes(Float32List encoded) {
-    final List<TextBox> boxes = List<TextBox>(encoded[0].toInt());
-    for (int index = 0; index < boxes.length; index += 1) {
-      final int position = (index * 5) + 1;
+    final int count = encoded.length ~/ 5;
+    final List<TextBox> boxes = List<TextBox>(count);
+    int position = 0;
+    for (int index = 0; index < count; index += 1) {
       boxes[index] = TextBox.fromLTRBD(
-        encoded[position + 0],
-        encoded[position + 1],
-        encoded[position + 2],
-        encoded[position + 3],
-        TextDirection.values[encoded[position + 4].toInt()],
+        encoded[position++],
+        encoded[position++],
+        encoded[position++],
+        encoded[position++],
+        TextDirection.values[encoded[position++].toInt()],
       );
     }
     return boxes;
@@ -1983,19 +2017,20 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// to repeatedly call this. Instead, cache the results.
   List<LineMetrics> computeLineMetrics() {
     final Float64List encoded = _computeLineMetrics();
-    final List<LineMetrics> metrics = List<LineMetrics>(encoded[0].toInt());
+    final int count = encoded.length ~/ 9;
+    int position = 0;
+    final List<LineMetrics> metrics = List<LineMetrics>(count);
     for (int index = 0; index < metrics.length; index += 1) {
-      final int position = (index * 5) + 1;
       metrics[index] = LineMetrics(
-        hardBreak:      encoded[position + 0] != 0,
-        ascent:         encoded[position + 1],
-        descent:        encoded[position + 2],
-        unscaledAscent: encoded[position + 3],
-        height:         encoded[position + 4],
-        width:          encoded[position + 5],
-        left:           encoded[position + 6],
-        baseline:       encoded[position + 7],
-        lineNumber:     encoded[position + 8].toInt(),
+        hardBreak:      encoded[position++] != 0,
+        ascent:         encoded[position++],
+        descent:        encoded[position++],
+        unscaledAscent: encoded[position++],
+        height:         encoded[position++],
+        width:          encoded[position++],
+        left:           encoded[position++],
+        baseline:       encoded[position++],
+        lineNumber:     encoded[position++].toInt(),
       );
     }
     return metrics;

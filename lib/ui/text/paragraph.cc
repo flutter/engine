@@ -100,18 +100,16 @@ static tonic::Float32List EncodeTextBoxes(
   // First value is the number of values.
   // Then there are boxes.size() groups of 5 which are LTRBD, where D is the
   // text direction index.
-  auto count = boxes.size() * 5;
   tonic::Float32List result(
-      Dart_NewTypedData(Dart_TypedData_kFloat32, 1 + count));
-  result[0] = count;
+      Dart_NewTypedData(Dart_TypedData_kFloat32, boxes.size() * 5));
+  unsigned long position = 0;
   for (unsigned long i = 0; i < boxes.size(); i++) {
-    auto position = (i * 5) + 1;
     const txt::Paragraph::TextBox& box = boxes[i];
-    result[position + 0] = box.rect.fLeft;
-    result[position + 1] = box.rect.fTop;
-    result[position + 2] = box.rect.fRight;
-    result[position + 3] = box.rect.fBottom;
-    result[position + 4] = static_cast<float>(box.direction);
+    result[position++] = box.rect.fLeft;
+    result[position++] = box.rect.fTop;
+    result[position++] = box.rect.fRight;
+    result[position++] = box.rect.fBottom;
+    result[position++] = static_cast<float>(box.direction);
   }
   return result;
 }
@@ -170,28 +168,25 @@ tonic::Float64List Paragraph::computeLineMetrics() {
   std::vector<txt::LineMetrics> metrics = m_paragraph->GetLineMetrics();
 
   // Layout:
-  // First value is the number of values.
-  // Then there are boxes.size() groups of 9 which are the line metrics
+  // boxes.size() groups of 9 which are the line metrics
   // properties
-  auto count = metrics.size() * 9;
   tonic::Float64List result(
-      Dart_NewTypedData(Dart_TypedData_kFloat64, 1 + count));
-  result[0] = count;
+      Dart_NewTypedData(Dart_TypedData_kFloat64, metrics.size() * 9));
+  unsigned long position = 0;
   for (unsigned long i = 0; i < metrics.size(); i++) {
-    auto position = (i * 9) + 1;
     const txt::LineMetrics& line = metrics[i];
-    result[position + 0] = static_cast<float>(line.hard_break);
-    result[position + 1] = line.ascent;
-    result[position + 2] = line.descent;
-    result[position + 3] = line.unscaled_ascent;
+    result[position++] = static_cast<double>(line.hard_break);
+    result[position++] = line.ascent;
+    result[position++] = line.descent;
+    result[position++] = line.unscaled_ascent;
     // We add then round to get the height. The
     // definition of height here is different
     // than the one in LibTxt.
-    result[position + 4] = round(line.ascent + line.descent);
-    result[position + 5] = line.width;
-    result[position + 6] = line.left;
-    result[position + 7] = line.baseline;
-    result[position + 8] = static_cast<double>(line.line_number);
+    result[position++] = round(line.ascent + line.descent);
+    result[position++] = line.width;
+    result[position++] = line.left;
+    result[position++] = line.baseline;
+    result[position++] = static_cast<double>(line.line_number);
   }
 
   return result;
