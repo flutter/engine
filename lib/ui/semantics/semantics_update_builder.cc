@@ -122,7 +122,8 @@ void SemanticsUpdateBuilder::updateCustomAction(int id,
 }
 
 void SemanticsUpdateBuilder::build(Dart_Handle semantics_update_handle) {
-  SemanticsUpdate::create(semantics_update_handle, std::move(nodes_), std::move(actions_));
+  SemanticsUpdate::create(semantics_update_handle, std::move(nodes_),
+                          std::move(actions_));
 }
 
 }  // namespace flutter

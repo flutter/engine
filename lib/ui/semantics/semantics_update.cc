@@ -20,10 +20,9 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SemanticsUpdate);
 
 DART_BIND_ALL(SemanticsUpdate, FOR_EACH_BINDING)
 
-void SemanticsUpdate::create(
-    Dart_Handle semantics_update_handle,
-    SemanticsNodeUpdates nodes,
-    CustomAccessibilityActionUpdates actions) {
+void SemanticsUpdate::create(Dart_Handle semantics_update_handle,
+                             SemanticsNodeUpdates nodes,
+                             CustomAccessibilityActionUpdates actions) {
   auto semantics_update = fml::MakeRefCounted<SemanticsUpdate>(
       std::move(nodes), std::move(actions));
   semantics_update->AssociateWithDartWrapper(semantics_update_handle);
