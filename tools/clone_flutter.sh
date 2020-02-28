@@ -2,11 +2,15 @@
 set -e
 set -x
 
-echo "is cirrus ci: $CIRRUS_CI"
+if [[ "$CIRRUS_CI" = false || -z $CIRRUS_CI ]]
+then
+  echo "This script is aimed to be run on CI environments. Do not run locally."
+  exit 1
+fi
 
 if [[ -z $ENGINE_PATH ]]
 then
-  echo "This script is aimed to be run on CI environments. Do not run locally."
+  echo "Engine path should be set to run the script."
   exit 1
 fi
 
