@@ -42,7 +42,7 @@ void main() {
     final List<TextBox> boxes = paragraph.getBoxesForRange(0, 3);
     expect(boxes.length, 1);
     expect(boxes.first.left, 0);
-    expect(boxes.first.top, 0);
+    expect(boxes.first.top, closeTo(0, epsillon));
     expect(boxes.first.right, closeTo(42, epsillon));
     expect(boxes.first.bottom, closeTo(14, epsillon));
     expect(boxes.first.direction, TextDirection.ltr);
