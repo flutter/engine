@@ -43,6 +43,14 @@ void DartPersistentValue::Clear() {
     return;
   }
 
+  // TODO (b/150383826): This is a temporary hack to prevent crashing
+  // when dart GC tries to collect on a null isolate.
+  Dart_Isolate isolate = Dart_CurrentIsolate();
+  if (!isolate) {
+    Log("Clearing a DartPersistentHandle on a null isolate.");
+    return;
+  }
+
   DartIsolateScope scope(dart_state->isolate());
   Dart_DeletePersistentHandle(value_);
   dart_state_.reset();
