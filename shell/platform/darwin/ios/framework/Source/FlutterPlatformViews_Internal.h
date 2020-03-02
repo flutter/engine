@@ -81,14 +81,15 @@ class FlutterPlatformViewLayerPool {
   FlutterPlatformViewLayerPool() = default;
   ~FlutterPlatformViewLayerPool() = default;
 
-  // Gets a view layer from an internal pool.
-  // If no availble, it allocates a new layer.
+  // Gets a layer from the pool if available, or allocates a new one.
+  // Finally, it marks the layer as used.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrContext* gr_context,
                                                      std::shared_ptr<IOSContext> ios_context);
 
+  // Gets the layers in the pool that aren't currently used.
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> GetUnusedLayers();
 
-  // Makes all the layers in the pool available for reuse.
+  // Marks the layers in the pool as available for reuse.
   void RecycleLayers();
 
  private:
