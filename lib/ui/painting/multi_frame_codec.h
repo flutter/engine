@@ -17,7 +17,6 @@ class MultiFrameCodec : public Codec {
  public:
   static fml::RefPtr<MultiFrameCodec> Create(Dart_Handle codec_handle,
                                              std::unique_ptr<SkCodec> codec) {
-    FML_DLOG(ERROR) << "MFC Create";
     auto multi_frame_codec =
         fml::MakeRefCounted<MultiFrameCodec>(std::move(codec));
     multi_frame_codec->AssociateWithDartWrapper(codec_handle);

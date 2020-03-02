@@ -4,7 +4,6 @@
 
 #include "tonic/dart_wrappable.h"
 
-#include "fml/logging.h"
 #include "tonic/dart_class_library.h"
 #include "tonic/dart_state.h"
 #include "tonic/dart_wrapper_info.h"

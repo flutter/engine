@@ -17,7 +17,6 @@ class SingleFrameCodec : public Codec {
   static fml::RefPtr<SingleFrameCodec> Create(
       Dart_Handle codec_handle,
       ImageDecoder::ImageDescriptor descriptor) {
-    FML_DLOG(ERROR) << "SFC Create";
     auto codec = fml::MakeRefCounted<SingleFrameCodec>(std::move(descriptor));
     codec->AssociateWithDartWrapper(codec_handle);
     return codec;

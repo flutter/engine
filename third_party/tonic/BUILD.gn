@@ -41,7 +41,6 @@ source_set("tonic") {
     "logging",
     "scopes",
     "typed_data",
-    "//flutter/fml",
     "//third_party/dart/runtime:dart_api",
   ]
 
