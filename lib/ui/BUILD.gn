@@ -165,8 +165,8 @@ if (current_toolchain == host_toolchain) {
     testonly = true
 
     sources = [
-      "painting/image_decoder_unittests.cc",
       "painting/flutter_rtree_unittests.cc",
+      "painting/image_decoder_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]
 
