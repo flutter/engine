@@ -240,7 +240,6 @@ void PersistentCache::store(const SkData& key, const SkData& data) {
 }
 
 void PersistentCache::DumpSkp(const SkData& data) {
-  FML_LOG(ERROR) << "PersistentCache::DumpSkp";
   if (is_read_only_ || !IsValid()) {
     FML_LOG(ERROR) << "Could not dump SKP from read-only or invalid persistent "
                       "cache.";
