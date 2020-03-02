@@ -8,6 +8,7 @@ import 'dart:async';
 import 'dart:io' hide FileSystemEntity;
 
 import 'package:args/args.dart';
+import 'package:kernel/ast.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:vm/incremental_compiler.dart';
@@ -135,7 +136,7 @@ Future<int> starter(
           '--gen-bytecode',
           '--bytecode-options=source-positions,local-var-info,debugger-stops,instance-field-initializers,keep-unreachable-code,avoid-closure-call-instructions',
         ]);
-        compiler ??= _FlutterFrontendCompiler(output);
+        compiler ??= _FlutterFrontendCompiler(output, transformer: _ToStringTransformer());
 
         await compiler.compile(input, options);
         compiler.acceptLastDelta();
@@ -154,7 +155,8 @@ Future<int> starter(
   }
 
   compiler ??= _FlutterFrontendCompiler(output,
-      transformer: transformer,
+      // transformer: transformer,
+      transformer: _ToStringTransformer(),
       unsafePackageSerialization:
           options['unsafe-package-serialization'] as bool);
 
@@ -165,4 +167,59 @@ Future<int> starter(
   final Completer<int> completer = Completer<int>();
   frontend.listenAndCompile(compiler, input ?? stdin, options, completer);
   return completer.future;
+}
+
+const Set<String> _toStringNames = <String>{
+  'toString',
+  'toStringDeep',
+  'toStringShort',
+};
+
+class _ToStringVisitor extends RecursiveVisitor<void> {
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (node.name.name == 'toString') {
+      print(node.location);
+    }
+    super.visitMethodInvocation(node);
+  }
+
+  @override
+  void visitSuperMethodInvocation(SuperMethodInvocation node) {
+    // TODO: implement visitSuperMethodInvocation
+    super.visitSuperMethodInvocation(node);
+  }
+
+  @override
+  void visitPropertyGet(PropertyGet node) {
+    // TODO: implement visitPropertyGet
+    super.visitPropertyGet(node);
+  }
+
+  @override
+  void visitSuperPropertyGet(SuperPropertyGet node) {
+    // TODO: implement visitSuperPropertyGet
+    super.visitSuperPropertyGet(node);
+  }
+
+  @override
+  void visitProcedure(Procedure node) {
+    if (node.name.name == 'toString' && node.enclosingLibrary != null) {
+      assert(node.enclosingClass != null);
+      final String importUri = node.enclosingLibrary.importUri.toString();
+      if (importUri.startsWith('dart:ui') || importUri.startsWith('package:flutter/')) {
+        // print('Removing ${node.location}');
+      }
+    }
+    super.visitProcedure(node);
+  }
+}
+
+class _ToStringTransformer extends frontend.ProgramTransformer {
+  @override
+  void transform(Component component) {
+    component.visitChildren(_ToStringVisitor());
+  }
+
 }
