@@ -15,7 +15,7 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   )  : assert(kernelFilePath != null),
         assert(classLibraryUri != null),
         assert(className != null),
-        _visitedInstnaces = <String>{},
+        _visitedInstances = <String>{},
         constantInstances = <Map<String, dynamic>>[],
         nonConstantLocations = <Map<String, dynamic>>[];
 
@@ -28,7 +28,7 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   /// The name of the class to find.
   final String className;
 
-  final Set<String> _visitedInstnaces;
+  final Set<String> _visitedInstances;
   final List<Map<String, dynamic>> constantInstances;
   final List<Map<String, dynamic>> nonConstantLocations;
 
@@ -68,9 +68,8 @@ class _ConstVisitor extends RecursiveVisitor<void> {
 
   @override
   void visitInstanceConstantReference(InstanceConstant node) {
-    node.fieldValues.values.whereType<InstanceConstant>().forEach(visitInstanceConstantReference);
+    super.visitInstanceConstantReference(node);
     if (!_matches(node.classNode)) {
-      super.visitInstanceConstantReference(node);
       return;
     }
     final Map<String, dynamic> instance = <String, dynamic>{};
@@ -79,9 +78,9 @@ class _ConstVisitor extends RecursiveVisitor<void> {
         continue;
       }
       final PrimitiveConstant<dynamic> value = kvp.value as PrimitiveConstant<dynamic>;
-      instance[kvp.key.canonicalName.name] = value.value;
+      instance[kvp.key.asField.name.name] = value.value;
     }
-    if (_visitedInstnaces.add(instance.toString())) {
+    if (_visitedInstances.add(instance.toString())) {
       constantInstances.add(instance);
     }
   }
@@ -107,7 +106,7 @@ class ConstFinder {
 
   /// Finds all instances
   Map<String, dynamic> findInstances() {
-    _visitor._visitedInstnaces.clear();
+    _visitor._visitedInstances.clear();
     for (Library library in loadComponentFromBinary(_visitor.kernelFilePath).libraries) {
       library.visitChildren(_visitor);
     }
