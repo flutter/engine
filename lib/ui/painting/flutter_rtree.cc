@@ -25,7 +25,7 @@ void FlutterRTree::insert(const SkRect boundsArray[],
     Branch b;
     b.fBounds = bounds;
     b.fOpIndex = i;
-    b.isDraw = metadata[i].isDraw;
+    b.isDraw = (metadata == nullptr) ? false : metadata[i].isDraw;
     branches.push_back(b);
   }
 
@@ -45,8 +45,9 @@ void FlutterRTree::insert(const SkRect boundsArray[],
   }
 }
 
-void FlutterRTree::insert(const SkRect[], int N) {
-  SkASSERT(false);
+void FlutterRTree::insert(const SkRect boundsArray[], int N) {
+  // TODO(egarciad): Ask Skia about removing this method signature.
+  insert(boundsArray, nullptr, N);
 }
 
 FlutterRTree::Node* FlutterRTree::allocateNodeAtLevel(uint16_t level) {
@@ -166,13 +167,14 @@ void FlutterRTree::search(Node* node,
                           const SkRect& query,
                           std::vector<int>* results) const {
   for (int i = 0; i < node->fNumChildren; ++i) {
-    if (SkRect::Intersects(node->fChildren[i].fBounds, query)) {
-      if (0 == node->fLevel) {
-        results->push_back(node->fChildren[i].fOpIndex);
-      } else {
-        this->search(node->fChildren[i].fSubtree, query, results);
-      }
+    if (!SkRect::Intersects(node->fChildren[i].fBounds, query)) {
+      continue;
     }
+    if (0 != node->fLevel) {
+      this->search(node->fChildren[i].fSubtree, query, results);
+      continue;
+    }
+    results->push_back(node->fChildren[i].fOpIndex);
   }
 }
 
@@ -190,32 +192,33 @@ void FlutterRTree::searchRects(Node* node,
     return;
   }
   for (int i = 0; i < node->fNumChildren; ++i) {
-    if (SkRect::Intersects(node->fChildren[i].fBounds, query)) {
-      // Non-leaf node
-      if (0 != node->fLevel) {
-        this->searchRects(node->fChildren[i].fSubtree, query, results);
-        continue;
-      }
-      // Ignore records that don't draw anything.
-      // TODO(egarciad): Figure out if this can be moved to insert().
-      if (!node->fChildren[i].isDraw) {
-        continue;
-      }
-      SkRect* currentRecordRect = &node->fChildren[i].fBounds;
-      bool replacedExistingRect = false;
+    if (!SkRect::Intersects(node->fChildren[i].fBounds, query)) {
+      continue;
+    }
+    // Non-leaf node
+    if (0 != node->fLevel) {
+      this->searchRects(node->fChildren[i].fSubtree, query, results);
+      continue;
+    }
+    // Ignore records that don't draw anything.
+    // TODO(egarciad): Figure out if this can be moved to insert().
+    if (!node->fChildren[i].isDraw) {
+      continue;
+    }
+    SkRect* currentRecordRect = &node->fChildren[i].fBounds;
+    bool replacedExistingRect = false;
 
-      std::vector<SkRect*> currentResults = *results;
-      // If the current record rect intersects with any of the rects in the
-      // result, then join them, and update the rect in results.
-      for (size_t j = 0; !replacedExistingRect && j < results->size(); j++) {
-        if (SkRect::Intersects(*currentResults[j], *currentRecordRect)) {
-          currentResults[j]->join(*currentRecordRect);
-          replacedExistingRect = true;
-        }
+    std::vector<SkRect*> currentResults = *results;
+    // If the current record rect intersects with any of the rects in the
+    // result, then join them, and update the rect in results.
+    for (size_t j = 0; !replacedExistingRect && j < results->size(); j++) {
+      if (SkRect::Intersects(*currentResults[j], *currentRecordRect)) {
+        currentResults[j]->join(*currentRecordRect);
+        replacedExistingRect = true;
       }
-      if (!replacedExistingRect) {
-        results->push_back(currentRecordRect);
-      }
+    }
+    if (!replacedExistingRect) {
+      results->push_back(currentRecordRect);
     }
   }
 }
