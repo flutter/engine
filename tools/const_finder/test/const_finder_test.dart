@@ -37,11 +37,19 @@ void _checkConsts() {
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
     className: 'Target',
   );
-
   expect<String>(
     jsonEncode(finder.findInstances()),
     jsonEncode(<String, dynamic>{
       'constantInstances': <Map<String, dynamic>>[
+        <String, dynamic>{'stringValue': '100', 'intValue': 100, 'targetValue': null},
+        <String, dynamic>{'stringValue': '102', 'intValue': 102, 'targetValue': null},
+        <String, dynamic>{'stringValue': '101', 'intValue': 101},
+        <String, dynamic>{'stringValue': '103', 'intValue': 103, 'targetValue': null},
+        <String, dynamic>{'stringValue': '105', 'intValue': 105, 'targetValue': null},
+        <String, dynamic>{'stringValue': '104', 'intValue': 104},
+        <String, dynamic>{'stringValue': '106', 'intValue': 106, 'targetValue': null},
+        <String, dynamic>{'stringValue': '108', 'intValue': 108, 'targetValue': null},
+        <String, dynamic>{'stringValue': '107', 'intValue': 107},
         <String, dynamic>{'stringValue': '1', 'intValue': 1, 'targetValue': null},
         <String, dynamic>{'stringValue': '4', 'intValue': 4, 'targetValue': null},
         <String, dynamic>{'stringValue': '2', 'intValue': 2},

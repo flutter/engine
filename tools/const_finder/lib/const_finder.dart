@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:collection';
+
 import 'package:kernel/kernel.dart' hide MapEntry;
 import 'package:meta/meta.dart';
 
@@ -31,8 +33,23 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   final List<Map<String, dynamic>> nonConstantLocations;
 
   bool _matches(Class node) {
-    return node.enclosingLibrary.canonicalName.name == classLibraryUri &&
+    return node.enclosingLibrary.importUri.toString() == classLibraryUri &&
       node.name == className;
+  }
+
+  // Avoid visiting the same constant more than once.
+  Set<Constant> _cache = LinkedHashSet<Constant>.identity();
+
+  @override
+  void defaultConstant(Constant node) {
+    if (_cache.add(node)) {
+      super.defaultConstant(node);
+    }
+  }
+
+  @override
+  void defaultConstantReference(Constant node) {
+    defaultConstant(node);
   }
 
   @override
