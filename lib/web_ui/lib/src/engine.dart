@@ -117,6 +117,7 @@ part 'engine/text_editing/text_editing.dart';
 part 'engine/util.dart';
 part 'engine/validators.dart';
 part 'engine/vector_math.dart';
+part 'engine/web_experiments.dart';
 part 'engine/window.dart';
 
 bool _engineInitialized = false;

@@ -210,6 +210,16 @@ class EngineWindow extends ui.Window {
             break;
         }
         return;
+
+      case 'flutter/experiments':
+        const MethodCodec codec = JSONMethodCodec();
+        final MethodCall decoded = codec.decodeMethodCall(data);
+        final Map<String, dynamic> arguments = decoded.arguments;
+        switch (decoded.method) {
+          case 'enableWebExperiments':
+            webExperiments.enableWebExperiments(arguments);
+            return;
+        }
     }
 
     if (pluginMessageCallHandler != null) {
