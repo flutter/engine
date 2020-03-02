@@ -43,7 +43,6 @@ void DartPersistentValue::Clear() {
     return;
   }
 
-  DartIsolateScope scope(dart_state->isolate());
   Dart_DeletePersistentHandle(value_);
   dart_state_.reset();
   value_ = nullptr;
