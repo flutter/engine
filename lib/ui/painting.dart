@@ -1689,14 +1689,12 @@ class Codec extends NativeFieldWrapperClass2 {
   ///
   /// The returned future can complete with an error if the decoding has failed.
   Future<FrameInfo> getNextFrame() async {
-    if (_cachedFrame != null && frameCount == 1) {
-      return _cachedFrame;
+    if (_cachedFrame == null || frameCount != 1) {
+      final Image image = Image._();
+      final int durationMilliseconds = await _futurize((_Callback<int> callback) => _getNextFrame(image, callback));
+      _cachedFrame = FrameInfo._(durationMilliseconds, image);
     }
-    final Image image = Image._();
-    print('About to call _futureize with image');
-    final int durationMilliseconds = await _futurize((_Callback<int> callback) => _getNextFrame(image, callback));
-    print(image);
-    return _cachedFrame = FrameInfo._(durationMilliseconds, image);
+    return _cachedFrame;
   }
 
   /// Returns an error message on failure, null on success.
