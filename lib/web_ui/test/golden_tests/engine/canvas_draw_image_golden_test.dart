@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:js_util' as js_util;
@@ -11,6 +12,8 @@ import 'package:ui/src/engine.dart';
 import 'package:test/test.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
+
+import 'scuba.dart';
 
 void main() async {
   const double screenWidth = 600.0;
@@ -29,7 +32,7 @@ void main() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      await matchGoldenFile('$fileName.png', region: region, maxDiffRate: 0.2);
+      await matchGoldenFile('$fileName.png', region: region, maxDiffRatePercent: 0.0);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -39,10 +42,9 @@ void main() async {
 
   setUp(() async {
     debugEmulateFlutterTesterEnvironment = true;
-    await webOnlyInitializePlatform();
-    webOnlyFontCollection.debugRegisterTestFonts();
-    await webOnlyFontCollection.ensureFontsLoaded();
   });
+
+  setUpStableTestFonts();
 
   test('Paints image', () async {
     final RecordingCanvas rc =

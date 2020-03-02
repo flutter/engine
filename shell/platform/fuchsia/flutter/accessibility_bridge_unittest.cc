@@ -23,7 +23,13 @@ class AccessibilityBridgeTestDelegate
     : public flutter_runner::AccessibilityBridge::Delegate {
  public:
   void SetSemanticsEnabled(bool enabled) override { enabled_ = enabled; }
+  void DispatchSemanticsAction(int32_t node_id,
+                               flutter::SemanticsAction action) override {
+    actions.push_back(std::make_pair(node_id, action));
+  }
+
   bool enabled() { return enabled_; }
+  std::vector<std::pair<int32_t, flutter::SemanticsAction>> actions;
 
  private:
   bool enabled_;
@@ -50,6 +56,7 @@ class AccessibilityBridgeTest : public testing::Test {
         /*flags*/ 0u, &view_ref_control_.reference, &view_ref_.reference);
     EXPECT_EQ(status, ZX_OK);
 
+    accessibility_delegate_.actions.clear();
     accessibility_bridge_ =
         std::make_unique<flutter_runner::AccessibilityBridge>(
             accessibility_delegate_, services_provider_.service_directory(),
@@ -130,6 +137,106 @@ TEST_F(AccessibilityBridgeTest, DeletesChildrenTransitively) {
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
 }
 
+TEST_F(AccessibilityBridgeTest, PopulatesCheckedState) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  // HasCheckedState = true
+  // IsChecked = true
+  // IsSelected = false
+  // IsHidden = false
+  node0.flags |= static_cast<int>(flutter::SemanticsFlags::kHasCheckedState);
+  node0.flags |= static_cast<int>(flutter::SemanticsFlags::kIsChecked);
+  node0.value = "value";
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}});
+  RunLoopUntilIdle();
+
+  EXPECT_EQ(0, semantics_manager_.DeleteCount());
+  EXPECT_EQ(1, semantics_manager_.UpdateCount());
+  EXPECT_EQ(1, semantics_manager_.CommitCount());
+  EXPECT_EQ(1U, semantics_manager_.LastUpdatedNodes().size());
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_TRUE(fuchsia_node.has_states());
+  const auto& states = fuchsia_node.states();
+  EXPECT_TRUE(states.has_checked_state());
+  EXPECT_EQ(states.checked_state(),
+            fuchsia::accessibility::semantics::CheckedState::CHECKED);
+  EXPECT_TRUE(states.has_selected());
+  EXPECT_FALSE(states.selected());
+  EXPECT_TRUE(states.has_hidden());
+  EXPECT_FALSE(states.hidden());
+  EXPECT_TRUE(states.has_value());
+  EXPECT_EQ(states.value(), node0.value);
+
+  EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
+  EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
+}
+
+TEST_F(AccessibilityBridgeTest, PopulatesSelectedState) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  // HasCheckedState = false
+  // IsChecked = false
+  // IsSelected = true
+  // IsHidden = false
+  node0.flags = static_cast<int>(flutter::SemanticsFlags::kIsSelected);
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}});
+  RunLoopUntilIdle();
+
+  EXPECT_EQ(0, semantics_manager_.DeleteCount());
+  EXPECT_EQ(1, semantics_manager_.UpdateCount());
+  EXPECT_EQ(1, semantics_manager_.CommitCount());
+  EXPECT_EQ(1U, semantics_manager_.LastUpdatedNodes().size());
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_TRUE(fuchsia_node.has_states());
+  const auto& states = fuchsia_node.states();
+  EXPECT_TRUE(states.has_checked_state());
+  EXPECT_EQ(states.checked_state(),
+            fuchsia::accessibility::semantics::CheckedState::NONE);
+  EXPECT_TRUE(states.has_selected());
+  EXPECT_TRUE(states.selected());
+  EXPECT_TRUE(states.has_hidden());
+  EXPECT_FALSE(states.hidden());
+
+  EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
+  EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
+}
+
+TEST_F(AccessibilityBridgeTest, PopulatesHiddenState) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  // HasCheckedState = false
+  // IsChecked = false
+  // IsSelected = false
+  // IsHidden = true
+  node0.flags = static_cast<int>(flutter::SemanticsFlags::kIsHidden);
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}});
+  RunLoopUntilIdle();
+
+  EXPECT_EQ(0, semantics_manager_.DeleteCount());
+  EXPECT_EQ(1, semantics_manager_.UpdateCount());
+  EXPECT_EQ(1, semantics_manager_.CommitCount());
+  EXPECT_EQ(1u, semantics_manager_.LastUpdatedNodes().size());
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_TRUE(fuchsia_node.has_states());
+  const auto& states = fuchsia_node.states();
+  EXPECT_TRUE(states.has_checked_state());
+  EXPECT_EQ(states.checked_state(),
+            fuchsia::accessibility::semantics::CheckedState::NONE);
+  EXPECT_TRUE(states.has_selected());
+  EXPECT_FALSE(states.selected());
+  EXPECT_TRUE(states.has_hidden());
+  EXPECT_TRUE(states.hidden());
+
+  EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
+  EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
+}
+
 TEST_F(AccessibilityBridgeTest, TruncatesLargeLabel) {
   // Test that labels which are too long are truncated.
   flutter::SemanticsNode node0;
@@ -174,6 +281,49 @@ TEST_F(AccessibilityBridgeTest, TruncatesLargeLabel) {
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
 }
 
+TEST_F(AccessibilityBridgeTest, TruncatesLargeValue) {
+  // Test that values which are too long are truncated.
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+
+  flutter::SemanticsNode node1;
+  node1.id = 1;
+
+  flutter::SemanticsNode bad_node;
+  bad_node.id = 2;
+  bad_node.value =
+      std::string(fuchsia::accessibility::semantics::MAX_VALUE_SIZE + 1, '2');
+
+  node0.childrenInTraversalOrder = {1, 2};
+  node0.childrenInHitTestOrder = {1, 2};
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({
+      {0, node0},
+      {1, node1},
+      {2, bad_node},
+  });
+  RunLoopUntilIdle();
+
+  EXPECT_EQ(0, semantics_manager_.DeleteCount());
+  EXPECT_EQ(1, semantics_manager_.UpdateCount());
+  EXPECT_EQ(1, semantics_manager_.CommitCount());
+  EXPECT_EQ(3U, semantics_manager_.LastUpdatedNodes().size());
+  auto trimmed_node =
+      std::find_if(semantics_manager_.LastUpdatedNodes().begin(),
+                   semantics_manager_.LastUpdatedNodes().end(),
+                   [id = static_cast<uint32_t>(bad_node.id)](
+                       fuchsia::accessibility::semantics::Node const& node) {
+                     return node.node_id() == id;
+                   });
+  ASSERT_NE(trimmed_node, semantics_manager_.LastUpdatedNodes().end());
+  ASSERT_TRUE(trimmed_node->has_states());
+  EXPECT_EQ(
+      trimmed_node->states().value(),
+      std::string(fuchsia::accessibility::semantics::MAX_VALUE_SIZE, '2'));
+  EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
+  EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
+}
+
 TEST_F(AccessibilityBridgeTest, SplitsLargeUpdates) {
   // Test that labels which are too long are truncated.
   flutter::SemanticsNode node0;
@@ -194,8 +344,8 @@ TEST_F(AccessibilityBridgeTest, SplitsLargeUpdates) {
 
   flutter::SemanticsNode node4;
   node4.id = 4;
-  node4.label =
-      std::string(fuchsia::accessibility::semantics::MAX_LABEL_SIZE, '4');
+  node4.value =
+      std::string(fuchsia::accessibility::semantics::MAX_VALUE_SIZE, '4');
 
   node0.childrenInTraversalOrder = {1, 2};
   node0.childrenInHitTestOrder = {1, 2};
@@ -287,7 +437,7 @@ TEST_F(AccessibilityBridgeTest, BatchesLargeMessages) {
   RunLoopUntilIdle();
 
   EXPECT_EQ(0, semantics_manager_.DeleteCount());
-  EXPECT_EQ(4, semantics_manager_.UpdateCount());
+  EXPECT_EQ(5, semantics_manager_.UpdateCount());
   EXPECT_EQ(1, semantics_manager_.CommitCount());
   EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
@@ -301,7 +451,7 @@ TEST_F(AccessibilityBridgeTest, BatchesLargeMessages) {
   RunLoopUntilIdle();
 
   EXPECT_EQ(1, semantics_manager_.DeleteCount());
-  EXPECT_EQ(5, semantics_manager_.UpdateCount());
+  EXPECT_EQ(6, semantics_manager_.UpdateCount());
   EXPECT_EQ(2, semantics_manager_.CommitCount());
   EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
@@ -363,5 +513,60 @@ TEST_F(AccessibilityBridgeTest, HitTest) {
   EXPECT_EQ(hit_node_id, 3u);
   accessibility_bridge_->HitTest({30, 30}, callback);
   EXPECT_EQ(hit_node_id, 4u);
+}
+
+TEST_F(AccessibilityBridgeTest, Actions) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+
+  flutter::SemanticsNode node1;
+  node1.id = 1;
+
+  node0.childrenInTraversalOrder = {1};
+  node0.childrenInHitTestOrder = {1};
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({
+      {0, node0},
+      {1, node1},
+  });
+  RunLoopUntilIdle();
+
+  auto handled_callback = [](bool handled) { EXPECT_TRUE(handled); };
+  auto unhandled_callback = [](bool handled) { EXPECT_FALSE(handled); };
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      0u, fuchsia::accessibility::semantics::Action::DEFAULT, handled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 1u);
+  EXPECT_EQ(accessibility_delegate_.actions.back(),
+            std::make_pair(0, flutter::SemanticsAction::kTap));
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      0u, fuchsia::accessibility::semantics::Action::SECONDARY,
+      handled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 2u);
+  EXPECT_EQ(accessibility_delegate_.actions.back(),
+            std::make_pair(0, flutter::SemanticsAction::kLongPress));
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      0u, fuchsia::accessibility::semantics::Action::SET_FOCUS,
+      unhandled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 2u);
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      0u, fuchsia::accessibility::semantics::Action::SET_VALUE,
+      unhandled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 2u);
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      0u, fuchsia::accessibility::semantics::Action::SHOW_ON_SCREEN,
+      handled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 3u);
+  EXPECT_EQ(accessibility_delegate_.actions.back(),
+            std::make_pair(0, flutter::SemanticsAction::kShowOnScreen));
+
+  accessibility_bridge_->OnAccessibilityActionRequested(
+      2u, fuchsia::accessibility::semantics::Action::DEFAULT,
+      unhandled_callback);
+  EXPECT_EQ(accessibility_delegate_.actions.size(), 3u);
 }
 }  // namespace flutter_runner_test

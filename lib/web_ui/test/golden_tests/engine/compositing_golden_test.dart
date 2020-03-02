@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:math' as math;
 
@@ -592,7 +593,7 @@ void _testCullRectComputation() {
       await matchGoldenFile(
         'compositing_draw_high_quality_text.png',
         region: canvasSize,
-        maxDiffRate: 0.0,
+        maxDiffRatePercent: 0.0,
         pixelComparison: PixelComparison.precise,
       );
     },

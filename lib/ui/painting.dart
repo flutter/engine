@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 // Some methods in this file assert that their arguments are not null. These
@@ -646,7 +647,7 @@ enum BlendMode {
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_colorDodge.png)
   colorDodge,
 
-  /// Divide the inverse of the destination by the the source, and inverse the result.
+  /// Divide the inverse of the destination by the source, and inverse the result.
   ///
   /// Inverting the components means that a fully saturated channel (opaque
   /// white) is treated as the value 0.0, and values normally treated as 0.0
@@ -1453,6 +1454,9 @@ class Paint {
 
   @override
   String toString() {
+    if (const bool.fromEnvironment('dart.vm.product', defaultValue: false)) {
+      return super.toString();
+    }
     final StringBuffer result = StringBuffer();
     String semicolon = '';
     result.write('Paint(');
@@ -1892,14 +1896,20 @@ class Path extends NativeFieldWrapperClass2 {
   Path() { _constructor(); }
   void _constructor() native 'Path_constructor';
 
+  /// Avoids creating a new native backing for the path for methods that will
+  /// create it later, such as [Path.from], [shift] and [transform].
+  Path._();
+
   /// Creates a copy of another [Path].
   ///
   /// This copy is fast and does not require additional memory unless either
   /// the `source` path or the path returned by this constructor are modified.
   factory Path.from(Path source) {
-    return source._clone();
+    final Path clonedPath = Path._();
+    source._clone(clonedPath);
+    return clonedPath;
   }
-  Path _clone() native 'Path_clone';
+  void _clone(Path outPath) native 'Path_clone';
 
   /// Determines how the interior of this path is calculated.
   ///
@@ -2118,7 +2128,7 @@ class Path extends NativeFieldWrapperClass2 {
   void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_addPathWithMatrix';
 
   /// Adds the given path to this path by extending the current segment of this
-  /// path with the the first segment of the given path.
+  /// path with the first segment of the given path.
   ///
   /// If `matrix4` is specified, the path will be transformed by this matrix
   /// after the matrix is translated by the given `offset`.  The matrix is a 4x4
@@ -2162,17 +2172,21 @@ class Path extends NativeFieldWrapperClass2 {
   /// sub-path translated by the given offset.
   Path shift(Offset offset) {
     assert(_offsetIsValid(offset));
-    return _shift(offset.dx, offset.dy);
+    final Path path = Path._();
+    _shift(path, offset.dx, offset.dy);
+    return path;
   }
-  Path _shift(double dx, double dy) native 'Path_shift';
+  void _shift(Path outPath, double dx, double dy) native 'Path_shift';
 
   /// Returns a copy of the path with all the segments of every
   /// sub-path transformed by the given matrix.
   Path transform(Float64List matrix4) {
     assert(_matrix4IsValid(matrix4));
-    return _transform(matrix4);
+    final Path path = Path._();
+    _transform(path, matrix4);
+    return path;
   }
-  Path _transform(Float64List matrix4) native 'Path_transform';
+  void _transform(Path outPath, Float64List matrix4) native 'Path_transform';
 
   /// Computes the bounding rectangle for this path.
   ///
@@ -2448,9 +2462,11 @@ class _PathMeasure extends NativeFieldWrapperClass2 {
 
   Path extractPath(int contourIndex, double start, double end, {bool startWithMoveTo = true}) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
-    return _extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
+    final Path path = Path._();
+    _extractPath(path, contourIndex, start, end, startWithMoveTo: startWithMoveTo);
+    return path;
   }
-  Path _extractPath(int contourIndex, double start, double end, {bool startWithMoveTo = true}) native 'PathMeasure_getSegment';
+  void _extractPath(Path outPath, int contourIndex, double start, double end, {bool startWithMoveTo = true}) native 'PathMeasure_getSegment';
 
   bool isClosed(int contourIndex) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
@@ -4158,7 +4174,13 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   /// and the canvas objects are invalid and cannot be used further.
   ///
   /// Returns null if the PictureRecorder is not associated with a canvas.
-  Picture endRecording() native 'PictureRecorder_endRecording';
+  Picture endRecording() {
+    final Picture picture = Picture._();
+    _endRecording(picture);
+    return picture;
+  }
+
+  void _endRecording(Picture outPicture) native 'PictureRecorder_endRecording';
 }
 
 /// A single shadow.

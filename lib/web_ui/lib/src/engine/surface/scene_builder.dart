@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 class SurfaceSceneBuilder implements ui.SceneBuilder {
@@ -41,7 +42,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     // the live tree.
     if (surface.oldLayer != null) {
       assert(surface.oldLayer.runtimeType == surface.runtimeType);
-      assert(surface.oldLayer.isActive);
+      assert(debugAssertSurfaceState(surface.oldLayer, PersistedSurfaceState.active));
       surface.oldLayer.state = PersistedSurfaceState.pendingUpdate;
     }
     _adoptSurface(surface);
@@ -264,7 +265,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
     final PersistedContainerSurface retainedSurface = retainedLayer;
-    assert(retainedSurface.isActive || retainedSurface.isReleased);
+    if (assertionsEnabled) {
+      assert(debugAssertSurfaceState(retainedSurface, PersistedSurfaceState.active, PersistedSurfaceState.released));
+    }
     retainedSurface.tryRetain();
     _adoptSurface(retainedSurface);
   }

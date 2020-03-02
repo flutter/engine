@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 
 import 'package:ui/ui.dart';
@@ -27,9 +28,11 @@ void main() async {
 
   final TextStyle warningStyle = TextStyle(
     color: const Color(0xFFFF0000),
-    fontFamily: 'Arial',
+    fontFamily: 'Roboto',
     fontSize: 10,
   );
+
+  setUpStableTestFonts();
 
   Paragraph warning(String text) {
     return paragraph(text, textStyle: warningStyle);

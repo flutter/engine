@@ -1665,7 +1665,7 @@ FlutterEngineResult FlutterEnginePostDartObject(
           SAFE_ACCESS(object->buffer_value, buffer_collect_callback, nullptr);
       auto user_data = SAFE_ACCESS(object->buffer_value, user_data, nullptr);
 
-      // The the user has provided a callback, let them manage the lifecycle of
+      // The user has provided a callback, let them manage the lifecycle of
       // the underlying data. If not, copy it out from the provided buffer.
 
       if (callback == nullptr) {
@@ -1724,7 +1724,6 @@ FlutterEngineResult FlutterEnginePostDartObject(
   return kSuccess;
 }
 
-FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineNotifyLowMemoryWarning(
     FLUTTER_API_SYMBOL(FlutterEngine) raw_engine) {
   auto engine = reinterpret_cast<flutter::EmbedderEngine*>(raw_engine);
@@ -1746,4 +1745,28 @@ FlutterEngineResult FlutterEngineNotifyLowMemoryWarning(
              : LOG_EMBEDDER_ERROR(
                    kInternalInconsistency,
                    "Could not dispatch the low memory notification message.");
+}
+
+FlutterEngineResult FlutterEnginePostCallbackOnAllNativeThreads(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterNativeThreadCallback callback,
+    void* user_data) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (callback == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Invalid native thread callback.");
+  }
+
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)
+                 ->PostTaskOnEngineManagedNativeThreads(
+                     [callback, user_data](FlutterNativeThreadType type) {
+                       callback(type, user_data);
+                     })
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                  "Internal error while attempting to post "
+                                  "tasks to all threads.");
 }

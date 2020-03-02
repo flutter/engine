@@ -4,18 +4,17 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
+#include "dpi_utils.h"
+
 namespace flutter {
 
 Win32Window::Win32Window() {
-  // Assume Windows 10 1703 or greater for DPI handling.  When running on a
-  // older release of Windows where this context doesn't exist, DPI calls will
-  // fail and Flutter rendering will be impacted until this is fixed.
-  // To handle downlevel correctly, dpi_helper must use the most recent DPI
-  // context available should be used: Windows 1703: Per-Monitor V2, 8.1:
-  // Per-Monitor V1, Windows 7: System See
-  // https://docs.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows
-  // for more information.
+  // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
+  // supported, |current_dpi_| should be updated in the
+  // kWmDpiChangedBeforeParent message.
+  current_dpi_ = GetDpiForHWND(nullptr);
 }
+
 Win32Window::~Win32Window() {
   Destroy();
 }
@@ -26,7 +25,7 @@ void Win32Window::InitializeChild(const char* title,
   Destroy();
   std::wstring converted_title = NarrowToWide(title);
 
-  WNDCLASS window_class = ResgisterWindowClass(converted_title);
+  WNDCLASS window_class = RegisterWindowClass(converted_title);
 
   auto* result = CreateWindowEx(
       0, window_class.lpszClassName, converted_title.c_str(),
@@ -54,7 +53,7 @@ std::wstring Win32Window::NarrowToWide(const char* source) {
   return wideTitle;
 }
 
-WNDCLASS Win32Window::ResgisterWindowClass(std::wstring& title) {
+WNDCLASS Win32Window::RegisterWindowClass(std::wstring& title) {
   window_class_name_ = title;
 
   WNDCLASS window_class{};
@@ -82,14 +81,6 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                      reinterpret_cast<LONG_PTR>(cs->lpCreateParams));
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
-
-    // Since the application is running in Per-monitor V2 mode, turn on
-    // automatic titlebar scaling
-    BOOL result = that->dpi_helper_->EnableNonClientDpiScaling(window);
-    if (result != TRUE) {
-      OutputDebugString(L"Failed to enable non-client area autoscaling");
-    }
-    that->current_dpi_ = that->dpi_helper_->GetDpiForWindow(window);
     that->window_handle_ = window;
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     return that->MessageHandler(window, message, wparam, lparam);
@@ -121,16 +112,10 @@ Win32Window::MessageHandler(HWND hwnd,
   UINT button_pressed = 0;
   if (window != nullptr) {
     switch (message) {
-      case WM_DPICHANGED:
-        return HandleDpiChange(window_handle_, wparam, lparam, true);
-        break;
       case kWmDpiChangedBeforeParent:
-        return HandleDpiChange(window_handle_, wparam, lparam, false);
-        break;
-      case WM_DESTROY:
-        window->OnClose();
+        current_dpi_ = GetDpiForHWND(window_handle_);
+        window->OnDpiScale(current_dpi_);
         return 0;
-        break;
       case WM_SIZE:
         width = LOWORD(lparam);
         height = HIWORD(lparam);
@@ -265,40 +250,6 @@ void Win32Window::Destroy() {
   }
 
   UnregisterClass(window_class_name_.c_str(), nullptr);
-}
-
-// DPI Change handler. on WM_DPICHANGE resize the window
-LRESULT
-Win32Window::HandleDpiChange(HWND hwnd,
-                             WPARAM wparam,
-                             LPARAM lparam,
-                             bool toplevel) {
-  if (hwnd != nullptr) {
-    auto window =
-        reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-
-    UINT uDpi = HIWORD(wparam);
-
-    // The DPI is only passed for DPI change messages on top level windows,
-    // hence call function to get DPI if needed.
-    if (uDpi == 0) {
-      uDpi = dpi_helper_->GetDpiForWindow(hwnd);
-    }
-    current_dpi_ = uDpi;
-    window->OnDpiScale(uDpi);
-
-    if (toplevel) {
-      // Resize the window only for toplevel windows which have a suggested
-      // size.
-      auto lprcNewScale = reinterpret_cast<RECT*>(lparam);
-      LONG newWidth = lprcNewScale->right - lprcNewScale->left;
-      LONG newHeight = lprcNewScale->bottom - lprcNewScale->top;
-
-      SetWindowPos(hwnd, nullptr, lprcNewScale->left, lprcNewScale->top,
-                   newWidth, newHeight, SWP_NOZORDER | SWP_NOACTIVATE);
-    }
-  }
-  return 0;
 }
 
 void Win32Window::HandleResize(UINT width, UINT height) {
