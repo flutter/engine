@@ -24,6 +24,7 @@
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 constexpr int kMicrosecondsPerSecond = 1000 * 1000;
+constexpr CGFloat kScrollViewContentSize = 10.0;
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 
@@ -333,8 +334,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
   [self installSplashScreenViewIfNecessary];
   // This is a workaround to accomodate iOS 13 and higher.  There isn't a way to get touches on the
-  // status bar to trigger scrolling to the top of a scroll view.  We place a UIScrollView offscreen
-  // with a content offset so we can get those events. See also:
+  // status bar to trigger scrolling to the top of a scroll view.  We place a UIScrollView with
+  // height zero and a content offset so we can get those events. See also:
   // https://github.com/flutter/flutter/issues/35050
   UIScrollView* scrollView = [[UIScrollView alloc] init];
   scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
@@ -342,11 +343,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   scrollView.backgroundColor = UIColor.whiteColor;
   scrollView.delegate = self;
   // This is an arbitrary small size.
-  scrollView.contentSize = CGSizeMake(10, 10);
+  scrollView.contentSize = CGSizeMake(kScrollViewContentSize, kScrollViewContentSize);
   // This is an arbitrary offset that is not CGPointZero.
-  scrollView.contentOffset = CGPointMake(10, 10);
   // This is some aribrary place offscreen.
-  scrollView.bounds = CGRectMake(0, -10, 0, 10);
+  scrollView.frame = CGRectMake(0, 0, 0, 0);
+  scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
   [self.view addSubview:scrollView];
   _scrollView.reset(scrollView);
 }
@@ -877,8 +878,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGSize viewSize = self.view.bounds.size;
   CGFloat scale = [UIScreen mainScreen].scale;
 
-  // Purposefully place this offscreen.
-  _scrollView.get().bounds = CGRectMake(0.0, -10.0, viewSize.width, 0);
+  // Purposefully place this not visible.
+  _scrollView.get().frame = CGRectMake(0.0, 0.0, viewSize.width, 0.0);
+  _scrollView.get().contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
 
   // First time since creation that the dimensions of its view is known.
   bool firstViewBoundsUpdate = !_viewportMetrics.physical_width;
