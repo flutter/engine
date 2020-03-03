@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_LIB_UI_PAINTING_PATCHED_R_TREE_H_
-#define FLUTTER_LIB_UI_PAINTING_PATCHED_R_TREE_H_
+#ifndef FLUTTER_LIB_UI_PAINTING_FLUTTER_RTREE_H_
+#define FLUTTER_LIB_UI_PAINTING_FLUTTER_RTREE_H_
 
 #include "third_party/skia/include/core/SkBBHFactory.h"
 #include "third_party/skia/include/core/SkTypes.h"
