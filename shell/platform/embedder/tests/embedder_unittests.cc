@@ -3529,7 +3529,7 @@ TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
   fml::AutoResetWaitableEvent latch;
   context.GetCompositor().SetNextPresentCallback(
       [&](const FlutterLayer** layers, size_t layers_count) {
-        ASSERT_EQ(layers_count, 2u);
+        ASSERT_EQ(layers_count, 3u);
 
         {
           FlutterPlatformView platform_view = *layers[0]->platform_view;
