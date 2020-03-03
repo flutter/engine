@@ -1,0 +1,12 @@
+// This is a generated file; do not edit or check into version control.
+FLUTTER_ROOT=/Users/egarciad/p/flutter
+FLUTTER_APPLICATION_PATH=/Users/egarciad/p/engine/src/flutter/testing/scenario_app
+FLUTTER_TARGET=lib/main.dart
+FLUTTER_BUILD_DIR=build
+SYMROOT=${SOURCE_ROOT}/../build/ios
+FLUTTER_FRAMEWORK_DIR=/Users/egarciad/p/engine/src/out/ios_debug_sim_unopt
+FLUTTER_BUILD_NAME=1.0.0
+FLUTTER_BUILD_NUMBER=1
+FLUTTER_ENGINE=/Users/egarciad/p/engine/src
+LOCAL_ENGINE=ios_debug_sim_unopt
+ARCHS=arm64

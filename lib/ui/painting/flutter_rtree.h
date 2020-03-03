@@ -20,6 +20,7 @@ class FlutterRTree : public SkBBoxHierarchy {
   void insert(const SkRect[], int N) override;
   void search(const SkRect& query, std::vector<int>* results) const override;
   void searchRects(const SkRect& query, std::vector<SkRect*>* results) const;
+  void getAll(std::vector<SkRect*>* results) const;
   size_t bytesUsed() const override;
 
   // Methods and constants below here are only public for tests.
