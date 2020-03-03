@@ -19,9 +19,11 @@ void expect<T>(T value, T expected) {
 final String basePath =
     path.canonicalize(path.join(path.dirname(Platform.script.path), '..'));
 final String fixtures = path.join(basePath, 'test', 'fixtures');
+final String box = path.join(fixtures, 'lib', 'box.dart');
 final String consts = path.join(fixtures, 'lib', 'consts.dart');
 final String dotPackages = path.join(fixtures, '.packages');
 final String constsAndNon = path.join(fixtures, 'lib', 'consts_and_non.dart');
+final String boxDill = path.join(fixtures, 'box.dill');
 final String constsDill = path.join(fixtures, 'consts.dill');
 final String constsAndNonDill = path.join(fixtures, 'consts_and_non.dill');
 
@@ -30,8 +32,19 @@ final String constsAndNonDill = path.join(fixtures, 'consts_and_non.dill');
 final String dart = Platform.resolvedExecutable;
 final String bat = Platform.isWindows ? '.bat' : '';
 
+void _checkRecursion() {
+  stdout.writeln('Checking recursive calls.');
+  final ConstFinder finder = ConstFinder(
+    kernelFilePath: boxDill,
+    classLibraryUri: 'package:const_finder_fixtures/box.dart',
+    className: 'Box',
+  );
+  // Will timeout if we did things wrong.
+  jsonEncode(finder.findInstances());
+}
+
 void _checkConsts() {
-  print('Checking for expected constants.');
+  stdout.writeln('Checking for expected constants.');
   final ConstFinder finder = ConstFinder(
     kernelFilePath: constsDill,
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
@@ -66,7 +79,7 @@ void _checkConsts() {
 }
 
 void _checkNonConsts() {
-  print('Checking for non-constant instances.');
+  stdout.writeln('Checking for non-constant instances.');
   final ConstFinder finder = ConstFinder(
     kernelFilePath: constsAndNonDill,
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
@@ -129,6 +142,18 @@ Future<void> main(List<String> args) async {
 
     stdout.writeln('Generating kernel fixtures...');
     stdout.writeln(consts);
+
+    _checkProcessResult(Process.runSync(dart, <String>[
+      frontendServer,
+      '--sdk-root=$sdkRoot',
+      '--target=flutter',
+      '--aot',
+      '--tfa',
+      '--packages=$dotPackages',
+      '--output-dill=$boxDill',
+      box,
+    ]));
+
     _checkProcessResult(Process.runSync(dart, <String>[
       frontendServer,
       '--sdk-root=$sdkRoot',
@@ -151,6 +176,7 @@ Future<void> main(List<String> args) async {
       constsAndNon,
     ]));
 
+    _checkRecursion();
     _checkConsts();
     _checkNonConsts();
   } finally {
