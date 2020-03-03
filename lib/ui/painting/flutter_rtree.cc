@@ -185,6 +185,10 @@ void FlutterRTree::searchRects(const SkRect& query,
   }
 }
 
+void FlutterRTree::getAll(std::vector<SkRect*>* results) const {
+  searchRects(fRoot.fBounds, results);
+}
+
 void FlutterRTree::searchRects(Node* node,
                                const SkRect& query,
                                std::vector<SkRect*>* results) const {
