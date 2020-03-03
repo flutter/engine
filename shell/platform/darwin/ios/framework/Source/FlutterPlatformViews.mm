@@ -545,14 +545,11 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
     sk_sp<SkPicture> picture,
     SkRect rect) {
   std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, ios_context);
-  UIView* overlay_view = layer->overlay_view;
-
-  overlay_view.backgroundColor = [UIColor blueColor];
-
   CGFloat screenScale = [UIScreen mainScreen].scale;
   // Set the size of the overlay UIView.
-  overlay_view.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
-                                  rect.width() / screenScale, rect.height() / screenScale);
+  layer->overlay_view.get().frame =
+      CGRectMake(rect.x() / screenScale, rect.y() / screenScale, rect.width() / screenScale,
+                 rect.height() / screenScale);
 
   SkISize rect_size = SkISize::Make(rect.width(), rect.height());
   std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(rect_size);
