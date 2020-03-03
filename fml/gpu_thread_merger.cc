@@ -21,6 +21,7 @@ GpuThreadMerger::GpuThreadMerger(fml::TaskQueueId platform_queue_id,
 }
 
 void GpuThreadMerger::MergeWithLease(size_t lease_term) {
+  FML_DLOG(ERROR) << "threads are merged";
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   if (!is_merged_) {
     is_merged_ = task_queues_->Merge(platform_queue_id_, gpu_queue_id_);
@@ -63,6 +64,7 @@ GpuThreadStatus GpuThreadMerger::DecrementLease() {
   lease_term_--;
   if (lease_term_ == 0) {
     bool success = task_queues_->Unmerge(platform_queue_id_);
+    FML_DLOG(ERROR) << "threads are unmerged";
     FML_CHECK(success) << "Unable to un-merge the GPU and platform threads.";
     is_merged_ = false;
     return GpuThreadStatus::kUnmergedNow;

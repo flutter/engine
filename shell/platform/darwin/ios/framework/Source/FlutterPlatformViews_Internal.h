@@ -90,6 +90,8 @@ class FlutterPlatformViewsController {
 
   void SetFrameSize(SkISize frame_size);
 
+  // Indicates that we don't compisite any platform views or overlays during this frame.
+  // Also reverts the composite_order_ to its original state at the begining of the frame.
   void CancelFrame();
 
   void PrerollCompositeEmbeddedView(int view_id,
@@ -112,6 +114,10 @@ class FlutterPlatformViewsController {
   void Reset();
 
   bool SubmitFrame(GrContext* gr_context, std::shared_ptr<IOSGLContext> gl_context);
+
+  // Invoked at the very end of a frame.
+  // After invoking this method, nothing should happen on the current TaskRunner during the same frame.
+  void EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
@@ -169,6 +175,8 @@ class FlutterPlatformViewsController {
   void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
 
+  // Remove PlatformViews and Overlays that is in `active_composition_order_` but not `composition_order_`.
+  // Must run on main thread.
   void DetachUnusedLayers();
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
@@ -213,6 +221,11 @@ class FlutterPlatformViewsController {
   // After each clip operation, we update the head to the super view of the current head.
   void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
+
+  // Default to `false`.
+  // If `true`, gpu thread and platform thread should be merged during |EndFrame|.
+  // Always resets to `false` right after the threads are merged.
+  bool will_merge_threads_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

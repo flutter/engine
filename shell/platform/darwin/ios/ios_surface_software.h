@@ -69,6 +69,10 @@ class IOSSurfaceSoftware final : public IOSSurface,
   // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
 
+  // |ExternalViewEmbedder|
+  void EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
+
+
  private:
   fml::scoped_nsobject<CALayer> layer_;
   sk_sp<SkSurface> sk_surface_;

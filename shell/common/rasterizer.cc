@@ -138,6 +138,12 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline, bool r
     consume_result = PipelineConsumeResult::MoreAvailable;
   }
 
+  // Merging the thread as we know the next `Draw` should be run on the platform thread.
+  if (raster_status == RasterStatus::kResubmit) {
+    auto* external_view_embedder = surface_->GetExternalViewEmbedder();
+    external_view_embedder->EndFrame(gpu_thread_merger_);
+  }
+
   // Consume as many pipeline items as possible. But yield the event loop
   // between successive tries.
   switch (consume_result) {

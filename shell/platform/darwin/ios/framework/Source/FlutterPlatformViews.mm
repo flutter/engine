@@ -165,7 +165,7 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
 }
 
 void FlutterPlatformViewsController::CancelFrame() {
-  composition_order_.clear();
+  composition_order_ = active_composition_order_;
 }
 
 bool FlutterPlatformViewsController::HasPendingViewOperations() {
@@ -184,8 +184,9 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     if (gpu_thread_merger->IsMerged()) {
       gpu_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
     } else {
+      // Wait until |EndFrame| to perform thread merging.
+      will_merge_threads_ = true;
       CancelFrame();
-      gpu_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
       return PostPrerollResult::kResubmitFrame;
     }
   }
@@ -387,6 +388,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
     composition_order_.clear();
     return did_submit;
   }
+
   DetachUnusedLayers();
   active_composition_order_.clear();
   UIView* flutter_view = flutter_view_.get();
@@ -414,7 +416,20 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   return did_submit;
 }
 
+void FlutterPlatformViewsController::EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+  if (will_merge_threads_) {
+    gpu_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
+    will_merge_threads_ = false;
+  }
+}
+
 void FlutterPlatformViewsController::DetachUnusedLayers() {
+  if (active_composition_order_.empty()) {
+    return;
+  }
+
+  FML_DCHECK([NSThread currentThread] == [NSThread mainThread]);
+
   std::unordered_set<int64_t> composition_order_set;
 
   for (int64_t view_id : composition_order_) {
@@ -440,6 +455,8 @@ void FlutterPlatformViewsController::DisposeViews() {
   if (views_to_dispose_.empty()) {
     return;
   }
+
+  FML_DCHECK([NSThread currentThread] == [NSThread mainThread]);
 
   for (int64_t viewId : views_to_dispose_) {
     UIView* root_view = root_views_[viewId].get();
@@ -467,7 +484,6 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
   auto overlay_it = overlays_.find(overlay_id);
 
   if (!gr_context) {
-    FML_DLOG(ERROR) << "No GrContext";
     if (overlays_.count(overlay_id) != 0) {
       return;
     }
