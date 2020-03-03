@@ -109,7 +109,7 @@ void Rasterizer::DrawLastLayerTree() {
   DrawToSurface(*last_layer_tree_);
 }
 
-void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
+void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline, bool resubmit) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (gpu_thread_merger_ && !gpu_thread_merger_->IsOnRasterizingThread()) {
     // we yield and let this frame be serviced on the right thread.
@@ -122,8 +122,12 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
       [&](std::unique_ptr<LayerTree> layer_tree) {
         raster_status = DoDraw(std::move(layer_tree));
       };
-
-  PipelineConsumeResult consume_result = pipeline->Consume(consumer);
+  PipelineConsumeResult consume_result;
+  if (resubmit) {
+    consume_result = pipeline->ConsumeWithoutSingal(consumer);
+  } else {
+    consume_result = pipeline->Consume(consumer);
+  }
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
   if (raster_status == RasterStatus::kResubmit) {
@@ -139,9 +143,9 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
       task_runners_.GetGPUTaskRunner()->PostTask(
-          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
+          [weak_this = weak_factory_.GetWeakPtr(), pipeline, raster_status]() {
             if (weak_this) {
-              weak_this->Draw(pipeline);
+              weak_this->Draw(pipeline, raster_status == RasterStatus::kResubmit);
             }
           });
       break;

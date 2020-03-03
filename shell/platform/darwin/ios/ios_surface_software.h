@@ -58,6 +58,8 @@ class IOSSurfaceSoftware final : public IOSSurface,
   void PrerollCompositeEmbeddedView(int view_id,
                                     std::unique_ptr<EmbeddedViewParams> params) override;
 
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
+
   // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 

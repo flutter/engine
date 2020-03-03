@@ -247,7 +247,7 @@ class Rasterizer final : public SnapshotDelegate {
   /// @param[in]  pipeline  The layer tree pipeline to take the next layer tree
   ///                       to render from.
   ///
-  void Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline);
+  void Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline, bool resubmit);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously

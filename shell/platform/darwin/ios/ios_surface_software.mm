@@ -167,6 +167,14 @@ void IOSSurfaceSoftware::PrerollCompositeEmbeddedView(int view_id,
 }
 
 // |ExternalViewEmbedder|
+PostPrerollResult IOSSurfaceSoftware::PostPrerollAction(
+    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->PostPrerollAction(gpu_thread_merger);
+}
+
+// |ExternalViewEmbedder|
 std::vector<SkCanvas*> IOSSurfaceSoftware::GetCurrentCanvases() {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);

@@ -164,6 +164,44 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
                            : PipelineConsumeResult::Done;
   }
 
+  /// @note Procedure doesn't copy all closures.
+  FML_WARN_UNUSED_RESULT
+  PipelineConsumeResult ConsumeWithoutSingal(const Consumer& consumer) {
+    if (consumer == nullptr) {
+      return PipelineConsumeResult::NoneAvailable;
+    }
+
+    if (!available_.TryWait()) {
+      return PipelineConsumeResult::NoneAvailable;
+    }
+
+    ResourcePtr resource;
+    size_t trace_id = 0;
+    size_t items_count = 0;
+
+    {
+      std::scoped_lock lock(queue_mutex_);
+      std::tie(resource, trace_id) = std::move(queue_.front());
+      queue_.pop_front();
+      items_count = queue_.size();
+    }
+
+    {
+      TRACE_EVENT0("flutter", "PipelineConsume");
+      consumer(std::move(resource));
+    }
+
+    --inflight_;
+
+    TRACE_FLOW_END("flutter", "PipelineItem", trace_id);
+    TRACE_EVENT_ASYNC_END0("flutter", "PipelineItem", trace_id);
+
+    return items_count > 0 ? PipelineConsumeResult::MoreAvailable
+                           : PipelineConsumeResult::Done;
+  }
+
+
+
  private:
   const uint32_t depth_;
   fml::Semaphore empty_;
