@@ -251,10 +251,11 @@ class ExternalViewEmbedder {
   virtual bool SubmitFrame(GrContext* context);
 
   // Caller should make sure to call this after |SubmitFrame|.
-  // Embedder that implements this method to do additional tasks after |SubmitFrame|.
-  // One of such examples is threading merging on iOS.
+  // Embedder that implements this method to do additional tasks after
+  // |SubmitFrame|. One of such examples is threading merging on iOS.
   //
-  // After invoking this method, the current task on the TaskRunner should end immediately.
+  // After invoking this method, the current task on the TaskRunner should end
+  // immediately.
   virtual void EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {}
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);

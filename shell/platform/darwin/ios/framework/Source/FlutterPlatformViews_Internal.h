@@ -116,7 +116,8 @@ class FlutterPlatformViewsController {
   bool SubmitFrame(GrContext* gr_context, std::shared_ptr<IOSGLContext> gl_context);
 
   // Invoked at the very end of a frame.
-  // After invoking this method, nothing should happen on the current TaskRunner during the same frame.
+  // After invoking this method, nothing should happen on the current TaskRunner during the same
+  // frame.
   void EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
@@ -175,8 +176,8 @@ class FlutterPlatformViewsController {
   void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
 
-  // Remove PlatformViews and Overlays that is in `active_composition_order_` but not `composition_order_`.
-  // Must run on main thread.
+  // Remove PlatformViews and Overlays that is in `active_composition_order_` but not
+  // `composition_order_`. Must run on main thread.
   void DetachUnusedLayers();
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();

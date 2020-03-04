@@ -75,12 +75,12 @@ class WeakPtr {
   // "originating" |WeakPtrFactory|.
 
   explicit operator bool() const {
-    //FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
     return flag_ && flag_->is_valid();
   }
 
   T* get() const {
-    //FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
     return *this ? ptr_ : nullptr;
   }
 
@@ -97,13 +97,13 @@ class WeakPtr {
   }
 
   T& operator*() const {
-    //FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
     FML_DCHECK(*this);
     return *get();
   }
 
   T* operator->() const {
-    //FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
     FML_DCHECK(*this);
     return get();
   }
@@ -177,7 +177,7 @@ class WeakPtrFactory {
   }
 
   ~WeakPtrFactory() {
-    //FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
     flag_->Invalidate();
   }
 
