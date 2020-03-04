@@ -23,8 +23,7 @@
 
 namespace txt {
 
-TextStyle::TextStyle()
-    : font_families(GetDefaultFontFamilies()) {}
+TextStyle::TextStyle() : font_families(GetDefaultFontFamilies()) {}
 
 bool TextStyle::equals(const TextStyle& other) const {
   if (color != other.color)

@@ -151,7 +151,7 @@ FontCollection::GetMinikinFontCollectionForFamilies(
   // Search for default font family if no user font families were found.
   if (minikin_families.empty()) {
     const auto default_font_families = GetDefaultFontFamilies();
-    for (auto family: default_font_families) {
+    for (auto family : default_font_families) {
       std::shared_ptr<minikin::FontFamily> minikin_family =
           FindFontFamilyInManagers(family);
       if (minikin_family != nullptr) {
