@@ -70,9 +70,13 @@
 
   FlutterViewController* flutterViewController;
   if ([scenarioIdentifier isEqualToString:@"tap_status_bar"]) {
-    flutterViewController = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+    flutterViewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                  nibName:nil
+                                                                   bundle:nil];
   } else {
-    flutterViewController = [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+    flutterViewController = [[NoStatusBarFlutterViewController alloc] initWithEngine:engine
+                                                                             nibName:nil
+                                                                              bundle:nil];
   }
   [engine.binaryMessenger
       setMessageHandlerOnChannel:@"scenario_status"
@@ -82,12 +86,15 @@
                         message:[scenarioIdentifier dataUsingEncoding:NSUTF8StringEncoding]];
             }];
   [engine.binaryMessenger
-   setMessageHandlerOnChannel:@"touches_scenario" binaryMessageHandler:^(NSData * _Nullable message, FlutterBinaryReply  _Nonnull reply) {
-    NSDictionary* dict = [NSJSONSerialization JSONObjectWithData:message options:0 error:nil];
-    UITextField* text = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 300, 100)];
-    text.text = dict[@"change"];
-    [flutterViewController.view addSubview:text];
-  }];
+      setMessageHandlerOnChannel:@"touches_scenario"
+            binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {
+              NSDictionary* dict = [NSJSONSerialization JSONObjectWithData:message
+                                                                   options:0
+                                                                     error:nil];
+              UITextField* text = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 300, 100)];
+              text.text = dict[@"change"];
+              [flutterViewController.view addSubview:text];
+            }];
   TextPlatformViewFactory* textPlatformViewFactory =
       [[TextPlatformViewFactory alloc] initWithMessenger:flutterViewController.binaryMessenger];
   NSObject<FlutterPluginRegistrar>* registrar =

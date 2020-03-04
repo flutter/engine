@@ -15,9 +15,10 @@
   [self.application launch];
 }
 
--(void)testTapStatusBar {
+- (void)testTapStatusBar {
   if (@available(iOS 13, *)) {
-    XCUIApplication* systemApp = [[XCUIApplication alloc] initWithBundleIdentifier:@"com.apple.springboard"];
+    XCUIApplication* systemApp =
+        [[XCUIApplication alloc] initWithBundleIdentifier:@"com.apple.springboard"];
     XCUIElement* statusBar = [systemApp.statusBars firstMatch];
     if (statusBar.isHittable) {
       [statusBar tap];

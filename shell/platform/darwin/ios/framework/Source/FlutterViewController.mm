@@ -126,6 +126,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // Coalescer that filters out superfluous keyboard notifications when the app
   // is being foregrounded.
   fml::scoped_nsobject<FlutterCoalescer> _updateViewportMetrics;
+  // This scroll view is a workaround to accomodate iOS 13 and higher.  There isn't a way to get
+  // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
+  // UIScrollView with height zero and a content offset so we can get those events. See also:
+  // https://github.com/flutter/flutter/issues/35050
+
   fml::scoped_nsobject<UIScrollView> _scrollView;
 }
 
@@ -333,10 +338,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
   [self installSplashScreenViewIfNecessary];
-  // This is a workaround to accomodate iOS 13 and higher.  There isn't a way to get touches on the
-  // status bar to trigger scrolling to the top of a scroll view.  We place a UIScrollView with
-  // height zero and a content offset so we can get those events. See also:
-  // https://github.com/flutter/flutter/issues/35050
   UIScrollView* scrollView = [[UIScrollView alloc] init];
   scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
   // The color shouldn't matter since it is offscreen.
@@ -345,8 +346,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // This is an arbitrary small size.
   scrollView.contentSize = CGSizeMake(kScrollViewContentSize, kScrollViewContentSize);
   // This is an arbitrary offset that is not CGPointZero.
-  // This is some aribrary place offscreen.
-  scrollView.frame = CGRectMake(0, 0, 0, 0);
   scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
   [self.view addSubview:scrollView];
   _scrollView.reset(scrollView);
