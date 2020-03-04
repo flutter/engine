@@ -49,7 +49,6 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   context.background_canvas->clipRect(
       context.view_embedder->GetPlatformViewRect(view_id_),
       SkClipOp::kDifference);
-  FML_CHECK(matrix_ != nullptr);
   context.background_canvas->setMatrix(matrix_);
 }
 }  // namespace flutter
