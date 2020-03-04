@@ -614,6 +614,19 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
 
 TEST_F(ImageDecoderFixtureTest,
        MultiFrameCodecCanBeCollectedBeforeIOTasksFinish) {
+  // This test verifies that the MultiFrameCodec safely shares state between
+  // tasks on the IO and UI runners, and does not allow unsafe memory access if
+  // the UI object is collected while the IO thread still has pending decode
+  // work. This could happen in a real application if the engine is collected
+  // while a multi-frame image is decoding. To exercise this, the test:
+  //   - Starts a Dart VM
+  //   - Latches the IO task runner
+  //   - Create a MultiFrameCodec for an animated gif pointed to a callback
+  //     in the Dart fixture
+  //   - Calls getNextFrame on the UI task runner
+  //   - Collects the MultiFrameCodec object before unlatching the IO task
+  //     runner.
+  //   - Unlatches the IO task runner
   auto settings = CreateSettingsForFixture();
   settings.leak_vm = false;
   settings.enable_observatory = false;

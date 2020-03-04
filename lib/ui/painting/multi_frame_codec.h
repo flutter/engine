@@ -26,6 +26,15 @@ class MultiFrameCodec : public Codec {
   Dart_Handle getNextFrame(Dart_Handle args) override;
 
  private:
+  // Captures the state shared between the IO and UI task runners.
+  //
+  // The state is initialized on the UI task runner when the Dart object is
+  // created. Decoding occurs on the IO task runner. Since it is possible for
+  // the UI object to be collected independently of the IO task runner work,
+  // it is not safe for this state to live directly on the MultiFrameCodec.
+  // Instead, the MultiFrameCodec creates this object when it is constructed,
+  // shares it with the IO task runner's decoding work, and sets the live_
+  // member to false when it is destructed.
   struct State {
     State(std::unique_ptr<SkCodec> codec);
 
@@ -33,10 +42,14 @@ class MultiFrameCodec : public Codec {
     const int frameCount_;
     const int repetitionCount_;
     int nextFrameIndex_;
+
+    // Indicates whether the Dart object has been collected on the UI task
+    // runner.
     std::atomic<bool> live_;
 
     // The last decoded frame that's required to decode any subsequent frames.
     std::unique_ptr<SkBitmap> lastRequiredFrame_;
+
     // The index of the last decoded required frame.
     int lastRequiredFrameIndex_ = -1;
 
