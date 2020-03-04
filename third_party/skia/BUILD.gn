@@ -1,0 +1,15 @@
+# Copyright 2016 Google Inc.
+#
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("skia") {
+  sources = [
+    "platform_view_rtree.cc",
+    "platform_view_rtree.h",
+  ]
+
+  deps = [
+    "//third_party/skia",
+  ]
+}
