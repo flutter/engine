@@ -14,6 +14,8 @@
 #include <memory>
 #include <mutex>
 
+const static int FRONT_QUEUE_CAPACITY = 1;
+
 namespace flutter {
 
 enum class PipelineConsumeResult {
@@ -89,7 +91,11 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   };
 
   explicit Pipeline(uint32_t depth)
-      : depth_(depth), empty_(depth), available_(0), inflight_(0) {}
+      : depth_(depth),
+        empty_(depth),
+        front_empty_(FRONT_QUEUE_CAPACITY),
+        available_(0),
+        inflight_(0) {}
 
   ~Pipeline() = default;
 
@@ -116,9 +122,16 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   // If we exceed the depth completing this continuation, we drop the
   // last frame to preserve the depth of the pipeline.
   //
+  // The frame pushed to front always runs on its own task runner.
+  //
   // Note: Use |Pipeline::Produce| where possible. This should only be
   // used to en-queue high-priority resources.
   ProducerContinuation ProduceToFront() {
+    if (!front_empty_.TryWait()) {
+      // exceeds front_queue_ capacity, bail.
+      return {};
+    }
+    ++inflight_;
     return ProducerContinuation{
         std::bind(&Pipeline::ProducerCommitFront, this, std::placeholders::_1,
                   std::placeholders::_2),  // continuation
@@ -142,19 +155,31 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     size_t trace_id = 0;
     size_t items_count = 0;
 
+    bool popped_front = false;
     {
       std::scoped_lock lock(queue_mutex_);
-      std::tie(resource, trace_id) = std::move(queue_.front());
-      queue_.pop_front();
-      items_count = queue_.size();
+      std::scoped_lock front_lock(front_queue_mutex_);
+      if (front_queue_.size() != 0) {
+        // prioritize the front_queue_
+        std::tie(resource, trace_id) = std::move(front_queue_.front());
+        front_queue_.pop_front();
+        popped_front = true;
+      } else {
+        std::tie(resource, trace_id) = std::move(queue_.front());
+        queue_.pop_front();
+      }
+      items_count = popped_front ? front_queue_.size() : queue_.size();
     }
 
     {
       TRACE_EVENT0("flutter", "PipelineConsume");
       consumer(std::move(resource));
     }
-
-    empty_.Signal();
+    if (popped_front) {
+      front_empty_.Signal();
+    } else {
+      empty_.Signal();
+    }
     --inflight_;
 
     TRACE_FLOW_END("flutter", "PipelineItem", trace_id);
@@ -167,10 +192,13 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
  private:
   const uint32_t depth_;
   fml::Semaphore empty_;
+  fml::Semaphore front_empty_;
   fml::Semaphore available_;
   std::atomic<int> inflight_;
   std::mutex queue_mutex_;
   std::deque<std::pair<ResourcePtr, size_t>> queue_;
+  std::mutex front_queue_mutex_;
+  std::deque<std::pair<ResourcePtr, size_t>> front_queue_;
 
   void ProducerCommit(ResourcePtr resource, size_t trace_id) {
     {
@@ -184,11 +212,8 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
 
   void ProducerCommitFront(ResourcePtr resource, size_t trace_id) {
     {
-      std::scoped_lock lock(queue_mutex_);
-      queue_.emplace_front(std::move(resource), trace_id);
-      while (queue_.size() > depth_) {
-        queue_.pop_back();
-      }
+      std::scoped_lock lock(front_queue_mutex_);
+      front_queue_.emplace_back(std::move(resource), trace_id);
     }
 
     // Ensure the queue mutex is not held as that would be a pessimization.
