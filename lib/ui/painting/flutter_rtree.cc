@@ -215,7 +215,7 @@ void FlutterRTree::searchRects(Node* node,
     std::vector<SkRect*> currentResults = *results;
     // If the current record rect intersects with any of the rects in the
     // result, then join them, and update the rect in results.
-    for (size_t j = 0; !replacedExistingRect && j < results->size(); j++) {
+    for (size_t j = 0; j < results->size(); j++) {
       if (SkRect::Intersects(*currentResults[j], *currentRecordRect)) {
         currentResults[j]->join(*currentRecordRect);
         replacedExistingRect = true;
