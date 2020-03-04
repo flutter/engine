@@ -162,6 +162,8 @@ if (current_toolchain == host_toolchain) {
   executable("ui_unittests") {
     testonly = true
 
+    configs += [ "//flutter:export_dynamic_symbols" ]
+
     sources = [
       "painting/image_decoder_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
