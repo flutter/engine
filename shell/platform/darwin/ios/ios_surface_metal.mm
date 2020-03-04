@@ -53,9 +53,21 @@ std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrContext* /* unused 
   );
 }
 
-// |GPUSurfaceDelegate|
-ExternalViewEmbedder* IOSSurfaceMetal::GetExternalViewEmbedder() {
-  return GetExternalViewEmbedderIfEnabled();
+SkRect IOSSurfaceMetal::GetPlatformViewRect(int view_id) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->GetPlatformViewRect(view_id);
+}
+
+bool IOSSurfaceMetal::SubmitFrame(GrContext* context) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  if (platform_views_controller == nullptr) {
+    return true;
+  }
+
+  bool submitted = platform_views_controller->SubmitFrame(context, nullptr);
+  [CATransaction commit];
+  return submitted;
 }
 
 }  // namespace flutter

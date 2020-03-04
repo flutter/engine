@@ -36,7 +36,38 @@ class IOSSurfaceMetal final : public IOSSurface, public GPUSurfaceDelegate {
   std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context) override;
 
   // |GPUSurfaceDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+
+  // |ExternalViewEmbedder|
+  SkCanvas* GetRootCanvas() override;
+
+  // |ExternalViewEmbedder|
+  void CancelFrame() override;
+
+  // |ExternalViewEmbedder|
+  void BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) override;
+
+  // |ExternalViewEmbedder|
+  void PrerollCompositeEmbeddedView(int view_id,
+                                    std::unique_ptr<flutter::EmbeddedViewParams> params) override;
+
+  // |ExternalViewEmbedder|
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
+
+  // |ExternalViewEmbedder|
+  std::vector<SkCanvas*> GetCurrentCanvases() override;
+
+  // |ExternalViewEmbedder|
+  SkCanvas* CompositeEmbeddedView(int view_id) override;
+
+  // |ExternalViewEmbedder|
+  SkRect GetPlatformViewRect(int view_id) override;
+
+  // |ExternalViewEmbedder|
+  bool SubmitFrame(GrContext* context) override;
+
+ private:
+  fml::scoped_nsobject<CAMetalLayer> layer_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceMetal);
 };

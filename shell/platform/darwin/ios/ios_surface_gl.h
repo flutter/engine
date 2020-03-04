@@ -51,6 +51,34 @@ class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
+  // |ExternalViewEmbedder|
+  SkCanvas* GetRootCanvas() override;
+
+  // |ExternalViewEmbedder|
+  void CancelFrame() override;
+
+  // |ExternalViewEmbedder|
+  void BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) override;
+
+  // |ExternalViewEmbedder|
+  void PrerollCompositeEmbeddedView(int view_id,
+                                    std::unique_ptr<flutter::EmbeddedViewParams> params) override;
+
+  // |ExternalViewEmbedder|
+  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
+
+  // |ExternalViewEmbedder|
+  std::vector<SkCanvas*> GetCurrentCanvases() override;
+
+  // |ExternalViewEmbedder|
+  SkCanvas* CompositeEmbeddedView(int view_id) override;
+
+  // |ExternalViewEmbedder|
+  SkRect GetPlatformViewRect(int view_id) override;
+
+  // |ExternalViewEmbedder|
+  bool SubmitFrame(GrContext* context) override;
+
  private:
   std::unique_ptr<IOSRenderTargetGL> render_target_;
 

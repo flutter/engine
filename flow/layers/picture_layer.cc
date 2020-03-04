@@ -42,13 +42,8 @@ void PictureLayer::Paint(PaintContext& context) const {
   FML_DCHECK(picture_.get());
   FML_DCHECK(needs_painting());
 
-  SkAutoCanvasRestore save(context.background_canvas, true);
-  context.background_canvas->translate(offset_.x(), offset_.y());
-
-  if (context.leaf_nodes_canvas != nullptr) {
-    SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
-    context.leaf_nodes_canvas->translate(offset_.x(), offset_.y());
-  }
+  SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
+  context.internal_nodes_canvas->translate(offset_.x(), offset_.y());
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   context.background_canvas->setMatrix(RasterCache::GetIntegralTransCTM(

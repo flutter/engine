@@ -42,6 +42,31 @@ class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDel
   // |GPUSurfaceSoftwareDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
+  // |ExternalViewEmbedder|
+  SkCanvas* GetRootCanvas() override;
+
+  // |ExternalViewEmbedder|
+  void CancelFrame() override;
+
+  // |ExternalViewEmbedder|
+  void BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) override;
+
+  // |ExternalViewEmbedder|
+  void PrerollCompositeEmbeddedView(int view_id,
+                                    std::unique_ptr<EmbeddedViewParams> params) override;
+
+  // |ExternalViewEmbedder|
+  std::vector<SkCanvas*> GetCurrentCanvases() override;
+
+  // |ExternalViewEmbedder|
+  SkCanvas* CompositeEmbeddedView(int view_id) override;
+
+  // |ExternalViewEmbedder|
+  SkRect GetPlatformViewRect(int view_id) override;
+
+  // |ExternalViewEmbedder|
+  bool SubmitFrame(GrContext* context) override;
+
  private:
   fml::scoped_nsobject<CALayer> layer_;
   sk_sp<SkSurface> sk_surface_;
