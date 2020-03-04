@@ -6,7 +6,6 @@
 
 #include <GLFW/glfw3.h>
 #include <assert.h>
-#include <glib.h>
 
 #include <algorithm>
 #include <chrono>
@@ -173,20 +172,6 @@ static double GetScreenCoordinatesPerInch() {
     return kDpPerInch;
   }
   return primary_monitor_mode->width / (primary_monitor_width_mm / 25.4);
-}
-
-static std::string GetSystemDefaultFont() {
-  std::string result = "";
-  g_autoptr(GSettngsSchema) schema = g_settings_schema_source_lookup (g_settings_schema_source_get_default (), "org.gnome.desktop.interface", FALSE);
-  if (schema != NULL) {
-    g_autoptr(GSettingsBackend) backend = g_settings_backend_get_default ();
-    g_autoptr(GSettings) settings = g_settings_new_full (schema, backend, "org.gnome.desktop.interface");
-    if (g_settings_schema_has_key (schema, "font-name")) {
-      g_autofree gchar *font_name = g_settings_get_string (settings, "font-name");
-      result = std::string(font_name);
-    }
-  }
-  return result;
 }
 
 // Sends a window metrics update to the Flutter engine using the given

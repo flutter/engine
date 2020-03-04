@@ -62,7 +62,6 @@ source_set("flutter_glfw") {
 
     configs += [
       "//flutter/shell/platform/linux/config:x11",
-      "//flutter/shell/platform/linux/config:glib",
     ]
   } else if (is_mac) {
     libs = [

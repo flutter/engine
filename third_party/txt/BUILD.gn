@@ -14,6 +14,7 @@
 
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
+import("//build/config/linux/pkg_config.gni")
 
 declare_args() {
   flutter_use_fontconfig = false
@@ -21,6 +22,12 @@ declare_args() {
 
 if (flutter_use_fontconfig) {
   assert(is_linux)
+}
+
+pkg_config("glib") {
+  packages = [
+    "gio-2.0",
+  ]
 }
 
 config("txt_config") {
@@ -135,6 +142,10 @@ source_set("txt") {
   ]
 
   public_configs = [ ":txt_config" ]
+
+  if (is_linux) {
+    configs += [ ":glib" ]
+  }
 
   public_deps = [
     "//flutter/fml",

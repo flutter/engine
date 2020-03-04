@@ -14,7 +14,6 @@ group("linux") {
       "//flutter/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
     ]
   }
-  configs += [ "//flutter/shell/platform/linux/config:glib" ]
 }
 
 # Temporary workaround for the issue describe in
