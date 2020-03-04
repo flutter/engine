@@ -510,15 +510,15 @@ static FLUTTER_API_SYMBOL(FlutterEngine)
   std::filesystem::path icu_path(engine_properties.icu_data_path);
   if (assets_path.is_relative() || icu_path.is_relative()) {
     // Treat relative paths as relative to the directory of this executable.
-    std::filesystem::path executable_location = GetExecutableDirectory();
-    if (executable_location.is_empty()) {
+    std::filesystem::path executable_location =
+        flutter::GetExecutableDirectory();
+    if (executable_location.empty()) {
       std::cerr << "Unable to find executable location to resolve paths."
                 << std::endl;
       return nullptr;
     }
-    assets_path =
-        std::filesystem::path(executable_location).append(assets_path);
-    icu_path = std::filesystem::path(executable_location).append(icu_path);
+    assets_path = std::filesystem::path(executable_location) / assets_path;
+    icu_path = std::filesystem::path(executable_location) / icu_path;
   }
 
   FlutterRendererConfig config = {};

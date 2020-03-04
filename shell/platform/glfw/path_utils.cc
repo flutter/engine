@@ -7,6 +7,8 @@
 #include <linux/limits.h>
 #include <unistd.h>
 
+namespace flutter {
+
 std::filesystem::path GetExecutableDirectory() {
   char buffer[PATH_MAX + 1];
   ssize_t length = readlink("/proc/self/exe", buffer, sizeof(buffer));
@@ -16,3 +18,5 @@ std::filesystem::path GetExecutableDirectory() {
   std::filesystem::path executable_path(std::string(buffer, length));
   return executable_path.remove_filename();
 }
+
+}  // namespace flutter
