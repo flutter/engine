@@ -136,7 +136,7 @@ Future<int> starter(
           '--gen-bytecode',
           '--bytecode-options=source-positions,local-var-info,debugger-stops,instance-field-initializers,keep-unreachable-code,avoid-closure-call-instructions',
         ]);
-        compiler ??= _FlutterFrontendCompiler(output, transformer: _ToStringTransformer());
+        compiler ??= _FlutterFrontendCompiler(output, transformer: _ToStringTransformer(null));
 
         await compiler.compile(input, options);
         compiler.acceptLastDelta();
@@ -156,7 +156,7 @@ Future<int> starter(
 
   compiler ??= _FlutterFrontendCompiler(output,
       // transformer: transformer,
-      transformer: _ToStringTransformer(),
+      transformer: _ToStringTransformer(transformer),
       unsafePackageSerialization:
           options['unsafe-package-serialization'] as bool);
 
@@ -169,47 +169,23 @@ Future<int> starter(
   return completer.future;
 }
 
-const Set<String> _toStringNames = <String>{
-  'toString',
-  'toStringDeep',
-  'toStringShort',
-};
-
 class _ToStringVisitor extends RecursiveVisitor<void> {
-
-  @override
-  void visitMethodInvocation(MethodInvocation node) {
-    if (node.name.name == 'toString') {
-      print(node.location);
-    }
-    super.visitMethodInvocation(node);
-  }
-
-  @override
-  void visitSuperMethodInvocation(SuperMethodInvocation node) {
-    // TODO: implement visitSuperMethodInvocation
-    super.visitSuperMethodInvocation(node);
-  }
-
-  @override
-  void visitPropertyGet(PropertyGet node) {
-    // TODO: implement visitPropertyGet
-    super.visitPropertyGet(node);
-  }
-
-  @override
-  void visitSuperPropertyGet(SuperPropertyGet node) {
-    // TODO: implement visitSuperPropertyGet
-    super.visitSuperPropertyGet(node);
-  }
-
   @override
   void visitProcedure(Procedure node) {
     if (node.name.name == 'toString' && node.enclosingLibrary != null) {
       assert(node.enclosingClass != null);
       final String importUri = node.enclosingLibrary.importUri.toString();
       if (importUri.startsWith('dart:ui') || importUri.startsWith('package:flutter/')) {
-        // print('Removing ${node.location}');
+        node.function.replaceWith(
+          FunctionNode(
+            ReturnStatement(
+              SuperMethodInvocation(
+                node.name,
+                Arguments(<Expression>[]),
+              ),
+            ),
+          ),
+        );
       }
     }
     super.visitProcedure(node);
@@ -217,9 +193,14 @@ class _ToStringVisitor extends RecursiveVisitor<void> {
 }
 
 class _ToStringTransformer extends frontend.ProgramTransformer {
+  _ToStringTransformer(this.child);
+
+  final frontend.ProgramTransformer child;
+
   @override
   void transform(Component component) {
-    component.visitChildren(_ToStringVisitor());
+    if (child is! _ToStringTransformer)
+      component.visitChildren(_ToStringVisitor());
+    child?.transform(component);
   }
-
 }
