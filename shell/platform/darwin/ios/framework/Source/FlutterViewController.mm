@@ -23,8 +23,8 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-constexpr int kMicrosecondsPerSecond = 1000 * 1000;
-constexpr CGFloat kScrollViewContentSize = 10.0;
+static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
+static constexpr CGFloat kScrollViewContentSize = 2.0;
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 
