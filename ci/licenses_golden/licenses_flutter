@@ -1110,6 +1110,8 @@ FILE: ../../../flutter/shell/platform/glfw/glfw_event_loop.h
 FILE: ../../../flutter/shell/platform/glfw/key_event_handler.cc
 FILE: ../../../flutter/shell/platform/glfw/key_event_handler.h
 FILE: ../../../flutter/shell/platform/glfw/keyboard_hook_handler.h
+FILE: ../../../flutter/shell/platform/glfw/path_utils.cc
+FILE: ../../../flutter/shell/platform/glfw/path_utils.h
 FILE: ../../../flutter/shell/platform/glfw/platform_handler.cc
 FILE: ../../../flutter/shell/platform/glfw/platform_handler.h
 FILE: ../../../flutter/shell/platform/glfw/public/flutter_glfw.h
