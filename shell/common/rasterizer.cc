@@ -146,7 +146,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
       task_runners_.GetGPUTaskRunner()->PostTask(
-          [weak_this = weak_factory_.GetWeakPtr(), pipeline, raster_status]() {
+          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
             if (weak_this) {
               weak_this->Draw(pipeline);
             }
