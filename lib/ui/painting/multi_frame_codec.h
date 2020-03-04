@@ -26,31 +26,24 @@ class MultiFrameCodec : public Codec {
   Dart_Handle getNextFrame(Dart_Handle args) override;
 
  private:
-  struct State {
-    State(std::unique_ptr<SkCodec> codec);
+  const std::unique_ptr<SkCodec> codec_;
+  const int frameCount_;
+  const int repetitionCount_;
+  int nextFrameIndex_;
 
-    const std::unique_ptr<SkCodec> codec_;
-    const int frameCount_;
-    const int repetitionCount_;
-    int nextFrameIndex_;
-    std::atomic<bool> live_;
+  // The last decoded frame that's required to decode any subsequent frames.
+  std::unique_ptr<SkBitmap> lastRequiredFrame_;
+  // The index of the last decoded required frame.
+  int lastRequiredFrameIndex_ = -1;
 
-    // The last decoded frame that's required to decode any subsequent frames.
-    std::unique_ptr<SkBitmap> lastRequiredFrame_;
-    // The index of the last decoded required frame.
-    int lastRequiredFrameIndex_ = -1;
+  sk_sp<SkImage> GetNextFrameImage(fml::WeakPtr<GrContext> resourceContext);
 
-    sk_sp<SkImage> GetNextFrameImage(fml::WeakPtr<GrContext> resourceContext);
-    void GetNextFrameAndInvokeCallback(
-        std::unique_ptr<DartPersistentValue> callback,
-        fml::RefPtr<fml::TaskRunner> ui_task_runner,
-        fml::WeakPtr<GrContext> resourceContext,
-        fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
-        size_t trace_id);
-  };
-
-  // Shared across the UI and IO task runners.
-  std::shared_ptr<State> state_;
+  void GetNextFrameAndInvokeCallback(
+      std::unique_ptr<DartPersistentValue> callback,
+      fml::RefPtr<fml::TaskRunner> ui_task_runner,
+      fml::WeakPtr<GrContext> resourceContext,
+      fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
+      size_t trace_id);
 
   FML_FRIEND_MAKE_REF_COUNTED(MultiFrameCodec);
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(MultiFrameCodec);
