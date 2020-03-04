@@ -100,7 +100,7 @@ SkRect EmbedderExternalViewEmbedder::GetPlatformViewRect(int view_id) {
         << "No root canvas could be found. This is extremely unlikely and "
            "indicates that the external view embedder did not receive the "
            "notification to begin the frame.";
-    return nullptr;
+    return SkRect::MakeEmpty();
   }
   auto size = found->second->GetRenderSurfaceSize();
   return SkRect::MakeXYWH(0, 0, size.width(), size.height());
