@@ -30,15 +30,9 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting());
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  SkAutoCanvasRestore save(context.background_canvas, true);
-  context.background_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
-      context.background_canvas->getTotalMatrix()));
-
-  if (context.leaf_nodes_canvas != nullptr) {
-    SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
-    context.leaf_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
-        context.leaf_nodes_canvas->getTotalMatrix()));
-  }
+  SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
+  context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
+      context.internal_nodes_canvas->getTotalMatrix()));
 #endif
 
   if (context.raster_cache) {

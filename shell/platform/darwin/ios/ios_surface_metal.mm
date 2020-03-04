@@ -98,6 +98,12 @@ SkCanvas* IOSSurfaceMetal::CompositeEmbeddedView(int view_id) {
   return platform_views_controller->CompositeEmbeddedView(view_id);
 }
 
+SkRect IOSSurfaceMetal::GetPlatformViewRect(int view_id) {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  return platform_views_controller->GetPlatformViewRect(view_id);
+}
+
 bool IOSSurfaceMetal::SubmitFrame(GrContext* context) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {

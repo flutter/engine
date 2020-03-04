@@ -131,6 +131,8 @@ class FlutterPlatformViewsController {
 
   SkCanvas* CompositeEmbeddedView(int view_id);
 
+  SkRect GetPlatformViewRect(int view_id);
+
   // Discards all platform views instances and auxiliary resources.
   void Reset();
 

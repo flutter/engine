@@ -370,7 +370,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   //
   // The UIKit frame is set based on the logical resolution instead of physical.
   // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
-  // However, flow is based on the physical resolution. For eaxmple, 1000 pixels in flow equals
+  // However, flow is based on the physical resol ution. For eaxmple, 1000 pixels in flow equals
   // 500 points in UIKit. And until this point, we did all the calculation based on the flow
   // resolution. So we need to scale down to match UIKit's logical resolution.
   CGFloat screenScale = [UIScreen mainScreen].scale;
@@ -430,12 +430,23 @@ void FlutterPlatformViewsController::Reset() {
   layer_pool_->RecycleLayers();
 }
 
+SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
+  UIView* platform_view = [views_[view_id].get() view];
+  UIScreen* screen = [UIScreen mainScreen];
+  CGRect platform_view_cgrect = [platform_view convertRect:platform_view.bounds
+                                         toCoordinateSpace:screen.coordinateSpace];
+  return SkRect::MakeXYWH(platform_view_cgrect.origin.x * screen.scale,    //
+                          platform_view_cgrect.origin.y * screen.scale,    //
+                          platform_view_cgrect.size.width * screen.scale,  //
+                          platform_view_cgrect.size.height * screen.scale  //
+  );
+}
+
 bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
                                                  std::shared_ptr<IOSGLContext> gl_context) {
   DisposeViews();
 
   bool did_submit = true;
-  CGFloat screenScale = [UIScreen mainScreen].scale;
 
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
@@ -448,66 +459,10 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
     sk_sp<SkPicture> picture =
         platform_views_recorder_[platform_view_id]->finishRecordingAsPicture();
 
-    std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, gl_context);
-    std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(frame_size_);
-
-    layer->overlay_view.get().frame = flutter_view_.get().bounds;
-
-    std::vector<SkRect*> rects;
-    bbh->getAll(&rects);
-
-    SkCanvas* overlay_canvas = frame->SkiaCanvas();
-    overlay_canvas->clear(SK_ColorTRANSPARENT);
-
-    auto paint = SkPaint();
-    paint.setColor(SkColors::kRed);
-    paint.setStyle(SkPaint::Style::kStroke_Style);
-    paint.setStrokeWidth(5);
-
-
-    for (SkRect* rect : rects) {
-      FML_DLOG(ERROR) << " rect: " << rect->x() << "x" << rect->y();
-      overlay_canvas->drawRect(*rect, paint);
-    }
-
-    frame->Submit();
-
-    platform_view_layers[platform_view_id].push_back(layer);
-
-
-
- // std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, gl_context);
- //  CGFloat screenScale = [UIScreen mainScreen].scale;
- //  // Set the size of the overlay UIView.
- //  layer->overlay_view.get().backgroundColor = [UIColor blueColor];
- //  layer->overlay_view.get().frame =
- //      CGRectMake(rect.x() / screenScale, rect.y() / screenScale, rect.width() / screenScale,
- //                 rect.height() / screenScale);
-
- //  SkISize rect_size = SkISize::Make(rect.width(), rect.height());
- //  std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(rect_size);
-
- //  // If frame is null, AcquireFrame already printed out an error message.
- //  if (frame == nullptr) {
- //    return layer;
- //  }
- //  SkCanvas* overlay_canvas = frame->SkiaCanvas();
- //  overlay_canvas->clear(SK_ColorTRANSPARENT);
- //  overlay_canvas->translate(-rect.x(), -rect.y());
- //  overlay_canvas->drawPicture(picture);
-
- //  layer->did_submit_last_frame = frame->Submit();
-
-    continue;
-
     for (size_t j = i + 1; j > 0; j--) {
       int current_platform_view_id = composition_order_[j - 1];
-      EmbeddedViewParams params = platform_views_params_[current_platform_view_id];
-      SkRect platform_view_rect = SkRect::MakeXYWH(
-          /*x=*/params.offsetPixels.x(),
-          /*y=*/params.offsetPixels.y(),
-          /*width=*/params.sizePoints.width() * screenScale,
-          /*height=*/params.sizePoints.height() * screenScale);
+
+      SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
 
       std::vector<SkRect*> intersection_rects;
       bbh->searchRects(platform_view_rect, &intersection_rects);
@@ -522,7 +477,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
         }
         // Get the intersection rect between the current joined rect
         // and the platform view rect.
-        // joined_rect.intersect(platform_view_rect);
+        joined_rect.intersect(platform_view_rect);
         auto layer = GetLayer(gr_context, gl_context, picture, joined_rect);
         did_submit &= layer->did_submit_last_frame;
         platform_view_layers[current_platform_view_id].push_back(layer);
@@ -531,7 +486,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
           // Get the intersection rect between the current rect
           // and the platform view rect.
           SkRect joined_rect = *rect;
-          // joined_rect.intersect(platform_view_rect);
+          joined_rect.intersect(platform_view_rect);
           auto layer = GetLayer(gr_context, gl_context, picture, joined_rect);
           did_submit &= layer->did_submit_last_frame;
           platform_view_layers[current_platform_view_id].push_back(layer);
@@ -544,6 +499,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
 
   composition_order_.clear();
   layer_pool_->RecycleLayers();
+
   return did_submit;
 }
 
@@ -553,13 +509,13 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int platform_view_id = composition_order_[i];
     auto layers = layer_map[platform_view_id];
-    // UIView* platform_view_root = root_views_[platform_view_id].get();
+    UIView* platform_view_root = root_views_[platform_view_id].get();
 
-    // if (platform_view_root.superview != flutter_view) {
-    //   [flutter_view addSubview:platform_view_root];
-    // } else {
-    //   platform_view_root.layer.zPosition = zIndex++;
-    // }
+    if (platform_view_root.superview != flutter_view) {
+      [flutter_view addSubview:platform_view_root];
+    } else {
+      platform_view_root.layer.zPosition = zIndex++;
+    }
     for (auto layer : layers) {
       if ([layer->overlay_view superview] != flutter_view) {
         [flutter_view addSubview:layer->overlay_view];
@@ -569,6 +525,36 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
     }
     active_composition_order_.push_back(platform_view_id);
   }
+}
+
+std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLayer(
+    GrContext* gr_context,
+    std::shared_ptr<IOSGLContext> gl_context,
+    sk_sp<SkPicture> picture,
+    SkRect rect) {
+  std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, gl_context);
+  CGFloat screenScale = [UIScreen mainScreen].scale;
+  // Set the size of the overlay UIView.
+  layer->overlay_view.get().frame = CGRectMake(rect.x() / screenScale,      //
+                                               rect.y() / screenScale,      //
+                                               rect.width() / screenScale,  //
+                                               rect.height() / screenScale  //
+  );
+
+  SkISize rect_size = SkISize::Make(rect.width(), rect.height());
+  std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(rect_size);
+
+  // If frame is null, AcquireFrame already printed out an error message.
+  if (frame == nullptr) {
+    return layer;
+  }
+  SkCanvas* overlay_canvas = frame->SkiaCanvas();
+  overlay_canvas->clear(SK_ColorTRANSPARENT);
+  overlay_canvas->translate(-rect.x(), -rect.y());
+  overlay_canvas->drawPicture(picture);
+
+  layer->did_submit_last_frame = frame->Submit();
+  return layer;
 }
 
 void FlutterPlatformViewsController::RemoveUnusedLayers() {
@@ -589,35 +575,6 @@ void FlutterPlatformViewsController::RemoveUnusedLayers() {
       [platform_view_root removeFromSuperview];
     }
   }
-}
-
-std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLayer(
-    GrContext* gr_context,
-    std::shared_ptr<IOSGLContext> gl_context,
-    sk_sp<SkPicture> picture,
-    SkRect rect) {
-  std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, gl_context);
-  CGFloat screenScale = [UIScreen mainScreen].scale;
-  // Set the size of the overlay UIView.
-  layer->overlay_view.get().backgroundColor = [UIColor blueColor];
-  layer->overlay_view.get().frame =
-      CGRectMake(rect.x() / screenScale, rect.y() / screenScale, rect.width() / screenScale,
-                 rect.height() / screenScale);
-
-  SkISize rect_size = SkISize::Make(rect.width(), rect.height());
-  std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(rect_size);
-
-  // If frame is null, AcquireFrame already printed out an error message.
-  if (frame == nullptr) {
-    return layer;
-  }
-  SkCanvas* overlay_canvas = frame->SkiaCanvas();
-  overlay_canvas->clear(SK_ColorTRANSPARENT);
-  overlay_canvas->translate(-rect.x(), -rect.y());
-  overlay_canvas->drawPicture(picture);
-
-  layer->did_submit_last_frame = frame->Submit();
-  return layer;
 }
 
 void FlutterPlatformViewsController::DisposeViews() {
