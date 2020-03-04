@@ -388,7 +388,6 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
     composition_order_.clear();
     return did_submit;
   }
-
   DetachUnusedLayers();
   active_composition_order_.clear();
   UIView* flutter_view = flutter_view_.get();
