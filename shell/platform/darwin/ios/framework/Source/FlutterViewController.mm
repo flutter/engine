@@ -130,7 +130,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
   // UIScrollView with height zero and a content offset so we can get those events. See also:
   // https://github.com/flutter/flutter/issues/35050
-
   fml::scoped_nsobject<UIScrollView> _scrollView;
 }
 
