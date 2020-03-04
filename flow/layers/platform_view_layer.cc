@@ -21,6 +21,7 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
                       "does not support embedding";
     return;
   }
+  matrix_ = matrix;
   context->has_platform_view = true;
   std::unique_ptr<EmbeddedViewParams> params =
       std::make_unique<EmbeddedViewParams>();
@@ -40,11 +41,15 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   }
   SkCanvas* canvas = context.view_embedder->CompositeEmbeddedView(view_id_);
   context.leaf_nodes_canvas = canvas;
-  // Don't draw on the area covered by the platform view, since these drawings
-  // are on an overlay on top of the platform view. This prevent visible drawings
-  // on the background canvas when the platform view has opacity.
+  // Don't draw subsequent drawings on the area covered by the platform view,
+  // since these drawings are render on an overlay on top of the platform view.
+  // This prevent visible drawings on the background canvas when the platform
+  // view has opacity.
+  context.background_canvas->resetMatrix();
   context.background_canvas->clipRect(
       context.view_embedder->GetPlatformViewRect(view_id_),
       SkClipOp::kDifference);
+  FML_CHECK(matrix_ != nullptr);
+  context.background_canvas->setMatrix(matrix_);
 }
 }  // namespace flutter

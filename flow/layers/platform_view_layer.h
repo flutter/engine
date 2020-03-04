@@ -22,6 +22,7 @@ class PlatformViewLayer : public Layer {
   SkPoint offset_;
   SkSize size_;
   int64_t view_id_;
+  SkMatrix matrix_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewLayer);
 };
