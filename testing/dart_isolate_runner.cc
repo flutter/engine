@@ -48,13 +48,13 @@ bool AutoIsolateShutdown::RunInIsolateScope(std::function<bool(void)> closure) {
 }
 
 void RunDartCodeInIsolate(DartVMRef& vm_ref,
-                                 std::unique_ptr<AutoIsolateShutdown>& result,
-                                 const Settings& settings,
-                                 const TaskRunners& task_runners,
-                                 std::string entrypoint,
-                                 const std::vector<std::string>& args,
-                                 const std::string& fixtures_path,
-                                 fml::WeakPtr<IOManager> io_manager) {
+                          std::unique_ptr<AutoIsolateShutdown>& result,
+                          const Settings& settings,
+                          const TaskRunners& task_runners,
+                          std::string entrypoint,
+                          const std::vector<std::string>& args,
+                          const std::string& fixtures_path,
+                          fml::WeakPtr<IOManager> io_manager) {
   FML_CHECK(task_runners.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   if (!vm_ref) {
