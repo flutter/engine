@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Allocates and caches 0 or more canvas(s) for [BitmapCanvas].
@@ -94,6 +95,14 @@ class _CanvasPool extends _SaveStackTracking {
         width: _widthInBitmapPixels,
         height: _heightInBitmapPixels,
       );
+      if (_canvas == null) {
+        // Evict BitmapCanvas(s) and retry.
+        _reduceCanvasMemoryUsage();
+        _canvas = html.CanvasElement(
+          width: _widthInBitmapPixels,
+          height: _heightInBitmapPixels,
+        );
+      }
       _canvas.style
         ..position = 'absolute'
         ..width = '${cssWidth}px'

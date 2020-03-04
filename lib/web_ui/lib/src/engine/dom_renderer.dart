@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 class DomRenderer {
@@ -471,6 +472,7 @@ flt-glass-pane * {
 
   /// Called immediately after browser window metrics change.
   void _metricsDidChange(html.Event event) {
+    window._computePhysicalSize();
     if (ui.window.onMetricsChanged != null) {
       ui.window.onMetricsChanged();
     }

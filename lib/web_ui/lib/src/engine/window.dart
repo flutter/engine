@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// When set to true, all platform messages will be printed to the console.
@@ -47,12 +48,11 @@ class EngineWindow extends ui.Window {
 
   @override
   ui.Size get physicalSize {
-    if (_physicalSize?.value == null) {
+    if (_physicalSize == null) {
       _computePhysicalSize();
     }
     assert(_physicalSize != null);
-    assert(_physicalSize.value != null);
-    return _physicalSize.value;
+    return _physicalSize;
   }
 
   /// Computes the physical size of the screen from [html.window].
@@ -64,7 +64,7 @@ class EngineWindow extends ui.Window {
 
     assert(() {
       if (webOnlyDebugPhysicalSizeOverride != null) {
-        _physicalSize = FrameReference<ui.Size>(webOnlyDebugPhysicalSizeOverride);
+        _physicalSize = webOnlyDebugPhysicalSizeOverride;
         override = true;
       }
       return true;
@@ -81,15 +81,15 @@ class EngineWindow extends ui.Window {
         windowInnerWidth = html.window.innerWidth * devicePixelRatio;
         windowInnerHeight = html.window.innerHeight * devicePixelRatio;
       }
-      _physicalSize = FrameReference<ui.Size>(ui.Size(
+      _physicalSize = ui.Size(
         windowInnerWidth,
         windowInnerHeight,
-      ));
+      );
     }
   }
 
   /// Lazily populated and cleared at the end of the frame.
-  FrameReference<ui.Size> _physicalSize;
+  ui.Size _physicalSize;
 
   /// Overrides the value of [physicalSize] in tests.
   ui.Size webOnlyDebugPhysicalSizeOverride;

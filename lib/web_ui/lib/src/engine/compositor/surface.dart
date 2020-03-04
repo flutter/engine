@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 typedef SubmitCallback = bool Function(SurfaceFrame, SkCanvas);
@@ -47,6 +48,7 @@ class Surface {
   /// The given [size] is in physical pixels.
   SurfaceFrame acquireFrame(ui.Size size) {
     final SkSurface surface = acquireRenderSurface(size);
+    canvasKit.callMethod('setCurrentContext', <int>[surface.context]);
 
     if (surface == null) return null;
 

@@ -43,8 +43,11 @@ class DartWrappable {
 
   virtual void ReleaseDartWrappableReference() const = 0;
 
+  // Use this method sparingly. It follows a slower path using Dart_New.
+  // Prefer constructing the object in Dart code and using
+  // AssociateWithDartWrapper.
   Dart_Handle CreateDartWrapper(DartState* dart_state);
-  void AssociateWithDartWrapper(Dart_NativeArguments args);
+  void AssociateWithDartWrapper(Dart_Handle wrappable);
   void ClearDartWrapper();  // Warning: Might delete this.
   Dart_WeakPersistentHandle dart_wrapper() const { return dart_wrapper_; }
 

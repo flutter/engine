@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 // TODO(yjbanov): this is a hack we use to compute ideographic baseline; this
@@ -429,6 +430,8 @@ class DomTextMeasurementService extends TextMeasurementService {
           text,
           startIndex: 0,
           endIndex: text.length,
+          endIndexWithoutNewlines:
+              _excludeTrailing(text, 0, text.length, _newlinePredicate),
           hardBreak: true,
           width: lineWidth,
           left: alignOffset,
@@ -796,6 +799,8 @@ class LinesCalculator {
           _text.substring(_lineStart, breakingPoint) + _style.ellipsis,
           startIndex: _lineStart,
           endIndex: chunkEnd,
+          endIndexWithoutNewlines:
+              _excludeTrailing(_text, _chunkStart, chunkEnd, _newlinePredicate),
           hardBreak: false,
           width: widthOfResultingLine,
           left: alignOffset,
@@ -861,6 +866,7 @@ class LinesCalculator {
       _text.substring(_lineStart, endWithoutNewlines),
       startIndex: _lineStart,
       endIndex: lineEnd,
+      endIndexWithoutNewlines: endWithoutNewlines,
       hardBreak: isHardBreak,
       width: lineWidth,
       left: alignOffset,

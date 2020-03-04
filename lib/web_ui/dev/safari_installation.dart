@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:io' as io;
 
@@ -70,7 +71,7 @@ Future<BrowserInstallation> getOrInstallSafari(
     infoLog.writeln('Using the system version that is already installed.');
     return BrowserInstallation(
       version: 'system',
-      executable: PlatformBinding.instance.getSafariSystemExecutablePath(),
+      executable: PlatformBinding.instance.getMacApplicationLauncher(),
     );
   } else {
     infoLog.writeln('Unsupported version $requestedVersion.');

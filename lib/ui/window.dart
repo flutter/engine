@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 /// Signature of callbacks that have no arguments and return no data.
@@ -1211,6 +1212,7 @@ class AccessibilityFeatures {
   static const int _kDisableAnimationsIndex = 1 << 2;
   static const int _kBoldTextIndex = 1 << 3;
   static const int _kReduceMotionIndex = 1 << 4;
+  static const int _kHighContrastIndex = 1 << 5;
 
   // A bitfield which represents each enabled feature.
   final int _index;
@@ -1238,6 +1240,11 @@ class AccessibilityFeatures {
   /// Only supported on iOS.
   bool get reduceMotion => _kReduceMotionIndex & _index != 0;
 
+  /// The platform is requesting that UI be rendered with darker colors.
+  ///
+  /// Only supported on iOS.
+  bool get highContrast => _kHighContrastIndex & _index != 0;
+
   @override
   String toString() {
     final List<String> features = <String>[];
@@ -1251,6 +1258,8 @@ class AccessibilityFeatures {
       features.add('boldText');
     if (reduceMotion)
       features.add('reduceMotion');
+    if (highContrast)
+      features.add('highContrast');
     return 'AccessibilityFeatures$features';
   }
 

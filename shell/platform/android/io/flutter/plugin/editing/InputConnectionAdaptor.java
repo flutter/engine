@@ -4,10 +4,15 @@
 
 package io.flutter.plugin.editing;
 
+import android.annotation.SuppressLint;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Build;
+import android.provider.Settings;
 import android.text.DynamicLayout;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.Layout;
 import android.text.Selection;
 import android.text.TextPaint;
@@ -17,6 +22,7 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.InputMethodSubtype;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 
@@ -29,6 +35,9 @@ class InputConnectionAdaptor extends BaseInputConnection {
   private int mBatchCount;
   private InputMethodManager mImm;
   private final Layout mLayout;
+
+  // Used to determine if Samsung-specific hacks should be applied.
+  private final boolean isSamsung;
 
   @SuppressWarnings("deprecation")
   public InputConnectionAdaptor(
@@ -56,6 +65,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
             0.0f,
             false);
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+
+    isSamsung = isSamsung();
   }
 
   // Send the current state of the editable to Flutter.
@@ -132,17 +143,62 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean finishComposingText() {
     boolean result = super.finishComposingText();
 
-    if (Build.VERSION.SDK_INT >= 21) {
-      // Update the keyboard with a reset/empty composing region. Critical on
-      // Samsung keyboards to prevent punctuation duplication.
-      CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
-      builder.setComposingText(-1, "");
-      CursorAnchorInfo anchorInfo = builder.build();
-      mImm.updateCursorAnchorInfo(mFlutterView, anchorInfo);
+    // Apply Samsung hacks. Samsung caches composing region data strangely, causing text
+    // duplication.
+    if (isSamsung) {
+      if (Build.VERSION.SDK_INT >= 21) {
+        // Samsung keyboards don't clear the composing region on finishComposingText.
+        // Update the keyboard with a reset/empty composing region. Critical on
+        // Samsung keyboards to prevent punctuation duplication.
+        CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
+        builder.setComposingText(/*composingTextStart*/ -1, /*composingText*/ "");
+        CursorAnchorInfo anchorInfo = builder.build();
+        mImm.updateCursorAnchorInfo(mFlutterView, anchorInfo);
+      }
+      // TODO(garyq): There is still a duplication case that comes from hiding+showing the keyboard.
+      // The exact behavior to cause it has so far been hard to pinpoint and it happens far more
+      // rarely than the original bug.
+
+      // Temporarily indicate to the IME that the composing region selection should be reset.
+      // The correct selection is then immediately set properly in the updateEditingState() call
+      // in this method. This is a hack to trigger Samsung keyboard's internal cache to clear.
+      // This prevents duplication on keyboard hide+show. See
+      // https://github.com/flutter/flutter/issues/31512
+      //
+      // We only do this if the proper selection will be restored later, eg, when mBatchCount is 0.
+      if (mBatchCount == 0) {
+        mImm.updateSelection(
+            mFlutterView,
+            -1, /*selStart*/
+            -1, /*selEnd*/
+            -1, /*candidatesStart*/
+            -1 /*candidatesEnd*/);
+      }
     }
 
     updateEditingState();
     return result;
+  }
+
+  // Detect if the keyboard is a Samsung keyboard, where we apply Samsung-specific hacks to
+  // fix critical bugs that make the keyboard otherwise unusable. See finishComposingText() for
+  // more details.
+  @SuppressLint("NewApi") // New API guard is inline, the linter can't see it.
+  @SuppressWarnings("deprecation")
+  private boolean isSamsung() {
+    InputMethodSubtype subtype = mImm.getCurrentInputMethodSubtype();
+    // Impacted devices all shipped with Android Lollipop or newer.
+    if (subtype == null
+        || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
+        || !Build.MANUFACTURER.equals("samsung")) {
+      return false;
+    }
+    String keyboardName =
+        Settings.Secure.getString(
+            mFlutterView.getContext().getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
+    // The Samsung keyboard is called "com.sec.android.inputmethod/.SamsungKeypad" but look
+    // for "Samsung" just in case Samsung changes the name of the keyboard.
+    return keyboardName.contains("Samsung");
   }
 
   @Override
@@ -213,16 +269,59 @@ class InputConnectionAdaptor extends BaseInputConnection {
         }
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
         int selStart = Selection.getSelectionStart(mEditable);
-        int newSel = Math.max(selStart - 1, 0);
-        setSelection(newSel, newSel);
+        int selEnd = Selection.getSelectionEnd(mEditable);
+        if (selStart == selEnd && !event.isShiftPressed()) {
+          int newSel = Math.max(selStart - 1, 0);
+          setSelection(newSel, newSel);
+        } else {
+          int newSelEnd = Math.max(selEnd - 1, 0);
+          setSelection(selStart, newSelEnd);
+        }
         return true;
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
         int selStart = Selection.getSelectionStart(mEditable);
-        int newSel = Math.min(selStart + 1, mEditable.length());
-        setSelection(newSel, newSel);
+        int selEnd = Selection.getSelectionEnd(mEditable);
+        if (selStart == selEnd && !event.isShiftPressed()) {
+          int newSel = Math.min(selStart + 1, mEditable.length());
+          setSelection(newSel, newSel);
+        } else {
+          int newSelEnd = Math.min(selEnd + 1, mEditable.length());
+          setSelection(selStart, newSelEnd);
+        }
         return true;
-      } else if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER
-          || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+      } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_UP) {
+        int selStart = Selection.getSelectionStart(mEditable);
+        int selEnd = Selection.getSelectionEnd(mEditable);
+        if (selStart == selEnd && !event.isShiftPressed()) {
+          Selection.moveUp(mEditable, mLayout);
+          int newSelStart = Selection.getSelectionStart(mEditable);
+          setSelection(newSelStart, newSelStart);
+        } else {
+          Selection.extendUp(mEditable, mLayout);
+          int newSelStart = Selection.getSelectionStart(mEditable);
+          int newSelEnd = Selection.getSelectionEnd(mEditable);
+          setSelection(newSelStart, newSelEnd);
+        }
+        return true;
+      } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_DOWN) {
+        int selStart = Selection.getSelectionStart(mEditable);
+        int selEnd = Selection.getSelectionEnd(mEditable);
+        if (selStart == selEnd && !event.isShiftPressed()) {
+          Selection.moveDown(mEditable, mLayout);
+          int newSelStart = Selection.getSelectionStart(mEditable);
+          setSelection(newSelStart, newSelStart);
+        } else {
+          Selection.extendDown(mEditable, mLayout);
+          int newSelStart = Selection.getSelectionStart(mEditable);
+          int newSelEnd = Selection.getSelectionEnd(mEditable);
+          setSelection(newSelStart, newSelEnd);
+        }
+        return true;
+        // When the enter key is pressed on a non-multiline field, consider it a
+        // submit instead of a newline.
+      } else if ((event.getKeyCode() == KeyEvent.KEYCODE_ENTER
+              || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER)
+          && (InputType.TYPE_TEXT_FLAG_MULTI_LINE & mEditorInfo.inputType) == 0) {
         performEditorAction(mEditorInfo.imeOptions & EditorInfo.IME_MASK_ACTION);
         return true;
       } else {
@@ -231,12 +330,74 @@ class InputConnectionAdaptor extends BaseInputConnection {
         if (character != 0) {
           int selStart = Math.max(0, Selection.getSelectionStart(mEditable));
           int selEnd = Math.max(0, Selection.getSelectionEnd(mEditable));
-          if (selEnd != selStart) mEditable.delete(selStart, selEnd);
-          mEditable.insert(selStart, String.valueOf((char) character));
-          setSelection(selStart + 1, selStart + 1);
+          int selMin = Math.min(selStart, selEnd);
+          int selMax = Math.max(selStart, selEnd);
+          if (selMin != selMax) mEditable.delete(selMin, selMax);
+          mEditable.insert(selMin, String.valueOf((char) character));
+          setSelection(selMin + 1, selMin + 1);
         }
         return true;
       }
+    }
+    if (event.getAction() == KeyEvent.ACTION_UP
+        && (event.getKeyCode() == KeyEvent.KEYCODE_SHIFT_LEFT
+            || event.getKeyCode() == KeyEvent.KEYCODE_SHIFT_RIGHT)) {
+      int selEnd = Selection.getSelectionEnd(mEditable);
+      setSelection(selEnd, selEnd);
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public boolean performContextMenuAction(int id) {
+    if (id == android.R.id.selectAll) {
+      setSelection(0, mEditable.length());
+      return true;
+    } else if (id == android.R.id.cut) {
+      int selStart = Selection.getSelectionStart(mEditable);
+      int selEnd = Selection.getSelectionEnd(mEditable);
+      if (selStart != selEnd) {
+        int selMin = Math.min(selStart, selEnd);
+        int selMax = Math.max(selStart, selEnd);
+        CharSequence textToCut = mEditable.subSequence(selMin, selMax);
+        ClipboardManager clipboard =
+            (ClipboardManager)
+                mFlutterView.getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText("text label?", textToCut);
+        clipboard.setPrimaryClip(clip);
+        mEditable.delete(selMin, selMax);
+        setSelection(selMin, selMin);
+      }
+      return true;
+    } else if (id == android.R.id.copy) {
+      int selStart = Selection.getSelectionStart(mEditable);
+      int selEnd = Selection.getSelectionEnd(mEditable);
+      if (selStart != selEnd) {
+        CharSequence textToCopy =
+            mEditable.subSequence(Math.min(selStart, selEnd), Math.max(selStart, selEnd));
+        ClipboardManager clipboard =
+            (ClipboardManager)
+                mFlutterView.getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        clipboard.setPrimaryClip(ClipData.newPlainText("text label?", textToCopy));
+      }
+      return true;
+    } else if (id == android.R.id.paste) {
+      ClipboardManager clipboard =
+          (ClipboardManager) mFlutterView.getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+      ClipData clip = clipboard.getPrimaryClip();
+      if (clip != null) {
+        CharSequence textToPaste = clip.getItemAt(0).coerceToText(mFlutterView.getContext());
+        int selStart = Math.max(0, Selection.getSelectionStart(mEditable));
+        int selEnd = Math.max(0, Selection.getSelectionEnd(mEditable));
+        int selMin = Math.min(selStart, selEnd);
+        int selMax = Math.max(selStart, selEnd);
+        if (selMin != selMax) mEditable.delete(selMin, selMax);
+        mEditable.insert(selMin, textToPaste);
+        int newSelStart = selMin + textToPaste.length();
+        setSelection(newSelStart, newSelStart);
+      }
+      return true;
     }
     return false;
   }

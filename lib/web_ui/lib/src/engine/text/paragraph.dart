@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 class EngineLineMetrics implements ui.LineMetrics {
@@ -15,14 +16,16 @@ class EngineLineMetrics implements ui.LineMetrics {
     this.left,
     this.baseline,
     this.lineNumber,
-  })  : text = null,
+  })  : displayText = null,
         startIndex = -1,
-        endIndex = -1;
+        endIndex = -1,
+        endIndexWithoutNewlines = -1;
 
   EngineLineMetrics.withText(
-    this.text, {
+    this.displayText, {
     @required this.startIndex,
     @required this.endIndex,
+    @required this.endIndexWithoutNewlines,
     @required this.hardBreak,
     this.ascent,
     this.descent,
@@ -32,14 +35,17 @@ class EngineLineMetrics implements ui.LineMetrics {
     @required this.left,
     this.baseline,
     @required this.lineNumber,
-  })  : assert(text != null),
+  })  : assert(displayText != null),
+        assert(startIndex != null),
+        assert(endIndex != null),
+        assert(endIndexWithoutNewlines != null),
         assert(hardBreak != null),
         assert(width != null),
         assert(left != null),
         assert(lineNumber != null && lineNumber >= 0);
 
-  /// The textual content representing this line.
-  final String text;
+  /// The text to be rendered on the screen representing this line.
+  final String displayText;
 
   /// The index (inclusive) in the text where this line begins.
   final int startIndex;
@@ -49,6 +55,10 @@ class EngineLineMetrics implements ui.LineMetrics {
   /// When the line contains an overflow, then [endIndex] goes until the end of
   /// the text and doesn't stop at the overflow cutoff.
   final int endIndex;
+
+  /// The index (exclusive) in the text where this line ends, ignoring newline
+  /// characters.
+  final int endIndexWithoutNewlines;
 
   @override
   final bool hardBreak;
@@ -79,7 +89,7 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   @override
   int get hashCode => ui.hashValues(
-        text,
+        displayText,
         startIndex,
         endIndex,
         hardBreak,
@@ -103,7 +113,7 @@ class EngineLineMetrics implements ui.LineMetrics {
       return false;
     }
     final EngineLineMetrics typedOther = other;
-    return text == typedOther.text &&
+    return displayText == typedOther.displayText &&
         startIndex == typedOther.startIndex &&
         endIndex == typedOther.endIndex &&
         hardBreak == typedOther.hardBreak &&
@@ -167,6 +177,8 @@ class EngineParagraph implements ui.Paragraph {
   /// The measurement result of the last layout operation.
   MeasurementResult _measurementResult;
 
+  bool get _hasLineMetrics => _measurementResult?.lines != null;
+
   @override
   double get width => _measurementResult?.width ?? -1;
 
@@ -188,7 +200,7 @@ class EngineParagraph implements ui.Paragraph {
 
   @override
   double get longestLine {
-    if (_measurementResult.lines != null) {
+    if (_hasLineMetrics) {
       double maxWidth = 0.0;
       for (ui.LineMetrics metrics in _measurementResult.lines) {
         if (maxWidth < metrics.width) {
@@ -196,12 +208,6 @@ class EngineParagraph implements ui.Paragraph {
         }
       }
       return maxWidth;
-    }
-
-    // In the single-line case, the longest line is equal to the maximum
-    // intrinsic width of the paragraph.
-    if (_measurementResult.isSingleLine) {
-      return _measurementResult.maxIntrinsicWidth;
     }
 
     // If we don't have any line metrics information, there's no way to know the
@@ -299,7 +305,7 @@ class EngineParagraph implements ui.Paragraph {
   /// - Paragraphs that have a non-null word-spacing.
   /// - Paragraphs with a background.
   bool get _drawOnCanvas {
-    if (_measurementResult.lines == null) {
+    if (!_hasLineMetrics) {
       return false;
     }
 
@@ -354,13 +360,63 @@ class EngineParagraph implements ui.Paragraph {
       return <ui.TextBox>[];
     }
 
-    return _measurementService.measureBoxesForRange(
-      this,
-      _lastUsedConstraints,
-      start: start,
-      end: end,
-      alignOffset: _alignOffset,
-      textDirection: _textDirection,
+    // Fallback to the old, DOM-based box measurements when there's no line
+    // metrics.
+    if (!_hasLineMetrics) {
+      return _measurementService.measureBoxesForRange(
+        this,
+        _lastUsedConstraints,
+        start: start,
+        end: end,
+        alignOffset: _alignOffset,
+        textDirection: _textDirection,
+      );
+    }
+
+    final List<EngineLineMetrics> lines = _measurementResult.lines;
+    if (start >= lines.last.endIndex) {
+      return <ui.TextBox>[];
+    }
+
+    final EngineLineMetrics startLine = _getLineForIndex(start);
+    EngineLineMetrics endLine = _getLineForIndex(end);
+
+    // If the range end is exactly at the beginning of a line, we shouldn't
+    // include any boxes from that line.
+    if (end == endLine.startIndex) {
+      endLine = lines[endLine.lineNumber - 1];
+    }
+
+    final List<ui.TextBox> boxes = <ui.TextBox>[];
+    for (int i = startLine.lineNumber; i <= endLine.lineNumber; i++) {
+      boxes.add(_getBoxForLine(lines[i], start, end));
+    }
+    return boxes;
+  }
+
+  ui.TextBox _getBoxForLine(EngineLineMetrics line, int start, int end) {
+    final double widthBeforeBox = start <= line.startIndex
+      ? 0.0
+      : _measurementService.measureSubstringWidth(this, line.startIndex, start);
+    final double widthAfterBox = end >= line.endIndexWithoutNewlines
+      ? 0.0
+      : _measurementService.measureSubstringWidth(this, end, line.endIndexWithoutNewlines);
+
+    final double top = line.lineNumber * _lineHeight;
+
+    //               |<------------------ line.width ------------------>|
+    // |-------------|------------------|-------------|-----------------|
+    // |<-line.left->|<-widthBeforeBox->|<-box width->|<-widthAfterBox->|
+    // |-------------|------------------|-------------|-----------------|
+    //
+    //                                   ^^^^^^^^^^^^^
+    //                          This is the box we want to return.
+    return ui.TextBox.fromLTRBD(
+      line.left + widthBeforeBox,
+      top,
+      line.left + line.width - widthAfterBox,
+      top + _lineHeight,
+      _textDirection,
     );
   }
 
@@ -379,7 +435,7 @@ class EngineParagraph implements ui.Paragraph {
   @override
   ui.TextPosition getPositionForOffset(ui.Offset offset) {
     final List<EngineLineMetrics> lines = _measurementResult.lines;
-    if (lines == null) {
+    if (!_hasLineMetrics) {
       return getPositionForMultiSpanOffset(offset);
     }
 
@@ -416,7 +472,7 @@ class EngineParagraph implements ui.Paragraph {
     // [offset] is to the right of the line.
     if (offset.dx >= lineRight) {
       return ui.TextPosition(
-        offset: lineMetrics.endIndex,
+        offset: lineMetrics.endIndexWithoutNewlines,
         affinity: ui.TextAffinity.upstream,
       );
     }
@@ -425,11 +481,11 @@ class EngineParagraph implements ui.Paragraph {
     // code below will do a binary search to find where exactly the [offset]
     // falls within the line.
 
-    final double dx = offset.dx - _alignOffset;
+    final double dx = offset.dx - lineMetrics.left;
     final TextMeasurementService instance = _measurementService;
 
     int low = lineMetrics.startIndex;
-    int high = lineMetrics.endIndex;
+    int high = lineMetrics.endIndexWithoutNewlines;
     do {
       final int current = (low + high) ~/ 2;
       final double width = instance.measureSubstringWidth(this, lineMetrics.startIndex, current);
@@ -480,18 +536,26 @@ class EngineParagraph implements ui.Paragraph {
     return ui.TextRange(start: start, end: end);
   }
 
+  EngineLineMetrics _getLineForIndex(int index) {
+    assert(_hasLineMetrics);
+    final List<EngineLineMetrics> lines = _measurementResult.lines;
+    assert(index >= 0);
+
+    for (int i = 0; i < lines.length; i++) {
+      final EngineLineMetrics line = lines[i];
+      if (index >= line.startIndex && index < line.endIndex) {
+        return line;
+      }
+    }
+
+    return lines.last;
+  }
+
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
-    final List<EngineLineMetrics> lines = _measurementResult.lines;
-    if (lines != null) {
-      final int offset = position.offset;
-
-      for (int i = 0; i < lines.length; i++) {
-        final EngineLineMetrics line = lines[i];
-        if (offset >= line.startIndex && offset < line.endIndex) {
-          return ui.TextRange(start: line.startIndex, end: line.endIndex);
-        }
-      }
+    if (_hasLineMetrics) {
+      final EngineLineMetrics line = _getLineForIndex(position.offset);
+      return ui.TextRange(start: line.startIndex, end: line.endIndex);
     }
     return ui.TextRange.empty;
   }
