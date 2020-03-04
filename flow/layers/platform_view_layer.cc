@@ -45,10 +45,10 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   // since these drawings are render on an overlay on top of the platform view.
   // This prevent visible drawings on the background canvas when the platform
   // view has opacity.
-  context.background_canvas->resetMatrix();
-  context.background_canvas->clipRect(
-      context.view_embedder->GetPlatformViewRect(view_id_),
-      SkClipOp::kDifference);
-  context.background_canvas->setMatrix(matrix_);
+  // context.background_canvas->resetMatrix();
+  // context.background_canvas->clipRect(
+  //     context.view_embedder->GetPlatformViewRect(view_id_),
+  //     SkClipOp::kDifference);
+  // context.background_canvas->setMatrix(matrix_);
 }
 }  // namespace flutter
