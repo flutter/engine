@@ -41,8 +41,8 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   SkCanvas* canvas = context.view_embedder->CompositeEmbeddedView(view_id_);
   context.leaf_nodes_canvas = canvas;
   // Don't draw on the area covered by the platform view, since these drawings
-  // are on an overlay on top of the platform view. This prevent to see drawings
-  // on the background canvas if the platform view has opacity.
+  // are on an overlay on top of the platform view. This prevent visible drawings
+  // on the background canvas when the platform view has opacity.
   context.background_canvas->clipRect(
       context.view_embedder->GetPlatformViewRect(view_id_),
       SkClipOp::kDifference);
