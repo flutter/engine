@@ -210,18 +210,33 @@ void FlutterRTree::searchRects(Node* node,
       continue;
     }
     SkRect* currentRecordRect = &node->fChildren[i].fBounds;
-    bool replacedExistingRect = false;
-
-    std::vector<SkRect*> currentResults = *results;
+    std::vector<SkRect*> current_results = *results;
+    bool replaced_existing_rect = false;
     // If the current record rect intersects with any of the rects in the
-    // result, then join them, and update the rect in results.
-    for (size_t j = 0; j < results->size(); j++) {
-      if (SkRect::Intersects(*currentResults[j], *currentRecordRect)) {
-        currentResults[j]->join(*currentRecordRect);
-        replacedExistingRect = true;
+    // result vector, then join them, and update the rect in results.
+    size_t joining_rect_idx = current_results.size();
+    size_t result_idx = 0;
+    while (result_idx < results->size()) {
+      if (SkRect::Intersects(*current_results[result_idx],
+                             *currentRecordRect)) {
+        joining_rect_idx = result_idx;
+        replaced_existing_rect = true;
+        current_results[joining_rect_idx]->join(*currentRecordRect);
+        break;
+      }
+      result_idx++;
+    }
+    result_idx = joining_rect_idx + 1;
+    while (replaced_existing_rect && result_idx < results->size()) {
+      if (SkRect::Intersects(*current_results[result_idx],
+                             *current_results[joining_rect_idx])) {
+        current_results[joining_rect_idx]->join(*current_results[result_idx]);
+        results->erase(results->begin() + result_idx);
+      } else {
+        result_idx++;
       }
     }
-    if (!replacedExistingRect) {
+    if (!replaced_existing_rect) {
       results->push_back(currentRecordRect);
     }
   }

@@ -443,8 +443,13 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
-                                                 std::shared_ptr<IOSContext> ios_context) {
+                                                 std::shared_ptr<IOSContext> ios_context,
+                                                 SkCanvas* background_canvas) {
   DisposeViews();
+
+  // Clipping the background canvas before drawing the picture recorders requires to
+  // save and restore the clip context.
+  SkAutoCanvasRestore save(background_canvas, true);
 
   bool did_submit = true;
 
@@ -478,7 +483,12 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
         // Get the intersection rect between the current joined rect
         // and the platform view rect.
         joined_rect.intersect(platform_view_rect);
-        auto layer = GetLayer(gr_context, ios_context, picture, joined_rect);
+
+        // Clip the background canvas, so it doesn't contain any of the pixels drawn
+        // on the overlay layer.
+        background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
+
+        auto layer = GetLayer(gr_context, gl_context, picture, joined_rect);
         did_submit &= layer->did_submit_last_frame;
         platform_view_layers[current_platform_view_id].push_back(layer);
       } else if (allocation_size > 0) {
@@ -487,13 +497,20 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
           // and the platform view rect.
           SkRect joined_rect = *rect;
           joined_rect.intersect(platform_view_rect);
-          auto layer = GetLayer(gr_context, ios_context, picture, joined_rect);
+
+          // Clip the background canvas, so it doesn't contain any of the pixels drawn
+          // on the overlay layer.
+          background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
+
+          auto layer = GetLayer(gr_context, gl_context, picture, joined_rect);
           did_submit &= layer->did_submit_last_frame;
           platform_view_layers[current_platform_view_id].push_back(layer);
         }
       }
     }
+    background_canvas->drawPicture(picture);
   }
+
   RemoveUnusedLayers();
   BringLayersIntoView(platform_view_layers);
 

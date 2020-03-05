@@ -30,7 +30,7 @@ TEST_F(PlatformViewLayerTest, NullViewEmbedderDoesntPrerollCompositeOrPaint) {
   EXPECT_FALSE(layer->needs_system_composite());
 
   layer->Paint(paint_context());
-  EXPECT_EQ(paint_context().background_canvas, &mock_canvas());
+  EXPECT_EQ(paint_context().leaf_nodes_canvas, &mock_canvas());
   EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
 }
 

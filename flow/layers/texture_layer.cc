@@ -30,7 +30,7 @@ void TextureLayer::Paint(PaintContext& context) const {
     TRACE_EVENT_INSTANT0("flutter", "null texture");
     return;
   }
-  texture->Paint(*context.background_canvas, paint_bounds(), freeze_,
+  texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,
                  context.gr_context);
   if (context.leaf_nodes_canvas != nullptr) {
     texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,

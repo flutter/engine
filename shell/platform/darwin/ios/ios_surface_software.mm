@@ -184,12 +184,12 @@ SkRect IOSSurfaceSoftware::GetPlatformViewRect(int view_id) {
 }
 
 // |ExternalViewEmbedder|
-bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
+bool IOSSurfaceSoftware::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {
     return true;
   }
-  return platform_views_controller->SubmitFrame(nullptr, nullptr);
+  return platform_views_controller->SubmitFrame(nullptr, nullptr, background_canvas);
 }
 
 }  // namespace flutter

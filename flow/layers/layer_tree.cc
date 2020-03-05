@@ -115,7 +115,6 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 
   Layer::PaintContext context = {
       (SkCanvas*)&internal_nodes_canvas,
-      nullptr,
       frame.canvas(),
       frame.gr_context(),
       frame.view_embedder(),
@@ -170,8 +169,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
 
   Layer::PaintContext paint_context = {
       (SkCanvas*)&internal_nodes_canvas,
-      nullptr,  // leaf node canvas
-      canvas,   // background canvas
+      canvas,  // leaf node canvas
       nullptr,
       nullptr,
       unused_stopwatch,          // frame time (dont care)

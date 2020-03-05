@@ -151,13 +151,14 @@ SkCanvas* IOSSurfaceGL::CompositeEmbeddedView(int view_id) {
 }
 
 // |ExternalViewEmbedder|
-bool IOSSurfaceGL::SubmitFrame(GrContext* context) {
+bool IOSSurfaceGL::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {
     return true;
   }
 
-  bool submitted = platform_views_controller->SubmitFrame(std::move(context), context_);
+  bool submitted = platform_views_controller->SubmitFrame(std::move(context), context_,
+                                                          std::move(background_canvas));
   [CATransaction commit];
   return submitted;
 }

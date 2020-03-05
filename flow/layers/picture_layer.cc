@@ -46,32 +46,21 @@ void PictureLayer::Paint(PaintContext& context) const {
   context.internal_nodes_canvas->translate(offset_.x(), offset_.y());
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  context.background_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
-      context.background_canvas->getTotalMatrix()));
-  if (context.leaf_nodes_canvas != nullptr) {
-    context.leaf_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
-        context.leaf_nodes_canvas->getTotalMatrix()));
-  }
+  context.leaf_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
+      context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
   if (context.raster_cache) {
-    const SkMatrix& ctm = context.background_canvas->getTotalMatrix();
+    const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
     RasterCacheResult result = context.raster_cache->Get(*picture(), ctm);
     if (result.is_valid()) {
       TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
 
-      result.draw(*context.background_canvas);
-      if (context.leaf_nodes_canvas != nullptr) {
-        result.draw(*context.leaf_nodes_canvas);
-      }
+      result.draw(*context.leaf_nodes_canvas);
       return;
     }
   }
-
-  context.background_canvas->drawPicture(picture());
-  if (context.leaf_nodes_canvas != nullptr) {
-    picture()->playback(context.leaf_nodes_canvas);
-  }
+  picture()->playback(context.leaf_nodes_canvas);
   //
 }
 
