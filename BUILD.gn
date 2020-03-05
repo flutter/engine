@@ -79,6 +79,7 @@ group("flutter") {
       "//flutter/shell/platform/embedder:embedder_unittests",
       "//flutter/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
       "//flutter/testing:testing_unittests",
+      "//flutter/third_party/skia:skia_unittests",
       "//flutter/third_party/txt:txt_unittests",
     ]
 

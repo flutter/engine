@@ -38,7 +38,7 @@ public:
     // Finds the rects in the tree that intersect with the query rect. Each of the
     // entries in the result vector don't intersect with each other. In other words,
     // the entries are mutually exclusive.
-    void searchRects(const SkRect& query, std::vector<SkRect*>* results) const;
+    std::vector<SkRect> searchRects(const SkRect& query) const;
 
     size_t bytesUsed() const override;
 
@@ -72,7 +72,7 @@ private:
     };
 
     void search(Node* root, const SkRect& query, std::vector<int>* results) const;
-    void searchRects(Node* root, const SkRect& query, std::vector<SkRect*>* results) const;
+    void searchRects(Node* root, const SkRect& query, std::vector<SkRect>& results) const;
 
     // Consumes the input array.
     Branch bulkLoad(std::vector<Branch>* branches, int level = 0);

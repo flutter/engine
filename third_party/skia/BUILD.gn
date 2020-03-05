@@ -3,6 +3,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/testing/testing.gni")
+
 source_set("skia") {
   sources = [
     "platform_view_rtree.cc",
@@ -10,6 +12,25 @@ source_set("skia") {
   ]
 
   deps = [
+    "//third_party/skia",
+  ]
+}
+
+test_fixtures("skia_fixtures") {
+  fixtures = []
+}
+
+executable("skia_unittests") {
+  testonly = true
+  sources = [
+    "platform_view_rtree_unittests.cc",
+    "main_unittests.cc",
+  ]
+  deps = [
+    ":skia",
+    ":skia_fixtures",
+    "//flutter/testing:testing_lib",
+    "//third_party/dart/runtime:libdart_jit",  # For logging.
     "//third_party/skia",
   ]
 }

@@ -6,8 +6,7 @@
  */
 
 #include "flutter/testing/testing.h"
-#include "flutter/testing/thread_test.h"
-#include "skia/platform_view_rtree.h"
+#include "platform_view_rtree.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -15,9 +14,9 @@
 namespace flutter {
 namespace testing {
 
-TEST_F(PlatformViewRTree, NoIntersection) {
-    auto r_tree = sk_make_sp<FlutterRTree>();
-    auto rtree_factory = FlutterRTreeFactory(r_tree);
+TEST(PlatformViewRTree, NoIntersection) {
+    auto r_tree = sk_make_sp<PlatformViewRTree>();
+    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -29,16 +28,13 @@ TEST_F(PlatformViewRTree, NoIntersection) {
     recording_canvas->drawRect(SkRect::MakeLTRB(20, 20, 40, 40), rect_paint);
     recorder->finishRecordingAsPicture();
 
-    auto hits = std::vector<SkRect*>();
-    auto query = SkRect::MakeLTRB(40, 40, 80, 80);
-
-    r_tree->searchRects(query, &hits);
+    auto hits = r_tree->searchRects(SkRect::MakeLTRB(40, 40, 80, 80));
     ASSERT_TRUE(hits.empty());
 }
 
-TEST_F(PlatformViewRTree, Intersection) {
-    auto r_tree = sk_make_sp<FlutterRTree>();
-    auto rtree_factory = FlutterRTreeFactory(r_tree);
+TEST(PlatformViewRTree, SingleRectIntersection) {
+    auto r_tree = sk_make_sp<PlatformViewRTree>();
+    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -52,17 +48,70 @@ TEST_F(PlatformViewRTree, Intersection) {
 
     recorder->finishRecordingAsPicture();
 
-    auto query = SkRect::MakeLTRB(140, 140, 150, 150);
-    auto hits = std::vector<SkRect*>();
-
-    r_tree->searchRects(query, &hits);
+    auto hits = r_tree->searchRects(SkRect::MakeLTRB(140, 140, 150, 150));
     ASSERT_EQ(1UL, hits.size());
-    ASSERT_EQ(*hits[0], SkRect::MakeLTRB(120, 120, 160, 160));
+    ASSERT_EQ(hits[0], SkRect::MakeLTRB(120, 120, 160, 160));
 }
 
-TEST_F(PlatformViewRTree, JoinRectsWhenIntersectedCase1) {
-    auto r_tree = sk_make_sp<FlutterRTree>();
-    auto rtree_factory = FlutterRTreeFactory(r_tree);
+TEST(PlatformViewRTree, IgnoresNonDrawingRecords) {
+    auto r_tree = sk_make_sp<PlatformViewRTree>();
+    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
+    auto recorder = std::make_unique<SkPictureRecorder>();
+    auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
+
+    auto rect_paint = SkPaint();
+    rect_paint.setColor(SkColors::kCyan);
+    rect_paint.setStyle(SkPaint::Style::kFill_Style);
+
+    // Creates two non drawing records.
+    recording_canvas->translate(100, 100);
+    // The result vector should only contain the clipping rect.
+    recording_canvas->clipRect(SkRect::MakeLTRB(40, 40, 50, 50), SkClipOp::kIntersect);
+    recording_canvas->drawRect(SkRect::MakeLTRB(20, 20, 80, 80), rect_paint);
+
+    recorder->finishRecordingAsPicture();
+
+    // The rtree has a translate, a clip and a rect record.
+    ASSERT_EQ(3, r_tree->getCount());
+
+    auto hits = r_tree->searchRects(SkRect::MakeLTRB(0, 0, 1000, 1000));
+    ASSERT_EQ(1UL, hits.size());
+    ASSERT_EQ(hits[0], SkRect::MakeLTRB(120, 120, 180, 180));
+}
+
+TEST(PlatformViewRTree, MultipleRectIntersection) {
+    auto r_tree = sk_make_sp<PlatformViewRTree>();
+    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
+    auto recorder = std::make_unique<SkPictureRecorder>();
+    auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
+
+    auto rect_paint = SkPaint();
+    rect_paint.setColor(SkColors::kCyan);
+    rect_paint.setStyle(SkPaint::Style::kFill_Style);
+
+    // Given the A, B that intersect with the query rect,
+    // there should be A and B in the result vector since
+    // they don't intersect with each other.
+    //
+    //  +-----+   +-----+
+    //  |  A  |   |  B  |
+    //  +-----+   +-----+
+    // A
+    recording_canvas->drawRect(SkRect::MakeLTRB(100, 100, 200, 200), rect_paint);
+    // B
+    recording_canvas->drawRect(SkRect::MakeLTRB(300, 100, 400, 200), rect_paint);
+
+    recorder->finishRecordingAsPicture();
+
+    auto hits = r_tree->searchRects(SkRect::MakeLTRB(0, 0, 1000, 1050));
+    ASSERT_EQ(2UL, hits.size());
+    ASSERT_EQ(hits[0], SkRect::MakeLTRB(100, 100, 200, 200));
+    ASSERT_EQ(hits[1], SkRect::MakeLTRB(300, 100, 400, 200));
+}
+
+TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase1) {
+    auto r_tree = sk_make_sp<PlatformViewRTree>();
+    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -88,17 +137,14 @@ TEST_F(PlatformViewRTree, JoinRectsWhenIntersectedCase1) {
 
     recorder->finishRecordingAsPicture();
 
-    auto query = SkRect::MakeXYWH(120, 120, 126, 126);
-    auto hits = std::vector<SkRect*>();
-
-    r_tree->searchRects(query, &hits);
+    auto hits = r_tree->searchRects(SkRect::MakeXYWH(120, 120, 126, 126));
     ASSERT_EQ(1UL, hits.size());
-    ASSERT_EQ(*hits[0], SkRect::MakeLTRB(100, 100, 175, 175));
+    ASSERT_EQ(hits[0], SkRect::MakeLTRB(100, 100, 175, 175));
 }
 
-TEST_F(PlatformViewRTree, JoinRectsWhenIntersectedCase2) {
-    auto r_tree = sk_make_sp<FlutterRTree>();
-    auto rtree_factory = FlutterRTreeFactory(r_tree);
+TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase2) {
+    auto r_tree = sk_make_sp<PlatformViewRTree>();
+    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -131,17 +177,14 @@ TEST_F(PlatformViewRTree, JoinRectsWhenIntersectedCase2) {
 
     recorder->finishRecordingAsPicture();
 
-    auto query = SkRect::MakeLTRB(30, 30, 550, 270);
-    auto hits = std::vector<SkRect*>();
-
-    r_tree->searchRects(query, &hits);
+    auto hits = r_tree->searchRects(SkRect::MakeLTRB(30, 30, 550, 270));
     ASSERT_EQ(1UL, hits.size());
-    ASSERT_EQ(*hits[0], SkRect::MakeLTRB(50, 50, 500, 250));
+    ASSERT_EQ(hits[0], SkRect::MakeLTRB(50, 50, 500, 250));
 }
 
-TEST_F(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
-    auto r_tree = sk_make_sp<FlutterRTree>();
-    auto rtree_factory = FlutterRTreeFactory(r_tree);
+TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
+    auto r_tree = sk_make_sp<PlatformViewRTree>();
+    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -150,15 +193,16 @@ TEST_F(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
     rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
     // Given the A, B, C and D rects that intersect with the query rect,
-    // there should be only D in the result vector,
-    // since A, B, and C are contained in D.
+    // the result vector contains a single rect, which is the union of
+    // these four rects.
     //
     // +------------------------------+
     // | D                            |
     // |  +-----+   +-----+   +-----+ |
     // |  |  A  |   |  B  |   |  C  | |
-    // |  +-----+   +-----+   +-----+ |
-    // +------------------------------+
+    // |  +-----+   +-----+   |     | |
+    // +----------------------|     |-+
+    //                        +-----+
     //              +-----+
     //              |  E  |
     //              +-----+
@@ -176,12 +220,9 @@ TEST_F(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
 
     recorder->finishRecordingAsPicture();
 
-    auto query = SkRect::MakeLTRB(30, 30, 550, 270);
-    auto hits = std::vector<SkRect*>();
-
-    r_tree->searchRects(query, &hits);
+    auto hits = r_tree->searchRects(SkRect::MakeLTRB(30, 30, 550, 270));
     ASSERT_EQ(1UL, hits.size());
-    ASSERT_EQ(*hits[0], SkRect::MakeLTRB(50, 50, 620, 250));
+    ASSERT_EQ(hits[0], SkRect::MakeLTRB(50, 50, 620, 300));
 }
 
 }  // namespace testing
