@@ -67,7 +67,7 @@ class IOSSurfaceMetal final : public IOSSurface,
   SkRect GetPlatformViewRect(int view_id) override;
 
   // |ExternalViewEmbedder|
-  bool SubmitFrame(GrContext* context) override;
+  bool SubmitFrame(GrContext* context, SkCanvas* background_canvas) override;
 
  private:
   fml::scoped_nsobject<CAMetalLayer> layer_;

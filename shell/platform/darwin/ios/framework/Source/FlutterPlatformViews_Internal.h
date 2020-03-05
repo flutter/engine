@@ -136,7 +136,9 @@ class FlutterPlatformViewsController {
   // Discards all platform views instances and auxiliary resources.
   void Reset();
 
-  bool SubmitFrame(GrContext* gr_context, std::shared_ptr<IOSGLContext> gl_context);
+  bool SubmitFrame(GrContext* gr_context,
+                   std::shared_ptr<IOSGLContext> gl_context,
+                   SkCanvas* background_canvas);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 

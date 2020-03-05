@@ -47,8 +47,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
         }),
         paint_context_({
             TestT::mock_canvas().internal_canvas(), /* internal_nodes_canvas */
-            nullptr,                                /* leaf_nodes_canvas */
-            &TestT::mock_canvas(),                  /* background_canvas */
+            &TestT::mock_canvas(),                  /* leaf_nodes_canvas */
             nullptr,                                /* gr_context */
             nullptr,                                /* external_view_embedder */
             raster_time_, ui_time_, texture_registry_,

@@ -104,13 +104,13 @@ SkRect IOSSurfaceMetal::GetPlatformViewRect(int view_id) {
   return platform_views_controller->GetPlatformViewRect(view_id);
 }
 
-bool IOSSurfaceMetal::SubmitFrame(GrContext* context) {
+bool IOSSurfaceMetal::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {
     return true;
   }
 
-  bool submitted = platform_views_controller->SubmitFrame(context, nullptr);
+  bool submitted = platform_views_controller->SubmitFrame(context, nullptr, background_canvas);
   [CATransaction commit];
   return submitted;
 }

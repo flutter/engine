@@ -39,10 +39,7 @@ void ChildSceneLayer::Paint(PaintContext& context) const {
   SkPaint paint;
   paint.setColor(SK_ColorTRANSPARENT);
   paint.setBlendMode(SkBlendMode::kSrc);
-  context.background_canvas->drawRect(paint_bounds(), paint);
-  if (context.leaf_nodes_canvas != nullptr) {
-    context.leaf_nodes_canvas->drawRect(paint_bounds(), paint);
-  }
+  context.leaf_nodes_canvas->drawRect(paint_bounds(), paint);
 }
 
 void ChildSceneLayer::UpdateScene(SceneUpdateContext& context) {

@@ -251,7 +251,7 @@ class ExternalViewEmbedder {
   // Must be called on the UI thread.
   virtual SkRect GetPlatformViewRect(int view_id) = 0;
 
-  virtual bool SubmitFrame(GrContext* context);
+  virtual bool SubmitFrame(GrContext* context, SkCanvas* background_canvas);
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

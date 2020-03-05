@@ -36,14 +36,11 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
 #endif
 
   if (context.raster_cache) {
-    const SkMatrix& ctm = context.background_canvas->getTotalMatrix();
+    const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
     RasterCacheResult layer_cache =
         context.raster_cache->Get((Layer*)this, ctm);
     if (layer_cache.is_valid()) {
-      layer_cache.draw(*context.background_canvas);
-      if (context.leaf_nodes_canvas != nullptr) {
-        layer_cache.draw(*context.leaf_nodes_canvas);
-      }
+      layer_cache.draw(*context.leaf_nodes_canvas);
       return;
     }
   }

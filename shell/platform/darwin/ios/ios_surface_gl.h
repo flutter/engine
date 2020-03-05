@@ -79,7 +79,7 @@ class IOSSurfaceGL final : public IOSSurface,
   SkRect GetPlatformViewRect(int view_id) override;
 
   // |ExternalViewEmbedder|
-  bool SubmitFrame(GrContext* context) override;
+  bool SubmitFrame(GrContext* context, SkCanvas* background_canvas) override;
 
  private:
   std::shared_ptr<IOSGLContext> context_;

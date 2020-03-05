@@ -88,18 +88,15 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
-      context.background_canvas->getTotalMatrix()));
+      context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
   if (context.raster_cache) {
     ContainerLayer* container = GetChildContainer();
-    const SkMatrix& ctm = context.background_canvas->getTotalMatrix();
+    const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
     RasterCacheResult child_cache = context.raster_cache->Get(container, ctm);
     if (child_cache.is_valid()) {
-      child_cache.draw(*context.background_canvas, &paint);
-      if (context.leaf_nodes_canvas != nullptr) {
-        child_cache.draw(*context.leaf_nodes_canvas, &paint);
-      }
+      child_cache.draw(*context.leaf_nodes_canvas, &paint);
       return;
     }
   }
