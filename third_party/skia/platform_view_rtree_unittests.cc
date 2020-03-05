@@ -153,7 +153,7 @@ TEST_F(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
 
     // Given the A, B, C and D rects that intersect with the query rect,
     // there should be only D in the result vector,
-    // since A, B, and C are contained in C.
+    // since A, B, and C are contained in D.
     //
     // +------------------------------+
     // | D                            |
