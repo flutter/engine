@@ -2181,7 +2181,8 @@ PREDEFINED             = NS_UNAVAILABLE \
                          "NS_ENUM(type, name)=enum name" \
                          NS_ASSUME_NONNULL_BEGIN \
                          NS_ASSUME_NONNULL_END \
-                         NS_DESIGNATED_INITIALIZER
+                         NS_DESIGNATED_INITIALIZER \
+                         __attribute__(x)=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
