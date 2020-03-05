@@ -269,8 +269,10 @@ class _PolyfillFontManager extends FontManager {
         completer.complete();
       } else {
         if (DateTime.now().difference(_fontLoadStart) > _fontLoadTimeout) {
-          completer.completeError(
-              Exception('Timed out trying to load font: $family'));
+          // Let application waiting for fonts continue with fallback.
+          completer.complete();
+          // Throw unhandled exception for logging.
+          throw Exception('Timed out trying to load font: $family');
         } else {
           Timer(_fontLoadRetryDuration, _watchWidth);
         }
