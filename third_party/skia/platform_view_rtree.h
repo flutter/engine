@@ -27,13 +27,18 @@
  *  Beckmann, N.; Kriegel, H. P.; Schneider, R.; Seeger, B. (1990). "The R*-tree:
  *      an efficient and robust access method for points and rectangles"
  */
-class SkRTree : public SkBBoxHierarchy {
+class PlatformViewRTree : public SkBBoxHierarchy {
 public:
-    SkRTree();
+    PlatformViewRTree();
 
     void insert(const SkRect[], const SkBBoxHierarchy::Metadata[], int N) override;
     void insert(const SkRect[], int N) override;
     void search(const SkRect& query, std::vector<int>* results) const override;
+
+    // Finds the rects in the tree that intersect with the query rect. Each of the
+    // entries in the result vector don't intersect with each other. In other words,
+    // the entries are mutually exclusive.
+    void searchRects(const SkRect& query, std::vector<SkRect*>* results) const;
 
     size_t bytesUsed() const override;
 
@@ -56,6 +61,7 @@ private:
             Node* fSubtree;
             int fOpIndex;
         };
+        bool isDraw;
         SkRect fBounds;
     };
 
@@ -66,6 +72,7 @@ private:
     };
 
     void search(Node* root, const SkRect& query, std::vector<int>* results) const;
+    void searchRects(Node* root, const SkRect& query, std::vector<SkRect*>* results) const;
 
     // Consumes the input array.
     Branch bulkLoad(std::vector<Branch>* branches, int level = 0);
@@ -79,6 +86,15 @@ private:
     int fCount;
     Branch fRoot;
     std::vector<Node> fNodes;
+};
+
+class PlatformViewRTreeFactory : public SkBBHFactory {
+public:
+    PlatformViewRTreeFactory(sk_sp<PlatformViewRTree>& r_tree);
+    sk_sp<SkBBoxHierarchy> operator()() const override;
+
+private:
+    sk_sp<PlatformViewRTree> r_tree_;
 };
 
 #endif  // SKIA_PLATFORM_VIEW_RTREE_H_

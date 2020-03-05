@@ -7,9 +7,9 @@
 
 #include "skia/platform_view_rtree.h"
 
-SkRTree::SkRTree() : fCount(0) {}
+PlatformViewRTree::PlatformViewRTree() : fCount(0) {}
 
-void SkRTree::insert(const SkRect boundsArray[],
+void PlatformViewRTree::insert(const SkRect boundsArray[],
                                const SkBBoxHierarchy::Metadata metadata[],
                                int N) {
     SkASSERT(0 == fCount);
@@ -30,6 +30,7 @@ void SkRTree::insert(const SkRect boundsArray[],
     Branch b;
     b.fBounds = bounds;
     b.fOpIndex = i;
+    b.isDraw = (metadata == nullptr) ? false : metadata[i].isDraw;
     branches.push_back(b);
 }
 
@@ -48,11 +49,11 @@ if (fCount) {
     }
 }
 
-void SkRTree::insert(const SkRect boundsArray[], int N) {
+void PlatformViewRTree::insert(const SkRect boundsArray[], int N) {
     insert(boundsArray, nullptr, N);
 }
 
-SkRTree::Node* SkRTree::allocateNodeAtLevel(uint16_t level) {
+PlatformViewRTree::Node* PlatformViewRTree::allocateNodeAtLevel(uint16_t level) {
     SkDEBUGCODE(Node* p = fNodes.data());
     fNodes.push_back(Node{});
     Node& out = fNodes.back();
@@ -64,7 +65,7 @@ SkRTree::Node* SkRTree::allocateNodeAtLevel(uint16_t level) {
 
 // This function parallels bulkLoad, but just counts how many nodes bulkLoad
 // would allocate.
-int SkRTree::CountNodes(int branches) {
+int PlatformViewRTree::CountNodes(int branches) {
     if (branches == 1) {
         return 1;
     }
@@ -100,7 +101,7 @@ int SkRTree::CountNodes(int branches) {
     return nodes + CountNodes(nodes);
 }
 
-SkRTree::Branch SkRTree::bulkLoad(std::vector<Branch>* branches, int level) {
+PlatformViewRTree::Branch PlatformViewRTree::bulkLoad(std::vector<Branch>* branches, int level) {
     if (branches->size() == 1) {  // Only one branch.  It will be the root.
         return (*branches)[0];
     }
@@ -156,13 +157,13 @@ SkRTree::Branch SkRTree::bulkLoad(std::vector<Branch>* branches, int level) {
     return this->bulkLoad(branches, level + 1);
 }
 
-void SkRTree::search(const SkRect& query, std::vector<int>* results) const {
+void PlatformViewRTree::search(const SkRect& query, std::vector<int>* results) const {
     if (fCount > 0 && SkRect::Intersects(fRoot.fBounds, query)) {
         this->search(fRoot.fSubtree, query, results);
     }
 }
 
-void SkRTree::search(Node* node, const SkRect& query, std::vector<int>* results) const {
+void PlatformViewRTree::search(Node* node, const SkRect& query, std::vector<int>* results) const {
     for (int i = 0; i < node->fNumChildren; ++i) {
         if (!SkRect::Intersects(node->fChildren[i].fBounds, query)) {
             continue;
@@ -175,8 +176,74 @@ void SkRTree::search(Node* node, const SkRect& query, std::vector<int>* results)
     }
 }
 
-size_t SkRTree::bytesUsed() const {
-    size_t byteCount = sizeof(SkRTree);
+void PlatformViewRTree::searchRects(const SkRect& query, std::vector<SkRect*>* results) const {
+    if (fCount > 0 && SkRect::Intersects(fRoot.fBounds, query)) {
+        this->searchRects(fRoot.fSubtree, query, results);
+    }
+}
+
+void PlatformViewRTree::searchRects(Node* node,
+                                    const SkRect& query,
+                                    std::vector<SkRect*>* results) const {
+    if (!SkRect::Intersects(fRoot.fBounds, query)) {
+        return;
+    }
+    for (int i = 0; i < node->fNumChildren; ++i) {
+        if (!SkRect::Intersects(node->fChildren[i].fBounds, query)) {
+            continue;
+        }
+        // Non-leaf node
+        if (0 != node->fLevel) {
+            this->searchRects(node->fChildren[i].fSubtree, query, results);
+            continue;
+        }
+        // Ignore records that don't draw anything.
+        if (!node->fChildren[i].isDraw) {
+            continue;
+        }
+        SkRect* currentRecordRect = &node->fChildren[i].fBounds;
+        std::vector<SkRect*> currentResults = *results;
+        bool replacedExistingRect = false;
+        // If the current record rect intersects with any of the rects in the
+        // result vector, then join them, and update the rect in results.
+        size_t joiningRectIdx = currentResults.size();
+        size_t resultIdx = 0;
+        while (resultIdx < results->size()) {
+            if (SkRect::Intersects(*currentResults[resultIdx], *currentRecordRect)) {
+                joiningRectIdx = resultIdx;
+                replacedExistingRect = true;
+                currentResults[joiningRectIdx]->join(*currentRecordRect);
+                break;
+            }
+            resultIdx++;
+        }
+        resultIdx = joiningRectIdx + 1;
+        // It's possible that after joining rects will result in duplicated
+        // rects in the results vector. For example, consider a result vector
+        // that contains rects A, B. If a new rect C is a superset of A and B,
+        // then A and B are the same set after the merge. As a result, find such
+        // cases and remove them from the result vector.
+        while (replacedExistingRect && resultIdx < results->size()) {
+            if (SkRect::Intersects(*currentResults[resultIdx], *currentResults[joiningRectIdx])) {
+                currentResults[joiningRectIdx]->join(*currentResults[resultIdx]);
+                results->erase(results->begin() + resultIdx);
+            } else {
+                resultIdx++;
+            }
+        }
+        if (!replacedExistingRect) {
+            results->push_back(currentRecordRect);
+        }
+    }
+}
+
+size_t PlatformViewRTree::bytesUsed() const {
+    size_t byteCount = sizeof(PlatformViewRTree);
     byteCount += fNodes.capacity() * sizeof(Node);
     return byteCount;
 }
+
+PlatformViewRTreeFactory::PlatformViewRTreeFactory(sk_sp<PlatformViewRTree>& r_tree)
+        : r_tree_(r_tree) {}
+
+sk_sp<SkBBoxHierarchy> PlatformViewRTreeFactory::operator()() const { return r_tree_; }
