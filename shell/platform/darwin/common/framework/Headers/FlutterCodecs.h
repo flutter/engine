@@ -99,7 +99,7 @@ FLUTTER_EXPORT
 - (void)writeBytes:(const void*)bytes length:(NSUInteger)length;
 /** Write an array of bytes contained in \p data. */
 - (void)writeData:(NSData*)data;
-/** Write 32-bit unsigned integer that represents a size of a collection. */
+/** Write 32-bit unsigned integer that represents a \p size of a collection. */
 - (void)writeSize:(UInt32)size;
 /** Write zero padding until data is aligned with \p alignment. */
 - (void)writeAlignment:(UInt8)alignment;
