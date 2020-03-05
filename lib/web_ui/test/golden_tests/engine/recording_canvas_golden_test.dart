@@ -593,7 +593,6 @@ void main() async {
         region: const Rect.fromLTRB(0, 0, 250, 600),
         maxDiffRatePercent: 0.0,
         pixelComparison: PixelComparison.precise,
-        write: true,
       );
     } finally {
       sceneElement.remove();

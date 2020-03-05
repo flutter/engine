@@ -154,7 +154,6 @@ void main() async {
         region: region,
         maxDiffRatePercent: 0.0,
         pixelComparison: PixelComparison.precise,
-        write: true,
       );
     },
     timeout: const Timeout(Duration(seconds: 10)),
