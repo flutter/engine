@@ -6,6 +6,8 @@
 
 #include "dpi_utils.h"
 
+#include <iostream>
+
 namespace flutter {
 
 Win32Window::Win32Window() {
@@ -214,6 +216,7 @@ Win32Window::MessageHandler(HWND hwnd,
       case WM_SYSKEYDOWN:
       case WM_KEYUP:
       case WM_SYSKEYUP:
+        // unsigned int scancode = ( lparam >> 16 ) & 0xff;
         unsigned char scancode = ((unsigned char*)&lparam)[2];
         unsigned int virtualKey = MapVirtualKey(scancode, MAPVK_VSC_TO_VK);
         const int key = virtualKey;

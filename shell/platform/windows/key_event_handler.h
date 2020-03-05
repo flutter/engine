@@ -9,6 +9,7 @@
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/binary_messenger.h"
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/encodable_value.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "rapidjson/document.h"
@@ -38,7 +39,7 @@ class KeyEventHandler : public KeyboardHookHandler {
 
  private:
   // The Flutter system channel for key event messages.
-  std::unique_ptr<flutter::BasicMessageChannel<rapidjson::Document>> channel_;
+  std::unique_ptr<flutter::BasicMessageChannel<flutter::EncodableValue>> channel_;
 };
 
 }  // namespace flutter
