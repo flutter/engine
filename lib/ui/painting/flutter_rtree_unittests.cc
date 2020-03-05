@@ -25,13 +25,14 @@ TEST_F(FlutterRTreeTest, NoIntersection) {
   rect_paint.setColor(SkColors::kCyan);
   rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
-  recording_canvas->drawRect(SkRect::MakeXYWH(20, 20, 20, 20), rect_paint);
+  // If no rect is intersected with the query rect, then the result vector is empty.
+  recording_canvas->drawRect(SkRect::MakeLTRB(20, 20, 40, 40), rect_paint);
   recorder->finishRecordingAsPicture();
 
   auto hits = std::vector<SkRect*>();
-  auto unobstructed = SkRect::MakeXYWH(40, 40, 20, 20);
+  auto query = SkRect::MakeLTRB(40, 40, 80, 80);
 
-  r_tree->searchRects(unobstructed, &hits);
+  r_tree->searchRects(query, &hits);
   ASSERT_TRUE(hits.empty());
 }
 
@@ -46,21 +47,21 @@ TEST_F(FlutterRTreeTest, Intersection) {
   rect_paint.setColor(SkColors::kCyan);
   rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
-  recording_canvas->drawRect(SkRect::MakeXYWH(120, 120, 40, 40), rect_paint);
+  // Given a single rect A that intersects with the query rect,
+  // the result vector contains this rect.
+  recording_canvas->drawRect(SkRect::MakeLTRB(120, 120, 160, 160), rect_paint);
 
   recorder->finishRecordingAsPicture();
 
-  // Hits that partially overlap with a drawn area return bboxes describing the
-  // intersection of the query and the drawn area.
-  auto one_hit = SkRect::MakeXYWH(140, 140, 40, 40);
+  auto query = SkRect::MakeLTRB(140, 140, 150, 150);
   auto hits = std::vector<SkRect*>();
 
-  r_tree->searchRects(one_hit, &hits);
+  r_tree->searchRects(query, &hits);
   ASSERT_EQ(1UL, hits.size());
-  ASSERT_EQ(*hits[0], SkRect::MakeXYWH(120, 120, 40, 40));
+  ASSERT_EQ(*hits[0], SkRect::MakeLTRB(120, 120, 160, 160));
 }
 
-TEST_F(FlutterRTreeTest, JoinRectsWhenIntersected) {
+TEST_F(FlutterRTreeTest, JoinRectsWhenIntersectedCase1) {
   auto r_tree = sk_make_sp<FlutterRTree>();
   auto rtree_factory = FlutterRTreeFactory(r_tree);
   auto recorder = std::make_unique<SkPictureRecorder>();
@@ -71,19 +72,76 @@ TEST_F(FlutterRTreeTest, JoinRectsWhenIntersected) {
   rect_paint.setColor(SkColors::kCyan);
   rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
-  recording_canvas->drawRect(SkRect::MakeXYWH(120, 120, 40, 40), rect_paint);
-  recording_canvas->drawRect(SkRect::MakeXYWH(140, 140, 40, 40), rect_paint);
+
+  // Given the A, and B rects, which intersect with the query rect, 
+  // the result vector contains the rect resulting from the union of A and B.
+  // 
+  // +-----+
+  // |  A  |
+  // |   +-----+
+  // |   |  C  |
+  // |   +-----+
+  // |     |
+  // +-----+
+
+  // A
+  recording_canvas->drawRect(SkRect::MakeLTRB(100, 100, 150, 150), rect_paint);
+  // B
+  recording_canvas->drawRect(SkRect::MakeLTRB(125, 125, 175, 175), rect_paint);
 
   recorder->finishRecordingAsPicture();
 
-  // Hits that partially overlap with a drawn area return bboxes describing the
-  // intersection of the query and the drawn area.
-  auto one_hit = SkRect::MakeXYWH(142, 142, 10, 10);
+  auto query = SkRect::MakeXYWH(120, 120, 126, 126);
   auto hits = std::vector<SkRect*>();
 
-  r_tree->searchRects(one_hit, &hits);
+  r_tree->searchRects(query, &hits);
   ASSERT_EQ(1UL, hits.size());
-  ASSERT_EQ(*hits[0], SkRect::MakeXYWH(120, 120, 60, 60));
+  ASSERT_EQ(*hits[0], SkRect::MakeLTRB(100, 100, 175, 175));
+}
+
+TEST_F(FlutterRTreeTest, JoinRectsWhenIntersectedCase2) {
+  auto r_tree = sk_make_sp<FlutterRTree>();
+  auto rtree_factory = FlutterRTreeFactory(r_tree);
+  auto recorder = std::make_unique<SkPictureRecorder>();
+  auto recording_canvas =
+      recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
+
+  auto rect_paint = SkPaint();
+  rect_paint.setColor(SkColors::kCyan);
+  rect_paint.setStyle(SkPaint::Style::kFill_Style);
+
+  // Given the A, B, and C rects that intersect with the query rect,
+  // there should be only C in the result vector, 
+  // since A and B are contained in C.
+  // 
+  // +---------------------+
+  // | C                   |
+  // |  +-----+   +-----+  |
+  // |  |  A  |   |  B  |  |
+  // |  +-----+   +-----+  |
+  // +---------------------+
+  //              +-----+
+  //              |  D  |
+  //              +-----+
+
+  // A
+  recording_canvas->drawRect(SkRect::MakeLTRB(100, 100, 200, 200), rect_paint);
+  // B
+  recording_canvas->drawRect(SkRect::MakeLTRB(300, 100, 400, 200), rect_paint);
+  // C
+  recording_canvas->drawRect(SkRect::MakeLTRB(50, 50, 500, 250), rect_paint);  
+  // D
+  recording_canvas->drawRect(SkRect::MakeLTRB(280, 100, 280, 320), rect_paint);
+
+  recorder->finishRecordingAsPicture();
+
+
+  auto query = SkRect::MakeLTRB(30, 30, 550, 270);
+  auto hits = std::vector<SkRect*>();
+
+  r_tree->searchRects(query, &hits);
+  ASSERT_EQ(1UL, hits.size());
+  ASSERT_EQ(*hits[0], SkRect::MakeLTRB(50, 50, 500, 250));
 }
 
 }  // namespace testing
