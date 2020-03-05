@@ -23,8 +23,8 @@ test_fixtures("skia_fixtures") {
 executable("skia_unittests") {
   testonly = true
   sources = [
-    "platform_view_rtree_unittests.cc",
     "main_unittests.cc",
+    "platform_view_rtree_unittests.cc",
   ]
   deps = [
     ":skia",
