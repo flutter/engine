@@ -15,8 +15,6 @@
 namespace flutter {
 namespace testing {
 
-using PlatformViewRTree = ThreadTest;
-
 TEST_F(PlatformViewRTree, NoIntersection) {
     auto r_tree = sk_make_sp<FlutterRTree>();
     auto rtree_factory = FlutterRTreeFactory(r_tree);
