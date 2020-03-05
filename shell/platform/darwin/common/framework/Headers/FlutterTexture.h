@@ -44,7 +44,7 @@ FLUTTER_EXPORT
 /**
  * Notifies Flutter that the content of the previously registered texture has been updated.
  *
- * See also: `flutter::PlatformView::MarkTextureFrameAvailable`
+ * This will trigger a call to `-[FlutterTexture copyPixelBuffer]` on the GPU thread.
  */
 - (void)textureFrameAvailable:(int64_t)textureId;
 /**
