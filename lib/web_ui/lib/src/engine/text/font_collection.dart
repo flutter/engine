@@ -245,7 +245,8 @@ class _PolyfillFontManager extends FontManager {
     paragraph.style.position = 'absolute';
     paragraph.style.visibility = 'hidden';
     paragraph.style.fontSize = '72px';
-    paragraph.style.fontFamily = 'sans-serif';
+    paragraph.style.fontFamily = browserEngine == BrowserEngine.ie11 ?
+        'Arial' : 'sans-serif';
     if (descriptors['style'] != null) {
       paragraph.style.fontStyle = descriptors['style'];
     }
