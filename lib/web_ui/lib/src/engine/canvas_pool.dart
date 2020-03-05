@@ -503,7 +503,7 @@ class _CanvasPool extends _SaveStackTracking {
             break;
           case PathCommandTypes.ellipse:
             final Ellipse ellipse = command;
-            ctx.ellipse(
+            DomRenderer.ellipse(ctx,
                 ellipse.x,
                 ellipse.y,
                 ellipse.radiusX,
