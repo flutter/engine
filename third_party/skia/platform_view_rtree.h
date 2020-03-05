@@ -26,6 +26,11 @@
  *
  *  Beckmann, N.; Kriegel, H. P.; Schneider, R.; Seeger, B. (1990). "The R*-tree:
  *      an efficient and robust access method for points and rectangles"
+ *
+ * The original source code can be found on
+ * https://github.com/google/skia/blob/508fd32091afe334d4e1dd6cdaa63168a53acb26/src/core/SkRTree.h
+ *
+ * This copy includes a searchRects method.
  */
 class PlatformViewRTree : public SkBBoxHierarchy {
 public:
@@ -35,9 +40,20 @@ public:
     void insert(const SkRect[], int N) override;
     void search(const SkRect& query, std::vector<int>* results) const override;
 
-    // Finds the rects in the tree that intersect with the query rect. Each of the
-    // entries in the result vector don't intersect with each other. In other words,
-    // the entries are mutually exclusive.
+    // Finds the rects in the tree that represent drawing operations and intersect
+    // with the query rect.
+    //
+    // When two rects intersect with each other, they are joined into a single rect
+    // which also intersects with the query rect. In other words, the bounds of each
+    // rect in the result vector are mutually exclusive.
+    //
+    // Since this method is used when compositing platform views, the rects in the
+    // result vector represent UIViews that are composed on top of the platform view.
+    //
+    // However, Skia uses this tree to tracks operations that don't have any context
+    // on how they relate to each other when compositing the final scene in Flutter.
+    // For example, they may include matrix changes, clips or rects that are stacked
+    // on top of each other.
     std::vector<SkRect> searchRects(const SkRect& query) const;
 
     size_t bytesUsed() const override;
