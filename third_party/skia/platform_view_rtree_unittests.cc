@@ -141,5 +141,50 @@ TEST_F(PlatformViewRTree, JoinRectsWhenIntersectedCase2) {
     ASSERT_EQ(*hits[0], SkRect::MakeLTRB(50, 50, 500, 250));
 }
 
+TEST_F(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
+    auto r_tree = sk_make_sp<FlutterRTree>();
+    auto rtree_factory = FlutterRTreeFactory(r_tree);
+    auto recorder = std::make_unique<SkPictureRecorder>();
+    auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
+
+    auto rect_paint = SkPaint();
+    rect_paint.setColor(SkColors::kCyan);
+    rect_paint.setStyle(SkPaint::Style::kFill_Style);
+
+    // Given the A, B, C and D rects that intersect with the query rect,
+    // there should be only D in the result vector,
+    // since A, B, and C are contained in C.
+    //
+    // +------------------------------+
+    // | D                            |
+    // |  +-----+   +-----+   +-----+ |
+    // |  |  A  |   |  B  |   |  C  | |
+    // |  +-----+   +-----+   +-----+ |
+    // +------------------------------+
+    //              +-----+
+    //              |  E  |
+    //              +-----+
+
+    // A
+    recording_canvas->drawRect(SkRect::MakeLTRB(100, 100, 200, 200), rect_paint);
+    // B
+    recording_canvas->drawRect(SkRect::MakeLTRB(300, 100, 400, 200), rect_paint);
+    // C
+    recording_canvas->drawRect(SkRect::MakeLTRB(500, 100, 600, 300), rect_paint);
+    // D
+    recording_canvas->drawRect(SkRect::MakeLTRB(50, 50, 620, 250), rect_paint);
+    // E
+    recording_canvas->drawRect(SkRect::MakeLTRB(280, 100, 280, 320), rect_paint);
+
+    recorder->finishRecordingAsPicture();
+
+    auto query = SkRect::MakeLTRB(30, 30, 550, 270);
+    auto hits = std::vector<SkRect*>();
+
+    r_tree->searchRects(query, &hits);
+    ASSERT_EQ(1UL, hits.size());
+    ASSERT_EQ(*hits[0], SkRect::MakeLTRB(50, 50, 620, 250));
+}
+
 }  // namespace testing
 }  // namespace flutter
