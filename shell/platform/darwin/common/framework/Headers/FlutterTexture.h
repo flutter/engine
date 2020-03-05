@@ -42,7 +42,7 @@ FLUTTER_EXPORT
  */
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture;
 /**
- * Notifies Flutter that the context of the previously registered texture has been updated.
+ * Notifies Flutter that the content of the previously registered texture has been updated.
  *
  * See also: `flutter::PlatformView::MarkTextureFrameAvailable`
  */
