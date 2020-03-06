@@ -37,6 +37,7 @@ class ImageDecoderFixtureTest : public ThreadTest {
     settings.isolate_create_callback = [this]() {
       native_resolver_->SetNativeResolverForIsolate();
     };
+    settings.enable_observatory = false;
     SetSnapshotsAndAssets(settings);
     return settings;
   }
@@ -57,7 +58,7 @@ class ImageDecoderFixtureTest : public ThreadTest {
     // don't need to be explicitly supplied by the embedder. In AOT, these
     // snapshots will be present in the application AOT dylib.
     if (DartVM::IsRunningPrecompiledCode()) {
-      PrepareSettingsForAOTWithSymbols(settings, aot_symbols_);
+      FML_CHECK(PrepareSettingsForAOTWithSymbols(settings, aot_symbols_));
     } else {
       settings.application_kernels = [this]() {
         std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
@@ -628,8 +629,6 @@ TEST_F(ImageDecoderFixtureTest,
   //     runner.
   //   - Unlatches the IO task runner
   auto settings = CreateSettingsForFixture();
-  settings.leak_vm = false;
-  settings.enable_observatory = false;
   auto vm_ref = DartVMRef::Create(settings);
   auto vm_data = vm_ref.GetVMData();
 
@@ -640,7 +639,6 @@ TEST_F(ImageDecoderFixtureTest,
   auto gif_codec = SkCodec::MakeFromData(gif_mapping);
   ASSERT_TRUE(gif_codec);
 
-  auto loop = fml::ConcurrentMessageLoop::Create();
   TaskRunners runners(GetCurrentTestName(),         // label
                       CreateNewThread("platform"),  // platform
                       CreateNewThread("gpu"),       // gpu
@@ -670,8 +668,7 @@ TEST_F(ImageDecoderFixtureTest,
     fml::AutoResetWaitableEvent isolate_latch;
     fml::RefPtr<MultiFrameCodec> codec;
     EXPECT_TRUE(isolate->RunInIsolateScope([&]() -> bool {
-      Dart_Handle library = Dart_LookupLibrary(Dart_NewStringFromCString(
-          "package:engine_root/ui/fixtures/ui_test.dart"));
+      Dart_Handle library = Dart_RootLibrary();
       if (Dart_IsError(library)) {
         isolate_latch.Signal();
         return false;

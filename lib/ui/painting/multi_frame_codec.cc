@@ -14,16 +14,13 @@ namespace flutter {
 MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec)
     : state_(new State(std::move(codec))) {}
 
-MultiFrameCodec::~MultiFrameCodec() {
-  state_->live_ = false;
-}
+MultiFrameCodec::~MultiFrameCodec() = default;
 
 MultiFrameCodec::State::State(std::unique_ptr<SkCodec> codec)
     : codec_(std::move(codec)),
       frameCount_(codec_->getFrameCount()),
       repetitionCount_(codec_->getRepetitionCount()),
-      nextFrameIndex_(0),
-      live_(true) {}
+      nextFrameIndex_(0) {}
 
 static void InvokeNextFrameCallback(
     fml::RefPtr<FrameInfo> frameInfo,
@@ -141,13 +138,6 @@ void MultiFrameCodec::State::GetNextFrameAndInvokeCallback(
     fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
     size_t trace_id) {
   fml::RefPtr<FrameInfo> frameInfo = NULL;
-  if (!live_) {
-    ui_task_runner->PostTask(fml::MakeCopyable(
-        [callback = std::move(callback), frameInfo, trace_id]() mutable {
-          InvokeNextFrameCallback(frameInfo, std::move(callback), trace_id);
-        }));
-    return;
-  }
   sk_sp<SkImage> skImage = GetNextFrameImage(resourceContext);
   if (skImage) {
     fml::RefPtr<CanvasImage> image = CanvasImage::Create();
@@ -177,12 +167,18 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 
   const auto& task_runners = dart_state->GetTaskRunners();
 
-  task_runners.GetIOTaskRunner()->PostTask(
-      fml::MakeCopyable([callback = std::make_unique<DartPersistentValue>(
-                             tonic::DartState::Current(), callback_handle),
-                         state = state_, trace_id,
-                         ui_task_runner = task_runners.GetUITaskRunner(),
-                         io_manager = dart_state->GetIOManager()]() mutable {
+  task_runners.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
+      [callback = std::make_unique<DartPersistentValue>(
+           tonic::DartState::Current(), callback_handle),
+       weak_state = std::weak_ptr<MultiFrameCodec::State>(state_), trace_id,
+       ui_task_runner = task_runners.GetUITaskRunner(),
+       io_manager = dart_state->GetIOManager()]() mutable {
+        auto state = weak_state.lock();
+        if (!state) {
+          ui_task_runner->PostTask(fml::MakeCopyable(
+              [callback = std::move(callback)]() { callback->Clear(); }));
+          return;
+        }
         state->GetNextFrameAndInvokeCallback(
             std::move(callback), std::move(ui_task_runner),
             io_manager->GetResourceContext(), io_manager->GetSkiaUnrefQueue(),

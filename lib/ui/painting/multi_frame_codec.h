@@ -41,12 +41,11 @@ class MultiFrameCodec : public Codec {
     const std::unique_ptr<SkCodec> codec_;
     const int frameCount_;
     const int repetitionCount_;
+
+    // The non-const members and functions below here are only read or written
+    // to on the IO thread. They are not safe to access or write on the UI
+    // thread.
     int nextFrameIndex_;
-
-    // Indicates whether the Dart object has been collected on the UI task
-    // runner.
-    std::atomic<bool> live_;
-
     // The last decoded frame that's required to decode any subsequent frames.
     std::unique_ptr<SkBitmap> lastRequiredFrame_;
 
@@ -54,6 +53,7 @@ class MultiFrameCodec : public Codec {
     int lastRequiredFrameIndex_ = -1;
 
     sk_sp<SkImage> GetNextFrameImage(fml::WeakPtr<GrContext> resourceContext);
+
     void GetNextFrameAndInvokeCallback(
         std::unique_ptr<DartPersistentValue> callback,
         fml::RefPtr<fml::TaskRunner> ui_task_runner,
