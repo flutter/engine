@@ -50,7 +50,7 @@ TEST(PlatformViewRTree, SingleRectIntersection) {
 
     auto hits = r_tree->searchRects(SkRect::MakeLTRB(140, 140, 150, 150));
     ASSERT_EQ(1UL, hits.size());
-    ASSERT_EQ(hits[0], SkRect::MakeLTRB(120, 120, 160, 160));
+    ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(120, 120, 160, 160));
 }
 
 TEST(PlatformViewRTree, IgnoresNonDrawingRecords) {
@@ -76,7 +76,7 @@ TEST(PlatformViewRTree, IgnoresNonDrawingRecords) {
 
     auto hits = r_tree->searchRects(SkRect::MakeLTRB(0, 0, 1000, 1000));
     ASSERT_EQ(1UL, hits.size());
-    ASSERT_EQ(hits[0], SkRect::MakeLTRB(120, 120, 180, 180));
+    ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(120, 120, 180, 180));
 }
 
 TEST(PlatformViewRTree, MultipleRectIntersection) {
@@ -105,8 +105,8 @@ TEST(PlatformViewRTree, MultipleRectIntersection) {
 
     auto hits = r_tree->searchRects(SkRect::MakeLTRB(0, 0, 1000, 1050));
     ASSERT_EQ(2UL, hits.size());
-    ASSERT_EQ(hits[0], SkRect::MakeLTRB(100, 100, 200, 200));
-    ASSERT_EQ(hits[1], SkRect::MakeLTRB(300, 100, 400, 200));
+    ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(100, 100, 200, 200));
+    ASSERT_EQ(*std::next(hits.begin(), 1), SkRect::MakeLTRB(300, 100, 400, 200));
 }
 
 TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase1) {
@@ -139,7 +139,7 @@ TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase1) {
 
     auto hits = r_tree->searchRects(SkRect::MakeXYWH(120, 120, 126, 126));
     ASSERT_EQ(1UL, hits.size());
-    ASSERT_EQ(hits[0], SkRect::MakeLTRB(100, 100, 175, 175));
+    ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(100, 100, 175, 175));
 }
 
 TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase2) {
@@ -179,7 +179,7 @@ TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase2) {
 
     auto hits = r_tree->searchRects(SkRect::MakeLTRB(30, 30, 550, 270));
     ASSERT_EQ(1UL, hits.size());
-    ASSERT_EQ(hits[0], SkRect::MakeLTRB(50, 50, 500, 250));
+    ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(50, 50, 500, 250));
 }
 
 TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
@@ -222,7 +222,7 @@ TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
 
     auto hits = r_tree->searchRects(SkRect::MakeLTRB(30, 30, 550, 270));
     ASSERT_EQ(1UL, hits.size());
-    ASSERT_EQ(hits[0], SkRect::MakeLTRB(50, 50, 620, 300));
+    ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(50, 50, 620, 300));
 }
 
 }  // namespace testing

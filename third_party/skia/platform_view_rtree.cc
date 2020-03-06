@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include <list>
+
 #include "platform_view_rtree.h"
 
 PlatformViewRTree::PlatformViewRTree() : fCount(0) {}
@@ -172,8 +174,8 @@ void PlatformViewRTree::search(Node* node, const SkRect& query, std::vector<int>
     }
 }
 
-std::vector<SkRect> PlatformViewRTree::searchRects(const SkRect& query) const {
-    std::vector<SkRect> results;
+std::list<SkRect> PlatformViewRTree::searchRects(const SkRect& query) const {
+    std::list<SkRect> results;
     if (fCount > 0 && SkRect::Intersects(fRoot.fBounds, query)) {
         this->searchRects(fRoot.fSubtree, query, results);
     }
@@ -182,7 +184,7 @@ std::vector<SkRect> PlatformViewRTree::searchRects(const SkRect& query) const {
 
 void PlatformViewRTree::searchRects(Node* node,
                                     const SkRect& query,
-                                    std::vector<SkRect>& results) const {
+                                    std::list<SkRect>& results) const {
     if (!SkRect::Intersects(fRoot.fBounds, query)) {
         return;
     }
@@ -203,29 +205,27 @@ void PlatformViewRTree::searchRects(Node* node,
         bool replacedExistingRect = false;
         // // If the current record rect intersects with any of the rects in the
         // // result vector, then join them, and update the rect in results.
-        size_t joiningRectIdx = results.size();
-        size_t resultIdx = 0;
-        while (resultIdx < results.size()) {
-            if (SkRect::Intersects(results[resultIdx], currentRecordRect)) {
-                joiningRectIdx = resultIdx;
+        std::list<SkRect>::iterator firstIntersectingRectItr = results.begin();
+        while (firstIntersectingRectItr != results.end()) {
+            if (SkRect::Intersects(*firstIntersectingRectItr, currentRecordRect)) {
                 replacedExistingRect = true;
-                results[joiningRectIdx].join(currentRecordRect);
+                firstIntersectingRectItr->join(currentRecordRect);
                 break;
             }
-            resultIdx++;
+            firstIntersectingRectItr++;
         }
-        resultIdx = joiningRectIdx + 1;
         // It's possible that the result contains duplicated rects at this point.
         // For example, consider a result vector that contains rects A, B. If a
         // new rect C is a superset of A and B, then A and B are the same set after
         // the merge. As a result, find such cases and remove them from the result vector.
-        while (replacedExistingRect && resultIdx < results.size()) {
-            if (SkRect::Intersects(results[resultIdx], results[joiningRectIdx])) {
-                results[joiningRectIdx].join(results[resultIdx]);
-                results.erase(results.begin() + resultIdx);
-            } else {
-                resultIdx++;
+        std::list<SkRect>::iterator currRectItr = firstIntersectingRectItr;
+        currRectItr++;
+        while (replacedExistingRect && currRectItr != results.end()) {
+            if (SkRect::Intersects(*currRectItr, *firstIntersectingRectItr)) {
+                firstIntersectingRectItr->join(*currRectItr);
+                results.erase(currRectItr);
             }
+            currRectItr++;
         }
         if (!replacedExistingRect) {
             results.push_back(currentRecordRect);

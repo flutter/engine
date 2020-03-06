@@ -8,6 +8,8 @@
 #ifndef SKIA_PLATFORM_VIEW_RTREE_H_
 #define SKIA_PLATFORM_VIEW_RTREE_H_
 
+#include <list>
+
 #include "third_party/skia/include/core/SkBBHFactory.h"
 #include "third_party/skia/include/core/SkTypes.h"
 
@@ -54,7 +56,7 @@ public:
     // on how they relate to each other when compositing the final scene in Flutter.
     // For example, they may include matrix changes, clips or rects that are stacked
     // on top of each other.
-    std::vector<SkRect> searchRects(const SkRect& query) const;
+    std::list<SkRect> searchRects(const SkRect& query) const;
 
     size_t bytesUsed() const override;
 
@@ -77,6 +79,7 @@ private:
             Node* fSubtree;
             int fOpIndex;
         };
+        // True if the current bounds represent a drawing operation.
         bool isDraw;
         SkRect fBounds;
     };
@@ -88,7 +91,7 @@ private:
     };
 
     void search(Node* root, const SkRect& query, std::vector<int>* results) const;
-    void searchRects(Node* root, const SkRect& query, std::vector<SkRect>& results) const;
+    void searchRects(Node* root, const SkRect& query, std::list<SkRect>& results) const;
 
     // Consumes the input array.
     Branch bulkLoad(std::vector<Branch>* branches, int level = 0);
