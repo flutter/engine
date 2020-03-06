@@ -219,7 +219,9 @@ void PlatformViewRTree::searchRects(Node* node,
         // new rect C is a superset of A and B, then A and B are the same set after
         // the merge. As a result, find such cases and remove them from the result list.
         std::list<SkRect>::iterator currRectItr = firstIntersectingRectItr;
-        currRectItr++;
+        if (currRectItr != results.end()) {
+           currRectItr++; 
+        }
         while (replacedExistingRect && currRectItr != results.end()) {
             if (SkRect::Intersects(*currRectItr, *firstIntersectingRectItr)) {
                 firstIntersectingRectItr->join(*currRectItr);
