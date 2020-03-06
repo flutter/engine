@@ -7,13 +7,11 @@
 
 #include <list>
 
-#include "platform_view_rtree.h"
+#include "rtree.h"
 
-PlatformViewRTree::PlatformViewRTree() : fCount(0) {}
+RTree::RTree() : fCount(0) {}
 
-void PlatformViewRTree::insert(const SkRect boundsArray[],
-                               const SkBBoxHierarchy::Metadata metadata[],
-                               int N) {
+void RTree::insert(const SkRect boundsArray[], const SkBBoxHierarchy::Metadata metadata[], int N) {
     SkASSERT(0 == fCount);
 
     std::vector<Branch> branches;
@@ -47,11 +45,9 @@ void PlatformViewRTree::insert(const SkRect boundsArray[],
     }
 }
 
-void PlatformViewRTree::insert(const SkRect boundsArray[], int N) {
-    insert(boundsArray, nullptr, N);
-}
+void RTree::insert(const SkRect boundsArray[], int N) { insert(boundsArray, nullptr, N); }
 
-PlatformViewRTree::Node* PlatformViewRTree::allocateNodeAtLevel(uint16_t level) {
+RTree::Node* RTree::allocateNodeAtLevel(uint16_t level) {
     SkDEBUGCODE(Node* p = fNodes.data());
     fNodes.push_back(Node{});
     Node& out = fNodes.back();
@@ -63,7 +59,7 @@ PlatformViewRTree::Node* PlatformViewRTree::allocateNodeAtLevel(uint16_t level) 
 
 // This function parallels bulkLoad, but just counts how many nodes bulkLoad
 // would allocate.
-int PlatformViewRTree::CountNodes(int branches) {
+int RTree::CountNodes(int branches) {
     if (branches == 1) {
         return 1;
     }
@@ -99,7 +95,7 @@ int PlatformViewRTree::CountNodes(int branches) {
     return nodes + CountNodes(nodes);
 }
 
-PlatformViewRTree::Branch PlatformViewRTree::bulkLoad(std::vector<Branch>* branches, int level) {
+RTree::Branch RTree::bulkLoad(std::vector<Branch>* branches, int level) {
     if (branches->size() == 1) {  // Only one branch.  It will be the root.
         return (*branches)[0];
     }
@@ -155,13 +151,13 @@ PlatformViewRTree::Branch PlatformViewRTree::bulkLoad(std::vector<Branch>* branc
     return this->bulkLoad(branches, level + 1);
 }
 
-void PlatformViewRTree::search(const SkRect& query, std::vector<int>* results) const {
+void RTree::search(const SkRect& query, std::vector<int>* results) const {
     if (fCount > 0 && SkRect::Intersects(fRoot.fBounds, query)) {
         this->search(fRoot.fSubtree, query, results);
     }
 }
 
-void PlatformViewRTree::search(Node* node, const SkRect& query, std::vector<int>* results) const {
+void RTree::search(Node* node, const SkRect& query, std::vector<int>* results) const {
     for (int i = 0; i < node->fNumChildren; ++i) {
         if (!SkRect::Intersects(node->fChildren[i].fBounds, query)) {
             continue;
@@ -174,17 +170,17 @@ void PlatformViewRTree::search(Node* node, const SkRect& query, std::vector<int>
     }
 }
 
-std::list<SkRect> PlatformViewRTree::searchRects(const SkRect& query) const {
+std::list<SkRect> RTree::searchNonOverlappingDrawnRects(const SkRect& query) const {
     std::list<SkRect> results;
     if (fCount > 0 && SkRect::Intersects(fRoot.fBounds, query)) {
-        this->searchRects(fRoot.fSubtree, query, results);
+        this->searchNonOverlappingDrawnRects(fRoot.fSubtree, query, results);
     }
     return results;
 }
 
-void PlatformViewRTree::searchRects(Node* node,
-                                    const SkRect& query,
-                                    std::list<SkRect>& results) const {
+void RTree::searchNonOverlappingDrawnRects(Node* node,
+                                           const SkRect& query,
+                                           std::list<SkRect>& results) const {
     if (!SkRect::Intersects(fRoot.fBounds, query)) {
         return;
     }
@@ -194,7 +190,7 @@ void PlatformViewRTree::searchRects(Node* node,
         }
         // Non-leaf node
         if (0 != node->fLevel) {
-            this->searchRects(node->fChildren[i].fSubtree, query, results);
+            this->searchNonOverlappingDrawnRects(node->fChildren[i].fSubtree, query, results);
             continue;
         }
         // Ignore records that don't draw anything.
@@ -232,13 +228,14 @@ void PlatformViewRTree::searchRects(Node* node,
     }
 }
 
-size_t PlatformViewRTree::bytesUsed() const {
-    size_t byteCount = sizeof(PlatformViewRTree);
+size_t RTree::bytesUsed() const {
+    size_t byteCount = sizeof(RTree);
     byteCount += fNodes.capacity() * sizeof(Node);
     return byteCount;
 }
 
-PlatformViewRTreeFactory::PlatformViewRTreeFactory(sk_sp<PlatformViewRTree>& r_tree)
-        : r_tree_(r_tree) {}
+RTreeFactory::RTreeFactory() { r_tree_ = sk_make_sp<RTree>(); }
 
-sk_sp<SkBBoxHierarchy> PlatformViewRTreeFactory::operator()() const { return r_tree_; }
+sk_sp<RTree> RTreeFactory::getInstance() { return r_tree_; }
+
+sk_sp<SkBBoxHierarchy> RTreeFactory::operator()() const { return r_tree_; }

@@ -5,8 +5,8 @@
  * found in the LICENSE file.
  */
 
-#ifndef SKIA_PLATFORM_VIEW_RTREE_H_
-#define SKIA_PLATFORM_VIEW_RTREE_H_
+#ifndef SKIA_RTREE_H_
+#define SKIA_RTREE_H_
 
 #include <list>
 
@@ -34,9 +34,9 @@
  *
  * This copy includes a searchRects method.
  */
-class PlatformViewRTree : public SkBBoxHierarchy {
+class RTree : public SkBBoxHierarchy {
 public:
-    PlatformViewRTree();
+    RTree();
 
     void insert(const SkRect[], const SkBBoxHierarchy::Metadata[], int N) override;
     void insert(const SkRect[], int N) override;
@@ -48,15 +48,7 @@ public:
     // When two rects intersect with each other, they are joined into a single rect
     // which also intersects with the query rect. In other words, the bounds of each
     // rect in the result list are mutually exclusive.
-    //
-    // Since this method is used when compositing platform views, the rects in the
-    // result list represent UIViews that are composed on top of the platform view.
-    //
-    // However, Skia uses this tree to tracks operations that don't have any context
-    // on how they relate to each other when compositing the final scene in Flutter.
-    // For example, they may include matrix changes, clips or rects that are stacked
-    // on top of each other.
-    std::list<SkRect> searchRects(const SkRect& query) const;
+    std::list<SkRect> searchNonOverlappingDrawnRects(const SkRect& query) const;
 
     size_t bytesUsed() const override;
 
@@ -91,7 +83,8 @@ private:
     };
 
     void search(Node* root, const SkRect& query, std::vector<int>* results) const;
-    void searchRects(Node* root, const SkRect& query, std::list<SkRect>& results) const;
+    void searchNonOverlappingDrawnRects(Node* root, const SkRect& query,
+                                        std::list<SkRect>& results) const;
 
     // Consumes the input array.
     Branch bulkLoad(std::vector<Branch>* branches, int level = 0);
@@ -107,13 +100,16 @@ private:
     std::vector<Node> fNodes;
 };
 
-class PlatformViewRTreeFactory : public SkBBHFactory {
+class RTreeFactory : public SkBBHFactory {
 public:
-    PlatformViewRTreeFactory(sk_sp<PlatformViewRTree>& r_tree);
+    RTreeFactory();
+
+    // Gets the instance to the R-tree.
+    sk_sp<RTree> getInstance();
     sk_sp<SkBBoxHierarchy> operator()() const override;
 
 private:
-    sk_sp<PlatformViewRTree> r_tree_;
+    sk_sp<RTree> r_tree_;
 };
 
-#endif  // SKIA_PLATFORM_VIEW_RTREE_H_
+#endif  // SKIA_RTREE_H_

@@ -6,17 +6,17 @@
  */
 
 #include "flutter/testing/testing.h"
-#include "platform_view_rtree.h"
+#include "rtree.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/utils/SkRandom.h"
 
 namespace flutter {
 namespace testing {
 
-TEST(PlatformViewRTree, NoIntersection) {
-    auto r_tree = sk_make_sp<PlatformViewRTree>();
-    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
+TEST(RTree, searchNonOverlappingDrawnRects_NoIntersection) {
+    auto rtree_factory = RTreeFactory();
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -28,13 +28,13 @@ TEST(PlatformViewRTree, NoIntersection) {
     recording_canvas->drawRect(SkRect::MakeLTRB(20, 20, 40, 40), rect_paint);
     recorder->finishRecordingAsPicture();
 
-    auto hits = r_tree->searchRects(SkRect::MakeLTRB(40, 40, 80, 80));
+    auto hits = rtree_factory.getInstance()->searchNonOverlappingDrawnRects(
+            SkRect::MakeLTRB(40, 40, 80, 80));
     ASSERT_TRUE(hits.empty());
 }
 
-TEST(PlatformViewRTree, SingleRectIntersection) {
-    auto r_tree = sk_make_sp<PlatformViewRTree>();
-    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
+TEST(RTree, searchNonOverlappingDrawnRects_SingleRectIntersection) {
+    auto rtree_factory = RTreeFactory();
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -48,14 +48,14 @@ TEST(PlatformViewRTree, SingleRectIntersection) {
 
     recorder->finishRecordingAsPicture();
 
-    auto hits = r_tree->searchRects(SkRect::MakeLTRB(140, 140, 150, 150));
+    auto hits = rtree_factory.getInstance()->searchNonOverlappingDrawnRects(
+            SkRect::MakeLTRB(140, 140, 150, 150));
     ASSERT_EQ(1UL, hits.size());
     ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(120, 120, 160, 160));
 }
 
-TEST(PlatformViewRTree, IgnoresNonDrawingRecords) {
-    auto r_tree = sk_make_sp<PlatformViewRTree>();
-    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
+TEST(RTree, searchNonOverlappingDrawnRects_IgnoresNonDrawingRecords) {
+    auto rtree_factory = RTreeFactory();
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -72,16 +72,16 @@ TEST(PlatformViewRTree, IgnoresNonDrawingRecords) {
     recorder->finishRecordingAsPicture();
 
     // The rtree has a translate, a clip and a rect record.
-    ASSERT_EQ(3, r_tree->getCount());
+    ASSERT_EQ(3, rtree_factory.getInstance()->getCount());
 
-    auto hits = r_tree->searchRects(SkRect::MakeLTRB(0, 0, 1000, 1000));
+    auto hits = rtree_factory.getInstance()->searchNonOverlappingDrawnRects(
+            SkRect::MakeLTRB(0, 0, 1000, 1000));
     ASSERT_EQ(1UL, hits.size());
     ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(120, 120, 180, 180));
 }
 
-TEST(PlatformViewRTree, MultipleRectIntersection) {
-    auto r_tree = sk_make_sp<PlatformViewRTree>();
-    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
+TEST(RTree, searchNonOverlappingDrawnRects_MultipleRectIntersection) {
+    auto rtree_factory = RTreeFactory();
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -103,15 +103,15 @@ TEST(PlatformViewRTree, MultipleRectIntersection) {
 
     recorder->finishRecordingAsPicture();
 
-    auto hits = r_tree->searchRects(SkRect::MakeLTRB(0, 0, 1000, 1050));
+    auto hits = rtree_factory.getInstance()->searchNonOverlappingDrawnRects(
+            SkRect::MakeLTRB(0, 0, 1000, 1050));
     ASSERT_EQ(2UL, hits.size());
     ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(100, 100, 200, 200));
     ASSERT_EQ(*std::next(hits.begin(), 1), SkRect::MakeLTRB(300, 100, 400, 200));
 }
 
-TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase1) {
-    auto r_tree = sk_make_sp<PlatformViewRTree>();
-    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
+TEST(RTree, searchNonOverlappingDrawnRects_JoinRectsWhenIntersectedCase1) {
+    auto rtree_factory = RTreeFactory();
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -137,14 +137,14 @@ TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase1) {
 
     recorder->finishRecordingAsPicture();
 
-    auto hits = r_tree->searchRects(SkRect::MakeXYWH(120, 120, 126, 126));
+    auto hits = rtree_factory.getInstance()->searchNonOverlappingDrawnRects(
+            SkRect::MakeXYWH(120, 120, 126, 126));
     ASSERT_EQ(1UL, hits.size());
     ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(100, 100, 175, 175));
 }
 
-TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase2) {
-    auto r_tree = sk_make_sp<PlatformViewRTree>();
-    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
+TEST(RTree, searchNonOverlappingDrawnRects_JoinRectsWhenIntersectedCase2) {
+    auto rtree_factory = RTreeFactory();
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -177,14 +177,14 @@ TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase2) {
 
     recorder->finishRecordingAsPicture();
 
-    auto hits = r_tree->searchRects(SkRect::MakeLTRB(30, 30, 550, 270));
+    auto hits = rtree_factory.getInstance()->searchNonOverlappingDrawnRects(
+            SkRect::MakeLTRB(30, 30, 550, 270));
     ASSERT_EQ(1UL, hits.size());
     ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(50, 50, 500, 250));
 }
 
-TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
-    auto r_tree = sk_make_sp<PlatformViewRTree>();
-    auto rtree_factory = PlatformViewRTreeFactory(r_tree);
+TEST(RTree, searchNonOverlappingDrawnRects_JoinRectsWhenIntersectedCase3) {
+    auto rtree_factory = RTreeFactory();
     auto recorder = std::make_unique<SkPictureRecorder>();
     auto recording_canvas = recorder->beginRecording(SkRect::MakeIWH(1000, 1000), &rtree_factory);
 
@@ -220,9 +220,92 @@ TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
 
     recorder->finishRecordingAsPicture();
 
-    auto hits = r_tree->searchRects(SkRect::MakeLTRB(30, 30, 550, 270));
+    auto hits = rtree_factory.getInstance()->searchNonOverlappingDrawnRects(
+            SkRect::MakeLTRB(30, 30, 550, 270));
     ASSERT_EQ(1UL, hits.size());
     ASSERT_EQ(*hits.begin(), SkRect::MakeLTRB(50, 50, 620, 300));
+}
+
+// Existing Skia tests from
+// https://github.com/google/skia/blob/508fd32091afe334d4e1dd6cdaa63168a53acb26/tests/RTreeTest.cpp
+
+static const int NUM_RECTS = 200;
+static const size_t NUM_ITERATIONS = 100;
+static const size_t NUM_QUERIES = 50;
+
+static SkRect random_rect(SkRandom& rand) {
+    SkRect rect = {0, 0, 0, 0};
+    while (rect.isEmpty()) {
+        rect.fLeft = rand.nextRangeF(0, 1000);
+        rect.fRight = rand.nextRangeF(0, 1000);
+        rect.fTop = rand.nextRangeF(0, 1000);
+        rect.fBottom = rand.nextRangeF(0, 1000);
+        rect.sort();
+    }
+    return rect;
+}
+
+static bool verify_query(SkRect query, SkRect rects[], std::vector<int>& found) {
+    std::vector<int> expected;
+    // manually intersect with every rectangle
+    for (int i = 0; i < NUM_RECTS; ++i) {
+        if (SkRect::Intersects(query, rects[i])) {
+            expected.push_back(i);
+        }
+    }
+
+    if (expected.size() != found.size()) {
+        return false;
+    }
+    if (0 == expected.size()) {
+        return true;
+    }
+    return found == expected;
+}
+
+static void run_queries(SkRandom& rand, SkRect rects[], const RTree& tree) {
+    for (size_t i = 0; i < NUM_QUERIES; ++i) {
+        std::vector<int> hits;
+        SkRect query = random_rect(rand);
+        tree.search(query, &hits);
+        ASSERT_TRUE(verify_query(query, rects, hits));
+    }
+}
+
+TEST(RTree, existingSkiaTest) {
+    int expectedDepthMin = -1;
+    int tmp = NUM_RECTS;
+    while (tmp > 0) {
+        tmp -= static_cast<int>(pow(static_cast<double>(RTree::kMaxChildren),
+                                    static_cast<double>(expectedDepthMin + 1)));
+        ++expectedDepthMin;
+    }
+
+    int expectedDepthMax = -1;
+    tmp = NUM_RECTS;
+    while (tmp > 0) {
+        tmp -= static_cast<int>(pow(static_cast<double>(RTree::kMinChildren),
+                                    static_cast<double>(expectedDepthMax + 1)));
+        ++expectedDepthMax;
+    }
+
+    SkRandom rand;
+    SkAutoTMalloc<SkRect> rects(NUM_RECTS);
+    for (size_t i = 0; i < NUM_ITERATIONS; ++i) {
+        RTree rtree;
+        ASSERT_EQ(0, rtree.getCount());
+
+        for (int j = 0; j < NUM_RECTS; j++) {
+            rects[j] = random_rect(rand);
+        }
+
+        rtree.insert(rects.get(), NUM_RECTS);
+        SkASSERT(rects);  // RTree doesn't take ownership of rects.
+
+        run_queries(rand, rects, rtree);
+        ASSERT_EQ(NUM_RECTS, rtree.getCount());
+        ASSERT_TRUE(expectedDepthMin <= rtree.getDepth() && expectedDepthMax >= rtree.getDepth());
+    }
 }
 
 }  // namespace testing

@@ -7,8 +7,8 @@ import("//flutter/testing/testing.gni")
 
 source_set("skia") {
   sources = [
-    "platform_view_rtree.cc",
-    "platform_view_rtree.h",
+    "rtree.cc",
+    "rtree.h",
   ]
 
   deps = [
@@ -24,7 +24,7 @@ executable("skia_unittests") {
   testonly = true
   sources = [
     "main_unittests.cc",
-    "platform_view_rtree_unittests.cc",
+    "rtree_unittests.cc",
   ]
   deps = [
     ":skia",
