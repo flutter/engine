@@ -84,7 +84,7 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
   SkScalar y = paint_bounds().y() + padding;
   SkScalar width = paint_bounds().width() - (padding * 2);
   SkScalar height = paint_bounds().height() / 2;
-  SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
+  SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
 
   VisualizeStopWatch(
       *context.leaf_nodes_canvas, context.raster_time, x, y, width,

@@ -25,7 +25,8 @@ TEST_F(FlutterRTreeTest, NoIntersection) {
   rect_paint.setColor(SkColors::kCyan);
   rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
-  // If no rect is intersected with the query rect, then the result vector is empty.
+  // If no rect is intersected with the query rect, then the result vector is
+  // empty.
   recording_canvas->drawRect(SkRect::MakeLTRB(20, 20, 40, 40), rect_paint);
   recorder->finishRecordingAsPicture();
 
@@ -72,10 +73,9 @@ TEST_F(FlutterRTreeTest, JoinRectsWhenIntersectedCase1) {
   rect_paint.setColor(SkColors::kCyan);
   rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
-
-  // Given the A, and B rects, which intersect with the query rect, 
+  // Given the A, and B rects, which intersect with the query rect,
   // the result vector contains the rect resulting from the union of A and B.
-  // 
+  //
   // +-----+
   // |  A  |
   // |   +-----+
@@ -111,9 +111,9 @@ TEST_F(FlutterRTreeTest, JoinRectsWhenIntersectedCase2) {
   rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
   // Given the A, B, and C rects that intersect with the query rect,
-  // there should be only C in the result vector, 
+  // there should be only C in the result vector,
   // since A and B are contained in C.
-  // 
+  //
   // +---------------------+
   // | C                   |
   // |  +-----+   +-----+  |
@@ -129,12 +129,11 @@ TEST_F(FlutterRTreeTest, JoinRectsWhenIntersectedCase2) {
   // B
   recording_canvas->drawRect(SkRect::MakeLTRB(300, 100, 400, 200), rect_paint);
   // C
-  recording_canvas->drawRect(SkRect::MakeLTRB(50, 50, 500, 250), rect_paint);  
+  recording_canvas->drawRect(SkRect::MakeLTRB(50, 50, 500, 250), rect_paint);
   // D
   recording_canvas->drawRect(SkRect::MakeLTRB(280, 100, 280, 320), rect_paint);
 
   recorder->finishRecordingAsPicture();
-
 
   auto query = SkRect::MakeLTRB(30, 30, 550, 270);
   auto hits = std::vector<SkRect*>();
