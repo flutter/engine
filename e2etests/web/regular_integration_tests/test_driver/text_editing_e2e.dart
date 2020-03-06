@@ -5,7 +5,7 @@
 import 'dart:html';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:text_editing/main.dart' as app;
+import 'package:regular_integration_tests/text_editing_main.dart' as app;
 import 'package:flutter/material.dart';
 
 import 'package:e2e/e2e.dart';
