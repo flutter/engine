@@ -47,10 +47,10 @@ public:
     //
     // When two rects intersect with each other, they are joined into a single rect
     // which also intersects with the query rect. In other words, the bounds of each
-    // rect in the result vector are mutually exclusive.
+    // rect in the result list are mutually exclusive.
     //
     // Since this method is used when compositing platform views, the rects in the
-    // result vector represent UIViews that are composed on top of the platform view.
+    // result list represent UIViews that are composed on top of the platform view.
     //
     // However, Skia uses this tree to tracks operations that don't have any context
     // on how they relate to each other when compositing the final scene in Flutter.

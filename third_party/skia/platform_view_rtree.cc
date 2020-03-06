@@ -204,7 +204,7 @@ void PlatformViewRTree::searchRects(Node* node,
         SkRect currentRecordRect = node->fChildren[i].fBounds;
         bool replacedExistingRect = false;
         // // If the current record rect intersects with any of the rects in the
-        // // result vector, then join them, and update the rect in results.
+        // // result list, then join them, and update the rect in results.
         std::list<SkRect>::iterator firstIntersectingRectItr = results.begin();
         while (firstIntersectingRectItr != results.end()) {
             if (SkRect::Intersects(*firstIntersectingRectItr, currentRecordRect)) {
@@ -215,9 +215,9 @@ void PlatformViewRTree::searchRects(Node* node,
             firstIntersectingRectItr++;
         }
         // It's possible that the result contains duplicated rects at this point.
-        // For example, consider a result vector that contains rects A, B. If a
+        // For example, consider a result list that contains rects A, B. If a
         // new rect C is a superset of A and B, then A and B are the same set after
-        // the merge. As a result, find such cases and remove them from the result vector.
+        // the merge. As a result, find such cases and remove them from the result list.
         std::list<SkRect>::iterator currRectItr = firstIntersectingRectItr;
         currRectItr++;
         while (replacedExistingRect && currRectItr != results.end()) {

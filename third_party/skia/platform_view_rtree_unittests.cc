@@ -24,7 +24,7 @@ TEST(PlatformViewRTree, NoIntersection) {
     rect_paint.setColor(SkColors::kCyan);
     rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
-    // If no rect is intersected with the query rect, then the result vector is empty.
+    // If no rect is intersected with the query rect, then the result list is empty.
     recording_canvas->drawRect(SkRect::MakeLTRB(20, 20, 40, 40), rect_paint);
     recorder->finishRecordingAsPicture();
 
@@ -43,7 +43,7 @@ TEST(PlatformViewRTree, SingleRectIntersection) {
     rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
     // Given a single rect A that intersects with the query rect,
-    // the result vector contains this rect.
+    // the result list contains this rect.
     recording_canvas->drawRect(SkRect::MakeLTRB(120, 120, 160, 160), rect_paint);
 
     recorder->finishRecordingAsPicture();
@@ -65,7 +65,7 @@ TEST(PlatformViewRTree, IgnoresNonDrawingRecords) {
 
     // Creates two non drawing records.
     recording_canvas->translate(100, 100);
-    // The result vector should only contain the clipping rect.
+    // The result list should only contain the clipping rect.
     recording_canvas->clipRect(SkRect::MakeLTRB(40, 40, 50, 50), SkClipOp::kIntersect);
     recording_canvas->drawRect(SkRect::MakeLTRB(20, 20, 80, 80), rect_paint);
 
@@ -90,7 +90,7 @@ TEST(PlatformViewRTree, MultipleRectIntersection) {
     rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
     // Given the A, B that intersect with the query rect,
-    // there should be A and B in the result vector since
+    // there should be A and B in the result list since
     // they don't intersect with each other.
     //
     //  +-----+   +-----+
@@ -120,7 +120,7 @@ TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase1) {
     rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
     // Given the A, and B rects, which intersect with the query rect,
-    // the result vector contains the rect resulting from the union of A and B.
+    // the result list contains the rect resulting from the union of A and B.
     //
     // +-----+
     // |  A  |
@@ -153,7 +153,7 @@ TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase2) {
     rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
     // Given the A, B, and C rects that intersect with the query rect,
-    // there should be only C in the result vector,
+    // there should be only C in the result list,
     // since A and B are contained in C.
     //
     // +---------------------+
@@ -193,7 +193,7 @@ TEST(PlatformViewRTree, JoinRectsWhenIntersectedCase3) {
     rect_paint.setStyle(SkPaint::Style::kFill_Style);
 
     // Given the A, B, C and D rects that intersect with the query rect,
-    // the result vector contains a single rect, which is the union of
+    // the result list contains a single rect, which is the union of
     // these four rects.
     //
     // +------------------------------+
