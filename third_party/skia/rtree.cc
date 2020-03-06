@@ -218,9 +218,10 @@ void RTree::searchNonOverlappingDrawnRects(Node* node,
         while (replacedExistingRect && currRectItr != results.end()) {
             if (SkRect::Intersects(*currRectItr, *firstIntersectingRectItr)) {
                 firstIntersectingRectItr->join(*currRectItr);
-                results.erase(currRectItr);
+                currRectItr = results.erase(currRectItr);
+            } else {
+                currRectItr++;
             }
-            currRectItr++;
         }
         if (!replacedExistingRect) {
             results.push_back(currentRecordRect);
