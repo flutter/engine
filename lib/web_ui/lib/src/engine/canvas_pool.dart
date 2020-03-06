@@ -503,7 +503,7 @@ class _CanvasPool extends _SaveStackTracking {
             break;
           case PathCommandTypes.ellipse:
             final Ellipse ellipse = command;
-            ctx.ellipse(
+            DomRenderer.ellipse(ctx,
                 ellipse.x,
                 ellipse.y,
                 ellipse.radiusX,
@@ -563,14 +563,14 @@ class _CanvasPool extends _SaveStackTracking {
 
   void drawOval(ui.Rect rect, ui.PaintingStyle style) {
     context.beginPath();
-    context.ellipse(rect.center.dx, rect.center.dy, rect.width / 2,
+    DomRenderer.ellipse(context, rect.center.dx, rect.center.dy, rect.width / 2,
         rect.height / 2, 0, 0, 2.0 * math.pi, false);
     contextHandle.paint(style);
   }
 
   void drawCircle(ui.Offset c, double radius, ui.PaintingStyle style) {
     context.beginPath();
-    context.ellipse(c.dx, c.dy, radius, radius, 0, 0, 2.0 * math.pi, false);
+    DomRenderer.ellipse(context, c.dx, c.dy, radius, radius, 0, 0, 2.0 * math.pi, false);
     contextHandle.paint(style);
   }
 
@@ -581,49 +581,46 @@ class _CanvasPool extends _SaveStackTracking {
 
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
-    final List<CanvasShadow> shadows =
-        ElevationShadow.computeCanvasShadows(elevation, color);
-    if (shadows.isNotEmpty) {
-      for (final CanvasShadow shadow in shadows) {
-        // TODO(het): Shadows with transparent occluders are not supported
-        // on webkit since filter is unsupported.
-        if (transparentOccluder && browserEngine != BrowserEngine.webkit) {
-          // We paint shadows using a path and a mask filter instead of the
-          // built-in shadow* properties. This is because the color alpha of the
-          // paint is added to the shadow. The effect we're looking for is to just
-          // paint the shadow without the path itself, but if we use a non-zero
-          // alpha for the paint the path is painted in addition to the shadow,
-          // which is undesirable.
-          context.save();
-          context.translate(shadow.offsetX, shadow.offsetY);
-          context.filter = _maskFilterToCss(
-              ui.MaskFilter.blur(ui.BlurStyle.normal, shadow.blur));
-          context.strokeStyle = '';
-          context.fillStyle = colorToCssString(shadow.color);
-          _runPath(context, path);
-          context.fill();
-          context.restore();
-        } else {
-          // TODO(het): We fill the path with this paint, then later we clip
-          // by the same path and fill it with a fully opaque color (we know
-          // the color is fully opaque because `transparentOccluder` is false.
-          // However, due to anti-aliasing of the clip, a few pixels of the
-          // path we are about to paint may still be visible after we fill with
-          // the opaque occluder. For that reason, we fill with the shadow color,
-          // and set the shadow color to fully opaque. This way, the visible
-          // pixels are less opaque and less noticeable.
-          context.save();
-          context.filter = 'none';
-          context.strokeStyle = '';
-          context.fillStyle = colorToCssString(shadow.color);
-          context.shadowBlur = shadow.blur;
-          context.shadowColor = colorToCssString(shadow.color.withAlpha(0xff));
-          context.shadowOffsetX = shadow.offsetX;
-          context.shadowOffsetY = shadow.offsetY;
-          _runPath(context, path);
-          context.fill();
-          context.restore();
-        }
+    final SurfaceShadowData shadow = computeShadow(path.getBounds(), elevation);
+    if (shadow != null) {
+      // TODO(het): Shadows with transparent occluders are not supported
+      // on webkit since filter is unsupported.
+      if (transparentOccluder && browserEngine != BrowserEngine.webkit) {
+        // We paint shadows using a path and a mask filter instead of the
+        // built-in shadow* properties. This is because the color alpha of the
+        // paint is added to the shadow. The effect we're looking for is to just
+        // paint the shadow without the path itself, but if we use a non-zero
+        // alpha for the paint the path is painted in addition to the shadow,
+        // which is undesirable.
+        context.save();
+        context.translate(shadow.offset.dx, shadow.offset.dy);
+        context.filter = _maskFilterToCss(
+            ui.MaskFilter.blur(ui.BlurStyle.normal, shadow.blurWidth));
+        context.strokeStyle = '';
+        context.fillStyle = colorToCssString(color);
+        _runPath(context, path);
+        context.fill();
+        context.restore();
+      } else {
+        // TODO(het): We fill the path with this paint, then later we clip
+        // by the same path and fill it with a fully opaque color (we know
+        // the color is fully opaque because `transparentOccluder` is false.
+        // However, due to anti-aliasing of the clip, a few pixels of the
+        // path we are about to paint may still be visible after we fill with
+        // the opaque occluder. For that reason, we fill with the shadow color,
+        // and set the shadow color to fully opaque. This way, the visible
+        // pixels are less opaque and less noticeable.
+        context.save();
+        context.filter = 'none';
+        context.strokeStyle = '';
+        context.fillStyle = colorToCssString(color);
+        context.shadowBlur = shadow.blurWidth;
+        context.shadowColor = colorToCssString(color.withAlpha(0xff));
+        context.shadowOffsetX = shadow.offset.dx;
+        context.shadowOffsetY = shadow.offset.dy;
+        _runPath(context, path);
+        context.fill();
+        context.restore();
       }
     }
   }
