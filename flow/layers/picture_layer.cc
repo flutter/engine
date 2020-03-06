@@ -61,7 +61,6 @@ void PictureLayer::Paint(PaintContext& context) const {
     }
   }
   picture()->playback(context.leaf_nodes_canvas);
-  //
 }
 
 }  // namespace flutter
