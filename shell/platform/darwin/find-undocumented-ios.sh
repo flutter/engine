@@ -1,1 +1,1 @@
-doxygen Doxyfile-iOS 2>&1 | grep "not documented"
+doxygen Doxyfile 2>&1 | grep "not documented"
