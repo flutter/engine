@@ -20,6 +20,18 @@ import 'test_platform.dart';
 import 'environment.dart';
 import 'utils.dart';
 
+/// The type of tests requested by the tool user.
+enum TestTypesRequested {
+  /// For running the unit tests only.
+  unit,
+  /// For running the integration tests only.
+  integration,
+  /// For running both unit and integration tests.
+  all,
+  /// Run no tests.
+  none,
+}
+
 class TestCommand extends Command<bool> {
   TestCommand() {
     argParser
@@ -28,6 +40,17 @@ class TestCommand extends Command<bool> {
         help: 'Pauses the browser before running a test, giving you an '
             'opportunity to add breakpoints or inspect loaded code before '
             'running the code.',
+      )
+      ..addFlag(
+        'unit-tests-only',
+        help: 'felt test command runs the unit tests and the integration tests '
+            'at the same time. If this flag is set, only run the unit tests.',
+      )
+      ..addFlag(
+        'integration-tests-only',
+        help: 'felt test command runs the unit tests and the integration tests '
+            'at the same time. If this flag is set, only run the integration '
+            'tests.',
       )
       ..addFlag(
         'update-screenshot-goldens',
@@ -54,10 +77,27 @@ class TestCommand extends Command<bool> {
   @override
   final String description = 'Run tests.';
 
+  TestTypesRequested testTypesRequested = TestTypesRequested.none;
+
   @override
   Future<bool> run() async {
     SupportedBrowsers.instance
       ..argParsers.forEach((t) => t.parseOptions(argResults));
+
+    // Check the flags to see what type of integration tests are requested.
+    if (argResults['unit-tests-only'] && argResults['integration-tests-only']) {
+      throw ArgumentError('Conflicting arguments: unit-tests-only and '
+          'integration-tests-only are both set');
+    } else if (argResults['unit-tests-only']) {
+      print('Running the unit tests only');
+      testTypesRequested = TestTypesRequested.unit;
+    } else if (argResults['integration-tests-only']) {
+      print('Running the integration tests only. Note that they are only '
+          'available for Chrome on Linux for now.');
+      testTypesRequested = TestTypesRequested.integration;
+    } else {
+      testTypesRequested = TestTypesRequested.all;
+    }
 
     _copyTestFontsIntoWebUi();
     await _buildHostPage();
@@ -252,18 +292,18 @@ class TestCommand extends Command<bool> {
 
   Future<void> _buildTests({List<FilePath> targets}) async {
     List<String> arguments = <String>[
-        'run',
-        'build_runner',
-        'build',
-        'test',
-        '-o',
-        'build',
-        if (targets != null)
-          for (FilePath path in targets) ...[
-            '--build-filter=${path.relativeToWebUi}.js',
-            '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
-          ],
-      ];
+      'run',
+      'build_runner',
+      'build',
+      'test',
+      '-o',
+      'build',
+      if (targets != null)
+        for (FilePath path in targets) ...[
+          '--build-filter=${path.relativeToWebUi}.js',
+          '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
+        ],
+    ];
     final int exitCode = await runProcess(
       environment.pubExecutable,
       arguments,
