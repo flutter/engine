@@ -220,7 +220,7 @@ void PlatformViewRTree::searchRects(Node* node,
         // the merge. As a result, find such cases and remove them from the result list.
         std::list<SkRect>::iterator currRectItr = firstIntersectingRectItr;
         if (currRectItr != results.end()) {
-           currRectItr++; 
+            currRectItr++;
         }
         while (replacedExistingRect && currRectItr != results.end()) {
             if (SkRect::Intersects(*currRectItr, *firstIntersectingRectItr)) {
