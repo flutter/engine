@@ -24,10 +24,13 @@ import 'utils.dart';
 enum TestTypesRequested {
   /// For running the unit tests only.
   unit,
+
   /// For running the integration tests only.
   integration,
+
   /// For running both unit and integration tests.
   all,
+
   /// Run no tests.
   none,
 }
@@ -79,26 +82,40 @@ class TestCommand extends Command<bool> {
 
   TestTypesRequested testTypesRequested = TestTypesRequested.none;
 
+  /// Check the flags to see what type of integration tests are requested.
+  TestTypesRequested findTestType() {
+    if (argResults['unit-tests-only'] && argResults['integration-tests-only']) {
+      throw ArgumentError('Conflicting arguments: unit-tests-only and '
+          'integration-tests-only are both set');
+    } else if (argResults['unit-tests-only']) {
+      print('Running the unit tests only');
+      return TestTypesRequested.unit;
+    } else if (argResults['integration-tests-only']) {
+      print('Running the integration tests only. Note that they are only '
+          'available for Chrome on Linux for now.');
+      return TestTypesRequested.integration;
+    } else {
+      return TestTypesRequested.all;
+    }
+  }
+
   @override
   Future<bool> run() async {
     SupportedBrowsers.instance
       ..argParsers.forEach((t) => t.parseOptions(argResults));
 
     // Check the flags to see what type of integration tests are requested.
-    if (argResults['unit-tests-only'] && argResults['integration-tests-only']) {
-      throw ArgumentError('Conflicting arguments: unit-tests-only and '
-          'integration-tests-only are both set');
-    } else if (argResults['unit-tests-only']) {
-      print('Running the unit tests only');
-      testTypesRequested = TestTypesRequested.unit;
-    } else if (argResults['integration-tests-only']) {
-      print('Running the integration tests only. Note that they are only '
-          'available for Chrome on Linux for now.');
-      testTypesRequested = TestTypesRequested.integration;
-    } else {
-      testTypesRequested = TestTypesRequested.all;
-    }
+    testTypesRequested = findTestType();
 
+    switch (testTypesRequested) {
+      case TestTypesRequested.unit:
+      case TestTypesRequested.integration:
+      case TestTypesRequested.all:
+      case TestTypesRequested.none:
+    }
+  }
+
+  Future<bool> runUnitTests() async {
     _copyTestFontsIntoWebUi();
     await _buildHostPage();
     if (io.Platform.isWindows) {
