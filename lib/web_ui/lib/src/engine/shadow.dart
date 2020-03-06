@@ -119,7 +119,8 @@ SurfaceShadowData computeShadow(ui.Rect shape, double elevation) {
   final double penumbraHeight = elevation * penumbraTangentY;
   return SurfaceShadowData(
     // There's no way to express different blur along different dimensions, so
-    // we use the narrower of the two.
+    // we use the narrower of the two to prevent the shadow blur from being longer
+    // than the shape itself, using min instead of average of penumbra values.
     blurWidth: math.min(penumbraWidth, penumbraHeight),
     offset: computeShadowOffset(elevation),
   );
