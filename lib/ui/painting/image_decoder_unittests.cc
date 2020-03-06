@@ -6,6 +6,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "flutter/lib/ui/painting/image_decoder_test.h"
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
@@ -19,58 +20,6 @@
 
 namespace flutter {
 namespace testing {
-
-class ImageDecoderFixtureTest : public ThreadTest {
- public:
-  ImageDecoderFixtureTest()
-      : native_resolver_(std::make_shared<TestDartNativeResolver>()),
-        assets_dir_(fml::OpenDirectory(GetFixturesPath(),
-                                       false,
-                                       fml::FilePermission::kRead)),
-        aot_symbols_(LoadELFSymbolFromFixturesIfNeccessary()) {}
-
-  Settings CreateSettingsForFixture() {
-    Settings settings;
-    settings.leak_vm = false;
-    settings.task_observer_add = [](intptr_t, fml::closure) {};
-    settings.task_observer_remove = [](intptr_t) {};
-    settings.isolate_create_callback = [this]() {
-      native_resolver_->SetNativeResolverForIsolate();
-    };
-    settings.enable_observatory = false;
-    SetSnapshotsAndAssets(settings);
-    return settings;
-  }
-
- private:
-  std::shared_ptr<TestDartNativeResolver> native_resolver_;
-  fml::UniqueFD assets_dir_;
-  ELFAOTSymbols aot_symbols_;
-
-  void SetSnapshotsAndAssets(Settings& settings) {
-    if (!assets_dir_.is_valid()) {
-      return;
-    }
-
-    settings.assets_dir = assets_dir_.get();
-
-    // In JIT execution, all snapshots are present within the binary itself and
-    // don't need to be explicitly supplied by the embedder. In AOT, these
-    // snapshots will be present in the application AOT dylib.
-    if (DartVM::IsRunningPrecompiledCode()) {
-      FML_CHECK(PrepareSettingsForAOTWithSymbols(settings, aot_symbols_));
-    } else {
-      settings.application_kernels = [this]() {
-        std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
-        kernel_mappings.emplace_back(
-            fml::FileMapping::CreateReadOnly(assets_dir_, "kernel_blob.bin"));
-        return kernel_mappings;
-      };
-    }
-  }
-
-  FML_DISALLOW_COPY_AND_ASSIGN(ImageDecoderFixtureTest);
-};
 
 class TestIOManager final : public IOManager {
  public:

@@ -165,6 +165,8 @@ if (current_toolchain == host_toolchain) {
     configs += [ "//flutter:export_dynamic_symbols" ]
 
     sources = [
+      "painting/image_decoder_test.cc",
+      "painting/image_decoder_test.h",
       "painting/image_decoder_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]
