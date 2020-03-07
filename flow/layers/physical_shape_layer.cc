@@ -103,9 +103,9 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
 
   TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
   // If we can't find an existing retained surface, create one.
-  SceneUpdateContext::Frame frame(context, frameRRect_, color_, SK_AlphaOPAQUE,
-                                  "flutter::PhysicalShapeLayer", z_translation,
-                                  this);
+  SceneUpdateContext::Frame frame(
+      context, frameRRect_, color_, sk_float_round2int(context.alphaf() * 255),
+      "flutter::PhysicalShapeLayer", z_translation, this);
   for (auto& layer : layers()) {
     if (layer->needs_painting()) {
       frame.AddPaintLayer(layer.get());

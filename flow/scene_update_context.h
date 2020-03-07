@@ -178,6 +178,10 @@ class SceneUpdateContext {
     return surface_producer_->GetRetainedNode(key);
   }
 
+  // The cumulative alpha value based on all the parent OpacityLayers.
+  void set_alphaf(float alpha) { alpha_ = alpha; }
+  float alphaf() { return alpha_; }
+
   // The global scenic elevation at a given point in the traversal.
   float scenic_elevation() { return scenic_elevation_; }
 
@@ -246,6 +250,7 @@ class SceneUpdateContext {
   float frame_device_pixel_ratio_ =
       1.0f;  // Ratio between logical and physical pixels.
 
+  float alpha_ = 1.0f;
   float scenic_elevation_ = 0.f;
   float topmost_global_scenic_elevation_ = 10.f;
 

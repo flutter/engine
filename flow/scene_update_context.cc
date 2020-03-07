@@ -222,6 +222,7 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
     surfaces_to_submit.emplace_back(std::move(task.surface));
   }
   paint_tasks_.clear();
+  alpha_ = 1.f;
   topmost_global_scenic_elevation_ = 10.f;
   scenic_elevation_ = 0.f;
   return surfaces_to_submit;

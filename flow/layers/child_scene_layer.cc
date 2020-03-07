@@ -49,7 +49,9 @@ void ChildSceneLayer::UpdateScene(SceneUpdateContext& context) {
   auto* view_holder = ViewHolder::FromId(layer_id_);
   FML_DCHECK(view_holder);
 
-  view_holder->UpdateScene(context, offset_, size_, hit_testable_);
+  view_holder->UpdateScene(context, offset_, size_,
+                           sk_float_round2int(context.alphaf() * 255),
+                           hit_testable_);
 }
 
 }  // namespace flutter
