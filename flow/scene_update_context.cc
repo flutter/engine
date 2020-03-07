@@ -4,6 +4,7 @@
 
 #include "flutter/flow/scene_update_context.h"
 
+#include <cfloat>
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/fml/trace_event.h"
@@ -72,14 +73,13 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
   // and possibly for its texture.
   // TODO(SCN-137): Need to be able to express the radii as vectors.
   scenic::ShapeNode shape_node(session());
-  scenic::RoundedRectangle shape(
-      session_,                                      // session
-      rrect.width(),                                 // width
-      rrect.height(),                                // height
-      rrect.radii(SkRRect::kUpperLeft_Corner).x(),   // top_left_radius
-      rrect.radii(SkRRect::kUpperRight_Corner).x(),  // top_right_radius
-      rrect.radii(SkRRect::kLowerRight_Corner).x(),  // bottom_right_radius
-      rrect.radii(SkRRect::kLowerLeft_Corner).x()    // bottom_left_radius
+  scenic::RoundedRectangle shape(session_,        // session
+                                 rrect.width(),   // width
+                                 rrect.height(),  // height
+                                 0.f,             // top_left_radius
+                                 0.f,             // top_right_radius
+                                 0.f,             // bottom_right_radius
+                                 0.f              // bottom_left_radius
   );
   shape_node.SetShape(shape);
   shape_node.SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
@@ -313,7 +313,11 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
   entity_node().SetLabel(label);
   entity_node().SetTranslation(0.f, 0.f, z_translation);
   entity_node().AddChild(opacity_node_);
-  opacity_node_.SetOpacity(opacity_ / 255.0f);
+  // Scenic currently lacks an API to enable rendering of alpha channel; this only happens
+  // if there is a OpacityNode higher in the tree with opacity != 1. For now,
+  // clamp to a infinitesimally smaller value than 1, which does not cause visual
+  // problems in practice.
+  opacity_node_.SetOpacity(std::min(1 - FLT_EPSILON, opacity_ / 255.0f));
 }
 
 SceneUpdateContext::Frame::~Frame() {

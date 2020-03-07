@@ -46,6 +46,8 @@ class PhysicalShapeLayer : public ContainerLayer {
  private:
 #if defined(OS_FUCHSIA)
   float local_scenic_elevation_ = 0.0f;
+  bool child_layer_exists_below_ = false;
+  bool children_need_system_compositing_ = false;
 #endif
   SkColor color_;
   SkColor shadow_color_;

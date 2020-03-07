@@ -52,23 +52,32 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 
   context->total_elevation += elevation_;
   total_elevation_ = context->total_elevation;
+#if defined(OS_FUCHSIA)
+  child_layer_exists_below_ = context->child_scene_layer_exists_below;
+  context->child_scene_layer_exists_below = false;
+ #endif
+
   SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
+
+#if defined(OS_FUCHSIA)
+  children_need_system_compositing_ = needs_system_composite();
+  if (child_layer_exists_below_) {
+    set_needs_system_composite(true);
+  }
+  context->child_scene_layer_exists_below =
+      context->child_scene_layer_exists_below || child_layer_exists_below_;
+#endif
   context->total_elevation -= elevation_;
 
   if (elevation_ == 0) {
     set_paint_bounds(path_.getBounds());
   } else {
-#if defined(OS_FUCHSIA)
-    // Let the system compositor draw all shadows for us.
-    set_needs_system_composite(true);
-#else
     // We will draw the shadow in Paint(), so add some margin to the paint
     // bounds to leave space for the shadow. We fill this whole region and clip
     // children to it so we don't need to join the child paint bounds.
     set_paint_bounds(ComputeShadowBounds(path_.getBounds(), elevation_,
                                          context->frame_device_pixel_ratio));
-#endif  // defined(OS_FUCHSIA)
   }
 }
 
@@ -78,37 +87,53 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   FML_DCHECK(needs_system_composite());
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::UpdateScene");
 
-  float global_scenic_elevation =
-      context.GetGlobalElevationForNextScenicLayer();
-  float local_scenic_elevation_ =
-      global_scenic_elevation - context.scenic_elevation();
-  float z_translation = -local_scenic_elevation_;
+  // If there is embedded Fuchsia content in the scene (a ChildSceneLayer),
+  // PhysicalShapeLayers that appear above the embedded content will be turned
+  // into their own Scenic layers.
+  if (child_layer_exists_below_) {
+    // Reset paint bounds, because shadows are not rendered in this case
+    // (see comment in Paint()).
+    set_paint_bounds(path_.getBounds());
 
-  // Retained rendering: speedup by reusing a retained entity node if possible.
-  // When an entity node is reused, no paint layer is added to the frame so we
-  // won't call PhysicalShapeLayer::Paint.
-  LayerRasterCacheKey key(unique_id(), context.Matrix());
-  if (context.HasRetainedNode(key)) {
-    TRACE_EVENT_INSTANT0("flutter", "retained layer cache hit");
-    scenic::EntityNode* retained_node = context.GetRetainedNode(key);
-    FML_DCHECK(context.top_entity());
-    FML_DCHECK(retained_node->session() == context.session());
+    float global_scenic_elevation = context.GetGlobalElevationForNextScenicLayer();
+    float local_scenic_elevation_ =
+        global_scenic_elevation - context.scenic_elevation();
+    float z_translation = -local_scenic_elevation_;
 
-    // Re-adjust the elevation.
-    retained_node->SetTranslation(0.f, 0.f, z_translation);
+    // Retained rendering: speedup by reusing a retained entity node if
+    // possible. When an entity node is reused, no paint layer is added to the
+    // frame so we won't call PhysicalShapeLayer::Paint.
+    LayerRasterCacheKey key(unique_id(), context.Matrix());
+    if (context.HasRetainedNode(key)) {
+      TRACE_EVENT_INSTANT0("flutter", "retained layer cache hit");
+      scenic::EntityNode* retained_node = context.GetRetainedNode(key);
+      FML_DCHECK(context.top_entity());
+      FML_DCHECK(retained_node->session() == context.session());
 
-    context.top_entity()->entity_node().AddChild(*retained_node);
-    return;
-  }
+      // Re-adjust the elevation.
+      retained_node->SetTranslation(0.f, 0.f, z_translation);
 
-  TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
-  // If we can't find an existing retained surface, create one.
-  SceneUpdateContext::Frame frame(
-      context, frameRRect_, color_, sk_float_round2int(context.alphaf() * 255),
-      "flutter::PhysicalShapeLayer", z_translation, this);
-  for (auto& layer : layers()) {
-    if (layer->needs_painting()) {
-      frame.AddPaintLayer(layer.get());
+      context.top_entity()->entity_node().AddChild(*retained_node);
+      return;
+    }
+
+    TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
+    // If we can't find an existing retained surface, create one.
+    SceneUpdateContext::Frame frame(context, frameRRect_, SK_ColorTRANSPARENT,
+                                    sk_float_round2int(context.alphaf() * 255),
+                                    "flutter::PhysicalShapeLayer",
+                                    z_translation, this);
+
+    frame.AddPaintLayer(this);
+
+    // Node: UpdateSceneChildren needs to be called here so that |frame| is still
+    // in scope (and therefore alive) while UpdateSceneChildren is being called.
+    if (children_need_system_compositing_) {
+      UpdateSceneChildren(context);
+    }
+  } else {
+    if (children_need_system_compositing_) {
+      UpdateSceneChildren(context);
     }
   }
 }
@@ -128,7 +153,19 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FML_DCHECK(needs_painting());
 
+
+#if defined(OS_FUCHSIA)
+  // TODO: Re-enable shadow drawing here.
+  // Shadows are not rendered for PhysicalShapeLayers that exist as separate
+  // system services; this is to maintain compatibility with the previous
+  // implementation and has the added benefit of requiring smaller textures, since
+  // extra space is not needed for the shadows.
+  // This behavior might change  after clients adjust their usage of PhysicalShaperLayer
+  // to make elevation correlate to desired shadow size.
+  if (false && !child_layer_exists_below_ && elevation_ != 0) {
+#else
   if (elevation_ != 0) {
+#endif
     DrawShadow(context.leaf_nodes_canvas, path_, shadow_color_, elevation_,
                SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
   }
