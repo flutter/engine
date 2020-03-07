@@ -32,10 +32,6 @@ void TextureLayer::Paint(PaintContext& context) const {
   }
   texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,
                  context.gr_context);
-  if (context.leaf_nodes_canvas != nullptr) {
-    texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,
-                   context.gr_context);
-  }
 }
 
 }  // namespace flutter
