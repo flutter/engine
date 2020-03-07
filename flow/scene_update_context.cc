@@ -222,6 +222,8 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
     surfaces_to_submit.emplace_back(std::move(task.surface));
   }
   paint_tasks_.clear();
+  topmost_global_scenic_elevation_ = 10.f;
+  scenic_elevation_ = 0.f;
   return surfaces_to_submit;
 }
 
@@ -250,14 +252,16 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
     // are not handled correctly.
     MatrixDecomposition decomposition(transform);
     if (decomposition.IsValid()) {
+      // Don't allow clients to control the z dimension; we control that
+      // instead to make sure layers appear in proper order.
       entity_node().SetTranslation(decomposition.translation().x(),  //
                                    decomposition.translation().y(),  //
-                                   -decomposition.translation().z()  //
+                                   0.f //
       );
 
       entity_node().SetScale(decomposition.scale().x(),  //
                              decomposition.scale().y(),  //
-                             decomposition.scale().z()   //
+                             0.f   //
       );
       context.top_scale_x_ *= decomposition.scale().x();
       context.top_scale_y_ *= decomposition.scale().y();
@@ -296,8 +300,7 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
                                  SkColor color,
                                  SkAlpha opacity,
                                  std::string label,
-                                 float local_elevation,
-                                 float world_elevation,
+                                 float z_translation,
                                  Layer* layer)
     : Entity(context),
       rrect_(rrect),
@@ -306,22 +309,8 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
       opacity_node_(context.session()),
       paint_bounds_(SkRect::MakeEmpty()),
       layer_(layer) {
-  const float depth = context.frame_physical_depth();
-  if (depth > -1 && world_elevation > depth) {
-    // TODO(mklim): Deal with bounds overflow more elegantly. We'd like to be
-    // able to have developers specify the behavior here to alternatives besides
-    // clamping, like normalization on some arbitrary curve.
-
-    // Clamp the local z coordinate at our max bound. Take into account the
-    // parent z position here to fix clamping in cases where the child is
-    // overflowing because of its parents.
-    const float parent_elevation = world_elevation - local_elevation;
-    local_elevation = depth - parent_elevation;
-  }
-  if (local_elevation != 0.0) {
-    entity_node().SetTranslation(0.f, 0.f, -local_elevation);
-  }
   entity_node().SetLabel(label);
+  entity_node().SetTranslation(0.f, 0.f, z_translation);
   entity_node().AddChild(opacity_node_);
   opacity_node_.SetOpacity(opacity_ / 255.0f);
 }

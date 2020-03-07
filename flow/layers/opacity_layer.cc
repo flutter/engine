@@ -126,6 +126,12 @@ void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
   FML_DCHECK(needs_system_composite());
   TRACE_EVENT0("flutter", "OpacityLayer::UpdateScene");
 
+  float global_scenic_elevation =
+      context.GetGlobalElevationForNextScenicLayer();
+  float local_scenic_elevation_ =
+      global_scenic_elevation - context.scenic_elevation();
+  float z_translation = -local_scenic_elevation_;
+
   ContainerLayer* container = GetChildContainer();
   FML_DCHECK(!container->layers().empty());  // OpacityLayer can't be a leaf.
 
@@ -138,10 +144,14 @@ void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
   LayerRasterCacheKey key(unique_id(), context.Matrix());
   if (context.HasRetainedNode(key)) {
     TRACE_EVENT_INSTANT0("flutter", "retained layer cache hit");
-    const scenic::EntityNode& retained_node = context.GetRetainedNode(key);
+    scenic::EntityNode* retained_node = context.GetRetainedNode(key);
     FML_DCHECK(context.top_entity());
-    FML_DCHECK(retained_node.session() == context.session());
-    context.top_entity()->embedder_node().AddChild(retained_node);
+    FML_DCHECK(retained_node->session() == context.session());
+
+    // Re-adjust the elevation.
+    retained_node->SetTranslation(0.f, 0.f, z_translation);
+
+    context.top_entity()->embedder_node().AddChild(*retained_node);
     return;
   }
 
@@ -149,11 +159,19 @@ void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
   // If we can't find an existing retained surface, create one.
   SceneUpdateContext::Frame frame(context, frameRRect_, SK_ColorTRANSPARENT,
                                   alpha_, "flutter::OpacityLayer",
-                                  kOpacityElevationWhenUsingSystemCompositor,
-                                  total_elevation_, this);
+                                  z_translation, this);
   frame.AddPaintLayer(container);
 
   UpdateSceneChildren(context);
+}
+
+void OpacityLayer::UpdateSceneChildren(SceneUpdateContext& context) {
+  float scenic_elevation = context.scenic_elevation();
+  context.set_scenic_elevation(scenic_elevation + local_scenic_elevation_);
+
+  ContainerLayer::UpdateSceneChildren(context);
+
+  context.set_scenic_elevation(scenic_elevation);
 }
 
 #endif  // defined(OS_FUCHSIA)

@@ -78,31 +78,48 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   FML_DCHECK(needs_system_composite());
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::UpdateScene");
 
+  float global_scenic_elevation =
+      context.GetGlobalElevationForNextScenicLayer();
+  float local_scenic_elevation_ =
+      global_scenic_elevation - context.scenic_elevation();
+  float z_translation = -local_scenic_elevation_;
+
   // Retained rendering: speedup by reusing a retained entity node if possible.
   // When an entity node is reused, no paint layer is added to the frame so we
   // won't call PhysicalShapeLayer::Paint.
   LayerRasterCacheKey key(unique_id(), context.Matrix());
   if (context.HasRetainedNode(key)) {
     TRACE_EVENT_INSTANT0("flutter", "retained layer cache hit");
-    const scenic::EntityNode& retained_node = context.GetRetainedNode(key);
+    scenic::EntityNode* retained_node = context.GetRetainedNode(key);
     FML_DCHECK(context.top_entity());
-    FML_DCHECK(retained_node.session() == context.session());
-    context.top_entity()->entity_node().AddChild(retained_node);
+    FML_DCHECK(retained_node->session() == context.session());
+
+    // Re-adjust the elevation.
+    retained_node->SetTranslation(0.f, 0.f, z_translation);
+
+    context.top_entity()->entity_node().AddChild(*retained_node);
     return;
   }
 
   TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
   // If we can't find an existing retained surface, create one.
   SceneUpdateContext::Frame frame(context, frameRRect_, color_, SK_AlphaOPAQUE,
-                                  "flutter::PhysicalShapeLayer", elevation_,
-                                  total_elevation_, this);
+                                  "flutter::PhysicalShapeLayer", z_translation,
+                                  this);
   for (auto& layer : layers()) {
     if (layer->needs_painting()) {
       frame.AddPaintLayer(layer.get());
     }
   }
+}
 
-  UpdateSceneChildren(context);
+void PhysicalShapeLayer::UpdateSceneChildren(SceneUpdateContext& context) {
+  float scenic_elevation = context.scenic_elevation();
+  context.set_scenic_elevation(scenic_elevation + local_scenic_elevation_);
+
+  ContainerLayer::UpdateSceneChildren(context);
+
+  context.set_scenic_elevation(scenic_elevation);
 }
 
 #endif  // defined(OS_FUCHSIA)

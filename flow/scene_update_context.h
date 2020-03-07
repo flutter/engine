@@ -59,8 +59,7 @@ class SceneUpdateContext {
     // Query a retained entity node (owned by a retained surface) for retained
     // rendering.
     virtual bool HasRetainedNode(const LayerRasterCacheKey& key) const = 0;
-    virtual const scenic::EntityNode& GetRetainedNode(
-        const LayerRasterCacheKey& key) = 0;
+    virtual scenic::EntityNode* GetRetainedNode(const LayerRasterCacheKey& key) = 0;
 
     virtual void SubmitSurface(
         std::unique_ptr<SurfaceProducerSurface> surface) = 0;
@@ -106,8 +105,7 @@ class SceneUpdateContext {
           SkColor color,
           SkAlpha opacity,
           std::string label,
-          float local_elevation = 0.0f,
-          float parent_elevation = 0.0f,
+          float z_translation = 0.0f,
           Layer* layer = nullptr);
     virtual ~Frame();
 
@@ -176,8 +174,19 @@ class SceneUpdateContext {
   bool HasRetainedNode(const LayerRasterCacheKey& key) const {
     return surface_producer_->HasRetainedNode(key);
   }
-  const scenic::EntityNode& GetRetainedNode(const LayerRasterCacheKey& key) {
+  scenic::EntityNode* GetRetainedNode(const LayerRasterCacheKey& key) {
     return surface_producer_->GetRetainedNode(key);
+  }
+
+  // The global scenic elevation at a given point in the traversal.
+  float scenic_elevation() { return scenic_elevation_; }
+
+  void set_scenic_elevation(float elevation) { scenic_elevation_ = elevation; }
+
+  float GetGlobalElevationForNextScenicLayer() {
+    float elevation = topmost_global_scenic_elevation_;
+    topmost_global_scenic_elevation_ += 10.f;
+    return elevation;
   }
 
  private:
@@ -236,6 +245,9 @@ class SceneUpdateContext {
   float frame_physical_depth_ = 0.0f;
   float frame_device_pixel_ratio_ =
       1.0f;  // Ratio between logical and physical pixels.
+
+  float scenic_elevation_ = 0.f;
+  float topmost_global_scenic_elevation_ = 10.f;
 
   std::vector<PaintTask> paint_tasks_;
 

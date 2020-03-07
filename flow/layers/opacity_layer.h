@@ -35,9 +35,14 @@ class OpacityLayer : public ContainerLayer {
 
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
+
+  void UpdateSceneChildren(SceneUpdateContext& context);
 #endif  // defined(OS_FUCHSIA)
 
  private:
+#if defined(OS_FUCHSIA)
+  float local_scenic_elevation_ = 0.0f;
+#endif
   ContainerLayer* GetChildContainer() const;
 
   SkAlpha alpha_;

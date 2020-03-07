@@ -37,11 +37,16 @@ class PhysicalShapeLayer : public ContainerLayer {
 
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
+
+  void UpdateSceneChildren(SceneUpdateContext& context);
 #endif  // defined(OS_FUCHSIA)
 
   float total_elevation() const { return total_elevation_; }
 
  private:
+#if defined(OS_FUCHSIA)
+  float local_scenic_elevation_ = 0.0f;
+#endif
   SkColor color_;
   SkColor shadow_color_;
   float elevation_ = 0.0f;
