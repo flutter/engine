@@ -21,7 +21,7 @@ class StreamHandler {
   // Handles a request to set up an event stream.
   // @param arguments stream configuration arguments, possibly null.
   // @param event_sink an EventSink for emitting events to the Flutter receiver.
-  using OnListen = std::function<void(const T* arguments, const EventSink<T>* event_sink)>;
+  using OnListen = std::function<void(const T* arguments, EventSink<T>* event_sink)>;
 
   // Handles a request to tear down the most recently created event stream.
   // @param arguments stream configuration arguments, possibly null.
@@ -33,7 +33,7 @@ class StreamHandler {
   // Registers a stream handler on this channel.
   // If no handler has been registered, any incoming stream setup requests will be handled
   // silently by providing an empty stream.
-  StreamHandler( OnListen const& onListen, OnCancel const& onCancel)
+  StreamHandler(OnListen const& onListen, OnCancel const& onCancel)
     : onListen(onListen), onCancel(onCancel) {}
 };
 

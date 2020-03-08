@@ -53,26 +53,43 @@ TEST(EventChannelTest, Registration) {
   const StandardMethodCodec& codec = StandardMethodCodec::GetInstance();
   EventChannel channel(&messenger, channel_name, &codec);
 
-  bool callback_called = false;
-  const std::string method_name("hello");
+  bool on_listen_called = false;
+  auto onListen = [&on_listen_called](const flutter::EncodableValue* arguments,
+                     EventSink<flutter::EncodableValue>* event_sink) {
+    event_sink->Success();
+    auto message = flutter::EncodableValue(flutter::EncodableMap{
+          {flutter::EncodableValue("message"),
+               flutter::EncodableValue("Test from Event Channel")}
+        });
+    event_sink->Success(&message);
+	  event_sink->Error("Event Channel Error Code",
+		              	  "Error Message",
+			                nullptr);
+  	event_sink->EndOfStream();
+	  event_sink->Success(&message);
 
-  // TODO: fix test code
-  auto onListen = [](const flutter::EncodableValue* arguments,
-                     const EventSink<flutter::EncodableValue>* event_sink){};
-  auto onCancel = [](const flutter::EncodableValue* arguments){};
+    on_listen_called = true;
+  };
+
+  bool on_cancel_called = false;
+  auto onCancel = [&on_cancel_called](const flutter::EncodableValue* arguments) {
+    on_cancel_called = true;
+  };
   channel.SetStreamHandler(
     flutter::StreamHandler<flutter::EncodableValue>(onListen, onCancel));
 
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
-  // Send a test message to trigger the handler test assertions.
-  MethodCall<EncodableValue> call(method_name, nullptr);
-  auto message = codec.EncodeMethodCall(call);
 
+  // Send a test message to trigger the handler test assertions.
+  MethodCall<EncodableValue> call("listen", nullptr);
+  auto message = codec.EncodeMethodCall(call);
   messenger.last_message_handler()(
       message->data(), message->size(),
       [](const uint8_t* reply, const size_t reply_size) {});
-  EXPECT_EQ(callback_called, true);
+
+  EXPECT_EQ(on_listen_called, true);
+  EXPECT_EQ(on_cancel_called, true);
 }
 
 // Tests that SetStreamHandler with a null handler unregisters the handler.
@@ -83,7 +100,7 @@ TEST(EventChannelTest, Unregistration) {
                        &flutter::StandardMethodCodec::GetInstance());
 
   auto onListen = [](const flutter::EncodableValue* arguments,
-                     const EventSink<flutter::EncodableValue>* event_sink){};
+                     EventSink<flutter::EncodableValue>* event_sink){};
   auto onCancel = [](const flutter::EncodableValue* arguments){};
   channel.SetStreamHandler(
     flutter::StreamHandler<flutter::EncodableValue>(onListen, onCancel));

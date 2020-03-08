@@ -25,14 +25,14 @@ class EventSink {
   void EndOfStream() { EndOfStreamInternal(); }
 
   // Consumes a successful event.
-  void Success(const T* event = nullptr) {
+  void Success(T* event = nullptr) {
     SuccessInternal(event);
   }
 
   // Consumes an error event.
   void Error(const std::string& error_code,
              const std::string& error_message = "",
-             const T* error_details = nullptr) {
+             T* error_details = nullptr) {
     ErrorInternal(error_code, error_message, error_details);
   }
 
@@ -41,12 +41,12 @@ class EventSink {
   virtual void EndOfStreamInternal() = 0;
 
   // Implementation of the public interface, to be provided by subclasses.
-  virtual void SuccessInternal(const T* event = nullptr) = 0;
+  virtual void SuccessInternal(T* event = nullptr) = 0;
 
   // Implementation of the public interface, to be provided by subclasses.
   virtual void ErrorInternal(const std::string& error_code,
                              const std::string& error_message,
-                             const T* error_details) = 0;
+                             T* error_details) = 0;
 };
 
 }  // namespace flutter

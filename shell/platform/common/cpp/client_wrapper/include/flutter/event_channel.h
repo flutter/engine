@@ -48,7 +48,7 @@ class EventChannel {
   // Registers a stream handler on this channel.
   // If no handler has been registered, any incoming stream setup requests will be handled
   // silently by providing an empty stream.
-  //void SetStreamHandler(std::optional<StreamHandler<T>> const& handler) const {
+  //void SetStreamHandler(std::optional<StreamHandler<T>> const& handler) const { /* <= available for more than C++17 */
   void SetStreamHandler(const StreamHandler<T>& handler) const {
     //if (!handler) {
     //  messenger_->SetMessageHandler(name_, nullptr);
@@ -146,7 +146,7 @@ class EventChannel {
     const MethodCodec<T>* codec_;
 
   protected:
-    void SuccessInternal(const T* event = nullptr) override {
+    void SuccessInternal(T* event = nullptr) override {
       auto result = codec_->EncodeSuccessEnvelope(event);
       uint8_t* buffer = new uint8_t[result->size()];
       std::copy(result->begin(), result->end(), buffer);
@@ -155,8 +155,8 @@ class EventChannel {
     }
 
     void ErrorInternal(const std::string& error_code,
-                      const std::string& error_message,
-                      const T* error_details) override {
+                       const std::string& error_message,
+                       T* error_details) override {
       auto result = 
         codec_->EncodeErrorEnvelope(error_code, error_message, error_details);
       uint8_t* buffer = new uint8_t[result->size()];
