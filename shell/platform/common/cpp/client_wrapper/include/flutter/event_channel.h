@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include <string>
-#include <optional>
 
 #include "binary_messenger.h"
 #include "engine_method_result.h"
@@ -49,11 +48,12 @@ class EventChannel {
   // Registers a stream handler on this channel.
   // If no handler has been registered, any incoming stream setup requests will be handled
   // silently by providing an empty stream.
-  void SetStreamHandler(std::optional<StreamHandler<T>> const& handler) const {
-    if (!handler) {
-      messenger_->SetMessageHandler(name_, nullptr);
-      return;
-    }
+  //void SetStreamHandler(std::optional<StreamHandler<T>> const& handler) const {
+  void SetStreamHandler(const StreamHandler<T>& handler) const {
+    //if (!handler) {
+    //  messenger_->SetMessageHandler(name_, nullptr);
+    //  return;
+    //}
 
     const auto* codec = codec_;
     const std::string channel_name = name_;
@@ -77,13 +77,13 @@ class EventChannel {
         if (current_sink) {
           std::cerr << "Failed to cancel existing stream: "
                     << channel_name << std::endl;
-          handler->onCancel(method_call->arguments());
+          handler.onCancel(method_call->arguments());
           delete current_sink;
         }
 
         current_sink = 
           new EventSinkImplementation(messenger, channel_name, codec);
-        handler->onListen(method_call->arguments(), 
+        handler.onListen(method_call->arguments(), 
                           static_cast<EventSink<T>*>(current_sink));
 
         {
@@ -96,7 +96,7 @@ class EventChannel {
       }
       else if (method.compare(kOnCancelMethod) == 0) {
         if (current_sink) {
-          handler->onCancel(method_call->arguments());
+          handler.onCancel(method_call->arguments());
 
           auto result = codec->EncodeSuccessEnvelope();
           uint8_t* buffer = new uint8_t[result->size()];
