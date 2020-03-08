@@ -48,9 +48,9 @@ class EventChannel {
   // Registers a stream handler on this channel.
   // If no handler has been registered, any incoming stream setup requests will be handled
   // silently by providing an empty stream.
-  //void SetStreamHandler(std::optional<StreamHandler<T>> const& handler) const { /* <= available for more than C++17 */
   void SetStreamHandler(const StreamHandler<T>& handler) const {
-    //if (!handler) {
+  //void SetStreamHandler(std::optional<StreamHandler<T>> const& handler) const {
+    //if (!handler) { /* <= available for more than C++17 */
     //  messenger_->SetMessageHandler(name_, nullptr);
     //  return;
     //}
@@ -79,6 +79,7 @@ class EventChannel {
                     << channel_name << std::endl;
           handler.onCancel(method_call->arguments());
           delete current_sink;
+          current_sink = nullptr;
         }
 
         current_sink = 
@@ -103,6 +104,7 @@ class EventChannel {
           std::copy(result->begin(), result->end(), buffer);
           reply(buffer, result->size());
           delete current_sink;
+          current_sink = nullptr;
         }
         else {
           auto result = 
@@ -118,8 +120,10 @@ class EventChannel {
         std::cerr << "Unknown event channel method call from message on channel: "
                   << channel_name << std::endl;
         reply(nullptr, 0);
-        if (current_sink)
+        if (current_sink) {
           delete current_sink;
+          current_sink = nullptr;
+        }
       }
     };
     messenger_->SetMessageHandler(name_, std::move(binary_handler));
@@ -173,7 +177,7 @@ class EventChannel {
   BinaryMessenger* messenger_;
   std::string name_;
   const MethodCodec<T>* codec_;
-  EventSinkImplementation* current_sink_;
+  EventSinkImplementation* current_sink_ = nullptr;
 
 };
 
