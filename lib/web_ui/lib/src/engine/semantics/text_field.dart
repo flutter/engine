@@ -14,6 +14,7 @@ part of engine;
 ///
 /// This class is still responsible for hooking up the DOM element with the
 /// [HybridTextEditing] instance so that changes are communicated to Flutter.
+// TODO(nurhan): Add an integration test.
 class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   /// Creates a [SemanticsTextEditingStrategy] that eagerly instantiates
   /// [domElement] so the caller can insert it before calling
