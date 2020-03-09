@@ -762,8 +762,8 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/encodable_value.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/engine_method_result.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/event_channel.h
-FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/event_stream_handler.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/event_sink.h
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/event_stream_handler.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_message_codec.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_method_codec.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_type.h
