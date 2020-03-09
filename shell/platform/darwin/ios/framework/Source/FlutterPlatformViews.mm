@@ -369,6 +369,12 @@ void FlutterPlatformViewsController::Reset() {
 
 bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
                                                  std::shared_ptr<IOSGLContext> gl_context) {
+  // As we are merging the threads, we bail here and let the next frame handle this.
+  if (will_merge_threads_) {
+    picture_recorders_.clear();
+    composition_order_.clear();
+    return true;
+  }
   DisposeViews();
 
   bool did_submit = true;
