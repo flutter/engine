@@ -7,9 +7,9 @@
 
 namespace flutter {
 
-// Event callback. Supports dual use: Producers of events to be sent to Flutter act as clients of
-// this interface for sending events. Consumers of events sent from Flutter implement this
-// interface for handling received events.
+// Event callback. Supports dual use: Producers of events to be sent to Flutter
+// act as clients of this interface for sending events. Consumers of events sent
+// from Flutter implement this interface for handling received events.
 template <typename T>
 class EventSink {
  public:

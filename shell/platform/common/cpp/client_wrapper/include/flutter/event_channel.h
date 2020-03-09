@@ -82,8 +82,8 @@ class EventChannel {
           current_sink = nullptr;
         }
 
-        current_sink = 
-          new EventSinkImplementation(messenger, channel_name, codec);
+        current_sink =
+            new EventSinkImplementation(messenger, channel_name, codec);
         handler.onListen(method_call->arguments(), 
                           static_cast<EventSink<T>*>(current_sink));
 
@@ -107,8 +107,8 @@ class EventChannel {
           current_sink = nullptr;
         }
         else {
-          auto result = 
-            codec->EncodeErrorEnvelope("error",
+          auto result =
+              codec->EncodeErrorEnvelope("error",
                                        "No active stream to cancel", nullptr);
           uint8_t* buffer = new uint8_t[result->size()];
           std::copy(result->begin(), result->end(), buffer);
@@ -161,24 +161,21 @@ class EventChannel {
     void ErrorInternal(const std::string& error_code,
                        const std::string& error_message,
                        T* error_details) override {
-      auto result = 
-        codec_->EncodeErrorEnvelope(error_code, error_message, error_details);
+      auto result =
+          codec_->EncodeErrorEnvelope(error_code, error_message, error_details);
       uint8_t* buffer = new uint8_t[result->size()];
       std::copy(result->begin(), result->end(), buffer);
       messenger_->Send(name_, buffer, result->size());
       delete[] buffer;
     }
 
-    void EndOfStreamInternal() override {
-      messenger_->Send(name_, nullptr, 0);
-    }
+    void EndOfStreamInternal() override { messenger_->Send(name_, nullptr, 0); }
   };
 
   BinaryMessenger* messenger_;
   std::string name_;
   const MethodCodec<T>* codec_;
   EventSinkImplementation* current_sink_ = nullptr;
-
 };
 
 }  // namespace flutter
