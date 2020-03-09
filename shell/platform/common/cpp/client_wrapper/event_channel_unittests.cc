@@ -59,7 +59,7 @@ TEST(EventChannelTest, Registration) {
     event_sink->Success();
     auto message = flutter::EncodableValue(flutter::EncodableMap{
           {flutter::EncodableValue("message"),
-               flutter::EncodableValue("Test from Event Channel")}
+           flutter::EncodableValue("Test from Event Channel")}
         });
     event_sink->Success(&message);
 	  event_sink->Error("Event Channel Error Code",
@@ -74,7 +74,7 @@ TEST(EventChannelTest, Registration) {
     on_cancel_called = true;
   };
   channel.SetStreamHandler(
-    flutter::StreamHandler<flutter::EncodableValue>(onListen, onCancel));
+      flutter::StreamHandler<flutter::EncodableValue>(onListen, onCancel));
 
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
@@ -88,7 +88,7 @@ TEST(EventChannelTest, Registration) {
   EXPECT_EQ(on_listen_called, true);
 
   // FIXME: add onCancel test scenario
-  //EXPECT_EQ(on_cancel_called, true);
+  // EXPECT_EQ(on_cancel_called, true);
 }
 
 // Tests that SetStreamHandler with a null handler unregisters the handler.
@@ -106,9 +106,9 @@ TEST(EventChannelTest, Unregistration) {
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 
-  //channel.SetStreamHandler(std::nullopt);
-  //EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
-  //EXPECT_EQ(messenger.last_message_handler(), nullptr);
+  // channel.SetStreamHandler(std::nullopt);
+  // EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
+  // EXPECT_EQ(messenger.last_message_handler(), nullptr);
 }
 
 }  // namespace flutter

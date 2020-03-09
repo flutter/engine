@@ -10,15 +10,15 @@
 
 #include "binary_messenger.h"
 #include "engine_method_result.h"
-#include "event_stream_handler.h"
 #include "event_sink.h"
+#include "event_stream_handler.h"
 
 static constexpr char kOnListenMethod[] = "listen";
 static constexpr char kOnCancelMethod[] = "cancel";
 
 namespace flutter {
 
-// A named channel for communicating with the Flutter application using 
+// A named channel for communicating with the Flutter application using
 // asynchronous event streams. Incoming requests for event stream setup are
 // decoded from binary on receipt, and C++ responses and events are encoded into
 // binary before being transmitted back to Flutter. The MethodCodec used must be
@@ -47,15 +47,15 @@ class EventChannel {
   EventChannel& operator=(EventChannel const&) = delete;
 
   // Registers a stream handler on this channel.
-  // If no handler has been registered, any incoming stream setup requests will be handled
-  // silently by providing an empty stream.
+  // If no handler has been registered, any incoming stream setup requests will
+  // be handled silently by providing an empty stream.
   void SetStreamHandler(const StreamHandler<T>& handler) const {
     // TODO: The following is required when nullptr
     // can be passed as an argument.
-    //if (!handler) { /* <= available for more than C++17 */
-    //  messenger_->SetMessageHandler(name_, nullptr);
-    //  return;
-    //}
+    // if (!handler) { /* <= available for more than C++17 */
+    //   messenger_->SetMessageHandler(name_, nullptr);
+    //   return;
+    // }
 
     const auto* codec = codec_;
     const std::string channel_name = name_;
