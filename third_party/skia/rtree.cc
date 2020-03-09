@@ -9,6 +9,8 @@
 
 #include "rtree.h"
 
+namespace flutter {
+
 RTree::RTree() : fCount(0) {}
 
 void RTree::insert(const SkRect boundsArray[], const SkBBoxHierarchy::Metadata metadata[], int N) {
@@ -240,3 +242,5 @@ RTreeFactory::RTreeFactory() { r_tree_ = sk_make_sp<RTree>(); }
 sk_sp<RTree> RTreeFactory::getInstance() { return r_tree_; }
 
 sk_sp<SkBBoxHierarchy> RTreeFactory::operator()() const { return r_tree_; }
+
+}  // namespace flutter

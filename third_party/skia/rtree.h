@@ -13,6 +13,7 @@
 #include "third_party/skia/include/core/SkBBHFactory.h"
 #include "third_party/skia/include/core/SkTypes.h"
 
+namespace flutter {
 /**
  * An R-Tree implementation. In short, it is a balanced n-ary tree containing a hierarchy of
  * bounding rectangles.
@@ -113,3 +114,5 @@ private:
 };
 
 #endif  // SKIA_RTREE_H_
+
+}  // namespace flutter
