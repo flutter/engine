@@ -53,12 +53,6 @@ std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrContext* /* unused 
   );
 }
 
-SkRect IOSSurfaceMetal::GetPlatformViewRect(int view_id) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->GetPlatformViewRect(view_id);
-}
-
 bool IOSSurfaceMetal::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {

@@ -177,13 +177,6 @@ SkCanvas* IOSSurfaceSoftware::CompositeEmbeddedView(int view_id) {
 }
 
 // |ExternalViewEmbedder|
-SkRect IOSSurfaceSoftware::GetPlatformViewRect(int view_id) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->GetPlatformViewRect(view_id);
-}
-
-// |ExternalViewEmbedder|
 bool IOSSurfaceSoftware::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {

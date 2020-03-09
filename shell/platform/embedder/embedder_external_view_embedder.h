@@ -94,9 +94,6 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override;
 
-  // |ExternalViewEmbedder|
-  SkRect GetPlatformViewRect(int view_id) override;
-
  private:
   const CreateRenderTargetCallback create_render_target_callback_;
   const PresentCallback present_callback_;

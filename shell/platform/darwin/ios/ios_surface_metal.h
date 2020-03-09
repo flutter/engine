@@ -61,9 +61,6 @@ class IOSSurfaceMetal final : public IOSSurface, public GPUSurfaceDelegate {
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  SkRect GetPlatformViewRect(int view_id) override;
-
-  // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context, SkCanvas* background_canvas) override;
 
  private:
