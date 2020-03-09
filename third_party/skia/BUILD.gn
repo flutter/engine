@@ -5,7 +5,7 @@
 
 import("//flutter/testing/testing.gni")
 
-source_set("skia") {
+source_set("rtree") {
   sources = [
     "rtree.cc",
     "rtree.h",
@@ -16,19 +16,19 @@ source_set("skia") {
   ]
 }
 
-test_fixtures("skia_fixtures") {
+test_fixtures("rtree_fixtures") {
   fixtures = []
 }
 
-executable("skia_unittests") {
+executable("rtree_unittests") {
   testonly = true
   sources = [
     "main_unittests.cc",
     "rtree_unittests.cc",
   ]
   deps = [
-    ":skia",
-    ":skia_fixtures",
+    ":rtree",
+    ":rtree_fixtures",
     "//flutter/testing:testing_lib",
     "//third_party/dart/runtime:libdart_jit",  # For logging.
     "//third_party/skia",
