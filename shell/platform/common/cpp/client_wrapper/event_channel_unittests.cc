@@ -63,7 +63,7 @@ TEST(EventChannelTest, Registration) {
          flutter::EncodableValue("Test from Event Channel")}});
     event_sink->Success(&message);
     event_sink->Error("Event Channel Error Code", "Error Message", nullptr);
-  	event_sink->EndOfStream();
+    event_sink->EndOfStream();
     on_listen_called = true;
   };
 
