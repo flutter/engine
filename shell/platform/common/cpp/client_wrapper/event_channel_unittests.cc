@@ -61,7 +61,6 @@ TEST(EventChannelTest, Registration) {
     auto message = flutter::EncodableValue(flutter::EncodableMap{
         {flutter::EncodableValue("message"),
          flutter::EncodableValue("Test from Event Channel")}});
-        });
     event_sink->Success(&message);
     event_sink->Error("Event Channel Error Code", "Error Message", nullptr);
   	event_sink->EndOfStream();
