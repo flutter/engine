@@ -65,9 +65,6 @@ class IOSSurfaceSoftware final : public IOSSurface,
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  SkRect GetPlatformViewRect(int view_id) override;
-
-  // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context, SkCanvas* background_canvas) override;
 
  private:
