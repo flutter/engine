@@ -18,18 +18,19 @@ static constexpr char kOnCancelMethod[] = "cancel";
 
 namespace flutter {
 
-// A named channel for communicating with the Flutter application using asynchronous event streams.
-// Incoming requests for event stream setup are decoded from binary on receipt, and C++
-// responses and events are encoded into binary before being transmitted back to Flutter. The 
-// MethodCodec used must be compatible with the one used by the Flutter application. This can be
-// achieved by creating an 
-// <a href="https://docs.flutter.io/flutter/services/EventChannel-class.html">EventChannel</a>
-// counterpart of this channel on the Dart side. The C++ type of stream configuration arguments,
-// events, and error details is Object, but only values supported by the specified 
-// MethodCodec can be used.
+// A named channel for communicating with the Flutter application using 
+// asynchronous event streams. Incoming requests for event stream setup are
+// decoded from binary on receipt, and C++ responses and events are encoded into
+// binary before being transmitted back to Flutter. The MethodCodec used must be
+// compatible with the one used by the Flutter application. This can be achieved
+// by creating an EventChannel
+// ("https://docs.flutter.io/flutter/services/EventChannel-class.html")
+// counterpart of this channel on the Dart side. The C++ type of stream
+// configuration arguments, events, and error details is Object, but only values
+// supported by the specified MethodCodec can be used.
 //
-// The logical identity of the channel is given by its name. Identically named channels will
-// interfere with each other's communication.
+// The logical identity of the channel is given by its name. Identically named
+// channels will interfere with each other's communication.
 template <typename T>
 class EventChannel {
  public:
@@ -49,7 +50,8 @@ class EventChannel {
   // If no handler has been registered, any incoming stream setup requests will be handled
   // silently by providing an empty stream.
   void SetStreamHandler(const StreamHandler<T>& handler) const {
-  //void SetStreamHandler(std::optional<StreamHandler<T>> const& handler) const {
+    // TODO: The following is required when nullptr
+    // can be passed as an argument.
     //if (!handler) { /* <= available for more than C++17 */
     //  messenger_->SetMessageHandler(name_, nullptr);
     //  return;
@@ -75,8 +77,8 @@ class EventChannel {
       const std::string& method = method_call->method_name();
       if (method.compare(kOnListenMethod) == 0) {
         if (current_sink) {
-          std::cerr << "Failed to cancel existing stream: "
-                    << channel_name << std::endl;
+          std::cerr << "Failed to cancel existing stream: " << channel_name
+                    << std::endl;
           handler.onCancel(method_call->arguments());
           delete current_sink;
           current_sink = nullptr;
@@ -84,8 +86,8 @@ class EventChannel {
 
         current_sink =
             new EventSinkImplementation(messenger, channel_name, codec);
-        handler.onListen(method_call->arguments(), 
-                          static_cast<EventSink<T>*>(current_sink));
+        handler.onListen(method_call->arguments(),
+                         static_cast<EventSink<T>*>(current_sink));
 
         {
           auto result = codec->EncodeSuccessEnvelope();
