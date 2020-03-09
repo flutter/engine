@@ -142,6 +142,9 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectZero
                                                            viewIdentifier:viewId
                                                                 arguments:params];
+  // Set a unique view identifier, so the platform view can be identified in unit tests.
+  [embedded_view view].accessibilityIdentifier =
+      [NSString stringWithFormat:@"platform_view[%ld]", viewId];
   views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
 
   FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
@@ -473,6 +476,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
       bbh->searchRects(platform_view_rect, &intersection_rects);
 
       size_t allocation_size = intersection_rects.size();
+      int64_t overlay_count = platform_view_layers[current_platform_view_id].size();
       if (allocation_size > kMaxLayerAllocations) {
         // If the max number of allocations per platform view is exceeded,
         // then join all the rects into a single one.
@@ -488,7 +492,13 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
         // on the overlay layer.
         background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
 
-        auto layer = GetLayer(gr_context, gl_context, picture, joined_rect);
+        auto layer = GetLayer(gr_context,                //
+                              gl_context,                //
+                              picture,                   //
+                              joined_rect,               //
+                              current_platform_view_id,  //
+                              overlay_count              //
+        );
         did_submit &= layer->did_submit_last_frame;
         platform_view_layers[current_platform_view_id].push_back(layer);
       } else if (allocation_size > 0) {
@@ -502,9 +512,16 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
           // on the overlay layer.
           background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
 
-          auto layer = GetLayer(gr_context, gl_context, picture, joined_rect);
+          auto layer = GetLayer(gr_context,                //
+                                gl_context,                //
+                                picture,                   //
+                                joined_rect,               //
+                                current_platform_view_id,  //
+                                overlay_count              //
+          );
           did_submit &= layer->did_submit_last_frame;
           platform_view_layers[current_platform_view_id].push_back(layer);
+          overlay_count++;
         }
       }
     }
@@ -548,7 +565,9 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
     GrContext* gr_context,
     std::shared_ptr<IOSGLContext> gl_context,
     sk_sp<SkPicture> picture,
-    SkRect rect) {
+    SkRect rect,
+    int64_t view_id,
+    int64_t overlay_id) {
   std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, gl_context);
   CGFloat screenScale = [UIScreen mainScreen].scale;
   // Set the size of the overlay UIView.
@@ -557,6 +576,9 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
                                                rect.width() / screenScale,  //
                                                rect.height() / screenScale  //
   );
+  // Set a unique view identifier, so the overlay can be identified in unit tests.
+  layer->overlay_view.get().accessibilityIdentifier =
+      [NSString stringWithFormat:@"platform_view[%lld].overlay[%lld]", view_id, overlay_id];
 
   SkISize rect_size = SkISize::Make(rect.width(), rect.height());
   std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(rect_size);
