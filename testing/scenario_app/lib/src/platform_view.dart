@@ -647,9 +647,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     int viewId, {
     Offset overlayOffset,
   }) {
-    if (overlayOffset == null) {
-      overlayOffset = const Offset(50, 50);
-    }
+    overlayOffset ??= const Offset(50, 50);
     _addPlatformViewtoScene(sceneBuilder, viewId, 500, 500);
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
