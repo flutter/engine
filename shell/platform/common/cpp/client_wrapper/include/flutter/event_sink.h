@@ -25,9 +25,7 @@ class EventSink {
   void EndOfStream() { EndOfStreamInternal(); }
 
   // Consumes a successful event.
-  void Success(T* event = nullptr) {
-    SuccessInternal(event);
-  }
+  void Success(T* event = nullptr) { SuccessInternal(event); }
 
   // Consumes an error event.
   void Error(const std::string& error_code,
