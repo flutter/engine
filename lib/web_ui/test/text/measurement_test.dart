@@ -160,7 +160,7 @@ void main() async {
         result = instance.measure(text, infiniteConstraints);
         expect(result.maxIntrinsicWidth, 60);
         expect(result.minIntrinsicWidth, 30);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         expect(result.lines, <EngineLineMetrics>[
           line('   abc', 0, 6, hardBreak: true, width: 60.0, lineNumber: 0, left: 0.0),
         ]);
@@ -170,7 +170,7 @@ void main() async {
         result = instance.measure(text, infiniteConstraints);
         expect(result.maxIntrinsicWidth, 60);
         expect(result.minIntrinsicWidth, 30);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('abc   ', 0, 6, hardBreak: true, width: 30.0, lineNumber: 0, left: 0.0),
@@ -188,7 +188,7 @@ void main() async {
         result = instance.measure(text, infiniteConstraints);
         expect(result.maxIntrinsicWidth, 100);
         expect(result.minIntrinsicWidth, 20);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('  ab   c  ', 0, 10, hardBreak: true, width: 80.0, lineNumber: 0, left: 0.0),
@@ -206,7 +206,7 @@ void main() async {
         result = instance.measure(text, infiniteConstraints);
         expect(result.maxIntrinsicWidth, 10);
         expect(result.minIntrinsicWidth, 0);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line(' ', 0, 1, hardBreak: true, width: 0.0, lineNumber: 0, left: 0.0),
@@ -224,7 +224,7 @@ void main() async {
         result = instance.measure(text, infiniteConstraints);
         expect(result.maxIntrinsicWidth, 50);
         expect(result.minIntrinsicWidth, 0);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('     ', 0, 5, hardBreak: true, width: 0.0, lineNumber: 0, left: 0.0),
@@ -250,7 +250,7 @@ void main() async {
         expect(result.maxIntrinsicWidth, 50);
         expect(result.minIntrinsicWidth, 50);
         expect(result.width, 50);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         expect(result.lines, <EngineLineMetrics>[
           line('12345', 0, 5, hardBreak: true, width: 50.0, lineNumber: 0, left: 0.0),
         ]);
@@ -270,7 +270,7 @@ void main() async {
         expect(result.maxIntrinsicWidth, 110);
         expect(result.minIntrinsicWidth, 30);
         expect(result.width, 70);
-        expect(result.height, 20);
+        expect(result.height, normalizedHeight(20, instance.isCanvas ? 2 : 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('foo bar ', 0, 8, hardBreak: false, width: 70.0, lineNumber: 0, left: 0.0),
@@ -295,7 +295,7 @@ void main() async {
         expect(result.maxIntrinsicWidth, 100);
         expect(result.minIntrinsicWidth, 100);
         expect(result.width, 50);
-        expect(result.height, 20);
+        expect(result.height, normalizedHeight(20, instance.isCanvas ? 2 : 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('12345', 0, 5, hardBreak: false, width: 50.0, lineNumber: 0, left: 0.0),
@@ -314,7 +314,7 @@ void main() async {
         expect(result.maxIntrinsicWidth, 140);
         expect(result.minIntrinsicWidth, 110);
         expect(result.width, 50);
-        expect(result.height, 30);
+        expect(result.height, normalizedHeight(30, instance.isCanvas ? 3 : 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('abcde', 0, 5, hardBreak: false, width: 50.0, lineNumber: 0, left: 0.0),
@@ -336,7 +336,7 @@ void main() async {
         expect(result.maxIntrinsicWidth, 20);
         expect(result.minIntrinsicWidth, 20);
         expect(result.width, 8);
-        expect(result.height, 20);
+        expect(result.height, normalizedHeight(20, instance.isCanvas ? 2 : 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('A', 0, 1, hardBreak: false, width: 10.0, lineNumber: 0, left: 0.0),
@@ -354,7 +354,7 @@ void main() async {
         expect(result.maxIntrinsicWidth, 20);
         expect(result.minIntrinsicWidth, 20);
         expect(result.width, 8);
-        expect(result.height, 30);
+        expect(result.height, normalizedHeight(30, instance.isCanvas ? 3 : 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('A', 0, 1, hardBreak: false, width: 10.0, lineNumber: 0, left: 0.0),
@@ -373,7 +373,7 @@ void main() async {
         expect(result.maxIntrinsicWidth, 30);
         expect(result.minIntrinsicWidth, 30);
         expect(result.width, 8);
-        expect(result.height, 40);
+        expect(result.height, normalizedHeight(40, instance.isCanvas ? 4 : 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('A', 0, 1, hardBreak: false, width: 10.0, lineNumber: 0, left: 0.0),
@@ -401,7 +401,7 @@ void main() async {
         expect(result.maxIntrinsicWidth, 20);
         expect(result.minIntrinsicWidth, 20);
         expect(result.width, 50);
-        expect(result.height, 20);
+        expect(result.height, normalizedHeight(20, instance.isCanvas ? 2 : 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('12', 0, 3, hardBreak: true, width: 20.0, lineNumber: 0, left: 0.0),
@@ -422,7 +422,7 @@ void main() async {
       result = instance.measure(build(ahemStyle, '\n\n1234'), constraints);
       expect(result.maxIntrinsicWidth, 40);
       expect(result.minIntrinsicWidth, 40);
-      expect(result.height, 30);
+      expect(result.height, normalizedHeight(30, instance.isCanvas ? 3 : 1));
       if (instance.isCanvas) {
         expect(result.lines, <EngineLineMetrics>[
           line('', 0, 1, hardBreak: true, width: 0.0, lineNumber: 0, left: 0.0),
@@ -439,7 +439,7 @@ void main() async {
       result = instance.measure(build(ahemStyle, '12\n\n345'), constraints);
       expect(result.maxIntrinsicWidth, 30);
       expect(result.minIntrinsicWidth, 30);
-      expect(result.height, 30);
+      expect(result.height, normalizedHeight(30, instance.isCanvas ? 3 : 1));
       if (instance.isCanvas) {
         expect(result.lines, <EngineLineMetrics>[
           line('12', 0, 3, hardBreak: true, width: 20.0, lineNumber: 0, left: 0.0),
@@ -458,7 +458,7 @@ void main() async {
       expect(result.minIntrinsicWidth, 40);
       if (instance.isCanvas) {
         // This can only be done correctly in the canvas-based implementation.
-        expect(result.height, 30);
+        expect(result.height, normalizedHeight(30, 3));
         expect(result.lines, <EngineLineMetrics>[
           line('1234', 0, 5, hardBreak: true, width: 40.0, lineNumber: 0, left: 0.0),
           line('', 5, 6, hardBreak: true, width: 0.0, lineNumber: 1, left: 0.0),
@@ -482,7 +482,7 @@ void main() async {
         expect(result.maxIntrinsicWidth, 70);
         expect(result.minIntrinsicWidth, 30);
         expect(result.width, double.infinity);
-        expect(result.height, 20);
+        expect(result.height, normalizedHeight(20, instance.isCanvas ? 2 : 1));
 
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
@@ -731,7 +731,7 @@ void main() async {
         result = instance.measure(longText, constraints);
         expect(result.minIntrinsicWidth, 480);
         expect(result.maxIntrinsicWidth, 480);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('AA...', 0, 48, hardBreak: false, width: 50.0, lineNumber: 0, left: 0.0),
@@ -751,7 +751,7 @@ void main() async {
         result = instance.measure(longTextShortPrefix, constraints);
         expect(result.minIntrinsicWidth, 450);
         expect(result.maxIntrinsicWidth, 450);
-        expect(result.height, 20);
+        expect(result.height, normalizedHeight(20, instance.isCanvas ? 2 : 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('AAA', 0, 4, hardBreak: true, width: 30.0, lineNumber: 0, left: 0.0),
@@ -770,7 +770,7 @@ void main() async {
         result = instance.measure(text, tinyConstraints);
         expect(result.minIntrinsicWidth, 40);
         expect(result.maxIntrinsicWidth, 40);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('...', 0, 4, hardBreak: false, width: 30.0, lineNumber: 0, left: 0.0),
@@ -787,7 +787,7 @@ void main() async {
         result = instance.measure(text, tinierConstraints);
         expect(result.minIntrinsicWidth, 40);
         expect(result.maxIntrinsicWidth, 40);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         if (instance.isCanvas) {
           // TODO(flutter_web): https://github.com/flutter/flutter/issues/34346
           // expect(result.lines, <EngineLineMetrics>[
@@ -817,7 +817,7 @@ void main() async {
       // The height should be that of a single line.
       final ui.Paragraph oneline = build(maxlinesStyle, 'One line');
       result = instance.measure(oneline, infiniteConstraints);
-      expect(result.height, 10);
+      expect(result.height, normalizedHeight(10, 1));
       expect(result.lines, <EngineLineMetrics>[
         line('One line', 0, 8, hardBreak: true, width: 80.0, lineNumber: 0, left: 0.0),
       ]);
@@ -826,7 +826,7 @@ void main() async {
       final ui.Paragraph threelines =
           build(maxlinesStyle, 'First\nSecond\nThird');
       result = instance.measure(threelines, infiniteConstraints);
-      expect(result.height, 20);
+      expect(result.height, normalizedHeight(20, 2));
       if (instance.isCanvas) {
         expect(result.lines, <EngineLineMetrics>[
           line('First', 0, 6, hardBreak: true, width: 50.0, lineNumber: 0, left: 0.0),
@@ -844,7 +844,7 @@ void main() async {
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
       );
       result = instance.measure(veryLong, constraints);
-      expect(result.height, 20);
+      expect(result.height, normalizedHeight(20, 2));
       if (instance.isCanvas) {
         expect(result.lines, <EngineLineMetrics>[
           line('Lorem ', 0, 6, hardBreak: false, width: 50.0, lineNumber: 0, left: 0.0),
@@ -862,7 +862,7 @@ void main() async {
         'AAA AAAAAAAAAAAAAAAAAAA',
       );
       result = instance.measure(veryLongLastLine, constraints);
-      expect(result.height, 20);
+      expect(result.height, normalizedHeight(20, 2));
       if (instance.isCanvas) {
         expect(result.lines, <EngineLineMetrics>[
           line('AAA ', 0, 4, hardBreak: false, width: 30.0, lineNumber: 0, left: 0.0),
@@ -899,7 +899,7 @@ void main() async {
         // Simple no overflow case.
         p = build(onelineStyle, 'abcdef');
         result = instance.measure(p, constraints);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         expect(result.lines, <EngineLineMetrics>[
           line('abcdef', 0, 6, hardBreak: true, width: 60.0, lineNumber: 0, left: 0.0),
         ]);
@@ -907,7 +907,7 @@ void main() async {
         // Simple overflow case.
         p = build(onelineStyle, 'abcd efg');
         result = instance.measure(p, constraints);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('abc...', 0, 8, hardBreak: false, width: 60.0, lineNumber: 0, left: 0.0),
@@ -921,7 +921,7 @@ void main() async {
         // Another simple overflow case.
         p = build(onelineStyle, 'a bcde fgh');
         result = instance.measure(p, constraints);
-        expect(result.height, 10);
+        expect(result.height, normalizedHeight(10, 1));
         if (instance.isCanvas) {
           expect(result.lines, <EngineLineMetrics>[
             line('a b...', 0, 10, hardBreak: false, width: 60.0, lineNumber: 0, left: 0.0),
@@ -938,7 +938,7 @@ void main() async {
         result = instance.measure(p, constraints);
         // This can only be done correctly in the canvas-based implementation.
         if (instance.isCanvas) {
-          expect(result.height, 20);
+          expect(result.height, normalizedHeight(20, 2));
 
           expect(result.lines, <EngineLineMetrics>[
             line('abcdef ', 0, 7, hardBreak: false, width: 60.0, lineNumber: 0, left: 0.0),
@@ -955,7 +955,7 @@ void main() async {
         result = instance.measure(p, constraints);
         // This can only be done correctly in the canvas-based implementation.
         if (instance.isCanvas) {
-          expect(result.height, 20);
+          expect(result.height, normalizedHeight(20, 2));
 
           expect(result.lines, <EngineLineMetrics>[
             line('abcd ', 0, 5, hardBreak: false, width: 40.0, lineNumber: 0, left: 0.0),
@@ -973,7 +973,7 @@ void main() async {
         result = instance.measure(p, constraints);
         // This can only be done correctly in the canvas-based implementation.
         if (instance.isCanvas) {
-          expect(result.height, 20);
+          expect(result.height, normalizedHeight(20, 2));
 
           expect(result.lines, <EngineLineMetrics>[
             line('abcde ', 0, 6, hardBreak: false, width: 50.0, lineNumber: 0, left: 0.0),
@@ -990,7 +990,7 @@ void main() async {
         result = instance.measure(p, constraints);
         // This can only be done correctly in the canvas-based implementation.
         if (instance.isCanvas) {
-          expect(result.height, 20);
+          expect(result.height, normalizedHeight(20, 2));
 
           expect(result.lines, <EngineLineMetrics>[
             line('abcdef', 0, 6, hardBreak: false, width: 60.0, lineNumber: 0, left: 0.0),
@@ -1007,7 +1007,7 @@ void main() async {
         result = instance.measure(p, constraints);
         // This can only be done correctly in the canvas-based implementation.
         if (instance.isCanvas) {
-          expect(result.height, 20);
+          expect(result.height, normalizedHeight(20, 2));
 
           expect(result.lines, <EngineLineMetrics>[
             line('abcdef', 0, 6, hardBreak: false, width: 60.0, lineNumber: 0, left: 0.0),
@@ -1156,3 +1156,11 @@ EngineLineMetrics line(
     left: left,
   );
 }
+
+// Normalizes height across firefox and other browsers.
+//
+// Firefox reports incorrect height by rounding down bounds, therefore
+// the ruler adds 1px by default to line heights to prevent
+// underline/double underline, descender clipping.
+double normalizedHeight(double value, int firefoxDelta) =>
+  browserEngine == BrowserEngine.firefox ? value + firefoxDelta : value;
