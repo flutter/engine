@@ -94,8 +94,7 @@ class EventChannel {
           reply(buffer, result->size());
           delete[] buffer;
         }
-      }
-      else if (method.compare(kOnCancelMethod) == 0) {
+      } else if (method.compare(kOnCancelMethod) == 0) {
         if (current_sink) {
           handler.onCancel(method_call->arguments());
 
@@ -105,20 +104,18 @@ class EventChannel {
           reply(buffer, result->size());
           delete current_sink;
           current_sink = nullptr;
-        }
-        else {
-          auto result =
-              codec->EncodeErrorEnvelope("error",
-                                       "No active stream to cancel", nullptr);
+        } else {
+          auto result = codec->EncodeErrorEnvelope(
+              "error", "No active stream to cancel", nullptr);
           uint8_t* buffer = new uint8_t[result->size()];
           std::copy(result->begin(), result->end(), buffer);
           reply(buffer, result->size());
           delete[] buffer;
         }
-      }
-      else {
-        std::cerr << "Unknown event channel method call from message on channel: "
-                  << channel_name << std::endl;
+      } else {
+        std::cerr
+            << "Unknown event channel method call from message on channel: "
+            << channel_name << std::endl;
         reply(nullptr, 0);
         if (current_sink) {
           delete current_sink;
@@ -131,12 +128,12 @@ class EventChannel {
 
  private:
   class EventSinkImplementation : public EventSink<T> {
-  public:
+   public:
     // Creates an instance that EventSink send event on the channel
     // named |name|, encoded with |codec| and dispatched via |messenger|.
     EventSinkImplementation(const BinaryMessenger* messenger,
-                const std::string& name,
-                const MethodCodec<T>* codec)
+                            const std::string& name,
+                            const MethodCodec<T>* codec)
         : messenger_(messenger), name_(name), codec_(codec) {}
     ~EventSinkImplementation() = default;
 
@@ -144,12 +141,12 @@ class EventChannel {
     EventSinkImplementation(EventSinkImplementation const&) = delete;
     EventSinkImplementation& operator=(EventSinkImplementation const&) = delete;
 
-  private:
+   private:
     const BinaryMessenger* messenger_;
     const std::string name_;
     const MethodCodec<T>* codec_;
 
-  protected:
+   protected:
     void SuccessInternal(T* event = nullptr) override {
       auto result = codec_->EncodeSuccessEnvelope(event);
       uint8_t* buffer = new uint8_t[result->size()];
