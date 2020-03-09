@@ -10,10 +10,14 @@ final bool _supportsDecode = js_util.getProperty(
         'decode') !=
     null;
 
+typedef WebOnlyImageCodecChunkCallback =
+    void Function(int cumulativeBytesLoaded, int expectedTotalBytes);
+
 class HtmlCodec implements ui.Codec {
   final String src;
+  final WebOnlyImageCodecChunkCallback chunkCallback;
 
-  HtmlCodec(this.src);
+  HtmlCodec(this.src, {this.chunkCallback});
 
   @override
   int get frameCount => 1;
@@ -24,6 +28,12 @@ class HtmlCodec implements ui.Codec {
   @override
   Future<ui.FrameInfo> getNextFrame() async {
     final Completer<ui.FrameInfo> completer = Completer<ui.FrameInfo>();
+    // Currently there is no way to watch decode progress, so
+    // we add 0/100 , 100/100 progress callbacks to enable loading progress
+    // builders to create UI.
+    if (chunkCallback != null) {
+      chunkCallback(0, 100);
+    }
     if (_supportsDecode) {
       final html.ImageElement imgElement = html.ImageElement();
       imgElement.src = src;
@@ -34,6 +44,9 @@ class HtmlCodec implements ui.Codec {
           imgElement.naturalWidth,
           imgElement.naturalHeight,
         );
+        if (chunkCallback != null) {
+          chunkCallback(100, 100);
+        }
         completer.complete(SingleFrameInfo(image));
       }).catchError((e) {
         // This code path is hit on Chrome 80.0.3987.16 when too many
@@ -68,6 +81,9 @@ class HtmlCodec implements ui.Codec {
         imgElement.naturalWidth,
         imgElement.naturalHeight,
       );
+      if (chunkCallback != null) {
+        chunkCallback(100, 100);
+      }
       completer.complete(SingleFrameInfo(image));
     });
     imgElement.src = src;
