@@ -87,8 +87,14 @@ TEST(EventChannelTest, Registration) {
   messenger.last_message_handler()(
       message->data(), message->size(),
       [](const uint8_t* reply, const size_t reply_size) {});
-
   EXPECT_EQ(on_listen_called, true);
+
+  // Send a test message to trigger the handler test assertions.
+  MethodCall<EncodableValue> call("cancel", nullptr);
+  auto message = codec.EncodeMethodCall(call);
+  messenger.last_message_handler()(
+      message->data(), message->size(),
+      [](const uint8_t* reply, const size_t reply_size) {});
   EXPECT_EQ(on_cancel_called, true);
 }
 
