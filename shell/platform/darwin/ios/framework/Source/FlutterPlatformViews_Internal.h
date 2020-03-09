@@ -250,7 +250,9 @@ class FlutterPlatformViewsController {
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrContext* gr_context,
                                                      std::shared_ptr<IOSContext> ios_context,
                                                      sk_sp<SkPicture> picture,
-                                                     SkRect rect);
+                                                     SkRect rect,
+                                                     int64_t view_id,
+                                                     int64_t overlay_id);
   // Removes overlay views and platform views that aren't needed in the current frame.
   void RemoveUnusedLayers();
   // Appends the overlay views and platform view and sets their z index based on the composition
