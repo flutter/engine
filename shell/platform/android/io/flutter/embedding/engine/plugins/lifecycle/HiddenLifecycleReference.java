@@ -5,8 +5,8 @@
 package io.flutter.embedding.engine.plugins.lifecycle;
 
 import android.arch.lifecycle.Lifecycle;
-import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
 
 /**
  * An {@code Object} that can be used to obtain a {@link Lifecycle} reference.
