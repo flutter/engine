@@ -286,7 +286,10 @@ class TextDimensions {
   /// The height of the paragraph being measured.
   double get height {
     double cachedHeight = _readAndCacheMetrics().height;
-    if (browserEngine == BrowserEngine.firefox) {
+    if (browserEngine == BrowserEngine.firefox &&
+      // In the flutter tester environment, we use a predictable-size for font
+      // measurement tests.
+      !ui.debugEmulateFlutterTesterEnvironment) {
       // See subpixel rounding bug :
       // https://bugzilla.mozilla.org/show_bug.cgi?id=442139
       // This causes bottom of letters such as 'y' to be cutoff and
