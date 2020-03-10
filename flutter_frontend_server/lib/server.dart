@@ -184,7 +184,7 @@ Future<int> starter(
 }
 
 class _ToStringVisitor extends RecursiveVisitor<void> {
-  _ToStringVisitor(this.packageUris);
+  _ToStringVisitor(this.packageUris) : assert(packageUris != null);
 
   final Set<String> packageUris;
 
@@ -211,7 +211,7 @@ class _ToStringVisitor extends RecursiveVisitor<void> {
 }
 
 class _ToStringTransformer extends frontend.ProgramTransformer {
-  _ToStringTransformer(this.child, this.packageUris);
+  _ToStringTransformer(this.child, this.packageUris) : assert(packageUris != null);
 
   final frontend.ProgramTransformer child;
   final Set<String> packageUris;
