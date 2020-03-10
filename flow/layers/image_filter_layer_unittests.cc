@@ -126,6 +126,22 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
   EXPECT_EQ(layer->paint_bounds(), filter_bounds);
   EXPECT_TRUE(layer->needs_painting());
   EXPECT_EQ(mock_layer->parent_matrix(), initial_transform);
+
+  SkPaint filter_paint;
+  filter_paint.setImageFilter(layer_filter);
+  layer->Paint(paint_context());
+  EXPECT_EQ(mock_canvas().draw_calls(),
+            std::vector({
+                MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
+                MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkMatrix()}},
+                MockCanvas::DrawCall{
+                    1, MockCanvas::SaveLayerData{child_bounds, filter_paint,
+                                                 nullptr, 2}},
+                MockCanvas::DrawCall{
+                    2, MockCanvas::DrawPathData{child_path, child_paint}},
+                MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
+                MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
+            }));
 }
 
 TEST_F(ImageFilterLayerTest, MultipleChildren) {
