@@ -208,7 +208,7 @@ class FirefoxInstaller {
   /// use a zip archive.
   /// See [version].
   Future<void> _uncompress(io.File downloadedFile) async {
-    io.ProcessResult unzipResult = await io.Process.run('tar', <String>[
+    final io.ProcessResult unzipResult = await io.Process.run('tar', <String>[
       '-x',
       '-f',
       downloadedFile.path,
