@@ -216,9 +216,20 @@ Win32Window::MessageHandler(HWND hwnd,
       case WM_SYSKEYDOWN:
       case WM_KEYUP:
       case WM_SYSKEYUP:
-        // unsigned int scancode = ( lparam >> 16 ) & 0xff;
-        unsigned char scancode = ((unsigned char*)&lparam)[2];
+        unsigned int scancode = ( lparam >> 16 ) & 0xff;
+        std::cerr << "Scan code param \n";
+        std::cerr << scancode << std::endl;
         unsigned int virtualKey = MapVirtualKey(scancode, MAPVK_VSC_TO_VK);
+        if (virtualKey == VK_SHIFT) {
+          if (GetKeyState(VK_LSHIFT) < 0) {
+            virtualKey = VK_LSHIFT;
+          } else if (GetKeyState(VK_RSHIFT) < 0) {
+                        virtualKey = VK_RSHIFT;
+          }
+        }
+        std::cerr << "virtualKey\n";
+        std::cerr << virtualKey << std::endl;
+
         const int key = virtualKey;
         const int action = message == WM_KEYDOWN ? WM_KEYDOWN : WM_KEYUP;
         window->OnKey(key, scancode, action, 0);
