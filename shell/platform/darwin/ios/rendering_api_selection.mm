@@ -33,6 +33,7 @@ bool ShouldUseMetalRenderer() {
 
   // This is just a version we picked that is easy to support and has all necessary Metal features.
   bool ios_version_supports_metal = false;
+  // TODO(52356): Update this to be the version selected for release.
   if (@available(iOS 11.0, *)) {
     ios_version_supports_metal = true;
   }
