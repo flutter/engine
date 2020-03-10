@@ -12,13 +12,13 @@
 #include "flutter/shell/platform/darwin/ios/ios_render_target_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
-@class CALayer;
+@class CAEAGLLayer;
 
 namespace flutter {
 
 class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
  public:
-  IOSSurfaceGL(fml::scoped_nsobject<CALayer> layer,
+  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
                std::shared_ptr<IOSContext> context,
                FlutterPlatformViewsController* platform_views_controller = nullptr);
 

@@ -9,20 +9,14 @@
 
 namespace flutter {
 
-static fml::scoped_nsobject<CAMetalLayer> CastToMetalLayer(fml::scoped_nsobject<CALayer> layer) {
-  FML_DCHECK([layer isKindOfClass:[CAMetalLayer class]]);
-  return fml::scoped_nsobject<CAMetalLayer>{reinterpret_cast<CAMetalLayer*>([layer.get() retain])};
-}
-
 static IOSContextMetal* CastToMetalContext(const std::shared_ptr<IOSContext>& context) {
   return reinterpret_cast<IOSContextMetal*>(context.get());
 }
 
-IOSSurfaceMetal::IOSSurfaceMetal(fml::scoped_nsobject<CALayer> layer,
+IOSSurfaceMetal::IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
                                  std::shared_ptr<IOSContext> context,
                                  FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(std::move(context), platform_views_controller),
-      layer_(CastToMetalLayer(std::move(layer))) {
+    : IOSSurface(std::move(context), platform_views_controller), layer_(std::move(layer)) {
   if (!layer_) {
     return;
   }

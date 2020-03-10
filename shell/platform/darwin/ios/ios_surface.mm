@@ -30,19 +30,30 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(
   FML_DCHECK(context);
 
   if ([layer.get() isKindOfClass:[CAEAGLLayer class]]) {
-    return std::make_unique<IOSSurfaceGL>(std::move(layer), std::move(context),
-                                          platform_views_controller);
+    return std::make_unique<IOSSurfaceGL>(
+        fml::scoped_nsobject<CAEAGLLayer>(
+            reinterpret_cast<CAEAGLLayer*>([layer.get() retain])),  // EAGL layer
+        std::move(context),                                         // context
+        platform_views_controller                                   // platform views controller
+    );
   }
 
 #if FLUTTER_SHELL_ENABLE_METAL
   if ([layer.get() isKindOfClass:[CAMetalLayer class]]) {
-    return std::make_unique<IOSSurfaceMetal>(std::move(layer), std::move(context),
-                                             platform_views_controller);
+    return std::make_unique<IOSSurfaceMetal>(
+        fml::scoped_nsobject<CAMetalLayer>(
+            reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
+        std::move(context),                                          // context
+        platform_views_controller                                    // platform views controller
+    );
   }
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
-  return std::make_unique<IOSSurfaceSoftware>(std::move(layer), std::move(context),
-                                              platform_views_controller);
+  return std::make_unique<IOSSurfaceSoftware>(
+      std::move(layer),          // layer
+      std::move(context),        // context
+      platform_views_controller  // platform views controller
+  );
 }
 
 IOSSurface::IOSSurface(std::shared_ptr<IOSContext> ios_context,

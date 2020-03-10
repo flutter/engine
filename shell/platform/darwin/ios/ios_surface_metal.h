@@ -9,14 +9,13 @@
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
-@class CALayer;
 @class CAMetalLayer;
 
 namespace flutter {
 
 class IOSSurfaceMetal final : public IOSSurface, public GPUSurfaceDelegate {
  public:
-  IOSSurfaceMetal(fml::scoped_nsobject<CALayer> layer,
+  IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
                   std::shared_ptr<IOSContext> context,
                   FlutterPlatformViewsController* platform_views_controller);
 

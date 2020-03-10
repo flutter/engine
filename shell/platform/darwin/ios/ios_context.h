@@ -115,7 +115,7 @@ class IOSContext {
   /// @brief      Clears the context binding of the current thread if one is
   ///             present. Does noting otherwise.
   ///
-  /// @return     Clears the current context binding.
+  /// @return     `true` is the current context bound to the thread is cleared.
   ///
   virtual bool ClearCurrent() = 0;
 
