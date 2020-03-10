@@ -99,8 +99,8 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
                 MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
                 MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkMatrix()}},
                 MockCanvas::DrawCall{
-                    1, MockCanvas::SaveLayerData{child_rounded_bounds,
-                                                 filter_paint, nullptr, 2}},
+                    1, MockCanvas::SaveLayerData{child_bounds, filter_paint,
+                                                 nullptr, 2}},
                 MockCanvas::DrawCall{
                     2, MockCanvas::DrawPathData{child_path, child_paint}},
                 MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
@@ -166,8 +166,8 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
                 {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
                  MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkMatrix()}},
                  MockCanvas::DrawCall{
-                     1, MockCanvas::SaveLayerData{children_rounded_bounds,
-                                                  filter_paint, nullptr, 2}},
+                     1, MockCanvas::SaveLayerData{children_bounds, filter_paint,
+                                                  nullptr, 2}},
                  MockCanvas::DrawCall{
                      2, MockCanvas::DrawPathData{child_path1, child_paint1}},
                  MockCanvas::DrawCall{
@@ -197,7 +197,7 @@ TEST_F(ImageFilterLayerTest, Nested) {
   layer1->Add(layer2);
 
   SkRect children_bounds = child_path1.getBounds();
-  children_bounds.join(child_path2.getBounds());
+  children_bounds.join(SkRect::Make(child_path2.getBounds().roundOut()));
   const SkRect children_rounded_bounds =
       SkRect::Make(children_bounds.roundOut());
   const SkRect mock_layer2_rounded_bounds =
@@ -224,14 +224,14 @@ TEST_F(ImageFilterLayerTest, Nested) {
                 MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
                 MockCanvas::DrawCall{1, MockCanvas::SetMatrixData{SkMatrix()}},
                 MockCanvas::DrawCall{
-                    1, MockCanvas::SaveLayerData{children_rounded_bounds,
-                                                 filter_paint1, nullptr, 2}},
+                    1, MockCanvas::SaveLayerData{children_bounds, filter_paint1,
+                                                 nullptr, 2}},
                 MockCanvas::DrawCall{
                     2, MockCanvas::DrawPathData{child_path1, child_paint1}},
                 MockCanvas::DrawCall{2, MockCanvas::SaveData{3}},
                 MockCanvas::DrawCall{3, MockCanvas::SetMatrixData{SkMatrix()}},
                 MockCanvas::DrawCall{
-                    3, MockCanvas::SaveLayerData{mock_layer2_rounded_bounds,
+                    3, MockCanvas::SaveLayerData{child_path2.getBounds(),
                                                  filter_paint2, nullptr, 4}},
                 MockCanvas::DrawCall{
                     4, MockCanvas::DrawPathData{child_path2, child_paint2}},
