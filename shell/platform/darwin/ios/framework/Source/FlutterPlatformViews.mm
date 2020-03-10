@@ -462,25 +462,23 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
 
   size_t num_platform_views = composition_order_.size();
   for (size_t i = 0; i < num_platform_views; i++) {
-    int platform_view_id = composition_order_[i];
+    auto platform_view_id = composition_order_[i];
 
     auto bbh = platform_views_bbh_[platform_view_id].get();
     sk_sp<SkPicture> picture =
         platform_views_recorder_[platform_view_id]->finishRecordingAsPicture();
 
+    // Check if the current picture contains overlays that intersect with the
+    // current platform view or any of the previous platform views.
     for (size_t j = i + 1; j > 0; j--) {
-      int current_platform_view_id = composition_order_[j - 1];
-
-      SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
-
-      std::list<SkRect> intersection_rects;
-      bbh->searchNonOverlappingDrawnRects(platform_view_rect, &intersection_rects);
-
-      size_t allocation_size = intersection_rects.size();
-      int64_t overlay_count = platform_view_layers[current_platform_view_id].size();
+      auto current_platform_view_id = composition_order_[j - 1];
+      auto platform_view_rect = GetPlatformViewRect(current_platform_view_id);
+      auto intersection_rects = bbh->searchNonOverlappingDrawnRects(platform_view_rect);
+      auto allocation_size = intersection_rects.size();
+      auto overlay_count = platform_view_layers[current_platform_view_id].size();
+      // If the max number of allocations per platform view is exceeded,
+      // then join all the rects into a single one.
       if (allocation_size > kMaxLayerAllocations) {
-        // If the max number of allocations per platform view is exceeded,
-        // then join all the rects into a single one.
         SkRect joined_rect;
         for (SkRect rect : intersection_rects) {
           joined_rect.join(rect);
@@ -488,11 +486,10 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
         // Get the intersection rect between the current joined rect
         // and the platform view rect.
         joined_rect.intersect(platform_view_rect);
-
         // Clip the background canvas, so it doesn't contain any of the pixels drawn
         // on the overlay layer.
         background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
-
+        // Get a new host layer.
         auto layer = GetLayer(gr_context,                //
                               gl_context,                //
                               picture,                   //
@@ -507,11 +504,10 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
           // Get the intersection rect between the current rect
           // and the platform view rect.
           joined_rect.intersect(platform_view_rect);
-
           // Clip the background canvas, so it doesn't contain any of the pixels drawn
           // on the overlay layer.
           background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
-
+          // Get a new host layer.
           auto layer = GetLayer(gr_context,                //
                                 gl_context,                //
                                 picture,                   //
@@ -527,23 +523,26 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
     }
     background_canvas->drawPicture(picture);
   }
-
+  // If a layer was allocated in the previous frame, but it's not used in the current frame,
+  // then it can be removed from the scene.
   RemoveUnusedLayers();
+  // Organize the layers by their z indexes.
   BringLayersIntoView(platform_view_layers);
-
-  composition_order_.clear();
+  // Mark all layers as available, so they can be used in the next frame.
   layer_pool_->RecycleLayers();
+  // Reset the composition order, so next frame starts empty.
+  composition_order_.clear();
 
   return did_submit;
 }
 
 void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
-  UIView* flutter_view = flutter_view_.get();
-  int zIndex = 0;
+  auto flutter_view = flutter_view_.get();
+  auto zIndex = 0;
   for (size_t i = 0; i < composition_order_.size(); i++) {
-    int platform_view_id = composition_order_[i];
+    auto platform_view_id = composition_order_[i];
     auto layers = layer_map[platform_view_id];
-    UIView* platform_view_root = root_views_[platform_view_id].get();
+    auto platform_view_root = root_views_[platform_view_id].get();
 
     if (platform_view_root.superview != flutter_view) {
       [flutter_view addSubview:platform_view_root];
@@ -568,8 +567,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
     SkRect rect,
     int64_t view_id,
     int64_t overlay_id) {
-  std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, ios_context);
-  CGFloat screenScale = [UIScreen mainScreen].scale;
+  auto layer = layer_pool_->GetLayer(gr_context, ios_context);
+  auto screenScale = [UIScreen mainScreen].scale;
   // Set the size of the overlay UIView.
   layer->overlay_view.get().frame = CGRectMake(rect.x() / screenScale,      //
                                                rect.y() / screenScale,      //
@@ -580,14 +579,13 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   layer->overlay_view.get().accessibilityIdentifier =
       [NSString stringWithFormat:@"platform_view[%lld].overlay[%lld]", view_id, overlay_id];
 
-  SkISize rect_size = SkISize::Make(rect.width(), rect.height());
-  std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(rect_size);
-
+  std::unique_ptr<SurfaceFrame> frame =
+      layer->surface->AcquireFrame(SkISize::Make(rect.width(), rect.height()));
   // If frame is null, AcquireFrame already printed out an error message.
   if (frame == nullptr) {
     return layer;
   }
-  SkCanvas* overlay_canvas = frame->SkiaCanvas();
+  auto overlay_canvas = frame->SkiaCanvas();
   overlay_canvas->clear(SK_ColorTRANSPARENT);
   overlay_canvas->translate(-rect.x(), -rect.y());
   overlay_canvas->drawPicture(picture);
