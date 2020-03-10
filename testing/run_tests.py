@@ -147,8 +147,6 @@ def RunCCTests(build_dir, filter):
   if IsLinux():
     RunEngineExecutable(build_dir, 'txt_unittests', filter, shuffle_flags)
 
-  RunEngineExecutable(build_dir, 'rtree_unittests', filter, shuffle_flags)
-
 
 def RunEngineBenchmarks(build_dir, filter):
   print("Running Engine Benchmarks.")
