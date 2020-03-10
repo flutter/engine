@@ -108,6 +108,13 @@ Future<int> starter(
   frontend.ProgramTransformer transformer,
 }) async {
   ArgResults options;
+  frontend.argParser.addMultiOption(
+    'delete-tostring-package-uri',
+    help: 'Replaces implementations of `toString` with `super.toString()` for '
+          'specified package',
+    valueHelp: 'dart:ui',
+    defaultsTo: const <String>[],
+  );
   try {
     options = frontend.argParser.parse(args);
   } catch (error) {
@@ -115,6 +122,8 @@ Future<int> starter(
     print(frontend.usage);
     return 1;
   }
+
+  final Set<String> deleteToStringPackageUris = (options['delete-tostring-package-uri'] as List<String>).toSet();
 
   if (options['train'] as bool) {
     if (!options.rest.isNotEmpty) {
@@ -138,7 +147,10 @@ Future<int> starter(
           '--gen-bytecode',
           '--bytecode-options=source-positions,local-var-info,debugger-stops,instance-field-initializers,keep-unreachable-code,avoid-closure-call-instructions',
         ]);
-        compiler ??= _FlutterFrontendCompiler(output, transformer: _ToStringTransformer(null));
+        compiler ??= _FlutterFrontendCompiler(
+          output,
+          transformer: _ToStringTransformer(null, deleteToStringPackageUris),
+        );
 
         await compiler.compile(input, options);
         compiler.acceptLastDelta();
@@ -157,7 +169,7 @@ Future<int> starter(
   }
 
   compiler ??= _FlutterFrontendCompiler(output,
-      transformer: _ToStringTransformer(transformer),
+      transformer: _ToStringTransformer(transformer, deleteToStringPackageUris),
       useDebuggerModuleNames: options['debugger-module-names'] as bool,
       unsafePackageSerialization:
           options['unsafe-package-serialization'] as bool);
@@ -172,12 +184,16 @@ Future<int> starter(
 }
 
 class _ToStringVisitor extends RecursiveVisitor<void> {
+  _ToStringVisitor(this.packageUris);
+
+  final Set<String> packageUris;
+
   @override
   void visitProcedure(Procedure node) {
     if (node.name.name == 'toString' && node.enclosingLibrary != null) {
       assert(node.enclosingClass != null);
       final String importUri = node.enclosingLibrary.importUri.toString();
-      if (importUri.startsWith('dart:ui') || importUri.startsWith('package:flutter/')) {
+      if (packageUris.contains(importUri)) {
         node.function.replaceWith(
           FunctionNode(
             ReturnStatement(
@@ -195,14 +211,15 @@ class _ToStringVisitor extends RecursiveVisitor<void> {
 }
 
 class _ToStringTransformer extends frontend.ProgramTransformer {
-  _ToStringTransformer(this.child);
+  _ToStringTransformer(this.child, this.packageUris);
 
   final frontend.ProgramTransformer child;
+  final Set<String> packageUris;
 
   @override
   void transform(Component component) {
     assert(child is! _ToStringTransformer);
-    component.visitChildren(_ToStringVisitor());
+    component.visitChildren(_ToStringVisitor(packageUris));
     child?.transform(component);
   }
 }
