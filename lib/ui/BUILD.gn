@@ -30,8 +30,6 @@ source_set("ui") {
     "painting/color_filter.h",
     "painting/engine_layer.cc",
     "painting/engine_layer.h",
-    "painting/flutter_rtree.cc",
-    "painting/flutter_rtree.h",
     "painting/frame_info.cc",
     "painting/frame_info.h",
     "painting/gradient.cc",
@@ -165,7 +163,6 @@ if (current_toolchain == host_toolchain) {
     testonly = true
 
     sources = [
-      "painting/flutter_rtree_unittests.cc",
       "painting/image_decoder_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]

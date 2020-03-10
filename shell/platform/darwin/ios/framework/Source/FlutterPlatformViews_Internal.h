@@ -6,8 +6,8 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/lib/ui/painting/flutter_rtree.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
@@ -149,7 +149,7 @@ class FlutterPlatformViewsController {
 
   // The pool of reusable view layers.
   std::unique_ptr<FlutterPlatformViewLayerPool> layer_pool_;
-  std::map<int64_t, sk_sp<FlutterRTree>> platform_views_bbh_;
+  std::map<int64_t, sk_sp<RTree>> platform_views_bbh_;
   std::map<int64_t, EmbeddedViewParams> platform_views_params_;
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> platform_views_recorder_;
 
