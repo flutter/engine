@@ -24,10 +24,11 @@ import java.util.Set;
  * FlutterActivity}: {@code // Create the FlutterEngine that will back the Flutter UI. FlutterEngine
  * flutterEngine = new FlutterEngine(context);
  *
- * <p><p>// Create a ShimPluginRegistry and wrap the FlutterEngine with the shim. ShimPluginRegistry
- * shimPluginRegistry = new ShimPluginRegistry(flutterEngine, platformViewsController);
+ * <p><p><p>// Create a ShimPluginRegistry and wrap the FlutterEngine with the shim.
+ * ShimPluginRegistry shimPluginRegistry = new ShimPluginRegistry(flutterEngine,
+ * platformViewsController);
  *
- * <p><p>// Use the GeneratedPluginRegistrant to add every plugin that's in the pubspec.
+ * <p><p><p>// Use the GeneratedPluginRegistrant to add every plugin that's in the pubspec.
  * GeneratedPluginRegistrant.registerWith(shimPluginRegistry); }
  */
 public class ShimPluginRegistry implements PluginRegistry {
