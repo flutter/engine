@@ -8,13 +8,14 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
+#include <list>
 #include <map>
 #include <memory>
 #include <string>
 
 #include "FlutterPlatformViews_Internal.h"
+#include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/lib/ui/painting/flutter_rtree.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
@@ -258,9 +259,9 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   platform_views_recorder_[view_id] = std::make_unique<SkPictureRecorder>();
-  platform_views_bbh_[view_id] = sk_make_sp<FlutterRTree>();
 
-  auto bbh_factory = FlutterRTreeFactory(platform_views_bbh_[view_id]);
+  auto bbh_factory = RTreeFactory();
+  platform_views_bbh_[view_id] = bbh_factory.getInstance();
   platform_views_recorder_[view_id]->beginRecording(SkRect::Make(frame_size_), &bbh_factory);
 
   composition_order_.push_back(view_id);
@@ -463,7 +464,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   for (size_t i = 0; i < num_platform_views; i++) {
     int platform_view_id = composition_order_[i];
 
-    FlutterRTree* bbh = platform_views_bbh_[platform_view_id].get();
+    auto bbh = platform_views_bbh_[platform_view_id].get();
     sk_sp<SkPicture> picture =
         platform_views_recorder_[platform_view_id]->finishRecordingAsPicture();
 
@@ -472,8 +473,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
 
       SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
 
-      std::vector<SkRect*> intersection_rects;
-      bbh->searchRects(platform_view_rect, &intersection_rects);
+      std::list<SkRect> intersection_rects;
+      bbh->searchNonOverlappingDrawnRects(platform_view_rect, &intersection_rects);
 
       size_t allocation_size = intersection_rects.size();
       int64_t overlay_count = platform_view_layers[current_platform_view_id].size();
@@ -481,8 +482,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
         // If the max number of allocations per platform view is exceeded,
         // then join all the rects into a single one.
         SkRect joined_rect;
-        for (SkRect* rect : intersection_rects) {
-          joined_rect.join(*rect);
+        for (SkRect rect : intersection_rects) {
+          joined_rect.join(rect);
         }
         // Get the intersection rect between the current joined rect
         // and the platform view rect.
@@ -502,10 +503,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
         did_submit &= layer->did_submit_last_frame;
         platform_view_layers[current_platform_view_id].push_back(layer);
       } else if (allocation_size > 0) {
-        for (SkRect* rect : intersection_rects) {
+        for (SkRect joined_rect : intersection_rects) {
           // Get the intersection rect between the current rect
           // and the platform view rect.
-          SkRect joined_rect = *rect;
           joined_rect.intersect(platform_view_rect);
 
           // Clip the background canvas, so it doesn't contain any of the pixels drawn
