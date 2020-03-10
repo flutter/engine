@@ -230,7 +230,7 @@ android_java_sources = [
 
 androidx_artifacts = [
   "//third_party/androidx/androidx_annotation.jar",
-  "//third_party/androidx/androidx_core.jar",
+  "//third_party/androidx/androidx_core.aar",
   "//third_party/androidx/androidx_fragment.aar",
   "//third_party/androidx/androidx_lifecycle_common.jar",
   "//third_party/androidx/androidx_lifecycle_common_java8.jar",
@@ -357,10 +357,10 @@ action("android_jar") {
 }
 
 action("pom_libflutter") {
-  script = "//flutter/tools/android_support/generate_pom_file.py"
+  script = "//flutter/tools/androidx/generate_pom_file.py"
 
   inputs = [
-    "//flutter/tools/android_support/files.json",
+    "//flutter/tools/androidx/files.json",
   ]
 
   artifact_id =
@@ -381,10 +381,10 @@ action("pom_libflutter") {
 }
 
 action("pom_embedding") {
-  script = "//flutter/tools/android_support/generate_pom_file.py"
+  script = "//flutter/tools/androidx/generate_pom_file.py"
 
   inputs = [
-    "//flutter/tools/android_support/files.json",
+    "//flutter/tools/androidx/files.json",
   ]
 
   artifact_id = "flutter_embedding_$flutter_runtime_mode"
