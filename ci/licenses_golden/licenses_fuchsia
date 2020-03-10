@@ -1,4 +1,4 @@
-Signature: 39e9691280dd7d69354fa72c708687fd
+Signature: 2028a4b04bc2471461bd711e9e9b83ce
 
 UNUSED LICENSES:
 
@@ -12,12 +12,12 @@ ORIGIN: ../../../fuchsia/sdk/linux/COPYRIGHT.musl
 TYPE: LicenseType.mit
 FILE: ../../../fuchsia/sdk/linux/.versions/core.cipd_version
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_core_validation.so
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_object_lifetimes.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_stateless_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_thread_safety.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_unique_objects.so
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libVkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libasync-default.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libfdio.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libmemfs.so
@@ -220,12 +220,12 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libpthread.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_core_validation.so
+FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_object_lifetimes.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_stateless_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_thread_safety.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_unique_objects.so
-FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libVkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libasync-default.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libfdio.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libmemfs.so
@@ -474,6 +474,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.ethernet/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
@@ -722,12 +723,12 @@ ORIGIN: ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/.versions/core.cipd_version
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_core_validation.so
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_object_lifetimes.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_stateless_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_thread_safety.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_unique_objects.so
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libVkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libasync-default.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libfdio.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libmemfs.so
@@ -978,12 +979,12 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/vdso/vmar.fidl
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/vdso/vmo.fidl
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/vdso/zx.fidl
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_core_validation.so
+FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_object_lifetimes.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_stateless_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_thread_safety.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_unique_objects.so
-FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libVkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libasync-default.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libfdio.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libmemfs.so
@@ -1398,6 +1399,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/goldfish_address
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/goldfish_control.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/goldfish_pipe.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/light.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/admin.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/hwinfo.fidl
@@ -1505,6 +1508,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.brightness/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.gfx/tokens.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/pointer_capture.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/events.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/keyboard.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input2/keys.fidl
@@ -1518,7 +1522,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.lifecycle/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/device_listener.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.scenic/pointer_capture.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.types/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.views/focuser.fidl
@@ -1741,12 +1744,12 @@ ORIGIN: ../../../fuchsia/sdk/linux/LICENSE.vulkan
 TYPE: LicenseType.apache
 FILE: ../../../fuchsia/sdk/linux/.versions/core.cipd_version
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_core_validation.so
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_object_lifetimes.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_stateless_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_thread_safety.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/VkLayer_unique_objects.so
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libVkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libasync-default.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libfdio.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/dist/libmemfs.so
@@ -1949,12 +1952,12 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libpthread.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_core_validation.so
+FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_khronos_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_object_lifetimes.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_stateless_validation.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_thread_safety.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/VkLayer_unique_objects.so
-FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libVkLayer_image_pipe_swapchain.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libasync-default.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libfdio.so
 FILE: ../../../fuchsia/sdk/linux/arch/x64/dist/libmemfs.so
@@ -2203,6 +2206,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.fonts/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.ethernet/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
