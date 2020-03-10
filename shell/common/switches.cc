@@ -361,7 +361,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     // Assume that individual flags are comma separated.
     while (std::getline(stream, flag, ',')) {
       if (!IsWhitelistedDartVMFlag(flag)) {
-        FML_LOG(FATAL) << "Encountered blacklisted Dart VM flag: " << flag;
+        FML_DLOG(FATAL) << "Encountered blacklisted Dart VM flag: " << flag;
       }
       settings.dart_flags.push_back(flag);
     }
