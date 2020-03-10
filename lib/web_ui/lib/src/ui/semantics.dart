@@ -31,6 +31,7 @@ class SemanticsAction {
   static const int _kDismissIndex = 1 << 18;
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
+  static const int _kDefaultActionIndex = 1 << 21;
 
   /// The numerical value for this action.
   ///
@@ -193,6 +194,14 @@ class SemanticsAction {
   static const SemanticsAction moveCursorBackwardByWord =
       SemanticsAction._(_kMoveCursorBackwardByWordIndex);
 
+  /// A request that the node should perform its default action.
+  ///
+  /// Indicates that the app or node should perform a default action.
+  /// The exact action performed by this method depends your app, typically toggling the most important state of the app.
+  /// On iOS (with VoiceOver) users can perform a double two-finger tap to perform the most common action.
+  /// For example, in the Phone app it answers and ends phone calls, in the Music app it plays and pauses playback.
+  static const SemanticsAction defaultAction = SemanticsAction._(_kDefaultActionIndex);
+
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
@@ -219,6 +228,7 @@ class SemanticsAction {
     _kDismissIndex: dismiss,
     _kMoveCursorForwardByWordIndex: moveCursorForwardByWord,
     _kMoveCursorBackwardByWordIndex: moveCursorBackwardByWord,
+    _kDefaultActionIndex: defaultAction,
   };
 
   @override
@@ -266,6 +276,8 @@ class SemanticsAction {
         return 'SemanticsAction.moveCursorForwardByWord';
       case _kMoveCursorBackwardByWordIndex:
         return 'SemanticsAction.moveCursorBackwardByWord';
+      case _kDefaultActionIndex:
+        return 'SemanticsAction.defaultAction';
     }
     return null;
   }

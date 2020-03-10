@@ -35,6 +35,7 @@ class SemanticsAction {
   static const int _kDismissIndex = 1 << 18;
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
+  static const int _kDefaultActionIndex = 1 << 21;
   // READ THIS: if you add an action here, you MUST update the
   // numSemanticsActions value in testing/dart/semantics_test.dart, or tests
   // will fail.
@@ -189,6 +190,15 @@ class SemanticsAction {
   /// movement should extend (or start) a selection.
   static const SemanticsAction moveCursorBackwardByWord = SemanticsAction._(_kMoveCursorBackwardByWordIndex);
 
+  /// A request that the node should perform a default action.
+  ///
+  /// The default action should typically toggle the most important state of the node.
+  /// On iOS (with VoiceOver) users can perform a double two-finger tap (MagicTap)
+  /// to invoke this handler.
+  /// As examples, in the Phone app it answers and ends calls,
+  /// in the Music app it starts and pauses playback.
+  static const SemanticsAction defaultAction = SemanticsAction._(_kDefaultActionIndex);
+
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
@@ -215,6 +225,7 @@ class SemanticsAction {
     _kDismissIndex: dismiss,
     _kMoveCursorForwardByWordIndex: moveCursorForwardByWord,
     _kMoveCursorBackwardByWordIndex: moveCursorBackwardByWord,
+    _kDefaultActionIndex: defaultAction,
   };
 
   @override
@@ -262,6 +273,8 @@ class SemanticsAction {
         return 'SemanticsAction.moveCursorForwardByWord';
       case _kMoveCursorBackwardByWordIndex:
         return 'SemanticsAction.moveCursorBackwardByWord';
+      case _kDefaultActionIndex:
+        return 'SemanticsAction.defaultAction';
     }
     return null;
   }

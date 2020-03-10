@@ -454,6 +454,15 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return YES;
 }
 
+- (BOOL)accessibilityPerformMagicTap {
+  if (![self isAccessibilityBridgeAlive])
+    return NO;
+  if (![self node].HasAction(flutter::SemanticsAction::kDefaultAction))
+    return NO;
+  [self bridge] -> DispatchSemanticsAction([self uid], flutter::SemanticsAction::kDefaultAction);
+  return YES;
+}
+
 #pragma mark UIAccessibilityFocus overrides
 
 - (void)accessibilityElementDidBecomeFocused {
