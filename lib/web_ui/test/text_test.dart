@@ -29,7 +29,7 @@ void main() async {
       final Paragraph paragraph = builder.build();
       paragraph.layout(const ParagraphConstraints(width: 400.0));
 
-      expect(paragraph.height, normalizedHeight(fontSize, 1));
+      expect(paragraph.height, fontSize);
       expect(paragraph.width, 400.0);
       expect(paragraph.minIntrinsicWidth, fontSize * 4.0);
       expect(paragraph.maxIntrinsicWidth, fontSize * 4.0);
@@ -55,7 +55,7 @@ void main() async {
       final Paragraph paragraph = builder.build();
       paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
 
-      expect(paragraph.height, normalizedHeight(fontSize * 2.0, 1)); // because it wraps
+      expect(paragraph.height, fontSize * 2.0); // because it wraps
       expect(paragraph.width, fontSize * 5.0);
       expect(paragraph.minIntrinsicWidth, fontSize * 4.0);
 
@@ -493,11 +493,3 @@ void main() async {
     });
   });
 }
-
-// Normalizes height across firefox and other browsers.
-//
-// Firefox reports incorrect height by rounding down bounds, therefore
-// the ruler adds 1px by default to line heights to prevent
-// underline/double underline, descender clipping.
-double normalizedHeight(double value, int firefoxDelta) =>
-    browserEngine == BrowserEngine.firefox ? value + firefoxDelta : value;
