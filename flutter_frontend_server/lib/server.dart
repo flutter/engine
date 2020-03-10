@@ -221,17 +221,20 @@ class ToStringVisitor extends RecursiveVisitor<void> {
 /// [packageUris].
 class ToStringTransformer extends frontend.ProgramTransformer {
   /// The [packageUris] parameter must not be null, but may be empty.
-  ToStringTransformer(this.child, this.packageUris) : assert(packageUris != null);
+  ToStringTransformer(this._child, this._packageUris) : assert(_packageUris != null);
 
-  final frontend.ProgramTransformer child;
-  final Set<String> packageUris;
+  final frontend.ProgramTransformer _child;
+
+  /// A set of package URIs to apply this transformer too, e.g. 'dart:ui' and
+  /// 'package:flutter/foundation.dart'.
+  final Set<String> _packageUris;
 
   @override
   void transform(Component component) {
-    assert(child is! ToStringTransformer);
-    if (packageUris.isNotEmpty) {
-      component.visitChildren(ToStringVisitor(packageUris));
+    assert(_child is! ToStringTransformer);
+    if (_packageUris.isNotEmpty) {
+      component.visitChildren(ToStringVisitor(_packageUris));
     }
-    child?.transform(component);
+    _child?.transform(component);
   }
 }
