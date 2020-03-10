@@ -5,14 +5,18 @@
 #include "flutter/lib/ui/painting/paint.h"
 
 #include "flutter/fml/logging.h"
+#include "flutter/lib/ui/painting/color_filter.h"
+#include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
-namespace blink {
+namespace flutter {
 
 // Indices for 32bit values.
 constexpr int kIsAntiAliasIndex = 0;
@@ -24,18 +28,18 @@ constexpr int kStrokeCapIndex = 5;
 constexpr int kStrokeJoinIndex = 6;
 constexpr int kStrokeMiterLimitIndex = 7;
 constexpr int kFilterQualityIndex = 8;
-constexpr int kColorFilterIndex = 9;
-constexpr int kColorFilterColorIndex = 10;
-constexpr int kColorFilterBlendModeIndex = 11;
-constexpr int kMaskFilterIndex = 12;
-constexpr int kMaskFilterBlurStyleIndex = 13;
-constexpr int kMaskFilterSigmaIndex = 14;
-constexpr int kInvertColorIndex = 15;
-constexpr size_t kDataByteCount = 75;  // 4 * (last index + 1)
+constexpr int kMaskFilterIndex = 9;
+constexpr int kMaskFilterBlurStyleIndex = 10;
+constexpr int kMaskFilterSigmaIndex = 11;
+constexpr int kInvertColorIndex = 12;
+constexpr int kDitherIndex = 13;
+constexpr size_t kDataByteCount = 56;  // 4 * (last index + 1)
 
 // Indices for objects.
 constexpr int kShaderIndex = 0;
-constexpr int kObjectCount = 1;  // One larger than largest object index.
+constexpr int kColorFilterIndex = 1;
+constexpr int kImageFilterIndex = 2;
+constexpr int kObjectCount = 3;  // One larger than largest object index.
 
 // Must be kept in sync with the default in painting.dart.
 constexpr uint32_t kColorDefault = 0xFF000000;
@@ -50,7 +54,7 @@ constexpr double kStrokeMiterLimitDefault = 4.0;
 
 // A color matrix which inverts colors.
 // clang-format off
-constexpr SkScalar invert_colors[20] = {
+constexpr float invert_colors[20] = {
   -1.0,    0,    0, 1.0, 0,
      0, -1.0,    0, 1.0, 0,
      0,    0, -1.0, 1.0, 0,
@@ -66,13 +70,13 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   if (is_null_)
     return;
 
+  Dart_Handle values[kObjectCount];
   if (!Dart_IsNull(paint_objects)) {
     FML_DCHECK(Dart_IsList(paint_objects));
     intptr_t length = 0;
     Dart_ListLength(paint_objects, &length);
 
     FML_CHECK(length == kObjectCount);
-    Dart_Handle values[kObjectCount];
     if (Dart_IsError(Dart_ListGetRange(paint_objects, 0, kObjectCount, values)))
       return;
 
@@ -80,6 +84,20 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
     if (!Dart_IsNull(shader)) {
       Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
       paint_.setShader(decoded->shader());
+    }
+
+    Dart_Handle color_filter = values[kColorFilterIndex];
+    if (!Dart_IsNull(color_filter)) {
+      ColorFilter* decoded_color_filter =
+          tonic::DartConverter<ColorFilter*>::FromDart(color_filter);
+      paint_.setColorFilter(decoded_color_filter->filter());
+    }
+
+    Dart_Handle image_filter = values[kImageFilterIndex];
+    if (!Dart_IsNull(image_filter)) {
+      ImageFilter* decoded =
+          tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
+      paint_.setImageFilter(decoded->filter());
     }
   }
 
@@ -127,23 +145,18 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   if (filter_quality)
     paint_.setFilterQuality(static_cast<SkFilterQuality>(filter_quality));
 
-  if (uint_data[kColorFilterIndex] && uint_data[kInvertColorIndex]) {
-    SkColor color = uint_data[kColorFilterColorIndex];
-    SkBlendMode blend_mode =
-        static_cast<SkBlendMode>(uint_data[kColorFilterBlendModeIndex]);
-    sk_sp<SkColorFilter> color_filter =
-        SkColorFilter::MakeModeFilter(color, blend_mode);
+  if (uint_data[kInvertColorIndex]) {
     sk_sp<SkColorFilter> invert_filter =
-        SkColorFilter::MakeMatrixFilterRowMajor255(invert_colors);
-    paint_.setColorFilter(invert_filter->makeComposed(color_filter));
-  } else if (uint_data[kInvertColorIndex]) {
-    paint_.setColorFilter(
-        SkColorFilter::MakeMatrixFilterRowMajor255(invert_colors));
-  } else if (uint_data[kColorFilterIndex]) {
-    SkColor color = uint_data[kColorFilterColorIndex];
-    SkBlendMode blend_mode =
-        static_cast<SkBlendMode>(uint_data[kColorFilterBlendModeIndex]);
-    paint_.setColorFilter(SkColorFilter::MakeModeFilter(color, blend_mode));
+        ColorFilter::MakeColorMatrixFilter255(invert_colors);
+    sk_sp<SkColorFilter> current_filter = paint_.refColorFilter();
+    if (current_filter) {
+      invert_filter = invert_filter->makeComposed(current_filter);
+    }
+    paint_.setColorFilter(invert_filter);
+  }
+
+  if (uint_data[kDitherIndex]) {
+    paint_.setDither(true);
   }
 
   switch (uint_data[kMaskFilterIndex]) {
@@ -158,11 +171,11 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   }
 }
 
-}  // namespace blink
+}  // namespace flutter
 
 namespace tonic {
 
-blink::Paint DartConverter<blink::Paint>::FromArguments(
+flutter::Paint DartConverter<flutter::Paint>::FromArguments(
     Dart_NativeArguments args,
     int index,
     Dart_Handle& exception) {
@@ -172,14 +185,14 @@ blink::Paint DartConverter<blink::Paint>::FromArguments(
   Dart_Handle paint_data = Dart_GetNativeArgument(args, index + 1);
   FML_DCHECK(!LogIfError(paint_data));
 
-  return blink::Paint(paint_objects, paint_data);
+  return flutter::Paint(paint_objects, paint_data);
 }
 
-blink::PaintData DartConverter<blink::PaintData>::FromArguments(
+flutter::PaintData DartConverter<flutter::PaintData>::FromArguments(
     Dart_NativeArguments args,
     int index,
     Dart_Handle& exception) {
-  return blink::PaintData();
+  return flutter::PaintData();
 }
 
 }  // namespace tonic

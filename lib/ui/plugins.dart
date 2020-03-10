@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
-/// An wrapper for a raw callback handle.
+/// A wrapper for a raw callback handle.
+///
+/// This is the return type for [PluginUtilities.getCallbackHandle].
 class CallbackHandle {
-  final int _handle;
-
   /// Create an instance using a raw callback handle.
   ///
   /// Only values produced by a call to [CallbackHandle.toRawHandle] should be
@@ -15,20 +16,31 @@ class CallbackHandle {
   CallbackHandle.fromRawHandle(this._handle)
       : assert(_handle != null, "'_handle' must not be null.");
 
-  /// Get the raw callback handle to pass over a [MethodChannel] or isolate
-  /// port.
+  final int _handle;
+
+  /// Get the raw callback handle to pass over a [MethodChannel] or [SendPort]
+  /// (to pass to another [Isolate]).
   int toRawHandle() => _handle;
 
   @override
-  int get hashCode => _handle;
+  bool operator ==(dynamic other) {
+    if (runtimeType != other.runtimeType)
+      return false;
+    return other is CallbackHandle
+        && other._handle == _handle;
+  }
 
   @override
-  bool operator ==(dynamic other) =>
-      (other is CallbackHandle) && (_handle == other._handle);
+  int get hashCode => _handle.hashCode;
 }
 
 /// Functionality for Flutter plugin authors.
-abstract class PluginUtilities {
+///
+/// See also:
+///
+///  * [IsolateNameServer], which provides utilities for dealing with
+///    [Isolate]s.
+class PluginUtilities {
   // This class is only a namespace, and should not be instantiated or
   // extended directly.
   factory PluginUtilities._() => null;
@@ -41,7 +53,7 @@ abstract class PluginUtilities {
   /// Get a handle to a named top-level or static callback function which can
   /// be easily passed between isolates.
   ///
-  /// `callback` must not be null.
+  /// The `callback` argument must not be null.
   ///
   /// Returns a [CallbackHandle] that can be provided to
   /// [PluginUtilities.getCallbackFromHandle] to retrieve a tear-off of the
@@ -51,14 +63,14 @@ abstract class PluginUtilities {
     assert(callback != null, "'callback' must not be null.");
     return _forwardCache.putIfAbsent(callback, () {
       final int handle = _getCallbackHandle(callback);
-      return handle != null ? new CallbackHandle.fromRawHandle(handle) : null;
+      return handle != null ? CallbackHandle.fromRawHandle(handle) : null;
     });
   }
 
   /// Get a tear-off of a named top-level or static callback represented by a
   /// handle.
   ///
-  /// `handle` must not be null.
+  /// The `handle` argument must not be null.
   ///
   /// If `handle` is not a valid handle returned by
   /// [PluginUtilities.getCallbackHandle], null is returned. Otherwise, a

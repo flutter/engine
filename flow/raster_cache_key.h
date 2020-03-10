@@ -8,11 +8,8 @@
 #include <unordered_map>
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
-#include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkPicture.h"
 
-namespace flow {
+namespace flutter {
 
 template <typename ID>
 class RasterCacheKey {
@@ -59,8 +56,9 @@ using PictureRasterCacheKey = RasterCacheKey<uint32_t>;
 
 class Layer;
 
-using LayerRasterCacheKey = RasterCacheKey<Layer*>;
+// The ID is the uint64_t layer unique_id
+using LayerRasterCacheKey = RasterCacheKey<uint64_t>;
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_RASTER_CACHE_KEY_H_

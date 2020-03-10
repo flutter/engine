@@ -15,15 +15,13 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
 
-namespace flow {
+namespace flutter {
 
 class RasterCacheResult {
  public:
-  RasterCacheResult();
+  RasterCacheResult() = default;
 
-  RasterCacheResult(const RasterCacheResult& other);
-
-  ~RasterCacheResult();
+  RasterCacheResult(const RasterCacheResult& other) = default;
 
   RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);
 
@@ -32,6 +30,10 @@ class RasterCacheResult {
   bool is_valid() const { return static_cast<bool>(image_); };
 
   void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const;
+
+  SkISize image_dimensions() const {
+    return image_ ? image_->dimensions() : SkISize::Make(0, 0);
+  };
 
  private:
   sk_sp<SkImage> image_;
@@ -42,9 +44,15 @@ struct PrerollContext;
 
 class RasterCache {
  public:
-  explicit RasterCache(size_t threshold = 3);
+  // The default max number of picture raster caches to be generated per frame.
+  // Generating too many caches in one frame may cause jank on that frame. This
+  // limit allows us to throttle the cache and distribute the work across
+  // multiple frames.
+  static constexpr int kDefaultPictureCacheLimitPerFrame = 3;
 
-  ~RasterCache();
+  explicit RasterCache(
+      size_t access_threshold = 3,
+      size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame);
 
   static SkIRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
     SkRect device_rect;
@@ -67,6 +75,8 @@ class RasterCache {
   // 1. The picture is not worth rasterizing
   // 2. The matrix is singular
   // 3. The picture is accessed too few times
+  // 4. There are too many pictures to be cached in the current frame.
+  //    (See also kDefaultPictureCacheLimitPerFrame.)
   bool Prepare(GrContext* context,
                SkPicture* picture,
                const SkMatrix& transformation_matrix,
@@ -77,6 +87,7 @@ class RasterCache {
   void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
 
   RasterCacheResult Get(const SkPicture& picture, const SkMatrix& ctm) const;
+
   RasterCacheResult Get(Layer* layer, const SkMatrix& ctm) const;
 
   void SweepAfterFrame();
@@ -85,6 +96,8 @@ class RasterCache {
 
   void SetCheckboardCacheImages(bool checkerboard);
 
+  size_t GetCachedEntriesCount() const;
+
  private:
   struct Entry {
     bool used_this_frame = false;
@@ -92,9 +105,9 @@ class RasterCache {
     RasterCacheResult image;
   };
 
-  template <class Cache, class Iterator>
+  template <class Cache>
   static void SweepOneCacheAfterFrame(Cache& cache) {
-    std::vector<Iterator> dead;
+    std::vector<typename Cache::iterator> dead;
 
     for (auto it = cache.begin(); it != cache.end(); ++it) {
       Entry& entry = it->second;
@@ -109,15 +122,18 @@ class RasterCache {
     }
   }
 
-  const size_t threshold_;
-  PictureRasterCacheKey::Map<Entry> picture_cache_;
-  LayerRasterCacheKey::Map<Entry> layer_cache_;
+  const size_t access_threshold_;
+  const size_t picture_cache_limit_per_frame_;
+  size_t picture_cached_this_frame_ = 0;
+  mutable PictureRasterCacheKey::Map<Entry> picture_cache_;
+  mutable LayerRasterCacheKey::Map<Entry> layer_cache_;
   bool checkerboard_images_;
-  fml::WeakPtrFactory<RasterCache> weak_factory_;
+
+  void TraceStatsToTimeline() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RasterCache);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_RASTER_CACHE_H_

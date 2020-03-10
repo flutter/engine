@@ -10,17 +10,17 @@
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
-namespace shell {
+namespace flutter {
 
 IOSGLContext::IOSGLContext() {
-  context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3]);
-  if (context_ != nullptr) {
-    resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
-                                                  sharegroup:context_.get().sharegroup]);
+  resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3]);
+  if (resource_context_ != nullptr) {
+    context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
+                                         sharegroup:resource_context_.get().sharegroup]);
   } else {
-    context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]);
-    resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
-                                                  sharegroup:context_.get().sharegroup]);
+    resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]);
+    context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
+                                         sharegroup:resource_context_.get().sharegroup]);
   }
 
   // TODO:
@@ -36,8 +36,7 @@ IOSGLContext::IOSGLContext() {
       case UIDisplayGamutP3:
         // Should we consider using more than 8-bits of precision given that
         // P3 specifies a wider range of colors?
-        color_space_ = SkColorSpace::MakeRGB(SkColorSpace::kSRGB_RenderTargetGamma,
-                                             SkColorSpace::kDCIP3_D65_Gamut);
+        color_space_ = SkColorSpace::MakeRGB(SkNamedTransferFn::kSRGB, SkNamedGamut::kDCIP3);
         break;
       default:
         break;
@@ -61,4 +60,4 @@ bool IOSGLContext::ResourceMakeCurrent() {
   return [EAGLContext setCurrentContext:resource_context_.get()];
 }
 
-}  // namespace shell
+}  // namespace flutter

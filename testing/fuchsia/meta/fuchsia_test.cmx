@@ -1,0 +1,20 @@
+{
+  "program": {
+    "binary": "bin/app"
+  },
+  "sandbox": {
+    "features": [
+      "vulkan",
+      "deprecated-ambient-replace-as-executable"
+    ],
+    "services": [
+      "fuchsia.accessibility.semantics.SemanticsManager",
+      "fuchsia.process.Launcher",
+      "fuchsia.deprecatedtimezone.Timezone",
+      "fuchsia.netstack.Netstack",
+      "fuchsia.vulkan.loader.Loader",
+      "fuchsia.logger.LogSink",
+      "fuchsia.tracing.provider.Registry"
+    ]
+  }
+}

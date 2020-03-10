@@ -11,7 +11,7 @@
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 
-namespace blink {
+namespace flutter {
 
 typedef CanvasGradient
     Gradient;  // Because the C++ name doesn't match the Dart name.
@@ -42,7 +42,8 @@ fml::RefPtr<CanvasGradient> CanvasGradient::Create() {
 void CanvasGradient::initLinear(const tonic::Float32List& end_points,
                                 const tonic::Int32List& colors,
                                 const tonic::Float32List& color_stops,
-                                SkShader::TileMode tile_mode) {
+                                SkTileMode tile_mode,
+                                const tonic::Float64List& matrix4) {
   FML_DCHECK(end_points.num_elements() == 4);
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
@@ -52,10 +53,16 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
   static_assert(sizeof(SkColor) == sizeof(int32_t),
                 "SkColor doesn't use int32_t.");
 
+  SkMatrix sk_matrix;
+  bool has_matrix = matrix4.data() != nullptr;
+  if (has_matrix) {
+    sk_matrix = ToSkMatrix(matrix4);
+  }
+
   set_shader(UIDartState::CreateGPUObject(SkGradientShader::MakeLinear(
       reinterpret_cast<const SkPoint*>(end_points.data()),
       reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
-      colors.num_elements(), tile_mode)));
+      colors.num_elements(), tile_mode, 0, has_matrix ? &sk_matrix : nullptr)));
 }
 
 void CanvasGradient::initRadial(double center_x,
@@ -63,7 +70,7 @@ void CanvasGradient::initRadial(double center_x,
                                 double radius,
                                 const tonic::Int32List& colors,
                                 const tonic::Float32List& color_stops,
-                                SkShader::TileMode tile_mode,
+                                SkTileMode tile_mode,
                                 const tonic::Float64List& matrix4) {
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
@@ -87,7 +94,7 @@ void CanvasGradient::initSweep(double center_x,
                                double center_y,
                                const tonic::Int32List& colors,
                                const tonic::Float32List& color_stops,
-                               SkShader::TileMode tile_mode,
+                               SkTileMode tile_mode,
                                double start_angle,
                                double end_angle,
                                const tonic::Float64List& matrix4) {
@@ -118,7 +125,7 @@ void CanvasGradient::initTwoPointConical(double start_x,
                                          double end_radius,
                                          const tonic::Int32List& colors,
                                          const tonic::Float32List& color_stops,
-                                         SkShader::TileMode tile_mode,
+                                         SkTileMode tile_mode,
                                          const tonic::Float64List& matrix4) {
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
@@ -143,4 +150,4 @@ CanvasGradient::CanvasGradient() = default;
 
 CanvasGradient::~CanvasGradient() = default;
 
-}  // namespace blink
+}  // namespace flutter

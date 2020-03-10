@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/fuchsia/sdk.gni")
+
 group("platform") {
   if (is_mac || is_ios) {
     deps = [
@@ -12,13 +14,24 @@ group("platform") {
       "android",
     ]
   } else if (is_linux) {
+    if (is_fuchsia_host) {
+      # The linux build is not supported as part of the Fuchsia host build.
+      deps = []
+    } else {
+      deps = [
+        "linux",
+      ]
+    }
+  } else if (is_win) {
     deps = [
-      "embedder",
+      "windows",
     ]
-  } else if (is_win || is_fuchsia) {
-    # There is no platform target on Windows. Fuchsia has its own runner
-    # implementation.
-    deps = []
+  } else if (is_fuchsia) {
+    if (using_fuchsia_sdk) {
+      deps = [
+        "fuchsia",
+      ]
+    }
   } else {
     assert(false, "Unknown/Unsupported platform.")
   }

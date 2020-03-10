@@ -14,7 +14,10 @@
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
+#include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/gpu/GrContext.h"
@@ -22,7 +25,7 @@
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/dart_state.h"
 
-namespace blink {
+namespace flutter {
 class FontSelector;
 class Window;
 
@@ -46,18 +49,25 @@ class UIDartState : public tonic::DartState {
 
   void FlushMicrotasksNow();
 
-  fml::RefPtr<flow::SkiaUnrefQueue> GetSkiaUnrefQueue() const;
+  fml::WeakPtr<IOManager> GetIOManager() const;
+
+  fml::RefPtr<flutter::SkiaUnrefQueue> GetSkiaUnrefQueue() const;
 
   fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
   fml::WeakPtr<GrContext> GetResourceContext() const;
 
-  IsolateNameServer* GetIsolateNameServer();
+  fml::WeakPtr<ImageDecoder> GetImageDecoder() const;
+
+  std::shared_ptr<IsolateNameServer> GetIsolateNameServer() const;
 
   tonic::DartErrorHandleType GetLastError();
 
+  void ReportUnhandledException(const std::string& error,
+                                const std::string& stack_trace);
+
   template <class T>
-  static flow::SkiaGPUObject<T> CreateGPUObject(sk_sp<T> object) {
+  static flutter::SkiaGPUObject<T> CreateGPUObject(sk_sp<T> object) {
     if (!object) {
       return {};
     }
@@ -72,12 +82,14 @@ class UIDartState : public tonic::DartState {
               TaskObserverAdd add_callback,
               TaskObserverRemove remove_callback,
               fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-              fml::WeakPtr<GrContext> resource_context,
-              fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
+              fml::WeakPtr<IOManager> io_manager,
+              fml::RefPtr<SkiaUnrefQueue> skia_unref_queue,
+              fml::WeakPtr<ImageDecoder> image_decoder,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
               std::string logger_prefix,
-              IsolateNameServer* isolate_name_server);
+              UnhandledExceptionCallback unhandled_exception_callback,
+              std::shared_ptr<IsolateNameServer> isolate_name_server);
 
   ~UIDartState() override;
 
@@ -94,20 +106,22 @@ class UIDartState : public tonic::DartState {
   const TaskObserverAdd add_callback_;
   const TaskObserverRemove remove_callback_;
   fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
-  fml::WeakPtr<GrContext> resource_context_;
+  fml::WeakPtr<IOManager> io_manager_;
+  fml::RefPtr<SkiaUnrefQueue> skia_unref_queue_;
+  fml::WeakPtr<ImageDecoder> image_decoder_;
   const std::string advisory_script_uri_;
   const std::string advisory_script_entrypoint_;
   const std::string logger_prefix_;
   Dart_Port main_port_ = ILLEGAL_PORT;
   std::string debug_name_;
   std::unique_ptr<Window> window_;
-  fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue_;
   tonic::DartMicrotaskQueue microtask_queue_;
-  IsolateNameServer* isolate_name_server_;
+  UnhandledExceptionCallback unhandled_exception_callback_;
+  const std::shared_ptr<IsolateNameServer> isolate_name_server_;
 
   void AddOrRemoveTaskObserver(bool add);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_UI_DART_STATE_H_

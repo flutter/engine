@@ -11,28 +11,33 @@
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
-UIDartState::UIDartState(TaskRunners task_runners,
-                         TaskObserverAdd add_callback,
-                         TaskObserverRemove remove_callback,
-                         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                         fml::WeakPtr<GrContext> resource_context,
-                         fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
-                         std::string advisory_script_uri,
-                         std::string advisory_script_entrypoint,
-                         std::string logger_prefix,
-                         IsolateNameServer* isolate_name_server)
+UIDartState::UIDartState(
+    TaskRunners task_runners,
+    TaskObserverAdd add_callback,
+    TaskObserverRemove remove_callback,
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::WeakPtr<IOManager> io_manager,
+    fml::RefPtr<SkiaUnrefQueue> skia_unref_queue,
+    fml::WeakPtr<ImageDecoder> image_decoder,
+    std::string advisory_script_uri,
+    std::string advisory_script_entrypoint,
+    std::string logger_prefix,
+    UnhandledExceptionCallback unhandled_exception_callback,
+    std::shared_ptr<IsolateNameServer> isolate_name_server)
     : task_runners_(std::move(task_runners)),
       add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
       snapshot_delegate_(std::move(snapshot_delegate)),
-      resource_context_(std::move(resource_context)),
+      io_manager_(std::move(io_manager)),
+      skia_unref_queue_(std::move(skia_unref_queue)),
+      image_decoder_(std::move(image_decoder)),
       advisory_script_uri_(std::move(advisory_script_uri)),
       advisory_script_entrypoint_(std::move(advisory_script_entrypoint)),
       logger_prefix_(std::move(logger_prefix)),
-      skia_unref_queue_(std::move(skia_unref_queue)),
-      isolate_name_server_(isolate_name_server) {
+      unhandled_exception_callback_(unhandled_exception_callback),
+      isolate_name_server_(std::move(isolate_name_server)) {
   AddOrRemoveTaskObserver(true /* add */);
 }
 
@@ -77,7 +82,11 @@ const TaskRunners& UIDartState::GetTaskRunners() const {
   return task_runners_;
 }
 
-fml::RefPtr<flow::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
+fml::WeakPtr<IOManager> UIDartState::GetIOManager() const {
+  return io_manager_;
+}
+
+fml::RefPtr<flutter::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
   return skia_unref_queue_;
 }
 
@@ -114,10 +123,17 @@ fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
 }
 
 fml::WeakPtr<GrContext> UIDartState::GetResourceContext() const {
-  return resource_context_;
+  if (!io_manager_) {
+    return {};
+  }
+  return io_manager_->GetResourceContext();
 }
 
-IsolateNameServer* UIDartState::GetIsolateNameServer() {
+fml::WeakPtr<ImageDecoder> UIDartState::GetImageDecoder() const {
+  return image_decoder_;
+}
+
+std::shared_ptr<IsolateNameServer> UIDartState::GetIsolateNameServer() const {
   return isolate_name_server_;
 }
 
@@ -129,4 +145,17 @@ tonic::DartErrorHandleType UIDartState::GetLastError() {
   return error;
 }
 
-}  // namespace blink
+void UIDartState::ReportUnhandledException(const std::string& error,
+                                           const std::string& stack_trace) {
+  if (unhandled_exception_callback_ &&
+      unhandled_exception_callback_(error, stack_trace)) {
+    return;
+  }
+
+  // Either the exception handler was not set or it could not handle the error,
+  // just log the exception.
+  FML_LOG(ERROR) << "Unhandled Exception: " << error << std::endl
+                 << stack_trace;
+}
+
+}  // namespace flutter

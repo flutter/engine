@@ -6,16 +6,31 @@ if (is_android) {
   import("//build/config/android/config.gni")
 }
 
+import("//build/fuchsia/sdk.gni")
+
 if (target_cpu == "arm" || target_cpu == "arm64") {
   import("//build/config/arm.gni")
 }
 
-declare_args() {
-  # Enable ahead-of-time compilation on platforms where AOT is optional.
-  flutter_aot = false
+if (is_ios || is_mac) {
+  if (using_fuchsia_sdk) {
+    import("//build/toolchain/clang.gni")
+  } else {
+    import("//build/toolchain/clang_toolchain.gni")
+  }
+}
 
-  # The runtime mode ("debug", "profile", "release", "dynamic_profile", or "dynamic_release")
+declare_args() {
+  # The runtime mode ("debug", "profile", "release", or "jit_release")
   flutter_runtime_mode = "debug"
+
+  # Whether to use the Skia text shaper module
+  flutter_enable_skshaper = false
+
+  # A copy of the enable_bitcode flag from build/toolchain/clang.gni.
+  # This needs to be mirrored here because build/toolchain/clang.gni does
+  # not exist in the Fuchsia source tree.
+  flutter_enable_bitcode = false
 }
 
 # feature_defines_list ---------------------------------------------------------
@@ -24,24 +39,35 @@ feature_defines_list = [
   "FLUTTER_RUNTIME_MODE_DEBUG=1",
   "FLUTTER_RUNTIME_MODE_PROFILE=2",
   "FLUTTER_RUNTIME_MODE_RELEASE=3",
-  "FLUTTER_RUNTIME_MODE_DYNAMIC_PROFILE=4",
-  "FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE=5",
+  "FLUTTER_RUNTIME_MODE_JIT_RELEASE=4",
 ]
 
 if (flutter_runtime_mode == "debug") {
-  feature_defines_list += [ "FLUTTER_RUNTIME_MODE=1" ]
+  feature_defines_list += [
+    "FLUTTER_RUNTIME_MODE=1",
+    "FLUTTER_JIT_RUNTIME=1",
+  ]
 } else if (flutter_runtime_mode == "profile") {
   feature_defines_list += [ "FLUTTER_RUNTIME_MODE=2" ]
 } else if (flutter_runtime_mode == "release") {
-  feature_defines_list += [ "FLUTTER_RUNTIME_MODE=3" ]
-} else if (flutter_runtime_mode == "dynamic_profile") {
-  feature_defines_list += [ "FLUTTER_RUNTIME_MODE=4" ]
-} else if (flutter_runtime_mode == "dynamic_release") {
-  feature_defines_list += [ "FLUTTER_RUNTIME_MODE=5" ]
+  feature_defines_list += [
+    "FLUTTER_RUNTIME_MODE=3",
+    "FLUTTER_RELEASE=1",
+  ]
+} else if (flutter_runtime_mode == "jit_release") {
+  feature_defines_list += [
+    "FLUTTER_RUNTIME_MODE=4",
+    "FLUTTER_RELEASE=1",
+    "FLUTTER_JIT_RUNTIME=1",
+  ]
 } else {
   feature_defines_list += [ "FLUTTER_RUNTIME_MODE=0" ]
 }
 
-if (flutter_aot) {
-  feature_defines_list += [ "FLUTTER_AOT=1" ]
+if (is_fuchsia && using_fuchsia_sdk) {
+  feature_defines_list += [ "FUCHSIA_SDK=1" ]
+}
+
+if ((is_ios || is_mac) && defined(enable_bitcode)) {
+  flutter_enable_bitcode = enable_bitcode
 }

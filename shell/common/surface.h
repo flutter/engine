@@ -12,16 +12,18 @@
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
-namespace shell {
+namespace flutter {
 
 /// Represents a Frame that has been fully configured for the underlying client
-/// rendering API. A frame may only be sumitted once.
+/// rendering API. A frame may only be submitted once.
 class SurfaceFrame {
  public:
   using SubmitCallback =
       std::function<bool(const SurfaceFrame& surface_frame, SkCanvas* canvas)>;
 
-  SurfaceFrame(sk_sp<SkSurface> surface, SubmitCallback submit_callback);
+  SurfaceFrame(sk_sp<SkSurface> surface,
+               bool supports_readback,
+               const SubmitCallback& submit_callback);
 
   ~SurfaceFrame();
 
@@ -31,10 +33,12 @@ class SurfaceFrame {
 
   sk_sp<SkSurface> SkiaSurface() const;
 
+  bool supports_readback() { return supports_readback_; }
+
  private:
   bool submitted_;
   sk_sp<SkSurface> surface_;
-  std::unique_ptr<SkCanvas> xform_canvas_;
+  bool supports_readback_;
   SubmitCallback submit_callback_;
 
   bool PerformSubmit();
@@ -42,6 +46,7 @@ class SurfaceFrame {
   FML_DISALLOW_COPY_AND_ASSIGN(SurfaceFrame);
 };
 
+/// Abstract Base Class that represents where we will be rendering content.
 class Surface {
  public:
   Surface();
@@ -56,7 +61,7 @@ class Surface {
 
   virtual GrContext* GetContext() = 0;
 
-  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder();
+  virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
 
   virtual bool MakeRenderContextCurrent();
 
@@ -64,6 +69,6 @@ class Surface {
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_COMMON_SURFACE_H_

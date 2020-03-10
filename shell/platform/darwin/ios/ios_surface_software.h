@@ -13,51 +13,58 @@
 
 @class CALayer;
 
-namespace shell {
+namespace flutter {
 
 class IOSSurfaceSoftware final : public IOSSurface,
                                  public GPUSurfaceSoftwareDelegate,
-                                 public flow::ExternalViewEmbedder {
+                                 public ExternalViewEmbedder {
  public:
   IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
                      FlutterPlatformViewsController* platform_views_controller);
 
   ~IOSSurfaceSoftware() override;
 
-  // |shell::IOSSurface|
+  // |IOSSurface|
   bool IsValid() const override;
 
-  // |shell::IOSSurface|
+  // |IOSSurface|
   bool ResourceContextMakeCurrent() override;
 
-  // |shell::IOSSurface|
+  // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;
 
-  // |shell::IOSSurface|
-  std::unique_ptr<Surface> CreateGPUSurface() override;
+  // |IOSSurface|
+  std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context = nullptr) override;
 
-  // |shell::GPUSurfaceSoftwareDelegate|
+  // |GPUSurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
 
-  // |shell::GPUSurfaceSoftwareDelegate|
+  // |GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
 
-  // |shell::GPUSurfaceSoftwareDelegate|
-  flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  // |GPUSurfaceSoftwareDelegate|
+  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
-  // |flow::ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size) override;
+  // |ExternalViewEmbedder|
+  SkCanvas* GetRootCanvas() override;
 
-  // |flow::ExternalViewEmbedder|
-  void PrerollCompositeEmbeddedView(int view_id) override;
+  // |ExternalViewEmbedder|
+  void CancelFrame() override;
 
-  // |flow::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
+  void BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) override;
+
+  // |ExternalViewEmbedder|
+  void PrerollCompositeEmbeddedView(int view_id,
+                                    std::unique_ptr<EmbeddedViewParams> params) override;
+
+  // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
-  // |flow::ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params) override;
+  // |ExternalViewEmbedder|
+  SkCanvas* CompositeEmbeddedView(int view_id) override;
 
-  // |flow::ExternalViewEmbedder|
+  // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context) override;
 
  private:
@@ -67,6 +74,6 @@ class IOSSurfaceSoftware final : public IOSSurface,
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceSoftware);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SURFACE_SOFTWARE_H_

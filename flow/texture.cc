@@ -4,17 +4,20 @@
 
 #include "flutter/flow/texture.h"
 
-namespace flow {
+namespace flutter {
+
+Texture::Texture(int64_t id) : id_(id) {}
+
+Texture::~Texture() = default;
 
 TextureRegistry::TextureRegistry() = default;
-
-TextureRegistry::~TextureRegistry() = default;
 
 void TextureRegistry::RegisterTexture(std::shared_ptr<Texture> texture) {
   mapping_[texture->Id()] = texture;
 }
 
 void TextureRegistry::UnregisterTexture(int64_t id) {
+  mapping_[id]->OnTextureUnregistered();
   mapping_.erase(id);
 }
 
@@ -35,8 +38,4 @@ std::shared_ptr<Texture> TextureRegistry::GetTexture(int64_t id) {
   return it != mapping_.end() ? it->second : nullptr;
 }
 
-Texture::Texture(int64_t id) : id_(id) {}
-
-Texture::~Texture() = default;
-
-}  // namespace flow
+}  // namespace flutter

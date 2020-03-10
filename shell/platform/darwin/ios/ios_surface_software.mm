@@ -13,7 +13,7 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-namespace shell {
+namespace flutter {
 
 IOSSurfaceSoftware::IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
                                        FlutterPlatformViewsController* platform_views_controller)
@@ -38,12 +38,12 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Android oddities.
 }
 
-std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface() {
+std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }
 
-  auto surface = std::make_unique<GPUSurfaceSoftware>(this);
+  auto surface = std::make_unique<GPUSurfaceSoftware>(this, true /* render to surface */);
 
   if (!surface->IsValid()) {
     return nullptr;
@@ -64,7 +64,8 @@ sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
     return sk_surface_;
   }
 
-  SkImageInfo info = SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType);
+  SkImageInfo info = SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType,
+                                          SkColorSpace::MakeSRGB());
   sk_surface_ = SkSurface::MakeRaster(info, nullptr);
   return sk_surface_;
 }
@@ -126,7 +127,7 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
   return true;
 }
 
-flow::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
+ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
   if (IsIosEmbeddedViewsPreviewEnabled()) {
     return this;
   } else {
@@ -134,37 +135,58 @@ flow::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
   }
 }
 
-void IOSSurfaceSoftware::BeginFrame(SkISize frame_size) {
+// |ExternalViewEmbedder|
+SkCanvas* IOSSurfaceSoftware::GetRootCanvas() {
+  // On iOS, the root surface is created using a managed allocation that is submitted to the
+  // platform. Only the surfaces for the various overlays are controlled by this class.
+  return nullptr;
+}
+
+// |ExternalViewEmbedder|
+void IOSSurfaceSoftware::CancelFrame() {
+  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
+  FML_CHECK(platform_views_controller != nullptr);
+  platform_views_controller->CancelFrame();
+}
+
+// |ExternalViewEmbedder|
+void IOSSurfaceSoftware::BeginFrame(SkISize frame_size,
+                                    GrContext* context,
+                                    double device_pixel_ratio) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   platform_views_controller->SetFrameSize(frame_size);
 }
 
-void IOSSurfaceSoftware::PrerollCompositeEmbeddedView(int view_id) {
+// |ExternalViewEmbedder|
+void IOSSurfaceSoftware::PrerollCompositeEmbeddedView(int view_id,
+                                                      std::unique_ptr<EmbeddedViewParams> params) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
-  platform_views_controller->PrerollCompositeEmbeddedView(view_id);
+  platform_views_controller->PrerollCompositeEmbeddedView(view_id, std::move(params));
 }
 
+// |ExternalViewEmbedder|
 std::vector<SkCanvas*> IOSSurfaceSoftware::GetCurrentCanvases() {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   return platform_views_controller->GetCurrentCanvases();
 }
 
-SkCanvas* IOSSurfaceSoftware::CompositeEmbeddedView(int view_id,
-                                                    const flow::EmbeddedViewParams& params) {
+// |ExternalViewEmbedder|
+SkCanvas* IOSSurfaceSoftware::CompositeEmbeddedView(int view_id) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->CompositeEmbeddedView(view_id, params);
+  return platform_views_controller->CompositeEmbeddedView(view_id);
 }
 
+// |ExternalViewEmbedder|
 bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   if (platform_views_controller == nullptr) {
     return true;
   }
-  return platform_views_controller->SubmitFrame(false, nullptr, nullptr);
+  return platform_views_controller->SubmitFrame(nullptr, nullptr);
 }
 
-}  // namespace shell
+}  // namespace flutter

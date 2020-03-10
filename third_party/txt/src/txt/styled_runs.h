@@ -62,6 +62,7 @@ class StyledRuns {
 
  private:
   FRIEND_TEST(ParagraphTest, SimpleParagraph);
+  FRIEND_TEST(ParagraphTest, SimpleParagraphSmall);
   FRIEND_TEST(ParagraphTest, SimpleRedParagraph);
   FRIEND_TEST(ParagraphTest, RainbowParagraph);
   FRIEND_TEST(ParagraphTest, DefaultStyleParagraph);
@@ -81,6 +82,7 @@ class StyledRuns {
   FRIEND_TEST(ParagraphTest, Ellipsize);
   FRIEND_TEST(ParagraphTest, SimpleShadow);
   FRIEND_TEST(ParagraphTest, ComplexShadow);
+  FRIEND_TEST(ParagraphTest, FontFallbackParagraph);
 
   struct IndexedRun {
     size_t style_index = 0;

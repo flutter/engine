@@ -14,7 +14,7 @@ namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 class Canvas;
 
 class Picture : public RefCountedDartWrappable<Picture> {
@@ -23,11 +23,14 @@ class Picture : public RefCountedDartWrappable<Picture> {
 
  public:
   ~Picture() override;
-  static fml::RefPtr<Picture> Create(flow::SkiaGPUObject<SkPicture> picture);
+  static fml::RefPtr<Picture> Create(Dart_Handle dart_handle,
+                                     flutter::SkiaGPUObject<SkPicture> picture);
 
   sk_sp<SkPicture> picture() const { return picture_.get(); }
 
-  fml::RefPtr<CanvasImage> toImage(int width, int height);
+  Dart_Handle toImage(uint32_t width,
+                      uint32_t height,
+                      Dart_Handle raw_image_callback);
 
   void dispose();
 
@@ -35,12 +38,17 @@ class Picture : public RefCountedDartWrappable<Picture> {
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
- private:
-  explicit Picture(flow::SkiaGPUObject<SkPicture> picture);
+  static Dart_Handle RasterizeToImage(sk_sp<SkPicture> picture,
+                                      uint32_t width,
+                                      uint32_t height,
+                                      Dart_Handle raw_image_callback);
 
-  flow::SkiaGPUObject<SkPicture> picture_;
+ private:
+  explicit Picture(flutter::SkiaGPUObject<SkPicture> picture);
+
+  flutter::SkiaGPUObject<SkPicture> picture_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_PICTURE_H_

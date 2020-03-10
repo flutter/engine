@@ -13,7 +13,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 
-namespace shell {
+namespace flutter {
 
 namespace {
 
@@ -61,7 +61,8 @@ std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface() {
     return nullptr;
   }
 
-  auto surface = std::make_unique<GPUSurfaceSoftware>(this);
+  auto surface =
+      std::make_unique<GPUSurfaceSoftware>(this, true /* render to surface */);
 
   if (!surface->IsValid()) {
     return nullptr;
@@ -83,8 +84,9 @@ sk_sp<SkSurface> AndroidSurfaceSoftware::AcquireBackingStore(
     return sk_surface_;
   }
 
-  SkImageInfo image_info = SkImageInfo::Make(
-      size.fWidth, size.fHeight, target_color_type_, target_alpha_type_);
+  SkImageInfo image_info =
+      SkImageInfo::Make(size.fWidth, size.fHeight, target_color_type_,
+                        target_alpha_type_, SkColorSpace::MakeSRGB());
 
   sk_surface_ = SkSurface::MakeRaster(image_info);
 
@@ -133,6 +135,11 @@ bool AndroidSurfaceSoftware::PresentBackingStore(
   return true;
 }
 
+// |GPUSurfaceSoftwareDelegate|
+ExternalViewEmbedder* AndroidSurfaceSoftware::GetExternalViewEmbedder() {
+  return nullptr;
+}
+
 void AndroidSurfaceSoftware::TeardownOnScreenContext() {}
 
 bool AndroidSurfaceSoftware::OnScreenSurfaceResize(const SkISize& size) const {
@@ -152,4 +159,4 @@ bool AndroidSurfaceSoftware::SetNativeWindow(
   return true;
 }
 
-}  // namespace shell
+}  // namespace flutter

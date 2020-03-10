@@ -11,7 +11,7 @@
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 
-namespace blink {
+namespace flutter {
 
 static void PictureRecorder_constructor(Dart_NativeArguments args) {
   DartCallConstructor(&PictureRecorder::Create, args);
@@ -47,12 +47,13 @@ SkCanvas* PictureRecorder::BeginRecording(SkRect bounds) {
   return picture_recorder_.beginRecording(bounds, &rtree_factory_);
 }
 
-fml::RefPtr<Picture> PictureRecorder::endRecording() {
+fml::RefPtr<Picture> PictureRecorder::endRecording(Dart_Handle dart_picture) {
   if (!isRecording())
     return nullptr;
 
-  fml::RefPtr<Picture> picture = Picture::Create(UIDartState::CreateGPUObject(
-      picture_recorder_.finishRecordingAsPicture()));
+  fml::RefPtr<Picture> picture = Picture::Create(
+      dart_picture, UIDartState::CreateGPUObject(
+                        picture_recorder_.finishRecordingAsPicture()));
   canvas_->Clear();
   canvas_->ClearDartWrapper();
   canvas_ = nullptr;
@@ -60,4 +61,4 @@ fml::RefPtr<Picture> PictureRecorder::endRecording() {
   return picture;
 }
 
-}  // namespace blink
+}  // namespace flutter

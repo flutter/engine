@@ -12,7 +12,11 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#if FLUTTER_SHELL_ENABLE_METAL
+#include "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
+#endif
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
@@ -21,13 +25,13 @@
 @implementation FlutterOverlayView
 
 - (instancetype)initWithFrame:(CGRect)frame {
-  @throw([NSException exceptionWithName:@"FlutterOverlayView must initWithDelegate"
+  @throw([NSException exceptionWithName:@"FlutterOverlayView must init or initWithContentsScale"
                                  reason:nil
                                userInfo:nil]);
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
-  @throw([NSException exceptionWithName:@"FlutterOverlayView must initWithDelegate"
+  @throw([NSException exceptionWithName:@"FlutterOverlayView must init or initWithContentsScale"
                                  reason:nil
                                userInfo:nil]);
 }
@@ -43,42 +47,54 @@
   return self;
 }
 
-- (void)layoutSubviews {
+- (instancetype)initWithContentsScale:(CGFloat)contentsScale {
+  self = [self init];
+
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
     layer.allowsGroupOpacity = NO;
-    CGFloat screenScale = [UIScreen mainScreen].scale;
-    layer.contentsScale = screenScale;
-    layer.rasterizationScale = screenScale;
+    layer.contentsScale = contentsScale;
+    layer.rasterizationScale = contentsScale;
+#if FLUTTER_SHELL_ENABLE_METAL
+  } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
+    CAMetalLayer* layer = reinterpret_cast<CAMetalLayer*>(self.layer);
+    layer.allowsGroupOpacity = NO;
+    layer.contentsScale = contentsScale;
+    layer.rasterizationScale = contentsScale;
+#endif  // FLUTTER_SHELL_ENABLE_METAL
   }
 
-  [super layoutSubviews];
+  return self;
 }
 
 + (Class)layerClass {
-#if TARGET_IPHONE_SIMULATOR
-  return [CALayer class];
-#else   // TARGET_IPHONE_SIMULATOR
-  return [CAEAGLLayer class];
-#endif  // TARGET_IPHONE_SIMULATOR
+  return [FlutterView layerClass];
 }
 
-- (std::unique_ptr<shell::IOSSurface>)createSoftwareSurface {
-  fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
-  return std::make_unique<shell::IOSSurfaceSoftware>(std::move(layer), nullptr);
-}
-
-- (std::unique_ptr<shell::IOSSurfaceGL>)createGLSurfaceWithContext:
-    (std::shared_ptr<shell::IOSGLContext>)gl_context {
-  fml::scoped_nsobject<CAEAGLLayer> eagl_layer(reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
-  // TODO(amirh): We can lower this to iOS 8.0 once we have a Metal rendering backend.
-  // https://github.com/flutter/flutter/issues/24132
-  if (@available(iOS 9.0, *)) {
-    eagl_layer.get().presentsWithTransaction = YES;
+- (std::unique_ptr<flutter::IOSSurface>)createSurface:
+    (std::shared_ptr<flutter::IOSGLContext>)gl_context {
+  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
+    fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
+        reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
+    if (@available(iOS 9.0, *)) {
+      eagl_layer.get().presentsWithTransaction = YES;
+    }
+    return std::make_unique<flutter::IOSSurfaceGL>(std::move(eagl_layer), gl_context);
+#if FLUTTER_SHELL_ENABLE_METAL
+  } else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
+    fml::scoped_nsobject<CAMetalLayer> metalLayer(
+        reinterpret_cast<CAMetalLayer*>([self.layer retain]));
+    if (@available(iOS 8.0, *)) {
+      metalLayer.get().presentsWithTransaction = YES;
+    }
+    return std::make_unique<flutter::IOSSurfaceMetal>(std::move(metalLayer));
+#endif  //  FLUTTER_SHELL_ENABLE_METAL
+  } else {
+    fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
+    return std::make_unique<flutter::IOSSurfaceSoftware>(std::move(layer), nullptr);
   }
-  return std::make_unique<shell::IOSSurfaceGL>(eagl_layer, std::move(gl_context));
 }
 
-// TODO(amirh): implement drawLayer to suppoer snapshotting.
+// TODO(amirh): implement drawLayer to support snapshotting.
 
 @end

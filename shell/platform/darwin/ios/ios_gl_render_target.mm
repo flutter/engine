@@ -10,7 +10,7 @@
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
-namespace shell {
+namespace flutter {
 
 IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
                                      EAGLContext* context,
@@ -62,6 +62,8 @@ IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
 }
 
 IOSGLRenderTarget::~IOSGLRenderTarget() {
+  EAGLContext* context = EAGLContext.currentContext;
+  [EAGLContext setCurrentContext:context_];
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
   // Deletes on GL_NONEs are ignored
@@ -69,6 +71,7 @@ IOSGLRenderTarget::~IOSGLRenderTarget() {
   glDeleteRenderbuffers(1, &colorbuffer_);
 
   FML_DCHECK(glGetError() == GL_NO_ERROR);
+  [EAGLContext setCurrentContext:context];
 }
 
 bool IOSGLRenderTarget::IsValid() const {
@@ -137,4 +140,4 @@ bool IOSGLRenderTarget::ResourceMakeCurrent() {
   return [EAGLContext setCurrentContext:resource_context_.get()];
 }
 
-}  // namespace shell
+}  // namespace flutter
