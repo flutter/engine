@@ -7,9 +7,9 @@ package io.flutter.embedding.android;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
+import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.view.View;
 
 /**
  * Splash screen configuration for a given Flutter experience.

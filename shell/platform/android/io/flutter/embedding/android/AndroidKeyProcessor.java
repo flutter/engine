@@ -4,10 +4,10 @@
 
 package io.flutter.embedding.android;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 

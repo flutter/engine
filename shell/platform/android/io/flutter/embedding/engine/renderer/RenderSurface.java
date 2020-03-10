@@ -4,9 +4,9 @@
 
 package io.flutter.embedding.engine.renderer;
 
+import android.view.Surface;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.view.Surface;
 
 /**
  * Owns a {@code Surface} that {@code FlutterRenderer} would like to paint.

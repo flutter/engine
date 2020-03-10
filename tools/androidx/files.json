@@ -1,7 +1,7 @@
 [
   {
     "url": "https://maven.google.com/androidx/lifecycle/lifecycle-common/2.2.0/lifecycle-common-2.2.0.jar",
-    "out_file_name": "androidx_common.jar",
+    "out_file_name": "androidx_lifecycle_common.jar",
     "maven_dependency": "androidx.lifecycle:lifecycle-common:2.2.0",
     "provides": [
       "androidx.lifecycle.Lifecycle",

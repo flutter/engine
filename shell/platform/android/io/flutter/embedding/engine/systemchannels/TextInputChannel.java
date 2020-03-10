@@ -1,8 +1,8 @@
 package io.flutter.embedding.engine.systemchannels;
 
+import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.view.inputmethod.EditorInfo;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;

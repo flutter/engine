@@ -228,14 +228,14 @@ android_java_sources = [
   "io/flutter/view/VsyncWaiter.java",
 ]
 
-android_support_jars = [
-  "//third_party/android_support/android_support_compat.jar",
-  "//third_party/android_support/android_support_annotations.jar",
-  "//third_party/android_support/android_support_fragment.jar",
-  "//third_party/android_support/android_arch_lifecycle_common.jar",
-  "//third_party/android_support/android_arch_lifecycle_common_java8.jar",
-  "//third_party/android_support/android_arch_lifecycle_runtime.jar",
-  "//third_party/android_support/android_arch_lifecycle_viewmodel.jar",
+androidx_artifacts = [
+  "//third_party/androidx/androidx_annotation.jar",
+  "//third_party/androidx/androidx_core.jar",
+  "//third_party/androidx/androidx_fragment.aar",
+  "//third_party/androidx/androidx_lifecycle_common.jar",
+  "//third_party/androidx/androidx_lifecycle_common_java8.jar",
+  "//third_party/androidx/androidx_lifecycle_runtime.aar",
+  "//third_party/androidx/androidx_lifecycle_viewmodel.aar",
 ]
 
 action("flutter_shell_java") {
@@ -259,7 +259,7 @@ action("flutter_shell_java") {
   inputs = [
     android_sdk_jar,
   ]
-  inputs += android_support_jars
+  inputs += androidx_artifacts
 
   _rebased_current_path = rebase_path(".")
   _rebased_jar_path = rebase_path(jar_path, root_build_dir)
@@ -267,7 +267,7 @@ action("flutter_shell_java") {
   _rebased_depfile = rebase_path(depfile, root_build_dir)
   _rebased_android_sdk_jar = rebase_path(android_sdk_jar, root_build_dir)
   _rebased_classpath = [ _rebased_android_sdk_jar ] +
-                       rebase_path(android_support_jars, root_build_dir)
+                       rebase_path(androidx_artifacts, root_build_dir)
 
   args = [
     "--depfile=$_rebased_depfile",
@@ -532,7 +532,7 @@ zip_bundle("android") {
 # https://github.com/flutter/flutter/issues/42400
 action("gen_android_javadoc") {
   script = "//flutter/tools/gen_javadoc.py"
-  sources = android_java_sources + android_support_jars
+  sources = android_java_sources + androidx_artifacts
 
   outputs = [
     "$target_gen_dir/javadocs",
