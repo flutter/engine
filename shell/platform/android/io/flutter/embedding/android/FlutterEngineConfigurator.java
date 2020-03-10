@@ -5,8 +5,8 @@
 package io.flutter.embedding.android;
 
 import android.app.Activity;
-import android.arch.lifecycle.Lifecycle;
 import androidx.annotation.NonNull;
+import androidx.lifecycle.Lifecycle;
 import io.flutter.embedding.engine.FlutterEngine;
 
 /**
