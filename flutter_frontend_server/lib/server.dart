@@ -149,7 +149,7 @@ Future<int> starter(
         ]);
         compiler ??= _FlutterFrontendCompiler(
           output,
-          transformer: _ToStringTransformer(null, deleteToStringPackageUris),
+          transformer: ToStringTransformer(null, deleteToStringPackageUris),
         );
 
         await compiler.compile(input, options);
@@ -169,7 +169,7 @@ Future<int> starter(
   }
 
   compiler ??= _FlutterFrontendCompiler(output,
-      transformer: _ToStringTransformer(transformer, deleteToStringPackageUris),
+      transformer: ToStringTransformer(transformer, deleteToStringPackageUris),
       useDebuggerModuleNames: options['debugger-module-names'] as bool,
       unsafePackageSerialization:
           options['unsafe-package-serialization'] as bool);
@@ -183,17 +183,24 @@ Future<int> starter(
   return completer.future;
 }
 
-class _ToStringVisitor extends RecursiveVisitor<void> {
-  _ToStringVisitor(this.packageUris) : assert(packageUris != null);
+/// A [RecursiveVisitor] that replaces [Object.toString] overrides with
+/// `super.toString()`.
+class ToStringVisitor extends RecursiveVisitor<void> {
+  /// The [packageUris] must not be null.
+  ToStringVisitor(this._packageUris) : assert(_packageUris != null);
 
-  final Set<String> packageUris;
+  /// A set of package URIs to apply this transformer too, e.g. 'dart:ui' and
+  /// 'package:flutter/foundation.dart'.
+  final Set<String> _packageUris;
 
   @override
   void visitProcedure(Procedure node) {
     if (node.name.name == 'toString' && node.enclosingLibrary != null) {
       assert(node.enclosingClass != null);
-      final String importUri = node.enclosingLibrary.importUri.toString();
-      if (packageUris.contains(importUri)) {
+      // Turn 'dart:ui' into 'dart:ui', or
+      // 'package:flutter/src/semantics_event.dart' into 'package:flutter'.
+      final String packageUri = '${node.enclosingLibrary.importUri.scheme}:${node.enclosingLibrary.importUri.pathSegments.first}';
+      if (_packageUris.contains(packageUri)) {
         node.function.replaceWith(
           FunctionNode(
             ReturnStatement(
@@ -210,16 +217,21 @@ class _ToStringVisitor extends RecursiveVisitor<void> {
   }
 }
 
-class _ToStringTransformer extends frontend.ProgramTransformer {
-  _ToStringTransformer(this.child, this.packageUris) : assert(packageUris != null);
+/// Replaces [Object.toString] overides with calls to super for the specified
+/// [packageUris].
+class ToStringTransformer extends frontend.ProgramTransformer {
+  /// The [packageUris] parameter must not be null, but may be empty.
+  ToStringTransformer(this.child, this.packageUris) : assert(packageUris != null);
 
   final frontend.ProgramTransformer child;
   final Set<String> packageUris;
 
   @override
   void transform(Component component) {
-    assert(child is! _ToStringTransformer);
-    component.visitChildren(_ToStringVisitor(packageUris));
+    assert(child is! ToStringTransformer);
+    if (packageUris.isNotEmpty) {
+      component.visitChildren(ToStringVisitor(packageUris));
+    }
     child?.transform(component);
   }
 }
