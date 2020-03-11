@@ -203,21 +203,25 @@ class ToStringVisitor extends RecursiveVisitor<void> {
       node.name.name        == 'toString' &&
       node.enclosingClass   != null       &&
       node.enclosingLibrary != null       &&
+      !node.isStatic                      &&
+      !node.isAbstract                    &&
       _packageUris.contains(_importUriToPackage(node.enclosingLibrary.importUri))
     ) {
-      node.function.replaceWith(
-        FunctionNode(
-          ReturnStatement(
-            SuperMethodInvocation(
-              node.name,
-              Arguments(<Expression>[]),
-            ),
+      node.function.body.replaceWith(
+        ReturnStatement(
+          SuperMethodInvocation(
+            node.name,
+            Arguments(<Expression>[]),
           ),
         ),
       );
     }
     super.visitProcedure(node);
   }
+
+  // Avoid doing anything to default toString.
+  @override
+  void defaultMember(Member node) {}
 }
 
 /// Replaces [Object.toString] overrides with calls to super for the specified
