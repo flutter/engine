@@ -50,6 +50,24 @@ void main() async {
     verifyNever(procedure.enclosingLibrary);
   });
 
+  test('ToStringVisitor ignores top level toString', () {
+    // i.e. a `toString` method specified at the top of a library, like:
+    //
+    // void main() {}
+    // String toString() => 'why?';
+    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final MockProcedure procedure = MockProcedure();
+    final MockFunctionNode function = MockFunctionNode();
+    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    when(procedure.function).thenReturn(function);
+    when(procedure.name).thenReturn(Name('toString'));
+    when(procedure.enclosingLibrary).thenReturn(library);
+    when(procedure.enclosingClass).thenReturn(null);
+
+    visitor.visitProcedure(procedure);
+    verifyNever(function.replaceWith(any));
+  });
+
   test('ToStringVisitor ignores non-specified libraries', () {
     final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();

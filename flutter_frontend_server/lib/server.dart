@@ -193,25 +193,28 @@ class ToStringVisitor extends RecursiveVisitor<void> {
   /// 'package:flutter/foundation.dart'.
   final Set<String> _packageUris;
 
+  /// Turn 'dart:ui' into 'dart:ui', or
+  /// 'package:flutter/src/semantics_event.dart' into 'package:flutter'.
+  String _importUriToPackage(Uri importUri) => '${importUri.scheme}:${importUri.pathSegments.first}';
+
   @override
   void visitProcedure(Procedure node) {
-    if (node.name.name == 'toString' && node.enclosingLibrary != null) {
-      assert(node.enclosingClass != null);
-      // Turn 'dart:ui' into 'dart:ui', or
-      // 'package:flutter/src/semantics_event.dart' into 'package:flutter'.
-      final String packageUri = '${node.enclosingLibrary.importUri.scheme}:${node.enclosingLibrary.importUri.pathSegments.first}';
-      if (_packageUris.contains(packageUri)) {
-        node.function.replaceWith(
-          FunctionNode(
-            ReturnStatement(
-              SuperMethodInvocation(
-                node.name,
-                Arguments(<Expression>[]),
-              ),
+    if (
+      node.name.name        == 'toString' &&
+      node.enclosingClass   != null       &&
+      node.enclosingLibrary != null       &&
+      _packageUris.contains(_importUriToPackage(node.enclosingLibrary.importUri))
+    ) {
+      node.function.replaceWith(
+        FunctionNode(
+          ReturnStatement(
+            SuperMethodInvocation(
+              node.name,
+              Arguments(<Expression>[]),
             ),
           ),
-        );
-      }
+        ),
+      );
     }
     super.visitProcedure(node);
   }
