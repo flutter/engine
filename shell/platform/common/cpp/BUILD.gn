@@ -46,10 +46,13 @@ source_set("common_cpp") {
   configs += [ ":desktop_library_implementation" ]
 
   deps = [
-    ":common_cpp_core",
     ":common_cpp_library_headers",
     "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper",
     "//flutter/shell/platform/embedder:embedder_with_symbol_prefix",
+  ]
+
+  public_deps = [
+    ":common_cpp_core",
   ]
 
   # TODO: Remove once text input model refactor lands, at which point this code
