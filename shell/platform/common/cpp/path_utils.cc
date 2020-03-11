@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/glfw/path_utils.h"
+#include "flutter/shell/platform/common/cpp/path_utils.h"
 
 #if defined(__linux__)
 #include <linux/limits.h>
