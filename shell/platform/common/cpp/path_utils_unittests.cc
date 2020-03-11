@@ -11,7 +11,7 @@ namespace flutter {
 // Tests that GetExecutableDirectory returns a valid, absolute path.
 TEST(PathUtilsTest, ExecutableDirector) {
   std::filesystem::path exe_directory = GetExecutableDirectory();
-#if defined(__linux__)
+#if defined(__linux__) || defined(_WIN32)
   EXPECT_EQ(exe_directory.empty(), false);
   EXPECT_EQ(exe_directory.is_absolute(), true);
 #else
