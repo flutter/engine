@@ -31,7 +31,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
       fml::scoped_nsobject<FlutterOverlayView> overlay_view([[FlutterOverlayView alloc] init]);
       overlay_view.get().autoresizingMask =
           (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
-      std::unique_ptr<IOSSurface> ios_surface = [overlay_view.get() createSurface:nil];
+      std::unique_ptr<IOSSurface> ios_surface =
+          [overlay_view.get() createSurface:std::move(ios_context)];
       std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface();
 
       layer = std::make_shared<FlutterPlatformViewLayer>(
