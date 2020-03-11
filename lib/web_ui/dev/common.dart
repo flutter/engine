@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:io' as io;
 
 import 'package:args/args.dart';
@@ -33,6 +34,8 @@ abstract class PlatformBinding {
         _instance = _LinuxBinding();
       } else if (io.Platform.isMacOS) {
         _instance = _MacBinding();
+      } else if (io.Platform.isWindows) {
+        _instance = _WindowsBinding();
       } else {
         throw '${io.Platform.operatingSystem} is not supported';
       }
@@ -45,14 +48,56 @@ abstract class PlatformBinding {
   int getChromeBuild(YamlMap chromeLock);
   String getChromeDownloadUrl(String version);
   String getFirefoxDownloadUrl(String version);
+  String getFirefoxDownloadFilename(String version);
   String getChromeExecutablePath(io.Directory versionDir);
   String getFirefoxExecutablePath(io.Directory versionDir);
   String getFirefoxLatestVersionUrl();
-  String getSafariSystemExecutablePath();
+  String getMacApplicationLauncher();
+  String getCommandToRunEdge();
 }
 
 const String _kBaseDownloadUrl =
     'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o';
+
+class _WindowsBinding implements PlatformBinding {
+  @override
+  int getChromeBuild(YamlMap browserLock) {
+    final YamlMap chromeMap = browserLock['chrome'];
+    return chromeMap['Win'];
+  }
+
+  @override
+  String getChromeDownloadUrl(String version) =>
+      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win%2F${version}%2Fchrome-win32.zip?alt=media';
+
+  @override
+  String getChromeExecutablePath(io.Directory versionDir) =>
+      path.join(versionDir.path, 'chrome-win32', 'chrome');
+
+  @override
+  String getFirefoxDownloadUrl(String version) =>
+      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/win64/en-US/'
+          '${getFirefoxDownloadFilename(version)}';
+
+  @override
+  String getFirefoxDownloadFilename(String version) =>
+      'firefox-${version}.exe';
+
+  @override
+  String getFirefoxExecutablePath(io.Directory versionDir) =>
+      path.join(versionDir.path, 'firefox', 'firefox');
+
+  @override
+  String getFirefoxLatestVersionUrl() =>
+      'https://download.mozilla.org/?product=firefox-latest&os=win&lang=en-US';
+
+  @override
+  String getMacApplicationLauncher() =>
+      throw UnsupportedError('Safari is not supported on Windows');
+
+  @override
+  String getCommandToRunEdge() => 'MicrosoftEdgeLauncher';
+}
 
 class _LinuxBinding implements PlatformBinding {
   @override
@@ -71,7 +116,12 @@ class _LinuxBinding implements PlatformBinding {
 
   @override
   String getFirefoxDownloadUrl(String version) =>
-      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/linux-x86_64/en-US/firefox-${version}.tar.bz2';
+      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/linux-x86_64/en-US/'
+          '${getFirefoxDownloadFilename(version)}';
+
+  @override
+  String getFirefoxDownloadFilename(String version) =>
+      'firefox-${version}.tar.bz2';
 
   @override
   String getFirefoxExecutablePath(io.Directory versionDir) =>
@@ -82,8 +132,12 @@ class _LinuxBinding implements PlatformBinding {
       'https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US';
 
   @override
-  String getSafariSystemExecutablePath() =>
+  String getMacApplicationLauncher() =>
       throw UnsupportedError('Safari is not supported on Linux');
+
+  @override
+  String getCommandToRunEdge() =>
+      throw UnsupportedError('Edge is not supported on Linux');
 }
 
 class _MacBinding implements PlatformBinding {
@@ -107,20 +161,27 @@ class _MacBinding implements PlatformBinding {
 
   @override
   String getFirefoxDownloadUrl(String version) =>
-      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/mac/en-US/firefox-${version}.dmg';
+    'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/mac/en-US/'
+        '${getFirefoxDownloadFilename(version)}';
 
   @override
-  String getFirefoxExecutablePath(io.Directory versionDir) {
-    throw UnimplementedError();
-  }
+  String getFirefoxDownloadFilename(String version) =>
+      'Firefox ${version}.dmg';
+
+  @override
+  String getFirefoxExecutablePath(io.Directory versionDir) =>
+    path.join(versionDir.path, 'Firefox.app','Contents','MacOS', 'firefox');
 
   @override
   String getFirefoxLatestVersionUrl() =>
       'https://download.mozilla.org/?product=firefox-latest&os=osx&lang=en-US';
 
   @override
-  String getSafariSystemExecutablePath() =>
-      '/Applications/Safari.app/Contents/MacOS/Safari';
+  String getMacApplicationLauncher() => 'open';
+
+  @override
+  String getCommandToRunEdge() =>
+      throw UnimplementedError('Tests for Edge are not implemented for MacOS.');
 }
 
 class BrowserInstallation {
@@ -132,7 +193,7 @@ class BrowserInstallation {
   /// Browser version.
   final String version;
 
-  /// Path the the browser executable.
+  /// Path the browser executable.
   final String executable;
 }
 

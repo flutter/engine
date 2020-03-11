@@ -15,6 +15,7 @@
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/dpi_utils.h"
 #include "flutter/shell/platform/windows/key_event_handler.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
@@ -70,7 +71,7 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   config.open_gl.fbo_callback = [](void* user_data) -> uint32_t { return 0; };
   config.open_gl.gl_proc_resolver = [](void* user_data,
                                        const char* what) -> void* {
-    return eglGetProcAddress(what);
+    return reinterpret_cast<void*>(eglGetProcAddress(what));
   };
   config.open_gl.make_resource_current = [](void* user_data) -> bool {
     auto host = static_cast<flutter::Win32FlutterWindow*>(user_data);
@@ -157,10 +158,6 @@ uint64_t FlutterDesktopProcessMessages(
   return controller->engine_state->task_runner->ProcessTasks().count();
 }
 
-HWND FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
-  return controller->view->GetWindowHandle();
-}
-
 void FlutterDesktopDestroyViewController(
     FlutterDesktopViewControllerRef controller) {
   FlutterEngineShutdown(controller->engine_state->engine);
@@ -175,6 +172,23 @@ FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
   // aligning more closely with the Flutter registrar system.
 
   return controller->view->GetRegistrar();
+}
+
+FlutterDesktopViewRef FlutterDesktopGetView(
+    FlutterDesktopViewControllerRef controller) {
+  return controller->view_wrapper.get();
+}
+
+HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
+  return view->window->GetWindowHandle();
+}
+
+UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
+  return flutter::GetDpiForHWND(hwnd);
+}
+
+UINT FlutterDesktopGetDpiForMonitor(HMONITOR monitor) {
+  return flutter::GetDpiForMonitor(monitor);
 }
 
 FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
@@ -202,6 +216,11 @@ void FlutterDesktopRegistrarEnableInputBlocking(
 FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
     FlutterDesktopPluginRegistrarRef registrar) {
   return registrar->messenger.get();
+}
+
+FlutterDesktopViewRef FlutterDesktopRegistrarGetView(
+    FlutterDesktopPluginRegistrarRef registrar) {
+  return registrar->window;
 }
 
 bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,

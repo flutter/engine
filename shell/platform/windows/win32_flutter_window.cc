@@ -4,7 +4,7 @@
 
 namespace flutter {
 
-// the Windows DPI system is based on this
+// The Windows DPI system is based on this
 // constant for machines running at 100% scaling.
 constexpr int base_dpi = 96;
 
@@ -15,7 +15,6 @@ Win32FlutterWindow::Win32FlutterWindow(int width, int height) {
 
 Win32FlutterWindow::~Win32FlutterWindow() {
   DestroyRenderSurface();
-  Win32Window::Destroy();
 }
 
 FlutterDesktopViewControllerRef Win32FlutterWindow::CreateWin32FlutterWindow(
@@ -177,10 +176,6 @@ void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
   }
 }
 
-void Win32FlutterWindow::OnClose() {
-  messageloop_running_ = false;
-}
-
 void Win32FlutterWindow::OnFontChange() {
   if (engine_ == nullptr) {
     return;
@@ -320,13 +315,6 @@ void Win32FlutterWindow::SendPointerEventWithData(
           std::chrono::high_resolution_clock::now().time_since_epoch())
           .count();
 
-  // Windows passes all input in either physical pixels (Per-monitor, System
-  // DPI) or pre-scaled to match bitmap scaling of output where process is
-  // running in DPI unaware more.  In either case, no need to manually scale
-  // input here.  For more information see DPIHelper.
-  event.scroll_delta_x;
-  event.scroll_delta_y;
-
   FlutterEngineSendPointerEvent(engine_, &event, 1);
 
   if (event_data.phase == FlutterPointerPhase::kAdd) {
@@ -365,5 +353,4 @@ void Win32FlutterWindow::DestroyRenderSurface() {
   }
   render_surface = EGL_NO_SURFACE;
 }
-
 }  // namespace flutter

@@ -86,8 +86,10 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
 
   FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
-       initWithEmbeddedView:embedded_view.view
-      flutterViewController:flutter_view_controller_.get()] autorelease];
+                  initWithEmbeddedView:embedded_view.view
+                 flutterViewController:flutter_view_controller_.get()
+      gestureRecognizersBlockingPolicy:gesture_recognizers_blocking_policies[viewType]]
+      autorelease];
 
   touch_interceptors_[viewId] =
       fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
@@ -149,11 +151,13 @@ void FlutterPlatformViewsController::OnRejectGesture(FlutterMethodCall* call,
 
 void FlutterPlatformViewsController::RegisterViewFactory(
     NSObject<FlutterPlatformViewFactory>* factory,
-    NSString* factoryId) {
+    NSString* factoryId,
+    FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy) {
   std::string idString([factoryId UTF8String]);
   FML_CHECK(factories_.count(idString) == 0);
   factories_[idString] =
       fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>([factory retain]);
+  gesture_recognizers_blocking_policies[idString] = gestureRecognizerBlockingPolicy;
 }
 
 void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
@@ -304,7 +308,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   //
   // The UIKit frame is set based on the logical resolution instead of physical.
   // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
-  // However, flow is based on the physical resolution. For eaxmple, 1000 pixels in flow equals
+  // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
   // 500 points in UIKit. And until this point, we did all the calculation based on the flow
   // resolution. So we need to scale down to match UIKit's logical resolution.
   CGFloat screenScale = [UIScreen mainScreen].scale;
@@ -363,12 +367,12 @@ void FlutterPlatformViewsController::Reset() {
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
-                                                 std::shared_ptr<IOSGLContext> gl_context) {
+                                                 std::shared_ptr<IOSContext> ios_context) {
   DisposeViews();
 
   bool did_submit = true;
   for (int64_t view_id : composition_order_) {
-    EnsureOverlayInitialized(view_id, gl_context, gr_context);
+    EnsureOverlayInitialized(view_id, ios_context, gr_context);
     auto frame = overlays_[view_id]->surface->AcquireFrame(frame_size_);
     // If frame is null, AcquireFrame already printed out an error message.
     if (frame) {
@@ -456,14 +460,13 @@ void FlutterPlatformViewsController::DisposeViews() {
 
 void FlutterPlatformViewsController::EnsureOverlayInitialized(
     int64_t overlay_id,
-    std::shared_ptr<IOSGLContext> gl_context,
+    std::shared_ptr<IOSContext> ios_context,
     GrContext* gr_context) {
   FML_DCHECK(flutter_view_);
 
   auto overlay_it = overlays_.find(overlay_id);
 
   if (!gr_context) {
-    FML_DLOG(ERROR) << "No GrContext";
     if (overlays_.count(overlay_id) != 0) {
       return;
     }
@@ -471,7 +474,8 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
     overlay_view.get().frame = flutter_view_.get().bounds;
     overlay_view.get().autoresizingMask =
         (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
-    std::unique_ptr<IOSSurface> ios_surface = [overlay_view.get() createSurface:nil];
+    std::unique_ptr<IOSSurface> ios_surface =
+        [overlay_view.get() createSurface:std::move(ios_context)];
     std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface();
     overlays_[overlay_id] = std::make_unique<FlutterPlatformViewLayer>(
         std::move(overlay_view), std::move(ios_surface), std::move(surface));
@@ -497,7 +501,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
   overlay_view.get().autoresizingMask =
       (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
   std::unique_ptr<IOSSurface> ios_surface =
-      [overlay_view.get() createSurface:std::move(gl_context)];
+      [overlay_view.get() createSurface:std::move(ios_context)];
   std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface(gr_context);
   overlays_[overlay_id] = std::make_unique<FlutterPlatformViewLayer>(
       std::move(overlay_view), std::move(ios_surface), std::move(surface));
@@ -513,6 +517,15 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 // invoking an acceptGesture method on the platform_views channel). And this is how we allow the
 // Flutter framework to delay or prevent the embedded view from getting a touch sequence.
 @interface DelayingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
+
+// Indicates that if the `DelayingGestureRecognizer`'s state should be set to
+// `UIGestureRecognizerStateEnded` during next `touchesEnded` call.
+@property(nonatomic) bool shouldEndInNextTouchesEnded;
+
+// Indicates that the `DelayingGestureRecognizer`'s `touchesEnded` has been invoked without
+// setting the state to `UIGestureRecognizerStateEnded`.
+@property(nonatomic) bool touchedEndedWithoutBlocking;
+
 - (instancetype)initWithTarget:(id)target
                         action:(SEL)action
           forwardingRecognizer:(UIGestureRecognizer*)forwardingRecognizer;
@@ -535,9 +548,12 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 
 @implementation FlutterTouchInterceptingView {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
+  FlutterPlatformViewGestureRecognizersBlockingPolicy _blockingPolicy;
 }
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
-               flutterViewController:(UIViewController*)flutterViewController {
+               flutterViewController:(UIViewController*)flutterViewController
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy {
   self = [super initWithFrame:embeddedView.frame];
   if (self) {
     self.multipleTouchEnabled = YES;
@@ -554,6 +570,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
               initWithTarget:self
                       action:nil
         forwardingRecognizer:forwardingRecognizer]);
+    _blockingPolicy = blockingPolicy;
 
     [self addGestureRecognizer:_delayingRecognizer.get()];
     [self addGestureRecognizer:forwardingRecognizer];
@@ -566,7 +583,27 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 }
 
 - (void)blockGesture {
-  _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
+  switch (_blockingPolicy) {
+    case FlutterPlatformViewGestureRecognizersBlockingPolicyEager:
+      // We block all other gesture recognizers immediately in this policy.
+      _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
+      break;
+    case FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded:
+      if (_delayingRecognizer.get().touchedEndedWithoutBlocking) {
+        // If touchesEnded of the `DelayingGesureRecognizer` has been already invoked,
+        // we want to set the state of the `DelayingGesureRecognizer` to
+        // `UIGestureRecognizerStateEnded` as soon as possible.
+        _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
+      } else {
+        // If touchesEnded of the `DelayingGesureRecognizer` has not been invoked,
+        // We will set a flag to notify the `DelayingGesureRecognizer` to set the state to
+        // `UIGestureRecognizerStateEnded` when touchesEnded is called.
+        _delayingRecognizer.get().shouldEndInNextTouchesEnded = YES;
+      }
+      break;
+    default:
+      break;
+  }
 }
 
 // We want the intercepting view to consume the touches and not pass the touches up to the parent
@@ -596,7 +633,10 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
   self = [super initWithTarget:target action:action];
   if (self) {
     self.delaysTouchesBegan = YES;
+    self.delaysTouchesEnded = YES;
     self.delegate = self;
+    self.shouldEndInNextTouchesEnded = NO;
+    self.touchedEndedWithoutBlocking = NO;
     _forwardingRecognizer.reset([forwardingRecognizer retain]);
   }
   return self;
@@ -612,6 +652,21 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
 - (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
     shouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer*)otherGestureRecognizer {
   return otherGestureRecognizer == self;
+}
+
+- (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+  self.touchedEndedWithoutBlocking = NO;
+  [super touchesBegan:touches withEvent:event];
+}
+
+- (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+  if (self.shouldEndInNextTouchesEnded) {
+    self.state = UIGestureRecognizerStateEnded;
+    self.shouldEndInNextTouchesEnded = NO;
+  } else {
+    self.touchedEndedWithoutBlocking = YES;
+  }
+  [super touchesEnded:touches withEvent:event];
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {

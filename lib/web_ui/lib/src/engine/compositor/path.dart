@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// An implementation of [ui.Path] which is backed by an `SkPath`.
@@ -15,9 +16,9 @@ class SkPath implements ui.Path {
     fillType = ui.PathFillType.nonZero;
   }
 
-  // TODO(yjbanov): implement: https://github.com/flutter/flutter/issues/46812
   SkPath.from(SkPath other) {
-    throw UnimplementedError('SkPath.from is not implemented in the CanvasKit backend');
+    _skPath = js.JsObject(canvasKit['SkPath'], <js.JsObject>[other._skPath]);
+    fillType = other.fillType;
   }
 
   SkPath._fromSkPath(js.JsObject skPath) : _skPath = skPath;
@@ -56,7 +57,7 @@ class SkPath implements ui.Path {
 
   @override
   void addOval(ui.Rect oval) {
-    _skPath.callMethod('addOval', <dynamic>[makeSkRect(oval), true, 0]);
+    _skPath.callMethod('addOval', <dynamic>[makeSkRect(oval), false, 1]);
   }
 
   @override

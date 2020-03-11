@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
@@ -28,7 +29,7 @@ void main() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      await matchGoldenFile('$fileName.png', region: region, maxDiffRate: 0.03);
+      await matchGoldenFile('$fileName.png', region: region, maxDiffRatePercent: 0.0);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -74,6 +75,7 @@ void main() async {
         Paint()
           ..style = PaintingStyle.fill
           ..color = const Color.fromARGB(128, 255, 0, 0));
+    rc.restore();
     await _checkScreenshot(rc, 'canvas_blend_circle_diff_color');
   });
 
@@ -109,6 +111,7 @@ void main() async {
           ..color = const Color.fromARGB(128, 255, 0, 0));
     rc.drawImage(createTestImage(), Offset(135.0, 130.0),
         Paint()..blendMode = BlendMode.multiply);
+    rc.restore();
     await _checkScreenshot(rc, 'canvas_blend_image_multiply');
   });
 }

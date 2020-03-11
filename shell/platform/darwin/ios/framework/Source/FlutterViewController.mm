@@ -23,14 +23,73 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
+static constexpr CGFloat kScrollViewContentSize = 2.0;
+
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
 
+/// Class to coalesce calls for a period of time.
+///
+/// This is used to filter out the conflicting notifications that can get sent
+/// in rapid succession when the app gets foregrounded.
+@interface FlutterCoalescer : NSObject
+@property(nonatomic, assign) BOOL isTriggered;
+@property(nonatomic, assign) BOOL isCoalescing;
+@property(nonatomic, copy) dispatch_block_t block;
+@end
+
+@implementation FlutterCoalescer
+- (instancetype)initWithBlock:(dispatch_block_t)block {
+  self = [super init];
+  if (self) {
+    self.block = block;
+  }
+  return self;
+}
+
+- (void)dealloc {
+  [_block release];
+  [super dealloc];
+}
+
+- (void)trigger {
+  if (_isCoalescing) {
+    _isTriggered = YES;
+  } else {
+    _isTriggered = NO;
+    if (_block) {
+      _block();
+    }
+  }
+}
+
+- (void)coalesceForSeconds:(double)seconds {
+  if (self.isCoalescing || !self.block) {
+    return;
+  }
+  self.isCoalescing = YES;
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, seconds * NSEC_PER_SEC),
+                 dispatch_get_main_queue(), ^{
+                   if (self.isTriggered && self.block) {
+                     self.block();
+                   }
+                   self.isTriggered = NO;
+                   self.isCoalescing = NO;
+                 });
+}
+
+- (void)invalidate {
+  self.block = nil;
+}
+
+@end  // FlutterCoalescer
+
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
-@interface FlutterViewController () <FlutterBinaryMessenger>
+@interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @end
 
@@ -64,6 +123,14 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
   NSMutableSet<NSNumber*>* _ongoingTouches;
+  // Coalescer that filters out superfluous keyboard notifications when the app
+  // is being foregrounded.
+  fml::scoped_nsobject<FlutterCoalescer> _updateViewportMetrics;
+  // This scroll view is a workaround to accomodate iOS 13 and higher.  There isn't a way to get
+  // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
+  // UIScrollView with height zero and a content offset so we can get those events. See also:
+  // https://github.com/flutter/flutter/issues/35050
+  fml::scoped_nsobject<UIScrollView> _scrollView;
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -147,6 +214,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   _statusBarStyle = UIStatusBarStyleDefault;
 
   [self setupNotificationCenterObservers];
+
+  __block FlutterViewController* blockSelf = self;
+  _updateViewportMetrics.reset([[FlutterCoalescer alloc] initWithBlock:^{
+    [blockSelf updateViewportMetricsImplementation];
+  }]);
 }
 
 - (FlutterEngine*)engine {
@@ -235,6 +307,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
                object:nil];
 
   [center addObserver:self
+             selector:@selector(onAccessibilityStatusChanged:)
+                 name:UIAccessibilityDarkerSystemColorsStatusDidChangeNotification
+               object:nil];
+
+  [center addObserver:self
              selector:@selector(onUserSettingsChanged:)
                  name:UIContentSizeCategoryDidChangeNotification
                object:nil];
@@ -260,6 +337,40 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
   [self installSplashScreenViewIfNecessary];
+  UIScrollView* scrollView = [[UIScrollView alloc] init];
+  scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+  // The color shouldn't matter since it is offscreen.
+  scrollView.backgroundColor = UIColor.whiteColor;
+  scrollView.delegate = self;
+  // This is an arbitrary small size.
+  scrollView.contentSize = CGSizeMake(kScrollViewContentSize, kScrollViewContentSize);
+  // This is an arbitrary offset that is not CGPointZero.
+  scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
+  [self.view addSubview:scrollView];
+  _scrollView.reset(scrollView);
+}
+
+static void sendFakeTouchEvent(FlutterEngine* engine,
+                               CGPoint location,
+                               flutter::PointerData::Change change) {
+  const CGFloat scale = [UIScreen mainScreen].scale;
+  flutter::PointerData pointer_data;
+  pointer_data.Clear();
+  pointer_data.physical_x = location.x * scale;
+  pointer_data.physical_y = location.y * scale;
+  pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
+  pointer_data.time_stamp = [[NSDate date] timeIntervalSince1970] * kMicrosecondsPerSecond;
+  auto packet = std::make_unique<flutter::PointerDataPacket>(/*count=*/1);
+  pointer_data.change = change;
+  packet->SetPointerData(0, pointer_data);
+  [engine dispatchPointerDataPacket:std::move(packet)];
+}
+
+- (BOOL)scrollViewShouldScrollToTop:(UIScrollView*)scrollView {
+  CGPoint statusBarPoint = CGPointZero;
+  sendFakeTouchEvent(_engine.get(), statusBarPoint, flutter::PointerData::Change::kDown);
+  sendFakeTouchEvent(_engine.get(), statusBarPoint, flutter::PointerData::Change::kUp);
+  return NO;
 }
 
 #pragma mark - Managing launch views
@@ -441,14 +552,24 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 #pragma mark - UIViewController lifecycle notifications
 
-- (void)viewWillAppear:(BOOL)animated {
-  TRACE_EVENT0("flutter", "viewWillAppear");
+- (void)viewDidLoad {
+  TRACE_EVENT0("flutter", "viewDidLoad");
 
   if (_engineNeedsLaunch) {
     [_engine.get() launchEngine:nil libraryURI:nil];
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
   }
+
+  FML_DCHECK([_engine.get() viewController] != nil)
+      << "FlutterViewController::viewWillAppear:AttachView ViewController was nil";
+  [_engine.get() attachView];
+
+  [super viewDidLoad];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+  TRACE_EVENT0("flutter", "viewWillAppear");
 
   // Send platform settings to Flutter, e.g., platform brightness.
   [self onUserSettingsChanged:nil];
@@ -500,7 +621,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
       flutter::PointerData pointer_data;
       pointer_data.Clear();
 
-      constexpr int kMicrosecondsPerSecond = 1000 * 1000;
       // Use current time.
       pointer_data.time_stamp = [[NSDate date] timeIntervalSince1970] * kMicrosecondsPerSecond;
 
@@ -531,6 +651,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                     userInfo:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_ongoingTouches release];
+  [_updateViewportMetrics invalidate];
   [super dealloc];
 }
 
@@ -557,6 +678,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
+  [_updateViewportMetrics coalesceForSeconds:0.5];
 }
 
 // Make this transition only while this current view controller is visible.
@@ -741,6 +863,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
+  [_updateViewportMetrics trigger];
+}
+
+/// The direct implementation of updateViewportMetrics, it doesn't conform to
+/// the coalescing logic when foregrounding the app.  Most calls should be
+/// directed to [updateViewportMetrics].
+- (void)updateViewportMetricsImplementation {
   [_engine.get() updateViewportMetrics:_viewportMetrics];
 }
 
@@ -757,6 +886,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGSize viewSize = self.view.bounds.size;
   CGFloat scale = [UIScreen mainScreen].scale;
 
+  // Purposefully place this not visible.
+  _scrollView.get().frame = CGRectMake(0.0, 0.0, viewSize.width, 0.0);
+  _scrollView.get().contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
+
   // First time since creation that the dimensions of its view is known.
   bool firstViewBoundsUpdate = !_viewportMetrics.physical_width;
   _viewportMetrics.device_pixel_ratio = scale;
@@ -764,7 +897,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   _viewportMetrics.physical_height = viewSize.height * scale;
 
   [self updateViewportPadding];
-  [self updateViewportMetrics];
+  [self updateViewportMetricsImplementation];
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
@@ -889,6 +1022,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kReduceMotion);
   if (UIAccessibilityIsBoldTextEnabled())
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kBoldText);
+  if (UIAccessibilityDarkerSystemColorsEnabled())
+    flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kHighContrast);
 #if TARGET_OS_SIMULATOR
   // There doesn't appear to be any way to determine whether the accessibility
   // inspector is enabled on the simulator. We conservatively always turn on the
@@ -1063,42 +1198,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
   } else {
     return @"normal";
-  }
-}
-
-#pragma mark - Status Bar touch event handling
-
-// Standard iOS status bar height in points.
-constexpr CGFloat kStandardStatusBarHeight = 20.0;
-
-- (void)handleStatusBarTouches:(UIEvent*)event {
-  CGFloat standardStatusBarHeight = kStandardStatusBarHeight;
-  if (@available(iOS 11, *)) {
-    standardStatusBarHeight = self.view.safeAreaInsets.top;
-  }
-
-  // If the status bar is double-height, don't handle status bar taps. iOS
-  // should open the app associated with the status bar.
-  CGRect statusBarFrame = [UIApplication sharedApplication].statusBarFrame;
-  if (statusBarFrame.size.height != standardStatusBarHeight) {
-    return;
-  }
-
-  // If we detect a touch in the status bar, synthesize a fake touch begin/end.
-  for (UITouch* touch in event.allTouches) {
-    if (touch.phase == UITouchPhaseBegan && touch.tapCount > 0) {
-      CGPoint windowLoc = [touch locationInView:nil];
-      CGPoint screenLoc = [touch.window convertPoint:windowLoc toWindow:nil];
-      if (CGRectContainsPoint(statusBarFrame, screenLoc)) {
-        NSSet* statusbarTouches = [NSSet setWithObject:touch];
-
-        flutter::PointerData::Change change = flutter::PointerData::Change::kDown;
-        [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change];
-        change = flutter::PointerData::Change::kUp;
-        [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change];
-        return;
-      }
-    }
   }
 }
 

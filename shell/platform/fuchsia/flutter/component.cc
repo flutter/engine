@@ -11,7 +11,6 @@
 #include <lib/async/default.h>
 #include <lib/fdio/directory.h>
 #include <lib/fdio/namespace.h>
-#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/ui/scenic/cpp/view_token_pair.h>
 #include <lib/vfs/cpp/composed_service_dir.h>
 #include <lib/vfs/cpp/remote_dir.h>
@@ -234,15 +233,21 @@ Application::Application(
                          << "): " << zx_status_get_string(status);
           return;
         }
-        const char* other_dirs[] = {"debug", "ctrl"};
+        const char* other_dirs[] = {"debug", "ctrl", "diagnostics"};
         // add other directories as RemoteDirs.
         for (auto& dir_str : other_dirs) {
           fidl::InterfaceHandle<fuchsia::io::Directory> dir;
           auto request = dir.NewRequest().TakeChannel();
-          fdio_service_connect_at(directory_ptr_.channel().get(), dir_str,
-                                  request.release());
-          outgoing_dir_->AddEntry(
-              dir_str, std::make_unique<vfs::RemoteDir>(dir.TakeChannel()));
+          auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
+                                                dir_str, request.release());
+          if (status == ZX_OK) {
+            outgoing_dir_->AddEntry(
+                dir_str, std::make_unique<vfs::RemoteDir>(dir.TakeChannel()));
+          } else {
+            FML_LOG(ERROR) << "could not add out directory entry(" << dir_str
+                           << ") for flutter app(" << debug_label_
+                           << "): " << zx_status_get_string(status);
+          }
         }
       };
 
@@ -613,7 +618,6 @@ void Application::CreateView(
       settings_,                     // settings
       std::move(isolate_snapshot_),  // isolate snapshot
       scenic::ToViewToken(std::move(view_token)),  // view token
-      scenic::ViewRefPair::New(),                  // view ref pair
       std::move(fdio_ns_),                         // FDIO namespace
       std::move(directory_request_)                // outgoing request
       ));

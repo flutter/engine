@@ -36,7 +36,9 @@ static bool OpenVmo(fuchsia::mem::Buffer* resource_vmo,
   dart_utils::Check(path[0] != '/', LOG_TAG);
 
   if (namespc == nullptr) {
-    return dart_utils::VmoFromFilename(path, resource_vmo);
+    if (!VmoFromFilename(path, resource_vmo)) {
+      return false;
+    }
   } else {
     auto root_dir = fdio_ns_opendir(namespc);
     if (root_dir < 0) {

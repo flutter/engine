@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 // Synced 2019-05-30T14:20:57.833907.
 
+// @dart = 2.6
 part of ui;
 
 /// Whether to slant the glyphs in the font
@@ -424,6 +425,92 @@ enum TextDecorationStyle {
   wavy
 }
 
+/// Defines how the paragraph will apply [TextStyle.height] the ascent of the
+/// first line and descent of the last line.
+///
+/// The boolean value represents whether the [TextStyle.height] modifier will
+/// be applied to the corresponding metric. By default, all properties are true,
+/// and [TextStyle.height] is applied as normal. When set to false, the font's
+/// default ascent will be used.
+class TextHeightBehavior {
+
+  /// Creates a new TextHeightBehavior object.
+  ///
+  ///  * applyHeightToFirstAscent: When true, the [TextStyle.height] modifier
+  ///    will be applied to the ascent of the first line. When false, the font's
+  ///    default ascent will be used.
+  ///  * applyHeightToLastDescent: When true, the [TextStyle.height] modifier
+  ///    will be applied to the descent of the last line. When false, the font's
+  ///    default descent will be used.
+  ///
+  /// All properties default to true (height modifications applied as normal).
+  const TextHeightBehavior({
+    this.applyHeightToFirstAscent = true,
+    this.applyHeightToLastDescent = true,
+  });
+
+  /// Creates a new TextHeightBehavior object from an encoded form.
+  ///
+  /// See [encode] for the creation of the encoded form.
+  const TextHeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) == 0,
+                                                      applyHeightToLastDescent = (encoded & 0x2) == 0;
+
+
+  /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
+  /// line in the paragraph.
+  ///
+  /// When true, the [TextStyle.height] modifier will be applied to to the ascent
+  /// of the first line. When false, the font's default ascent will be used and
+  /// the [TextStyle.height] will have no effect on the ascent of the first line.
+  ///
+  /// This property only has effect if a non-null [TextStyle.height] is specified.
+  ///
+  /// Defaults to true (height modifications applied as normal).
+  final bool applyHeightToFirstAscent;
+
+  /// Whether to apply the [TextStyle.height] modifier to the descent of the last
+  /// line in the paragraph.
+  ///
+  /// When true, the [TextStyle.height] modifier will be applied to to the descent
+  /// of the last line. When false, the font's default descent will be used and
+  /// the [TextStyle.height] will have no effect on the descent of the last line.
+  ///
+  /// This property only has effect if a non-null [TextStyle.height] is specified.
+  ///
+  /// Defaults to true (height modifications applied as normal).
+  final bool applyHeightToLastDescent;
+
+  /// Returns an encoded int representation of this object.
+  int encode() {
+    return (applyHeightToFirstAscent ? 0 : 1 << 0) | (applyHeightToLastDescent ? 0 : 1 << 1);
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is TextHeightBehavior
+        && other.applyHeightToFirstAscent == applyHeightToFirstAscent
+        && other.applyHeightToLastDescent == applyHeightToLastDescent;
+  }
+
+  @override
+  int get hashCode {
+    return hashValues(
+      applyHeightToFirstAscent,
+      applyHeightToLastDescent,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'TextHeightBehavior('
+             'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
+             'applyHeightToLastDescent: $applyHeightToLastDescent'
+           ')';
+  }
+}
+
 /// An opaque object that determines the size, position, and rendering of text.
 abstract class TextStyle {
   /// Creates a new TextStyle object.
@@ -584,6 +671,7 @@ abstract class ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
+    TextHeightBehavior textHeightBehavior,
     FontWeight fontWeight,
     FontStyle fontStyle,
     StrutStyle strutStyle,
@@ -598,6 +686,7 @@ abstract class ParagraphStyle {
         fontFamily: fontFamily,
         fontSize: fontSize,
         height: height,
+        textHeightBehavior: textHeightBehavior,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
         strutStyle: strutStyle,
@@ -612,6 +701,7 @@ abstract class ParagraphStyle {
         fontFamily: fontFamily,
         fontSize: fontSize,
         height: height,
+        textHeightBehavior: textHeightBehavior,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
         strutStyle: strutStyle,
@@ -1100,8 +1190,8 @@ enum BoxHeightStyle {
   /// guarantee that the boxes will cover the entire vertical height of the line
   /// when there is additional line spacing.
   ///
-  /// See [RectHeightStyle.includeLineSpacingTop], [RectHeightStyle.includeLineSpacingMiddle],
-  /// and [RectHeightStyle.includeLineSpacingBottom] for styles that will cover
+  /// See [BoxHeightStyle.includeLineSpacingTop], [BoxHeightStyle.includeLineSpacingMiddle],
+  /// and [BoxHeightStyle.includeLineSpacingBottom] for styles that will cover
   /// the entire line.
   max,
 
@@ -1123,7 +1213,7 @@ enum BoxHeightStyle {
   ///
   /// The line spacing will be added to the top of the box.
   ///
-  /// {@macro flutter.dart:ui.rectHeightStyle.includeLineSpacing}
+  /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
   includeLineSpacingTop,
 
   /// Extends the bottom edge of the bounds to fully cover any line spacing.
@@ -1132,6 +1222,14 @@ enum BoxHeightStyle {
   ///
   /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
   includeLineSpacingBottom,
+
+  /// Calculate box heights based on the metrics of this paragraph's [StrutStyle].
+  ///
+  /// Boxes based on the strut will have consistent heights throughout the
+  /// entire paragraph.  The top edge of each line will align with the bottom
+  /// edge of the previous line.  It is possible for glyphs to extend outside
+  /// these boxes.
+  strut,
 }
 
 /// Defines various ways to horizontally bound the boxes returned by
@@ -1490,5 +1588,24 @@ abstract class ParagraphBuilder {
 /// * `fontFamily`: The family name used to identify the font in text styles.
 ///  If this is not provided, then the family name will be extracted from the font file.
 Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
-  return _fontCollection.loadFontFromList(list, fontFamily: fontFamily);
+  if (engine.experimentalUseSkia) {
+    return engine.skiaFontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
+        (_) => _sendFontChangeMessage()
+    );
+  } else {
+    return _fontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
+      (_) => _sendFontChangeMessage()
+    );
+  }
+}
+
+final ByteData _fontChangeMessage = engine.JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
+
+FutureOr<void> _sendFontChangeMessage() async {
+  if (window.onPlatformMessage != null)
+    window.onPlatformMessage(
+      'flutter/system',
+      _fontChangeMessage,
+      (_) {},
+    );
 }

@@ -11,6 +11,8 @@
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
+#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
+#include "flutter/shell/platform/darwin/ios/ios_context.h"
 
 // A UIView that is used as the parent for embedded UIViews.
 //
@@ -19,7 +21,9 @@
 // 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
 @interface FlutterTouchInterceptingView : UIView
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
-               flutterViewController:(UIViewController*)flutterViewController;
+               flutterViewController:(UIViewController*)flutterViewController
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)blockingPolicy;
 
 // Stop delaying any active touch sequence (and let it arrive the embedded view).
 - (void)releaseGesture;
@@ -50,7 +54,7 @@ CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix);
 // The position of the `layer` should be unchanged after resetting the anchor.
 void ResetAnchor(CALayer* layer);
 
-class IOSGLContext;
+class IOSContextGL;
 class IOSSurface;
 
 struct FlutterPlatformViewLayer {
@@ -80,7 +84,10 @@ class FlutterPlatformViewsController {
 
   void SetFlutterViewController(UIViewController* flutter_view_controller);
 
-  void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
+  void RegisterViewFactory(
+      NSObject<FlutterPlatformViewFactory>* factory,
+      NSString* factoryId,
+      FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy);
 
   void SetFrameSize(SkISize frame_size);
 
@@ -105,7 +112,7 @@ class FlutterPlatformViewsController {
   // Discards all platform views instances and auxiliary resources.
   void Reset();
 
-  bool SubmitFrame(GrContext* gr_context, std::shared_ptr<IOSGLContext> gl_context);
+  bool SubmitFrame(GrContext* gr_context, std::shared_ptr<IOSContext> ios_context);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
@@ -152,6 +159,10 @@ class FlutterPlatformViewsController {
   // Only compoiste platform views in this set.
   std::unordered_set<int64_t> views_to_recomposite_;
 
+  // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
+  std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
+      gesture_recognizers_blocking_policies;
+
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 
   void OnCreate(FlutterMethodCall* call, FlutterResult& result);
@@ -163,7 +174,7 @@ class FlutterPlatformViewsController {
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
   void EnsureOverlayInitialized(int64_t overlay_id,
-                                std::shared_ptr<IOSGLContext> gl_context,
+                                std::shared_ptr<IOSContext> ios_context,
                                 GrContext* gr_context);
 
   // This will return true after pre-roll if any of the embedded views

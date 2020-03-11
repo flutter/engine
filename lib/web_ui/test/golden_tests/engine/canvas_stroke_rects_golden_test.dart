@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:math' as math;
 
@@ -30,7 +31,7 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_stroke_rects.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
 }
 

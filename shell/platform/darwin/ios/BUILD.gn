@@ -5,11 +5,11 @@
 assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
-import("$flutter_root/build/darwin/ios_app.gni")
-import("$flutter_root/common/config.gni")
-import("$flutter_root/shell/gpu/gpu.gni")
-import("$flutter_root/shell/platform/darwin/common/framework_shared.gni")
-import("$flutter_root/testing/testing.gni")
+import("//flutter/build/darwin/ios_app.gni")
+import("//flutter/common/config.gni")
+import("//flutter/shell/gpu/gpu.gni")
+import("//flutter/shell/platform/darwin/common/framework_shared.gni")
+import("//flutter/testing/testing.gni")
 
 _flutter_framework_dir = "$root_out_dir/Flutter.framework"
 
@@ -44,9 +44,10 @@ shared_library("create_flutter_framework_dylib") {
 
   ldflags = [ "-Wl,-install_name,@rpath/Flutter.framework/Flutter" ]
 
+  public = _flutter_framework_headers
+
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
-    "framework/Source/FlutterAppDelegate_Internal.h",
     "framework/Source/FlutterBinaryMessengerRelay.mm",
     "framework/Source/FlutterCallbackCache.mm",
     "framework/Source/FlutterCallbackCache_Internal.h",
@@ -82,12 +83,16 @@ shared_library("create_flutter_framework_dylib") {
     "framework/Source/platform_message_router.mm",
     "framework/Source/vsync_waiter_ios.h",
     "framework/Source/vsync_waiter_ios.mm",
+    "ios_context.h",
+    "ios_context.mm",
+    "ios_context_gl.h",
+    "ios_context_gl.mm",
+    "ios_context_software.h",
+    "ios_context_software.mm",
     "ios_external_texture_gl.h",
     "ios_external_texture_gl.mm",
-    "ios_gl_context.h",
-    "ios_gl_context.mm",
-    "ios_gl_render_target.h",
-    "ios_gl_render_target.mm",
+    "ios_render_target_gl.h",
+    "ios_render_target_gl.mm",
     "ios_surface.h",
     "ios_surface.mm",
     "ios_surface_gl.h",
@@ -96,37 +101,39 @@ shared_library("create_flutter_framework_dylib") {
     "ios_surface_software.mm",
     "platform_view_ios.h",
     "platform_view_ios.mm",
+    "rendering_api_selection.h",
+    "rendering_api_selection.mm",
   ]
-
-  if (shell_enable_metal) {
-    sources += [
-      "ios_surface_metal.h",
-      "ios_surface_metal.mm",
-    ]
-  }
 
   sources += _flutter_framework_headers
 
   deps = [
     ":ios_gpu_configuration",
-    "$flutter_root/common",
-    "$flutter_root/flow",
-    "$flutter_root/fml",
-    "$flutter_root/lib/ui",
-    "$flutter_root/runtime",
-    "$flutter_root/runtime:libdart",
-    "$flutter_root/shell/common",
-    "$flutter_root/shell/platform/darwin/common",
-    "$flutter_root/shell/platform/darwin/common:framework_shared",
+    "//flutter/common",
+    "//flutter/flow",
+    "//flutter/fml",
+    "//flutter/lib/ui",
+    "//flutter/runtime",
+    "//flutter/runtime:libdart",
+    "//flutter/shell/common",
+    "//flutter/shell/platform/darwin/common",
+    "//flutter/shell/platform/darwin/common:framework_shared",
     "//third_party/skia",
   ]
 
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [ "//flutter:config" ]
 
   defines = [ "FLUTTER_FRAMEWORK=1" ]
 
   if (shell_enable_metal) {
     defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
+
+    sources += [
+      "ios_context_metal.h",
+      "ios_context_metal.mm",
+      "ios_surface_metal.h",
+      "ios_surface_metal.mm",
+    ]
   }
 
   libs = [
@@ -155,7 +162,7 @@ copy("copy_dylib") {
 }
 
 action("copy_framework_info_plist") {
-  script = "$flutter_root/build/copy_info_plist.py"
+  script = "//flutter/build/copy_info_plist.py"
   visibility = [ ":*" ]
   sources = [
     "framework/Info.plist",
@@ -181,7 +188,7 @@ copy("copy_framework_module_map") {
 }
 
 action("copy_framework_headers") {
-  script = "$flutter_root/sky/tools/install_framework_headers.py"
+  script = "//flutter/sky/tools/install_framework_headers.py"
   visibility = [ ":*" ]
   sources = get_path_info(_flutter_framework_headers, "abspath") +
             framework_shared_headers

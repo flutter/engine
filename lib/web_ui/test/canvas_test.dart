@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -41,7 +42,7 @@ void main() {
       canvas.clear();
       recordingCanvas.apply(canvas);
     }, whenDone: () {
-      expect(mockCanvas.methodCallLog, hasLength(2));
+      expect(mockCanvas.methodCallLog, hasLength(3));
 
       MockCanvasCall call = mockCanvas.methodCallLog[0];
       expect(call.methodName, 'clear');
@@ -64,8 +65,9 @@ void main() {
       canvas.clear();
       recordingCanvas.apply(canvas);
     }, whenDone: () {
-      expect(mockCanvas.methodCallLog, hasLength(1));
+      expect(mockCanvas.methodCallLog, hasLength(2));
       expect(mockCanvas.methodCallLog[0].methodName, 'clear');
+      expect(mockCanvas.methodCallLog[1].methodName, 'endOfPaint');
     });
   });
 }
