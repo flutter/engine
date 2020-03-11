@@ -189,7 +189,7 @@ class ToStringVisitor extends RecursiveVisitor<void> {
   /// The [packageUris] must not be null.
   ToStringVisitor(this._packageUris) : assert(_packageUris != null);
 
-  /// A set of package URIs to apply this transformer too, e.g. 'dart:ui' and
+  /// A set of package URIs to apply this transformer to, e.g. 'dart:ui' and
   /// 'package:flutter/foundation.dart'.
   final Set<String> _packageUris;
 
@@ -220,7 +220,7 @@ class ToStringVisitor extends RecursiveVisitor<void> {
   }
 }
 
-/// Replaces [Object.toString] overides with calls to super for the specified
+/// Replaces [Object.toString] overrides with calls to super for the specified
 /// [packageUris].
 class ToStringTransformer extends frontend.ProgramTransformer {
   /// The [packageUris] parameter must not be null, but may be empty.
@@ -228,7 +228,7 @@ class ToStringTransformer extends frontend.ProgramTransformer {
 
   final frontend.ProgramTransformer _child;
 
-  /// A set of package URIs to apply this transformer too, e.g. 'dart:ui' and
+  /// A set of package URIs to apply this transformer to, e.g. 'dart:ui' and
   /// 'package:flutter/foundation.dart'.
   final Set<String> _packageUris;
 
