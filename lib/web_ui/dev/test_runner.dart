@@ -14,8 +14,8 @@ import 'package:test_core/src/runner/hack_register_platform.dart'
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
-import 'package:ui/src/engine.dart';
 
+import 'integration_tests.dart';
 import 'supported_browsers.dart';
 import 'test_platform.dart';
 import 'environment.dart';
@@ -47,11 +47,13 @@ class TestCommand extends Command<bool> {
       )
       ..addFlag(
         'unit-tests-only',
+        defaultsTo: false,
         help: 'felt test command runs the unit tests and the integration tests '
             'at the same time. If this flag is set, only run the unit tests.',
       )
       ..addFlag(
         'integration-tests-only',
+        defaultsTo: false,
         help: 'felt test command runs the unit tests and the integration tests '
             'at the same time. If this flag is set, only run the integration '
             'tests.',
@@ -85,6 +87,10 @@ class TestCommand extends Command<bool> {
 
   /// Check the flags to see what type of integration tests are requested.
   TestTypesRequested findTestType() {
+    print('chrome: $isChrome');
+    print('unit test only: ${argResults['unit-tests-only']}');
+    print('int test only: ${argResults['integration-tests-only']}');
+
     if (argResults['unit-tests-only'] && argResults['integration-tests-only']) {
       throw ArgumentError('Conflicting arguments: unit-tests-only and '
           'integration-tests-only are both set');
@@ -108,6 +114,7 @@ class TestCommand extends Command<bool> {
   Future<bool> run() async {
     SupportedBrowsers.instance
       ..argParsers.forEach((t) => t.parseOptions(argResults));
+    print('run tests started');
 
     // Check the flags to see what type of integration tests are requested.
     testTypesRequested = findTestType();
@@ -118,7 +125,11 @@ class TestCommand extends Command<bool> {
       case TestTypesRequested.integration:
         return runIntegrationTests();
       case TestTypesRequested.all:
-        return await runIntegrationTests() && await runUnitTests();
+        bool integrationTestResult = await runIntegrationTests();
+        bool unitTestResult = await runUnitTests();
+        print('Tests run. Integratiion tests passed: $integrationTestResult '
+            'unit tests passed: $unitTestResult');
+        return integrationTestResult && unitTestResult;
       case TestTypesRequested.none:
         throw ArgumentError('One test type should be chosed to run felt test.');
     }
@@ -126,7 +137,7 @@ class TestCommand extends Command<bool> {
   }
 
   Future<bool> runIntegrationTests() async {
-
+    IntegrationTestsManager().runTests();
   }
 
   Future<bool> runUnitTests() async {
