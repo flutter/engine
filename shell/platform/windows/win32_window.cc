@@ -4,9 +4,9 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
-#include "dpi_utils.h"
-
 #include <iostream>
+
+#include "dpi_utils.h"
 
 namespace flutter {
 
@@ -112,6 +112,7 @@ Win32Window::MessageHandler(HWND hwnd,
   auto window =
       reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
   UINT button_pressed = 0;
+  static unsigned int saved_key = 0;
   if (window != nullptr) {
     switch (message) {
       case kWmDpiChangedBeforeParent:
@@ -192,11 +193,17 @@ Win32Window::MessageHandler(HWND hwnd,
         // DefWindowProc will send WM_CHAR for this WM_UNICHAR.
         break;
       }
+      case WM_DEADCHAR:
+      case WM_SYSDEADCHAR:
       case WM_CHAR:
       case WM_SYSCHAR: {
+        std::cerr << "Char called\n";
         if (wparam == VK_BACK)
           break;
         char32_t code_point = static_cast<char32_t>(wparam);
+        std::cerr << "Char called in char " << code_point << std::endl;
+        std::cerr << "Saved key code called in char " << saved_key << std::endl;
+
         static char32_t lead_surrogate = 0;
         // If code_point is LeadSurrogate, save and return.
         if ((code_point & 0xFFFFFC00) == 0xD800) {
@@ -210,29 +217,71 @@ Win32Window::MessageHandler(HWND hwnd,
         }
         lead_surrogate = 0;
         window->OnChar(code_point);
+
+        unsigned int scancode = (lparam >> 16) & 0xff;
+        window->OnKey(saved_key, scancode, WM_KEYDOWN, 0, code_point);
+
         break;
       }
       case WM_KEYDOWN:
       case WM_SYSKEYDOWN:
       case WM_KEYUP:
       case WM_SYSKEYUP:
-        unsigned int scancode = ( lparam >> 16 ) & 0xff;
-        std::cerr << "Scan code param \n";
-        std::cerr << scancode << std::endl;
-        unsigned int virtualKey = MapVirtualKey(scancode, MAPVK_VSC_TO_VK);
-        if (virtualKey == VK_SHIFT) {
+        std::cerr << "Keycode called\n";
+        unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
+        std::cerr << "Char in keydown " << character << std::endl;
+        unsigned int keyCode(wparam);
+
+        if (character > 0) {
+                  saved_key = keyCode;
+
+          break;
+        }
+        unsigned int scancode = (lparam >> 16) & 0xff;
+        if (keyCode == VK_SHIFT) {
           if (GetKeyState(VK_LSHIFT) < 0) {
-            virtualKey = VK_LSHIFT;
+            keyCode = VK_LSHIFT;
           } else if (GetKeyState(VK_RSHIFT) < 0) {
-                        virtualKey = VK_RSHIFT;
+            keyCode = VK_RSHIFT;
+          } else {
+            if (saved_key > 0 && saved_key == VK_LSHIFT) {
+              keyCode = VK_LSHIFT;
+            } else if (saved_key > 0 && saved_key == VK_RSHIFT) {
+              keyCode = VK_RSHIFT;
+            }
           }
         }
-        std::cerr << "virtualKey\n";
-        std::cerr << virtualKey << std::endl;
+        if (keyCode == VK_CONTROL) {
+          if (GetKeyState(VK_LCONTROL) < 0) {
+            keyCode = VK_LCONTROL;
+          } else if (GetKeyState(VK_RCONTROL) < 0) {
+            keyCode = VK_RCONTROL;
+          } else {
+            if (saved_key > 0 && saved_key == VK_LCONTROL) {
+              keyCode = VK_LCONTROL;
+            } else if (saved_key > 0 && saved_key == VK_RCONTROL) {
+              keyCode = VK_RCONTROL;
+            }
+          }
+        }
+        if (keyCode == VK_MENU) {
+          if (GetKeyState(VK_LMENU) < 0) {
+            keyCode = VK_LMENU;
+          } else if (GetKeyState(VK_RMENU) < 0) {
+            keyCode = VK_RMENU;
+          } else {
+            if (saved_key > 0 && saved_key == VK_LMENU) {
+              keyCode = VK_LMENU;
+            } else if (saved_key > 0 && saved_key == VK_RMENU) {
+              keyCode = VK_RMENU;
+            }
+          }
+        }
+        saved_key = keyCode;
 
-        const int key = virtualKey;
+        const int key = keyCode;
         const int action = message == WM_KEYDOWN ? WM_KEYDOWN : WM_KEYUP;
-        window->OnKey(key, scancode, action, 0);
+        window->OnKey(key, scancode, action, 0, character);
         break;
     }
     return DefWindowProc(hwnd, message, wparam, lparam);
