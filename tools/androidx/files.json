@@ -65,7 +65,7 @@
   {
     "url": "https://maven.google.com/androidx/core/core/1.1.0/core-1.1.0.aar",
     "out_file_name": "androidx_core.aar",
-    "maven_dependency": "androidx.core:core:1.2.0",
+    "maven_dependency": "androidx.core:core:1.1.0",
     "provides": []
   },
   {
@@ -75,7 +75,7 @@
     "provides": []
   },
   {
-    "url": "https://dl.google.com/dl/android/maven2/androidx/savedstate/savedstate/1.0.0/savedstate-1.0.0.aar",
+    "url": "https://maven.google.com/androidx/savedstate/savedstate/1.0.0/savedstate-1.0.0.aar",
     "out_file_name": "androidx_savedstate.aar",
     "maven_dependency": "androidx.savedstate:savedstate:1.0.0",
     "provides": []

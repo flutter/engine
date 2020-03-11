@@ -290,7 +290,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   android_out_dir = os.path.join(out_dir, android_variant)
   EnsureJavaTestsAreBuilt(android_out_dir)
 
-  robolectric_dir = os.path.join(buildroot_dir, 'third_party', 'robolectric', 'lib')
+  robolectric_dir = os.path.join(buildroot_dir, 'third_party', 'android_embedding_dependencies', 'lib')
   classpath = map(str, [
     os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-29', 'android.jar'),
     os.path.join(robolectric_dir, '*'), # Wildcard for all jars in the directory
