@@ -139,6 +139,7 @@ void main() async {
     final Library library = Library(Uri.parse('dart:ui'));
     final Name name = Name('toString');
     final Class pragmaClass = Class(name: 'pragma')..parent = Library(Uri.parse('dart:core'));
+    final Reference key = Reference()..node = Field(Name('name'));
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
@@ -147,7 +148,7 @@ void main() async {
         InstanceConstant(
           Reference()..node = pragmaClass,
           <DartType>[],
-          <Reference, Constant>{Reference(): StringConstant('flutter_frontend:keep')},
+          <Reference, Constant>{key: StringConstant('flutter_frontend:keep')},
         ),
       ),
     ]);
