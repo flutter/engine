@@ -45,6 +45,7 @@ void main() async {
     final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     when(procedure.name).thenReturn(Name('main'));
+    when(procedure.annotations).thenReturn(const <Expression>[]);
 
     visitor.visitProcedure(procedure);
     verifyNever(procedure.enclosingLibrary);
@@ -62,6 +63,7 @@ void main() async {
     final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
+    when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
     when(procedure.enclosingClass).thenReturn(null);
     when(procedure.isAbstract).thenReturn(false);
@@ -80,6 +82,7 @@ void main() async {
     final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
+    when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
     when(procedure.enclosingClass).thenReturn(Class());
     when(procedure.isAbstract).thenReturn(true);
@@ -98,6 +101,7 @@ void main() async {
     final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
+    when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
     when(procedure.enclosingClass).thenReturn(Class());
     when(procedure.isAbstract).thenReturn(false);
@@ -116,6 +120,38 @@ void main() async {
     final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
+    when(procedure.annotations).thenReturn(const <Expression>[]);
+    when(procedure.enclosingLibrary).thenReturn(library);
+    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.isAbstract).thenReturn(false);
+    when(procedure.isStatic).thenReturn(false);
+    when(function.body).thenReturn(statement);
+
+    visitor.visitProcedure(procedure);
+    verifyNever(statement.replaceWith(any));
+  });
+
+  test('ToStringVisitor ignores @pragma("flutter_frontend:keep")', () {
+    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final MockProcedure procedure = MockProcedure();
+    final MockFunctionNode function = MockFunctionNode();
+    final MockStatement statement = MockStatement();
+    final Library library = Library(Uri.parse('dart:ui'));
+    final Name name = Name('toString');
+    final Class pragmaClass = Class(name: 'pragma')..parent = Library(Uri.parse('dart:core'));
+
+    when(procedure.function).thenReturn(function);
+    when(procedure.name).thenReturn(name);
+    when(procedure.annotations).thenReturn(<Expression>[
+      ConstantExpression(
+        InstanceConstant(
+          Reference()..node = pragmaClass,
+          <DartType>[],
+          <Reference, Constant>{Reference(): StringConstant('flutter_frontend:keep')},
+        ),
+      ),
+    ]);
+
     when(procedure.enclosingLibrary).thenReturn(library);
     when(procedure.enclosingClass).thenReturn(Class());
     when(procedure.isAbstract).thenReturn(false);
@@ -143,6 +179,7 @@ void main() async {
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
+    when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
     when(procedure.enclosingClass).thenReturn(Class());
     when(procedure.isAbstract).thenReturn(false);
@@ -163,6 +200,7 @@ void main() async {
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
+    when(procedure.annotations).thenReturn(const <Expression>[]);
     when(procedure.enclosingLibrary).thenReturn(library);
     when(procedure.enclosingClass).thenReturn(Class());
     when(procedure.isAbstract).thenReturn(false);

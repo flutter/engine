@@ -197,6 +197,23 @@ class ToStringVisitor extends RecursiveVisitor<void> {
   /// 'package:flutter/src/semantics_event.dart' into 'package:flutter'.
   String _importUriToPackage(Uri importUri) => '${importUri.scheme}:${importUri.pathSegments.first}';
 
+  bool _isInTargetPackage(Procedure node) {
+    return _packageUris.contains(_importUriToPackage(node.enclosingLibrary.importUri));
+  }
+
+  bool _hasKeepAnnotation(Procedure node) {
+    for (ConstantExpression expression in node.annotations.whereType<ConstantExpression>()) {
+      final InstanceConstant constant = expression.constant as InstanceConstant;
+      if (constant.classNode.name == 'pragma' && constant.classNode.enclosingLibrary.importUri.toString() == 'dart:core') {
+        final StringConstant pragmaName = constant.fieldValues.values.first as StringConstant;
+        if (pragmaName.value == 'flutter_frontend:keep') {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   @override
   void visitProcedure(Procedure node) {
     if (
@@ -205,7 +222,8 @@ class ToStringVisitor extends RecursiveVisitor<void> {
       node.enclosingLibrary != null       &&
       !node.isStatic                      &&
       !node.isAbstract                    &&
-      _packageUris.contains(_importUriToPackage(node.enclosingLibrary.importUri))
+      _isInTargetPackage(node)            &&
+      !_hasKeepAnnotation(node)
     ) {
       node.function.body.replaceWith(
         ReturnStatement(
@@ -216,10 +234,8 @@ class ToStringVisitor extends RecursiveVisitor<void> {
         ),
       );
     }
-    super.visitProcedure(node);
   }
 
-  // Avoid doing anything to default toString.
   @override
   void defaultMember(Member node) {}
 }
