@@ -261,7 +261,7 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
   platform_views_recorder_[view_id] = std::make_unique<SkPictureRecorder>();
 
   auto bbh_factory = RTreeFactory();
-  platform_views_bbh_[view_id] = bbh_factory.getInstance();
+  platform_views_bbh_[view_id] = bbh_factory.getInstance().get();
   platform_views_recorder_[view_id]->beginRecording(SkRect::Make(frame_size_), &bbh_factory);
 
   composition_order_.push_back(view_id);
@@ -374,7 +374,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   //
   // The UIKit frame is set based on the logical resolution instead of physical.
   // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
-  // However, flow is based on the physical resol ution. For eaxmple, 1000 pixels in flow equals
+  // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
   // 500 points in UIKit. And until this point, we did all the calculation based on the flow
   // resolution. So we need to scale down to match UIKit's logical resolution.
   CGFloat screenScale = [UIScreen mainScreen].scale;
@@ -464,7 +464,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   for (size_t i = 0; i < num_platform_views; i++) {
     auto platform_view_id = composition_order_[i];
 
-    auto bbh = platform_views_bbh_[platform_view_id].get();
+    auto bbh = platform_views_bbh_[platform_view_id];
     sk_sp<SkPicture> picture =
         platform_views_recorder_[platform_view_id]->finishRecordingAsPicture();
 
@@ -491,7 +491,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
         background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
         // Get a new host layer.
         auto layer = GetLayer(gr_context,                //
-                              gl_context,                //
+                              ios_context,               //
                               picture,                   //
                               joined_rect,               //
                               current_platform_view_id,  //
@@ -509,7 +509,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
           background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
           // Get a new host layer.
           auto layer = GetLayer(gr_context,                //
-                                gl_context,                //
+                                ios_context,               //
                                 picture,                   //
                                 joined_rect,               //
                                 current_platform_view_id,  //

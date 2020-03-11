@@ -343,12 +343,14 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
     if (raster_status == RasterStatus::kFailed) {
       return raster_status;
     }
-
     if (external_view_embedder != nullptr) {
       external_view_embedder->SubmitFrame(surface_->GetContext(),
                                           root_surface_canvas);
     }
-
+    // The external view embedder may mutate the root surface canvas while
+    // submitting the frame.
+    // Therefore, submit the final frame after asking the external view embedder
+    // to submit the frame.
     frame->Submit();
 
     FireNextFrameCallbackIfPresent();

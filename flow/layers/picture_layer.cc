@@ -44,7 +44,6 @@ void PictureLayer::Paint(PaintContext& context) const {
 
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
   context.leaf_nodes_canvas->translate(offset_.x(), offset_.y());
-
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   context.leaf_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
       context.leaf_nodes_canvas->getTotalMatrix()));

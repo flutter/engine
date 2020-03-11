@@ -148,11 +148,19 @@ class FlutterPlatformViewsController {
 
   using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
 
-  // The pool of reusable view layers.
+  // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<FlutterPlatformViewLayerPool> layer_pool_;
-  std::map<int64_t, sk_sp<RTree>> platform_views_bbh_;
-  std::map<int64_t, EmbeddedViewParams> platform_views_params_;
+
+  // The platform view's BBoxHierarchy keyed off the view id, which contains any subsequent
+  // draw operation until the next platform view or the last leaf node in the layer tree.
+  std::map<int64_t, RTree*> platform_views_bbh_;
+
+  // The platform view's picture recorder keyed off the view id, which contains any subsequent
+  // operation until the next platform view or the end of the last leaf node in the layer tree.
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> platform_views_recorder_;
+
+  // The platform view's parameters used to compose the scene keyed off the view id.
+  std::map<int64_t, EmbeddedViewParams> platform_views_params_;
 
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;
