@@ -1,4 +1,4 @@
-Signature: 3e3a5372daa79081b53d715d7291bbc5
+Signature: 4e55b5baef1fa7d7d9610d567650b3b6
 
 UNUSED LICENSES:
 
@@ -7460,7 +7460,6 @@ FILE: ../../../third_party/dart/PATENT_GRANT
 FILE: ../../../third_party/dart/benchmarks/IsolateJson/dart/sample.json
 FILE: ../../../third_party/dart/benchmarks/IsolateSpawn/dart/helloworld.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateSpawnMemory/dart/helloworld.dart
-FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/iterable.dart
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
@@ -7493,6 +7492,7 @@ FILE: ../../../third_party/dart/sdk/lib/vmservice_libraries.json
 FILE: ../../../third_party/dart/sdk_nnbd/lib/html/html_common/conversions_dart2js.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/html/html_common/html_common.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/libraries.json
+FILE: ../../../third_party/dart/sdk_nnbd/lib/libraries_nnbd_mix_hack.json
 FILE: ../../../third_party/dart/sdk_nnbd/lib/vmservice_libraries.json
 FILE: ../../../third_party/dart/third_party/7zip.tar.gz.sha1
 FILE: ../../../third_party/dart/third_party/clang.tar.gz.sha1
@@ -7547,8 +7547,6 @@ FILE: ../../../third_party/dart/benchmarks/Isolate/dart/Isolate.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateJson/dart/IsolateJson.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateSpawn/dart/IsolateSpawn.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateSpawnMemory/dart/IsolateSpawnMemory.dart
-FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/SoundSplayTreeSieve.dart
-FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/sound_splay_tree.dart
 FILE: ../../../third_party/dart/runtime/bin/abi_version.h
 FILE: ../../../third_party/dart/runtime/bin/abi_version_in.cc
 FILE: ../../../third_party/dart/runtime/bin/elf_loader.cc
@@ -7557,7 +7555,6 @@ FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extens
 FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension_dllmain_win.cc
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/ffi_test_dynamic_library.cc
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/ffi_test_functions.cc
-FILE: ../../../third_party/dart/runtime/bin/ffi_test/ffi_test_functions_vmspecific.cc
 FILE: ../../../third_party/dart/runtime/bin/ifaddrs-android.cc
 FILE: ../../../third_party/dart/runtime/bin/ifaddrs-android.h
 FILE: ../../../third_party/dart/runtime/bin/namespace_fuchsia.h
@@ -7673,12 +7670,6 @@ FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_x64.cc
 FILE: ../../../third_party/dart/samples/ffi/coordinate.dart
 FILE: ../../../third_party/dart/samples/ffi/dylib_utils.dart
-FILE: ../../../third_party/dart/samples/ffi/resource_management/pool.dart
-FILE: ../../../third_party/dart/samples/ffi/resource_management/pool_isolate_shutdown_sample.dart
-FILE: ../../../third_party/dart/samples/ffi/resource_management/pool_sample.dart
-FILE: ../../../third_party/dart/samples/ffi/resource_management/pool_zoned_sample.dart
-FILE: ../../../third_party/dart/samples/ffi/resource_management/resource_management_test.dart
-FILE: ../../../third_party/dart/samples/ffi/resource_management/unmanaged_sample.dart
 FILE: ../../../third_party/dart/samples/ffi/sample_ffi_bitfield.dart
 FILE: ../../../third_party/dart/samples/ffi/sample_ffi_data.dart
 FILE: ../../../third_party/dart/samples/ffi/sample_ffi_dynamic_library.dart
@@ -7708,7 +7699,6 @@ FILE: ../../../third_party/dart/sdk/lib/ffi/dynamic_library.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/ffi.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/native_type.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/struct.dart
-FILE: ../../../third_party/dart/sdk/lib/internal/errors.dart
 FILE: ../../../third_party/dart/sdk/lib/wasm/wasm.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/rti.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/shared/recipe_syntax.dart
@@ -7721,7 +7711,6 @@ FILE: ../../../third_party/dart/sdk_nnbd/lib/ffi/dynamic_library.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/ffi/ffi.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/ffi/native_type.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/ffi/struct.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/internal/errors.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/wasm/wasm.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
@@ -8196,6 +8185,7 @@ FILE: ../../../third_party/dart/sdk/lib/web_gl/dart2js/web_gl_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/web_sql/dart2js/web_sql_dart2js.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_http/crypto.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_http/http_date.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/libraries.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/async_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/core_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/isolate_patch.dart
