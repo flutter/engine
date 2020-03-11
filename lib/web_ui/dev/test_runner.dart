@@ -14,6 +14,7 @@ import 'package:test_core/src/runner/hack_register_platform.dart'
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
+import 'package:ui/src/engine.dart';
 
 import 'supported_browsers.dart';
 import 'test_platform.dart';
@@ -92,7 +93,11 @@ class TestCommand extends Command<bool> {
       return TestTypesRequested.unit;
     } else if (argResults['integration-tests-only']) {
       print('Running the integration tests only. Note that they are only '
-          'available for Chrome on Linux for now.');
+          'available for Chrome Desktop.');
+      if (!isChrome) {
+        throw UnimplementedError(
+            'Integration tests are only awailable on Chrome Desktop for now');
+      }
       return TestTypesRequested.integration;
     } else {
       return TestTypesRequested.all;
@@ -109,10 +114,19 @@ class TestCommand extends Command<bool> {
 
     switch (testTypesRequested) {
       case TestTypesRequested.unit:
+        return runUnitTests();
       case TestTypesRequested.integration:
+        return runIntegrationTests();
       case TestTypesRequested.all:
+        return await runIntegrationTests() && await runUnitTests();
       case TestTypesRequested.none:
+        throw ArgumentError('One test type should be chosed to run felt test.');
     }
+    return false;
+  }
+
+  Future<bool> runIntegrationTests() async {
+
   }
 
   Future<bool> runUnitTests() async {
