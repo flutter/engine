@@ -20,8 +20,13 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
-namespace shell {
+#if defined(OS_POSIX)
+#include <signal.h>
+#endif  // defined(OS_POSIX)
+
+namespace flutter {
 
 // Checks whether the engine's main Dart isolate has no pending work.  If so,
 // then exit the given message loop.
@@ -30,35 +35,20 @@ class ScriptCompletionTaskObserver {
   ScriptCompletionTaskObserver(Shell& shell,
                                fml::RefPtr<fml::TaskRunner> main_task_runner,
                                bool run_forever)
-      : engine_(shell.GetEngine()),
+      : shell_(shell),
         main_task_runner_(std::move(main_task_runner)),
         run_forever_(run_forever) {}
 
   int GetExitCodeForLastError() const {
-    // Exit codes used by the Dart command line tool.
-    const int kApiErrorExitCode = 253;
-    const int kCompilationErrorExitCode = 254;
-    const int kErrorExitCode = 255;
-    switch (last_error_) {
-      case tonic::kCompilationErrorType:
-        return kCompilationErrorExitCode;
-      case tonic::kApiErrorType:
-        return kApiErrorExitCode;
-      case tonic::kUnknownErrorType:
-        return kErrorExitCode;
-      default:
-        return 0;
-    }
+    return static_cast<int>(last_error_.value_or(DartErrorCode::NoError));
   }
 
   void DidProcessTask() {
-    if (engine_) {
-      last_error_ = engine_->GetUIIsolateLastError();
-      if (engine_->UIIsolateHasLivePorts()) {
-        // The UI isolate still has live ports and is running. Nothing to do
-        // just yet.
-        return;
-      }
+    last_error_ = shell_.GetUIIsolateLastError();
+    if (shell_.EngineHasLivePorts()) {
+      // The UI isolate still has live ports and is running. Nothing to do
+      // just yet.
+      return;
     }
 
     if (run_forever_) {
@@ -70,34 +60,77 @@ class ScriptCompletionTaskObserver {
     if (!has_terminated) {
       // Only try to terminate the loop once.
       has_terminated = true;
-      main_task_runner_->PostTask(
-          []() { fml::MessageLoop::GetCurrent().Terminate(); });
+      fml::TaskRunner::RunNowOrPostTask(main_task_runner_, []() {
+        fml::MessageLoop::GetCurrent().Terminate();
+      });
     }
   }
 
  private:
-  fml::WeakPtr<Engine> engine_;
+  Shell& shell_;
   fml::RefPtr<fml::TaskRunner> main_task_runner_;
   bool run_forever_ = false;
-  tonic::DartErrorHandleType last_error_ = tonic::kUnknownErrorType;
+  std::optional<DartErrorCode> last_error_;
   bool has_terminated = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ScriptCompletionTaskObserver);
 };
 
-int RunTester(const blink::Settings& settings, bool run_forever) {
-  const auto thread_label = "io.flutter.test";
+// Processes spawned via dart:io inherit their signal handling from the parent
+// process. As part of spawning, the spawner blocks signals temporarily, so we
+// need to explicitly unblock the signals we care about in the new process. In
+// particular, we need to unblock SIGPROF for CPU profiling to work on the
+// mutator thread in the main isolate in this process (threads spawned by the VM
+// know about this limitation and automatically have this signal unblocked).
+static void UnblockSIGPROF() {
+#if defined(OS_POSIX)
+  sigset_t set;
+  sigemptyset(&set);
+  sigaddset(&set, SIGPROF);
+  pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+#endif  // defined(OS_POSIX)
+}
+
+int RunTester(const flutter::Settings& settings,
+              bool run_forever,
+              bool multithreaded) {
+  const auto thread_label = "io.flutter.test.";
+
+  // Necessary if we want to use the CPU profiler on the main isolate's mutator
+  // thread.
+  //
+  // OSX WARNING: avoid spawning additional threads before this call due to a
+  // kernel bug that may enable SIGPROF on an unintended thread in the process.
+  UnblockSIGPROF();
 
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
   auto current_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
 
-  // Setup a single threaded test runner configuration.
-  const blink::TaskRunners task_runners(thread_label,  // dart thread label
-                                        current_task_runner,  // platform
-                                        current_task_runner,  // gpu
-                                        current_task_runner,  // ui
-                                        current_task_runner   // io
+  std::unique_ptr<ThreadHost> threadhost;
+  fml::RefPtr<fml::TaskRunner> platform_task_runner;
+  fml::RefPtr<fml::TaskRunner> gpu_task_runner;
+  fml::RefPtr<fml::TaskRunner> ui_task_runner;
+  fml::RefPtr<fml::TaskRunner> io_task_runner;
+
+  if (multithreaded) {
+    threadhost = std::make_unique<ThreadHost>(
+        thread_label, ThreadHost::Type::Platform | ThreadHost::Type::IO |
+                          ThreadHost::Type::UI | ThreadHost::Type::GPU);
+    platform_task_runner = current_task_runner;
+    gpu_task_runner = threadhost->gpu_thread->GetTaskRunner();
+    ui_task_runner = threadhost->ui_thread->GetTaskRunner();
+    io_task_runner = threadhost->io_thread->GetTaskRunner();
+  } else {
+    platform_task_runner = gpu_task_runner = ui_task_runner = io_task_runner =
+        current_task_runner;
+  }
+
+  const flutter::TaskRunners task_runners(thread_label,  // dart thread label
+                                          platform_task_runner,  // platform
+                                          gpu_task_runner,       // gpu
+                                          ui_task_runner,        // ui
+                                          io_task_runner         // io
   );
 
   Shell::CreateCallback<PlatformView> on_create_platform_view =
@@ -106,7 +139,7 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
-    return std::make_unique<Rasterizer>(shell.GetTaskRunners());
+    return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
   };
 
   auto shell = Shell::Create(task_runners,             //
@@ -133,10 +166,10 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
       "\"CN\",\"\",\"\"]}";
   std::vector<uint8_t> locale_bytes(locale_json,
                                     locale_json + std::strlen(locale_json));
-  fml::RefPtr<blink::PlatformMessageResponse> response;
+  fml::RefPtr<flutter::PlatformMessageResponse> response;
   shell->GetPlatformView()->DispatchPlatformMessage(
-      fml::MakeRefCounted<blink::PlatformMessage>("flutter/localization",
-                                                  locale_bytes, response));
+      fml::MakeRefCounted<flutter::PlatformMessage>("flutter/localization",
+                                                    locale_bytes, response));
 
   std::initializer_list<fml::FileMapping::Protection> protection = {
       fml::FileMapping::Protection::kRead};
@@ -154,11 +187,11 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
     return EXIT_FAILURE;
   }
 
-  auto asset_manager = std::make_shared<blink::AssetManager>();
-  asset_manager->PushBack(std::make_unique<blink::DirectoryAssetBundle>(
+  auto asset_manager = std::make_shared<flutter::AssetManager>();
+  asset_manager->PushBack(std::make_unique<flutter::DirectoryAssetBundle>(
       fml::Duplicate(settings.assets_dir)));
   asset_manager->PushBack(
-      std::make_unique<blink::DirectoryAssetBundle>(fml::OpenDirectory(
+      std::make_unique<flutter::DirectoryAssetBundle>(fml::OpenDirectory(
           settings.assets_path.c_str(), false, fml::FilePermission::kRead)));
 
   RunConfiguration run_configuration(std::move(isolate_configuration),
@@ -175,46 +208,43 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
 
   bool engine_did_run = false;
 
-  fml::AutoResetWaitableEvent sync_run_latch;
-  fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&sync_run_latch, &completion_observer,
-                         engine = shell->GetEngine(),
-                         config = std::move(run_configuration),
-                         &engine_did_run]() mutable {
-        fml::MessageLoop::GetCurrent().AddTaskObserver(
-            reinterpret_cast<intptr_t>(&completion_observer),
-            [&completion_observer]() { completion_observer.DidProcessTask(); });
-        if (engine->Run(std::move(config)) !=
-            shell::Engine::RunStatus::Failure) {
-          engine_did_run = true;
+  fml::AutoResetWaitableEvent latch;
+  auto task_observer_add = [&completion_observer]() {
+    fml::MessageLoop::GetCurrent().AddTaskObserver(
+        reinterpret_cast<intptr_t>(&completion_observer),
+        [&completion_observer]() { completion_observer.DidProcessTask(); });
+  };
 
-          blink::ViewportMetrics metrics;
-          metrics.device_pixel_ratio = 3.0;
-          metrics.physical_width = 2400;   // 800 at 3x resolution
-          metrics.physical_height = 1800;  // 600 at 3x resolution
-          engine->SetViewportMetrics(metrics);
+  auto task_observer_remove = [&completion_observer, &latch]() {
+    fml::MessageLoop::GetCurrent().RemoveTaskObserver(
+        reinterpret_cast<intptr_t>(&completion_observer));
+    latch.Signal();
+  };
 
-        } else {
-          FML_DLOG(ERROR) << "Could not launch the engine with configuration.";
-        }
-        sync_run_latch.Signal();
-      }));
-  sync_run_latch.Wait();
+  shell->RunEngine(std::move(run_configuration),
+                   [&engine_did_run, &ui_task_runner,
+                    &task_observer_add](Engine::RunStatus run_status) mutable {
+                     if (run_status != flutter::Engine::RunStatus::Failure) {
+                       engine_did_run = true;
+                       // Now that our engine is initialized we can install the
+                       // ScriptCompletionTaskObserver
+                       fml::TaskRunner::RunNowOrPostTask(ui_task_runner,
+                                                         task_observer_add);
+                     }
+                   });
+
+  flutter::ViewportMetrics metrics;
+  metrics.device_pixel_ratio = 3.0;
+  metrics.physical_width = 2400;   // 800 at 3x resolution
+  metrics.physical_height = 1800;  // 600 at 3x resolution
+  shell->GetPlatformView()->SetViewportMetrics(metrics);
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();
 
   // Cleanup the completion observer synchronously as it is living on the
   // stack.
-  fml::AutoResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(),
-      [&latch, &completion_observer] {
-        fml::MessageLoop::GetCurrent().RemoveTaskObserver(
-            reinterpret_cast<intptr_t>(&completion_observer));
-        latch.Signal();
-      });
+  fml::TaskRunner::RunNowOrPostTask(ui_task_runner, task_observer_remove);
   latch.Wait();
 
   if (!engine_did_run) {
@@ -226,7 +256,7 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
   return completion_observer.GetExitCodeForLastError();
 }
 
-}  // namespace shell
+}  // namespace flutter
 
 int main(int argc, char* argv[]) {
   dart::bin::SetExecutableName(argv[0]);
@@ -234,12 +264,12 @@ int main(int argc, char* argv[]) {
 
   auto command_line = fml::CommandLineFromArgcArgv(argc, argv);
 
-  if (command_line.HasOption(shell::FlagForSwitch(shell::Switch::Help))) {
-    shell::PrintUsage("flutter_tester");
+  if (command_line.HasOption(flutter::FlagForSwitch(flutter::Switch::Help))) {
+    flutter::PrintUsage("flutter_tester");
     return EXIT_SUCCESS;
   }
 
-  auto settings = shell::SettingsFromCommandLine(command_line);
+  auto settings = flutter::SettingsFromCommandLine(command_line);
   if (command_line.positional_args().size() > 0) {
     // The tester may not use the switch for the main dart file path. Specifying
     // it as a positional argument instead.
@@ -251,7 +281,9 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  settings.icu_data_path = "icudtl.dat";
+  if (settings.icu_data_path.size() == 0) {
+    settings.icu_data_path = "icudtl.dat";
+  }
 
   // The tools that read logs get confused if there is a log tag specified.
   settings.log_tag = "";
@@ -264,7 +296,18 @@ int main(int argc, char* argv[]) {
     fml::MessageLoop::GetCurrent().RemoveTaskObserver(key);
   };
 
-  return shell::RunTester(
-      settings,
-      command_line.HasOption(shell::FlagForSwitch(shell::Switch::RunForever)));
+  settings.unhandled_exception_callback = [](const std::string& error,
+                                             const std::string& stack_trace) {
+    FML_LOG(ERROR) << "Unhandled exception" << std::endl
+                   << "Exception: " << error << std::endl
+                   << "Stack trace: " << stack_trace;
+    ::exit(1);
+    return true;
+  };
+
+  return flutter::RunTester(settings,
+                            command_line.HasOption(flutter::FlagForSwitch(
+                                flutter::Switch::RunForever)),
+                            command_line.HasOption(flutter::FlagForSwitch(
+                                flutter::Switch::ForceMultithreading)));
 }

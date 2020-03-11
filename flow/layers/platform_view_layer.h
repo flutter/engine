@@ -9,16 +9,11 @@
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkSize.h"
 
-namespace flow {
+namespace flutter {
 
 class PlatformViewLayer : public Layer {
  public:
-  PlatformViewLayer();
-  ~PlatformViewLayer() override;
-
-  void set_offset(const SkPoint& offset) { offset_ = offset; }
-  void set_size(const SkSize& size) { size_ = size; }
-  void set_view_id(int64_t view_id) { view_id_ = view_id; }
+  PlatformViewLayer(const SkPoint& offset, const SkSize& size, int64_t view_id);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
@@ -31,6 +26,6 @@ class PlatformViewLayer : public Layer {
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewLayer);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_LAYERS_PLATFORM_VIEW_LAYER_H_

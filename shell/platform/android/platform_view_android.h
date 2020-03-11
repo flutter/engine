@@ -18,7 +18,7 @@
 #include "flutter/shell/platform/android/android_native_window.h"
 #include "flutter/shell/platform/android/android_surface.h"
 
-namespace shell {
+namespace flutter {
 
 class PlatformViewAndroid final : public PlatformView {
  public:
@@ -27,12 +27,12 @@ class PlatformViewAndroid final : public PlatformView {
   // Creates a PlatformViewAndroid with no rendering surface for use with
   // background execution.
   PlatformViewAndroid(PlatformView::Delegate& delegate,
-                      blink::TaskRunners task_runners,
+                      flutter::TaskRunners task_runners,
                       fml::jni::JavaObjectWeakGlobalRef java_object);
 
   // Creates a PlatformViewAndroid with a rendering surface.
   PlatformViewAndroid(PlatformView::Delegate& delegate,
-                      blink::TaskRunners task_runners,
+                      flutter::TaskRunners task_runners,
                       fml::jni::JavaObjectWeakGlobalRef java_object,
                       bool use_software_rendering);
 
@@ -42,7 +42,7 @@ class PlatformViewAndroid final : public PlatformView {
 
   void NotifyChanged(const SkISize& size);
 
-  // |shell::PlatformView|
+  // |PlatformView|
   void NotifyDestroyed() override;
 
   void DispatchPlatformMessage(JNIEnv* env,
@@ -78,31 +78,31 @@ class PlatformViewAndroid final : public PlatformView {
   const std::unique_ptr<AndroidSurface> android_surface_;
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;
-  std::unordered_map<int, fml::RefPtr<blink::PlatformMessageResponse>>
+  std::unordered_map<int, fml::RefPtr<flutter::PlatformMessageResponse>>
       pending_responses_;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   void UpdateSemantics(
-      blink::SemanticsNodeUpdates update,
-      blink::CustomAccessibilityActionUpdates actions) override;
+      flutter::SemanticsNodeUpdates update,
+      flutter::CustomAccessibilityActionUpdates actions) override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   void HandlePlatformMessage(
-      fml::RefPtr<blink::PlatformMessage> message) override;
+      fml::RefPtr<flutter::PlatformMessage> message) override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   void OnPreEngineRestart() const override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   sk_sp<GrContext> CreateResourceContext() const override;
 
-  // |shell::PlatformView|
+  // |PlatformView|
   void ReleaseResourceContext() const override;
 
   void InstallFirstFrameCallback();
@@ -112,6 +112,6 @@ class PlatformViewAndroid final : public PlatformView {
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroid);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_H_

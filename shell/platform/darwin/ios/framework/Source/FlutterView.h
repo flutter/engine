@@ -13,14 +13,15 @@
 
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/platform/darwin/ios/ios_context.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @protocol FlutterViewEngineDelegate <NSObject>
 
-- (shell::Rasterizer::Screenshot)takeScreenshot:(shell::Rasterizer::ScreenshotType)type
-                                asBase64Encoded:(BOOL)base64Encode;
+- (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
+                                  asBase64Encoded:(BOOL)base64Encode;
 
-- (shell::FlutterPlatformViewsController*)platformViewsController;
+- (flutter::FlutterPlatformViewsController*)platformViewsController;
 
 @end
 
@@ -33,7 +34,7 @@
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
                           opaque:(BOOL)opaque NS_DESIGNATED_INITIALIZER;
-- (std::unique_ptr<shell::IOSSurface>)createSurface;
+- (std::unique_ptr<flutter::IOSSurface>)createSurface:(std::shared_ptr<flutter::IOSContext>)context;
 
 @end
 

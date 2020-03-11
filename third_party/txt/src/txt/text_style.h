@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "font_features.h"
 #include "font_style.h"
 #include "font_weight.h"
 #include "text_baseline.h"
@@ -50,12 +51,16 @@ class TextStyle {
   double letter_spacing = 0.0;
   double word_spacing = 0.0;
   double height = 1.0;
+  bool has_height_override = false;
   std::string locale;
   bool has_background = false;
   SkPaint background;
   bool has_foreground = false;
   SkPaint foreground;
+  // An ordered list of shadows where the first shadow will be drawn first (at
+  // the bottom).
   std::vector<TextShadow> text_shadows;
+  FontFeatures font_features;
 
   TextStyle();
 

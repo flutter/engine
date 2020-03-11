@@ -12,7 +12,7 @@
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/lib/ui/window/platform_message_response.h"
 
-namespace blink {
+namespace flutter {
 
 class PlatformMessage : public fml::RefCountedThreadSafe<PlatformMessage> {
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(PlatformMessage);
@@ -28,10 +28,10 @@ class PlatformMessage : public fml::RefCountedThreadSafe<PlatformMessage> {
   }
 
  private:
-  PlatformMessage(std::string name,
+  PlatformMessage(std::string channel,
                   std::vector<uint8_t> data,
                   fml::RefPtr<PlatformMessageResponse> response);
-  PlatformMessage(std::string name,
+  PlatformMessage(std::string channel,
                   fml::RefPtr<PlatformMessageResponse> response);
   ~PlatformMessage();
 
@@ -41,6 +41,6 @@ class PlatformMessage : public fml::RefCountedThreadSafe<PlatformMessage> {
   fml::RefPtr<PlatformMessageResponse> response_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_H_

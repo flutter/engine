@@ -6,16 +6,13 @@
 
 #include <string.h>
 
-namespace blink {
+namespace flutter {
 
-// If this value changes, update the pointer data unpacking code in hooks.dart.
-static constexpr int kPointerDataFieldCount = 21;
-
-static_assert(sizeof(PointerData) == sizeof(int64_t) * kPointerDataFieldCount,
+static_assert(sizeof(PointerData) == kBytesPerField * kPointerDataFieldCount,
               "PointerData has the wrong size");
 
 void PointerData::Clear() {
   memset(this, 0, sizeof(PointerData));
 }
 
-}  // namespace blink
+}  // namespace flutter

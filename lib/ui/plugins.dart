@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 /// A wrapper for a raw callback handle.
@@ -25,8 +26,8 @@ class CallbackHandle {
   bool operator ==(dynamic other) {
     if (runtimeType != other.runtimeType)
       return false;
-    final CallbackHandle typedOther = other;
-    return _handle == typedOther._handle;
+    return other is CallbackHandle
+        && other._handle == _handle;
   }
 
   @override
@@ -62,7 +63,7 @@ class PluginUtilities {
     assert(callback != null, "'callback' must not be null.");
     return _forwardCache.putIfAbsent(callback, () {
       final int handle = _getCallbackHandle(callback);
-      return handle != null ? new CallbackHandle.fromRawHandle(handle) : null;
+      return handle != null ? CallbackHandle.fromRawHandle(handle) : null;
     });
   }
 

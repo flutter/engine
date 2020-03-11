@@ -3,6 +3,15 @@ set -e
 shopt -s nullglob
 
 echo "Verifying license script is still happy..."
+echo "Using pub from `which pub`, dart from `which dart`"
+
+exitStatus=0
+
+dart --version
+
+# These files trip up the script on Mac OS X.
+find . -name ".DS_Store" -exec rm {} \;
+
 (cd flutter/tools/licenses; pub get; dart --enable-asserts lib/main.dart --src ../../.. --out ../../../out/license_script_output --golden ../../ci/licenses_golden)
 
 for f in out/license_script_output/licenses_*; do
@@ -18,7 +27,9 @@ for f in out/license_script_output/licenses_*; do
         echo "  https://github.com/flutter/engine/tree/master/tools/licenses"
         echo ""
         diff -U 6 flutter/ci/licenses_golden/$(basename $f) $f
-        exit 1
+        echo "================================================================="
+        echo ""
+        exitStatus=1
     fi
 done
 
@@ -32,12 +43,14 @@ then
     echo "changed, no diffs are typically expected in the output of the"
     echo "script. Verify the output, and if it looks correct, update the"
     echo "license tool signature golden file:"
-    echo "  ci/licences_golden/tool_signature"
+    echo "  ci/licenses_golden/tool_signature"
     echo "For more information, see the script in:"
     echo "  https://github.com/flutter/engine/tree/master/tools/licenses"
     echo ""
     diff -U 6 flutter/ci/licenses_golden/tool_signature out/license_script_output/tool_signature
-    exit 1
+    echo "================================================================="
+    echo ""
+    exitStatus=1
 fi
 
 echo "Checking license count in licenses_flutter..."
@@ -56,8 +69,13 @@ then
     echo "Files in 'third_party/txt' may have an Apache license header instead."
     echo "If you're absolutely sure that the change in license count is"
     echo "intentional, update 'flutter/ci/licenses.sh' with the new count."
-    exit 1
+    echo "================================================================="
+    echo ""
+    exitStatus=1
 fi
 
-echo "Licenses are as expected."
-exit 0
+if [ "$exitStatus" -eq "0" ]
+then
+  echo "Licenses are as expected."
+fi
+exit $exitStatus

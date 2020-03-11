@@ -12,13 +12,13 @@
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkShader.h"
-#include "third_party/tonic/typed_data/float64_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 class ImageShader : public Shader {
   DEFINE_WRAPPERTYPEINFO();
@@ -29,8 +29,8 @@ class ImageShader : public Shader {
   static fml::RefPtr<ImageShader> Create();
 
   void initWithImage(CanvasImage* image,
-                     SkShader::TileMode tmx,
-                     SkShader::TileMode tmy,
+                     SkTileMode tmx,
+                     SkTileMode tmy,
                      const tonic::Float64List& matrix4);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
@@ -39,6 +39,6 @@ class ImageShader : public Shader {
   ImageShader();
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_IMAGE_SHADER_H_

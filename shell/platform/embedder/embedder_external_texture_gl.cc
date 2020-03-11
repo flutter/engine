@@ -6,21 +6,22 @@
 
 #include "flutter/fml/logging.h"
 
-namespace shell {
+namespace flutter {
 
 EmbedderExternalTextureGL::EmbedderExternalTextureGL(
     int64_t texture_identifier,
-    ExternalTextureCallback callback)
+    const ExternalTextureCallback& callback)
     : Texture(texture_identifier), external_texture_callback_(callback) {
   FML_DCHECK(external_texture_callback_);
 }
 
 EmbedderExternalTextureGL::~EmbedderExternalTextureGL() = default;
 
-// |flow::Texture|
+// |flutter::Texture|
 void EmbedderExternalTextureGL::Paint(SkCanvas& canvas,
                                       const SkRect& bounds,
-                                      bool freeze) {
+                                      bool freeze,
+                                      GrContext* context) {
   if (auto image = external_texture_callback_(
           Id(),                                           //
           canvas.getGrContext(),                          //
@@ -30,17 +31,24 @@ void EmbedderExternalTextureGL::Paint(SkCanvas& canvas,
   }
 
   if (last_image_) {
-    canvas.drawImage(last_image_, bounds.x(), bounds.y());
+    if (bounds != SkRect::Make(last_image_->bounds())) {
+      canvas.drawImageRect(last_image_, bounds, nullptr);
+    } else {
+      canvas.drawImage(last_image_, bounds.x(), bounds.y());
+    }
   }
 }
 
-// |flow::Texture|
+// |flutter::Texture|
 void EmbedderExternalTextureGL::OnGrContextCreated() {}
 
-// |flow::Texture|
+// |flutter::Texture|
 void EmbedderExternalTextureGL::OnGrContextDestroyed() {}
 
-// |flow::Texture|
+// |flutter::Texture|
 void EmbedderExternalTextureGL::MarkNewFrameAvailable() {}
 
-}  // namespace shell
+// |flutter::Texture|
+void EmbedderExternalTextureGL::OnTextureUnregistered() {}
+
+}  // namespace flutter

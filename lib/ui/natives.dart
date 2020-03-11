@@ -4,6 +4,7 @@
 
 // TODO(dnfield): remove unused_element ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
+// @dart = 2.6
 part of dart.ui;
 
 // Corelib 'print' implementation.
@@ -11,9 +12,19 @@ void _print(dynamic arg) {
   _Logger._printString(arg.toString());
 }
 
+void _printDebug(dynamic arg) {
+  _Logger._printDebugString(arg.toString());
+}
+
 class _Logger {
   static void _printString(String s) native 'Logger_PrintString';
+  static void _printDebugString(String s) native 'Logger_PrintDebugString';
 }
+
+// If we actually run on big endian machines, we'll need to do something smarter
+// here. We don't use [Endian.Host] because it's not a compile-time
+// constant and can't propagate into the set/get calls.
+const Endian _kFakeHostEndian = Endian.little;
 
 // A service protocol extension to schedule a frame to be rendered into the
 // window.
@@ -24,7 +35,7 @@ Future<developer.ServiceExtensionResponse> _scheduleFrame(
   // Schedule the frame.
   window.scheduleFrame();
   // Always succeed.
-  return new developer.ServiceExtensionResponse.result(json.encode(<String, String>{
+  return developer.ServiceExtensionResponse.result(json.encode(<String, String>{
     'type': 'Success',
   }));
 }
@@ -40,11 +51,14 @@ void _setupHooks() {  // ignore: unused_element
 
 /// Returns runtime Dart compilation trace as a UTF-8 encoded memory buffer.
 ///
-/// The buffer contains a list of symbols compiled by the Dart JIT at runtime up to the point
-/// when this function was called. This list can be saved to a text file and passed to tools
-/// such as `flutter build` or Dart `gen_snapshot` in order to precompile this code offline.
+/// The buffer contains a list of symbols compiled by the Dart JIT at runtime up
+/// to the point when this function was called. This list can be saved to a text
+/// file and passed to tools such as `flutter build` or Dart `gen_snapshot` in
+/// order to pre-compile this code offline.
 ///
-/// The list has one symbol per line of the following format: `<namespace>,<class>,<symbol>\n`.
+/// The list has one symbol per line of the following format:
+/// `<namespace>,<class>,<symbol>\n`.
+///
 /// Here are some examples:
 ///
 /// ```
@@ -58,7 +72,7 @@ List<int> saveCompilationTrace() {
   final dynamic result = _saveCompilationTrace();
   if (result is Error)
     throw result;
-  return result;
+  return result as List<int>;
 }
 
 dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
