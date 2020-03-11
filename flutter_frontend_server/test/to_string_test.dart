@@ -58,36 +58,78 @@ void main() async {
     final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
+    final MockStatement statement = MockStatement();
     final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.enclosingLibrary).thenReturn(library);
     when(procedure.enclosingClass).thenReturn(null);
+    when(procedure.isAbstract).thenReturn(false);
+    when(procedure.isStatic).thenReturn(false);
+    when(function.body).thenReturn(statement);
 
     visitor.visitProcedure(procedure);
-    verifyNever(function.replaceWith(any));
+    verifyNever(statement.replaceWith(any));
+  });
+
+  test('ToStringVisitor ignores abstract toString', () {
+    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final MockProcedure procedure = MockProcedure();
+    final MockFunctionNode function = MockFunctionNode();
+    final MockStatement statement = MockStatement();
+    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    when(procedure.function).thenReturn(function);
+    when(procedure.name).thenReturn(Name('toString'));
+    when(procedure.enclosingLibrary).thenReturn(library);
+    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.isAbstract).thenReturn(true);
+    when(procedure.isStatic).thenReturn(false);
+    when(function.body).thenReturn(statement);
+
+    visitor.visitProcedure(procedure);
+    verifyNever(statement.replaceWith(any));
+  });
+
+  test('ToStringVisitor ignores static toString', () {
+    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final MockProcedure procedure = MockProcedure();
+    final MockFunctionNode function = MockFunctionNode();
+    final MockStatement statement = MockStatement();
+    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    when(procedure.function).thenReturn(function);
+    when(procedure.name).thenReturn(Name('toString'));
+    when(procedure.enclosingLibrary).thenReturn(library);
+    when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.isAbstract).thenReturn(false);
+    when(procedure.isStatic).thenReturn(true);
+    when(function.body).thenReturn(statement);
+
+    visitor.visitProcedure(procedure);
+    verifyNever(statement.replaceWith(any));
   });
 
   test('ToStringVisitor ignores non-specified libraries', () {
     final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
+    final MockStatement statement = MockStatement();
     final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(Name('toString'));
     when(procedure.enclosingLibrary).thenReturn(library);
     when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.isAbstract).thenReturn(false);
+    when(procedure.isStatic).thenReturn(false);
+    when(function.body).thenReturn(statement);
 
     visitor.visitProcedure(procedure);
-    verifyNever(function.replaceWith(any));
+    verifyNever(statement.replaceWith(any));
   });
 
-  void _validateReplacement(MockFunctionNode function) {
-    final FunctionNode replacement = verify(function.replaceWith(captureAny)).captured.single as FunctionNode;
-    expect(replacement.body, isA<ReturnStatement>());
-    final ReturnStatement returnStatement = replacement.body as ReturnStatement;
-    expect(returnStatement.expression, isA<SuperMethodInvocation>());
-    final SuperMethodInvocation superMethodInvocation = returnStatement.expression as SuperMethodInvocation;
+  void _validateReplacement(MockStatement body) {
+    final ReturnStatement replacement = verify(body.replaceWith(captureAny)).captured.single as ReturnStatement;
+    expect(replacement.expression, isA<SuperMethodInvocation>());
+    final SuperMethodInvocation superMethodInvocation = replacement.expression as SuperMethodInvocation;
     expect(superMethodInvocation.name.name, 'toString');
   }
 
@@ -95,6 +137,7 @@ void main() async {
     final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
+    final MockStatement statement = MockStatement();
     final Library library = Library(Uri.parse('dart:ui'));
     final Name name = Name('toString');
 
@@ -102,15 +145,19 @@ void main() async {
     when(procedure.name).thenReturn(name);
     when(procedure.enclosingLibrary).thenReturn(library);
     when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.isAbstract).thenReturn(false);
+    when(procedure.isStatic).thenReturn(false);
+    when(function.body).thenReturn(statement);
 
     visitor.visitProcedure(procedure);
-    _validateReplacement(function);
+    _validateReplacement(statement);
   });
 
   test('ToStringVisitor replaces toString in specified libraries (package:flutter)', () {
     final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
+    final MockStatement statement = MockStatement();
     final Library library = Library(Uri.parse('package:flutter/src/foundation.dart'));
     final Name name = Name('toString');
 
@@ -118,9 +165,12 @@ void main() async {
     when(procedure.name).thenReturn(name);
     when(procedure.enclosingLibrary).thenReturn(library);
     when(procedure.enclosingClass).thenReturn(Class());
+    when(procedure.isAbstract).thenReturn(false);
+    when(procedure.isStatic).thenReturn(false);
+    when(function.body).thenReturn(statement);
 
     visitor.visitProcedure(procedure);
-    _validateReplacement(function);
+    _validateReplacement(statement);
   });
 }
 
@@ -128,3 +178,4 @@ class MockComponent extends Mock implements Component {}
 class MockTransformer extends Mock implements frontend.ProgramTransformer {}
 class MockProcedure extends Mock implements Procedure {}
 class MockFunctionNode extends Mock implements FunctionNode {}
+class MockStatement extends Mock implements Statement {}
