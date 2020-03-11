@@ -229,6 +229,7 @@ android_java_sources = [
 ]
 
 androidx_artifacts = [
+  "//third_party/androidx/androidx_activity.aar",
   "//third_party/androidx/androidx_annotation.jar",
   "//third_party/androidx/androidx_core.aar",
   "//third_party/androidx/androidx_fragment.aar",
@@ -236,6 +237,8 @@ androidx_artifacts = [
   "//third_party/androidx/androidx_lifecycle_common_java8.jar",
   "//third_party/androidx/androidx_lifecycle_runtime.aar",
   "//third_party/androidx/androidx_lifecycle_viewmodel.aar",
+  "//third_party/androidx/androidx_lifecycle_viewmodel_savedstate.aar",
+  "//third_party/androidx/androidx_savedstate.aar",
 ]
 
 action("flutter_shell_java") {
