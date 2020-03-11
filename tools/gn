@@ -226,7 +226,6 @@ def to_gn_args(args):
     if args.target_os == 'ios':
       gn_args['skia_use_metal'] = not args.simulator
       gn_args['shell_enable_metal'] = not args.simulator
-      gn_args['allow_deprecated_api_calls'] = not args.simulator
 
     # The buildroot currently isn't set up to support Vulkan in the
     # Windows ANGLE build, so disable it regardless of enable_vulkan's value.
