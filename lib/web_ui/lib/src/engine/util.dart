@@ -54,6 +54,11 @@ String matrix4ToCssTransform(Matrix4 matrix) {
   return float64ListToCssTransform(matrix.storage);
 }
 
+/// Converts [matrix] to CSS transform value.
+String matrix4ToCssTransform3d(Matrix4 matrix) {
+  return float64ListToCssTransform3d(matrix.storage);
+}
+
 /// Returns `true` is the [matrix] describes an identity transformation.
 bool isIdentityFloat64ListTransform(Float64List matrix) {
   assert(matrix.length == 16);
@@ -99,6 +104,34 @@ String float64ListToCssTransform(Float64List matrix) {
     final double tx = m[12];
     final double ty = m[13];
     return 'translate(${tx}px, ${ty}px)';
+  } else {
+    return 'matrix3d(${m[0]},${m[1]},${m[2]},${m[3]},${m[4]},${m[5]},${m[6]},${m[7]},${m[8]},${m[9]},${m[10]},${m[11]},${m[12]},${m[13]},${m[14]},${m[15]})';
+  }
+}
+
+/// Converts [matrix] to CSS transform value.
+String float64ListToCssTransform3d(Float64List matrix) {
+  assert(matrix.length == 16);
+  final Float64List m = matrix;
+  if (m[0] == 1.0 &&
+      m[1] == 0.0 &&
+      m[2] == 0.0 &&
+      m[3] == 0.0 &&
+      m[4] == 0.0 &&
+      m[5] == 1.0 &&
+      m[6] == 0.0 &&
+      m[7] == 0.0 &&
+      m[8] == 0.0 &&
+      m[9] == 0.0 &&
+      m[10] == 1.0 &&
+      m[11] == 0.0 &&
+      // 12 can be anything
+      // 13 can be anything
+      m[14] == 0.0 &&
+      m[15] == 1.0) {
+    final double tx = m[12];
+    final double ty = m[13];
+    return 'translate3d(${tx}px, ${ty}px, 0px)';
   } else {
     return 'matrix3d(${m[0]},${m[1]},${m[2]},${m[3]},${m[4]},${m[5]},${m[6]},${m[7]},${m[8]},${m[9]},${m[10]},${m[11]},${m[12]},${m[13]},${m[14]},${m[15]})';
   }
@@ -237,4 +270,41 @@ String _pathToSvgClipPath(ui.Path path,
 /// for the programmer).
 bool _isNsErrorFailureException(dynamic e) {
   return js_util.getProperty(e, 'name') == 'NS_ERROR_FAILURE';
+}
+
+/// From: https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Syntax
+///
+/// Generic font families are a fallback mechanism, a means of preserving some
+/// of the style sheet author's intent when none of the specified fonts are
+/// available. Generic family names are keywords and must not be quoted. A
+/// generic font family should be the last item in the list of font family
+/// names.
+const Set<String> _genericFontFamilies = <String>{
+  'serif',
+  'sans-serif',
+  'monospace',
+  'cursive',
+  'fantasy',
+  'system-ui',
+  'math',
+  'emoji',
+  'fangsong',
+};
+
+/// A default fallback font family in case an unloaded font has been requested.
+///
+/// For iOS, default to Helvetica, where it should be available, otherwise
+/// default to Arial.
+final String _fallbackFontFamily =
+    operatingSystem == OperatingSystem.iOs ? 'Helvetica' : 'Arial';
+
+/// Create a font-family string appropriate for CSS.
+///
+/// If the given [fontFamily] is a generic font-family, then just return it.
+/// Otherwise, wrap the family name in quotes and add a fallback font family.
+String canonicalizeFontFamily(String fontFamily) {
+  if (_genericFontFamilies.contains(fontFamily)) {
+    return fontFamily;
+  }
+  return '"$fontFamily", $_fallbackFontFamily, sans-serif';
 }

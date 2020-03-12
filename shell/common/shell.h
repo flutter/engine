@@ -18,7 +18,7 @@
 #include "flutter/fml/memory/thread_checker.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/status.h"
-#include "flutter/fml/synchronization/thread_annotations.h"
+#include "flutter/fml/synchronization/sync_switch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
@@ -75,7 +75,8 @@ enum class DartErrorCode {
 /// platform task runner. In case the embedder wants to directly access a shell
 /// subcomponent, it is the embedder's responsibility to acquire a weak pointer
 /// to that component and post a task to the task runner used by the component
-/// to access its methods.
+/// to access its methods. The shell must also be destroyed on the platform
+/// task runner.
 ///
 /// There is no explicit API to bootstrap and shutdown the Dart VM. The first
 /// instance of the shell in the process bootstraps the Dart VM and the
@@ -122,8 +123,8 @@ class Shell final : public PlatformView::Delegate,
   static std::unique_ptr<Shell> Create(
       TaskRunners task_runners,
       Settings settings,
-      CreateCallback<PlatformView> on_create_platform_view,
-      CreateCallback<Rasterizer> on_create_rasterizer);
+      const CreateCallback<PlatformView>& on_create_platform_view,
+      const CreateCallback<Rasterizer>& on_create_rasterizer);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
@@ -137,9 +138,6 @@ class Shell final : public PlatformView::Delegate,
   /// @param[in]  task_runners             The task runners
   /// @param[in]  settings                 The settings
   /// @param[in]  isolate_snapshot         A custom isolate snapshot. Takes
-  ///                                      precedence over any snapshots
-  ///                                      specified in the settings.
-  /// @param[in]  shared_snapshot          A custom shared snapshot. Takes
   ///                                      precedence over any snapshots
   ///                                      specified in the settings.
   /// @param[in]  on_create_platform_view  The callback that must return a
@@ -164,9 +162,8 @@ class Shell final : public PlatformView::Delegate,
       TaskRunners task_runners,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      fml::RefPtr<const DartSnapshot> shared_snapshot,
-      CreateCallback<PlatformView> on_create_platform_view,
-      CreateCallback<Rasterizer> on_create_rasterizer,
+      const CreateCallback<PlatformView>& on_create_platform_view,
+      const CreateCallback<Rasterizer>& on_create_rasterizer,
       DartVMRef vm);
 
   //----------------------------------------------------------------------------
@@ -188,7 +185,7 @@ class Shell final : public PlatformView::Delegate,
   ///             operation.
   ///
   void RunEngine(RunConfiguration run_configuration,
-                 std::function<void(Engine::RunStatus)> result_callback);
+                 const std::function<void(Engine::RunStatus)>& result_callback);
 
   //------------------------------------------------------------------------------
   /// @return     The settings used to launch this shell.
@@ -214,11 +211,8 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @return     A weak pointer to the rasterizer.
   ///
-  fml::WeakPtr<Rasterizer> GetRasterizer();
+  fml::WeakPtr<Rasterizer> GetRasterizer() const;
 
-// TODO(dnfield): Remove this when either Topaz is up to date or flutter_runner
-// is built out of this repo.
-#ifdef OS_FUCHSIA
   //------------------------------------------------------------------------------
   /// @brief      Engines may only be accessed on the UI thread. This method is
   ///             deprecated, and implementers should instead use other API
@@ -227,7 +221,6 @@ class Shell final : public PlatformView::Delegate,
   /// @return     A weak pointer to the engine.
   ///
   fml::WeakPtr<Engine> GetEngine();
-#endif  // OS_FUCHSIA
 
   //----------------------------------------------------------------------------
   /// @brief      Platform views may only be accessed on the platform task
@@ -285,6 +278,16 @@ class Shell final : public PlatformView::Delegate,
   fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
 
   //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to reload the system fonts in
+  /// FontCollection.
+  ///             It also clears the cached font families and send system
+  ///             channel message to framework to rebuild affected widgets.
+  ///
+  /// @return     Returns if shell reloads system fonts successfully.
+  ///
+  bool ReloadSystemFonts();
+
+  //----------------------------------------------------------------------------
   /// @brief      Used by embedders to get the last error from the Dart UI
   ///             Isolate, if one exists.
   ///
@@ -303,6 +306,10 @@ class Shell final : public PlatformView::Delegate,
   ///
   bool EngineHasLivePorts() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief     Accessor for the disable GPU SyncSwitch
+  std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const;
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
@@ -315,6 +322,7 @@ class Shell final : public PlatformView::Delegate,
   std::unique_ptr<Engine> engine_;               // on UI task runner
   std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
   std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
+  std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
 
   fml::WeakPtr<Engine> weak_engine_;          // to be shared across threads
   fml::WeakPtr<Rasterizer> weak_rasterizer_;  // to be shared across threads
@@ -365,9 +373,8 @@ class Shell final : public PlatformView::Delegate,
       TaskRunners task_runners,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      fml::RefPtr<const DartSnapshot> shared_snapshot,
-      Shell::CreateCallback<PlatformView> on_create_platform_view,
-      Shell::CreateCallback<Rasterizer> on_create_rasterizer);
+      const Shell::CreateCallback<PlatformView>& on_create_platform_view,
+      const Shell::CreateCallback<Rasterizer>& on_create_rasterizer);
 
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,
@@ -419,7 +426,7 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) override;
 
   // |PlatformView::Delegate|
-  void OnPlatformViewSetNextFrameCallback(fml::closure closure) override;
+  void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override;
 
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_time) override;
@@ -506,6 +513,10 @@ class Shell final : public PlatformView::Delegate,
       rapidjson::Document& response);
 
   fml::WeakPtrFactory<Shell> weak_factory_;
+
+  // For accessing the Shell via the GPU thread, necessary for various
+  // rasterizer callbacks.
+  std::unique_ptr<fml::WeakPtrFactory<Shell>> weak_factory_gpu_;
 
   friend class testing::ShellTest;
 

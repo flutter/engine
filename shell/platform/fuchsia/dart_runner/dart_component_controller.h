@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TOPAZ_RUNTIME_DART_RUNNER_DART_COMPONENT_CONTROLLER_H_
-#define TOPAZ_RUNTIME_DART_RUNNER_DART_COMPONENT_CONTROLLER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_RUNNER_DART_COMPONENT_CONTROLLER_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_RUNNER_DART_COMPONENT_CONTROLLER_H_
 
 #include <memory>
 
@@ -42,9 +42,7 @@ class DartComponentController : public fuchsia::sys::ComponentController {
   bool SetupFromAppSnapshot();
 
   bool CreateIsolate(const uint8_t* isolate_snapshot_data,
-                     const uint8_t* isolate_snapshot_instructions,
-                     const uint8_t* shared_snapshot_data,
-                     const uint8_t* shared_snapshot_instructions);
+                     const uint8_t* isolate_snapshot_instructions);
 
   int SetupFileDescriptor(fuchsia::sys::FileDescriptorPtr fd);
 
@@ -76,8 +74,6 @@ class DartComponentController : public fuchsia::sys::ComponentController {
   int stderrfd_ = -1;
   MappedResource isolate_snapshot_data_;
   MappedResource isolate_snapshot_instructions_;
-  MappedResource shared_snapshot_data_;
-  MappedResource shared_snapshot_instructions_;
   std::vector<MappedResource> kernel_peices_;
 
   Dart_Isolate isolate_;
@@ -96,4 +92,4 @@ class DartComponentController : public fuchsia::sys::ComponentController {
 
 }  // namespace dart_runner
 
-#endif  // TOPAZ_RUNTIME_DART_RUNNER_DART_COMPONENT_CONTROLLER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_RUNNER_DART_COMPONENT_CONTROLLER_H_

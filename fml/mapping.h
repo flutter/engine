@@ -86,6 +86,8 @@ class DataMapping final : public Mapping {
  public:
   DataMapping(std::vector<uint8_t> data);
 
+  DataMapping(const std::string& string);
+
   ~DataMapping() override;
 
   // |Mapping|
@@ -105,7 +107,7 @@ class NonOwnedMapping final : public Mapping {
   using ReleaseProc = std::function<void(const uint8_t* data, size_t size)>;
   NonOwnedMapping(const uint8_t* data,
                   size_t size,
-                  ReleaseProc release_proc = nullptr);
+                  const ReleaseProc& release_proc = nullptr);
 
   ~NonOwnedMapping() override;
 

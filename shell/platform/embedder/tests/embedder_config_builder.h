@@ -43,9 +43,9 @@ class EmbedderConfigBuilder {
 
   FlutterProjectArgs& GetProjectArgs();
 
-  void SetSoftwareRendererConfig();
+  void SetSoftwareRendererConfig(SkISize surface_size = SkISize::Make(1, 1));
 
-  void SetOpenGLRendererConfig();
+  void SetOpenGLRendererConfig(SkISize surface_size);
 
   void SetAssetsPath();
 
@@ -61,14 +61,18 @@ class EmbedderConfigBuilder {
 
   void SetPlatformTaskRunner(const FlutterTaskRunnerDescription* runner);
 
+  void SetRenderTaskRunner(const FlutterTaskRunnerDescription* runner);
+
   void SetPlatformMessageCallback(
-      std::function<void(const FlutterPlatformMessage*)> callback);
+      const std::function<void(const FlutterPlatformMessage*)>& callback);
 
   void SetCompositor();
 
   FlutterCompositor& GetCompositor();
 
-  UniqueEngine LaunchEngine();
+  UniqueEngine LaunchEngine() const;
+
+  UniqueEngine InitializeEngine() const;
 
  private:
   EmbedderTestContext& context_;
@@ -80,6 +84,8 @@ class EmbedderConfigBuilder {
   FlutterCustomTaskRunners custom_task_runners_ = {};
   FlutterCompositor compositor_ = {};
   std::vector<std::string> command_line_arguments_;
+
+  UniqueEngine SetupEngine(bool run) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderConfigBuilder);
 };

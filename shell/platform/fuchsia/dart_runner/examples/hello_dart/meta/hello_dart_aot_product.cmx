@@ -1,13 +1,12 @@
 {
-    "program": {
-        "data": "data/hello_dart_aot_product"
-    },
-    "sandbox": {
-        "features": [
-            "deprecated-ambient-replace-as-executable"
-        ],
-        "services": [
-            "fuchsia.sys.Environment"
-        ]
-    }
+  "program": {
+    "data": "data/hello_dart_aot_product"
+  },
+  "sandbox": {
+    "features": [],
+    "services": [
+      "fuchsia.intl.PropertyProvider",
+      "fuchsia.sys.Environment"
+    ]
+  }
 }

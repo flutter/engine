@@ -4,8 +4,8 @@
 
 package io.flutter.embedding.android;
 
-import android.annotation.TargetApi;
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Insets;
@@ -37,7 +37,9 @@ import java.util.Set;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
-import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
+import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
+import io.flutter.embedding.engine.renderer.RenderSurface;
+import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
@@ -74,9 +76,9 @@ public class FlutterView extends FrameLayout {
 
   // Internal view hierarchy references.
   @Nullable
-  private FlutterRenderer.RenderSurface renderSurface;
-  private final Set<OnFirstFrameRenderedListener> onFirstFrameRenderedListeners = new HashSet<>();
-  private boolean didRenderFirstFrame;
+  private RenderSurface renderSurface;
+  private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners = new HashSet<>();
+  private boolean isFlutterUiDisplayed;
 
   // Connections to a Flutter execution context.
   @Nullable
@@ -108,13 +110,22 @@ public class FlutterView extends FrameLayout {
     }
   };
 
-  private final OnFirstFrameRenderedListener onFirstFrameRenderedListener = new OnFirstFrameRenderedListener() {
+  private final FlutterUiDisplayListener flutterUiDisplayListener = new FlutterUiDisplayListener() {
     @Override
-    public void onFirstFrameRendered() {
-      didRenderFirstFrame = true;
+    public void onFlutterUiDisplayed() {
+      isFlutterUiDisplayed = true;
 
-      for (OnFirstFrameRenderedListener listener : onFirstFrameRenderedListeners) {
-        listener.onFirstFrameRendered();
+      for (FlutterUiDisplayListener listener : flutterUiDisplayListeners) {
+        listener.onFlutterUiDisplayed();
+      }
+    }
+
+    @Override
+    public void onFlutterUiNoLongerDisplayed() {
+      isFlutterUiDisplayed = false;
+
+      for (FlutterUiDisplayListener listener : flutterUiDisplayListeners) {
+        listener.onFlutterUiNoLongerDisplayed();
       }
     }
   };
@@ -228,23 +239,23 @@ public class FlutterView extends FrameLayout {
    * </ol>
    */
   public boolean hasRenderedFirstFrame() {
-    return didRenderFirstFrame;
+    return isFlutterUiDisplayed;
   }
 
   /**
    * Adds the given {@code listener} to this {@code FlutterView}, to be notified upon Flutter's
    * first rendered frame.
    */
-  public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
-    onFirstFrameRenderedListeners.add(listener);
+  public void addOnFirstFrameRenderedListener(@NonNull FlutterUiDisplayListener listener) {
+    flutterUiDisplayListeners.add(listener);
   }
 
   /**
    * Removes the given {@code listener}, which was previously added with
-   * {@link #addOnFirstFrameRenderedListener(OnFirstFrameRenderedListener)}.
+   * {@link #addOnFirstFrameRenderedListener(FlutterUiDisplayListener)}.
    */
-  public void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
-    onFirstFrameRenderedListeners.remove(listener);
+  public void removeOnFirstFrameRenderedListener(@NonNull FlutterUiDisplayListener listener) {
+    flutterUiDisplayListeners.remove(listener);
   }
 
   //------- Start: Process View configuration that Flutter cares about. ------
@@ -258,9 +269,18 @@ public class FlutterView extends FrameLayout {
   @Override
   protected void onConfigurationChanged(@NonNull Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
-    Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
-    sendLocalesToFlutter(newConfig);
-    sendUserSettingsToFlutter();
+    // We've observed on Android Q that going to the background, changing
+    // orientation, and bringing the app back to foreground results in a sequence
+    // of detatch from flutterEngine, onConfigurationChanged, followed by attach
+    // to flutterEngine.
+    // No-op here so that we avoid NPE; these channels will get notified once
+    // the activity or fragment tell the view to attach to the Flutter engine
+    // again (e.g. in onStart).
+    if (flutterEngine != null) {
+      Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
+      sendLocalesToFlutter(newConfig);
+      sendUserSettingsToFlutter();
+    }
   }
 
   /**
@@ -580,9 +600,9 @@ public class FlutterView extends FrameLayout {
 
     // Instruct our FlutterRenderer that we are now its designated RenderSurface.
     FlutterRenderer flutterRenderer = this.flutterEngine.getRenderer();
-    didRenderFirstFrame = flutterRenderer.hasRenderedFirstFrame();
-    flutterRenderer.attachToRenderSurface(renderSurface);
-    flutterRenderer.addOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
+    isFlutterUiDisplayed = flutterRenderer.isDisplayingFlutterUi();
+    renderSurface.attachToRenderer(flutterRenderer);
+    flutterRenderer.addIsDisplayingFlutterUiListener(flutterUiDisplayListener);
 
     // Initialize various components that know how to process Android View I/O
     // in a way that Flutter understands.
@@ -623,6 +643,8 @@ public class FlutterView extends FrameLayout {
     sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
 
+    flutterEngine.getPlatformViewsController().attachToView(this);
+
     // Notify engine attachment listeners of the attachment.
     for (FlutterEngineAttachmentListener listener : flutterEngineAttachmentListeners) {
       listener.onFlutterEngineAttachedToFlutterView(flutterEngine);
@@ -631,8 +653,8 @@ public class FlutterView extends FrameLayout {
     // If the first frame has already been rendered, notify all first frame listeners.
     // Do this after all other initialization so that listeners don't inadvertently interact
     // with a FlutterView that is only partially attached to a FlutterEngine.
-    if (didRenderFirstFrame) {
-      onFirstFrameRenderedListener.onFirstFrameRendered();
+    if (isFlutterUiDisplayed) {
+      flutterUiDisplayListener.onFlutterUiDisplayed();
     }
   }
 
@@ -658,6 +680,8 @@ public class FlutterView extends FrameLayout {
       listener.onFlutterEngineDetachedFromFlutterView();
     }
 
+    flutterEngine.getPlatformViewsController().detachFromView();
+
     // Disconnect the FlutterEngine's PlatformViewsController from the AccessibilityBridge.
     flutterEngine.getPlatformViewsController().detachAccessibiltyBridge();
 
@@ -674,9 +698,11 @@ public class FlutterView extends FrameLayout {
 
     // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
     FlutterRenderer flutterRenderer = flutterEngine.getRenderer();
-    didRenderFirstFrame = false;
-    flutterRenderer.removeOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
-    flutterRenderer.detachFromRenderSurface();
+    isFlutterUiDisplayed = false;
+    flutterRenderer.removeIsDisplayingFlutterUiListener(flutterUiDisplayListener);
+    flutterRenderer.stopRenderingToSurface();
+    flutterRenderer.setSemanticsEnabled(false);
+    renderSurface.detachFromRenderer();
     flutterEngine = null;
   }
 
@@ -685,7 +711,8 @@ public class FlutterView extends FrameLayout {
    */
   @VisibleForTesting
   public boolean isAttachedToFlutterEngine() {
-    return flutterEngine != null && flutterEngine.getRenderer().isAttachedTo(renderSurface);
+    return flutterEngine != null
+        && flutterEngine.getRenderer() == renderSurface.getAttachedRenderer();
   }
 
   /**
@@ -745,10 +772,19 @@ public class FlutterView extends FrameLayout {
    *
    * FlutterEngine must be non-null when this method is invoked.
    */
-  private void sendUserSettingsToFlutter() {
-    flutterEngine.getSettingsChannel().startMessage()
+  @VisibleForTesting
+  /* package */ void sendUserSettingsToFlutter() {
+    // Lookup the current brightness of the Android OS.
+    boolean isNightModeOn = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+    SettingsChannel.PlatformBrightness brightness = isNightModeOn
+        ? SettingsChannel.PlatformBrightness.dark
+        : SettingsChannel.PlatformBrightness.light;
+
+    flutterEngine.getSettingsChannel()
+        .startMessage()
         .setTextScaleFactor(getResources().getConfiguration().fontScale)
         .setUse24HourFormat(DateFormat.is24HourFormat(getContext()))
+        .setPlatformBrightness(brightness)
         .send();
   }
 

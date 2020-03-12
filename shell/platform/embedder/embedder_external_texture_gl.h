@@ -18,7 +18,7 @@ class EmbedderExternalTextureGL : public flutter::Texture {
       sk_sp<SkImage>(int64_t texture_identifier, GrContext*, const SkISize&)>;
 
   EmbedderExternalTextureGL(int64_t texture_identifier,
-                            ExternalTextureCallback callback);
+                            const ExternalTextureCallback& callback);
 
   ~EmbedderExternalTextureGL();
 
@@ -40,6 +40,9 @@ class EmbedderExternalTextureGL : public flutter::Texture {
 
   // |flutter::Texture|
   void MarkNewFrameAvailable() override;
+
+  // |flutter::Texture|
+  void OnTextureUnregistered() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderExternalTextureGL);
 };

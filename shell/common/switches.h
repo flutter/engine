@@ -130,6 +130,12 @@ DEF_SWITCH(DumpSkpOnShaderCompilation,
            "Automatically dump the skp that triggers new shader compilations. "
            "This is useful for writing custom ShaderWarmUp to reduce jank. "
            "By default, this is not enabled to reduce the overhead. ")
+DEF_SWITCH(CacheSkSL,
+           "cache-sksl",
+           "Only cache the shader in SkSL instead of binary or GLSL. This "
+           "should only be used during development phases. The generated SkSLs "
+           "can later be used in the release build for shader precompilation "
+           "at launch in order to eliminate the shader-compile jank.")
 DEF_SWITCH(
     TraceSystrace,
     "trace-systrace",
@@ -159,6 +165,12 @@ DEF_SWITCH(DisableDartAsserts,
            "disabled. This flag may be specified if the user wishes to run "
            "with assertions disabled in the debug product mode (i.e. with JIT "
            "or DBC).")
+DEF_SWITCH(
+    ForceMultithreading,
+    "force-multithreading",
+    "Uses separate threads for the platform, UI, GPU and IO task runners. "
+    "By default, a single thread is used for all task runners. Only available "
+    "in the flutter_tester.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

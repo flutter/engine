@@ -53,7 +53,7 @@ abstract class _RepositoryLicensedFile extends _RepositoryFile {
 
   // file names that we are confident won't be included in the final build product
   static final RegExp _readmeNamePattern = RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
-  static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties)$', caseSensitive: false);
+  static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties|.+\.obj)$', caseSensitive: false);
   static final RegExp _docsPattern = RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|Doxyfile|.+\.spec(?:\.in)?)$', caseSensitive: false);
   static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml)$', caseSensitive: false);
   static final RegExp _testsPattern = RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
@@ -925,6 +925,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != 'test' &&
             entry.name != 'test.disabled' &&
             entry.name != 'test_support' &&
+            entry.name != 'testdata' &&
             entry.name != 'tests' &&
             entry.name != 'javatests' &&
             entry.name != 'testing' &&
@@ -1888,7 +1889,7 @@ class _RepositoryBoringSSLDirectory extends _RepositoryDirectory {
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'src')
       return _RepositoryBoringSSLSourceDirectory(this, entry);
-    return super.createSubdirectory(entry);
+    return _RepositoryBoringSSLDirectory(this, entry);
   }
 }
 
@@ -2044,27 +2045,71 @@ class _RepositoryFlutterDirectory extends _RepositoryDirectory {
     if (entry.name == 'third_party')
       return _RepositoryFlutterThirdPartyDirectory(this, entry);
     if (entry.name == 'lib')
-      return _RepositoryLibDirectory(entry, this, entry);
+      return _createLibDirectoryRoot(entry, this);
+    if (entry.name == 'web_sdk')
+      return _createWebSdkDirectoryRoot(entry, this);
     return super.createSubdirectory(entry);
   }
 }
 
-// The "lib/" directory containing the source code for "dart:ui" (both native and Web) and
-// all its sub-directories.
-class _RepositoryLibDirectory extends _RepositoryDirectory {
-  _RepositoryLibDirectory(this.libRoot, _RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+/// A specialized crawler for "github.com/flutter/engine/lib" directory.
+///
+/// It includes everything except build tools, test build artifacts, and test code.
+_RelativePathBlacklistRepositoryDirectory _createLibDirectoryRoot(fs.Directory entry, _RepositoryDirectory parent) {
+  return _RelativePathBlacklistRepositoryDirectory(
+    rootDir: entry,
+    blacklist: <Pattern>[
+      'web_ui/lib/assets/ahem.ttf',  // this gitignored file exists only for testing purposes
+      RegExp(r'web_ui/build/.*'),  // this is compiler-generated output
+      RegExp(r'web_ui/dev/.*'),  // these are build tools; they do not end up in Engine artifacts
+      RegExp(r'web_ui/test/.*'),  // tests do not end up in Engine artifacts
+    ],
+    parent: parent,
+    io: entry,
+  );
+}
 
-  // List of files inside the lib directory that we're not scanning.
-  static const List<String> _kBlacklist = <String>[
-    'web_ui/lib/assets/ahem.ttf',  // this gitignored file exists only for testing purposes
-  ];
+/// A specialized crawler for "github.com/flutter/engine/web_sdk" directory.
+///
+/// It includes everything except the "web_engine_tester" package, which is only
+/// used to test the engine itself and is not shipped as part of the Flutter SDK.
+_RelativePathBlacklistRepositoryDirectory _createWebSdkDirectoryRoot(fs.Directory entry, _RepositoryDirectory parent) {
+  return _RelativePathBlacklistRepositoryDirectory(
+    rootDir: entry,
+    blacklist: <Pattern>[
+      RegExp(r'web_engine_tester/.*'),  // contains test code for the engine itself
+    ],
+    parent: parent,
+    io: entry,
+  );
+}
 
-  final fs.Directory libRoot;
+/// Walks a [rootDir] recursively, omitting paths that match a [blacklist].
+///
+/// The path patterns in the [blacklist] are specified relative to the [rootDir].
+class _RelativePathBlacklistRepositoryDirectory extends _RepositoryDirectory {
+  _RelativePathBlacklistRepositoryDirectory({
+    @required this.rootDir,
+    @required this.blacklist,
+    @required _RepositoryDirectory parent,
+    @required fs.Directory io,
+  }) : super(parent, io);
+
+  /// The directory, relative to which the paths are [blacklist]ed.
+  final fs.Directory rootDir;
+
+  /// Blacklisted path patterns.
+  ///
+  /// Paths are assumed relative to [rootDir].
+  final List<Pattern> blacklist;
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    final String relativePath = path.relative(entry.fullName, from: libRoot.fullName);
-    if (_kBlacklist.contains(relativePath)) {
+    final String relativePath = path.relative(entry.fullName, from: rootDir.fullName);
+    final bool isBlacklisted = blacklist.any(
+      (Pattern pattern) => pattern.matchAsPrefix(relativePath) != null,
+    );
+    if (isBlacklisted) {
       return false;
     }
     return super.shouldRecurse(entry);
@@ -2072,7 +2117,12 @@ class _RepositoryLibDirectory extends _RepositoryDirectory {
 
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    return _RepositoryLibDirectory(libRoot, this, entry);
+    return _RelativePathBlacklistRepositoryDirectory(
+      rootDir: rootDir,
+      blacklist: blacklist,
+      parent: this,
+      io: entry,
+    );
   }
 }
 

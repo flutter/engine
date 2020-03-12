@@ -38,7 +38,7 @@ std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrContext* gr_context
 }
 
 // |ExternalViewEmbedder|
-sk_sp<SkSurface> IOSSurfaceMetal::GetRootSurface() {
+SkCanvas* IOSSurfaceMetal::GetRootCanvas() {
   // On iOS, the root surface is created from the on-screen render target. Only the surfaces for the
   // various overlays are controlled by this class.
   return nullptr;
@@ -61,7 +61,9 @@ void IOSSurfaceMetal::CancelFrame() {
   [CATransaction commit];
 }
 
-void IOSSurfaceMetal::BeginFrame(SkISize frame_size, GrContext* context) {
+void IOSSurfaceMetal::BeginFrame(SkISize frame_size,
+                                 GrContext* context,
+                                 double device_pixel_ratio) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   platform_views_controller->SetFrameSize(frame_size);
@@ -102,7 +104,7 @@ bool IOSSurfaceMetal::SubmitFrame(GrContext* context) {
     return true;
   }
 
-  bool submitted = platform_views_controller->SubmitFrame(std::move(context), nullptr);
+  bool submitted = platform_views_controller->SubmitFrame(context, nullptr);
   [CATransaction commit];
   return submitted;
 }

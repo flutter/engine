@@ -10,33 +10,15 @@ part of ui;
 ///
 /// Scene objects can be displayed on the screen using the
 /// [Window.render] method.
-class Scene {
-  /// This class is created by the engine, and should not be instantiated
-  /// or extended directly.
-  ///
-  /// To create a Scene object, use a [SceneBuilder].
-  Scene._(this.webOnlyRootElement);
-
-  final html.Element webOnlyRootElement;
-
+abstract class Scene {
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
-  Future<Image> toImage(int width, int height) {
-    if (width <= 0 || height <= 0) {
-      throw Exception('Invalid image dimensions.');
-    }
-    throw UnsupportedError('toImage is not supported on the Web');
-    // TODO(flutter_web): Implement [_toImage].
-    // return futurize(
-    //     (Callback<Image> callback) => _toImage(width, height, callback));
-  }
-
-  // String _toImage(int width, int height, Callback<Image> callback) => null;
+  Future<Image> toImage(int width, int height);
 
   /// Releases the resources used by this scene.
   ///
   /// After calling this function, the scene is cannot be used further.
-  void dispose() {}
+  void dispose();
 }
 
 /// An opaque handle to a transform engine layer.
@@ -120,70 +102,14 @@ abstract class PhysicalShapeEngineLayer implements EngineLayer {}
 /// To draw graphical operations onto a [Scene], first create a
 /// [Picture] using a [PictureRecorder] and a [Canvas], and then add
 /// it to the scene using [addPicture].
-class SceneBuilder {
+abstract class SceneBuilder {
   /// Creates an empty [SceneBuilder] object.
   factory SceneBuilder() {
     if (engine.experimentalUseSkia) {
       return engine.LayerSceneBuilder();
     } else {
-      return SceneBuilder._();
+      return engine.SurfaceSceneBuilder();
     }
-  }
-
-  SceneBuilder._() {
-    _surfaceStack.add(engine.PersistedScene(_lastFrameScene));
-  }
-
-  factory SceneBuilder.layer() = engine.LayerSceneBuilder;
-
-  final List<engine.PersistedContainerSurface> _surfaceStack =
-      <engine.PersistedContainerSurface>[];
-
-  /// The scene built by this scene builder.
-  ///
-  /// This getter should only be called after all surfaces are built.
-  engine.PersistedScene get _persistedScene {
-    assert(() {
-      if (_surfaceStack.length != 1) {
-        final String surfacePrintout = _surfaceStack
-            .map<Type>((engine.PersistedContainerSurface surface) =>
-                surface.runtimeType)
-            .toList()
-            .join(', ');
-        throw Exception('Incorrect sequence of push/pop operations while '
-            'building scene surfaces. After building the scene the persisted '
-            'surface stack must contain a single element which corresponds '
-            'to the scene itself (_PersistedScene). All other surfaces '
-            'should have been popped off the stack. Found the following '
-            'surfaces in the stack:\n$surfacePrintout');
-      }
-      return true;
-    }());
-    return _surfaceStack.first;
-  }
-
-  /// The surface currently being built.
-  engine.PersistedContainerSurface get _currentSurface => _surfaceStack.last;
-
-  EngineLayer _pushSurface(engine.PersistedContainerSurface surface) {
-    // Only attempt to update if the update is requested and the surface is in
-    // the live tree.
-    if (surface.oldLayer != null) {
-      assert(surface.oldLayer.runtimeType == surface.runtimeType);
-      assert(surface.oldLayer.isActive);
-      surface.oldLayer.state = engine.PersistedSurfaceState.pendingUpdate;
-    }
-    _adoptSurface(surface);
-    _surfaceStack.add(surface);
-    return surface;
-  }
-
-  void _addSurface(engine.PersistedSurface surface) {
-    _adoptSurface(surface);
-  }
-
-  void _adoptSurface(engine.PersistedSurface surface) {
-    _currentSurface.appendChild(surface);
   }
 
   /// Pushes an offset operation onto the operation stack.
@@ -192,9 +118,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   OffsetEngineLayer pushOffset(double dx, double dy,
-      {OffsetEngineLayer oldLayer}) {
-    return _pushSurface(engine.PersistedOffset(oldLayer, dx, dy));
-  }
+      {OffsetEngineLayer oldLayer});
 
   /// Pushes a transform operation onto the operation stack.
   ///
@@ -202,15 +126,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   TransformEngineLayer pushTransform(Float64List matrix4,
-      {TransformEngineLayer oldLayer}) {
-    if (matrix4 == null) {
-      throw ArgumentError('"matrix4" argument cannot be null');
-    }
-    if (matrix4.length != 16) {
-      throw ArgumentError('"matrix4" must have 16 entries.');
-    }
-    return _pushSurface(engine.PersistedTransform(oldLayer, matrix4));
-  }
+      {TransformEngineLayer oldLayer});
 
   /// Pushes a rectangular clip operation onto the operation stack.
   ///
@@ -219,11 +135,7 @@ class SceneBuilder {
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
   ClipRectEngineLayer pushClipRect(Rect rect,
-      {Clip clipBehavior = Clip.antiAlias, ClipRectEngineLayer oldLayer}) {
-    assert(clipBehavior != null);
-    assert(clipBehavior != Clip.none);
-    return _pushSurface(engine.PersistedClipRect(oldLayer, rect));
-  }
+      {Clip clipBehavior = Clip.antiAlias, ClipRectEngineLayer oldLayer});
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///
@@ -231,10 +143,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   ClipRRectEngineLayer pushClipRRect(RRect rrect,
-      {Clip clipBehavior, ClipRRectEngineLayer oldLayer}) {
-    return _pushSurface(
-        engine.PersistedClipRRect(oldLayer, rrect, clipBehavior));
-  }
+      {Clip clipBehavior, ClipRRectEngineLayer oldLayer});
 
   /// Pushes a path clip operation onto the operation stack.
   ///
@@ -242,11 +151,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   ClipPathEngineLayer pushClipPath(Path path,
-      {Clip clipBehavior = Clip.antiAlias, ClipPathEngineLayer oldLayer}) {
-    assert(clipBehavior != null);
-    assert(clipBehavior != Clip.none);
-    return _pushSurface(engine.PersistedClipPath(oldLayer, path, clipBehavior));
-  }
+      {Clip clipBehavior = Clip.antiAlias, ClipPathEngineLayer oldLayer});
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -257,9 +162,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   OpacityEngineLayer pushOpacity(int alpha,
-      {Offset offset = Offset.zero, OpacityEngineLayer oldLayer}) {
-    return _pushSurface(engine.PersistedOpacity(oldLayer, alpha, offset));
-  }
+      {Offset offset = Offset.zero, OpacityEngineLayer oldLayer});
 
   /// Pushes a color filter operation onto the operation stack.
   ///
@@ -272,10 +175,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   ColorFilterEngineLayer pushColorFilter(ColorFilter filter,
-      {ColorFilterEngineLayer oldLayer}) {
-    assert(filter != null);
-    throw UnimplementedError();
-  }
+      {ColorFilterEngineLayer oldLayer});
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
@@ -284,9 +184,7 @@ class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack.
   BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter,
-      {BackdropFilterEngineLayer oldLayer}) {
-    return _pushSurface(engine.PersistedBackdropFilter(oldLayer, filter));
-  }
+      {BackdropFilterEngineLayer oldLayer});
 
   /// Pushes a shader mask operation onto the operation stack.
   ///
@@ -296,9 +194,7 @@ class SceneBuilder {
   /// See [pop] for details about the operation stack.
   ShaderMaskEngineLayer pushShaderMask(
       Shader shader, Rect maskRect, BlendMode blendMode,
-      {ShaderMaskEngineLayer oldLayer}) {
-    throw UnimplementedError();
-  }
+      {ShaderMaskEngineLayer oldLayer});
 
   /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
@@ -319,16 +215,7 @@ class SceneBuilder {
     Color shadowColor,
     Clip clipBehavior = Clip.none,
     PhysicalShapeEngineLayer oldLayer,
-  }) {
-    return _pushSurface(engine.PersistedPhysicalShape(
-      oldLayer,
-      path,
-      elevation,
-      color.value,
-      shadowColor?.value ?? 0xFF000000,
-      clipBehavior,
-    ));
-  }
+  });
 
   /// Add a retained engine layer subtree from previous frames.
   ///
@@ -338,12 +225,7 @@ class SceneBuilder {
   /// Therefore, when implementing a subclass of the [Layer] concept defined in
   /// the rendering layer of Flutter's framework, once this is called, there's
   /// no need to call [addToScene] for its children layers.
-  void addRetained(EngineLayer retainedLayer) {
-    final engine.PersistedContainerSurface retainedSurface = retainedLayer;
-    assert(retainedSurface.isActive || retainedSurface.isReleased);
-    retainedSurface.tryRetain();
-    _adoptSurface(retainedSurface);
-  }
+  void addRetained(EngineLayer retainedLayer);
 
   /// Ends the effect of the most recently pushed operation.
   ///
@@ -351,10 +233,7 @@ class SceneBuilder {
   /// operations in the stack applies to each of the objects added to the scene.
   /// Calling this function removes the most recently added operation from the
   /// stack.
-  void pop() {
-    assert(_surfaceStack.isNotEmpty);
-    _surfaceStack.removeLast();
-  }
+  void pop();
 
   /// Adds an object to the scene that displays performance statistics.
   ///
@@ -379,25 +258,7 @@ class SceneBuilder {
   ///
   /// See also the [PerformanceOverlayOption] enum in the rendering library.
   /// for more details.
-  void addPerformanceOverlay(int enabledOptions, Rect bounds) {
-    _addPerformanceOverlay(
-        enabledOptions, bounds.left, bounds.right, bounds.top, bounds.bottom);
-  }
-
-  /// Whether we've already warned the user about the lack of the performance
-  /// overlay or not.
-  ///
-  /// We use this to avoid spamming the console with redundant warning messages.
-  static bool _webOnlyDidWarnAboutPerformanceOverlay = false;
-
-  void _addPerformanceOverlay(int enabledOptions, double left, double right,
-      double top, double bottom) {
-    if (!_webOnlyDidWarnAboutPerformanceOverlay) {
-      _webOnlyDidWarnAboutPerformanceOverlay = true;
-      html.window.console
-          .warn('The performance overlay isn\'t supported on the web');
-    }
-  }
+  void addPerformanceOverlay(int enabledOptions, Rect bounds);
 
   /// Adds a [Picture] to the scene.
   ///
@@ -407,17 +268,7 @@ class SceneBuilder {
     Picture picture, {
     bool isComplexHint = false,
     bool willChangeHint = false,
-  }) {
-    int hints = 0;
-    if (isComplexHint) {
-      hints |= 1;
-    }
-    if (willChangeHint) {
-      hints |= 2;
-    }
-    _addSurface(
-        engine.persistedPictureFactory(offset.dx, offset.dy, picture, hints));
-  }
+  });
 
   /// Adds a backend texture to the scene.
   ///
@@ -427,18 +278,7 @@ class SceneBuilder {
       {Offset offset = Offset.zero,
       double width = 0.0,
       double height = 0.0,
-      bool freeze = false}) {
-    assert(offset != null, 'Offset argument was null');
-    _addTexture(offset.dx, offset.dy, width, height, textureId);
-  }
-
-  void _addTexture(
-      double dx, double dy, double width, double height, int textureId) {
-    // In test mode, allow this to be a no-op.
-    if (!debugEmulateFlutterTesterEnvironment) {
-      throw UnimplementedError('Textures are not supported in Flutter Web');
-    }
-  }
+      bool freeze = false});
 
   /// Adds a platform view (e.g an iOS UIView) to the scene.
   ///
@@ -461,20 +301,7 @@ class SceneBuilder {
     Offset offset = Offset.zero,
     double width = 0.0,
     double height = 0.0,
-  }) {
-    assert(offset != null, 'Offset argument was null');
-    _addPlatformView(offset.dx, offset.dy, width, height, viewId);
-  }
-
-  void _addPlatformView(
-    double dx,
-    double dy,
-    double width,
-    double height,
-    int viewId,
-  ) {
-    _addSurface(engine.PersistedPlatformView(viewId, dx, dy, width, height));
-  }
+  });
 
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.
@@ -483,14 +310,7 @@ class SceneBuilder {
       double width = 0.0,
       double height = 0.0,
       SceneHost sceneHost,
-      bool hitTestable = true}) {
-    _addChildScene(offset.dx, offset.dy, width, height, sceneHost, hitTestable);
-  }
-
-  void _addChildScene(double dx, double dy, double width, double height,
-      SceneHost sceneHost, bool hitTestable) {
-    throw UnimplementedError();
-  }
+      bool hitTestable = true});
 
   /// Sets a threshold after which additional debugging information should be
   /// recorded.
@@ -499,7 +319,7 @@ class SceneBuilder {
   /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
   /// We'll hopefully be able to figure out how to make this feature more useful
   /// to you.
-  void setRasterizerTracingThreshold(int frameInterval) {}
+  void setRasterizerTracingThreshold(int frameInterval);
 
   /// Sets whether the raster cache should checkerboard cached entries. This is
   /// only useful for debugging purposes.
@@ -517,45 +337,13 @@ class SceneBuilder {
   ///
   /// Currently this interface is difficult to use by end-developers. If you're
   /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
-  void setCheckerboardRasterCacheImages(bool checkerboard) {}
+  void setCheckerboardRasterCacheImages(bool checkerboard);
 
   /// Sets whether the compositor should checkerboard layers that are rendered
   /// to offscreen bitmaps.
   ///
   /// This is only useful for debugging purposes.
-  void setCheckerboardOffscreenLayers(bool checkerboard) {}
-
-  /// The scene recorded in the last frame.
-  ///
-  /// This is a surface tree that holds onto the DOM elements that can be reused
-  /// on the next frame.
-  static engine.PersistedScene _lastFrameScene;
-
-  /// Returns the computed persisted scene graph recorded in the last frame.
-  ///
-  /// This is only available in debug mode. It returns `null` in profile and
-  /// release modes.
-  static engine.PersistedScene get debugLastFrameScene {
-    engine.PersistedScene result;
-    assert(() {
-      result = _lastFrameScene;
-      return true;
-    }());
-    return result;
-  }
-
-  /// Discards information about previously rendered frames, including DOM
-  /// elements and cached canvases.
-  ///
-  /// After calling this function new canvases will be created for the
-  /// subsequent scene. This is useful when tests need predictable canvas
-  /// sizes. If the cache is not cleared, then canvases allocated in one test
-  /// may be reused in another test.
-  static void debugForgetFrameScene() {
-    _lastFrameScene?.rootElement?.remove();
-    _lastFrameScene = null;
-    engine.debugForgetFrameScene();
-  }
+  void setCheckerboardOffscreenLayers(bool checkerboard);
 
   /// Finishes building the scene.
   ///
@@ -565,24 +353,12 @@ class SceneBuilder {
   ///
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.
-  Scene build() {
-    _persistedScene.preroll();
-    if (_lastFrameScene == null) {
-      _persistedScene.build();
-    } else {
-      _persistedScene.update(_lastFrameScene);
-    }
-    engine.commitScene(_persistedScene);
-    _lastFrameScene = _persistedScene;
-    return Scene._(_persistedScene.rootElement);
-  }
+  Scene build();
 
   /// Set properties on the linked scene.  These properties include its bounds,
   /// as well as whether it can be the target of focus events or not.
   void setProperties(double width, double height, double insetTop,
-      double insetRight, double insetBottom, double insetLeft, bool focusable) {
-    throw UnimplementedError();
-  }
+      double insetRight, double insetBottom, double insetLeft, bool focusable);
 }
 
 /// A handle for the framework to hold and retain an engine layer across frames.

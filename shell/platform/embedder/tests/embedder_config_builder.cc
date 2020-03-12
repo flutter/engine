@@ -46,6 +46,12 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     return reinterpret_cast<EmbedderTestContext*>(context)->GLGetProcAddress(
         name);
   };
+  opengl_renderer_config_.fbo_reset_after_present = true;
+  opengl_renderer_config_.surface_transformation =
+      [](void* context) -> FlutterTransformation {
+    return reinterpret_cast<EmbedderTestContext*>(context)
+        ->GetRootSurfaceTransformation();
+  };
 
   software_renderer_config_.struct_size = sizeof(FlutterSoftwareRendererConfig);
   software_renderer_config_.surface_present_callback =
@@ -65,12 +71,16 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
             SkImage::MakeFromBitmap(bitmap));
       };
 
+  // The first argument is treated as the executable name. Don't make tests have
+  // to do this manually.
+  AddCommandLineArgument("embedder_unittest");
+
   if (preference == InitializationPreference::kInitialize) {
-    SetSoftwareRendererConfig();
     SetAssetsPath();
     SetSnapshots();
     SetIsolateCreateCallbackHook();
     SetSemanticsCallbackHooks();
+    AddCommandLineArgument("--disable-observatory");
   }
 }
 
@@ -80,15 +90,20 @@ FlutterProjectArgs& EmbedderConfigBuilder::GetProjectArgs() {
   return project_args_;
 }
 
-void EmbedderConfigBuilder::SetSoftwareRendererConfig() {
+void EmbedderConfigBuilder::SetSoftwareRendererConfig(SkISize surface_size) {
   renderer_config_.type = FlutterRendererType::kSoftware;
   renderer_config_.software = software_renderer_config_;
+
+  // TODO(chinmaygarde): The compositor still uses a GL surface for operation.
+  // Once this is no longer the case, don't setup the GL surface when using the
+  // software renderer config.
+  context_.SetupOpenGLSurface(surface_size);
 }
 
-void EmbedderConfigBuilder::SetOpenGLRendererConfig() {
+void EmbedderConfigBuilder::SetOpenGLRendererConfig(SkISize surface_size) {
   renderer_config_.type = FlutterRendererType::kOpenGL;
   renderer_config_.open_gl = opengl_renderer_config_;
-  context_.SetupOpenGLSurface();
+  context_.SetupOpenGLSurface(surface_size);
 }
 
 void EmbedderConfigBuilder::SetAssetsPath() {
@@ -155,8 +170,18 @@ void EmbedderConfigBuilder::SetPlatformTaskRunner(
   project_args_.custom_task_runners = &custom_task_runners_;
 }
 
+void EmbedderConfigBuilder::SetRenderTaskRunner(
+    const FlutterTaskRunnerDescription* runner) {
+  if (runner == nullptr) {
+    return;
+  }
+
+  custom_task_runners_.render_task_runner = runner;
+  project_args_.custom_task_runners = &custom_task_runners_;
+}
+
 void EmbedderConfigBuilder::SetPlatformMessageCallback(
-    std::function<void(const FlutterPlatformMessage*)> callback) {
+    const std::function<void(const FlutterPlatformMessage*)>& callback) {
   context_.SetPlatformMessageCallback(callback);
 }
 
@@ -197,8 +222,17 @@ FlutterCompositor& EmbedderConfigBuilder::GetCompositor() {
   return compositor_;
 }
 
-UniqueEngine EmbedderConfigBuilder::LaunchEngine() {
+UniqueEngine EmbedderConfigBuilder::LaunchEngine() const {
+  return SetupEngine(true);
+}
+
+UniqueEngine EmbedderConfigBuilder::InitializeEngine() const {
+  return SetupEngine(false);
+}
+
+UniqueEngine EmbedderConfigBuilder::SetupEngine(bool run) const {
   FlutterEngine engine = nullptr;
+  FlutterProjectArgs project_args = project_args_;
 
   std::vector<const char*> args;
   args.reserve(command_line_arguments_.size());
@@ -208,17 +242,20 @@ UniqueEngine EmbedderConfigBuilder::LaunchEngine() {
   }
 
   if (args.size() > 0) {
-    project_args_.command_line_argv = args.data();
-    project_args_.command_line_argc = args.size();
+    project_args.command_line_argv = args.data();
+    project_args.command_line_argc = args.size();
   } else {
     // Clear it out in case this is not the first engine launch from the
     // embedder config builder.
-    project_args_.command_line_argv = nullptr;
-    project_args_.command_line_argc = 0;
+    project_args.command_line_argv = nullptr;
+    project_args.command_line_argc = 0;
   }
 
-  auto result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &renderer_config_,
-                                 &project_args_, &context_, &engine);
+  auto result =
+      run ? FlutterEngineRun(FLUTTER_ENGINE_VERSION, &renderer_config_,
+                             &project_args, &context_, &engine)
+          : FlutterEngineInitialize(FLUTTER_ENGINE_VERSION, &renderer_config_,
+                                    &project_args, &context_, &engine);
 
   if (result != kSuccess) {
     return {};

@@ -38,7 +38,6 @@ import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -162,7 +161,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
         dartExecutor = mNativeView.getDartExecutor();
         flutterRenderer = new FlutterRenderer(mNativeView.getFlutterJNI());
-        mIsSoftwareRenderingEnabled = FlutterJNI.nativeGetIsSoftwareRenderingEnabled();
+        mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().nativeGetIsSoftwareRenderingEnabled();
         mMetrics = new ViewportMetrics();
         mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
         setFocusable(true);
@@ -677,29 +676,6 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
             mMetrics.systemGestureInsetBottom,
             mMetrics.systemGestureInsetLeft
         );
-    }
-
-    // Called by native to update the semantics/accessibility tree.
-    public void updateSemantics(ByteBuffer buffer, String[] strings) {
-        try {
-            if (mAccessibilityNodeProvider != null) {
-                buffer.order(ByteOrder.LITTLE_ENDIAN);
-                mAccessibilityNodeProvider.updateSemantics(buffer, strings);
-            }
-        } catch (Exception ex) {
-            Log.e(TAG, "Uncaught exception while updating semantics", ex);
-        }
-    }
-
-    public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
-        try {
-            if (mAccessibilityNodeProvider != null) {
-                buffer.order(ByteOrder.LITTLE_ENDIAN);
-                mAccessibilityNodeProvider.updateCustomAccessibilityActions(buffer, strings);
-            }
-        } catch (Exception ex) {
-            Log.e(TAG, "Uncaught exception while updating local context actions", ex);
-        }
     }
 
     // Called by FlutterNativeView to notify first Flutter frame rendered.

@@ -9,7 +9,7 @@ Future<void> webOnlyInitializePlatform({
   engine.AssetManager assetManager,
 }) async {
   if (!debugEmulateFlutterTesterEnvironment) {
-    engine.window.webOnlyLocationStrategy = const engine.HashLocationStrategy();
+    engine.window.locationStrategy = const engine.HashLocationStrategy();
   }
 
   engine.webOnlyInitializeEngine();
@@ -22,9 +22,10 @@ Future<void> webOnlyInitializePlatform({
 
   assetManager ??= const engine.AssetManager();
   await webOnlySetAssetManager(assetManager);
-  await _fontCollection.ensureFontsLoaded();
   if (engine.experimentalUseSkia) {
     await engine.skiaFontCollection.ensureFontsLoaded();
+  } else {
+    await _fontCollection.ensureFontsLoaded();
   }
 
   _webOnlyIsInitialized = true;
@@ -50,20 +51,21 @@ Future<void> webOnlySetAssetManager(engine.AssetManager assetManager) async {
 
   if (engine.experimentalUseSkia) {
     engine.skiaFontCollection ??= engine.SkiaFontCollection();
+  } else {
+    _fontCollection ??= engine.FontCollection();
+    _fontCollection.clear();
   }
 
-  _fontCollection ??= engine.FontCollection();
 
-  _fontCollection.clear();
   if (_assetManager != null) {
-    await _fontCollection.registerFonts(_assetManager);
-
     if (engine.experimentalUseSkia) {
       await engine.skiaFontCollection.registerFonts(_assetManager);
+    } else {
+      await _fontCollection.registerFonts(_assetManager);
     }
   }
 
-  if (debugEmulateFlutterTesterEnvironment) {
+  if (debugEmulateFlutterTesterEnvironment && !engine.experimentalUseSkia) {
     _fontCollection.debugRegisterTestFonts();
   }
 }

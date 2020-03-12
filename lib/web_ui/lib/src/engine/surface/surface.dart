@@ -86,6 +86,7 @@ void commitScene(PersistedScene scene) {
     _debugPrintSurfaceStats(scene, _debugFrameNumber);
     _debugRepaintSurfaceStatsOverlay(scene);
   }
+
   assert(() {
     final List<String> validationErrors = <String>[];
     scene.debugValidate(validationErrors);
@@ -108,18 +109,6 @@ void commitScene(PersistedScene scene) {
     _debugFrameNumber++;
     return true;
   }());
-}
-
-/// Discards information about previously rendered frames, including DOM
-/// elements and cached canvases.
-///
-/// After calling this function new canvases will be created for the
-/// subsequent scene. This is useful when tests need predictable canvas
-/// sizes. If the cache is not cleared, then canvases allocated in one test
-/// may be reused in another test.
-void debugForgetFrameScene() {
-  _clipIdCounter = 0;
-  _recycledCanvases.clear();
 }
 
 /// Surfaces that were retained this frame.
@@ -638,6 +627,14 @@ abstract class PersistedSurface implements ui.EngineLayer {
   @protected
   @mustCallSuper
   void build() {
+    if (rootElement != null) {
+      try {
+        throw null;
+      } catch(_, stack) {
+        print('Attempted to build a $runtimeType, but it already has an HTML element ${rootElement.tagName}.');
+        print(stack.toString().split('\n').take(20).join('\n'));
+      }
+    }
     assert(rootElement == null);
     assert(isCreated);
     rootElement = createElement();

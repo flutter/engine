@@ -23,7 +23,7 @@ import 'package:ui/src/engine.dart';
 ///
 /// Surfaces are returned in a depth-first order.
 Iterable<PersistedSurface> enumerateSurfaces([PersistedSurface root]) {
-  root ??= SceneBuilder.debugLastFrameScene;
+  root ??= SurfaceSceneBuilder.debugLastFrameScene;
   final List<PersistedSurface> surfaces = <PersistedSurface>[root];
 
   root.visitChildren((PersistedSurface surface) {
@@ -37,7 +37,7 @@ Iterable<PersistedSurface> enumerateSurfaces([PersistedSurface root]) {
 ///
 /// If [root] is `null` returns all pictures from the last rendered scene.
 Iterable<PersistedPicture> enumeratePictures([PersistedSurface root]) {
-  root ??= SceneBuilder.debugLastFrameScene;
+  root ??= SurfaceSceneBuilder.debugLastFrameScene;
   return enumerateSurfaces(root).whereType<PersistedPicture>();
 }
 
@@ -45,7 +45,7 @@ Iterable<PersistedPicture> enumeratePictures([PersistedSurface root]) {
 ///
 /// If [root] is `null` returns all pictures from the last rendered scene.
 Iterable<PersistedOffset> enumerateOffsets([PersistedSurface root]) {
-  root ??= SceneBuilder.debugLastFrameScene;
+  root ??= SurfaceSceneBuilder.debugLastFrameScene;
   return enumerateSurfaces(root).whereType<PersistedOffset>();
 }
 
@@ -116,8 +116,7 @@ double _sizeDistance(Size a, Size b) {
 /// The distance is computed by a [DistanceFunction].
 ///
 /// If `distanceFunction` is null, a standard distance function is used for the
-/// `runtimeType` of the `from` argument. Standard functions are defined for
-/// the following types:
+/// type `T` . Standard functions are defined for the following types:
 ///
 ///  * [Color], whose distance is the maximum component-wise delta.
 ///  * [Offset], whose distance is the Euclidean distance computed using the
@@ -138,12 +137,12 @@ Matcher within<T>({
   @required T from,
   DistanceFunction<T> distanceFunction,
 }) {
-  distanceFunction ??= _kStandardDistanceFunctions[from.runtimeType];
+  distanceFunction ??= _kStandardDistanceFunctions[T];
 
   if (distanceFunction == null) {
     throw ArgumentError(
         'The specified distanceFunction was null, and a standard distance '
-        'function was not found for type ${from.runtimeType} of the provided '
+        'function was not found for type ${T} of the provided '
         '`from` argument.');
   }
 
@@ -459,7 +458,7 @@ String get currentHtml {
 class SceneTester {
   SceneTester(this.scene);
 
-  final Scene scene;
+  final SurfaceScene scene;
 
   void expectSceneHtml(String expectedHtml) {
     expectHtml(scene.webOnlyRootElement, expectedHtml,

@@ -13,6 +13,8 @@ import os
 import subprocess
 import sys
 
+from gather_flutter_runner_artifacts import CreateMetaPackage
+
 
 # Generates the manifest and returns the file.
 def GenerateManifest(package_dir):
@@ -22,6 +24,7 @@ def GenerateManifest(package_dir):
       common_prefix = os.path.commonprefix([root, package_dir])
       rel_path = os.path.relpath(os.path.join(root, f), common_prefix)
       from_package = os.path.abspath(os.path.join(package_dir, rel_path))
+      assert from_package, 'Failed to create from_package for %s' % os.path.join(root, f)
       full_paths.append('%s=%s' % (rel_path, from_package))
   parent_dir = os.path.abspath(os.path.join(package_dir, os.pardir))
   manifest_file_name = os.path.basename(package_dir) + '.manifest'
@@ -40,10 +43,10 @@ def CreateFarPackage(pm_bin, package_dir, signing_key, dst_dir):
   ]
 
   # Build the package
-  subprocess.check_call(pm_command_base + ['build'])
+  subprocess.check_output(pm_command_base + ['build'])
 
   # Archive the package
-  subprocess.check_call(pm_command_base + ['archive'])
+  subprocess.check_output(pm_command_base + ['archive'])
 
   return 0
 
@@ -57,30 +60,62 @@ def main():
   parser.add_argument(
       '--signing-key', dest='signing_key', action='store', required=True)
   parser.add_argument(
-      '--manifest-file', dest='manifest_file', action='store', required=True)
+      '--manifest-file', dest='manifest_file', action='store', required=False)
+  parser.add_argument(
+      '--far-name', dest='far_name', action='store', required=False)
 
   args = parser.parse_args()
 
   assert os.path.exists(args.pm_bin)
   assert os.path.exists(args.package_dir)
   assert os.path.exists(args.signing_key)
-  assert os.path.exists(args.manifest_file)
+
+  pkg_dir = args.package_dir
+  if not os.path.exists(os.path.join(pkg_dir, 'meta', 'package')):
+    CreateMetaPackage(pkg_dir, args.far_name)
+
+  output_dir = os.path.abspath(pkg_dir + '_out')
+  if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+  manifest_file = None
+  if args.manifest_file is not None:
+    assert os.path.exists(args.manifest_file)
+    manifest_file = args.manifest_file
+  else:
+    manifest_file = GenerateManifest(args.package_dir)
 
   pm_command_base = [
       args.pm_bin,
       '-o',
-      args.package_dir,
+      output_dir,
       '-k',
       args.signing_key,
       '-m',
-      args.manifest_file,
+      manifest_file,
   ]
 
-  # Build the package
-  subprocess.check_call(pm_command_base + ['build'])
-
-  # Archive the package
-  subprocess.check_call(pm_command_base + ['archive'])
+  # Build and then archive the package
+  # Use check_output so if anything goes wrong we get the output.
+  try:
+    pm_commands = [
+        ['build'],
+        ['archive', '--output='+ os.path.join(os.path.dirname(output_dir), args.far_name + "-0")],
+    ]
+    for pm_command in pm_commands:
+      subprocess.check_output(pm_command_base + pm_command)
+  except subprocess.CalledProcessError as e:
+    print('==================== Manifest contents =========================================')
+    with open(manifest_file, 'r') as manifest:
+      sys.stdout.write(manifest.read())
+    print('==================== End manifest contents =====================================')
+    meta_contents_path = os.path.join(output_dir, 'meta', 'contents')
+    if os.path.exists(meta_contents_path):
+      print('==================== meta/contents =============================================')
+      with open(meta_contents_path, 'r') as meta_contents:
+        sys.stdout.write(meta_contents.read())
+      print('==================== End meta/contents =========================================')
+    raise
 
   return 0
 

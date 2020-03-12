@@ -24,7 +24,7 @@ const char* DartSnapshot::kIsolateInstructionsSymbol =
 // data through symbols that are statically linked into the executable.
 // On other platforms this data is obtained by a dynamic symbol lookup.
 #define DART_SNAPSHOT_STATIC_LINK \
-  (OS_WIN || (OS_ANDROID && FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG))
+  (OS_WIN || (OS_ANDROID && FLUTTER_JIT_RUNTIME))
 
 #if !DART_SNAPSHOT_STATIC_LINK
 
@@ -178,10 +178,6 @@ fml::RefPtr<DartSnapshot> DartSnapshot::IsolateSnapshotFromSettings(
     return snapshot;
   }
   return nullptr;
-}
-
-fml::RefPtr<DartSnapshot> DartSnapshot::Empty() {
-  return fml::MakeRefCounted<DartSnapshot>(nullptr, nullptr);
 }
 
 DartSnapshot::DartSnapshot(std::shared_ptr<const fml::Mapping> data,

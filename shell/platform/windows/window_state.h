@@ -12,26 +12,27 @@
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/shell/platform/windows/win32_task_runner.h"
 
 struct flutter::Win32FlutterWindow;
 
 // Struct for storing state within an instance of the windows native (HWND or
 // CoreWindow) Window.
-struct FlutterDesktopWindowControllerState {
-  //// The win32 window that owns this state object.
-  std::unique_ptr<flutter::Win32FlutterWindow> window;
+struct FlutterDesktopViewControllerState {
+  // The win32 window that owns this state object.
+  std::unique_ptr<flutter::Win32FlutterWindow> view;
 
-  // The handle to the Flutter engine instance.
-  FLUTTER_API_SYMBOL(FlutterEngine) engine;
+  // The state associate with the engine backing the view.
+  std::unique_ptr<FlutterDesktopEngineState> engine_state;
 
   // The window handle given to API clients.
-  std::unique_ptr<FlutterDesktopWindow> window_wrapper;
+  std::unique_ptr<FlutterDesktopView> view_wrapper;
 };
 
 // Opaque reference for the native windows itself. This is separate from the
 // controller so that it can be provided to plugins without giving them access
 // to all of the controller-based functionality.
-struct FlutterDesktopWindow {
+struct FlutterDesktopView {
   // The window that (indirectly) owns this state object.
   flutter::Win32FlutterWindow* window;
 };
@@ -40,6 +41,9 @@ struct FlutterDesktopWindow {
 struct FlutterDesktopEngineState {
   // The handle to the Flutter engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
+
+  // Task runner for tasks posted from the engine.
+  std::unique_ptr<flutter::Win32TaskRunner> task_runner;
 };
 
 // State associated with the plugin registrar.
@@ -48,7 +52,7 @@ struct FlutterDesktopPluginRegistrar {
   std::unique_ptr<FlutterDesktopMessenger> messenger;
 
   // The handle for the window associated with this registrar.
-  FlutterDesktopWindow* window;
+  FlutterDesktopView* window;
 };
 
 // State associated with the messenger used to communicate with the engine.

@@ -33,20 +33,9 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
 @property(nonatomic) NSTextInputContext* textInputContext;
 
 /**
- * A dictionary of text input models, one per client connection, keyed
- * by the client connection ID.
- */
-@property(nonatomic) NSMutableDictionary<NSNumber*, FlutterTextInputModel*>* textInputModels;
-
-/**
- * The currently active client connection ID.
- */
-@property(nonatomic, nullable) NSNumber* activeClientID;
-
-/**
  * The currently active text input model.
  */
-@property(nonatomic, readonly, nullable) FlutterTextInputModel* activeModel;
+@property(nonatomic, nullable) FlutterTextInputModel* activeModel;
 
 /**
  * The channel used to communicate with Flutter.
@@ -78,17 +67,12 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
     [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [weakSelf handleMethodCall:call result:result];
     }];
-    _textInputModels = [[NSMutableDictionary alloc] init];
     _textInputContext = [[NSTextInputContext alloc] initWithClient:self];
   }
   return self;
 }
 
 #pragma mark - Private
-
-- (FlutterTextInputModel*)activeModel {
-  return (_activeClientID == nil) ? nil : _textInputModels[_activeClientID];
-}
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   BOOL handled = YES;
@@ -102,19 +86,15 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
       return;
     }
     NSNumber* clientID = call.arguments[0];
-    if (clientID != nil &&
-        (_activeClientID == nil || ![_activeClientID isEqualToNumber:clientID])) {
-      _activeClientID = clientID;
-      // TODO: Do we need to preserve state across setClient calls?
-      FlutterTextInputModel* inputModel =
-          [[FlutterTextInputModel alloc] initWithClientID:clientID configuration:call.arguments[1]];
-      if (!inputModel) {
+    if (clientID != nil) {
+      self.activeModel = [[FlutterTextInputModel alloc] initWithClientID:clientID
+                                                           configuration:call.arguments[1]];
+      if (!self.activeModel) {
         result([FlutterError errorWithCode:@"error"
                                    message:@"Failed to create an input model"
                                    details:@"Configuration arguments might be missing"]);
         return;
       }
-      _textInputModels[_activeClientID] = inputModel;
     }
   } else if ([method isEqualToString:kShowMethod]) {
     [self.flutterViewController addKeyResponder:self];
@@ -123,10 +103,14 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
     [self.flutterViewController removeKeyResponder:self];
     [_textInputContext deactivate];
   } else if ([method isEqualToString:kClearClientMethod]) {
-    _activeClientID = nil;
+    self.activeModel = nil;
   } else if ([method isEqualToString:kSetEditingStateMethod]) {
     NSDictionary* state = call.arguments;
     self.activeModel.state = state;
+    // Close the loop, since the framework state could have been updated by the
+    // engine since it sent this update, and needs to now be made to match the
+    // engine's version of the state.
+    [self updateEditState];
   } else {
     handled = NO;
     NSLog(@"Unhandled text input method '%@'", method);
@@ -141,9 +125,8 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
   if (self.activeModel == nil) {
     return;
   }
-
   [_channel invokeMethod:kUpdateEditStateResponseMethod
-               arguments:@[ _activeClientID, _textInputModels[_activeClientID].state ]];
+               arguments:@[ self.activeModel.clientID, self.activeModel.state ]];
 }
 
 #pragma mark -
@@ -220,12 +203,28 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
       // Use selection
       range = self.activeModel.selectedRange;
     }
-    if (range.location > self.activeModel.text.length)
-      range.location = self.activeModel.text.length;
-    if (range.length > (self.activeModel.text.length - range.location))
-      range.length = self.activeModel.text.length - range.location;
-    [self.activeModel.text replaceCharactersInRange:range withString:string];
-    self.activeModel.selectedRange = NSMakeRange(range.location + ((NSString*)string).length, 0);
+    // The selected range can actually have negative numbers, since it can start
+    // at the end of the range if the user selected the text going backwards.
+    // NSRange uses NSUIntegers, however, so we have to cast them to know if the
+    // selection is reversed or not.
+    long signedLength = static_cast<long>(range.length);
+
+    NSUInteger length;
+    NSUInteger location;
+    if (signedLength >= 0) {
+      location = range.location;
+      length = range.length;
+    } else {
+      location = range.location + range.length;
+      length = ABS(signedLength);
+    }
+    if (location > self.activeModel.text.length)
+      location = self.activeModel.text.length;
+    if (length > (self.activeModel.text.length - location))
+      length = self.activeModel.text.length - location;
+    [self.activeModel.text replaceCharactersInRange:NSMakeRange(location, length)
+                                         withString:string];
+    self.activeModel.selectedRange = NSMakeRange(location + ((NSString*)string).length, 0);
     [self updateEditState];
   }
 }
@@ -247,7 +246,7 @@ static NSString* const kMultilineInputType = @"TextInputType.multiline";
       [self insertText:@"\n" replacementRange:self.activeModel.selectedRange];
     }
     [_channel invokeMethod:kPerformAction
-                 arguments:@[ _activeClientID, self.activeModel.inputAction ]];
+                 arguments:@[ self.activeModel.clientID, self.activeModel.inputAction ]];
   }
 }
 

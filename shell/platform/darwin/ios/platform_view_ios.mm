@@ -43,12 +43,27 @@ fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() co
 }
 
 void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.reset();
     accessibility_bridge_.reset();
   }
   owner_controller_ = owner_controller;
+
+  // Add an observer that will clear out the owner_controller_ ivar and
+  // the accessibility_bridge_ in case the view controller is deleted.
+  dealloc_view_controller_observer_.reset(
+      [[[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
+                                                         object:owner_controller_.get()
+                                                          queue:[NSOperationQueue mainQueue]
+                                                     usingBlock:^(NSNotification* note) {
+                                                       // Implicit copy of 'this' is fine.
+                                                       accessibility_bridge_.reset();
+                                                       owner_controller_.reset();
+                                                     }] retain]);
+
   if (owner_controller_) {
     ios_surface_ =
         [static_cast<FlutterView*>(owner_controller.get().view) createSurface:gl_context_];
@@ -66,6 +81,12 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   }
 }
 
+PointerDataDispatcherMaker PlatformViewIOS::GetDispatcherMaker() {
+  return [](DefaultPointerDataDispatcher::Delegate& delegate) {
+    return std::make_unique<SmoothPointerDataDispatcher>(delegate);
+  };
+}
+
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
@@ -73,6 +94,8 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
 
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
+  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (!ios_surface_) {
     FML_DLOG(INFO) << "Could not CreateRenderingSurface, this PlatformViewIOS "
                       "has no ViewController.";
@@ -83,6 +106,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 
 // |PlatformView|
 sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
+  FML_DCHECK(task_runners_.GetIOTaskRunner()->RunsTasksOnCurrentThread());
   if (!gl_context_ || !gl_context_->ResourceMakeCurrent()) {
     FML_DLOG(INFO) << "Could not make resource context current on IO thread. "
                       "Async texture uploads will be disabled. On Simulators, "
@@ -148,6 +172,25 @@ fml::scoped_nsprotocol<FlutterTextInputPlugin*> PlatformViewIOS::GetTextInputPlu
 
 void PlatformViewIOS::SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin) {
   text_input_plugin_ = plugin;
+}
+
+PlatformViewIOS::ScopedObserver::ScopedObserver() : observer_(nil) {}
+
+PlatformViewIOS::ScopedObserver::~ScopedObserver() {
+  if (observer_) {
+    [[NSNotificationCenter defaultCenter] removeObserver:observer_];
+    [observer_ release];
+  }
+}
+
+void PlatformViewIOS::ScopedObserver::reset(id<NSObject> observer) {
+  if (observer != observer_) {
+    if (observer_) {
+      [[NSNotificationCenter defaultCenter] removeObserver:observer_];
+      [observer_ release];
+    }
+    observer_ = observer;
+  }
 }
 
 }  // namespace flutter

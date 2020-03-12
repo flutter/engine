@@ -5,13 +5,14 @@
 part of engine;
 
 class SkiaFontCollection {
-  final Map<String, Map<Map<String, String>, js.JsObject>>
-      _registeredTypefaces = <String, Map<Map<String, String>, js.JsObject>>{};
-
-  final List<Future<void>> _fontLoadingFutures = <Future<void>>[];
+  final List<Future<ByteBuffer>> _loadingFontBuffers = <Future<ByteBuffer>>[];
 
   Future<void> ensureFontsLoaded() async {
-    await Future.wait(_fontLoadingFutures);
+    final List<Uint8List> fontBuffers =
+        (await Future.wait<ByteBuffer>(_loadingFontBuffers))
+            .map((ByteBuffer buffer) => buffer.asUint8List())
+            .toList();
+    skFontMgr = canvasKit['SkFontMgr'].callMethod('FromData', fontBuffers);
   }
 
   Future<void> registerFonts(AssetManager assetManager) async {
@@ -41,11 +42,6 @@ class SkiaFontCollection {
           'There was a problem trying to load FontManifest.json');
     }
 
-    // Add Roboto to the bundled fonts since it is provided by default by
-    // Flutter.
-    _fontLoadingFutures
-        .add(_registerFont('Roboto', _robotoFontUrl, <String, String>{}));
-
     for (Map<String, dynamic> fontFamily in fontManifest) {
       final String family = fontFamily['family'];
       final List<dynamic> fontAssets = fontFamily['fonts'];
@@ -53,41 +49,12 @@ class SkiaFontCollection {
       for (dynamic fontAssetItem in fontAssets) {
         final Map<String, dynamic> fontAsset = fontAssetItem;
         final String asset = fontAsset['asset'];
-        final Map<String, String> descriptors = <String, String>{};
-        for (String descriptor in fontAsset.keys) {
-          if (descriptor != 'asset') {
-            descriptors[descriptor] = '${fontAsset[descriptor]}';
-          }
-        }
-        _fontLoadingFutures.add(_registerFont(
-            family, assetManager.getAssetUrl(asset), descriptors));
+        _loadingFontBuffers.add(html.window
+            .fetch(assetManager.getAssetUrl(asset))
+            .then((dynamic fetchResult) => fetchResult.arrayBuffer()));
       }
     }
   }
 
-  Future<void> _registerFont(
-      String family, String url, Map<String, String> descriptors) async {
-    final dynamic fetchResult = await html.window.fetch(url);
-    final ByteBuffer resultBuffer = await fetchResult.arrayBuffer();
-    final js.JsObject skTypeFace = skFontMgr.callMethod(
-        'MakeTypefaceFromData', <Uint8List>[resultBuffer.asUint8List()]);
-    _registeredTypefaces.putIfAbsent(
-        family, () => <Map<String, String>, js.JsObject>{});
-    _registeredTypefaces[family][descriptors] = skTypeFace;
-  }
-
-  js.JsObject getFont(String family, double size) {
-    if (_registeredTypefaces[family] == null) {
-      if (family == 'sans-serif') {
-        // If it's the default font, return a default SkFont
-        return js.JsObject(canvasKit['SkFont'], <dynamic>[null, size]);
-      }
-      throw Exception('Unregistered font: $family');
-    }
-    final js.JsObject skTypeface = _registeredTypefaces[family].values.first;
-    return js.JsObject(canvasKit['SkFont'], <dynamic>[skTypeface, size]);
-  }
-
-  final js.JsObject skFontMgr =
-      js.JsObject(canvasKit['SkFontMgr']['RefDefault']);
+  js.JsObject skFontMgr;
 }

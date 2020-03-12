@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.view.LayoutInflater;
@@ -21,7 +22,7 @@ import android.view.ViewGroup;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
-import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
+import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 
@@ -565,27 +566,28 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   // Delegate that runs all lifecycle and OS hook logic that is common between
   // FlutterActivity and FlutterFragment. See the FlutterActivityAndFragmentDelegate
   // implementation for details about why it exists.
-  private FlutterActivityAndFragmentDelegate delegate;
-
-  private final OnFirstFrameRenderedListener onFirstFrameRenderedListener = new OnFirstFrameRenderedListener() {
-    @Override
-    public void onFirstFrameRendered() {
-      // Notify our subclasses that the first frame has been rendered.
-      FlutterFragment.this.onFirstFrameRendered();
-
-      // Notify our owning Activity that the first frame has been rendered.
-      FragmentActivity fragmentActivity = getActivity();
-      if (fragmentActivity instanceof OnFirstFrameRenderedListener) {
-        OnFirstFrameRenderedListener activityAsListener = (OnFirstFrameRenderedListener) fragmentActivity;
-        activityAsListener.onFirstFrameRendered();
-      }
-    }
-  };
+  @VisibleForTesting
+  /* package */ FlutterActivityAndFragmentDelegate delegate;
 
   public FlutterFragment() {
     // Ensure that we at least have an empty Bundle of arguments so that we don't
     // need to continually check for null arguments before grabbing one.
     setArguments(new Bundle());
+  }
+
+  /**
+   * This method exists so that JVM tests can ensure that a delegate exists without
+   * putting this Fragment through any lifecycle events, because JVM tests cannot handle
+   * executing any lifecycle methods, at the time of writing this.
+   * <p>
+   * The testing infrastructure should be upgraded to make FlutterFragment tests easy to
+   * write while exercising real lifecycle methods. At such a time, this method should be
+   * removed.
+   */
+  // TODO(mattcarroll): remove this when tests allow for it (https://github.com/flutter/flutter/issues/43798)
+  @VisibleForTesting
+  /* package */ void setDelegate(@NonNull FlutterActivityAndFragmentDelegate delegate) {
+    this.delegate = delegate;
   }
 
   @Override
@@ -599,6 +601,12 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   @Override
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     return delegate.onCreateView(inflater, container, savedInstanceState);
+  }
+
+  @Override
+  public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+    super.onActivityCreated(savedInstanceState);
+    delegate.onActivityCreated(savedInstanceState);
   }
 
   @Override
@@ -635,6 +643,12 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   public void onDestroyView() {
     super.onDestroyView();
     delegate.onDestroyView();
+  }
+
+  @Override
+  public void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    delegate.onSaveInstanceState(outState);
   }
 
   @Override
@@ -769,7 +783,15 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
    */
   @Override
   public boolean shouldDestroyEngineWithHost() {
-    return getArguments().getBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, false);
+    boolean explicitDestructionRequested = getArguments().getBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, false);
+    if (getCachedEngineId() != null || delegate.isFlutterEngineFromHost()) {
+      // Only destroy a cached engine if explicitly requested by app developer.
+      return explicitDestructionRequested;
+    } else {
+      // If this Fragment created the FlutterEngine, destroy it by default unless
+      // explicitly requested not to.
+      return getArguments().getBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, true);
+    }
   }
 
   /**
@@ -940,6 +962,20 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
+   * Hook for the host to cleanup references that were established in
+   * {@link #configureFlutterEngine(FlutterEngine)} before the host is destroyed or detached.
+   * <p>
+   * This method is called in {@link #onDetach()}.
+   */
+  @Override
+  public void cleanUpFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    FragmentActivity attachedActivity = getActivity();
+    if (attachedActivity instanceof FlutterEngineConfigurator) {
+      ((FlutterEngineConfigurator) attachedActivity).cleanUpFlutterEngine(flutterEngine);
+    }
+  }
+
+  /**
    * See {@link NewEngineFragmentBuilder#shouldAttachEngineToActivity()} and
    * {@link CachedEngineFragmentBuilder#shouldAttachEngineToActivity()}.
    * <p>
@@ -951,21 +987,40 @@ public class FlutterFragment extends Fragment implements FlutterActivityAndFragm
   }
 
   /**
-   * Invoked after the {@link FlutterView} within this {@code FlutterFragment} renders its first
-   * frame.
+   * Invoked after the {@link FlutterView} within this {@code FlutterFragment} starts rendering
+   * pixels to the screen.
    * <p>
-   * This method forwards {@code onFirstFrameRendered()} to its attached {@code Activity}, if
-   * the attached {@code Activity} implements {@link OnFirstFrameRenderedListener}.
+   * This method forwards {@code onFlutterUiDisplayed()} to its attached {@code Activity}, if
+   * the attached {@code Activity} implements {@link FlutterUiDisplayListener}.
    * <p>
    * Subclasses that override this method must call through to the {@code super} method.
    * <p>
    * Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate.Host}
    */
   @Override
-  public void onFirstFrameRendered() {
+  public void onFlutterUiDisplayed() {
     FragmentActivity attachedActivity = getActivity();
-    if (attachedActivity instanceof OnFirstFrameRenderedListener) {
-      ((OnFirstFrameRenderedListener) attachedActivity).onFirstFrameRendered();
+    if (attachedActivity instanceof FlutterUiDisplayListener) {
+      ((FlutterUiDisplayListener) attachedActivity).onFlutterUiDisplayed();
+    }
+  }
+
+  /**
+   * Invoked after the {@link FlutterView} within this {@code FlutterFragment} stops rendering
+   * pixels to the screen.
+   * <p>
+   * This method forwards {@code onFlutterUiNoLongerDisplayed()} to its attached {@code Activity},
+   * if the attached {@code Activity} implements {@link FlutterUiDisplayListener}.
+   * <p>
+   * Subclasses that override this method must call through to the {@code super} method.
+   * <p>
+   * Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate.Host}
+   */
+  @Override
+  public void onFlutterUiNoLongerDisplayed() {
+    FragmentActivity attachedActivity = getActivity();
+    if (attachedActivity instanceof FlutterUiDisplayListener) {
+      ((FlutterUiDisplayListener) attachedActivity).onFlutterUiNoLongerDisplayed();
     }
   }
 

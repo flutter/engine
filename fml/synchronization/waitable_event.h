@@ -14,7 +14,6 @@
 #include <mutex>
 
 #include "flutter/fml/macros.h"
-#include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_delta.h"
 
 namespace fml {
@@ -52,7 +51,7 @@ class AutoResetWaitableEvent final {
   // called) each |Signal()| unblocks exactly one |Wait()|.
   void Wait();
 
-  // Like |Wait()|, but with a timeout. Also unblocks if |timeout_microseconds|
+  // Like |Wait()|, but with a timeout. Also unblocks if |timeout| expires
   // without being signaled in which case it returns true (otherwise, it returns
   // false).
   bool WaitWithTimeout(TimeDelta timeout);
@@ -95,7 +94,7 @@ class ManualResetWaitableEvent final {
   // Blocks the calling thread until the event is signaled.
   void Wait();
 
-  // Like |Wait()|, but with a timeout. Also unblocks if |timeout_microseconds|
+  // Like |Wait()|, but with a timeout. Also unblocks if |timeout| expires
   // without being signaled in which case it returns true (otherwise, it returns
   // false).
   bool WaitWithTimeout(TimeDelta timeout);

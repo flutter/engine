@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,7 +26,7 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
+import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 
@@ -83,10 +84,15 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
   private boolean isFlutterEngineFromHost;
 
   @NonNull
-  private final OnFirstFrameRenderedListener onFirstFrameRenderedListener = new OnFirstFrameRenderedListener() {
+  private final FlutterUiDisplayListener flutterUiDisplayListener = new FlutterUiDisplayListener() {
     @Override
-    public void onFirstFrameRendered() {
-      host.onFirstFrameRendered();
+    public void onFlutterUiDisplayed() {
+      host.onFlutterUiDisplayed();
+    }
+
+    @Override
+    public void onFlutterUiNoLongerDisplayed() {
+      host.onFlutterUiNoLongerDisplayed();
     }
   };
 
@@ -116,8 +122,16 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
    * or {@code Fragment}.
    */
   @Nullable
-  FlutterEngine getFlutterEngine() {
+  /* package */ FlutterEngine getFlutterEngine() {
     return flutterEngine;
+  }
+
+  /**
+   * Returns true if the host {@code Activity}/{@code Fragment} provided a
+   * {@code FlutterEngine}, as opposed to this delegate creating a new one.
+   */
+  /* package */ boolean isFlutterEngineFromHost() {
+    return isFlutterEngineFromHost;
   }
 
   /**
@@ -136,8 +150,6 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
    */
   void onAttach(@NonNull Context context) {
     ensureAlive();
-
-    initializeFlutter(context);
 
     // When "retain instance" is true, the FlutterEngine will survive configuration
     // changes. Therefore, we create a new one only if one does not already exist.
@@ -173,13 +185,6 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     host.configureFlutterEngine(flutterEngine);
   }
 
-  private void initializeFlutter(@NonNull Context context) {
-    FlutterMain.ensureInitializationComplete(
-        context.getApplicationContext(),
-        host.getFlutterShellArgs().toArray()
-    );
-  }
-
   /**
    * Obtains a reference to a FlutterEngine to back this delegate and its {@code host}.
    * <p>
@@ -193,7 +198,8 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
    * If the {@code host} does not provide a {@link FlutterEngine}, then a new {@link FlutterEngine}
    * is instantiated.
    */
-  private void setupFlutterEngine() {
+  @VisibleForTesting
+  /* package */ void setupFlutterEngine() {
     Log.d(TAG, "Setting up FlutterEngine.");
 
     // First, check if the host wants to use a cached FlutterEngine.
@@ -218,7 +224,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     // FlutterView.
     Log.d(TAG, "No preferred FlutterEngine was provided. Creating a new FlutterEngine for"
         + " this FlutterFragment.");
-    flutterEngine = new FlutterEngine(host.getContext());
+    flutterEngine = new FlutterEngine(host.getContext(), host.getFlutterShellArgs().toArray());
     isFlutterEngineFromHost = false;
   }
 
@@ -228,7 +234,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
    * <p>
    * {@code inflater} and {@code container} may be null when invoked from an {@code Activity}.
    * <p>
-   * This method creates a new {@link FlutterView}, adds a {@link OnFirstFrameRenderedListener} to
+   * This method creates a new {@link FlutterView}, adds a {@link FlutterUiDisplayListener} to
    * it, and then returns it.
    */
   @NonNull
@@ -236,7 +242,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     Log.v(TAG, "Creating FlutterView.");
     ensureAlive();
     flutterView = new FlutterView(host.getActivity(), host.getRenderMode(), host.getTransparencyMode());
-    flutterView.addOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
+    flutterView.addOnFirstFrameRenderedListener(flutterUiDisplayListener);
 
     flutterSplashView = new FlutterSplashView(host.getContext());
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -250,6 +256,15 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     flutterSplashView.displayFlutterViewWithSplash(flutterView, host.provideSplashScreen());
 
     return flutterSplashView;
+  }
+
+  void onActivityCreated(@Nullable Bundle bundle) {
+    Log.v(TAG, "onActivityCreated. Giving plugins an opportunity to restore state.");
+    ensureAlive();
+
+    if (host.shouldAttachEngineToActivity()) {
+      flutterEngine.getActivityControlSurface().onRestoreInstanceState(bundle);
+    }
   }
 
   /**
@@ -391,12 +406,21 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
   /**
    * Invoke this from {@code Activity#onDestroy()} or {@code Fragment#onDestroyView()}.
    * <p>
-   * This method removes this delegate's {@link FlutterView}'s {@link OnFirstFrameRenderedListener}.
+   * This method removes this delegate's {@link FlutterView}'s {@link FlutterUiDisplayListener}.
    */
   void onDestroyView() {
     Log.v(TAG, "onDestroyView()");
     ensureAlive();
-    flutterView.removeOnFirstFrameRenderedListener(onFirstFrameRenderedListener);
+    flutterView.removeOnFirstFrameRenderedListener(flutterUiDisplayListener);
+  }
+
+  void onSaveInstanceState(@Nullable Bundle bundle) {
+    Log.v(TAG, "onSaveInstanceState. Giving plugins an opportunity to save state.");
+    ensureAlive();
+
+    if (host.shouldAttachEngineToActivity()) {
+      flutterEngine.getActivityControlSurface().onSaveInstanceState(bundle);
+    }
   }
 
   /**
@@ -416,6 +440,10 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     Log.v(TAG, "onDetach()");
     ensureAlive();
 
+    // Give the host an opportunity to cleanup any references that were created in
+    // configureFlutterEngine().
+    host.cleanUpFlutterEngine(flutterEngine);
+
     if (host.shouldAttachEngineToActivity()) {
       // Notify plugins that they are no longer attached to an Activity.
       Log.d(TAG, "Detaching FlutterEngine from the Activity that owns this Fragment.");
@@ -432,6 +460,8 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
       platformPlugin.destroy();
       platformPlugin = null;
     }
+
+    flutterEngine.getLifecycleChannel().appIsDetached();
 
     // Destroy our FlutterEngine if we're not set to retain it.
     if (host.shouldDestroyEngineWithHost()) {
@@ -689,15 +719,25 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
     void configureFlutterEngine(@NonNull FlutterEngine flutterEngine);
 
     /**
+     * Hook for the host to cleanup references that were established in
+     * {@link #configureFlutterEngine(FlutterEngine)} before the host is destroyed or detached.
+     */
+    void cleanUpFlutterEngine(@NonNull FlutterEngine flutterEngine);
+
+    /**
      * Returns true if the {@link FlutterEngine}'s plugin system should be connected to the
      * host {@link Activity}, allowing plugins to interact with it.
      */
     boolean shouldAttachEngineToActivity();
 
     /**
-     * Invoked by this delegate when its {@link FlutterView} has rendered its first Flutter
-     * frame.
+     * Invoked by this delegate when its {@link FlutterView} starts painting pixels.
      */
-    void onFirstFrameRendered();
+    void onFlutterUiDisplayed();
+
+    /**
+     * Invoked by this delegate when its {@link FlutterView} stops painting pixels.
+     */
+    void onFlutterUiNoLongerDisplayed();
   }
 }

@@ -4,8 +4,11 @@
 
 part of engine;
 
-final bool _supportsDecode =
-    js_util.hasProperty(js.JsObject(js.context['Image']), 'decode');
+final bool _supportsDecode = js_util.getProperty(
+        js_util.getProperty(
+            js_util.getProperty(html.window, 'Image'), 'prototype'),
+        'decode') !=
+    null;
 
 class HtmlCodec implements ui.Codec {
   final String src;
@@ -89,7 +92,7 @@ class SingleFrameInfo implements ui.FrameInfo {
 
 class HtmlImage implements ui.Image {
   final html.ImageElement imgElement;
-
+  bool _requiresClone = false;
   HtmlImage(this.imgElement, this.width, this.height);
 
   @override
@@ -112,6 +115,18 @@ class HtmlImage implements ui.Image {
         callback(encoded?.buffer?.asByteData());
       });
     });
+  }
+
+  // Returns absolutely positioned actual image element on first call and
+  // clones on subsequent calls.
+  html.ImageElement cloneImageElement() {
+    if (_requiresClone) {
+      return imgElement.clone(true);
+    } else {
+      _requiresClone = true;
+      imgElement.style..position = 'absolute';
+      return imgElement;
+    }
   }
 
   /// Returns an error message on failure, null on success.

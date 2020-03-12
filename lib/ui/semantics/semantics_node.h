@@ -72,6 +72,8 @@ enum class SemanticsFlags : int32_t {
   // The Dart API defines the following flag but it isn't used in iOS.
   // kIsMultiline = 1 << 19,
   kIsReadOnly = 1 << 20,
+  kIsFocusable = 1 << 21,
+  kIsLink = 1 << 22,
 };
 
 const int kScrollableSemanticsFlags =
@@ -93,6 +95,8 @@ struct SemanticsNode {
   int32_t id = 0;
   int32_t flags = 0;
   int32_t actions = 0;
+  int32_t maxValueLength = -1;
+  int32_t currentValueLength = -1;
   int32_t textSelectionBase = -1;
   int32_t textSelectionExtent = -1;
   int32_t platformViewId = -1;

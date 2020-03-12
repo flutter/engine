@@ -38,10 +38,11 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
   auto weak_isolate = DartIsolate::CreateRootIsolate(
       vm_data->GetSettings(),             // settings
       vm_data->GetIsolateSnapshot(),      // isolate snapshot
-      vm_data->GetSharedSnapshot(),       // shared snapshot
       std::move(task_runners),            // task runners
       nullptr,                            // window
+      {},                                 // snapshot delegate
       {},                                 // io manager
+      {},                                 // unref queue
       {},                                 // image decoder
       "main.dart",                        // advisory uri
       "main",                             // advisory entrypoint,
@@ -71,10 +72,11 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
   auto weak_isolate = DartIsolate::CreateRootIsolate(
       vm_data->GetSettings(),             // settings
       vm_data->GetIsolateSnapshot(),      // isolate snapshot
-      vm_data->GetSharedSnapshot(),       // shared snapshot
       std::move(task_runners),            // task runners
       nullptr,                            // window
+      {},                                 // snapshot delegate
       {},                                 // io manager
+      {},                                 // unref queue
       {},                                 // image decoder
       "main.dart",                        // advisory uri
       "main",                             // advisory entrypoint
@@ -181,10 +183,11 @@ static void RunDartCodeInIsolate(DartVMRef& vm_ref,
   auto weak_isolate = DartIsolate::CreateRootIsolate(
       vm_data->GetSettings(),             // settings
       vm_data->GetIsolateSnapshot(),      // isolate snapshot
-      vm_data->GetSharedSnapshot(),       // shared snapshot
       std::move(task_runners),            // task runners
       nullptr,                            // window
+      {},                                 // snapshot delegate
       {},                                 // io manager
+      {},                                 // unref queue
       {},                                 // image decoder
       "main.dart",                        // advisory uri
       "main",                             // advisory entrypoint
@@ -360,6 +363,8 @@ TEST_F(DartIsolateTest, CanSaveCompilationTrace) {
 
 TEST_F(DartIsolateTest, CanLaunchSecondaryIsolates) {
   fml::CountDownLatch latch(3);
+  fml::AutoResetWaitableEvent child_shutdown_latch;
+  fml::AutoResetWaitableEvent root_isolate_shutdown_latch;
   AddNativeCallback("NotifyNative",
                     CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments args) {
                       latch.CountDown();
@@ -371,14 +376,22 @@ TEST_F(DartIsolateTest, CanLaunchSecondaryIsolates) {
         ASSERT_EQ("Hello from code is secondary isolate.", message);
         latch.CountDown();
       })));
-  const auto settings = CreateSettingsForFixture();
+  auto settings = CreateSettingsForFixture();
+  settings.root_isolate_shutdown_callback = [&root_isolate_shutdown_latch]() {
+    root_isolate_shutdown_latch.Signal();
+  };
+  settings.isolate_shutdown_callback = [&child_shutdown_latch]() {
+    child_shutdown_latch.Signal();
+  };
   auto vm_ref = DartVMRef::Create(settings);
   auto isolate = RunDartCodeInIsolate(vm_ref, settings, CreateNewThread(),
                                       "testCanLaunchSecondaryIsolate", {});
   ASSERT_TRUE(isolate);
   ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
-
-  latch.Wait();
+  child_shutdown_latch.Wait();  // wait for child isolate to shutdown first
+  ASSERT_FALSE(root_isolate_shutdown_latch.IsSignaledForTest());
+  latch.Wait();  // wait for last NotifyNative called by main isolate
+  // root isolate will be auto-shutdown
 }
 
 TEST_F(DartIsolateTest, CanRecieveArguments) {

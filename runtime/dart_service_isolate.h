@@ -11,7 +11,6 @@
 #include <string>
 
 #include "flutter/fml/compiler_specific.h"
-#include "flutter/fml/synchronization/thread_annotations.h"
 
 #include "third_party/dart/runtime/include/dart_api.h"
 
@@ -35,7 +34,7 @@ class DartServiceIsolate {
   // RemoveServerStatusCallback
   FML_WARN_UNUSED_RESULT
   static CallbackHandle AddServerStatusCallback(
-      ObservatoryServerStateCallback callback);
+      const ObservatoryServerStateCallback& callback);
 
   // Accepts the handle returned by AddServerStatusCallback
   static bool RemoveServerStatusCallback(CallbackHandle handle);
@@ -46,8 +45,7 @@ class DartServiceIsolate {
   static void Shutdown(Dart_NativeArguments args);
 
   static std::mutex callbacks_mutex_;
-  static std::set<std::unique_ptr<ObservatoryServerStateCallback>> callbacks_
-      FML_GUARDED_BY(callbacks_mutex_);
+  static std::set<std::unique_ptr<ObservatoryServerStateCallback>> callbacks_;
 };
 
 }  // namespace flutter

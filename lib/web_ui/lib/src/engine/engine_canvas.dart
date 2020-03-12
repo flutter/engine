@@ -65,6 +65,9 @@ abstract class EngineCanvas {
       ui.Image image, ui.Rect src, ui.Rect dst, ui.PaintData paint);
 
   void drawParagraph(EngineParagraph paragraph, ui.Offset offset);
+
+  void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode,
+      ui.PaintData paint);
 }
 
 /// Adds an [offset] transformation to a [transform] matrix and returns the
@@ -258,7 +261,7 @@ html.Element _drawParagraphElement(
     paragraphStyle
       ..transformOrigin = '0 0 0'
       ..transform =
-          matrix4ToCssTransform(transformWithOffset(transform, offset));
+          matrix4ToCssTransform3d(transformWithOffset(transform, offset));
   }
 
   final ParagraphGeometricStyle style = paragraph._geometricStyle;

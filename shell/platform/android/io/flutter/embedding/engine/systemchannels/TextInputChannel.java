@@ -9,7 +9,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 
 import io.flutter.Log;
@@ -109,6 +108,17 @@ public class TextInputChannel {
   public TextInputChannel(@NonNull DartExecutor dartExecutor) {
     this.channel = new MethodChannel(dartExecutor, "flutter/textinput", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
+  }
+
+  /**
+   * Instructs Flutter to reattach the last active text input client, if any.
+   *
+   * This is necessary when the view heirarchy has been detached and reattached
+   * to a {@link FlutterEngine}, as the engine may have kept alive a text
+   * editing client on the Dart side.
+   */
+  public void requestExistingInputState() {
+    channel.invokeMethod("TextInputClient.requestExistingInputState", null);
   }
 
   /**
@@ -224,17 +234,6 @@ public class TextInputChannel {
   }
 
   /**
-   * Instructs Flutter to clear the current input client, which ends the text
-   * input interaction with the given input control.
-   */
-  public void onConnectionClosed(int inputClientId) {
-    channel.invokeMethod(
-        "TextInputClient.onConnectionClosed",
-        Collections.singletonList(inputClientId)
-    );
-  }
-
-  /**
    * Sets the {@link TextInputMethodHandler} which receives all events and requests
    * that are parsed from the underlying platform channel.
    */
@@ -283,6 +282,7 @@ public class TextInputChannel {
       return new Configuration(
           json.optBoolean("obscureText"),
           json.optBoolean("autocorrect", true),
+          json.optBoolean("enableSuggestions"),
           TextCapitalization.fromValue(json.getString("textCapitalization")),
           InputType.fromJson(json.getJSONObject("inputType")),
           inputAction,
@@ -319,6 +319,7 @@ public class TextInputChannel {
 
     public final boolean obscureText;
     public final boolean autocorrect;
+    public final boolean enableSuggestions;
     @NonNull
     public final TextCapitalization textCapitalization;
     @NonNull
@@ -331,6 +332,7 @@ public class TextInputChannel {
     public Configuration(
         boolean obscureText,
         boolean autocorrect,
+        boolean enableSuggestions,
         @NonNull TextCapitalization textCapitalization,
         @NonNull InputType inputType,
         @Nullable Integer inputAction,
@@ -338,6 +340,7 @@ public class TextInputChannel {
     ) {
       this.obscureText = obscureText;
       this.autocorrect = autocorrect;
+      this.enableSuggestions = enableSuggestions;
       this.textCapitalization = textCapitalization;
       this.inputType = inputType;
       this.inputAction = inputAction;
