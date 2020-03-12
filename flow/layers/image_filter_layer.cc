@@ -61,6 +61,10 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   SkPaint paint;
   paint.setImageFilter(filter_);
 
+  // Normally a save_layer is sized to the current layer bounds, but in this
+  // case the bounds of the child may not be the same as the filtered version
+  // so we use the child_paint_bounds_ which were snapshotted from the
+  // Preroll on the children before we adjusted them based on the filter.
   Layer::AutoSaveLayer save_layer =
       Layer::AutoSaveLayer::Create(context, child_paint_bounds_, &paint);
   PaintChildren(context);
