@@ -112,7 +112,7 @@ Win32Window::MessageHandler(HWND hwnd,
   auto window =
       reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
   UINT button_pressed = 0;
-  static unsigned int saved_key = 0;
+  static unsigned int keycode_for_char_message = 0;
   if (window != nullptr) {
     switch (message) {
       case kWmDpiChangedBeforeParent:
@@ -214,31 +214,28 @@ Win32Window::MessageHandler(HWND hwnd,
         lead_surrogate = 0;
         window->OnChar(code_point);
 
-        unsigned int scancode = (lparam >> 16) & 0xff;
-        window->OnKey(saved_key, scancode, 0, 0, code_point);
+        const unsigned int scancode = (lparam >> 16) & 0xff;
+        window->OnKey(keycode_for_char_message, scancode, 0, 0, code_point);
         break;
       }
       case WM_KEYDOWN:
       case WM_SYSKEYDOWN:
       case WM_KEYUP:
       case WM_SYSKEYUP:
-        unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
-        unsigned int keyCode(wparam);
-        unsigned int scancode = (lparam >> 16) & 0xff;
-
-        if (character > 0 && message == WM_KEYDOWN) {
-          saved_key = keyCode;
+        const bool is_keydown_message = (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
+        const unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
+        if (character > 0 && is_keydown_message) {
+          keycode_for_char_message = wparam;
           break;
         }
-        unsigned int transition = (lparam >> 31) & 0xff;
+        unsigned int keyCode(wparam);
+        const unsigned int scancode = (lparam >> 16) & 0xff;
         if (keyCode == VK_SHIFT || keyCode == VK_MENU ||
             keyCode == VK_CONTROL) {
           keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
         }
-        const int key = keyCode;
-        UINT down = WM_KEYDOWN || WM_SYSKEYDOWN;
-        const int action = message == down ? 0 : 1;
-        window->OnKey(key, scancode, action, 0, 0);
+        const int action = is_keydown_message ? 0 : 1;
+        window->OnKey(keyCode, scancode, action, 0, 0);
         break;
     }
     return DefWindowProc(hwnd, message, wparam, lparam);

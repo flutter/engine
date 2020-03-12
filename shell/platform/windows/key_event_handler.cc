@@ -46,20 +46,15 @@ void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
   std::cerr << "Scancode  " << scancode << std::endl;
   std::cerr << "Action " << action << std::endl;
   std::cerr << "Character " << character << std::endl;
-  size_t timestamp =
-      std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::high_resolution_clock::now().time_since_epoch())
-          .count();
+
+  EncodableMap logicKeyPayload;
+  EncodableMap physicalKeyPayload;
 
   std::map<int, uint64_t>::iterator it;
   it = g_windows_to_logical_key.find(key);
-  EncodableMap logicKeyPayload;
-  EncodableMap physicalKeyPayload;
   if (it != g_windows_to_logical_key.end()) {
-    logicKeyPayload = {
-        {EncodableValue(10000),
-         EncodableValue(static_cast<int>(g_windows_to_logical_key.at(key)))},
-    };
+    logicKeyPayload[EncodableValue(10000)] =
+        EncodableValue(static_cast<int>(g_windows_to_logical_key.at(key)));
     std::cerr << "Logical key " << g_windows_to_logical_key.at(key)
               << std::endl;
     if (character > 0) {
@@ -69,14 +64,11 @@ void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
   } else {
     std::cerr << "Failed to find logical key " << key << std::endl;
   }
-  std::map<int, uint64_t>::iterator itp;
-  itp = g_windows_to_physical_key.find(scancode);
-  if (itp != g_windows_to_physical_key.end()) {
-    physicalKeyPayload = {
-        {EncodableValue(10000000),
-         EncodableValue(
-             static_cast<int>(g_windows_to_physical_key.at(scancode)))},
-    };
+
+  it = g_windows_to_physical_key.find(scancode);
+  if (it != g_windows_to_physical_key.end()) {
+    physicalKeyPayload[EncodableValue(10000000)] = EncodableValue(
+        static_cast<int>(g_windows_to_physical_key.at(scancode)));
     std::cerr << "Physical key " << g_windows_to_physical_key.at(scancode)
               << std::endl;
     if (character > 0) {
@@ -92,6 +84,11 @@ void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
       {EncodableValue(200), EncodableValue(physicalKeyPayload)},
   };
 
+  size_t timestamp =
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::high_resolution_clock::now().time_since_epoch())
+          .count();
+
   EncodableMap map = {
       {EncodableValue(1), EncodableValue(static_cast<int>(timestamp))},
       {EncodableValue(2), EncodableValue(action)},
@@ -99,7 +96,6 @@ void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
   };
 
   EncodableValue value(map);
-  std::cerr << "***************\n";
   // channel_->Send(value);
 }
 
