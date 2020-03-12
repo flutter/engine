@@ -589,7 +589,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
                          rasterizer = rasterizer_->GetWeakPtr(),  //
                          surface = std::move(surface),            //
                          &latch]() mutable {
-        if (rasterizer) {
+        if (rasterizer && surface) {
           rasterizer->Setup(std::move(surface));
         }
 
