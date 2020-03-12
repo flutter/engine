@@ -28,9 +28,9 @@ web_engine_sources += [ "//flutter/lib/web_ui/lib/src/engine.dart" ]
 
 group("web_sdk") {
   deps = [
+    ":flutter_dartdevc_canvaskit_kernel_sdk",
     ":flutter_dartdevc_kernel_sdk",
     ":flutter_dartdevc_kernel_sdk_outline",
-    ":flutter_dartdevc_canvaskit_kernel_sdk",
     ":web_engine_sources",
     ":web_ui_library",
     ":web_ui_sources",
@@ -232,10 +232,12 @@ prebuilt_dart_action("flutter_dartdevc_canvaskit_kernel_sdk") {
     "--modules",
     "amd",
     "-o",
-    rebase_path("$root_out_dir/flutter_web_sdk/kernel/amd-canvaskit/dart_sdk.js"),
+    rebase_path(
+        "$root_out_dir/flutter_web_sdk/kernel/amd-canvaskit/dart_sdk.js"),
     "--modules",
     "legacy",
     "-o",
-    rebase_path("$root_out_dir/flutter_web_sdk/kernel/legacy-canvaskit/dart_sdk.js"),
+    rebase_path(
+        "$root_out_dir/flutter_web_sdk/kernel/legacy-canvaskit/dart_sdk.js"),
   ]
 }
