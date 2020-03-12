@@ -76,6 +76,7 @@ struct FlutterPlatformViewLayer {
   GrContext* gr_context;
 };
 
+// This class isn't thread safe.
 class FlutterPlatformViewLayerPool {
  public:
   FlutterPlatformViewLayerPool() = default;
@@ -93,8 +94,22 @@ class FlutterPlatformViewLayerPool {
   void RecycleLayers();
 
  private:
+  // The index of the entry in the layer_ vector that determines the beginning of the unused layers.
+  // For example, consider the following vector:
+  //  _____
+  //  | 0 |
+  /// |---|
+  /// | 1 | <-- available_layer_index_
+  /// |---|
+  /// | 2 |
+  /// |---|
+  ///
+  /// This indicates that entries starting from 1 can be reused meanwhile the entry at position 0
+  /// cannot be reused.
   size_t available_layer_index_ = 0;
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layer_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewLayerPool);
 };
 
 class FlutterPlatformViewsController {
@@ -157,10 +172,7 @@ class FlutterPlatformViewsController {
 
   // The platform view's picture recorder keyed off the view id, which contains any subsequent
   // operation until the next platform view or the end of the last leaf node in the layer tree.
-  std::map<int64_t, std::unique_ptr<SkPictureRecorder>> platform_views_recorder_;
-
-  // The platform view's parameters used to compose the scene keyed off the view id.
-  std::map<int64_t, EmbeddedViewParams> platform_views_params_;
+  std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;
