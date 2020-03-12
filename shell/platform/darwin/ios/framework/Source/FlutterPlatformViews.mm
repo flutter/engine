@@ -478,6 +478,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
 
       // If the max number of allocations per platform view is exceeded,
       // then join all the rects into a single one.
+      //
+      // TODO(egarciad): Consider making this configurable.
+      // https://github.com/flutter/flutter/issues/52510
       if (allocation_size > kMaxLayerAllocations) {
         SkRect joined_rect;
         for (SkRect rect : intersection_rects) {
