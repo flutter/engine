@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 #define FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 
+#include <cfloat>
 #include <memory>
 #include <set>
 #include <vector>
@@ -21,6 +22,15 @@
 namespace flutter {
 
 class Layer;
+
+// Scenic currently lacks an API to enable rendering of alpha channel; this only
+// happens if there is a OpacityNode higher in the tree with opacity != 1. For
+// now, clamp to a infinitesimally smaller value than 1, which does not cause
+// visual problems in practice.
+constexpr float kOneMinusEpsilon = 1 - FLT_EPSILON;
+
+// How much layers are separated in Scenic z elevation.
+constexpr float kScenicZElevationBetweenLayers = 10.f;
 
 class SceneUpdateContext {
  public:
@@ -59,7 +69,8 @@ class SceneUpdateContext {
     // Query a retained entity node (owned by a retained surface) for retained
     // rendering.
     virtual bool HasRetainedNode(const LayerRasterCacheKey& key) const = 0;
-    virtual scenic::EntityNode* GetRetainedNode(const LayerRasterCacheKey& key) = 0;
+    virtual scenic::EntityNode* GetRetainedNode(
+        const LayerRasterCacheKey& key) = 0;
 
     virtual void SubmitSurface(
         std::unique_ptr<SurfaceProducerSurface> surface) = 0;
@@ -189,7 +200,7 @@ class SceneUpdateContext {
 
   float GetGlobalElevationForNextScenicLayer() {
     float elevation = topmost_global_scenic_elevation_;
-    topmost_global_scenic_elevation_ += 10.f;
+    topmost_global_scenic_elevation_ += kScenicZElevationBetweenLayers;
     return elevation;
   }
 
@@ -252,7 +263,7 @@ class SceneUpdateContext {
 
   float alpha_ = 1.0f;
   float scenic_elevation_ = 0.f;
-  float topmost_global_scenic_elevation_ = 10.f;
+  float topmost_global_scenic_elevation_ = kScenicZElevationBetweenLayers;
 
   std::vector<PaintTask> paint_tasks_;
 

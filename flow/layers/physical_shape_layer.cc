@@ -55,13 +55,12 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 #if defined(OS_FUCHSIA)
   child_layer_exists_below_ = context->child_scene_layer_exists_below;
   context->child_scene_layer_exists_below = false;
- #endif
+#endif
 
   SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
 
 #if defined(OS_FUCHSIA)
-  children_need_system_compositing_ = needs_system_composite();
   if (child_layer_exists_below_) {
     set_needs_system_composite(true);
   }
@@ -91,14 +90,11 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   // PhysicalShapeLayers that appear above the embedded content will be turned
   // into their own Scenic layers.
   if (child_layer_exists_below_) {
-    // Reset paint bounds, because shadows are not rendered in this case
-    // (see comment in Paint()).
-    set_paint_bounds(path_.getBounds());
-
-    float global_scenic_elevation = context.GetGlobalElevationForNextScenicLayer();
-    float local_scenic_elevation_ =
+    float global_scenic_elevation =
+        context.GetGlobalElevationForNextScenicLayer();
+    float local_scenic_elevation =
         global_scenic_elevation - context.scenic_elevation();
-    float z_translation = -local_scenic_elevation_;
+    float z_translation = -local_scenic_elevation;
 
     // Retained rendering: speedup by reusing a retained entity node if
     // possible. When an entity node is reused, no paint layer is added to the
@@ -120,31 +116,22 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
     TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
     // If we can't find an existing retained surface, create one.
     SceneUpdateContext::Frame frame(context, frameRRect_, SK_ColorTRANSPARENT,
-                                    sk_float_round2int(context.alphaf() * 255),
+                                    SkScalarRoundToInt(context.alphaf() * 255),
                                     "flutter::PhysicalShapeLayer",
                                     z_translation, this);
 
     frame.AddPaintLayer(this);
 
-    // Node: UpdateSceneChildren needs to be called here so that |frame| is still
-    // in scope (and therefore alive) while UpdateSceneChildren is being called.
-    if (children_need_system_compositing_) {
-      UpdateSceneChildren(context);
-    }
+    // Node: UpdateSceneChildren needs to be called here so that |frame| is
+    // still in scope (and therefore alive) while UpdateSceneChildren is being
+    // called.
+    float scenic_elevation = context.scenic_elevation();
+    context.set_scenic_elevation(scenic_elevation + local_scenic_elevation);
+    ContainerLayer::UpdateSceneChildren(context);
+    context.set_scenic_elevation(scenic_elevation);
   } else {
-    if (children_need_system_compositing_) {
-      UpdateSceneChildren(context);
-    }
+    ContainerLayer::UpdateSceneChildren(context);
   }
-}
-
-void PhysicalShapeLayer::UpdateSceneChildren(SceneUpdateContext& context) {
-  float scenic_elevation = context.scenic_elevation();
-  context.set_scenic_elevation(scenic_elevation + local_scenic_elevation_);
-
-  ContainerLayer::UpdateSceneChildren(context);
-
-  context.set_scenic_elevation(scenic_elevation);
 }
 
 #endif  // defined(OS_FUCHSIA)
@@ -153,15 +140,14 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FML_DCHECK(needs_painting());
 
-
 #if defined(OS_FUCHSIA)
-  // TODO: Re-enable shadow drawing here.
+  // TODO(mikejurka,dworsham,liyl): Re-enable shadow drawing here.
   // Shadows are not rendered for PhysicalShapeLayers that exist as separate
   // system services; this is to maintain compatibility with the previous
-  // implementation and has the added benefit of requiring smaller textures, since
-  // extra space is not needed for the shadows.
-  // This behavior might change  after clients adjust their usage of PhysicalShaperLayer
-  // to make elevation correlate to desired shadow size.
+  // implementation and has the added benefit of requiring smaller textures,
+  // since extra space is not needed for the shadows. This behavior might change
+  // after clients adjust their usage of PhysicalShaperLayer to make elevation
+  // correlate to desired shadow size.
   if (false && !child_layer_exists_below_ && elevation_ != 0) {
 #else
   if (elevation_ != 0) {

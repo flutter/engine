@@ -51,7 +51,7 @@ void ChildSceneLayer::UpdateScene(SceneUpdateContext& context) {
   FML_DCHECK(view_holder);
 
   view_holder->UpdateScene(context, offset_, size_,
-                           sk_float_round2int(context.alphaf() * 255),
+                           SkScalarRoundToInt(context.alphaf() * 255),
                            hit_testable_);
 }
 

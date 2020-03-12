@@ -4,7 +4,6 @@
 
 #include "flutter/flow/scene_update_context.h"
 
-#include <cfloat>
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/fml/trace_event.h"
@@ -73,13 +72,9 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
   // and possibly for its texture.
   // TODO(SCN-137): Need to be able to express the radii as vectors.
   scenic::ShapeNode shape_node(session());
-  scenic::RoundedRectangle shape(session_,        // session
-                                 rrect.width(),   // width
-                                 rrect.height(),  // height
-                                 0.f,             // top_left_radius
-                                 0.f,             // top_right_radius
-                                 0.f,             // bottom_right_radius
-                                 0.f              // bottom_left_radius
+  scenic::Rectangle shape(session_,       // session
+                          rrect.width(),  // width
+                          rrect.height()  // height
   );
   shape_node.SetShape(shape);
   shape_node.SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
@@ -223,7 +218,7 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
   }
   paint_tasks_.clear();
   alpha_ = 1.f;
-  topmost_global_scenic_elevation_ = 10.f;
+  topmost_global_scenic_elevation_ = kScenicZElevationBetweenLayers;
   scenic_elevation_ = 0.f;
   return surfaces_to_submit;
 }
@@ -257,12 +252,12 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
       // instead to make sure layers appear in proper order.
       entity_node().SetTranslation(decomposition.translation().x(),  //
                                    decomposition.translation().y(),  //
-                                   0.f //
+                                   0.f                               //
       );
 
       entity_node().SetScale(decomposition.scale().x(),  //
                              decomposition.scale().y(),  //
-                             0.f   //
+                             0.f                         //
       );
       context.top_scale_x_ *= decomposition.scale().x();
       context.top_scale_y_ *= decomposition.scale().y();
@@ -313,11 +308,11 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
   entity_node().SetLabel(label);
   entity_node().SetTranslation(0.f, 0.f, z_translation);
   entity_node().AddChild(opacity_node_);
-  // Scenic currently lacks an API to enable rendering of alpha channel; this only happens
-  // if there is a OpacityNode higher in the tree with opacity != 1. For now,
-  // clamp to a infinitesimally smaller value than 1, which does not cause visual
-  // problems in practice.
-  opacity_node_.SetOpacity(std::min(1 - FLT_EPSILON, opacity_ / 255.0f));
+  // Scenic currently lacks an API to enable rendering of alpha channel; alpha
+  // channels are only rendered if there is a OpacityNode higher in the tree
+  // with opacity != 1. For now, clamp to a infinitesimally smaller value than
+  // 1, which does not cause visual problems in practice.
+  opacity_node_.SetOpacity(std::min(kOneMinusEpsilon, opacity_ / 255.0f));
 }
 
 SceneUpdateContext::Frame::~Frame() {

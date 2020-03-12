@@ -106,7 +106,8 @@ void ViewHolder::UpdateScene(SceneUpdateContext& context,
                              bool hit_testable) {
   if (pending_view_holder_token_.value) {
     entity_node_ = std::make_unique<scenic::EntityNode>(context.session());
-    opacity_node_ = std::make_unique<scenic::OpacityNodeHACK>(context.session());
+    opacity_node_ =
+        std::make_unique<scenic::OpacityNodeHACK>(context.session());
     view_holder_ = std::make_unique<scenic::ViewHolder>(
         context.session(), std::move(pending_view_holder_token_),
         "Flutter SceneHost");
