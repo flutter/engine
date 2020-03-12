@@ -10,6 +10,8 @@ import("//flutter/testing/testing.gni")
 
 source_set("fml") {
   sources = [
+    "ascii_trie.cc",
+    "ascii_trie.h",
     "base32.cc",
     "base32.h",
     "build_config.h",
@@ -229,6 +231,7 @@ executable("fml_unittests") {
   testonly = true
 
   sources = [
+    "ascii_trie_unittest.cc",
     "base32_unittest.cc",
     "command_line_unittest.cc",
     "file_unittest.cc",
