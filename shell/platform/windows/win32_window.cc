@@ -197,13 +197,9 @@ Win32Window::MessageHandler(HWND hwnd,
       case WM_SYSDEADCHAR:
       case WM_CHAR:
       case WM_SYSCHAR: {
-        std::cerr << "Char called\n";
         if (wparam == VK_BACK)
           break;
         char32_t code_point = static_cast<char32_t>(wparam);
-        std::cerr << "Char called in char " << code_point << std::endl;
-        std::cerr << "Saved key code called in char " << saved_key << std::endl;
-
         static char32_t lead_surrogate = 0;
         // If code_point is LeadSurrogate, save and return.
         if ((code_point & 0xFFFFFC00) == 0xD800) {
@@ -219,69 +215,30 @@ Win32Window::MessageHandler(HWND hwnd,
         window->OnChar(code_point);
 
         unsigned int scancode = (lparam >> 16) & 0xff;
-        window->OnKey(saved_key, scancode, WM_KEYDOWN, 0, code_point);
-
+        window->OnKey(saved_key, scancode, 0, 0, code_point);
         break;
       }
       case WM_KEYDOWN:
       case WM_SYSKEYDOWN:
       case WM_KEYUP:
       case WM_SYSKEYUP:
-        std::cerr << "Keycode called\n";
         unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
-        std::cerr << "Char in keydown " << character << std::endl;
         unsigned int keyCode(wparam);
+        unsigned int scancode = (lparam >> 16) & 0xff;
 
-        if (character > 0) {
-                  saved_key = keyCode;
-
+        if (character > 0 && message == WM_KEYDOWN) {
+          saved_key = keyCode;
           break;
         }
-        unsigned int scancode = (lparam >> 16) & 0xff;
-        if (keyCode == VK_SHIFT) {
-          if (GetKeyState(VK_LSHIFT) < 0) {
-            keyCode = VK_LSHIFT;
-          } else if (GetKeyState(VK_RSHIFT) < 0) {
-            keyCode = VK_RSHIFT;
-          } else {
-            if (saved_key > 0 && saved_key == VK_LSHIFT) {
-              keyCode = VK_LSHIFT;
-            } else if (saved_key > 0 && saved_key == VK_RSHIFT) {
-              keyCode = VK_RSHIFT;
-            }
-          }
+        unsigned int transition = (lparam >> 31) & 0xff;
+        if (keyCode == VK_SHIFT || keyCode == VK_MENU ||
+            keyCode == VK_CONTROL) {
+          keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
         }
-        if (keyCode == VK_CONTROL) {
-          if (GetKeyState(VK_LCONTROL) < 0) {
-            keyCode = VK_LCONTROL;
-          } else if (GetKeyState(VK_RCONTROL) < 0) {
-            keyCode = VK_RCONTROL;
-          } else {
-            if (saved_key > 0 && saved_key == VK_LCONTROL) {
-              keyCode = VK_LCONTROL;
-            } else if (saved_key > 0 && saved_key == VK_RCONTROL) {
-              keyCode = VK_RCONTROL;
-            }
-          }
-        }
-        if (keyCode == VK_MENU) {
-          if (GetKeyState(VK_LMENU) < 0) {
-            keyCode = VK_LMENU;
-          } else if (GetKeyState(VK_RMENU) < 0) {
-            keyCode = VK_RMENU;
-          } else {
-            if (saved_key > 0 && saved_key == VK_LMENU) {
-              keyCode = VK_LMENU;
-            } else if (saved_key > 0 && saved_key == VK_RMENU) {
-              keyCode = VK_RMENU;
-            }
-          }
-        }
-        saved_key = keyCode;
-
         const int key = keyCode;
-        const int action = message == WM_KEYDOWN ? WM_KEYDOWN : WM_KEYUP;
-        window->OnKey(key, scancode, action, 0, character);
+        UINT down = WM_KEYDOWN || WM_SYSKEYDOWN;
+        const int action = message == down ? 0 : 1;
+        window->OnKey(key, scancode, action, 0, 0);
         break;
     }
     return DefWindowProc(hwnd, message, wparam, lparam);
