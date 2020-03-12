@@ -15,7 +15,7 @@ import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_im
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
 
-import 'integration_tests.dart';
+import 'integration_tests_manager.dart';
 import 'supported_browsers.dart';
 import 'test_platform.dart';
 import 'environment.dart';
@@ -87,10 +87,6 @@ class TestCommand extends Command<bool> {
 
   /// Check the flags to see what type of integration tests are requested.
   TestTypesRequested findTestType() {
-    print('chrome: $isChrome');
-    print('unit test only: ${argResults['unit-tests-only']}');
-    print('int test only: ${argResults['integration-tests-only']}');
-
     if (argResults['unit-tests-only'] && argResults['integration-tests-only']) {
       throw ArgumentError('Conflicting arguments: unit-tests-only and '
           'integration-tests-only are both set');
@@ -114,7 +110,6 @@ class TestCommand extends Command<bool> {
   Future<bool> run() async {
     SupportedBrowsers.instance
       ..argParsers.forEach((t) => t.parseOptions(argResults));
-    print('run tests started');
 
     // Check the flags to see what type of integration tests are requested.
     testTypesRequested = findTestType();
@@ -127,7 +122,7 @@ class TestCommand extends Command<bool> {
       case TestTypesRequested.all:
         bool integrationTestResult = await runIntegrationTests();
         bool unitTestResult = await runUnitTests();
-        print('Tests run. Integratiion tests passed: $integrationTestResult '
+        print('Tests run. Integration tests passed: $integrationTestResult '
             'unit tests passed: $unitTestResult');
         return integrationTestResult && unitTestResult;
       case TestTypesRequested.none:
