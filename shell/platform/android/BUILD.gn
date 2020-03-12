@@ -228,18 +228,14 @@ android_java_sources = [
   "io/flutter/view/VsyncWaiter.java",
 ]
 
-androidx_artifacts = [
-  "//third_party/androidx/androidx_activity.aar",
-  "//third_party/androidx/androidx_annotation.jar",
-  "//third_party/androidx/androidx_core.aar",
-  "//third_party/androidx/androidx_fragment.aar",
-  "//third_party/androidx/androidx_lifecycle_common.jar",
-  "//third_party/androidx/androidx_lifecycle_common_java8.jar",
-  "//third_party/androidx/androidx_lifecycle_runtime.aar",
-  "//third_party/androidx/androidx_lifecycle_viewmodel.aar",
-  "//third_party/androidx/androidx_lifecycle_viewmodel_savedstate.aar",
-  "//third_party/androidx/androidx_savedstate.aar",
-]
+list_script = rebase_path("//build/ls.py", ".", "//")
+embedding_dependencies_jars =
+    exec_script(list_script,
+                [
+                  "--target-directory",
+                  rebase_path("//third_party/android_embedding_dependencies"),
+                ],
+                "list lines")
 
 action("flutter_shell_java") {
   script = "//build/android/gyp/javac.py"
@@ -259,10 +255,7 @@ action("flutter_shell_java") {
     source_jar_path,
     source_jar_path + ".md5.stamp",
   ]
-  inputs = [
-    android_sdk_jar,
-  ]
-  inputs += androidx_artifacts
+  inputs = [ android_sdk_jar ] + embedding_dependencies_jars
 
   _rebased_current_path = rebase_path(".")
   _rebased_jar_path = rebase_path(jar_path, root_build_dir)
@@ -270,7 +263,7 @@ action("flutter_shell_java") {
   _rebased_depfile = rebase_path(depfile, root_build_dir)
   _rebased_android_sdk_jar = rebase_path(android_sdk_jar, root_build_dir)
   _rebased_classpath = [ _rebased_android_sdk_jar ] +
-                       rebase_path(androidx_artifacts, root_build_dir)
+                       rebase_path(embedding_dependencies_jars, root_build_dir)
 
   args = [
     "--depfile=$_rebased_depfile",
@@ -454,26 +447,9 @@ action("robolectric_tests") {
   ]
 
   _jar_dependencies = [
-    android_sdk_jar,
-    embedding_jar_path,
-    "//third_party/android_embedding_dependencies/lib/junit-3.8.jar",
-    "//third_party/android_embedding_dependencies/lib/junit-4.13-beta-3.jar",
-    "//third_party/android_embedding_dependencies/lib/robolectric-3.8.jar",
-    "//third_party/android_embedding_dependencies/lib/shadows-framework-3.8.jar",
-    "//third_party/android_embedding_dependencies/lib/annotations-3.8.jar",
-    "//third_party/android_embedding_dependencies/lib/shadowapi-3.8.jar",
-    "//third_party/android_embedding_dependencies/lib/mockito-all-1.10.19.jar",
-    "//third_party/android_embedding_dependencies/lib/lifecycle-common-2.2.0.jar",
-    "//third_party/android_embedding_dependencies/lib/lifecycle-common-java8-2.2.0.jar",
-    "//third_party/android_embedding_dependencies/lib/annotation-1.1.0.jar",
-    "//third_party/android_embedding_dependencies/lib/lifecycle-runtime-2.2.0.jar",
-    "//third_party/android_embedding_dependencies/lib/fragment-1.1.0.jar",
-    "//third_party/android_embedding_dependencies/lib/savedstate-1.0.0.jar",
-    "//third_party/android_embedding_dependencies/lib/lifecycle-viewmodel-savedstate-2.2.0.jar",
-    "//third_party/android_embedding_dependencies/lib/lifecycle-viewmodel-2.2.0.jar",
-    "//third_party/android_embedding_dependencies/lib/lifecycle-livedata-core-2.2.0.jar",
-    "//third_party/android_embedding_dependencies/lib/core-1.1.0.jar",
-  ]
+                        android_sdk_jar,
+                        embedding_jar_path,
+                      ] + embedding_dependencies_jars
 
   inputs = _jar_dependencies
 
@@ -540,7 +516,7 @@ zip_bundle("android") {
 # https://github.com/flutter/flutter/issues/42400
 action("gen_android_javadoc") {
   script = "//flutter/tools/gen_javadoc.py"
-  sources = android_java_sources + androidx_artifacts
+  sources = android_java_sources + embedding_dependencies_jars
 
   outputs = [
     "$target_gen_dir/javadocs",

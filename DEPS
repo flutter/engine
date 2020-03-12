@@ -594,15 +594,6 @@ hooks = [
     'action': ['python', 'src/build/vs_toolchain.py', 'update'],
   },
   {
-    'name': 'download_androidx',
-    'pattern': '.',
-    'condition': 'download_android_deps',
-    'action': [
-        'python',
-        'src/flutter/tools/androidx/download_androidx.py',
-    ],
-  },
-  {
     'name': 'generate_package_files',
     'pattern': '.',
     'cwd': 'src/',
