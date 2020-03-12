@@ -25,8 +25,8 @@ import io.flutter.view.TextureRegistry;
  * defaults to an instance of {@link io.flutter.app.FlutterActivity}, itself a {@link
  * PluginRegistry}.
  *
- * This class is now deprecated. See https://flutter.dev/go/android-project-migration for migration
- * details.
+ * <p>This class is now deprecated. See https://flutter.dev/go/android-project-migration for
+ * migration details.
  */
 public interface PluginRegistry {
   /**

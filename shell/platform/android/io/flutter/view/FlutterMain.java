@@ -13,8 +13,8 @@ import io.flutter.embedding.engine.loader.FlutterLoader;
 
 /**
  * A legacy class to initialize the Flutter engine.
- * <p>
- * Replaced by {@link io.flutter.embedding.engine.loader.FlutterLoader}.
+ *
+ * <p>Replaced by {@link io.flutter.embedding.engine.loader.FlutterLoader}.
  */
 public class FlutterMain {
 

@@ -70,8 +70,8 @@ import java.lang.reflect.Method;
  * <p>The Dart entrypoint executed within this {@code Activity} is "main()" by default. To change
  * the entrypoint that a {@code FlutterActivity} executes, subclass {@code FlutterActivity} and
  * override {@link #getDartEntrypointFunctionName()}. For non-main Dart entrypoints to not be
- * tree-shaken away, you need to annotate those functions with {@code @pragma('vm:entry-point')}
- * in Dart.
+ * tree-shaken away, you need to annotate those functions with {@code @pragma('vm:entry-point')} in
+ * Dart.
  *
  * <p>The Flutter route that is initially loaded within this {@code Activity} is "/". The initial
  * route may be specified explicitly by passing the name of the route as a {@code String} in {@link
@@ -98,10 +98,10 @@ import java.lang.reflect.Method;
  * new one. Use {@link #withCachedEngine(String)} to build a {@code FlutterActivity} {@code Intent}
  * that is configured to use an existing, cached {@link FlutterEngine}. {@link
  * io.flutter.embedding.engine.FlutterEngineCache} is the cache that is used to obtain a given
- * cached {@link FlutterEngine}. You must create and put a {@link FlutterEngine} into the
- * {@link io.flutter.embedding.engine.FlutterEngineCache} yourself before using the
- * {@link #withCachedEngine(String)} builder. An {@code IllegalStateException} will be thrown if a
- * cached engine is requested but does not exist in the cache.
+ * cached {@link FlutterEngine}. You must create and put a {@link FlutterEngine} into the {@link
+ * io.flutter.embedding.engine.FlutterEngineCache} yourself before using the {@link
+ * #withCachedEngine(String)} builder. An {@code IllegalStateException} will be thrown if a cached
+ * engine is requested but does not exist in the cache.
  *
  * <p>When using a cached {@link FlutterEngine}, that {@link FlutterEngine} should already be
  * executing Dart code, which means that the Dart entrypoint and initial route have already been
@@ -119,8 +119,8 @@ import java.lang.reflect.Method;
  *       pre-warming a {@link FlutterEngine} would have no impact in this situation.
  *   <li>When you are unsure when/if you will need to display a Flutter experience.
  * </ul>
- * <p>
- * See https://flutter.dev/docs/development/add-to-app/performance for additional performance
+ *
+ * <p>See https://flutter.dev/docs/development/add-to-app/performance for additional performance
  * explorations on engine loading.
  *
  * <p>The following illustrates how to pre-warm and cache a {@link FlutterEngine}:
@@ -200,11 +200,11 @@ public class FlutterActivity extends Activity
   private static final String TAG = "FlutterActivity";
 
   /**
-   * Creates an {@link Intent} that launches a {@code FlutterActivity}, which creates a
-   * {@link FlutterEngine} that executes a {@code main()} Dart entrypoint, and displays the "/"
-   * route as Flutter's initial route.
-   * <p>
-   * Consider using the {@link #withCachedEngine(String)} {@link Intent} builder to control when
+   * Creates an {@link Intent} that launches a {@code FlutterActivity}, which creates a {@link
+   * FlutterEngine} that executes a {@code main()} Dart entrypoint, and displays the "/" route as
+   * Flutter's initial route.
+   *
+   * <p>Consider using the {@link #withCachedEngine(String)} {@link Intent} builder to control when
    * the {@link FlutterEngine} should be created in your application.
    */
   @NonNull
