@@ -32,7 +32,6 @@ class KeyEventHandler : public KeyboardHookHandler {
                     int key,
                     int scancode,
                     int action,
-                    int mods,
                     char32_t character) override;
 
   // |KeyboardHookHandler|

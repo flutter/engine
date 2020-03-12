@@ -40,7 +40,6 @@ void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
                                    int key,
                                    int scancode,
                                    int action,
-                                   int mods,
                                    char32_t character) {
   std::cerr << "Key code " << key << std::endl;
   std::cerr << "Scancode  " << scancode << std::endl;

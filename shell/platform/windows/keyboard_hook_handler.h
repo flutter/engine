@@ -21,7 +21,6 @@ class KeyboardHookHandler {
                             int key,
                             int scancode,
                             int action,
-                            int mods,
                             char32_t character) = 0;
 
   // A function for hooking into unicode code point input.

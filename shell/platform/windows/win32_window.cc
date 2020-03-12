@@ -215,7 +215,7 @@ Win32Window::MessageHandler(HWND hwnd,
         window->OnChar(code_point);
 
         const unsigned int scancode = (lparam >> 16) & 0xff;
-        window->OnKey(keycode_for_char_message, scancode, 0, 0, code_point);
+        window->OnKey(keycode_for_char_message, scancode, 0, code_point);
         break;
       }
       case WM_KEYDOWN:
@@ -235,7 +235,7 @@ Win32Window::MessageHandler(HWND hwnd,
           keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
         }
         const int action = is_keydown_message ? 0 : 1;
-        window->OnKey(keyCode, scancode, action, 0, 0);
+        window->OnKey(keyCode, scancode, action, 0);
         break;
     }
     return DefWindowProc(hwnd, message, wparam, lparam);

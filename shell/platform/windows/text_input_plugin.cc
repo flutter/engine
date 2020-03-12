@@ -49,7 +49,6 @@ void TextInputPlugin::KeyboardHook(Win32FlutterWindow* window,
                                    int key,
                                    int scancode,
                                    int action,
-                                   int mods,
                                    char32_t character) {
   if (active_model_ == nullptr) {
     return;

@@ -164,9 +164,9 @@ void Win32FlutterWindow::OnChar(char32_t code_point) {
   }
 }
 
-void Win32FlutterWindow::OnKey(int key, int scancode, int action, int mods, char32_t character) {
+void Win32FlutterWindow::OnKey(int key, int scancode, int action, char32_t character) {
   if (process_events_) {
-    SendKey(key, scancode, action, 0, character);
+    SendKey(key, scancode, action, character);
   }
 }
 
@@ -264,9 +264,9 @@ void Win32FlutterWindow::SendChar(char32_t code_point) {
   }
 }
 
-void Win32FlutterWindow::SendKey(int key, int scancode, int action, int mods, char32_t character) {
+void Win32FlutterWindow::SendKey(int key, int scancode, int action, char32_t character) {
   for (const auto& handler : keyboard_hook_handlers_) {
-    handler->KeyboardHook(this, key, scancode, action, mods, character);
+    handler->KeyboardHook(this, key, scancode, action, character);
   }
 }
 
