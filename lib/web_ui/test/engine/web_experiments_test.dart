@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
+
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
@@ -12,63 +15,55 @@ void main() {
   });
 
   test('default web experiment values', () {
-    expect(webExperiments.useSkia, false);
     expect(webExperiments.useCanvasText, false);
   });
 
   test('can turn on/off web experiments', () {
-    webExperiments.enableWebExperiments(<String, bool>{
-      'useSkia': true,
-    });
-    expect(webExperiments.useSkia, true);
-    expect(webExperiments.useCanvasText, false);
-
-    webExperiments.enableWebExperiments(<String, bool>{
-      'useSkia': false,
-      'useCanvasText': true,
-    });
-    expect(webExperiments.useSkia, false);
+    webExperiments.updateExperiment('useCanvasText', true);
     expect(webExperiments.useCanvasText, true);
 
-    webExperiments.enableWebExperiments(<String, bool>{
-      'useSkia': true,
-      'useCanvasText': null,
-    });
-    expect(webExperiments.useSkia, true);
-    // Goes back to default value.
+    webExperiments.updateExperiment('useCanvasText', false);
     expect(webExperiments.useCanvasText, false);
 
-    webExperiments.enableWebExperiments(<String, bool>{
-      'useSkia': null,
-    });
+    webExperiments.updateExperiment('useCanvasText', null);
     // Goes back to default value.
-    expect(webExperiments.useSkia, false);
+    expect(webExperiments.useCanvasText, false);
+  });
+
+  test('ignores unknown experiments', () {
+    expect(webExperiments.useCanvasText, false);
+    webExperiments.updateExperiment('foobarbazqux', true);
+    expect(webExperiments.useCanvasText, false);
+    webExperiments.updateExperiment('foobarbazqux', false);
     expect(webExperiments.useCanvasText, false);
   });
 
   test('can reset web experiments', () {
-    webExperiments.enableWebExperiments(<String, bool>{
-      'useSkia': true,
-      'useCanvasText': false,
-    });
+    webExperiments.updateExperiment('useCanvasText', true);
     webExperiments.reset();
-    expect(webExperiments.useSkia, false);
     expect(webExperiments.useCanvasText, false);
 
-    webExperiments.enableWebExperiments(<String, bool>{
-      'useSkia': false,
-      'useCanvasText': true,
-    });
+    webExperiments.updateExperiment('useCanvasText', true);
+    webExperiments.updateExperiment('foobarbazqux', true);
     webExperiments.reset();
-    expect(webExperiments.useSkia, false);
+    expect(webExperiments.useCanvasText, false);
+  });
+
+  test('js interop also works', () {
     expect(webExperiments.useCanvasText, false);
 
-    webExperiments.enableWebExperiments(<String, bool>{
-      'useSkia': true,
-      'useCanvasText': true,
-    });
-    webExperiments.reset();
-    expect(webExperiments.useSkia, false);
+    js_util.callMethod(
+      html.window,
+      '_flutter_internal_update_experiment',
+      <dynamic>['useCanvasText', true],
+    );
+    expect(webExperiments.useCanvasText, true);
+
+    js_util.callMethod(
+      html.window,
+      '_flutter_internal_update_experiment',
+      <dynamic>['useCanvasText', null],
+    );
     expect(webExperiments.useCanvasText, false);
   });
 }

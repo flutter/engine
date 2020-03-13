@@ -6,7 +6,8 @@
 part of engine;
 
 /// EXPERIMENTAL: Enable the Skia-based rendering backend.
-bool get experimentalUseSkia => webExperiments.useSkia;
+const bool experimentalUseSkia =
+    bool.fromEnvironment('FLUTTER_WEB_USE_SKIA', defaultValue: false);
 
 /// The URL to use when downloading the CanvasKit script and associated wasm.
 ///
