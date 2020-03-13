@@ -52,9 +52,15 @@ android {
     embeddingTesting "org.robolectric:android-all:8.1.0-robolectric-4611349"
     // This is required by the robolectric test.
     embeddingTesting_duplicated "org.robolectric:android-all:4.1.2_r1-robolectric-r1"
-    embeddingTesting "org.robolectric:robolectric:4.3"
     embeddingTesting "org.mockito:mockito-all:1.10.19"
-    embeddingTesting "junit:junit:4.13"
+    embeddingTesting ("org.robolectric:robolectric:4.3") {
+      // org.hamcrest is added by org.mockito:mockito-all
+      exclude group: "org.hamcrest", module:"hamcrest-core"
+    }
+    embeddingTesting ("junit:junit:4.13") {
+      // org.hamcrest is added by org.mockito:mockito-all
+      exclude group: "org.hamcrest", module:"hamcrest-core"
+    }
   }
 }
 
