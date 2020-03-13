@@ -127,13 +127,4 @@ ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
   return GetExternalViewEmbedderIfEnabled();
 }
 
-// |ExternalViewEmbedder|
-void IOSSurfaceSoftware::EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  if (platform_views_controller == nullptr) {
-    return;
-  }
-  return platform_views_controller->EndFrame(gpu_thread_merger);
-}
-
 }  // namespace flutter
