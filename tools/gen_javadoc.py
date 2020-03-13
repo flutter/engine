@@ -29,14 +29,7 @@ def main():
 
   classpath = [
     args.android_source_root,
-    args.third_party + '/androidx/androidx_core.aar',
-    args.third_party + '/androidx/androidx_annotation.jar',
-    args.third_party + '/androidx/androidx_fragment.aar',
-    args.third_party + '/androidx/androidx_lifecycle_common.jar',
-    args.third_party + '/androidx/androidx_lifecycle_common_java8.jar',
-    args.third_party + '/androidx/androidx_lifecycle_runtime.aar',
-    args.third_party + '/androidx/androidx_lifecycle_viewmodel.aar',
-    args.third_party + '/android_tools/sdk/platforms/android-29/android.jar',
+    os.path.join(args.third_party, 'android_embedding_dependencies', 'lib', '*'),
   ]
   if args.build_config_path:
     classpath.append(args.build_config_path)
