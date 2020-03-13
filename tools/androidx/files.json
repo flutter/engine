@@ -49,11 +49,5 @@
       "androidx.annotation.UiThread",
       "androidx.annotation.VisibleForTesting"
     ]
-  },
-  {
-    "url": "https://maven.google.com/androidx/lifecycle/lifecycle-viewmodel/2.2.0/lifecycle-viewmodel-2.2.0.aar",
-    "out_file_name": "androidx_lifecycle_viewmodel.aar",
-    "maven_dependency": "androidx.lifecycle:lifecycle-viewmodel:2.2.0",
-    "provides": []
   }
 ]
