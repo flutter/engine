@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 #include "flutter/fml/ascii_trie.h"
+#include "flutter/fml/logging.h"
 
 namespace fml {
 typedef AsciiTrie::TrieNode TrieNode;
@@ -9,7 +10,7 @@ typedef AsciiTrie::TrieNode TrieNode;
 namespace {
 void Add(TrieNode** trie, const char* entry) {
   int ch = entry[0];
-  assert(ch < 128);
+  FML_DCHECK(ch < 128);
   if (ch != 0) {
     if (!*trie) {
       TrieNode* newNode = (TrieNode*)calloc(sizeof(TrieNode), 1);
