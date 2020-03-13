@@ -55,7 +55,7 @@ void AsciiTrie::fill(const std::vector<std::string>& entries) {
 }
 
 bool AsciiTrie::query(TrieNode* trie, const char* query) {
-  assert(trie);
+  FML_DCHECK(trie);
   const char* char_position = query;
   TrieNode* trie_position = trie;
   TrieNode* child;
