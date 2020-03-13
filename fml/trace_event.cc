@@ -269,6 +269,8 @@ void TraceEventFlowEnd0(TraceArg category_group, TraceArg name, TraceIDArg id) {
 
 #else  // TIMELINE_ENABLED
 
+void TraceSetWhitelist(const std::vector<std::string>& whitelist) {}
+
 size_t TraceNonce() {
   return 0;
 }
