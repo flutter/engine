@@ -238,7 +238,7 @@ executable("fml_unittests") {
   testonly = true
 
   sources = [
-    "ascii_trie_unittest.cc",
+    "ascii_trie_unittests.cc",
     "backtrace_unittests.cc",
     "base32_unittest.cc",
     "command_line_unittest.cc",
