@@ -10,7 +10,7 @@ typedef AsciiTrie::TrieNode TrieNode;
 namespace {
 void Add(TrieNode** trie, const char* entry) {
   int ch = entry[0];
-  FML_DCHECK(ch < 128);
+  FML_DCHECK(ch < AsciiTrie::kMaxAsciiValue);
   if (ch != 0) {
     if (!*trie) {
       TrieNode* newNode = static_cast<TrieNode*>(calloc(sizeof(TrieNode), 1));
@@ -29,12 +29,10 @@ TrieNode* MakeTrie(const std::vector<std::string>& entries) {
 }
 
 void FreeNode(TrieNode* node) {
-  for (int i = 0; i < 128; ++i) {
-    if (node->children[i]) {
-      TrieNode* child = node->children[i];
-      if (child) {
-        FreeNode(child);
-      }
+  for (int i = 0; i < AsciiTrie::kMaxAsciiValue; ++i) {
+    TrieNode* child = node->children[i];
+    if (child) {
+      FreeNode(child);
     }
   }
   free(node);

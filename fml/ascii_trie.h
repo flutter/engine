@@ -23,8 +23,11 @@ class AsciiTrie {
     return !node_ || Query(node_.get(), argument);
   }
 
+  /// The max Ascii value.
+  static const int kMaxAsciiValue = 128;
+
   struct TrieNode {
-    TrieNode* children[128];
+    TrieNode* children[kMaxAsciiValue];
   };
 
  private:
