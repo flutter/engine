@@ -5,12 +5,19 @@
 #include "flutter/fml/logging.h"
 
 namespace fml {
+// The max Ascii value.
+static const int kMaxAsciiValue = 128;
+
+struct AsciiTrie::TrieNode {
+  AsciiTrie::TrieNode* children[kMaxAsciiValue];
+};
+
 typedef AsciiTrie::TrieNode TrieNode;
 
 namespace {
 void Add(TrieNode** trie, const char* entry) {
   int ch = entry[0];
-  FML_DCHECK(ch < AsciiTrie::kMaxAsciiValue);
+  FML_DCHECK(ch < kMaxAsciiValue);
   if (ch != 0) {
     if (!*trie) {
       TrieNode* newNode = static_cast<TrieNode*>(calloc(sizeof(TrieNode), 1));
@@ -29,7 +36,7 @@ TrieNode* MakeTrie(const std::vector<std::string>& entries) {
 }
 
 void FreeNode(TrieNode* node) {
-  for (int i = 0; i < AsciiTrie::kMaxAsciiValue; ++i) {
+  for (int i = 0; i < kMaxAsciiValue; ++i) {
     TrieNode* child = node->children[i];
     if (child) {
       FreeNode(child);

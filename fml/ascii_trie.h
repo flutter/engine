@@ -13,6 +13,8 @@ namespace fml {
 /// A trie for looking for ASCII prefixes.
 class AsciiTrie {
  public:
+  struct TrieNode;
+
   AsciiTrie();
 
   /// Clear and insert all the entries into the trie.
@@ -22,13 +24,6 @@ class AsciiTrie {
   inline bool Query(const char* argument) {
     return !node_ || Query(node_.get(), argument);
   }
-
-  /// The max Ascii value.
-  static const int kMaxAsciiValue = 128;
-
-  struct TrieNode {
-    TrieNode* children[kMaxAsciiValue];
-  };
 
  private:
   static bool Query(TrieNode* trie, const char* query);
