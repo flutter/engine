@@ -217,23 +217,17 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
                     SkScalar x,
                     SkScalar y,
                     const SkPaint* paint) override;
-  void onDrawBitmapNine(const SkBitmap&,
-                        const SkIRect&,
-                        const SkRect&,
-                        const SkPaint*) override;
   void onDrawImageLattice(const SkImage*,
                           const Lattice&,
                           const SkRect&,
                           const SkPaint*) override;
-  void onDrawBitmapLattice(const SkBitmap&,
-                           const Lattice&,
-                           const SkRect&,
-                           const SkPaint*) override;
   void onDrawVerticesObject(const SkVertices*,
-                            const SkVertices::Bone[],
-                            int,
-                            SkBlendMode,
-                            const SkPaint&) override;
+#ifdef SK_SUPPORT_LEGACY_DRAWVERTS_VIRTUAL
+                              const SkVertices::Bone[],
+                              int,
+#endif
+                              SkBlendMode,
+                              const SkPaint&) override;
   void onDrawAtlas(const SkImage*,
                    const SkRSXform[],
                    const SkRect[],
