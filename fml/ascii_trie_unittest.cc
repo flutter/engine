@@ -9,7 +9,7 @@ using fml::AsciiTrie;
 
 TEST(AsciiTableTest, Simple) {
   AsciiTrie trie;
-  auto entries = std::vector<std::string> {"foo"};
+  auto entries = std::vector<std::string>{"foo"};
   trie.fill(entries);
   ASSERT_TRUE(trie.query("foobar"));
   ASSERT_FALSE(trie.query("google"));
@@ -17,7 +17,7 @@ TEST(AsciiTableTest, Simple) {
 
 TEST(AsciiTableTest, ExactMatch) {
   AsciiTrie trie;
-  auto entries = std::vector<std::string> {"foo"};
+  auto entries = std::vector<std::string>{"foo"};
   trie.fill(entries);
   ASSERT_TRUE(trie.query("foo"));
 }
@@ -29,7 +29,7 @@ TEST(AsciiTableTest, Empty) {
 
 TEST(AsciiTableTest, MultipleEntries) {
   AsciiTrie trie;
-  auto entries = std::vector<std::string> {"foo", "bar"};
+  auto entries = std::vector<std::string>{"foo", "bar"};
   trie.fill(entries);
   ASSERT_TRUE(trie.query("foozzz"));
   ASSERT_TRUE(trie.query("barzzz"));
