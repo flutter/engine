@@ -43,4 +43,6 @@ void main() async {
     expect(installer.isInstalled, isTrue);
     expect(io.File(installation.executable).existsSync(), isTrue);
   });
+
+
 }
