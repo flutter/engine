@@ -221,6 +221,13 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
                           const Lattice&,
                           const SkRect&,
                           const SkPaint*) override;
+#ifdef SK_SUPPORT_LEGACY_DRAWVERTS_VIRTUAL
+  void onDrawVerticesObject(const SkVertices*,
+                            const SkVertices::Bone[],
+                            int,
+                            SkBlendMode,
+                            const SkPaint&) override {}
+#endif
   void onDrawVerticesObject(const SkVertices*,
                             SkBlendMode,
                             const SkPaint&) override;
