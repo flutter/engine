@@ -1,4 +1,4 @@
-Signature: 2028a4b04bc2471461bd711e9e9b83ce
+Signature: 7eddb9ce2a1c65700a052042fa1fa722
 
 UNUSED LICENSES:
 
@@ -3112,6 +3112,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/server.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/constants.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/error.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/types.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_register.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input/keys.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.legacymetrics/event.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.legacymetrics/metrics_recorder.fidl

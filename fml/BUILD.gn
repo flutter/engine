@@ -12,6 +12,7 @@ source_set("fml") {
   sources = [
     "ascii_trie.cc",
     "ascii_trie.h",
+    "backtrace.h",
     "base32.cc",
     "base32.h",
     "build_config.h",
@@ -87,6 +88,12 @@ source_set("fml") {
     "unique_object.h",
     "wakeable.h",
   ]
+
+  if (is_mac || is_ios || is_linux) {
+    sources += [ "backtrace.cc" ]
+  } else {
+    sources += [ "backtrace_stub.cc" ]
+  }
 
   public_deps = []
 
@@ -232,6 +239,7 @@ executable("fml_unittests") {
 
   sources = [
     "ascii_trie_unittest.cc",
+    "backtrace_unittests.cc",
     "base32_unittest.cc",
     "command_line_unittest.cc",
     "file_unittest.cc",
