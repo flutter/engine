@@ -60,10 +60,6 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
       }
     }
 
-    // Return `true` if successful.
-    //
-    // If a `ProducerContinuation` is created with `ProduceIfEmpty`, `Complete`
-    // returns `false` if the queue is not empty.
     void Complete(ResourcePtr resource) {
       if (continuation_) {
         continuation_(std::move(resource), trace_id_);
@@ -179,7 +175,6 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   std::mutex queue_mutex_;
   std::deque<std::pair<ResourcePtr, size_t>> queue_;
 
-  // Always returns `true` as it is always successful.
   void ProducerCommit(ResourcePtr resource, size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
@@ -190,7 +185,6 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     available_.Signal();
   }
 
-  // Returns `true` if successful.
   void ProducerCommitIfEmpty(ResourcePtr resource, size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
