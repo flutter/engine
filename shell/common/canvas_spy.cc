@@ -187,10 +187,6 @@ void DidDrawCanvas::onDrawDrawable(SkDrawable* drawable,
 }
 
 void DidDrawCanvas::onDrawVerticesObject(const SkVertices* vertices,
-#ifdef SK_SUPPORT_LEGACY_DRAWVERTS_VIRTUAL
-                                         const SkVertices::Bone[],
-                                         int,
-#endif
                                          SkBlendMode bmode,
                                          const SkPaint& paint) {
   MarkDrawIfNonTransparentPaint(paint);

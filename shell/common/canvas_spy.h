@@ -167,12 +167,8 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawVerticesObject(const SkVertices*,
-#ifdef SK_SUPPORT_LEGACY_DRAWVERTS_VIRTUAL
-                              const SkVertices::Bone[],
-                              int,
-#endif
-                              SkBlendMode,
-                              const SkPaint&) override;
+                            SkBlendMode,
+                            const SkPaint&) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawAtlas(const SkImage*,

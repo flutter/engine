@@ -270,10 +270,6 @@ void MockCanvas::onDrawImageLattice(const SkImage*,
 }
 
 void MockCanvas::onDrawVerticesObject(const SkVertices*,
-#ifdef SK_SUPPORT_LEGACY_DRAWVERTS_VIRTUAL
-                                      const SkVertices::Bone[],
-                                      int,
-#endif
                                       SkBlendMode,
                                       const SkPaint&) {
   FML_DCHECK(false);
