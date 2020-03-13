@@ -182,10 +182,10 @@ static void RecordStartupTimestamp() {
 
 static void Tokenize(const std::string& input,
                      std::vector<std::string>* results,
-                     char deliminator) {
+                     char delimiter) {
   std::istringstream ss(input);
   std::string token;
-  while (std::getline(ss, token, deliminator)) {
+  while (std::getline(ss, token, delimiter)) {
     results->push_back(token);
   }
 }
