@@ -98,19 +98,18 @@ TEST(PipelineTest, ProduceIfEmptyWhenQueueIsNotEmptyDoesNotConsume) {
 
   const int test_val_1 = 1, test_val_2 = 2;
   continuation_1.Complete(std::make_unique<int>(test_val_1));
-  ASSERT_EQ(continuation_2.Complete(std::make_unique<int>(test_val_2)), false);
+  continuation_2.Complete(std::make_unique<int>(test_val_2));
 
   PipelineConsumeResult consume_result_1 = pipeline->Consume(
       [&test_val_1](std::unique_ptr<int> v) { ASSERT_EQ(*v, test_val_1); });
   ASSERT_EQ(consume_result_1, PipelineConsumeResult::Done);
 }
 
-TEST(PipelineTest, ProduceIfEmptySuccessfulIf) {
+TEST(PipelineTest, ProduceIfEmptySuccessfulIfQueueIsEmpty) {
   const int depth = 1;
   fml::RefPtr<IntPipeline> pipeline = fml::MakeRefCounted<IntPipeline>(depth);
 
   Continuation continuation_1 = pipeline->ProduceIfEmpty();
-  Continuation continuation_2 = pipeline->ProduceIfEmpty();
 
   const int test_val_1 = 1;
   continuation_1.Complete(std::make_unique<int>(test_val_1));

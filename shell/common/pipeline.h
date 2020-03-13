@@ -64,21 +64,20 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     //
     // If a `ProducerContinuation` is created with `ProduceIfEmpty`, `Complete`
     // returns `false` if the queue is not empty.
-    bool Complete(ResourcePtr resource) {
-      if (!continuation_ || !continuation_(std::move(resource), trace_id_)) {
-        return false;
+    void Complete(ResourcePtr resource) {
+      if (continuation_) {
+        continuation_(std::move(resource), trace_id_);
+        continuation_ = nullptr;
+        TRACE_EVENT_ASYNC_END0("flutter", "PipelineProduce", trace_id_);
+        TRACE_FLOW_STEP("flutter", "PipelineItem", trace_id_);
       }
-      continuation_ = nullptr;
-      TRACE_EVENT_ASYNC_END0("flutter", "PipelineProduce", trace_id_);
-      TRACE_FLOW_STEP("flutter", "PipelineItem", trace_id_);
-      return true;
     }
 
     operator bool() const { return continuation_ != nullptr; }
 
    private:
     friend class Pipeline;
-    using Continuation = std::function<bool(ResourcePtr, size_t)>;
+    using Continuation = std::function<void(ResourcePtr, size_t)>;
 
     Continuation continuation_;
     size_t trace_id_;
@@ -181,7 +180,7 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   std::deque<std::pair<ResourcePtr, size_t>> queue_;
 
   // Always returns `true` as it is always successful.
-  bool ProducerCommit(ResourcePtr resource, size_t trace_id) {
+  void ProducerCommit(ResourcePtr resource, size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
       queue_.emplace_back(std::move(resource), trace_id);
@@ -189,23 +188,21 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
 
     // Ensure the queue mutex is not held as that would be a pessimization.
     available_.Signal();
-    return true;
   }
 
   // Returns `true` if successful.
-  bool ProducerCommitIfEmpty(ResourcePtr resource, size_t trace_id) {
+  void ProducerCommitIfEmpty(ResourcePtr resource, size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
       if (!queue_.empty()) {
         empty_.Signal();
-        return false;
+        return;
       }
       queue_.emplace_back(std::move(resource), trace_id);
     }
 
     // Ensure the queue mutex is not held as that would be a pessimization.
     available_.Signal();
-    return true;
   }
 
   FML_DISALLOW_COPY_AND_ASSIGN(Pipeline);
