@@ -90,7 +90,9 @@ void IOSSurface::CancelFrame() {
   platform_views_controller_->CancelFrame();
   // Committing the current transaction as |BeginFrame| will create a nested
   // CATransaction otherwise.
-  [CATransaction commit];
+  if ([NSThread currentThread] == [NSThread mainThread]) {
+    [CATransaction commit];
+  }
 }
 
 // |ExternalViewEmbedder|
@@ -98,7 +100,9 @@ void IOSSurface::BeginFrame(SkISize frame_size, GrContext* context, double devic
   TRACE_EVENT0("flutter", "IOSSurface::BeginFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   platform_views_controller_->SetFrameSize(frame_size);
-  [CATransaction begin];
+  if ([NSThread currentThread] == [NSThread mainThread]) {
+    [CATransaction begin];
+  }
 }
 
 // |ExternalViewEmbedder|
@@ -136,7 +140,9 @@ bool IOSSurface::SubmitFrame(GrContext* context) {
   TRACE_EVENT0("flutter", "IOSSurface::SubmitFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   bool submitted = platform_views_controller_->SubmitFrame(std::move(context), ios_context_);
-  [CATransaction commit];
+  if ([NSThread currentThread] == [NSThread mainThread]) {
+    [CATransaction commit];
+  }
   return submitted;
 }
 
