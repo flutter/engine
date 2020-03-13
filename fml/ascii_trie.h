@@ -32,7 +32,7 @@ class AsciiTrie {
 
  private:
   static bool Query(TrieNode* trie, const char* query);
-  std::unique_ptr<TrieNode, void(*)(TrieNode*)> node_;
+  std::unique_ptr<TrieNode, void (*)(TrieNode*)> node_;
 };
 }  // namespace fml
 
