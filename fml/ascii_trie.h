@@ -13,14 +13,14 @@ namespace fml {
 /// A trie for looking for ASCII prefixes.
 class AsciiTrie {
  public:
-  ~AsciiTrie();
+  AsciiTrie();
 
   /// Clear and insert all the entries into the trie.
   void Fill(const std::vector<std::string>& entries);
 
   /// Returns true if \p argument is prefixed by the contents of the trie.
   inline bool Query(const char* argument) {
-    return !node_ || Query(node_, argument);
+    return !node_ || Query(node_.get(), argument);
   }
 
   struct TrieNode {
@@ -29,7 +29,7 @@ class AsciiTrie {
 
  private:
   static bool Query(TrieNode* trie, const char* query);
-  TrieNode* node_ = nullptr;
+  std::unique_ptr<TrieNode, void(*)(TrieNode*)> node_;
 };
 }  // namespace fml
 

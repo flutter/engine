@@ -13,7 +13,7 @@ void Add(TrieNode** trie, const char* entry) {
   FML_DCHECK(ch < 128);
   if (ch != 0) {
     if (!*trie) {
-      TrieNode* newNode = (TrieNode*)calloc(sizeof(TrieNode), 1);
+      TrieNode* newNode = static_cast<TrieNode*>(calloc(sizeof(TrieNode), 1));
       *trie = newNode;
     }
     Add(&(*trie)->children[ch], entry + 1);
@@ -41,17 +41,10 @@ void FreeNode(TrieNode* node) {
 }
 }  // namespace
 
-AsciiTrie::~AsciiTrie() {
-  if (node_) {
-    FreeNode(node_);
-  }
-}
+AsciiTrie::AsciiTrie() : node_(nullptr, FreeNode) {}
 
 void AsciiTrie::Fill(const std::vector<std::string>& entries) {
-  if (node_) {
-    FreeNode(node_);
-  }
-  node_ = MakeTrie(entries);
+  node_.reset(MakeTrie(entries));
 }
 
 bool AsciiTrie::Query(TrieNode* trie, const char* query) {
