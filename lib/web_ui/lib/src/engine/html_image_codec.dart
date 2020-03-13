@@ -4,14 +4,15 @@
 
 // @dart = 2.6
 part of engine;
+
 final bool _supportsDecode = js_util.getProperty(
         js_util.getProperty(
             js_util.getProperty(html.window, 'Image'), 'prototype'),
         'decode') !=
     null;
 
-typedef WebOnlyImageCodecChunkCallback =
-    void Function(int cumulativeBytesLoaded, int expectedTotalBytes);
+typedef WebOnlyImageCodecChunkCallback = void Function(
+    int cumulativeBytesLoaded, int expectedTotalBytes);
 
 class HtmlCodec implements ui.Codec {
   final String src;
@@ -39,14 +40,14 @@ class HtmlCodec implements ui.Codec {
       imgElement.src = src;
       js_util.setProperty(imgElement, 'decoding', 'async');
       imgElement.decode().then((dynamic _) {
+        if (chunkCallback != null) {
+          chunkCallback(100, 100);
+        }
         final HtmlImage image = HtmlImage(
           imgElement,
           imgElement.naturalWidth,
           imgElement.naturalHeight,
         );
-        if (chunkCallback != null) {
-          chunkCallback(100, 100);
-        }
         completer.complete(SingleFrameInfo(image));
       }).catchError((e) {
         // This code path is hit on Chrome 80.0.3987.16 when too many
@@ -74,6 +75,9 @@ class HtmlCodec implements ui.Codec {
       completer.completeError(event);
     });
     loadSubscription = imgElement.onLoad.listen((html.Event event) {
+      if (chunkCallback != null) {
+        chunkCallback(100, 100);
+      }
       loadSubscription.cancel();
       errorSubscription.cancel();
       final HtmlImage image = HtmlImage(
@@ -81,9 +85,6 @@ class HtmlCodec implements ui.Codec {
         imgElement.naturalWidth,
         imgElement.naturalHeight,
       );
-      if (chunkCallback != null) {
-        chunkCallback(100, 100);
-      }
       completer.complete(SingleFrameInfo(image));
     });
     imgElement.src = src;

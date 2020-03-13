@@ -899,9 +899,8 @@ enum Clip {
 abstract class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
-  factory Paint() => engine.experimentalUseSkia
-    ? engine.SkPaint()
-    : engine.SurfacePaint();
+  factory Paint() =>
+      engine.experimentalUseSkia ? engine.SkPaint() : engine.SurfacePaint();
 
   /// Whether to dither the output when drawing images.
   ///
@@ -1605,12 +1604,13 @@ String _instantiateImageCodec(
 }
 
 Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
-    engine.WebOnlyImageCodecChunkCallback chunkCallback) {
+    {engine.WebOnlyImageCodecChunkCallback chunkCallback}) {
   return engine.futurize((engine.Callback<Codec> callback) =>
       _instantiateImageCodecFromUrl(uri, chunkCallback, callback));
 }
 
-String _instantiateImageCodecFromUrl(Uri uri,
+String _instantiateImageCodecFromUrl(
+    Uri uri,
     engine.WebOnlyImageCodecChunkCallback chunkCallback,
     engine.Callback<Codec> callback) {
   callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
