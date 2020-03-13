@@ -10,27 +10,27 @@ using fml::AsciiTrie;
 TEST(AsciiTableTest, Simple) {
   AsciiTrie trie;
   auto entries = std::vector<std::string>{"foo"};
-  trie.fill(entries);
-  ASSERT_TRUE(trie.query("foobar"));
-  ASSERT_FALSE(trie.query("google"));
+  trie.Fill(entries);
+  ASSERT_TRUE(trie.Query("foobar"));
+  ASSERT_FALSE(trie.Query("google"));
 }
 
 TEST(AsciiTableTest, ExactMatch) {
   AsciiTrie trie;
   auto entries = std::vector<std::string>{"foo"};
-  trie.fill(entries);
-  ASSERT_TRUE(trie.query("foo"));
+  trie.Fill(entries);
+  ASSERT_TRUE(trie.Query("foo"));
 }
 
 TEST(AsciiTableTest, Empty) {
   AsciiTrie trie;
-  ASSERT_TRUE(trie.query("foo"));
+  ASSERT_TRUE(trie.Query("foo"));
 }
 
 TEST(AsciiTableTest, MultipleEntries) {
   AsciiTrie trie;
   auto entries = std::vector<std::string>{"foo", "bar"};
-  trie.fill(entries);
-  ASSERT_TRUE(trie.query("foozzz"));
-  ASSERT_TRUE(trie.query("barzzz"));
+  trie.Fill(entries);
+  ASSERT_TRUE(trie.Query("foozzz"));
+  ASSERT_TRUE(trie.Query("barzzz"));
 }

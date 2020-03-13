@@ -47,14 +47,14 @@ AsciiTrie::~AsciiTrie() {
   }
 }
 
-void AsciiTrie::fill(const std::vector<std::string>& entries) {
+void AsciiTrie::Fill(const std::vector<std::string>& entries) {
   if (node_) {
     FreeNode(node_);
   }
   node_ = MakeTrie(entries);
 }
 
-bool AsciiTrie::query(TrieNode* trie, const char* query) {
+bool AsciiTrie::Query(TrieNode* trie, const char* query) {
   FML_DCHECK(trie);
   const char* char_position = query;
   TrieNode* trie_position = trie;

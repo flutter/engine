@@ -16,11 +16,11 @@ class AsciiTrie {
   ~AsciiTrie();
 
   /// Clear and insert all the entries into the trie.
-  void fill(const std::vector<std::string>& entries);
+  void Fill(const std::vector<std::string>& entries);
 
   /// Returns true if \p argument is prefixed by the contents of the trie.
-  inline bool query(const char* argument) {
-    return !node_ || query(node_, argument);
+  inline bool Query(const char* argument) {
+    return !node_ || Query(node_, argument);
   }
 
   struct TrieNode {
@@ -28,7 +28,7 @@ class AsciiTrie {
   };
 
  private:
-  static bool query(TrieNode* trie, const char* query);
+  static bool Query(TrieNode* trie, const char* query);
   TrieNode* node_ = nullptr;
 };
 }  // namespace fml

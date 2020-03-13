@@ -29,13 +29,13 @@ static AsciiTrie s_whitelist;
 #define FLUTTER_TIMELINE_EVENT(label, timestamp0, timestamp1_or_async_id, \
                                type, argument_count, argument_names,      \
                                argument_values)                           \
-  if (s_whitelist.query(label)) {                                         \
+  if (s_whitelist.Query(label)) {                                         \
     Dart_TimelineEvent(label, timestamp0, timestamp1_or_async_id, type,   \
                        argument_count, argument_names, argument_values);  \
   }
 
 void TraceSetWhitelist(const std::vector<std::string>& whitelist) {
-  s_whitelist.fill(whitelist);
+  s_whitelist.Fill(whitelist);
 }
 
 size_t TraceNonce() {
