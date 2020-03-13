@@ -253,7 +253,7 @@ UIView* FlutterPlatformViewsController::ReconstructClipViewsChain(int number_of_
   // If there were not enough existing clip views, add more.
   while (clipIndex < number_of_clips) {
     ChildClippingView* clippingView =
-        [[ChildClippingView alloc] initWithFrame:flutter_view_.get().bounds];
+        [[[ChildClippingView alloc] initWithFrame:flutter_view_.get().bounds] autorelease];
     [clippingView addSubview:head];
     head = clippingView;
     clipIndex++;
@@ -464,7 +464,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
       return;
     }
     fml::scoped_nsobject<FlutterOverlayView> overlay_view(
-        [[[FlutterOverlayView alloc] init] retain]);
+        [[FlutterOverlayView alloc] init]);
     overlay_view.get().frame = flutter_view_.get().bounds;
     overlay_view.get().autoresizingMask =
         (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
@@ -489,7 +489,7 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(
   }
   auto contentsScale = flutter_view_.get().layer.contentsScale;
   fml::scoped_nsobject<FlutterOverlayView> overlay_view(
-      [[[FlutterOverlayView alloc] initWithContentsScale:contentsScale] retain]);
+      [[FlutterOverlayView alloc] initWithContentsScale:contentsScale]);
   overlay_view.get().frame = flutter_view_.get().bounds;
   overlay_view.get().autoresizingMask =
       (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
