@@ -58,7 +58,6 @@ bool IOSSurfaceMetal::SubmitFrame(GrContext* context, SkCanvas* background_canva
   if (platform_views_controller == nullptr) {
     return true;
   }
-
   return platform_views_controller->SubmitFrame(context, nullptr, background_canvas);
 }
 
