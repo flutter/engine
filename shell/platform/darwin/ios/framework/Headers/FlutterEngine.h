@@ -25,16 +25,21 @@ NS_ASSUME_NONNULL_BEGIN
 extern NSString* const FlutterDefaultDartEntrypoint;
 
 /**
- * The FlutterEngine class coordinates a single instance of execution for a
+ * The `FlutterEngine` class coordinates a single instance of execution for a
  * `FlutterDartProject`.  It may have zero or one `FlutterViewController` at a
  * time, which can be specified via `-setViewController:`.
  * `FlutterViewController`'s `initWithEngine` initializer will automatically call
  * `-setViewController:` for itself.
  *
- * A FlutterEngine can be created independently of a `FlutterViewController` for
+ * A `FlutterEngine` can be created independently of a `FlutterViewController` for
  * headless execution.  It can also persist across the lifespan of multiple
  * `FlutterViewController` instances to maintain state and/or asynchronous tasks
  * (such as downloading a large file).
+ *
+ * A `FlutterEngine` can also be used to prewarm the Dart execution environment and reduce the
+ * latency of showing the Flutter screen when a `FlutterViewController` is created and presented.
+ * See http://flutter.dev/docs/development/add-to-app/performance for more details on loading
+ * performance.
  *
  * Alternatively, you can simply create a new `FlutterViewController` with only a
  * `FlutterDartProject`. That `FlutterViewController` will internally manage its
