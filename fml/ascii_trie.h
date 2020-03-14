@@ -14,8 +14,9 @@ namespace fml {
 class AsciiTrie {
  public:
   struct TrieNode;
-
-  AsciiTrie();
+  typedef std::unique_ptr<TrieNode> TrieNodePtr;
+  /// The max Ascii value.
+  static const int kMaxAsciiValue = 128;
 
   /// Clear and insert all the entries into the trie.
   void Fill(const std::vector<std::string>& entries);
@@ -25,9 +26,13 @@ class AsciiTrie {
     return !node_ || Query(node_.get(), argument);
   }
 
+  struct TrieNode {
+    TrieNodePtr children[kMaxAsciiValue];
+  };
+
  private:
   static bool Query(TrieNode* trie, const char* query);
-  std::unique_ptr<TrieNode, void (*)(TrieNode*)> node_;
+  TrieNodePtr node_;
 };
 }  // namespace fml
 
