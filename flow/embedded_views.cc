@@ -11,6 +11,8 @@ bool ExternalViewEmbedder::SubmitFrame(GrContext* context,
   return false;
 };
 
+void ExternalViewEmbedder::FinishFrame(){};
+
 void MutatorsStack::PushClipRect(const SkRect& rect) {
   std::shared_ptr<Mutator> element = std::make_shared<Mutator>(rect);
   vector_.push_back(element);
