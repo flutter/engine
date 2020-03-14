@@ -266,4 +266,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context,
   return true;
 }
 
+// |ExternalViewEmbedder|
+void EmbedderExternalViewEmbedder::FinishFrame() {}
+
 }  // namespace flutter

@@ -81,6 +81,9 @@ class IOSSurface : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   bool SubmitFrame(GrContext* context, SkCanvas* background_canvas) override;
 
+  // |ExternalViewEmbedder|
+  void FinishFrame() override;
+
  public:
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurface);
 };

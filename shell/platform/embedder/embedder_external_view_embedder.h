@@ -92,6 +92,9 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   bool SubmitFrame(GrContext* context, SkCanvas* background_canvas) override;
 
   // |ExternalViewEmbedder|
+  void FinishFrame() override;
+
+  // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override;
 
  private:

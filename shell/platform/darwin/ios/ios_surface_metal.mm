@@ -59,9 +59,11 @@ bool IOSSurfaceMetal::SubmitFrame(GrContext* context, SkCanvas* background_canva
     return true;
   }
 
-  bool submitted = platform_views_controller->SubmitFrame(context, nullptr, background_canvas);
+  return platform_views_controller->SubmitFrame(context, nullptr, background_canvas);
+}
+
+void IOSSurfaceMetal::FinishFrame() {
   [CATransaction commit];
-  return submitted;
 }
 
 }  // namespace flutter

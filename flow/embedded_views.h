@@ -250,6 +250,9 @@ class ExternalViewEmbedder {
 
   virtual bool SubmitFrame(GrContext* context, SkCanvas* background_canvas);
 
+  // This is called after submitting the embedder frame and the surface frame.
+  virtual void FinishFrame();
+
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 
 };  // ExternalViewEmbedder
