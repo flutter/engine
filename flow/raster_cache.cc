@@ -141,6 +141,7 @@ void RasterCache::Prepare(PrerollContext* context,
   entry.access_count++;
   entry.used_this_frame = true;
   if (!entry.image) {
+    FML_LOG(ERROR) << "Rasterizing " << layer->unique_id();
     entry.image = RasterizeLayer(context, layer, ctm, checkerboard_images_);
   }
 }

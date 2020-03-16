@@ -160,4 +160,37 @@ void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
 
 #endif  // defined(OS_FUCHSIA)
 
+MergedContainerLayer::MergedContainerLayer() {
+  // Ensure the layer has only one direct child.
+  //
+  // This intermediary container helps container layers that want or need
+  // to cache the rendering of their children to do so more easily.
+  //
+  // Any children will be actually added as children of this empty
+  // ContainerLayer.
+  //
+  // @see GetChildContainer()
+  // @see GetCacheableChild()
+  ContainerLayer::Add(std::make_shared<ContainerLayer>());
+}
+
+void MergedContainerLayer::Add(std::shared_ptr<Layer> layer) {
+  GetChildContainer()->Add(std::move(layer));
+}
+
+ContainerLayer* MergedContainerLayer::GetChildContainer() const {
+  FML_DCHECK(layers().size() == 1);
+
+  return static_cast<ContainerLayer*>(layers()[0].get());
+}
+
+Layer* MergedContainerLayer::GetCacheableChild() const {
+  ContainerLayer* child_container = GetChildContainer();
+  if (child_container->layers().size() == 1) {
+    return child_container->layers()[0].get();
+  }
+
+  return child_container;
+}
+
 }  // namespace flutter

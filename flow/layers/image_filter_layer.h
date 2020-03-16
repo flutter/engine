@@ -11,7 +11,7 @@
 
 namespace flutter {
 
-class ImageFilterLayer : public ContainerLayer {
+class ImageFilterLayer : public MergedContainerLayer {
  public:
   ImageFilterLayer(sk_sp<SkImageFilter> filter);
 
@@ -20,8 +20,14 @@ class ImageFilterLayer : public ContainerLayer {
   void Paint(PaintContext& context) const override;
 
  private:
+  // The default minimum number of times to render a filtered layer before
+  // we cache the output of the filter. Note that until this limit is
+  // reached we may continue to cache the children anyway.
+  static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
+
   sk_sp<SkImageFilter> filter_;
   SkRect child_paint_bounds_;
+  int render_count_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageFilterLayer);
 };

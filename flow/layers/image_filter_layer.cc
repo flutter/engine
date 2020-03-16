@@ -7,7 +7,7 @@
 namespace flutter {
 
 ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
-    : filter_(std::move(filter)) {}
+    : filter_(std::move(filter)), render_count_(1) {}
 
 void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
@@ -28,18 +28,38 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     set_paint_bounds(child_paint_bounds_);
   }
 
-  TryToPrepareRasterCache(context, this, matrix);
+  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
+    TryToPrepareRasterCache(context, this, matrix);
+  } else {
+    render_count_++;
+    context->raster_cache->Prepare(context, GetCacheableChild(), matrix);
+  }
 }
 
 void ImageFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ImageFilterLayer::Paint");
   FML_DCHECK(needs_painting());
 
-  if (context.raster_cache &&
-      context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
-    return;
+  if (context.raster_cache) {
+    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
+      FML_LOG(ERROR) << "Rendered filtered output from cache";
+      return;
+    }
+    const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
+    sk_sp<SkImageFilter> transformed_filter = filter_->makeWithLocalMatrix(ctm);
+    if (transformed_filter) {
+      SkPaint paint;
+      paint.setImageFilter(transformed_filter);
+
+      if (context.raster_cache->Draw(GetCacheableChild(),
+                                     *context.leaf_nodes_canvas, &paint)) {
+        FML_LOG(ERROR) << "Filtered from cached child";
+        return;
+      }
+    }
   }
 
+  FML_LOG(ERROR) << "Applying filter to child on the fly";
   SkPaint paint;
   paint.setImageFilter(filter_);
 
