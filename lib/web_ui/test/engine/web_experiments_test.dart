@@ -52,18 +52,25 @@ void main() {
   test('js interop also works', () {
     expect(webExperiments.useCanvasText, false);
 
-    js_util.callMethod(
-      html.window,
-      '_flutter_internal_update_experiment',
-      <dynamic>['useCanvasText', true],
-    );
+    expect(() => jsUpdateExperiment('useCanvasText', true), returnsNormally);
     expect(webExperiments.useCanvasText, true);
 
-    js_util.callMethod(
-      html.window,
-      '_flutter_internal_update_experiment',
-      <dynamic>['useCanvasText', null],
-    );
+    expect(() => jsUpdateExperiment('useCanvasText', null), returnsNormally);
     expect(webExperiments.useCanvasText, false);
   });
+
+  test('js interop throws on wrong type', () {
+    expect(() => jsUpdateExperiment(123, true), throwsA(anything));
+    expect(() => jsUpdateExperiment('foo', 123), throwsA(anything));
+    expect(() => jsUpdateExperiment('foo', 'bar'), throwsA(anything));
+    expect(() => jsUpdateExperiment(false, 'foo'), throwsA(anything));
+  });
+}
+
+void jsUpdateExperiment(dynamic name, dynamic enabled) {
+  js_util.callMethod(
+    html.window,
+    '_flutter_internal_update_experiment',
+    <dynamic>[name, enabled],
+  );
 }
