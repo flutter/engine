@@ -144,6 +144,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     _viewOpaque = YES;
+    if (engine.viewController) {
+      FML_LOG(ERROR) << "Attempting to share a FlutterEngine across multiple "
+      "live FlutterViewControllers.  This is an unsupported flow and will likely "
+      "cause unexpected results and/or crashes.";
+    }
     _engine.reset([engine retain]);
     _engineNeedsLaunch = NO;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
