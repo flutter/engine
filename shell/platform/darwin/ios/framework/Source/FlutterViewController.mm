@@ -146,8 +146,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
     _viewOpaque = YES;
     if (engine.viewController) {
       FML_LOG(ERROR) << "Attempting to share a FlutterEngine across multiple "
-      "live FlutterViewControllers.  This is an unsupported flow and will likely "
-      "cause unexpected results and/or crashes.";
+                        "live FlutterViewControllers.  This is an unsupported flow and will likely "
+                        "cause unexpected results and/or crashes.";
     }
     _engine.reset([engine retain]);
     _engineNeedsLaunch = NO;
