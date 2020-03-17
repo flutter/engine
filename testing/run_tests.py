@@ -335,11 +335,15 @@ def RunFrontEndServerTests(build_dir):
   test_dir = os.path.join(buildroot_dir, 'flutter', 'flutter_frontend_server')
   dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
   for dart_test_file in dart_tests:
+    opts = [
+      dart_test_file,
+      os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
+      os.path.join(build_dir, 'flutter_patched_sdk')]
     RunEngineExecutable(
       build_dir,
       os.path.join('dart-sdk', 'bin', 'dart'),
       None,
-      flags=[dart_test_file],
+      flags=opts,
       cwd=test_dir)
 
 

@@ -209,7 +209,7 @@ class ToStringVisitor extends RecursiveVisitor<void> {
         continue;
       }
       final InstanceConstant constant = expression.constant as InstanceConstant;
-      if (constant.classNode.name == 'keepToString' && constant.classNode.enclosingLibrary.importUri.toString() == 'dart:ui') {
+      if (constant.classNode.name == '_KeepToString' && constant.classNode.enclosingLibrary.importUri.toString() == 'dart:ui') {
         return true;
       }
     }

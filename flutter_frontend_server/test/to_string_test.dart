@@ -2,14 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:flutter_frontend_server/server.dart';
 import 'package:frontend_server/frontend_server.dart' as frontend show ProgramTransformer;
-
 import 'package:kernel/kernel.dart';
 import 'package:mockito/mockito.dart';
+import 'package:path/path.dart' as path;
+
 import 'package:test/test.dart';
 
-void main() async {
+void main(List<String> args) async {
+  if (args.length != 2) {
+    stderr.writeln('The first argument must be the path to the forntend server dill.');
+    stderr.writeln('The second argument must be the path to the flutter_patched_sdk');
+    exit(-1);
+  }
+
   const Set<String> uiAndFlutter = <String>{
     'dart:ui',
     'package:flutter',
@@ -138,7 +147,7 @@ void main() async {
     final MockStatement statement = MockStatement();
     final Library library = Library(Uri.parse('dart:ui'));
     final Name name = Name('toString');
-    final Class annotation = Class(name: 'keepToString')..parent = Library(Uri.parse('dart:ui'));
+    final Class annotation = Class(name: '_KeepToString')..parent = Library(Uri.parse('dart:ui'));
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
@@ -209,6 +218,67 @@ void main() async {
 
     visitor.visitProcedure(procedure);
     _validateReplacement(statement);
+  });
+
+  group('Integration tests',  () {
+    final String dart = Platform.resolvedExecutable;
+    final String frontendServer = args[0];
+    final String sdkRoot = args[1];
+    final String basePath = path.canonicalize(path.join(path.dirname(Platform.script.path), '..'));
+    final String fixtures = path.join(basePath, 'test', 'fixtures');
+    final String mainDart = path.join(fixtures, 'lib', 'main.dart');
+    final String dotPackages = path.join(fixtures, '.packages');
+    final String regularDill = path.join(fixtures, 'toString.dill');
+    final String transformedDill = path.join(fixtures, 'toStringTransformed.dill');
+
+
+    void _checkProcessResult(ProcessResult result) {
+      if (result.exitCode != 0) {
+        stdout.writeln(result.stdout);
+        stderr.writeln(result.stderr);
+      }
+      expect(result.exitCode, 0);
+    }
+
+    test('Without flag', () async {
+      _checkProcessResult(Process.runSync(dart, <String>[
+        frontendServer,
+        '--sdk-root=$sdkRoot',
+        '--target=flutter',
+        '--packages=$dotPackages',
+        '--output-dill=$regularDill',
+        mainDart,
+      ]));
+      final ProcessResult runResult = Process.runSync(dart, <String>[regularDill]);
+      _checkProcessResult(runResult);
+      expect(
+        runResult.stdout.trim(),
+        '{"Paint.toString":"Paint(Color(0xffffffff))",'
+         '"Foo.toString":"I am a Foo",'
+         '"Keep.toString":"I am a Keep"}',
+      );
+    });
+
+    test('With flag', () async {
+      _checkProcessResult(Process.runSync(dart, <String>[
+        frontendServer,
+        '--sdk-root=$sdkRoot',
+        '--target=flutter',
+        '--packages=$dotPackages',
+        '--output-dill=$transformedDill',
+        '--delete-tostring-package-uri', 'dart:ui',
+        '--delete-tostring-package-uri', 'package:flutter_frontend_fixtures',
+        mainDart,
+      ]));
+      final ProcessResult runResult = Process.runSync(dart, <String>[transformedDill]);
+      _checkProcessResult(runResult);
+      expect(
+        runResult.stdout.trim(),
+        '{"Paint.toString":"Instance of \'Paint\'",'
+         '"Foo.toString":"Instance of \'Foo\'",'
+         '"Keep.toString":"I am a Keep"}',
+      );
+    });
   });
 }
 
