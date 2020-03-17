@@ -8,10 +8,6 @@ import 'dart:async';
 import 'dart:io' hide FileSystemEntity;
 
 import 'package:args/args.dart';
-import 'package:kernel/ast.dart';
-import 'package:path/path.dart' as path;
-
-import 'package:vm/incremental_compiler.dart';
 import 'package:frontend_server/frontend_server.dart' as frontend
     show
         FrontendCompiler,
@@ -20,6 +16,9 @@ import 'package:frontend_server/frontend_server.dart' as frontend
         argParser,
         usage,
         ProgramTransformer;
+import 'package:kernel/ast.dart';
+import 'package:path/path.dart' as path;
+import 'package:vm/incremental_compiler.dart';
 
 /// Wrapper around [FrontendCompiler] that adds [widgetCreatorTracker] kernel
 /// transformation to the compilation.
