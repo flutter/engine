@@ -131,24 +131,23 @@ void main() async {
     verifyNever(statement.replaceWith(any));
   });
 
-  test('ToStringVisitor ignores @pragma("flutter_frontend:keep")', () {
+  test('ToStringVisitor ignores @keepToString', () {
     final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
     final MockFunctionNode function = MockFunctionNode();
     final MockStatement statement = MockStatement();
     final Library library = Library(Uri.parse('dart:ui'));
     final Name name = Name('toString');
-    final Class pragmaClass = Class(name: 'pragma')..parent = Library(Uri.parse('dart:core'));
-    final Reference key = Reference()..node = Field(Name('name'));
+    final Class annotation = Class(name: 'keepToString')..parent = Library(Uri.parse('dart:ui'));
 
     when(procedure.function).thenReturn(function);
     when(procedure.name).thenReturn(name);
     when(procedure.annotations).thenReturn(<Expression>[
       ConstantExpression(
         InstanceConstant(
-          Reference()..node = pragmaClass,
+          Reference()..node = annotation,
           <DartType>[],
-          <Reference, Constant>{key: StringConstant('flutter_frontend:keep')},
+          <Reference, Constant>{},
         ),
       ),
     ]);

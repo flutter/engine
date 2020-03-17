@@ -207,18 +207,8 @@ class ToStringVisitor extends RecursiveVisitor<void> {
         continue;
       }
       final InstanceConstant constant = expression.constant as InstanceConstant;
-      if (constant.classNode.name == 'pragma' && constant.classNode.enclosingLibrary.importUri.toString() == 'dart:core') {
-        final Reference key = constant.fieldValues.keys.firstWhere((Reference ref) {
-          return ref.asField?.name?.name == 'name';
-        });
-
-        final Constant pragmaName = constant.fieldValues[key];
-        if (pragmaName is! StringConstant) {
-          continue;
-        }
-        if ((pragmaName as StringConstant).value == 'flutter_frontend:keep') {
-          return true;
-        }
+      if (constant.classNode.name == 'keepToString' && constant.classNode.enclosingLibrary.importUri.toString() == 'dart:ui') {
+        return true;
       }
     }
     return false;
