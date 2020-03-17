@@ -182,6 +182,9 @@ Future<int> starter(
   return completer.future;
 }
 
+// Transformer/visitor for toString
+// If we add any more of these, they really should go into a separate library.
+
 /// A [RecursiveVisitor] that replaces [Object.toString] overrides with
 /// `super.toString()`.
 class ToStringVisitor extends RecursiveVisitor<void> {

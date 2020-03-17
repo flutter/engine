@@ -7,6 +7,8 @@
 // @dart = 2.6
 part of ui;
 
+// TODO(dnfield): Update this if/when we default this to on in the tool,
+// see: https://github.com/flutter/flutter/issues/52759
 /// Annotation used by Flutter's Dart compiler to indicate that an
 /// [Object.toString] override should not be replaced with a supercall.
 ///
@@ -15,7 +17,7 @@ part of ui;
 /// `toString` bodies with `return super.toString()` during compilation. This
 /// significantly reduces release code size, and would make it impossible to
 /// implement a meaningful override of `toString` for release mode without
-/// disabling the feature and losing the size savings. If package uses this
+/// disabling the feature and losing the size savings. If a package uses this
 /// feature and has some unavoidable need to keep the `toString` implementation
 /// for a specific class, applying this annotation will direct the compiler
 /// to leave the method body as-is.
