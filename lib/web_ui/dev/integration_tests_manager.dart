@@ -18,7 +18,8 @@ class IntegrationTestsManager {
   /// It usually changes with each the browser version changes.
   /// A better solution would be installing the browser and the driver at the
   /// same time.
-  // TODO(nurhan):
+  // TODO(nurhan): change the web installers to install driver and the browser
+  // at the same time.
   io.Directory _driverDir;
 
   IntegrationTestsManager(this._browser) {
@@ -26,18 +27,6 @@ class IntegrationTestsManager {
         pathlib.join(environment.webUiRootDir.path, 'drivers', _browser));
   }
 
-  // (DONE) TODO: update the paths on environment.dart.
-  // TODO: Go to integration tests directory and get a list of tests to run.
-
-  // (DONE) TODO: Check the browser version. Give warning if not chrome.
-  // (DONE) TODO: Install the driver
-  // (DONE) TODO: run driver in the background.
-  // (DONE) TODO: Go to the list of integration tests directory and loop for each one.
-  // TODO: Fetch flutter for CIs.
-  // TODO: Run the tests one by one.
-  // TODO: For each run print out success fail. Also print out how to rerun.
-  // TODO: Make sure tests finish when they run
-  // TODO: Make sure the error is visible.
   Future<bool> run() async {
     if (_browser != 'chrome') {
       print('WARNING: integration tests are only suppoted on chrome for now');
@@ -171,23 +160,11 @@ class IntegrationTestsManager {
   /// expected to be a test project which includes a `pubspec.yaml` file
   /// and a `test_driver` directory.
   Future<bool> _runTestsInTheDirectory(io.Directory directory) async {
-    // TODO: Validation step. check if the files the directory has.
-    // (DONE) (1) pubspec yaml.
-    // (DONE) (2) test_driver directory for tests.
-
-    // (DONE) Run pub get.
-    // (DONE) Get the list of tests under driver. .dart which has _test.dart.
-    // (DONE) Print WARNING: for cases where there is a file missing _test.dart
-    // (DONE) Print WARNING: if no tests to run.
-
-    // TODO: Run the tests in debug mode.
-    // TODO: print out a statement where to run the test and the command.
-    // TODO: Print the result.
-    // TODO: return the result as boolean.
     final bool directoryContentValid = _validateTestDirectory(directory);
     if (directoryContentValid) {
-      _runPubGet(directory.path);
-      _runTestsInDirectory(directory);
+      await _runPubGet(directory.path);
+      final bool testResults = await _runTestsInDirectory(directory);
+      return testResults;
     } else {
       return false;
     }
@@ -216,10 +193,9 @@ class IntegrationTestsManager {
     print(
         'INFO: In project ${directory} ${e2eTestsToRun.length} tests to run.');
 
-    int numberOfPassedTests;
-    int numberOfFailedTests;
+    int numberOfPassedTests = 0;
+    int numberOfFailedTests = 0;
     for (String fileName in e2eTestsToRun) {
-      print('test to run: $fileName');
       final bool testResults = await _runTestsInDebugMode(directory, fileName);
       if (testResults) {
         numberOfPassedTests++;
@@ -227,32 +203,29 @@ class IntegrationTestsManager {
         numberOfFailedTests++;
       }
     }
-
     final int numberOfTestsRun = numberOfPassedTests + numberOfFailedTests;
 
-    print('${numberOfTestsRun} tests run ${numberOfPassedTests} passed and'
+    print('${numberOfTestsRun} tests run ${numberOfPassedTests} passed and '
         '${numberOfFailedTests} failed.');
-
     return numberOfFailedTests == 0;
   }
 
   Future<bool> _runTestsInDebugMode(
       io.Directory directory, String testName) async {
-    // TODO(nurhan): Give options to the developer to run tests in another mode.
     final String statementToRun = 'flutter drive '
         '--target=test_driver/${testName} -d web-server --release '
         '--browser-name=$_browser --local-engine=host_debug_unopt';
     print('INFO: To manually run the test use $statementToRun under '
           'directory ${directory.path}');
+    // TODO(nurhan): Give options to the developer to run tests in another mode.
     final int exitCode = await runProcess(
-      //environment.pubExecutable,
       'flutter',
       <String>[
         'drive',
         '--target=test_driver/${testName}',
         '-d',
         'web-server',
-        '--release',
+         '--profile',
         '--browser-name=$_browser',
         '--local-engine=host_debug_unopt',
       ],
