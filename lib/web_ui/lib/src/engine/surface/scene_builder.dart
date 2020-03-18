@@ -97,6 +97,14 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
+    if (_surfaceStack.length == 1) {
+      // Top level transform contains view configuration to scale
+      // scene to devicepixelratio. Use identity instead since web browser
+      // renders using logical device pixels.
+      assert(matrix4[0] == EngineWindow.browserDevicePixelRatio &&
+          matrix4[5] == EngineWindow.browserDevicePixelRatio);
+      matrix4 = Matrix4.identity().storage;
+    }
     return _pushSurface(PersistedTransform(oldLayer, matrix4));
   }
 
