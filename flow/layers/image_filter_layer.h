@@ -26,7 +26,6 @@ class ImageFilterLayer : public MergedContainerLayer {
   static constexpr int kMinimumRendersBeforeCachingFilterLayer = 3;
 
   sk_sp<SkImageFilter> filter_;
-  SkRect child_paint_bounds_;
   int render_count_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageFilterLayer);

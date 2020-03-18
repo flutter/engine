@@ -163,14 +163,13 @@ void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
 MergedContainerLayer::MergedContainerLayer() {
   // Ensure the layer has only one direct child.
   //
-  // This intermediary container helps container layers that want or need
-  // to cache the rendering of their children to do so more easily.
-  //
-  // Any children will be actually added as children of this empty
-  // ContainerLayer.
-  //
-  // @see GetChildContainer()
-  // @see GetCacheableChild()
+  // Any children will actually be added as children of this empty
+  // ContainerLayer which can be accessed via ::GetContainerLayer().
+  // If only one child is ever added to this layer then that child
+  // will become the layer returned from ::GetCacheableChild().
+  // If multiple child layers are added, then this implicit container
+  // child becomes the cacheable child, but at the potential cost of
+  // not being as stable in the raster cache from frame to frame.
   ContainerLayer::Add(std::make_shared<ContainerLayer>());
 }
 
@@ -190,6 +189,7 @@ Layer* MergedContainerLayer::GetCacheableChild() const {
     return child_container->layers()[0].get();
   }
 
+  FML_LOG(INFO) << "Single child layer contains multiple children";
   return child_container;
 }
 

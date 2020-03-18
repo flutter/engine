@@ -16,17 +16,16 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
 
-  child_paint_bounds_ = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_paint_bounds_);
+  SkRect child_bounds = SkRect::MakeEmpty();
+  PrerollChildren(context, matrix, &child_bounds);
   if (filter_) {
-    const SkIRect filter_input_bounds = child_paint_bounds_.roundOut();
+    const SkIRect filter_input_bounds = child_bounds.roundOut();
     SkIRect filter_output_bounds =
         filter_->filterBounds(filter_input_bounds, SkMatrix::I(),
                               SkImageFilter::kForward_MapDirection);
-    set_paint_bounds(SkRect::Make(filter_output_bounds));
-  } else {
-    set_paint_bounds(child_paint_bounds_);
+    child_bounds = SkRect::Make(filter_output_bounds);
   }
+  set_paint_bounds(child_bounds);
 
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
     TryToPrepareRasterCache(context, this, matrix);
@@ -59,16 +58,15 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
     }
   }
 
-  FML_LOG(ERROR) << "Applying filter to child on the fly";
   SkPaint paint;
   paint.setImageFilter(filter_);
 
   // Normally a save_layer is sized to the current layer bounds, but in this
   // case the bounds of the child may not be the same as the filtered version
-  // so we use the child_paint_bounds_ which were snapshotted from the
-  // Preroll on the children before we adjusted them based on the filter.
-  Layer::AutoSaveLayer save_layer =
-      Layer::AutoSaveLayer::Create(context, child_paint_bounds_, &paint);
+  // so we use the bounds of the child container which do not include any
+  // modifications that the filter might apply.
+  Layer::AutoSaveLayer save_layer = Layer::AutoSaveLayer::Create(
+      context, GetChildContainer()->paint_bounds(), &paint);
   PaintChildren(context);
 }
 

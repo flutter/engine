@@ -114,6 +114,7 @@ class MergedContainerLayer : public ContainerLayer {
    */
   Layer* GetCacheableChild() const;
 
+ private:
   FML_DISALLOW_COPY_AND_ASSIGN(MergedContainerLayer);
 };
 
