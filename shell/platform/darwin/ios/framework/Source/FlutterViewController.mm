@@ -145,9 +145,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
   if (self) {
     _viewOpaque = YES;
     if (engine.viewController) {
-      FML_LOG(ERROR) << "Attempting to share a FlutterEngine across multiple "
-                        "live FlutterViewControllers.  This is an unsupported flow and will likely "
-                        "cause unexpected results and/or crashes.";
+      FML_LOG(ERROR) << "The supplied FlutterEngine " << [[engine description] UTF8String] << " "
+                        " is already used with FlutterViewController instance " <<
+                        [[engine.viewController description] UTF8String] <<
+                        ". One instance of the FlutterEngine can only be attached to one "
+                        "FlutterViewController at a time. Set FlutterEngine.viewController "
+                        "to nil before attaching it to another FlutterViewController.";
     }
     _engine.reset([engine retain]);
     _engineNeedsLaunch = NO;
