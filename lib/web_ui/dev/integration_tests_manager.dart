@@ -26,7 +26,7 @@ class IntegrationTestsManager {
       : this._driverDir = io.Directory(
             pathlib.join(environment.webUiRootDir.path, 'drivers', _browser));
 
-  Future<bool> run() async {
+  Future<bool> runTests() async {
     if (_browser != 'chrome') {
       print('WARNING: integration tests are only supported on chrome for now');
       return false;
@@ -45,7 +45,7 @@ class IntegrationTestsManager {
     }
   }
 
-  Future<bool> _cloneWebInstalllers() async {
+  Future<bool> _cloneWebInstallers() async {
     final int exitCode = await runProcess(
       'git',
       <String>[
@@ -65,14 +65,19 @@ class IntegrationTestsManager {
   }
 
   Future<bool> _runPubGet(String workingDirectory) async {
-    // TODO(nurhan): Run flutter pub get from the fetched flutter on CI.
+    final String executable =
+        (isCirrus != null && isCirrus) ? environment.pubExecutable : 'flutter';
+    final List<String> arguments = (isCirrus != null && isCirrus)
+        ? <String>[
+            'get',
+          ]
+        : <String>[
+            'pub',
+            'get',
+          ];
     final int exitCode = await runProcess(
-      //environment.pubExecutable,
-      'flutter',
-      <String>[
-        'pub',
-        'get',
-      ],
+      executable,
+      arguments,
       workingDirectory: workingDirectory,
     );
 
@@ -120,7 +125,7 @@ class IntegrationTestsManager {
 
     _driverDir.createSync(recursive: true);
 
-    bool installWebInstallers = await _cloneWebInstalllers();
+    bool installWebInstallers = await _cloneWebInstallers();
     if (installWebInstallers) {
       bool pubGet = await _runPubGet(pathlib.join(
           _driverDir.path, 'web_installers', 'packages', 'web_drivers'));
@@ -133,7 +138,7 @@ class IntegrationTestsManager {
     return false;
   }
 
-  /// Runs the all the web tests under e2e_tests/web.
+  /// Runs all the web tests under e2e_tests/web.
   Future<bool> _runTests() async {
     // Only list the files under e2e_tests/web.
     final List<io.FileSystemEntity> entities =
@@ -141,14 +146,14 @@ class IntegrationTestsManager {
 
     print('INFO: Listing test files under directory: '
         '${environment.integrationTestsDir.path.toString()}');
-    bool testResults = true;
+    bool allTestsPassed = true;
     for (io.FileSystemEntity e in entities) {
       // The tests should be under this directories.
       if (e is io.Directory) {
-        testResults = testResults && await _runTestsInTheDirectory(e);
+        allTestsPassed = allTestsPassed && await _validateAndRunTests(e);
       }
     }
-    return testResults;
+    return allTestsPassed;
   }
 
   /// Run tests in a single directory under: e2e_tests/web.
@@ -158,22 +163,20 @@ class IntegrationTestsManager {
   /// Validate the directory before running the tests. Each directory is
   /// expected to be a test project which includes a `pubspec.yaml` file
   /// and a `test_driver` directory.
-  Future<bool> _runTestsInTheDirectory(io.Directory directory) async {
-    final bool directoryContentValid = _validateTestDirectory(directory);
-    if (directoryContentValid) {
-      await _runPubGet(directory.path);
-      final bool testResults = await _runTestsInDirectory(directory);
-      return testResults;
-    } else {
-      return false;
-    }
+  Future<bool> _validateAndRunTests(io.Directory directory) async {
+    _validateTestDirectory(directory);
+    await _runPubGet(directory.path);
+    final bool testResults = await _runTestsInDirectory(directory);
+    return testResults;
   }
 
   Future<bool> _runTestsInDirectory(io.Directory directory) async {
     final io.Directory testDirectory =
         io.Directory(pathlib.join(directory.path, 'test_driver'));
-    final List<io.FileSystemEntity> entities =
-        testDirectory.listSync(followLinks: false);
+    final List<io.FileSystemEntity> entities = testDirectory
+        .listSync(followLinks: false)
+        .whereType<io.File>()
+        .toList();
 
     final List<String> e2eTestsToRun = List<String>();
 
@@ -195,7 +198,8 @@ class IntegrationTestsManager {
     int numberOfPassedTests = 0;
     int numberOfFailedTests = 0;
     for (String fileName in e2eTestsToRun) {
-      final bool testResults = await _runTestsInDebugMode(directory, fileName);
+      final bool testResults =
+          await _runTestsInProfileMode(directory, fileName);
       if (testResults) {
         numberOfPassedTests++;
       } else {
@@ -204,18 +208,13 @@ class IntegrationTestsManager {
     }
     final int numberOfTestsRun = numberOfPassedTests + numberOfFailedTests;
 
-    print('${numberOfTestsRun} tests run ${numberOfPassedTests} passed and '
-        '${numberOfFailedTests} failed.');
+    print('INFO: ${numberOfTestsRun} tests run. ${numberOfPassedTests} passed '
+        'and ${numberOfFailedTests} failed.');
     return numberOfFailedTests == 0;
   }
 
-  Future<bool> _runTestsInDebugMode(
+  Future<bool> _runTestsInProfileMode(
       io.Directory directory, String testName) async {
-    final String statementToRun = 'flutter drive '
-        '--target=test_driver/${testName} -d web-server --release '
-        '--browser-name=$_browser --local-engine=host_debug_unopt';
-    print('INFO: To manually run the test use $statementToRun under '
-        'directory ${directory.path}');
     // TODO(nurhan): Give options to the developer to run tests in another mode.
     final int exitCode = await runProcess(
       'flutter',
@@ -232,9 +231,13 @@ class IntegrationTestsManager {
     );
 
     if (exitCode != 0) {
+      final String statementToRun = 'flutter drive '
+          '--target=test_driver/${testName} -d web-server --profile '
+          '--browser-name=$_browser --local-engine=host_debug_unopt';
       io.stderr
-          .writeln('ERROR: Failed to run test. Exited with exit code $exitCode.'
-              ' Statement to run $statementToRun');
+          .writeln('ERROR: Failed to run test. Exited with exit code $exitCode'
+              '. Statement to run $testName locally use the following '
+              'command:\n\n$statementToRun');
       return false;
     } else {
       return true;
@@ -246,7 +249,7 @@ class IntegrationTestsManager {
   ///
   /// Also check the validity of files under `test_driver` directory calling
   /// [_checkE2ETestsValidity] method.
-  bool _validateTestDirectory(io.Directory directory) {
+  void _validateTestDirectory(io.Directory directory) {
     final List<io.FileSystemEntity> entities =
         directory.listSync(followLinks: false);
 
@@ -266,16 +269,15 @@ class IntegrationTestsManager {
       }
     }
     if (!pubSpecFound) {
-      io.stderr
-          .writeln('ERROR: pubspec.yaml file not found in the test project.');
-      return false;
+      throw StateError('ERROR: pubspec.yaml file not found in the test project '
+          'in the directory ${directory.path}.');
     }
     if (testDirectory == null) {
-      io.stderr
-          .writeln('ERROR: test_driver folder not found in the test project.');
-      return false;
+      throw StateError(
+          'ERROR: test_driver folder not found in the test project.'
+          'in the directory ${directory.path}.');
     } else {
-      return _checkE2ETestsValidity(testDirectory);
+      _checkE2ETestsValidity(testDirectory);
     }
   }
 
@@ -286,7 +288,7 @@ class IntegrationTestsManager {
   /// For each e2e test which has name {name}.dart there will be a driver
   /// file which drives it. The driver file should be named:
   /// {name}_test.dart
-  bool _checkE2ETestsValidity(io.Directory testDirectory) {
+  void _checkE2ETestsValidity(io.Directory testDirectory) {
     final List<io.FileSystemEntity> entities =
         testDirectory.listSync(followLinks: false);
 
@@ -299,7 +301,6 @@ class IntegrationTestsManager {
     // not ending with `_test.dart` is an e2e test.
     for (io.File f in entities) {
       final String basename = pathlib.basename(f.path);
-      print('basename: $basename');
       if (basename.contains('_test.dart')) {
         // First remove this from expectedSet if not there add to the foundSet.
         if (expectedDriverFileNames.contains(basename)) {
@@ -309,8 +310,7 @@ class IntegrationTestsManager {
         }
       } else if (basename.contains('.dart')) {
         // Only run on dart files.
-        final String e2efileName =
-            basename.substring(0, basename.indexOf('.dart'));
+        final String e2efileName = pathlib.basenameWithoutExtension(f.path);
         final String expectedDriverName = '${e2efileName}_test.dart';
         numberOfTests++;
         // First remove this from foundSet if not there add to the expectedSet.
@@ -336,9 +336,8 @@ class IntegrationTestsManager {
             'integration tests. Please add ${expectedDriverName}. Check to '
             'README file on more details on how to setup integration tests.');
       }
-      return false;
-    } else {
-      return true;
+      throw StateError('Error in test files. Check the logs for '
+          'further instructions');
     }
   }
 }

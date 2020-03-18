@@ -132,7 +132,7 @@ class TestCommand extends Command<bool> {
   }
 
   Future<bool> runIntegrationTests() async {
-   return IntegrationTestsManager(browser).run();
+   return IntegrationTestsManager(browser).runTests();
   }
 
   Future<bool> runUnitTests() async {
