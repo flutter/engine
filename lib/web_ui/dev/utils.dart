@@ -62,6 +62,25 @@ Future<int> runProcess(
   return exitCode;
 }
 
+/// Runs [executable]. Do not follow the exit code or the output.
+void runProcessInTheBackground(
+  String executable,
+  List<String> arguments, {
+  String workingDirectory,
+  bool mustSucceed: false,
+}) async {
+  arguments.add('&');
+  io.Process.start(
+    executable,
+    arguments,
+    workingDirectory: workingDirectory,
+    // Running the process in a system shell for Windows. Otherwise
+    // the process is not able to get Dart from path.
+    runInShell: io.Platform.isWindows,
+    mode: io.ProcessStartMode.inheritStdio,
+  );
+}
+
 /// Runs [executable] and returns its standard output as a string.
 ///
 /// If the process fails, throws a [ProcessException].
