@@ -4,14 +4,8 @@
 
 @TestOn('vm && linux')
 
-// @dart = 2.6
-import 'dart:io' as io;
-
-import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
-import 'common.dart';
-import 'environment.dart';
 import 'integration_tests_manager.dart';
 
 void main() async {
