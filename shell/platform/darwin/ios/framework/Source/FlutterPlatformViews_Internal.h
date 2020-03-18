@@ -68,6 +68,8 @@ struct FlutterPlatformViewLayer {
   fml::scoped_nsobject<UIView> overlay_view;
   std::unique_ptr<IOSSurface> ios_surface;
   std::unique_ptr<Surface> surface;
+
+  // Whether a frame for this layer was submitted.
   bool did_submit_last_frame;
 
   // The GrContext that is currently used by the overlay surfaces.
@@ -83,7 +85,7 @@ class FlutterPlatformViewLayerPool {
   ~FlutterPlatformViewLayerPool() = default;
 
   // Gets a layer from the pool if available, or allocates a new one.
-  // Finally, it marks the layer as used.
+  // Finally, it marks the layer as used. That is, it increments `available_layer_index_`.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrContext* gr_context,
                                                      std::shared_ptr<IOSContext> ios_context);
 
@@ -94,8 +96,8 @@ class FlutterPlatformViewLayerPool {
   void RecycleLayers();
 
  private:
-  // The index of the entry in the layer_ vector that determines the beginning of the unused layers.
-  // For example, consider the following vector:
+  // The index of the entry in the layers_ vector that determines the beginning of the unused
+  // layers. For example, consider the following vector:
   //  _____
   //  | 0 |
   /// |---|
@@ -107,7 +109,7 @@ class FlutterPlatformViewLayerPool {
   /// This indicates that entries starting from 1 can be reused meanwhile the entry at position 0
   /// cannot be reused.
   size_t available_layer_index_ = 0;
-  std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layer_;
+  std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewLayerPool);
 };
@@ -147,6 +149,9 @@ class FlutterPlatformViewsController {
 
   SkCanvas* CompositeEmbeddedView(int view_id);
 
+  // The rect of the platform view at index view_id. This rect has been translated into the
+  // host view coordinate system. That is, after applying any transformation matrix and scaling each
+  // of the rect's components based on the device's screen scale.
   SkRect GetPlatformViewRect(int view_id);
 
   // Discards all platform views instances and auxiliary resources.
@@ -166,9 +171,11 @@ class FlutterPlatformViewsController {
   // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<FlutterPlatformViewLayerPool> layer_pool_;
 
-  // The platform view's BBoxHierarchy keyed off the view id, which contains any subsequent
+  // The platform view's R-tree keyed off the view id, which contains any subsequent
   // draw operation until the next platform view or the last leaf node in the layer tree.
-  std::map<int64_t, RTree*> platform_views_bbh_;
+  //
+  // The R-trees are deleted by the FlutterPlatformViewsController.reset().
+  std::map<int64_t, sk_sp<RTree>> platform_view_rtrees_;
 
   // The platform view's picture recorder keyed off the view id, which contains any subsequent
   // operation until the next platform view or the end of the last leaf node in the layer tree.

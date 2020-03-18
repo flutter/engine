@@ -24,7 +24,7 @@ namespace flutter {
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer(
     GrContext* gr_context,
     std::shared_ptr<IOSContext> ios_context) {
-  if (available_layer_index_ >= layer_.size()) {
+  if (available_layer_index_ >= layers_.size()) {
     std::shared_ptr<FlutterPlatformViewLayer> layer;
 
     if (!gr_context) {
@@ -51,9 +51,9 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
           std::move(overlay_view), std::move(ios_surface), std::move(surface));
       layer->gr_context = gr_context;
     }
-    layer_.push_back(layer);
+    layers_.push_back(layer);
   }
-  auto layer = layer_[available_layer_index_];
+  auto layer = layers_[available_layer_index_];
   if (gr_context != layer->gr_context) {
     layer->gr_context = gr_context;
     // The overlay already exists, but the GrContext was changed so we need to recreate
@@ -73,8 +73,8 @@ void FlutterPlatformViewLayerPool::RecycleLayers() {
 std::vector<std::shared_ptr<FlutterPlatformViewLayer>>
 FlutterPlatformViewLayerPool::GetUnusedLayers() {
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> results;
-  for (size_t i = available_layer_index_; i < layer_.size(); i++) {
-    results.push_back(layer_[i]);
+  for (size_t i = available_layer_index_; i < layers_.size(); i++) {
+    results.push_back(layers_[i]);
   }
   return results;
 }
@@ -261,9 +261,9 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     std::unique_ptr<EmbeddedViewParams> params) {
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
 
-  auto bbh_factory = RTreeFactory();
-  platform_views_bbh_[view_id] = bbh_factory.getInstance().get();
-  picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_), &bbh_factory);
+  auto rtree_factory = RTreeFactory();
+  platform_view_rtrees_[view_id] = rtree_factory.getInstance();
+  picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_), &rtree_factory);
 
   composition_order_.push_back(view_id);
 
@@ -428,7 +428,7 @@ void FlutterPlatformViewsController::Reset() {
   composition_order_.clear();
   active_composition_order_.clear();
   picture_recorders_.clear();
-  platform_views_bbh_.clear();
+  platform_view_rtrees_.clear();
   current_composition_params_.clear();
   clip_count_.clear();
   views_to_recomposite_.clear();
@@ -451,30 +451,32 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
                                                  std::shared_ptr<IOSContext> ios_context,
                                                  SkCanvas* background_canvas) {
   DisposeViews();
-
   // Clipping the background canvas before drawing the picture recorders requires to
   // save and restore the clip context.
-  SkAutoCanvasRestore save(background_canvas, true);
-
-  bool did_submit = true;
-
+  SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
 
-  size_t num_platform_views = composition_order_.size();
+  auto did_submit = true;
+  auto num_platform_views = composition_order_.size();
+
   for (size_t i = 0; i < num_platform_views; i++) {
-    auto platform_view_id = composition_order_[i];
-    auto bbh = platform_views_bbh_[platform_view_id];
+    int64_t platform_view_id = composition_order_[i];
+    sk_sp<RTree> rtree = platform_view_rtrees_[platform_view_id];
     sk_sp<SkPicture> picture = picture_recorders_[platform_view_id]->finishRecordingAsPicture();
 
     // Check if the current picture contains overlays that intersect with the
     // current platform view or any of the previous platform views.
     for (size_t j = i + 1; j > 0; j--) {
-      auto current_platform_view_id = composition_order_[j - 1];
-      auto platform_view_rect = GetPlatformViewRect(current_platform_view_id);
-      auto intersection_rects = bbh->searchNonOverlappingDrawnRects(platform_view_rect);
+      int64_t current_platform_view_id = composition_order_[j - 1];
+      SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
+      std::list<SkRect> intersection_rects =
+          rtree->searchNonOverlappingDrawnRects(platform_view_rect);
       auto allocation_size = intersection_rects.size();
-      auto overlay_count = platform_view_layers[current_platform_view_id].size();
+
+      // For testing purposes, the overlay id is used to find the overlay view.
+      // This is the index of the layer for the current platform view.
+      auto overlay_id = platform_view_layers[current_platform_view_id].size();
 
       // If the max number of allocations per platform view is exceeded,
       // then join all the rects into a single one.
@@ -483,7 +485,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
       // https://github.com/flutter/flutter/issues/52510
       if (allocation_size > kMaxLayerAllocations) {
         SkRect joined_rect;
-        for (SkRect rect : intersection_rects) {
+        for (const SkRect& rect : intersection_rects) {
           joined_rect.join(rect);
         }
         // Replace the rects in the intersection rects list for a single rect that is
@@ -491,7 +493,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
         intersection_rects.clear();
         intersection_rects.push_back(joined_rect);
       }
-      for (SkRect joined_rect : intersection_rects) {
+      for (SkRect& joined_rect : intersection_rects) {
         // Get the intersection rect between the current rect
         // and the platform view rect.
         joined_rect.intersect(platform_view_rect);
@@ -504,11 +506,11 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
                               picture,                   //
                               joined_rect,               //
                               current_platform_view_id,  //
-                              overlay_count              //
+                              overlay_id                 //
         );
         did_submit &= layer->did_submit_last_frame;
         platform_view_layers[current_platform_view_id].push_back(layer);
-        overlay_count++;
+        overlay_id++;
       }
     }
     background_canvas->drawPicture(picture);
@@ -527,19 +529,19 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
 }
 
 void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
-  auto flutter_view = flutter_view_.get();
+  UIView* flutter_view = flutter_view_.get();
   auto zIndex = 0;
   for (size_t i = 0; i < composition_order_.size(); i++) {
-    auto platform_view_id = composition_order_[i];
-    auto layers = layer_map[platform_view_id];
-    auto platform_view_root = root_views_[platform_view_id].get();
+    int64_t platform_view_id = composition_order_[i];
+    std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
+    UIView* platform_view_root = root_views_[platform_view_id].get();
 
     if (platform_view_root.superview != flutter_view) {
       [flutter_view addSubview:platform_view_root];
     } else {
       platform_view_root.layer.zPosition = zIndex++;
     }
-    for (auto layer : layers) {
+    for (std::shared_ptr<FlutterPlatformViewLayer> layer : layers) {
       if ([layer->overlay_view superview] != flutter_view) {
         [flutter_view addSubview:layer->overlay_view];
       } else {
