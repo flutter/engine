@@ -120,6 +120,10 @@ vars = {
   # So by default we will not download prebuilts. This varible is needed in
   # the flutter engine to ensure that Dart gn has access to it as well.
   "checkout_llvm": False,
+
+  # Download and unpack the emscripten SDK, which is used for building
+  # CanvasKit.
+  'download_emsdk': True,
 }
 
 gclient_gn_args_file = 'src/third_party/dart/build/config/gclient_args.gni'
@@ -428,6 +432,9 @@ deps = {
   'src/third_party/pkg/when':
    Var('dart_git') + '/when.git' + '@' + '0.2.0',
 
+  'src/third_party/emsdk':
+  Var('github_git') + '/emscripten-core/emsdk.git' + '@' + '1bd7d547598f3fc74699c172f6c9c59a1e8484f1',
+
    'src/third_party/android_tools/ndk': {
      'packages': [
        {
@@ -625,5 +632,16 @@ hooks = [
       '-s',
       'src/third_party/dart/third_party/7zip.tar.gz.sha1',
     ],
+  },
+  {
+    'name': 'emsdk',
+    'pattern': '.',
+    'condition': 'download_emsdk',
+    'action': [
+      'python',
+      'src/third_party/emsdk/emsdk.py',
+      'install',
+      'latest',
+    ]
   },
 ]
