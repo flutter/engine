@@ -18,9 +18,6 @@ import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
 import android.os.LocaleList;
-import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
-import android.support.annotation.UiThread;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -36,6 +33,9 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.UiThread;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
@@ -60,7 +60,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** An Android view containing a Flutter app. */
+/**
+ * Deprecated Android view containing a Flutter app.
+ *
+ * <p>Deprecation: {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
+ * this class. See https://flutter.dev/go/android-project-migration for more migration details.
+ */
 public class FlutterView extends SurfaceView implements BinaryMessenger, TextureRegistry {
   /**
    * Interface for those objects that maintain and expose a reference to a {@code FlutterView} (such
