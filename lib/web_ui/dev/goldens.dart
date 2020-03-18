@@ -186,7 +186,7 @@ class ImageDiff {
 // Returns text explaining pixel difference rate.
 String getPrintableDiffFilesInfo(double diffRate, double maxRate) =>
   '(${((diffRate) * 100).toStringAsFixed(4)}% of pixels were different. '
-  'Maximum allowed rate is: ${((maxRate * 100) - 1).toStringAsFixed(4)}%).';
+  'Maximum allowed rate is: ${(maxRate * 100).toStringAsFixed(4)}%).';
 
 /// Fetches golden files from github.com/flutter/goldens, cloning the repository if necessary.
 ///
