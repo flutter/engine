@@ -52,7 +52,7 @@ felt test --integration-tests-only
 To run tests on Firefox (this will work only on a Linux device):
 
 ```
-felt test  --browser=firefox
+felt test --browser=firefox
 ```
 
 For Chrome and Firefox, the tests run on a version locked on the [browser_lock.yaml](https://github.com/flutter/engine/blob/master/lib/web_ui/dev/browser_lock.yaml). In order to use another version, add the version argument:

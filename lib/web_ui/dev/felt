@@ -56,9 +56,9 @@ install_deps() {
 KERNEL_NAME=`uname`
 if [[ $KERNEL_NAME == *"Darwin"* ]]
 then
-     echo "Running on MacOS. Increase the user limits"
-    #  ulimit -n 50000
-    #  ulimit -u 4096
+  echo "Running on MacOS. Increase the user limits"
+  ulimit -n 50000
+  ulimit -u 4096
 fi
 
 if [[ "$FELT_USE_SNAPSHOT" == "false" || "$FELT_USE_SNAPSHOT" == "0" ]]; then
@@ -68,7 +68,6 @@ if [[ "$FELT_USE_SNAPSHOT" == "false" || "$FELT_USE_SNAPSHOT" == "0" ]]; then
   rm -f "$SNAPSHOT_PATH"
   rm -f "$STAMP_PATH"
   install_deps
-  echo "starting felt"
   $DART_SDK_DIR/bin/dart "$DEV_DIR/felt.dart" $@
 else
   # Create a new snapshot if any of the following is true:

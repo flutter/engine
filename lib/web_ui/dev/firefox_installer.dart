@@ -189,7 +189,6 @@ class FirefoxInstaller {
 
     versionDir.createSync(recursive: true);
     final String url = PlatformBinding.instance.getFirefoxDownloadUrl(version);
-    print('url to download: $url');
     final StreamedResponse download = await client.send(Request(
       'GET',
       Uri.parse(url),

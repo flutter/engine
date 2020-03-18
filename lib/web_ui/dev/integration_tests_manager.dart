@@ -20,16 +20,15 @@ class IntegrationTestsManager {
   /// same time.
   // TODO(nurhan): change the web installers to install driver and the browser
   // at the same time.
-  io.Directory _driverDir;
+  final io.Directory _driverDir;
 
-  IntegrationTestsManager(this._browser) {
-    _driverDir = io.Directory(
-        pathlib.join(environment.webUiRootDir.path, 'drivers', _browser));
-  }
+  IntegrationTestsManager(this._browser)
+      : this._driverDir = io.Directory(
+            pathlib.join(environment.webUiRootDir.path, 'drivers', _browser));
 
   Future<bool> run() async {
     if (_browser != 'chrome') {
-      print('WARNING: integration tests are only suppoted on chrome for now');
+      print('WARNING: integration tests are only supported on chrome for now');
       return false;
     } else {
       bool driverReady = await prepareDriver();
@@ -216,7 +215,7 @@ class IntegrationTestsManager {
         '--target=test_driver/${testName} -d web-server --release '
         '--browser-name=$_browser --local-engine=host_debug_unopt';
     print('INFO: To manually run the test use $statementToRun under '
-          'directory ${directory.path}');
+        'directory ${directory.path}');
     // TODO(nurhan): Give options to the developer to run tests in another mode.
     final int exitCode = await runProcess(
       'flutter',
@@ -225,7 +224,7 @@ class IntegrationTestsManager {
         '--target=test_driver/${testName}',
         '-d',
         'web-server',
-         '--profile',
+        '--profile',
         '--browser-name=$_browser',
         '--local-engine=host_debug_unopt',
       ],
