@@ -224,7 +224,7 @@ def to_gn_args(args):
       gn_args['shell_enable_metal'] = True
       # Bitcode enabled builds using the current version of the toolchain leak
       # C++ symbols decorated with the availability attribute. Disable these
-      # attributess in release modes till the toolchain is updated.
+      # attributes in release modes till the toolchain is updated.
       gn_args['skia_enable_api_available_macro'] = args.runtime_mode != "release"
 
     if args.enable_vulkan:
