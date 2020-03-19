@@ -108,6 +108,8 @@ def RunCCTests(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'client_wrapper_glfw_unittests', filter, shuffle_flags)
 
+  RunEngineExecutable(build_dir, 'common_cpp_core_unittests', filter, shuffle_flags)
+
   RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter, shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36294
@@ -290,10 +292,10 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   android_out_dir = os.path.join(out_dir, android_variant)
   EnsureJavaTestsAreBuilt(android_out_dir)
 
-  robolectric_dir = os.path.join(buildroot_dir, 'third_party', 'robolectric', 'lib')
+  embedding_deps_dir = os.path.join(buildroot_dir, 'third_party', 'android_embedding_dependencies', 'lib')
   classpath = map(str, [
     os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-29', 'android.jar'),
-    os.path.join(robolectric_dir, '*'), # Wildcard for all jars in the directory
+    os.path.join(embedding_deps_dir, '*'), # Wildcard for all jars in the directory
     os.path.join(android_out_dir, 'flutter.jar'),
     os.path.join(android_out_dir, 'robolectric_tests.jar')
   ])
@@ -302,7 +304,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   command = [
     'java',
     '-Drobolectric.offline=true',
-    '-Drobolectric.dependency.dir=' + robolectric_dir,
+    '-Drobolectric.dependency.dir=' + embedding_deps_dir,
     '-classpath', ':'.join(classpath),
     '-Drobolectric.logging=stdout',
     'org.junit.runner.JUnitCore',
@@ -329,6 +331,23 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
       print("Testing dart file %s" % dart_test_file)
       RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, True)
       RunDartTest(build_dir, dart_test_file, verbose_dart_snapshot, False)
+
+
+def RunFrontEndServerTests(build_dir):
+  test_dir = os.path.join(buildroot_dir, 'flutter', 'flutter_frontend_server')
+  dart_tests = glob.glob('%s/test/*_test.dart' % test_dir)
+  for dart_test_file in dart_tests:
+    opts = [
+      dart_test_file,
+      os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
+      os.path.join(build_dir, 'flutter_patched_sdk')]
+    RunEngineExecutable(
+      build_dir,
+      os.path.join('dart-sdk', 'bin', 'dart'),
+      None,
+      flags=opts,
+      cwd=test_dir)
+
 
 def RunConstFinderTests(build_dir):
   test_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'const_finder', 'test')
@@ -376,6 +395,7 @@ def main():
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
     RunConstFinderTests(build_dir)
+    RunFrontEndServerTests(build_dir)
 
   if 'java' in types:
     assert not IsWindows(), "Android engine files can't be compiled on Windows."

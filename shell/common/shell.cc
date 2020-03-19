@@ -180,6 +180,16 @@ static void RecordStartupTimestamp() {
   }
 }
 
+static void Tokenize(const std::string& input,
+                     std::vector<std::string>* results,
+                     char delimiter) {
+  std::istringstream ss(input);
+  std::string token;
+  while (std::getline(ss, token, delimiter)) {
+    results->push_back(token);
+  }
+}
+
 // Though there can be multiple shells, some settings apply to all components in
 // the process. These have to be setup before the shell or any of its
 // sub-components can be initialized. In a perfect world, this would be empty.
@@ -203,6 +213,12 @@ static void PerformInitializationTasks(const Settings& settings) {
 
     if (settings.trace_skia) {
       InitSkiaEventTracer(settings.trace_skia);
+    }
+
+    if (!settings.trace_whitelist.empty()) {
+      std::vector<std::string> prefixes;
+      Tokenize(settings.trace_whitelist, &prefixes, ',');
+      fml::tracing::TraceSetWhitelist(prefixes);
     }
 
     if (!settings.skia_deterministic_rendering_on_cpu) {
@@ -1251,16 +1267,6 @@ bool Shell::OnServiceProtocolRunInView(
     return false;
   }
 
-  // TODO(chinmaygarde): In case of hot-reload from .dill files, the packages
-  // file is ignored. Currently, the tool is passing a junk packages file to
-  // pass this check. Update the service protocol interface and remove this
-  // workaround.
-  if (params.count("packagesFile") == 0) {
-    ServiceProtocolParameterError(response,
-                                  "'packagesFile' parameter is missing.");
-    return false;
-  }
-
   if (params.count("assetDirectory") == 0) {
     ServiceProtocolParameterError(response,
                                   "'assetDirectory' parameter is missing.");
@@ -1269,8 +1275,6 @@ bool Shell::OnServiceProtocolRunInView(
 
   std::string main_script_path =
       fml::paths::FromURI(params.at("mainScript").data());
-  std::string packages_path =
-      fml::paths::FromURI(params.at("packagesFile").data());
   std::string asset_directory_path =
       fml::paths::FromURI(params.at("assetDirectory").data());
 
