@@ -28,12 +28,10 @@ class EngineWindow extends ui.Window {
 
   /// Overrides the default device pixel ratio.
   ///
-  /// This is useful in tests to emulate screens of different dimensions.
-  void debugOverrideDevicePixelRatio(double value) {
-    assert(() {
-      _debugDevicePixelRatio = value;
-      return true;
-    }());
+  /// This is useful in tests to emulate screens of different dimensions
+  /// including integration tests.
+  void overrideDevicePixelRatio(double value) {
+    _debugDevicePixelRatio = value;
   }
 
   double _debugDevicePixelRatio;
@@ -174,6 +172,9 @@ class EngineWindow extends ui.Window {
         textEditing.channel.handleTextInput(data);
         return;
 
+      case 'flutter/web_test_e2e':
+        _handleWebTestEnd2EndMessage(data);
+        return;
       case 'flutter/platform_views':
         if (experimentalUseSkia) {
           rasterizer.viewEmbedder.handlePlatformViewCall(data, callback);
@@ -305,6 +306,19 @@ class EngineWindow extends ui.Window {
 
   @visibleForTesting
   Rasterizer rasterizer = experimentalUseSkia ? Rasterizer(Surface()) : null;
+}
+
+void _handleWebTestEnd2EndMessage(ByteData data) {
+  const MethodCodec codec = JSONMethodCodec();
+  final MethodCall decoded = codec.decodeMethodCall(data);
+  final Map<String, dynamic> message = decoded.arguments;
+  double ratio = double.parse(decoded.arguments);
+  switch(decoded.method) {
+    case 'setDevicePixelRatio':
+      window.overrideDevicePixelRatio(ratio);
+      window.onMetricsChanged();
+      break;
+  }
 }
 
 /// The window singleton.
