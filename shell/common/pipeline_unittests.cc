@@ -89,7 +89,7 @@ TEST(PipelineTest, PushingMultiProcessesInOrder) {
   ASSERT_EQ(consume_result_2, PipelineConsumeResult::Done);
 }
 
-TEST(PipelineTest, ProduceIfEmptyWhenQueueIsNotEmptyDoesNotConsume) {
+TEST(PipelineTest, ProduceIfEmptyDoesNotConsumeWhenQueueIsNotEmpty) {
   const int depth = 2;
   fml::RefPtr<IntPipeline> pipeline = fml::MakeRefCounted<IntPipeline>(depth);
 

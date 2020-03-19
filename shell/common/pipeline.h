@@ -113,6 +113,8 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
 
   // Create a `ProducerContinuation` that will only push the task if the queue
   // is empty.
+  // Prefer using |Produce|. ProducerContinuation returned by this method
+  // doesn't guarantee that the frame will be rendered.
   ProducerContinuation ProduceIfEmpty() {
     if (!empty_.TryWait()) {
       return {};
@@ -189,6 +191,8 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     {
       std::scoped_lock lock(queue_mutex_);
       if (!queue_.empty()) {
+        // Bail if the queue is not empty, opens up spaces to produce other
+        // frames.
         empty_.Signal();
         return;
       }
