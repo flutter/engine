@@ -10,6 +10,9 @@ import 'browser.dart';
 import 'safari_installation.dart';
 import 'common.dart';
 
+
+
+
 /// A class for running an instance of Safari.
 ///
 /// Most of the communication with the browser is expected to happen via HTTP,
