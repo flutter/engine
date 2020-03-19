@@ -31,9 +31,6 @@ enum TestTypesRequested {
 
   /// For running both unit and integration tests.
   all,
-
-  /// Run no tests.
-  none,
 }
 
 class TestCommand extends Command<bool> {
@@ -83,9 +80,9 @@ class TestCommand extends Command<bool> {
   @override
   final String description = 'Run tests.';
 
-  TestTypesRequested testTypesRequested = TestTypesRequested.none;
+  TestTypesRequested testTypesRequested = null;
 
-  /// Check the flags to see what type of integration tests are requested.
+  /// Check the flags to see what type of tests are requested.
   TestTypesRequested findTestType() {
     if (argResults['unit-tests-only'] && argResults['integration-tests-only']) {
       throw ArgumentError('Conflicting arguments: unit-tests-only and '
@@ -94,11 +91,9 @@ class TestCommand extends Command<bool> {
       print('Running the unit tests only');
       return TestTypesRequested.unit;
     } else if (argResults['integration-tests-only']) {
-      print('Running the integration tests only. Note that they are only '
-          'available for Chrome Desktop.');
       if (!isChrome) {
         throw UnimplementedError(
-            'Integration tests are only awailable on Chrome Desktop for now');
+            'Integration tests are only available on Chrome Desktop for now');
       }
       return TestTypesRequested.integration;
     } else {
@@ -122,17 +117,17 @@ class TestCommand extends Command<bool> {
       case TestTypesRequested.all:
         bool integrationTestResult = await runIntegrationTests();
         bool unitTestResult = await runUnitTests();
-        print('Tests run. Integration tests passed: $integrationTestResult '
-            'unit tests passed: $unitTestResult');
+        if (integrationTestResult != unitTestResult) {
+          print('Tests run. Integration tests passed: $integrationTestResult '
+              'unit tests passed: $unitTestResult');
+        }
         return integrationTestResult && unitTestResult;
-      case TestTypesRequested.none:
-        throw ArgumentError('One test type should be chosed to run felt test.');
     }
     return false;
   }
 
   Future<bool> runIntegrationTests() async {
-   return IntegrationTestsManager(browser).runTests();
+    return IntegrationTestsManager(browser).runTests();
   }
 
   Future<bool> runUnitTests() async {

@@ -107,7 +107,7 @@ class IntegrationTestsManager {
           'ERROR: Failed to run driver. Exited with exit code $exitCode');
       return false;
     } else {
-      runProcessInTheBackground(
+      startDetachedProcess(
         './chromedriver/chromedriver',
         ['--port=4444'],
         workingDirectory: pathlib.join(
@@ -303,9 +303,7 @@ class IntegrationTestsManager {
       final String basename = pathlib.basename(f.path);
       if (basename.contains('_test.dart')) {
         // First remove this from expectedSet if not there add to the foundSet.
-        if (expectedDriverFileNames.contains(basename)) {
-          expectedDriverFileNames.remove(basename);
-        } else {
+        if (!expectedDriverFileNames.remove(basename)) {
           foundDriverFileNames.add(basename);
         }
       } else if (basename.contains('.dart')) {
@@ -314,9 +312,7 @@ class IntegrationTestsManager {
         final String expectedDriverName = '${e2efileName}_test.dart';
         numberOfTests++;
         // First remove this from foundSet if not there add to the expectedSet.
-        if (foundDriverFileNames.contains(expectedDriverName)) {
-          foundDriverFileNames.remove(expectedDriverName);
-        } else {
+        if(!foundDriverFileNames.remove(expectedDriverName)) {
           expectedDriverFileNames.add(expectedDriverName);
         }
       }

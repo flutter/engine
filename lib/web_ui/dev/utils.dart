@@ -63,13 +63,12 @@ Future<int> runProcess(
 }
 
 /// Runs [executable]. Do not follow the exit code or the output.
-void runProcessInTheBackground(
+void startDetachedProcess(
   String executable,
   List<String> arguments, {
   String workingDirectory,
   bool mustSucceed: false,
 }) async {
-  arguments.add('&');
   io.Process.start(
     executable,
     arguments,
@@ -77,7 +76,7 @@ void runProcessInTheBackground(
     // Running the process in a system shell for Windows. Otherwise
     // the process is not able to get Dart from path.
     runInShell: io.Platform.isWindows,
-    mode: io.ProcessStartMode.inheritStdio,
+    mode: io.ProcessStartMode.detached,
   );
 }
 
