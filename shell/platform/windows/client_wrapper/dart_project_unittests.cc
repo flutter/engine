@@ -14,17 +14,18 @@ class DartProjectTest : public ::testing::Test {
  protected:
   // Wrapper for accessing private icu_data_path.
   std::wstring GetProjectIcuDataPath(const DartProject& project) {
-      return project.icu_data_path();
+    return project.icu_data_path();
   }
 
   // Wrapper for accessing private assets_path.
   std::wstring GetProjectAssetsPath(const DartProject& project) {
-      return project.assets_path();
+    return project.assets_path();
   }
 
   // Wrapper for accessing private engine_switches.
-  std::vector<std::string> GetProjectEngineSwitches(const DartProject& project) {
-      return project.engine_switches();
+  std::vector<std::string> GetProjectEngineSwitches(
+      const DartProject& project) {
+    return project.engine_switches();
   }
 };
 
