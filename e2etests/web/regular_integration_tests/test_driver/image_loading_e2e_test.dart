@@ -11,7 +11,6 @@ Future<void> main() async {
 
   final String dataRequest =
       await driver.requestData(null, timeout: const Duration(seconds: 1));
-  print('result $dataRequest');
   await driver.close();
 
   exit(dataRequest == 'pass' ? 0 : 1);
