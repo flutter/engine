@@ -99,8 +99,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     }
     if (_surfaceStack.length == 1) {
       // Top level transform contains view configuration to scale
-      // scene to devicepixelratio. Use identity instead since web browser
-      // renders using logical device pixels.
+      // scene to devicepixelratio. Use identity instead since CSS uses
+      // logical device pixels.
       assert(matrix4[0] == EngineWindow.browserDevicePixelRatio &&
           matrix4[5] == EngineWindow.browserDevicePixelRatio);
       matrix4 = Matrix4.identity().storage;
