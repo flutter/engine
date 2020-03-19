@@ -412,10 +412,12 @@ class Rasterizer final : public SnapshotDelegate {
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   // This is the last successfully rasterized layer tree.
   std::unique_ptr<flutter::LayerTree> last_layer_tree_;
+  fml::TimePoint last_render_finish_;
   // Set when we need attempt to rasterize the layer tree again. This layer_tree
   // has not successfully rasterized. This can happen due to the change in the
   // thread configuration. This will be inserted to the front of the pipeline.
   std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
+  fml::TimePoint resubmitted_time_target_;
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
@@ -432,6 +434,8 @@ class Rasterizer final : public SnapshotDelegate {
   sk_sp<SkImage> DoMakeRasterSnapshot(
       SkISize size,
       std::function<void(SkCanvas*)> draw_callback);
+
+  fml::TimePoint DetermineRasterizationTime(LayerTree& layer_tree);
 
   RasterStatus DoDraw(std::unique_ptr<flutter::LayerTree> layer_tree);
 

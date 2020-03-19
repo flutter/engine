@@ -143,6 +143,9 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
 
     {
       std::scoped_lock lock(queue_mutex_);
+      if (queue_.size() == 0) {
+        return PipelineConsumeResult::NoneAvailable;
+      }
       std::tie(resource, trace_id) = std::move(queue_.front());
       queue_.pop_front();
       items_count = queue_.size();
@@ -174,6 +177,10 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   void ProducerCommit(ResourcePtr resource, size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
+      if (queue_.size() > 0) {
+        FML_LOG(INFO) << "queue was already stocked";
+        queue_.clear();
+      }
       queue_.emplace_back(std::move(resource), trace_id);
     }
 
@@ -184,9 +191,13 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   void ProducerCommitFront(ResourcePtr resource, size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
-      queue_.emplace_front(std::move(resource), trace_id);
-      while (queue_.size() > depth_) {
-        queue_.pop_back();
+      if (queue_.size() > 0) {
+        FML_LOG(INFO) << "ignoring CommitFront in favor of existing queue entry";
+      } else {
+        queue_.emplace_front(std::move(resource), trace_id);
+        while (queue_.size() > depth_) {
+          queue_.pop_back();
+        }
       }
     }
 
