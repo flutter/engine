@@ -269,6 +269,7 @@ FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries.json
 FILE: ../../../flutter/lib/snapshot/snapshot.h
+FILE: ../../../flutter/lib/ui/annotations.dart
 FILE: ../../../flutter/lib/ui/channel_buffers.dart
 FILE: ../../../flutter/lib/ui/compositing.dart
 FILE: ../../../flutter/lib/ui/compositing/scene.cc
@@ -494,6 +495,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/validators.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/window.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/ui/annotations.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/channel_buffers.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/compositing.dart
@@ -796,6 +798,9 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_message
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_method_codec_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.h
+FILE: ../../../flutter/shell/platform/common/cpp/path_utils.cc
+FILE: ../../../flutter/shell/platform/common/cpp/path_utils.h
+FILE: ../../../flutter/shell/platform/common/cpp/path_utils_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_export.h
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_messenger.h
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_plugin_registrar.h
