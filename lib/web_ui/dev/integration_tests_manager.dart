@@ -160,8 +160,6 @@ class IntegrationTestsManager {
     final List<io.FileSystemEntity> entities =
         environment.integrationTestsDir.listSync(followLinks: false);
 
-    print('INFO: Listing test files under directory: '
-        '${environment.integrationTestsDir.path.toString()}');
     bool allTestsPassed = true;
     for (io.FileSystemEntity e in entities) {
       // The tests should be under this directories.
@@ -343,7 +341,8 @@ class IntegrationTestsManager {
     }
 
     if (numberOfTests == 0) {
-      print('WARNING: No tests to run in this directory.');
+      throw StateError(
+          'WARNING: No tests to run in this directory ${testDirectory.path}');
     }
 
     // TODO(nurhan): In order to reduce the work required from team members,
