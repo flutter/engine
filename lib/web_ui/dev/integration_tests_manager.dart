@@ -64,9 +64,7 @@ class IntegrationTestsManager {
   }
 
   Future<bool> _runPubGet(String workingDirectory) async {
-    final String executable = isCirrus
-        ? environment.pubExecutable
-        : 'flutter';
+    final String executable = isCirrus ? environment.pubExecutable : 'flutter';
     final List<String> arguments = isCirrus
         ? <String>[
             'get',
@@ -289,8 +287,16 @@ class IntegrationTestsManager {
   /// file which drives it. The driver file should be named:
   /// {name}_test.dart
   void _checkE2ETestsValidity(io.Directory testDirectory) {
-    final List<io.FileSystemEntity> entities =
-        testDirectory.listSync(followLinks: false);
+    final List<io.Directory> directories =
+        testDirectory.listSync(followLinks: false).whereType<io.Directory>();
+
+    if (directories.length > 0) {
+      throw StateError('${testDirectory.path} directory should not containd '
+          'any sub-sriectories');
+    }
+
+    final List<io.File> entities =
+        testDirectory.listSync(followLinks: false).whereType<io.File>();
 
     final Set<String> expectedDriverFileNames = Set<String>();
     final Set<String> foundDriverFileNames = Set<String>();
