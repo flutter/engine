@@ -41,10 +41,6 @@ class IntegrationTestsManager {
       return false;
     } else {
       await prepareDriver();
-      // TODO(nurhan): provide a flag for running as if on CI. Also use this
-      // flag from LUCI.
-      // TODO(nurhan): if we are running on cirrus. fetch Flutter, we will use
-      // flutter pub get in the next steps.
       return await _runTests();
     }
   }

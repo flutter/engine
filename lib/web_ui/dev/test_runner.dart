@@ -127,6 +127,11 @@ class TestCommand extends Command<bool> {
   }
 
   Future<bool> runIntegrationTests() async {
+    // TODO(nurhan): https://github.com/flutter/flutter/issues/52983
+    if (io.Platform.environment['LUCI_CONTEXT'] != null || isCirrus) {
+      return true;
+    }
+
     return IntegrationTestsManager(browser).runTests();
   }
 
