@@ -9,6 +9,7 @@ import 'dart:io' as io;
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
+import 'common.dart';
 import 'environment.dart';
 
 class FilePath {
@@ -63,21 +64,22 @@ Future<int> runProcess(
 }
 
 /// Runs [executable]. Do not follow the exit code or the output.
-void startDetachedProcess(
+void startProcess(
   String executable,
   List<String> arguments, {
   String workingDirectory,
   bool mustSucceed: false,
 }) async {
-  io.Process.start(
+  final io.Process process = await io.Process.start(
     executable,
     arguments,
     workingDirectory: workingDirectory,
     // Running the process in a system shell for Windows. Otherwise
     // the process is not able to get Dart from path.
     runInShell: io.Platform.isWindows,
-    mode: io.ProcessStartMode.detached,
+    mode: io.ProcessStartMode.inheritStdio,
   );
+  processesToCleanUp.add(process);
 }
 
 /// Runs [executable] and returns its standard output as a string.

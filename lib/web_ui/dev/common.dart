@@ -243,3 +243,8 @@ class DevNull implements StringSink {
 }
 
 bool get isCirrus => io.Platform.environment['CIRRUS_CI'] == 'true';
+
+/// There might be proccessed started during the tests.
+///
+/// Use this list to store those Processes, for cleaning up before shutdown.
+final List<io.Process> processesToCleanUp = List<io.Process>();

@@ -34,9 +34,8 @@ class IntegrationTestsManager {
       bool driverReady = await prepareDriver();
       // TODO(nurhan): provide a flag for running as if on CI. Also use this
       // flag from LUCI.
-      if (isCirrus != null && isCirrus) {
-        // TODO(nurhan): fetch Flutter, we will use flutter pub get in the next steps.
-      }
+      // TODO(nurhan): if we are running on cirrus. fetch Flutter, we will use
+      // flutter pub get in the next steps.
       if (driverReady) {
         return await _runTests();
       } else {
@@ -65,9 +64,10 @@ class IntegrationTestsManager {
   }
 
   Future<bool> _runPubGet(String workingDirectory) async {
-    final String executable =
-        (isCirrus != null && isCirrus) ? environment.pubExecutable : 'flutter';
-    final List<String> arguments = (isCirrus != null && isCirrus)
+    final String executable = isCirrus
+        ? environment.pubExecutable
+        : 'flutter';
+    final List<String> arguments = isCirrus
         ? <String>[
             'get',
           ]
@@ -107,7 +107,7 @@ class IntegrationTestsManager {
           'ERROR: Failed to run driver. Exited with exit code $exitCode');
       return false;
     } else {
-      startDetachedProcess(
+      startProcess(
         './chromedriver/chromedriver',
         ['--port=4444'],
         workingDirectory: pathlib.join(
@@ -312,7 +312,7 @@ class IntegrationTestsManager {
         final String expectedDriverName = '${e2efileName}_test.dart';
         numberOfTests++;
         // First remove this from foundSet if not there add to the expectedSet.
-        if(!foundDriverFileNames.remove(expectedDriverName)) {
+        if (!foundDriverFileNames.remove(expectedDriverName)) {
           expectedDriverFileNames.add(expectedDriverName);
         }
       }
