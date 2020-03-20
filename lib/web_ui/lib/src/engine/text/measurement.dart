@@ -199,7 +199,7 @@ abstract class TextMeasurementService {
     // Skip using canvas measurements until the iframe becomes visible.
     // see: https://github.com/flutter/flutter/issues/36341
     if (!window.physicalSize.isEmpty &&
-        webExperiments.useCanvasText &&
+        WebExperiments.instance.useCanvasText &&
         _canUseCanvasMeasurement(paragraph)) {
       return canvasInstance;
     }

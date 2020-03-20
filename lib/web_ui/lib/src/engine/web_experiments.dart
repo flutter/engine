@@ -5,8 +5,6 @@
 // @dart = 2.6
 part of engine;
 
-final WebExperiments webExperiments = WebExperiments._();
-
 /// A bag of all experiment flags in the web engine.
 ///
 /// This class also handles platform messages that can be sent to enable/disable
@@ -14,7 +12,19 @@ final WebExperiments webExperiments = WebExperiments._();
 class WebExperiments {
   WebExperiments._() {
     js.context['_flutter_internal_update_experiment'] = updateExperiment;
+    registerHotRestartListener(() {
+      js.context['_flutter_internal_update_experiment'] = null;
+    });
   }
+
+  static WebExperiments ensureInitialized() {
+    if (WebExperiments.instance == null) {
+      WebExperiments.instance = WebExperiments._();
+    }
+    return WebExperiments.instance;
+  }
+
+  static WebExperiments instance;
 
   /// Experiment flag for using canvas-based text measurement.
   bool get useCanvasText => _useCanvasText ?? false;

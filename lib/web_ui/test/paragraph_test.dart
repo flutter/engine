@@ -12,20 +12,20 @@ void testEachMeasurement(String description, VoidCallback body, {bool skip}) {
   test('$description (dom measurement)', () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
-      webExperiments.useCanvasText = false;
+      WebExperiments.instance.useCanvasText = false;
       return body();
     } finally {
-      webExperiments.useCanvasText = null;
+      WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
   }, skip: skip);
   test('$description (canvas measurement)', () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
-      webExperiments.useCanvasText = true;
+      WebExperiments.instance.useCanvasText = true;
       return body();
     } finally {
-      webExperiments.useCanvasText = null;
+      WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
   }, skip: skip);
@@ -186,7 +186,7 @@ void main() async {
   test('getPositionForOffset multi-line', () {
     // [Paragraph.getPositionForOffset] for multi-line text doesn't work well
     // with dom-based measurement.
-    webExperiments.useCanvasText = true;
+    WebExperiments.instance.useCanvasText = true;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -282,11 +282,11 @@ void main() async {
     );
 
     TextMeasurementService.clearCache();
-    webExperiments.useCanvasText = null;
+    WebExperiments.instance.useCanvasText = null;
   });
 
   test('getPositionForOffset multi-line centered', () {
-    webExperiments.useCanvasText = true;
+    WebExperiments.instance.useCanvasText = true;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -389,7 +389,7 @@ void main() async {
     );
 
     TextMeasurementService.clearCache();
-    webExperiments.useCanvasText = null;
+    WebExperiments.instance.useCanvasText = null;
   });
 
   testEachMeasurement('getBoxesForRange returns a box', () {
@@ -784,7 +784,7 @@ void main() async {
 
   test('longestLine', () {
     // [Paragraph.longestLine] is only supported by canvas-based measurement.
-    webExperiments.useCanvasText = true;
+    WebExperiments.instance.useCanvasText = true;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -799,7 +799,7 @@ void main() async {
     expect(paragraph.longestLine, 50.0);
 
     TextMeasurementService.clearCache();
-    webExperiments.useCanvasText = null;
+    WebExperiments.instance.useCanvasText = null;
   });
 
   testEachMeasurement('getLineBoundary (single-line)', () {
@@ -826,7 +826,7 @@ void main() async {
   test('getLineBoundary (multi-line)', () {
     // [Paragraph.getLineBoundary] for multi-line paragraphs is only supported
     // by canvas-based measurement.
-    webExperiments.useCanvasText = true;
+    WebExperiments.instance.useCanvasText = true;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -869,7 +869,7 @@ void main() async {
     }
 
     TextMeasurementService.clearCache();
-    webExperiments.useCanvasText = null;
+    WebExperiments.instance.useCanvasText = null;
   });
 
   testEachMeasurement('width should be a whole integer', () {

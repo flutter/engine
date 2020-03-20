@@ -162,8 +162,7 @@ void webOnlyInitializeEngine() {
   // initialize framework bindings.
   domRenderer;
 
-  // Calling this getter to force the [WebExperiments] instance to be created.
-  webExperiments;
+  WebExperiments.ensureInitialized();
 
   bool waitingForAnimation = false;
   ui.webOnlyScheduleFrameCallback = () {
