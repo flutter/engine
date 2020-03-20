@@ -4,6 +4,7 @@
 
 import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
+import 'package:web_driver_installer/chrome_driver_installer.dart';
 
 import 'common.dart';
 import 'environment.dart';
@@ -117,17 +118,25 @@ class IntegrationTestsManager {
   }
 
   Future<bool> prepareDriver() async {
+    final io.Directory priorCurrentDirectory = io.Directory.current;
     if (_driverDir.existsSync()) {
       _driverDir.deleteSync(recursive: true);
     }
 
     _driverDir.createSync(recursive: true);
 
+    // TODO(nurhan): We currently need git clone for getting the driver lock
+    // file. Remove this after making changes in web_installers.
     bool installWebInstallers = await _cloneWebInstallers();
     if (installWebInstallers) {
-      bool pubGet = await _runPubGet(pathlib.join(
-          _driverDir.path, 'web_installers', 'packages', 'web_drivers'));
-      if (pubGet) {
+      // Change the directory to the driver_lock.yaml file's directory.
+      io.Directory.current = pathlib.join(
+            _driverDir.path, 'web_installers', 'packages', 'web_drivers');
+      ChromeDriverInstaller chromeDriverInstaller = ChromeDriverInstaller();
+      bool installation = await chromeDriverInstaller.install();
+
+      if (installation) {
+        io.Directory.current =  priorCurrentDirectory;
         return await _runDriver();
       } else {
         return false;
@@ -287,7 +296,7 @@ class IntegrationTestsManager {
   /// file which drives it. The driver file should be named:
   /// {name}_test.dart
   void _checkE2ETestsValidity(io.Directory testDirectory) {
-    final List<io.Directory> directories =
+    final Iterable<io.Directory> directories =
         testDirectory.listSync(followLinks: false).whereType<io.Directory>();
 
     if (directories.length > 0) {
@@ -295,7 +304,7 @@ class IntegrationTestsManager {
           'any sub-directories');
     }
 
-    final List<io.File> entities =
+    final Iterable<io.File> entities =
         testDirectory.listSync(followLinks: false).whereType<io.File>();
 
     final Set<String> expectedDriverFileNames = Set<String>();
