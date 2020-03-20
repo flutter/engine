@@ -121,6 +121,8 @@ class IntegrationTestsManager {
 
   void prepareDriver() async {
     final io.Directory priorCurrentDirectory = io.Directory.current;
+    // TODO(nurhan): Add a flag for using the existing driver.
+    // This will can be used to speed up local development.
     if (_browserDriverDir.existsSync()) {
       _browserDriverDir.deleteSync(recursive: true);
     }
@@ -185,6 +187,9 @@ class IntegrationTestsManager {
         .toList();
 
     final List<String> e2eTestsToRun = List<String>();
+
+    // TODO(nurhan): Add an option to only run one test. This can be useful for
+    // local development.
 
     // The following loops over the contents of the directory and saves an
     // expected driver file name for each e2e test assuming any dart file
