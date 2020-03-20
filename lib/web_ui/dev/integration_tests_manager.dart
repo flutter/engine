@@ -21,11 +21,19 @@ class IntegrationTestsManager {
   /// same time.
   // TODO(nurhan): change the web installers to install driver and the browser
   // at the same time.
-  final io.Directory _driverDir;
+  final io.Directory _browserDriverDir;
+
+  /// This is the parent directory for all drivers.
+  ///
+  /// This directory is saved to [temporaryDirectories] and deleted before
+  /// tests shutdown.
+  final io.Directory _drivers;
 
   IntegrationTestsManager(this._browser)
-      : this._driverDir = io.Directory(
-            pathlib.join(environment.webUiRootDir.path, 'drivers', _browser));
+      : this._browserDriverDir = io.Directory(
+            pathlib.join(environment.webUiRootDir.path, 'drivers', _browser)),
+        this._drivers = io.Directory(
+            pathlib.join(environment.webUiRootDir.path, 'drivers'));
 
   Future<bool> runTests() async {
     if (_browser != 'chrome') {
@@ -52,7 +60,7 @@ class IntegrationTestsManager {
         'clone',
         'https://github.com/flutter/web_installers.git',
       ],
-      workingDirectory: _driverDir.path,
+      workingDirectory: _browserDriverDir.path,
     );
 
     if (exitCode != 0) {
@@ -98,7 +106,7 @@ class IntegrationTestsManager {
         '--install-only',
       ],
       workingDirectory: pathlib.join(
-          _driverDir.path, 'web_installers', 'packages', 'web_drivers'),
+          _browserDriverDir.path, 'web_installers', 'packages', 'web_drivers'),
     );
 
     if (exitCode != 0) {
@@ -109,8 +117,8 @@ class IntegrationTestsManager {
       startProcess(
         './chromedriver/chromedriver',
         ['--port=4444'],
-        workingDirectory: pathlib.join(
-            _driverDir.path, 'web_installers', 'packages', 'web_drivers'),
+        workingDirectory: pathlib.join(_browserDriverDir.path, 'web_installers',
+            'packages', 'web_drivers'),
       );
       print('INFO: Driver started');
       return true;
@@ -119,11 +127,12 @@ class IntegrationTestsManager {
 
   Future<bool> prepareDriver() async {
     final io.Directory priorCurrentDirectory = io.Directory.current;
-    if (_driverDir.existsSync()) {
-      _driverDir.deleteSync(recursive: true);
+    if (_browserDriverDir.existsSync()) {
+      _browserDriverDir.deleteSync(recursive: true);
     }
 
-    _driverDir.createSync(recursive: true);
+    _browserDriverDir.createSync(recursive: true);
+    temporaryDirectories.add(_drivers);
 
     // TODO(nurhan): We currently need git clone for getting the driver lock
     // file. Remove this after making changes in web_installers.
@@ -131,12 +140,12 @@ class IntegrationTestsManager {
     if (installWebInstallers) {
       // Change the directory to the driver_lock.yaml file's directory.
       io.Directory.current = pathlib.join(
-            _driverDir.path, 'web_installers', 'packages', 'web_drivers');
+          _browserDriverDir.path, 'web_installers', 'packages', 'web_drivers');
       ChromeDriverInstaller chromeDriverInstaller = ChromeDriverInstaller();
       bool installation = await chromeDriverInstaller.install();
 
       if (installation) {
-        io.Directory.current =  priorCurrentDirectory;
+        io.Directory.current = priorCurrentDirectory;
         return await _runDriver();
       } else {
         return false;
