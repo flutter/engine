@@ -21,6 +21,10 @@ Future<void> webOnlyInitializePlatform({
     await engine.initializeSkia();
   }
 
+  if (engine.Profiler.isBenchmarkMode) {
+    engine.Profiler.ensureInitialized();
+  }
+
   assetManager ??= const engine.AssetManager();
   await webOnlySetAssetManager(assetManager);
   if (engine.experimentalUseSkia) {
