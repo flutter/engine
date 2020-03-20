@@ -41,6 +41,7 @@ class IntegrationTestsManager {
       return false;
     } else {
       await prepareDriver();
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/52987
       return await _runTests();
     }
   }
@@ -117,8 +118,6 @@ class IntegrationTestsManager {
 
   void prepareDriver() async {
     final io.Directory priorCurrentDirectory = io.Directory.current;
-    // TODO(nurhan): Add a flag for using the existing driver.
-    // This will can be used to speed up local development.
     if (_browserDriverDir.existsSync()) {
       _browserDriverDir.deleteSync(recursive: true);
     }
@@ -184,9 +183,6 @@ class IntegrationTestsManager {
 
     final List<String> e2eTestsToRun = List<String>();
 
-    // TODO(nurhan): Add an option to only run one test. This can be useful for
-    // local development.
-
     // The following loops over the contents of the directory and saves an
     // expected driver file name for each e2e test assuming any dart file
     // not ending with `_test.dart` is an e2e test.
@@ -222,7 +218,6 @@ class IntegrationTestsManager {
 
   Future<bool> _runTestsInProfileMode(
       io.Directory directory, String testName) async {
-    // TODO(nurhan): Give options to the developer to run tests in another mode.
     final int exitCode = await runProcess(
       'flutter',
       <String>[
