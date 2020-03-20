@@ -53,16 +53,9 @@ std::unique_ptr<Surface> IOSSurfaceMetal::CreateGPUSurface(GrContext* /* unused 
   );
 }
 
-bool IOSSurfaceMetal::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  if (platform_views_controller == nullptr) {
-    return true;
-  }
-  return platform_views_controller->SubmitFrame(context, nullptr, background_canvas);
-}
-
-void IOSSurfaceMetal::FinishFrame() {
-  [CATransaction commit];
+// |GPUSurfaceDelegate|
+ExternalViewEmbedder* IOSSurfaceMetal::GetExternalViewEmbedder() {
+  return GetExternalViewEmbedderIfEnabled();
 }
 
 }  // namespace flutter

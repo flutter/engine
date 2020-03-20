@@ -90,6 +90,7 @@ class FlutterPlatformViewLayerPool {
                                                      std::shared_ptr<IOSContext> ios_context);
 
   // Gets the layers in the pool that aren't currently used.
+  // This method doesn't mark the layers as unused.
   std::vector<std::shared_ptr<FlutterPlatformViewLayer>> GetUnusedLayers();
 
   // Marks the layers in the pool as available for reuse.
@@ -150,8 +151,7 @@ class FlutterPlatformViewsController {
   SkCanvas* CompositeEmbeddedView(int view_id);
 
   // The rect of the platform view at index view_id. This rect has been translated into the
-  // host view coordinate system. That is, after applying any transformation matrix and scaling each
-  // of the rect's components based on the device's screen scale.
+  // host view coordinate system. Units are device screen pixels.
   SkRect GetPlatformViewRect(int view_id);
 
   // Discards all platform views instances and auxiliary resources.

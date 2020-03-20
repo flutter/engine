@@ -541,7 +541,7 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
     } else {
       platform_view_root.layer.zPosition = zIndex++;
     }
-    for (std::shared_ptr<FlutterPlatformViewLayer> layer : layers) {
+    for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
       if ([layer->overlay_view superview] != flutter_view) {
         [flutter_view addSubview:layer->overlay_view];
       } else {
@@ -574,7 +574,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   std::unique_ptr<SurfaceFrame> frame =
       layer->surface->AcquireFrame(SkISize::Make(rect.width(), rect.height()));
   // If frame is null, AcquireFrame already printed out an error message.
-  if (frame == nullptr) {
+  if (!frame) {
     return layer;
   }
   auto overlay_canvas = frame->SkiaCanvas();
@@ -590,7 +590,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
 
 void FlutterPlatformViewsController::RemoveUnusedLayers() {
   auto layers = layer_pool_->GetUnusedLayers();
-  for (auto layer : layers) {
+  for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
     [layer->overlay_view removeFromSuperview];
   }
 
