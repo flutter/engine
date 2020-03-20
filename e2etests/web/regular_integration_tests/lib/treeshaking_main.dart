@@ -1,3 +1,4 @@
+
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -28,7 +29,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _controller =
-  TextEditingController(text: 'Text1');
+  TextEditingController(text: 'TreeshakingThings1');
 
   @override
   Widget build(BuildContext context) {
@@ -36,24 +37,8 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'Text Editing Test',
-            ),
-            TextFormField(
-              key: const Key('input'),
-              enabled: true,
-              controller: _controller,
-              //initialValue: 'Text1',
-              decoration: const InputDecoration(
-                labelText: 'Text Input Field:',
-              ),
-            ),
-          ],
-        ),
+      body: const Center(
+        child: Text('TreeshakingThings'),
       ),
     );
   }
