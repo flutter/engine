@@ -1,4 +1,4 @@
-Signature: 0dd6b317e4b88e03504eb1fd3ac02432
+Signature: 83245e49e829e1b31e83ac42cc773a33
 
 UNUSED LICENSES:
 
@@ -2441,7 +2441,6 @@ FILE: ../../../third_party/skia/src/gpu/GrDrawingManager.h
 FILE: ../../../third_party/skia/src/gpu/GrFragmentProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/GrGpuResourcePriv.h
 FILE: ../../../third_party/skia/src/gpu/GrManagedResource.h
-FILE: ../../../third_party/skia/src/gpu/GrMesh.h
 FILE: ../../../third_party/skia/src/gpu/GrNonAtomicRef.h
 FILE: ../../../third_party/skia/src/gpu/GrOpFlushState.cpp
 FILE: ../../../third_party/skia/src/gpu/GrOpFlushState.h
@@ -2454,6 +2453,7 @@ FILE: ../../../third_party/skia/src/gpu/GrRenderTargetPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrResourceProvider.h
 FILE: ../../../third_party/skia/src/gpu/GrSamplerState.h
+FILE: ../../../third_party/skia/src/gpu/GrSimpleMesh.h
 FILE: ../../../third_party/skia/src/gpu/GrTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrTessellator.h
 FILE: ../../../third_party/skia/src/gpu/GrTestUtils.cpp
@@ -2479,8 +2479,6 @@ FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLProgramBuilder.cpp
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLProgramBuilder.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLProgramDataManager.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLUniformHandler.h
-FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLUtil.cpp
-FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLUtil.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLVarying.cpp
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLVarying.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLXferProcessor.h
@@ -3086,7 +3084,6 @@ FILE: ../../../third_party/skia/src/core/SkStrikeForGPU.cpp
 FILE: ../../../third_party/skia/src/core/SkStrikeForGPU.h
 FILE: ../../../third_party/skia/src/core/SkStrikeSpec.h
 FILE: ../../../third_party/skia/src/core/SkVMBlitter.cpp
-FILE: ../../../third_party/skia/src/core/SkVMBlitter.h
 FILE: ../../../third_party/skia/src/core/SkYUVMath.cpp
 FILE: ../../../third_party/skia/src/core/SkYUVMath.h
 FILE: ../../../third_party/skia/src/core/SkZip.h
@@ -3904,6 +3901,8 @@ FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DBackendContext.h
 FILE: ../../../third_party/skia/include/private/SkIDChangeListener.h
 FILE: ../../../third_party/skia/src/core/SkIDChangeListener.cpp
 FILE: ../../../third_party/skia/src/core/SkVM_fwd.h
+FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.cpp
+FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrManagedResource.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCaps.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCaps.h
@@ -5061,11 +5060,8 @@ FILE: ../../../third_party/skia/src/gpu/ccpr/GrSampleMaskProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrSampleMaskProcessor.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrStencilAtlasOp.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrComposeLerpEffect.fp
-FILE: ../../../third_party/skia/src/gpu/effects/GrComposeLerpRedEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpEffect.h
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpRedEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpRedEffect.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrGpuTessellationPathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrGpuTessellationPathRenderer.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStencilPathShader.cpp
@@ -5171,10 +5167,12 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/docs/examples/50_percent_gray.cpp
 FILE: ../../../third_party/skia/docs/examples/50_percent_srgb.cpp
 FILE: ../../../third_party/skia/docs/examples/BlendModes.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_saveLayer_4.cpp
 FILE: ../../../third_party/skia/docs/examples/ChromeMDRefreshTab.cpp
 FILE: ../../../third_party/skia/docs/examples/ChromeMDRefreshTabs.cpp
 FILE: ../../../third_party/skia/docs/examples/Color_Wheel.cpp
 FILE: ../../../third_party/skia/docs/examples/DCIToXYZD50.cpp
+FILE: ../../../third_party/skia/docs/examples/GradientShader_MakeLinear.cpp
 FILE: ../../../third_party/skia/docs/examples/Octopus_Generator.cpp
 FILE: ../../../third_party/skia/docs/examples/Octopus_Generator_Animated.cpp
 FILE: ../../../third_party/skia/docs/examples/PaintDump.cpp
@@ -5599,13 +5597,18 @@ FILE: ../../../third_party/skia/gm/verifiers/gmverifier.cpp
 FILE: ../../../third_party/skia/gm/verifiers/gmverifier.h
 FILE: ../../../third_party/skia/include/core/SkM44.h
 FILE: ../../../third_party/skia/modules/skottie/src/Adapter.h
-FILE: ../../../third_party/skia/modules/skottie/src/Animator.cpp
-FILE: ../../../third_party/skia/modules/skottie/src/Animator.h
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.h
 FILE: ../../../third_party/skia/modules/skottie/src/Path.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Transform.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Transform.h
+FILE: ../../../third_party/skia/modules/skottie/src/animator/Animator.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/animator/Animator.h
+FILE: ../../../third_party/skia/modules/skottie/src/animator/Keyframe.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/animator/Keyframe.h
+FILE: ../../../third_party/skia/modules/skottie/src/animator/Scalar.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/animator/Vec2.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/animator/Vector.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Ellipse.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/FillStroke.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Gradient.cpp

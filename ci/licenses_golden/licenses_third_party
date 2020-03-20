@@ -1,4 +1,4 @@
-Signature: 97daf653c9cb0ff8cbbe5b9d1d9bbecb
+Signature: bb7475da375e6d3d09b02525bab95d8b
 
 UNUSED LICENSES:
 
@@ -7778,6 +7778,11 @@ FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
 FILE: ../../../third_party/dart/runtime/vm/field_table.cc
 FILE: ../../../third_party/dart/runtime/vm/field_table.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.h
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/visitor.cc
 FILE: ../../../third_party/dart/samples/ffi/async/async_test.dart
 FILE: ../../../third_party/dart/samples/ffi/async/sample_async_callback.dart
@@ -8281,6 +8286,7 @@ FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/js_array.d
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/js_number.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/js_string.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/math_patch.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/mirrors_patch_cfe.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/native_helper.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/regexp_helper.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/string_helper.dart
