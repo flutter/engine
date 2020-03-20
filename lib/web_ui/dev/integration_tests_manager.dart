@@ -291,8 +291,8 @@ class IntegrationTestsManager {
         testDirectory.listSync(followLinks: false).whereType<io.Directory>();
 
     if (directories.length > 0) {
-      throw StateError('${testDirectory.path} directory should not containd '
-          'any sub-sriectories');
+      throw StateError('${testDirectory.path} directory should not contain '
+          'any sub-directories');
     }
 
     final List<io.File> entities =
