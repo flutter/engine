@@ -40,20 +40,16 @@ class IntegrationTestsManager {
       print('WARNING: integration tests are only supported on chrome for now');
       return false;
     } else {
-      bool driverReady = await prepareDriver();
+      await prepareDriver();
       // TODO(nurhan): provide a flag for running as if on CI. Also use this
       // flag from LUCI.
       // TODO(nurhan): if we are running on cirrus. fetch Flutter, we will use
       // flutter pub get in the next steps.
-      if (driverReady) {
-        return await _runTests();
-      } else {
-        return false;
-      }
+      return await _runTests();
     }
   }
 
-  Future<bool> _cloneWebInstallers() async {
+  void _cloneWebInstallers() async {
     final int exitCode = await runProcess(
       'git',
       <String>[
@@ -66,9 +62,8 @@ class IntegrationTestsManager {
     if (exitCode != 0) {
       io.stderr.writeln('ERROR: '
           'Failed to clone web installers. Exited with exit code $exitCode');
-      return false;
-    } else {
-      return true;
+      throw DriverException('ERROR: '
+          'Failed to clone web installers. Exited with exit code $exitCode');
     }
   }
 
@@ -97,7 +92,7 @@ class IntegrationTestsManager {
     }
   }
 
-  Future<bool> _runDriver() async {
+  void _runDriver() async {
     final int exitCode = await runProcess(
       environment.dartExecutable,
       <String>[
@@ -112,20 +107,19 @@ class IntegrationTestsManager {
     if (exitCode != 0) {
       io.stderr.writeln(
           'ERROR: Failed to run driver. Exited with exit code $exitCode');
-      return false;
-    } else {
-      startProcess(
-        './chromedriver/chromedriver',
-        ['--port=4444'],
-        workingDirectory: pathlib.join(_browserDriverDir.path, 'web_installers',
-            'packages', 'web_drivers'),
-      );
-      print('INFO: Driver started');
-      return true;
+      throw DriverException(
+          'ERROR: Failed to run driver. Exited with exit code $exitCode');
     }
+    startProcess(
+      './chromedriver/chromedriver',
+      ['--port=4444'],
+      workingDirectory: pathlib.join(
+          _browserDriverDir.path, 'web_installers', 'packages', 'web_drivers'),
+    );
+    print('INFO: Driver started');
   }
 
-  Future<bool> prepareDriver() async {
+  void prepareDriver() async {
     final io.Directory priorCurrentDirectory = io.Directory.current;
     if (_browserDriverDir.existsSync()) {
       _browserDriverDir.deleteSync(recursive: true);
@@ -136,22 +130,20 @@ class IntegrationTestsManager {
 
     // TODO(nurhan): We currently need git clone for getting the driver lock
     // file. Remove this after making changes in web_installers.
-    bool installWebInstallers = await _cloneWebInstallers();
-    if (installWebInstallers) {
-      // Change the directory to the driver_lock.yaml file's directory.
-      io.Directory.current = pathlib.join(
-          _browserDriverDir.path, 'web_installers', 'packages', 'web_drivers');
-      ChromeDriverInstaller chromeDriverInstaller = ChromeDriverInstaller();
-      bool installation = await chromeDriverInstaller.install();
+    await _cloneWebInstallers();
+    // Change the directory to the driver_lock.yaml file's directory.
+    io.Directory.current = pathlib.join(
+        _browserDriverDir.path, 'web_installers', 'packages', 'web_drivers');
+    // Chrome is the only browser supporting integration tests for now.
+    ChromeDriverInstaller chromeDriverInstaller = ChromeDriverInstaller();
+    bool installation = await chromeDriverInstaller.install();
 
-      if (installation) {
-        io.Directory.current = priorCurrentDirectory;
-        return await _runDriver();
-      } else {
-        return false;
-      }
+    if (installation) {
+      io.Directory.current = priorCurrentDirectory;
+      await _runDriver();
+    } else {
+      throw DriverException('ERROR: Installing driver failed');
     }
-    return false;
   }
 
   /// Runs all the web tests under e2e_tests/web.

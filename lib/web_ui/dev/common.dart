@@ -27,6 +27,15 @@ class BrowserInstallerException implements Exception {
   String toString() => message;
 }
 
+class DriverException implements Exception {
+  DriverException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 abstract class PlatformBinding {
   static PlatformBinding get instance {
     if (_instance == null) {
