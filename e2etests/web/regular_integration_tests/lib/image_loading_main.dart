@@ -5,7 +5,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-void main() {
+void main() async {
+  const MethodChannel channel =
+  OptionalMethodChannel('flutter/web_test_e2e', JSONMethodCodec());
+  await channel.invokeMethod<void>(
+    'setDevicePixelRatio',
+    '1.5',
+  );
   runApp(MyApp());
 }
 
@@ -15,18 +21,6 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> {
-
-  @override
-  void initState() {
-    super.initState();
-    const MethodChannel channel =
-        OptionalMethodChannel('flutter/web_test_e2e', JSONMethodCodec());
-    channel.invokeMethod<void>(
-      'setDevicePixelRatio',
-      '1.5',
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

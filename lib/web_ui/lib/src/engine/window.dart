@@ -150,20 +150,25 @@ class EngineWindow extends ui.Window {
           case 'HapticFeedback.vibrate':
             final String type = decoded.arguments;
             domRenderer.vibrate(_getHapticFeedbackDuration(type));
+            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
             final Map<String, dynamic> arguments = decoded.arguments;
             domRenderer.setTitle(arguments['label']);
             domRenderer.setThemeColor(ui.Color(arguments['primaryColor']));
+            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemSound.play':
             // There are no default system sounds on web.
+            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'Clipboard.setData':
             ClipboardMessageHandler().setDataMethodCall(decoded, callback);
+            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'Clipboard.getData':
             ClipboardMessageHandler().getDataMethodCall(callback);
+            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
         }
         break;
@@ -173,8 +178,12 @@ class EngineWindow extends ui.Window {
         return;
 
       case 'flutter/web_test_e2e':
-        _handleWebTestEnd2EndMessage(data);
+        const MethodCodec codec = JSONMethodCodec();
+        _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(
+          _handleWebTestEnd2EndMessage(codec, data)
+        ));
         return;
+
       case 'flutter/platform_views':
         if (experimentalUseSkia) {
           rasterizer.viewEmbedder.handlePlatformViewCall(data, callback);
@@ -308,17 +317,18 @@ class EngineWindow extends ui.Window {
   Rasterizer rasterizer = experimentalUseSkia ? Rasterizer(Surface()) : null;
 }
 
-void _handleWebTestEnd2EndMessage(ByteData data) {
-  const MethodCodec codec = JSONMethodCodec();
+bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData data) {
   final MethodCall decoded = codec.decodeMethodCall(data);
   final Map<String, dynamic> message = decoded.arguments;
   double ratio = double.parse(decoded.arguments);
+  bool result = false;
   switch(decoded.method) {
     case 'setDevicePixelRatio':
       window.overrideDevicePixelRatio(ratio);
       window.onMetricsChanged();
-      break;
+      return true;
   }
+  return false;
 }
 
 /// The window singleton.
