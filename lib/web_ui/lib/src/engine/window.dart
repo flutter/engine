@@ -256,7 +256,9 @@ class EngineWindow extends ui.Window {
     ByteData data,
   ) {
     Future<void>.delayed(Duration.zero).then((_) {
-      callback(data);
+      if (callback != null) {
+        callback(data);
+      }
     });
   }
 
