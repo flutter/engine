@@ -57,8 +57,8 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewControllerLegacy(
     // This stub will be removed shortly, and the current tests don't need the
     // arguments, so there's no need to translate them to engine_properties.
     FlutterDesktopEngineProperties engine_properties;
-    return s_stub_implementation->CreateViewController(initial_width, initial_height,
-                                                       engine_properties);
+    return s_stub_implementation->CreateViewController(
+        initial_width, initial_height, engine_properties);
   }
   return nullptr;
 }
