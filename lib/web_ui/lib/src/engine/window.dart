@@ -174,7 +174,7 @@ class EngineWindow extends ui.Window {
         break;
 
       case 'flutter/textinput':
-        textEditing.channel.handleTextInput(data);
+        textEditing.channel.handleTextInput(data, callback);
         return;
 
       case 'flutter/web_test_e2e':
@@ -194,7 +194,9 @@ class EngineWindow extends ui.Window {
 
       case 'flutter/accessibility':
         // In widget tests we want to bypass processing of platform messages.
-        accessibilityAnnouncements.handleMessage(data);
+        final StandardMessageCodec codec =
+            accessibilityAnnouncements.handleMessage(data);
+        _replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 
       case 'flutter/navigation':
@@ -206,9 +208,11 @@ class EngineWindow extends ui.Window {
           case 'routePushed':
           case 'routeReplaced':
             _browserHistory.setRouteName(message['routeName']);
+            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             break;
           case 'routePopped':
             _browserHistory.setRouteName(message['previousRouteName']);
+            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             break;
         }
         return;
