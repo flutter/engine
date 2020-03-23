@@ -55,6 +55,7 @@ void main() {
   });
 
   test('Locale toString does not include separator for \'\'', () {
+    expect(const Locale('en').toString(), 'en');
     expect(const Locale('en', '').toString(), 'en');
     expect(const Locale('en', 'US').toString(), 'en_US');
   });
