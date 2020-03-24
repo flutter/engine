@@ -360,7 +360,7 @@ bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData data) {
   bool result = false;
   switch(decoded.method) {
     case 'setDevicePixelRatio':
-      window.overrideDevicePixelRatio(ratio);
+      window.debugOverrideDevicePixelRatio(ratio);
       window.onMetricsChanged();
       return true;
   }

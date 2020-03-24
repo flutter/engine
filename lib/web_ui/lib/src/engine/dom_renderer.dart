@@ -423,7 +423,7 @@ flt-glass-pane * {
     // position, and sizes all use browser pixel as the unit (i.e. "px" in CSS).
     // Therefore, as far as the framework is concerned the device pixel ratio
     // is 1.0.
-    window.overrideDevicePixelRatio(1.0);
+    window.debugOverrideDevicePixelRatio(1.0);
 
     if (html.window.visualViewport == null && isWebKit) {
       // Safari sometimes gives us bogus innerWidth/innerHeight values when the
