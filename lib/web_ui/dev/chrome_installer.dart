@@ -227,3 +227,63 @@ Future<String> fetchLatestChromeVersion() async {
     client.close();
   }
 }
+
+/// Get the Chrome Driver version for the system Chrome.
+///
+/// It is only used by integration tests for now.
+/// TODO(nurhan): Merge the chrome download code in the unit tests with this
+/// one. Have both of them relying to the same chrome version.
+Future<String> queryChromeDriverVersion() async {
+  final int chromeVersion = await _querySystemChromeVersion();
+  final io.File lockFile = io.File(
+        path.join(environment.webUiRootDir.path, 'dev', 'driver_version.yaml'));
+  YamlMap _configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
+  final String chromeDriverVersion =
+      _configuration['chrome'][chromeVersion] as String;
+  return chromeDriverVersion;
+}
+
+Future<int> _querySystemChromeVersion() async {
+  String chromeExecutable = '';
+  if (io.Platform.isLinux) {
+    chromeExecutable = 'google-chrome';
+  } else if (io.Platform.isMacOS) {
+    chromeExecutable = await _findChromeExecutableOnMac();
+  } else {
+    throw UnimplementedError('Web installers only work on Linux and Mac.');
+  }
+
+  final io.ProcessResult versionResult =
+      await io.Process.run('$chromeExecutable', <String>['--version']);
+
+  if (versionResult.exitCode != 0) {
+    throw Exception('Failed to locate system Chrome.');
+  }
+  // The output looks like: Google Chrome 79.0.3945.36.
+  final String output = versionResult.stdout as String;
+
+  print('INFO: chrome version in use $output');
+
+  // Version number such as 79.0.3945.36.
+  final String versionAsString = output.split(' ')[2];
+
+  final String versionNo = versionAsString.split('.')[0];
+
+  return int.parse(versionNo);
+}
+
+/// Find Google Chrome App on Mac.
+Future<String> _findChromeExecutableOnMac() async {
+  io.Directory chromeDirectory = io.Directory('/Applications')
+      .listSync()
+      .whereType<io.Directory>()
+      .firstWhere(
+        (d) => path.basename(d.path).endsWith('Chrome.app'),
+        orElse: () => throw Exception('Failed to locate system Chrome'),
+      );
+
+  final io.File chromeExecutableDir = io.File(
+      path.join(chromeDirectory.path, 'Contents', 'MacOS', 'Google Chrome'));
+
+  return chromeExecutableDir.path;
+}
