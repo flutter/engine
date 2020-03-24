@@ -283,7 +283,7 @@ class Locale {
     this._languageCode, [
     this._countryCode,
   ]) : assert(_languageCode != null),
-       assert(_languageCode.isNotEmpty),
+       assert(_languageCode != ''),
        scriptCode = null;
 
   /// Creates a new Locale object.
@@ -307,10 +307,10 @@ class Locale {
     this.scriptCode,
     String countryCode,
   }) : assert(languageCode != null),
-       assert(languageCode.isNotEmpty),
+       assert(languageCode != ''),
        _languageCode = languageCode,
-       assert(scriptCode.isNotEmpty),
-       assert(countryCode.isNotEmpty),
+       assert(scriptCode != ''),
+       assert(countryCode != ''),
        _countryCode = countryCode;
 
   /// The primary language subtag for the locale.
