@@ -58,7 +58,12 @@ class EngineWindow extends ui.Window {
   ///
   /// This is useful in tests to emulate screens of different dimensions.
   void overrideDevicePixelRatio(double value) {
-    _debugDevicePixelRatio = value;
+    void overrideDevicePixelRatio(double value) {
+      assert(() {
+        _debugDevicePixelRatio = value;
+        return true;
+      }());
+    }
   }
 
   double _debugDevicePixelRatio;
@@ -221,8 +226,8 @@ class EngineWindow extends ui.Window {
 
       case 'flutter/accessibility':
         // In widget tests we want to bypass processing of platform messages.
-        final StandardMessageCodec codec =
-            accessibilityAnnouncements.handleMessage(data);
+        final StandardMessageCodec codec = StandardMessageCodec();
+        accessibilityAnnouncements.handleMessage(codec, data);
         _replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 
