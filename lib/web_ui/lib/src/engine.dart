@@ -165,6 +165,10 @@ void webOnlyInitializeEngine() {
 
   WebExperiments.ensureInitialized();
 
+  if (Profiler.isBenchmarkMode) {
+    Profiler.ensureInitialized();
+  }
+
   bool waitingForAnimation = false;
   ui.webOnlyScheduleFrameCallback = () {
     // We're asked to schedule a frame and call `frameHandler` when the frame

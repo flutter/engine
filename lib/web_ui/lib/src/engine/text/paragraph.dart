@@ -261,8 +261,8 @@ class EngineParagraph implements ui.Paragraph {
     }
     _measurementResult = _measurementService.measure(this, constraints);
     if (Profiler.isBenchmarkMode) {
-      Profiler.instance.benchmark('text_layout', stopwatch.elapsedMicroseconds);
       stopwatch.stop();
+      Profiler.instance.benchmark('text_layout', stopwatch.elapsedMicroseconds);
     }
 
     _lastUsedConstraints = constraints;

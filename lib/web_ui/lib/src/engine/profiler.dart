@@ -13,21 +13,16 @@ typedef OnBenchmark = void Function(String name, num value);
 ///
 /// To use the [Profiler]:
 ///
-/// 1. Enable the `FLUTTER_WEB_ENABLE_PROFILING` flag.
+/// 1. Set the environment variable `FLUTTER_WEB_ENABLE_PROFILING` to true.
 ///
-/// 2. Using js interop, assign a listener function to
+/// 2. Using JS interop, assign a listener function to
 ///    `window._flutter_internal_on_benchmark` in the browser.
 ///
 /// The listener function will be called every time a new benchmark number is
 /// calculated. The signature is `Function(String name, num value)`.
 class Profiler {
   Profiler._() {
-    if (!isBenchmarkMode) {
-      throw Exception(
-        'Cannot use Profiler unless benchmark mode is enabled. '
-        'You can enable it by using the FLUTTER_WEB_ENABLE_PROFILING flag.',
-      );
-    }
+    _checkBenchmarkMode();
   }
 
   static bool isBenchmarkMode = const bool.fromEnvironment(
@@ -36,25 +31,12 @@ class Profiler {
   );
 
   static Profiler ensureInitialized() {
-    if (!isBenchmarkMode) {
-      throw Exception(
-        'Cannot use Profiler unless benchmark mode is enabled. '
-        'You can enable it by using the FLUTTER_WEB_ENABLE_PROFILING flag.',
-      );
-    }
-    if (Profiler._instance == null) {
-      Profiler._instance = Profiler._();
-    }
-    return Profiler._instance;
+    _checkBenchmarkMode();
+    return Profiler._instance ??= Profiler._();
   }
 
   static Profiler get instance {
-    if (!isBenchmarkMode) {
-      throw Exception(
-        'Cannot use Profiler unless benchmark mode is enabled. '
-        'You can enable it by using the FLUTTER_WEB_ENABLE_PROFILING flag.',
-      );
-    }
+    _checkBenchmarkMode();
     if (_instance == null) {
       throw Exception(
         'Profiler has not been properly initialized. '
@@ -67,14 +49,19 @@ class Profiler {
 
   static Profiler _instance;
 
-  /// Used to send benchmark data to whoever is listening to them.
-  void benchmark(String name, num value) {
+  static void _checkBenchmarkMode() {
     if (!isBenchmarkMode) {
       throw Exception(
         'Cannot use Profiler unless benchmark mode is enabled. '
-        'You can enable it by using the FLUTTER_WEB_ENABLE_PROFILING flag.',
+        'You can enable it by setting the `FLUTTER_WEB_ENABLE_PROFILING` '
+        'environment variable to true.',
       );
     }
+  }
+
+  /// Used to send benchmark data to whoever is listening to them.
+  void benchmark(String name, num value) {
+    _checkBenchmarkMode();
 
     final OnBenchmark onBenchmark =
         js_util.getProperty(html.window, '_flutter_internal_on_benchmark');
