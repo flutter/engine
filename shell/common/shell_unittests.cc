@@ -1137,6 +1137,7 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
   // encoding of B) with content x and y.
   fml::ScopedTemporaryDirectory temp_dir;
   PersistentCache::SetCacheDirectoryPath(temp_dir.path());
+  PersistentCache::ResetCacheForProcess();
   std::vector<std::string> components = {"flutter_engine",
                                          GetFlutterEngineVersion(), "skia",
                                          GetSkiaVersion(), "sksl"};

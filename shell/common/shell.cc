@@ -375,7 +375,7 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
           std::bind(&Shell::OnServiceProtocolGetDisplayRefreshRate, this,
                     std::placeholders::_1, std::placeholders::_2)};
   service_protocol_handlers_[ServiceProtocol::kGetSkSLsExtensionName] = {
-      task_runners_.GetUITaskRunner(),
+      task_runners_.GetIOTaskRunner(),
       std::bind(&Shell::OnServiceProtocolGetSkSLs, this, std::placeholders::_1,
                 std::placeholders::_2)};
 }
@@ -1349,11 +1349,11 @@ bool Shell::OnServiceProtocolGetDisplayRefreshRate(
 bool Shell::OnServiceProtocolGetSkSLs(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document& response) {
-  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetIOTaskRunner()->RunsTasksOnCurrentThread());
   response.SetObject();
   response.AddMember("type", "GetSkSLs", response.GetAllocator());
 
-  rapidjson::Value shadersJson(rapidjson::kObjectType);
+  rapidjson::Value shaders_json(rapidjson::kObjectType);
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   std::vector<PersistentCache::SkSLCache> sksls = persistent_cache->LoadSkSLs();
   for (const auto& sksl : sksls) {
@@ -1363,12 +1363,12 @@ bool Shell::OnServiceProtocolGetSkSLs(
     char* b64_char = static_cast<char*>(b64_data->writable_data());
     SkBase64::Encode(sksl.second->data(), sksl.second->size(), b64_char);
     b64_char[b64_size] = 0;  // make it null terminated for printing
-    rapidjson::Value shaderValue(b64_char, response.GetAllocator());
-    rapidjson::Value shaderKey(PersistentCache::SkKeyToFilePath(*sksl.first),
-                               response.GetAllocator());
-    shadersJson.AddMember(shaderKey, shaderValue, response.GetAllocator());
+    rapidjson::Value shader_value(b64_char, response.GetAllocator());
+    rapidjson::Value shader_key(PersistentCache::SkKeyToFilePath(*sksl.first),
+                                response.GetAllocator());
+    shaders_json.AddMember(shader_key, shader_value, response.GetAllocator());
   }
-  response.AddMember("SkSLs", shadersJson, response.GetAllocator());
+  response.AddMember("SkSLs", shaders_json, response.GetAllocator());
   return true;
 }
 

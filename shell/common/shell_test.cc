@@ -207,7 +207,7 @@ void ShellTest::OnServiceProtocolGetSkSLs(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document& response) {
   std::promise<bool> finished;
-  fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetUITaskRunner(),
+  fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetIOTaskRunner(),
                                     [shell, params, &response, &finished]() {
                                       shell->OnServiceProtocolGetSkSLs(
                                           params, response);
