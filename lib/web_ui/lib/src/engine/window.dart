@@ -57,7 +57,7 @@ class EngineWindow extends ui.Window {
   /// Overrides the default device pixel ratio.
   ///
   /// This is useful in tests to emulate screens of different dimensions.
-  void overrideDevicePixelRatio(double value) {
+  void debugOverrideDevicePixelRatio(double value) {
     void overrideDevicePixelRatio(double value) {
       assert(() {
         _debugDevicePixelRatio = value;
@@ -362,7 +362,7 @@ bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData data) {
   bool result = false;
   switch(decoded.method) {
     case 'setDevicePixelRatio':
-      window.overrideDevicePixelRatio(ratio);
+      window.debugOverrideDevicePixelRatio(ratio);
       window.onMetricsChanged();
       return true;
   }
