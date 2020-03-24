@@ -259,7 +259,7 @@ void main() {
   // Regression test for https://github.com/flutter/flutter/issues/44470
   test('Should handle contains for devicepixelratio != 1.0', () {
     js_util.setProperty(html.window, 'devicePixelRatio', 4.0);
-    window.debugoverrideDevicePixelRatio(4.0);
+    window.debugOverrideDevicePixelRatio(4.0);
     final path = Path()
       ..moveTo(50, 0)
       ..lineTo(100, 100)

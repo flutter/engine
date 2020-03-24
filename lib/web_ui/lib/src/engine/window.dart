@@ -31,12 +31,7 @@ class EngineWindow extends ui.Window {
   ///
   /// This is useful in tests to emulate screens of different dimensions.
   void debugOverrideDevicePixelRatio(double value) {
-    void overrideDevicePixelRatio(double value) {
-      assert(() {
-        _debugDevicePixelRatio = value;
-        return true;
-      }());
-    }
+    _debugDevicePixelRatio = value;
   }
 
   double _debugDevicePixelRatio;

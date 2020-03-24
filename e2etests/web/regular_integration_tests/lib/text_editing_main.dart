@@ -28,7 +28,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _controller =
-  TextEditingController(text: 'Text1');
+      TextEditingController(text: 'Text1');
 
   @override
   Widget build(BuildContext context) {
