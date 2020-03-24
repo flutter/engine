@@ -14,45 +14,18 @@ class EngineWindow extends ui.Window {
     _addBrightnessMediaQueryListener();
   }
 
-//  @override
-//  double get devicePixelRatio => _debugDevicePixelRatio != null
-//      ? _debugDevicePixelRatio
-//      : browserDevicePixelRatio;
-//
-//  /// Returns device pixel ratio returned by browser.
-//  static double get browserDevicePixelRatio {
-//    double ratio = html.window.devicePixelRatio;
-//    // Guard against WebOS returning 0.
-//    return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
-//  }
-//
-//  /// Overrides the default device pixel ratio.
-//  ///
-//  /// This is useful in tests to emulate screens of different dimensions
-//  /// including integration tests.
-//  void overrideDevicePixelRatio(double value) {
-//    _debugDevicePixelRatio = value;
-//  }
-
   @override
-  double get devicePixelRatio {
-    if (_debugDevicePixelRatio != null) {
-      return _debugDevicePixelRatio;
-    }
+  double get devicePixelRatio => _debugDevicePixelRatio != null
+      ? _debugDevicePixelRatio
+      : browserDevicePixelRatio;
 
-    if (experimentalUseSkia) {
-      return browserDevicePixelRatio;
-    } else {
-      return 1.0;
-    }
-  }
-
-  /// Returns device pixel ratio returns by browser.
+  /// Returns device pixel ratio returned by browser.
   static double get browserDevicePixelRatio {
     double ratio = html.window.devicePixelRatio;
     // Guard against WebOS returning 0.
     return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
   }
+
 
   /// Overrides the default device pixel ratio.
   ///
