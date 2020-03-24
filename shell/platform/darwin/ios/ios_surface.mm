@@ -136,20 +136,27 @@ SkCanvas* IOSSurface::CompositeEmbeddedView(int view_id) {
 }
 
 // |ExternalViewEmbedder|
-bool IOSSurface::SubmitFrame(GrContext* context) {
+bool IOSSurface::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
   TRACE_EVENT0("flutter", "IOSSurface::SubmitFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  bool submitted = platform_views_controller_->SubmitFrame(std::move(context), ios_context_);
-  if ([NSThread currentThread] == [NSThread mainThread]) {
-    [CATransaction commit];
-  }
+  bool submitted =
+      platform_views_controller_->SubmitFrame(std::move(context), ios_context_, background_canvas);
   return submitted;
 }
 
 // |ExternalViewEmbedder|
 void IOSSurface::EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+  TRACE_EVENT0("flutter", "IOSSurface::EndFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   return platform_views_controller_->EndFrame(gpu_thread_merger);
 }
 
+// |ExternalViewEmbedder|
+void IOSSurface::FinishFrame() {
+  TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
+  if ([NSThread currentThread] != [NSThread mainThread]) {
+    return;
+  }
+  [CATransaction commit];
+}
 }  // namespace flutter

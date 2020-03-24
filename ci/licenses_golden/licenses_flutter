@@ -49,6 +49,7 @@ FILE: ../../../flutter/flow/layers/color_filter_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/container_layer.cc
 FILE: ../../../flutter/flow/layers/container_layer.h
 FILE: ../../../flutter/flow/layers/container_layer_unittests.cc
+FILE: ../../../flutter/flow/layers/fuchsia_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/image_filter_layer.cc
 FILE: ../../../flutter/flow/layers/image_filter_layer.h
 FILE: ../../../flutter/flow/layers/image_filter_layer_unittests.cc
@@ -107,6 +108,9 @@ FILE: ../../../flutter/flow/view_holder.cc
 FILE: ../../../flutter/flow/view_holder.h
 FILE: ../../../flutter/flutter_frontend_server/bin/starter.dart
 FILE: ../../../flutter/flutter_frontend_server/lib/server.dart
+FILE: ../../../flutter/fml/ascii_trie.cc
+FILE: ../../../flutter/fml/ascii_trie.h
+FILE: ../../../flutter/fml/ascii_trie_unittests.cc
 FILE: ../../../flutter/fml/backtrace.cc
 FILE: ../../../flutter/fml/backtrace.h
 FILE: ../../../flutter/fml/backtrace_stub.cc
@@ -186,6 +190,7 @@ FILE: ../../../flutter/fml/platform/android/scoped_java_ref.cc
 FILE: ../../../flutter/fml/platform/android/scoped_java_ref.h
 FILE: ../../../flutter/fml/platform/darwin/cf_utils.cc
 FILE: ../../../flutter/fml/platform/darwin/cf_utils.h
+FILE: ../../../flutter/fml/platform/darwin/cf_utils_unittests.mm
 FILE: ../../../flutter/fml/platform/darwin/message_loop_darwin.h
 FILE: ../../../flutter/fml/platform/darwin/message_loop_darwin.mm
 FILE: ../../../flutter/fml/platform/darwin/paths_darwin.mm
@@ -266,6 +271,7 @@ FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries.json
 FILE: ../../../flutter/lib/snapshot/snapshot.h
+FILE: ../../../flutter/lib/ui/annotations.dart
 FILE: ../../../flutter/lib/ui/channel_buffers.dart
 FILE: ../../../flutter/lib/ui/compositing.dart
 FILE: ../../../flutter/lib/ui/compositing/scene.cc
@@ -490,7 +496,9 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_editing.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/validators.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/web_experiments.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/window.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/ui/annotations.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/channel_buffers.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/compositing.dart
@@ -793,6 +801,9 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_message
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_method_codec_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.h
+FILE: ../../../flutter/shell/platform/common/cpp/path_utils.cc
+FILE: ../../../flutter/shell/platform/common/cpp/path_utils.h
+FILE: ../../../flutter/shell/platform/common/cpp/path_utils_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_export.h
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_messenger.h
 FILE: ../../../flutter/shell/platform/common/cpp/public/flutter_plugin_registrar.h
@@ -882,6 +893,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_context_software.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_context_software.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_metal.h
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_metal.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_render_target_gl.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_render_target_gl.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface.h
@@ -1134,9 +1147,11 @@ FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.cc
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.h
+FILE: ../../../flutter/shell/platform/windows/client_wrapper/dart_project_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_view_controller.cc
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_view_controller_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_view_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/dart_project.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_view.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_view_controller.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/plugin_registrar_windows.h
