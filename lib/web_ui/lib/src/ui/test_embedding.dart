@@ -41,6 +41,7 @@ Future<void> webOnlyInitializeTestDomRenderer({double devicePixelRatio = 3.0}) {
     engine.window.overrideDevicePixelRatio(devicePixelRatio);
     engine.window.webOnlyDebugPhysicalSizeOverride =
         Size(800 * devicePixelRatio, 600 * devicePixelRatio);
+    return true;
   }());
 
   webOnlyScheduleFrameCallback = () {};
