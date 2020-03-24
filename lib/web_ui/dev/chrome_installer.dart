@@ -231,16 +231,16 @@ Future<String> fetchLatestChromeVersion() async {
 /// Get the Chrome Driver version for the system Chrome.
 // TODO(nurhan): https://github.com/flutter/flutter/issues/53179
 Future<String> queryChromeDriverVersion() async {
-  final int chromeVersion = await _querySystemChromeVersion();
+  final int chromeVersion = await _querySystemChromeMajorVersion();
   final io.File lockFile = io.File(
-        path.join(environment.webUiRootDir.path, 'dev', 'driver_version.yaml'));
+      path.join(environment.webUiRootDir.path, 'dev', 'driver_version.yaml'));
   YamlMap _configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
   final String chromeDriverVersion =
       _configuration['chrome'][chromeVersion] as String;
   return chromeDriverVersion;
 }
 
-Future<int> _querySystemChromeVersion() async {
+Future<int> _querySystemChromeMajorVersion() async {
   String chromeExecutable = '';
   if (io.Platform.isLinux) {
     chromeExecutable = 'google-chrome';
@@ -262,11 +262,15 @@ Future<int> _querySystemChromeVersion() async {
   print('INFO: chrome version in use $output');
 
   // Version number such as 79.0.3945.36.
-  final String versionAsString = output.split(' ')[2];
-
-  final String versionNo = versionAsString.split('.')[0];
-
-  return int.parse(versionNo);
+  try {
+    final String versionAsString = output.split(' ').last;
+    final String majorVersion = versionAsString.split('.')[0];
+    return int.parse(majorVersion);
+  } catch (e) {
+    throw Exception(
+        'Was expecting a version of the form Google Chrome 79.0.3945.36., '
+        'received $output');
+  }
 }
 
 /// Find Google Chrome App on Mac.
