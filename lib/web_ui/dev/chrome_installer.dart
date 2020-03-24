@@ -263,7 +263,7 @@ Future<int> _querySystemChromeMajorVersion() async {
 
   // Version number such as 79.0.3945.36.
   try {
-    final String versionAsString = output.split(' ').last;
+    final String versionAsString = output.trim().split(' ').last;
     final String majorVersion = versionAsString.split('.')[0];
     return int.parse(majorVersion);
   } catch (e) {
