@@ -133,7 +133,7 @@ class FlutterPlatformViewsController {
   void SetFrameSize(SkISize frame_size);
 
   // Indicates that we don't compisite any platform views or overlays during this frame.
-  // Also reverts the composite_order_ to its original state at the begining of the frame.
+  // Also reverts the composition_order_ to its original state at the begining of the frame.
   void CancelFrame();
 
   void PrerollCompositeEmbeddedView(int view_id,
@@ -282,7 +282,7 @@ class FlutterPlatformViewsController {
   // Default to `false`.
   // If `true`, gpu thread and platform thread should be merged during |EndFrame|.
   // Always resets to `false` right after the threads are merged.
-  bool will_merge_threads_;
+  bool merge_threads_;
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
   // the picture on the layer's canvas.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrContext* gr_context,
@@ -292,6 +292,7 @@ class FlutterPlatformViewsController {
                                                      int64_t view_id,
                                                      int64_t overlay_id);
   // Removes overlay views and platform views that aren't needed in the current frame.
+  // Must run on the platform thread.
   void RemoveUnusedLayers();
   // Appends the overlay views and platform view and sets their z index based on the composition
   // order.

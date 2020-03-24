@@ -248,8 +248,8 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     if (gpu_thread_merger->IsMerged()) {
       gpu_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
     } else {
-      // Wait until |EndFrame| to perform thread merging.
-      will_merge_threads_ = true;
+      // Wait until |EndFrame| to merge the threads.
+      merge_threads_ = true;
       CancelFrame();
       return PostPrerollResult::kResubmitFrame;
     }
@@ -451,7 +451,9 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
 bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
                                                  std::shared_ptr<IOSContext> ios_context,
                                                  SkCanvas* background_canvas) {
-  if (will_merge_threads_) {
+  if (merge_threads_) {
+    // Threads are about to be merged, we drop everything from this frame
+    // and possibly resubmit the same layer tree in the next frame.
     picture_recorders_.clear();
     composition_order_.clear();
     return true;
@@ -560,9 +562,9 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
 }
 
 void FlutterPlatformViewsController::EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
-  if (will_merge_threads_) {
+  if (merge_threads_) {
     gpu_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
-    will_merge_threads_ = false;
+    merge_threads_ = false;
   }
 }
 
