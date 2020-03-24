@@ -120,6 +120,8 @@ class EngineWindow extends ui.Window {
     _onTextScaleFactorChangedZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnTextScaleFactorChanged() {
     _invoke(_onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
   }
@@ -134,6 +136,8 @@ class EngineWindow extends ui.Window {
     _onPlatformBrightnessChangedZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnPlatformBrightnessChanged() {
     _invoke(_onPlatformBrightnessChanged, _onPlatformBrightnessChangedZone);
   }
@@ -148,6 +152,8 @@ class EngineWindow extends ui.Window {
     _onMetricsChangedZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnMetricsChanged() {
     _invoke(_onMetricsChanged, _onMetricsChangedZone);
   }
@@ -162,6 +168,8 @@ class EngineWindow extends ui.Window {
     _onLocaleChangedZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnLocaleChanged() {
     _invoke(_onLocaleChanged, _onLocaleChangedZone);
   }
@@ -176,6 +184,8 @@ class EngineWindow extends ui.Window {
     _onBeginFrameZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnBeginFrame(Duration duration) {
     _invoke1<Duration>(_onBeginFrame, _onBeginFrameZone, duration);
   }
@@ -190,6 +200,8 @@ class EngineWindow extends ui.Window {
     _onReportTimingsZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnReportTimings(List<ui.FrameTiming> timings) {
     _invoke1<List<ui.FrameTiming>>(_onReportTimings, _onReportTimingsZone, timings);
   }
@@ -204,6 +216,8 @@ class EngineWindow extends ui.Window {
     _onDrawFrameZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnDrawFrame() {
     _invoke(_onDrawFrame, _onDrawFrameZone);
   }
@@ -218,6 +232,8 @@ class EngineWindow extends ui.Window {
     _onPointerDataPacketZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnPointerDataPacket(ui.PointerDataPacket packet) {
     _invoke1<ui.PointerDataPacket>(_onPointerDataPacket, _onPointerDataPacketZone, packet);
   }
@@ -232,6 +248,8 @@ class EngineWindow extends ui.Window {
     _onSemanticsEnabledChangedZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnSemanticsEnabledChanged() {
     _invoke(_onSemanticsEnabledChanged, _onSemanticsEnabledChangedZone);
   }
@@ -246,6 +264,8 @@ class EngineWindow extends ui.Window {
     _onSemanticsActionZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnSemanticsAction(int id, ui.SemanticsAction action, ByteData args) {
     _invoke3<int, ui.SemanticsAction, ByteData>(_onSemanticsAction,
         _onSemanticsActionZone, id, action, args);
@@ -261,6 +281,8 @@ class EngineWindow extends ui.Window {
     _onAccessibilityFeaturesChangedZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnAccessibilityFeaturesChanged() {
     _invoke(_onAccessibilityFeaturesChanged, _onAccessibilityFeaturesChangedZone);
   }
@@ -275,6 +297,8 @@ class EngineWindow extends ui.Window {
     _onPlatformMessageZone = Zone.current;
   }
 
+  /// Engine code should use this method instead of the callback directly.
+  /// Otherwise zones won't work properly.
   void invokeOnPlatformMessage(String name, ByteData data, ui.PlatformMessageResponseCallback callback) {
     _invoke3<String, ByteData, ui.PlatformMessageResponseCallback>(
       _onPlatformMessage,
