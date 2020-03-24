@@ -29,17 +29,20 @@ Future<dynamic> ensureTestPlatformInitializedThenRunTest(
 /// are available.
 Future<void> _platformInitializedFuture;
 
-/// Initializes domRenderer with specific devicePixelRation and physicalSize.
+/// Initializes domRenderer with specific devicePixelRatio and physicalSize.
 Future<void> webOnlyInitializeTestDomRenderer({double devicePixelRatio = 3.0}) {
   // Force-initialize DomRenderer so it doesn't overwrite test pixel ratio.
   engine.domRenderer;
 
-  // The following parameters are hard-coded in Flutter's test embedder. Since
-  // we don't have an embedder yet this is the lowest-most layer we can put
-  // this stuff in.
-  engine.window.overrideDevicePixelRatio(devicePixelRatio);
-  engine.window.webOnlyDebugPhysicalSizeOverride =
-      Size(800 * devicePixelRatio, 600 * devicePixelRatio);
+  assert(() {
+    // The following parameters are hard-coded in Flutter's test embedder. Since
+    // we don't have an embedder yet this is the lowest-most layer we can put
+    // this stuff in.
+    engine.window.overrideDevicePixelRatio(devicePixelRatio);
+    engine.window.webOnlyDebugPhysicalSizeOverride =
+        Size(800 * devicePixelRatio, 600 * devicePixelRatio);
+  }());
+
   webOnlyScheduleFrameCallback = () {};
   debugEmulateFlutterTesterEnvironment = true;
 
