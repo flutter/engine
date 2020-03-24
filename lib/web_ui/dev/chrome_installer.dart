@@ -229,10 +229,7 @@ Future<String> fetchLatestChromeVersion() async {
 }
 
 /// Get the Chrome Driver version for the system Chrome.
-///
-/// It is only used by integration tests for now.
-/// TODO(nurhan): Merge the chrome download code in the unit tests with this
-/// one. Have both of them relying to the same chrome version.
+// TODO(nurhan): https://github.com/flutter/flutter/issues/53179
 Future<String> queryChromeDriverVersion() async {
   final int chromeVersion = await _querySystemChromeVersion();
   final io.File lockFile = io.File(

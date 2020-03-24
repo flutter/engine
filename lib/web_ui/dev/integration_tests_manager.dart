@@ -89,10 +89,11 @@ class IntegrationTestsManager {
     _browserDriverDir.createSync(recursive: true);
     temporaryDirectories.add(_drivers);
 
+    // TODO(nurhan): https://github.com/flutter/flutter/issues/53179
     final String chromeDriverVersion = await queryChromeDriverVersion();
     ChromeDriverInstaller chromeDriverInstaller =
         ChromeDriverInstaller.withVersion(chromeDriverVersion);
-    await chromeDriverInstaller.install();
+    await chromeDriverInstaller.install(alwaysInstall: true);
     await _runDriver();
   }
 
