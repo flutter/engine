@@ -54,7 +54,6 @@ task:
         git clone https://github.com/flutter/flutter.git
         cd flutter
         git checkout stable
-        bin/flutter doctor --verbose
       test_web_script: |
         cd $FRAMEWORK_PATH/flutter/dev/integration_tests/web
         ../../../bin/flutter config --local-engine=host_debug_unopt --no-analytics --enable-web
