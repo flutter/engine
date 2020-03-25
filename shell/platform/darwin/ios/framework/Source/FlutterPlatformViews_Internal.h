@@ -60,12 +60,14 @@ class IOSSurface;
 
 struct FlutterPlatformViewLayer {
   FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> overlay_view,
+                           fml::scoped_nsobject<UIView> overlay_view_wrapper,
                            std::unique_ptr<IOSSurface> ios_surface,
                            std::unique_ptr<Surface> surface);
 
   ~FlutterPlatformViewLayer();
 
   fml::scoped_nsobject<UIView> overlay_view;
+  fml::scoped_nsobject<UIView> overlay_view_wrapper;
   std::unique_ptr<IOSSurface> ios_surface;
   std::unique_ptr<Surface> surface;
 
@@ -198,7 +200,6 @@ class FlutterPlatformViewsController {
   // Mapping a platform view ID to the count of the clipping operations that were applied to the
   // platform view last time it was composited.
   std::map<int64_t, int64_t> clip_count_;
-  std::map<int64_t, std::unique_ptr<FlutterPlatformViewLayer>> overlays_;
   SkISize frame_size_;
 
   // This is the number of frames the task runners will stay
