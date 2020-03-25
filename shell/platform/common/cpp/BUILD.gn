@@ -35,7 +35,6 @@ source_set("common_cpp") {
     "incoming_message_dispatcher.h",
     "json_message_codec.h",
     "json_method_codec.h",
-    "json_type.h",
     "text_input_model.h",
   ]
 
@@ -60,8 +59,6 @@ source_set("common_cpp") {
   public_deps = [
     ":common_cpp_core",
   ]
-
-  defines = [ "USE_RAPID_JSON" ]
 
   if (is_win) {
     # For wstring_conversion. See issue #50053.
