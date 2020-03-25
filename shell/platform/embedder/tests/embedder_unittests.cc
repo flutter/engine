@@ -1494,7 +1494,7 @@ TEST_F(EmbedderTest,
 }
 
 //------------------------------------------------------------------------------
-/// Custom compositor must play nicely with a custom task runner. The GPU thread
+/// Custom compositor must play nicely with a custom task runner. The raster thread
 /// merging mechanism must not interfere with the custom compositor.
 ///
 TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {

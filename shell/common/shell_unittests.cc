@@ -885,7 +885,7 @@ class MockTexture : public Texture {
 
   ~MockTexture() override = default;
 
-  // Called from GPU thread.
+  // Called from raster thread.
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,

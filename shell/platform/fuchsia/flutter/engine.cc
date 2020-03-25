@@ -154,7 +154,7 @@ Engine::Engine(Delegate& delegate,
             );
           });
 
-  // Session can be terminated on the GPU thread, but we must terminate
+  // Session can be terminated on the raster thread, but we must terminate
   // ourselves on the platform thread.
   //
   // This handles the fidl error callback when the Session connection is
