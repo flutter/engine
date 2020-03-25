@@ -45,15 +45,16 @@ task:
       #  export FELT="$ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dart dev/felt.dart"
       #  $FELT check-licenses
       #  CHROME_NO_SANDBOX=true $FELT test
-      #always:
-      #  web_engine_test_artifacts:
-      #    path: test_results/*
+      always:
+        web_engine_test_artifacts:
+          path: test_results/*
       fetch_framework_script: |
         mkdir -p $FRAMEWORK_PATH
         cd $FRAMEWORK_PATH
         git clone https://github.com/flutter/flutter.git
+        cd flutter
         git checkout stable
-        ./bin/flutter doctor --verbose
+        bin/flutter doctor --verbose
       test_web_script: |
         cd $FRAMEWORK_PATH/flutter/dev/integration_tests/web
         ../../../bin/flutter config --local-engine=host_debug_unopt --no-analytics --enable-web
