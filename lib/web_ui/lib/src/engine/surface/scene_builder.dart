@@ -310,7 +310,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// The "UI thread" is the thread that includes all the execution of
   /// the main Dart isolate (the isolate that can call
   /// [Window.render]). The UI thread frame time is the total time
-  /// spent executing the [Window.onBeginFrame] callback. The "GPU
+  /// spent executing the [Window.onBeginFrame] callback. The "raster
   /// thread" is the thread (running on the CPU) that subsequently
   /// processes the [Scene] provided by the Dart code to turn it into
   /// GPU commands and send it to the GPU.
