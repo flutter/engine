@@ -33,6 +33,9 @@ source_set("common_cpp_library_headers") {
 source_set("common_cpp") {
   public = [
     "incoming_message_dispatcher.h",
+    "json_message_codec.h",
+    "json_method_codec.h",
+    "json_type.h",
     "text_input_model.h",
   ]
 
@@ -40,6 +43,8 @@ source_set("common_cpp") {
   # to the _public_headers above into this target.
   sources = [
     "incoming_message_dispatcher.cc",
+    "json_message_codec.cc",
+    "json_method_codec.cc",
     "text_input_model.cc",
   ]
 
@@ -49,16 +54,14 @@ source_set("common_cpp") {
     ":common_cpp_library_headers",
     "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper",
     "//flutter/shell/platform/embedder:embedder_with_symbol_prefix",
+    "//third_party/rapidjson",
   ]
 
   public_deps = [
     ":common_cpp_core",
   ]
 
-  # TODO: Remove once text input model refactor lands, at which point this code
-  # won't have a JSON dependency.
   defines = [ "USE_RAPID_JSON" ]
-  deps += [ "//third_party/rapidjson" ]
 
   if (is_win) {
     # For wstring_conversion. See issue #50053.

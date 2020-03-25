@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "include/flutter/json_method_codec.h"
+#include "flutter/shell/platform/common/cpp/json_method_codec.h"
 
-#include "include/flutter/json_message_codec.h"
+#include "flutter/shell/platform/common/cpp/json_message_codec.h"
 
 namespace flutter {
 
