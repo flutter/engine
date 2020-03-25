@@ -175,7 +175,7 @@ Engine::Engine(Delegate& delegate,
   const flutter::TaskRunners task_runners(
       thread_label_,  // Dart thread labels
       CreateFMLTaskRunner(async_get_default_dispatcher()),  // platform
-      CreateFMLTaskRunner(threads_[0]->dispatcher()),       // gpu
+      CreateFMLTaskRunner(threads_[0]->dispatcher()),       // raster
       CreateFMLTaskRunner(threads_[1]->dispatcher()),       // ui
       CreateFMLTaskRunner(threads_[2]->dispatcher())        // io
   );

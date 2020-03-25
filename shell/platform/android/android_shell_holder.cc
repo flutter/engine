@@ -102,7 +102,7 @@ AndroidShellHolder::AndroidShellHolder(
   }
   flutter::TaskRunners task_runners(thread_label,     // label
                                     platform_runner,  // platform
-                                    gpu_runner,       // gpu
+                                    gpu_runner,       // raster
                                     ui_runner,        // ui
                                     io_runner         // io
   );

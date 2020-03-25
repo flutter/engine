@@ -156,7 +156,7 @@ TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   TaskRunners task_runners(
       "test",
       thread_host.platform_thread->GetTaskRunner(),  // platform
-      thread_host.platform_thread->GetTaskRunner(),  // gpu
+      thread_host.platform_thread->GetTaskRunner(),  // raster
       thread_host.ui_thread->GetTaskRunner(),        // ui
       thread_host.io_thread->GetTaskRunner()         // io
   );
@@ -960,7 +960,7 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
       std::make_shared<fml::DataMapping>(message);
   TaskRunners task_runners("test",                  // label
                            GetCurrentTaskRunner(),  // platform
-                           CreateNewThread(),       // gpu
+                           CreateNewThread(),       // raster
                            CreateNewThread(),       // ui
                            CreateNewThread()        // io
   );
