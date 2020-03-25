@@ -273,17 +273,21 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           new AccessibilityManager.AccessibilityStateChangeListener() {
             @Override
             public void onAccessibilityStateChanged(boolean accessibilityEnabled) {
-              if (accessibilityEnabled) {
-                accessibilityChannel.setAccessibilityMessageHandler(accessibilityMessageHandler);
-                accessibilityChannel.onAndroidAccessibilityEnabled();
-              } else {
-                accessibilityChannel.setAccessibilityMessageHandler(null);
-                accessibilityChannel.onAndroidAccessibilityDisabled();
-              }
+              if (accessibilityChannel.flutterJNI.isAttached()) {
+                if (accessibilityEnabled) {
+                  accessibilityChannel.setAccessibilityMessageHandler(accessibilityMessageHandler);
+                  accessibilityChannel.onAndroidAccessibilityEnabled();
+                } else {
+                  accessibilityChannel.setAccessibilityMessageHandler(null);
+                  accessibilityChannel.onAndroidAccessibilityDisabled();
+                }
 
-              if (onAccessibilityChangeListener != null) {
-                onAccessibilityChangeListener.onAccessibilityChanged(
-                    accessibilityEnabled, accessibilityManager.isTouchExplorationEnabled());
+                if (onAccessibilityChangeListener != null) {
+                  onAccessibilityChangeListener.onAccessibilityChanged(
+                      accessibilityEnabled, accessibilityManager.isTouchExplorationEnabled());
+                }
+              } else {
+                Log.w(TAG, "flutterJNI not attached,ignore accessibilityStateChanged");
               }
             }
           };
@@ -351,17 +355,21 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           new AccessibilityManager.TouchExplorationStateChangeListener() {
             @Override
             public void onTouchExplorationStateChanged(boolean isTouchExplorationEnabled) {
-              if (isTouchExplorationEnabled) {
-                accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-              } else {
-                onTouchExplorationExit();
-                accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-              }
-              sendLatestAccessibilityFlagsToFlutter();
+              if (accessibilityChannel.flutterJNI.isAttached()) {
+                if (isTouchExplorationEnabled) {
+                  accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+                } else {
+                  onTouchExplorationExit();
+                  accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+                }
+                sendLatestAccessibilityFlagsToFlutter();
 
-              if (onAccessibilityChangeListener != null) {
-                onAccessibilityChangeListener.onAccessibilityChanged(
-                    accessibilityManager.isEnabled(), isTouchExplorationEnabled);
+                if (onAccessibilityChangeListener != null) {
+                  onAccessibilityChangeListener.onAccessibilityChanged(
+                      accessibilityManager.isEnabled(), isTouchExplorationEnabled);
+                }
+              } else {
+                Log.w(TAG, "flutterJNI not attached,ignore touchExplorationStateChanged");
               }
             }
           };
