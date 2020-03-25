@@ -26,7 +26,6 @@ class EngineWindow extends ui.Window {
     return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
   }
 
-
   /// Overrides the default device pixel ratio.
   ///
   /// This is useful in tests to emulate screens of different dimensions.
