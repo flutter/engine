@@ -335,9 +335,9 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  // Generate a WeakPtrFactory for use with the raster thread. This does not need
-  // to wait on a latch because it can only ever be used from the raster thread
-  // from this class, so we have ordering guarantees.
+  // Generate a WeakPtrFactory for use with the raster thread. This does not
+  // need to wait on a latch because it can only ever be used from the raster
+  // thread from this class, so we have ordering guarantees.
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetGPUTaskRunner(), fml::MakeCopyable([this]() mutable {
         this->weak_factory_gpu_ =
@@ -620,11 +620,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // starting the sequence and waiting on the latch. Later the UI thread posts
   // gpu_task to the raster thread which signals the latch. If the GPU the and
   // platform threads are the same this results in a deadlock as the gpu_task
-  // will never be posted to the plaform/raster thread that is blocked on a latch.
-  // To avoid the described deadlock, if the gpu and the platform threads are
-  // the same, should_post_gpu_task will be false, and then instead of posting a
-  // task to the raster thread, the ui thread just signals the latch and the
-  // platform/raster thread follows with executing gpu_task.
+  // will never be posted to the plaform/raster thread that is blocked on a
+  // latch. To avoid the described deadlock, if the gpu and the platform threads
+  // are the same, should_post_gpu_task will be false, and then instead of
+  // posting a task to the raster thread, the ui thread just signals the latch
+  // and the platform/raster thread follows with executing gpu_task.
   bool should_post_gpu_task =
       task_runners_.GetGPUTaskRunner() != task_runners_.GetPlatformTaskRunner();
 
@@ -636,8 +636,8 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     if (engine) {
       engine->OnOutputSurfaceCreated();
     }
-    // Step 2: Next, tell the raster thread that it should create a surface for its
-    // rasterizer.
+    // Step 2: Next, tell the raster thread that it should create a surface for
+    // its rasterizer.
     if (should_post_gpu_task) {
       fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, gpu_task);
     } else {
@@ -713,13 +713,14 @@ void Shell::OnPlatformViewDestroyed() {
 
   // The normal flow executed by this method is that the platform thread is
   // starting the sequence and waiting on the latch. Later the UI thread posts
-  // gpu_task to the raster thread triggers signaling the latch(on the IO thread).
-  // If the GPU the and platform threads are the same this results in a deadlock
-  // as the gpu_task will never be posted to the plaform/raster thread that is
-  // blocked on a latch.  To avoid the described deadlock, if the gpu and the
-  // platform threads are the same, should_post_gpu_task will be false, and then
-  // instead of posting a task to the raster thread, the ui thread just signals the
-  // latch and the platform/raster thread follows with executing gpu_task.
+  // gpu_task to the raster thread triggers signaling the latch(on the IO
+  // thread). If the GPU the and platform threads are the same this results in a
+  // deadlock as the gpu_task will never be posted to the plaform/raster thread
+  // that is blocked on a latch.  To avoid the described deadlock, if the gpu
+  // and the platform threads are the same, should_post_gpu_task will be false,
+  // and then instead of posting a task to the raster thread, the ui thread just
+  // signals the latch and the platform/raster thread follows with executing
+  // gpu_task.
   bool should_post_gpu_task =
       task_runners_.GetGPUTaskRunner() != task_runners_.GetPlatformTaskRunner();
 

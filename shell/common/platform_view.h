@@ -352,10 +352,11 @@ class PlatformView {
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to specify the updated viewport metrics. In
-  ///             response to this call, on the raster thread, the rasterizer may
-  ///             need to be reconfigured to the updated viewport dimensions. On
-  ///             the UI thread, the framework may need to start generating a
-  ///             new frame for the updated viewport metrics as well.
+  ///             response to this call, on the raster thread, the rasterizer
+  ///             may need to be reconfigured to the updated viewport
+  ///             dimensions. On the UI thread, the framework may need to start
+  ///             generating a new frame for the updated viewport metrics as
+  ///             well.
   ///
   /// @param[in]  metrics  The updated viewport metrics.
   ///

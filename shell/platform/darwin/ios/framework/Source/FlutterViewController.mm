@@ -536,7 +536,8 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 #pragma mark - Surface creation and teardown updates
 
 - (void)surfaceUpdated:(BOOL)appeared {
-  // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and raster thread.
+  // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and raster
+  // thread.
   if (appeared) {
     [self installFirstFrameCallback];
     [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
