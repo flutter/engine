@@ -294,7 +294,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       Log.e(
           TAG,
           "Could not read meta-data for FlutterFragmentActivity. Using the launch theme as normal"
-          + " theme.");
+              + " theme.");
     }
   }
 
