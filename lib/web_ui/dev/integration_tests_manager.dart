@@ -5,7 +5,6 @@
 import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
 import 'package:web_driver_installer/chrome_driver_installer.dart';
-import 'package:yaml/yaml.dart';
 
 import 'chrome_installer.dart';
 import 'common.dart';
