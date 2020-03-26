@@ -293,8 +293,7 @@ public class FlutterFragmentActivity extends FragmentActivity
     } catch (PackageManager.NameNotFoundException exception) {
       Log.e(
           TAG,
-          "Could not read meta-data for FlutterFragmentActivity. Using the launch theme as normal"
-              + " theme.");
+          "Could not read meta-data for FlutterFragmentActivity. Using the launch theme as normal theme.");
     }
   }
 
@@ -490,6 +489,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   @Override
   public void onRequestPermissionsResult(
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     flutterFragment.onRequestPermissionsResult(requestCode, permissions, grantResults);
   }
 
