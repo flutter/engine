@@ -1,4 +1,4 @@
-Signature: da1bde54103c07da0fd99fa9e639a77b
+Signature: 6e688751dc15f30a0d423bac0f496b92
 
 UNUSED LICENSES:
 
@@ -7789,8 +7789,10 @@ FILE: ../../../third_party/dart/samples/ffi/async/sample_async_callback.dart
 FILE: ../../../third_party/dart/samples/ffi/async/sample_native_port_call.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_struct_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/js_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/js_patch.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/ffi_struct_patch.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
