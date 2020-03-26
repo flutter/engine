@@ -375,7 +375,10 @@ class BitmapCanvas extends EngineCanvas {
           transformWithOffset(_canvasPool.currentTransform, p).storage);
       imgElement.style
         ..transformOrigin = '0 0 0'
-        ..transform = cssTransform;
+        ..transform = cssTransform
+        // Reset width/height since they may have been previously set.
+        ..width = ''
+        ..height = '';
       rootElement.append(imgElement);
       _children.add(imgElement);
     }
