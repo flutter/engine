@@ -176,7 +176,7 @@ class TestCommand extends Command<bool> {
       : targets.map((t) => FilePath.fromCwd(t)).toList();
 
   /// Whether all tests should run.
-  bool get runAllTests => (targets.isEmpty) ? true : false;
+  bool get runAllTests => targets.isEmpty;
 
   String get browser => argResults['browser'];
 
