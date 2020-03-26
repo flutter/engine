@@ -475,7 +475,9 @@ class Locale {
       return true;
     return other is Locale
         && other.languageCode == languageCode
-        && other.scriptCode == scriptCode
+        && (other.scriptCode == scriptCode
+            || other.scriptCode != null && other.scriptCode.isEmpty && scriptCode == null
+            || scriptCode != null && scriptCode.isEmpty && other.scriptCode == null)
         && other.countryCode == countryCode;
   }
 
