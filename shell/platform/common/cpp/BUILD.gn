@@ -62,7 +62,7 @@ source_set("common_cpp") {
 
   if (is_win) {
     # For wstring_conversion. See issue #50053.
-    defines += [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
+    defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
   }
 }
 
