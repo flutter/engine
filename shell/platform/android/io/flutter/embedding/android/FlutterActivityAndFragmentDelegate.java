@@ -225,7 +225,7 @@ import java.util.Arrays;
             + " this FlutterFragment.");
     flutterEngine =
         new FlutterEngine(
-            host.getContext(),
+            host.getContext().getApplicationContext(),
             host.getFlutterShellArgs().toArray(),
             /*automaticallyRegisterPlugins=*/ false);
     isFlutterEngineFromHost = false;
