@@ -1154,7 +1154,6 @@ EngineLineMetrics line(
     width: width,
     lineNumber: lineNumber,
     left: left,
-    // TODO(yjbanov): I chose -1 value just to fix the analyzer warning. I don't know if it's the right value to pass.
     endIndexWithoutNewlines: -1,
   );
 }
