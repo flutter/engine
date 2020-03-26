@@ -23,13 +23,11 @@ core_cpp_client_wrapper_includes =
 # TODO: Once the wrapper API is more stable, consolidate to as few files as is
 # reasonable (without forcing different kinds of clients to take unnecessary
 # code) to simplify use.
-core_cpp_client_wrapper_sources =
-    get_path_info(
-        [
-          "byte_stream_wrappers.h",
-          "engine_method_result.cc",
-          "plugin_registrar.cc",
-          "standard_codec_serializer.h",
-          "standard_codec.cc",
-        ],
-        "abspath")
+core_cpp_client_wrapper_sources = get_path_info([
+                                                  "byte_stream_wrappers.h",
+                                                  "engine_method_result.cc",
+                                                  "plugin_registrar.cc",
+                                                  "standard_codec_serializer.h",
+                                                  "standard_codec.cc",
+                                                ],
+                                                "abspath")
