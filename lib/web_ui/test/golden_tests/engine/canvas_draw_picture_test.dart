@@ -47,9 +47,7 @@ void main() async {
     builder2.pop();
 
     elm1.remove();
-    html.document.body.append(builder2
-        .build()
-        .webOnlyRootElement);
+    html.document.body.append(builder2.build().webOnlyRootElement);
 
     await matchGoldenFile('canvas_draw_picture_acrossframes.png',
         region: region);
@@ -76,9 +74,7 @@ void main() async {
     builder2.pop();
 
     elm1.remove();
-    html.document.body.append(builder2
-        .build()
-        .webOnlyRootElement);
+    html.document.body.append(builder2.build().webOnlyRootElement);
 
     await matchGoldenFile('canvas_draw_picture_acrossframes_clipped.png',
         region: region);
@@ -91,12 +87,14 @@ void _drawTestPicture(SceneBuilder builder, double targetSize, bool clipped) {
   sharedImage ??= _createRealTestImage();
   final EnginePictureRecorder recorder = PictureRecorder();
   final RecordingCanvas canvas =
-  recorder.beginRecording(const Rect.fromLTRB(0, 0, 100, 100));
+      recorder.beginRecording(const Rect.fromLTRB(0, 0, 100, 100));
   canvas.debugEnforceArbitraryPaint();
   if (clipped) {
-    canvas.clipRRect(RRect.fromLTRBR(0, 0, targetSize, targetSize, Radius.circular(4)));
+    canvas.clipRRect(
+        RRect.fromLTRBR(0, 0, targetSize, targetSize, Radius.circular(4)));
   }
-  canvas.drawImageRect(sharedImage, Rect.fromLTWH(0, 0, 20, 20), Rect.fromLTWH(0, 0, targetSize, targetSize), Paint());
+  canvas.drawImageRect(sharedImage, Rect.fromLTWH(0, 0, 20, 20),
+      Rect.fromLTWH(0, 0, targetSize, targetSize), Paint());
   final Picture picture = recorder.endRecording();
   builder.addPicture(
     Offset.zero,
@@ -106,7 +104,8 @@ void _drawTestPicture(SceneBuilder builder, double targetSize, bool clipped) {
 
 typedef PaintCallback = void Function(RecordingCanvas canvas);
 
-const String _base64Encoded20x20TestImage = 'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAACXBIWXMAAC4jAAAuIwF4pT92AAAA'
+const String _base64Encoded20x20TestImage =
+    'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAACXBIWXMAAC4jAAAuIwF4pT92AAAA'
     'B3RJTUUH5AMFFBksg4i3gQAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAj'
     'SURBVDjLY2TAC/7jlWVioACMah4ZmhnxpyHG0QAb1UyZZgBjWAIm/clP0AAAAABJRU5ErkJggg==';
 
