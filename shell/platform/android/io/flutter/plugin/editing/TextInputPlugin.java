@@ -11,7 +11,10 @@ import android.provider.Settings;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
+import android.util.SparseArray;
+import android.view.autofill.AutofillValue;
 import android.view.View;
+import android.view.ViewStructure;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
@@ -31,6 +34,7 @@ public class TextInputPlugin {
   @NonNull private final TextInputChannel textInputChannel;
   @NonNull private InputTarget inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
   @Nullable private TextInputChannel.Configuration configuration;
+  @Nullable private SparseArray<TextInputChannel.Configuration> mAutofillConfigurations;
   @Nullable private Editable mEditable;
   private boolean mRestartInputPending;
   @Nullable private InputConnection lastInputConnection;
@@ -336,6 +340,65 @@ public class TextInputPlugin {
       mImm.restartInput(view);
       mRestartInputPending = false;
     }
+  }
+  private void saveVirtualStructureForAutofillIfNeeded() {
+    final TextInputChannel.Configuration[] configurations = configuration.allFields;
+    if (configurations == null) {
+      mAutofillConfigurations = null;
+      return;
+    }
+
+    mAutofillConfigurations = new SparseArray<>();
+    for (TextInputChannel.Configuration config : configurations) {
+      TextInputChannel.Configuration.Autofill autofill = config.autofill;
+      if (autofill == null)
+        continue;
+
+      mAutofillConfigurations.put(autofill.uniqueIdentifier.hashCode(), mAutofillConfigurations);
+    }
+  }
+
+  public void onProvideAutofillVirtualStructure(ViewStructure structure, int flags) {
+    if (mAutofillConfigurations == null)
+      return;
+
+    String triggerIdentifier = configuration.autofill.uniqueIdentifier;
+    for (int i = 0; i < mAutofillConfigurations.size(); i++) {
+      final int autofillId = mAutofillConfigurations.keyAt(i);
+      final TextInputChannel.Configuration config = mAutofillConfigurations.valueAt(i);
+      final TextInputChannel.Configuration.Autofill autofill = config.autofill;
+      if (autofill == null)
+        continue;
+
+      structure.addChildCount(1);
+      ViewStructure child = structure.newChild(i);
+      child.setAutofillId(structure.getAutofillId(), autofillId);
+      child.setAutofillValue(AutofillValue.forText(autofill.editState.text));
+      child.setAutofillType(View.AUTOFILL_TYPE_TEXT);
+    }
+  }
+
+  @Override
+  public void autofill (SparseArray<AutofillValue> values) {
+    final HashMap<String, TextEditState> editingValues = new HashMap<>();
+    final TextInputChannel.Configuration.Autofill currentAutofill = configuration.autofill;
+    if (currentAutofill == null)
+      return;
+
+    for (int i = 0; i < values.size(); i++) {
+      int virtualId = values.keyAt(i);
+
+      final TextInputChannel.Configuration config = mAutofillConfigurations.get(virtualId);
+      if (config == null || config.autofill == null)
+        continue;
+
+      final AutofillValue value = values.valueAt(i);
+      final TextInputChannel.Configuration.Autofill autofill = config.autofill;
+
+      editingValues.put(autofill.uniqueIdentifier, TextEditingState(value.getTextValue(), -1, -1));
+    }
+
+    textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);
   }
 
   // Samsung's Korean keyboard has a bug where it always attempts to combine characters based on

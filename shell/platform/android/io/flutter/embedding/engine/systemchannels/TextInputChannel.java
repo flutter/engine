@@ -1,5 +1,6 @@
 package io.flutter.embedding.engine.systemchannels;
 
+import android.util.SparseArray;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -157,6 +158,20 @@ public class TextInputChannel {
     channel.invokeMethod("TextInputClient.updateEditingState", Arrays.asList(inputClientId, state));
   }
 
+  public void updateEditingStateWithTag(
+      int inputClientId,
+      HashMap<String, TextEditState> editStates)  {
+    Log.v(
+        TAG,
+        "Sending message to update editing state for " + editStates.size().toString() + " field(s).");
+    editStates.replaceAll((key, value) -> value.toJson());
+    HashMap<String, HashMap<String, Object>> json= new HashMap<>();
+    for (Map<String, TextEditState>.Entry element : editStates.entrySet()) {
+      json[element.getKey()] = element.getValue().toJson();
+    }
+    channel.invokeMethod("TextInputClient.updateEditingStateWithTag", Arrays.asList(inputClientId, json));
+  }
+
   /** Instructs Flutter to execute a "newline" action. */
   public void newline(int inputClientId) {
     Log.v(TAG, "Sending 'newline' message.");
@@ -257,7 +272,15 @@ public class TextInputChannel {
       if (inputActionName == null) {
         throw new JSONException("Configuration JSON missing 'inputAction' property.");
       }
+      Configuration[] allFields;
+      if (!json.isNull("allFields")) {
+        final JSONArray fields = json.getJSONArray("allFields");
+        allFields = new Configuration[fields.length()];
+        for (int i = 0; i < allFields.length; i++) {
+          allFields[i] = Configuration.fromJson(fields.getJSONObject[i]);
+        }
 
+      }
       final Integer inputAction = inputActionFromTextInputAction(inputActionName);
       return new Configuration(
           json.optBoolean("obscureText"),
@@ -266,7 +289,9 @@ public class TextInputChannel {
           TextCapitalization.fromValue(json.getString("textCapitalization")),
           InputType.fromJson(json.getJSONObject("inputType")),
           inputAction,
-          json.isNull("actionLabel") ? null : json.getString("actionLabel"));
+          json.isNull("actionLabel") ? null : json.getString("actionLabel"),
+          json.isNull("autofill") ? null : Autofill.fromJson(json.getJSONObject("autofill")),
+          allFields);
     }
 
     @NonNull
@@ -296,6 +321,45 @@ public class TextInputChannel {
       }
     }
 
+    public static class Autofill {
+      public  static Autofill fromJson(@NonNull JSONObject json)
+              throws JSONException, NoSuchFieldException {
+        final String uniqueIdentifier = json.getString("uniqueIdentifier");
+        final JSONArray hints = json.getJSONArray("hints");
+        final JSONObject editingState = json.getJSONObject("editingValue");
+        final String[] hintList = new String[hints.length()];
+
+        for (int i = 0; i < hintList.length; i++) {
+          hintList[i] = translateAutofillHint(hints.getString(i));
+        }
+        return new Autofill(
+                uniqueIdentifier,
+                hintList,
+                TextEditState.fromJson(editingState));
+      }
+
+      public final String uniqueIdentifier;
+      public final String[] hints;
+      public final TextEditState editState;
+
+      @NonNull
+      private static String translateAutofillHint(@NonNull String hint) {
+        switch (hint) {
+          default:
+            return hint;
+        }
+      }
+
+      public Autofill(
+              @NonNull String uniqueIdentifier,
+              @NonNull String[] hints,
+              @NonNull TextEditState editingState) {
+          this.uniqueIdentifier = uniqueIdentifier;
+          this.hints = hints;
+          this.editState = editingState;
+      }
+    }
+
     public final boolean obscureText;
     public final boolean autocorrect;
     public final boolean enableSuggestions;
@@ -303,6 +367,8 @@ public class TextInputChannel {
     @NonNull public final InputType inputType;
     @Nullable public final Integer inputAction;
     @Nullable public final String actionLabel;
+    @Nullable public final Autofill autofill;
+    @Nullable public final Configuration[] allFields;
 
     public Configuration(
         boolean obscureText,
@@ -311,7 +377,9 @@ public class TextInputChannel {
         @NonNull TextCapitalization textCapitalization,
         @NonNull InputType inputType,
         @Nullable Integer inputAction,
-        @Nullable String actionLabel) {
+        @Nullable String actionLabel,
+        @Nullable Autofill autofill,
+        @Nullable Configuration[] allFields) {
       this.obscureText = obscureText;
       this.autocorrect = autocorrect;
       this.enableSuggestions = enableSuggestions;
@@ -319,6 +387,8 @@ public class TextInputChannel {
       this.inputType = inputType;
       this.inputAction = inputAction;
       this.actionLabel = actionLabel;
+      this.autofill = autofill;
+      this.allFields = allFields;
     }
   }
 
