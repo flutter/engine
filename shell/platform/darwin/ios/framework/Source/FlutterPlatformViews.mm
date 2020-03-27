@@ -72,7 +72,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
     [overlay_view_wrapper.get() addSubview:overlay_view];
     layers_.push_back(layer);
   }
-  auto layer = layers_[available_layer_index_];
+  std::shared_ptr<FlutterPlatformViewLayer> layer = layers_[available_layer_index_];
   if (gr_context != layer->gr_context) {
     layer->gr_context = gr_context;
     // The overlay already exists, but the GrContext was changed so we need to recreate
@@ -527,12 +527,12 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
         // on the overlay layer.
         background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
         // Get a new host layer.
-        auto layer = GetLayer(gr_context,                //
-                              ios_context,               //
-                              picture,                   //
-                              joined_rect,               //
-                              current_platform_view_id,  //
-                              overlay_id                 //
+        std::shared_ptr<FlutterPlatformViewLayer> layer = GetLayer(gr_context,                //
+                                                                   ios_context,               //
+                                                                   picture,                   //
+                                                                   joined_rect,               //
+                                                                   current_platform_view_id,  //
+                                                                   overlay_id                 //
         );
         did_submit &= layer->did_submit_last_frame;
         platform_view_layers[current_platform_view_id].push_back(layer);
@@ -585,9 +585,9 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
     SkRect rect,
     int64_t view_id,
     int64_t overlay_id) {
-  auto layer = layer_pool_->GetLayer(gr_context, ios_context);
+  std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, ios_context);
 
-  auto overlay_view_wrapper = layer->overlay_view_wrapper.get();
+  UIView* overlay_view_wrapper = layer->overlay_view_wrapper.get();
   auto screenScale = [UIScreen mainScreen].scale;
   // Set the size of the overlay view wrapper.
   // This wrapper view masks the overlay view.
@@ -597,7 +597,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   overlay_view_wrapper.accessibilityIdentifier =
       [NSString stringWithFormat:@"platform_view[%lld].overlay[%lld]", view_id, overlay_id];
 
-  auto overlay_view = layer->overlay_view.get();
+  UIView* overlay_view = layer->overlay_view.get();
   // Set the size of the overlay view.
   // This size is equal to the the device screen size.
   overlay_view.frame = flutter_view_.get().bounds;
@@ -607,7 +607,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   if (!frame) {
     return layer;
   }
-  auto overlay_canvas = frame->SkiaCanvas();
+  SkCanvas* overlay_canvas = frame->SkiaCanvas();
   overlay_canvas->clear(SK_ColorTRANSPARENT);
   // Offset the picture since its absolute position on the scene is determined
   // by the position of the overlay view.
@@ -619,7 +619,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
 }
 
 void FlutterPlatformViewsController::RemoveUnusedLayers() {
-  auto layers = layer_pool_->GetUnusedLayers();
+  std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_pool_->GetUnusedLayers();
   for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
     [layer->overlay_view_wrapper removeFromSuperview];
   }
