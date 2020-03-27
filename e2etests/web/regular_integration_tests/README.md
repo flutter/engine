@@ -5,6 +5,10 @@ configuration (e.g. PWA vs non-PWA packaging), please create another
 directory under e2etests/web. Otherwise tests such as text_editing, history,
 scrolling, pointer events... should all go under this package.
 
+Tests can be run on both 'release' and 'profile' modes. However 'release' mode
+will swallow the stack trace and only fails the test. Use 'profile' mode for
+trouble-shooting purposes.
+
 # To run the application under test for traouble shooting purposes.
 flutter run -d web-server lib/text_editing_main.dart --local-engine=host_debug_unopt
 
