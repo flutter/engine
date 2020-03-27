@@ -81,6 +81,9 @@ class Environment {
   /// The "pub" executable file.
   String get pubExecutable => pathlib.join(dartSdkDir.path, 'bin', 'pub');
 
+  /// The "webdev" executable file.
+  // String get webdevExecutable => pathlib.join(dartSdkDir.path, 'bin', 'pub');
+
   /// The "dart2js" executable file.
   String get dart2jsExecutable => pathlib.join(dartSdkDir.path, 'bin', 'dart2js');
 

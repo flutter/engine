@@ -340,6 +340,11 @@ class TestCommand extends Command<bool> {
     timestampFile.writeAsStringSync(timestamp);
   }
 
+  Future<void> _serverTests() async {
+    await startProcess('webdev', ['serve', 'test:8080'],
+        workingDirectory: environment.webUiRootDir.path);
+  }
+
   Future<void> _buildTests({List<FilePath> targets}) async {
     List<String> arguments = <String>[
       'run',
