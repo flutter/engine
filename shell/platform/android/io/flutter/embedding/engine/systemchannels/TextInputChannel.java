@@ -10,6 +10,7 @@ import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.HashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -120,6 +121,20 @@ public class TextInputChannel {
     channel.invokeMethod("TextInputClient.requestExistingInputState", null);
   }
 
+  private HashMap<Object, Object> createEditingStateJSON(
+       String text,
+       int selectionStart,
+       int selectionEnd,
+       int composingStart,
+       int composingEnd) {
+    HashMap<Object, Object> state = new HashMap<>();
+    state.put("text", text);
+    state.put("selectionBase", selectionStart);
+    state.put("selectionExtent", selectionEnd);
+    state.put("composingBase", composingStart);
+    state.put("composingExtent", composingEnd);
+    return state;
+  }
   /**
    * Instructs Flutter to update its text input editing state to reflect the given configuration.
    */
@@ -148,12 +163,8 @@ public class TextInputChannel {
             + "Composing end: "
             + composingEnd);
 
-    HashMap<Object, Object> state = new HashMap<>();
-    state.put("text", text);
-    state.put("selectionBase", selectionStart);
-    state.put("selectionExtent", selectionEnd);
-    state.put("composingBase", composingStart);
-    state.put("composingExtent", composingEnd);
+    final HashMap<Object, Object> state = createEditingStateJSON(
+            text, selectionStart, selectionEnd, composingStart, composingEnd);
 
     channel.invokeMethod("TextInputClient.updateEditingState", Arrays.asList(inputClientId, state));
   }
@@ -163,11 +174,15 @@ public class TextInputChannel {
       HashMap<String, TextEditState> editStates)  {
     Log.v(
         TAG,
-        "Sending message to update editing state for " + editStates.size().toString() + " field(s).");
-    editStates.replaceAll((key, value) -> value.toJson());
-    HashMap<String, HashMap<String, Object>> json= new HashMap<>();
-    for (Map<String, TextEditState>.Entry element : editStates.entrySet()) {
-      json[element.getKey()] = element.getValue().toJson();
+        "Sending message to update editing state for " + String.valueOf(editStates.size()) + " field(s).");
+
+    final HashMap<String, HashMap<Object, Object>> json= new HashMap<>();
+    for (Map.Entry<String, TextEditState> element : editStates.entrySet()) {
+      final TextEditState state = element.getValue();
+      json.put(
+              element.getKey(),
+              createEditingStateJSON(
+                      state.text, state.selectionStart, state.selectionEnd, -1, -1));
     }
     channel.invokeMethod("TextInputClient.updateEditingStateWithTag", Arrays.asList(inputClientId, json));
   }
@@ -272,12 +287,12 @@ public class TextInputChannel {
       if (inputActionName == null) {
         throw new JSONException("Configuration JSON missing 'inputAction' property.");
       }
-      Configuration[] allFields;
+      Configuration[] allFields = null;
       if (!json.isNull("allFields")) {
         final JSONArray fields = json.getJSONArray("allFields");
         allFields = new Configuration[fields.length()];
         for (int i = 0; i < allFields.length; i++) {
-          allFields[i] = Configuration.fromJson(fields.getJSONObject[i]);
+          allFields[i] = Configuration.fromJson(fields.getJSONObject(i));
         }
 
       }
@@ -489,3 +504,4 @@ public class TextInputChannel {
     }
   }
 }
+

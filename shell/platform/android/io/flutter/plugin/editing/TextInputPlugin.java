@@ -11,6 +11,7 @@ import android.provider.Settings;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
+import java.util.HashMap;
 import android.util.SparseArray;
 import android.view.autofill.AutofillValue;
 import android.view.View;
@@ -354,7 +355,7 @@ public class TextInputPlugin {
       if (autofill == null)
         continue;
 
-      mAutofillConfigurations.put(autofill.uniqueIdentifier.hashCode(), mAutofillConfigurations);
+      mAutofillConfigurations.put(autofill.uniqueIdentifier.hashCode(), config);
     }
   }
 
@@ -378,9 +379,8 @@ public class TextInputPlugin {
     }
   }
 
-  @Override
   public void autofill (SparseArray<AutofillValue> values) {
-    final HashMap<String, TextEditState> editingValues = new HashMap<>();
+    final HashMap<String, TextInputChannel.TextEditState> editingValues = new HashMap<>();
     final TextInputChannel.Configuration.Autofill currentAutofill = configuration.autofill;
     if (currentAutofill == null)
       return;
@@ -395,7 +395,9 @@ public class TextInputPlugin {
       final AutofillValue value = values.valueAt(i);
       final TextInputChannel.Configuration.Autofill autofill = config.autofill;
 
-      editingValues.put(autofill.uniqueIdentifier, TextEditingState(value.getTextValue(), -1, -1));
+      editingValues.put(
+              autofill.uniqueIdentifier,
+              new TextInputChannel.TextEditState(value.getTextValue().toString(), -1, -1));
     }
 
     textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);
