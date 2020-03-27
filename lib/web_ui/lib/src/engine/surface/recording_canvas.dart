@@ -59,7 +59,9 @@ class RecordingCanvas {
   }
 
   /// Applies the recorded commands onto an [engineCanvas].
-  void apply(EngineCanvas engineCanvas) {
+  ///
+  /// The [clipRect] specifies the clip applied to the picture (screen clip at a minimum).
+  void apply(EngineCanvas engineCanvas, ui.Rect clipRect) {
     if (_debugDumpPaintCommands) {
       final StringBuffer debugBuf = StringBuffer();
       debugBuf.writeln(
@@ -67,6 +69,13 @@ class RecordingCanvas {
           'with bounds $_paintBounds');
       for (int i = 0; i < _commands.length; i++) {
         final PaintCommand command = _commands[i];
+        if (command is DrawCommand) {
+          if (_isOutsideClipRegion(command, clipRect)) {
+            // The drawing command is outside the clip region. No need to apply.
+            debugBuf.writeln('SKIPPED: ctx.$command;');
+            continue;
+          }
+        }
         debugBuf.writeln('ctx.$command;');
         command.apply(engineCanvas);
       }
@@ -75,7 +84,13 @@ class RecordingCanvas {
     } else {
       try {
         for (int i = 0, len = _commands.length; i < len; i++) {
-          PaintCommand command = _commands[i];
+          final PaintCommand command = _commands[i];
+          if (command is DrawCommand) {
+            if (_isOutsideClipRegion(command, clipRect)) {
+              // The drawing command is outside the clip region. No need to apply.
+              continue;
+            }
+          }
           command.apply(engineCanvas);
         }
       } catch (e) {
@@ -87,6 +102,13 @@ class RecordingCanvas {
       }
     }
     engineCanvas.endOfPaint();
+  }
+
+  static bool _isOutsideClipRegion(DrawCommand command, ui.Rect clipRect) {
+    return command.rightBound < clipRect.left ||
+      command.bottomBound < clipRect.top ||
+      command.leftBound > clipRect.right ||
+      command.topBound > clipRect.bottom;
   }
 
   /// Prints recorded commands.
@@ -484,6 +506,11 @@ abstract class PaintCommand {
 /// A [PaintCommand] that puts pixels on the screen (unlike [SaveCommand]).
 abstract class DrawCommand extends PaintCommand {
   final Float32List bounds = Float32List(4);
+
+  double get leftBound => bounds[0];
+  double get topBound => bounds[1];
+  double get rightBound => bounds[2];
+  double get bottomBound => bounds[3];
 }
 
 class PaintSave extends PaintCommand {

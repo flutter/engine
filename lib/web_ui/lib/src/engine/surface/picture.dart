@@ -145,7 +145,7 @@ class PersistedHoudiniPicture extends PersistedPicture {
     _canvas = canvas;
     domRenderer.clearDom(rootElement);
     rootElement.append(_canvas.rootElement);
-    picture.recordingCanvas.apply(_canvas);
+    picture.recordingCanvas.apply(_canvas, _optimalLocalCullRect);
     canvas.commit();
   }
 }
@@ -231,7 +231,7 @@ class PersistedStandardPicture extends PersistedPicture {
     _canvas = DomCanvas();
     domRenderer.clearDom(rootElement);
     rootElement.append(_canvas.rootElement);
-    picture.recordingCanvas.apply(_canvas);
+    picture.recordingCanvas.apply(_canvas, _optimalLocalCullRect);
   }
 
   void _applyBitmapPaint(EngineCanvas oldCanvas) {
@@ -244,7 +244,7 @@ class PersistedStandardPicture extends PersistedPicture {
       oldCanvas.bounds = _optimalLocalCullRect;
       _canvas = oldCanvas;
       _canvas.clear();
-      picture.recordingCanvas.apply(_canvas);
+      picture.recordingCanvas.apply(_canvas, _optimalLocalCullRect);
     } else {
       // We can't use the old canvas because the size has changed, so we put
       // it in a cache for later reuse.
@@ -265,7 +265,7 @@ class PersistedStandardPicture extends PersistedPicture {
           domRenderer.clearDom(rootElement);
           rootElement.append(_canvas.rootElement);
           _canvas.clear();
-          picture.recordingCanvas.apply(_canvas);
+          picture.recordingCanvas.apply(_canvas, _optimalLocalCullRect);
         },
       ));
     }
