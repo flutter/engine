@@ -387,6 +387,18 @@ final class AccessibilityViewEmbedder {
     return origin.view.dispatchGenericMotionEvent(translatedEvent);
   }
 
+  /**
+   * Returns the View that contains the accessibility node identified by the
+   * provided flutterId or null if it doesn't belong to a view.
+   */
+  public View platformViewOfNode(int flutterId) {
+    ViewAndId viewAndId = flutterIdToOrigin.get(flutterId);
+    if (viewAndId == null) {
+      return null;
+    }
+    return viewAndId.view;
+  }
+
   private static class ViewAndId {
     final View view;
     final int id;

@@ -1580,15 +1580,30 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     //                    for null'ing accessibilityFocusedSemanticsNode, inputFocusedSemanticsNode,
     //                    and hoveredObject.  Is this a hook method or a command?
     semanticsNodeToBeRemoved.parent = null;
+
+    if (semanticsNodeToBeRemoved.platformViewId != -1
+        && embeddedAccessibilityFocusedNodeId != null
+        && accessibilityViewEmbedder.platformViewOfNode(embeddedAccessibilityFocusedNodeId)
+            == platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNodeToBeRemoved.platformViewId)) {
+      // If the currently focused a11y node is within a platform view that is
+      // getting removed: clear it's a11y focus.
+      sendAccessibilityEvent(
+          embeddedAccessibilityFocusedNodeId,
+          AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
+      embeddedAccessibilityFocusedNodeId = null;
+    }
+
     if (accessibilityFocusedSemanticsNode == semanticsNodeToBeRemoved) {
       sendAccessibilityEvent(
           accessibilityFocusedSemanticsNode.id,
           AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
       accessibilityFocusedSemanticsNode = null;
     }
+
     if (inputFocusedSemanticsNode == semanticsNodeToBeRemoved) {
       inputFocusedSemanticsNode = null;
     }
+
     if (hoveredObject == semanticsNodeToBeRemoved) {
       hoveredObject = null;
     }
