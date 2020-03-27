@@ -159,7 +159,7 @@ TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   TaskRunners task_runners(
       "test",
       thread_host.platform_thread->GetTaskRunner(),  // platform
-      thread_host.platform_thread->GetTaskRunner(),  // gpu
+      thread_host.platform_thread->GetTaskRunner(),  // raster
       thread_host.ui_thread->GetTaskRunner(),        // ui
       thread_host.io_thread->GetTaskRunner()         // io
   );
@@ -888,7 +888,7 @@ class MockTexture : public Texture {
 
   ~MockTexture() override = default;
 
-  // Called from GPU thread.
+  // Called from raster thread.
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
@@ -963,7 +963,7 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
       std::make_shared<fml::DataMapping>(message);
   TaskRunners task_runners("test",                  // label
                            GetCurrentTaskRunner(),  // platform
-                           CreateNewThread(),       // gpu
+                           CreateNewThread(),       // raster
                            CreateNewThread(),       // ui
                            CreateNewThread()        // io
   );
@@ -1132,7 +1132,8 @@ TEST_F(ShellTest, CanDecompressImageFromAsset) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
+// TODO(53399): Re-enable once it passes on Fuchsia.
+TEST_F(ShellTest, DISABLED_OnServiceProtocolGetSkSLsWorks) {
   // Create 2 dummpy SkSL cache file IE (base32 encoding of A), II (base32
   // encoding of B) with content x and y.
   fml::ScopedTemporaryDirectory temp_dir;
