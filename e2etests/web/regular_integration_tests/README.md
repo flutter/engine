@@ -9,8 +9,8 @@ scrolling, pointer events... should all go under this package.
 flutter run -d web-server lib/text_editing_main.dart --local-engine=host_debug_unopt
 
 # To run the Text Editing test and use the developer tools in the browser.
-flutter run --target=test_driver/text_editing_e2e.dart -d web-server --web-port=8080 --release --local-engine=host_debug_unopt
+flutter run --target=test_driver/text_editing_e2e.dart -d web-server --web-port=8080 --profile --local-engine=host_debug_unopt
 
 # To test the Text Editing test with driver:
-flutter drive -v --target=test_driver/text_editing_e2e.dart -d web-server --release --browser-name=chrome --local-engine=host_debug_unopt
+flutter drive -v --target=test_driver/text_editing_e2e.dart -d web-server --profile --browser-name=chrome --local-engine=host_debug_unopt
 ```
