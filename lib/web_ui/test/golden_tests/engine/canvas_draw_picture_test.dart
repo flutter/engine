@@ -4,13 +4,11 @@
 
 // @dart = 2.6
 import 'dart:html' as html;
-import 'dart:math' as math;
 
 import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
 import 'package:test/test.dart';
 
-import '../../matchers.dart';
 import 'package:web_engine_tester/golden_tester.dart';
 
 final Rect region = Rect.fromLTWH(0, 0, 500, 100);
@@ -28,57 +26,77 @@ void main() async {
     await webOnlyFontCollection.ensureFontsLoaded();
   });
 
-  test('draw picture', () async {
+  test('draw growing picture across frames', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     builder.pushClipRect(
       const Rect.fromLTRB(0, 0, 100, 100),
     );
-    _drawTestPicture(builder);
+
+    _drawTestPicture(builder, 100, false);
     builder.pop();
 
-    html.document.body.append(builder
+    html.Element elm1 = builder.build().webOnlyRootElement;
+    html.document.body.append(elm1);
+
+    // Now draw picture again but at larger size.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    builder2.pushClipRect(
+      const Rect.fromLTRB(0, 0, 100, 100),
+    );
+    _drawTestPicture(builder2, 20, false);
+    builder2.pop();
+
+    elm1.remove();
+    html.document.body.append(builder2
         .build()
         .webOnlyRootElement);
 
-    await matchGoldenFile('canvas_drawpicture.png', region: region, write: true);
+    await matchGoldenFile('canvas_draw_picture_acrossframes.png',
+        region: region);
   });
 
-//  test('draw growing picture across frames', () async {
-//    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-//
-//    builder.pushOffset(0, 60);
-//    builder.pushTransform(
-//      Matrix4
-//          .diagonal3Values(1, -1, 1)
-//          .storage,
-//    );
-//    builder.pushClipRect(
-//      const Rect.fromLTRB(10, 10, 60, 60),
-//    );
-//    _drawTestPicture(builder);
-//    builder.pop();
-//    builder.pop();
-//    builder.pop();
-//
-//    html.document.body.append(builder
-//        .build()
-//        .webOnlyRootElement);
-//
-//    // Now draw picture again but at larger size.
-//
-//    await matchGoldenFile('canvas_drawpicture_acrossframes.png',
-//        region: region);
-//  });
+  test('draw growing picture across frames clipped', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    builder.pushClipRect(
+      const Rect.fromLTRB(0, 0, 100, 100),
+    );
+
+    _drawTestPicture(builder, 100, true);
+    builder.pop();
+
+    html.Element elm1 = builder.build().webOnlyRootElement;
+    html.document.body.append(elm1);
+
+    // Now draw picture again but at larger size.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    builder2.pushClipRect(
+      const Rect.fromLTRB(0, 0, 100, 100),
+    );
+    _drawTestPicture(builder2, 20, true);
+    builder2.pop();
+
+    elm1.remove();
+    html.document.body.append(builder2
+        .build()
+        .webOnlyRootElement);
+
+    await matchGoldenFile('canvas_draw_picture_acrossframes_clipped.png',
+        region: region);
+  });
 }
 
-void _drawTestPicture(SceneBuilder builder) {
-  final HtmlImage image = _createRealTestImage();
+HtmlImage sharedImage;
+
+void _drawTestPicture(SceneBuilder builder, double targetSize, bool clipped) {
+  sharedImage ??= _createRealTestImage();
   final EnginePictureRecorder recorder = PictureRecorder();
   final RecordingCanvas canvas =
   recorder.beginRecording(const Rect.fromLTRB(0, 0, 100, 100));
   canvas.debugEnforceArbitraryPaint();
-  canvas.clipRRect(RRect.fromLTRBR(0, 0, 10, 10, Radius.circular(4)));
-  canvas.drawImageRect(image, Rect.fromLTWH(0, 0, 20, 20), Rect.fromLTWH(0, 0, 10, 10), Paint());
+  if (clipped) {
+    canvas.clipRRect(RRect.fromLTRBR(0, 0, targetSize, targetSize, Radius.circular(4)));
+  }
+  canvas.drawImageRect(sharedImage, Rect.fromLTWH(0, 0, 20, 20), Rect.fromLTWH(0, 0, targetSize, targetSize), Paint());
   final Picture picture = recorder.endRecording();
   builder.addPicture(
     Offset.zero,
