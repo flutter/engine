@@ -72,8 +72,7 @@ IOSRenderTargetGL::~IOSRenderTargetGL() {
   FML_DCHECK(glGetError() == GL_NO_ERROR);
   if (context == context_.get()) {
     [EAGLContext setCurrentContext:nil];
-  }
-  else {
+  } else {
     [EAGLContext setCurrentContext:context];
   }
 }
