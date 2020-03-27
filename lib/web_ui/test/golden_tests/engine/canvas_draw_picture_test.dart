@@ -43,6 +43,9 @@ void main() async {
     builder2.pushClipRect(
       const Rect.fromLTRB(0, 0, 100, 100),
     );
+    // Now draw the picture at original target size, which will use a
+    // different code path that should normally not have width/height set
+    // on image element.
     _drawTestPicture(builder2, 20, false);
     builder2.pop();
 
