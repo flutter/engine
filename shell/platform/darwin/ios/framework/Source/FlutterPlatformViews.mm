@@ -520,9 +520,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
         joined_rect.intersect(platform_view_rect);
         // Subpixels in the platform may not align with the canvas subpixels.
         // To workaround it, round the floating point bounds and make the rect slighly larger.
-        // For example, {0.3, 0.5, 3.5, 4.7} becomes {0, 0, 4, 5}.
+        // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
         joined_rect.setLTRB(std::nearbyint(joined_rect.left()), std::nearbyint(joined_rect.top()),
-                            std::round(joined_rect.right()), std::round(joined_rect.bottom()));
+                            std::ceil(joined_rect.right()), std::ceil(joined_rect.bottom()));
         // Clip the background canvas, so it doesn't contain any of the pixels drawn
         // on the overlay layer.
         background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
