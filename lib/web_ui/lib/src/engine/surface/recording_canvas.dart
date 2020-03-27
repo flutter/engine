@@ -183,12 +183,14 @@ class RecordingCanvas {
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    _paintBounds.grow(_paintBounds.maxPaintBounds);
-    _commands.add(PaintDrawColor(color, blendMode));
+    final PaintDrawColor command = PaintDrawColor(color, blendMode);
+    _commands.add(command);
+    _paintBounds.grow(_paintBounds.maxPaintBounds, command.bounds);
   }
 
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaint paint) {
     final double paintSpread = math.max(_getPaintSpread(paint), 1.0);
+    final PaintDrawLine command = PaintDrawLine(p1, p2, paint.paintData);
     // TODO(yjbanov): This can be optimized. Currently we create a box around
     //                the line and then apply the transform on the box to get
     //                the bounding box. If you have a 45-degree line and a
@@ -201,17 +203,19 @@ class RecordingCanvas {
       math.min(p1.dy, p2.dy) - paintSpread,
       math.max(p1.dx, p2.dx) + paintSpread,
       math.max(p1.dy, p2.dy) + paintSpread,
+      command.bounds,
     );
     _hasArbitraryPaint = true;
     _didDraw = true;
-    _commands.add(PaintDrawLine(p1, p2, paint.paintData));
+    _commands.add(command);
   }
 
   void drawPaint(SurfacePaint paint) {
     _hasArbitraryPaint = true;
     _didDraw = true;
-    _paintBounds.grow(_paintBounds.maxPaintBounds);
-    _commands.add(PaintDrawPaint(paint.paintData));
+    final PaintDrawPaint command = PaintDrawPaint(paint.paintData);
+    _paintBounds.grow(_paintBounds.maxPaintBounds, command.bounds);
+    _commands.add(command);
   }
 
   void drawRect(ui.Rect rect, SurfacePaint paint) {
@@ -220,12 +224,13 @@ class RecordingCanvas {
     }
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
+    final PaintDrawRect command = PaintDrawRect(rect, paint.paintData);
     if (paintSpread != 0.0) {
-      _paintBounds.grow(rect.inflate(paintSpread));
+      _paintBounds.grow(rect.inflate(paintSpread), command.bounds);
     } else {
-      _paintBounds.grow(rect);
+      _paintBounds.grow(rect, command.bounds);
     }
-    _commands.add(PaintDrawRect(rect, paint.paintData));
+    _commands.add(command);
   }
 
   void drawRRect(ui.RRect rrect, SurfacePaint paint) {
@@ -238,8 +243,9 @@ class RecordingCanvas {
     final double top = math.min(rrect.top, rrect.bottom) - paintSpread;
     final double right = math.max(rrect.left, rrect.right) + paintSpread;
     final double bottom = math.max(rrect.top, rrect.bottom) + paintSpread;
-    _paintBounds.growLTRB(left, top, right, bottom);
-    _commands.add(PaintDrawRRect(rrect, paint.paintData));
+    final PaintDrawRRect command = PaintDrawRRect(rrect, paint.paintData);
+    _paintBounds.growLTRB(left, top, right, bottom, command.bounds);
+    _commands.add(command);
   }
 
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaint paint) {
@@ -283,38 +289,43 @@ class RecordingCanvas {
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
+    final PaintDrawDRRect command = PaintDrawDRRect(outer, inner, paint.paintData);
     _paintBounds.growLTRB(
       outer.left - paintSpread,
       outer.top - paintSpread,
       outer.right + paintSpread,
       outer.bottom + paintSpread,
+      command.bounds,
     );
-    _commands.add(PaintDrawDRRect(outer, inner, paint.paintData));
+    _commands.add(command);
   }
 
   void drawOval(ui.Rect rect, SurfacePaint paint) {
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
+    final PaintDrawOval command = PaintDrawOval(rect, paint.paintData);
     if (paintSpread != 0.0) {
-      _paintBounds.grow(rect.inflate(paintSpread));
+      _paintBounds.grow(rect.inflate(paintSpread), command.bounds);
     } else {
-      _paintBounds.grow(rect);
+      _paintBounds.grow(rect, command.bounds);
     }
-    _commands.add(PaintDrawOval(rect, paint.paintData));
+    _commands.add(command);
   }
 
   void drawCircle(ui.Offset c, double radius, SurfacePaint paint) {
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
+    final PaintDrawCircle command = PaintDrawCircle(c, radius, paint.paintData);
     _paintBounds.growLTRB(
       c.dx - radius - paintSpread,
       c.dy - radius - paintSpread,
       c.dx + radius + paintSpread,
       c.dy + radius + paintSpread,
+      command.bounds,
     );
-    _commands.add(PaintDrawCircle(c, radius, paint.paintData));
+    _commands.add(command);
   }
 
   void drawPath(ui.Path path, SurfacePaint paint) {
@@ -340,11 +351,12 @@ class RecordingCanvas {
     if (paintSpread != 0.0) {
       pathBounds = pathBounds.inflate(paintSpread);
     }
-    _paintBounds.grow(pathBounds);
     // Clone path so it can be reused for subsequent draw calls.
     final ui.Path clone = SurfacePath._shallowCopy(path);
+    final PaintDrawPath command = PaintDrawPath(clone, paint.paintData);
+    _paintBounds.grow(pathBounds, command.bounds);
     clone.fillType = path.fillType;
-    _commands.add(PaintDrawPath(clone, paint.paintData));
+    _commands.add(command);
   }
 
   void drawImage(ui.Image image, ui.Offset offset, SurfacePaint paint) {
@@ -352,16 +364,18 @@ class RecordingCanvas {
     _didDraw = true;
     final double left = offset.dx;
     final double top = offset.dy;
-    _paintBounds.growLTRB(left, top, left + image.width, top + image.height);
-    _commands.add(PaintDrawImage(image, offset, paint.paintData));
+    final command = PaintDrawImage(image, offset, paint.paintData);
+    _paintBounds.growLTRB(left, top, left + image.width, top + image.height, command.bounds);
+    _commands.add(command);
   }
 
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaint paint) {
     _hasArbitraryPaint = true;
     _didDraw = true;
-    _paintBounds.grow(dst);
-    _commands.add(PaintDrawImageRect(image, src, dst, paint.paintData));
+    final PaintDrawImageRect command = PaintDrawImageRect(image, src, dst, paint.paintData);
+    _paintBounds.grow(dst, command.bounds);
+    _commands.add(command);
   }
 
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
@@ -377,9 +391,15 @@ class RecordingCanvas {
     }
     final double left = offset.dx;
     final double top = offset.dy;
+    final PaintDrawParagraph command = PaintDrawParagraph(engineParagraph, offset);
     _paintBounds.growLTRB(
-        left, top, left + engineParagraph.width, top + engineParagraph.height);
-    _commands.add(PaintDrawParagraph(engineParagraph, offset));
+      left,
+      top,
+      left + engineParagraph.width,
+      top + engineParagraph.height,
+      command.bounds,
+    );
+    _commands.add(command);
   }
 
   void drawShadow(ui.Path path, ui.Color color, double elevation,
@@ -388,16 +408,18 @@ class RecordingCanvas {
     _didDraw = true;
     final ui.Rect shadowRect =
         computePenumbraBounds(path.getBounds(), elevation);
-    _paintBounds.grow(shadowRect);
-    _commands.add(PaintDrawShadow(path, color, elevation, transparentOccluder));
+    final PaintDrawShadow command = PaintDrawShadow(path, color, elevation, transparentOccluder);
+    _paintBounds.grow(shadowRect, command.bounds);
+    _commands.add(command);
   }
 
   void drawVertices(
       ui.Vertices vertices, ui.BlendMode blendMode, SurfacePaint paint) {
     _hasArbitraryPaint = true;
     _didDraw = true;
-    _growPaintBoundsByPoints(vertices.positions, 0, paint);
-    _commands.add(PaintVertices(vertices, blendMode, paint.paintData));
+    final PaintDrawVertices command = PaintDrawVertices(vertices, blendMode, paint.paintData);
+    _growPaintBoundsByPoints(vertices.positions, 0, paint, command.bounds);
+    _commands.add(command);
   }
 
   void drawRawPoints(
@@ -407,12 +429,12 @@ class RecordingCanvas {
     }
     _hasArbitraryPaint = true;
     _didDraw = true;
-    _growPaintBoundsByPoints(points, paint.strokeWidth, paint);
-    _commands
-        .add(PaintPoints(pointMode, points, paint.strokeWidth, paint.color));
+    final PaintDrawPoints command = PaintDrawPoints(pointMode, points, paint.strokeWidth, paint.color);
+    _growPaintBoundsByPoints(points, paint.strokeWidth, paint, command.bounds);
+    _commands.add(command);
   }
 
-  void _growPaintBoundsByPoints(Float32List points, double thickness, SurfacePaint paint) {
+  void _growPaintBoundsByPoints(Float32List points, double thickness, SurfacePaint paint, Float32List bounds) {
     double minValueX, maxValueX, minValueY, maxValueY;
     minValueX = maxValueX = points[0];
     minValueY = maxValueY = points[1];
@@ -436,6 +458,7 @@ class RecordingCanvas {
       minValueY - distance - paintSpread,
       maxValueX + distance + paintSpread,
       maxValueY + distance + paintSpread,
+      bounds,
     );
   }
 
@@ -456,6 +479,11 @@ abstract class PaintCommand {
   void apply(EngineCanvas canvas);
 
   void serializeToCssPaint(List<List<dynamic>> serializedCommands);
+}
+
+/// A [PaintCommand] that puts pixels on the screen (unlike [SaveCommand]).
+abstract class DrawCommand extends PaintCommand {
+  final Float32List bounds = Float32List(4);
 }
 
 class PaintSave extends PaintCommand {
@@ -710,7 +738,7 @@ class PaintClipPath extends PaintCommand {
   }
 }
 
-class PaintDrawColor extends PaintCommand {
+class PaintDrawColor extends DrawCommand {
   final ui.Color color;
   final ui.BlendMode blendMode;
 
@@ -737,7 +765,7 @@ class PaintDrawColor extends PaintCommand {
   }
 }
 
-class PaintDrawLine extends PaintCommand {
+class PaintDrawLine extends DrawCommand {
   final ui.Offset p1;
   final ui.Offset p2;
   final SurfacePaintData paint;
@@ -771,7 +799,7 @@ class PaintDrawLine extends PaintCommand {
   }
 }
 
-class PaintDrawPaint extends PaintCommand {
+class PaintDrawPaint extends DrawCommand {
   final SurfacePaintData paint;
 
   PaintDrawPaint(this.paint);
@@ -796,11 +824,11 @@ class PaintDrawPaint extends PaintCommand {
   }
 }
 
-class PaintVertices extends PaintCommand {
+class PaintDrawVertices extends DrawCommand {
   final ui.Vertices vertices;
   final ui.BlendMode blendMode;
   final SurfacePaintData paint;
-  PaintVertices(this.vertices, this.blendMode, this.paint);
+  PaintDrawVertices(this.vertices, this.blendMode, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -822,12 +850,12 @@ class PaintVertices extends PaintCommand {
   }
 }
 
-class PaintPoints extends PaintCommand {
+class PaintDrawPoints extends DrawCommand {
   final Float32List points;
   final ui.PointMode pointMode;
   final double strokeWidth;
   final ui.Color color;
-  PaintPoints(this.pointMode, this.points, this.strokeWidth, this.color);
+  PaintDrawPoints(this.pointMode, this.points, this.strokeWidth, this.color);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -849,7 +877,7 @@ class PaintPoints extends PaintCommand {
   }
 }
 
-class PaintDrawRect extends PaintCommand {
+class PaintDrawRect extends DrawCommand {
   final ui.Rect rect;
   final SurfacePaintData paint;
 
@@ -879,7 +907,7 @@ class PaintDrawRect extends PaintCommand {
   }
 }
 
-class PaintDrawRRect extends PaintCommand {
+class PaintDrawRRect extends DrawCommand {
   final ui.RRect rrect;
   final SurfacePaintData paint;
 
@@ -909,7 +937,7 @@ class PaintDrawRRect extends PaintCommand {
   }
 }
 
-class PaintDrawDRRect extends PaintCommand {
+class PaintDrawDRRect extends DrawCommand {
   final ui.RRect outer;
   final ui.RRect inner;
   final SurfacePaintData paint;
@@ -941,7 +969,7 @@ class PaintDrawDRRect extends PaintCommand {
   }
 }
 
-class PaintDrawOval extends PaintCommand {
+class PaintDrawOval extends DrawCommand {
   final ui.Rect rect;
   final SurfacePaintData paint;
 
@@ -971,7 +999,7 @@ class PaintDrawOval extends PaintCommand {
   }
 }
 
-class PaintDrawCircle extends PaintCommand {
+class PaintDrawCircle extends DrawCommand {
   final ui.Offset c;
   final double radius;
   final SurfacePaintData paint;
@@ -1004,7 +1032,7 @@ class PaintDrawCircle extends PaintCommand {
   }
 }
 
-class PaintDrawPath extends PaintCommand {
+class PaintDrawPath extends DrawCommand {
   final SurfacePath path;
   final SurfacePaintData paint;
 
@@ -1034,7 +1062,7 @@ class PaintDrawPath extends PaintCommand {
   }
 }
 
-class PaintDrawShadow extends PaintCommand {
+class PaintDrawShadow extends DrawCommand {
   PaintDrawShadow(
       this.path, this.color, this.elevation, this.transparentOccluder);
 
@@ -1074,7 +1102,7 @@ class PaintDrawShadow extends PaintCommand {
   }
 }
 
-class PaintDrawImage extends PaintCommand {
+class PaintDrawImage extends DrawCommand {
   final ui.Image image;
   final ui.Offset offset;
   final SurfacePaintData paint;
@@ -1103,7 +1131,7 @@ class PaintDrawImage extends PaintCommand {
   }
 }
 
-class PaintDrawImageRect extends PaintCommand {
+class PaintDrawImageRect extends DrawCommand {
   final ui.Image image;
   final ui.Rect src;
   final ui.Rect dst;
@@ -1133,7 +1161,7 @@ class PaintDrawImageRect extends PaintCommand {
   }
 }
 
-class PaintDrawParagraph extends PaintCommand {
+class PaintDrawParagraph extends DrawCommand {
   final EngineParagraph paragraph;
   final ui.Offset offset;
 
@@ -1810,12 +1838,13 @@ class _PaintBounds {
   }
 
   /// Grow painted area to include given rectangle.
-  void grow(ui.Rect r) {
-    growLTRB(r.left, r.top, r.right, r.bottom);
+  void grow(ui.Rect r, Float32List bounds) {
+    growLTRB(r.left, r.top, r.right, r.bottom, bounds);
   }
 
   /// Grow painted area to include given rectangle.
-  void growLTRB(double left, double top, double right, double bottom) {
+  void growLTRB(double left, double top, double right, double bottom, Float32List bounds) {
+    assert(bounds.length == 4);
     if (left == right || top == bottom) {
       return;
     }
@@ -1860,6 +1889,11 @@ class _PaintBounds {
         transformedPointBottom = _currentClipBottom;
       }
     }
+
+    bounds[0] = transformedPointLeft;
+    bounds[1] = transformedPointTop;
+    bounds[2] = transformedPointRight;
+    bounds[3] = transformedPointBottom;
 
     if (_didPaintInsideClipArea) {
       _left = math.min(
