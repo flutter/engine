@@ -30,13 +30,14 @@ void main() async {
     await webOnlyFontCollection.ensureFontsLoaded();
   });
 
-  test('Reuses canvas across', () async {
+  // Regression test for https://github.com/flutter/flutter/issues/51514
+  test('Canvas is reused and z-index doesn\'t leak across paints', () async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
     const Rect region = Rect.fromLTWH(0, 0, 500, 500);
 
     // Draw first frame into engine canvas.
     final RecordingCanvas rc =
-        RecordingCanvas(const Rect.fromLTWH(1, 2, 300, 400));
+      RecordingCanvas(const Rect.fromLTWH(1, 2, 300, 400));
     final Path path = Path()
       ..moveTo(3, 0)
       ..lineTo(100, 97);
@@ -49,7 +50,9 @@ void main() async {
     html.document.body.append(sceneElement);
 
     final html.CanvasElement canvas = html.document.querySelector('canvas');
-    expect(canvas , isNotNull);
+    // ! Since canvas is first element, it should have zIndex = -1 for correct
+    // paint order.
+    expect(canvas.style.zIndex , '-1');
 
     // Add id to canvas element to test for reuse.
     const String kTestId = 'test-id-5698';
@@ -60,12 +63,14 @@ void main() async {
 
     engineCanvas.clear();
 
-    // Now paint a second scene to same [BitmapCanvas].
+    // Now paint a second scene to same [BitmapCanvas] but paint an image
+    // before the path to move canvas element into second position.
     final RecordingCanvas rc2 =
-        RecordingCanvas(const Rect.fromLTWH(1, 2, 300, 400));
+      RecordingCanvas(const Rect.fromLTWH(1, 2, 300, 400));
     final Path path2 = Path()
       ..moveTo(3, 0)
       ..quadraticBezierTo(100, 0, 100, 100);
+    rc2.drawImage(_createRealTestImage(), Offset(0, 0), Paint());
     rc2.drawPath(path2, testPaint);
     rc2.apply(engineCanvas);
 
@@ -74,8 +79,11 @@ void main() async {
     html.document.body.append(sceneElement);
 
     final html.CanvasElement canvas2 = html.document.querySelector('canvas');
+    // ZIndex should have been cleared since we have image element preceding
+    // canvas.
+    expect(canvas.style.zIndex != '-1', true);
     expect(canvas2.id, kTestId);
-    await matchGoldenFile('bitmap_canvas_reuse1.png', region: region, write: true);
+    await matchGoldenFile('bitmap_canvas_reuse_zindex.png', region: region, write: true);
   });
 }
 
@@ -90,24 +98,4 @@ HtmlImage _createRealTestImage() {
     20,
     20,
   );
-}
-
-class TestImage implements Image {
-  @override
-  int get width => 20;
-
-  @override
-  int get height => 10;
-
-  @override
-  Future<ByteData> toByteData(
-      {ImageByteFormat format = ImageByteFormat.rawRgba}) async {
-    throw UnsupportedError('Cannot encode test image');
-  }
-
-  @override
-  String toString() => '[$width\u00D7$height]';
-
-  @override
-  void dispose() {}
 }
