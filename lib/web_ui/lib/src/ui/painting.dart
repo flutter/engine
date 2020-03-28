@@ -1582,6 +1582,71 @@ Future<Codec> instantiateImageCodec(
       _instantiateImageCodec(list, callback, null));
 }
 
+
+/// Creates the BMP header with the info needed to decode
+/// an image with it's [_ImageInfo].
+/// TODO(kalildev): Throw if the image height, width or size is too big for an BMP
+ByteBuffer _constructBmpHeader(_ImageInfo imageInfo) {
+  final int size = imageInfo.height * imageInfo.rowBytes;
+  final int headerSize = 122;
+  final ByteData data = ByteData(headerSize);
+
+  var index = 0;
+  void write2b(int val, [Endian endian = Endian.little]) {
+    data.setUint16(index, val, endian);
+    index += 2;
+  }
+  void write4b(int val, [Endian endian = Endian.little]) {
+    data.setUint32(index, val, endian);
+    index += 4;
+  }
+  void skip(int bytes) => index += bytes;
+  
+  write2b(0x4D42);            // BMP Magic 'BM'
+  write4b(size + headerSize); // File size
+  skip(4);                    // Unused
+  write4b(headerSize);        // Header size
+  write4b(0x00006C);          // BITMAPV4HEADER
+  write4b(imageInfo.width);   // Width
+  write4b(imageInfo.height);  // Height
+  write2b(0x0001);            // Planes
+  write2b(0x0020);            // Bits per px (always 32bit on flutter)
+  write4b(0x000003);          // Compression (BI_BITFIELDS)
+  write4b(size);              // Img size
+  skip(4 * 2 + 4 * 2);        // Unused resolution & colors
+  // Color masks
+  if (imageInfo.format == 0) {
+    // RGBA8888
+    write4b(0xFF000000, Endian.big);
+    write4b(0x00FF0000, Endian.big);
+    write4b(0x0000FF00, Endian.big);
+    write4b(0x000000FF, Endian.big);
+  }
+  if (imageInfo.format == 1) {
+    // BGRA8888
+    write4b(0x0000FF00, Endian.big);
+    write4b(0x00FF0000, Endian.big);
+    write4b(0xFF000000, Endian.big);
+    write4b(0x000000FF, Endian.big);
+  }
+  write4b(0x73524742, Endian.big); // "sRGB"
+  skip(4*3*3 + 4*3);               // Unused color space endpoints & gamma
+  return data.buffer;
+}
+
+/// Makes the BMP header and flips the image vertically using Uint8ListView
+List<dynamic> _buildBmp(Uint8List bytes, _ImageInfo imageInfo) {
+  final ByteBuffer header = _constructBmpHeader(imageInfo);
+  final ByteBuffer imageBuffer = bytes.buffer;
+  final List<dynamic> bmpImage = [header];
+  for (int i = imageInfo.height - 1; i >= 0; i--) {
+	final int rowStart = i*imageInfo.rowBytes;
+  	final Uint8List row = imageBuffer.asUint8List(rowStart, imageInfo.rowBytes);
+  	bmpImage.add(row);
+  }
+  return bmpImage;
+}
+
 /// Instantiates a [Codec] object for an image binary data.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
@@ -1596,7 +1661,8 @@ String _instantiateImageCodec(
     }
     return null;
   }
-  final html.Blob blob = html.Blob(<dynamic>[list.buffer]);
+  final List<dynamic> blobParts = imageInfo == null ? [list.buffer] : _buildBmp(list, imageInfo);
+  final html.Blob blob = html.Blob(blobParts);
   callback(engine.HtmlBlobCodec(blob));
   return null;
 }
