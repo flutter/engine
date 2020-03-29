@@ -56,58 +56,78 @@ TEST(EventChannelTest, Registration) {
   bool on_listen_called = false;
   auto onListen = [&on_listen_called](
                       const flutter::EncodableValue* arguments,
-                      EventSink<flutter::EncodableValue>* event_sink) {
-    event_sink->Success();
-    auto message = flutter::EncodableValue(flutter::EncodableMap{
-        {flutter::EncodableValue("message"),
-         flutter::EncodableValue("Test from Event Channel")}});
-    event_sink->Success(&message);
-    event_sink->Error("Event Channel Error Code", "Error Message", nullptr);
-    event_sink->EndOfStream();
+                      EventSink<flutter::EncodableValue>* events) {
     on_listen_called = true;
   };
+  auto onCancel = [](const flutter::EncodableValue* arguments) {};
 
-  bool on_cancel_called = false;
-  auto onCancel =
-      [&on_cancel_called](const flutter::EncodableValue* arguments) {
-        on_cancel_called = true;
-      };
-  channel.SetStreamHandler(
-      flutter::StreamHandler<flutter::EncodableValue>(onListen, onCancel));
-
+  flutter::StreamHandler<flutter::EncodableValue> handler(onListen, onCancel);
+  channel.SetStreamHandler(&handler);
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 
-  // Send a test message to trigger the handler test assertions.
-  MethodCall<EncodableValue> call("listen", nullptr);
+  // Send dummy listen message
+  MethodCall<flutter::EncodableValue> call("listen", nullptr);
   auto message = codec.EncodeMethodCall(call);
   messenger.last_message_handler()(
       message->data(), message->size(),
       [](const uint8_t* reply, const size_t reply_size) {});
-  EXPECT_EQ(on_listen_called, true);
 
-  // FIXME: add onCancel test scenario
-  // EXPECT_EQ(on_cancel_called, true);
+  // Check results
+  EXPECT_EQ(on_listen_called, true);
 }
 
 // Tests that SetStreamHandler with a null handler unregisters the handler.
 TEST(EventChannelTest, Unregistration) {
   TestBinaryMessenger messenger;
   const std::string channel_name("some_channel");
-  EventChannel<flutter::EncodableValue> channel(
-      &messenger, channel_name, &flutter::StandardMethodCodec::GetInstance());
+  const StandardMethodCodec& codec = StandardMethodCodec::GetInstance();
+  EventChannel channel(&messenger, channel_name, &codec);
 
   auto onListen = [](const flutter::EncodableValue* arguments,
-                     EventSink<flutter::EncodableValue>* event_sink) {};
+                     EventSink<flutter::EncodableValue>* events) {};
   auto onCancel = [](const flutter::EncodableValue* arguments) {};
-  channel.SetStreamHandler(
-      flutter::StreamHandler<flutter::EncodableValue>(onListen, onCancel));
+
+  flutter::StreamHandler<flutter::EncodableValue> handler(onListen, onCancel);
+  channel.SetStreamHandler(&handler);
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 
-  // channel.SetStreamHandler(std::nullopt);
-  // EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
-  // EXPECT_EQ(messenger.last_message_handler(), nullptr);
+  channel.SetStreamHandler(nullptr);
+  EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
+  EXPECT_EQ(messenger.last_message_handler(), nullptr);
+}
+
+// Test of OnCancel callback
+TEST(EventChannelTest, Cancel) {
+  TestBinaryMessenger messenger;
+  const std::string channel_name("some_channel");
+  const StandardMethodCodec& codec = StandardMethodCodec::GetInstance();
+  EventChannel channel(&messenger, channel_name, &codec);
+
+  auto onListen = [](const flutter::EncodableValue* arguments,
+                     EventSink<flutter::EncodableValue>* events) {};
+
+  bool on_cancel_called = false;
+  auto onCancel =
+      [&on_cancel_called](const flutter::EncodableValue* arguments) {
+        on_cancel_called = true;
+      };
+
+  flutter::StreamHandler<flutter::EncodableValue> handler(onListen, onCancel);
+  channel.SetStreamHandler(&handler);
+  EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
+  EXPECT_NE(messenger.last_message_handler(), nullptr);
+
+  // Send dummy cancel message
+  MethodCall<flutter::EncodableValue> call("cancel", nullptr);
+  auto message = codec.EncodeMethodCall(call);
+  messenger.last_message_handler()(
+      message->data(), message->size(),
+      [](const uint8_t* reply, const size_t reply_size) {});
+
+  // Check results
+  EXPECT_EQ(on_cancel_called, true);
 }
 
 }  // namespace flutter
