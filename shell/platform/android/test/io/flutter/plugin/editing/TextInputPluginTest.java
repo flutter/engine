@@ -29,8 +29,6 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Test;
