@@ -64,20 +64,25 @@ class RecordingCanvas {
   void apply(EngineCanvas engineCanvas, ui.Rect clipRect) {
     if (_debugDumpPaintCommands) {
       final StringBuffer debugBuf = StringBuffer();
+      int skips = 0;
       debugBuf.writeln(
           '--- Applying RecordingCanvas to ${engineCanvas.runtimeType} '
-          'with bounds $_paintBounds');
+          'with bounds $_paintBounds and clip $clipRect (w = ${clipRect.width}, h = ${clipRect.height})');
       for (int i = 0; i < _commands.length; i++) {
         final PaintCommand command = _commands[i];
         if (command is DrawCommand) {
           if (_isOutsideClipRegion(command, clipRect)) {
             // The drawing command is outside the clip region. No need to apply.
             debugBuf.writeln('SKIPPED: ctx.$command;');
+            skips += 1;
             continue;
           }
         }
         debugBuf.writeln('ctx.$command;');
         command.apply(engineCanvas);
+      }
+      if (skips > 0) {
+        debugBuf.writeln('Total commands skipped: $skips');
       }
       debugBuf.writeln('--- End of command stream');
       print(debugBuf);
