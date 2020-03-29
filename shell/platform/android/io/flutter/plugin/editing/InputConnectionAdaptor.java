@@ -80,6 +80,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     int selectionEnd = Selection.getSelectionEnd(mEditable);
     int composingStart = BaseInputConnection.getComposingSpanStart(mEditable);
     int composingEnd = BaseInputConnection.getComposingSpanEnd(mEditable);
+    Log.e("flutter", "    ## updateEditingState(" +selectionStart + "," +selectionEnd + "," +composingStart + "," +composingEnd + ")");
 
     mImm.updateSelection(mFlutterView, selectionStart, selectionEnd, composingStart, composingEnd);
 
@@ -95,6 +96,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
   @Override
   public boolean beginBatchEdit() {
     mBatchCount++;
+    Log.e("flutter", "    # beg " + mBatchCount);
     return super.beginBatchEdit();
   }
 
@@ -102,12 +104,14 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean endBatchEdit() {
     boolean result = super.endBatchEdit();
     mBatchCount--;
+    Log.e("flutter", "    # end " + mBatchCount);
     updateEditingState();
     return result;
   }
 
   @Override
   public boolean commitText(CharSequence text, int newCursorPosition) {
+    Log.e("flutter", "commitText");
     boolean result = super.commitText(text, newCursorPosition);
     updateEditingState();
     return result;
@@ -115,6 +119,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean deleteSurroundingText(int beforeLength, int afterLength) {
+    Log.e("flutter", "deleteSurroundingText");
     if (Selection.getSelectionStart(mEditable) == -1) return true;
 
     boolean result = super.deleteSurroundingText(beforeLength, afterLength);
@@ -124,6 +129,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean setComposingRegion(int start, int end) {
+    Log.e("flutter", "setComposingRegion(" + start + "," + end + ")");
     boolean result = super.setComposingRegion(start, end);
     updateEditingState();
     return result;
@@ -131,6 +137,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean setComposingText(CharSequence text, int newCursorPosition) {
+    Log.e("flutter", "setComposingText(" + text + "," + newCursorPosition + ")");
     boolean result;
     if (text.length() == 0) {
       result = super.commitText(text, newCursorPosition);
@@ -143,11 +150,13 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean finishComposingText() {
+    Log.e("flutter", "finishComposingText");
     boolean result = super.finishComposingText();
 
     // Apply Samsung hacks. Samsung caches composing region data strangely, causing text
     // duplication.
     if (isSamsung) {
+      Log.e("flutter", "finishComposingText: Samsung hacks");
       if (Build.VERSION.SDK_INT >= 21) {
         // Samsung keyboards don't clear the composing region on finishComposingText.
         // Update the keyboard with a reset/empty composing region. Critical on
@@ -196,6 +205,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean setSelection(int start, int end) {
+    Log.e("flutter", "setSelection");
     boolean result = super.setSelection(start, end);
     updateEditingState();
     return result;
@@ -219,6 +229,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
+    Log.e("flutter", "sendKeyEvent(" + event + ")");
     if (event.getAction() == KeyEvent.ACTION_DOWN) {
       if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
         int selStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
