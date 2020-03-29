@@ -325,21 +325,39 @@ class InputConnectionAdaptor extends BaseInputConnection {
           // TODO(garyq): Explore how to obtain per-character direction. The
           // isRTLCharAt() call below is returning blanket direction assumption
           // based on the first character in the line.
-          boolean isRtl = mLayout.isRtlCharAt(mLayout.getLineForOffset(selStart));
-          try {
-            if (isRtl) {
-              Selection.extendRight(mEditable, mLayout);
-            } else {
-              Selection.extendLeft(mEditable, mLayout);
+
+          Boolean selectedCharIsEmoji = false;
+          if (selStart > 1) {
+            final String emo_regex =
+                "([\\u20a0-\\u32ff\\ud83c\\udc00-\\ud83d\\udeff\\udbb9\\udce5-\\udbb9\\udcee])";
+            String lastChars = mLayout.getText().subSequence(selStart - 2, selStart).toString();
+            selectedCharIsEmoji = lastChars.matches(emo_regex);
+          }
+
+          // The Selection.extendLeft and extendRight calls have some problems
+          // when mixing RTL and LTR text so if selected character is not emoji
+          // simply select that character
+          if (selectedCharIsEmoji) {
+            boolean isRtl =
+                mLayout.isRtlCharAt(mLayout.getLineStart(mLayout.getLineForOffset(selStart)));
+            Log.i("isRtl", Boolean.toString(isRtl));
+            try {
+              if (isRtl) {
+                Selection.extendRight(mEditable, mLayout);
+              } else {
+                Selection.extendLeft(mEditable, mLayout);
+              }
+            } catch (IndexOutOfBoundsException e) {
+              // On some Chinese devices (primarily Huawei, some Xiaomi),
+              // on initial app startup before focus is lost, the
+              // Selection.extendLeft and extendRight calls always extend
+              // from the index of the initial contents of mEditable. This
+              // try-catch will prevent crashing on Huawei devices by falling
+              // back to a simple way of deletion, although this a hack and
+              // will not handle emojis.
+              Selection.setSelection(mEditable, selStart, selStart - 1);
             }
-          } catch (IndexOutOfBoundsException e) {
-            // On some Chinese devices (primarily Huawei, some Xiaomi),
-            // on initial app startup before focus is lost, the
-            // Selection.extendLeft and extendRight calls always extend
-            // from the index of the initial contents of mEditable. This
-            // try-catch will prevent crashing on Huawei devices by falling
-            // back to a simple way of deletion, although this a hack and
-            // will not handle emojis.
+          } else {
             Selection.setSelection(mEditable, selStart, selStart - 1);
           }
           int newStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
