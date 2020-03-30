@@ -776,6 +776,8 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
 }
 
 String _maskFilterToCss(ui.MaskFilter maskFilter) {
-  if (maskFilter == null) return 'none';
+  if (maskFilter == null) {
+    return 'none';
+  }
   return 'blur(${maskFilter.webOnlySigma}px)';
 }
