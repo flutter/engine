@@ -595,6 +595,13 @@ hooks = [
     ],
   },
   {
+    # Update the Windows toolchain if necessary.
+    'name': 'win_toolchain',
+    'condition': 'download_windows_deps',
+    'pattern': '.',
+    'action': ['python', 'src/build/vs_toolchain.py', 'update'],
+  },
+  {
     'name': 'generate_package_files',
     'pattern': '.',
     'cwd': 'src/',
