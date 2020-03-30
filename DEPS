@@ -525,6 +525,18 @@ deps = {
     'dep_type': 'cipd',
   },
 
+  # TODO(fxb/4443): Remove this when Fuchsia can provide the Windows Clang Toolchain
+  'src/third_party/llvm-build/Release+Asserts': {
+    'packages': [
+      {
+        'package': 'flutter/clang/win-amd64',
+        'version': 'svn_revision:342523'
+      }
+    ],
+    'condition': 'download_windows_deps',
+    'dep_type': 'cipd',
+  },
+
    # Get the SDK from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/core at the 'latest' tag
    # Get the toolchain from https://chrome-infra-packages.appspot.com/p/fuchsia/clang at the 'goma' tag
 
@@ -583,13 +595,6 @@ hooks = [
     ],
   },
   {
-    # Update the Windows toolchain if necessary.
-    'name': 'win_toolchain',
-    'condition': 'download_windows_deps',
-    'pattern': '.',
-    'action': ['python', 'src/build/vs_toolchain.py', 'update'],
-  },
-  {
     'name': 'generate_package_files',
     'pattern': '.',
     'cwd': 'src/',
@@ -620,6 +625,15 @@ hooks = [
       '--extract',
       '-s',
       'src/third_party/dart/third_party/7zip.tar.gz.sha1',
+    ],
+  },
+  {
+    'name': 'dia_dll',
+    'pattern': '.',
+    'condition': 'download_windows_deps',
+    'action': [
+      'python',
+      'src/flutter/tools/dia_dll.py',
     ],
   },
 ]

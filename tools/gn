@@ -101,7 +101,7 @@ def to_gn_args(args):
     gn_args['dart_component_kind'] = 'static_library' # Always link Dart in statically.
     gn_args['is_debug'] = args.unoptimized
     gn_args['android_full_debug'] = args.target_os == 'android' and args.unoptimized
-    gn_args['is_clang'] = not sys.platform.startswith(('cygwin', 'win'))
+    gn_args['is_clang'] = True
 
     if args.target_os == 'android' or args.target_os == 'ios':
       gn_args['skia_gl_standard'] = 'gles'
