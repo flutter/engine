@@ -866,14 +866,6 @@ class TextBox {
     this.direction,
   );
 
-  TextBox._(
-    this.left,
-    this.top,
-    this.right,
-    this.bottom,
-    int directionIndex,
-  ) : direction = TextDirection.values[directionIndex];
-
   /// The left edge of the text box, irrespective of direction.
   ///
   /// To get the leading edge (which may depend on the [direction]), consider [start].
@@ -1113,8 +1105,12 @@ class TextRange {
 
   @override
   bool operator ==(dynamic other) {
-    if (identical(this, other)) return true;
-    if (other is! TextRange) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! TextRange) {
+      return false;
+    }
     final TextRange typedOther = other;
     return typedOther.start == start && typedOther.end == end;
   }
