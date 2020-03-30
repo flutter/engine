@@ -343,22 +343,28 @@ class InputConnectionAdaptor extends BaseInputConnection {
         int selStart = Selection.getSelectionStart(mEditable);
         int selEnd = Selection.getSelectionEnd(mEditable);
         if (selStart == selEnd && !event.isShiftPressed()) {
-          int newSel = Math.max(selStart - 1, 0);
-          setSelection(newSel, newSel);
+          Selection.moveLeft(mEditable, mLayout);
+          int newSelStart = Selection.getSelectionStart(mEditable);
+          setSelection(newSelStart, newSelStart);
         } else {
-          int newSelEnd = Math.max(selEnd - 1, 0);
-          setSelection(selStart, newSelEnd);
+          Selection.extendLeft(mEditable, mLayout);
+          int newSelStart = Selection.getSelectionStart(mEditable);
+          int newSelEnd = Selection.getSelectionEnd(mEditable);
+          setSelection(newSelStart, newSelEnd);
         }
         return true;
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
         int selStart = Selection.getSelectionStart(mEditable);
         int selEnd = Selection.getSelectionEnd(mEditable);
         if (selStart == selEnd && !event.isShiftPressed()) {
-          int newSel = Math.min(selStart + 1, mEditable.length());
-          setSelection(newSel, newSel);
+          Selection.moveRight(mEditable, mLayout);
+          int newSelStart = Selection.getSelectionStart(mEditable);
+          setSelection(newSelStart, newSelStart);
         } else {
-          int newSelEnd = Math.min(selEnd + 1, mEditable.length());
-          setSelection(selStart, newSelEnd);
+          Selection.extendRight(mEditable, mLayout);
+          int newSelStart = Selection.getSelectionStart(mEditable);
+          int newSelEnd = Selection.getSelectionEnd(mEditable);
+          setSelection(newSelStart, newSelEnd);
         }
         return true;
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_UP) {
