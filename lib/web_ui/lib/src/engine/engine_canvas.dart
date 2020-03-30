@@ -254,7 +254,7 @@ html.Element _drawParagraphElement(
 }) {
   assert(paragraph._isLaidOut);
 
-  final html.Element paragraphElement = paragraph._paragraphElement.clone(true) as html.Element;
+  final html.Element paragraphElement = unsafeCast<html.Element>(paragraph._paragraphElement.clone(true));
 
   final html.CssStyleDeclaration paragraphStyle = paragraphElement.style;
   paragraphStyle

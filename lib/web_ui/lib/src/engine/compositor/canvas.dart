@@ -11,7 +11,7 @@ class SkCanvas {
 
   SkCanvas(this.skCanvas);
 
-  int get saveCount => skCanvas.callMethod('getSaveCount') as int;
+  int get saveCount => unsafeCast<int>(skCanvas.callMethod('getSaveCount'));
 
   void clear(ui.Color color) {
     skCanvas.callMethod('clear', <int>[color.value]);
@@ -19,7 +19,7 @@ class SkCanvas {
 
   void clipPath(SkPath path, bool doAntiAlias) {
     final SkPath skPath = path;
-    final js.JsObject intersectClipOp = canvasKit['ClipOp']['Intersect'] as js.JsObject;
+    final js.JsObject intersectClipOp = unsafeCast<js.JsObject>(canvasKit['ClipOp']['Intersect']);
     skCanvas.callMethod('clipPath', <dynamic>[
       skPath._skPath,
       intersectClipOp,
@@ -28,7 +28,7 @@ class SkCanvas {
   }
 
   void clipRRect(ui.RRect rrect, bool doAntiAlias) {
-    final js.JsObject intersectClipOp = canvasKit['ClipOp']['Intersect'] as js.JsObject;
+    final js.JsObject intersectClipOp = unsafeCast<js.JsObject>(canvasKit['ClipOp']['Intersect']);
     skCanvas.callMethod('clipRRect', <dynamic>[
       makeSkRRect(rrect),
       intersectClipOp,
@@ -40,10 +40,10 @@ class SkCanvas {
     js.JsObject skClipOp;
     switch (clipOp) {
       case ui.ClipOp.difference:
-        skClipOp = canvasKit['ClipOp']['Difference'] as js.JsObject;
+        skClipOp = unsafeCast<js.JsObject>(canvasKit['ClipOp']['Difference']);
         break;
       case ui.ClipOp.intersect:
-        skClipOp = canvasKit['ClipOp']['Intersect'] as js.JsObject;
+        skClipOp = unsafeCast<js.JsObject>(canvasKit['ClipOp']['Intersect']);
         break;
     }
 
@@ -228,7 +228,7 @@ class SkCanvas {
   }
 
   int save() {
-    return skCanvas.callMethod('save') as int;
+    return unsafeCast<int>(skCanvas.callMethod('save'));
   }
 
   void saveLayer(ui.Rect bounds, SkPaint paint) {

@@ -177,7 +177,7 @@ class SkiaFontCollection {
 
   Future<ByteBuffer> _getArrayBuffer(dynamic fetchResult) {
     // TODO(yjbanov): fetchResult.arrayBuffer is a dynamic invocation. Clean it up.
-    return fetchResult.arrayBuffer().then<ByteBuffer>((dynamic x) => x as ByteBuffer);
+    return fetchResult.arrayBuffer().then<ByteBuffer>((dynamic x) => unsafeCast<ByteBuffer>(x));
   }
 
   js.JsObject skFontMgr;

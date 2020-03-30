@@ -15,7 +15,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   List<E> _buffer;
 
   /// Returns a view of [_buffer] as a [TypedData].
-  TypedData get _typedBuffer => _buffer as TypedData;
+  TypedData get _typedBuffer => unsafeCast<TypedData>(_buffer);
 
   /// The length of the list being built.
   int _length;

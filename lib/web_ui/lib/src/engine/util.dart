@@ -455,3 +455,11 @@ FutureOr<void> sendFontChangeMessage() async {
       (_) {},
     );
 }
+
+/// Casts any expression to type [T].
+///
+/// This cast is unsafe because release mode compiles using `-O4`, which
+/// includes the `--omit-implicit-checks` option. This option forces the
+/// compiler to omit the runtime type check. Use this cast only in places
+/// where you are absolutely sure that it will not fail.
+T unsafeCast<T>(Object any) => any; // ignore: return_of_invalid_type

@@ -357,9 +357,8 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPool.allocateExtraCanvas();
   }
 
-  html.ImageElement _drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
-    final HtmlImage htmlImage = image as HtmlImage;
-    final html.ImageElement imgElement = htmlImage.cloneImageElement();
+  html.ImageElement _drawImage(HtmlImage image, ui.Offset p, SurfacePaintData paint) {
+    final html.ImageElement imgElement = image.cloneImageElement();
     final ui.BlendMode blendMode = paint.blendMode;
     imgElement.style.mixBlendMode = _stringForBlendMode(blendMode);
     if (_canvasPool.isClipped) {
@@ -526,9 +525,8 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   /// Paints the [picture] into this canvas.
-  void drawPicture(ui.Picture picture) {
-    final EnginePicture enginePicture = picture as EnginePicture;
-    enginePicture.recordingCanvas.apply(this);
+  void drawPicture(EnginePicture picture) {
+    picture.recordingCanvas.apply(this);
   }
 
   /// Draws vertices on a gl context.

@@ -498,7 +498,7 @@ class _CanvasPool extends _SaveStackTracking {
       for (PathCommand command in subpath.commands) {
         switch (command.type) {
           case PathCommandTypes.bezierCurveTo:
-            final BezierCurveTo curve = command as BezierCurveTo;
+            final BezierCurveTo curve = unsafeCast<BezierCurveTo>(command);
             ctx.bezierCurveTo(
                 curve.x1, curve.y1, curve.x2, curve.y2, curve.x3, curve.y3);
             break;
@@ -506,7 +506,7 @@ class _CanvasPool extends _SaveStackTracking {
             ctx.closePath();
             break;
           case PathCommandTypes.ellipse:
-            final Ellipse ellipse = command as Ellipse;
+            final Ellipse ellipse = unsafeCast<Ellipse>(command);
             DomRenderer.ellipse(ctx,
                 ellipse.x,
                 ellipse.y,
@@ -518,25 +518,25 @@ class _CanvasPool extends _SaveStackTracking {
                 ellipse.anticlockwise);
             break;
           case PathCommandTypes.lineTo:
-            final LineTo lineTo = command as LineTo;
+            final LineTo lineTo = unsafeCast<LineTo>(command);
             ctx.lineTo(lineTo.x, lineTo.y);
             break;
           case PathCommandTypes.moveTo:
-            final MoveTo moveTo = command as MoveTo;
+            final MoveTo moveTo = unsafeCast<MoveTo>(command);
             ctx.moveTo(moveTo.x, moveTo.y);
             break;
           case PathCommandTypes.rRect:
-            final RRectCommand rrectCommand = command as RRectCommand;
+            final RRectCommand rrectCommand = unsafeCast<RRectCommand>(command);
             _RRectToCanvasRenderer(ctx)
                 .render(rrectCommand.rrect, startNewPath: false);
             break;
           case PathCommandTypes.rect:
-            final RectCommand rectCommand = command as RectCommand;
+            final RectCommand rectCommand = unsafeCast<RectCommand>(command);
             ctx.rect(rectCommand.x, rectCommand.y, rectCommand.width,
                 rectCommand.height);
             break;
           case PathCommandTypes.quadraticCurveTo:
-            final QuadraticCurveTo quadraticCurveTo = command as QuadraticCurveTo;
+            final QuadraticCurveTo quadraticCurveTo = unsafeCast<QuadraticCurveTo>(command);
             ctx.quadraticCurveTo(quadraticCurveTo.x1, quadraticCurveTo.y1,
                 quadraticCurveTo.x2, quadraticCurveTo.y2);
             break;
