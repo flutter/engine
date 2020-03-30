@@ -5,8 +5,8 @@
 // @dart = 2.6
 part of engine;
 
-html.HtmlElement _createContainer() {
-  final html.HtmlElement container = html.DivElement();
+html.Element _createContainer() {
+  final html.Element container = html.DivElement();
   container.style
     ..position = 'fixed'
     ..top = '0'
@@ -25,8 +25,8 @@ html.HtmlElement _createContainer() {
 /// release builds.
 class DebugCanvasReuseOverlay {
   DebugCanvasReuseOverlay._() {
-    final html.HtmlElement container = _createContainer();
-    final html.HtmlElement title = html.DivElement();
+    final html.Element container = _createContainer();
+    final html.Element title = html.DivElement();
     title.style
       ..fontWeight = 'bold'
       ..textDecoration = 'underline';

@@ -19,7 +19,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   /// [domElement] so the caller can insert it before calling
   /// [SemanticsTextEditingStrategy.enable].
   SemanticsTextEditingStrategy(
-      HybridTextEditing owner, html.HtmlElement domElement)
+      HybridTextEditing owner, html.Element domElement)
       : super(owner) {
     // Make sure the DOM element is of a type that we support for text editing.
     // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
@@ -80,7 +80,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 class TextField extends RoleManager {
   TextField(SemanticsObject semanticsObject)
       : super(Role.textField, semanticsObject) {
-    final html.HtmlElement editableDomElement =
+    final html.Element editableDomElement =
         semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
             ? html.TextAreaElement()
             : html.InputElement();

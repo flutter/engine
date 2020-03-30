@@ -207,10 +207,9 @@ class BitmapCanvas extends EngineCanvas {
       ..strokeJoin = paint.strokeJoin
       ..filter = _maskFilterToCss(paint.maskFilter);
 
-    if (paint.shader != null) {
-      final EngineGradient engineShader = paint.shader;
-      final Object paintStyle =
-          engineShader.createPaintStyle(_canvasPool.context);
+    final ui.Shader shader = paint.shader;
+    if (shader is EngineGradient) {
+      final Object paintStyle = shader.createPaintStyle(_canvasPool.context);
       contextHandle.fillStyle = paintStyle;
       contextHandle.strokeStyle = paintStyle;
     } else if (paint.color != null) {
@@ -288,7 +287,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   @override
-  void clipPath(ui.Path path) {
+  void clipPath(SurfacePath path) {
     _canvasPool.clipPath(path);
   }
 
@@ -340,13 +339,13 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   @override
-  void drawPath(ui.Path path, SurfacePaintData paint) {
+  void drawPath(SurfacePath path, SurfacePaintData paint) {
     _applyPaint(paint);
     _canvasPool.drawPath(path, paint.style);
   }
 
   @override
-  void drawShadow(ui.Path path, ui.Color color, double elevation,
+  void drawShadow(SurfacePath path, ui.Color color, double elevation,
       bool transparentOccluder) {
     _canvasPool.drawShadow(path, color, elevation, transparentOccluder);
   }
@@ -359,8 +358,8 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   html.ImageElement _drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
-    final HtmlImage htmlImage = image;
-    final html.Element imgElement = htmlImage.cloneImageElement();
+    final HtmlImage htmlImage = image as HtmlImage;
+    final html.ImageElement imgElement = htmlImage.cloneImageElement();
     final ui.BlendMode blendMode = paint.blendMode;
     imgElement.style.mixBlendMode = _stringForBlendMode(blendMode);
     if (_canvasPool.isClipped) {
@@ -528,7 +527,7 @@ class BitmapCanvas extends EngineCanvas {
 
   /// Paints the [picture] into this canvas.
   void drawPicture(ui.Picture picture) {
-    final EnginePicture enginePicture = picture;
+    final EnginePicture enginePicture = picture as EnginePicture;
     enginePicture.recordingCanvas.apply(this);
   }
 
@@ -702,13 +701,13 @@ String _stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
 /// it's contents. The clipping rectangles are nested and returned together
 /// with a list of svg elements that provide clip-paths.
 List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
-    html.HtmlElement content, ui.Offset offset, Matrix4 currentTransform) {
+    html.Element content, ui.Offset offset, Matrix4 currentTransform) {
   html.Element root, curElement;
   final List<html.Element> clipDefs = <html.Element>[];
   final int len = clipStack.length;
   for (int clipIndex = 0; clipIndex < len; clipIndex++) {
     final _SaveClipEntry entry = clipStack[clipIndex];
-    final html.HtmlElement newElement = html.DivElement();
+    final html.Element newElement = html.DivElement();
     newElement.style.position = 'absolute';
     applyWebkitClipFix(newElement);
     if (root == null) {

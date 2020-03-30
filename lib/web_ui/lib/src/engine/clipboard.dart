@@ -19,7 +19,7 @@ class ClipboardMessageHandler {
       MethodCall methodCall, ui.PlatformMessageResponseCallback callback) {
     const MethodCodec codec = JSONMethodCodec();
     _copyToClipboardStrategy
-        .setData(methodCall.arguments['text'])
+        .setData(methodCall.arguments['text'] as String)
         .then((bool success) {
       if (success) {
         callback(codec.encodeSuccessEnvelope(true));
@@ -166,7 +166,7 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
     return tempElement;
   }
 
-  void _removeTemporaryTextArea(html.HtmlElement element) {
+  void _removeTemporaryTextArea(html.Element element) {
     element?.remove();
   }
 }

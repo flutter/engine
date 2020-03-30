@@ -17,7 +17,7 @@ void _emptyCallback(dynamic _) {}
 /// element.
 ///
 /// They are assigned once during the creation of the DOM element.
-void _setStaticStyleAttributes(html.HtmlElement domElement) {
+void _setStaticStyleAttributes(html.Element domElement) {
   domElement.classes.add(HybridTextEditing.textEditingClass);
 
   final html.CssStyleDeclaration elementStyle = domElement.style;
@@ -88,7 +88,7 @@ class EditingState {
   ///
   /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
   /// the [InputType] of the text field.
-  factory EditingState.fromDomElement(html.HtmlElement domElement) {
+  factory EditingState.fromDomElement(html.Element domElement) {
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
       return EditingState(
@@ -155,7 +155,7 @@ class EditingState {
   ///
   /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
   /// the [InputType] of the text field.
-  void applyToDomElement(html.HtmlElement domElement) {
+  void applyToDomElement(html.Element domElement) {
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
       element.value = text;
@@ -305,7 +305,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   @visibleForTesting
   bool isEnabled = false;
 
-  html.HtmlElement domElement;
+  html.Element domElement;
   InputConfiguration _inputConfiguration;
   EditingState _lastEditingState;
 
@@ -1084,7 +1084,7 @@ class EditableTextStyle {
 
   String get cssFont => '${fontWeight} ${fontSize}px ${fontFamily}';
 
-  void applyToDomElement(html.HtmlElement domElement) {
+  void applyToDomElement(html.Element domElement) {
     domElement.style
       ..textAlign = align
       ..font = cssFont;
@@ -1141,7 +1141,7 @@ class EditableTextGeometry {
   /// example, if the editable DOM element is nested inside the semantics
   /// tree the semantics tree provides the placement parameters, in which
   /// case this method should not be used.
-  void applyToDomElement(html.HtmlElement domElement) {
+  void applyToDomElement(html.Element domElement) {
     final String cssTransform = float64ListToCssTransform(globalTransform);
     domElement.style
       ..width = '${width}px'

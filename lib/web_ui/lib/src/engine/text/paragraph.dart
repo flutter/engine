@@ -135,7 +135,7 @@ class EngineParagraph implements ui.Paragraph {
   ///
   /// To create a [ui.Paragraph] object, use a [ui.ParagraphBuilder].
   EngineParagraph({
-    @required html.HtmlElement paragraphElement,
+    @required html.Element paragraphElement,
     @required ParagraphGeometricStyle geometricStyle,
     @required String plainText,
     @required ui.Paint paint,
@@ -152,7 +152,7 @@ class EngineParagraph implements ui.Paragraph {
         _paint = paint,
         _background = background;
 
-  final html.HtmlElement _paragraphElement;
+  final html.Element _paragraphElement;
   final ParagraphGeometricStyle _geometricStyle;
   final String _plainText;
   final SurfacePaint _paint;
@@ -164,7 +164,7 @@ class EngineParagraph implements ui.Paragraph {
   String get plainText => _plainText;
 
   @visibleForTesting
-  html.HtmlElement get paragraphElement => _paragraphElement;
+  html.Element get paragraphElement => _paragraphElement;
 
   @visibleForTesting
   ParagraphGeometricStyle get geometricStyle => _geometricStyle;
@@ -976,7 +976,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
   /// Marks a call to the [pop] method in the [_ops] list.
   static final Object _paragraphBuilderPop = Object();
 
-  final html.HtmlElement _paragraphElement = domRenderer.createElement('p');
+  final html.Element _paragraphElement = domRenderer.createElement('p');
   final EngineParagraphStyle _paragraphStyle;
   final List<dynamic> _ops = <dynamic>[];
 
@@ -1352,7 +1352,7 @@ String fontWeightIndexToCss({int fontWeightIndex = 3}) {
 ///
 /// If [previousStyle] is not null, updates only the mismatching attributes.
 void _applyParagraphStyleToElement({
-  @required html.HtmlElement element,
+  @required html.Element element,
   @required EngineParagraphStyle style,
   EngineParagraphStyle previousStyle,
 }) {
@@ -1420,7 +1420,7 @@ void _applyParagraphStyleToElement({
 /// If [isSpan] is true, the text element is a span within richtext and
 /// should not assign effectiveFontFamily if fontFamily was not specified.
 void _applyTextStyleToElement({
-  @required html.HtmlElement element,
+  @required html.Element element,
   @required EngineTextStyle style,
   EngineTextStyle previousStyle,
   bool isSpan = false,
@@ -1552,7 +1552,7 @@ String _shadowListToCss(List<ui.Shadow> shadows) {
 /// Applies background color properties in text style to paragraph or span
 /// elements.
 void _applyTextBackgroundToElement({
-  @required html.HtmlElement element,
+  @required html.Element element,
   @required EngineTextStyle style,
   EngineTextStyle previousStyle,
 }) {

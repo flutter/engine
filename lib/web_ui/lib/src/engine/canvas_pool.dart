@@ -31,7 +31,7 @@ class _CanvasPool extends _SaveStackTracking {
   // Current canvas element or null if marked for lazy allocation.
   html.CanvasElement _canvas;
 
-  html.HtmlElement _rootElement;
+  html.Element _rootElement;
   int _saveContextCount = 0;
 
   _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
@@ -71,7 +71,7 @@ class _CanvasPool extends _SaveStackTracking {
     }
   }
 
-  void allocateCanvas(html.HtmlElement rootElement) {
+  void allocateCanvas(html.Element rootElement) {
     _rootElement = rootElement;
   }
 
@@ -415,12 +415,12 @@ class _CanvasPool extends _SaveStackTracking {
   }
 
   void _clipRRect(html.CanvasRenderingContext2D ctx, ui.RRect rrect) {
-    final ui.Path path = ui.Path()..addRRect(rrect);
+    final SurfacePath path = SurfacePath()..addRRect(rrect);
     _runPath(ctx, path);
     ctx.clip();
   }
 
-  void clipPath(ui.Path path) {
+  void clipPath(SurfacePath path) {
     super.clipPath(path);
     if (_canvas != null) {
       html.CanvasRenderingContext2D ctx = context;
@@ -498,7 +498,7 @@ class _CanvasPool extends _SaveStackTracking {
       for (PathCommand command in subpath.commands) {
         switch (command.type) {
           case PathCommandTypes.bezierCurveTo:
-            final BezierCurveTo curve = command;
+            final BezierCurveTo curve = command as BezierCurveTo;
             ctx.bezierCurveTo(
                 curve.x1, curve.y1, curve.x2, curve.y2, curve.x3, curve.y3);
             break;
@@ -506,7 +506,7 @@ class _CanvasPool extends _SaveStackTracking {
             ctx.closePath();
             break;
           case PathCommandTypes.ellipse:
-            final Ellipse ellipse = command;
+            final Ellipse ellipse = command as Ellipse;
             DomRenderer.ellipse(ctx,
                 ellipse.x,
                 ellipse.y,
@@ -518,25 +518,25 @@ class _CanvasPool extends _SaveStackTracking {
                 ellipse.anticlockwise);
             break;
           case PathCommandTypes.lineTo:
-            final LineTo lineTo = command;
+            final LineTo lineTo = command as LineTo;
             ctx.lineTo(lineTo.x, lineTo.y);
             break;
           case PathCommandTypes.moveTo:
-            final MoveTo moveTo = command;
+            final MoveTo moveTo = command as MoveTo;
             ctx.moveTo(moveTo.x, moveTo.y);
             break;
           case PathCommandTypes.rRect:
-            final RRectCommand rrectCommand = command;
+            final RRectCommand rrectCommand = command as RRectCommand;
             _RRectToCanvasRenderer(ctx)
                 .render(rrectCommand.rrect, startNewPath: false);
             break;
           case PathCommandTypes.rect:
-            final RectCommand rectCommand = command;
+            final RectCommand rectCommand = command as RectCommand;
             ctx.rect(rectCommand.x, rectCommand.y, rectCommand.width,
                 rectCommand.height);
             break;
           case PathCommandTypes.quadraticCurveTo:
-            final QuadraticCurveTo quadraticCurveTo = command;
+            final QuadraticCurveTo quadraticCurveTo = command as QuadraticCurveTo;
             ctx.quadraticCurveTo(quadraticCurveTo.x1, quadraticCurveTo.y1,
                 quadraticCurveTo.x2, quadraticCurveTo.y2);
             break;
@@ -578,12 +578,12 @@ class _CanvasPool extends _SaveStackTracking {
     contextHandle.paint(style);
   }
 
-  void drawPath(ui.Path path, ui.PaintingStyle style) {
+  void drawPath(SurfacePath path, ui.PaintingStyle style) {
     _runPath(context, path);
     contextHandle.paint(style);
   }
 
-  void drawShadow(ui.Path path, ui.Color color, double elevation,
+  void drawShadow(SurfacePath path, ui.Color color, double elevation,
       bool transparentOccluder) {
     final SurfaceShadowData shadow = computeShadow(path.getBounds(), elevation);
     if (shadow != null) {
@@ -858,7 +858,7 @@ class _SaveStackTracking {
 
   /// Adds a path to clipping stack.
   @mustCallSuper
-  void clipPath(ui.Path path) {
+  void clipPath(SurfacePath path) {
     _clipStack ??= <_SaveClipEntry>[];
     _clipStack.add(_SaveClipEntry.path(path, _currentTransform.clone()));
   }

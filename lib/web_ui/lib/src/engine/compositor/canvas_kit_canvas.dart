@@ -9,15 +9,14 @@ part of engine;
 class CanvasKitCanvas implements ui.Canvas {
   final SkCanvas _canvas;
 
-  factory CanvasKitCanvas(ui.PictureRecorder recorder, [ui.Rect cullRect]) {
+  factory CanvasKitCanvas(SkPictureRecorder recorder, [ui.Rect cullRect]) {
     assert(recorder != null);
     if (recorder.isRecording) {
       throw ArgumentError(
           '"recorder" must not already be associated with another Canvas.');
     }
     cullRect ??= ui.Rect.largest;
-    final SkPictureRecorder skRecorder = recorder;
-    return CanvasKitCanvas._(skRecorder.beginRecording(cullRect));
+    return CanvasKitCanvas._(recorder.beginRecording(cullRect));
   }
 
   CanvasKitCanvas._(this._canvas);
@@ -39,11 +38,11 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _saveLayerWithoutBounds(ui.Paint paint) {
-    _canvas.saveLayerWithoutBounds(paint);
+    _canvas.saveLayerWithoutBounds(paint as SkPaint);
   }
 
   void _saveLayer(ui.Rect bounds, ui.Paint paint) {
-    _canvas.saveLayer(bounds, paint);
+    _canvas.saveLayer(bounds, paint as SkPaint);
   }
 
   @override
@@ -146,7 +145,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawLine(ui.Offset p1, ui.Offset p2, ui.Paint paint) {
-    _canvas.drawLine(p1, p2, paint);
+    _canvas.drawLine(p1, p2, paint as SkPaint);
   }
 
   @override
@@ -156,7 +155,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawPaint(ui.Paint paint) {
-    _canvas.drawPaint(paint);
+    _canvas.drawPaint(paint as SkPaint);
   }
 
   @override
@@ -167,7 +166,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawRect(ui.Rect rect, ui.Paint paint) {
-    _canvas.drawRect(rect, paint);
+    _canvas.drawRect(rect, paint as SkPaint);
   }
 
   @override
@@ -178,7 +177,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawRRect(ui.RRect rrect, ui.Paint paint) {
-    _canvas.drawRRect(rrect, paint);
+    _canvas.drawRRect(rrect, paint as SkPaint);
   }
 
   @override
@@ -190,7 +189,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawDRRect(ui.RRect outer, ui.RRect inner, ui.Paint paint) {
-    _canvas.drawDRRect(outer, inner, paint);
+    _canvas.drawDRRect(outer, inner, paint as SkPaint);
   }
 
   @override
@@ -201,7 +200,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawOval(ui.Rect rect, ui.Paint paint) {
-    _canvas.drawOval(rect, paint);
+    _canvas.drawOval(rect, paint as SkPaint);
   }
 
   @override
@@ -212,7 +211,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawCircle(ui.Offset c, double radius, ui.Paint paint) {
-    _canvas.drawCircle(c, radius, paint);
+    _canvas.drawCircle(c, radius, paint as SkPaint);
   }
 
   @override
@@ -225,7 +224,7 @@ class CanvasKitCanvas implements ui.Canvas {
 
   void _drawArc(ui.Rect rect, double startAngle, double sweepAngle,
       bool useCenter, ui.Paint paint) {
-    _canvas.drawArc(rect, startAngle, sweepAngle, useCenter, paint);
+    _canvas.drawArc(rect, startAngle, sweepAngle, useCenter, paint as SkPaint);
   }
 
   @override
@@ -236,7 +235,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawPath(ui.Path path, ui.Paint paint) {
-    _canvas.drawPath(path, paint);
+    _canvas.drawPath(path, paint as SkPaint);
   }
 
   @override
@@ -248,7 +247,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawImage(ui.Image image, ui.Offset p, ui.Paint paint) {
-    _canvas.drawImage(image, p, paint);
+    _canvas.drawImage(image, p, paint as SkPaint);
   }
 
   @override
@@ -262,7 +261,7 @@ class CanvasKitCanvas implements ui.Canvas {
 
   void _drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, ui.Paint paint) {
-    _canvas.drawImageRect(image, src, dst, paint);
+    _canvas.drawImageRect(image, src, dst, paint as SkPaint);
   }
 
   @override
@@ -277,7 +276,7 @@ class CanvasKitCanvas implements ui.Canvas {
 
   void _drawImageNine(
       ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {
-    _canvas.drawImageNine(image, center, dst, paint);
+    _canvas.drawImageNine(image, center, dst, paint as SkPaint);
   }
 
   @override
@@ -323,7 +322,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawPoints(ui.Paint paint, ui.PointMode pointMode, Float32List points) {
-    _canvas.drawPoints(paint, pointMode, points);
+    _canvas.drawPoints(paint as SkPaint, pointMode, points);
   }
 
   @override
@@ -337,7 +336,7 @@ class CanvasKitCanvas implements ui.Canvas {
 
   void _drawVertices(
       ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
-    _canvas.drawVertices(vertices, blendMode, paint);
+    _canvas.drawVertices(vertices, blendMode, paint as SkPaint);
   }
 
   @override
@@ -390,7 +389,7 @@ class CanvasKitCanvas implements ui.Canvas {
         colors.isEmpty ? null : _encodeColorList(colors);
 
     _drawAtlas(
-        paint, atlas, rstTransformBuffer, rectBuffer, colorBuffer, blendMode);
+        paint as SkPaint, atlas, rstTransformBuffer, rectBuffer, colorBuffer, blendMode);
   }
 
   @override
@@ -419,12 +418,12 @@ class CanvasKitCanvas implements ui.Canvas {
       throw ArgumentError(
           'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
-    _drawAtlas(paint, atlas, rstTransforms, rects, colors, blendMode);
+    _drawAtlas(paint as SkPaint, atlas, rstTransforms, rects, colors, blendMode);
   }
 
   // TODO(hterkelsen): Pass a cull_rect once CanvasKit supports that.
   void _drawAtlas(
-    ui.Paint paint,
+    SkPaint paint,
     ui.Image atlas,
     Float32List rstTransforms,
     Float32List rects,

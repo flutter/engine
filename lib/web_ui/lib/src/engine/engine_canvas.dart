@@ -37,7 +37,7 @@ abstract class EngineCanvas {
 
   void clipRRect(ui.RRect rrect);
 
-  void clipPath(ui.Path path);
+  void clipPath(SurfacePath path);
 
   void drawColor(ui.Color color, ui.BlendMode blendMode);
 
@@ -55,10 +55,10 @@ abstract class EngineCanvas {
 
   void drawCircle(ui.Offset c, double radius, SurfacePaintData paint);
 
-  void drawPath(ui.Path path, SurfacePaintData paint);
+  void drawPath(SurfacePath path, SurfacePaintData paint);
 
   void drawShadow(
-      ui.Path path, ui.Color color, double elevation, bool transparentOccluder);
+      SurfacePath path, ui.Color color, double elevation, bool transparentOccluder);
 
   void drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint);
 
@@ -108,7 +108,7 @@ class _SaveStackEntry {
 class _SaveClipEntry {
   final ui.Rect rect;
   final ui.RRect rrect;
-  final ui.Path path;
+  final SurfacePath path;
   final Matrix4 currentTransform;
   _SaveClipEntry.rect(this.rect, this.currentTransform)
       : rrect = null,
@@ -241,7 +241,7 @@ mixin SaveStackTracking on EngineCanvas {
   ///
   /// Classes that override this method must call `super.clipPath()`.
   @override
-  void clipPath(ui.Path path) {
+  void clipPath(SurfacePath path) {
     _clipStack ??= <_SaveClipEntry>[];
     _clipStack.add(_SaveClipEntry.path(path, _currentTransform.clone()));
   }
@@ -254,7 +254,7 @@ html.Element _drawParagraphElement(
 }) {
   assert(paragraph._isLaidOut);
 
-  final html.Element paragraphElement = paragraph._paragraphElement.clone(true);
+  final html.Element paragraphElement = paragraph._paragraphElement.clone(true) as html.Element;
 
   final html.CssStyleDeclaration paragraphStyle = paragraphElement.style;
   paragraphStyle

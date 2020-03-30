@@ -30,6 +30,8 @@ String ensureLeading(String str, String leading, {bool applyWhenEmpty = true}) {
   return str.startsWith(leading) ? str : '$leading$str';
 }
 
+typedef OnPopStateListener = void Function(html.PopStateEvent);
+
 /// [LocationStrategy] is responsible for representing and reading route state
 /// from the browser's URL.
 ///

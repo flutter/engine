@@ -64,10 +64,10 @@ abstract class EngineInputType {
   bool get submitActionOnEnter => true;
 
   /// Create the appropriate DOM element for this input type.
-  html.HtmlElement createDomElement() => html.InputElement();
+  html.Element createDomElement() => html.InputElement();
 
   /// Given a [domElement], set attributes that are specific to this input type.
-  void configureInputMode(html.HtmlElement domElement) {
+  void configureInputMode(html.Element domElement) {
     if (inputmodeAttribute == null) {
       return;
     }
@@ -132,5 +132,5 @@ class MultilineInputType extends EngineInputType {
   bool get submitActionOnEnter => false;
 
   @override
-  html.HtmlElement createDomElement() => html.TextAreaElement();
+  html.Element createDomElement() => html.TextAreaElement();
 }
