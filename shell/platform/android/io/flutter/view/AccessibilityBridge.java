@@ -1584,7 +1584,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (semanticsNodeToBeRemoved.platformViewId != -1
         && embeddedAccessibilityFocusedNodeId != null
         && accessibilityViewEmbedder.platformViewOfNode(embeddedAccessibilityFocusedNodeId)
-            == platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNodeToBeRemoved.platformViewId)) {
+            == platformViewsAccessibilityDelegate.getPlatformViewById(
+                semanticsNodeToBeRemoved.platformViewId)) {
       // If the currently focused a11y node is within a platform view that is
       // getting removed: clear it's a11y focus.
       sendAccessibilityEvent(

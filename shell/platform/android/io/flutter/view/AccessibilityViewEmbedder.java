@@ -388,8 +388,8 @@ final class AccessibilityViewEmbedder {
   }
 
   /**
-   * Returns the View that contains the accessibility node identified by the
-   * provided flutterId or null if it doesn't belong to a view.
+   * Returns the View that contains the accessibility node identified by the provided flutterId or
+   * null if it doesn't belong to a view.
    */
   public View platformViewOfNode(int flutterId) {
     ViewAndId viewAndId = flutterIdToOrigin.get(flutterId);
