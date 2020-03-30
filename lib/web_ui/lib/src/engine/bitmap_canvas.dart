@@ -431,7 +431,6 @@ class BitmapCanvas extends EngineCanvas {
       }
       final html.CssStyleDeclaration imageStyle = imgElement.style;
       imageStyle
-        ..transform = ''
         ..width = '${targetWidth.toStringAsFixed(2)}px'
         ..height = '${targetHeight.toStringAsFixed(2)}px';
       if (requiresClipping) {
