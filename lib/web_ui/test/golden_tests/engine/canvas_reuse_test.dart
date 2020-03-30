@@ -83,7 +83,7 @@ void main() async {
     // canvas.
     expect(canvas.style.zIndex != '-1', true);
     expect(canvas2.id, kTestId);
-    await matchGoldenFile('bitmap_canvas_reuse_zindex.png', region: region, write: true);
+    await matchGoldenFile('bitmap_canvas_reuse_zindex.png', region: region);
   });
 }
 
