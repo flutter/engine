@@ -14,8 +14,10 @@ void main() {
 
   testWidgets('debug+Fill+Properties for widgets is tree shaken',
           (WidgetTester tester) async {
-    // About 11 instances are used by DiagnosticsNode itself.
-    await testOccurenceCountBelow(tester, '${debugPrefix}FillProperties', 20);
+    // About 110 instances are used by DiagnosticsNode and diagnostics
+    // for flutter framework itself. Widgets have > 300. So we check for 200 to
+    // so this test fails when tree-shaking is broken.
+    await testOccurenceCountBelow(tester, '${debugPrefix}FillProperties', 200);
   });
 }
 
