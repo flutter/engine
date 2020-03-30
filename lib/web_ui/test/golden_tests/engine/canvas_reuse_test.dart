@@ -4,14 +4,11 @@
 
 // @dart = 2.6
 import 'dart:html' as html;
-import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:ui/ui.dart' hide TextStyle;
 import 'package:ui/src/engine.dart';
 import 'package:test/test.dart';
 
-import '../../matchers.dart';
 import 'package:web_engine_tester/golden_tester.dart';
 
 void main() async {
