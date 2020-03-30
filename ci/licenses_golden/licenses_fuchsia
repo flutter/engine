@@ -1,4 +1,4 @@
-Signature: 9cd367155310be6c188125ba3d3e842d
+Signature: fe3727d3c50ee09caf0c8e785ec68d18
 
 UNUSED LICENSES:
 
@@ -2599,7 +2599,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/internal/_stdout_lo
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_logger/lib/src/logger/logger.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/agent.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/codecs.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/entity.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/lifecycle.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/logger.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/module.dart
@@ -2607,9 +2606,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/service_connection.dar
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/agent/agent.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/agent/internal/_agent_context.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/agent/internal/_agent_impl.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/entity/entity.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/entity/entity_exceptions.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/entity/internal/_entity_impl.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/internal/_component_context.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/lifecycle/internal/_lifecycle_impl.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/lifecycle/lifecycle.dart
