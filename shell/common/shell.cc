@@ -626,7 +626,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // gpu_task to the raster thread which signals the latch. If the GPU the and
   // platform threads are the same this results in a deadlock as the gpu_task
   // will never be posted to the plaform/raster thread that is blocked on a
-  // latch. To avoid the described deadlock, if the gpu and the platform threads
+  // latch. To avoid the described deadlock, if the raster and the platform threads
   // are the same, should_post_gpu_task will be false, and then instead of
   // posting a task to the raster thread, the ui thread just signals the latch
   // and the platform/raster thread follows with executing gpu_task.
@@ -721,7 +721,7 @@ void Shell::OnPlatformViewDestroyed() {
   // gpu_task to the raster thread triggers signaling the latch(on the IO
   // thread). If the GPU the and platform threads are the same this results in a
   // deadlock as the gpu_task will never be posted to the plaform/raster thread
-  // that is blocked on a latch.  To avoid the described deadlock, if the gpu
+  // that is blocked on a latch.  To avoid the described deadlock, if the raster
   // and the platform threads are the same, should_post_gpu_task will be false,
   // and then instead of posting a task to the raster thread, the ui thread just
   // signals the latch and the platform/raster thread follows with executing

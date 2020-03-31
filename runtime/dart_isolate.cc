@@ -687,7 +687,7 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
               parent_group_data.GetIsolateShutdownCallback())));
 
   TaskRunners null_task_runners(advisory_script_uri,
-                                /* platform= */ nullptr, /* gpu= */ nullptr,
+                                /* platform= */ nullptr, /* raster= */ nullptr,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 
@@ -729,7 +729,7 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
           Dart_CurrentIsolateGroupData());
 
   TaskRunners null_task_runners((*isolate_group_data)->GetAdvisoryScriptURI(),
-                                /* platform= */ nullptr, /* gpu= */ nullptr,
+                                /* platform= */ nullptr, /* raster= */ nullptr,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 

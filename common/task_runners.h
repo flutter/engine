@@ -16,7 +16,7 @@ class TaskRunners {
  public:
   TaskRunners(std::string label,
               fml::RefPtr<fml::TaskRunner> platform,
-              fml::RefPtr<fml::TaskRunner> gpu,
+              fml::RefPtr<fml::TaskRunner> raster,
               fml::RefPtr<fml::TaskRunner> ui,
               fml::RefPtr<fml::TaskRunner> io);
 
@@ -39,7 +39,7 @@ class TaskRunners {
  private:
   const std::string label_;
   fml::RefPtr<fml::TaskRunner> platform_;
-  fml::RefPtr<fml::TaskRunner> gpu_;
+  fml::RefPtr<fml::TaskRunner> raster_;
   fml::RefPtr<fml::TaskRunner> ui_;
   fml::RefPtr<fml::TaskRunner> io_;
 };
