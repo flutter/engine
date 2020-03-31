@@ -21,7 +21,7 @@ struct StreamHandler {
   // |arguments| is stream configuration arguments and
   // |events| is an EventSink for emitting events to the Flutter receiver.
   using OnListen =
-      std::function<void(const T* arguments, EventSink<T>* events)>;
+      std::function<void(const T* arguments, std::unique_ptr<EventSink<T>>&& events)>;
 
   // Handles a request to tear down the most recently created event stream.
   // |arguments| is stream configuration arguments.

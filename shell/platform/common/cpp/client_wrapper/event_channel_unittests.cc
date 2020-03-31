@@ -56,7 +56,7 @@ TEST(EventChannelTest, Registration) {
   bool on_listen_called = false;
   auto onListen = [&on_listen_called](
                       const flutter::EncodableValue* arguments,
-                      EventSink<flutter::EncodableValue>* events) {
+                      std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&& events) {
     on_listen_called = true;
   };
   auto onCancel = [](const flutter::EncodableValue* arguments) {};
@@ -85,7 +85,7 @@ TEST(EventChannelTest, Unregistration) {
   EventChannel channel(&messenger, channel_name, &codec);
 
   auto onListen = [](const flutter::EncodableValue* arguments,
-                     EventSink<flutter::EncodableValue>* events) {};
+                     std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&& events) {};
   auto onCancel = [](const flutter::EncodableValue* arguments) {};
 
   flutter::StreamHandler<flutter::EncodableValue> handler(onListen, onCancel);
@@ -106,7 +106,7 @@ TEST(EventChannelTest, Cancel) {
   EventChannel channel(&messenger, channel_name, &codec);
 
   auto onListen = [](const flutter::EncodableValue* arguments,
-                     EventSink<flutter::EncodableValue>* events) {};
+                     std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&& events) {};
 
   bool on_cancel_called = false;
   auto onCancel =
