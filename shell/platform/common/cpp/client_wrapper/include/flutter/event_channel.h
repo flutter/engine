@@ -6,8 +6,8 @@
 #define FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_EVENT_CHANNEL_H_
 
 #include <iostream>
-#include <string>
 #include <memory>
+#include <string>
 
 #include "binary_messenger.h"
 #include "engine_method_result.h"
@@ -71,8 +71,8 @@ class EventChannel {
 
       const std::string& method = method_call->method_name();
       if (method.compare(kOnListenMethod) == 0) {
-        auto sink = 
-            std::make_unique<EventSinkImplementation>(messenger, channel_name, codec);
+        auto sink = std::make_unique<EventSinkImplementation>(
+            messenger, channel_name, codec);
         handler->onListen(method_call->arguments(), std::move(sink));
 
         auto result = codec->EncodeSuccessEnvelope();
