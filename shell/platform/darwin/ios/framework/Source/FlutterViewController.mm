@@ -704,13 +704,16 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 static flutter::PointerData::Change PointerDataChangeFromUITouchPhase(UITouchPhase phase) {
   switch (phase) {
     case UITouchPhaseBegan:
+    case UITouchPhaseRegionEntered:
       return flutter::PointerData::Change::kDown;
     case UITouchPhaseMoved:
     case UITouchPhaseStationary:
+    case UITouchPhaseRegionMoved:
       // There is no EVENT_TYPE_POINTER_STATIONARY. So we just pass a move type
       // with the same coordinates
       return flutter::PointerData::Change::kMove;
     case UITouchPhaseEnded:
+    case UITouchPhaseRegionExited:
       return flutter::PointerData::Change::kUp;
     case UITouchPhaseCancelled:
       return flutter::PointerData::Change::kCancel;
@@ -724,6 +727,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     switch (touch.type) {
       case UITouchTypeDirect:
       case UITouchTypeIndirect:
+      case UITouchTypeIndirectPointer:
         return flutter::PointerData::DeviceKind::kTouch;
       case UITouchTypeStylus:
         return flutter::PointerData::DeviceKind::kStylus;
