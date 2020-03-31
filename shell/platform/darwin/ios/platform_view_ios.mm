@@ -42,7 +42,9 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.reset();
-    accessibility_bridge_.reset();
+    if (owner_controller_) {
+      SetSemanticsEnabled(false);
+    }
   }
   owner_controller_ = owner_controller;
 
@@ -54,7 +56,9 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
                                                           queue:[NSOperationQueue mainQueue]
                                                      usingBlock:^(NSNotification* note) {
                                                        // Implicit copy of 'this' is fine.
-                                                       accessibility_bridge_.reset();
+                                                       if (owner_controller_) {
+                                                         SetSemanticsEnabled(false);
+                                                       }
                                                        owner_controller_.reset();
                                                      }] retain]);
 
