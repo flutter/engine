@@ -623,15 +623,16 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   // The normal flow executed by this method is that the platform thread is
   // starting the sequence and waiting on the latch. Later the UI thread posts
-  // raster_task to the raster thread which signals the latch. If the raster and the
-  // platform threads are the same this results in a deadlock as the raster_task
-  // will never be posted to the plaform/raster thread that is blocked on a
-  // latch. To avoid the described deadlock, if the raster and the platform
-  // threads are the same, should_post_raster_task will be false, and then instead
-  // of posting a task to the raster thread, the ui thread just signals the
-  // latch and the platform/raster thread follows with executing raster_task.
+  // raster_task to the raster thread which signals the latch. If the raster and
+  // the platform threads are the same this results in a deadlock as the
+  // raster_task will never be posted to the plaform/raster thread that is
+  // blocked on a latch. To avoid the described deadlock, if the raster and the
+  // platform threads are the same, should_post_raster_task will be false, and
+  // then instead of posting a task to the raster thread, the ui thread just
+  // signals the latch and the platform/raster thread follows with executing
+  // raster_task.
   bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
-                              task_runners_.GetPlatformTaskRunner();
+                                 task_runners_.GetPlatformTaskRunner();
 
   auto ui_task = [engine = engine_->GetWeakPtr(),                            //
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
@@ -707,8 +708,8 @@ void Shell::OnPlatformViewDestroyed() {
   };
 
   auto raster_task = [rasterizer = rasterizer_->GetWeakPtr(),
-                   io_task_runner = task_runners_.GetIOTaskRunner(),
-                   io_task]() {
+                      io_task_runner = task_runners_.GetIOTaskRunner(),
+                      io_task]() {
     if (rasterizer) {
       rasterizer->Teardown();
     }
@@ -719,15 +720,15 @@ void Shell::OnPlatformViewDestroyed() {
   // The normal flow executed by this method is that the platform thread is
   // starting the sequence and waiting on the latch. Later the UI thread posts
   // raster_task to the raster thread triggers signaling the latch(on the IO
-  // thread). If the raster and the platform threads are the same this results in a
-  // deadlock as the raster_task will never be posted to the plaform/raster thread
-  // that is blocked on a latch.  To avoid the described deadlock, if the raster
-  // and the platform threads are the same, should_post_raster_task will be false,
-  // and then instead of posting a task to the raster thread, the ui thread just
-  // signals the latch and the platform/raster thread follows with executing
-  // raster_task.
+  // thread). If the raster and the platform threads are the same this results
+  // in a deadlock as the raster_task will never be posted to the plaform/raster
+  // thread that is blocked on a latch.  To avoid the described deadlock, if the
+  // raster and the platform threads are the same, should_post_raster_task will
+  // be false, and then instead of posting a task to the raster thread, the ui
+  // thread just signals the latch and the platform/raster thread follows with
+  // executing raster_task.
   bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
-                              task_runners_.GetPlatformTaskRunner();
+                                 task_runners_.GetPlatformTaskRunner();
 
   auto ui_task = [engine = engine_->GetWeakPtr(),
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),
