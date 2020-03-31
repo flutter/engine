@@ -1149,7 +1149,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     // never be reported until the next animation starts.
     frame_timings_report_scheduled_ = true;
     task_runners_.GetRasterTaskRunner()->PostDelayedTask(
-        [self = weak_factory_gpu_->GetWeakPtr()]() {
+        [self = weak_factory_gpu_->GetTaskRunnerWeakPtr()]() {
           if (!self.get()) {
             return;
           }

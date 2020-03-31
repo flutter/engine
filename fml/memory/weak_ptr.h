@@ -12,6 +12,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/memory/task_runner_checker.h"
 #include "flutter/fml/memory/thread_checker.h"
 #include "flutter/fml/memory/weak_ptr_internal.h"
 
@@ -19,6 +20,10 @@ namespace fml {
 
 struct DebugThreadChecker {
   FML_DECLARE_THREAD_CHECKER(checker);
+};
+
+struct DebugTaskRunnerCheckerChecker {
+  FML_DECLARE_TASK_RUNNER_CHECKER(checker);
 };
 
 // Forward declaration, so |WeakPtr<T>| can friend it.
@@ -58,7 +63,7 @@ class WeakPtr {
         flag_(std::move(r.flag_)),
         checker_(r.checker_) {}
 
-  ~WeakPtr() = default;
+  virtual ~WeakPtr() = default;
 
   // The following methods are thread-friendly, in the sense that they may be
   // called subject to additional synchronization.
@@ -75,12 +80,12 @@ class WeakPtr {
   // "originating" |WeakPtrFactory|.
 
   explicit operator bool() const {
-    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+    CheckThreadSafety();
     return flag_ && flag_->is_valid();
   }
 
   T* get() const {
-    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+    CheckThreadSafety();
     return *this ? ptr_ : nullptr;
   }
 
@@ -97,15 +102,26 @@ class WeakPtr {
   }
 
   T& operator*() const {
-    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+    CheckThreadSafety();
     FML_DCHECK(*this);
     return *get();
   }
 
   T* operator->() const {
-    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+    CheckThreadSafety();
     FML_DCHECK(*this);
     return get();
+  }
+
+ protected:
+  explicit WeakPtr(T* ptr, fml::RefPtr<fml::internal::WeakPtrFlag>&& flag)
+      : ptr_(ptr), flag_(std::move(flag)) {}
+
+  T* ptr_;
+  fml::RefPtr<fml::internal::WeakPtrFlag> flag_;
+
+  virtual void CheckThreadSafety() const {
+    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
   }
 
  private:
@@ -119,11 +135,49 @@ class WeakPtr {
                    DebugThreadChecker checker)
       : ptr_(ptr), flag_(std::move(flag)), checker_(checker) {}
 
-  T* ptr_;
-  fml::RefPtr<fml::internal::WeakPtrFlag> flag_;
   DebugThreadChecker checker_;
 
   // Copy/move construction/assignment supported.
+};
+
+// A weak pointer that can be used in different threads as long as
+// the threads are belong to the same |TaskRunner|.
+//
+// It is still not in general thread safe as |WeakPtr|.
+template <typename T>
+class TaskRunnerWeakPtr : public WeakPtr<T> {
+ public:
+  // Copy constructor.
+  TaskRunnerWeakPtr(const TaskRunnerWeakPtr<T>& r) = default;
+
+  template <typename U>
+  TaskRunnerWeakPtr(const TaskRunnerWeakPtr<U>& r)
+      : WeakPtr<T>(static_cast<T*>(r.ptr_), r.flag_), checker_(r.checker_) {}
+
+  // Move constructor.
+  TaskRunnerWeakPtr(TaskRunnerWeakPtr<T>&& r) = default;
+
+  template <typename U>
+  TaskRunnerWeakPtr(TaskRunnerWeakPtr<U>&& r)
+      : WeakPtr<T>(static_cast<T*>(r.ptr_), std::move(r.flag_)),
+        checker_(r.checker_) {}
+
+  ~TaskRunnerWeakPtr() = default;
+
+ protected:
+  void CheckThreadSafety() const override {
+    FML_DCHECK_TASK_RUNNER_IS_CURRENT(checker_.checker);
+  }
+
+ private:
+  friend class WeakPtrFactory<T>;
+
+  explicit TaskRunnerWeakPtr(T* ptr,
+                             fml::RefPtr<fml::internal::WeakPtrFlag>&& flag,
+                             DebugTaskRunnerCheckerChecker checker)
+      : WeakPtr<T>(ptr, std::move(flag)), checker_(checker) {}
+
+  DebugTaskRunnerCheckerChecker checker_;
 };
 
 // Class that produces (valid) |WeakPtr<T>|s. Typically, this is used as a
@@ -177,7 +231,7 @@ class WeakPtrFactory {
   }
 
   ~WeakPtrFactory() {
-    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+    CheckThreadSafety();
     flag_->Invalidate();
   }
 
@@ -187,12 +241,25 @@ class WeakPtrFactory {
     return WeakPtr<T>(ptr_, flag_.Clone(), checker_);
   }
 
- private:
+  // Gets a new weak pointer, which will be valid until either
+  // |InvalidateWeakPtrs()| is called or this object is destroyed.
+  TaskRunnerWeakPtr<T> GetTaskRunnerWeakPtr() const {
+    return TaskRunnerWeakPtr<T>(ptr_, flag_.Clone(), task_runner_checker_);
+  }
+
+ protected:
   // Note: See weak_ptr_internal.h for an explanation of why we store the
   // pointer here, instead of in the "flag".
   T* const ptr_;
   fml::RefPtr<fml::internal::WeakPtrFlag> flag_;
+
+  void CheckThreadSafety() const {
+    FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+  }
+
+ private:
   DebugThreadChecker checker_;
+  DebugTaskRunnerCheckerChecker task_runner_checker_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(WeakPtrFactory);
 };

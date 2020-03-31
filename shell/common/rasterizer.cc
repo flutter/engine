@@ -53,8 +53,8 @@ Rasterizer::Rasterizer(
 
 Rasterizer::~Rasterizer() = default;
 
-fml::WeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
-  return weak_factory_.GetWeakPtr();
+fml::TaskRunnerWeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
+  return weak_factory_.GetTaskRunnerWeakPtr();
 }
 
 fml::WeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate() const {
@@ -155,7 +155,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
       task_runners_.GetRasterTaskRunner()->PostTask(
-          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
+          [weak_this = weak_factory_.GetTaskRunnerWeakPtr(), pipeline]() {
             if (weak_this) {
               weak_this->Draw(pipeline);
             }
