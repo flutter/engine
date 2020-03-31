@@ -188,7 +188,7 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderToken,
     scene_host_bindings.emplace(std::make_pair(key, scene_host));
   };
 
-  // Pass the raw handle to the GPU thead; destroying a |zircon::dart::Handle|
+  // Pass the raw handle to the raster thread; destroying a |zircon::dart::Handle|
   // on that thread can cause a race condition.
   raster_task_runner_->PostTask(
       [id = koid_,
