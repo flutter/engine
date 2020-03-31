@@ -106,8 +106,6 @@ TEST(EventChannelTest, Cancel) {
   const StandardMethodCodec& codec = StandardMethodCodec::GetInstance();
   EventChannel channel(&messenger, channel_name, &codec);
 
-  auto onListen = [](const flutter::EncodableValue* arguments,
-                     std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&& events) {};
   auto onListen =
       [](const flutter::EncodableValue* arguments,
          std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
