@@ -19,6 +19,7 @@ import android.text.SpannableStringBuilder;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.ExtractedText;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -257,16 +258,16 @@ public class InputConnectionAdaptorTest {
   }
 
   @Test
-  public void testMethod_getExtendedText() {
+  public void testMethod_getExtractedText() {
     int selStart = 5;
     Editable editable = sampleEditable(selStart, selStart);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
-    ExtendedText extendedText = adaptor.getExtendedText();
+    ExtractedText extractedText = adaptor.getExtractedText();
 
-    assertEquals(extendedText.text, SAMPLE_TEXT);
-    assertEquals(extendedText.selectionStart, selStart);
-    assertEquals(extendedText.selectionEnd, selStart);
+    assertEquals(extractedText.text, SAMPLE_TEXT);
+    assertEquals(extractedText.selectionStart, selStart);
+    assertEquals(extractedText.selectionEnd, selStart);
   }
 
   private static final String SAMPLE_TEXT =
