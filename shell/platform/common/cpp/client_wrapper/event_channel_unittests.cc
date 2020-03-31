@@ -54,8 +54,9 @@ TEST(EventChannelTest, Registration) {
   EventChannel channel(&messenger, channel_name, &codec);
 
   bool on_listen_called = false;
-  auto onListen = [&on_listen_called]
-         (const flutter::EncodableValue* arguments,
+  auto onListen = 
+      [&on_listen_called](
+          const flutter::EncodableValue* arguments,
           std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
               events) { on_listen_called = true; };
   auto onCancel = [](const flutter::EncodableValue* arguments) {};
