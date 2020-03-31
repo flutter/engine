@@ -896,9 +896,20 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       assert(newChild.rootElement != null);
       assert(newChild.parent == this);
       final bool reparented = newChild.rootElement.parent != containerElement;
+      // Quick check against the next immediate sibling.
+      bool nextElementMatches = newChild.rootElement.nextElementSibling == nextSibling?.rootElement;
+      if (!nextElementMatches) {
+        // The immediate sibling may be removed in the update, so if we do not have a confirmed match
+        // we need to check the next sibling that will be retained after the update.
+        final _childrenElements = _children.map((surface) => surface.rootElement);
+        html.HtmlElement nextRetainedSibling = newChild.rootElement.nextElementSibling;
+        while (nextRetainedSibling != null && !_childrenElements.contains(nextRetainedSibling)) {
+          nextRetainedSibling = nextRetainedSibling.nextElementSibling;
+        }
+        nextElementMatches = nextRetainedSibling == nextSibling?.rootElement;
+      }
       // Do not check for sibling if reparented. It's obvious that we moved.
-      final bool moved = reparented ||
-          newChild.rootElement.nextElementSibling != nextSibling?.rootElement;
+      final bool moved = reparented || !nextElementMatches;
       if (moved) {
         if (nextSibling == null) {
           // We're at the end of the list.
