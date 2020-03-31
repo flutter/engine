@@ -4,18 +4,14 @@
 
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-#import <QuartzCore/CAEAGLLayer.h>
-
 #include <utility>
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
-#include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
 
 namespace flutter {
 
@@ -92,12 +88,13 @@ PointerDataDispatcherMaker PlatformViewIOS::GetDispatcherMaker() {
 
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
-  RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
+  RegisterTexture(ios_context_->CreateExternalTexture(
+      texture_id, fml::scoped_nsobject<NSObject<FlutterTexture>>{[texture retain]}));
 }
 
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (!ios_surface_) {
     FML_DLOG(INFO) << "Could not CreateRenderingSurface, this PlatformViewIOS "

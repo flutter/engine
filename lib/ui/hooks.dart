@@ -146,7 +146,7 @@ void _updateAccessibilityFeatures(int values) {
   if (newFeatures == window._accessibilityFeatures)
     return;
   window._accessibilityFeatures = newFeatures;
-  _invoke(window.onAccessibilityFeaturesChanged, window._onAccessibilityFlagsChangedZone);
+  _invoke(window.onAccessibilityFeaturesChanged, window._onAccessibilityFeaturesChangedZone);
 }
 
 @pragma('vm:entry-point')
@@ -230,7 +230,7 @@ void _runMainZoned(Function startMainIsolateFunction,
                    Function userMainFunction,
                    List<String> args) {
   startMainIsolateFunction((){
-    runZoned<void>(() {
+    runZonedGuarded<void>(() {
       if (userMainFunction is _BinaryFunction) {
         // This seems to be undocumented but supported by the command line VM.
         // Let's do the same in case old entry-points are ported to Flutter.
@@ -240,7 +240,7 @@ void _runMainZoned(Function startMainIsolateFunction,
       } else {
         userMainFunction();
       }
-    }, onError: (Object error, StackTrace stackTrace) {
+    }, (Object error, StackTrace stackTrace) {
       _reportUnhandledException(error.toString(), stackTrace.toString());
     });
   }, null);
@@ -276,22 +276,7 @@ void _invoke1<A>(void callback(A a), Zone zone, A arg) {
   }
 }
 
-/// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
-// ignore: unused_element
-void _invoke2<A1, A2>(void callback(A1 a1, A2 a2), Zone zone, A1 arg1, A2 arg2) {
-  if (callback == null)
-    return;
-
-  assert(zone != null);
-
-  if (identical(zone, Zone.current)) {
-    callback(arg1, arg2);
-  } else {
-    zone.runBinaryGuarded<A1, A2>(callback, arg1, arg2);
-  }
-}
-
-/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2] and [arg3].
+/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
 void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1, A2 arg2, A3 arg3) {
   if (callback == null)
     return;

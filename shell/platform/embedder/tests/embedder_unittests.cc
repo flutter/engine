@@ -754,7 +754,7 @@ TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
 
   setup.Wait();
   const flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
-  shell.GetTaskRunners().GetGPUTaskRunner()->PostTask([&] {
+  shell.GetTaskRunners().GetRasterTaskRunner()->PostTask([&] {
     const flutter::RasterCache& raster_cache =
         shell.GetRasterizer()->compositor_context()->raster_cache();
     // 3 layers total, but one of them had the platform view. So the cache
@@ -826,7 +826,7 @@ TEST_F(EmbedderTest, RasterCacheEnabled) {
 
   setup.Wait();
   const flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
-  shell.GetTaskRunners().GetGPUTaskRunner()->PostTask([&] {
+  shell.GetTaskRunners().GetRasterTaskRunner()->PostTask([&] {
     const flutter::RasterCache& raster_cache =
         shell.GetRasterizer()->compositor_context()->raster_cache();
     ASSERT_EQ(raster_cache.GetCachedEntriesCount(), 1u);
@@ -1494,8 +1494,8 @@ TEST_F(EmbedderTest,
 }
 
 //------------------------------------------------------------------------------
-/// Custom compositor must play nicely with a custom task runner. The GPU thread
-/// merging mechanism must not interfere with the custom compositor.
+/// Custom compositor must play nicely with a custom task runner. The raster
+/// thread merging mechanism must not interfere with the custom compositor.
 ///
 TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
   auto& context = GetEmbedderContext();

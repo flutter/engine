@@ -1,4 +1,4 @@
-Signature: d3fea33ac3d1e3a5885406c606a2573b
+Signature: 9cd367155310be6c188125ba3d3e842d
 
 UNUSED LICENSES:
 
@@ -461,8 +461,10 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castauth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castconfig/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castremotecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.runner/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/meta.json
@@ -1372,10 +1374,12 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castauth/cast_auth.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castauth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castconfig/cast_config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castconfig/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castremotecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/cast_setup.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/cast_system_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.runner/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/meta.json
@@ -2197,8 +2201,10 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castauth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castconfig/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castremotecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsysteminfo/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.runner/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/meta.json
@@ -3252,6 +3258,7 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/noop_view_p
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/view_provider.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/module_interceptor.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/module_with_view_provider_impl.dart
+FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/launch.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/power.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/update.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.a2dp/audio_mode.fidl
@@ -3259,7 +3266,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/connection_options.fi
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/device.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/device_watcher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/stream.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castremotecontrol/remote_control.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castsetup/server.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/window.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/constants.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/error.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/types.fidl
@@ -3269,6 +3278,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.legacymetrics/event.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.legacymetrics/metrics_recorder.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.target/target_discovery.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/activity_reporter.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/profile_provider.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.memorypressure/memorypressure.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/night_mode.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/events.fidl
