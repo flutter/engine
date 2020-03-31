@@ -7,8 +7,8 @@
 
 #include <vector>
 
-#include "flutter/fml/raster_thread_merger.h"
 #include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/raster_thread_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"

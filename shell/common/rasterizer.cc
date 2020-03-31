@@ -111,7 +111,8 @@ void Rasterizer::DrawLastLayerTree() {
 
 void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
-  if (raster_thread_merger_ && !raster_thread_merger_->IsOnRasterizingThread()) {
+  if (raster_thread_merger_ &&
+      !raster_thread_merger_->IsOnRasterizingThread()) {
     // we yield and let this frame be serviced on the right thread.
     return;
   }
@@ -334,7 +335,7 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       root_surface_transformation,  // root surface transformation
       true,                         // instrumentation enabled
       frame->supports_readback(),   // surface supports pixel reads
-      raster_thread_merger_            // thread merger
+      raster_thread_merger_         // thread merger
   );
 
   if (compositor_frame) {

@@ -260,7 +260,8 @@ bool EmbedderEngine::PostTaskOnEngineManagedNativeThreads(
 
   // Post the task to all thread host threads.
   const auto& task_runners = shell_->GetTaskRunners();
-  trampoline(kFlutterNativeThreadTypeRender, task_runners.GetRasterTaskRunner());
+  trampoline(kFlutterNativeThreadTypeRender,
+             task_runners.GetRasterTaskRunner());
   trampoline(kFlutterNativeThreadTypeWorker, task_runners.GetIOTaskRunner());
   trampoline(kFlutterNativeThreadTypeUI, task_runners.GetUITaskRunner());
   trampoline(kFlutterNativeThreadTypePlatform,

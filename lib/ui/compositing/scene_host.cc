@@ -220,8 +220,9 @@ void SceneHost::setProperties(double width,
                               double insetBottom,
                               double insetLeft,
                               bool focusable) {
-  raster_task_runner_->PostTask([id = koid_, width, height, insetTop, insetRight,
-                              insetBottom, insetLeft, focusable]() {
+  raster_task_runner_->PostTask([id = koid_, width, height, insetTop,
+                                 insetRight, insetBottom, insetLeft,
+                                 focusable]() {
     auto* view_holder = flutter::ViewHolder::FromId(id);
     FML_DCHECK(view_holder);
 

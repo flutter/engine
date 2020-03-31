@@ -75,7 +75,8 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && raster_thread_merger_) {
-    post_preroll_result = view_embedder_->PostPrerollAction(raster_thread_merger_);
+    post_preroll_result =
+        view_embedder_->PostPrerollAction(raster_thread_merger_);
   }
 
   if (post_preroll_result == PostPrerollResult::kResubmitFrame) {

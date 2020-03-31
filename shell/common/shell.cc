@@ -63,9 +63,9 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   auto snapshot_delegate_future = snapshot_delegate_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetRasterTaskRunner(), [&rasterizer_promise,  //
-                                        &snapshot_delegate_promise,
-                                        on_create_rasterizer,  //
-                                        shell = shell.get()    //
+                                           &snapshot_delegate_promise,
+                                           on_create_rasterizer,  //
+                                           shell = shell.get()    //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
         std::unique_ptr<Rasterizer> rasterizer(on_create_rasterizer(*shell));
@@ -626,14 +626,14 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // gpu_task to the raster thread which signals the latch. If the GPU the and
   // platform threads are the same this results in a deadlock as the gpu_task
   // will never be posted to the plaform/raster thread that is blocked on a
-  // latch. To avoid the described deadlock, if the raster and the platform threads
-  // are the same, should_post_gpu_task will be false, and then instead of
-  // posting a task to the raster thread, the ui thread just signals the latch
-  // and the platform/raster thread follows with executing gpu_task.
-  bool should_post_gpu_task =
-      task_runners_.GetRasterTaskRunner() != task_runners_.GetPlatformTaskRunner();
+  // latch. To avoid the described deadlock, if the raster and the platform
+  // threads are the same, should_post_gpu_task will be false, and then instead
+  // of posting a task to the raster thread, the ui thread just signals the
+  // latch and the platform/raster thread follows with executing gpu_task.
+  bool should_post_gpu_task = task_runners_.GetRasterTaskRunner() !=
+                              task_runners_.GetPlatformTaskRunner();
 
-  auto ui_task = [engine = engine_->GetWeakPtr(),                      //
+  auto ui_task = [engine = engine_->GetWeakPtr(),                            //
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
                   gpu_task, should_post_gpu_task,
                   &latch  //
@@ -726,12 +726,12 @@ void Shell::OnPlatformViewDestroyed() {
   // and then instead of posting a task to the raster thread, the ui thread just
   // signals the latch and the platform/raster thread follows with executing
   // gpu_task.
-  bool should_post_gpu_task =
-      task_runners_.GetRasterTaskRunner() != task_runners_.GetPlatformTaskRunner();
+  bool should_post_gpu_task = task_runners_.GetRasterTaskRunner() !=
+                              task_runners_.GetPlatformTaskRunner();
 
   auto ui_task = [engine = engine_->GetWeakPtr(),
-                  raster_task_runner = task_runners_.GetRasterTaskRunner(), gpu_task,
-                  should_post_gpu_task, &latch]() {
+                  raster_task_runner = task_runners_.GetRasterTaskRunner(),
+                  gpu_task, should_post_gpu_task, &latch]() {
     if (engine) {
       engine->OnOutputSurfaceDestroyed();
     }
@@ -1419,10 +1419,10 @@ Rasterizer::Screenshot Shell::Screenshot(
   Rasterizer::Screenshot screenshot;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetRasterTaskRunner(), [&latch,                        //
-                                         rasterizer = GetRasterizer(),  //
-                                         &screenshot,                   //
-                                         screenshot_type,               //
-                                         base64_encode                  //
+                                            rasterizer = GetRasterizer(),  //
+                                            &screenshot,                   //
+                                            screenshot_type,               //
+                                            base64_encode                  //
   ]() {
         if (rasterizer) {
           screenshot = rasterizer->ScreenshotLastLayerTree(screenshot_type,

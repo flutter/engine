@@ -122,13 +122,13 @@ int RunTester(const flutter::Settings& settings,
     ui_task_runner = threadhost->ui_thread->GetTaskRunner();
     io_task_runner = threadhost->io_thread->GetTaskRunner();
   } else {
-    platform_task_runner = raster_task_runner = ui_task_runner = io_task_runner =
-        current_task_runner;
+    platform_task_runner = raster_task_runner = ui_task_runner =
+        io_task_runner = current_task_runner;
   }
 
   const flutter::TaskRunners task_runners(thread_label,  // dart thread label
                                           platform_task_runner,  // platform
-                                          raster_task_runner,       // raster
+                                          raster_task_runner,    // raster
                                           ui_task_runner,        // ui
                                           io_task_runner         // io
   );

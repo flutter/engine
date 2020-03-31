@@ -12,7 +12,7 @@ namespace fml {
 const int RasterThreadMerger::kLeaseNotSet = -1;
 
 RasterThreadMerger::RasterThreadMerger(fml::TaskQueueId platform_queue_id,
-                                 fml::TaskQueueId gpu_queue_id)
+                                       fml::TaskQueueId gpu_queue_id)
     : platform_queue_id_(platform_queue_id),
       gpu_queue_id_(gpu_queue_id),
       task_queues_(fml::MessageLoopTaskQueues::GetInstance()),

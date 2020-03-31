@@ -119,8 +119,8 @@ void ConvertImageToRaster(sk_sp<SkImage> image,
   // by drawing them into a surface.  This must be done on the raster thread
   // to prevent concurrent usage of the image on both the IO and raster threads.
   raster_task_runner->PostTask([image, encode_task = std::move(encode_task),
-                             resource_context, snapshot_delegate,
-                             io_task_runner]() {
+                                resource_context, snapshot_delegate,
+                                io_task_runner]() {
     sk_sp<SkImage> raster_image =
         snapshot_delegate->ConvertToRasterImage(image);
 

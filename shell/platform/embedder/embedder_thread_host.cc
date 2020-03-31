@@ -219,10 +219,10 @@ EmbedderThreadHost::CreateEngineManagedThreadHost() {
 
   flutter::TaskRunners task_runners(
       kFlutterThreadName,
-      platform_task_runner,                     // platform
+      platform_task_runner,                        // platform
       thread_host.raster_thread->GetTaskRunner(),  // raster
-      thread_host.ui_thread->GetTaskRunner(),   // ui
-      thread_host.io_thread->GetTaskRunner()    // io
+      thread_host.ui_thread->GetTaskRunner(),      // ui
+      thread_host.io_thread->GetTaskRunner()       // io
   );
 
   if (!task_runners.IsValid()) {

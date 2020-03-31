@@ -13,9 +13,14 @@ namespace fml {
 
 class MessageLoopImpl;
 
-enum class RasterThreadStatus { kRemainsMerged, kRemainsUnmerged, kUnmergedNow };
+enum class RasterThreadStatus {
+  kRemainsMerged,
+  kRemainsUnmerged,
+  kUnmergedNow
+};
 
-class RasterThreadMerger : public fml::RefCountedThreadSafe<RasterThreadMerger> {
+class RasterThreadMerger
+    : public fml::RefCountedThreadSafe<RasterThreadMerger> {
  public:
   // Merges the raster thread into platform thread for the duration of
   // the lease term. Lease is managed by the caller by either calling
@@ -27,14 +32,14 @@ class RasterThreadMerger : public fml::RefCountedThreadSafe<RasterThreadMerger> 
 
   void ExtendLeaseTo(size_t lease_term);
 
-  // Returns |RasterThreadStatus::kUnmergedNow| if this call resulted in splitting
-  // the GPU and platform threads. Reduces the lease term by 1.
+  // Returns |RasterThreadStatus::kUnmergedNow| if this call resulted in
+  // splitting the GPU and platform threads. Reduces the lease term by 1.
   RasterThreadStatus DecrementLease();
 
   bool IsMerged() const;
 
   RasterThreadMerger(fml::TaskQueueId platform_queue_id,
-                  fml::TaskQueueId gpu_queue_id);
+                     fml::TaskQueueId gpu_queue_id);
 
   // Returns true if the current thread owns rasterizing.
   // When the threads are merged, platform thread owns rasterizing.
