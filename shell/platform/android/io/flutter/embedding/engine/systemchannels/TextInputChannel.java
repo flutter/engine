@@ -1,9 +1,9 @@
 package io.flutter.embedding.engine.systemchannels;
 
-import android.util.SparseArray;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import android.util.SparseArray;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -83,6 +83,20 @@ public class TextInputChannel {
                 final JSONObject editingState = (JSONObject) args;
                 textInputMethodHandler.setEditingState(TextEditState.fromJson(editingState));
                 result.success(null);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
+              break;
+            case "TextInput.setEditableSizeAndTransform":
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final double width = arguments.getDouble("width");
+                final double height = arguments.getDouble("height");
+                final JSONArray jsonMatrix = arguments.getJSONArray("transform");
+                final double[] matrix = new double[16];
+                for (int i = 0; i < 16; i++)
+                  matrix[i] = jsonMatrix.getDouble(i);
+                textInputMethodHandler.setEditableSizeAndTransform(width, height, matrix);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
               }
@@ -272,6 +286,16 @@ public class TextInputChannel {
      */
     void setPlatformViewClient(int id);
 
+    /**
+     * Sets the size and the transform matrix of the current text input client.
+     *
+     * @param width the width of text input client. Must be finite.
+     * @param height the height of text input client. Must be finite.
+     * @param transform a 4x4 matrix that maps the local paint coordinate system to coordinate system
+     *                  of the FlutterView that owns the current client.
+     */
+    void setEditableSizeAndTransform(double width, double height, double[] transform);
+
     // TODO(mattcarroll): javadoc
     void setEditingState(@NonNull TextEditState editingState);
 
@@ -294,7 +318,6 @@ public class TextInputChannel {
         for (int i = 0; i < allFields.length; i++) {
           allFields[i] = Configuration.fromJson(fields.getJSONObject(i));
         }
-
       }
       final Integer inputAction = inputActionFromTextInputAction(inputActionName);
       return new Configuration(
