@@ -263,7 +263,7 @@ public class InputConnectionAdaptorTest {
     Editable editable = sampleEditable(selStart, selStart);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
-    ExtractedText extractedText = adaptor.getExtractedText();
+    ExtractedText extractedText = adaptor.getExtractedText(null, 0);
 
     assertEquals(extractedText.text, SAMPLE_TEXT);
     assertEquals(extractedText.selectionStart, selStart);
