@@ -32,7 +32,7 @@ class TaskRunners {
 
   fml::RefPtr<fml::TaskRunner> GetIOTaskRunner() const;
 
-  fml::RefPtr<fml::TaskRunner> GetGPUTaskRunner() const;
+  fml::RefPtr<fml::TaskRunner> GetRasterTaskRunner() const;
 
   bool IsValid() const;
 

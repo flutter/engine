@@ -195,9 +195,9 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   return _shell->GetTaskRunners().GetPlatformTaskRunner();
 }
 
-- (fml::RefPtr<fml::TaskRunner>)GPUTaskRunner {
+- (fml::RefPtr<fml::TaskRunner>)RasterTaskRunner {
   FML_DCHECK(_shell);
-  return _shell->GetTaskRunners().GetGPUTaskRunner();
+  return _shell->GetTaskRunners().GetRasterTaskRunner();
 }
 
 - (void)ensureSemanticsEnabled {

@@ -222,9 +222,9 @@ bool DartIsolate::UpdateThreadPoolNames() const {
   // shells sharing the same (or subset of) threads.
   const auto& task_runners = GetTaskRunners();
 
-  if (auto task_runner = task_runners.GetGPUTaskRunner()) {
+  if (auto task_runner = task_runners.GetRasterTaskRunner()) {
     task_runner->PostTask(
-        [label = task_runners.GetLabel() + std::string{".gpu"}]() {
+        [label = task_runners.GetLabel() + std::string{".raster"}]() {
           Dart_SetThreadName(label.c_str());
         });
   }

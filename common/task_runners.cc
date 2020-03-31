@@ -39,7 +39,7 @@ fml::RefPtr<fml::TaskRunner> TaskRunners::GetIOTaskRunner() const {
   return io_;
 }
 
-fml::RefPtr<fml::TaskRunner> TaskRunners::GetGPUTaskRunner() const {
+fml::RefPtr<fml::TaskRunner> TaskRunners::GetRasterTaskRunner() const {
   return gpu_;
 }
 

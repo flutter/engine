@@ -717,7 +717,7 @@ static size_t GetRasterizerResourceCacheBytesSync(Shell& shell) {
   size_t bytes = 0;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
-      shell.GetTaskRunners().GetGPUTaskRunner(), [&]() {
+      shell.GetTaskRunners().GetRasterTaskRunner(), [&]() {
         if (auto rasterizer = shell.GetRasterizer()) {
           bytes = rasterizer->GetResourceCacheMaxBytes().value_or(0U);
         }
@@ -938,7 +938,7 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
       std::make_shared<MockTexture>(0, latch);
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
+      shell->GetTaskRunners().GetRasterTaskRunner(), [&]() {
         shell->GetPlatformView()->RegisterTexture(mockTexture);
         shell->GetPlatformView()->MarkTextureFrameAvailable(0);
       });
@@ -947,7 +947,7 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
   EXPECT_EQ(mockTexture->frames_available(), 1);
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(),
+      shell->GetTaskRunners().GetRasterTaskRunner(),
       [&]() { shell->GetPlatformView()->UnregisterTexture(0); });
   latch->Wait();
 
@@ -1032,7 +1032,7 @@ TEST_F(ShellTest, Screenshot) {
   auto screenshot_future = screenshot_promise.get_future();
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(),
+      shell->GetTaskRunners().GetRasterTaskRunner(),
       [&screenshot_promise, &shell]() {
         auto rasterizer = shell->GetRasterizer();
         screenshot_promise.set_value(rasterizer->ScreenshotLastLayerTree(

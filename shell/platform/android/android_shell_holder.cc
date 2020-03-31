@@ -121,7 +121,7 @@ AndroidShellHolder::AndroidShellHolder(
   is_valid_ = shell_ != nullptr;
 
   if (is_valid_) {
-    task_runners.GetGPUTaskRunner()->PostTask([]() {
+    task_runners.GetRasterTaskRunner()->PostTask([]() {
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
       // set the raster thread to slightly lower priority than it.

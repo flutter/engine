@@ -69,7 +69,7 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   if (surface_->GetExternalViewEmbedder()) {
     const auto platform_id =
         task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
-    const auto gpu_id = task_runners_.GetGPUTaskRunner()->GetTaskQueueId();
+    const auto gpu_id = task_runners_.GetRasterTaskRunner()->GetTaskQueueId();
     gpu_thread_merger_ =
         fml::MakeRefCounted<fml::GpuThreadMerger>(platform_id, gpu_id);
   }
@@ -115,7 +115,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
     // we yield and let this frame be serviced on the right thread.
     return;
   }
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
   RasterStatus raster_status = RasterStatus::kFailed;
   Pipeline<flutter::LayerTree>::Consumer consumer =
@@ -137,7 +137,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // between successive tries.
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
-      task_runners_.GetGPUTaskRunner()->PostTask(
+      task_runners_.GetRasterTaskRunner()->PostTask(
           [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
             if (weak_this) {
               weak_this->Draw(pipeline);
@@ -232,7 +232,7 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
 
 RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<flutter::LayerTree> layer_tree) {
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
   if (!layer_tree || !surface_) {
     return RasterStatus::kFailed;
