@@ -256,6 +256,19 @@ public class InputConnectionAdaptorTest {
     assertTrue(Selection.getSelectionStart(editable) > selStart);
   }
 
+  @Test
+  public void testMethod_getExtendedText() {
+    int selStart = 5;
+    Editable editable = sampleEditable(selStart, selStart);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    ExtendedText extendedText = adaptor.getExtendedText();
+
+    assertEquals(extendedText.text, SAMPLE_TEXT);
+    assertEquals(extendedText.selectionStart, selStart);
+    assertEquals(extendedText.selectionEnd, selStart);
+  }
+
   private static final String SAMPLE_TEXT =
       "Lorem ipsum dolor sit amet," + "\nconsectetur adipiscing elit.";
 
