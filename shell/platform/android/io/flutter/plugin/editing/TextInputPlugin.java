@@ -4,9 +4,6 @@
 
 package io.flutter.plugin.editing;
 
-import android.util.Log;
-import java.util.Arrays;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
@@ -68,10 +65,14 @@ public class TextInputPlugin {
     textInputChannel.setTextInputMethodHandler(
         new TextInputChannel.TextInputMethodHandler() {
           @Override
-          public void show() { showTextInput(mView); }
+          public void show() {
+            showTextInput(mView);
+          }
 
           @Override
-          public void hide() { hideTextInput(mView); }
+          public void hide() {
+            hideTextInput(mView);
+          }
 
           @Override
           public void setClient(
@@ -284,9 +285,7 @@ public class TextInputPlugin {
   }
 
   private void hideTextInput(View view) {
-    if (afm != null && needsAutofill()) {
-      afm.notifyViewExited(view);
-    }
+    notifyViewExited();
     // Note: a race condition may lead to us hiding the keyboard here just after a platform view has
     // shown it.
     // This can only potentially happen when switching focus from a Flutter text field to a platform
@@ -308,7 +307,7 @@ public class TextInputPlugin {
   }
 
   private void notifyViewExited() {
-    if (afm != null && needsAutofill()) {
+    if (afm != null && configuration != null && configuration.autofill != null) {
       final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
       afm.notifyViewExited(mView, triggerIdentifier.hashCode());
     }
@@ -331,6 +330,7 @@ public class TextInputPlugin {
     // Do a restartInput at that time.
     mRestartInputPending = true;
     unlockPlatformViewInputConnection();
+    lastClientRect = null;
   }
 
   private void setPlatformViewTextInputClient(int platformViewId) {
@@ -386,7 +386,7 @@ public class TextInputPlugin {
   private interface MinMax { void inspect(double x, double y); }
 
   private void saveEditableSizeAndTransform(double width, double height, double[] matrix) {
-    final double[] minMax = new double[4];
+    final double[] minMax = new double[4]; // minX, maxX, minY, maxY.
     final boolean isAffine = matrix[3] == 0 && matrix[7] == 0 && matrix[15] == 1;
     minMax[0] = minMax[1] = matrix[12] / matrix[15]; // minX and maxX.
     minMax[2] = minMax[3] = matrix[13] / matrix[15]; // minY and maxY.
@@ -421,18 +421,24 @@ public class TextInputPlugin {
     notifyViewExited();
     this.configuration = configuration;
     final TextInputChannel.Configuration[] configurations = configuration.allFields;
-    if (configurations == null) {
+
+    if (configuration.autofill == null) {
       mAutofillConfigurations = null;
       return;
     }
 
     mAutofillConfigurations = new SparseArray<>();
-    for (TextInputChannel.Configuration config : configurations) {
-      TextInputChannel.Configuration.Autofill autofill = config.autofill;
-      if (autofill == null)
-        continue;
 
-      mAutofillConfigurations.put(autofill.uniqueIdentifier.hashCode(), config);
+    if (configurations == null) {
+      mAutofillConfigurations.put(configuration.autofill.uniqueIdentifier.hashCode(), configuration);
+    } else {
+      for (TextInputChannel.Configuration config : configurations) {
+        TextInputChannel.Configuration.Autofill autofill = config.autofill;
+        if (autofill == null)
+          continue;
+
+        mAutofillConfigurations.put(autofill.uniqueIdentifier.hashCode(), config);
+      }
     }
   }
 
@@ -478,12 +484,14 @@ public class TextInputPlugin {
       if (config == null || config.autofill == null)
         continue;
 
-      final AutofillValue value = values.valueAt(i);
       final TextInputChannel.Configuration.Autofill autofill = config.autofill;
+      final String value = values.valueAt(i).getTextValue().toString();
+      final TextInputChannel.TextEditState newState = new TextInputChannel.TextEditState(value, value.length(), value.length());
 
-      editingValues.put(
-              autofill.uniqueIdentifier,
-              new TextInputChannel.TextEditState(value.getTextValue().toString(), -1, -1));
+      // The value of the currently focused text field needs to be updated.
+      if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier))
+        setTextInputEditingState(mView, newState);
+      editingValues.put(autofill.uniqueIdentifier, newState);
     }
 
     textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);
@@ -541,6 +549,7 @@ public class TextInputPlugin {
     }
     inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
     unlockPlatformViewInputConnection();
+    notifyViewExited();
     lastClientRect = null;
   }
 

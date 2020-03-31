@@ -391,6 +391,28 @@ public class TextInputPluginTest {
     assertEquals(testImm.getSelectionUpdateValues(), expectedSelectionValues);
   }
 
+  //@Test
+  //public void autofill_onProvideVirtualViewStructure() {
+  //  TestImm testImm =
+  //          Shadow.extract(
+  //                  RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+  //  testImm.setCurrentInputMethodSubtype(null);
+
+  //  FlutterView testView = new FlutterView(RuntimeEnvironment.application);
+  //  TextInputPlugin textInputPlugin =
+  //          new TextInputPlugin(
+  //                  testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+  //  textInputPlugin.setTextInputClient(
+  //          0,
+  //          new TextInputChannel.Configuration(
+  //                  false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null));
+  //  // There's a pending restart since we initialized the text input client. Flush that now.
+  //  textInputPlugin.setTextInputEditingState(
+  //          testView, new TextInputChannel.TextEditState("", 0, 0));
+  //  assertEquals(1, testImm.getRestartCount(testView));
+  //}
+
+
   @Implements(InputMethodManager.class)
   public static class TestImm extends ShadowInputMethodManager {
     private InputMethodSubtype currentInputMethodSubtype;

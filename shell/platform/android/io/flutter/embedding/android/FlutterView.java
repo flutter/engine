@@ -273,6 +273,8 @@ public class FlutterView extends FrameLayout {
   }
 
   private void init() {
+    Log.v(TAG, "Initializing FlutterView");
+
     if (flutterSurfaceView != null) {
       Log.v(TAG, "Internally using a FlutterSurfaceView.");
       addView(flutterSurfaceView);
