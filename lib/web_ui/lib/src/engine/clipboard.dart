@@ -19,7 +19,7 @@ class ClipboardMessageHandler {
       MethodCall methodCall, ui.PlatformMessageResponseCallback callback) {
     const MethodCodec codec = JSONMethodCodec();
     _copyToClipboardStrategy
-        .setData(methodCall.arguments['text'] as String)
+        .setData(unsafeCast<String>(methodCall.arguments['text']))
         .then((bool success) {
       if (success) {
         callback(codec.encodeSuccessEnvelope(true));
