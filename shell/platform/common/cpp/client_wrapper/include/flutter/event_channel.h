@@ -93,7 +93,7 @@ class EventChannel {
   }
 
  private:
-   class EventSinkImplementation : public EventSink<T> {
+  class EventSinkImplementation : public EventSink<T> {
    public:
     EventSinkImplementation(const BinaryMessenger* messenger,
                             const std::string& name,
