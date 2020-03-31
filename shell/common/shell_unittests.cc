@@ -279,8 +279,8 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
 TEST_F(ShellTest, WhitelistedDartVMFlag) {
   const std::vector<fml::CommandLine::Option> options = {
 #if !FLUTTER_RELEASE
-      fml::CommandLine::Option("dart-flags",
-                               "--max_profile_depth 1,--random_seed 42")
+    fml::CommandLine::Option("dart-flags",
+                             "--max_profile_depth 1,--random_seed 42")
 #endif
   };
   fml::CommandLine command_line("", options, std::vector<std::string>());
