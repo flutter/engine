@@ -38,6 +38,7 @@ class SupportedBrowsers {
     'edge',
     'firefox',
     'safari'
+    'ios-safari',
   ];
 
   final Map<String, Runtime> supportedBrowsersToRuntimes = {

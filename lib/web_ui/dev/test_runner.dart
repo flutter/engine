@@ -16,6 +16,7 @@ import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
 
 import 'integration_tests_manager.dart';
+import 'mobile_unit_test_manager.dart';
 import 'supported_browsers.dart';
 import 'test_platform.dart';
 import 'environment.dart';
@@ -106,6 +107,9 @@ class TestCommand extends Command<bool> {
     SupportedBrowsers.instance
       ..argParsers.forEach((t) => t.parseOptions(argResults));
 
+    // Make sure the browser requested is supported.
+    assert(SupportedBrowsers.instance.supportedBrowserNames.contains(browser));
+
     // Check the flags to see what type of integration tests are requested.
     testTypesRequested = findTestType();
 
@@ -142,19 +146,26 @@ class TestCommand extends Command<bool> {
 
   Future<bool> runUnitTests() async {
     _copyTestFontsIntoWebUi();
-    await _buildHostPage();
-    if (io.Platform.isWindows) {
-      // On Dart 2.7 or greater, it gives an error for not
-      // recognized "pub" version and asks for "pub" get.
-      // See: https://github.com/dart-lang/sdk/issues/39738
-      await _runPubGet();
-    }
 
-    await _buildTests(targets: targetFiles);
-    if (runAllTests) {
-      await _runAllTests();
+    if (browser == 'ios-safari') {
+      final MobileUnitTestManager mobileUnitTestManager =
+          MobileUnitTestManager(browser);
+      await mobileUnitTestManager.runUnitTests();
     } else {
-      await _runTargetTests(targetFiles);
+      await _buildHostPage();
+      if (io.Platform.isWindows) {
+        // On Dart 2.7 or greater, it gives an error for not
+        // recognized "pub" version and asks for "pub" get.
+        // See: https://github.com/dart-lang/sdk/issues/39738
+        await _runPubGet();
+      }
+
+      await _buildTests(targets: targetFiles);
+      if (runAllTests) {
+        await _runAllTests();
+      } else {
+        await _runTargetTests(targetFiles);
+      }
     }
     return true;
   }
@@ -338,11 +349,6 @@ class TestCommand extends Command<bool> {
 
     // Record the timestamp to avoid rebuilding unless the file changes.
     timestampFile.writeAsStringSync(timestamp);
-  }
-
-  Future<void> _serverTests() async {
-    await startProcess('webdev', ['serve', 'test:8080'],
-        workingDirectory: environment.webUiRootDir.path);
   }
 
   Future<void> _buildTests({List<FilePath> targets}) async {
