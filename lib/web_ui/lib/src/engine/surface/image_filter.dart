@@ -13,7 +13,7 @@ class PersistedImageFilter extends PersistedContainerSurface
   final ui.ImageFilter filter;
 
   @override
-  html.Element createElement() {
+  html.HtmlElement createElement() {
     return defaultCreateElement('flt-image-filter');
   }
 

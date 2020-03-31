@@ -25,10 +25,10 @@ class HtmlViewEmbedder {
       <int, EmbeddedViewParams>{};
 
   /// The HTML element associated with the given view id.
-  final Map<int, html.Element> _views = <int, html.Element>{};
+  final Map<int, html.HtmlElement> _views = <int, html.HtmlElement>{};
 
   /// The root view in the stack of mutator elements for the view id.
-  final Map<int, html.Element> _rootViews = <int, html.Element>{};
+  final Map<int, html.HtmlElement> _rootViews = <int, html.HtmlElement>{};
 
   /// The overlay for the view id.
   final Map<int, Overlay> _overlays = <int, Overlay>{};
@@ -107,7 +107,7 @@ class HtmlViewEmbedder {
     }
 
     // TODO(het): Support creation parameters.
-    html.Element embeddedView = factory(viewId);
+    html.HtmlElement embeddedView = factory(viewId);
     _views[viewId] = embeddedView;
 
     _rootViews[viewId] = embeddedView;
@@ -165,7 +165,7 @@ class HtmlViewEmbedder {
   }
 
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
-    final html.Element platformView = _views[viewId];
+    final html.HtmlElement platformView = _views[viewId];
     platformView.style.width = '${params.size.width}px';
     platformView.style.height = '${params.size.height}px';
     platformView.style.position = 'absolute';
@@ -174,8 +174,8 @@ class HtmlViewEmbedder {
     final int previousClippingCount = _clipCount[viewId];
     if (currentClippingCount != previousClippingCount) {
       _clipCount[viewId] = currentClippingCount;
-      html.Element oldPlatformViewRoot = _rootViews[viewId];
-      html.Element newPlatformViewRoot = _reconstructClipViewsChain(
+      html.HtmlElement oldPlatformViewRoot = _rootViews[viewId];
+      html.HtmlElement newPlatformViewRoot = _reconstructClipViewsChain(
         currentClippingCount,
         platformView,
         oldPlatformViewRoot,
@@ -195,17 +195,17 @@ class HtmlViewEmbedder {
     return clipCount;
   }
 
-  html.Element _reconstructClipViewsChain(
+  html.HtmlElement _reconstructClipViewsChain(
     int numClips,
-    html.Element platformView,
-    html.Element headClipView,
+    html.HtmlElement platformView,
+    html.HtmlElement headClipView,
   ) {
     int indexInFlutterView = -1;
     if (headClipView.parent != null) {
       indexInFlutterView = skiaSceneHost.children.indexOf(headClipView);
       headClipView.remove();
     }
-    html.Element head = platformView;
+    html.HtmlElement head = platformView;
     int clipIndex = 0;
     // Re-use as much existing clip views as needed.
     while (head != headClipView && clipIndex < numClips) {
@@ -214,7 +214,7 @@ class HtmlViewEmbedder {
     }
     // If there weren't enough existing clip views, add more.
     while (clipIndex < numClips) {
-      html.Element clippingView = html.Element.tag('flt-clip');
+      html.HtmlElement clippingView = html.Element.tag('flt-clip');
       clippingView.append(head);
       head = clippingView;
       clipIndex++;
@@ -228,8 +228,8 @@ class HtmlViewEmbedder {
     return head;
   }
 
-  void _applyMutators(MutatorsStack mutators, html.Element embeddedView) {
-    html.Element head = embeddedView;
+  void _applyMutators(MutatorsStack mutators, html.HtmlElement embeddedView) {
+    html.HtmlElement head = embeddedView;
     Matrix4 headTransform = Matrix4.identity();
     double embeddedOpacity = 1.0;
     _resetAnchor(head);
@@ -244,7 +244,7 @@ class HtmlViewEmbedder {
         case MutatorType.clipRect:
         case MutatorType.clipRRect:
         case MutatorType.clipPath:
-          html.Element clipView = head.parent;
+          html.HtmlElement clipView = head.parent;
           clipView.style.clip = '';
           clipView.style.clipPath = '';
           headTransform = Matrix4.identity();
@@ -257,9 +257,9 @@ class HtmlViewEmbedder {
             final SkPath path = SkPath();
             path.addRRect(mutator.rrect);
             _ensureSvgPathDefs();
-            html.Element pathDefs = _svgPathDefs.querySelector('#sk_path_defs');
+            html.HtmlElement pathDefs = _svgPathDefs.querySelector('#sk_path_defs');
             _clipPathCount += 1;
-            html.Element newClipPath =
+            html.HtmlElement newClipPath =
                 html.Element.html('<clipPath id="svgClip$_clipPathCount">'
                     '<path d="${path.toSvgString()}">'
                     '</path></clipPath>');
@@ -268,9 +268,9 @@ class HtmlViewEmbedder {
           } else if (mutator.path != null) {
             final SkPath path = mutator.path;
             _ensureSvgPathDefs();
-            html.Element pathDefs = _svgPathDefs.querySelector('#sk_path_defs');
+            html.HtmlElement pathDefs = _svgPathDefs.querySelector('#sk_path_defs');
             _clipPathCount += 1;
-            html.Element newClipPath =
+            html.HtmlElement newClipPath =
                 html.Element.html('<clipPath id="svgClip$_clipPathCount">'
                     '<path d="${path.toSvgString()}">'
                     '</path></clipPath>');
@@ -304,14 +304,14 @@ class HtmlViewEmbedder {
   ///
   /// By default, the transform origin is the center of the element, but
   /// Flutter assumes the transform origin is the top-left point.
-  void _resetAnchor(html.Element element) {
+  void _resetAnchor(html.HtmlElement element) {
     element.style.transformOrigin = '0 0 0';
     element.style.position = 'absolute';
   }
 
   int _clipPathCount = 0;
 
-  html.Element _svgPathDefs;
+  html.HtmlElement _svgPathDefs;
 
   /// Ensures we add a container of SVG path defs to the DOM so they can
   /// be referred to in clip-path: url(#blah).
@@ -347,8 +347,8 @@ class HtmlViewEmbedder {
 
     for (int i = 0; i < _compositionOrder.length; i++) {
       int viewId = _compositionOrder[i];
-      html.Element platformViewRoot = _rootViews[viewId];
-      html.Element overlay = _overlays[viewId].surface.htmlElement;
+      html.HtmlElement platformViewRoot = _rootViews[viewId];
+      html.HtmlElement overlay = _overlays[viewId].surface.htmlElement;
       platformViewRoot.remove();
       skiaSceneHost.append(platformViewRoot);
       overlay.remove();
@@ -364,7 +364,7 @@ class HtmlViewEmbedder {
     }
 
     for (int viewId in _viewsToDispose) {
-      final html.Element rootView = _rootViews[viewId];
+      final html.HtmlElement rootView = _rootViews[viewId];
       rootView.remove();
       _views.remove(viewId);
       _rootViews.remove(viewId);

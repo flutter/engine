@@ -19,7 +19,7 @@ class Tappable extends RoleManager {
 
   @override
   void update() {
-    final html.Element element = semanticsObject.element;
+    final html.HtmlElement element = semanticsObject.element;
 
     semanticsObject.setAriaRole(
         'button', semanticsObject.hasFlag(ui.SemanticsFlag.isButton));

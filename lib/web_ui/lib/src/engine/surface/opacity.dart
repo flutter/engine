@@ -34,7 +34,7 @@ class PersistedOpacity extends PersistedContainerSurface
       Matrix4.translationValues(-offset.dx, -offset.dy, 0);
 
   @override
-  html.Element createElement() {
+  html.HtmlElement createElement() {
     return defaultCreateElement('flt-opacity')..style.transformOrigin = '0 0 0';
   }
 

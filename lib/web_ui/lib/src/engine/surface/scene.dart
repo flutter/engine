@@ -12,7 +12,7 @@ class SurfaceScene implements ui.Scene {
   /// To create a Scene object, use a [SceneBuilder].
   SurfaceScene(this.webOnlyRootElement);
 
-  final html.Element webOnlyRootElement;
+  final html.HtmlElement webOnlyRootElement;
 
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
@@ -49,7 +49,7 @@ class PersistedScene extends PersistedContainerSurface {
   Matrix4 get localTransformInverse => _localTransformInverse;
 
   @override
-  html.Element createElement() {
+  html.HtmlElement createElement() {
     return defaultCreateElement('flt-scene');
   }
 

@@ -8,7 +8,7 @@ part of engine;
 /// A canvas that renders to DOM elements and CSS properties.
 class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
-  final html.Element rootElement = html.Element.tag('flt-dom-canvas');
+  final html.HtmlElement rootElement = html.Element.tag('flt-dom-canvas');
 
   DomCanvas() {
     rootElement.style
@@ -45,7 +45,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     // TODO(yjbanov): implement blendMode
-    final html.Element box = html.Element.tag('draw-color');
+    final html.HtmlElement box = html.Element.tag('draw-color');
     box.style
       ..position = 'absolute'
       ..top = '0'
@@ -71,9 +71,9 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
     _drawRect(rect, paint, 'draw-rect');
   }
 
-  html.Element _drawRect(ui.Rect rect, SurfacePaintData paint, String tagName) {
+  html.HtmlElement _drawRect(ui.Rect rect, SurfacePaintData paint, String tagName) {
     assert(paint.shader == null);
-    final html.Element rectangle = html.Element.tag(tagName);
+    final html.HtmlElement rectangle = html.Element.tag(tagName);
     assert(() {
       rectangle.setAttribute('flt-rect', '$rect');
       rectangle.setAttribute('flt-paint', '$paint');
@@ -135,7 +135,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    html.Element element = _drawRect(rrect.outerRect, paint, 'draw-rrect');
+    html.HtmlElement element = _drawRect(rrect.outerRect, paint, 'draw-rrect');
     element.style.borderRadius = '${rrect.blRadiusX.toStringAsFixed(3)}px';
   }
 
@@ -178,7 +178,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    final html.Element paragraphElement =
+    final html.HtmlElement paragraphElement =
         _drawParagraphElement(paragraph, offset, transform: currentTransform);
     currentElement.append(paragraphElement);
   }

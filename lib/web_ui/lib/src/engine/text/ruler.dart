@@ -162,7 +162,7 @@ class ParagraphGeometricStyle {
 class TextDimensions {
   TextDimensions(this._element);
 
-  final html.Element _element;
+  final html.HtmlElement _element;
   html.Rectangle<num> _cachedBoundingClientRect;
 
   /// Attempts to efficiently copy text from [from].
@@ -205,7 +205,7 @@ class TextDimensions {
     } else {
       // Rich text: deeply copy contents. This is the slow case that should be
       // avoided if fast layout performance is desired.
-      final html.Element copy = from._paragraphElement.clone(true);
+      final html.HtmlElement copy = from._paragraphElement.clone(true);
       _element.nodes.addAll(copy.nodes);
     }
   }
@@ -272,7 +272,7 @@ class TextDimensions {
 
   /// Appends element and probe to hostElement that is setup for a specific
   /// TextStyle.
-  void appendToHost(html.Element hostElement) {
+  void appendToHost(html.HtmlElement hostElement) {
     hostElement.append(_element);
     _invalidateBoundsCache();
   }
@@ -353,7 +353,7 @@ class ParagraphRuler {
   final RulerManager rulerManager;
 
   /// Probe to use for measuring alphabetic base line.
-  final html.Element _probe = html.DivElement();
+  final html.HtmlElement _probe = html.DivElement();
 
   /// Cached value of alphabetic base line.
   double _cachedAlphabeticBaseline;
@@ -634,7 +634,7 @@ class ParagraphRuler {
   int hitTest(ui.ParagraphConstraints constraints, ui.Offset offset) {
     measureWithConstraints(constraints);
     // Get paragraph element root used to measure constrainedDimensions.
-    final html.Element el = constrainedDimensions._element;
+    final html.HtmlElement el = constrainedDimensions._element;
     final List<html.Node> textNodes = <html.Node>[];
     // Collect all text nodes (breadth first traversal).
     // Since there is no api to get bounds of text nodes directly we work
@@ -645,7 +645,7 @@ class ParagraphRuler {
       final html.Node node = textNodes[i];
       // Check if offset is within client rect bounds of text node's
       // parent element.
-      final html.Element parent = node.parentNode;
+      final html.HtmlElement parent = node.parentNode;
       final html.Rectangle<num> bounds = parent.getBoundingClientRect();
       final double dx = offset.dx;
       final double dy = offset.dy;

@@ -31,7 +31,7 @@ class _CanvasPool extends _SaveStackTracking {
   // Current canvas element or null if marked for lazy allocation.
   html.CanvasElement _canvas;
 
-  html.Element _rootElement;
+  html.HtmlElement _rootElement;
   int _saveContextCount = 0;
 
   _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
@@ -71,7 +71,7 @@ class _CanvasPool extends _SaveStackTracking {
     }
   }
 
-  void allocateCanvas(html.Element rootElement) {
+  void allocateCanvas(html.HtmlElement rootElement) {
     _rootElement = rootElement;
   }
 

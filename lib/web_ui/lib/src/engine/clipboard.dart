@@ -166,7 +166,7 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
     return tempElement;
   }
 
-  void _removeTemporaryTextArea(html.Element element) {
+  void _removeTemporaryTextArea(html.HtmlElement element) {
     element?.remove();
   }
 }

@@ -531,7 +531,7 @@ class SemanticsObject {
   final EngineSemanticsOwner owner;
 
   /// The DOM element used to convey semantics information to the browser.
-  final html.Element element = html.Element.tag('flt-semantics');
+  final html.HtmlElement element = html.Element.tag('flt-semantics');
 
   /// Bitfield showing which fields have been updated but have not yet been
   /// applied to the DOM.
@@ -552,7 +552,7 @@ class SemanticsObject {
   /// is not created. This is necessary for "aria-label" to function correctly.
   /// The browser will ignore the [label] of HTML element that contain child
   /// elements.
-  html.Element getOrCreateChildContainer() {
+  html.HtmlElement getOrCreateChildContainer() {
     if (_childContainerElement == null) {
       _childContainerElement = html.Element.tag('flt-semantics-container');
       _childContainerElement.style.position = 'absolute';
@@ -566,7 +566,7 @@ class SemanticsObject {
   ///
   /// This element is used to correct for [_rect] offsets. It is only non-`null`
   /// when there are non-zero children (i.e. when [hasChildren] is `true`).
-  html.Element _childContainerElement;
+  html.HtmlElement _childContainerElement;
 
   /// The parent of this semantics object.
   SemanticsObject _parent;
@@ -823,7 +823,7 @@ class SemanticsObject {
       ..width = '${_rect.width}px'
       ..height = '${_rect.height}px';
 
-    final html.Element containerElement =
+    final html.HtmlElement containerElement =
         hasChildren ? getOrCreateChildContainer() : null;
 
     final bool hasZeroRectOffset = _rect.top == 0.0 && _rect.left == 0.0;
@@ -925,7 +925,7 @@ class SemanticsObject {
       return;
     }
 
-    final html.Element containerElement = getOrCreateChildContainer();
+    final html.HtmlElement containerElement = getOrCreateChildContainer();
 
     // Empty case.
     if (_previousChildrenInTraversalOrder == null ||
@@ -1009,7 +1009,7 @@ class SemanticsObject {
       }
     }
 
-    html.Element refNode;
+    html.HtmlElement refNode;
     for (int i = _childrenInTraversalOrder.length - 1; i >= 0; i -= 1) {
       final int childId = _childrenInTraversalOrder[i];
       final SemanticsObject child = owner.getOrCreateObject(childId);
@@ -1187,7 +1187,7 @@ class EngineSemanticsOwner {
   }
 
   /// The top-level DOM element of the semantics DOM element tree.
-  html.Element _rootSemanticsElement;
+  html.HtmlElement _rootSemanticsElement;
 
   TimestampFunction _now = () => DateTime.now();
 

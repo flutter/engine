@@ -392,7 +392,7 @@ void _debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
   // A microtask will fire after the DOM is flushed, letting us probe into
   // actual <canvas> tags.
   scheduleMicrotask(() {
-    final List<html.Element> canvasElements =
+    final List<html.HtmlElement> canvasElements =
         html.document.querySelectorAll('canvas');
     final StringBuffer canvasInfo = StringBuffer();
     final int pixelCount = canvasElements
@@ -617,7 +617,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   ///
   /// This element can be reused across frames. See also, [childContainer],
   /// which is the element used to manage child nodes.
-  html.Element rootElement;
+  html.HtmlElement rootElement;
 
   /// Whether this surface can update an existing [oldSurface].
   bool canUpdateAsMatch(PersistedSurface oldSurface) {
@@ -629,7 +629,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// By default this is the same as the [rootElement]. However, specialized
   /// surface implementations may choose to override this and provide a
   /// different element for nesting children.
-  html.Element get childContainer => rootElement;
+  html.HtmlElement get childContainer => rootElement;
 
   /// This surface's immediate parent.
   PersistedContainerSurface parent;
@@ -798,12 +798,12 @@ abstract class PersistedSurface implements ui.EngineLayer {
   }
 
   /// Creates a DOM element for this surface.
-  html.Element createElement();
+  html.HtmlElement createElement();
 
   /// Creates a DOM element for this surface preconfigured with common
   /// attributes, such as absolute positioning and debug information.
-  html.Element defaultCreateElement(String tagName) {
-    final html.Element element = html.Element.tag(tagName);
+  html.HtmlElement defaultCreateElement(String tagName) {
+    final html.HtmlElement element = html.Element.tag(tagName);
     element.style.position = 'absolute';
     if (assertionsEnabled) {
       element.setAttribute('flt-layer-state', 'new');
@@ -982,7 +982,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     // Memoize length for efficiency.
     final int len = _children.length;
     // Memoize container element for efficiency. [childContainer] is polymorphic
-    final html.Element containerElement = childContainer;
+    final html.HtmlElement containerElement = childContainer;
     for (int i = 0; i < len; i++) {
       final PersistedSurface child = _children[i];
       if (child.isPendingRetention) {
@@ -1069,7 +1069,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     assert(oldSurface._children.isEmpty);
 
     // Memoizing variables for efficiency.
-    final html.Element containerElement = childContainer;
+    final html.HtmlElement containerElement = childContainer;
     final int length = _children.length;
 
     for (int i = 0; i < length; i++) {
@@ -1200,7 +1200,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     assert(_children.isNotEmpty && oldSurface._children.isNotEmpty);
 
     // Memoize container element for efficiency. [childContainer] is polymorphic
-    final html.Element containerElement = childContainer;
+    final html.HtmlElement containerElement = childContainer;
 
     PersistedSurface nextSibling;
 

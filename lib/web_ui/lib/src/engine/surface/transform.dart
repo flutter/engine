@@ -28,7 +28,7 @@ class PersistedTransform extends PersistedContainerSurface
   }
 
   @override
-  html.Element createElement() {
+  html.HtmlElement createElement() {
     return defaultCreateElement('flt-transform')
       ..style.transformOrigin = '0 0 0';
   }

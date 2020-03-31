@@ -102,7 +102,7 @@ class Keyboard {
       return false;
     }
     // Other keys should be ignored if triggered on a text field.
-    return event.target is html.Element &&
+    return event.target is html.HtmlElement &&
         HybridTextEditing.isEditingElement(event.target);
   }
 

@@ -5,8 +5,8 @@
 // @dart = 2.6
 part of engine;
 
-html.Element _logElement;
-html.Element _logContainer;
+html.HtmlElement _logElement;
+html.HtmlElement _logContainer;
 List<_LogMessage> _logBuffer = <_LogMessage>[];
 
 class _LogMessage {

@@ -32,7 +32,7 @@ class PersistedOffset extends PersistedContainerSurface
       _localTransformInverse ??= Matrix4.translationValues(-dx, -dy, 0);
 
   @override
-  html.Element createElement() {
+  html.HtmlElement createElement() {
     return defaultCreateElement('flt-offset')..style.transformOrigin = '0 0 0';
   }
 

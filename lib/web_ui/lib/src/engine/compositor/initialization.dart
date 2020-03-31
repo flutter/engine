@@ -53,4 +53,4 @@ js.JsObject canvasKit;
 SkiaFontCollection skiaFontCollection;
 
 /// The scene host, where the root canvas and overlay canvases are added to.
-html.Element skiaSceneHost;
+html.HtmlElement skiaSceneHost;

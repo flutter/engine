@@ -43,7 +43,7 @@ class LabelAndValue extends RoleManager {
   ///   its label is not reachable via accessibility focus. This happens, for
   ///   example in popup dialogs, such as the alert dialog. The text of the
   ///   alert is supplied as a label on the parent node.
-  html.Element _auxiliaryValueElement;
+  html.HtmlElement _auxiliaryValueElement;
 
   @override
   void update() {

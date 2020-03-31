@@ -368,7 +368,7 @@ abstract class PersistedPicture extends PersistedLeafSurface {
   final int hints;
 
   @override
-  html.Element createElement() {
+  html.HtmlElement createElement() {
     return defaultCreateElement('flt-picture');
   }
 
@@ -612,7 +612,7 @@ abstract class PersistedPicture extends PersistedLeafSurface {
   void debugPrintChildren(StringBuffer buffer, int indent) {
     super.debugPrintChildren(buffer, indent);
     if (rootElement != null && rootElement.firstChild != null) {
-      final html.Element firstChild = rootElement.firstChild;
+      final html.HtmlElement firstChild = rootElement.firstChild;
       final String canvasTag = firstChild.tagName.toLowerCase();
       final int canvasHash = rootElement.firstChild.hashCode;
       buffer.writeln('${'  ' * (indent + 1)}<$canvasTag @$canvasHash />');

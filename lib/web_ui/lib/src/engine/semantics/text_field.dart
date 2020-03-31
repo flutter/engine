@@ -19,7 +19,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   /// [domElement] so the caller can insert it before calling
   /// [SemanticsTextEditingStrategy.enable].
   SemanticsTextEditingStrategy(
-      HybridTextEditing owner, html.Element domElement)
+      HybridTextEditing owner, html.HtmlElement domElement)
       : super(owner) {
     // Make sure the DOM element is of a type that we support for text editing.
     // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
@@ -80,7 +80,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 class TextField extends RoleManager {
   TextField(SemanticsObject semanticsObject)
       : super(Role.textField, semanticsObject) {
-    final html.Element editableDomElement =
+    final html.HtmlElement editableDomElement =
         semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
             ? html.TextAreaElement()
             : html.InputElement();
@@ -92,7 +92,7 @@ class TextField extends RoleManager {
   }
 
   SemanticsTextEditingStrategy textEditingElement;
-  html.Element get _textFieldElement => textEditingElement.domElement;
+  html.HtmlElement get _textFieldElement => textEditingElement.domElement;
 
   void _setupDomElement() {
     // On iOS, even though the semantic text field is transparent, the cursor

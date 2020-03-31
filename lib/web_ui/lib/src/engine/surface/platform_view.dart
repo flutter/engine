@@ -18,8 +18,8 @@ class PersistedPlatformView extends PersistedLeafSurface {
   PersistedPlatformView(this.viewId, this.dx, this.dy, this.width, this.height);
 
   @override
-  html.Element createElement() {
-    html.Element element = defaultCreateElement('flt-platform-view');
+  html.HtmlElement createElement() {
+    html.HtmlElement element = defaultCreateElement('flt-platform-view');
 
     // Allow the platform view host element to receive pointer events.
     //
@@ -46,7 +46,7 @@ class PersistedPlatformView extends PersistedLeafSurface {
         all: initial;
       }''';
     _shadowRoot.append(_styleReset);
-    final html.Element platformView =
+    final html.HtmlElement platformView =
         platformViewRegistry.getCreatedView(viewId);
     if (platformView != null) {
       _shadowRoot.append(platformView);
@@ -66,7 +66,7 @@ class PersistedPlatformView extends PersistedLeafSurface {
       ..width = '${width}px'
       ..height = '${height}px';
     // Set size of the root element created by the PlatformView.
-    final html.Element platformView =
+    final html.HtmlElement platformView =
         platformViewRegistry.getCreatedView(viewId);
     if (platformView != null) {
       platformView.style

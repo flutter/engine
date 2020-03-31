@@ -47,9 +47,9 @@ class AccessibilityAnnouncements {
   /// This element has aria-live attribute.
   ///
   /// It also has id 'accessibility-element' for testing purposes.
-  html.Element _element;
+  html.HtmlElement _element;
 
-  html.Element get _domElement => _element ??= _createElement();
+  html.HtmlElement get _domElement => _element ??= _createElement();
 
   /// Decodes the message coming from the 'flutter/accessibility' channel.
   void handleMessage(StandardMessageCodec codec, ByteData data) {

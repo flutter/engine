@@ -17,9 +17,9 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   /// [rootElement] is used to host child in front of [filterElement] that
   /// is transformed to cover background.
   @override
-  html.Element get childContainer => _childContainer;
-  html.Element _childContainer;
-  html.Element _filterElement;
+  html.HtmlElement get childContainer => _childContainer;
+  html.HtmlElement _childContainer;
+  html.HtmlElement _filterElement;
   // Cached inverted transform for _transform.
   Matrix4 _invertedTransform;
   // Reference to transform last used to cache [_invertedTransform].
@@ -34,8 +34,8 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   }
 
   @override
-  html.Element createElement() {
-    final html.Element element = defaultCreateElement('flt-backdrop')
+  html.HtmlElement createElement() {
+    final html.HtmlElement element = defaultCreateElement('flt-backdrop')
       ..style.transformOrigin = '0 0 0';
     _childContainer = html.Element.tag('flt-backdrop-interior');
     _childContainer.style.position = 'absolute';

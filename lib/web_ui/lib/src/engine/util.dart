@@ -58,7 +58,7 @@ String matrix4ToCssTransform(Matrix4 matrix) {
 /// Applies a transform to the [element].
 ///
 /// See [float64ListToCssTransform] for details on how the CSS value is chosen.
-void setElementTransform(html.Element element, Float64List matrix4) {
+void setElementTransform(html.HtmlElement element, Float64List matrix4) {
   element.style
     ..transformOrigin = '0 0 0'
     ..transform = float64ListToCssTransform(matrix4);
@@ -439,7 +439,7 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 ///
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
-void applyWebkitClipFix(html.Element containerElement) {
+void applyWebkitClipFix(html.HtmlElement containerElement) {
   if (browserEngine == BrowserEngine.webkit) {
     containerElement.style.zIndex = '0';
   }

@@ -12,8 +12,8 @@ mixin _DomClip on PersistedContainerSurface {
   /// [rootElement] is used to compensate for the coordinate system shift
   /// introduced by the [rootElement] translation.
   @override
-  html.Element get childContainer => _childContainer;
-  html.Element _childContainer;
+  html.HtmlElement get childContainer => _childContainer;
+  html.HtmlElement _childContainer;
 
   @override
   void adoptElements(_DomClip oldSurface) {
@@ -23,8 +23,8 @@ mixin _DomClip on PersistedContainerSurface {
   }
 
   @override
-  html.Element createElement() {
-    final html.Element element = defaultCreateElement('flt-clip');
+  html.HtmlElement createElement() {
+    final html.HtmlElement element = defaultCreateElement('flt-clip');
     if (!debugShowClipLayers) {
       // Hide overflow in production mode. When debugging we want to see the
       // clipped picture in full.
@@ -73,7 +73,7 @@ class PersistedClipRect extends PersistedContainerSurface
   }
 
   @override
-  html.Element createElement() {
+  html.HtmlElement createElement() {
     return super.createElement()..setAttribute('clip-type', 'rect');
   }
 
@@ -122,7 +122,7 @@ class PersistedClipRRect extends PersistedContainerSurface
   }
 
   @override
-  html.Element createElement() {
+  html.HtmlElement createElement() {
     return super.createElement()..setAttribute('clip-type', 'rrect');
   }
 
@@ -171,7 +171,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   final ui.Color color;
   final ui.Color shadowColor;
   final ui.Clip clipBehavior;
-  html.Element _clipElement;
+  html.HtmlElement _clipElement;
 
   @override
   void recomputeTransformAndClip() {
@@ -201,7 +201,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   }
 
   @override
-  html.Element createElement() {
+  html.HtmlElement createElement() {
     return super.createElement()..setAttribute('clip-type', 'physical-shape');
   }
 
@@ -345,10 +345,10 @@ class PersistedClipPath extends PersistedContainerSurface
 
   final ui.Path clipPath;
   final ui.Clip clipBehavior;
-  html.Element _clipElement;
+  html.HtmlElement _clipElement;
 
   @override
-  html.Element createElement() {
+  html.HtmlElement createElement() {
     return defaultCreateElement('flt-clippath');
   }
 
@@ -398,7 +398,7 @@ class PersistedClipPath extends PersistedContainerSurface
 }
 
 /// Creates an svg clipPath and applies it to [element].
-String createSvgClipDef(html.Element element, ui.Path clipPath) {
+String createSvgClipDef(html.HtmlElement element, ui.Path clipPath) {
   final ui.Rect pathBounds = clipPath.getBounds();
   final String svgClipPath = _pathToSvgClipPath(clipPath,
       scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom);

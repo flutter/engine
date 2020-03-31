@@ -11,7 +11,7 @@ part of engine;
 /// This can be used either as an interface or super-class.
 abstract class EngineCanvas {
   /// The element that is attached to the DOM.
-  html.Element get rootElement;
+  html.HtmlElement get rootElement;
 
   void dispose() {
     clear();
@@ -247,14 +247,14 @@ mixin SaveStackTracking on EngineCanvas {
   }
 }
 
-html.Element _drawParagraphElement(
+html.HtmlElement _drawParagraphElement(
   EngineParagraph paragraph,
   ui.Offset offset, {
   Matrix4 transform,
 }) {
   assert(paragraph._isLaidOut);
 
-  final html.Element paragraphElement = unsafeCast<html.Element>(paragraph._paragraphElement.clone(true));
+  final html.HtmlElement paragraphElement = unsafeCast<html.HtmlElement>(paragraph._paragraphElement.clone(true));
 
   final html.CssStyleDeclaration paragraphStyle = paragraphElement.style;
   paragraphStyle

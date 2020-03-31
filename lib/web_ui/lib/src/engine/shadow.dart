@@ -128,7 +128,7 @@ SurfaceShadowData computeShadow(ui.Rect shape, double elevation) {
 
 /// Applies a CSS shadow to the [shape].
 void applyCssShadow(
-    html.Element element, ui.Rect shape, double elevation, ui.Color color) {
+    html.HtmlElement element, ui.Rect shape, double elevation, ui.Color color) {
   final SurfaceShadowData shadow = computeShadow(shape, elevation);
   if (shadow == null) {
     element.style.boxShadow = 'none';

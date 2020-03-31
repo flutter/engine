@@ -50,18 +50,18 @@ class DomRenderer {
   /// This element precedes the [glassPaneElement] so that it never receives
   /// input events. All input events are processed by [glassPaneElement] and the
   /// semantics tree.
-  html.Element get sceneHostElement => _sceneHostElement;
-  html.Element _sceneHostElement;
+  html.HtmlElement get sceneHostElement => _sceneHostElement;
+  html.HtmlElement _sceneHostElement;
 
   /// The last scene element rendered by the [render] method.
-  html.Element get sceneElement => _sceneElement;
-  html.Element _sceneElement;
+  html.HtmlElement get sceneElement => _sceneElement;
+  html.HtmlElement _sceneElement;
 
   /// This is state persistant across hot restarts that indicates what
   /// to clear.  We delay removal of old visible state to make the
   /// transition appear smooth.
   static const String _staleHotRestartStore = '__flutter_state';
-  List<html.Element> _staleHotRestartState;
+  List<html.HtmlElement> _staleHotRestartState;
 
   /// Used to decide if the browser tab still has the focus.
   ///
@@ -78,14 +78,14 @@ class DomRenderer {
     _staleHotRestartState =
         js_util.getProperty(html.window, _staleHotRestartStore);
     if (_staleHotRestartState == null) {
-      _staleHotRestartState = <html.Element>[];
+      _staleHotRestartState = <html.HtmlElement>[];
       js_util.setProperty(
           html.window, _staleHotRestartStore, _staleHotRestartState);
     }
 
     registerHotRestartListener(() {
       _resizeSubscription?.cancel();
-      _staleHotRestartState.addAll(<html.Element>[
+      _staleHotRestartState.addAll(<html.HtmlElement>[
         _glassPaneElement,
         _styleElement,
         _viewportMeta,
@@ -96,7 +96,7 @@ class DomRenderer {
 
   void _clearOnHotRestart() {
     if (_staleHotRestartState.isNotEmpty) {
-      for (html.Element element in _staleHotRestartState) {
+      for (html.HtmlElement element in _staleHotRestartState) {
         element?.remove();
       }
       _staleHotRestartState.clear();
@@ -107,7 +107,7 @@ class DomRenderer {
   /// already in the right place, skip DOM mutation. This is both faster and
   /// more correct, because moving DOM nodes loses internal state, such as
   /// text selection.
-  void renderScene(html.Element sceneElement) {
+  void renderScene(html.HtmlElement sceneElement) {
     if (sceneElement != _sceneElement) {
       _sceneElement?.remove();
       _sceneElement = sceneElement;
@@ -125,17 +125,17 @@ class DomRenderer {
   /// which captures semantics input events. The semantics DOM tree must be a
   /// child of the glass pane element so that events bubble up to the glass pane
   /// if they are not handled by semantics.
-  html.Element get glassPaneElement => _glassPaneElement;
-  html.Element _glassPaneElement;
+  html.HtmlElement get glassPaneElement => _glassPaneElement;
+  html.HtmlElement _glassPaneElement;
 
-  final html.Element rootElement = html.document.body;
+  final html.HtmlElement rootElement = html.document.body;
 
-  void addElementClass(html.Element element, String className) {
+  void addElementClass(html.HtmlElement element, String className) {
     element.classes.add(className);
   }
 
   void attachBeforeElement(
-      html.Element parent, html.Element before, html.Element newElement) {
+      html.HtmlElement parent, html.HtmlElement before, html.HtmlElement newElement) {
     assert(parent != null);
     if (parent != null) {
       assert(() {
@@ -156,37 +156,37 @@ class DomRenderer {
     }
   }
 
-  html.Element createElement(String tagName, {html.Element parent}) {
-    final html.Element element = html.document.createElement(tagName);
+  html.HtmlElement createElement(String tagName, {html.HtmlElement parent}) {
+    final html.HtmlElement element = html.document.createElement(tagName);
     parent?.append(element);
     return element;
   }
 
-  void append(html.Element parent, html.Element child) {
+  void append(html.HtmlElement parent, html.HtmlElement child) {
     parent.append(child);
   }
 
-  void appendText(html.Element parent, String text) {
+  void appendText(html.HtmlElement parent, String text) {
     parent.appendText(text);
   }
 
-  void detachElement(html.Element element) {
+  void detachElement(html.HtmlElement element) {
     element.remove();
   }
 
-  void removeElementClass(html.Element element, String className) {
+  void removeElementClass(html.HtmlElement element, String className) {
     element.classes.remove(className);
   }
 
-  void setElementAttribute(html.Element element, String name, String value) {
+  void setElementAttribute(html.HtmlElement element, String name, String value) {
     element.setAttribute(name, value);
   }
 
-  void setElementProperty(html.Element element, String name, Object value) {
+  void setElementProperty(html.HtmlElement element, String name, Object value) {
     js_util.setProperty(element, name, value);
   }
 
-  void setElementStyle(html.Element element, String name, String value) {
+  void setElementStyle(html.HtmlElement element, String name, String value) {
     if (value == null) {
       element.style.removeProperty(name);
     } else {
@@ -194,15 +194,15 @@ class DomRenderer {
     }
   }
 
-  void setText(html.Element element, String text) {
+  void setText(html.HtmlElement element, String text) {
     element.text = text;
   }
 
-  void removeAllChildren(html.Element element) {
+  void removeAllChildren(html.HtmlElement element) {
     element.children.clear();
   }
 
-  html.Element getParent(html.Element element) => element.parent;
+  html.HtmlElement getParent(html.HtmlElement element) => element.parent;
 
   void setTitle(String title) {
     html.document.title = title;
@@ -352,7 +352,7 @@ flt-glass-pane * {
     // engine are complete.
     bodyElement.spellcheck = false;
 
-    for (html.Element viewportMeta
+    for (html.HtmlElement viewportMeta
         in html.document.head.querySelectorAll('meta[name="viewport"]')) {
       if (assertionsEnabled) {
         // Filter out the meta tag that we ourselves placed on the page. This is
@@ -400,7 +400,7 @@ flt-glass-pane * {
 
     _glassPaneElement.append(_sceneHostElement);
 
-    final html.Element _accesibilityPlaceholder = EngineSemanticsOwner
+    final html.HtmlElement _accesibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
         .prepareAccesibilityPlaceholder();
 
@@ -472,7 +472,7 @@ flt-glass-pane * {
     }
   }
 
-  void focus(html.Element element) {
+  void focus(html.HtmlElement element) {
     element.focus();
   }
 
@@ -504,8 +504,8 @@ flt-glass-pane * {
   }
 
   /// The element corresponding to the only child of the root surface.
-  html.Element get _rootApplicationElement {
-    final html.Element lastElement = rootElement.children.last;
+  html.HtmlElement get _rootApplicationElement {
+    final html.HtmlElement lastElement = rootElement.children.last;
     return lastElement.children.singleWhere((html.Element element) {
       return element.tagName == 'FLT-SCENE';
     }, orElse: () => null);

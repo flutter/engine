@@ -97,7 +97,7 @@ class Checkable extends RoleManager {
 
   void _updateDisabledAttribute() {
     if (!semanticsObject.hasFlag(ui.SemanticsFlag.isEnabled)) {
-      final html.Element element = semanticsObject.element;
+      final html.HtmlElement element = semanticsObject.element;
       element
         ..setAttribute('aria-disabled', 'true')
         ..setAttribute('disabled', 'true');
@@ -107,7 +107,7 @@ class Checkable extends RoleManager {
   }
 
   void _removeDisabledAttribute() {
-    final html.Element element = semanticsObject.element;
+    final html.HtmlElement element = semanticsObject.element;
     element..removeAttribute('aria-disabled')..removeAttribute('disabled');
   }
 }

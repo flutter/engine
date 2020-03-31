@@ -35,7 +35,7 @@ class MockEngineCanvas implements EngineCanvas {
   final List<MockCanvasCall> methodCallLog = <MockCanvasCall>[];
 
   @override
-  html.Element get rootElement => null;
+  html.HtmlElement get rootElement => null;
 
   void _called(String methodName, {dynamic arguments}) {
     methodCallLog.add(MockCanvasCall._(

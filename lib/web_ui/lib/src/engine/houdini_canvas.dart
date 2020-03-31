@@ -16,7 +16,7 @@ part of engine;
 /// class must be kept in sync with houdini_painter.js.
 class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
-  final html.Element rootElement = html.Element.tag('flt-houdini');
+  final html.HtmlElement rootElement = html.Element.tag('flt-houdini');
 
   /// The rectangle positioned relative to the parent layer's coordinate system
   /// where this canvas paints.
@@ -70,7 +70,7 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void clipRect(ui.Rect rect) {
-    final html.Element clip = html.Element.tag('flt-clip-rect');
+    final html.HtmlElement clip = html.Element.tag('flt-clip-rect');
     final String cssTransform = matrix4ToCssTransform(
         transformWithOffset(currentTransform, ui.Offset(rect.left, rect.top)));
     clip.style
@@ -97,7 +97,7 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
       return;
     }
 
-    final html.Element clip = html.Element.tag('flt-clip-rrect');
+    final html.HtmlElement clip = html.Element.tag('flt-clip-rrect');
     final html.CssStyleDeclaration style = clip.style;
     style
       ..overflow = 'hidden'
@@ -207,7 +207,7 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaintData paint) {
     // TODO(yjbanov): implement src rectangle
     final HtmlImage htmlImage = image;
-    final html.Element imageBox = html.Element.tag('flt-img');
+    final html.HtmlElement imageBox = html.Element.tag('flt-img');
     final String cssTransform = matrix4ToCssTransform(
         transformWithOffset(currentTransform, ui.Offset(dst.left, dst.top)));
     imageBox.style
@@ -224,7 +224,7 @@ class HoudiniCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    final html.Element paragraphElement =
+    final html.HtmlElement paragraphElement =
         _drawParagraphElement(paragraph, offset, transform: currentTransform);
     currentElement.append(paragraphElement);
   }
@@ -251,7 +251,7 @@ class _SaveElementStackEntry {
     @required this.transform,
   });
 
-  final html.Element savedElement;
+  final html.HtmlElement savedElement;
   final Matrix4 transform;
 }
 
@@ -264,18 +264,18 @@ mixin SaveElementStackTracking on EngineCanvas {
 
   /// The element at the top of the element stack, or [rootElement] if the stack
   /// is empty.
-  html.Element get currentElement =>
+  html.HtmlElement get currentElement =>
       _elementStack.isEmpty ? rootElement : _elementStack.last;
 
   /// The stack that maintains the DOM elements used to express certain paint
   /// operations, such as clips.
-  final List<html.Element> _elementStack = <html.Element>[];
+  final List<html.HtmlElement> _elementStack = <html.HtmlElement>[];
 
   /// Pushes the [element] onto the element stack for the purposes of applying
   /// a paint effect using a DOM element, e.g. for clipping.
   ///
   /// The [restore] method automatically pops the element off the stack.
-  void pushElement(html.Element element) {
+  void pushElement(html.HtmlElement element) {
     _elementStack.add(element);
   }
 

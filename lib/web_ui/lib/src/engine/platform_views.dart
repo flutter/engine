@@ -10,7 +10,7 @@ class PlatformViewRegistry {
   final Map<String, PlatformViewFactory> registeredFactories =
       <String, PlatformViewFactory>{};
 
-  final Map<int, html.Element> _createdViews = <int, html.Element>{};
+  final Map<int, html.HtmlElement> _createdViews = <int, html.HtmlElement>{};
 
   /// Private constructor so this class can be a singleton.
   PlatformViewRegistry._();
@@ -26,13 +26,13 @@ class PlatformViewRegistry {
 
   /// Returns the view that has been created with the given [id], or `null` if
   /// no such view exists.
-  html.Element getCreatedView(int id) {
+  html.HtmlElement getCreatedView(int id) {
     return _createdViews[id];
   }
 }
 
 /// A function which takes a unique [id] and creates an HTML element.
-typedef PlatformViewFactory = html.Element Function(int viewId);
+typedef PlatformViewFactory = html.HtmlElement Function(int viewId);
 
 /// The platform view registry for this app.
 final PlatformViewRegistry platformViewRegistry = PlatformViewRegistry._();
@@ -76,7 +76,7 @@ void _createPlatformView(
     return;
   }
   // TODO(het): Use creation parameters.
-  final html.Element element =
+  final html.HtmlElement element =
       platformViewRegistry.registeredFactories[viewType](id);
 
   platformViewRegistry._createdViews[id] = element;

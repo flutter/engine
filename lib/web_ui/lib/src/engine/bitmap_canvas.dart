@@ -32,7 +32,7 @@ class BitmapCanvas extends EngineCanvas {
   static const int kPaddingPixels = 1;
 
   @override
-  final html.Element rootElement = html.Element.tag('flt-canvas');
+  final html.HtmlElement rootElement = html.Element.tag('flt-canvas');
 
   final _CanvasPool _canvasPool;
 
@@ -44,7 +44,7 @@ class BitmapCanvas extends EngineCanvas {
   ParagraphGeometricStyle _cachedLastStyle;
 
   /// List of extra sibling elements created for paragraphs and clipping.
-  final List<html.Element> _children = <html.Element>[];
+  final List<html.HtmlElement> _children = <html.HtmlElement>[];
 
   /// The number of pixels along the width of the bitmap that the canvas element
   /// renders into.
@@ -366,9 +366,9 @@ class BitmapCanvas extends EngineCanvas {
       imgElement.style
         ..removeProperty('width')
         ..removeProperty('height');
-      final List<html.Element> clipElements = _clipContent(
+      final List<html.HtmlElement> clipElements = _clipContent(
           _canvasPool._clipStack, imgElement, p, _canvasPool.currentTransform);
-      for (html.Element clipElement in clipElements) {
+      for (html.HtmlElement clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
@@ -501,16 +501,16 @@ class BitmapCanvas extends EngineCanvas {
       return;
     }
 
-    final html.Element paragraphElement =
+    final html.HtmlElement paragraphElement =
         _drawParagraphElement(paragraph, offset);
 
     if (_canvasPool.isClipped) {
-      final List<html.Element> clipElements = _clipContent(
+      final List<html.HtmlElement> clipElements = _clipContent(
           _canvasPool._clipStack,
           paragraphElement,
           offset,
           _canvasPool.currentTransform);
-      for (html.Element clipElement in clipElements) {
+      for (html.HtmlElement clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
@@ -698,14 +698,14 @@ String _stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
 /// overflow:hidden with bounds to clip child or sets a clip-path to clip
 /// it's contents. The clipping rectangles are nested and returned together
 /// with a list of svg elements that provide clip-paths.
-List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
-    html.Element content, ui.Offset offset, Matrix4 currentTransform) {
-  html.Element root, curElement;
-  final List<html.Element> clipDefs = <html.Element>[];
+List<html.HtmlElement> _clipContent(List<_SaveClipEntry> clipStack,
+    html.HtmlElement content, ui.Offset offset, Matrix4 currentTransform) {
+  html.HtmlElement root, curElement;
+  final List<html.HtmlElement> clipDefs = <html.HtmlElement>[];
   final int len = clipStack.length;
   for (int clipIndex = 0; clipIndex < len; clipIndex++) {
     final _SaveClipEntry entry = clipStack[clipIndex];
-    final html.Element newElement = html.DivElement();
+    final html.HtmlElement newElement = html.DivElement();
     newElement.style.position = 'absolute';
     applyWebkitClipFix(newElement);
     if (root == null) {
@@ -744,7 +744,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
     } else if (entry.path != null) {
       curElement.style.transform = matrix4ToCssTransform(newClipTransform);
       String svgClipPath = createSvgClipDef(curElement, entry.path);
-      final html.Element clipElement =
+      final html.HtmlElement clipElement =
           html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
       clipDefs.add(clipElement);
     }
@@ -752,7 +752,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
     // effective transform to render.
     // TODO(flutter_web): When we have more than a single clip element,
     // reduce number of div nodes by merging (multiplying transforms).
-    final html.Element reverseTransformDiv = html.DivElement();
+    final html.HtmlElement reverseTransformDiv = html.DivElement();
     reverseTransformDiv.style.position = 'absolute';
     setElementTransform(
       reverseTransformDiv,
@@ -768,7 +768,7 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
     content,
     transformWithOffset(currentTransform, offset).storage,
   );
-  return <html.Element>[root]..addAll(clipDefs);
+  return <html.HtmlElement>[root]..addAll(clipDefs);
 }
 
 String _maskFilterToCss(ui.MaskFilter maskFilter) {

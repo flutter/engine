@@ -35,7 +35,7 @@ class SurfaceFrame {
 /// created.
 class Surface {
   SkSurface _surface;
-  html.Element htmlElement;
+  html.HtmlElement htmlElement;
 
   bool _addedToScene = false;
 

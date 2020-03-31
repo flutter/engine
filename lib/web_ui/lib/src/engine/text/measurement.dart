@@ -47,7 +47,7 @@ class RulerManager {
   /// rulers would be attached to the `<body>` element polluting the element
   /// tree and making it hard to navigate. It does not serve any functional
   /// purpose.
-  final html.Element _rulerHost = html.Element.tag('flt-ruler-host');
+  final html.HtmlElement _rulerHost = html.Element.tag('flt-ruler-host');
 
   /// The cache of rulers used to measure text.
   ///

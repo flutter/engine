@@ -17,7 +17,7 @@ class ImageRoleManager extends RoleManager {
   /// The element with role="img" and aria-label could block access to all
   /// children elements, therefore create an auxiliary element and  describe the
   /// image in that if the semantic object have child nodes.
-  html.Element _auxiliaryImageElement;
+  html.HtmlElement _auxiliaryImageElement;
 
   @override
   void update() {
@@ -53,7 +53,7 @@ class ImageRoleManager extends RoleManager {
     }
   }
 
-  void _setLabel(html.Element element) {
+  void _setLabel(html.HtmlElement element) {
     if (semanticsObject.hasLabel) {
       element.setAttribute('aria-label', semanticsObject.label);
     }

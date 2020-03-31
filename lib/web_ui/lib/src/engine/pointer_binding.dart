@@ -57,7 +57,7 @@ class PointerBinding {
   static PointerBinding get instance => _instance;
   static PointerBinding _instance;
 
-  static void initInstance(html.Element glassPaneElement) {
+  static void initInstance(html.HtmlElement glassPaneElement) {
     if (_instance == null) {
       _instance = PointerBinding._(glassPaneElement);
       assert(() {
@@ -76,7 +76,7 @@ class PointerBinding {
     _adapter = _createAdapter();
   }
 
-  final html.Element glassPaneElement;
+  final html.HtmlElement glassPaneElement;
 
   PointerSupportDetector _detector;
   _BaseAdapter _adapter;
@@ -155,7 +155,7 @@ abstract class _BaseAdapter {
   /// Listeners that are registered through native javascript api.
   static final Map<String, html.EventListener> _nativeListeners =
     <String, html.EventListener>{};
-  final html.Element glassPaneElement;
+  final html.HtmlElement glassPaneElement;
   _PointerDataCallback _callback;
   PointerDataConverter _pointerDataConverter;
 
@@ -387,7 +387,7 @@ typedef _PointerEventListener = dynamic Function(html.PointerEvent event);
 class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _PointerAdapter(
     _PointerDataCallback callback,
-    html.Element glassPaneElement,
+    html.HtmlElement glassPaneElement,
     PointerDataConverter _pointerDataConverter
   ) : super(callback, glassPaneElement, _pointerDataConverter);
 
@@ -555,7 +555,7 @@ typedef _TouchEventListener = dynamic Function(html.TouchEvent event);
 class _TouchAdapter extends _BaseAdapter {
   _TouchAdapter(
     _PointerDataCallback callback,
-    html.Element glassPaneElement,
+    html.HtmlElement glassPaneElement,
     PointerDataConverter _pointerDataConverter
   ) : super(callback, glassPaneElement, _pointerDataConverter);
 
@@ -700,7 +700,7 @@ typedef _MouseEventListener = dynamic Function(html.MouseEvent event);
 class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
   _MouseAdapter(
     _PointerDataCallback callback,
-    html.Element glassPaneElement,
+    html.HtmlElement glassPaneElement,
     PointerDataConverter _pointerDataConverter
   ) : super(callback, glassPaneElement, _pointerDataConverter);
 

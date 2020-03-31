@@ -134,7 +134,7 @@ class Scrollable extends RoleManager {
     // This value is arbitrary.
     const int _canonicalNeutralScrollPosition = 10;
 
-    final html.Element element = semanticsObject.element;
+    final html.HtmlElement element = semanticsObject.element;
     if (semanticsObject.isVerticalScrollContainer) {
       element.scrollTop = _canonicalNeutralScrollPosition;
       // Read back because the effective value depends on the amount of content.
@@ -155,7 +155,7 @@ class Scrollable extends RoleManager {
   }
 
   void _gestureModeDidChange() {
-    final html.Element element = semanticsObject.element;
+    final html.HtmlElement element = semanticsObject.element;
     switch (semanticsObject.owner.gestureMode) {
       case GestureMode.browserGestures:
         // overflow:scroll will cause the browser report "scroll" events when
