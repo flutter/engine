@@ -75,7 +75,7 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
                          ThreadHost::Type::Platform | ThreadHost::Type::GPU |
                              ThreadHost::Type::IO | ThreadHost::Type::UI);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
-                           thread_host.gpu_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   auto shell = CreateShell(std::move(settings), std::move(task_runners));
@@ -124,7 +124,7 @@ TEST_F(ShellTest,
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
-                           thread_host.gpu_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   auto shell = Shell::Create(
