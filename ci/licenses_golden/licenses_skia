@@ -1,4 +1,4 @@
-Signature: b39e6f199638d78c07e950bfaf5d74a7
+Signature: 94449c0766bdad0c6d983e3777d226a5
 
 UNUSED LICENSES:
 
@@ -486,7 +486,6 @@ FILE: ../../../third_party/skia/gm/hardstop_gradients.cpp
 FILE: ../../../third_party/skia/gm/imagemakewithfilter.cpp
 FILE: ../../../third_party/skia/gm/imagemasksubset.cpp
 FILE: ../../../third_party/skia/gm/lattice.cpp
-FILE: ../../../third_party/skia/gm/lightingshader2.cpp
 FILE: ../../../third_party/skia/gm/overdrawcolorfilter.cpp
 FILE: ../../../third_party/skia/gm/overstroke.cpp
 FILE: ../../../third_party/skia/gm/pathmaskcache.cpp
@@ -534,7 +533,6 @@ FILE: ../../../third_party/skia/modules/skshaper/src/SkShaper_primitive.cpp
 FILE: ../../../third_party/skia/samplecode/DecodeFile.h
 FILE: ../../../third_party/skia/samplecode/Sample.cpp
 FILE: ../../../third_party/skia/samplecode/SampleAndroidShadows.cpp
-FILE: ../../../third_party/skia/samplecode/SampleLitAtlas.cpp
 FILE: ../../../third_party/skia/samplecode/SampleMegaStroke.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePathOverstroke.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSVGFile.cpp
@@ -571,12 +569,6 @@ FILE: ../../../third_party/skia/src/core/SkLeanWindows.h
 FILE: ../../../third_party/skia/src/core/SkMSAN.h
 FILE: ../../../third_party/skia/src/core/SkMatrixPriv.h
 FILE: ../../../third_party/skia/src/core/SkModeColorFilter.h
-FILE: ../../../third_party/skia/src/core/SkNormalFlatSource.cpp
-FILE: ../../../third_party/skia/src/core/SkNormalFlatSource.h
-FILE: ../../../third_party/skia/src/core/SkNormalMapSource.cpp
-FILE: ../../../third_party/skia/src/core/SkNormalMapSource.h
-FILE: ../../../third_party/skia/src/core/SkNormalSource.cpp
-FILE: ../../../third_party/skia/src/core/SkNormalSource.h
 FILE: ../../../third_party/skia/src/core/SkOverdrawCanvas.cpp
 FILE: ../../../third_party/skia/src/core/SkPathMeasurePriv.h
 FILE: ../../../third_party/skia/src/core/SkRasterPipeline.cpp
@@ -641,8 +633,6 @@ FILE: ../../../third_party/skia/src/gpu/GrTextureRenderTargetProxy.h
 FILE: ../../../third_party/skia/src/gpu/GrUserStencilSettings.h
 FILE: ../../../third_party/skia/src/gpu/GrWindowRectangles.h
 FILE: ../../../third_party/skia/src/gpu/GrWindowRectsState.h
-FILE: ../../../third_party/skia/src/gpu/effects/GrSRGBEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/GrSRGBEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrShadowGeoProc.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrShadowGeoProc.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.cpp
@@ -706,7 +696,6 @@ FILE: ../../../third_party/skia/src/ports/SkImageGeneratorCG.cpp
 FILE: ../../../third_party/skia/src/ports/SkImageGeneratorWIC.cpp
 FILE: ../../../third_party/skia/src/shaders/SkColorFilterShader.h
 FILE: ../../../third_party/skia/src/shaders/SkColorShader.cpp
-FILE: ../../../third_party/skia/src/shaders/SkLights.cpp
 FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fGradientBase.cpp
 FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fGradientBase.h
 FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fGradientPriv.h
@@ -2280,7 +2269,6 @@ FILE: ../../../third_party/skia/gm/imagesource2.cpp
 FILE: ../../../third_party/skia/gm/largeglyphblur.cpp
 FILE: ../../../third_party/skia/gm/lcdblendmodes.cpp
 FILE: ../../../third_party/skia/gm/lcdoverlap.cpp
-FILE: ../../../third_party/skia/gm/lightingshader.cpp
 FILE: ../../../third_party/skia/gm/localmatriximagefilter.cpp
 FILE: ../../../third_party/skia/gm/localmatriximageshader.cpp
 FILE: ../../../third_party/skia/gm/mipmap.cpp
@@ -2340,7 +2328,6 @@ FILE: ../../../third_party/skia/samplecode/SampleAnimatedText.cpp
 FILE: ../../../third_party/skia/samplecode/SampleAtlas.cpp
 FILE: ../../../third_party/skia/samplecode/SampleClipDrawMatch.cpp
 FILE: ../../../third_party/skia/samplecode/SampleFilterQuality.cpp
-FILE: ../../../third_party/skia/samplecode/SampleLighting.cpp
 FILE: ../../../third_party/skia/samplecode/SampleShip.cpp
 FILE: ../../../third_party/skia/samplecode/SampleXfer.cpp
 FILE: ../../../third_party/skia/src/android/SkBitmapRegionCodec.cpp
@@ -2452,10 +2439,10 @@ FILE: ../../../third_party/skia/src/gpu/GrResourceProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrResourceProvider.h
 FILE: ../../../third_party/skia/src/gpu/GrSamplerState.h
 FILE: ../../../third_party/skia/src/gpu/GrSimpleMesh.h
-FILE: ../../../third_party/skia/src/gpu/GrTessellator.cpp
-FILE: ../../../third_party/skia/src/gpu/GrTessellator.h
 FILE: ../../../third_party/skia/src/gpu/GrTestUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrTestUtils.h
+FILE: ../../../third_party/skia/src/gpu/GrTriangulator.cpp
+FILE: ../../../third_party/skia/src/gpu/GrTriangulator.h
 FILE: ../../../third_party/skia/src/gpu/GrXferProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/GrYUVProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/GrYUVProvider.h
@@ -2503,8 +2490,8 @@ FILE: ../../../third_party/skia/src/gpu/ops/GrMeshDrawOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrStencilPathOp.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrTessellatingPathRenderer.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrTessellatingPathRenderer.h
+FILE: ../../../third_party/skia/src/gpu/ops/GrTriangulatingPathRenderer.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/GrTriangulatingPathRenderer.h
 FILE: ../../../third_party/skia/src/gpu/text/GrDistanceFieldAdjustTable.cpp
 FILE: ../../../third_party/skia/src/gpu/text/GrDistanceFieldAdjustTable.h
 FILE: ../../../third_party/skia/src/gpu/text/GrStrikeCache.cpp
@@ -2584,9 +2571,6 @@ FILE: ../../../third_party/skia/src/ports/SkOSLibrary_posix.cpp
 FILE: ../../../third_party/skia/src/ports/SkOSLibrary_win.cpp
 FILE: ../../../third_party/skia/src/shaders/SkImageShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkImageShader.h
-FILE: ../../../third_party/skia/src/shaders/SkLightingShader.cpp
-FILE: ../../../third_party/skia/src/shaders/SkLightingShader.h
-FILE: ../../../third_party/skia/src/shaders/SkLights.h
 FILE: ../../../third_party/skia/src/svg/SkSVGCanvas.cpp
 FILE: ../../../third_party/skia/src/svg/SkSVGDevice.cpp
 FILE: ../../../third_party/skia/src/svg/SkSVGDevice.h
@@ -2878,7 +2862,7 @@ FILE: ../../../third_party/skia/include/effects/SkRuntimeEffect.h
 FILE: ../../../third_party/skia/include/gpu/gl/GrGLAssembleHelpers.h
 FILE: ../../../third_party/skia/include/private/GrGLTypesPriv.h
 FILE: ../../../third_party/skia/include/private/SkThreadAnnotations.h
-FILE: ../../../third_party/skia/modules/canvaskit/WasmAliases.h
+FILE: ../../../third_party/skia/modules/canvaskit/WasmCommon.h
 FILE: ../../../third_party/skia/modules/canvaskit/paragraph_bindings.cpp
 FILE: ../../../third_party/skia/modules/canvaskit/particles_bindings.cpp
 FILE: ../../../third_party/skia/modules/canvaskit/skottie_bindings.cpp
@@ -2997,6 +2981,8 @@ FILE: ../../../third_party/skia/experimental/ffmpeg/SkVideoDecoder.cpp
 FILE: ../../../third_party/skia/experimental/ffmpeg/SkVideoDecoder.h
 FILE: ../../../third_party/skia/experimental/ffmpeg/SkVideoEncoder.cpp
 FILE: ../../../third_party/skia/experimental/ffmpeg/SkVideoEncoder.h
+FILE: ../../../third_party/skia/experimental/svg/model/SkSVGText.cpp
+FILE: ../../../third_party/skia/experimental/svg/model/SkSVGText.h
 FILE: ../../../third_party/skia/gm/backdrop.cpp
 FILE: ../../../third_party/skia/gm/backdrop_imagefilter_croprect.cpp
 FILE: ../../../third_party/skia/gm/bug9331.cpp
@@ -3896,8 +3882,10 @@ FILE: ../../../third_party/skia/gm/crbug_1041204.cpp
 FILE: ../../../third_party/skia/gm/crbug_224618.cpp
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypes.h
+FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypesMinimal.h
 FILE: ../../../third_party/skia/include/private/GrD3DTypesPriv.h
 FILE: ../../../third_party/skia/include/private/SkIDChangeListener.h
+FILE: ../../../third_party/skia/modules/canvaskit/viewer_bindings.cpp
 FILE: ../../../third_party/skia/src/core/SkIDChangeListener.cpp
 FILE: ../../../third_party/skia/src/core/SkVM_fwd.h
 FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.cpp
@@ -3912,13 +3900,19 @@ FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DGpu.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DOpsRenderPass.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DOpsRenderPass.h
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DPipelineState.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DPipelineState.h
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DRenderTarget.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DRenderTarget.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DResourceProvider.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DResourceProvider.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DResourceState.h
-FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DSurfaceResource.cpp
-FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DSurfaceResource.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTexture.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTexture.h
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTextureRenderTarget.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTextureRenderTarget.h
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTextureResource.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTextureResource.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTypesPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DUtil.h
@@ -5067,12 +5061,12 @@ FILE: ../../../third_party/skia/src/gpu/ccpr/GrStencilAtlasOp.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrComposeLerpEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrComposeLerpEffect.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrGpuTessellationPathRenderer.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrGpuTessellationPathRenderer.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStencilPathShader.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStencilPathShader.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrTessellatePathOp.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrTessellatePathOp.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrTessellationPathRenderer.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrTessellationPathRenderer.h
 FILE: ../../../third_party/skia/src/pdf/SkPDFGraphicStackState.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFGraphicStackState.h
 FILE: ../../../third_party/skia/src/pdf/SkPDFType1Font.cpp
@@ -5629,6 +5623,7 @@ FILE: ../../../third_party/skia/modules/sksg/src/SkSGDashEffect.cpp
 FILE: ../../../third_party/skia/modules/skshaper/src/SkShaper_coretext.cpp
 FILE: ../../../third_party/skia/samplecode/Sample3D.cpp
 FILE: ../../../third_party/skia/src/core/SkCanvasMatrix.h
+FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
 FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.h
 FILE: ../../../third_party/skia/src/core/SkM44.cpp
@@ -5636,6 +5631,7 @@ FILE: ../../../third_party/skia/src/core/SkVerticesPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.h
 FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.h
+FILE: ../../../third_party/skia/src/gpu/ccpr/GrAutoMapVertexBuffer.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.cpp
@@ -6370,6 +6366,7 @@ FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/example.html
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/extra.html
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/node.example.js
 FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/package.json
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/viewer.html
 FILE: ../../../third_party/skia/modules/pathkit/npm-asmjs/example.html
 FILE: ../../../third_party/skia/modules/pathkit/npm-asmjs/package.json
 FILE: ../../../third_party/skia/modules/pathkit/npm-wasm/example.html

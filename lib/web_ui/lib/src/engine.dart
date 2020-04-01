@@ -69,6 +69,7 @@ part 'engine/platform_views.dart';
 part 'engine/plugins.dart';
 part 'engine/pointer_binding.dart';
 part 'engine/pointer_converter.dart';
+part 'engine/profiler.dart';
 part 'engine/render_vertices.dart';
 part 'engine/rrect_renderer.dart';
 part 'engine/semantics/accessibility.dart';
@@ -164,6 +165,10 @@ void webOnlyInitializeEngine() {
 
   WebExperiments.ensureInitialized();
 
+  if (Profiler.isBenchmarkMode) {
+    Profiler.ensureInitialized();
+  }
+
   bool waitingForAnimation = false;
   ui.webOnlyScheduleFrameCallback = () {
     // We're asked to schedule a frame and call `frameHandler` when the frame
@@ -181,17 +186,17 @@ void webOnlyInitializeEngine() {
         // microsecond precision, and only then convert to `int`.
         final int highResTimeMicroseconds = (1000 * highResTime).toInt();
 
-        if (ui.window.onBeginFrame != null) {
-          ui.window
-              .onBeginFrame(Duration(microseconds: highResTimeMicroseconds));
+        if (window._onBeginFrame != null) {
+          window
+              .invokeOnBeginFrame(Duration(microseconds: highResTimeMicroseconds));
         }
 
-        if (ui.window.onDrawFrame != null) {
+        if (window._onDrawFrame != null) {
           // TODO(yjbanov): technically Flutter flushes microtasks between
           //                onBeginFrame and onDrawFrame. We don't, which hasn't
           //                been an issue yet, but eventually we'll have to
           //                implement it properly.
-          ui.window.onDrawFrame();
+          window.invokeOnDrawFrame();
         }
       });
     }

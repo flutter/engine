@@ -33,7 +33,7 @@ enum TestTypesRequested {
   all,
 }
 
-class TestCommand extends Command<bool> {
+class TestCommand extends Command<bool> with ArgUtils {
   TestCommand() {
     argParser
       ..addFlag(
@@ -84,13 +84,13 @@ class TestCommand extends Command<bool> {
 
   /// Check the flags to see what type of tests are requested.
   TestTypesRequested findTestType() {
-    if (argResults['unit-tests-only'] && argResults['integration-tests-only']) {
+    if (boolArg('unit-tests-only') && boolArg('integration-tests-only')) {
       throw ArgumentError('Conflicting arguments: unit-tests-only and '
           'integration-tests-only are both set');
-    } else if (argResults['unit-tests-only']) {
+    } else if (boolArg('unit-tests-only')) {
       print('Running the unit tests only');
       return TestTypesRequested.unit;
-    } else if (argResults['integration-tests-only']) {
+    } else if (boolArg('integration-tests-only')) {
       if (!isChrome) {
         throw UnimplementedError(
             'Integration tests are only available on Chrome Desktop for now');
@@ -115,13 +115,18 @@ class TestCommand extends Command<bool> {
       case TestTypesRequested.integration:
         return runIntegrationTests();
       case TestTypesRequested.all:
-        bool integrationTestResult = await runIntegrationTests();
-        bool unitTestResult = await runUnitTests();
-        if (integrationTestResult != unitTestResult) {
-          print('Tests run. Integration tests passed: $integrationTestResult '
-              'unit tests passed: $unitTestResult');
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/53322
+        if (runAllTests) {
+          bool integrationTestResult = await runIntegrationTests();
+          bool unitTestResult = await runUnitTests();
+          if (integrationTestResult != unitTestResult) {
+            print('Tests run. Integration tests passed: $integrationTestResult '
+                'unit tests passed: $unitTestResult');
+          }
+          return integrationTestResult && unitTestResult;
+        } else {
+          return await runUnitTests();
         }
-        return integrationTestResult && unitTestResult;
     }
     return false;
   }
@@ -145,13 +150,11 @@ class TestCommand extends Command<bool> {
       await _runPubGet();
     }
 
-    final List<FilePath> targets =
-        this.targets.map((t) => FilePath.fromCwd(t)).toList();
-    await _buildTests(targets: targets);
-    if (targets.isEmpty) {
+    await _buildTests(targets: targetFiles);
+    if (runAllTests) {
       await _runAllTests();
     } else {
-      await _runTargetTests(targets);
+      await _runTargetTests(targetFiles);
     }
     return true;
   }
@@ -160,18 +163,30 @@ class TestCommand extends Command<bool> {
   ///
   /// In this mode the browser pauses before running the test to allow
   /// you set breakpoints or inspect the code.
-  bool get isDebug => argResults['debug'];
+  bool get isDebug => boolArg('debug');
 
   /// Paths to targets to run, e.g. a single test.
   List<String> get targets => argResults.rest;
 
-  String get browser => argResults['browser'];
+  /// The target test files to run.
+  ///
+  /// The value can be null if the developer prefers to run all the tests.
+  List<FilePath> get targetFiles => (targets.isEmpty)
+      ? null
+      : targets.map((t) => FilePath.fromCwd(t)).toList();
 
-  bool get isChrome => argResults['browser'] == 'chrome';
+  /// Whether all tests should run.
+  bool get runAllTests => targets.isEmpty;
+
+  /// The name of the browser to run tests in.
+  String get browser => stringArg('browser');
+
+  /// Whether [browser] is set to "chrome".
+  bool get isChrome => browser == 'chrome';
 
   /// When running screenshot tests writes them to the file system into
   /// ".dart_tool/goldens".
-  bool get doUpdateScreenshotGoldens => argResults['update-screenshot-goldens'];
+  bool get doUpdateScreenshotGoldens => boolArg('update-screenshot-goldens');
 
   Future<void> _runTargetTests(List<FilePath> targets) async {
     await _runTestBatch(targets, concurrency: 1, expectFailure: false);

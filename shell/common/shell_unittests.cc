@@ -75,7 +75,7 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
                          ThreadHost::Type::Platform | ThreadHost::Type::GPU |
                              ThreadHost::Type::IO | ThreadHost::Type::UI);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
-                           thread_host.gpu_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   auto shell = CreateShell(std::move(settings), std::move(task_runners));
@@ -124,7 +124,7 @@ TEST_F(ShellTest,
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
-                           thread_host.gpu_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   auto shell = Shell::Create(
@@ -159,7 +159,7 @@ TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   TaskRunners task_runners(
       "test",
       thread_host.platform_thread->GetTaskRunner(),  // platform
-      thread_host.platform_thread->GetTaskRunner(),  // gpu
+      thread_host.platform_thread->GetTaskRunner(),  // raster
       thread_host.ui_thread->GetTaskRunner(),        // ui
       thread_host.io_thread->GetTaskRunner()         // io
   );
@@ -717,7 +717,7 @@ static size_t GetRasterizerResourceCacheBytesSync(Shell& shell) {
   size_t bytes = 0;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
-      shell.GetTaskRunners().GetGPUTaskRunner(), [&]() {
+      shell.GetTaskRunners().GetRasterTaskRunner(), [&]() {
         if (auto rasterizer = shell.GetRasterizer()) {
           bytes = rasterizer->GetResourceCacheMaxBytes().value_or(0U);
         }
@@ -888,7 +888,7 @@ class MockTexture : public Texture {
 
   ~MockTexture() override = default;
 
-  // Called from GPU thread.
+  // Called from raster thread.
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
@@ -938,7 +938,7 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
       std::make_shared<MockTexture>(0, latch);
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
+      shell->GetTaskRunners().GetRasterTaskRunner(), [&]() {
         shell->GetPlatformView()->RegisterTexture(mockTexture);
         shell->GetPlatformView()->MarkTextureFrameAvailable(0);
       });
@@ -947,7 +947,7 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
   EXPECT_EQ(mockTexture->frames_available(), 1);
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(),
+      shell->GetTaskRunners().GetRasterTaskRunner(),
       [&]() { shell->GetPlatformView()->UnregisterTexture(0); });
   latch->Wait();
 
@@ -963,7 +963,7 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
       std::make_shared<fml::DataMapping>(message);
   TaskRunners task_runners("test",                  // label
                            GetCurrentTaskRunner(),  // platform
-                           CreateNewThread(),       // gpu
+                           CreateNewThread(),       // raster
                            CreateNewThread(),       // ui
                            CreateNewThread()        // io
   );
@@ -1032,7 +1032,7 @@ TEST_F(ShellTest, Screenshot) {
   auto screenshot_future = screenshot_promise.get_future();
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(),
+      shell->GetTaskRunners().GetRasterTaskRunner(),
       [&screenshot_promise, &shell]() {
         auto rasterizer = shell->GetRasterizer();
         screenshot_promise.set_value(rasterizer->ScreenshotLastLayerTree(
@@ -1162,10 +1162,14 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
   document.Accept(writer);
   DestroyShell(std::move(shell));
 
-  // Base64 encoding of x, y are eQ, eA.
-  ASSERT_STREQ(
-      buffer.GetString(),
-      "{\"type\":\"GetSkSLs\",\"SkSLs\":{\"II\":\"eQ==\",\"IE\":\"eA==\"}}");
+  const std::string expected_json1 =
+      "{\"type\":\"GetSkSLs\",\"SkSLs\":{\"II\":\"eQ==\",\"IE\":\"eA==\"}}";
+  const std::string expected_json2 =
+      "{\"type\":\"GetSkSLs\",\"SkSLs\":{\"IE\":\"eA==\",\"II\":\"eQ==\"}}";
+  bool json_is_expected = (expected_json1 == buffer.GetString()) ||
+                          (expected_json2 == buffer.GetString());
+  ASSERT_TRUE(json_is_expected) << buffer.GetString() << " is not equal to "
+                                << expected_json1 << " or " << expected_json2;
 
   // Cleanup files
   fml::FileVisitor recursive_cleanup = [&recursive_cleanup](
