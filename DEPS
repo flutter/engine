@@ -122,7 +122,7 @@ vars = {
 
   # Download and unpack the emscripten SDK, which is used for building
   # CanvasKit.
-  'download_emsdk': True,
+  'download_emsdk': False,
 }
 
 gclient_gn_args_file = 'src/third_party/dart/build/config/gclient_args.gni'
