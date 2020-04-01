@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'driver_runner.dart';
 import 'environment.dart';
 import 'utils.dart';
 
@@ -20,8 +21,9 @@ class MobileUnitTestManager {
     await _buildTestsWebdev();
     await _serveTests();
 
-    // TODO(nurhan): Start Safari Driver.
-
+    // TODO(nurhan): Start Safari Driver. Implement after functionality is
+    // added to web_installers.
+    await UnitTestRunner().runWebDriverBasedTests(_browser);
   }
 
   Future<void> _buildTestsWebdev() async {
@@ -33,6 +35,4 @@ class MobileUnitTestManager {
     await startProcess('webdev', ['serve', 'test:8080'],
         workingDirectory: environment.webUiRootDir.path);
   }
-
-
 }

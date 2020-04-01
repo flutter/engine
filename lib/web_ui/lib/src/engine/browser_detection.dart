@@ -155,3 +155,8 @@ const Set<OperatingSystem> _desktopOperatingSystems = {
 ///
 /// See [_desktopOperatingSystems].
 bool get isDesktop => _desktopOperatingSystems.contains(operatingSystem);
+
+/// A flag to check if the browser is Safari running on IOS.
+bool get isIosSafari =>
+    operatingSystem == OperatingSystem.iOs &&
+    browserEngine == BrowserEngine.webkit;

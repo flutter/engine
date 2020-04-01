@@ -8,7 +8,17 @@ import 'dart:html' as html;
 import 'package:ui/src/engine.dart';
 import 'package:test/test.dart';
 
+import 'mobile_unit_test_bindings.dart';
+
 void main() {
+  MobileUnitTestBindings mobileUnitTestBindings =
+      isIosSafari ? MobileUnitTestBindings() : null;
+  setUpAll(() {
+    if (isIosSafari) {
+      mobileUnitTestBindings.initialize();
+    }
+  });
+
   test('creating elements works', () {
     final DomRenderer renderer = DomRenderer();
     final html.Element element = renderer.createElement('div');
@@ -128,5 +138,11 @@ void main() {
 
     expect(html.document.getElementsByTagName('flt-semantics-placeholder'),
         isNotEmpty);
+  });
+
+  tearDownAll(() {
+    if (isIosSafari) {
+      mobileUnitTestBindings.initialize();
+    }
   });
 }
