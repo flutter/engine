@@ -2894,6 +2894,9 @@ TEST_F(EmbedderTest, CanQueryDartAOTMode) {
 }
 
 TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
+#if !defined(OS_LINUX)
+  GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
+#endif  // OS_LINUX
   auto& context = GetEmbedderContext();
 
   EmbedderConfigBuilder builder(context);
