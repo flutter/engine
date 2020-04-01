@@ -429,7 +429,7 @@ deps = {
    Var('dart_git') + '/when.git' + '@' + '0.2.0',
 
   'src/third_party/emsdk':
-  Var('github_git') + '/emscripten-core/emsdk.git' + '@' + '1bd7d547598f3fc74699c172f6c9c59a1e8484f1',
+  Var('github_git') + '/emscripten-core/emsdk.git' + '@' + '009ab2c77f568d9331c7ff1d3943de78a6eda60d',
 
    'src/third_party/android_tools/ndk': {
      'packages': [
