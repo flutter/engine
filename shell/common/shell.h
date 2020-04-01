@@ -131,11 +131,52 @@ class Shell final : public PlatformView::Delegate,
   ///             callbacks to create the various shell subcomponents will be
   ///             called on the appropriate threads before this method returns.
   ///             Unlike the simpler variant of this factory method, this method
+  ///             allows for specification of window data. If this is the first
+  ///             instance of a shell in the process, this call also bootstraps
+  ///             the Dart VM.
+  ///
+  /// @param[in]  task_runners             The task runners
+  /// @param[in]  window_data              The default data for setting up
+  ///                                      ui.Window that attached to this
+  ///                                      intance.
+  /// @param[in]  settings                 The settings
+  /// @param[in]  on_create_platform_view  The callback that must return a
+  ///                                      platform view. This will be called on
+  ///                                      the platform task runner before this
+  ///                                      method returns.
+  /// @param[in]  on_create_rasterizer     That callback that must provide a
+  ///                                      valid rasterizer. This will be called
+  ///                                      on the render task runner before this
+  ///                                      method returns.
+  ///
+  /// @return     A full initialized shell if the settings and callbacks are
+  ///             valid. The root isolate has been created but not yet launched.
+  ///             It may be launched by obtaining the engine weak pointer and
+  ///             posting a task onto the UI task runner with a valid run
+  ///             configuration to run the isolate. The embedder must always
+  ///             check the validity of the shell (using the IsSetup call)
+  ///             immediately after getting a pointer to it.
+  ///
+  static std::unique_ptr<Shell> Create(
+      TaskRunners task_runners,
+      const WindowData window_data,
+      Settings settings,
+      CreateCallback<PlatformView> on_create_platform_view,
+      CreateCallback<Rasterizer> on_create_rasterizer);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a shell instance using the provided settings. The
+  ///             callbacks to create the various shell subcomponents will be
+  ///             called on the appropriate threads before this method returns.
+  ///             Unlike the simpler variant of this factory method, this method
   ///             allows for the specification of an isolate snapshot that
   ///             cannot be adequately described in the settings. This call also
   ///             requires the specification of a running VM instance.
   ///
   /// @param[in]  task_runners             The task runners
+  /// @param[in]  window_data              The default data for setting up
+  ///                                      ui.Window that attached to this
+  ///                                      intance.
   /// @param[in]  settings                 The settings
   /// @param[in]  isolate_snapshot         A custom isolate snapshot. Takes
   ///                                      precedence over any snapshots
@@ -160,6 +201,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   static std::unique_ptr<Shell> Create(
       TaskRunners task_runners,
+      const WindowData window_data,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const CreateCallback<PlatformView>& on_create_platform_view,
@@ -233,7 +275,7 @@ class Shell final : public PlatformView::Delegate,
   // Embedders should call this under low memory conditions to free up
   // internal caches used.
   //
-  // This method posts a task to the GPU threads to signal the Rasterizer to
+  // This method posts a task to the raster threads to signal the Rasterizer to
   // free resources.
 
   //----------------------------------------------------------------------------
@@ -310,6 +352,14 @@ class Shell final : public PlatformView::Delegate,
   /// @brief     Accessor for the disable GPU SyncSwitch
   std::shared_ptr<fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Get a pointer to the Dart VM used by this running shell
+  ///             instance.
+  ///
+  /// @return     The Dart VM pointer.
+  ///
+  DartVM* GetDartVM();
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
@@ -343,7 +393,7 @@ class Shell final : public PlatformView::Delegate,
   std::mutex waiting_for_first_frame_mutex_;
   std::condition_variable waiting_for_first_frame_condition_;
 
-  // Written in the UI thread and read from the GPU thread. Hence make it
+  // Written in the UI thread and read from the raster thread. Hence make it
   // atomic.
   std::atomic<bool> needs_report_timings_{false};
 
@@ -357,10 +407,10 @@ class Shell final : public PlatformView::Delegate,
   std::vector<int64_t> unreported_timings_;
 
   // A cache of `Engine::GetDisplayRefreshRate` (only callable in the UI thread)
-  // so we can access it from `Rasterizer` (in the GPU thread).
+  // so we can access it from `Rasterizer` (in the raster thread).
   //
   // The atomic is for extra thread safety as this is written in the UI thread
-  // and read from the GPU thread.
+  // and read from the raster thread.
   std::atomic<float> display_refresh_rate_ = 0.0f;
 
   // How many frames have been timed since last report.
@@ -371,6 +421,7 @@ class Shell final : public PlatformView::Delegate,
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
       DartVMRef vm,
       TaskRunners task_runners,
+      const WindowData window_data,
       Settings settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const Shell::CreateCallback<PlatformView>& on_create_platform_view,
@@ -380,8 +431,6 @@ class Shell final : public PlatformView::Delegate,
              std::unique_ptr<Engine> engine,
              std::unique_ptr<Rasterizer> rasterizer,
              std::unique_ptr<ShellIOManager> io_manager);
-
-  DartVM* GetDartVM();
 
   void ReportTimings();
 
@@ -512,9 +561,16 @@ class Shell final : public PlatformView::Delegate,
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 
+  // Service protocol handler
+  //
+  // The returned SkSLs are base64 encoded. Decode before storing them to files.
+  bool OnServiceProtocolGetSkSLs(
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document& response);
+
   fml::WeakPtrFactory<Shell> weak_factory_;
 
-  // For accessing the Shell via the GPU thread, necessary for various
+  // For accessing the Shell via the raster thread, necessary for various
   // rasterizer callbacks.
   std::unique_ptr<fml::WeakPtrFactory<Shell>> weak_factory_gpu_;
 

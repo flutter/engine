@@ -155,7 +155,7 @@ def BuildBucket(runtime_mode, arch, product):
   CopyToBucket(out_dir, bucket_dir, product)
 
 
-def ProcessCIPDPakcage(upload, engine_version):
+def ProcessCIPDPackage(upload, engine_version):
   # Copy the CIPD YAML template from the source directory to be next to the bucket
   # we are about to package.
   cipd_yaml = os.path.join(_script_dir, 'fuchsia.cipd.yaml')
@@ -173,8 +173,18 @@ def ProcessCIPDPakcage(upload, engine_version):
         os.path.join(_bucket_directory, 'fuchsia.cipd')
     ]
 
-  subprocess.check_call(command, cwd=_bucket_directory)
-
+  # Retry up to three times.  We've seen CIPD fail on verification in some
+  # instances. Normally verification takes slightly more than 1 minute when
+  # it succeeds.
+  num_tries = 3
+  for tries in range(num_tries):
+    try:
+      subprocess.check_call(command, cwd=_bucket_directory)
+      break
+    except subprocess.CalledProcessError:
+      print('Failed %s times' % tries + 1)
+      if tries == num_tries - 1:
+        raise
 
 def GetRunnerTarget(runner_type, product, aot):
   base = '%s/%s:' % (_fuchsia_base, runner_type)
@@ -278,7 +288,7 @@ def main():
     if args.engine_version is None:
       print('--upload requires --engine-version to be specified.')
       return 1
-    ProcessCIPDPakcage(args.upload, args.engine_version)
+    ProcessCIPDPackage(args.upload, args.engine_version)
   return 0
 
 

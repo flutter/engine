@@ -4,8 +4,8 @@
   },
   "sandbox": {
     "features": [
+      "config-data",
       "root-ssl-certificates",
-      "deprecated-ambient-replace-as-executable",
       "vulkan"
     ],
     "services": [

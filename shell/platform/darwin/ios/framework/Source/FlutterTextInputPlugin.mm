@@ -159,6 +159,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @property(nonatomic) UIKeyboardType keyboardType;
 @property(nonatomic) UIReturnKeyType returnKeyType;
 @property(nonatomic, getter=isSecureTextEntry) BOOL secureTextEntry;
+@property(nonatomic) UITextSmartQuotesType smartQuotesType API_AVAILABLE(ios(11.0));
+@property(nonatomic) UITextSmartDashesType smartDashesType API_AVAILABLE(ios(11.0));
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 
@@ -193,6 +195,10 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     _keyboardType = UIKeyboardTypeDefault;
     _returnKeyType = UIReturnKeyDone;
     _secureTextEntry = NO;
+    if (@available(iOS 11.0, *)) {
+      _smartQuotesType = UITextSmartQuotesTypeYes;
+      _smartDashesType = UITextSmartDashesTypeYes;
+    }
   }
 
   return self;
@@ -306,7 +312,13 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 - (NSString*)textInRange:(UITextRange*)range {
+  if (!range) {
+    return nil;
+  }
+  NSAssert([range isKindOfClass:[FlutterTextRange class]],
+           @"Expected a FlutterTextRange for range (got %@).", [range class]);
   NSRange textRange = ((FlutterTextRange*)range).range;
+  NSAssert(textRange.location != NSNotFound, @"Expected a valid text range.");
   return [self.text substringWithRange:textRange];
 }
 
@@ -764,6 +776,18 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   _activeView.keyboardType = ToUIKeyboardType(inputType);
   _activeView.returnKeyType = ToUIReturnKeyType(configuration[@"inputAction"]);
   _activeView.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
+  if (@available(iOS 11.0, *)) {
+    NSString* smartDashesType = configuration[@"smartDashesType"];
+    // This index comes from the SmartDashesType enum in the framework.
+    bool smartDashesIsDisabled = smartDashesType && [smartDashesType isEqualToString:@"0"];
+    _activeView.smartDashesType =
+        smartDashesIsDisabled ? UITextSmartDashesTypeNo : UITextSmartDashesTypeYes;
+    NSString* smartQuotesType = configuration[@"smartQuotesType"];
+    // This index comes from the SmartQuotesType enum in the framework.
+    bool smartQuotesIsDisabled = smartQuotesType && [smartQuotesType isEqualToString:@"0"];
+    _activeView.smartQuotesType =
+        smartQuotesIsDisabled ? UITextSmartQuotesTypeNo : UITextSmartQuotesTypeYes;
+  }
   if ([keyboardAppearance isEqualToString:@"Brightness.dark"]) {
     _activeView.keyboardAppearance = UIKeyboardAppearanceDark;
   } else if ([keyboardAppearance isEqualToString:@"Brightness.light"]) {

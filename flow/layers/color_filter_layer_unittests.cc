@@ -29,7 +29,7 @@ TEST_F(ColorFilterLayerTest, PaintingEmptyLayerDies) {
                             "needs_painting\\(\\)");
 }
 
-TEST_F(ColorFilterLayerTest, PaintBeforePreollDies) {
+TEST_F(ColorFilterLayerTest, PaintBeforePrerollDies) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   auto mock_layer = std::make_shared<MockLayer>(child_path);
@@ -193,6 +193,25 @@ TEST_F(ColorFilterLayerTest, Nested) {
                        2, MockCanvas::DrawPathData{child_path2, child_paint2}},
                    MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
                    MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
+}
+
+TEST_F(ColorFilterLayerTest, Readback) {
+  auto layer_filter = SkColorFilters::LinearToSRGBGamma();
+  auto initial_transform = SkMatrix();
+
+  // ColorFilterLayer does not read from surface
+  auto layer = std::make_shared<ColorFilterLayer>(layer_filter);
+  preroll_context()->surface_needs_readback = false;
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_FALSE(preroll_context()->surface_needs_readback);
+
+  // ColorFilterLayer blocks child with readback
+  auto mock_layer =
+      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
+  layer->Add(mock_layer);
+  preroll_context()->surface_needs_readback = false;
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_FALSE(preroll_context()->surface_needs_readback);
 }
 
 }  // namespace testing

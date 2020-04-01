@@ -15,6 +15,11 @@ namespace flutter {
 
 class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
  public:
+  ~GPUSurfaceGLDelegate() override;
+
+  // |GPUSurfaceDelegate|
+  ExternalViewEmbedder* GetExternalViewEmbedder() override;
+
   // Called to make the main GL context current on the current thread.
   virtual bool GLContextMakeCurrent() = 0;
 
@@ -36,8 +41,9 @@ class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
   // subsequent frames.
   virtual bool GLContextFBOResetAfterPresent() const;
 
-  // Create an offscreen surface to render into before onscreen composition.
-  virtual bool UseOffscreenSurface() const;
+  // Indicates whether or not the surface supports pixel readback as used in
+  // circumstances such as a BackdropFilter.
+  virtual bool SurfaceSupportsReadback() const;
 
   // A transformation applied to the onscreen surface before the canvas is
   // flushed.

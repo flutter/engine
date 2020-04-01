@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// A canvas that renders to DOM elements and CSS properties.
@@ -51,24 +52,28 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
       ..right = '0'
       ..bottom = '0'
       ..left = '0'
-      ..backgroundColor = color.toCssString();
+      ..backgroundColor = colorToCssString(color);
     currentElement.append(box);
   }
 
   @override
-  void drawLine(ui.Offset p1, ui.Offset p2, ui.PaintData paint) {
+  void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaintData paint) {
     throw UnimplementedError();
   }
 
   @override
-  void drawPaint(ui.PaintData paint) {
+  void drawPaint(SurfacePaintData paint) {
     throw UnimplementedError();
   }
 
   @override
-  void drawRect(ui.Rect rect, ui.PaintData paint) {
+  void drawRect(ui.Rect rect, SurfacePaintData paint) {
+    _drawRect(rect, paint, 'draw-rect');
+  }
+
+  html.Element _drawRect(ui.Rect rect, SurfacePaintData paint, String tagName) {
     assert(paint.shader == null);
-    final html.Element rectangle = html.Element.tag('draw-rect');
+    final html.Element rectangle = html.Element.tag(tagName);
     assert(() {
       rectangle.setAttribute('flt-rect', '$rect');
       rectangle.setAttribute('flt-paint', '$paint');
@@ -76,6 +81,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
     }());
     String effectiveTransform;
     final bool isStroke = paint.style == ui.PaintingStyle.stroke;
+    final double strokeWidth = paint.strokeWidth ?? 0.0;
     final double left = math.min(rect.left, rect.right);
     final double right = math.max(rect.left, rect.right);
     final double top = math.min(rect.top, rect.bottom);
@@ -83,7 +89,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
     if (currentTransform.isIdentity()) {
       if (isStroke) {
         effectiveTransform =
-            'translate(${left - (paint.strokeWidth / 2.0)}px, ${top - (paint.strokeWidth / 2.0)}px)';
+            'translate(${left - (strokeWidth / 2.0)}px, ${top - (strokeWidth / 2.0)}px)';
       } else {
         effectiveTransform = 'translate(${left}px, ${top}px)';
       }
@@ -92,7 +98,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
       final Matrix4 translated = currentTransform.clone();
       if (isStroke) {
         translated.translate(
-            left - (paint.strokeWidth / 2.0), top - (paint.strokeWidth / 2.0));
+            left - (strokeWidth / 2.0), top - (strokeWidth / 2.0));
       } else {
         translated.translate(left, top);
       }
@@ -104,7 +110,8 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
       ..transformOrigin = '0 0 0'
       ..transform = effectiveTransform;
 
-    final String cssColor = paint.color?.toCssString() ?? '#000000';
+    final String cssColor =
+        paint.color == null ? '#000000' : colorToCssString(paint.color);
 
     if (paint.maskFilter != null) {
       style.filter = 'blur(${paint.maskFilter.webOnlySigma}px)';
@@ -112,9 +119,9 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
     if (isStroke) {
       style
-        ..width = '${right - left - paint.strokeWidth}px'
-        ..height = '${bottom - top - paint.strokeWidth}px'
-        ..border = '${paint.strokeWidth}px solid $cssColor';
+        ..width = '${right - left - strokeWidth}px'
+        ..height = '${bottom - top - strokeWidth}px'
+        ..border = '${strokeWidth}px solid $cssColor';
     } else {
       style
         ..width = '${right - left}px'
@@ -123,30 +130,32 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
     }
 
     currentElement.append(rectangle);
+    return rectangle;
   }
 
   @override
-  void drawRRect(ui.RRect rrect, ui.PaintData paint) {
+  void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
+    html.Element element = _drawRect(rrect.outerRect, paint, 'draw-rrect');
+    element.style.borderRadius = '${rrect.blRadiusX.toStringAsFixed(3)}px';
+  }
+
+  @override
+  void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaintData paint) {
     throw UnimplementedError();
   }
 
   @override
-  void drawDRRect(ui.RRect outer, ui.RRect inner, ui.PaintData paint) {
+  void drawOval(ui.Rect rect, SurfacePaintData paint) {
     throw UnimplementedError();
   }
 
   @override
-  void drawOval(ui.Rect rect, ui.PaintData paint) {
+  void drawCircle(ui.Offset c, double radius, SurfacePaintData paint) {
     throw UnimplementedError();
   }
 
   @override
-  void drawCircle(ui.Offset c, double radius, ui.PaintData paint) {
-    throw UnimplementedError();
-  }
-
-  @override
-  void drawPath(ui.Path path, ui.PaintData paint) {
+  void drawPath(ui.Path path, SurfacePaintData paint) {
     throw UnimplementedError();
   }
 
@@ -157,13 +166,13 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   }
 
   @override
-  void drawImage(ui.Image image, ui.Offset p, ui.PaintData paint) {
+  void drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
     throw UnimplementedError();
   }
 
   @override
   void drawImageRect(
-      ui.Image image, ui.Rect src, ui.Rect dst, ui.PaintData paint) {
+      ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaintData paint) {
     throw UnimplementedError();
   }
 
@@ -175,8 +184,19 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   }
 
   @override
-  void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode,
-      ui.PaintData paint) {
+  void drawVertices(
+      ui.Vertices vertices, ui.BlendMode blendMode, SurfacePaintData paint) {
     throw UnimplementedError();
+  }
+
+  @override
+  void drawPoints(ui.PointMode pointMode, Float32List points,
+      double strokeWidth, ui.Color color) {
+    throw UnimplementedError();
+  }
+
+  @override
+  void endOfPaint() {
+    // No reuse of elements yet to handle here. Noop.
   }
 }

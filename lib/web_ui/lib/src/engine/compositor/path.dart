@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// An implementation of [ui.Path] which is backed by an `SkPath`.
@@ -13,6 +14,11 @@ class SkPath implements ui.Path {
   SkPath() {
     _skPath = js.JsObject(canvasKit['SkPath']);
     fillType = ui.PathFillType.nonZero;
+  }
+
+  SkPath.from(SkPath other) {
+    _skPath = js.JsObject(canvasKit['SkPath'], <js.JsObject>[other._skPath]);
+    fillType = other.fillType;
   }
 
   SkPath._fromSkPath(js.JsObject skPath) : _skPath = skPath;
@@ -51,7 +57,7 @@ class SkPath implements ui.Path {
 
   @override
   void addOval(ui.Rect oval) {
-    _skPath.callMethod('addOval', <dynamic>[makeSkRect(oval), true, 0]);
+    _skPath.callMethod('addOval', <dynamic>[makeSkRect(oval), false, 1]);
   }
 
   @override
@@ -308,39 +314,13 @@ class SkPath implements ui.Path {
   }
 
   @override
-  List<Subpath> get subpaths {
-    throw UnimplementedError(
-        'Path.subpaths is not used in the CanvasKit backend.');
-  }
-
-  @override
   ui.Path transform(Float64List matrix4) {
     final js.JsObject newPath = _skPath.callMethod('copy');
     newPath.callMethod('transform', <js.JsArray>[makeSkMatrix(matrix4)]);
     return SkPath._fromSkPath(newPath);
   }
 
-  @override
-  Ellipse get webOnlyPathAsCircle {
-    throw new UnimplementedError(
-        'webOnlyPathAsCircle is not used in the CanvasKit backend.');
-  }
-
-  @override
-  ui.Rect get webOnlyPathAsRect {
-    throw new UnimplementedError(
-        'webOnlyPathAsRect is not used in the CanvasKit backend.');
-  }
-
-  @override
-  ui.RRect get webOnlyPathAsRoundedRect {
-    throw new UnimplementedError(
-        'webOnlyPathAsRoundedRect is not used in the CanvasKit backend.');
-  }
-
-  @override
-  List<dynamic> webOnlySerializeToCssPaint() {
-    throw new UnimplementedError(
-        'webOnlySerializeToCssPaint is not used in the CanvasKit backend.');
+  String toSvgString() {
+    return _skPath.callMethod('toSVGString');
   }
 }

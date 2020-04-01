@@ -2,12 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:io' as io;
 
+import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
+import 'common.dart';
 import 'environment.dart';
 
 class FilePath {
@@ -43,6 +46,9 @@ Future<int> runProcess(
     executable,
     arguments,
     workingDirectory: workingDirectory,
+    // Running the process in a system shell for Windows. Otherwise
+    // the process is not able to get Dart from path.
+    runInShell: io.Platform.isWindows,
     mode: io.ProcessStartMode.inheritStdio,
   );
   final int exitCode = await process.exitCode;
@@ -56,6 +62,25 @@ Future<int> runProcess(
     );
   }
   return exitCode;
+}
+
+/// Runs [executable]. Do not follow the exit code or the output.
+void startProcess(
+  String executable,
+  List<String> arguments, {
+  String workingDirectory,
+  bool mustSucceed: false,
+}) async {
+  final io.Process process = await io.Process.start(
+    executable,
+    arguments,
+    workingDirectory: workingDirectory,
+    // Running the process in a system shell for Windows. Otherwise
+    // the process is not able to get Dart from path.
+    runInShell: io.Platform.isWindows,
+    mode: io.ProcessStartMode.inheritStdio,
+  );
+  processesToCleanUp.add(process);
 }
 
 /// Runs [executable] and returns its standard output as a string.
@@ -73,14 +98,14 @@ Future<String> evalProcess(
   );
   if (result.exitCode != 0) {
     throw ProcessException(
-      description: result.stderr,
+      description: result.stderr as String,
       executable: executable,
       arguments: arguments,
       workingDirectory: workingDirectory,
       exitCode: result.exitCode,
     );
   }
-  return result.stdout;
+  return result.stdout as String;
 }
 
 @immutable
@@ -108,5 +133,31 @@ class ProcessException implements Exception {
       ..writeln('Working directory: ${workingDirectory ?? io.Directory.current.path}')
       ..writeln('Exit code: $exitCode');
     return '$message';
+  }
+}
+
+/// Adds utility methods
+mixin ArgUtils<T> on Command<T> {
+  /// Extracts a boolean argument from [argResults].
+  bool boolArg(String name) => argResults[name] as bool;
+
+  /// Extracts a string argument from [argResults].
+  String stringArg(String name) => argResults[name] as String;
+
+  /// Extracts a integer argument from [argResults].
+  ///
+  /// If the argument value cannot be parsed as [int] throws an [ArgumentError].
+  int intArg(String name) {
+    final String rawValue = stringArg(name);
+    if (rawValue == null) {
+      return null;
+    }
+    final int value = int.tryParse(rawValue);
+    if (value == null) {
+      throw ArgumentError(
+        'Argument $name should be an integer value but was "$rawValue"',
+      );
+    }
+    return value;
   }
 }

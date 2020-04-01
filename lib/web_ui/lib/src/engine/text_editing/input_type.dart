@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Various types of inputs used in text fields.
@@ -66,7 +67,7 @@ abstract class EngineInputType {
   html.HtmlElement createDomElement() => html.InputElement();
 
   /// Given a [domElement], set attributes that are specific to this input type.
-  void configureDomElement(html.HtmlElement domElement) {
+  void configureInputMode(html.HtmlElement domElement) {
     if (inputmodeAttribute == null) {
       return;
     }

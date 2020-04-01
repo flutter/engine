@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -28,9 +29,12 @@ void main() async {
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      // Set rate to 0.66% for webGL difference across platforms.
-      await matchGoldenFile('$fileName.png', region: region, write: write,
-          maxDiffRate: 1.5 / 100.0);
+      await matchGoldenFile(
+        '$fileName.png',
+        region: region,
+        write: write,
+        maxDiffRatePercent: 0.0,
+      );
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // golden screenshot.
@@ -72,6 +76,7 @@ void main() async {
   test('Should draw black hairline triangles when colors array is null'
       ' and Paint() has no color.',
           () async {
+    // ignore: unused_local_variable
     final Int32List colors = Int32List.fromList(<int>[
         0xFFFF0000, 0xFF00FF00, 0xFF0000FF,
         0xFFFF0000, 0xFF00FF00, 0xFF0000FF,

@@ -7,6 +7,8 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
 
+static const UIAccessibilityTraits UIAccessibilityTraitUndocumentedEmptyLine = 0x800000000000;
+
 @implementation FlutterInactiveTextInput {
 }
 
@@ -23,7 +25,13 @@
 }
 
 - (NSString*)textInRange:(UITextRange*)range {
+  if (!range) {
+    return nil;
+  }
+  NSAssert([range isKindOfClass:[FlutterTextRange class]],
+           @"Expected a FlutterTextRange for range (got %@).", [range class]);
   NSRange textRange = ((FlutterTextRange*)range).range;
+  NSAssert(textRange.location != NSNotFound, @"Expected a valid text range.");
   return [self.text substringWithRange:textRange];
 }
 
@@ -278,8 +286,13 @@
   // Adding UIAccessibilityTraitKeyboardKey to the trait list so that iOS treats it like
   // a keyboard entry control, thus adding support for text editing features, such as
   // pinch to select text, and up/down fling to move cursor.
-  return [super accessibilityTraits] | [self textInputSurrogate].accessibilityTraits |
-         UIAccessibilityTraitKeyboardKey;
+  UIAccessibilityTraits results = [super accessibilityTraits] |
+                                  [self textInputSurrogate].accessibilityTraits |
+                                  UIAccessibilityTraitKeyboardKey;
+  // We remove an undocumented flag to get rid of a bug where single-tapping
+  // a text input field incorrectly says "empty line".
+  // See also: https://github.com/flutter/flutter/issues/52487
+  return results & (~UIAccessibilityTraitUndocumentedEmptyLine);
 }
 
 #pragma mark - UITextInput overrides

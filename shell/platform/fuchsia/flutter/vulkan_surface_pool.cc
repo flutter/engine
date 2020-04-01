@@ -49,7 +49,8 @@ std::unique_ptr<VulkanSurface> VulkanSurfacePool::AcquireSurface(
 
 std::unique_ptr<VulkanSurface> VulkanSurfacePool::GetCachedOrCreateSurface(
     const SkISize& size) {
-  TRACE_EVENT0("flutter", "VulkanSurfacePool::GetCachedOrCreateSurface");
+  TRACE_EVENT2("flutter", "VulkanSurfacePool::GetCachedOrCreateSurface",
+               "width", size.width(), "height", size.height());
   // First try to find a surface that exactly matches |size|.
   {
     auto exact_match_it =
@@ -128,7 +129,11 @@ void VulkanSurfacePool::SubmitSurface(
   const flutter::LayerRasterCacheKey& retained_key =
       vulkan_surface->GetRetainedKey();
 
-  if (retained_key.id() != 0) {
+  // TODO(https://bugs.fuchsia.dev/p/fuchsia/issues/detail?id=44141): Re-enable
+  // retained surfaces after we find out why textures are being prematurely
+  // recycled.
+  const bool kUseRetainedSurfaces = false;
+  if (kUseRetainedSurfaces && retained_key.id() != 0) {
     // Add the surface to |retained_surfaces_| if its retained key has a valid
     // layer id (|retained_key.id()|).
     //
@@ -163,7 +168,8 @@ void VulkanSurfacePool::SubmitSurface(
 
 std::unique_ptr<VulkanSurface> VulkanSurfacePool::CreateSurface(
     const SkISize& size) {
-  TRACE_EVENT0("flutter", "VulkanSurfacePool::CreateSurface");
+  TRACE_EVENT2("flutter", "VulkanSurfacePool::CreateSurface", "width",
+               size.width(), "height", size.height());
   auto surface = std::make_unique<VulkanSurface>(vulkan_provider_, context_,
                                                  scenic_session_, size);
   if (!surface->IsValid()) {

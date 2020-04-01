@@ -36,10 +36,11 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     ExternalViewEmbedder* view_embedder,
     const SkMatrix& root_surface_transformation,
     bool instrumentation_enabled,
-    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+    bool surface_supports_readback,
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   return std::make_unique<ScopedFrame>(
       *this, gr_context, canvas, view_embedder, root_surface_transformation,
-      instrumentation_enabled, gpu_thread_merger);
+      instrumentation_enabled, surface_supports_readback, raster_thread_merger);
 }
 
 CompositorContext::ScopedFrame::ScopedFrame(
@@ -49,14 +50,16 @@ CompositorContext::ScopedFrame::ScopedFrame(
     ExternalViewEmbedder* view_embedder,
     const SkMatrix& root_surface_transformation,
     bool instrumentation_enabled,
-    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger)
+    bool surface_supports_readback,
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger)
     : context_(context),
       gr_context_(gr_context),
       canvas_(canvas),
       view_embedder_(view_embedder),
       root_surface_transformation_(root_surface_transformation),
       instrumentation_enabled_(instrumentation_enabled),
-      gpu_thread_merger_(gpu_thread_merger) {
+      surface_supports_readback_(surface_supports_readback),
+      raster_thread_merger_(raster_thread_merger) {
   context_.BeginFrame(*this, instrumentation_enabled_);
 }
 
@@ -67,10 +70,13 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
     bool ignore_raster_cache) {
-  layer_tree.Preroll(*this, ignore_raster_cache);
+  TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
+  bool root_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
+  bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
-  if (view_embedder_ && gpu_thread_merger_) {
-    post_preroll_result = view_embedder_->PostPrerollAction(gpu_thread_merger_);
+  if (view_embedder_ && raster_thread_merger_) {
+    post_preroll_result =
+        view_embedder_->PostPrerollAction(raster_thread_merger_);
   }
 
   if (post_preroll_result == PostPrerollResult::kResubmitFrame) {
@@ -79,9 +85,19 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   // Clearing canvas after preroll reduces one render target switch when preroll
   // paints some raster cache.
   if (canvas()) {
+    if (needs_save_layer) {
+      FML_LOG(INFO) << "Using SaveLayer to protect non-readback surface";
+      SkRect bounds = SkRect::Make(layer_tree.frame_size());
+      SkPaint paint;
+      paint.setBlendMode(SkBlendMode::kSrc);
+      canvas()->saveLayer(&bounds, &paint);
+    }
     canvas()->clear(SK_ColorTRANSPARENT);
   }
   layer_tree.Paint(*this, ignore_raster_cache);
+  if (canvas() && needs_save_layer) {
+    canvas()->restore();
+  }
   return RasterStatus::kSuccess;
 }
 

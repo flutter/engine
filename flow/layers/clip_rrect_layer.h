@@ -17,6 +17,10 @@ class ClipRRectLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
+  bool UsesSaveLayer() const {
+    return clip_behavior_ == Clip::antiAliasWithSaveLayer;
+  }
+
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
 #endif  // defined(OS_FUCHSIA)
@@ -24,6 +28,7 @@ class ClipRRectLayer : public ContainerLayer {
  private:
   SkRRect clip_rrect_;
   Clip clip_behavior_;
+  bool children_inside_clip_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ClipRRectLayer);
 };

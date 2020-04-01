@@ -13,8 +13,8 @@
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/closure.h"
-#include "flutter/fml/gpu_thread_merger.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/raster_thread_merger.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
@@ -200,7 +200,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///             This is used as an optimization in cases where there are
   ///             external textures (video or camera streams for example) in
   ///             referenced in the layer tree. These textures may be updated at
-  ///             a cadence different from that of the the Flutter application.
+  ///             a cadence different from that of the Flutter application.
   ///             Flutter can re-render the layer tree with just the updated
   ///             textures instead of waiting for the framework to do the work
   ///             to generate the layer tree describing the same contents.
@@ -220,8 +220,8 @@ class Rasterizer final : public SnapshotDelegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Takes the next item from the layer tree pipeline and executes
-  ///             the GPU thread frame workload for that pipeline item to render
-  ///             a frame on the on-screen surface.
+  ///             the raster thread frame workload for that pipeline item to
+  ///             render a frame on the on-screen surface.
   ///
   ///             Why does the draw call take a layer tree pipeline and not the
   ///             layer tree directly?
@@ -420,7 +420,7 @@ class Rasterizer final : public SnapshotDelegate {
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
   fml::WeakPtrFactory<Rasterizer> weak_factory_;
-  fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger_;
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,

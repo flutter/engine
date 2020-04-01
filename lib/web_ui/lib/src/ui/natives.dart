@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of ui;
 
 // Corelib 'print' implementation.
+// ignore: unused_element
 void _print(dynamic arg) {
   _Logger._printString(arg.toString());
 }

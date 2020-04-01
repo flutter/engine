@@ -16,6 +16,7 @@
 #include "third_party/skia/include/core/SkClipOp.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
+#include "third_party/skia/include/core/SkMatrix44.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
@@ -53,6 +54,10 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
 
   struct ConcatMatrixData {
     SkMatrix matrix;
+  };
+
+  struct ConcatMatrix44Data {
+    SkMatrix44 matrix;
   };
 
   struct SetMatrixData {
@@ -109,6 +114,7 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
                                     SaveLayerData,
                                     RestoreData,
                                     ConcatMatrixData,
+                                    ConcatMatrix44Data,
                                     SetMatrixData,
                                     DrawRectData,
                                     DrawPathData,
@@ -139,6 +145,9 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
   void willRestore() override;
   void didRestore() override {}
   void didConcat(const SkMatrix& matrix) override;
+  void didConcat44(const SkScalar matrix[]) override;
+  void didScale(SkScalar x, SkScalar y) override;
+  void didTranslate(SkScalar x, SkScalar y) override;
   void didSetMatrix(const SkMatrix& matrix) override;
 
   // Draw and clip operations that we track.
@@ -186,11 +195,13 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
                  bool,
                  const SkPaint&) override;
   void onDrawRRect(const SkRRect&, const SkPaint&) override;
+#if defined(SK_SUPPORT_LEGACY_ONDRAWBITMAP_VIRTUALS)
   void onDrawBitmapRect(const SkBitmap&,
                         const SkRect*,
                         const SkRect&,
                         const SkPaint*,
                         SrcRectConstraint) override;
+#endif
   void onDrawImage(const SkImage* image,
                    SkScalar x,
                    SkScalar y,
@@ -204,25 +215,24 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
                        const SkIRect&,
                        const SkRect&,
                        const SkPaint*) override;
+#if defined(SK_SUPPORT_LEGACY_ONDRAWBITMAP_VIRTUALS)
   void onDrawBitmap(const SkBitmap& bitmap,
                     SkScalar x,
                     SkScalar y,
                     const SkPaint* paint) override;
-  void onDrawBitmapNine(const SkBitmap&,
-                        const SkIRect&,
-                        const SkRect&,
-                        const SkPaint*) override;
+#endif
   void onDrawImageLattice(const SkImage*,
                           const Lattice&,
                           const SkRect&,
                           const SkPaint*) override;
-  void onDrawBitmapLattice(const SkBitmap&,
-                           const Lattice&,
-                           const SkRect&,
-                           const SkPaint*) override;
+#ifdef SK_SUPPORT_LEGACY_DRAWVERTS_VIRTUAL
   void onDrawVerticesObject(const SkVertices*,
                             const SkVertices::Bone[],
                             int,
+                            SkBlendMode,
+                            const SkPaint&) override {}
+#endif
+  void onDrawVerticesObject(const SkVertices*,
                             SkBlendMode,
                             const SkPaint&) override;
   void onDrawAtlas(const SkImage*,
@@ -269,6 +279,10 @@ extern bool operator==(const MockCanvas::ConcatMatrixData& a,
                        const MockCanvas::ConcatMatrixData& b);
 extern std::ostream& operator<<(std::ostream& os,
                                 const MockCanvas::ConcatMatrixData& data);
+extern bool operator==(const MockCanvas::ConcatMatrix44Data& a,
+                       const MockCanvas::ConcatMatrix44Data& b);
+extern std::ostream& operator<<(std::ostream& os,
+                                const MockCanvas::ConcatMatrix44Data& data);
 extern bool operator==(const MockCanvas::SetMatrixData& a,
                        const MockCanvas::SetMatrixData& b);
 extern std::ostream& operator<<(std::ostream& os,

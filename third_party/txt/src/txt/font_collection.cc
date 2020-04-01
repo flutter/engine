@@ -150,11 +150,14 @@ FontCollection::GetMinikinFontCollectionForFamilies(
   }
   // Search for default font family if no user font families were found.
   if (minikin_families.empty()) {
-    const auto default_font_family = GetDefaultFontFamily();
-    std::shared_ptr<minikin::FontFamily> minikin_family =
-        FindFontFamilyInManagers(default_font_family);
-    if (minikin_family != nullptr) {
-      minikin_families.push_back(minikin_family);
+    const auto default_font_families = GetDefaultFontFamilies();
+    for (auto family : default_font_families) {
+      std::shared_ptr<minikin::FontFamily> minikin_family =
+          FindFontFamilyInManagers(family);
+      if (minikin_family != nullptr) {
+        minikin_families.push_back(minikin_family);
+        break;
+      }
     }
   }
   // Default font family also not found. We fail to get a FontCollection.
@@ -315,19 +318,20 @@ void FontCollection::ClearFontFamilyCache() {
 
 sk_sp<skia::textlayout::FontCollection>
 FontCollection::CreateSktFontCollection() {
-  sk_sp<skia::textlayout::FontCollection> skt_collection =
-      sk_make_sp<skia::textlayout::FontCollection>();
+  if (!skt_collection_) {
+    skt_collection_ = sk_make_sp<skia::textlayout::FontCollection>();
 
-  skt_collection->setDefaultFontManager(default_font_manager_,
-                                        GetDefaultFontFamily().c_str());
-  skt_collection->setAssetFontManager(asset_font_manager_);
-  skt_collection->setDynamicFontManager(dynamic_font_manager_);
-  skt_collection->setTestFontManager(test_font_manager_);
-  if (!enable_font_fallback_) {
-    skt_collection->disableFontFallback();
+    skt_collection_->setDefaultFontManager(default_font_manager_,
+                                           GetDefaultFontFamilies()[0].c_str());
+    skt_collection_->setAssetFontManager(asset_font_manager_);
+    skt_collection_->setDynamicFontManager(dynamic_font_manager_);
+    skt_collection_->setTestFontManager(test_font_manager_);
+    if (!enable_font_fallback_) {
+      skt_collection_->disableFontFallback();
+    }
   }
 
-  return skt_collection;
+  return skt_collection_;
 }
 
 #endif  // FLUTTER_ENABLE_SKSHAPER

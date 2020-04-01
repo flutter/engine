@@ -20,7 +20,7 @@ TEST_F(OpacityLayerTest, LeafLayer) {
       std::make_shared<OpacityLayer>(SK_AlphaOPAQUE, SkPoint::Make(0.0f, 0.0f));
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Preroll(preroll_context(), SkMatrix()),
-                            "layers\\(\\)\\.size\\(\\) > 0");
+                            "\\!container->layers\\(\\)\\.empty\\(\\)");
 }
 
 TEST_F(OpacityLayerTest, PaintingEmptyLayerDies) {
@@ -306,6 +306,25 @@ TEST_F(OpacityLayerTest, Nested) {
        MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   layer1->Paint(paint_context());
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
+}
+
+TEST_F(OpacityLayerTest, Readback) {
+  auto initial_transform = SkMatrix();
+  auto layer = std::make_shared<OpacityLayer>(kOpaque_SkAlphaType, SkPoint());
+  layer->Add(std::make_shared<MockLayer>(SkPath()));
+
+  // OpacityLayer does not read from surface
+  preroll_context()->surface_needs_readback = false;
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_FALSE(preroll_context()->surface_needs_readback);
+
+  // OpacityLayer blocks child with readback
+  auto mock_layer =
+      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
+  layer->Add(mock_layer);
+  preroll_context()->surface_needs_readback = false;
+  layer->Preroll(preroll_context(), initial_transform);
+  EXPECT_FALSE(preroll_context()->surface_needs_readback);
 }
 
 }  // namespace testing

@@ -8,8 +8,10 @@
 #include <iostream>
 
 #include "flutter/fml/build_config.h"
+#include "flutter/fml/closure.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/native_library.h"
+#include "third_party/dart/runtime/include/dart_native_api.h"
 
 #if OS_WIN
 #define FLUTTER_EXPORT __declspec(dllexport)
@@ -662,6 +664,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   settings.icu_data_path = icu_data_path;
   settings.assets_path = args->assets_path;
   settings.leak_vm = !SAFE_ACCESS(args, shutdown_dart_vm_when_done, false);
+  settings.old_gen_heap_size = SAFE_ACCESS(args, dart_old_gen_heap_size, -1);
 
   if (!flutter::DartVM::IsRunningPrecompiledCode()) {
     // Verify the assets path contains Dart 2 kernel assets.
@@ -1501,6 +1504,37 @@ FlutterEngineResult FlutterEngineRunTask(FLUTTER_API_SYMBOL(FlutterEngine)
                                   "Could not run the specified task.");
 }
 
+static bool DispatchJSONPlatformMessage(FLUTTER_API_SYMBOL(FlutterEngine)
+                                            engine,
+                                        rapidjson::Document document,
+                                        const std::string& channel_name) {
+  if (channel_name.size() == 0) {
+    return false;
+  }
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+
+  if (!document.Accept(writer)) {
+    return false;
+  }
+
+  const char* message = buffer.GetString();
+
+  if (message == nullptr || buffer.GetSize() == 0) {
+    return false;
+  }
+
+  auto platform_message = fml::MakeRefCounted<flutter::PlatformMessage>(
+      channel_name.c_str(),                                       // channel
+      std::vector<uint8_t>{message, message + buffer.GetSize()},  // message
+      nullptr                                                     // response
+  );
+
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)
+      ->SendPlatformMessage(std::move(platform_message));
+}
+
 FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
                                                    engine,
                                                const FlutterLocale** locales,
@@ -1553,27 +1587,8 @@ FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
   }
   document.AddMember("args", args, allocator);
 
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  if (!document.Accept(writer)) {
-    return LOG_EMBEDDER_ERROR(kInternalInconsistency,
-                              "Could not create locale payload.");
-  }
-
-  const char* message = buffer.GetString();
-
-  if (message == nullptr || buffer.GetSize() == 0) {
-    return LOG_EMBEDDER_ERROR(kInternalInconsistency,
-                              "Could not create locale update message.");
-  }
-
-  auto platform_message = fml::MakeRefCounted<flutter::PlatformMessage>(
-      "flutter/localization",                                     // channel
-      std::vector<uint8_t>{message, message + buffer.GetSize()},  // message
-      nullptr                                                     // response
-  );
-  return reinterpret_cast<flutter::EmbedderEngine*>(engine)
-                 ->SendPlatformMessage(std::move(platform_message))
+  return DispatchJSONPlatformMessage(engine, std::move(document),
+                                     "flutter/localization")
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInternalInconsistency,
                                   "Could not send message to update locale of "
@@ -1582,4 +1597,176 @@ FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
 
 bool FlutterEngineRunsAOTCompiledDartCode(void) {
   return flutter::DartVM::IsRunningPrecompiledCode();
+}
+
+FlutterEngineResult FlutterEnginePostDartObject(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterEngineDartPort port,
+    const FlutterEngineDartObject* object) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (!reinterpret_cast<flutter::EmbedderEngine*>(engine)->IsValid()) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine not running.");
+  }
+
+  if (port == ILLEGAL_PORT) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Attempted to post to an illegal port.");
+  }
+
+  if (object == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Invalid Dart object to post.");
+  }
+
+  Dart_CObject dart_object = {};
+  fml::ScopedCleanupClosure typed_data_finalizer;
+
+  switch (object->type) {
+    case kFlutterEngineDartObjectTypeNull:
+      dart_object.type = Dart_CObject_kNull;
+      break;
+    case kFlutterEngineDartObjectTypeBool:
+      dart_object.type = Dart_CObject_kBool;
+      dart_object.value.as_bool = object->bool_value;
+      break;
+    case kFlutterEngineDartObjectTypeInt32:
+      dart_object.type = Dart_CObject_kInt32;
+      dart_object.value.as_int32 = object->int32_value;
+      break;
+    case kFlutterEngineDartObjectTypeInt64:
+      dart_object.type = Dart_CObject_kInt64;
+      dart_object.value.as_int64 = object->int64_value;
+      break;
+    case kFlutterEngineDartObjectTypeDouble:
+      dart_object.type = Dart_CObject_kDouble;
+      dart_object.value.as_double = object->double_value;
+      break;
+    case kFlutterEngineDartObjectTypeString:
+      if (object->string_value == nullptr) {
+        return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                  "kFlutterEngineDartObjectTypeString must be "
+                                  "a null terminated string but was null.");
+      }
+      dart_object.type = Dart_CObject_kString;
+      dart_object.value.as_string = const_cast<char*>(object->string_value);
+      break;
+    case kFlutterEngineDartObjectTypeBuffer: {
+      auto* buffer = SAFE_ACCESS(object->buffer_value, buffer, nullptr);
+      if (buffer == nullptr) {
+        return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                  "kFlutterEngineDartObjectTypeBuffer must "
+                                  "specify a buffer but found nullptr.");
+      }
+      auto buffer_size = SAFE_ACCESS(object->buffer_value, buffer_size, 0);
+      auto callback =
+          SAFE_ACCESS(object->buffer_value, buffer_collect_callback, nullptr);
+      auto user_data = SAFE_ACCESS(object->buffer_value, user_data, nullptr);
+
+      // The user has provided a callback, let them manage the lifecycle of
+      // the underlying data. If not, copy it out from the provided buffer.
+
+      if (callback == nullptr) {
+        dart_object.type = Dart_CObject_kTypedData;
+        dart_object.value.as_typed_data.type = Dart_TypedData_kUint8;
+        dart_object.value.as_typed_data.length = buffer_size;
+        dart_object.value.as_typed_data.values = buffer;
+      } else {
+        struct ExternalTypedDataPeer {
+          void* user_data = nullptr;
+          VoidCallback trampoline = nullptr;
+        };
+        auto peer = new ExternalTypedDataPeer();
+        peer->user_data = user_data;
+        peer->trampoline = callback;
+        // This finalizer is set so that in case of failure of the
+        // Dart_PostCObject below, we collect the peer. The embedder is still
+        // responsible for collecting the buffer in case of non-kSuccess returns
+        // from this method. This finalizer must be released in case of kSuccess
+        // returns from this method.
+        typed_data_finalizer.SetClosure([peer]() {
+          // This is the tiny object we use as the peer to the Dart call so that
+          // we can attach the a trampoline to the embedder supplied callback.
+          // In case of error, we need to collect this object lest we introduce
+          // a tiny leak.
+          delete peer;
+        });
+        dart_object.type = Dart_CObject_kExternalTypedData;
+        dart_object.value.as_external_typed_data.type = Dart_TypedData_kUint8;
+        dart_object.value.as_external_typed_data.length = buffer_size;
+        dart_object.value.as_external_typed_data.data = buffer;
+        dart_object.value.as_external_typed_data.peer = peer;
+        dart_object.value.as_external_typed_data.callback =
+            +[](void* unused_isolate_callback_data,
+                Dart_WeakPersistentHandle unused_handle, void* peer) {
+              auto typed_peer = reinterpret_cast<ExternalTypedDataPeer*>(peer);
+              typed_peer->trampoline(typed_peer->user_data);
+              delete typed_peer;
+            };
+      }
+    } break;
+    default:
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Invalid FlutterEngineDartObjectType type specified.");
+  }
+
+  if (!Dart_PostCObject(port, &dart_object)) {
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency,
+                              "Could not post the object to the Dart VM.");
+  }
+
+  // On a successful call, the VM takes ownership of and is responsible for
+  // invoking the finalizer.
+  typed_data_finalizer.Release();
+  return kSuccess;
+}
+
+FlutterEngineResult FlutterEngineNotifyLowMemoryWarning(
+    FLUTTER_API_SYMBOL(FlutterEngine) raw_engine) {
+  auto engine = reinterpret_cast<flutter::EmbedderEngine*>(raw_engine);
+  if (engine == nullptr || !engine->IsValid()) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine was invalid.");
+  }
+
+  engine->GetShell().NotifyLowMemoryWarning();
+
+  rapidjson::Document document;
+  auto& allocator = document.GetAllocator();
+
+  document.SetObject();
+  document.AddMember("type", "memoryPressure", allocator);
+
+  return DispatchJSONPlatformMessage(raw_engine, std::move(document),
+                                     "flutter/system")
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(
+                   kInternalInconsistency,
+                   "Could not dispatch the low memory notification message.");
+}
+
+FlutterEngineResult FlutterEnginePostCallbackOnAllNativeThreads(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterNativeThreadCallback callback,
+    void* user_data) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (callback == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Invalid native thread callback.");
+  }
+
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)
+                 ->PostTaskOnEngineManagedNativeThreads(
+                     [callback, user_data](FlutterNativeThreadType type) {
+                       callback(type, user_data);
+                     })
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                  "Internal error while attempting to post "
+                                  "tasks to all threads.");
 }

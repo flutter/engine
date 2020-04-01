@@ -4,22 +4,27 @@
 
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
+#include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 static int kMaxPointsInVerb = 4;
 
 namespace flutter {
 
-FlutterPlatformViewLayer::FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> overlay_view,
-                                                   std::unique_ptr<IOSSurface> ios_surface,
-                                                   std::unique_ptr<Surface> surface)
+FlutterPlatformViewLayer::FlutterPlatformViewLayer(
+    fml::scoped_nsobject<UIView> overlay_view,
+    fml::scoped_nsobject<UIView> overlay_view_wrapper,
+    std::unique_ptr<IOSSurface> ios_surface,
+    std::unique_ptr<Surface> surface)
     : overlay_view(std::move(overlay_view)),
+      overlay_view_wrapper(std::move(overlay_view_wrapper)),
       ios_surface(std::move(ios_surface)),
       surface(std::move(surface)){};
 
 FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
 
-FlutterPlatformViewsController::FlutterPlatformViewsController() = default;
+FlutterPlatformViewsController::FlutterPlatformViewsController()
+    : layer_pool_(std::make_unique<FlutterPlatformViewLayerPool>()){};
 
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
 
@@ -55,11 +60,10 @@ void ResetAnchor(CALayer* layer) {
 
 - (void)clipRect:(const SkRect&)clipSkRect {
   CGRect clipRect = [ChildClippingView getCGRectFromSkRect:clipSkRect];
-  CGPathRef pathRef = CGPathCreateWithRect(clipRect, nil);
-  CAShapeLayer* clip = [[CAShapeLayer alloc] init];
+  fml::CFRef<CGPathRef> pathRef(CGPathCreateWithRect(clipRect, nil));
+  CAShapeLayer* clip = [[[CAShapeLayer alloc] init] autorelease];
   clip.path = pathRef;
   self.layer.mask = clip;
-  CGPathRelease(pathRef);
 }
 
 - (void)clipRRect:(const SkRRect&)clipSkRRect {
@@ -125,22 +129,21 @@ void ResetAnchor(CALayer* layer) {
   // TODO(cyanglaz): iOS does not seem to support hard edge on CAShapeLayer. It clearly stated that
   // the CAShaperLayer will be drawn antialiased. Need to figure out a way to do the hard edge
   // clipping on iOS.
-  CAShapeLayer* clip = [[CAShapeLayer alloc] init];
+  CAShapeLayer* clip = [[[CAShapeLayer alloc] init] autorelease];
   clip.path = pathRef;
   self.layer.mask = clip;
   CGPathRelease(pathRef);
 }
 
 - (void)clipPath:(const SkPath&)path {
-  CGMutablePathRef pathRef = CGPathCreateMutable();
   if (!path.isValid()) {
     return;
   }
+  fml::CFRef<CGMutablePathRef> pathRef(CGPathCreateMutable());
   if (path.isEmpty()) {
-    CAShapeLayer* clip = [[CAShapeLayer alloc] init];
+    CAShapeLayer* clip = [[[CAShapeLayer alloc] init] autorelease];
     clip.path = pathRef;
     self.layer.mask = clip;
-    CGPathRelease(pathRef);
     return;
   }
 
@@ -195,10 +198,9 @@ void ResetAnchor(CALayer* layer) {
     verb = iter.next(pts);
   }
 
-  CAShapeLayer* clip = [[CAShapeLayer alloc] init];
+  CAShapeLayer* clip = [[[CAShapeLayer alloc] init] autorelease];
   clip.path = pathRef;
   self.layer.mask = clip;
-  CGPathRelease(pathRef);
 }
 
 - (void)setClip:(flutter::MutatorType)type

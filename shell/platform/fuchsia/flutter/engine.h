@@ -36,8 +36,6 @@ class Engine final {
          flutter::Settings settings,
          fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
          fuchsia::ui::views::ViewToken view_token,
-         fuchsia::ui::views::ViewRefControl view_ref_control,
-         fuchsia::ui::views::ViewRef view_ref,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request);
   ~Engine();

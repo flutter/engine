@@ -72,8 +72,6 @@ FLUTTER_EXPORT
                         nibName:(nullable NSString*)nibName
                          bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
 
-- (void)handleStatusBarTouches:(UIEvent*)event;
-
 /**
  * Registers a callback that will be invoked when the Flutter view has been rendered.
  * The callback will be fired only once.
@@ -105,11 +103,15 @@ FLUTTER_EXPORT
 - (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package;
 
 /**
- * Sets the first route that the Flutter app shows. The default is "/".
- * This method will guarnatee that the initial route is delivered, even if the
- * Flutter window hasn't been created yet when called. It cannot be used to update
- * the current route being shown in a visible FlutterViewController (see pushRoute
- * and popRoute).
+ * Attempts to set the first route that the Flutter app shows if the Flutter
+ * runtime hasn't yet started. The default is "/".
+ *
+ * This method must be called immediately after `initWithProject` and has no
+ * effect when using `initWithEngine` if the `FlutterEngine` has already been
+ * run.
+ *
+ * Setting this after the Flutter started running has no effect. See `pushRoute`
+ * and `popRoute` to change the route after Flutter started running.
  *
  * @param route The name of the first route to show.
  */

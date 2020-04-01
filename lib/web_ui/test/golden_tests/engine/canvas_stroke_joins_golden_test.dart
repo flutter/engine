@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:ui/src/engine.dart';
@@ -29,13 +30,13 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_stroke_joins.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
 }
 
 void paintStrokeJoins(BitmapCanvas canvas) {
   canvas.drawRect(Rect.fromLTRB(0, 0, 300, 300),
-      PaintData()
+      SurfacePaintData()
         ..color = Color(0xFFFFFFFF)
         ..style = PaintingStyle.fill); // white
 
@@ -55,7 +56,7 @@ void paintStrokeJoins(BitmapCanvas canvas) {
       path.moveTo(start.dx, start.dy);
       path.lineTo(mid.dx, mid.dy);
       path.lineTo(end.dx, end.dy);
-      canvas.drawPath(path, PaintData()
+      canvas.drawPath(path, SurfacePaintData()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 4
             ..color = color

@@ -17,8 +17,9 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h"
-#include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
+#include "flutter/shell/platform/darwin/ios/ios_context.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 
 @class FlutterViewController;
 
@@ -26,7 +27,9 @@ namespace flutter {
 
 class PlatformViewIOS final : public PlatformView {
  public:
-  explicit PlatformViewIOS(PlatformView::Delegate& delegate, flutter::TaskRunners task_runners);
+  explicit PlatformViewIOS(PlatformView::Delegate& delegate,
+                           IOSRenderingAPI rendering_api,
+                           flutter::TaskRunners task_runners);
 
   ~PlatformViewIOS() override;
 
@@ -34,6 +37,7 @@ class PlatformViewIOS final : public PlatformView {
 
   fml::WeakPtr<FlutterViewController> GetOwnerViewController() const;
   void SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller);
+  void attachView();
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
@@ -64,10 +68,10 @@ class PlatformViewIOS final : public PlatformView {
 
   fml::WeakPtr<FlutterViewController> owner_controller_;
   // Since the `ios_surface_` is created on the platform thread but
-  // used on the GPU thread we need to protect it with a mutex.
+  // used on the raster thread we need to protect it with a mutex.
   std::mutex ios_surface_mutex_;
   std::unique_ptr<IOSSurface> ios_surface_;
-  std::shared_ptr<IOSGLContext> gl_context_;
+  std::shared_ptr<IOSContext> ios_context_;
   PlatformMessageRouter platform_message_router_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;

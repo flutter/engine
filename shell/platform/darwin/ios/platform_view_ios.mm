@@ -4,28 +4,22 @@
 
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-#import <QuartzCore/CAEAGLLayer.h>
-
 #include <utility>
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
-#include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
 
 namespace flutter {
 
 PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
+                                 IOSRenderingAPI rendering_api,
                                  flutter::TaskRunners task_runners)
-    : PlatformView(delegate, std::move(task_runners)) {
-#if !TARGET_IPHONE_SIMULATOR
-  gl_context_ = std::make_shared<IOSGLContext>();
-#endif  // !TARGET_IPHONE_SIMULATOR
-}
+    : PlatformView(delegate, std::move(task_runners)),
+      ios_context_(IOSContext::Create(rendering_api)) {}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
@@ -64,20 +58,25 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
                                                        owner_controller_.reset();
                                                      }] retain]);
 
-  if (owner_controller_) {
-    ios_surface_ =
-        [static_cast<FlutterView*>(owner_controller.get().view) createSurface:gl_context_];
-    FML_DCHECK(ios_surface_ != nullptr);
+  if (owner_controller_ && [owner_controller_.get() isViewLoaded]) {
+    this->attachView();
+  }
+  // Do not call `NotifyCreated()` here - let FlutterViewController take care
+  // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
+  // it can occasionally get invoked before the viewport is sized resulting in
+  // a framebuffer that will not be able to completely attach.
+}
 
-    if (accessibility_bridge_) {
-      accessibility_bridge_.reset(
-          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                  [owner_controller.get() platformViewsController]));
-    }
-    // Do not call `NotifyCreated()` here - let FlutterViewController take care
-    // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
-    // it can occasionally get invoked before the viewport is sized resulting in
-    // a framebuffer that will not be able to completely attach.
+void PlatformViewIOS::attachView() {
+  FML_DCHECK(owner_controller_);
+  ios_surface_ =
+      [static_cast<FlutterView*>(owner_controller_.get().view) createSurface:ios_context_];
+  FML_DCHECK(ios_surface_ != nullptr);
+
+  if (accessibility_bridge_) {
+    accessibility_bridge_.reset(
+        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
+                                [owner_controller_.get() platformViewsController]));
   }
 }
 
@@ -89,12 +88,13 @@ PointerDataDispatcherMaker PlatformViewIOS::GetDispatcherMaker() {
 
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
-  RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
+  RegisterTexture(ios_context_->CreateExternalTexture(
+      texture_id, fml::scoped_nsobject<NSObject<FlutterTexture>>{[texture retain]}));
 }
 
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (!ios_surface_) {
     FML_DLOG(INFO) << "Could not CreateRenderingSurface, this PlatformViewIOS "
@@ -106,16 +106,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 
 // |PlatformView|
 sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
-  FML_DCHECK(task_runners_.GetIOTaskRunner()->RunsTasksOnCurrentThread());
-  if (!gl_context_ || !gl_context_->ResourceMakeCurrent()) {
-    FML_DLOG(INFO) << "Could not make resource context current on IO thread. "
-                      "Async texture uploads will be disabled. On Simulators, "
-                      "this is expected.";
-    return nullptr;
-  }
-
-  return ShellIOManager::CreateCompatibleResourceLoadingContext(
-      GrBackend::kOpenGL_GrBackend, GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
+  return ios_context_->CreateResourceContext();
 }
 
 // |PlatformView|

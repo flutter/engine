@@ -49,6 +49,7 @@ skt::ParagraphStyle TxtToSkia(const ParagraphStyle& txt) {
   text_style.setFontStyle(MakeSkFontStyle(txt.font_weight, txt.font_style));
   text_style.setFontSize(SkDoubleToScalar(txt.font_size));
   text_style.setHeight(SkDoubleToScalar(txt.height));
+  text_style.setHeightOverride(txt.has_height_override);
   text_style.setFontFamilies({SkString(txt.font_family.c_str())});
   text_style.setLocale(SkString(txt.locale.c_str()));
   skia.setTextStyle(text_style);
@@ -103,6 +104,7 @@ skt::TextStyle TxtToSkia(const TextStyle& txt) {
   skia.setLetterSpacing(SkDoubleToScalar(txt.letter_spacing));
   skia.setWordSpacing(SkDoubleToScalar(txt.word_spacing));
   skia.setHeight(SkDoubleToScalar(txt.height));
+  skia.setHeightOverride(txt.has_height_override);
 
   skia.setLocale(SkString(txt.locale.c_str()));
   if (txt.has_background) {
@@ -110,6 +112,11 @@ skt::TextStyle TxtToSkia(const TextStyle& txt) {
   }
   if (txt.has_foreground) {
     skia.setForegroundColor(txt.foreground);
+  }
+
+  skia.resetFontFeatures();
+  for (const auto& ff : txt.font_features.GetFontFeatures()) {
+    skia.addFontFeature(SkString(ff.first.c_str()), ff.second);
   }
 
   skia.resetShadows();
