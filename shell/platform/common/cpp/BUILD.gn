@@ -118,7 +118,6 @@ executable("common_cpp_unittests") {
     ":common_cpp_fixtures",
     "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper_library_stubs",
     "//flutter/testing",
-    "//third_party/dart/runtime:libdart_jit",
   ]
 
   public_configs = [ "//flutter:config" ]
