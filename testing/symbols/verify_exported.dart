@@ -187,7 +187,13 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
       '__emutls_get_address': 'T',
       '__emutls_register_common': 'T',
     };
-    if (!const MapEquality<String, String>().equals(entryMap, expectedSymbols)) {
+    final Map<String, String> badSymbols = <String, String>{};
+    for (final String key in entryMap.keys) {
+      if (entryMap[key] != expectedSymbols[key]) {
+        badSymbols[key] = entryMap[key];
+      }
+    }
+    if (badSymbols.isNotEmpty) {
       print('ERROR: $libFlutter exports the wrong symbols');
       print(' Expected $expectedSymbols');
       print(' Library has $entryMap.');
