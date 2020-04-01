@@ -105,7 +105,7 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null));
+            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, null, null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0));
@@ -134,7 +134,7 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null));
+            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, null, null));
     // There's a pending restart since we initialized the text input client. Flush that now. With
     // changed text, we should
     // always set the Editable contents.
@@ -175,7 +175,7 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null));
+            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, null, null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0));
@@ -210,7 +210,7 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null));
+            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, null, null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0));
@@ -238,7 +238,7 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null));
+            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, null, null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0));
@@ -263,6 +263,8 @@ public class TextInputPluginTest {
             true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
+            null,
+            null,
             null,
             null));
     // There's a pending restart since we initialized the text input client. Flush that now.
@@ -333,6 +335,8 @@ public class TextInputPluginTest {
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
             null,
+            null,
+            null,
             null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
@@ -375,6 +379,8 @@ public class TextInputPluginTest {
             true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
+            null,
+            null,
             null,
             null));
     // There's a pending restart since we initialized the text input client. Flush that now.

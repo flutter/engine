@@ -59,7 +59,10 @@ public class TextInputPlugin {
       @NonNull PlatformViewsController platformViewsController) {
     mView = view;
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-    afm = view.getContext().getSystemService(AutofillManager.class);
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+      afm = view.getContext().getSystemService(AutofillManager.class);
+    else
+      afm = null;
 
     textInputChannel = new TextInputChannel(dartExecutor);
     textInputChannel.setTextInputMethodHandler(
