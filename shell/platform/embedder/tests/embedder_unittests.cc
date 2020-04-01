@@ -2894,9 +2894,6 @@ TEST_F(EmbedderTest, CanQueryDartAOTMode) {
 }
 
 TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
-#if !defined(OS_LINUX)
-  GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
-#endif  // OS_LINUX
   auto& context = GetEmbedderContext();
 
   EmbedderConfigBuilder builder(context);
@@ -3004,6 +3001,12 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
   auto renderered_scene = context.GetNextSceneImage();
 
   latch.Wait();
+
+  // TODO(https://github.com/flutter/flutter/issues/53784): enable this on all
+  // platforms.
+#if !defined(OS_LINUX)
+  GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
+#endif  // OS_LINUX
   ASSERT_TRUE(ImageMatchesFixture("verifyb143464703_soft_noxform.png",
                                   renderered_scene));
 }
