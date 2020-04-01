@@ -1430,7 +1430,7 @@ TEST_F(EmbedderTest,
       });
 
   context.GetCompositor().SetPlatformViewRendererCallback(
-      [&](const FlutterLayer& layer, GrContext *
+      [&](const FlutterLayer& layer, GrContext*
           /* don't use because software compositor */) -> sk_sp<SkImage> {
         auto surface = CreateRenderSurface(
             layer, nullptr /* null because software compositor */);
