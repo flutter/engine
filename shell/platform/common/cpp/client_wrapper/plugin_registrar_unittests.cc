@@ -104,7 +104,6 @@ TEST(PluginRegistrarTest, MessengerSetMessageHandler) {
 // the wrapper for the same reference.
 TEST(PluginRegistrarTest, ManagerSameInstance) {
   testing::ScopedStubFlutterApi scoped_api_stub(std::make_unique<TestApi>());
-  auto test_api = static_cast<TestApi*>(scoped_api_stub.stub());
 
   auto dummy_registrar_handle =
       reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1);
@@ -118,7 +117,6 @@ TEST(PluginRegistrarTest, ManagerSameInstance) {
 // references.
 TEST(PluginRegistrarTest, ManagerDifferentInstances) {
   testing::ScopedStubFlutterApi scoped_api_stub(std::make_unique<TestApi>());
-  auto test_api = static_cast<TestApi*>(scoped_api_stub.stub());
 
   auto dummy_registrar_handle_a =
       reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1);
