@@ -408,20 +408,19 @@ public class TextInputPluginTest {
   public void autofill_onProvideVirtualViewStructure() {
     FlutterView testView = new FlutterView(RuntimeEnvironment.application);
     TextInputPlugin textInputPlugin =
-            new TextInputPlugin(
-                    testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
     final TextInputChannel.Configuration.Autofill autofill1 = new TextInputChannel.Configuration.Autofill("1", new String[]{ "HINT1" },  new TextInputChannel.TextEditState("", 0, 0));
     final TextInputChannel.Configuration.Autofill autofill2 = new TextInputChannel.Configuration.Autofill("2", new String[]{ "HINT2", "EXTRA" },  new TextInputChannel.TextEditState("", 0, 0));
 
     final TextInputChannel.Configuration config1 = new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill1, null);
+        false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill1, null);
     final TextInputChannel.Configuration config2 = new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill2, null);
+        false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill2, null);
 
     textInputPlugin.setTextInputClient(
-            0,
-            new TextInputChannel.Configuration(
-                    false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill1, new TextInputChannel.Configuration[]{ config1, config2 }));
+        0,
+        new TextInputChannel.Configuration(
+            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill1, new TextInputChannel.Configuration[]{ config1, config2 }));
 
     final ViewStructure viewStructure = mock(ViewStructure.class);
     final ViewStructure[] children = { mock(ViewStructure.class), mock(ViewStructure.class) };
@@ -443,20 +442,23 @@ public class TextInputPluginTest {
   public void autofill_onProvideVirtualViewStructure_single() {
     FlutterView testView = new FlutterView(RuntimeEnvironment.application);
     TextInputPlugin textInputPlugin =
-            new TextInputPlugin(
-                    testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
-    final TextInputChannel.Configuration.Autofill autofill = new TextInputChannel.Configuration.Autofill("1", new String[]{ "HINT1" },  new TextInputChannel.TextEditState("", 0, 0));
+        new TextInputPlugin(
+            testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+    final TextInputChannel.Configuration.Autofill autofill =
+        new TextInputChannel.Configuration.Autofill(
+            "1", new String[]{ "HINT1" },  new TextInputChannel.TextEditState("", 0, 0));
 
-    // Without AutofillGroup, Autofill should still work
+    // Autofill should still work without AutofillGroup.
     textInputPlugin.setTextInputClient(
-            0,
-            new TextInputChannel.Configuration(
-                    false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill, null));
+        0,
+        new TextInputChannel.Configuration(
+            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill, null));
 
     final ViewStructure viewStructure = mock(ViewStructure.class);
     final ViewStructure[] children = { mock(ViewStructure.class) };
 
-    when(viewStructure.newChild(anyInt())).thenAnswer(invocation -> children[invocation.getArgumentAt(0, int.class)]);
+    when(viewStructure.newChild(anyInt()))
+        .thenAnswer(invocation -> children[invocation.getArgumentAt(0, int.class)]);
 
     textInputPlugin.onProvideAutofillVirtualStructure(viewStructure, 0);
 

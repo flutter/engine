@@ -148,7 +148,6 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
   public FlutterView(Context context, AttributeSet attrs, FlutterNativeView nativeView) {
     super(context, attrs);
-    Log.w(TAG, "Initializing Deprecated FlutterView");
 
     Activity activity = getActivity(getContext());
     if (activity == null) {
@@ -451,7 +450,6 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
   @Override
   public void onProvideAutofillVirtualStructure(ViewStructure structure, int flags) {
-    Log.w(TAG, "onProvideAutofill");
     super.onProvideAutofillVirtualStructure(structure, flags);
     mTextInputPlugin.onProvideAutofillVirtualStructure(structure, flags);
   }

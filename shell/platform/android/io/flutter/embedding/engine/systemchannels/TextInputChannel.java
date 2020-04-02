@@ -136,11 +136,11 @@ public class TextInputChannel {
   }
 
   private HashMap<Object, Object> createEditingStateJSON(
-       String text,
-       int selectionStart,
-       int selectionEnd,
-       int composingStart,
-       int composingEnd) {
+      String text,
+      int selectionStart,
+      int selectionEnd,
+      int composingStart,
+      int composingEnd) {
     HashMap<Object, Object> state = new HashMap<>();
     state.put("text", text);
     state.put("selectionBase", selectionStart);
@@ -178,7 +178,7 @@ public class TextInputChannel {
             + composingEnd);
 
     final HashMap<Object, Object> state = createEditingStateJSON(
-            text, selectionStart, selectionEnd, composingStart, composingEnd);
+        text, selectionStart, selectionEnd, composingStart, composingEnd);
 
     channel.invokeMethod("TextInputClient.updateEditingState", Arrays.asList(inputClientId, state));
   }
@@ -194,9 +194,9 @@ public class TextInputChannel {
     for (Map.Entry<String, TextEditState> element : editStates.entrySet()) {
       final TextEditState state = element.getValue();
       json.put(
-              element.getKey(),
-              createEditingStateJSON(
-                      state.text, state.selectionStart, state.selectionEnd, -1, -1));
+          element.getKey(),
+          createEditingStateJSON(
+               state.text, state.selectionStart, state.selectionEnd, -1, -1));
     }
     channel.invokeMethod("TextInputClient.updateEditingStateWithTag", Arrays.asList(inputClientId, json));
   }
@@ -371,9 +371,7 @@ public class TextInputChannel {
           hintList[i] = translateAutofillHint(hints.getString(i));
         }
         return new Autofill(
-                uniqueIdentifier,
-                hintList,
-                TextEditState.fromJson(editingState));
+            uniqueIdentifier, hintList, TextEditState.fromJson(editingState));
       }
 
       public final String uniqueIdentifier;
@@ -390,9 +388,9 @@ public class TextInputChannel {
       }
 
       public Autofill(
-              @NonNull String uniqueIdentifier,
-              @NonNull String[] hints,
-              @NonNull TextEditState editingState) {
+          @NonNull String uniqueIdentifier,
+          @NonNull String[] hints,
+          @NonNull TextEditState editingState) {
           this.uniqueIdentifier = uniqueIdentifier;
           this.hints = hints;
           this.editState = editingState;
