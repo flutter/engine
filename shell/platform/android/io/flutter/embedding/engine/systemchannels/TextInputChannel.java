@@ -380,6 +380,7 @@ public class TextInputChannel {
       public final String[] hints;
       public final TextEditState editState;
 
+      // TODO(LongCatIsLooong): add translation for every predefined hint.
       @NonNull
       private static String translateAutofillHint(@NonNull String hint) {
         switch (hint) {

@@ -59,7 +59,7 @@ public class TextInputPlugin {
       @NonNull PlatformViewsController platformViewsController) {
     mView = view;
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
       afm = view.getContext().getSystemService(AutofillManager.class);
     else
       afm = null;
@@ -469,8 +469,6 @@ public class TextInputPlugin {
       child.setAutofillHints(autofill.hints);
       child.setAutofillType(View.AUTOFILL_TYPE_TEXT);
       child.setVisibility(View.VISIBLE);
-      child.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS);
-      child.setDataIsSensitive(false);
     }
   }
 
