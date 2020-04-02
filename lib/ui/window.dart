@@ -475,12 +475,14 @@ class Locale {
       return true;
     return other is Locale
         && other.languageCode == languageCode
-        && other.scriptCode == scriptCode
-        && other.countryCode == countryCode;
+        && other.scriptCode == scriptCode // scriptCode cannot be ''
+        && (other.countryCode == countryCode // Treat '' as equal to null.
+            || other.countryCode != null && other.countryCode.isEmpty && countryCode == null
+            || countryCode != null && countryCode.isEmpty && other.countryCode == null);
   }
 
   @override
-  int get hashCode => hashValues(languageCode, scriptCode, countryCode);
+  int get hashCode => hashValues(languageCode, scriptCode, countryCode == '' ? null : countryCode);
 
   static Locale _cachedLocale;
   static String _cachedLocaleString;
@@ -490,6 +492,7 @@ class Locale {
   /// This identifier happens to be a valid Unicode Locale Identifier using
   /// underscores as separator, however it is intended to be used for debugging
   /// purposes only. For parseable results, use [toLanguageTag] instead.
+  @keepToString
   @override
   String toString() {
     if (!identical(_cachedLocale, this)) {

@@ -225,25 +225,10 @@ void MockCanvas::onDrawRRect(const SkRRect&, const SkPaint&) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawBitmap(const SkBitmap&,
-                              SkScalar,
-                              SkScalar,
-                              const SkPaint*) {
-  FML_DCHECK(false);
-}
-
 void MockCanvas::onDrawImage(const SkImage*,
                              SkScalar,
                              SkScalar,
                              const SkPaint*) {
-  FML_DCHECK(false);
-}
-
-void MockCanvas::onDrawBitmapRect(const SkBitmap&,
-                                  const SkRect*,
-                                  const SkRect&,
-                                  const SkPaint*,
-                                  SrcRectConstraint) {
   FML_DCHECK(false);
 }
 

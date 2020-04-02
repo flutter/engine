@@ -15,11 +15,41 @@
 
 namespace flutter {
 
+PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+    const std::function<void(bool)>& set_semantics_enabled)
+    : AccessibilityBridgePtr(set_semantics_enabled, nullptr) {}
+
+PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+    const std::function<void(bool)>& set_semantics_enabled,
+    AccessibilityBridge* bridge)
+    : accessibility_bridge_(bridge), set_semantics_enabled_(set_semantics_enabled) {
+  if (bridge) {
+    set_semantics_enabled_(true);
+  }
+}
+
+PlatformViewIOS::AccessibilityBridgePtr::~AccessibilityBridgePtr() {
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(false);
+  }
+}
+
+void PlatformViewIOS::AccessibilityBridgePtr::reset(AccessibilityBridge* bridge) {
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(false);
+  }
+  accessibility_bridge_.reset(bridge);
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(true);
+  }
+}
+
 PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
                                  IOSRenderingAPI rendering_api,
                                  flutter::TaskRunners task_runners)
     : PlatformView(delegate, std::move(task_runners)),
-      ios_context_(IOSContext::Create(rendering_api)) {}
+      ios_context_(IOSContext::Create(rendering_api)),
+      accessibility_bridge_([this](bool enabled) { PlatformView::SetSemanticsEnabled(enabled); }) {}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
@@ -94,7 +124,7 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
 
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (!ios_surface_) {
     FML_DLOG(INFO) << "Could not CreateRenderingSurface, this PlatformViewIOS "
@@ -117,13 +147,14 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
     return;
   }
   if (enabled && !accessibility_bridge_) {
-    accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-        static_cast<FlutterView*>(owner_controller_.get().view), this,
-        [owner_controller_.get() platformViewsController]);
+    accessibility_bridge_.reset(
+        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
+                                [owner_controller_.get() platformViewsController]));
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
+  } else {
+    PlatformView::SetSemanticsEnabled(enabled);
   }
-  PlatformView::SetSemanticsEnabled(enabled);
 }
 
 // |shell:PlatformView|
