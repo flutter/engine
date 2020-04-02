@@ -16,6 +16,8 @@ import android.text.InputType;
 import android.text.Layout;
 import android.text.Selection;
 import android.text.TextPaint;
+import android.text.method.QwertyKeyListener;
+import android.text.method.TextKeyListener.Capitalize;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
@@ -321,53 +323,12 @@ class InputConnectionAdaptor extends BaseInputConnection {
           updateEditingState();
           return true;
         } else if (selStart > 0) {
-          // Delete to the left/right of the cursor depending on direction of text.
-          // TODO(garyq): Explore how to obtain per-character direction. The
-          // isRTLCharAt() call below is returning blanket direction assumption
-          // based on the first character in the line.
-
-          Boolean selectedCharIsEmoji = false;
-          if (selStart > 1) {
-            final String emo_regex =
-                "([\\u20a0-\\u32ff\\ud83c\\udc00-\\ud83d\\udeff\\udbb9\\udce5-\\udbb9\\udcee])";
-            String lastChars = mLayout.getText().subSequence(selStart - 2, selStart).toString();
-            selectedCharIsEmoji = lastChars.matches(emo_regex);
+          QwertyKeyListener qwertyKeyListener = new QwertyKeyListener(Capitalize.NONE, false);
+          if (qwertyKeyListener.onKeyDown(null, mEditable, event.getKeyCode(), event)) {
+            updateEditingState();
+            return true;
           }
-
-          // The Selection.extendLeft and extendRight calls have some problems
-          // when mixing RTL and LTR text so if selected character is not emoji
-          // simply select that character
-          if (selectedCharIsEmoji) {
-            boolean isRtl =
-                mLayout.isRtlCharAt(mLayout.getLineStart(mLayout.getLineForOffset(selStart)));
-            Log.i("isRtl", Boolean.toString(isRtl));
-            try {
-              if (isRtl) {
-                Selection.extendRight(mEditable, mLayout);
-              } else {
-                Selection.extendLeft(mEditable, mLayout);
-              }
-            } catch (IndexOutOfBoundsException e) {
-              // On some Chinese devices (primarily Huawei, some Xiaomi),
-              // on initial app startup before focus is lost, the
-              // Selection.extendLeft and extendRight calls always extend
-              // from the index of the initial contents of mEditable. This
-              // try-catch will prevent crashing on Huawei devices by falling
-              // back to a simple way of deletion, although this a hack and
-              // will not handle emojis.
-              Selection.setSelection(mEditable, selStart, selStart - 1);
-            }
-          } else {
-            Selection.setSelection(mEditable, selStart, selStart - 1);
-          }
-          int newStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
-          int newEnd = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
-          Selection.setSelection(mEditable, Math.min(newStart, newEnd));
-          // Min/Max the values since RTL selections will start at a higher
-          // index than they end at.
-          mEditable.delete(Math.min(newStart, newEnd), Math.max(newStart, newEnd));
-          updateEditingState();
-          return true;
+          return false;
         }
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
         int selStart = Selection.getSelectionStart(mEditable);
