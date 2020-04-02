@@ -88,6 +88,13 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   return UIReturnKeyDefault;
 }
 
+static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
+  NSDictionary* autofill = dictionary[@"autofill"];
+  if (autofill == nil)
+    return nil;
+  return autofill[@"uniqueIdentifier"];
+}
+
 #pragma mark - FlutterTextPosition
 
 @implementation FlutterTextPosition
@@ -167,6 +174,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @end
 
 @implementation FlutterTextInputView {
+  NSString* _uniqueIdentifier;
   int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
@@ -210,6 +218,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   [_markedTextRange release];
   [_selectedTextRange release];
   [_tokenizer release];
+  if (_uniqueIdentifier != nil)
+    [_uniqueIdentifier release];
   [super dealloc];
 }
 
@@ -267,7 +277,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 #pragma mark - UIResponder Overrides
 
 - (BOOL)canBecomeFirstResponder {
-  return YES;
+  return _textInputClient != 0;
 }
 
 #pragma mark - UITextInput Overrides
@@ -616,16 +626,23 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     composingBase = ((FlutterTextPosition*)self.markedTextRange.start).index;
     composingExtent = ((FlutterTextPosition*)self.markedTextRange.end).index;
   }
-  [_textInputDelegate updateEditingClient:_textInputClient
-                                withState:@{
-                                  @"selectionBase" : @(selectionBase),
-                                  @"selectionExtent" : @(selectionExtent),
-                                  @"selectionAffinity" : @(_selectionAffinity),
-                                  @"selectionIsDirectional" : @(false),
-                                  @"composingBase" : @(composingBase),
-                                  @"composingExtent" : @(composingExtent),
-                                  @"text" : [NSString stringWithString:self.text],
-                                }];
+
+  NSDictionary* state = @{
+    @"selectionBase" : @(selectionBase),
+    @"selectionExtent" : @(selectionExtent),
+    @"selectionAffinity" : @(_selectionAffinity),
+    @"selectionIsDirectional" : @(false),
+    @"composingBase" : @(composingBase),
+    @"composingExtent" : @(composingExtent),
+    @"text" : [NSString stringWithString:self.text],
+  };
+
+  if (_textInputClient == 0 && _uniqueIdentifier != nil)
+    [_textInputDelegate updateEditingClient:_textInputClient
+                                  withState:state
+                                    withTag:_uniqueIdentifier];
+  else
+    [_textInputDelegate updateEditingClient:_textInputClient withState:state];
 }
 
 - (BOOL)hasText {
@@ -688,8 +705,10 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 @end
 
 @implementation FlutterTextInputPlugin {
-  FlutterTextInputView* _view;
-  FlutterTextInputView* _secureView;
+  FlutterTextInputView* _nonAutofillInputView;
+  FlutterTextInputView* _nonAutofillSecureInputView;
+
+  NSMutableArray<FlutterTextInputView*>* _inputViews;
   FlutterTextInputView* _activeView;
   FlutterTextInputViewAccessibilityHider* _inputHider;
 }
@@ -700,12 +719,13 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   self = [super init];
 
   if (self) {
-    _view = [[FlutterTextInputView alloc] init];
-    _view.secureTextEntry = NO;
-    _secureView = [[FlutterTextInputView alloc] init];
-    _secureView.secureTextEntry = YES;
+    _nonAutofillInputView = [[FlutterTextInputView alloc] init];
+    _nonAutofillInputView.secureTextEntry = NO;
+    _nonAutofillInputView = [[FlutterTextInputView alloc] init];
+    _nonAutofillSecureInputView.secureTextEntry = YES;
+    _inputViews = [[NSMutableArray alloc] init];
 
-    _activeView = _view;
+    _activeView = _nonAutofillInputView;
     _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
   }
 
@@ -714,9 +734,10 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (void)dealloc {
   [self hideTextInput];
-  [_view release];
-  [_secureView release];
+  [_nonAutofillInputView release];
+  [_nonAutofillSecureInputView release];
   [_inputHider release];
+  [_inputViews release];
 
   [super dealloc];
 }
@@ -749,58 +770,103 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 - (void)showTextInput {
-  NSAssert([UIApplication sharedApplication].keyWindow != nullptr,
+  UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
+  NSAssert(keyWindow != nullptr,
            @"The application must have a key window since the keyboard client "
            @"must be part of the responder chain to function");
   _activeView.textInputDelegate = _textInputDelegate;
-  [_inputHider addSubview:_activeView];
-  [[UIApplication sharedApplication].keyWindow addSubview:_inputHider];
+  if (![_activeView isDescendantOfView:_inputHider]) {
+    [_inputHider addSubview:_activeView];
+  }
+  [keyWindow addSubview:_inputHider];
   [_activeView becomeFirstResponder];
 }
 
 - (void)hideTextInput {
   [_activeView resignFirstResponder];
-  [_activeView removeFromSuperview];
   [_inputHider removeFromSuperview];
 }
 
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
-  NSDictionary* inputType = configuration[@"inputType"];
-  NSString* keyboardAppearance = configuration[@"keyboardAppearance"];
-  if ([configuration[@"obscureText"] boolValue]) {
-    _activeView = _secureView;
+  NSArray* allFields = configuration[@"allFields"];
+  NSString* clientUniqueId = _uniqueIdFromDictionary(configuration);
+  bool isSecureTextEntry = [configuration[@"obscureText"] boolValue];
+
+  if (allFields == nil) {
+    _activeView = isSecureTextEntry ? _nonAutofillSecureInputView : _nonAutofillInputView;
+    [FlutterTextInputPlugin setupInputView:_activeView WithConfiguration:configuration];
+
+    if (![_activeView isDescendantOfView:_inputHider]) {
+      [_inputHider addSubview:_activeView];
+    }
   } else {
-    _activeView = _view;
+    NSAssert(clientUniqueId != nil, @"The client's unique id can't be null");
+    for (FlutterTextInputView* v in _inputViews)
+      [v removeFromSuperview];
+    for (UIView* subview in [_inputHider subviews])
+      [subview removeFromSuperview];
+
+    [_inputViews removeAllObjects];
+
+    for (NSDictionary* field in allFields) {
+      FlutterTextInputView* newInputView = [[FlutterTextInputView alloc] init];
+      [_inputViews addObject:newInputView];
+
+      if ([clientUniqueId isEqualToString:_uniqueIdFromDictionary(field)])
+        _activeView = newInputView;
+
+      [FlutterTextInputPlugin setupInputView:newInputView WithConfiguration:field];
+      [_inputHider addSubview:newInputView];
+    }
   }
 
-  _activeView.keyboardType = ToUIKeyboardType(inputType);
-  _activeView.returnKeyType = ToUIReturnKeyType(configuration[@"inputAction"]);
-  _activeView.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
+  [_activeView setTextInputClient:client];
+  [_activeView reloadInputViews];
+}
+
++ (void)setupInputView:(FlutterTextInputView*)inputView
+     WithConfiguration:(NSDictionary*)configuration {
+  NSDictionary* inputType = configuration[@"inputType"];
+  NSString* keyboardAppearance = configuration[@"keyboardAppearance"];
+  NSDictionary* autofill = configuration[@"autofill"];
+
+  inputView.secureTextEntry = [configuration[@"obscureText"] boolValue];
+  inputView.keyboardType = ToUIKeyboardType(inputType);
+  inputView.returnKeyType = ToUIReturnKeyType(configuration[@"inputAction"]);
+  inputView.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
+
   if (@available(iOS 11.0, *)) {
     NSString* smartDashesType = configuration[@"smartDashesType"];
     // This index comes from the SmartDashesType enum in the framework.
     bool smartDashesIsDisabled = smartDashesType && [smartDashesType isEqualToString:@"0"];
-    _activeView.smartDashesType =
+    inputView.smartDashesType =
         smartDashesIsDisabled ? UITextSmartDashesTypeNo : UITextSmartDashesTypeYes;
     NSString* smartQuotesType = configuration[@"smartQuotesType"];
     // This index comes from the SmartQuotesType enum in the framework.
     bool smartQuotesIsDisabled = smartQuotesType && [smartQuotesType isEqualToString:@"0"];
-    _activeView.smartQuotesType =
+    inputView.smartQuotesType =
         smartQuotesIsDisabled ? UITextSmartQuotesTypeNo : UITextSmartQuotesTypeYes;
   }
   if ([keyboardAppearance isEqualToString:@"Brightness.dark"]) {
-    _activeView.keyboardAppearance = UIKeyboardAppearanceDark;
+    inputView.keyboardAppearance = UIKeyboardAppearanceDark;
   } else if ([keyboardAppearance isEqualToString:@"Brightness.light"]) {
-    _activeView.keyboardAppearance = UIKeyboardAppearanceLight;
+    inputView.keyboardAppearance = UIKeyboardAppearanceLight;
   } else {
-    _activeView.keyboardAppearance = UIKeyboardAppearanceDefault;
+    inputView.keyboardAppearance = UIKeyboardAppearanceDefault;
   }
   NSString* autocorrect = configuration[@"autocorrect"];
-  _activeView.autocorrectionType = autocorrect && ![autocorrect boolValue]
-                                       ? UITextAutocorrectionTypeNo
-                                       : UITextAutocorrectionTypeDefault;
-  [_activeView setTextInputClient:client];
-  [_activeView reloadInputViews];
+  inputView.autocorrectionType = autocorrect && ![autocorrect boolValue]
+                                     ? UITextAutocorrectionTypeNo
+                                     : UITextAutocorrectionTypeDefault;
+  if (autofill == nil) {
+    if (@available(iOS 10.0, *))
+      inputView.textContentType = @"";
+  } else {
+    if (@available(iOS 10.0, *))
+      inputView.textContentType = autofill[@"hints"];
+
+    [inputView setTextInputState:autofill[@"editingValue"]];
+  }
 }
 
 - (void)setTextInputEditingState:(NSDictionary*)state {
@@ -810,5 +876,4 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (void)clearTextInputClient {
   [_activeView setTextInputClient:0];
 }
-
 @end
