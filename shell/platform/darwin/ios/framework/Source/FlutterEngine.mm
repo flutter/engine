@@ -122,6 +122,11 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                  name:UIApplicationWillResignActiveNotification
                object:nil];
 
+  [center addObserver:self
+             selector:@selector(onLocaleUpdated:)
+                 name:NSCurrentLocaleDidChangeNotification
+               object:nil];
+
   return self;
 }
 
@@ -195,9 +200,9 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   return _shell->GetTaskRunners().GetPlatformTaskRunner();
 }
 
-- (fml::RefPtr<fml::TaskRunner>)GPUTaskRunner {
+- (fml::RefPtr<fml::TaskRunner>)RasterTaskRunner {
   FML_DCHECK(_shell);
-  return _shell->GetTaskRunners().GetGPUTaskRunner();
+  return _shell->GetTaskRunners().GetRasterTaskRunner();
 }
 
 - (void)ensureSemanticsEnabled {
@@ -476,7 +481,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   } else {
     flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
                                       fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
-                                      _threadHost.gpu_thread->GetTaskRunner(),         // raster
+                                      _threadHost.raster_thread->GetTaskRunner(),      // raster
                                       _threadHost.ui_thread->GetTaskRunner(),          // ui
                                       _threadHost.io_thread->GetTaskRunner()           // io
     );
@@ -494,6 +499,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                    << entrypoint.UTF8String;
   } else {
     [self setupChannels];
+    [self onLocaleUpdated:nil];
     if (!_platformViewsController) {
       _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
     }
@@ -708,6 +714,48 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(value ? true : false);
   }
   _isGpuDisabled = value;
+}
+
+#pragma mark - Locale updates
+
+- (void)onLocaleUpdated:(NSNotification*)notification {
+  NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
+  NSMutableArray<NSString*>* data = [[NSMutableArray new] autorelease];
+
+  // Force prepend the [NSLocale currentLocale] to the front of the list
+  // to ensure we are including the full default locale. preferredLocales
+  // is not guaranteed to include anything beyond the languageCode.
+  NSLocale* currentLocale = [NSLocale currentLocale];
+  NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
+  NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
+  NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
+  NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
+  if (languageCode) {
+    [data addObject:languageCode];
+    [data addObject:(countryCode ? countryCode : @"")];
+    [data addObject:(scriptCode ? scriptCode : @"")];
+    [data addObject:(variantCode ? variantCode : @"")];
+  }
+
+  // Add any secondary locales/languages to the list.
+  for (NSString* localeID in preferredLocales) {
+    NSLocale* currentLocale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
+    NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
+    NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
+    NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
+    NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
+    if (!languageCode) {
+      continue;
+    }
+    [data addObject:languageCode];
+    [data addObject:(countryCode ? countryCode : @"")];
+    [data addObject:(scriptCode ? scriptCode : @"")];
+    [data addObject:(variantCode ? variantCode : @"")];
+  }
+  if (data.count == 0) {
+    return;
+  }
+  [self.localizationChannel invokeMethod:@"setLocale" arguments:data];
 }
 
 @end
