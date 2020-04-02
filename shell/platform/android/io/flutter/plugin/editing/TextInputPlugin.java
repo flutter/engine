@@ -12,13 +12,12 @@ import android.provider.Settings;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
-import java.util.HashMap;
 import android.util.SparseArray;
+import android.view.View;
+import android.view.ViewStructure;
 import android.view.autofill.AutofillId;
 import android.view.autofill.AutofillManager;
 import android.view.autofill.AutofillValue;
-import android.view.View;
-import android.view.ViewStructure;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
@@ -30,6 +29,7 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
+import java.util.HashMap;
 
 /** Android implementation of the text input plugin. */
 public class TextInputPlugin {
@@ -61,8 +61,7 @@ public class TextInputPlugin {
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
       afm = view.getContext().getSystemService(AutofillManager.class);
-    else
-      afm = null;
+    else afm = null;
 
     textInputChannel = new TextInputChannel(dartExecutor);
     textInputChannel.setTextInputMethodHandler(
@@ -386,7 +385,9 @@ public class TextInputPlugin {
     }
   }
 
-  private interface MinMax { void inspect(double x, double y); }
+  private interface MinMax {
+    void inspect(double x, double y);
+  }
 
   private void saveEditableSizeAndTransform(double width, double height, double[] matrix) {
     final double[] minMax = new double[4]; // minX, maxX, minY, maxY.
@@ -394,30 +395,32 @@ public class TextInputPlugin {
     minMax[0] = minMax[1] = matrix[12] / matrix[15]; // minX and maxX.
     minMax[2] = minMax[3] = matrix[13] / matrix[15]; // minY and maxY.
 
-    final MinMax finder = new MinMax() {
-      @Override
-      public void inspect(double x, double y) {
-        final double w = isAffine ? 1 : 1 / (matrix[3] * x + matrix[7] * y + matrix[15]);
-        final double tx = (matrix[0] * x + matrix[4] * y + matrix[12]) * w;
-        final double ty = (matrix[1] * x + matrix[5] * y + matrix[13]) * w;
+    final MinMax finder =
+        new MinMax() {
+          @Override
+          public void inspect(double x, double y) {
+            final double w = isAffine ? 1 : 1 / (matrix[3] * x + matrix[7] * y + matrix[15]);
+            final double tx = (matrix[0] * x + matrix[4] * y + matrix[12]) * w;
+            final double ty = (matrix[1] * x + matrix[5] * y + matrix[13]) * w;
 
-        if (tx < minMax[0])
-          minMax[0] = tx;
-        else if (tx > minMax[1])
-          minMax[1] = tx;
+            if (tx < minMax[0]) minMax[0] = tx;
+            else if (tx > minMax[1]) minMax[1] = tx;
 
-        if (ty < minMax[2])
-          minMax[2] = ty;
-        else if (ty > minMax[3])
-          minMax[3] = ty;
-      }
-    };
+            if (ty < minMax[2]) minMax[2] = ty;
+            else if (ty > minMax[3]) minMax[3] = ty;
+          }
+        };
 
     finder.inspect(width, 0);
     finder.inspect(width, height);
     finder.inspect(0, height);
     final Float density = mView.getContext().getResources().getDisplayMetrics().density;
-    lastClientRect = new Rect((int) (minMax[0] * density), (int) (minMax[2] * density), (int) Math.ceil(minMax[1] * density), (int) Math.ceil(minMax[3] * density));
+    lastClientRect =
+        new Rect(
+            (int) (minMax[0] * density),
+            (int) (minMax[2] * density),
+            (int) Math.ceil(minMax[1] * density),
+            (int) Math.ceil(minMax[3] * density));
   }
 
   private void updateAutofillConfigurationIfNeeded(TextInputChannel.Configuration configuration) {
@@ -433,12 +436,12 @@ public class TextInputPlugin {
     mAutofillConfigurations = new SparseArray<>();
 
     if (configurations == null) {
-      mAutofillConfigurations.put(configuration.autofill.uniqueIdentifier.hashCode(), configuration);
+      mAutofillConfigurations.put(
+          configuration.autofill.uniqueIdentifier.hashCode(), configuration);
     } else {
       for (TextInputChannel.Configuration config : configurations) {
         TextInputChannel.Configuration.Autofill autofill = config.autofill;
-        if (autofill == null)
-          continue;
+        if (autofill == null) continue;
 
         mAutofillConfigurations.put(autofill.uniqueIdentifier.hashCode(), config);
       }
@@ -450,8 +453,7 @@ public class TextInputPlugin {
   }
 
   public void onProvideAutofillVirtualStructure(ViewStructure structure, int flags) {
-    if (mAutofillConfigurations == null)
-      return;
+    if (mAutofillConfigurations == null) return;
 
     final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
     final AutofillId parentId = structure.getAutofillId();
@@ -459,8 +461,7 @@ public class TextInputPlugin {
       final int autofillId = mAutofillConfigurations.keyAt(i);
       final TextInputChannel.Configuration config = mAutofillConfigurations.valueAt(i);
       final TextInputChannel.Configuration.Autofill autofill = config.autofill;
-      if (autofill == null)
-        continue;
+      if (autofill == null) continue;
 
       structure.addChildCount(1);
       final ViewStructure child = structure.newChild(i);
@@ -475,19 +476,18 @@ public class TextInputPlugin {
   public void autofill(SparseArray<AutofillValue> values) {
     final HashMap<String, TextInputChannel.TextEditState> editingValues = new HashMap<>();
     final TextInputChannel.Configuration.Autofill currentAutofill = configuration.autofill;
-    if (currentAutofill == null)
-      return;
+    if (currentAutofill == null) return;
 
     for (int i = 0; i < values.size(); i++) {
       int virtualId = values.keyAt(i);
 
       final TextInputChannel.Configuration config = mAutofillConfigurations.get(virtualId);
-      if (config == null || config.autofill == null)
-        continue;
+      if (config == null || config.autofill == null) continue;
 
       final TextInputChannel.Configuration.Autofill autofill = config.autofill;
       final String value = values.valueAt(i).getTextValue().toString();
-      final TextInputChannel.TextEditState newState = new TextInputChannel.TextEditState(value, value.length(), value.length());
+      final TextInputChannel.TextEditState newState =
+          new TextInputChannel.TextEditState(value, value.length(), value.length());
 
       // The value of the currently focused text field needs to be updated.
       if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier))

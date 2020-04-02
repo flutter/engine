@@ -29,7 +29,6 @@ import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
-import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
@@ -110,7 +109,15 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, null, null));
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            null,
+            null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0));
@@ -139,7 +146,15 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, null, null));
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            null,
+            null));
     // There's a pending restart since we initialized the text input client. Flush that now. With
     // changed text, we should
     // always set the Editable contents.
@@ -180,7 +195,15 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, null, null));
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            null,
+            null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0));
@@ -215,7 +238,15 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, null, null));
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            null,
+            null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0));
@@ -243,7 +274,15 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, null, null));
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            null,
+            null));
     // There's a pending restart since we initialized the text input client. Flush that now.
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0));
@@ -406,24 +445,56 @@ public class TextInputPluginTest {
   public void autofill_onProvideVirtualViewStructure() {
     FlutterView testView = new FlutterView(RuntimeEnvironment.application);
     TextInputPlugin textInputPlugin =
-        new TextInputPlugin(testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
-    final TextInputChannel.Configuration.Autofill autofill1 = new TextInputChannel.Configuration.Autofill("1", new String[]{ "HINT1" },  new TextInputChannel.TextEditState("", 0, 0));
-    final TextInputChannel.Configuration.Autofill autofill2 = new TextInputChannel.Configuration.Autofill("2", new String[]{ "HINT2", "EXTRA" },  new TextInputChannel.TextEditState("", 0, 0));
+        new TextInputPlugin(
+            testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+    final TextInputChannel.Configuration.Autofill autofill1 =
+        new TextInputChannel.Configuration.Autofill(
+            "1", new String[] {"HINT1"}, new TextInputChannel.TextEditState("", 0, 0));
+    final TextInputChannel.Configuration.Autofill autofill2 =
+        new TextInputChannel.Configuration.Autofill(
+            "2", new String[] {"HINT2", "EXTRA"}, new TextInputChannel.TextEditState("", 0, 0));
 
-    final TextInputChannel.Configuration config1 = new TextInputChannel.Configuration(
-        false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill1, null);
-    final TextInputChannel.Configuration config2 = new TextInputChannel.Configuration(
-        false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill2, null);
+    final TextInputChannel.Configuration config1 =
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofill1,
+            null);
+    final TextInputChannel.Configuration config2 =
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofill2,
+            null);
 
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill1, new TextInputChannel.Configuration[]{ config1, config2 }));
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofill1,
+            new TextInputChannel.Configuration[] {config1, config2}));
 
     final ViewStructure viewStructure = mock(ViewStructure.class);
-    final ViewStructure[] children = { mock(ViewStructure.class), mock(ViewStructure.class) };
+    final ViewStructure[] children = {mock(ViewStructure.class), mock(ViewStructure.class)};
 
-    when(viewStructure.newChild(anyInt())).thenAnswer(invocation -> children[invocation.getArgumentAt(0, int.class)]);
+    when(viewStructure.newChild(anyInt()))
+        .thenAnswer(invocation -> children[invocation.getArgumentAt(0, int.class)]);
 
     textInputPlugin.onProvideAutofillVirtualStructure(viewStructure, 0);
 
@@ -431,9 +502,9 @@ public class TextInputPluginTest {
     verify(viewStructure).newChild(1);
 
     verify(children[0]).setAutofillId(any(), eq("1".hashCode()));
-    verify(children[0]).setAutofillHints(aryEq(new String[]{ "HINT1" }));
+    verify(children[0]).setAutofillHints(aryEq(new String[] {"HINT1"}));
     verify(children[1]).setAutofillId(any(), eq("2".hashCode()));
-    verify(children[1]).setAutofillHints(aryEq(new String[]{ "HINT2", "EXTRA" }));
+    verify(children[1]).setAutofillHints(aryEq(new String[] {"HINT2", "EXTRA"}));
   }
 
   @Test
@@ -444,16 +515,24 @@ public class TextInputPluginTest {
             testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
     final TextInputChannel.Configuration.Autofill autofill =
         new TextInputChannel.Configuration.Autofill(
-            "1", new String[]{ "HINT1" },  new TextInputChannel.TextEditState("", 0, 0));
+            "1", new String[] {"HINT1"}, new TextInputChannel.TextEditState("", 0, 0));
 
     // Autofill should still work without AutofillGroup.
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
-            false, false, true, TextInputChannel.TextCapitalization.NONE, null, null, null, autofill, null));
+            false,
+            false,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            autofill,
+            null));
 
     final ViewStructure viewStructure = mock(ViewStructure.class);
-    final ViewStructure[] children = { mock(ViewStructure.class) };
+    final ViewStructure[] children = {mock(ViewStructure.class)};
 
     when(viewStructure.newChild(anyInt()))
         .thenAnswer(invocation -> children[invocation.getArgumentAt(0, int.class)]);
@@ -463,7 +542,7 @@ public class TextInputPluginTest {
     verify(viewStructure).newChild(0);
 
     verify(children[0]).setAutofillId(any(), eq("1".hashCode()));
-    verify(children[0]).setAutofillHints(aryEq(new String[]{ "HINT1" }));
+    verify(children[0]).setAutofillHints(aryEq(new String[] {"HINT1"}));
   }
 
   @Implements(InputMethodManager.class)

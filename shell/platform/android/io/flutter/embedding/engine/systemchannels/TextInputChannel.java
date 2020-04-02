@@ -3,15 +3,14 @@ package io.flutter.embedding.engine.systemchannels;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.SparseArray;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -94,8 +93,7 @@ public class TextInputChannel {
                 final double height = arguments.getDouble("height");
                 final JSONArray jsonMatrix = arguments.getJSONArray("transform");
                 final double[] matrix = new double[16];
-                for (int i = 0; i < 16; i++)
-                  matrix[i] = jsonMatrix.getDouble(i);
+                for (int i = 0; i < 16; i++) matrix[i] = jsonMatrix.getDouble(i);
                 textInputMethodHandler.setEditableSizeAndTransform(width, height, matrix);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
@@ -136,11 +134,7 @@ public class TextInputChannel {
   }
 
   private HashMap<Object, Object> createEditingStateJSON(
-      String text,
-      int selectionStart,
-      int selectionEnd,
-      int composingStart,
-      int composingEnd) {
+      String text, int selectionStart, int selectionEnd, int composingStart, int composingEnd) {
     HashMap<Object, Object> state = new HashMap<>();
     state.put("text", text);
     state.put("selectionBase", selectionStart);
@@ -177,28 +171,29 @@ public class TextInputChannel {
             + "Composing end: "
             + composingEnd);
 
-    final HashMap<Object, Object> state = createEditingStateJSON(
-        text, selectionStart, selectionEnd, composingStart, composingEnd);
+    final HashMap<Object, Object> state =
+        createEditingStateJSON(text, selectionStart, selectionEnd, composingStart, composingEnd);
 
     channel.invokeMethod("TextInputClient.updateEditingState", Arrays.asList(inputClientId, state));
   }
 
   public void updateEditingStateWithTag(
-      int inputClientId,
-      HashMap<String, TextEditState> editStates)  {
+      int inputClientId, HashMap<String, TextEditState> editStates) {
     Log.v(
         TAG,
-        "Sending message to update editing state for " + String.valueOf(editStates.size()) + " field(s).");
+        "Sending message to update editing state for "
+            + String.valueOf(editStates.size())
+            + " field(s).");
 
-    final HashMap<String, HashMap<Object, Object>> json= new HashMap<>();
+    final HashMap<String, HashMap<Object, Object>> json = new HashMap<>();
     for (Map.Entry<String, TextEditState> element : editStates.entrySet()) {
       final TextEditState state = element.getValue();
       json.put(
           element.getKey(),
-          createEditingStateJSON(
-               state.text, state.selectionStart, state.selectionEnd, -1, -1));
+          createEditingStateJSON(state.text, state.selectionStart, state.selectionEnd, -1, -1));
     }
-    channel.invokeMethod("TextInputClient.updateEditingStateWithTag", Arrays.asList(inputClientId, json));
+    channel.invokeMethod(
+        "TextInputClient.updateEditingStateWithTag", Arrays.asList(inputClientId, json));
   }
 
   /** Instructs Flutter to execute a "newline" action. */
@@ -291,8 +286,8 @@ public class TextInputChannel {
      *
      * @param width the width of text input client. Must be finite.
      * @param height the height of text input client. Must be finite.
-     * @param transform a 4x4 matrix that maps the local paint coordinate system to coordinate system
-     *                  of the FlutterView that owns the current client.
+     * @param transform a 4x4 matrix that maps the local paint coordinate system to coordinate
+     *     system of the FlutterView that owns the current client.
      */
     void setEditableSizeAndTransform(double width, double height, double[] transform);
 
@@ -360,8 +355,8 @@ public class TextInputChannel {
     }
 
     public static class Autofill {
-      public  static Autofill fromJson(@NonNull JSONObject json)
-              throws JSONException, NoSuchFieldException {
+      public static Autofill fromJson(@NonNull JSONObject json)
+          throws JSONException, NoSuchFieldException {
         final String uniqueIdentifier = json.getString("uniqueIdentifier");
         final JSONArray hints = json.getJSONArray("hints");
         final JSONObject editingState = json.getJSONObject("editingValue");
@@ -370,8 +365,7 @@ public class TextInputChannel {
         for (int i = 0; i < hintList.length; i++) {
           hintList[i] = translateAutofillHint(hints.getString(i));
         }
-        return new Autofill(
-            uniqueIdentifier, hintList, TextEditState.fromJson(editingState));
+        return new Autofill(uniqueIdentifier, hintList, TextEditState.fromJson(editingState));
       }
 
       public final String uniqueIdentifier;
@@ -391,9 +385,9 @@ public class TextInputChannel {
           @NonNull String uniqueIdentifier,
           @NonNull String[] hints,
           @NonNull TextEditState editingState) {
-          this.uniqueIdentifier = uniqueIdentifier;
-          this.hints = hints;
-          this.editState = editingState;
+        this.uniqueIdentifier = uniqueIdentifier;
+        this.hints = hints;
+        this.editState = editingState;
       }
     }
 
@@ -526,4 +520,3 @@ public class TextInputChannel {
     }
   }
 }
-
