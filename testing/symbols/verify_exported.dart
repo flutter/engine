@@ -186,6 +186,9 @@ int _checkAndroid(String outPath, String nmPath, Iterable<String> builds) {
       // arm64 && x64
       '__emutls_get_address': 'T',
       '__emutls_register_common': 'T',
+      // jit x86
+      '__moddi3': 'T',
+      '__umoddi3': 'T',
     };
     final Map<String, String> badSymbols = <String, String>{};
     for (final String key in entryMap.keys) {
