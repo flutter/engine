@@ -206,7 +206,7 @@ inline void splat_type(TYPE* where, const TYPE* what, size_t n) {
     while (n > 0) {
       n--;
       new (where) TYPE(*what);
-      where++;
+          where++;
     }
   } else {
     while (n > 0) {
