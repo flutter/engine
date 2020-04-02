@@ -216,6 +216,10 @@ def to_gn_args(args):
       gn_args['use_goma'] = False
       gn_args['goma_dir'] = None
 
+    # Enable unobstructed platform views on iOS builds.
+    if args.target_os == 'ios':
+      gn_args['enable_unobstructed_platform_views'] = True
+
     # Enable Metal on non-simulator iOS builds.
     if args.target_os == 'ios' and not args.simulator:
       gn_args['skia_use_metal'] = True

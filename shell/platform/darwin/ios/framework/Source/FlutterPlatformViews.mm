@@ -465,16 +465,29 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
   );
 }
 
+bool FlutterPlatformViewsController::ShouldUnobstructPlatformView() {
+#if FLUTTER_ENABLE_UNOBSTRUCTED_PLATFORM_VIEWS
+  bool disabled = [[[NSBundle mainBundle]
+      objectForInfoDictionaryKey:@"io.flutter.disable_unobstructed_platform_views"] boolValue];
+  return !disabled;
+#else
+  return false;
+#endif  // FLUTTER_ENABLE_UNOBSTRUCTED_PLATFORM_VIEWS
+}
+
 bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
                                                  std::shared_ptr<IOSContext> ios_context,
                                                  SkCanvas* background_canvas) {
   DisposeViews();
 
-  // Resolve all pending GPU operations before allocating a new surface.
-  background_canvas->flush();
-  // Clipping the background canvas before drawing the picture recorders requires to
-  // save and restore the clip context.
-  SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
+  static bool should_unobstruct_platform_views = ShouldUnobstructPlatformView();
+  if (should_unobstruct_platform_views) {
+    // Resolve all pending GPU operations before allocating a new surface.
+    background_canvas->flush();
+    // Clipping the background canvas before drawing the picture recorders requires to
+    // save and restore the clip context.
+    SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
+  }
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
 
@@ -486,6 +499,21 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
     sk_sp<RTree> rtree = platform_view_rtrees_[platform_view_id];
     sk_sp<SkPicture> picture = picture_recorders_[platform_view_id]->finishRecordingAsPicture();
 
+    // If unobstructed platform views is disabled, then default to creating a
+    // fullscreen overlay for each platform view.
+    if (!should_unobstruct_platform_views) {
+      SkRect fullscreen_rect = SkRect::Make(frame_size_);
+      std::shared_ptr<FlutterPlatformViewLayer> layer = GetLayer(gr_context,        //
+                                                                 ios_context,       //
+                                                                 picture,           //
+                                                                 fullscreen_rect,   //
+                                                                 platform_view_id,  //
+                                                                 0                  //
+      );
+      did_submit &= layer->did_submit_last_frame;
+      platform_view_layers[platform_view_id].push_back(layer);
+      continue;
+    }
     // Check if the current picture contains overlays that intersect with the
     // current platform view or any of the previous platform views.
     for (size_t j = i + 1; j > 0; j--) {

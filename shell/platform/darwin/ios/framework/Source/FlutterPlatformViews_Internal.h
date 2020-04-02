@@ -159,6 +159,9 @@ class FlutterPlatformViewsController {
   // Discards all platform views instances and auxiliary resources.
   void Reset();
 
+  // Returns true if platform views shouldn't be blocked by a fullscreen overlay.
+  bool ShouldUnobstructPlatformView();
+
   bool SubmitFrame(GrContext* gr_context,
                    std::shared_ptr<IOSContext> ios_context,
                    SkCanvas* background_canvas);
