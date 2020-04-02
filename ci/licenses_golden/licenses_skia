@@ -1,4 +1,4 @@
-Signature: 94449c0766bdad0c6d983e3777d226a5
+Signature: 9d9bbbc53975fe3640278f517c6d165c
 
 UNUSED LICENSES:
 
@@ -1285,6 +1285,7 @@ FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/confetti.json
 FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/drinks.json
 FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/lego_loader.json
 FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/onboarding.json
+FILE: ../../../third_party/skia/modules/canvaskit/perf/matrix.bench.js
 FILE: ../../../third_party/skia/modules/canvaskit/postamble.js
 FILE: ../../../third_party/skia/modules/canvaskit/preamble.js
 FILE: ../../../third_party/skia/modules/canvaskit/ready.js
@@ -3232,7 +3233,6 @@ FILE: ../../../third_party/skia/gm/scaledemoji.cpp
 FILE: ../../../third_party/skia/gm/scaledemoji_rendering.cpp
 FILE: ../../../third_party/skia/gm/shadermaskfilter.cpp
 FILE: ../../../third_party/skia/gm/sharedcorners.cpp
-FILE: ../../../third_party/skia/gm/skinning.cpp
 FILE: ../../../third_party/skia/gm/trickycubicstrokes.cpp
 FILE: ../../../third_party/skia/gm/unpremul.cpp
 FILE: ../../../third_party/skia/gm/wacky_yuv_formats.cpp
@@ -3891,7 +3891,6 @@ FILE: ../../../third_party/skia/src/core/SkVM_fwd.h
 FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrManagedResource.cpp
-FILE: ../../../third_party/skia/src/gpu/d3d/GrD3D12.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCaps.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCaps.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCommandList.cpp
@@ -5606,8 +5605,10 @@ FILE: ../../../third_party/skia/modules/skottie/src/animator/Animator.h
 FILE: ../../../third_party/skia/modules/skottie/src/animator/Keyframe.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/animator/Keyframe.h
 FILE: ../../../third_party/skia/modules/skottie/src/animator/Scalar.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/animator/Shape.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/animator/Vec2.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/animator/Vector.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/animator/Vector.h
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Ellipse.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/FillStroke.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Gradient.cpp
