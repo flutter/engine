@@ -168,7 +168,8 @@ PluginRegistrarManager* PluginRegistrarManager::GetInstance() {
 PluginRegistrarManager::PluginRegistrarManager() = default;
 
 // static
-void PluginRegistrarManager::OnRegistrarDestroyed(FlutterDesktopPluginRegistrarRef registrar) {
+void PluginRegistrarManager::OnRegistrarDestroyed(
+    FlutterDesktopPluginRegistrarRef registrar) {
   GetInstance()->registrars()->erase(registrar);
 }
 
