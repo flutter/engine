@@ -349,6 +349,16 @@ String _colorToCssStringRgbOnly(ui.Color color) {
   return '#${paddedValue.substring(paddedValue.length - 6)}';
 }
 
+/// Converts color components to a CSS compatible attribute value.
+String colorComponentsToCssString(int r, int g, int b, int a) {
+  if (a == 255) {
+    return 'rgb($r,$g,$b)';
+  } else {
+    final double alphaRatio = a / 255;
+    return 'rgba($r,$g,$b,${alphaRatio.toStringAsFixed(2)})';
+  }
+}
+
 /// Determines if the (dynamic) exception passed in is a NS_ERROR_FAILURE
 /// (from Firefox).
 ///
@@ -433,4 +443,15 @@ void applyWebkitClipFix(html.Element containerElement) {
   if (browserEngine == BrowserEngine.webkit) {
     containerElement.style.zIndex = '0';
   }
+}
+
+final ByteData _fontChangeMessage = JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
+
+FutureOr<void> sendFontChangeMessage() async {
+  if (window._onPlatformMessage != null)
+    window.invokeOnPlatformMessage(
+      'flutter/system',
+      _fontChangeMessage,
+      (_) {},
+    );
 }

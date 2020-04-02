@@ -15,12 +15,25 @@ import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_im
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
 
+import 'integration_tests_manager.dart';
 import 'supported_browsers.dart';
 import 'test_platform.dart';
 import 'environment.dart';
 import 'utils.dart';
 
-class TestCommand extends Command<bool> {
+/// The type of tests requested by the tool user.
+enum TestTypesRequested {
+  /// For running the unit tests only.
+  unit,
+
+  /// For running the integration tests only.
+  integration,
+
+  /// For running both unit and integration tests.
+  all,
+}
+
+class TestCommand extends Command<bool> with ArgUtils {
   TestCommand() {
     argParser
       ..addFlag(
@@ -28,6 +41,19 @@ class TestCommand extends Command<bool> {
         help: 'Pauses the browser before running a test, giving you an '
             'opportunity to add breakpoints or inspect loaded code before '
             'running the code.',
+      )
+      ..addFlag(
+        'unit-tests-only',
+        defaultsTo: false,
+        help: 'felt test command runs the unit tests and the integration tests '
+            'at the same time. If this flag is set, only run the unit tests.',
+      )
+      ..addFlag(
+        'integration-tests-only',
+        defaultsTo: false,
+        help: 'felt test command runs the unit tests and the integration tests '
+            'at the same time. If this flag is set, only run the integration '
+            'tests.',
       )
       ..addFlag(
         'update-screenshot-goldens',
@@ -54,11 +80,67 @@ class TestCommand extends Command<bool> {
   @override
   final String description = 'Run tests.';
 
+  TestTypesRequested testTypesRequested = null;
+
+  /// Check the flags to see what type of tests are requested.
+  TestTypesRequested findTestType() {
+    if (boolArg('unit-tests-only') && boolArg('integration-tests-only')) {
+      throw ArgumentError('Conflicting arguments: unit-tests-only and '
+          'integration-tests-only are both set');
+    } else if (boolArg('unit-tests-only')) {
+      print('Running the unit tests only');
+      return TestTypesRequested.unit;
+    } else if (boolArg('integration-tests-only')) {
+      if (!isChrome) {
+        throw UnimplementedError(
+            'Integration tests are only available on Chrome Desktop for now');
+      }
+      return TestTypesRequested.integration;
+    } else {
+      return TestTypesRequested.all;
+    }
+  }
+
   @override
   Future<bool> run() async {
     SupportedBrowsers.instance
       ..argParsers.forEach((t) => t.parseOptions(argResults));
 
+    // Check the flags to see what type of integration tests are requested.
+    testTypesRequested = findTestType();
+
+    switch (testTypesRequested) {
+      case TestTypesRequested.unit:
+        return runUnitTests();
+      case TestTypesRequested.integration:
+        return runIntegrationTests();
+      case TestTypesRequested.all:
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/53322
+        if (runAllTests) {
+          bool integrationTestResult = await runIntegrationTests();
+          bool unitTestResult = await runUnitTests();
+          if (integrationTestResult != unitTestResult) {
+            print('Tests run. Integration tests passed: $integrationTestResult '
+                'unit tests passed: $unitTestResult');
+          }
+          return integrationTestResult && unitTestResult;
+        } else {
+          return await runUnitTests();
+        }
+    }
+    return false;
+  }
+
+  Future<bool> runIntegrationTests() async {
+    // TODO(nurhan): https://github.com/flutter/flutter/issues/52983
+    if (io.Platform.environment['LUCI_CONTEXT'] != null || isCirrus) {
+      return true;
+    }
+
+    return IntegrationTestsManager(browser).runTests();
+  }
+
+  Future<bool> runUnitTests() async {
     _copyTestFontsIntoWebUi();
     await _buildHostPage();
     if (io.Platform.isWindows) {
@@ -68,13 +150,11 @@ class TestCommand extends Command<bool> {
       await _runPubGet();
     }
 
-    final List<FilePath> targets =
-        this.targets.map((t) => FilePath.fromCwd(t)).toList();
-    await _buildTests(targets: targets);
-    if (targets.isEmpty) {
+    await _buildTests(targets: targetFiles);
+    if (runAllTests) {
       await _runAllTests();
     } else {
-      await _runTargetTests(targets);
+      await _runTargetTests(targetFiles);
     }
     return true;
   }
@@ -83,18 +163,30 @@ class TestCommand extends Command<bool> {
   ///
   /// In this mode the browser pauses before running the test to allow
   /// you set breakpoints or inspect the code.
-  bool get isDebug => argResults['debug'];
+  bool get isDebug => boolArg('debug');
 
   /// Paths to targets to run, e.g. a single test.
   List<String> get targets => argResults.rest;
 
-  String get browser => argResults['browser'];
+  /// The target test files to run.
+  ///
+  /// The value can be null if the developer prefers to run all the tests.
+  List<FilePath> get targetFiles => (targets.isEmpty)
+      ? null
+      : targets.map((t) => FilePath.fromCwd(t)).toList();
 
-  bool get isChrome => argResults['browser'] == 'chrome';
+  /// Whether all tests should run.
+  bool get runAllTests => targets.isEmpty;
+
+  /// The name of the browser to run tests in.
+  String get browser => stringArg('browser');
+
+  /// Whether [browser] is set to "chrome".
+  bool get isChrome => browser == 'chrome';
 
   /// When running screenshot tests writes them to the file system into
   /// ".dart_tool/goldens".
-  bool get doUpdateScreenshotGoldens => argResults['update-screenshot-goldens'];
+  bool get doUpdateScreenshotGoldens => boolArg('update-screenshot-goldens');
 
   Future<void> _runTargetTests(List<FilePath> targets) async {
     await _runTestBatch(targets, concurrency: 1, expectFailure: false);
@@ -252,18 +344,18 @@ class TestCommand extends Command<bool> {
 
   Future<void> _buildTests({List<FilePath> targets}) async {
     List<String> arguments = <String>[
-        'run',
-        'build_runner',
-        'build',
-        'test',
-        '-o',
-        'build',
-        if (targets != null)
-          for (FilePath path in targets) ...[
-            '--build-filter=${path.relativeToWebUi}.js',
-            '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
-          ],
-      ];
+      'run',
+      'build_runner',
+      'build',
+      'test',
+      '-o',
+      'build',
+      if (targets != null)
+        for (FilePath path in targets) ...[
+          '--build-filter=${path.relativeToWebUi}.js',
+          '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
+        ],
+    ];
     final int exitCode = await runProcess(
       environment.pubExecutable,
       arguments,

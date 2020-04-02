@@ -1,4 +1,4 @@
-Signature: 0c1aa0f89b3c71cfa512e0c9846df1a2
+Signature: 6a8cdbfab22fe5596c1dd7b9f6696c39
 
 UNUSED LICENSES:
 
@@ -7421,6 +7421,12 @@ FILE: ../../../third_party/dart/benchmarks/IsolateJson/dart/sample.json
 FILE: ../../../third_party/dart/benchmarks/IsolateSpawn/dart/helloworld.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateSpawnMemory/dart/helloworld.dart
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/iterable.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/datext_latin1_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/entext_ascii_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/netext_3_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/rutext_2_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/sktext_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/zhtext_10k.dart
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
@@ -7474,7 +7480,6 @@ FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions_dart2js.dar
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/html_common.dart
 FILE: ../../../third_party/dart/sdk/lib/libraries.json
 FILE: ../../../third_party/dart/sdk/lib/vmservice_libraries.json
-FILE: ../../../third_party/dart/sdk_nnbd/lib/dart2js_migration_libraries.json
 FILE: ../../../third_party/dart/sdk_nnbd/lib/html/html_common/conversions_dart2js.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/html/html_common/html_common.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/libraries.json
@@ -7741,6 +7746,7 @@ ORIGIN: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart + ../..
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart
 FILE: ../../../third_party/dart/benchmarks/TypedDataDuplicate/dart/TypedDataDuplicate.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/Utf8Decode.dart
 FILE: ../../../third_party/dart/runtime/bin/dartdev_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/dartdev_utils.h
 FILE: ../../../third_party/dart/runtime/bin/exe_utils.cc
@@ -7752,6 +7758,7 @@ FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/xref_extra
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_base.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/reachability_fence_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/call.cc
@@ -7770,20 +7777,31 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination_test.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_base.h
 FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
 FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
 FILE: ../../../third_party/dart/runtime/vm/field_table.cc
 FILE: ../../../third_party/dart/runtime/vm/field_table.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.h
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/visitor.cc
 FILE: ../../../third_party/dart/samples/ffi/async/async_test.dart
 FILE: ../../../third_party/dart/samples/ffi/async/sample_async_callback.dart
 FILE: ../../../third_party/dart/samples/ffi/async/sample_native_port_call.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_struct_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/js_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/js_patch.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/ffi_struct_patch.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
@@ -8279,6 +8297,7 @@ FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/js_array.d
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/js_number.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/js_string.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/math_patch.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/mirrors_patch_cfe.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/native_helper.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/regexp_helper.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/string_helper.dart

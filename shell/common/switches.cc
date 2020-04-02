@@ -41,8 +41,8 @@ struct SwitchDesc {
 
 // clang-format off
 static const std::string gDartFlagsWhitelist[] = {
-    "--lazy_async_stacks",
     "--no-causal_async_stacks",
+    "--lazy_async_stacks",
 };
 // clang-format on
 
@@ -271,6 +271,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.trace_skia =
       command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::TraceWhitelist),
+                              &settings.trace_whitelist);
 
   settings.trace_systrace =
       command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));

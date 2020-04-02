@@ -81,13 +81,11 @@ source_set("ui") {
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
     "text/font_collection.h",
-    "text/line_metrics.cc",
     "text/line_metrics.h",
     "text/paragraph.cc",
     "text/paragraph.h",
     "text/paragraph_builder.cc",
     "text/paragraph_builder.h",
-    "text/text_box.cc",
     "text/text_box.h",
     "ui_dart_state.cc",
     "ui_dart_state.h",
@@ -137,15 +135,11 @@ source_set("ui") {
       "compositing/scene_host.h",
     ]
 
-    if (using_fuchsia_sdk) {
-      deps += [
-        "$fuchsia_sdk_root/pkg:async-cpp",
-        "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
-        "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
-      ]
-    } else {
-      deps += [ "//topaz/public/dart-pkg/zircon" ]
-    }
+    deps += [
+      "$fuchsia_sdk_root/pkg:async-cpp",
+      "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
+      "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+    ]
   }
 }
 
@@ -164,7 +158,11 @@ if (current_toolchain == host_toolchain) {
   executable("ui_unittests") {
     testonly = true
 
+    configs += [ "//flutter:export_dynamic_symbols" ]
+
     sources = [
+      "painting/image_decoder_test.cc",
+      "painting/image_decoder_test.h",
       "painting/image_decoder_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]
@@ -173,8 +171,11 @@ if (current_toolchain == host_toolchain) {
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/common",
+      "//flutter/testing",
       "//flutter/testing:dart",
       "//flutter/testing:opengl",
+      "//flutter/third_party/tonic",
+      "//third_party/dart/runtime/bin:elf_loader",
     ]
   }
 }

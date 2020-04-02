@@ -10,6 +10,9 @@ import("//flutter/testing/testing.gni")
 
 source_set("fml") {
   sources = [
+    "ascii_trie.cc",
+    "ascii_trie.h",
+    "backtrace.h",
     "base32.cc",
     "base32.h",
     "build_config.h",
@@ -24,8 +27,7 @@ source_set("fml") {
     "eintr_wrapper.h",
     "file.cc",
     "file.h",
-    "gpu_thread_merger.cc",
-    "gpu_thread_merger.h",
+    "hash_combine.h",
     "icu_util.cc",
     "icu_util.h",
     "log_level.h",
@@ -57,6 +59,8 @@ source_set("fml") {
     "paths.cc",
     "paths.h",
     "posix_wrappers.h",
+    "raster_thread_merger.cc",
+    "raster_thread_merger.h",
     "size.h",
     "synchronization/atomic_object.h",
     "synchronization/count_down_latch.cc",
@@ -84,6 +88,12 @@ source_set("fml") {
     "unique_object.h",
     "wakeable.h",
   ]
+
+  if (is_mac || is_ios || is_linux) {
+    sources += [ "backtrace.cc" ]
+  } else {
+    sources += [ "backtrace_stub.cc" ]
+  }
 
   public_deps = []
 
@@ -170,25 +180,14 @@ source_set("fml") {
       "platform/fuchsia/paths_fuchsia.cc",
     ]
 
-    if (using_fuchsia_sdk) {
-      public_deps += [
-        "$fuchsia_sdk_root/pkg:async-cpp",
-        "$fuchsia_sdk_root/pkg:async-loop-cpp",
-        "$fuchsia_sdk_root/pkg:async-loop-default",
-        "$fuchsia_sdk_root/pkg:trace",
-        "$fuchsia_sdk_root/pkg:trace-engine",
-        "$fuchsia_sdk_root/pkg:zx",
-      ]
-    } else {
-      public_deps += [
-        "//zircon/public/lib/async-cpp",
-        "//zircon/public/lib/async-loop-cpp",
-        "//zircon/public/lib/async-loop-default",
-        "//zircon/public/lib/trace",
-        "//zircon/public/lib/trace-engine",
-        "//zircon/public/lib/zx",
-      ]
-    }
+    public_deps += [
+      "$fuchsia_sdk_root/pkg:async-cpp",
+      "$fuchsia_sdk_root/pkg:async-loop-cpp",
+      "$fuchsia_sdk_root/pkg:async-loop-default",
+      "$fuchsia_sdk_root/pkg:trace",
+      "$fuchsia_sdk_root/pkg:trace-engine",
+      "$fuchsia_sdk_root/pkg:zx",
+    ]
   }
 
   if (is_win) {
@@ -228,10 +227,12 @@ executable("fml_unittests") {
   testonly = true
 
   sources = [
+    "ascii_trie_unittests.cc",
+    "backtrace_unittests.cc",
     "base32_unittest.cc",
     "command_line_unittest.cc",
     "file_unittest.cc",
-    "gpu_thread_merger_unittests.cc",
+    "hash_combine_unittests.cc",
     "memory/ref_counted_unittest.cc",
     "memory/weak_ptr_unittest.cc",
     "message_loop_task_queues_merge_unmerge_unittests.cc",
@@ -239,7 +240,7 @@ executable("fml_unittests") {
     "message_loop_unittests.cc",
     "message_unittests.cc",
     "paths_unittests.cc",
-    "platform/darwin/string_range_sanitization_unittests.mm",
+    "raster_thread_merger_unittests.cc",
     "synchronization/count_down_latch_unittests.cc",
     "synchronization/semaphore_unittest.cc",
     "synchronization/sync_switch_unittest.cc",
@@ -251,6 +252,13 @@ executable("fml_unittests") {
     "time/time_unittest.cc",
   ]
 
+  if (is_mac) {
+    sources += [
+      "platform/darwin/cf_utils_unittests.mm",
+      "platform/darwin/string_range_sanitization_unittests.mm",
+    ]
+  }
+
   deps = [
     ":fml_fixtures",
     "//flutter/fml",
@@ -259,7 +267,7 @@ executable("fml_unittests") {
     "//flutter/testing",
   ]
 
-  if (is_fuchsia && using_fuchsia_sdk) {
+  if (is_fuchsia) {
     libs = [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
   }
 }

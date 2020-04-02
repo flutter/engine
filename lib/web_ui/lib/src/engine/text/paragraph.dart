@@ -255,7 +255,16 @@ class EngineParagraph implements ui.Paragraph {
       return;
     }
 
+    Stopwatch stopwatch;
+    if (Profiler.isBenchmarkMode) {
+      stopwatch = Stopwatch()..start();
+    }
     _measurementResult = _measurementService.measure(this, constraints);
+    if (Profiler.isBenchmarkMode) {
+      stopwatch.stop();
+      Profiler.instance.benchmark('text_layout', stopwatch.elapsedMicroseconds);
+    }
+
     _lastUsedConstraints = constraints;
 
     if (_geometricStyle.maxLines != null) {
@@ -374,6 +383,10 @@ class EngineParagraph implements ui.Paragraph {
     }
 
     final List<EngineLineMetrics> lines = _measurementResult.lines;
+    if (start >= lines.last.endIndex) {
+      return <ui.TextBox>[];
+    }
+
     final EngineLineMetrics startLine = _getLineForIndex(start);
     EngineLineMetrics endLine = _getLineForIndex(end);
 
@@ -392,11 +405,13 @@ class EngineParagraph implements ui.Paragraph {
 
   ui.TextBox _getBoxForLine(EngineLineMetrics line, int start, int end) {
     final double widthBeforeBox = start <= line.startIndex
-      ? 0.0
-      : _measurementService.measureSubstringWidth(this, line.startIndex, start);
+        ? 0.0
+        : _measurementService.measureSubstringWidth(
+            this, line.startIndex, start);
     final double widthAfterBox = end >= line.endIndexWithoutNewlines
-      ? 0.0
-      : _measurementService.measureSubstringWidth(this, end, line.endIndexWithoutNewlines);
+        ? 0.0
+        : _measurementService.measureSubstringWidth(
+            this, end, line.endIndexWithoutNewlines);
 
     final double top = line.lineNumber * _lineHeight;
 
@@ -484,7 +499,8 @@ class EngineParagraph implements ui.Paragraph {
     int high = lineMetrics.endIndexWithoutNewlines;
     do {
       final int current = (low + high) ~/ 2;
-      final double width = instance.measureSubstringWidth(this, lineMetrics.startIndex, current);
+      final double width =
+          instance.measureSubstringWidth(this, lineMetrics.startIndex, current);
       if (width < dx) {
         low = current;
       } else if (width > dx) {
@@ -499,8 +515,10 @@ class EngineParagraph implements ui.Paragraph {
       return ui.TextPosition(offset: high, affinity: ui.TextAffinity.upstream);
     }
 
-    final double lowWidth = instance.measureSubstringWidth(this, lineMetrics.startIndex, low);
-    final double highWidth = instance.measureSubstringWidth(this, lineMetrics.startIndex, high);
+    final double lowWidth =
+        instance.measureSubstringWidth(this, lineMetrics.startIndex, low);
+    final double highWidth =
+        instance.measureSubstringWidth(this, lineMetrics.startIndex, high);
 
     if (dx - lowWidth < highWidth - dx) {
       // The offset is closer to the low index.
@@ -535,8 +553,7 @@ class EngineParagraph implements ui.Paragraph {
   EngineLineMetrics _getLineForIndex(int index) {
     assert(_hasLineMetrics);
     final List<EngineLineMetrics> lines = _measurementResult.lines;
-    assert(index >= lines.first.startIndex);
-    assert(index <= lines.last.endIndex);
+    assert(index >= 0);
 
     for (int i = 0; i < lines.length; i++) {
       final EngineLineMetrics line = lines[i];
@@ -545,7 +562,6 @@ class EngineParagraph implements ui.Paragraph {
       }
     }
 
-    assert(index == lines.last.endIndex);
     return lines.last;
   }
 
@@ -664,18 +680,17 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   @override
   int get hashCode {
     return ui.hashValues(
-      _textAlign,
-      _textDirection,
-      _fontWeight,
-      _fontStyle,
-      _maxLines,
-      _fontFamily,
-      _fontSize,
-      _height,
-      _textHeightBehavior,
-      _ellipsis,
-      _locale
-    );
+        _textAlign,
+        _textDirection,
+        _fontWeight,
+        _fontStyle,
+        _maxLines,
+        _fontFamily,
+        _fontSize,
+        _height,
+        _textHeightBehavior,
+        _ellipsis,
+        _locale);
   }
 
   @override
@@ -1498,7 +1513,12 @@ void _applyTextStyleToElement({
       final String textDecoration =
           _textDecorationToCssString(style._decoration, style._decorationStyle);
       if (textDecoration != null) {
-        cssStyle.textDecoration = textDecoration;
+        if (browserEngine == BrowserEngine.webkit) {
+          domRenderer.setElementStyle(
+              element, '-webkit-text-decoration', textDecoration);
+        } else {
+          cssStyle.textDecoration = textDecoration;
+        }
         final ui.Color decorationColor = style._decorationColor;
         if (decorationColor != null) {
           cssStyle.textDecorationColor = colorToCssString(decorationColor);

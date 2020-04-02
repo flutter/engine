@@ -353,18 +353,21 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
-    //_applyPaint(paint);
-    final HtmlImage htmlImage = image;
-    final html.ImageElement imgElement = htmlImage.cloneImageElement();
-    String blendMode = _stringForBlendMode(paint.blendMode);
-    imgElement.style.mixBlendMode = blendMode;
-    _drawImage(imgElement, p);
+    _drawImage(image, p, paint);
     _childOverdraw = true;
     _canvasPool.allocateExtraCanvas();
   }
 
-  void _drawImage(html.ImageElement imgElement, ui.Offset p) {
+  html.ImageElement _drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
+    final HtmlImage htmlImage = image;
+    final html.Element imgElement = htmlImage.cloneImageElement();
+    final ui.BlendMode blendMode = paint.blendMode;
+    imgElement.style.mixBlendMode = _stringForBlendMode(blendMode);
     if (_canvasPool.isClipped) {
+      // Reset width/height since they may have been previously set.
+      imgElement.style
+        ..removeProperty('width')
+        ..removeProperty('height');
       final List<html.Element> clipElements = _clipContent(
           _canvasPool._clipStack, imgElement, p, _canvasPool.currentTransform);
       for (html.Element clipElement in clipElements) {
@@ -376,16 +379,19 @@ class BitmapCanvas extends EngineCanvas {
           transformWithOffset(_canvasPool.currentTransform, p).storage);
       imgElement.style
         ..transformOrigin = '0 0 0'
-        ..transform = cssTransform;
+        ..transform = cssTransform
+        // Reset width/height since they may have been previously set.
+        ..removeProperty('width')
+        ..removeProperty('height');
       rootElement.append(imgElement);
       _children.add(imgElement);
     }
+    return imgElement;
   }
 
   @override
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaintData paint) {
-    final HtmlImage htmlImage = image;
     final bool requiresClipping = src.left != 0 ||
         src.top != 0 ||
         src.width != image.width ||
@@ -395,9 +401,6 @@ class BitmapCanvas extends EngineCanvas {
         !requiresClipping) {
       drawImage(image, dst.topLeft, paint);
     } else {
-      final html.Element imgElement = htmlImage.cloneImageElement();
-      final ui.BlendMode blendMode = paint.blendMode;
-      imgElement.style.mixBlendMode = _stringForBlendMode(blendMode);
       if (requiresClipping) {
         save();
         clipRect(dst);
@@ -414,7 +417,8 @@ class BitmapCanvas extends EngineCanvas {
           targetTop += topMargin;
         }
       }
-      _drawImage(imgElement, ui.Offset(targetLeft, targetTop));
+
+      final html.ImageElement imgElement = _drawImage(image, ui.Offset(targetLeft, targetTop), paint);
       // To scale set width / height on destination image.
       // For clipping we need to scale according to
       // clipped-width/full image width and shift it according to left/top of
@@ -771,6 +775,8 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
 }
 
 String _maskFilterToCss(ui.MaskFilter maskFilter) {
-  if (maskFilter == null) return 'none';
+  if (maskFilter == null) {
+    return 'none';
+  }
   return 'blur(${maskFilter.webOnlySigma}px)';
 }
