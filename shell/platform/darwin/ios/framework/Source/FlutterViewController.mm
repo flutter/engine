@@ -548,14 +548,14 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   // thread.
   if (appeared) {
     [self installFirstFrameCallback];
-    [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
-    [_engine.get() platformViewsController] -> SetFlutterViewController(self);
-    [_engine.get() platformView] -> NotifyCreated();
+    [_engine.get() platformViewsController]->SetFlutterView(_flutterView.get());
+    [_engine.get() platformViewsController]->SetFlutterViewController(self);
+    [_engine.get() platformView]->NotifyCreated();
   } else {
     self.displayingFlutterUI = NO;
-    [_engine.get() platformView] -> NotifyDestroyed();
-    [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
-    [_engine.get() platformViewsController] -> SetFlutterViewController(nullptr);
+    [_engine.get() platformView]->NotifyDestroyed();
+    [_engine.get() platformViewsController]->SetFlutterView(nullptr);
+    [_engine.get() platformViewsController]->SetFlutterViewController(nullptr);
   }
 }
 
@@ -968,8 +968,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     CGFloat bottom = CGRectGetHeight(keyboardFrame);
     CGFloat scale = [UIScreen mainScreen].scale;
 
-    // The keyboard is treated as an inset since we want to effectively reduce the window size by the
-    // keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
+    // The keyboard is treated as an inset since we want to effectively reduce the window size by
+    // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
     // bottom padding.
     _viewportMetrics.physical_view_inset_bottom = bottom * scale;
   } else {
