@@ -776,8 +776,8 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy {
-  [_flutterEngine platformViewsController] -> RegisterViewFactory(factory, factoryId,
-                                                                  gestureRecognizersBlockingPolicy);
+  [_flutterEngine platformViewsController]->RegisterViewFactory(factory, factoryId,
+                                                                gestureRecognizersBlockingPolicy);
 }
 
 @end
