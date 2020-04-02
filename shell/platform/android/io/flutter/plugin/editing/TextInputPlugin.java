@@ -298,6 +298,8 @@ public class TextInputPlugin {
   }
 
   private void notifyViewEntered() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+
     if (afm != null && needsAutofill()) {
       final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
       final int[] offset = new int[2];
@@ -309,6 +311,8 @@ public class TextInputPlugin {
   }
 
   private void notifyViewExited() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+
     if (afm != null && configuration != null && configuration.autofill != null) {
       final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
       afm.notifyViewExited(mView, triggerIdentifier.hashCode());
@@ -316,6 +320,8 @@ public class TextInputPlugin {
   }
 
   private void notifyValueChanged(String newValue) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+
     if (afm != null && needsAutofill()) {
       final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
       afm.notifyValueChanged(mView, triggerIdentifier.hashCode(), AutofillValue.forText(newValue));
@@ -453,7 +459,9 @@ public class TextInputPlugin {
   }
 
   public void onProvideAutofillVirtualStructure(ViewStructure structure, int flags) {
-    if (mAutofillConfigurations == null) return;
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+
+    if (!needsAutofill()) return;
 
     final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
     final AutofillId parentId = structure.getAutofillId();
@@ -474,10 +482,12 @@ public class TextInputPlugin {
   }
 
   public void autofill(SparseArray<AutofillValue> values) {
-    final HashMap<String, TextInputChannel.TextEditState> editingValues = new HashMap<>();
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+
     final TextInputChannel.Configuration.Autofill currentAutofill = configuration.autofill;
     if (currentAutofill == null) return;
 
+    final HashMap<String, TextInputChannel.TextEditState> editingValues = new HashMap<>();
     for (int i = 0; i < values.size(); i++) {
       int virtualId = values.keyAt(i);
 
