@@ -88,11 +88,18 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   return UIReturnKeyDefault;
 }
 
+// TODO(LongCatIsLooong): add translation for evey predefined
+// UITextContentType.
+static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
+  if (hints == nil || hints.count == 0)
+    return @"";
+
+  return hints[0];
+}
+
 static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
   NSDictionary* autofill = dictionary[@"autofill"];
-  if (autofill == nil)
-    return nil;
-  return autofill[@"uniqueIdentifier"];
+  return autofill == nil ? nil : autofill[@"uniqueIdentifier"];
 }
 
 #pragma mark - FlutterTextPosition
@@ -147,34 +154,8 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 @end
 
-@interface FlutterTextInputView : UIView <UITextInput>
-
-// UITextInput
-@property(nonatomic, readonly) NSMutableString* text;
-@property(nonatomic, readonly) NSMutableString* markedText;
-@property(readwrite, copy) UITextRange* selectedTextRange;
-@property(nonatomic, strong) UITextRange* markedTextRange;
-@property(nonatomic, copy) NSDictionary* markedTextStyle;
-@property(nonatomic, assign) id<UITextInputDelegate> inputDelegate;
-
-// UITextInputTraits
-@property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
-@property(nonatomic) UITextAutocorrectionType autocorrectionType;
-@property(nonatomic) UITextSpellCheckingType spellCheckingType;
-@property(nonatomic) BOOL enablesReturnKeyAutomatically;
-@property(nonatomic) UIKeyboardAppearance keyboardAppearance;
-@property(nonatomic) UIKeyboardType keyboardType;
-@property(nonatomic) UIReturnKeyType returnKeyType;
-@property(nonatomic, getter=isSecureTextEntry) BOOL secureTextEntry;
-@property(nonatomic) UITextSmartQuotesType smartQuotesType API_AVAILABLE(ios(11.0));
-@property(nonatomic) UITextSmartDashesType smartDashesType API_AVAILABLE(ios(11.0));
-
-@property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
-
-@end
-
 @implementation FlutterTextInputView {
-  NSString* _uniqueIdentifier;
+  NSString* _autofillId;
   int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
@@ -218,13 +199,16 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
   [_markedTextRange release];
   [_selectedTextRange release];
   [_tokenizer release];
-  if (_uniqueIdentifier != nil)
-    [_uniqueIdentifier release];
+  [_autofillId release];
   [super dealloc];
 }
 
 - (void)setTextInputClient:(int)client {
   _textInputClient = client;
+}
+
+- (void)setAutofillId:(NSString*)autofillId {
+  _autofillId = [autofillId copy];
 }
 
 - (void)setTextInputState:(NSDictionary*)state {
@@ -637,10 +621,8 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
     @"text" : [NSString stringWithString:self.text],
   };
 
-  if (_textInputClient == 0 && _uniqueIdentifier != nil)
-    [_textInputDelegate updateEditingClient:_textInputClient
-                                  withState:state
-                                    withTag:_uniqueIdentifier];
+  if (_textInputClient == 0 && _autofillId != nil)
+    [_textInputDelegate updateEditingClient:_textInputClient withState:state withTag:_autofillId];
   else
     [_textInputDelegate updateEditingClient:_textInputClient withState:state];
 }
@@ -810,9 +792,13 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 
     for (NSDictionary* field in allFields) {
       FlutterTextInputView* newInputView = [[FlutterTextInputView alloc] init];
+      newInputView.textInputDelegate = _textInputDelegate;
       [_inputViews addObject:newInputView];
 
-      if ([clientUniqueId isEqualToString:_uniqueIdFromDictionary(field)])
+      NSString* autofillId = _uniqueIdFromDictionary(field);
+      [newInputView setAutofillId:autofillId];
+
+      if ([clientUniqueId isEqualToString:autofillId])
         _activeView = newInputView;
 
       [FlutterTextInputPlugin setupInputView:newInputView WithConfiguration:field];
@@ -858,14 +844,17 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
   inputView.autocorrectionType = autocorrect && ![autocorrect boolValue]
                                      ? UITextAutocorrectionTypeNo
                                      : UITextAutocorrectionTypeDefault;
-  if (autofill == nil) {
-    if (@available(iOS 10.0, *))
+  if (@available(iOS 10.0, *)) {
+    if (autofill == nil) {
       inputView.textContentType = @"";
-  } else {
-    if (@available(iOS 10.0, *))
-      inputView.textContentType = autofill[@"hints"];
-
-    [inputView setTextInputState:autofill[@"editingValue"]];
+    } else {
+      inputView.textContentType = ToUITextContentType(autofill[@"hints"]);
+      [inputView setTextInputState:autofill[@"editingValue"]];
+      // An input field needs to be visible in order to get
+      // autofilled when it's not the one that triggered
+      // autofill.
+      inputView.frame = CGRectMake(0, 0, 1, 1);
+    }
   }
 }
 
@@ -876,4 +865,5 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 - (void)clearTextInputClient {
   [_activeView setTextInputClient:0];
 }
+
 @end
