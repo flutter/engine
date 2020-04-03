@@ -121,6 +121,25 @@ void main(List<String> args) async {
     verifyNever(statement.replaceWith(any));
   });
 
+  test('ToStringVisitor ignores enum toString', () {
+    final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
+    final MockProcedure procedure = MockProcedure();
+    final MockFunctionNode function = MockFunctionNode();
+    final MockStatement statement = MockStatement();
+    final Library library = Library(Uri.parse('package:some_package/src/blah.dart'));
+    when(procedure.function).thenReturn(function);
+    when(procedure.name).thenReturn(Name('toString'));
+    when(procedure.annotations).thenReturn(const <Expression>[]);
+    when(procedure.enclosingLibrary).thenReturn(library);
+    when(procedure.enclosingClass).thenReturn(Class()..isEnum = true);
+    when(procedure.isAbstract).thenReturn(false);
+    when(procedure.isStatic).thenReturn(false);
+    when(function.body).thenReturn(statement);
+
+    visitor.visitProcedure(procedure);
+    verifyNever(statement.replaceWith(any));
+  });
+
   test('ToStringVisitor ignores non-specified libraries', () {
     final ToStringVisitor visitor = ToStringVisitor(uiAndFlutter);
     final MockProcedure procedure = MockProcedure();
@@ -251,9 +270,14 @@ void main(List<String> args) async {
       ]));
       final ProcessResult runResult = Process.runSync(dart, <String>[regularDill]);
       _checkProcessResult(runResult);
+      String paintString = '"Paint.toString":"Paint(Color(0xffffffff))"';
+      if (const bool.fromEnvironment('dart.vm.product', defaultValue: false)) {
+        paintString = '"Paint.toString":"Instance of \'Paint\'"';
+      }
       expect(
         runResult.stdout.trim(),
-        '{"Paint.toString":"Paint(Color(0xffffffff))",'
+        '{$paintString,'
+         '"Brightness.toString":"Brightness.dark",'
          '"Foo.toString":"I am a Foo",'
          '"Keep.toString":"I am a Keep"}',
       );
@@ -275,6 +299,7 @@ void main(List<String> args) async {
       expect(
         runResult.stdout.trim(),
         '{"Paint.toString":"Instance of \'Paint\'",'
+         '"Brightness.toString":"Brightness.dark",'
          '"Foo.toString":"Instance of \'Foo\'",'
          '"Keep.toString":"I am a Keep"}',
       );

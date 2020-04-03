@@ -202,6 +202,20 @@ bool ShellTest::GetNeedsReportTimings(Shell* shell) {
   return shell->needs_report_timings_;
 }
 
+void ShellTest::OnServiceProtocolGetSkSLs(
+    Shell* shell,
+    const ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document& response) {
+  std::promise<bool> finished;
+  fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetIOTaskRunner(),
+                                    [shell, params, &response, &finished]() {
+                                      shell->OnServiceProtocolGetSkSLs(
+                                          params, response);
+                                      finished.set_value(true);
+                                    });
+  finished.get_future().wait();
+}
+
 std::shared_ptr<txt::FontCollection> ShellTest::GetFontCollection(
     Shell* shell) {
   return shell->weak_engine_->GetFontCollection().GetFontCollection();
@@ -230,10 +244,14 @@ TaskRunners ShellTest::GetTaskRunnersForFixture() {
   return {
       "test",
       thread_host_.platform_thread->GetTaskRunner(),  // platform
-      thread_host_.gpu_thread->GetTaskRunner(),       // gpu
+      thread_host_.raster_thread->GetTaskRunner(),    // raster
       thread_host_.ui_thread->GetTaskRunner(),        // ui
       thread_host_.io_thread->GetTaskRunner()         // io
   };
+}
+
+fml::TimePoint ShellTest::GetLatestFrameTargetTime(Shell* shell) const {
+  return shell->GetLatestFrameTargetTime();
 }
 
 std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,

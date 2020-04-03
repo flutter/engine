@@ -6,6 +6,7 @@ import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
 import 'package:web_driver_installer/chrome_driver_installer.dart';
 
+import 'chrome_installer.dart';
 import 'common.dart';
 import 'environment.dart';
 import 'utils.dart';
@@ -19,8 +20,7 @@ class IntegrationTestsManager {
   /// It usually changes with each the browser version changes.
   /// A better solution would be installing the browser and the driver at the
   /// same time.
-  // TODO(nurhan): change the web installers to install driver and the browser
-  // at the same time.
+  // TODO(nurhan): https://github.com/flutter/flutter/issues/53179.
   final io.Directory _browserDriverDir;
 
   /// This is the parent directory for all drivers.
@@ -30,10 +30,10 @@ class IntegrationTestsManager {
   final io.Directory _drivers;
 
   IntegrationTestsManager(this._browser)
-      : this._browserDriverDir = io.Directory(
-            pathlib.join(environment.webUiRootDir.path, 'drivers', _browser)),
+      : this._browserDriverDir = io.Directory(pathlib.join(
+            environment.webUiDartToolDir.path, 'drivers', _browser)),
         this._drivers = io.Directory(
-            pathlib.join(environment.webUiRootDir.path, 'drivers'));
+            pathlib.join(environment.webUiDartToolDir.path, 'drivers'));
 
   Future<bool> runTests() async {
     if (_browser != 'chrome') {
@@ -43,24 +43,6 @@ class IntegrationTestsManager {
       await prepareDriver();
       // TODO(nurhan): https://github.com/flutter/flutter/issues/52987
       return await _runTests();
-    }
-  }
-
-  void _cloneWebInstallers() async {
-    final int exitCode = await runProcess(
-      'git',
-      <String>[
-        'clone',
-        'https://github.com/flutter/web_installers.git',
-      ],
-      workingDirectory: _browserDriverDir.path,
-    );
-
-    if (exitCode != 0) {
-      io.stderr.writeln('ERROR: '
-          'Failed to clone web installers. Exited with exit code $exitCode');
-      throw DriverException('ERROR: '
-          'Failed to clone web installers. Exited with exit code $exitCode');
     }
   }
 
@@ -90,34 +72,15 @@ class IntegrationTestsManager {
   }
 
   void _runDriver() async {
-    final int exitCode = await runProcess(
-      environment.dartExecutable,
-      <String>[
-        'lib/web_driver_installer.dart',
-        '${_browser}driver',
-        '--install-only',
-      ],
-      workingDirectory: pathlib.join(
-          _browserDriverDir.path, 'web_installers', 'packages', 'web_drivers'),
-    );
-
-    if (exitCode != 0) {
-      io.stderr.writeln(
-          'ERROR: Failed to run driver. Exited with exit code $exitCode');
-      throw DriverException(
-          'ERROR: Failed to run driver. Exited with exit code $exitCode');
-    }
     startProcess(
       './chromedriver/chromedriver',
       ['--port=4444'],
-      workingDirectory: pathlib.join(
-          _browserDriverDir.path, 'web_installers', 'packages', 'web_drivers'),
+      workingDirectory: io.Directory.current.path
     );
     print('INFO: Driver started');
   }
 
   void prepareDriver() async {
-    final io.Directory priorCurrentDirectory = io.Directory.current;
     if (_browserDriverDir.existsSync()) {
       _browserDriverDir.deleteSync(recursive: true);
     }
@@ -125,22 +88,16 @@ class IntegrationTestsManager {
     _browserDriverDir.createSync(recursive: true);
     temporaryDirectories.add(_drivers);
 
-    // TODO(nurhan): We currently need git clone for getting the driver lock
-    // file. Remove this after making changes in web_installers.
-    await _cloneWebInstallers();
-    // Change the directory to the driver_lock.yaml file's directory.
-    io.Directory.current = pathlib.join(
-        _browserDriverDir.path, 'web_installers', 'packages', 'web_drivers');
-    // Chrome is the only browser supporting integration tests for now.
-    ChromeDriverInstaller chromeDriverInstaller = ChromeDriverInstaller();
-    bool installation = await chromeDriverInstaller.install();
+    io.Directory temp = io.Directory.current;
+    io.Directory.current = _browserDriverDir;
 
-    if (installation) {
-      io.Directory.current = priorCurrentDirectory;
-      await _runDriver();
-    } else {
-      throw DriverException('ERROR: Installing driver failed');
-    }
+    // TODO(nurhan): https://github.com/flutter/flutter/issues/53179
+    final String chromeDriverVersion = await queryChromeDriverVersion();
+    ChromeDriverInstaller chromeDriverInstaller =
+        ChromeDriverInstaller.withVersion(chromeDriverVersion);
+    await chromeDriverInstaller.install(alwaysInstall: true);
+    await _runDriver();
+    io.Directory.current = temp;
   }
 
   /// Runs all the web tests under e2e_tests/web.
@@ -176,7 +133,7 @@ class IntegrationTestsManager {
   Future<bool> _runTestsInDirectory(io.Directory directory) async {
     final io.Directory testDirectory =
         io.Directory(pathlib.join(directory.path, 'test_driver'));
-    final List<io.FileSystemEntity> entities = testDirectory
+    final List<io.File> entities = testDirectory
         .listSync(followLinks: false)
         .whereType<io.File>()
         .toList();

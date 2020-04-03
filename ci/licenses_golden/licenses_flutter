@@ -134,9 +134,6 @@ FILE: ../../../flutter/fml/eintr_wrapper.h
 FILE: ../../../flutter/fml/file.cc
 FILE: ../../../flutter/fml/file.h
 FILE: ../../../flutter/fml/file_unittest.cc
-FILE: ../../../flutter/fml/gpu_thread_merger.cc
-FILE: ../../../flutter/fml/gpu_thread_merger.h
-FILE: ../../../flutter/fml/gpu_thread_merger_unittests.cc
 FILE: ../../../flutter/fml/hash_combine.h
 FILE: ../../../flutter/fml/hash_combine_unittests.cc
 FILE: ../../../flutter/fml/icu_util.cc
@@ -229,6 +226,9 @@ FILE: ../../../flutter/fml/platform/win/paths_win.cc
 FILE: ../../../flutter/fml/platform/win/posix_wrappers_win.cc
 FILE: ../../../flutter/fml/platform/win/wstring_conversion.h
 FILE: ../../../flutter/fml/posix_wrappers.h
+FILE: ../../../flutter/fml/raster_thread_merger.cc
+FILE: ../../../flutter/fml/raster_thread_merger.h
+FILE: ../../../flutter/fml/raster_thread_merger_unittests.cc
 FILE: ../../../flutter/fml/size.h
 FILE: ../../../flutter/fml/status.h
 FILE: ../../../flutter/fml/synchronization/atomic_object.h
@@ -448,6 +448,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_converter.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/profiler.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/render_vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/rrect_renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/accessibility.dart
@@ -777,9 +778,6 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/binary_messenger.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/encodable_value.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/engine_method_result.h
-FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_message_codec.h
-FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_method_codec.h
-FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_type.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/message_codec.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/method_call.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/method_channel.h
@@ -789,8 +787,6 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registry.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_message_codec.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_method_codec.h
-FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/json_message_codec.cc
-FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/json_method_codec.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/method_call_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/method_channel_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/plugin_registrar.cc
@@ -801,6 +797,12 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_message
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/standard_method_codec_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.cc
 FILE: ../../../flutter/shell/platform/common/cpp/incoming_message_dispatcher.h
+FILE: ../../../flutter/shell/platform/common/cpp/json_message_codec.cc
+FILE: ../../../flutter/shell/platform/common/cpp/json_message_codec.h
+FILE: ../../../flutter/shell/platform/common/cpp/json_message_codec_unittests.cc
+FILE: ../../../flutter/shell/platform/common/cpp/json_method_codec.cc
+FILE: ../../../flutter/shell/platform/common/cpp/json_method_codec.h
+FILE: ../../../flutter/shell/platform/common/cpp/json_method_codec_unittests.cc
 FILE: ../../../flutter/shell/platform/common/cpp/path_utils.cc
 FILE: ../../../flutter/shell/platform/common/cpp/path_utils.h
 FILE: ../../../flutter/shell/platform/common/cpp/path_utils_unittests.cc
@@ -1145,6 +1147,11 @@ FILE: ../../../flutter/shell/platform/glfw/platform_handler.h
 FILE: ../../../flutter/shell/platform/glfw/public/flutter_glfw.h
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
+FILE: ../../../flutter/shell/platform/linux/fl_dart_project.cc
+FILE: ../../../flutter/shell/platform/linux/fl_view.cc
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_view.h
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/flutter_linux.h
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.cc
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/dart_project_unittests.cc
