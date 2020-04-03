@@ -832,6 +832,15 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 }
 
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
+                     withId:(NSString*)factoryId
+              compositeMode:(FlutterPlatformViewCompositeMode)compositeMode {
+  [self registerViewFactory:factory
+                                withId:factoryId
+      gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager
+                         compositeMode:compositeMode];
+}
+
+- (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy

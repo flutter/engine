@@ -344,6 +344,20 @@ typedef enum {
  * @param factory The view factory that will be registered.
  * @param factoryId A unique identifier for the factory, the Dart code of the Flutter app can use
  *   this identifier to request creation of a `UIView` by the registered factory.
+ * @param compositeMode How the platform view and Flutter UI are composed together.
+ */
+- (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
+                     withId:(NSString*)factoryId
+              compositeMode:(FlutterPlatformViewCompositeMode)compositeMode;
+
+/**
+ * Registers a `FlutterPlatformViewFactory` for creation of platform views.
+ *
+ * Plugins can expose a `UIView` for embedding in Flutter apps by registering a view factory.
+ *
+ * @param factory The view factory that will be registered.
+ * @param factoryId A unique identifier for the factory, the Dart code of the Flutter app can use
+ *   this identifier to request creation of a `UIView` by the registered factory.
  * @param gestureRecognizersBlockingPolicy How UIGestureRecognizers on the platform views are
  * blocked.
  * @param compositeMode How the platform view and Flutter UI are composed together.
