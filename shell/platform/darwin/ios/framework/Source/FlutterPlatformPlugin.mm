@@ -204,16 +204,17 @@ using namespace flutter;
 
 - (void)popSystemNavigator:(BOOL)isAnimated {
   // Apple's human user guidelines say not to terminate iOS applications. However, if the
-  // root view of the app is a navigation controller, it is instructed to back up a level
-  // in the navigation hierarchy.
+  // FlutterViewController or one of its ancestors is a child of a navigation controller,
+  // it is instructed to back up a level in the navigation hierarchy.
   // It's also possible in an Add2App scenario that the FlutterViewController was presented
   // outside the context of a UINavigationController, and still wants to be popped.
-  UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
-  if ([viewController isKindOfClass:[UINavigationController class]]) {
-    [((UINavigationController*)viewController) popViewControllerAnimated:isAnimated];
+  auto engineViewController = static_cast<UIViewController*>([_engine.get() viewController]);
+  if ([engineViewController navigationController] != nil) {
+    [[engineViewController navigationController] popViewControllerAnimated:isAnimated];
   } else {
-    auto engineViewController = static_cast<UIViewController*>([_engine.get() viewController]);
-    if (engineViewController != viewController) {
+    UIViewController* rootViewController =
+        [UIApplication sharedApplication].keyWindow.rootViewController;
+    if (engineViewController != rootViewController) {
       [engineViewController dismissViewControllerAnimated:isAnimated completion:nil];
     }
   }
