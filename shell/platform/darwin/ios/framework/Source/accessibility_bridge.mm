@@ -166,6 +166,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
+  NSMutableArray<SemanticsObject*>* _children;
 }
 
 #pragma mark - Override base class designated initializers
@@ -249,6 +250,13 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   for (SemanticsObject* child in _children) {
     child.parent = self;
   }
+}
+
+- (void)replaceChildAtIndex:(NSInteger)index withChild:(SemanticsObject*)child {
+  SemanticsObject* oldChild = _children[index];
+  [_children replaceObjectAtIndex:index withObject:child];
+  oldChild.parent = nil;
+  child.parent = self;
 }
 
 #pragma mark - UIAccessibility overrides
@@ -859,11 +867,8 @@ static void ReplaceSemanticsObject(SemanticsObject* oldObject,
   assert(oldObject.node.id == newObject.node.id);
   NSNumber* nodeId = @(oldObject.node.id);
   NSUInteger positionInChildlist = [oldObject.parent.children indexOfObject:oldObject];
-  SemanticsObject* parent = oldObject.parent;
   [objects removeObjectForKey:nodeId];
-  newObject.parent = parent;
-  oldObject.parent = nil;
-  [newObject.parent.children replaceObjectAtIndex:positionInChildlist withObject:newObject];
+  [oldObject.parent replaceChildAtIndex:positionInChildlist withChild:newObject];
   objects[nodeId] = newObject;
 }
 

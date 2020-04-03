@@ -85,12 +85,14 @@ class AccessibilityBridge;
  * Direct children of this semantics object. Each child's `parent` property must
  * be equal to this object.
  */
-@property(nonatomic, strong) NSMutableArray<SemanticsObject*>* children;
+@property(nonatomic, strong) NSArray<SemanticsObject*>* children;
 
 /**
  * Used if this SemanticsObject is for a platform view.
  */
 @property(strong, nonatomic) FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer;
+
+- (void)replaceChildAtIndex:(NSInteger)index withChild:(SemanticsObject*)child;
 
 - (BOOL)nodeWillCauseLayoutChange:(const flutter::SemanticsNode*)node;
 
