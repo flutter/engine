@@ -261,6 +261,9 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 #pragma mark - UIResponder Overrides
 
 - (BOOL)canBecomeFirstResponder {
+  // Only the currently focused input field can
+  // become the first responder. This prevents iOS
+  // from changing focus by itself.
   return _textInputClient != 0;
 }
 
