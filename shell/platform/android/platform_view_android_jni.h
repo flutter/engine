@@ -46,6 +46,11 @@ void SurfaceTextureGetTransformMatrix(JNIEnv* env,
 
 void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj);
 
+void FlutterViewHandleEngineInit(JNIEnv* env,
+                                 jobject obj,
+                                 jboolean success,
+                                 jlong holder_id);
+
 }  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_

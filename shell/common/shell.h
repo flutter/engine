@@ -95,6 +95,8 @@ class Shell final : public PlatformView::Delegate,
  public:
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
+  using ShellCreateCallback =
+      std::function<void(bool success, std::unique_ptr<Shell> shell)>;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
@@ -165,6 +167,13 @@ class Shell final : public PlatformView::Delegate,
       Settings settings,
       CreateCallback<PlatformView> on_create_platform_view,
       CreateCallback<Rasterizer> on_create_rasterizer);
+
+  static void CreateAsync(ShellCreateCallback callBack,
+                          TaskRunners task_runners,
+                          WindowData window_data,
+                          Settings settings,
+                          CreateCallback<PlatformView> on_create_platform_view,
+                          CreateCallback<Rasterizer> on_create_rasterizer);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
@@ -430,6 +439,16 @@ class Shell final : public PlatformView::Delegate,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const Shell::CreateCallback<PlatformView>& on_create_platform_view,
       const Shell::CreateCallback<Rasterizer>& on_create_rasterizer);
+
+  static bool CreateShellAsyncOnPlatformThread(
+      ShellCreateCallback async_init_callback,
+      DartVMRef vm,
+      TaskRunners task_runners,
+      WindowData window_data,
+      Settings settings,
+      fml::RefPtr<const DartSnapshot> isolate_snapshot,
+      Shell::CreateCallback<PlatformView> on_create_platform_view,
+      Shell::CreateCallback<Rasterizer> on_create_rasterizer);
 
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,

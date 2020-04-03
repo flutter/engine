@@ -144,7 +144,7 @@ public class FlutterNativeView implements BinaryMessenger {
   }
 
   private void attach(FlutterNativeView view, boolean isBackgroundView) {
-    mFlutterJNI.attachToNative(isBackgroundView);
+    mFlutterJNI.attachToNative(isBackgroundView, false);
     dartExecutor.onAttachedToJNI();
   }
 
@@ -160,5 +160,11 @@ public class FlutterNativeView implements BinaryMessenger {
       }
       mPluginRegistry.onPreEngineRestart();
     }
+
+    @Override
+    public void onAsyncAttachEnd(boolean success) {}
+
+    @Override
+    public void onAsyncCreateEngineEnd(boolean success) {}
   }
 }

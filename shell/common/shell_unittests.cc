@@ -150,6 +150,67 @@ TEST_F(ShellTest,
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
+TEST_F(ShellTest,
+       AsyncInitializeWithMultipleThreadButCallingThreadAsPlatformThread) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  // Must create new PlatformThread for this test case:
+  // 1、current thread is platform thread
+  // 2、In test case, we need call latch.wait here and latch.signal in callback
+  // 3、but asyncCallback will called on platform thread after next frames
+  // So, if use current platform thread ,will make deadlock. (callback will
+  // never excute cause latch.wait) But in user case, they can call CreateAsync
+  // directly, because then will never caled latch.wait/signal
+
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::GPU |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  fml::AutoResetWaitableEvent latch;
+  std::unique_ptr<Shell> shell_res;
+
+  // run on newPlatformThread
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners.GetPlatformTaskRunner(),
+      [&task_runners, &latch, &shell_res, &settings]() {
+        Shell::CreateAsync(
+            [&latch, &shell_res](bool success, std::unique_ptr<Shell> shell) {
+              if (success) {
+                shell_res = std::move(shell);
+              }
+              // called on platformread
+              latch.Signal();
+            },
+            std::move(task_runners), WindowData{/* default window data */},
+            std::move(settings),
+            [](Shell& shell) {
+              const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+              return ShellTestPlatformView::Create(
+                  shell, shell.GetTaskRunners(), vsync_clock,
+                  [task_runners = shell.GetTaskRunners()]() {
+                    return static_cast<std::unique_ptr<VsyncWaiter>>(
+                        std::make_unique<VsyncWaiterFallback>(task_runners));
+                  },
+                  ShellTestPlatformView::BackendType::kDefaultBackend);
+            },
+            [](Shell& shell) {
+              return std::make_unique<Rasterizer>(shell,
+                                                  shell.GetTaskRunners());
+            });
+      });
+
+  // In test case, must wait excute end
+  latch.Wait();
+  ASSERT_TRUE(ValidateShell(shell_res.get()));
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  DestroyShell(std::move(shell_res), std::move(task_runners));
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
 TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();

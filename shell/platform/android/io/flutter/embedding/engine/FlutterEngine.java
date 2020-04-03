@@ -67,24 +67,27 @@ import java.util.Set;
 public class FlutterEngine {
   private static final String TAG = "FlutterEngine";
 
-  @NonNull private final FlutterJNI flutterJNI;
-  @NonNull private final FlutterRenderer renderer;
-  @NonNull private final DartExecutor dartExecutor;
-  @NonNull private final FlutterEnginePluginRegistry pluginRegistry;
+  @NonNull private FlutterJNI flutterJNI;
+  @NonNull private FlutterRenderer renderer;
+  @NonNull private DartExecutor dartExecutor;
+  @NonNull private FlutterEnginePluginRegistry pluginRegistry;
 
   // System channels.
-  @NonNull private final AccessibilityChannel accessibilityChannel;
-  @NonNull private final KeyEventChannel keyEventChannel;
-  @NonNull private final LifecycleChannel lifecycleChannel;
-  @NonNull private final LocalizationChannel localizationChannel;
-  @NonNull private final NavigationChannel navigationChannel;
-  @NonNull private final PlatformChannel platformChannel;
-  @NonNull private final SettingsChannel settingsChannel;
-  @NonNull private final SystemChannel systemChannel;
-  @NonNull private final TextInputChannel textInputChannel;
+  @NonNull private AccessibilityChannel accessibilityChannel;
+  @NonNull private KeyEventChannel keyEventChannel;
+  @NonNull private LifecycleChannel lifecycleChannel;
+  @NonNull private LocalizationChannel localizationChannel;
+  @NonNull private NavigationChannel navigationChannel;
+  @NonNull private PlatformChannel platformChannel;
+  @NonNull private SettingsChannel settingsChannel;
+  @NonNull private SystemChannel systemChannel;
+  @NonNull private TextInputChannel textInputChannel;
+  @NonNull private Context context;
+  @NonNull private FlutterLoader flutterLoader;
+  private boolean automaticallyRegisterPlugins;
 
   // Platform Views.
-  @NonNull private final PlatformViewsController platformViewsController;
+  @NonNull private PlatformViewsController platformViewsController;
 
   // Engine Lifecycle.
   @NonNull private final Set<EngineLifecycleListener> engineLifecycleListeners = new HashSet<>();
@@ -100,6 +103,28 @@ public class FlutterEngine {
           }
 
           platformViewsController.onPreEngineRestart();
+        }
+
+        @Override
+        public void onAsyncAttachEnd(boolean success) {
+          for (EngineLifecycleListener lifecycleListener : engineLifecycleListeners) {
+            lifecycleListener.onAsyncAttachEnd(success);
+          }
+          if (success) {
+            initAfterAttachNative();
+            onAsyncCreateEngineEnd(true);
+
+          } else {
+            Log.e(TAG, "asyncAttach failed");
+            onAsyncCreateEngineEnd(false);
+          }
+        }
+
+        @Override
+        public void onAsyncCreateEngineEnd(boolean success) {
+          for (EngineLifecycleListener lifecycleListener : engineLifecycleListeners) {
+            lifecycleListener.onAsyncCreateEngineEnd(success);
+          }
         }
       };
 
@@ -200,21 +225,81 @@ public class FlutterEngine {
       @NonNull PlatformViewsController platformViewsController,
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins) {
+    doInit(
+        context,
+        flutterLoader,
+        flutterJNI,
+        platformViewsController,
+        dartVmArgs,
+        automaticallyRegisterPlugins,
+        null);
+  }
+
+  public FlutterEngine() {}
+
+  public void initAsync(
+      @NonNull Context appContext, @NonNull EngineLifecycleListener asyncInitCallback) {
+    if (asyncInitCallback == null) {
+      Log.w(
+          TAG,
+          "initAsync: callback is null, you should care lifecycle, and called other api after initCallback called");
+      asyncInitCallback =
+          new EngineLifecycleListener() {
+            @Override
+            public void onPreEngineRestart() {}
+
+            @Override
+            public void onAsyncAttachEnd(boolean success) {}
+
+            @Override
+            public void onAsyncCreateEngineEnd(boolean success) {}
+          };
+    }
+    doInit(
+        appContext,
+        FlutterLoader.getInstance(),
+        new FlutterJNI(),
+        new PlatformViewsController(),
+        null,
+        true,
+        asyncInitCallback);
+  }
+
+  private void doInit(
+      @NonNull Context context,
+      @NonNull FlutterLoader flutterLoader,
+      @NonNull FlutterJNI flutterJNI,
+      @NonNull PlatformViewsController platformViewsController,
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins,
+      EngineLifecycleListener asyncInitListener) {
     this.flutterJNI = flutterJNI;
+    this.context = context;
+    this.automaticallyRegisterPlugins = automaticallyRegisterPlugins;
+    this.flutterLoader = flutterLoader;
+    this.platformViewsController = platformViewsController;
     flutterLoader.startInitialization(context.getApplicationContext());
     flutterLoader.ensureInitializationComplete(context, dartVmArgs);
 
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
-    attachToJni();
+    if (asyncInitListener != null) {
+      addEngineLifecycleListener(asyncInitListener);
+      attachToJni(true);
+      return;
+    }
+    attachToJni(false);
+    initAfterAttachNative();
+  }
 
-    this.dartExecutor = new DartExecutor(flutterJNI, context.getAssets());
+  private void initAfterAttachNative() {
+    this.dartExecutor = new DartExecutor(this.flutterJNI, this.context.getAssets());
     this.dartExecutor.onAttachedToJNI();
 
     // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if
     // possible.
-    this.renderer = new FlutterRenderer(flutterJNI);
+    this.renderer = new FlutterRenderer(this.flutterJNI);
 
-    accessibilityChannel = new AccessibilityChannel(dartExecutor, flutterJNI);
+    accessibilityChannel = new AccessibilityChannel(dartExecutor, this.flutterJNI);
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
@@ -224,23 +309,22 @@ public class FlutterEngine {
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
 
-    this.platformViewsController = platformViewsController;
     this.platformViewsController.onAttachedToJNI();
-
     this.pluginRegistry =
-        new FlutterEnginePluginRegistry(context.getApplicationContext(), this, flutterLoader);
+        new FlutterEnginePluginRegistry(
+            this.context.getApplicationContext(), this, this.flutterLoader);
 
     if (automaticallyRegisterPlugins) {
       registerPlugins();
     }
   }
 
-  private void attachToJni() {
+  private void attachToJni(boolean asyncInitMode) {
     Log.v(TAG, "Attaching to JNI.");
     // TODO(mattcarroll): update native call to not take in "isBackgroundView"
-    flutterJNI.attachToNative(false);
+    flutterJNI.attachToNative(false, asyncInitMode);
 
-    if (!isAttachedToJni()) {
+    if (!asyncInitMode && !isAttachedToJni()) {
       throw new RuntimeException("FlutterEngine failed to attach to its native Object reference.");
     }
   }
@@ -438,5 +522,11 @@ public class FlutterEngine {
   public interface EngineLifecycleListener {
     /** Lifecycle callback invoked before a hot restart of the Flutter engine. */
     void onPreEngineRestart();
+    /**
+     * Lifecycle callback invoked after flutterJni.asyncAttachNative end (native engine env ready).
+     */
+    void onAsyncAttachEnd(boolean success);
+
+    void onAsyncCreateEngineEnd(boolean success);
   }
 }

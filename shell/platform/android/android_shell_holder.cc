@@ -30,15 +30,34 @@ static WindowData GetDefaultWindowData() {
 AndroidShellHolder::AndroidShellHolder(
     flutter::Settings settings,
     fml::jni::JavaObjectWeakGlobalRef java_object,
-    bool is_background_view)
-    : settings_(std::move(settings)), java_object_(java_object) {
+    bool is_background_view) {
+  AndroidShellHolder(std::move(settings), java_object, is_background_view,
+                     false);
+}
+
+AndroidShellHolder::AndroidShellHolder(
+    flutter::Settings settings,
+    fml::jni::JavaObjectWeakGlobalRef java_object,
+    bool is_background_view,
+    bool initAsync)
+    : settings_(std::move(settings)),
+      java_object_(java_object),
+      is_background_view_(is_background_view) {
+  if (initAsync) {
+    return;
+  }
+  AsyncInitCallback empty;
+  init(empty);
+}
+
+void AndroidShellHolder::init(AsyncInitCallback holderCallback) {
   static size_t shell_count = 1;
   auto thread_label = std::to_string(shell_count++);
 
   FML_CHECK(pthread_key_create(&thread_destruct_key_, ThreadDestructCallback) ==
             0);
 
-  if (is_background_view) {
+  if (is_background_view_) {
     thread_host_ = {thread_label, ThreadHost::Type::UI};
   } else {
     thread_host_ = {thread_label, ThreadHost::Type::UI | ThreadHost::Type::GPU |
@@ -50,13 +69,14 @@ AndroidShellHolder::AndroidShellHolder(
     FML_CHECK(pthread_setspecific(key, reinterpret_cast<void*>(1)) == 0);
   });
   thread_host_.ui_thread->GetTaskRunner()->PostTask(jni_exit_task);
-  if (!is_background_view) {
+  if (!is_background_view_) {
     thread_host_.raster_thread->GetTaskRunner()->PostTask(jni_exit_task);
   }
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
   Shell::CreateCallback<PlatformView> on_create_platform_view =
-      [is_background_view, java_object, &weak_platform_view](Shell& shell) {
+      [is_background_view = is_background_view_, java_object = java_object_,
+       &weak_platform_view](Shell& shell) {
         std::unique_ptr<PlatformViewAndroid> platform_view_android;
         if (is_background_view) {
           platform_view_android = std::make_unique<PlatformViewAndroid>(
@@ -90,7 +110,7 @@ AndroidShellHolder::AndroidShellHolder(
   fml::RefPtr<fml::TaskRunner> io_runner;
   fml::RefPtr<fml::TaskRunner> platform_runner =
       fml::MessageLoop::GetCurrent().GetTaskRunner();
-  if (is_background_view) {
+  if (is_background_view_) {
     auto single_task_runner = thread_host_.ui_thread->GetTaskRunner();
     gpu_runner = single_task_runner;
     ui_runner = single_task_runner;
@@ -106,22 +126,38 @@ AndroidShellHolder::AndroidShellHolder(
                                     ui_runner,        // ui
                                     io_runner         // io
   );
-
-  shell_ =
-      Shell::Create(task_runners,             // task runners
-                    GetDefaultWindowData(),   // window data
-                    settings_,                // settings
-                    on_create_platform_view,  // platform view create callback
-                    on_create_rasterizer      // rasterizer create callback
-      );
-
+  if (holderCallback) {
+    Shell::CreateAsync(
+        [holderCallback = std::move(holderCallback), holder_point = this](
+            bool success, std::unique_ptr<Shell> shell) {
+          if (!success) {
+            holderCallback(false);
+            return;
+          }
+          holder_point->shell_ = std::move(shell);
+          holder_point->setThreadPriority();
+          holderCallback(true);
+        },
+        std::move(task_runners), GetDefaultWindowData(), settings_,
+        std::move(on_create_platform_view), std::move(on_create_rasterizer));
+  } else {
+    shell_ =
+        Shell::Create(task_runners,             // task runners
+                      GetDefaultWindowData(),   // window data
+                      settings_,                // settings
+                      on_create_platform_view,  // platform view create callback
+                      on_create_rasterizer      // rasterizer create callback
+        );
+  }
   platform_view_ = weak_platform_view;
   FML_DCHECK(platform_view_);
+}
 
+void AndroidShellHolder::setThreadPriority() {
   is_valid_ = shell_ != nullptr;
 
   if (is_valid_) {
-    task_runners.GetRasterTaskRunner()->PostTask([]() {
+    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([]() {
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
       // set the raster thread to slightly lower priority than it.
@@ -133,7 +169,7 @@ AndroidShellHolder::AndroidShellHolder(
         }
       }
     });
-    task_runners.GetUITaskRunner()->PostTask([]() {
+    shell_->GetTaskRunners().GetUITaskRunner()->PostTask([]() {
       if (::setpriority(PRIO_PROCESS, gettid(), -1) != 0) {
         FML_LOG(ERROR) << "Failed to set UI task runner priority";
       }

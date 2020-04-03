@@ -21,11 +21,20 @@ namespace flutter {
 
 class AndroidShellHolder {
  public:
+  using AsyncInitCallback = std::function<void(bool)>;
+
   AndroidShellHolder(flutter::Settings settings,
                      fml::jni::JavaObjectWeakGlobalRef java_object,
                      bool is_background_view);
 
+  AndroidShellHolder(flutter::Settings settings,
+                     fml::jni::JavaObjectWeakGlobalRef java_object,
+                     bool is_background_view,
+                     bool initAsync);
+
   ~AndroidShellHolder();
+
+  void init(AsyncInitCallback asyncCallBack);
 
   bool IsValid() const;
 
@@ -47,10 +56,12 @@ class AndroidShellHolder {
   ThreadHost thread_host_;
   std::unique_ptr<Shell> shell_;
   bool is_valid_ = false;
+  bool is_background_view_ = false;
   pthread_key_t thread_destruct_key_;
   uint64_t next_pointer_flow_id_ = 0;
-
   static void ThreadDestructCallback(void* value);
+
+  void setThreadPriority();
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidShellHolder);
 };

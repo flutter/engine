@@ -11,7 +11,9 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.internal.runner.junit4.statement.UiThreadStatement;
 import androidx.test.runner.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -64,5 +66,46 @@ public class EngineLaunchE2ETest {
       fail("timed out waiting for engine started signal");
     }
     // If it gets to here, statusReceived is true.
+  }
+
+  @Test
+  public void smokeTestEngineAsyncLaunch() {
+    final CompletableFuture<Boolean> statusReceived = new CompletableFuture<>();
+    UiThreadStatement.runOnUiThread(
+        () -> {
+          FlutterEngine engine = new FlutterEngine();
+          engine.initAsync(
+              this,
+              new EngineLifecycleListener() {
+                @Override
+                public void onPreEngineRestart() {}
+
+                @Override
+                public void onAsyncAttachEnd(boolean success) {}
+
+                @Override
+                public void onAsyncCreateEngineEnd(boolean success) {
+                  if (!success) {
+                    Log.e("flutter", "========> init error ! <=======================");
+
+                  } else {
+                    engine.getDartExecutor().executeDartEntrypoint(DartEntrypoint.createDefault());
+                  }
+                  statusReceived.complete(success);
+                }
+              });
+        });
+    try {
+      Boolean result = statusReceived.get(10, TimeUnit.SECONDS);
+      if (!result) {
+        fail("flutterEngien async init failed");
+      }
+    } catch (ExecutionException e) {
+      fail(e.getMessage());
+    } catch (InterruptedException e) {
+      fail(e.getMessage());
+    } catch (TimeoutException e) {
+      fail("timed out waiting for EngineAsyncLaunch");
+    }
   }
 }
