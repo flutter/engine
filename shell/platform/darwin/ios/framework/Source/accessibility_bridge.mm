@@ -14,6 +14,8 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+FLUTTER_ASSERT_NOT_ARC
+
 namespace {
 
 constexpr int32_t kRootNodeId = 0;
@@ -199,7 +201,6 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   for (SemanticsObject* child in _children) {
     child.parent = nil;
   }
-  [_children removeAllObjects];
   [_children release];
   _parent = nil;
   _container.get().semanticsObject = nil;
@@ -237,6 +238,17 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     return YES;
   }
   return [self.children count] != 0;
+}
+
+- (void)setChildren:(NSMutableArray<SemanticsObject*>*)children {
+  for (SemanticsObject* child in _children) {
+    child.parent = nil;
+  }
+  [_children release];
+  _children = [children retain];
+  for (SemanticsObject* child in _children) {
+    child.parent = self;
+  }
 }
 
 #pragma mark - UIAccessibility overrides
@@ -653,7 +665,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     return ((FlutterPlatformViewSemanticsContainer*)element).index;
   }
 
-  NSMutableArray<SemanticsObject*>* children = [_semanticsObject children];
+  NSArray<SemanticsObject*>* children = [_semanticsObject children];
   for (size_t i = 0; i < [children count]; i++) {
     SemanticsObject* child = children[i];
     if ((![child hasChildren] && child == element) ||
@@ -850,6 +862,7 @@ static void ReplaceSemanticsObject(SemanticsObject* oldObject,
   SemanticsObject* parent = oldObject.parent;
   [objects removeObjectForKey:nodeId];
   newObject.parent = parent;
+  oldObject.parent = nil;
   [newObject.parent.children replaceObjectAtIndex:positionInChildlist withObject:newObject];
   objects[nodeId] = newObject;
 }
