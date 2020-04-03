@@ -48,6 +48,7 @@ enum class DartErrorCode {
   /// The Dart error code for an unkonwn error.
   UnknownError = 255
 };
+struct ShellCreateParams;
 
 //------------------------------------------------------------------------------
 /// Perhaps the single most important class in the Flutter engine repository.
@@ -95,6 +96,46 @@ class Shell final : public PlatformView::Delegate,
  public:
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
+
+  ///----------------------------------------------------------------------------
+  /// Used by method `CreateShellHolder`,Provide synchronous and asynchronous
+  /// initialization methods.
+  ///   auto shell_holder_future = Shell::CreateShellHolder(...);
+  /// 1.synchronous
+  ///   auto shell_holder = shell_holder_future.get();
+  ///   //must run in platformThread
+  ///   auto shell = Shell::MakeShellFromHolder(std::move(shell_holder));
+  /// 2.asynchronous
+  ///   std::async(std::launch::async,[](){
+  ///     auto shell_holder = shell_holder_future.get();
+  ///     fml::TaskRunner::RunNowOrPostTask(task_runners.GetPlatformTaskRunner(),[](){
+  ///           auto shell =
+  ///           Shell::MakeShellFromHolder(std::move(shell_holder));
+  ///      });
+  ///   });
+  ///
+  class ShellHolder {
+   public:
+    ShellHolder(std::unique_ptr<Shell> shell_ref,
+                std::unique_ptr<PlatformView> platform_view_ref,
+                std::unique_ptr<Engine> engine_ref,
+                std::unique_ptr<Rasterizer> rasterizer_ref,
+                std::unique_ptr<ShellIOManager> io_manager_ref)
+        : shell(std::move(shell_ref)),
+          platform_view(std::move(platform_view_ref)),
+          engine(std::move(engine_ref)),
+          rasterizer(std::move(rasterizer_ref)),
+          io_manager(std::move(io_manager_ref)) {}
+
+   private:
+    /// shell has not been Setup.
+    std::unique_ptr<Shell> shell;
+    std::unique_ptr<PlatformView> platform_view;
+    std::unique_ptr<Engine> engine;
+    std::unique_ptr<Rasterizer> rasterizer;
+    std::unique_ptr<ShellIOManager> io_manager;
+    friend Shell;
+  };
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
@@ -209,6 +250,25 @@ class Shell final : public PlatformView::Delegate,
       const CreateCallback<PlatformView>& on_create_platform_view,
       const CreateCallback<Rasterizer>& on_create_rasterizer,
       DartVMRef vm);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a shell instance asynchronously using the provided
+  /// params.
+  ///
+  /// @param[in]  params                   shell init params
+  ///
+  /// @return future with shell which is full initialized  or null if the params
+  /// are valid
+
+  static std::future<std::unique_ptr<Shell::ShellHolder>> CreateShellHolder(
+      std::unique_ptr<ShellCreateParams> params);
+
+  //----------------------------------------------------------------------------
+  /// @brief      return full init shell. (call `shell.setup` on
+  /// platformThread)
+  /// must run in platfromThread , else abort
+  static std::unique_ptr<Shell> MakeShellFromHolder(
+      std::unique_ptr<ShellHolder> holder);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the shell. This is a synchronous operation and
@@ -423,7 +483,8 @@ class Shell final : public PlatformView::Delegate,
 
   Shell(DartVMRef vm, TaskRunners task_runners, Settings settings);
 
-  static std::unique_ptr<Shell> CreateShellOnPlatformThread(
+  static void CreateShellOnPlatformThread(
+      std::promise<std::unique_ptr<Shell::ShellHolder>> shell_holder_promise,
       DartVMRef vm,
       TaskRunners task_runners,
       const WindowData window_data,
@@ -431,6 +492,15 @@ class Shell final : public PlatformView::Delegate,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const Shell::CreateCallback<PlatformView>& on_create_platform_view,
       const Shell::CreateCallback<Rasterizer>& on_create_rasterizer);
+
+  static std::future<std::unique_ptr<Shell::ShellHolder>> InitShellEnv(
+      TaskRunners task_runners,
+      const WindowData window_data,
+      Settings settings,
+      fml::RefPtr<const DartSnapshot> isolate_snapshot,
+      const CreateCallback<PlatformView>& on_create_platform_view,
+      const CreateCallback<Rasterizer>& on_create_rasterizer,
+      DartVMRef vm);
 
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,
@@ -593,6 +663,36 @@ class Shell final : public PlatformView::Delegate,
   friend class testing::ShellTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Shell);
+};
+
+//----------------------------------------------------------------------------
+/// @brief     shell init params, used by create method
+struct ShellCreateParams {
+  // The task runners
+  TaskRunners task_runners;
+  // The default data for setting up ui.Window that attached to this intance.
+  WindowData window_data;
+  // The settings
+  Settings settings;
+  // The callback that must return a  platform view. This will be called on the
+  // platform task runner before this method returns
+  Shell::CreateCallback<flutter::PlatformView> on_create_platform_view;
+  // valid rasterizer. This will be called  on the render task runner before
+  // thismethod returns.
+  Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer;
+
+  ShellCreateParams(
+      flutter::TaskRunners task_runners,
+      flutter::WindowData window_data,
+      flutter::Settings settings,
+      flutter::Shell::CreateCallback<flutter::PlatformView>
+          on_create_platform_view,
+      flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer)
+      : task_runners(std::move(task_runners)),
+        window_data(window_data),
+        settings(settings),
+        on_create_platform_view(std::move(on_create_platform_view)),
+        on_create_rasterizer(std::move(on_create_rasterizer)) {}
 };
 
 }  // namespace flutter

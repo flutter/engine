@@ -154,6 +154,66 @@ TEST_F(ShellTest,
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
+TEST_F(ShellTest,
+       AsyncInitializeWithMultipleThreadButCallingThreadAsPlatformThread) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::GPU | ThreadHost::Type::IO |
+                             ThreadHost::Type::UI | ThreadHost::Type::Platform);
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+
+  auto shell_holder_future =
+      Shell::CreateShellHolder(std::make_unique<ShellCreateParams>(
+          task_runners, WindowData{/* default window data */}, settings,
+          [](Shell& shell) {
+            const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
+            return ShellTestPlatformView::Create(
+                shell, shell.GetTaskRunners(), vsync_clock,
+                [task_runners = shell.GetTaskRunners()]() {
+                  return static_cast<std::unique_ptr<VsyncWaiter>>(
+                      std::make_unique<VsyncWaiterFallback>(task_runners));
+                },
+                ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
+          },
+          [](Shell& shell) {
+            return std::make_unique<Rasterizer>(
+                shell, shell.GetTaskRunners(),
+                shell.GetIsGpuDisabledSyncSwitch());
+          }));
+
+  fml::AutoResetWaitableEvent latch;
+  std::async(std::launch::async,
+             fml::MakeCopyable([shell_test_point = this, &latch, task_runners,
+                                shell_holder_future =
+                                    std::move(shell_holder_future)]() mutable {
+               // wait
+               auto shell_holder = shell_holder_future.get();
+               // check shell_res on platformthread
+               auto lambda_shell_res = fml::MakeCopyable(
+                   [shell_test_point, &latch, task_runners,
+                    shell_holder = std::move(shell_holder)]() mutable {
+                     auto shell_res =
+                         Shell::MakeShellFromHolder(std::move(shell_holder));
+                     ASSERT_TRUE(ValidateShell(shell_res.get()));
+                     ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+                     shell_test_point->DestroyShell(std::move(shell_res),
+                                                    std::move(task_runners));
+                     ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+                     latch.Signal();
+                   });
+               fml::TaskRunner::RunNowOrPostTask(
+                   task_runners.GetPlatformTaskRunner(),
+                   std::move(lambda_shell_res));
+             }));
+
+  latch.Wait();
+}
+
 TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();

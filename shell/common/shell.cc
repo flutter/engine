@@ -39,7 +39,8 @@ constexpr char kSystemChannel[] = "flutter/system";
 constexpr char kTypeKey[] = "type";
 constexpr char kFontChange[] = "fontsChange";
 
-std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
+void Shell::CreateShellOnPlatformThread(
+    std::promise<std::unique_ptr<Shell::ShellHolder>> shell_holder_promise,
     DartVMRef vm,
     TaskRunners task_runners,
     const WindowData window_data,
@@ -47,54 +48,58 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer) {
+  FML_CHECK(task_runners.GetPlatformTaskRunner()->RunsTasksOnCurrentThread())
+      << "CreateShellOnPlatformThread() must run in platformThread!";
   if (!task_runners.IsValid()) {
     FML_LOG(ERROR) << "Task runners to run the shell were invalid.";
-    return nullptr;
+    shell_holder_promise.set_value(nullptr);
+    return;
   }
 
   auto shell =
       std::unique_ptr<Shell>(new Shell(std::move(vm), task_runners, settings));
 
   // Create the rasterizer on the raster thread.
-  std::promise<std::unique_ptr<Rasterizer>> rasterizer_promise;
-  auto rasterizer_future = rasterizer_promise.get_future();
-  std::promise<fml::WeakPtr<SnapshotDelegate>> snapshot_delegate_promise;
-  auto snapshot_delegate_future = snapshot_delegate_promise.get_future();
+  auto rasterizer_promise =
+      std::make_shared<std::promise<std::unique_ptr<Rasterizer>>>();
+  auto snapshot_delegate_promise =
+      std::make_shared<std::promise<fml::WeakPtr<SnapshotDelegate>>>();
+
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetRasterTaskRunner(), [&rasterizer_promise,  //
-                                           &snapshot_delegate_promise,
-                                           on_create_rasterizer,  //
-                                           shell = shell.get()    //
-  ]() {
+      task_runners.GetRasterTaskRunner(),
+      [rasterizer_promise, snapshot_delegate_promise,
+       on_create_rasterizer,  //
+       shell = shell.get()    //
+  ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
         std::unique_ptr<Rasterizer> rasterizer(on_create_rasterizer(*shell));
-        snapshot_delegate_promise.set_value(rasterizer->GetSnapshotDelegate());
-        rasterizer_promise.set_value(std::move(rasterizer));
+        snapshot_delegate_promise->set_value(rasterizer->GetSnapshotDelegate());
+        rasterizer_promise->set_value(std::move(rasterizer));
       });
 
   // Create the platform view on the platform thread (this thread).
   auto platform_view = on_create_platform_view(*shell.get());
   if (!platform_view || !platform_view->GetWeakPtr()) {
-    return nullptr;
+    shell_holder_promise.set_value(nullptr);
+    return;
   }
 
   // Ask the platform view for the vsync waiter. This will be used by the engine
   // to create the animator.
   auto vsync_waiter = platform_view->CreateVSyncWaiter();
   if (!vsync_waiter) {
-    return nullptr;
+    shell_holder_promise.set_value(nullptr);
+    return;
   }
 
   // Create the IO manager on the IO thread. The IO manager must be initialized
   // first because it has state that the other subsystems depend on. It must
   // first be booted and the necessary references obtained to initialize the
   // other subsystems.
-  std::promise<std::unique_ptr<ShellIOManager>> io_manager_promise;
-  auto io_manager_future = io_manager_promise.get_future();
-  std::promise<fml::WeakPtr<ShellIOManager>> weak_io_manager_promise;
-  auto weak_io_manager_future = weak_io_manager_promise.get_future();
-  std::promise<fml::RefPtr<SkiaUnrefQueue>> unref_queue_promise;
-  auto unref_queue_future = unref_queue_promise.get_future();
+  auto io_manager_promise =
+      std::make_shared<std::promise<std::unique_ptr<ShellIOManager>>>();
+  auto weak_io_manager_promise =
+      std::make_shared<std::promise<fml::WeakPtr<ShellIOManager>>>();
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
 
   // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
@@ -105,20 +110,16 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // https://github.com/flutter/flutter/issues/42948
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
-      [&io_manager_promise,                                               //
-       &weak_io_manager_promise,                                          //
-       &unref_queue_promise,                                              //
-       platform_view = platform_view->GetWeakPtr(),                       //
-       io_task_runner,                                                    //
+      [io_task_runner, io_manager_promise, weak_io_manager_promise,
+       weak_platform_view = platform_view->GetWeakPtr(),                  //
        is_backgrounded_sync_switch = shell->GetIsGpuDisabledSyncSwitch()  //
-  ]() {
+  ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
         auto io_manager = std::make_unique<ShellIOManager>(
-            platform_view.getUnsafe()->CreateResourceContext(),
+            weak_platform_view.getUnsafe()->CreateResourceContext(),
             is_backgrounded_sync_switch, io_task_runner);
-        weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
-        unref_queue_promise.set_value(io_manager->GetSkiaUnrefQueue());
-        io_manager_promise.set_value(std::move(io_manager));
+        weak_io_manager_promise->set_value(io_manager->GetWeakPtr());
+        io_manager_promise->set_value(std::move(io_manager));
       });
 
   // Send dispatcher_maker to the engine constructor because shell won't have
@@ -126,52 +127,53 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   auto dispatcher_maker = platform_view->GetDispatcherMaker();
 
   // Create the engine on the UI thread.
-  std::promise<std::unique_ptr<Engine>> engine_promise;
-  auto engine_future = engine_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&engine_promise,                                 //
-                         shell = shell.get(),                             //
-                         &dispatcher_maker,                               //
-                         &window_data,                                    //
+      fml::MakeCopyable([shell = std::move(shell),  //
+                         shell_holder_promise = std::move(shell_holder_promise),
+                         platform_view = std::move(platform_view),
+                         dispatcher_in = std::move(dispatcher_maker),     //
+                         window_data = std::move(window_data),            //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          vsync_waiter = std::move(vsync_waiter),          //
-                         &weak_io_manager_future,                         //
-                         &snapshot_delegate_future,                       //
-                         &unref_queue_future                              //
-  ]() mutable {
+                         io_manager_promise,                              //
+                         rasterizer_promise,                              //
+                         weak_io_manager_promise,                         //
+                         snapshot_delegate_promise]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
 
-        // The animator is owned by the UI thread but it gets its vsync pulses
-        // from the platform.
+        // The animator is owned by the UI thread but it gets its vsync
+        // pulses from the platform.
         auto animator = std::make_unique<Animator>(*shell, task_runners,
                                                    std::move(vsync_waiter));
 
-        engine_promise.set_value(std::make_unique<Engine>(
-            *shell,                         //
-            dispatcher_maker,               //
-            *shell->GetDartVM(),            //
-            std::move(isolate_snapshot),    //
-            task_runners,                   //
-            window_data,                    //
-            shell->GetSettings(),           //
-            std::move(animator),            //
-            weak_io_manager_future.get(),   //
-            unref_queue_future.get(),       //
-            snapshot_delegate_future.get()  //
-            ));
+        // wait params（io、gpu task end）
+        auto rasterizer = rasterizer_promise->get_future().get();
+        auto snapshot_delegate = snapshot_delegate_promise->get_future().get();
+        auto io_manager = io_manager_promise->get_future().get();
+        auto weak_io_manager = weak_io_manager_promise->get_future().get();
+
+        auto unref_queue = io_manager->GetSkiaUnrefQueue();
+
+        auto engine_ref =
+            std::make_unique<Engine>(*(shell.get()),               //
+                                     dispatcher_in,                //
+                                     *shell->GetDartVM(),          //
+                                     std::move(isolate_snapshot),  //
+                                     task_runners,                 //
+                                     window_data,                  //
+                                     shell->GetSettings(),         //
+                                     std::move(animator),          //
+                                     std::move(weak_io_manager),   //
+                                     std::move(unref_queue),       //
+                                     std::move(snapshot_delegate)  //
+            );
+        shell_holder_promise.set_value(std::make_unique<Shell::ShellHolder>(
+            std::move(shell), std::move(platform_view), std::move(engine_ref),
+            std::move(rasterizer), std::move(io_manager)));
       }));
-
-  if (!shell->Setup(std::move(platform_view),  //
-                    engine_future.get(),       //
-                    rasterizer_future.get(),   //
-                    io_manager_future.get())   //
-  ) {
-    return nullptr;
-  }
-
-  return shell;
+  return;
 }
 
 static void Tokenize(const std::string& input,
@@ -249,6 +251,21 @@ std::unique_ptr<Shell> Shell::Create(
   );
 }
 
+std::future<std::unique_ptr<Shell::ShellHolder>> Shell::CreateShellHolder(
+    std::unique_ptr<ShellCreateParams> params) {
+  PerformInitializationTasks(params->settings);
+  PersistentCache::SetCacheSkSL(params->settings.cache_sksl);
+  TRACE_EVENT0("flutter", "Shell::Create");
+  auto vm = DartVMRef::Create(params->settings);
+  FML_CHECK(vm) << "Must be able to initialize the VM.";
+  auto vm_data = vm->GetVMData();
+  return Shell::InitShellEnv(
+      std::move(params->task_runners), std::move(params->window_data),
+      std::move(params->settings), vm_data->GetIsolateSnapshot(),
+      std::move(params->on_create_platform_view),
+      std::move(params->on_create_rasterizer), std::move(vm));
+}
+
 std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
     const WindowData window_data,
@@ -283,13 +300,12 @@ std::unique_ptr<Shell> Shell::Create(
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
     DartVMRef vm) {
-  PerformInitializationTasks(settings);
-  PersistentCache::SetCacheSkSL(settings.cache_sksl);
-
-  TRACE_EVENT0("flutter", "Shell::CreateWithSnapshots");
-
-  if (!task_runners.IsValid() || !on_create_platform_view ||
-      !on_create_rasterizer) {
+  auto shell_holder_future = Shell::InitShellEnv(
+      std::move(task_runners), window_data, settings,
+      std::move(isolate_snapshot), std::move(on_create_platform_view),
+      std::move(on_create_rasterizer), std::move(vm));
+  auto shell_holder = shell_holder_future.get();
+  if (!shell_holder) {
     return nullptr;
   }
 
@@ -297,9 +313,45 @@ std::unique_ptr<Shell> Shell::Create(
   std::unique_ptr<Shell> shell;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetPlatformTaskRunner(),
-      fml::MakeCopyable([&latch,                                          //
+      fml::MakeCopyable([&latch, &shell, &shell_holder
+
+  ]() mutable {
+        shell = Shell::MakeShellFromHolder(std::move(shell_holder));
+        latch.Signal();
+      }));
+  latch.Wait();
+
+  return shell;
+}
+
+std::future<std::unique_ptr<Shell::ShellHolder>> Shell::InitShellEnv(
+    TaskRunners task_runners,
+    const WindowData window_data,
+    Settings settings,
+    fml::RefPtr<const DartSnapshot> isolate_snapshot,
+    const Shell::CreateCallback<PlatformView>& on_create_platform_view,
+    const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
+    DartVMRef vm) {
+  PerformInitializationTasks(settings);
+  PersistentCache::SetCacheSkSL(settings.cache_sksl);
+
+  TRACE_EVENT0("flutter", "Shell::CreateWithSnapshots");
+
+  if (!task_runners.IsValid() || !on_create_platform_view ||
+      !on_create_rasterizer) {
+    std::promise<std::unique_ptr<Shell::ShellHolder>> shell_holder_promise;
+    shell_holder_promise.set_value(nullptr);
+    return shell_holder_promise.get_future();
+  }
+
+  // fml::AutoResetWaitableEvent latch;
+  std::promise<std::unique_ptr<Shell::ShellHolder>> shell_holder_promise;
+  auto shell_holder_future = shell_holder_promise.get_future();
+
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners.GetPlatformTaskRunner(),
+      fml::MakeCopyable([shell_holder_promise = std::move(shell_holder_promise),
                          vm = std::move(vm),                              //
-                         &shell,                                          //
                          task_runners = std::move(task_runners),          //
                          window_data,                                     //
                          settings,                                        //
@@ -307,18 +359,17 @@ std::unique_ptr<Shell> Shell::Create(
                          on_create_platform_view,                         //
                          on_create_rasterizer                             //
   ]() mutable {
-        shell = CreateShellOnPlatformThread(std::move(vm),
-                                            std::move(task_runners),      //
-                                            window_data,                  //
-                                            settings,                     //
-                                            std::move(isolate_snapshot),  //
-                                            on_create_platform_view,      //
-                                            on_create_rasterizer          //
+        CreateShellOnPlatformThread(std::move(shell_holder_promise),
+                                    std::move(vm),                //
+                                    std::move(task_runners),      //
+                                    window_data,                  //
+                                    settings,                     //
+                                    std::move(isolate_snapshot),  //
+                                    on_create_platform_view,      //
+                                    on_create_rasterizer          //
         );
-        latch.Signal();
       }));
-  latch.Wait();
-  return shell;
+  return shell_holder_future;
 }
 
 Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
@@ -1535,6 +1586,18 @@ bool Shell::ReloadSystemFonts() {
 
 std::shared_ptr<fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch() const {
   return is_gpu_disabled_sync_switch_;
+}
+
+std::unique_ptr<Shell> Shell::MakeShellFromHolder(
+    std::unique_ptr<ShellHolder> holder) {
+  FML_CHECK(holder->shell->GetTaskRunners()
+                .GetPlatformTaskRunner()
+                ->RunsTasksOnCurrentThread())
+      << "MakeShellFromHolder() must run in platformThread!";
+  holder->shell->Setup(std::move(holder->platform_view),
+                       std::move(holder->engine), std::move(holder->rasterizer),
+                       std::move(holder->io_manager));
+  return std::move(holder->shell);
 }
 
 }  // namespace flutter
