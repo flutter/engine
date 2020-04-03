@@ -459,7 +459,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         _convertEventsToPointerData(data: pointerData, event: event, details: details);
       }
       _callback(pointerData);
-    });
+    }, acceptOutsideGlasspane: true);
 
     _addPointerEventListener('pointerup', (html.PointerEvent event) {
       final int device = event.pointerId;
@@ -750,7 +750,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final _SanitizedDetails sanitizedDetails = _sanitizer.sanitizeMoveEvent(buttons: event.buttons);
       _convertEventsToPointerData(data: pointerData, event: event, details: sanitizedDetails);
       _callback(pointerData);
-    });
+    }, acceptOutsideGlasspane: true);
 
     _addMouseEventListener('mouseup', (html.MouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];

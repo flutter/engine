@@ -1478,6 +1478,18 @@ void main() {
       ));
       packets.clear();
 
+      // Move outside the glasspane.
+      html.window.dispatchEvent(context.primaryMove(
+        clientX: 900.0,
+        clientY: 1900.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(900.0));
+      expect(packets[0].data[0].physicalY, equals(1900.0));
+      packets.clear();
+
       // Release outside the glasspane.
       html.window.dispatchEvent(context.primaryUp(
         clientX: 1000.0,
