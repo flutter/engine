@@ -207,6 +207,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   for (SemanticsObject* child in _children) {
     [child privateSetParent:nil];
   }
+  [_children removeAllObjects];
   [_children release];
   _parent = nil;
   _container.get().semanticsObject = nil;
@@ -263,9 +264,9 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 - (void)replaceChildAtIndex:(NSInteger)index withChild:(SemanticsObject*)child {
   SemanticsObject* oldChild = _children[index];
-  [_children replaceObjectAtIndex:index withObject:child];
   [oldChild privateSetParent:nil];
   [child privateSetParent:self];
+  [_children replaceObjectAtIndex:index withObject:child];
 }
 
 #pragma mark - UIAccessibility overrides
