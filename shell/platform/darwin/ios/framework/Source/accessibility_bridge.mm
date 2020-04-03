@@ -250,12 +250,12 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   _parent = parent;
 }
 
-- (void)setChildren:(NSMutableArray<SemanticsObject*>*)children {
+- (void)setChildren:(NSArray<SemanticsObject*>*)children {
   for (SemanticsObject* child in _children) {
     [child privateSetParent:nil];
   }
   [_children release];
-  _children = [children retain];
+  _children = [[NSMutableArray alloc] initWithArray:children];
   for (SemanticsObject* child in _children) {
     [child privateSetParent:self];
   }
