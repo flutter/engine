@@ -164,6 +164,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 @end
 
+@interface SemanticsObject ()
+/** Should only be called in conjunction with setting child/parent relationship. */
+- (void)privateSetParent:(SemanticsObject*)parent;
+@end
+
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
   NSMutableArray<SemanticsObject*>* _children;
@@ -200,7 +205,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 - (void)dealloc {
   for (SemanticsObject* child in _children) {
-    child.parent = nil;
+    [child privateSetParent:nil];
   }
   [_children release];
   _parent = nil;
@@ -241,22 +246,26 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   return [self.children count] != 0;
 }
 
+- (void)privateSetParent:(SemanticsObject*)parent {
+  _parent = parent;
+}
+
 - (void)setChildren:(NSMutableArray<SemanticsObject*>*)children {
   for (SemanticsObject* child in _children) {
-    child.parent = nil;
+    [child privateSetParent:nil];
   }
   [_children release];
   _children = [children retain];
   for (SemanticsObject* child in _children) {
-    child.parent = self;
+    [child privateSetParent:self];
   }
 }
 
 - (void)replaceChildAtIndex:(NSInteger)index withChild:(SemanticsObject*)child {
   SemanticsObject* oldChild = _children[index];
   [_children replaceObjectAtIndex:index withObject:child];
-  oldChild.parent = nil;
-  child.parent = self;
+  [oldChild privateSetParent:nil];
+  [child privateSetParent:self];
 }
 
 #pragma mark - UIAccessibility overrides
@@ -761,7 +770,6 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
         [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
     for (NSUInteger i = 0; i < newChildCount; ++i) {
       SemanticsObject* child = GetOrCreateObject(node.childrenInTraversalOrder[i], nodes);
-      child.parent = object;
       [newChildren addObject:child];
     }
     object.children = newChildren;

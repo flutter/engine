@@ -43,7 +43,7 @@ class AccessibilityBridge;
  * The parent of this node in the node tree. Will be nil for the root node and
  * during transient state changes.
  */
-@property(nonatomic, assign) SemanticsObject* parent;
+@property(nonatomic, readonly) SemanticsObject* parent;
 
 /**
  * The accessibility bridge that this semantics object is attached to. This
