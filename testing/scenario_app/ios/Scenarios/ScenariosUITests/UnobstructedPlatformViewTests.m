@@ -251,4 +251,29 @@
   XCTAssertFalse(app.otherElements[@"platform_view[0].overlay[1]"].exists);
 }
 
+// A is the layer above the platform view.
+// +-----------------+
+// | PV        +---+ |
+// +-----------| A |-+
+//             +---+
+- (void)testObstructedPlatformView {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments = @[ @"--platform-view-obstructed" ];
+  [app launch];
+
+  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCTAssertTrue(platform_view.exists);
+  XCTAssertEqual(platform_view.frame.origin.x, 25);
+  XCTAssertEqual(platform_view.frame.origin.y, 25);
+  XCTAssertEqual(platform_view.frame.size.width, 250);
+  XCTAssertEqual(platform_view.frame.size.height, 250);
+
+  XCUIElement* overlay1 = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCTAssertTrue(overlay1.exists);
+  // Full screen overlay
+  XCTAssertEqual(overlay1.frame.origin.x, 0);
+  XCTAssertEqual(overlay1.frame.origin.y, 0);
+  XCTAssertEqual(overlay1.frame.size.width, 375);
+  XCTAssertEqual(overlay1.frame.size.height, 667);
+}
 @end

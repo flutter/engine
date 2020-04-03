@@ -37,6 +37,7 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
   'platform_view_gesture_reject_eager': PlatformViewForTouchIOSScenario(window, 'platform view touch', id: 11, accept: false),
   'platform_view_gesture_accept': PlatformViewForTouchIOSScenario(window, 'platform view touch', id: 11, accept: true),
   'platform_view_gesture_reject_after_touches_ended': PlatformViewForTouchIOSScenario(window, 'platform view touch', id: 11, accept: false, rejectUntilTouchesEnded: true),
+  'platform_view_obstructed': PlatformViewObstructedScenario(window, 'Platform view obstructed', id: 0),
   'tap_status_bar' : TouchesScenario(window),
 };
 

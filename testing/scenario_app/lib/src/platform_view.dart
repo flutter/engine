@@ -266,6 +266,47 @@ class PlatformViewMaxOverlaysScenario extends Scenario with _BasePlatformViewSce
   }
 }
 
+/// A simple platform view obstructed by a full screen overlay.
+class PlatformViewObstructedScenario extends Scenario with _BasePlatformViewScenarioMixin {
+  /// Creates the PlatformView scenario.
+  ///
+  /// The [window] parameter must not be null.
+  PlatformViewObstructedScenario(Window window, String text, {int id = 0})
+      : assert(window != null),
+        super(window) {
+    createPlatformView(window, text, id, viewType: 'scenarios/textPlatformView_obstructed');
+  }
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0, 0);
+
+    _addPlatformViewtoScene(builder, 0, 500, 500);
+
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    final Offset overlayOffset = const Offset(150, 250);
+    canvas.drawCircle(
+      overlayOffset,
+      50,
+      Paint()..color = const Color(0xFFABCDEF),
+    );
+    final Picture picture = recorder.endRecording();
+    builder.addPicture(const Offset(300, 300), picture);
+    final Scene scene = builder.build();
+    window.render(scene);
+    scene.dispose();
+
+    finishBuilderByAddingPlatformViewAndPicture(
+      builder,
+      0,
+      overlayOffset: const Offset(150, 250),
+    );
+  }
+}
+
 /// Builds a scene with 2 platform views.
 class MultiPlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.

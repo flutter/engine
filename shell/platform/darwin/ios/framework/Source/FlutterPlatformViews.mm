@@ -177,6 +177,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   touch_interceptors_[viewId] =
       fml::scoped_nsobject<FlutterTouchInterceptingView>([touch_interceptor retain]);
   root_views_[viewId] = fml::scoped_nsobject<UIView>([touch_interceptor retain]);
+  composite_mode_for_view_id_[viewId] = composite_mode_for_view_factory_[viewType];
 
   result(nil);
 }
@@ -235,12 +236,14 @@ void FlutterPlatformViewsController::OnRejectGesture(FlutterMethodCall* call,
 void FlutterPlatformViewsController::RegisterViewFactory(
     NSObject<FlutterPlatformViewFactory>* factory,
     NSString* factoryId,
-    FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy) {
+    FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy,
+    FlutterPlatformViewCompositeMode compositeMode) {
   std::string idString([factoryId UTF8String]);
   FML_CHECK(factories_.count(idString) == 0);
   factories_[idString] =
       fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>([factory retain]);
   gesture_recognizers_blocking_policies[idString] = gestureRecognizerBlockingPolicy;
+  composite_mode_for_view_factory_[idString] = compositeMode;
 }
 
 void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
@@ -465,14 +468,9 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
   );
 }
 
-bool FlutterPlatformViewsController::ShouldUnobstructPlatformView() {
-#if FLUTTER_ENABLE_UNOBSTRUCTED_PLATFORM_VIEWS
-  bool disabled = [[[NSBundle mainBundle]
-      objectForInfoDictionaryKey:@"io.flutter.disable_unobstructed_platform_views"] boolValue];
-  return !disabled;
-#else
-  return false;
-#endif  // FLUTTER_ENABLE_UNOBSTRUCTED_PLATFORM_VIEWS
+bool FlutterPlatformViewsController::ShouldUnobstructPlatformView(int64_t platform_view_id) {
+  return composite_mode_for_view_id_[platform_view_id] ==
+         FlutterPlatformViewCompositeModeUnobstructed;
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
@@ -480,14 +478,11 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
                                                  SkCanvas* background_canvas) {
   DisposeViews();
 
-  static bool should_unobstruct_platform_views = ShouldUnobstructPlatformView();
-  if (should_unobstruct_platform_views) {
-    // Resolve all pending GPU operations before allocating a new surface.
-    background_canvas->flush();
-    // Clipping the background canvas before drawing the picture recorders requires to
-    // save and restore the clip context.
-    SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
-  }
+  // Resolve all pending GPU operations before allocating a new surface.
+  background_canvas->flush();
+  // Clipping the background canvas before drawing the picture recorders requires to
+  // save and restore the clip context.
+  SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
 
@@ -500,8 +495,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
     sk_sp<SkPicture> picture = picture_recorders_[platform_view_id]->finishRecordingAsPicture();
 
     // If unobstructed platform views is disabled, then default to creating a
-    // fullscreen overlay for each platform view.
-    if (!should_unobstruct_platform_views) {
+    // fullscreen overlay for this platform view.
+    if (!ShouldUnobstructPlatformView(platform_view_id)) {
       SkRect fullscreen_rect = SkRect::Make(frame_size_);
       std::shared_ptr<FlutterPlatformViewLayer> layer = GetLayer(gr_context,        //
                                                                  ios_context,       //
@@ -679,6 +674,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     current_composition_params_.erase(viewId);
     clip_count_.erase(viewId);
     views_to_recomposite_.erase(viewId);
+    composite_mode_for_view_id_.erase(viewId);
   }
   views_to_dispose_.clear();
 }

@@ -45,6 +45,7 @@
     @"--platform-view-transform" : @"platform_view_transform",
     @"--platform-view-opacity" : @"platform_view_opacity",
     @"--platform-view-rotate" : @"platform_view_rotate",
+    @"--platform-view-obstructed" : @"platform_view_obstructed",
     @"--gesture-reject-after-touches-ended" : @"platform_view_gesture_reject_after_touches_ended",
     @"--gesture-reject-eager" : @"platform_view_gesture_reject_eager",
     @"--gesture-accept" : @"platform_view_gesture_accept",
@@ -113,6 +114,13 @@
                                 withId:@"scenarios/textPlatformView_blockPolicyUntilTouchesEnded"
       gestureRecognizersBlockingPolicy:
           FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded];
+
+  [registrar registerViewFactory:textPlatformViewFactory
+                                withId:@"scenarios/textPlatformView_obstructed"
+      gestureRecognizersBlockingPolicy:
+          FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded
+                         compositeMode:FlutterPlatformViewCompositeModeObstructed];
+
   self.window.rootViewController = flutterViewController;
 }
 

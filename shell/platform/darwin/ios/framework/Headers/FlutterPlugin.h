@@ -264,6 +264,23 @@ typedef enum {
   FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded,
 } FlutterPlatformViewGestureRecognizersBlockingPolicy;
 
+/**
+ * How the platform view and Flutter UI is composed.
+ */
+typedef enum {
+  /**
+   * A `UIView` is put above of the platform view to render Flutter UI that is above the platform
+   * view by z index.
+   */
+  FlutterPlatformViewCompositeModeObstructed,
+  /**
+   * No `UIView` is put above the platform view if no Flutter UI is above the platform view by z
+   * index. Otherwise, a minimal UIView is put above the platform view without entirely obstructing
+   * it.
+   */
+  FlutterPlatformViewCompositeModeUnobstructed,
+} FlutterPlatformViewCompositeMode;
+
 #pragma mark -
 /**
  * Registration context for a single `FlutterPlugin`, providing a one stop shop
@@ -313,12 +330,29 @@ typedef enum {
  *   this identifier to request creation of a `UIView` by the registered factory.
  * @param gestureRecognizersBlockingPolicy How UIGestureRecognizers on the platform views are
  * blocked.
- *
  */
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy;
+
+/**
+ * Registers a `FlutterPlatformViewFactory` for creation of platform views.
+ *
+ * Plugins can expose a `UIView` for embedding in Flutter apps by registering a view factory.
+ *
+ * @param factory The view factory that will be registered.
+ * @param factoryId A unique identifier for the factory, the Dart code of the Flutter app can use
+ *   this identifier to request creation of a `UIView` by the registered factory.
+ * @param gestureRecognizersBlockingPolicy How UIGestureRecognizers on the platform views are
+ * blocked.
+ * @param compositeMode How the platform view and Flutter UI are composed together.
+ */
+- (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
+                              withId:(NSString*)factoryId
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy
+                       compositeMode:(FlutterPlatformViewCompositeMode)compositeMode;
 
 /**
  * Publishes a value for external use of the plugin.

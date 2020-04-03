@@ -130,7 +130,8 @@ class FlutterPlatformViewsController {
   void RegisterViewFactory(
       NSObject<FlutterPlatformViewFactory>* factory,
       NSString* factoryId,
-      FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy);
+      FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy,
+      FlutterPlatformViewCompositeMode compositeMode);
 
   void SetFrameSize(SkISize frame_size);
 
@@ -159,8 +160,8 @@ class FlutterPlatformViewsController {
   // Discards all platform views instances and auxiliary resources.
   void Reset();
 
-  // Returns true if platform views shouldn't be blocked by a fullscreen overlay.
-  bool ShouldUnobstructPlatformView();
+  // Returns true if the platform view shouldn't be blocked by a fullscreen overlay.
+  bool ShouldUnobstructPlatformView(int64_t platform_view_id);
 
   bool SubmitFrame(GrContext* gr_context,
                    std::shared_ptr<IOSContext> ios_context,
@@ -230,6 +231,12 @@ class FlutterPlatformViewsController {
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies;
+
+  // Whether the platform view should be obstructed or unobstructed keyed off the factory id.
+  std::map<std::string, FlutterPlatformViewCompositeMode> composite_mode_for_view_factory_;
+
+  // Whether the platform view should be obstructed or unobstructed keyoff the view id.
+  std::map<int64_t, FlutterPlatformViewCompositeMode> composite_mode_for_view_id_;
 
   void OnCreate(FlutterMethodCall* call, FlutterResult& result);
   void OnDispose(FlutterMethodCall* call, FlutterResult& result);

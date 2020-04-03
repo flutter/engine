@@ -127,10 +127,6 @@ shared_library("create_flutter_framework_dylib") {
 
   defines = [ "FLUTTER_FRAMEWORK=1" ]
 
-  if (enable_unobstructed_platform_views) {
-    defines += [ "FLUTTER_ENABLE_UNOBSTRUCTED_PLATFORM_VIEWS=1" ]
-  }
-
   if (shell_enable_metal) {
     defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
 

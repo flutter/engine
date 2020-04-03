@@ -5,6 +5,5 @@
 declare_args() {
   shell_enable_vulkan = false
   shell_enable_metal = false
-  enable_unobstructed_platform_views = false
   stripped_symbols = true
 }

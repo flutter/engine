@@ -817,15 +817,28 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                      withId:(NSString*)factoryId {
   [self registerViewFactory:factory
                                 withId:factoryId
-      gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager];
+      gestureRecognizersBlockingPolicy:FlutterPlatformViewGestureRecognizersBlockingPolicyEager
+                         compositeMode:FlutterPlatformViewCompositeModeUnobstructed];
 }
 
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy {
-  [_flutterEngine platformViewsController]->RegisterViewFactory(factory, factoryId,
-                                                                gestureRecognizersBlockingPolicy);
+  [self registerViewFactory:factory
+                                withId:factoryId
+      gestureRecognizersBlockingPolicy:gestureRecognizersBlockingPolicy
+                         compositeMode:FlutterPlatformViewCompositeModeUnobstructed];
+}
+
+- (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
+                              withId:(NSString*)factoryId
+    gestureRecognizersBlockingPolicy:
+        (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy
+                       compositeMode:(FlutterPlatformViewCompositeMode)compositeMode {
+  [_flutterEngine platformViewsController] -> RegisterViewFactory(factory, factoryId,
+                                                                  gestureRecognizersBlockingPolicy,
+                                                                  compositeMode);
 }
 
 @end
