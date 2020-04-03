@@ -183,6 +183,13 @@ abstract class _BaseAdapter {
     _nativeListeners.clear();
   }
 
+  /// Adds a listener to the given [eventName].
+  ///
+  /// The event listener is attached to [html.window] but only events that have
+  /// [glassPaneElement] as a target will be let through by default.
+  ///
+  /// If [acceptOutsideGlasspane] is set to true, events outside of the
+  /// glasspane will also invoke the [handler].
   void addEventListener(
     String eventName,
     html.EventListener handler, {
