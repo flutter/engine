@@ -77,6 +77,11 @@ public class TextInputPlugin {
           }
 
           @Override
+          public void requestAutofill() {
+            notifyViewEntered();
+          }
+
+          @Override
           public void setClient(
               int textInputClientId, TextInputChannel.Configuration configuration) {
             setTextInputClient(textInputClientId, configuration);
@@ -282,7 +287,6 @@ public class TextInputPlugin {
 
   private void showTextInput(View view) {
     view.requestFocus();
-    notifyViewEntered();
     mImm.showSoftInput(view, 0);
   }
 

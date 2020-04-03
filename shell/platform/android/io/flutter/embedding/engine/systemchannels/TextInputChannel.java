@@ -268,6 +268,13 @@ public class TextInputChannel {
     // TODO(mattcarroll): javadoc
     void hide();
 
+    /**
+     * Requests that the autofill dropdown menu appear for the current client.
+     *
+     * <p>Has no effect if the current client does not support autofill.
+     */
+    void requestAutofill();
+
     // TODO(mattcarroll): javadoc
     void setClient(int textInputClientId, @NonNull Configuration configuration);
 
