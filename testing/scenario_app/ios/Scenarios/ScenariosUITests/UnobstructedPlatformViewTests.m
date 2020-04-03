@@ -24,14 +24,14 @@
   app.launchArguments = @[ @"--platform-view-no-overlay-intersection" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.textViews[@"platform_view[1]"];
   XCTAssertTrue(platform_view.exists);
   XCTAssertEqual(platform_view.frame.origin.x, 25);
   XCTAssertEqual(platform_view.frame.origin.y, 25);
   XCTAssertEqual(platform_view.frame.size.width, 250);
   XCTAssertEqual(platform_view.frame.size.height, 250);
 
-  XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCUIElement* overlay = app.otherElements[@"platform_view[1].overlay[0]"];
   XCTAssertFalse(overlay.exists);
 }
 
@@ -71,14 +71,14 @@
   app.launchArguments = @[ @"--platform-view-partial-intersection" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.textViews[@"platform_view[2]"];
   XCTAssertTrue(platform_view.exists);
   XCTAssertEqual(platform_view.frame.origin.x, 25);
   XCTAssertEqual(platform_view.frame.origin.y, 25);
   XCTAssertEqual(platform_view.frame.size.width, 250);
   XCTAssertEqual(platform_view.frame.size.height, 250);
 
-  XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCUIElement* overlay = app.otherElements[@"platform_view[2].overlay[0]"];
   XCTAssertTrue(overlay.exists);
   XCTAssertEqual(overlay.frame.origin.x, 200);
   XCTAssertEqual(overlay.frame.origin.y, 250);
@@ -99,21 +99,21 @@
   app.launchArguments = @[ @"--platform-view-two-intersecting-overlays" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.textViews[@"platform_view[3]"];
   XCTAssertTrue(platform_view.exists);
   XCTAssertEqual(platform_view.frame.origin.x, 25);
   XCTAssertEqual(platform_view.frame.origin.y, 25);
   XCTAssertEqual(platform_view.frame.size.width, 250);
   XCTAssertEqual(platform_view.frame.size.height, 250);
 
-  XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCUIElement* overlay = app.otherElements[@"platform_view[3].overlay[0]"];
   XCTAssertTrue(overlay.exists);
   XCTAssertEqual(overlay.frame.origin.x, 150);
   XCTAssertEqual(overlay.frame.origin.y, 150);
   XCTAssertEqual(overlay.frame.size.width, 75);
   XCTAssertEqual(overlay.frame.size.height, 75);
 
-  XCTAssertFalse(app.otherElements[@"platform_view[0].overlay[1]"].exists);
+  XCTAssertFalse(app.otherElements[@"platform_view[3].overlay[1]"].exists);
 }
 
 // A, B, and C are the layers above the platform view.
@@ -128,21 +128,21 @@
   app.launchArguments = @[ @"--platform-view-one-overlay-two-intersecting-overlays" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.textViews[@"platform_view[4]"];
   XCTAssertTrue(platform_view.exists);
   XCTAssertEqual(platform_view.frame.origin.x, 25);
   XCTAssertEqual(platform_view.frame.origin.y, 25);
   XCTAssertEqual(platform_view.frame.size.width, 250);
   XCTAssertEqual(platform_view.frame.size.height, 250);
 
-  XCUIElement* overlay1 = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCUIElement* overlay1 = app.otherElements[@"platform_view[4].overlay[0]"];
   XCTAssertTrue(overlay1.exists);
   XCTAssertEqual(overlay1.frame.origin.x, 150);
   XCTAssertEqual(overlay1.frame.origin.y, 150);
   XCTAssertEqual(overlay1.frame.size.width, 75);
   XCTAssertEqual(overlay1.frame.size.height, 75);
 
-  XCUIElement* overlay2 = app.otherElements[@"platform_view[0].overlay[1]"];
+  XCUIElement* overlay2 = app.otherElements[@"platform_view[4].overlay[1]"];
   XCTAssertTrue(overlay2.exists);
   XCTAssertEqual(overlay2.frame.origin.x, 75);
   XCTAssertEqual(overlay2.frame.origin.y, 225);
@@ -162,22 +162,22 @@
   app.launchArguments = @[ @"--platform-view-multiple-without-overlays" ];
   [app launch];
 
-  XCUIElement* platform_view1 = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view1 = app.textViews[@"platform_view[5]"];
   XCTAssertTrue(platform_view1.exists);
   XCTAssertEqual(platform_view1.frame.origin.x, 25);
   XCTAssertEqual(platform_view1.frame.origin.y, 325);
   XCTAssertEqual(platform_view1.frame.size.width, 250);
   XCTAssertEqual(platform_view1.frame.size.height, 250);
 
-  XCUIElement* platform_view2 = app.textViews[@"platform_view[1]"];
+  XCUIElement* platform_view2 = app.textViews[@"platform_view[6]"];
   XCTAssertTrue(platform_view2.exists);
   XCTAssertEqual(platform_view2.frame.origin.x, 25);
   XCTAssertEqual(platform_view2.frame.origin.y, 25);
   XCTAssertEqual(platform_view2.frame.size.width, 250);
   XCTAssertEqual(platform_view2.frame.size.height, 250);
 
-  XCTAssertFalse(app.otherElements[@"platform_view[0].overlay[0]"].exists);
-  XCTAssertFalse(app.otherElements[@"platform_view[1].overlay[0]"].exists);
+  XCTAssertFalse(app.otherElements[@"platform_view[5].overlay[0]"].exists);
+  XCTAssertFalse(app.otherElements[@"platform_view[6].overlay[0]"].exists);
 }
 
 // A is the layer above both platform view.
@@ -192,28 +192,28 @@
   app.launchArguments = @[ @"--platform-view-multiple-background-foreground" ];
   [app launch];
 
-  XCUIElement* platform_view1 = app.textViews[@"platform_view[8]"];
+  XCUIElement* platform_view1 = app.textViews[@"platform_view[15]"];
   XCTAssertTrue(platform_view1.exists);
   XCTAssertEqual(platform_view1.frame.origin.x, 25);
   XCTAssertEqual(platform_view1.frame.origin.y, 325);
   XCTAssertEqual(platform_view1.frame.size.width, 250);
   XCTAssertEqual(platform_view1.frame.size.height, 250);
 
-  XCUIElement* platform_view2 = app.textViews[@"platform_view[9]"];
+  XCUIElement* platform_view2 = app.textViews[@"platform_view[16]"];
   XCTAssertTrue(platform_view2.exists);
   XCTAssertEqual(platform_view2.frame.origin.x, 25);
   XCTAssertEqual(platform_view2.frame.origin.y, 25);
   XCTAssertEqual(platform_view2.frame.size.width, 250);
   XCTAssertEqual(platform_view2.frame.size.height, 250);
 
-  XCUIElement* overlay1 = app.otherElements[@"platform_view[8].overlay[0]"];
+  XCUIElement* overlay1 = app.otherElements[@"platform_view[15].overlay[0]"];
   XCTAssertTrue(overlay1.exists);
   XCTAssertEqual(overlay1.frame.origin.x, 25);
   XCTAssertEqual(overlay1.frame.origin.y, 325);
   XCTAssertEqual(overlay1.frame.size.width, 225);
   XCTAssertEqual(overlay1.frame.size.height, 175);
 
-  XCUIElement* overlay2 = app.otherElements[@"platform_view[9].overlay[0]"];
+  XCUIElement* overlay2 = app.otherElements[@"platform_view[16].overlay[0]"];
   XCTAssertTrue(overlay2.exists);
   XCTAssertEqual(overlay2.frame.origin.x, 25);
   XCTAssertEqual(overlay2.frame.origin.y, 25);
@@ -234,21 +234,21 @@
   app.launchArguments = @[ @"--platform-view-max-overlays" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.textViews[@"platform_view[7]"];
   XCTAssertTrue(platform_view.exists);
   XCTAssertEqual(platform_view.frame.origin.x, 25);
   XCTAssertEqual(platform_view.frame.origin.y, 25);
   XCTAssertEqual(platform_view.frame.size.width, 250);
   XCTAssertEqual(platform_view.frame.size.height, 250);
 
-  XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCUIElement* overlay = app.otherElements[@"platform_view[7].overlay[0]"];
   XCTAssertTrue(overlay.exists);
   XCTAssertEqual(overlay.frame.origin.x, 75);
   XCTAssertEqual(overlay.frame.origin.y, 85);
   XCTAssertEqual(overlay.frame.size.width, 150);
   XCTAssertEqual(overlay.frame.size.height, 190);
 
-  XCTAssertFalse(app.otherElements[@"platform_view[0].overlay[1]"].exists);
+  XCTAssertFalse(app.otherElements[@"platform_view[7].overlay[1]"].exists);
 }
 
 // A is the layer above the platform view.
@@ -261,14 +261,14 @@
   app.launchArguments = @[ @"--platform-view-obstructed" ];
   [app launch];
 
-  XCUIElement* platform_view = app.textViews[@"platform_view[0]"];
+  XCUIElement* platform_view = app.textViews[@"platform_view[21]"];
   XCTAssertTrue(platform_view.exists);
   XCTAssertEqual(platform_view.frame.origin.x, 25);
   XCTAssertEqual(platform_view.frame.origin.y, 25);
   XCTAssertEqual(platform_view.frame.size.width, 250);
   XCTAssertEqual(platform_view.frame.size.height, 250);
 
-  XCUIElement* overlay1 = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCUIElement* overlay1 = app.otherElements[@"platform_view[21].overlay[0]"];
   XCTAssertTrue(overlay1.exists);
   // Full screen overlay
   XCTAssertEqual(overlay1.frame.origin.x, 0);

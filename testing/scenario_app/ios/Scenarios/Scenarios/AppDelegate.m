@@ -114,7 +114,6 @@
                                 withId:@"scenarios/textPlatformView_blockPolicyUntilTouchesEnded"
       gestureRecognizersBlockingPolicy:
           FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded];
-
   [registrar registerViewFactory:textPlatformViewFactory
                                 withId:@"scenarios/textPlatformView_obstructed"
       gestureRecognizersBlockingPolicy:
