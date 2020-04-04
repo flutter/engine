@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:matcher/matcher.dart';
 import 'package:webdriver/async_io.dart' as async_io;
 import 'package:webdriver/support/async.dart';
 
 import 'dart:async';
 import 'dart:convert';
-
-import 'package:matcher/matcher.dart';
 
 /// Runs the unit tests using [async_io.WebDriver].
 class UnitTestRunner {
@@ -17,24 +16,30 @@ class UnitTestRunner {
   async_io.WebDriver _testDriver;
 
   Future<void> runWebDriverBasedTests(String browser) async {
-    assert(browser == 'ios-safari', 'Browser $browser not supported.');
-
-    _testDriver = await _createTestDriver(
-      driverPort,
-      browser,
-    );
-
-    if (_testDriver == null) {
-      throw Exception('Failed creating the test driver.');
+    if(browser != 'ios-safari') {
+      throw Exception('Browser $browser not supported.');
     }
 
-    // TODO(nurhan): Loop over all the tests now only one test registers the
-    // driver commands to DOM. Rest will be added after the testing strategy
-    // is discussed in the PR.
-    await _testDriver.get(_testUrl('dom_renderer_test'));
-    await _runOneTest('dom_renderer_test');
+    try {
+      _testDriver = await _createTestDriver(
+        driverPort,
+        browser,
+      );
 
-    _testDriver.quit();
+      if (_testDriver == null) {
+        throw Exception('Failed creating the test driver.');
+      }
+
+      // TODO(nurhan): Loop over all the tests now only one test registers the
+      // driver commands to DOM. I added only two tests. Expected changes is
+      // very large. I will do all the other tests in the next PR, once logic is
+      // merged.
+      await _testDriver.get(_testUrl('alarm_clock_test'));
+      await _runOneTest('alarm_clock_test');
+      await _runOneTest('dom_renderer_test');
+    } finally {
+      _testDriver?.quit(closeSession: true);
+    }
   }
 
   String _testUrl(String testName) =>
@@ -44,7 +49,6 @@ class UnitTestRunner {
     Map<String, dynamic> respone = await _fetchResults(
         DriverCommand(message: 'null', timeout: Duration(seconds: 5)));
     String testResult = respone['message'] as String;
-    print('run safari tests 4');
     if (testResult == 'pass') {
       print('INFO: Test passed successfully $testName');
     } else {
@@ -112,7 +116,8 @@ class UnitTestRunner {
       return <String, dynamic>{
         'platformName': 'ios',
         'browserName': 'safari',
-        'safari:useSimulator': true
+        'safari:useSimulator': true,
+        'safari:diagnose': true
       };
     } else {
       throw UnsupportedError('Browser $browser not supported.');

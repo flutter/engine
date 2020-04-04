@@ -9,7 +9,21 @@ import 'package:quiver/time.dart';
 
 import 'package:ui/src/engine.dart';
 
+import 'mobile_unit_test_bindings.dart';
+
+MobileUnitTestBindings mobileUnitTestBindings =
+    isIosSafari ? MobileUnitTestBindings() : null;
+
 void main() {
+  setUpAll(() {
+    if (isIosSafari) {
+      print('initialize ios safari');
+      mobileUnitTestBindings.initialize();
+    } else {
+      print('ios: ${operatingSystem} browser: ${browserEngine}');
+    }
+  });
+
   group(AlarmClock, () {
     _alarmClockTests();
   });
@@ -185,6 +199,13 @@ void _alarmClockTests() {
     fakeAsync.elapse(const Duration(minutes: 2));
     expect(callCount, 0);
     expect(fakeAsync.nonPeriodicTimerCount, 0);
+  });
+
+  tearDownAll(() {
+    if (isIosSafari) {
+      print('tear down all');
+      mobileUnitTestBindings.tearDown();
+    }
   });
 }
 

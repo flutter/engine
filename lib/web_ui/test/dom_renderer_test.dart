@@ -130,8 +130,7 @@ void main() {
   },
       // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50828
-      skip: (browserEngine == BrowserEngine.firefox ||
-          browserEngine == BrowserEngine.edge));
+      skip: (browserEngine != BrowserEngine.blink));
 
   test('accesibility placeholder is attached after creation', () {
     DomRenderer();
@@ -142,7 +141,7 @@ void main() {
 
   tearDownAll(() {
     if (isIosSafari) {
-      mobileUnitTestBindings.initialize();
+      mobileUnitTestBindings.tearDown();
     }
   });
 }
