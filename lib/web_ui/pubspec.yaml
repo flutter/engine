@@ -19,7 +19,7 @@ dev_dependencies:
   build_web_compilers: 2.7.1
   yaml: 2.2.0
   watcher: 0.9.7+12
-  webdriver: any
+  webdriver: 2.1.2
   web_engine_tester:
     path: ../../web_sdk/web_engine_tester
   web_driver_installer:
