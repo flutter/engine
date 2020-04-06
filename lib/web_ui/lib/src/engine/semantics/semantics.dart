@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Set this flag to `true` to cause the engine to visualize the semantics tree
@@ -1235,8 +1236,8 @@ class EngineSemanticsOwner {
       _gestureModeClock?.datetime = null;
     }
 
-    if (ui.window.onSemanticsEnabledChanged != null) {
-      ui.window.onSemanticsEnabledChanged();
+    if (window._onSemanticsEnabledChanged != null) {
+      window.invokeOnSemanticsEnabledChanged();
     }
   }
 

@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
+import 'dart:math' as math;
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
@@ -10,18 +12,24 @@ import 'package:test/test.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
+import 'scuba.dart';
+
 void main() async {
-  final Rect region = Rect.fromLTWH(8, 8, 500, 100); // Compensate for old scuba tester padding
+  final Rect region = Rect.fromLTWH(0, 0, 500, 100);
 
   BitmapCanvas canvas;
 
-  setUp(() {
-    html.document.body.style.transform = 'translate(10px, 10px)';
-  });
+  void appendToScene() {
+    // Create a <flt-scene> element to make sure our CSS reset applies correctly.
+    final html.Element testScene = html.Element.tag('flt-scene');
+    testScene.append(canvas.rootElement);
+    html.document.querySelector('flt-scene-host').append(testScene);
+  }
+
+  setUpStableTestFonts();
 
   tearDown(() {
-    html.document.body.style.transform = 'none';
-    canvas.rootElement.remove();
+    html.document.querySelector('flt-scene').remove();
   });
 
   /// Draws several lines, some aligned precisely with the pixel grid, and some
@@ -39,6 +47,8 @@ void main() async {
 
     final SurfacePaintData fillPaint =
         (SurfacePaint()..style = PaintingStyle.fill).paintData;
+
+    canvas.translate(10, 10);
 
     canvas.drawRect(
       const Rect.fromLTWH(0, 0, 40, 40),
@@ -66,10 +76,10 @@ void main() async {
 
     drawMisalignedLines(canvas);
 
-    html.document.body.append(canvas.rootElement);
+    appendToScene();
 
     await matchGoldenFile('misaligned_pixels_in_canvas_test.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('compensates for misalignment of the canvas', () async {
     // Notice the 0.5 offset in the bounds rectangle. It's what causes the
@@ -81,10 +91,10 @@ void main() async {
 
     drawMisalignedLines(canvas);
 
-    html.document.body.append(canvas.rootElement);
+    appendToScene();
 
     await matchGoldenFile('misaligned_canvas_test.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('fill the whole canvas with color even when transformed', () async {
     canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50));
@@ -92,10 +102,10 @@ void main() async {
     canvas.translate(25, 25);
     canvas.drawColor(const Color.fromRGBO(0, 255, 0, 1.0), BlendMode.src);
 
-    html.document.body.append(canvas.rootElement);
+    appendToScene();
 
     await matchGoldenFile('bitmap_canvas_fills_color_when_transformed.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('fill the whole canvas with paint even when transformed', () async {
     canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50));
@@ -105,8 +115,133 @@ void main() async {
       ..color = const Color.fromRGBO(0, 255, 0, 1.0)
       ..style = PaintingStyle.fill);
 
-    html.document.body.append(canvas.rootElement);
+    appendToScene();
 
     await matchGoldenFile('bitmap_canvas_fills_paint_when_transformed.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
+
+  // This test reproduces text blurriness when two pieces of text appear inside
+  // two nested clips:
+  //
+  //   ┌───────────────────────┐
+  //   │   text in outer clip  │
+  //   │ ┌────────────────────┐│
+  //   │ │ text in inner clip ││
+  //   │ └────────────────────┘│
+  //   └───────────────────────┘
+  //
+  // This test clips using canvas. See a similar test in `compositing_golden_test.dart`,
+  // which clips using layers.
+  //
+  // More details: https://github.com/flutter/flutter/issues/32274
+  test('renders clipped DOM text with high quality', () async {
+    final Paragraph paragraph =
+        (ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'))..addText('Am I blurry?')).build();
+    paragraph.layout(const ParagraphConstraints(width: 1000));
+
+    final Rect canvasSize = Rect.fromLTRB(
+      0,
+      0,
+      paragraph.maxIntrinsicWidth + 16,
+      2 * paragraph.height + 32,
+    );
+    final Rect outerClip =
+        Rect.fromLTRB(0.5, 0.5, canvasSize.right, canvasSize.bottom);
+    final Rect innerClip = Rect.fromLTRB(0.5, canvasSize.bottom / 2 + 0.5,
+        canvasSize.right, canvasSize.bottom);
+
+    canvas = BitmapCanvas(canvasSize);
+    canvas.debugChildOverdraw = true;
+    canvas.clipRect(outerClip);
+    canvas.drawParagraph(paragraph, const Offset(8.5, 8.5));
+    canvas.clipRect(innerClip);
+    canvas.drawParagraph(paragraph, Offset(8.5, 8.5 + innerClip.top));
+
+    expect(
+      canvas.rootElement.querySelectorAll('p').map<String>((e) => e.innerText).toList(),
+      <String>['Am I blurry?', 'Am I blurry?'],
+      reason: 'Expected to render text using HTML',
+    );
+
+    appendToScene();
+
+    await matchGoldenFile(
+      'bitmap_canvas_draws_high_quality_text.png',
+      region: canvasSize,
+      maxDiffRatePercent: 0.0,
+      pixelComparison: PixelComparison.precise,
+    );
+  }, testOn: 'chrome');
+
+  // NOTE: Chrome in --headless mode does not reproduce the bug that this test
+  //       attempts to reproduce. However, it's still good to have this test
+  //       for potential future regressions related to paint order.
+  test('draws text on top of canvas when transformed and clipped', () async {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontSize: 18,
+    ));
+
+    const String text = 'This text is intentionally very long to make sure that it '
+      'breaks into multiple lines.';
+    builder.addText(text);
+
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100));
+
+    final Rect canvasSize = Offset.zero & Size(500, 500);
+
+    canvas = BitmapCanvas(canvasSize);
+    canvas.debugChildOverdraw = true;
+
+    final SurfacePaintData pathPaint = SurfacePaintData()
+      ..color = const Color(0xFF7F7F7F)
+      ..style = PaintingStyle.fill;
+
+    const double r = 200.0;
+    const double l = 50.0;
+
+    final Path path = (Path()
+      ..moveTo(-l, -l)
+      ..lineTo(0, -r)
+      ..lineTo(l, -l)
+      ..lineTo(r, 0)
+      ..lineTo(l, l)
+      ..lineTo(0, r)
+      ..lineTo(-l, l)
+      ..lineTo(-r, 0)
+      ..close()).shift(const Offset(250, 250));
+
+    canvas.drawPath(path, pathPaint);
+    canvas.drawParagraph(paragraph, const Offset(180, 50));
+
+    expect(
+      canvas.rootElement.querySelectorAll('p').map<String>((e) => e.innerText).toList(),
+      <String>[text],
+      reason: 'Expected to render text using HTML',
+    );
+
+    final SceneBuilder sb = SceneBuilder();
+    sb.pushTransform(Matrix4.diagonal3Values(EngineWindow.browserDevicePixelRatio,
+        EngineWindow.browserDevicePixelRatio, 1.0).storage);
+    sb.pushTransform(Matrix4.rotationZ(math.pi / 2).storage);
+    sb.pushOffset(0, -500);
+    sb.pushClipRect(canvasSize);
+    sb.pop();
+    sb.pop();
+    sb.pop();
+    sb.pop();
+    final SurfaceScene scene = sb.build();
+    final html.Element sceneElement = scene.webOnlyRootElement;
+
+    sceneElement.querySelector('flt-clip').append(canvas.rootElement);
+    html.document.querySelector('flt-scene-host').append(sceneElement);
+
+    await matchGoldenFile(
+      'bitmap_canvas_draws_text_on_top_of_canvas.png',
+      region: canvasSize,
+      maxDiffRatePercent: 0.0,
+      pixelComparison: PixelComparison.precise,
+    );
+  });
 }

@@ -39,7 +39,9 @@ const char* kDartVMArgs[] = {
     // addressed.
     "--no_causal_async_stacks",
 
+#if !defined(FLUTTER_PROFILE)
     "--systrace_timeline",
+#endif
     "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM",
 
 #if defined(AOT_RUNTIME)
@@ -155,12 +157,12 @@ DartRunner::DartRunner() : context_(sys::ComponentContext::Create()) {
   params.vm_snapshot_data = ::_kDartVmSnapshotData;
   params.vm_snapshot_instructions = ::_kDartVmSnapshotInstructions;
 #else
-  if (!MappedResource::LoadFromNamespace(
-          nullptr, "pkg/data/vm_snapshot_data.bin", vm_snapshot_data_)) {
+  if (!dart_utils::MappedResource::LoadFromNamespace(
+          nullptr, "/pkg/data/vm_snapshot_data.bin", vm_snapshot_data_)) {
     FX_LOG(FATAL, LOG_TAG, "Failed to load vm snapshot data");
   }
-  if (!MappedResource::LoadFromNamespace(
-          nullptr, "pkg/data/vm_snapshot_instructions.bin",
+  if (!dart_utils::MappedResource::LoadFromNamespace(
+          nullptr, "/pkg/data/vm_snapshot_instructions.bin",
           vm_snapshot_instructions_, true /* executable */)) {
     FX_LOG(FATAL, LOG_TAG, "Failed to load vm snapshot instructions");
   }

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// A layer to be composed into a scene.
@@ -338,6 +339,23 @@ class TransformLayer extends ContainerLayer
 
     paintContext.internalNodesCanvas.save();
     paintContext.internalNodesCanvas.transform(_transform.storage);
+    paintChildren(paintContext);
+    paintContext.internalNodesCanvas.restore();
+  }
+}
+
+/// A layer that applies an [ui.ImageFilter] to its children.
+class ImageFilterLayer extends ContainerLayer implements ui.OpacityEngineLayer {
+  ImageFilterLayer(this._filter);
+
+  final ui.ImageFilter _filter;
+
+  @override
+  void paint(PaintContext paintContext) {
+    assert(needsPainting);
+    final ui.Paint paint = ui.Paint();
+    paint.imageFilter = _filter;
+    paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
     paintChildren(paintContext);
     paintContext.internalNodesCanvas.restore();
   }

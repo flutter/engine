@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// A registry for factories that create platform views.
@@ -49,9 +50,11 @@ void handlePlatformViewCall(
   switch (decoded.method) {
     case 'create':
       _createPlatformView(decoded, callback);
+      window._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
       return;
     case 'dispose':
       _disposePlatformView(decoded, callback);
+      window._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
       return;
   }
   callback(null);

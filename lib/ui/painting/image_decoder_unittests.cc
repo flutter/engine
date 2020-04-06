@@ -6,6 +6,13 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "flutter/lib/ui/painting/image_decoder_test.h"
+#include "flutter/lib/ui/painting/multi_frame_codec.h"
+#include "flutter/runtime/dart_vm.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
+#include "flutter/testing/dart_isolate_runner.h"
+#include "flutter/testing/elf_loader.h"
+#include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
 #include "flutter/testing/thread_test.h"
@@ -13,8 +20,6 @@
 
 namespace flutter {
 namespace testing {
-
-using ImageDecoderFixtureTest = ThreadTest;
 
 class TestIOManager final : public IOManager {
  public:
@@ -120,7 +125,7 @@ TEST_F(ImageDecoderFixtureTest, CanCreateImageDecoder) {
   auto thread_task_runner = CreateNewThread();
   TaskRunners runners(GetCurrentTestName(),  // label
                       thread_task_runner,    // platform
-                      thread_task_runner,    // gpu
+                      thread_task_runner,    // raster
                       thread_task_runner,    // ui
                       thread_task_runner     // io
 
@@ -141,7 +146,7 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
   auto thread_task_runner = CreateNewThread();
   TaskRunners runners(GetCurrentTestName(),  // label
                       thread_task_runner,    // platform
-                      thread_task_runner,    // gpu
+                      thread_task_runner,    // raster
                       thread_task_runner,    // ui
                       thread_task_runner     // io
   );
@@ -171,7 +176,7 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
   auto loop = fml::ConcurrentMessageLoop::Create();
   TaskRunners runners(GetCurrentTestName(),         // label
                       CreateNewThread("platform"),  // platform
-                      CreateNewThread("gpu"),       // gpu
+                      CreateNewThread("raster"),    // raster
                       CreateNewThread("ui"),        // ui
                       CreateNewThread("io")         // io
   );
@@ -218,7 +223,7 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
   auto loop = fml::ConcurrentMessageLoop::Create();
   TaskRunners runners(GetCurrentTestName(),         // label
                       CreateNewThread("platform"),  // platform
-                      CreateNewThread("gpu"),       // gpu
+                      CreateNewThread("raster"),    // raster
                       CreateNewThread("ui"),        // ui
                       CreateNewThread("io")         // io
   );
@@ -270,7 +275,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
   auto loop = fml::ConcurrentMessageLoop::Create();
   TaskRunners runners(GetCurrentTestName(),         // label
                       CreateNewThread("platform"),  // platform
-                      CreateNewThread("gpu"),       // gpu
+                      CreateNewThread("raster"),    // raster
                       CreateNewThread("ui"),        // ui
                       CreateNewThread("io")         // io
   );
@@ -326,7 +331,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
   auto loop = fml::ConcurrentMessageLoop::Create();
   TaskRunners runners(GetCurrentTestName(),         // label
                       CreateNewThread("platform"),  // platform
-                      CreateNewThread("gpu"),       // gpu
+                      CreateNewThread("raster"),    // raster
                       CreateNewThread("ui"),        // ui
                       CreateNewThread("io")         // io
   );
@@ -425,7 +430,7 @@ TEST_F(ImageDecoderFixtureTest, CanResizeWithoutDecode) {
   auto loop = fml::ConcurrentMessageLoop::Create();
   TaskRunners runners(GetCurrentTestName(),         // label
                       CreateNewThread("platform"),  // platform
-                      CreateNewThread("gpu"),       // gpu
+                      CreateNewThread("raster"),    // raster
                       CreateNewThread("ui"),        // ui
                       CreateNewThread("io")         // io
   );
@@ -517,6 +522,135 @@ TEST(ImageDecoderTest,
   // of 1
   ASSERT_EQ(gif_codec->getRepetitionCount(), 1);
   ASSERT_EQ(webp_codec->getRepetitionCount(), 1);
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecoding) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(ImageFromCompressedData(data, 6, 2, fml::tracing::TraceFlow(""))
+                ->dimensions(),
+            SkISize::Make(6, 2));
+}
+
+TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  auto decode = [data](std::optional<uint32_t> target_width,
+                       std::optional<uint32_t> target_height) {
+    return ImageFromCompressedData(data, target_width, target_height,
+                                   fml::tracing::TraceFlow(""));
+  };
+
+  auto expected_data = OpenFixtureAsSkData("Horizontal.png");
+  ASSERT_TRUE(expected_data != nullptr);
+  ASSERT_FALSE(expected_data->isEmpty());
+
+  auto assert_image = [&](auto decoded_image) {
+    ASSERT_EQ(decoded_image->dimensions(), SkISize::Make(300, 100));
+    ASSERT_TRUE(decoded_image->encodeToData(SkEncodedImageFormat::kPNG, 100)
+                    ->equals(expected_data.get()));
+  };
+
+  assert_image(decode(300, 100));
+  assert_image(decode(300, {}));
+  assert_image(decode({}, 100));
+}
+
+TEST_F(ImageDecoderFixtureTest,
+       MultiFrameCodecCanBeCollectedBeforeIOTasksFinish) {
+  // This test verifies that the MultiFrameCodec safely shares state between
+  // tasks on the IO and UI runners, and does not allow unsafe memory access if
+  // the UI object is collected while the IO thread still has pending decode
+  // work. This could happen in a real application if the engine is collected
+  // while a multi-frame image is decoding. To exercise this, the test:
+  //   - Starts a Dart VM
+  //   - Latches the IO task runner
+  //   - Create a MultiFrameCodec for an animated gif pointed to a callback
+  //     in the Dart fixture
+  //   - Calls getNextFrame on the UI task runner
+  //   - Collects the MultiFrameCodec object before unlatching the IO task
+  //     runner.
+  //   - Unlatches the IO task runner
+  auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  auto vm_data = vm_ref.GetVMData();
+
+  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
+
+  ASSERT_TRUE(gif_mapping);
+
+  auto gif_codec = SkCodec::MakeFromData(gif_mapping);
+  ASSERT_TRUE(gif_codec);
+
+  TaskRunners runners(GetCurrentTestName(),         // label
+                      CreateNewThread("platform"),  // platform
+                      CreateNewThread("raster"),    // raster
+                      CreateNewThread("ui"),        // ui
+                      CreateNewThread("io")         // io
+  );
+
+  fml::AutoResetWaitableEvent latch;
+  fml::AutoResetWaitableEvent io_latch;
+  std::unique_ptr<TestIOManager> io_manager;
+
+  // Setup the IO manager.
+  runners.GetIOTaskRunner()->PostTask([&]() {
+    io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
+    latch.Signal();
+  });
+  latch.Wait();
+
+  auto isolate =
+      RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
+                           GetFixturesPath(), io_manager->GetWeakIOManager());
+
+  // Latch the IO task runner.
+  runners.GetIOTaskRunner()->PostTask([&]() { io_latch.Wait(); });
+
+  runners.GetUITaskRunner()->PostTask([&]() {
+    fml::AutoResetWaitableEvent isolate_latch;
+    fml::RefPtr<MultiFrameCodec> codec;
+    EXPECT_TRUE(isolate->RunInIsolateScope([&]() -> bool {
+      Dart_Handle library = Dart_RootLibrary();
+      if (Dart_IsError(library)) {
+        isolate_latch.Signal();
+        return false;
+      }
+      Dart_Handle closure =
+          Dart_GetField(library, Dart_NewStringFromCString("frameCallback"));
+      if (Dart_IsError(closure) || !Dart_IsClosure(closure)) {
+        isolate_latch.Signal();
+        return false;
+      }
+
+      codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_codec));
+      codec->getNextFrame(closure);
+      codec = nullptr;
+      isolate_latch.Signal();
+      return true;
+    }));
+    isolate_latch.Wait();
+
+    EXPECT_FALSE(codec);
+
+    io_latch.Signal();
+
+    latch.Signal();
+  });
+  latch.Wait();
+
+  // Destroy the IO manager
+  runners.GetIOTaskRunner()->PostTask([&]() {
+    io_manager.reset();
+    latch.Signal();
+  });
+  latch.Wait();
 }
 
 }  // namespace testing

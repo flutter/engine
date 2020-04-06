@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// A [ui.ColorFilter] backed by Skia's [SkColorFilter].
@@ -18,7 +19,7 @@ class SkColorFilter {
 
   SkColorFilter.matrix(EngineColorFilter filter) {
     // TODO(het): Find a way to remove these array conversions.
-    final js.JsArray colorMatrix = js.JsArray();
+    final js.JsArray<double> colorMatrix = js.JsArray<double>();
     colorMatrix.length = 20;
     for (int i = 0; i < 20; i++) {
       colorMatrix[i] = filter._matrix[i];

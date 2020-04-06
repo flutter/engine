@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// An implementation of [ui.PictureRecorder] backed by a [RecordingCanvas].
@@ -47,7 +48,7 @@ class EnginePicture implements ui.Picture {
   Future<ui.Image> toImage(int width, int height) async {
     final BitmapCanvas canvas = BitmapCanvas(ui.Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble()));
     recordingCanvas.apply(canvas);
-    final String imageDataUrl = canvas.canvas.toDataUrl();
+    final String imageDataUrl = canvas.toDataUrl();
     final html.ImageElement imageElement = html.ImageElement()
       ..src = imageDataUrl
       ..width = width

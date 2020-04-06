@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/sdk.gni")
-import("$flutter_root/common/config.gni")
-import("$flutter_root/testing/testing.gni")
+import("//flutter/common/config.gni")
+import("//flutter/testing/testing.gni")
 
 source_set("ui") {
   sources = [
@@ -81,13 +81,11 @@ source_set("ui") {
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
     "text/font_collection.h",
-    "text/line_metrics.cc",
     "text/line_metrics.h",
     "text/paragraph.cc",
     "text/paragraph.h",
     "text/paragraph_builder.cc",
     "text/paragraph_builder.h",
-    "text/text_box.cc",
     "text/text_box.h",
     "ui_dart_state.cc",
     "ui_dart_state.h",
@@ -109,22 +107,22 @@ source_set("ui") {
     "window/window.h",
   ]
 
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [ "//flutter:config" ]
 
   deps = [
-    "$flutter_root/assets",
-    "$flutter_root/common",
-    "$flutter_root/flow",
-    "$flutter_root/fml",
-    "$flutter_root/runtime:test_font",
+    "//flutter/assets",
+    "//flutter/common",
+    "//flutter/flow",
+    "//flutter/fml",
+    "//flutter/runtime:test_font",
+    "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
-    "//third_party/tonic",
   ]
 
   public_deps = [
-    "$flutter_root/third_party/txt",
+    "//flutter/third_party/txt",
   ]
 
   if (flutter_enable_skshaper) {
@@ -137,15 +135,11 @@ source_set("ui") {
       "compositing/scene_host.h",
     ]
 
-    if (using_fuchsia_sdk) {
-      deps += [
-        "$flutter_root/shell/platform/fuchsia/dart-pkg/fuchsia",
-        "$flutter_root/shell/platform/fuchsia/dart-pkg/zircon",
-        "$fuchsia_sdk_root/pkg:async-cpp",
-      ]
-    } else {
-      deps += [ "//topaz/public/dart-pkg/zircon" ]
-    }
+    deps += [
+      "$fuchsia_sdk_root/pkg:async-cpp",
+      "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
+      "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+    ]
   }
 }
 
@@ -155,6 +149,7 @@ if (current_toolchain == host_toolchain) {
     fixtures = [
       "fixtures/DashInNooglerHat.jpg",
       "fixtures/Horizontal.jpg",
+      "fixtures/Horizontal.png",
       "fixtures/hello_loop_2.gif",
       "fixtures/hello_loop_2.webp",
     ]
@@ -163,7 +158,11 @@ if (current_toolchain == host_toolchain) {
   executable("ui_unittests") {
     testonly = true
 
+    configs += [ "//flutter:export_dynamic_symbols" ]
+
     sources = [
+      "painting/image_decoder_test.cc",
+      "painting/image_decoder_test.h",
       "painting/image_decoder_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]
@@ -171,9 +170,12 @@ if (current_toolchain == host_toolchain) {
     deps = [
       ":ui",
       ":ui_unittests_fixtures",
-      "$flutter_root/common",
-      "$flutter_root/testing:dart",
-      "$flutter_root/testing:opengl",
+      "//flutter/common",
+      "//flutter/testing",
+      "//flutter/testing:dart",
+      "//flutter/testing:opengl",
+      "//flutter/third_party/tonic",
+      "//third_party/dart/runtime/bin:elf_loader",
     ]
   }
 }

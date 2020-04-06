@@ -9,16 +9,17 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiters_test.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
+#include "flutter/testing/elf_loader.h"
 #include "flutter/testing/test_dart_native_resolver.h"
-#include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/thread_test.h"
+#include "fml/time/time_point.h"
 
 namespace flutter {
 namespace testing {
@@ -36,6 +37,8 @@ class ShellTest : public ThreadTest {
   void DestroyShell(std::unique_ptr<Shell> shell);
   void DestroyShell(std::unique_ptr<Shell> shell, TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
+
+  fml::TimePoint GetLatestFrameTargetTime(Shell* shell) const;
 
   void SendEnginePlatformMessage(Shell* shell,
                                  fml::RefPtr<PlatformMessage> message);
@@ -59,7 +62,9 @@ class ShellTest : public ThreadTest {
                            double width = 1,
                            double height = 1,
                            LayerTreeBuilder = {});
-
+  static void PumpOneFrame(Shell* shell,
+                           flutter::ViewportMetrics viewport_metrics,
+                           LayerTreeBuilder = {});
   static void DispatchFakePointerData(Shell* shell);
   static void DispatchPointerData(Shell* shell,
                                   std::unique_ptr<PointerDataPacket> packet);
@@ -69,6 +74,14 @@ class ShellTest : public ThreadTest {
 
   static bool GetNeedsReportTimings(Shell* shell);
   static void SetNeedsReportTimings(Shell* shell, bool value);
+
+  // Helper method to test private method Shell::OnServiceProtocolGetSkSLs.
+  // (ShellTest is a friend class of Shell.) We'll also make sure that it is
+  // running on the UI thread.
+  static void OnServiceProtocolGetSkSLs(
+      Shell* shell,
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document& response);
 
   std::shared_ptr<txt::FontCollection> GetFontCollection(Shell* shell);
 
@@ -83,56 +96,9 @@ class ShellTest : public ThreadTest {
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
   ThreadHost thread_host_;
   fml::UniqueFD assets_dir_;
+  ELFAOTSymbols aot_symbols_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTest);
-};
-
-class ShellTestPlatformView : public PlatformView, public GPUSurfaceGLDelegate {
- public:
-  ShellTestPlatformView(PlatformView::Delegate& delegate,
-                        TaskRunners task_runners,
-                        std::shared_ptr<ShellTestVsyncClock> vsync_clock,
-                        CreateVsyncWaiter create_vsync_waiter);
-
-  ~ShellTestPlatformView() override;
-
-  void SimulateVSync();
-
- private:
-  TestGLSurface gl_surface_;
-
-  CreateVsyncWaiter create_vsync_waiter_;
-
-  std::shared_ptr<ShellTestVsyncClock> vsync_clock_;
-
-  // |PlatformView|
-  std::unique_ptr<Surface> CreateRenderingSurface() override;
-
-  // |PlatformView|
-  std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
-
-  // |PlatformView|
-  PointerDataDispatcherMaker GetDispatcherMaker() override;
-
-  // |GPUSurfaceGLDelegate|
-  bool GLContextMakeCurrent() override;
-
-  // |GPUSurfaceGLDelegate|
-  bool GLContextClearCurrent() override;
-
-  // |GPUSurfaceGLDelegate|
-  bool GLContextPresent() override;
-
-  // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO() const override;
-
-  // |GPUSurfaceGLDelegate|
-  GLProcResolver GetGLProcResolver() const override;
-
-  // |GPUSurfaceGLDelegate|
-  ExternalViewEmbedder* GetExternalViewEmbedder() override;
-
-  FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
 };
 
 }  // namespace testing

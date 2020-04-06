@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Renders an RRect using path primitives.
@@ -195,7 +196,7 @@ class _RRectToCanvasRenderer extends _RRectRenderer {
 
   void ellipse(double centerX, double centerY, double radiusX, double radiusY,
       double rotation, double startAngle, double endAngle, bool antiClockwise) {
-    context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
+    DomRenderer.ellipse(context, centerX, centerY, radiusX, radiusY, rotation, startAngle,
         endAngle, antiClockwise);
   }
 }

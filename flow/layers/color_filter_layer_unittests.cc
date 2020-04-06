@@ -29,7 +29,7 @@ TEST_F(ColorFilterLayerTest, PaintingEmptyLayerDies) {
                             "needs_painting\\(\\)");
 }
 
-TEST_F(ColorFilterLayerTest, PaintBeforePreollDies) {
+TEST_F(ColorFilterLayerTest, PaintBeforePrerollDies) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   auto mock_layer = std::make_shared<MockLayer>(child_path);

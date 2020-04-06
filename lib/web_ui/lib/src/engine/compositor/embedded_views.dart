@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// This composites HTML views into the [ui.Scene].
@@ -68,9 +69,11 @@ class HtmlViewEmbedder {
     switch (decoded.method) {
       case 'create':
         _create(decoded, callback);
+        window._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
         return;
       case 'dispose':
         _dispose(decoded, callback);
+        window._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
         return;
     }
     callback(null);
@@ -289,7 +292,7 @@ class HtmlViewEmbedder {
     //
     // HTML elements use logical (CSS) pixels, but we have been using physical
     // pixels, so scale down the head element to match the logical resolution.
-    final double scale = html.window.devicePixelRatio;
+    final double scale = EngineWindow.browserDevicePixelRatio;
     final double inverseScale = 1 / scale;
     final Matrix4 scaleMatrix =
         Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
@@ -313,7 +316,9 @@ class HtmlViewEmbedder {
   /// Ensures we add a container of SVG path defs to the DOM so they can
   /// be referred to in clip-path: url(#blah).
   void _ensureSvgPathDefs() {
-    if (_svgPathDefs != null) return;
+    if (_svgPathDefs != null) {
+      return;
+    }
     _svgPathDefs = html.Element.html(
       '<svg width="0" height="0"><defs id="sk_path_defs"></defs></svg>',
       treeSanitizer: _NullTreeSanitizer(),
@@ -396,8 +401,12 @@ class EmbeddedViewParams {
   final MutatorsStack mutators;
 
   bool operator ==(dynamic other) {
-    if (identical(this, other)) return true;
-    if (other is! EmbeddedViewParams) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! EmbeddedViewParams) {
+      return false;
+    }
 
     EmbeddedViewParams typedOther = other;
     return offset == typedOther.offset &&
@@ -453,8 +462,12 @@ class Mutator {
   double get alphaFloat => alpha / 255.0;
 
   bool operator ==(dynamic other) {
-    if (identical(this, other)) return true;
-    if (other is! Mutator) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Mutator) {
+      return false;
+    }
 
     final Mutator typedOther = other;
     if (type != typedOther.type) {
@@ -472,6 +485,8 @@ class Mutator {
         return matrix == typedOther.matrix;
       case MutatorType.opacity:
         return alpha == typedOther.alpha;
+      default:
+        return false;
     }
   }
 
@@ -512,8 +527,12 @@ class MutatorsStack extends Iterable<Mutator> {
   }
 
   bool operator ==(dynamic other) {
-    if (identical(other, this)) return true;
-    if (other is! MutatorsStack) return false;
+    if (identical(other, this)) {
+      return true;
+    }
+    if (other is! MutatorsStack) {
+      return false;
+    }
 
     final MutatorsStack typedOther = other;
     if (_mutators.length != typedOther._mutators.length) {

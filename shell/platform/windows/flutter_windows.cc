@@ -9,12 +9,15 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <vector>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
+#include "flutter/shell/platform/common/cpp/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/dpi_utils.h"
 #include "flutter/shell/platform/windows/key_event_handler.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
@@ -35,18 +38,16 @@ static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 // engine.
 static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
     flutter::Win32FlutterWindow* window,
-    const char* assets_path,
-    const char* icu_data_path,
-    const char** arguments,
-    size_t arguments_count) {
+    const FlutterDesktopEngineProperties& engine_properties) {
   auto state = std::make_unique<FlutterDesktopEngineState>();
 
   // FlutterProjectArgs is expecting a full argv, so when processing it for
   // flags the first item is treated as the executable and ignored. Add a dummy
   // value so that all provided arguments are used.
   std::vector<const char*> argv = {"placeholder"};
-  if (arguments_count > 0) {
-    argv.insert(argv.end(), &arguments[0], &arguments[arguments_count]);
+  if (engine_properties.switches_count > 0) {
+    argv.insert(argv.end(), &engine_properties.switches[0],
+                &engine_properties.switches[engine_properties.switches_count]);
   }
 
   window->CreateRenderSurface();
@@ -70,7 +71,7 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   config.open_gl.fbo_callback = [](void* user_data) -> uint32_t { return 0; };
   config.open_gl.gl_proc_resolver = [](void* user_data,
                                        const char* what) -> void* {
-    return eglGetProcAddress(what);
+    return reinterpret_cast<void*>(eglGetProcAddress(what));
   };
   config.open_gl.make_resource_current = [](void* user_data) -> bool {
     auto host = static_cast<flutter::Win32FlutterWindow*>(user_data);
@@ -104,10 +105,28 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
 
+  std::filesystem::path assets_path(engine_properties.assets_path);
+  std::filesystem::path icu_path(engine_properties.icu_data_path);
+  if (assets_path.is_relative() || icu_path.is_relative()) {
+    // Treat relative paths as relative to the directory of this executable.
+    std::filesystem::path executable_location =
+        flutter::GetExecutableDirectory();
+    if (executable_location.empty()) {
+      std::cerr
+          << "Unable to find executable location to resolve resource paths."
+          << std::endl;
+      return nullptr;
+    }
+    assets_path = std::filesystem::path(executable_location) / assets_path;
+    icu_path = std::filesystem::path(executable_location) / icu_path;
+  }
+  std::string assets_path_string = assets_path.u8string();
+  std::string icu_path_string = icu_path.u8string();
+
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
-  args.assets_path = assets_path;
-  args.icu_data_path = icu_data_path;
+  args.assets_path = assets_path_string.c_str();
+  args.icu_data_path = icu_path_string.c_str();
   args.command_line_argc = static_cast<int>(argv.size());
   args.command_line_argv = &argv[0];
   args.platform_message_callback =
@@ -131,18 +150,13 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
 }
 
 FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
-    int initial_width,
-    int initial_height,
-    const char* assets_path,
-    const char* icu_data_path,
-    const char** arguments,
-    size_t argument_count) {
+    int width,
+    int height,
+    const FlutterDesktopEngineProperties& engine_properties) {
   FlutterDesktopViewControllerRef state =
-      flutter::Win32FlutterWindow::CreateWin32FlutterWindow(initial_width,
-                                                            initial_height);
+      flutter::Win32FlutterWindow::CreateWin32FlutterWindow(width, height);
 
-  auto engine_state = RunFlutterEngine(
-      state->view.get(), assets_path, icu_data_path, arguments, argument_count);
+  auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
 
   if (!engine_state) {
     return nullptr;
@@ -152,13 +166,29 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
   return state;
 }
 
+FlutterDesktopViewControllerRef FlutterDesktopCreateViewControllerLegacy(
+    int initial_width,
+    int initial_height,
+    const char* assets_path,
+    const char* icu_data_path,
+    const char** arguments,
+    size_t argument_count) {
+  std::filesystem::path assets_path_fs = std::filesystem::u8path(assets_path);
+  std::filesystem::path icu_data_path_fs =
+      std::filesystem::u8path(icu_data_path);
+  FlutterDesktopEngineProperties engine_properties = {};
+  engine_properties.assets_path = assets_path_fs.c_str();
+  engine_properties.icu_data_path = icu_data_path_fs.c_str();
+  engine_properties.switches = arguments;
+  engine_properties.switches_count = argument_count;
+
+  return FlutterDesktopCreateViewController(initial_width, initial_height,
+                                            engine_properties);
+}
+
 uint64_t FlutterDesktopProcessMessages(
     FlutterDesktopViewControllerRef controller) {
   return controller->engine_state->task_runner->ProcessTasks().count();
-}
-
-HWND FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
-  return controller->view->GetWindowHandle();
 }
 
 void FlutterDesktopDestroyViewController(
@@ -177,12 +207,26 @@ FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
   return controller->view->GetRegistrar();
 }
 
-FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
-                                                const char* icu_data_path,
-                                                const char** arguments,
-                                                size_t argument_count) {
-  auto engine = RunFlutterEngine(nullptr, assets_path, icu_data_path, arguments,
-                                 argument_count);
+FlutterDesktopViewRef FlutterDesktopGetView(
+    FlutterDesktopViewControllerRef controller) {
+  return controller->view_wrapper.get();
+}
+
+HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
+  return view->window->GetWindowHandle();
+}
+
+UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
+  return flutter::GetDpiForHWND(hwnd);
+}
+
+UINT FlutterDesktopGetDpiForMonitor(HMONITOR monitor) {
+  return flutter::GetDpiForMonitor(monitor);
+}
+
+FlutterDesktopEngineRef FlutterDesktopRunEngine(
+    const FlutterDesktopEngineProperties& engine_properties) {
+  auto engine = RunFlutterEngine(nullptr, engine_properties);
   return engine.release();
 }
 
@@ -202,6 +246,11 @@ void FlutterDesktopRegistrarEnableInputBlocking(
 FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
     FlutterDesktopPluginRegistrarRef registrar) {
   return registrar->messenger.get();
+}
+
+FlutterDesktopViewRef FlutterDesktopRegistrarGetView(
+    FlutterDesktopPluginRegistrarRef registrar) {
+  return registrar->window;
 }
 
 bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,

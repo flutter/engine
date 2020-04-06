@@ -11,8 +11,6 @@
 #include <memory>
 #include <string>
 
-#include "flutter/shell/platform/windows/win32_dpi_helper.h"
-
 namespace flutter {
 
 // Struct holding the mouse state. The engine doesn't keep track of which mouse
@@ -37,7 +35,7 @@ struct MouseState {
 class Win32Window {
  public:
   Win32Window();
-  ~Win32Window();
+  virtual ~Win32Window();
 
   // Initializes as a child window with size using |width| and |height| and
   // |title| to identify the windowclass.  Does not show window, window must be
@@ -45,9 +43,6 @@ class Win32Window {
   void InitializeChild(const char* title,
                        unsigned int width,
                        unsigned int height);
-
-  // Release OS resources asociated with window.
-  virtual void Destroy();
 
   HWND GetWindowHandle();
 
@@ -57,7 +52,7 @@ class Win32Window {
 
   // Registers a window class with default style attributes, cursor and
   // icon.
-  WNDCLASS ResgisterWindowClass(std::wstring& title);
+  WNDCLASS RegisterWindowClass(std::wstring& title);
 
   // OS callback called by message pump.  Handles the WM_NCCREATE message which
   // is passed when the non-client area is being created and enables automatic
@@ -116,9 +111,6 @@ class Win32Window {
   // Called when mouse scrollwheel input occurs.
   virtual void OnScroll(double delta_x, double delta_y) = 0;
 
-  // Called when the user closes the Windows.
-  virtual void OnClose() = 0;
-
   // Called when the system font change.
   virtual void OnFontChange() = 0;
 
@@ -150,6 +142,9 @@ class Win32Window {
   void SetMouseButtons(uint64_t buttons) { mouse_state_.buttons = buttons; }
 
  private:
+  // Release OS resources asociated with window.
+  void Destroy();
+
   // Activates tracking for a "mouse leave" event.
   void TrackMouseLeaveEvent(HWND hwnd);
 
@@ -171,11 +166,6 @@ class Win32Window {
 
   // Member variable to hold the window title.
   std::wstring window_class_name_;
-
-  // Member variable referencing an instance of dpi_helper used to abstract some
-  // aspects of win32 High DPI handling across different OS versions.
-  std::unique_ptr<Win32DpiHelper> dpi_helper_ =
-      std::make_unique<Win32DpiHelper>();
 
   // Set to true to be notified when the mouse leaves the window.
   bool tracking_mouse_leave_ = false;

@@ -8,6 +8,7 @@
 #include <tuple>
 
 #include "flutter/fml/paths.h"
+#include "flutter/fml/posix_wrappers.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
@@ -221,9 +222,9 @@ bool DartIsolate::UpdateThreadPoolNames() const {
   // shells sharing the same (or subset of) threads.
   const auto& task_runners = GetTaskRunners();
 
-  if (auto task_runner = task_runners.GetGPUTaskRunner()) {
+  if (auto task_runner = task_runners.GetRasterTaskRunner()) {
     task_runner->PostTask(
-        [label = task_runners.GetLabel() + std::string{".gpu"}]() {
+        [label = task_runners.GetLabel() + std::string{".raster"}]() {
           Dart_SetThreadName(label.c_str());
         });
   }
@@ -294,9 +295,11 @@ bool DartIsolate::PrepareForRunningFromPrecompiledCode() {
     return false;
   }
 
-  GetIsolateGroupData().SetChildIsolatePreparer([](DartIsolate* isolate) {
-    return isolate->PrepareForRunningFromPrecompiledCode();
-  });
+  if (GetIsolateGroupData().GetChildIsolatePreparer() == nullptr) {
+    GetIsolateGroupData().SetChildIsolatePreparer([](DartIsolate* isolate) {
+      return isolate->PrepareForRunningFromPrecompiledCode();
+    });
+  }
 
   const fml::closure& isolate_create_callback =
       GetIsolateGroupData().GetIsolateCreateCallback();
@@ -335,8 +338,7 @@ bool DartIsolate::LoadKernel(std::shared_ptr<const fml::Mapping> mapping,
   return true;
 }
 
-FML_WARN_UNUSED_RESULT
-bool DartIsolate::PrepareForRunningFromKernel(
+[[nodiscard]] bool DartIsolate::PrepareForRunningFromKernel(
     std::shared_ptr<const fml::Mapping> mapping,
     bool last_piece) {
   TRACE_EVENT0("flutter", "DartIsolate::PrepareForRunningFromKernel");
@@ -402,8 +404,7 @@ bool DartIsolate::PrepareForRunningFromKernel(
   return true;
 }
 
-FML_WARN_UNUSED_RESULT
-bool DartIsolate::PrepareForRunningFromKernels(
+[[nodiscard]] bool DartIsolate::PrepareForRunningFromKernels(
     std::vector<std::shared_ptr<const fml::Mapping>> kernels) {
   const auto count = kernels.size();
   if (count == 0) {
@@ -420,8 +421,7 @@ bool DartIsolate::PrepareForRunningFromKernels(
   return true;
 }
 
-FML_WARN_UNUSED_RESULT
-bool DartIsolate::PrepareForRunningFromKernels(
+[[nodiscard]] bool DartIsolate::PrepareForRunningFromKernels(
     std::vector<std::unique_ptr<const fml::Mapping>> kernels) {
   std::vector<std::shared_ptr<const fml::Mapping>> shared_kernels;
   for (auto& kernel : kernels) {
@@ -457,9 +457,9 @@ bool DartIsolate::MarkIsolateRunnable() {
   return true;
 }
 
-FML_WARN_UNUSED_RESULT
-static bool InvokeMainEntrypoint(Dart_Handle user_entrypoint_function,
-                                 Dart_Handle args) {
+[[nodiscard]] static bool InvokeMainEntrypoint(
+    Dart_Handle user_entrypoint_function,
+    Dart_Handle args) {
   if (tonic::LogIfError(user_entrypoint_function)) {
     FML_LOG(ERROR) << "Could not resolve main entrypoint function.";
     return false;
@@ -485,10 +485,9 @@ static bool InvokeMainEntrypoint(Dart_Handle user_entrypoint_function,
 }
 
 /// @note Procedure doesn't copy all closures.
-FML_WARN_UNUSED_RESULT
-bool DartIsolate::Run(const std::string& entrypoint_name,
-                      const std::vector<std::string>& args,
-                      const fml::closure& on_run) {
+[[nodiscard]] bool DartIsolate::Run(const std::string& entrypoint_name,
+                                    const std::vector<std::string>& args,
+                                    const fml::closure& on_run) {
   TRACE_EVENT0("flutter", "DartIsolate::Run");
   if (phase_ != Phase::Ready) {
     return false;
@@ -506,7 +505,6 @@ bool DartIsolate::Run(const std::string& entrypoint_name,
   }
 
   phase_ = Phase::Running;
-  FML_DLOG(INFO) << "New isolate is in the running state.";
 
   if (on_run) {
     on_run();
@@ -515,11 +513,11 @@ bool DartIsolate::Run(const std::string& entrypoint_name,
 }
 
 /// @note Procedure doesn't copy all closures.
-FML_WARN_UNUSED_RESULT
-bool DartIsolate::RunFromLibrary(const std::string& library_name,
-                                 const std::string& entrypoint_name,
-                                 const std::vector<std::string>& args,
-                                 const fml::closure& on_run) {
+[[nodiscard]] bool DartIsolate::RunFromLibrary(
+    const std::string& library_name,
+    const std::string& entrypoint_name,
+    const std::vector<std::string>& args,
+    const fml::closure& on_run) {
   TRACE_EVENT0("flutter", "DartIsolate::RunFromLibrary");
   if (phase_ != Phase::Ready) {
     return false;
@@ -538,7 +536,6 @@ bool DartIsolate::RunFromLibrary(const std::string& library_name,
   }
 
   phase_ = Phase::Running;
-  FML_DLOG(INFO) << "New isolate is in the running state.";
 
   if (on_run) {
     on_run();
@@ -577,7 +574,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
   auto vm_data = DartVMRef::GetVMData();
 
   if (!vm_data) {
-    *error = strdup(
+    *error = fml::strdup(
         "Could not access VM data to initialize isolates. This may be because "
         "the VM has initialized shutdown on another thread already.");
     return nullptr;
@@ -586,7 +583,6 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
   const auto& settings = vm_data->GetSettings();
 
   if (!settings.enable_observatory) {
-    FML_DLOG(INFO) << "Observatory is disabled.";
     return nullptr;
   }
 
@@ -614,7 +610,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
 
   std::shared_ptr<DartIsolate> service_isolate = weak_service_isolate.lock();
   if (!service_isolate) {
-    *error = strdup("Could not create the service isolate.");
+    *error = fml::strdup("Could not create the service isolate.");
     FML_DLOG(ERROR) << *error;
     return nullptr;
   }
@@ -626,7 +622,9 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           tonic::DartState::HandleLibraryTag,  // embedder library tag handler
           false,  //  disable websocket origin check
           settings.disable_service_auth_codes,  // disable VM service auth codes
-          error                                 // error (out)
+          settings.enable_service_port_fallback,  // enable fallback to port 0
+                                                  // when bind fails.
+          error                                   // error (out)
           )) {
     // Error is populated by call to startup.
     FML_DLOG(ERROR) << *error;
@@ -689,7 +687,7 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
               parent_group_data.GetIsolateShutdownCallback())));
 
   TaskRunners null_task_runners(advisory_script_uri,
-                                /* platform= */ nullptr, /* gpu= */ nullptr,
+                                /* platform= */ nullptr, /* raster= */ nullptr,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 
@@ -721,7 +719,7 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateInitializeCallback");
   Dart_Isolate isolate = Dart_CurrentIsolate();
   if (isolate == nullptr) {
-    *error = strdup("Isolate should be available in initialize callback.");
+    *error = fml::strdup("Isolate should be available in initialize callback.");
     FML_DLOG(ERROR) << *error;
     return false;
   }
@@ -731,7 +729,7 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
           Dart_CurrentIsolateGroupData());
 
   TaskRunners null_task_runners((*isolate_group_data)->GetAdvisoryScriptURI(),
-                                /* platform= */ nullptr, /* gpu= */ nullptr,
+                                /* platform= */ nullptr, /* raster= */ nullptr,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 
@@ -798,14 +796,14 @@ bool DartIsolate::InitializeIsolate(
     char** error) {
   TRACE_EVENT0("flutter", "DartIsolate::InitializeIsolate");
   if (!embedder_isolate->Initialize(isolate)) {
-    *error = strdup("Embedder could not initialize the Dart isolate.");
+    *error = fml::strdup("Embedder could not initialize the Dart isolate.");
     FML_DLOG(ERROR) << *error;
     return false;
   }
 
   if (!embedder_isolate->LoadLibraries()) {
-    *error =
-        strdup("Embedder could not load libraries in the new Dart isolate.");
+    *error = fml::strdup(
+        "Embedder could not load libraries in the new Dart isolate.");
     FML_DLOG(ERROR) << *error;
     return false;
   }
@@ -814,11 +812,11 @@ bool DartIsolate::InitializeIsolate(
   // also a root isolate) by the utility routines in the VM. However, secondary
   // isolates will be run by the VM if they are marked as runnable.
   if (!embedder_isolate->IsRootIsolate()) {
-    const ChildIsolatePreparer& child_isolate_preparer =
+    auto child_isolate_preparer =
         embedder_isolate->GetIsolateGroupData().GetChildIsolatePreparer();
     FML_DCHECK(child_isolate_preparer);
     if (!child_isolate_preparer(embedder_isolate.get())) {
-      *error = strdup("Could not prepare the child isolate to run.");
+      *error = fml::strdup("Could not prepare the child isolate to run.");
       FML_DLOG(ERROR) << *error;
       return false;
     }
@@ -832,9 +830,6 @@ void DartIsolate::DartIsolateShutdownCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateShutdownCallback");
-  FML_DLOG(INFO) << "DartIsolateShutdownCallback"
-                 << " isolate_group_data " << isolate_group_data
-                 << " isolate_data " << isolate_data;
   isolate_data->get()->OnShutdownCallback();
 }
 
@@ -842,9 +837,6 @@ void DartIsolate::DartIsolateShutdownCallback(
 void DartIsolate::DartIsolateGroupCleanupCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateGroupCleanupCallback");
-  FML_DLOG(INFO) << "DartIsolateGroupCleanupCallback isolate_data "
-                 << isolate_data;
-
   delete isolate_data;
 }
 
@@ -853,9 +845,6 @@ void DartIsolate::DartIsolateCleanupCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateCleanupCallback");
-
-  FML_DLOG(INFO) << "DartIsolateCleanupCallback cleaned up isolate_data "
-                 << isolate_data;
   delete isolate_data;
 }
 

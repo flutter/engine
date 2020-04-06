@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// An object backed by a [js.JsObject] mapped onto a Skia C++ object in the
@@ -284,10 +285,6 @@ js.JsArray<double> makeSkiaColorStops(List<double> colorStops) {
   jsColorStops.length = colorStops.length;
   return jsColorStops;
 }
-
-// These must be kept in sync with `flow/layers/physical_shape_layer.cc`.
-const double kLightHeight = 600.0;
-const double kLightRadius = 800.0;
 
 void drawSkShadow(
   js.JsObject skCanvas,

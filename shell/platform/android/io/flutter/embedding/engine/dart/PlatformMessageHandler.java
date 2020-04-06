@@ -4,14 +4,13 @@
 
 package io.flutter.embedding.engine.dart;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
-/**
- * Handler that receives messages from Dart code.
- */
+/** Handler that receives messages from Dart code. */
 public interface PlatformMessageHandler {
-  void handleMessageFromDart(@NonNull final String channel, @Nullable byte[] message, final int replyId);
+  void handleMessageFromDart(
+      @NonNull final String channel, @Nullable byte[] message, final int replyId);
 
   void handlePlatformMessageResponse(int replyId, @Nullable byte[] reply);
 }

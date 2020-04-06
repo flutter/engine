@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:ui/src/engine.dart';
@@ -150,7 +151,7 @@ void main() {
 
       scene2.preroll();
       scene2.update(scene1);
-      commitScene(scene1);
+      commitScene(scene2);
       expect(picture.retainCount, 1);
       expect(picture.buildCount, 1);
       expect(picture.updateCount, 0);
@@ -168,7 +169,7 @@ void main() {
 
       scene3.preroll();
       scene3.update(scene2);
-      commitScene(scene1);
+      commitScene(scene3);
       expect(picture.retainCount, 2);
       expect(picture.buildCount, 1);
       expect(picture.updateCount, 0);
@@ -269,6 +270,13 @@ class MockPersistedPicture extends PersistedPicture {
   int buildCount = 0;
   int updateCount = 0;
   int applyPaintCount = 0;
+
+  final BitmapCanvas _fakeCanvas = BitmapCanvas(const Rect.fromLTRB(0, 0, 10, 10));
+
+  @override
+  EngineCanvas get debugCanvas {
+    return _fakeCanvas;
+  }
 
   @override
   double matchForUpdate(PersistedPicture existingSurface) {

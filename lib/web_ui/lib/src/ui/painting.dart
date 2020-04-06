@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of ui;
 
 // ignore: unused_element, Used in Shader assert.
@@ -248,37 +249,6 @@ class Color {
 
   @override
   int get hashCode => value.hashCode;
-
-  /// Converts color to a css compatible attribute value.
-  // webOnly
-  String toCssString() {
-    if ((0xff000000 & value) == 0xff000000) {
-      return toCssStringRgbOnly();
-    } else {
-      final double alpha = ((value >> 24) & 0xFF) / 255.0;
-      final StringBuffer sb = StringBuffer();
-      sb.write('rgba(');
-      sb.write(((value >> 16) & 0xFF).toString());
-      sb.write(',');
-      sb.write(((value >> 8) & 0xFF).toString());
-      sb.write(',');
-      sb.write((value & 0xFF).toString());
-      sb.write(',');
-      sb.write(alpha.toString());
-      sb.write(')');
-      return sb.toString();
-    }
-  }
-
-  /// Returns the CSS value of this color without the alpha component.
-  ///
-  /// This is useful when painting shadows as on the Web shadow opacity combines
-  /// with the paint opacity.
-  // webOnly
-  String toCssStringRgbOnly() {
-    final String paddedValue = '00000${value.toRadixString(16)}';
-    return '#${paddedValue.substring(paddedValue.length - 6)}';
-  }
 
   @override
   String toString() {
@@ -691,7 +661,7 @@ enum BlendMode {
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_colorDodge.png)
   colorDodge,
 
-  /// Divide the inverse of the destination by the the source, and inverse the result.
+  /// Divide the inverse of the destination by the source, and inverse the result.
   ///
   /// Inverting the components means that a fully saturated channel (opaque
   /// white) is treated as the value 0.0, and values normally treated as 0.0
@@ -929,9 +899,8 @@ enum Clip {
 abstract class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
-  factory Paint() => engine.experimentalUseSkia
-    ? engine.SkPaint()
-    : engine.SurfacePaint();
+  factory Paint() =>
+      engine.experimentalUseSkia ? engine.SkPaint() : engine.SurfacePaint();
 
   /// Whether to dither the output when drawing images.
   ///
@@ -1100,8 +1069,6 @@ abstract class Shader {
 /// There are several types of gradients, represented by the various
 /// constructors on this class.
 abstract class Gradient extends Shader {
-  Gradient._() : super._();
-
   /// Creates a linear gradient from `from` to `to`.
   ///
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
@@ -1634,13 +1601,17 @@ String _instantiateImageCodec(
   return null;
 }
 
-Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri) {
+Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
+    {engine.WebOnlyImageCodecChunkCallback chunkCallback}) {
   return engine.futurize((engine.Callback<Codec> callback) =>
-      _instantiateImageCodecFromUrl(uri, callback));
+      _instantiateImageCodecFromUrl(uri, chunkCallback, callback));
 }
 
-String _instantiateImageCodecFromUrl(Uri uri, engine.Callback<Codec> callback) {
-  callback(engine.HtmlCodec(uri.toString()));
+String _instantiateImageCodecFromUrl(
+    Uri uri,
+    engine.WebOnlyImageCodecChunkCallback chunkCallback,
+    engine.Callback<Codec> callback) {
+  callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
   return null;
 }
 

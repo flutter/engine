@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 library engine;
 
 import 'dart:async';
@@ -23,6 +24,8 @@ part 'engine/assets.dart';
 part 'engine/bitmap_canvas.dart';
 part 'engine/browser_detection.dart';
 part 'engine/browser_location.dart';
+part 'engine/canvas_pool.dart';
+part 'engine/clipboard.dart';
 part 'engine/color_filter.dart';
 part 'engine/compositor/canvas.dart';
 part 'engine/compositor/canvas_kit_canvas.dart';
@@ -66,6 +69,7 @@ part 'engine/platform_views.dart';
 part 'engine/plugins.dart';
 part 'engine/pointer_binding.dart';
 part 'engine/pointer_converter.dart';
+part 'engine/profiler.dart';
 part 'engine/render_vertices.dart';
 part 'engine/rrect_renderer.dart';
 part 'engine/semantics/accessibility.dart';
@@ -88,6 +92,7 @@ part 'engine/shadow.dart';
 part 'engine/surface/backdrop_filter.dart';
 part 'engine/surface/clip.dart';
 part 'engine/surface/debug_canvas_reuse_overlay.dart';
+part 'engine/surface/image_filter.dart';
 part 'engine/surface/offset.dart';
 part 'engine/surface/opacity.dart';
 part 'engine/surface/painting.dart';
@@ -113,6 +118,7 @@ part 'engine/text_editing/text_editing.dart';
 part 'engine/util.dart';
 part 'engine/validators.dart';
 part 'engine/vector_math.dart';
+part 'engine/web_experiments.dart';
 part 'engine/window.dart';
 
 bool _engineInitialized = false;
@@ -157,6 +163,12 @@ void webOnlyInitializeEngine() {
   // initialize framework bindings.
   domRenderer;
 
+  WebExperiments.ensureInitialized();
+
+  if (Profiler.isBenchmarkMode) {
+    Profiler.ensureInitialized();
+  }
+
   bool waitingForAnimation = false;
   ui.webOnlyScheduleFrameCallback = () {
     // We're asked to schedule a frame and call `frameHandler` when the frame
@@ -174,17 +186,17 @@ void webOnlyInitializeEngine() {
         // microsecond precision, and only then convert to `int`.
         final int highResTimeMicroseconds = (1000 * highResTime).toInt();
 
-        if (ui.window.onBeginFrame != null) {
-          ui.window
-              .onBeginFrame(Duration(microseconds: highResTimeMicroseconds));
+        if (window._onBeginFrame != null) {
+          window
+              .invokeOnBeginFrame(Duration(microseconds: highResTimeMicroseconds));
         }
 
-        if (ui.window.onDrawFrame != null) {
+        if (window._onDrawFrame != null) {
           // TODO(yjbanov): technically Flutter flushes microtasks between
           //                onBeginFrame and onDrawFrame. We don't, which hasn't
           //                been an issue yet, but eventually we'll have to
           //                implement it properly.
-          ui.window.onDrawFrame();
+          window.invokeOnDrawFrame();
         }
       });
     }
