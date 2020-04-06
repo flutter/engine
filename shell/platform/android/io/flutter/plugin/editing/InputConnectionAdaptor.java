@@ -46,7 +46,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
   private int mPreviousComposingStart;
   private int mPreviousComposingEnd;
   private String mPreviousText;
-  private boolean repeatCheckNeeded = false;
+  private boolean mRepeatCheckNeeded = false;
 
   // Used to determine if Samsung-specific hacks should be applied.
   private final boolean isSamsung;
@@ -96,7 +96,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     // occurred to mark this as dirty. This prevents duplicate remote updates of
     // the same data, which can break formatters that change the length of the
     // contents.
-    if (repeatCheckNeeded
+    if (mRepeatCheckNeeded
         && selectionStart == mPreviousSelectionStart
         && selectionEnd == mPreviousSelectionEnd
         && composingStart == mPreviousComposingStart
@@ -110,7 +110,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     textInputChannel.updateEditingState(
         mClient, text, selectionStart, selectionEnd, composingStart, composingEnd);
 
-    repeatCheckNeeded = true;
+    mRepeatCheckNeeded = true;
     mPreviousSelectionStart = selectionStart;
     mPreviousSelectionEnd = selectionEnd;
     mPreviousComposingStart = composingStart;
@@ -124,7 +124,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
   // to the framework.
   public void markDirty() {
     // Disable updateEditngState's repeat-update check
-    repeatCheckNeeded = false;
+    mRepeatCheckNeeded = false;
   }
 
   @Override
