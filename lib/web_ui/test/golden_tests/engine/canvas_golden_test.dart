@@ -79,7 +79,7 @@ void main() async {
     appendToScene();
 
     await matchGoldenFile('misaligned_pixels_in_canvas_test.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('compensates for misalignment of the canvas', () async {
     // Notice the 0.5 offset in the bounds rectangle. It's what causes the
@@ -94,7 +94,7 @@ void main() async {
     appendToScene();
 
     await matchGoldenFile('misaligned_canvas_test.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('fill the whole canvas with color even when transformed', () async {
     canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50));
@@ -105,7 +105,7 @@ void main() async {
     appendToScene();
 
     await matchGoldenFile('bitmap_canvas_fills_color_when_transformed.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('fill the whole canvas with paint even when transformed', () async {
     canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50));
@@ -118,7 +118,7 @@ void main() async {
     appendToScene();
 
     await matchGoldenFile('bitmap_canvas_fills_paint_when_transformed.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   // This test reproduces text blurriness when two pieces of text appear inside
   // two nested clips:
@@ -171,7 +171,7 @@ void main() async {
       maxDiffRatePercent: 0.0,
       pixelComparison: PixelComparison.precise,
     );
-  }, timeout: const Timeout(Duration(seconds: 10)), testOn: 'chrome');
+  }, testOn: 'chrome');
 
   // NOTE: Chrome in --headless mode does not reproduce the bug that this test
   //       attempts to reproduce. However, it's still good to have this test
@@ -222,9 +222,12 @@ void main() async {
     );
 
     final SceneBuilder sb = SceneBuilder();
+    sb.pushTransform(Matrix4.diagonal3Values(EngineWindow.browserDevicePixelRatio,
+        EngineWindow.browserDevicePixelRatio, 1.0).storage);
     sb.pushTransform(Matrix4.rotationZ(math.pi / 2).storage);
     sb.pushOffset(0, -500);
     sb.pushClipRect(canvasSize);
+    sb.pop();
     sb.pop();
     sb.pop();
     sb.pop();

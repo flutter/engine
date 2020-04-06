@@ -8,11 +8,12 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
@@ -251,6 +252,7 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
     splashScreen.transitionToFlutter(onTransitionComplete);
   }
 
+  @Keep
   public static class SavedState extends BaseSavedState {
     public static Creator<SavedState> CREATOR =
         new Creator<SavedState>() {

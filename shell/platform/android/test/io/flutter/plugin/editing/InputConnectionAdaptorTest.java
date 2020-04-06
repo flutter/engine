@@ -10,7 +10,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import android.content.Context;
+import android.content.ClipboardManager;
 import android.content.res.AssetManager;
 import android.text.Editable;
 import android.text.InputType;
@@ -19,6 +19,7 @@ import android.text.SpannableStringBuilder;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.ExtractedText;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -28,7 +29,6 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
-import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowClipboardManager;
 
 @Config(manifest = Config.NONE, sdk = 27, shadows = ShadowClipboardManager.class)
@@ -71,8 +71,8 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformContextMenuAction_cut() {
-    ShadowClipboardManager clipboardManager =
-        Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.CLIPBOARD_SERVICE));
+    ClipboardManager clipboardManager =
+        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
     int selStart = 6;
     int selEnd = 11;
     Editable editable = sampleEditable(selStart, selEnd);
@@ -89,8 +89,8 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformContextMenuAction_copy() {
-    ShadowClipboardManager clipboardManager =
-        Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.CLIPBOARD_SERVICE));
+    ClipboardManager clipboardManager =
+        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
     int selStart = 6;
     int selEnd = 11;
     Editable editable = sampleEditable(selStart, selEnd);
@@ -109,8 +109,8 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformContextMenuAction_paste() {
-    ShadowClipboardManager clipboardManager =
-        Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.CLIPBOARD_SERVICE));
+    ClipboardManager clipboardManager =
+        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
     String textToBePasted = "deadbeef";
     clipboardManager.setText(textToBePasted);
     Editable editable = sampleEditable(0, 0);
@@ -255,6 +255,19 @@ public class InputConnectionAdaptorTest {
     // Checks the caret moved right (to some following character). Selection.moveDown() behaves
     // different in tests than on a real device, we can't verify the exact position.
     assertTrue(Selection.getSelectionStart(editable) > selStart);
+  }
+
+  @Test
+  public void testMethod_getExtractedText() {
+    int selStart = 5;
+    Editable editable = sampleEditable(selStart, selStart);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    ExtractedText extractedText = adaptor.getExtractedText(null, 0);
+
+    assertEquals(extractedText.text, SAMPLE_TEXT);
+    assertEquals(extractedText.selectionStart, selStart);
+    assertEquals(extractedText.selectionEnd, selStart);
   }
 
   private static final String SAMPLE_TEXT =

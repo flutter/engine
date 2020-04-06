@@ -3,11 +3,17 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import 'package:test/test.dart';
 
 void main() {
+  setUpAll(() {
+    WebExperiments.ensureInitialized();
+    Profiler.ensureInitialized();
+  });
+
   test('Should be able to build and layout a paragraph', () {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
     builder.addText('Hello');

@@ -135,15 +135,11 @@ source_set("ui") {
       "compositing/scene_host.h",
     ]
 
-    if (using_fuchsia_sdk) {
-      deps += [
-        "$fuchsia_sdk_root/pkg:async-cpp",
-        "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
-        "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
-      ]
-    } else {
-      deps += [ "//topaz/public/dart-pkg/zircon" ]
-    }
+    deps += [
+      "$fuchsia_sdk_root/pkg:async-cpp",
+      "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
+      "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+    ]
   }
 }
 
@@ -162,7 +158,11 @@ if (current_toolchain == host_toolchain) {
   executable("ui_unittests") {
     testonly = true
 
+    configs += [ "//flutter:export_dynamic_symbols" ]
+
     sources = [
+      "painting/image_decoder_test.cc",
+      "painting/image_decoder_test.h",
       "painting/image_decoder_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]
@@ -171,8 +171,11 @@ if (current_toolchain == host_toolchain) {
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/common",
+      "//flutter/testing",
       "//flutter/testing:dart",
       "//flutter/testing:opengl",
+      "//flutter/third_party/tonic",
+      "//third_party/dart/runtime/bin:elf_loader",
     ]
   }
 }

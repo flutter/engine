@@ -21,6 +21,8 @@ import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.ExtractedText;
+import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import io.flutter.Log;
@@ -155,29 +157,20 @@ class InputConnectionAdaptor extends BaseInputConnection {
         CursorAnchorInfo anchorInfo = builder.build();
         mImm.updateCursorAnchorInfo(mFlutterView, anchorInfo);
       }
-      // TODO(garyq): There is still a duplication case that comes from hiding+showing the keyboard.
-      // The exact behavior to cause it has so far been hard to pinpoint and it happens far more
-      // rarely than the original bug.
-
-      // Temporarily indicate to the IME that the composing region selection should be reset.
-      // The correct selection is then immediately set properly in the updateEditingState() call
-      // in this method. This is a hack to trigger Samsung keyboard's internal cache to clear.
-      // This prevents duplication on keyboard hide+show. See
-      // https://github.com/flutter/flutter/issues/31512
-      //
-      // We only do this if the proper selection will be restored later, eg, when mBatchCount is 0.
-      if (mBatchCount == 0) {
-        mImm.updateSelection(
-            mFlutterView,
-            -1, /*selStart*/
-            -1, /*selEnd*/
-            -1, /*candidatesStart*/
-            -1 /*candidatesEnd*/);
-      }
     }
 
     updateEditingState();
     return result;
+  }
+
+  // TODO(garyq): Implement a more feature complete version of getExtractedText
+  @Override
+  public ExtractedText getExtractedText(ExtractedTextRequest request, int flags) {
+    ExtractedText extractedText = new ExtractedText();
+    extractedText.selectionStart = Selection.getSelectionStart(mEditable);
+    extractedText.selectionEnd = Selection.getSelectionEnd(mEditable);
+    extractedText.text = mEditable.toString();
+    return extractedText;
   }
 
   // Detect if the keyboard is a Samsung keyboard, where we apply Samsung-specific hacks to
