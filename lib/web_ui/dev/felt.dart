@@ -9,6 +9,7 @@ import 'package:args/command_runner.dart';
 
 import 'build.dart';
 import 'clean.dart';
+import 'common.dart';
 import 'licenses.dart';
 import 'test_runner.dart';
 
@@ -31,9 +32,10 @@ void main(List<String> args) async {
   _listenToShutdownSignals();
 
   try {
-    final bool result = await runner.run(args);
+    final bool result = (await runner.run(args)) as bool;
     if (result == false) {
       print('Sub-command returned false: `${args.join(' ')}`');
+      _cleanup();
       io.exit(1);
     }
   } on UsageException catch (e) {
@@ -41,10 +43,27 @@ void main(List<String> args) async {
     io.exit(64); // Exit code 64 indicates a usage error.
   } catch (e) {
     rethrow;
+  } finally {
+    _cleanup();
   }
 
   // Sometimes the Dart VM refuses to quit.
   io.exit(io.exitCode);
+}
+
+void _cleanup() {
+  // Cleanup remaining processes if any.
+  if (processesToCleanUp.length > 0) {
+    for (io.Process process in processesToCleanUp) {
+      process.kill();
+    }
+  }
+  // Delete temporary directories.
+  if (temporaryDirectories.length > 0) {
+    for (io.Directory directory in temporaryDirectories) {
+      directory.deleteSync(recursive: true);
+    }
+  }
 }
 
 void _listenToShutdownSignals() {

@@ -58,6 +58,8 @@ source_set("flow") {
     "raster_cache.h",
     "raster_cache_key.cc",
     "raster_cache_key.h",
+    "rtree.cc",
+    "rtree.h",
     "skia_gpu_object.cc",
     "skia_gpu_object.h",
     "texture.cc",
@@ -84,19 +86,11 @@ source_set("flow") {
       "view_holder.h",
     ]
 
-    if (using_fuchsia_sdk) {
-      public_deps += [
-        "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
-        "$fuchsia_sdk_root/pkg:scenic_cpp",
-      ]
-    } else {
-      public_deps += [
-        "//garnet/public/lib/ui/scenic/cpp",
-        "//sdk/fidl/fuchsia.ui.scenic",
-        "//topaz/public/dart-pkg/zircon",
-        "//zircon/public/lib/zx",
-      ]
-    }
+    public_deps += [
+      "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+      "$fuchsia_sdk_root/fidl:fuchsia.ui.gfx",
+      "$fuchsia_sdk_root/pkg:scenic_cpp",
+    ]
   }
 }
 
@@ -150,11 +144,16 @@ executable("flow_unittests") {
     "matrix_decomposition_unittests.cc",
     "mutators_stack_unittests.cc",
     "raster_cache_unittests.cc",
+    "rtree_unittests.cc",
     "skia_gpu_object_unittests.cc",
     "testing/mock_layer_unittests.cc",
     "testing/mock_texture_unittests.cc",
     "texture_unittests.cc",
   ]
+
+  if (is_fuchsia) {
+    sources += [ "layers/fuchsia_layer_unittests.cc" ]
+  }
 
   deps = [
     ":flow",
@@ -167,6 +166,10 @@ executable("flow_unittests") {
     "//third_party/googletest:gtest",
     "//third_party/skia",
   ]
+
+  if (is_fuchsia) {
+    deps += [ "//build/fuchsia/pkg:sys_cpp_testing" ]
+  }
 }
 
 if (is_fuchsia) {

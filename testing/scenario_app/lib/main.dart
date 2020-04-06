@@ -14,10 +14,17 @@ import 'src/animated_color_square.dart';
 import 'src/platform_view.dart';
 import 'src/poppable_screen.dart';
 import 'src/scenario.dart';
+import 'src/touches_scenario.dart';
 
 Map<String, Scenario> _scenarios = <String, Scenario>{
   'animated_color_square': AnimatedColorSquareScenario(window),
   'platform_view': PlatformViewScenario(window, 'Hello from Scenarios (Platform View)', id: 0),
+  'platform_view_no_overlay_intersection': PlatformViewNoOverlayIntersectionScenario(window, 'Hello from Scenarios (Platform View)', id: 0),
+  'platform_view_partial_intersection': PlatformViewPartialIntersectionScenario(window, 'Hello from Scenarios (Platform View)', id: 0),
+  'platform_view_two_intersecting_overlays': PlatformViewTwoIntersectingOverlaysScenario(window, 'Hello from Scenarios (Platform View)', id: 0),
+  'platform_view_one_overlay_two_intersecting_overlays': PlatformViewOneOverlayTwoIntersectingOverlaysScenario(window, 'Hello from Scenarios (Platform View)', id: 0),
+  'platform_view_multiple_without_overlays': MultiPlatformViewWithoutOverlaysScenario(window, 'Hello from Scenarios (Platform View)', id: 0),
+  'platform_view_max_overlays': PlatformViewMaxOverlaysScenario(window, 'Hello from Scenarios (Platform View)', id: 0),
   'platform_view_cliprect': PlatformViewClipRectScenario(window, 'PlatformViewClipRect', id: 1),
   'platform_view_cliprrect': PlatformViewClipRRectScenario(window, 'PlatformViewClipRRect', id: 2),
   'platform_view_clippath': PlatformViewClipPathScenario(window, 'PlatformViewClipPath', id: 3),
@@ -30,11 +37,13 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
   'platform_view_gesture_reject_eager': PlatformViewForTouchIOSScenario(window, 'platform view touch', id: 11, accept: false),
   'platform_view_gesture_accept': PlatformViewForTouchIOSScenario(window, 'platform view touch', id: 11, accept: true),
   'platform_view_gesture_reject_after_touches_ended': PlatformViewForTouchIOSScenario(window, 'platform view touch', id: 11, accept: false, rejectUntilTouchesEnded: true),
+  'tap_status_bar' : TouchesScenario(window),
 };
 
 Scenario _currentScenario = _scenarios['animated_color_square'];
 
 void main() {
+  assert(window.locale != null);
   window
     ..onPlatformMessage = _handlePlatformMessage
     ..onBeginFrame = _onBeginFrame

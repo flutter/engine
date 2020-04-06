@@ -13,9 +13,11 @@
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/closure.h"
-#include "flutter/fml/gpu_thread_merger.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/raster_thread_merger.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/time/time_delta.h"
+#include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
 #include "flutter/shell/common/surface.h"
@@ -67,6 +69,10 @@ class Rasterizer final : public SnapshotDelegate {
 
     /// Time limit for a smooth frame. See `Engine::GetDisplayRefreshRate`.
     virtual fml::Milliseconds GetFrameBudget() = 0;
+
+    /// Target time for the latest frame. See also `Shell::OnAnimatorBeginFrame`
+    /// for when this time gets updated.
+    virtual fml::TimePoint GetLatestFrameTargetTime() const = 0;
   };
 
   // TODO(dnfield): remove once embedders have caught up.
@@ -74,6 +80,11 @@ class Rasterizer final : public SnapshotDelegate {
     void OnFrameRasterized(const FrameTiming&) override {}
     fml::Milliseconds GetFrameBudget() override {
       return fml::kDefaultFrameBudget;
+    }
+    // Returning a time in the past so we don't add additional trace
+    // events when exceeding the frame budget for other embedders.
+    fml::TimePoint GetLatestFrameTargetTime() const override {
+      return fml::TimePoint::FromEpochDelta(fml::TimeDelta::Zero());
     }
   };
 
@@ -220,8 +231,8 @@ class Rasterizer final : public SnapshotDelegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Takes the next item from the layer tree pipeline and executes
-  ///             the GPU thread frame workload for that pipeline item to render
-  ///             a frame on the on-screen surface.
+  ///             the raster thread frame workload for that pipeline item to
+  ///             render a frame on the on-screen surface.
   ///
   ///             Why does the draw call take a layer tree pipeline and not the
   ///             layer tree directly?
@@ -420,7 +431,7 @@ class Rasterizer final : public SnapshotDelegate {
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
   fml::WeakPtrFactory<Rasterizer> weak_factory_;
-  fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger_;
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
