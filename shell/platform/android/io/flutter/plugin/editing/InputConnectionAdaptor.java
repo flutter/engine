@@ -165,6 +165,14 @@ class InputConnectionAdaptor extends BaseInputConnection {
   }
 
   @Override
+  public boolean deleteSurroundingTextInCodePoints(int beforeLength, int afterLength) {
+    boolean result = super.deleteSurroundingTextInCodePoints(beforeLength, afterLength);
+    markDirty();
+    updateEditingState();
+    return result;
+  }
+
+  @Override
   public boolean setComposingRegion(int start, int end) {
     boolean result = super.setComposingRegion(start, end);
     markDirty();
@@ -217,6 +225,13 @@ class InputConnectionAdaptor extends BaseInputConnection {
     extractedText.text = mEditable.toString();
     return extractedText;
   }
+
+ @Override
+ public boolean clearMetaKeyStates(int states) {
+    boolean result = super.clearMetaKeyStates(states);
+    markDirty();
+    return result;
+ }
 
   // Detect if the keyboard is a Samsung keyboard, where we apply Samsung-specific hacks to
   // fix critical bugs that make the keyboard otherwise unusable. See finishComposingText() for
