@@ -6,96 +6,98 @@
 
 #include <windows.h>
 
-#include <chrono>
 #include <iostream>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_message_codec.h"
-#include "flutter/shell/platform/windows/keycodes/keyboard_map_windows.h"
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_message_codec.h"
 
-static constexpr char kChannelName[] = "flutter/hardwarekeyevent";
+static constexpr char kChannelName[] = "flutter/keyevent";
 
 static constexpr char kKeyCodeKey[] = "keyCode";
+static constexpr char kScanCodeKey[] = "scanCode";
+static constexpr char kCharacterCodePointKey[] = "characterCodePoint";
+static constexpr char kModifiersKey[] = "modifiers";
 static constexpr char kKeyMapKey[] = "keymap";
 static constexpr char kTypeKey[] = "type";
 
-static constexpr char kAndroidKeyMap[] = "android";
+static constexpr char kWindowsKeyMap[] = "windows";
 static constexpr char kKeyUp[] = "keyup";
 static constexpr char kKeyDown[] = "keydown";
 
 namespace flutter {
 
+// TODO: These have to be in sync with file
+const int kShift = 1 << 0;
+const int kShiftLeft = 1 << 1;
+const int kShiftRight = 1 << 2;
+const int kControl = 1 << 3;
+const int kControlLeft = 1 << 4;
+const int kControlRight = 1 << 5;
+const int kAlt = 1 << 6;
+const int kAltLeft = 1 << 7;
+const int kAltRight = 1 << 8;
+const int kWinLeft = 1 << 9;
+const int kWinRight = 1 << 10;
+const int kCapsLock = 1 << 11;
+const int kNumLock = 1 << 12;
+const int kScrollLock = 1 << 13;
+
 KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger)
-    : channel_(std::make_unique<
-               flutter::BasicMessageChannel<flutter::EncodableValue>>(
-          messenger,
-          kChannelName,
-          &flutter::StandardMessageCodec::GetInstance())) {}
+    : channel_(
+          std::make_unique<flutter::BasicMessageChannel<rapidjson::Document>>(
+              messenger,
+              kChannelName,
+              &flutter::JsonMessageCodec::GetInstance())) {}
 
 KeyEventHandler::~KeyEventHandler() = default;
 
 void KeyEventHandler::CharHook(Win32FlutterWindow* window,
                                char32_t code_point) {}
 
+
 void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
                                    int key,
                                    int scancode,
                                    int action,
                                    char32_t character) {
-  std::cerr << "Key code " << key << std::endl;
-  std::cerr << "Scancode  " << scancode << std::endl;
-  std::cerr << "Action " << action << std::endl;
-  std::cerr << "Character " << character << std::endl;
+  // TODO: Translate to a cross-platform key code system rather than passing
+  // the native key code.
+  rapidjson::Document event(rapidjson::kObjectType);
+  auto& allocator = event.GetAllocator();
+  event.AddMember(kKeyCodeKey, key, allocator);
+  event.AddMember(kScanCodeKey, scancode, allocator);
+  event.AddMember(kCharacterCodePointKey, character, allocator);
+  event.AddMember(kKeyMapKey, kWindowsKeyMap, allocator);
 
-  EncodableMap logicKeyPayload;
-  EncodableMap physicalKeyPayload;
+  int mods = 0;
+  if (GetKeyState(VK_SHIFT) < 0) mods &= kShift;
+  if (GetKeyState(VK_LSHIFT) < 0) mods &= kShiftLeft;
+  if (GetKeyState(VK_RSHIFT) < 0) mods &= kShiftRight;
+  if (GetKeyState(VK_CONTROL) < 0) mods &= kControl;
+  if (GetKeyState(VK_LCONTROL) < 0) mods &= kControlLeft;
+  if (GetKeyState(VK_RCONTROL) < 0) mods &= kControlRight;
+  if (GetKeyState(VK_MENU) < 0) mods &= kAlt;
+  if (GetKeyState(VK_LMENU) < 0) mods &= kAltLeft;
+  if (GetKeyState(VK_RMENU) < 0) mods &= kAltRight;
+  if (GetKeyState(VK_LWIN) < 0) mods &= kWinLeft;
+  if (GetKeyState(VK_RWIN) < 0) mods &= kWinRight;
+  if (GetKeyState(VK_CAPITAL) < 0) mods &= kCapsLock;
+  if (GetKeyState(VK_NUMLOCK) < 0) mods &= kNumLock;
+  if (GetKeyState(VK_SCROLL) < 0) mods &= kScrollLock;
+  event.AddMember(kModifiersKey, mods, allocator);
 
-  std::map<int, uint64_t>::iterator it;
-  it = g_windows_to_logical_key.find(key);
-  if (it != g_windows_to_logical_key.end()) {
-    logicKeyPayload[EncodableValue(10000)] =
-        EncodableValue(static_cast<int>(g_windows_to_logical_key.at(key)));
-    std::cerr << "Logical key " << g_windows_to_logical_key.at(key)
-              << std::endl;
-    if (character > 0) {
-      logicKeyPayload[EncodableValue(20000)] =
-          EncodableValue(static_cast<int>(character));
-    }
-  } else {
-    std::cerr << "Failed to find logical key " << key << std::endl;
+
+  switch (action) {
+    case WM_KEYDOWN:
+      event.AddMember(kTypeKey, kKeyDown, allocator);
+      break;
+    case WM_KEYUP:
+      event.AddMember(kTypeKey, kKeyUp, allocator);
+      break;
+    default:
+      std::cerr << "Unknown key event action: " << action << std::endl;
+      return;
   }
-
-  it = g_windows_to_physical_key.find(scancode);
-  if (it != g_windows_to_physical_key.end()) {
-    physicalKeyPayload[EncodableValue(10000000)] = EncodableValue(
-        static_cast<int>(g_windows_to_physical_key.at(scancode)));
-    std::cerr << "Physical key " << g_windows_to_physical_key.at(scancode)
-              << std::endl;
-    if (character > 0) {
-      physicalKeyPayload[EncodableValue(20000)] =
-          EncodableValue(static_cast<int>(character));
-    }
-  } else {
-    std::cerr << "Failed to find physical scan code " << scancode << std::endl;
-  }
-
-  EncodableMap payload = {
-      {EncodableValue(100), EncodableValue(logicKeyPayload)},
-      {EncodableValue(200), EncodableValue(physicalKeyPayload)},
-  };
-
-  size_t timestamp =
-      std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::high_resolution_clock::now().time_since_epoch())
-          .count();
-
-  EncodableMap map = {
-      {EncodableValue(1), EncodableValue(static_cast<int>(timestamp))},
-      {EncodableValue(2), EncodableValue(action)},
-      {EncodableValue(3), EncodableValue(payload)},
-  };
-
-  EncodableValue value(map);
-  // channel_->Send(value);
+  channel_->Send(event);
 }
 
 }  // namespace flutter
