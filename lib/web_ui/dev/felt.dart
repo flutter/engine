@@ -10,8 +10,12 @@ import 'package:args/command_runner.dart';
 import 'build.dart';
 import 'clean.dart';
 import 'common.dart';
+import 'environment.dart';
 import 'licenses.dart';
 import 'test_runner.dart';
+import 'utils.dart';
+
+final TestCommand testCommand = TestCommand();
 
 CommandRunner runner = CommandRunner<bool>(
   'felt',
@@ -19,7 +23,7 @@ CommandRunner runner = CommandRunner<bool>(
 )
   ..addCommand(CleanCommand())
   ..addCommand(LicensesCommand())
-  ..addCommand(TestCommand())
+  ..addCommand(testCommand)
   ..addCommand(BuildCommand());
 
 void main(List<String> args) async {
@@ -63,6 +67,16 @@ void _cleanup() {
     for (io.Directory directory in temporaryDirectories) {
       directory.deleteSync(recursive: true);
     }
+  }
+
+  // Many tabs left open after Safari runs, quit safari.
+  if(testCommand.browser == 'safari') {
+    print('INFO: Safari tests run. Quit Safari.');
+    startProcess(
+      'osascript',
+      ['dev/quit_safari.scpt'],
+      workingDirectory: environment.webUiRootDir.path,
+    );
   }
 }
 
