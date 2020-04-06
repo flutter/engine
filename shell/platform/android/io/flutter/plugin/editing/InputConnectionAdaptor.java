@@ -96,12 +96,12 @@ class InputConnectionAdaptor extends BaseInputConnection {
     // occurred to mark this as dirty. This prevents duplicate remote updates of
     // the same data, which can break formatters that change the length of the
     // contents.
-    if (repeatCheckNeeded &&
-        selectionStart == mPreviousSelectionStart &&
-        selectionEnd == mPreviousSelectionEnd &&
-        composingStart == mPreviousComposingStart &&
-        composingEnd == mPreviousComposingEnd &&
-        text.equals(mPreviousText)) {
+    if (repeatCheckNeeded
+        && selectionStart == mPreviousSelectionStart
+        && selectionEnd == mPreviousSelectionEnd
+        && composingStart == mPreviousComposingStart
+        && composingEnd == mPreviousComposingEnd
+        && text.equals(mPreviousText)) {
       return;
     }
 
