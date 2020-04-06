@@ -130,7 +130,8 @@ class ProcessException implements Exception {
     message
       ..writeln(description)
       ..writeln('Command: $executable ${arguments.join(' ')}')
-      ..writeln('Working directory: ${workingDirectory ?? io.Directory.current.path}')
+      ..writeln(
+          'Working directory: ${workingDirectory ?? io.Directory.current.path}')
       ..writeln('Exit code: $exitCode');
     return '$message';
   }
@@ -159,5 +160,31 @@ mixin ArgUtils<T> on Command<T> {
       );
     }
     return value;
+  }
+}
+
+/// Cleanup the remaning processes, close open browsers, delete temp files.
+void cleanup({String browser = 'chrome'}) async {
+  // Cleanup remaining processes if any.
+  if (processesToCleanUp.length > 0) {
+    for (io.Process process in processesToCleanUp) {
+      process.kill();
+    }
+  }
+  // Delete temporary directories.
+  if (temporaryDirectories.length > 0) {
+    for (io.Directory directory in temporaryDirectories) {
+      directory.deleteSync(recursive: true);
+    }
+  }
+
+  // Many tabs left open after Safari runs, quit safari.
+  if (browser == 'safari') {
+    print('INFO: Safari tests run. Quit Safari.');
+    await runProcess(
+      'osascript',
+      ['dev/quit_safari.scpt'],
+      workingDirectory: environment.webUiRootDir.path,
+    );
   }
 }

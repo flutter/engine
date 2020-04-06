@@ -179,7 +179,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   bool get runAllTests => targets.isEmpty;
 
   /// The name of the browser to run tests in.
-  String get browser => stringArg('browser');
+  String get browser => (argResults != null) ? stringArg('browser') : 'chrome';
 
   /// Whether [browser] is set to "chrome".
   bool get isChrome => browser == 'chrome';
@@ -190,7 +190,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   Future<void> _runTargetTests(List<FilePath> targets) async {
     await _runTestBatch(targets, concurrency: 1, expectFailure: false);
-    _checkExitCode();
+    await _checkExitCode();
   }
 
   Future<void> _runAllTests() async {
@@ -236,12 +236,12 @@ class TestCommand extends Command<bool> with ArgUtils {
           concurrency: 1,
           expectFailure: true,
         );
-        _checkExitCode();
+        await _checkExitCode();
       }
 
       // Run all unit-tests as a single batch.
       await _runTestBatch(unitTestFiles, concurrency: 10, expectFailure: false);
-      _checkExitCode();
+      await _checkExitCode();
 
       // Run screenshot tests one at a time.
       for (FilePath testFilePath in screenshotTestFiles) {
@@ -250,7 +250,7 @@ class TestCommand extends Command<bool> with ArgUtils {
           concurrency: 1,
           expectFailure: false,
         );
-        _checkExitCode();
+        await _checkExitCode();
       }
     } else {
       final List<FilePath> unitTestFiles = <FilePath>[];
@@ -269,13 +269,14 @@ class TestCommand extends Command<bool> with ArgUtils {
       }
       // Run all unit-tests as a single batch.
       await _runTestBatch(unitTestFiles, concurrency: 10, expectFailure: false);
-      _checkExitCode();
+      await _checkExitCode();
     }
   }
 
-  void _checkExitCode() {
+  void _checkExitCode() async {
     if (io.exitCode != 0) {
       io.stderr.writeln('Process exited with exit code ${io.exitCode}.');
+      await cleanup(browser: browser);
       io.exit(1);
     }
   }

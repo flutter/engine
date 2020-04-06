@@ -9,8 +9,6 @@ import 'package:args/command_runner.dart';
 
 import 'build.dart';
 import 'clean.dart';
-import 'common.dart';
-import 'environment.dart';
 import 'licenses.dart';
 import 'test_runner.dart';
 import 'utils.dart';
@@ -39,7 +37,7 @@ void main(List<String> args) async {
     final bool result = (await runner.run(args)) as bool;
     if (result == false) {
       print('Sub-command returned false: `${args.join(' ')}`');
-      _cleanup();
+      await cleanup();
       io.exit(1);
     }
   } on UsageException catch (e) {
@@ -48,36 +46,11 @@ void main(List<String> args) async {
   } catch (e) {
     rethrow;
   } finally {
-    _cleanup();
+    await cleanup(browser: testCommand.browser);
   }
 
   // Sometimes the Dart VM refuses to quit.
   io.exit(io.exitCode);
-}
-
-void _cleanup() {
-  // Cleanup remaining processes if any.
-  if (processesToCleanUp.length > 0) {
-    for (io.Process process in processesToCleanUp) {
-      process.kill();
-    }
-  }
-  // Delete temporary directories.
-  if (temporaryDirectories.length > 0) {
-    for (io.Directory directory in temporaryDirectories) {
-      directory.deleteSync(recursive: true);
-    }
-  }
-
-  // Many tabs left open after Safari runs, quit safari.
-  if(testCommand.browser == 'safari') {
-    print('INFO: Safari tests run. Quit Safari.');
-    startProcess(
-      'osascript',
-      ['dev/quit_safari.scpt'],
-      workingDirectory: environment.webUiRootDir.path,
-    );
-  }
 }
 
 void _listenToShutdownSignals() {
