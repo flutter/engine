@@ -226,12 +226,12 @@ class InputConnectionAdaptor extends BaseInputConnection {
     return extractedText;
   }
 
- @Override
- public boolean clearMetaKeyStates(int states) {
+  @Override
+  public boolean clearMetaKeyStates(int states) {
     boolean result = super.clearMetaKeyStates(states);
     markDirty();
     return result;
- }
+  }
 
   // Detect if the keyboard is a Samsung keyboard, where we apply Samsung-specific hacks to
   // fix critical bugs that make the keyboard otherwise unusable. See finishComposingText() for
