@@ -5,7 +5,6 @@
 #include "flutter/shell/platform/windows/key_event_handler.h"
 
 #include <windows.h>
-#include <windef.h>
 
 #include <iostream>
 

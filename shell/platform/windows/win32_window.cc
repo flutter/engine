@@ -4,8 +4,6 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
-#include <iostream>
-
 #include "dpi_utils.h"
 
 namespace flutter {

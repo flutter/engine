@@ -27,7 +27,7 @@ class KeyEventHandler : public KeyboardHookHandler {
   virtual ~KeyEventHandler();
 
   // |KeyboardHookHandler|
-   void KeyboardHook(Win32FlutterWindow* window,
+  void KeyboardHook(Win32FlutterWindow* window,
                     int key,
                     int scancode,
                     int action,
