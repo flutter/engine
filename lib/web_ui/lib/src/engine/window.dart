@@ -396,7 +396,6 @@ class EngineWindow extends ui.Window {
             return;
           case 'Clipboard.getData':
             ClipboardMessageHandler().getDataMethodCall(callback);
-            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
         }
         break;
