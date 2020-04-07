@@ -180,11 +180,17 @@ void cleanup({String browser = 'chrome'}) async {
 
   // Many tabs left open after Safari runs, quit safari.
   if (browser == 'safari') {
-    print('INFO: Safari tests run. Quit Safari.');
-    await runProcess(
-      'osascript',
-      ['dev/quit_safari.scpt'],
-      workingDirectory: environment.webUiRootDir.path,
-    );
+    // Only close Safari if felt is running in CI environments. Do not close
+    // Safari for the local testing.
+    if (io.Platform.environment['LUCI_CONTEXT'] != null || isCirrus) {
+      print('INFO: Safari tests run. Quit Safari.');
+      await runProcess(
+        'sudo',
+        ['pkill', '-lf', 'Safari'],
+        workingDirectory: environment.webUiRootDir.path,
+      );
+    } else {
+      print('INFO: Safari tests run. Please quit Safari tabs.');
+    }
   }
 }
