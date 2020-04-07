@@ -392,7 +392,6 @@ class EngineWindow extends ui.Window {
             return;
           case 'Clipboard.setData':
             ClipboardMessageHandler().setDataMethodCall(decoded, callback);
-            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'Clipboard.getData':
             ClipboardMessageHandler().getDataMethodCall(callback);
