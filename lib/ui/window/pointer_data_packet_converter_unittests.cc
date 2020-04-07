@@ -252,7 +252,7 @@ TEST(PointerDataPacketConverterTest, AlwaysForwardMoveEvent) {
   packet->SetPointerData(0, data);
   CreateSimulatedPointerData(data, PointerData::Change::kDown, 0, 0.0, 0.0);
   packet->SetPointerData(1, data);
-  // Creates a move event without location change.
+  // Creates a move event without a location change.
   CreateSimulatedPointerData(data, PointerData::Change::kMove, 0, 0.0, 0.0);
   packet->SetPointerData(2, data);
   CreateSimulatedPointerData(data, PointerData::Change::kUp, 0, 0.0, 0.0);
@@ -271,7 +271,7 @@ TEST(PointerDataPacketConverterTest, AlwaysForwardMoveEvent) {
   ASSERT_EQ(result[1].pointer_identifier, 1);
   ASSERT_EQ(result[1].synthesized, 0);
 
-  // Does not filter out move event
+  // Does not filter out the move event.
   ASSERT_EQ(result[2].change, PointerData::Change::kMove);
   ASSERT_EQ(result[2].pointer_identifier, 1);
   ASSERT_EQ(result[2].synthesized, 0);
