@@ -197,14 +197,13 @@ Win32Window::MessageHandler(HWND hwnd,
       case WM_SYSDEADCHAR:
       case WM_CHAR:
       case WM_SYSCHAR: {
-        if (wparam == VK_BACK)
-          break;
         char32_t code_point = static_cast<char32_t>(wparam);
         static char32_t lead_surrogate = 0;
-        // If code_point is LeadSurrogate, save and return.
+        // If code_point is LeadSurrogate, save to combine to potentially form
+        // a complex Unicode character.
         if ((code_point & 0xFFFFFC00) == 0xD800) {
           lead_surrogate = code_point;
-          return TRUE;
+          // return TRUE;
         }
         // Merge TrailSurrogate and LeadSurrogate.
         if (lead_surrogate != 0 && (code_point & 0xFFFFFC00) == 0xDC00) {
@@ -222,7 +221,8 @@ Win32Window::MessageHandler(HWND hwnd,
       case WM_SYSKEYDOWN:
       case WM_KEYUP:
       case WM_SYSKEYUP:
-        const bool is_keydown_message = (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
+        const bool is_keydown_message =
+            (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
         const unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
         if (character > 0 && is_keydown_message) {
           keycode_for_char_message = wparam;

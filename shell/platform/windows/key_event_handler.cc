@@ -53,7 +53,6 @@ KeyEventHandler::~KeyEventHandler() = default;
 void KeyEventHandler::CharHook(Win32FlutterWindow* window,
                                char32_t code_point) {}
 
-
 void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
                                    int key,
                                    int scancode,
@@ -69,28 +68,42 @@ void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
   event.AddMember(kKeyMapKey, kWindowsKeyMap, allocator);
 
   int mods = 0;
-  if (GetKeyState(VK_SHIFT) < 0) mods &= kShift;
-  if (GetKeyState(VK_LSHIFT) < 0) mods &= kShiftLeft;
-  if (GetKeyState(VK_RSHIFT) < 0) mods &= kShiftRight;
-  if (GetKeyState(VK_CONTROL) < 0) mods &= kControl;
-  if (GetKeyState(VK_LCONTROL) < 0) mods &= kControlLeft;
-  if (GetKeyState(VK_RCONTROL) < 0) mods &= kControlRight;
-  if (GetKeyState(VK_MENU) < 0) mods &= kAlt;
-  if (GetKeyState(VK_LMENU) < 0) mods &= kAltLeft;
-  if (GetKeyState(VK_RMENU) < 0) mods &= kAltRight;
-  if (GetKeyState(VK_LWIN) < 0) mods &= kWinLeft;
-  if (GetKeyState(VK_RWIN) < 0) mods &= kWinRight;
-  if (GetKeyState(VK_CAPITAL) < 0) mods &= kCapsLock;
-  if (GetKeyState(VK_NUMLOCK) < 0) mods &= kNumLock;
-  if (GetKeyState(VK_SCROLL) < 0) mods &= kScrollLock;
+  if (GetKeyState(VK_SHIFT) < 0)
+    mods |= kShift;
+  if (GetAsyncKeyState(VK_LSHIFT) < 0)
+    mods |= kShiftLeft;
+  if (GetKeyState(VK_RSHIFT) < 0)
+    mods |= kShiftRight;
+  if (GetKeyState(VK_CONTROL) < 0)
+    mods |= kControl;
+  if (GetKeyState(VK_LCONTROL) < 0)
+    mods |= kControlLeft;
+  if (GetKeyState(VK_RCONTROL) < 0)
+    mods |= kControlRight;
+  if (GetKeyState(VK_MENU) < 0)
+    mods |= kAlt;
+  if (GetKeyState(VK_LMENU) < 0)
+    mods |= kAltLeft;
+  if (GetKeyState(VK_RMENU) < 0)
+    mods |= kAltRight;
+  if (GetKeyState(VK_LWIN) < 0)
+    mods |= kWinLeft;
+  if (GetKeyState(VK_RWIN) < 0)
+    mods |= kWinRight;
+  if (GetKeyState(VK_CAPITAL) < 0)
+    mods |= kCapsLock;
+  if (GetKeyState(VK_NUMLOCK) < 0)
+    mods |= kNumLock;
+  if (GetKeyState(VK_SCROLL) < 0)
+    mods |= kScrollLock;
+
   event.AddMember(kModifiersKey, mods, allocator);
 
-
   switch (action) {
-    case WM_KEYDOWN:
+    case 0:
       event.AddMember(kTypeKey, kKeyDown, allocator);
       break;
-    case WM_KEYUP:
+    case 1:
       event.AddMember(kTypeKey, kKeyUp, allocator);
       break;
     default:
