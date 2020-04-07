@@ -9,27 +9,6 @@ part of engine;
 
 // Some parts of this file were inspired/copied from the AngularDart router.
 
-/// Ensures that `str` is prefixed with `leading`.
-///
-/// If `str` is already prefixed, it'll be returned unchanged. If it's not,
-/// this function will prefix it.
-///
-/// The `applyWhenEmpty` flag controls whether this function should prefix `str`
-/// or not when it's an empty string.
-///
-/// ```dart
-/// ensureLeading('/path', '/'); // "/path"
-/// ensureLeading('path', '/'); // "/path"
-/// ensureLeading('', '/'); // "/"
-/// ensureLeading('', '/', applyWhenEmpty: false); // ""
-/// ```
-String ensureLeading(String str, String leading, {bool applyWhenEmpty = true}) {
-  if (str.isEmpty && !applyWhenEmpty) {
-    return str;
-  }
-  return str.startsWith(leading) ? str : '$leading$str';
-}
-
 /// [LocationStrategy] is responsible for representing and reading route state
 /// from the browser's URL.
 ///
@@ -96,9 +75,7 @@ class HashLocationStrategy extends LocationStrategy {
     // Dart will complain if a call to substring is
     // executed with a position value that exceeds the
     // length of string.
-    path = path.isEmpty ? path : path.substring(1);
-    // The path, by convention, should always contain a leading '/'.
-    return ensureLeading(path, '/');
+    return path.isEmpty ? path : path.substring(1);
   }
 
   @override
