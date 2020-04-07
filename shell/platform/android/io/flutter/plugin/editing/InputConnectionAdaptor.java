@@ -37,19 +37,46 @@ class InputConnectionAdaptor extends BaseInputConnection {
   private int mBatchCount;
   private InputMethodManager mImm;
   private final Layout mLayout;
-
-  // Used to store the last-sent values via updateEditingState to the framework.
-  // These are then compared against to prevent redundant messages with the same
-  // data before any valid operations were made to the contents.
-  private int mPreviousSelectionStart;
-  private int mPreviousSelectionEnd;
-  private int mPreviousComposingStart;
-  private int mPreviousComposingEnd;
-  private String mPreviousText;
-  private boolean mRepeatCheckNeeded = false;
-
   // Used to determine if Samsung-specific hacks should be applied.
   private final boolean isSamsung;
+
+  private boolean mRepeatCheckNeeded = false;
+  private TextEditingValue mLastSentTextEditngValue;
+  // Data class used to get and store the last-sent values via updateEditingState to
+  // the  framework. These are then compared against to prevent redundant messages
+  // with the same data before any valid operations were made to the contents.
+  private class TextEditingValue {
+    public int selectionStart;
+    public int selectionEnd;
+    public int composingStart;
+    public int composingEnd;
+    public String text;
+
+    public TextEditingValue(Editable editable) {
+      selectionStart = Selection.getSelectionStart(editable);
+      selectionEnd = Selection.getSelectionEnd(editable);
+      composingStart = BaseInputConnection.getComposingSpanStart(editable);
+      composingEnd = BaseInputConnection.getComposingSpanEnd(editable);
+      text = editable.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == this) {
+        return true;
+      }
+      if (!(o instanceof TextEditingValue)) {
+        return false;
+      }
+      TextEditingValue value = (TextEditingValue) o;
+      return selectionStart == value.selectionStart
+        && selectionEnd == value.selectionEnd
+        && composingStart == value.composingStart
+        && composingEnd == value.composingEnd
+        && text.equals(value.text);
+    }
+  }
+
 
   @SuppressWarnings("deprecation")
   public InputConnectionAdaptor(
@@ -86,36 +113,33 @@ class InputConnectionAdaptor extends BaseInputConnection {
     // If the IME is in the middle of a batch edit, then wait until it completes.
     if (mBatchCount > 0) return;
 
-    int selectionStart = Selection.getSelectionStart(mEditable);
-    int selectionEnd = Selection.getSelectionEnd(mEditable);
-    int composingStart = BaseInputConnection.getComposingSpanStart(mEditable);
-    int composingEnd = BaseInputConnection.getComposingSpanEnd(mEditable);
-    String text = mEditable.toString();
+    TextEditingValue currentValue = new TextEditingValue(mEditable);
 
     // Return if this data has already been sent and no meaningful changes have
     // occurred to mark this as dirty. This prevents duplicate remote updates of
     // the same data, which can break formatters that change the length of the
     // contents.
-    if (mRepeatCheckNeeded
-        && selectionStart == mPreviousSelectionStart
-        && selectionEnd == mPreviousSelectionEnd
-        && composingStart == mPreviousComposingStart
-        && composingEnd == mPreviousComposingEnd
-        && text.equals(mPreviousText)) {
+    if (mRepeatCheckNeeded && currentValue.equals(mLastSentTextEditngValue)) {
       return;
     }
 
-    mImm.updateSelection(mFlutterView, selectionStart, selectionEnd, composingStart, composingEnd);
+    mImm.updateSelection(
+        mFlutterView,
+        currentValue.selectionStart,
+        currentValue.selectionEnd,
+        currentValue.composingStart,
+        currentValue.composingEnd);
 
     textInputChannel.updateEditingState(
-        mClient, text, selectionStart, selectionEnd, composingStart, composingEnd);
+        mClient,
+        currentValue.text,
+        currentValue.selectionStart,
+        currentValue.selectionEnd,
+        currentValue.composingStart,
+        currentValue.composingEnd);
 
     mRepeatCheckNeeded = true;
-    mPreviousSelectionStart = selectionStart;
-    mPreviousSelectionEnd = selectionEnd;
-    mPreviousComposingStart = composingStart;
-    mPreviousComposingEnd = composingEnd;
-    mPreviousText = text;
+    mLastSentTextEditngValue = currentValue;
   }
 
   // This should be called whenever a change could have been made to
