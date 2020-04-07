@@ -587,9 +587,9 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
   }
 }
 
-void FlutterPlatformViewsController::EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+void FlutterPlatformViewsController::EndFrame(fml::RefPtr<fml::GpuThreadMerger> raster_thread_merger) {
   if (merge_threads_) {
-    gpu_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
+    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
     merge_threads_ = false;
   }
 }

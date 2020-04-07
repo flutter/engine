@@ -145,10 +145,10 @@ bool IOSSurface::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
 }
 
 // |ExternalViewEmbedder|
-void IOSSurface::EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+void IOSSurface::EndFrame(fml::RefPtr<fml::GpuThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::EndFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  return platform_views_controller_->EndFrame(gpu_thread_merger);
+  return platform_views_controller_->EndFrame(raster_thread_merger);
 }
 
 // |ExternalViewEmbedder|

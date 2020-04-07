@@ -168,7 +168,7 @@ class FlutterPlatformViewsController {
   // Invoked at the very end of a frame.
   // After invoking this method, nothing should happen on the current TaskRunner during the same
   // frame.
-  void EndFrame(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger);
+  void EndFrame(fml::RefPtr<fml::GpuThreadMerger> raster_thread_merger);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 

@@ -140,7 +140,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // thread.
   if (raster_status == RasterStatus::kResubmit) {
     auto* external_view_embedder = surface_->GetExternalViewEmbedder();
-    external_view_embedder->EndFrame(gpu_thread_merger_);
+    external_view_embedder->EndFrame(raster_thread_merger_);
   }
 
   // Consume as many pipeline items as possible. But yield the event loop
