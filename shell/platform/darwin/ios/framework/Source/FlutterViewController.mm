@@ -28,8 +28,10 @@ static constexpr CGFloat kScrollViewContentSize = 2.0;
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
-NSNotificationName const FlutterViewControllerHideHomeIndicator = @"FlutterViewControllerHideHomeIndicator";
-NSNotificationName const FlutterViewControllerShowHomeIndicator = @"FlutterViewControllerShowHomeIndicator";
+NSNotificationName const FlutterViewControllerHideHomeIndicator =
+    @"FlutterViewControllerHideHomeIndicator";
+NSNotificationName const FlutterViewControllerShowHomeIndicator =
+    @"FlutterViewControllerShowHomeIndicator";
 
 /// Class to coalesce calls for a period of time.
 ///

@@ -163,9 +163,13 @@ using namespace flutter;
   [UIApplication sharedApplication].statusBarHidden =
       ![overlays containsObject:@"SystemUiOverlay.top"];
   if ([overlays containsObject:@"SystemUiOverlay.bottom"]) {
-    [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerShowHomeIndicator object:nil];
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:FlutterViewControllerShowHomeIndicator
+                      object:nil];
   } else {
-    [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerHideHomeIndicator object:nil];
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:FlutterViewControllerHideHomeIndicator
+                      object:nil];
   }
 }
 
