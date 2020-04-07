@@ -94,7 +94,7 @@ NSNotificationName const FlutterViewControllerShowHomeIndicator =
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
-@property(nonatomic, assign) BOOL hideHomeIndicator;
+@property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @end
 
 // The following conditional compilation defines an API 13 concept on earlier API targets so that
@@ -1027,16 +1027,16 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)onHideHomeIndicatorNotification:(NSNotification*)notification {
-  self.hideHomeIndicator = YES;
+  self.isHomeIndicatorHidden = YES;
 }
 
 - (void)onShowHomeIndicatorNotification:(NSNotification*)notification {
-  self.hideHomeIndicator = NO;
+  self.isHomeIndicatorHidden = NO;
 }
 
-- (void)setHideHomeIndicator:(BOOL)hideHomeIndicator {
-  if (hideHomeIndicator != _hideHomeIndicator) {
-    _hideHomeIndicator = hideHomeIndicator;
+- (void)setIsHomeIndicatorHidden:(BOOL)hideHomeIndicator {
+  if (hideHomeIndicator != _isHomeIndicatorHidden) {
+    _isHomeIndicatorHidden = hideHomeIndicator;
     if (@available(iOS 11, *)) {
       [self setNeedsUpdateOfHomeIndicatorAutoHidden];
     }
@@ -1044,7 +1044,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (BOOL)prefersHomeIndicatorAutoHidden {
-  return self.hideHomeIndicator;
+  return self.isHomeIndicatorHidden;
 }
 
 - (BOOL)shouldAutorotate {
