@@ -140,6 +140,9 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // thread.
   if (raster_status == RasterStatus::kResubmit) {
     auto* external_view_embedder = surface_->GetExternalViewEmbedder();
+    // We know only the `external_view_embedder` can
+    // causes|RasterStatus::kResubmit|. Check to make sure.
+    FML_DCheck(external_view_embedder != nullptr);
     external_view_embedder->EndFrame(raster_thread_merger_);
   }
 

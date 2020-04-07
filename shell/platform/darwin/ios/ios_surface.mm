@@ -91,6 +91,9 @@ void IOSSurface::CancelFrame() {
   // Committing the current transaction as |BeginFrame| will create a nested
   // CATransaction otherwise.
   if ([NSThread currentThread] == [NSThread mainThread]) {
+    // The only time we need to commit the `CATranscation` is when
+    // there are platform views in the scene, which has to be run on the
+    // main thread.
     [CATransaction commit];
   }
 }
@@ -101,6 +104,9 @@ void IOSSurface::BeginFrame(SkISize frame_size, GrContext* context, double devic
   FML_CHECK(platform_views_controller_ != nullptr);
   platform_views_controller_->SetFrameSize(frame_size);
   if ([NSThread currentThread] == [NSThread mainThread]) {
+    // The only time we need to commit the `CATranscation` is when
+    // there are platform views in the scene, which has to be run on the
+    // main thread.
     [CATransaction begin];
   }
 }
@@ -157,6 +163,9 @@ void IOSSurface::FinishFrame() {
   if ([NSThread currentThread] != [NSThread mainThread]) {
     return;
   }
+  // The only time we need to commit the `CATranscation` is when
+  // there are platform views in the scene, which has to be run on the
+  // main thread.
   [CATransaction commit];
 }
 }  // namespace flutter
