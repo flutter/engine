@@ -70,13 +70,12 @@ class InputConnectionAdaptor extends BaseInputConnection {
       }
       TextEditingValue value = (TextEditingValue) o;
       return selectionStart == value.selectionStart
-        && selectionEnd == value.selectionEnd
-        && composingStart == value.composingStart
-        && composingEnd == value.composingEnd
-        && text.equals(value.text);
+          && selectionEnd == value.selectionEnd
+          && composingStart == value.composingStart
+          && composingEnd == value.composingEnd
+          && text.equals(value.text);
     }
   }
-
 
   @SuppressWarnings("deprecation")
   public InputConnectionAdaptor(
