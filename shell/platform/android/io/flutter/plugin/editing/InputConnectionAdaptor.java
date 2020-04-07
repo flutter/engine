@@ -150,7 +150,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean commitText(CharSequence text, int newCursorPosition) {
     boolean result = super.commitText(text, newCursorPosition);
     markDirty();
-    updateEditingState();
     return result;
   }
 
@@ -160,7 +159,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
     boolean result = super.deleteSurroundingText(beforeLength, afterLength);
     markDirty();
-    updateEditingState();
     return result;
   }
 
@@ -168,7 +166,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean deleteSurroundingTextInCodePoints(int beforeLength, int afterLength) {
     boolean result = super.deleteSurroundingTextInCodePoints(beforeLength, afterLength);
     markDirty();
-    updateEditingState();
     return result;
   }
 
@@ -176,7 +173,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean setComposingRegion(int start, int end) {
     boolean result = super.setComposingRegion(start, end);
     markDirty();
-    updateEditingState();
     return result;
   }
 
@@ -189,7 +185,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
       result = super.setComposingText(text, newCursorPosition);
     }
     markDirty();
-    updateEditingState();
     return result;
   }
 
@@ -212,7 +207,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
     }
 
     markDirty();
-    updateEditingState();
     return result;
   }
 
@@ -258,7 +252,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
   public boolean setSelection(int start, int end) {
     boolean result = super.setSelection(start, end);
     markDirty();
-    updateEditingState();
     return result;
   }
 
