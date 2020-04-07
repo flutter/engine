@@ -473,7 +473,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
     // Threads are about to be merged, we drop everything from this frame
     // and possibly resubmit the same layer tree in the next frame.
     // Before merging thread, we know the code is not running on the main thread. Assert that
-    FML_DCHECK([NSThread currentThread] != [NSThread mainThread])
+    FML_DCHECK(![[NSThread currentThread] isMainThread])
     picture_recorders_.clear();
     composition_order_.clear();
     return true;
@@ -482,7 +482,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   // Any UIKit related code has to run on main thread.
   // When on a non-main thread, we only allow the rest of the method to run if there is no platform
   // view.
-  FML_DCHECK([NSThread currentThread] == [NSThread mainThread] || views_to_dispose_.empty())
+  FML_DCHECK([[NSThread currentThread] isMainThread] || views_to_dispose_.empty())
 
   DisposeViews();
 
@@ -666,7 +666,7 @@ void FlutterPlatformViewsController::DisposeViews() {
     return;
   }
 
-  FML_DCHECK([NSThread currentThread] == [NSThread mainThread]);
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
 
   for (int64_t viewId : views_to_dispose_) {
     UIView* root_view = root_views_[viewId].get();
