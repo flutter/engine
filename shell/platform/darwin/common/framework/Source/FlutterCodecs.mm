@@ -33,10 +33,10 @@
 }
 
 - (NSData*)encode:(id)message {
-  NSAssert(!message || [message isKindOfClass:[NSString class]], @"");
-  NSString* stringMessage = message;
   if (message == nil)
     return nil;
+  NSAssert([message isKindOfClass:[NSString class]], @"");
+  NSString* stringMessage = message;
   const char* utf8 = stringMessage.UTF8String;
   return [NSData dataWithBytes:utf8 length:strlen(utf8)];
 }
