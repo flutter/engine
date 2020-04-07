@@ -630,7 +630,7 @@ hooks = [
     ],
   },
   {
-    'name': 'emsdk',
+    'name': 'emsdk install',
     'pattern': '.',
     'condition': 'download_emsdk',
     'action': [
@@ -638,6 +638,18 @@ hooks = [
       'src/third_party/emsdk/emsdk.py',
       'install',
       'latest',
+    ]
+  },
+  {
+    'name': 'emsdk activate',
+    'pattern': '.',
+    'condition': 'download_emsdk',
+    'action': [
+      'python',
+      'src/third_party/emsdk/emsdk.py',
+      'activate',
+      'latest',
+      '--embedded', # Makes the installation hermetic to //third_party/emsdk
     ]
   },
 ]
