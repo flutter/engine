@@ -27,8 +27,9 @@ static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
-
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
+NSNotificationName const FlutterViewControllerHideHomeIndicator = @"FlutterViewControllerHideHomeIndicator";
+NSNotificationName const FlutterViewControllerShowHomeIndicator = @"FlutterViewControllerShowHomeIndicator";
 
 /// Class to coalesce calls for a period of time.
 ///
@@ -91,6 +92,7 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
+@property(nonatomic, assign) BOOL hideHomeIndicator;
 @end
 
 // The following conditional compilation defines an API 13 concept on earlier API targets so that
@@ -317,6 +319,16 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [center addObserver:self
              selector:@selector(onUserSettingsChanged:)
                  name:UIContentSizeCategoryDidChangeNotification
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(onHideHomeIndicatorNotification:)
+                 name:FlutterViewControllerHideHomeIndicator
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(onShowHomeIndicatorNotification:)
+                 name:FlutterViewControllerShowHomeIndicator
                object:nil];
 }
 
@@ -1010,6 +1022,27 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       }
     }
   }
+}
+
+- (void)onHideHomeIndicatorNotification:(NSNotification*)notification {
+  self.hideHomeIndicator = YES;
+}
+
+- (void)onShowHomeIndicatorNotification:(NSNotification*)notification {
+  self.hideHomeIndicator = NO;
+}
+
+- (void)setHideHomeIndicator:(BOOL)hideHomeIndicator {
+  if (hideHomeIndicator != _hideHomeIndicator) {
+    _hideHomeIndicator = hideHomeIndicator;
+    if (@available(iOS 11, *)) {
+      [self setNeedsUpdateOfHomeIndicatorAutoHidden];
+    }
+  }
+}
+
+- (BOOL)prefersHomeIndicatorAutoHidden {
+  return self.hideHomeIndicator;
 }
 
 - (BOOL)shouldAutorotate {

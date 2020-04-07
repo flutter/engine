@@ -15,6 +15,12 @@
 FLUTTER_EXPORT
 extern NSNotificationName const FlutterViewControllerWillDealloc;
 
+FLUTTER_EXPORT
+extern NSNotificationName const FlutterViewControllerHideHomeIndicator;
+
+FLUTTER_EXPORT
+extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
+
 @interface FlutterViewController ()
 
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr;
