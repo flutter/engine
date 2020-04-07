@@ -110,6 +110,8 @@ def RunCCTests(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'common_cpp_core_unittests', filter, shuffle_flags)
 
+  RunEngineExecutable(build_dir, 'common_cpp_unittests', filter, shuffle_flags)
+
   RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter, shuffle_flags)
 
   # https://github.com/flutter/flutter/issues/36294
@@ -409,7 +411,7 @@ def main():
   if 'benchmarks' in types and not IsWindows():
     RunEngineBenchmarks(build_dir, engine_filter)
 
-  if 'engine' in types or 'font-subset' in types:
+  if ('engine' in types or 'font-subset' in types) and args.variant != 'host_release':
     RunCmd(['python', 'test.py'], cwd=font_subset_dir)
 
 
