@@ -467,7 +467,6 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   DestroyShell(std::move(shell));
 }
 
-// chris
 TEST_F(ShellTest,
        ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit) {
   auto settings = CreateSettingsForFixture();
