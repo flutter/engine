@@ -606,7 +606,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // a synchronous fashion.
   fml::AutoResetWaitableEvent latch;
   auto raster_task =
-      fml::MakeCopyable([& waiting_for_first_frame = waiting_for_first_frame_,
+      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
                          rasterizer = rasterizer_->GetWeakPtr(),  //
                          surface = std::move(surface),            //
                          &latch]() mutable {
@@ -931,12 +931,17 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_time) {
+void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
+  // record the target time for use by rasterizer.
+  {
+    std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+    latest_frame_target_time_.emplace(frame_target_time);
+  }
   if (engine_) {
-    engine_->BeginFrame(frame_time);
+    engine_->BeginFrame(frame_target_time);
   }
 }
 
@@ -955,7 +960,7 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   FML_DCHECK(is_setup_);
 
   task_runners_.GetRasterTaskRunner()->PostTask(
-      [& waiting_for_first_frame = waiting_for_first_frame_,
+      [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
        pipeline = std::move(pipeline)]() {
@@ -1163,6 +1168,13 @@ fml::Milliseconds Shell::GetFrameBudget() {
   } else {
     return fml::kDefaultFrameBudget;
   }
+}
+
+fml::TimePoint Shell::GetLatestFrameTargetTime() const {
+  std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+  FML_CHECK(latest_frame_target_time_.has_value())
+      << "GetLatestFrameTargetTime called before OnAnimatorBeginFrame";
+  return latest_frame_target_time_.value();
 }
 
 // |ServiceProtocol::Handler|
@@ -1447,7 +1459,7 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
   bool success = waiting_for_first_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [& waiting_for_first_frame = waiting_for_first_frame_] {
+      [&waiting_for_first_frame = waiting_for_first_frame_] {
         return !waiting_for_first_frame.load();
       });
   if (success) {
