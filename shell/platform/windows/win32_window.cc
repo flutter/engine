@@ -112,6 +112,9 @@ Win32Window::MessageHandler(HWND hwnd,
   auto window =
       reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
   UINT button_pressed = 0;
+
+  // Variable used to store the key code preceding a WM_CHAR message. For more
+  // info, read the comments below in WM_KEYDOWN/UP.
   static unsigned int keycode_for_char_message = 0;
   if (window != nullptr) {
     switch (message) {
@@ -203,7 +206,6 @@ Win32Window::MessageHandler(HWND hwnd,
         // a complex Unicode character.
         if ((code_point & 0xFFFFFC00) == 0xD800) {
           lead_surrogate = code_point;
-          // return TRUE;
         }
         // Merge TrailSurrogate and LeadSurrogate.
         if (lead_surrogate != 0 && (code_point & 0xFFFFFC00) == 0xDC00) {
@@ -213,6 +215,10 @@ Win32Window::MessageHandler(HWND hwnd,
         lead_surrogate = 0;
         window->OnChar(code_point);
 
+        // All key presses that generate a character should be sent from
+        // WM_CHAR. In order to send the full key press information, the keycode
+        // is persisted in a static variable keycode_for_char_message obtained
+        // from WM_KEYDOWN.
         const unsigned int scancode = (lparam >> 16) & 0xff;
         window->OnKey(keycode_for_char_message, scancode, 0, code_point);
         break;
@@ -223,6 +229,9 @@ Win32Window::MessageHandler(HWND hwnd,
       case WM_SYSKEYUP:
         const bool is_keydown_message =
             (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
+        // Check if this key produces a character. If so, the key press should
+        // be sent with the character produced at WM_CHAR. Store the produced
+        // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
         const unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
         if (character > 0 && is_keydown_message) {
           keycode_for_char_message = wparam;
@@ -230,11 +239,12 @@ Win32Window::MessageHandler(HWND hwnd,
         }
         unsigned int keyCode(wparam);
         const unsigned int scancode = (lparam >> 16) & 0xff;
+        // If the key is a modifier, get its side.
         if (keyCode == VK_SHIFT || keyCode == VK_MENU ||
             keyCode == VK_CONTROL) {
           keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
         }
-        const int action = is_keydown_message ? 0 : 1;
+        const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
         window->OnKey(keyCode, scancode, action, 0);
         break;
     }

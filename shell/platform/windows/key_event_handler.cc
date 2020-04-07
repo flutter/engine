@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/key_event_handler.h"
 
 #include <windows.h>
+#include <windef.h>
 
 #include <iostream>
 
@@ -25,7 +26,9 @@ static constexpr char kKeyDown[] = "keydown";
 
 namespace flutter {
 
-// TODO: These have to be in sync with file
+// Re-definition of the modifiers for compatibility with the Flutter framework.
+// These have to be in sync with the framework's RawKeyEventDataWindows
+// modifiers definition.
 const int kShift = 1 << 0;
 const int kShiftLeft = 1 << 1;
 const int kShiftRight = 1 << 2;
@@ -67,7 +70,9 @@ void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
   event.AddMember(kCharacterCodePointKey, character, allocator);
   event.AddMember(kKeyMapKey, kWindowsKeyMap, allocator);
 
+  // Get all the currently pressed modifiers
   int mods = 0;
+
   if (GetKeyState(VK_SHIFT) < 0)
     mods |= kShift;
   if (GetAsyncKeyState(VK_LSHIFT) < 0)
@@ -100,10 +105,10 @@ void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
   event.AddMember(kModifiersKey, mods, allocator);
 
   switch (action) {
-    case 0:
+    case WM_KEYDOWN:
       event.AddMember(kTypeKey, kKeyDown, allocator);
       break;
-    case 1:
+    case WM_KEYUP:
       event.AddMember(kTypeKey, kKeyUp, allocator);
       break;
     default:
