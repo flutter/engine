@@ -13,15 +13,16 @@ namespace flutter {
 //------------------------------------------------------------------------------
 /// @brief The external view embedder used by |ShellTestPlatformViewGL|
 ///
-class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
+class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
  public:
-  using EndFrameCallBack =
-      std::function<void)>;
+  using EndFrameCallBack = std::function<void(void)>;
 
-  EmbedderExternalViewEmbedder(
-      const EndFrameCallBack& end_frame_call_back):end_frame_call_back_(end_frame_call_back);
+  ShellTestExternalViewEmbedder(const EndFrameCallBack& end_frame_call_back,
+                                PostPrerollResult post_preroll_result)
+      : end_frame_call_back_(end_frame_call_back),
+        post_preroll_result_(post_preroll_result) {}
 
-  ~EmbedderExternalViewEmbedder() override;
+  ~ShellTestExternalViewEmbedder() = default;
 
  private:
   // |ExternalViewEmbedder|
@@ -38,6 +39,10 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
       std::unique_ptr<EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
+  PostPrerollResult PostPrerollAction(
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+
+  // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
@@ -50,15 +55,16 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   void FinishFrame() override;
 
   // |ExternalViewEmbedder|
-  void EndFrame(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+  void EndFrame(
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override;
 
- private:
   const EndFrameCallBack end_frame_call_back_;
+  const PostPrerollResult post_preroll_result_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(EmbedderExternalViewEmbedder);
+  FML_DISALLOW_COPY_AND_ASSIGN(ShellTestExternalViewEmbedder);
 };
 
 }  // namespace flutter
