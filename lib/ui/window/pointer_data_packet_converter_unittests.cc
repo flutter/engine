@@ -246,7 +246,7 @@ TEST(PointerDataPacketConverterTest, CanUpdatePointerIdentifier) {
 
 TEST(PointerDataPacketConverterTest, AlwaysForwardMoveEvent) {
   PointerDataPacketConverter converter;
-  auto packet = std::make_unique<PointerDataPacket>(7);
+  auto packet = std::make_unique<PointerDataPacket>(4);
   PointerData data;
   CreateSimulatedPointerData(data, PointerData::Change::kAdd, 0, 0.0, 0.0);
   packet->SetPointerData(0, data);
