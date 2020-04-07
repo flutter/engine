@@ -211,14 +211,16 @@ Win32Window::MessageHandler(HWND hwnd,
                        (code_point & 0x3FF);
         }
         lead_surrogate = 0;
-        window->OnChar(code_point);
+        if (wparam != VK_BACK) {
+          window->OnChar(code_point);
+        }
 
         // All key presses that generate a character should be sent from
         // WM_CHAR. In order to send the full key press information, the keycode
         // is persisted in a static variable keycode_for_char_message obtained
         // from WM_KEYDOWN.
         const unsigned int scancode = (lparam >> 16) & 0xff;
-        window->OnKey(keycode_for_char_message, scancode, 0, code_point);
+        window->OnKey(keycode_for_char_message, scancode, WM_KEYDOWN, code_point);
         break;
       }
       case WM_KEYDOWN:
