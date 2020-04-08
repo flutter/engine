@@ -211,7 +211,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   Future<void> _runTargetTests(List<FilePath> targets) async {
     await _runTestBatch(targets, concurrency: 1, expectFailure: false);
-    await _checkExitCode();
+    _checkExitCode();
   }
 
   Future<void> _runAllTests() async {
@@ -257,12 +257,12 @@ class TestCommand extends Command<bool> with ArgUtils {
           concurrency: 1,
           expectFailure: true,
         );
-        await _checkExitCode();
+        _checkExitCode();
       }
 
       // Run all unit-tests as a single batch.
       await _runTestBatch(unitTestFiles, concurrency: 10, expectFailure: false);
-      await _checkExitCode();
+      _checkExitCode();
 
       // Run screenshot tests one at a time.
       for (FilePath testFilePath in screenshotTestFiles) {
@@ -271,7 +271,7 @@ class TestCommand extends Command<bool> with ArgUtils {
           concurrency: 1,
           expectFailure: false,
         );
-        await _checkExitCode();
+        _checkExitCode();
       }
     } else {
       final List<FilePath> unitTestFiles = <FilePath>[];
@@ -290,7 +290,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       }
       // Run all unit-tests as a single batch.
       await _runTestBatch(unitTestFiles, concurrency: 10, expectFailure: false);
-      await _checkExitCode();
+      _checkExitCode();
     }
   }
 
