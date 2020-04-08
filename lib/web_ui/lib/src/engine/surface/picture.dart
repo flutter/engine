@@ -523,7 +523,6 @@ abstract class PersistedPicture extends PersistedLeafSurface {
       // Shrinking. Give it 10% of the extent in case the trend is reversed.
       return extent * 0.1;
     } else {
-      print('>>> _predictTrend(extent = $extent, delta = $delta)');
       // Growing. Predict 10 more frames of similar deltas. Give it at least
       // 50% of the extent (protect from extremely slow growth trend such as
       // slow scrolling). Give no more than the full extent (protects from
