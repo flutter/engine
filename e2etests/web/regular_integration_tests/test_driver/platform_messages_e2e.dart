@@ -54,5 +54,6 @@ void main() async {
       'id': '567',
     };
     await SystemChannels.platform_views.invokeMethod<void>('dispose', disposeArgs);
+    expect(viewInstanceCount, 1);
   });
 }
