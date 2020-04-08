@@ -18,24 +18,6 @@ const int kMaxScreenshotWidth = 1024;
 const int kMaxScreenshotHeight = 1024;
 const double kMaxDiffRateFailure = 0.28 / 100; // 0.28%
 
-class BrowserInstallerException implements Exception {
-  BrowserInstallerException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
-class DriverException implements Exception {
-  DriverException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
 abstract class PlatformBinding {
   static PlatformBinding get instance {
     if (_instance == null) {

@@ -183,14 +183,14 @@ void cleanup({String browser = 'chrome'}) async {
     // Only close Safari if felt is running in CI environments. Do not close
     // Safari for the local testing.
     if (io.Platform.environment['LUCI_CONTEXT'] != null || isCirrus) {
-      print('INFO: Safari tests run. Quit Safari.');
+      print('INFO: Safari tests ran. Quit Safari.');
       await runProcess(
         'sudo',
         ['pkill', '-lf', 'Safari'],
         workingDirectory: environment.webUiRootDir.path,
       );
     } else {
-      print('INFO: Safari tests run. Please quit Safari tabs.');
+      print('INFO: Safari tests ran. Please quit Safari tabs.');
     }
   }
 }

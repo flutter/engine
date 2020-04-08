@@ -15,6 +15,7 @@ import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_im
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
 
+import 'exceptions.dart';
 import 'integration_tests_manager.dart';
 import 'supported_browsers.dart';
 import 'test_platform.dart';
@@ -275,9 +276,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   void _checkExitCode() async {
     if (io.exitCode != 0) {
-      io.stderr.writeln('Process exited with exit code ${io.exitCode}.');
-      await cleanup(browser: browser);
-      io.exit(1);
+      throw ToolException('Process exited with exit code ${io.exitCode}.');
     }
   }
 
@@ -291,9 +290,8 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      io.stderr
-          .writeln('Failed to run pub get. Exited with exit code $exitCode');
-      io.exit(1);
+      throw ToolException(
+          'Failed to run pub get. Exited with exit code $exitCode');
     }
   }
 
@@ -334,9 +332,8 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      io.stderr.writeln(
-          'Failed to compile ${hostDartFile.path}. Compiler exited with exit code $exitCode');
-      io.exit(1);
+      throw ToolException('Failed to compile ${hostDartFile.path}. Compiler '
+          'exited with exit code $exitCode');
     }
 
     // Record the timestamp to avoid rebuilding unless the file changes.
@@ -364,9 +361,8 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      io.stderr.writeln(
+      throw ToolException(
           'Failed to compile tests. Compiler exited with exit code $exitCode');
-      io.exit(1);
     }
   }
 
