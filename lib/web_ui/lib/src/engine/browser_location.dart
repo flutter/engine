@@ -72,6 +72,7 @@ class HashLocationStrategy extends LocationStrategy {
     // the hash value is always prefixed with a `#`
     // and if it is empty then it will stay empty
     String path = _platformLocation.hash ?? '';
+    assert(path.isEmpty || path.startsWith('#'));
     // Dart will complain if a call to substring is
     // executed with a position value that exceeds the
     // length of string.
