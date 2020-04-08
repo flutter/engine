@@ -294,7 +294,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     }
   }
 
-  void _checkExitCode() async {
+  void _checkExitCode() {
     if (io.exitCode != 0) {
       throw ToolException('Process exited with exit code ${io.exitCode}.');
     }
