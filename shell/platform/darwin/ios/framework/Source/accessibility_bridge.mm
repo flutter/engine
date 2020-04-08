@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
@@ -38,7 +39,7 @@ AccessibilityBridge::~AccessibilityBridge() {
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
-  return [platform_view_->GetTextInputPlugin() textInputView];
+  return [[platform_view_->GetOwnerViewController().get().engine textInputPlugin] textInputView];
 }
 
 void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,

@@ -394,7 +394,6 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [_textInputPlugin.get() handleMethodCall:call result:result];
     }];
-    self.iosPlatformView->SetTextInputPlugin(_textInputPlugin);
   }
 }
 
