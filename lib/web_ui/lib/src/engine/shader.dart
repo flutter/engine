@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 bool _offsetIsValid(ui.Offset offset) {
@@ -237,7 +238,25 @@ class GradientConical extends EngineGradient {
 
   @override
   js.JsObject createSkiaShader() {
-    throw UnimplementedError();
+    assert(experimentalUseSkia);
+
+    final js.JsArray<num> jsColors = js.JsArray<num>();
+    jsColors.length = colors.length;
+    for (int i = 0; i < colors.length; i++) {
+      jsColors[i] = colors[i].value;
+    }
+
+    return canvasKit.callMethod('MakeTwoPointConicalGradient', <dynamic>[
+      makeSkPoint(focal),
+      focalRadius,
+      makeSkPoint(center),
+      radius,
+      jsColors,
+      makeSkiaColorStops(colorStops),
+      tileMode.index,
+      matrix4 != null ? makeSkMatrix(matrix4) : null,
+      0,
+    ]);
   }
 }
 

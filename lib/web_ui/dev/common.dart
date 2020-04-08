@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:io' as io;
 
 import 'package:args/args.dart';
@@ -19,6 +20,15 @@ const double kMaxDiffRateFailure = 0.28 / 100; // 0.28%
 
 class BrowserInstallerException implements Exception {
   BrowserInstallerException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+class DriverException implements Exception {
+  DriverException(this.message);
 
   final String message;
 
@@ -47,10 +57,11 @@ abstract class PlatformBinding {
   int getChromeBuild(YamlMap chromeLock);
   String getChromeDownloadUrl(String version);
   String getFirefoxDownloadUrl(String version);
+  String getFirefoxDownloadFilename(String version);
   String getChromeExecutablePath(io.Directory versionDir);
   String getFirefoxExecutablePath(io.Directory versionDir);
   String getFirefoxLatestVersionUrl();
-  String getSafariSystemExecutablePath();
+  String getMacApplicationLauncher();
   String getCommandToRunEdge();
 }
 
@@ -60,8 +71,8 @@ const String _kBaseDownloadUrl =
 class _WindowsBinding implements PlatformBinding {
   @override
   int getChromeBuild(YamlMap browserLock) {
-    final YamlMap chromeMap = browserLock['chrome'];
-    return chromeMap['Win'];
+    final YamlMap chromeMap = browserLock['chrome'] as YamlMap;
+    return chromeMap['Win'] as int;
   }
 
   @override
@@ -74,7 +85,11 @@ class _WindowsBinding implements PlatformBinding {
 
   @override
   String getFirefoxDownloadUrl(String version) =>
-      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/win64/en-US/firefox-${version}.exe';
+      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/win64/en-US/'
+      '${getFirefoxDownloadFilename(version)}';
+
+  @override
+  String getFirefoxDownloadFilename(String version) => 'firefox-${version}.exe';
 
   @override
   String getFirefoxExecutablePath(io.Directory versionDir) =>
@@ -85,7 +100,7 @@ class _WindowsBinding implements PlatformBinding {
       'https://download.mozilla.org/?product=firefox-latest&os=win&lang=en-US';
 
   @override
-  String getSafariSystemExecutablePath() =>
+  String getMacApplicationLauncher() =>
       throw UnsupportedError('Safari is not supported on Windows');
 
   @override
@@ -95,8 +110,8 @@ class _WindowsBinding implements PlatformBinding {
 class _LinuxBinding implements PlatformBinding {
   @override
   int getChromeBuild(YamlMap browserLock) {
-    final YamlMap chromeMap = browserLock['chrome'];
-    return chromeMap['Linux'];
+    final YamlMap chromeMap = browserLock['chrome'] as YamlMap;
+    return chromeMap['Linux'] as int;
   }
 
   @override
@@ -109,7 +124,12 @@ class _LinuxBinding implements PlatformBinding {
 
   @override
   String getFirefoxDownloadUrl(String version) =>
-      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/linux-x86_64/en-US/firefox-${version}.tar.bz2';
+      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/linux-x86_64/en-US/'
+      '${getFirefoxDownloadFilename(version)}';
+
+  @override
+  String getFirefoxDownloadFilename(String version) =>
+      'firefox-${version}.tar.bz2';
 
   @override
   String getFirefoxExecutablePath(io.Directory versionDir) =>
@@ -120,7 +140,7 @@ class _LinuxBinding implements PlatformBinding {
       'https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US';
 
   @override
-  String getSafariSystemExecutablePath() =>
+  String getMacApplicationLauncher() =>
       throw UnsupportedError('Safari is not supported on Linux');
 
   @override
@@ -131,8 +151,8 @@ class _LinuxBinding implements PlatformBinding {
 class _MacBinding implements PlatformBinding {
   @override
   int getChromeBuild(YamlMap browserLock) {
-    final YamlMap chromeMap = browserLock['chrome'];
-    return chromeMap['Mac'];
+    final YamlMap chromeMap = browserLock['chrome'] as YamlMap;
+    return chromeMap['Mac'] as int;
   }
 
   @override
@@ -149,20 +169,22 @@ class _MacBinding implements PlatformBinding {
 
   @override
   String getFirefoxDownloadUrl(String version) =>
-      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/mac/en-US/firefox-${version}.dmg';
+      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/mac/en-US/'
+      '${getFirefoxDownloadFilename(version)}';
 
   @override
-  String getFirefoxExecutablePath(io.Directory versionDir) {
-    throw UnimplementedError();
-  }
+  String getFirefoxDownloadFilename(String version) => 'Firefox ${version}.dmg';
+
+  @override
+  String getFirefoxExecutablePath(io.Directory versionDir) =>
+      path.join(versionDir.path, 'Firefox.app', 'Contents', 'MacOS', 'firefox');
 
   @override
   String getFirefoxLatestVersionUrl() =>
       'https://download.mozilla.org/?product=firefox-latest&os=osx&lang=en-US';
 
   @override
-  String getSafariSystemExecutablePath() =>
-      '/Applications/Safari.app/Contents/MacOS/Safari';
+  String getMacApplicationLauncher() => 'open';
 
   @override
   String getCommandToRunEdge() =>
@@ -170,15 +192,15 @@ class _MacBinding implements PlatformBinding {
 }
 
 class BrowserInstallation {
-  const BrowserInstallation(
-      {@required this.version,
-      @required this.executable,
-      fetchLatestChromeVersion});
+  const BrowserInstallation({
+    @required this.version,
+    @required this.executable,
+  });
 
   /// Browser version.
   final String version;
 
-  /// Path the the browser executable.
+  /// Path the browser executable.
   final String executable;
 }
 
@@ -208,7 +230,7 @@ class BrowserLock {
   BrowserLock._() {
     final io.File lockFile = io.File(
         path.join(environment.webUiRootDir.path, 'dev', 'browser_lock.yaml'));
-    this._configuration = loadYaml(lockFile.readAsStringSync());
+    this._configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
   }
 }
 
@@ -228,3 +250,14 @@ class DevNull implements StringSink {
 }
 
 bool get isCirrus => io.Platform.environment['CIRRUS_CI'] == 'true';
+
+/// There might be proccesses started during the tests.
+///
+/// Use this list to store those Processes, for cleaning up before shutdown.
+final List<io.Process> processesToCleanUp = List<io.Process>();
+
+/// There might be temporary directories created during the tests.
+///
+/// Use this list to store those directories and for deleteing them before
+/// shutdown.
+final List<io.Directory> temporaryDirectories = List<io.Directory>();

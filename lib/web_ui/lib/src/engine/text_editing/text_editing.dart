@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
@@ -777,8 +778,11 @@ class TextEditingChannel {
   final HybridTextEditing implementation;
 
   /// Handles "flutter/textinput" platform messages received from the framework.
-  void handleTextInput(ByteData data) {
-    final MethodCall call = const JSONMethodCodec().decodeMethodCall(data);
+  void handleTextInput(
+      ByteData data,
+      ui.PlatformMessageResponseCallback callback) {
+    const JSONMethodCodec codec = JSONMethodCodec();
+    final MethodCall call = codec.decodeMethodCall(data);
     switch (call.method) {
       case 'TextInput.setClient':
         implementation.setClient(
@@ -814,48 +818,55 @@ class TextEditingChannel {
       default:
         throw StateError('Unsupported method call on the flutter/textinput channel: ${call.method}');
     }
+    window._replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
   }
 
   /// Sends the 'TextInputClient.updateEditingState' message to the framework.
   void updateEditingState(int clientId, EditingState editingState) {
-    ui.window.onPlatformMessage(
-      'flutter/textinput',
-      const JSONMethodCodec().encodeMethodCall(
-        MethodCall('TextInputClient.updateEditingState', <dynamic>[
-          clientId,
-          editingState.toFlutter(),
-        ]),
-      ),
-      _emptyCallback,
-    );
+    if (window._onPlatformMessage != null) {
+      window.invokeOnPlatformMessage(
+        'flutter/textinput',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall('TextInputClient.updateEditingState', <dynamic>[
+            clientId,
+            editingState.toFlutter(),
+          ]),
+        ),
+        _emptyCallback,
+      );
+    }
   }
 
   /// Sends the 'TextInputClient.performAction' message to the framework.
   void performAction(int clientId, String inputAction) {
-    ui.window.onPlatformMessage(
-      'flutter/textinput',
-      const JSONMethodCodec().encodeMethodCall(
-        MethodCall(
-          'TextInputClient.performAction',
-          <dynamic>[clientId, inputAction],
+    if (window._onPlatformMessage != null) {
+      window.invokeOnPlatformMessage(
+        'flutter/textinput',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall(
+            'TextInputClient.performAction',
+            <dynamic>[clientId, inputAction],
+          ),
         ),
-      ),
-      _emptyCallback,
-    );
+        _emptyCallback,
+      );
+    }
   }
 
   /// Sends the 'TextInputClient.onConnectionClosed' message to the framework.
   void onConnectionClosed(int clientId) {
-    ui.window.onPlatformMessage(
-      'flutter/textinput',
-      const JSONMethodCodec().encodeMethodCall(
-        MethodCall(
-          'TextInputClient.onConnectionClosed',
-          <dynamic>[clientId],
+    if (window._onPlatformMessage != null) {
+      window.invokeOnPlatformMessage(
+        'flutter/textinput',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall(
+            'TextInputClient.onConnectionClosed',
+            <dynamic>[clientId],
+          ),
         ),
-      ),
-      _emptyCallback,
-    );
+        _emptyCallback,
+      );
+    }
   }
 }
 

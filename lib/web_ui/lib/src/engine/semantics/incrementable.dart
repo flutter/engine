@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Adds increment/decrement event handling to a semantics object.
@@ -52,11 +53,11 @@ class Incrementable extends RoleManager {
       final int newInputValue = int.parse(_element.value);
       if (newInputValue > _currentSurrogateValue) {
         _currentSurrogateValue += 1;
-        ui.window.onSemanticsAction(
+        window.invokeOnSemanticsAction(
             semanticsObject.id, ui.SemanticsAction.increase, null);
       } else if (newInputValue < _currentSurrogateValue) {
         _currentSurrogateValue -= 1;
-        ui.window.onSemanticsAction(
+        window.invokeOnSemanticsAction(
             semanticsObject.id, ui.SemanticsAction.decrease, null);
       }
     });

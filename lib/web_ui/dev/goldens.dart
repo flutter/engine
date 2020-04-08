@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// @dart = 2.6
 import 'dart:io' as io;
 import 'package:image/image.dart';
 import 'package:meta/meta.dart';
@@ -71,10 +72,10 @@ class ImageDiff {
 
   /// That would be the distance between black and white.
   static final double _maxTheoreticalColorDistance = Color.distance(
-    <int>[255, 255, 255],  // white
-    <int>[0, 0, 0],  // black
+    <num>[255, 255, 255],  // white
+    <num>[0, 0, 0],  // black
     false,
-  );
+  ).toDouble();
 
   // If the normalized color difference of a pixel is greater than this number,
   // we consider it a wrong pixel.
@@ -202,9 +203,9 @@ class _GoldensRepoFetcher {
     final io.File lockFile = io.File(
       path.join(environment.webUiDevDir.path, 'goldens_lock.yaml')
     );
-    final YamlMap lock = loadYaml(lockFile.readAsStringSync());
-    _repository = lock['repository'];
-    _revision = lock['revision'];
+    final YamlMap lock = loadYaml(lockFile.readAsStringSync()) as YamlMap;
+    _repository = lock['repository'] as String;
+    _revision = lock['revision'] as String;
 
     final String localRevision = await _getLocalRevision();
     if (localRevision == _revision) {

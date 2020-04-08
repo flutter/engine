@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 /// Whether to slant the glyphs in the font
@@ -429,6 +430,94 @@ enum TextDecorationStyle {
   wavy
 }
 
+/// {@template flutter.dart:ui.textHeightBehavior}
+/// Defines how the paragraph will apply [TextStyle.height] to the ascent of the
+/// first line and descent of the last line.
+///
+/// Each boolean value represents whether the [TextStyle.height] modifier will
+/// be applied to the corresponding metric. By default, all properties are true,
+/// and [TextStyle.height] is applied as normal. When set to false, the font's
+/// default ascent will be used.
+/// {@endtemplate}
+class TextHeightBehavior {
+
+  /// Creates a new TextHeightBehavior object.
+  ///
+  ///  * applyHeightToFirstAscent: When true, the [TextStyle.height] modifier
+  ///    will be applied to the ascent of the first line. When false, the font's
+  ///    default ascent will be used.
+  ///  * applyHeightToLastDescent: When true, the [TextStyle.height] modifier
+  ///    will be applied to the descent of the last line. When false, the font's
+  ///    default descent will be used.
+  ///
+  /// All properties default to true (height modifications applied as normal).
+  const TextHeightBehavior({
+    this.applyHeightToFirstAscent = true,
+    this.applyHeightToLastDescent = true,
+  });
+
+  /// Creates a new TextHeightBehavior object from an encoded form.
+  ///
+  /// See [encode] for the creation of the encoded form.
+  const TextHeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) == 0,
+                                                      applyHeightToLastDescent = (encoded & 0x2) == 0;
+
+
+  /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
+  /// line in the paragraph.
+  ///
+  /// When true, the [TextStyle.height] modifier will be applied to to the ascent
+  /// of the first line. When false, the font's default ascent will be used and
+  /// the [TextStyle.height] will have no effect on the ascent of the first line.
+  ///
+  /// This property only has effect if a non-null [TextStyle.height] is specified.
+  ///
+  /// Defaults to true (height modifications applied as normal).
+  final bool applyHeightToFirstAscent;
+
+  /// Whether to apply the [TextStyle.height] modifier to the descent of the last
+  /// line in the paragraph.
+  ///
+  /// When true, the [TextStyle.height] modifier will be applied to to the descent
+  /// of the last line. When false, the font's default descent will be used and
+  /// the [TextStyle.height] will have no effect on the descent of the last line.
+  ///
+  /// This property only has effect if a non-null [TextStyle.height] is specified.
+  ///
+  /// Defaults to true (height modifications applied as normal).
+  final bool applyHeightToLastDescent;
+
+  /// Returns an encoded int representation of this object.
+  int encode() {
+    return (applyHeightToFirstAscent ? 0 : 1 << 0) | (applyHeightToLastDescent ? 0 : 1 << 1);
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is TextHeightBehavior
+        && other.applyHeightToFirstAscent == applyHeightToFirstAscent
+        && other.applyHeightToLastDescent == applyHeightToLastDescent;
+  }
+
+  @override
+  int get hashCode {
+    return hashValues(
+      applyHeightToFirstAscent,
+      applyHeightToLastDescent,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'TextHeightBehavior('
+             'applyHeightToFirstAscent: $applyHeightToFirstAscent, '
+             'applyHeightToLastDescent: $applyHeightToLastDescent'
+           ')';
+  }
+}
+
 /// Determines if lists [a] and [b] are deep equivalent.
 ///
 /// Returns true if the lists are both null, or if they are both non-null, have
@@ -746,6 +835,8 @@ class TextStyle {
 //
 //  - Element 5: The value of |maxLines|.
 //
+//  - Element 6: The encoded value of |textHeightBehavior|.
+//
 Int32List _encodeParagraphStyle(
   TextAlign textAlign,
   TextDirection textDirection,
@@ -753,13 +844,14 @@ Int32List _encodeParagraphStyle(
   String fontFamily,
   double fontSize,
   double height,
+  TextHeightBehavior textHeightBehavior,
   FontWeight fontWeight,
   FontStyle fontStyle,
   StrutStyle strutStyle,
   String ellipsis,
   Locale locale,
 ) {
-  final Int32List result = Int32List(6); // also update paragraph_builder.cc
+  final Int32List result = Int32List(7); // also update paragraph_builder.cc
   if (textAlign != null) {
     result[0] |= 1 << 1;
     result[1] = textAlign.index;
@@ -780,28 +872,32 @@ Int32List _encodeParagraphStyle(
     result[0] |= 1 << 5;
     result[5] = maxLines;
   }
-  if (fontFamily != null) {
+  if (textHeightBehavior != null) {
     result[0] |= 1 << 6;
-    // Passed separately to native.
+    result[6] = textHeightBehavior.encode();
   }
-  if (fontSize != null) {
+  if (fontFamily != null) {
     result[0] |= 1 << 7;
     // Passed separately to native.
   }
-  if (height != null) {
+  if (fontSize != null) {
     result[0] |= 1 << 8;
     // Passed separately to native.
   }
-  if (strutStyle != null) {
+  if (height != null) {
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
-  if (ellipsis != null) {
+  if (strutStyle != null) {
     result[0] |= 1 << 10;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (ellipsis != null) {
     result[0] |= 1 << 11;
+    // Passed separately to native.
+  }
+  if (locale != null) {
+    result[0] |= 1 << 12;
     // Passed separately to native.
   }
   return result;
@@ -842,6 +938,9 @@ class ParagraphStyle {
   ///   the line height to take the height as defined by the font, which may not
   ///   be exactly the height of the `fontSize`.
   ///
+  /// * `textHeightBehavior`: Specifies how the `height` multiplier is
+  ///   applied to ascent of the first line and the descent of the last line.
+  ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
   ///
@@ -869,6 +968,7 @@ class ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
+    TextHeightBehavior textHeightBehavior,
     FontWeight fontWeight,
     FontStyle fontStyle,
     StrutStyle strutStyle,
@@ -881,6 +981,7 @@ class ParagraphStyle {
          fontFamily,
          fontSize,
          height,
+         textHeightBehavior,
          fontWeight,
          fontStyle,
          strutStyle,
@@ -929,11 +1030,14 @@ class ParagraphStyle {
              'fontWeight: ${    _encoded[0] & 0x008 == 0x008 ? FontWeight.values[_encoded[3]]    : "unspecified"}, '
              'fontStyle: ${     _encoded[0] & 0x010 == 0x010 ? FontStyle.values[_encoded[4]]     : "unspecified"}, '
              'maxLines: ${      _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
-             'fontFamily: ${    _encoded[0] & 0x040 == 0x040 ? _fontFamily                       : "unspecified"}, '
-             'fontSize: ${      _encoded[0] & 0x080 == 0x080 ? _fontSize                         : "unspecified"}, '
-             'height: ${        _encoded[0] & 0x100 == 0x100 ? "${_height}x"                     : "unspecified"}, '
-             'ellipsis: ${      _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}, '
-             'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
+             'textHeightBehavior: ${
+                                _encoded[0] & 0x040 == 0x040 ?
+                                          TextHeightBehavior.fromEncoded(_encoded[6]).toString() : "unspecified"}, '
+             'fontFamily: ${    _encoded[0] & 0x080 == 0x080 ? _fontFamily                       : "unspecified"}, '
+             'fontSize: ${      _encoded[0] & 0x100 == 0x100 ? _fontSize                         : "unspecified"}, '
+             'height: ${        _encoded[0] & 0x200 == 0x200 ? "${_height}x"                     : "unspecified"}, '
+             'ellipsis: ${      _encoded[0] & 0x400 == 0x400 ? "\"$_ellipsis\""                  : "unspecified"}, '
+             'locale: ${        _encoded[0] & 0x800 == 0x800 ? _locale                           : "unspecified"}'
            ')';
   }
 }
@@ -1201,16 +1305,6 @@ class TextBox {
     this.bottom,
     this.direction,
   );
-
-  @pragma('vm:entry-point')
-  // ignore: unused_element
-  TextBox._(
-    this.left,
-    this.top,
-    this.right,
-    this.bottom,
-    int directionIndex,
-  ) : direction = TextDirection.values[directionIndex];
 
   /// The left edge of the text box, irrespective of direction.
   ///
@@ -1517,6 +1611,8 @@ class ParagraphConstraints {
 
 /// Defines various ways to vertically bound the boxes returned by
 /// [Paragraph.getBoxesForRange].
+///
+/// See [BoxWidthStyle] for a similar property to control width.
 enum BoxHeightStyle {
   /// Provide tight bounding boxes that fit heights per run. This style may result
   /// in uneven bounding boxes that do not nicely connect with adjacent boxes.
@@ -1528,8 +1624,8 @@ enum BoxHeightStyle {
   /// This does not guarantee that the boxes will cover the entire vertical height of the line
   /// when there is additional line spacing.
   ///
-  /// See [RectHeightStyle.includeLineSpacingTop], [RectHeightStyle.includeLineSpacingMiddle],
-  /// and [RectHeightStyle.includeLineSpacingBottom] for styles that will cover
+  /// See [BoxHeightStyle.includeLineSpacingTop], [BoxHeightStyle.includeLineSpacingMiddle],
+  /// and [BoxHeightStyle.includeLineSpacingBottom] for styles that will cover
   /// the entire line.
   max,
 
@@ -1551,7 +1647,7 @@ enum BoxHeightStyle {
   ///
   /// The line spacing will be added to the top of the box.
   ///
-  /// {@macro flutter.dart:ui.rectHeightStyle.includeLineSpacing}
+  /// {@macro flutter.dart:ui.boxHeightStyle.includeLineSpacing}
   includeLineSpacingTop,
 
   /// Extends the bottom edge of the bounds to fully cover any line spacing.
@@ -1572,6 +1668,8 @@ enum BoxHeightStyle {
 
 /// Defines various ways to horizontally bound the boxes returned by
 /// [Paragraph.getBoxesForRange].
+///
+/// See [BoxHeightStyle] for a similar property to control height.
 enum BoxWidthStyle {
   /// Provide tight bounding boxes that fit widths to the runs of each line
   /// independently.
@@ -1656,20 +1754,6 @@ class LineMetrics {
     this.lineNumber,
   });
 
-  @pragma('vm:entry-point')
-  // ignore: unused_element
-  LineMetrics._(
-    this.hardBreak,
-    this.ascent,
-    this.descent,
-    this.unscaledAscent,
-    this.height,
-    this.width,
-    this.left,
-    this.baseline,
-    this.lineNumber,
-  );
-
   /// True if this line ends with an explicit line break (e.g. '\n') or is the end
   /// of the paragraph. False otherwise.
   final bool hardBreak;
@@ -1735,6 +1819,39 @@ class LineMetrics {
   ///
   /// For example, the first line is line 0, second line is line 1.
   final int lineNumber;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is LineMetrics
+        && other.hardBreak == hardBreak
+        && other.ascent == ascent
+        && other.descent == descent
+        && other.unscaledAscent == unscaledAscent
+        && other.height == height
+        && other.width == width
+        && other.left == left
+        && other.baseline == baseline
+        && other.lineNumber == lineNumber;
+  }
+
+  @override
+  int get hashCode => hashValues(hardBreak, ascent, descent, unscaledAscent, height, width, left, baseline, lineNumber);
+
+  @override
+  String toString() {
+    return 'LineMetrics(hardBreak: $hardBreak, '
+                       'ascent: $ascent, '
+                       'descent: $descent, '
+                       'unscaledAscent: $unscaledAscent, '
+                       'height: $height, '
+                       'width: $width, '
+                       'left: $left, '
+                       'baseline: $baseline, '
+                       'lineNumber: $lineNumber)';
+  }
 }
 
 /// A paragraph of text.
@@ -1806,6 +1923,21 @@ class Paragraph extends NativeFieldWrapperClass2 {
   void layout(ParagraphConstraints constraints) => _layout(constraints.width);
   void _layout(double width) native 'Paragraph_layout';
 
+  List<TextBox> _decodeTextBoxes(Float32List encoded) {
+    final int count = encoded.length ~/ 5;
+    final List<TextBox> boxes = List<TextBox>(count);
+    int position = 0;
+    for (int index = 0; index < count; index += 1) {
+      boxes[index] = TextBox.fromLTRBD(
+        encoded[position++],
+        encoded[position++],
+        encoded[position++],
+        encoded[position++],
+        TextDirection.values[encoded[position++].toInt()],
+      );
+    }
+    return boxes;
+  }
   /// Returns a list of text boxes that enclose the given text range.
   ///
   /// The [boxHeightStyle] and [boxWidthStyle] parameters allow customization
@@ -1822,9 +1954,10 @@ class Paragraph extends NativeFieldWrapperClass2 {
   List<TextBox> getBoxesForRange(int start, int end, {BoxHeightStyle boxHeightStyle = BoxHeightStyle.tight, BoxWidthStyle boxWidthStyle = BoxWidthStyle.tight}) {
     assert(boxHeightStyle != null);
     assert(boxWidthStyle != null);
-    return _getBoxesForRange(start, end, boxHeightStyle.index, boxWidthStyle.index);
+    return _decodeTextBoxes(_getBoxesForRange(start, end, boxHeightStyle.index, boxWidthStyle.index));
   }
-  List<TextBox> _getBoxesForRange(int start, int end, int boxHeightStyle, int boxWidthStyle) native 'Paragraph_getRectsForRange';
+  // See paragraph.cc for the layout of this return value.
+  Float32List _getBoxesForRange(int start, int end, int boxHeightStyle, int boxWidthStyle) native 'Paragraph_getRectsForRange';
 
   /// Returns a list of text boxes that enclose all placeholders in the paragraph.
   ///
@@ -1832,7 +1965,10 @@ class Paragraph extends NativeFieldWrapperClass2 {
   ///
   /// Coordinates of the [TextBox] are relative to the upper-left corner of the paragraph,
   /// where positive y values indicate down.
-  List<TextBox> getBoxesForPlaceholders() native 'Paragraph_getRectsForPlaceholders';
+  List<TextBox> getBoxesForPlaceholders() {
+    return _decodeTextBoxes(_getBoxesForPlaceholders());
+  }
+  Float32List _getBoxesForPlaceholders() native 'Paragraph_getRectsForPlaceholders';
 
   /// Returns the text position closest to the given offset.
   TextPosition getPositionForOffset(Offset offset) {
@@ -1879,7 +2015,27 @@ class Paragraph extends NativeFieldWrapperClass2 {
   ///
   /// This can potentially return a large amount of data, so it is not recommended
   /// to repeatedly call this. Instead, cache the results.
-  List<LineMetrics> computeLineMetrics() native 'Paragraph_computeLineMetrics';
+  List<LineMetrics> computeLineMetrics() {
+    final Float64List encoded = _computeLineMetrics();
+    final int count = encoded.length ~/ 9;
+    int position = 0;
+    final List<LineMetrics> metrics = List<LineMetrics>(count);
+    for (int index = 0; index < metrics.length; index += 1) {
+      metrics[index] = LineMetrics(
+        hardBreak:      encoded[position++] != 0,
+        ascent:         encoded[position++],
+        descent:        encoded[position++],
+        unscaledAscent: encoded[position++],
+        height:         encoded[position++],
+        width:          encoded[position++],
+        left:           encoded[position++],
+        baseline:       encoded[position++],
+        lineNumber:     encoded[position++].toInt(),
+      );
+    }
+    return metrics;
+  }
+  Float64List _computeLineMetrics() native 'Paragraph_computeLineMetrics';
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.
@@ -2087,7 +2243,12 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   ///
   /// After calling this function, the paragraph builder object is invalid and
   /// cannot be used further.
-  Paragraph build() native 'ParagraphBuilder_build';
+  Paragraph build() {
+    final Paragraph paragraph = Paragraph._();
+    _build(paragraph);
+    return paragraph;
+  }
+  void _build(Paragraph outParagraph) native 'ParagraphBuilder_build';
 }
 
 /// Loads a font from a buffer and makes it available for rendering text.

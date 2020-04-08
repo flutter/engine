@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Text editing used by accesibility mode.
@@ -148,8 +149,8 @@ class TextField extends RoleManager {
       }
 
       textEditing.useCustomEditableElement(textEditingElement);
-      ui.window
-          .onSemanticsAction(semanticsObject.id, ui.SemanticsAction.tap, null);
+      window
+          .invokeOnSemanticsAction(semanticsObject.id, ui.SemanticsAction.tap, null);
     });
   }
 
@@ -186,7 +187,7 @@ class TextField extends RoleManager {
 
         if (offsetX * offsetX + offsetY * offsetY < kTouchSlop) {
           // Recognize it as a tap that requires a keyboard.
-          ui.window.onSemanticsAction(
+          window.invokeOnSemanticsAction(
               semanticsObject.id, ui.SemanticsAction.tap, null);
         }
       } else {

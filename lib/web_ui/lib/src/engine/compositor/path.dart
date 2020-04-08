@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// An implementation of [ui.Path] which is backed by an `SkPath`.
@@ -56,7 +57,7 @@ class SkPath implements ui.Path {
 
   @override
   void addOval(ui.Rect oval) {
-    _skPath.callMethod('addOval', <dynamic>[makeSkRect(oval), true, 0]);
+    _skPath.callMethod('addOval', <dynamic>[makeSkRect(oval), false, 1]);
   }
 
   @override

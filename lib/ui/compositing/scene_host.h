@@ -53,10 +53,11 @@ class SceneHost : public RefCountedDartWrappable<SceneHost> {
             Dart_Handle viewDisconnectedCallback,
             Dart_Handle viewStateChangedCallback);
 
-  fml::RefPtr<fml::TaskRunner> gpu_task_runner_;
+  fml::RefPtr<fml::TaskRunner> raster_task_runner_;
   tonic::DartPersistentValue view_connected_callback_;
   tonic::DartPersistentValue view_disconnected_callback_;
   tonic::DartPersistentValue view_state_changed_callback_;
+  std::string isolate_service_id_;
   zx_koid_t koid_ = ZX_KOID_INVALID;
 };
 

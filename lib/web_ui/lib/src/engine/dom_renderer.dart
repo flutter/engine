@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 class DomRenderer {
@@ -70,7 +71,7 @@ class DomRenderer {
   /// This getter calls the `hasFocus` method of the `Document` interface.
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
-  bool get windowHasFocus => js_util.callMethod(html.document, 'hasFocus', []);
+  bool get windowHasFocus => js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
@@ -343,7 +344,7 @@ flt-glass-pane * {
     setElementStyle(bodyElement, 'touch-action', 'none');
 
     // These are intentionally outrageous font parameters to make sure that the
-    // apps fully specifies their text styles.
+    // apps fully specify their text styles.
     setElementStyle(bodyElement, 'font', defaultCssFont);
     setElementStyle(bodyElement, 'color', 'red');
 
@@ -418,12 +419,6 @@ flt-glass-pane * {
     // DOM tree.
     setElementAttribute(_sceneHostElement, 'aria-hidden', 'true');
 
-    // We treat browser pixels as device pixels because pointer events,
-    // position, and sizes all use browser pixel as the unit (i.e. "px" in CSS).
-    // Therefore, as far as the framework is concerned the device pixel ratio
-    // is 1.0.
-    window.debugOverrideDevicePixelRatio(1.0);
-
     if (html.window.visualViewport == null && isWebKit) {
       // Safari sometimes gives us bogus innerWidth/innerHeight values when the
       // page loads. When it changes the values to correct ones it does not
@@ -471,8 +466,9 @@ flt-glass-pane * {
 
   /// Called immediately after browser window metrics change.
   void _metricsDidChange(html.Event event) {
-    if (ui.window.onMetricsChanged != null) {
-      ui.window.onMetricsChanged();
+    window._computePhysicalSize();
+    if (window._onMetricsChanged != null) {
+      window.invokeOnMetricsChanged();
     }
   }
 
@@ -484,6 +480,26 @@ flt-glass-pane * {
   void clearDom(html.Node node) {
     while (node.lastChild != null) {
       node.lastChild.remove();
+    }
+  }
+
+  static bool _ellipseFeatureDetected;
+
+  /// Draws CanvasElement ellipse with fallback.
+  static void ellipse(html.CanvasRenderingContext2D context,
+      double centerX, double centerY, double radiusX, double radiusY,
+      double rotation, double startAngle, double endAngle, bool antiClockwise) {
+    _ellipseFeatureDetected ??= js_util.getProperty(context, 'ellipse') != null;
+    if (_ellipseFeatureDetected) {
+      context.ellipse(centerX, centerY, radiusX, radiusY,
+          rotation, startAngle, endAngle, antiClockwise);
+    } else {
+      context.save();
+      context.translate(centerX, centerY);
+      context.rotate(rotation);
+      context.scale(radiusX, radiusY);
+      context.arc(0, 0, 1, startAngle, endAngle, antiClockwise);
+      context.restore();
     }
   }
 

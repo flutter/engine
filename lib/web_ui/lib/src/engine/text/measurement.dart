@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 // TODO(yjbanov): this is a hack we use to compute ideographic baseline; this
@@ -186,13 +187,6 @@ abstract class TextMeasurementService {
   static TextMeasurementService get canvasInstance =>
       CanvasTextMeasurementService.instance;
 
-  /// Whether the new experimental implementation of canvas-based text
-  /// measurement is enabled or not.
-  ///
-  /// This is only used for testing at the moment. Once the implementation is
-  /// complete and production-ready, we'll get rid of this flag.
-  static bool enableExperimentalCanvasImplementation = const bool.fromEnvironment('FLUTTER_WEB_USE_EXPERIMENTAL_CANVAS_TEXT', defaultValue: false);
-
   /// Gets the appropriate [TextMeasurementService] instance for the given
   /// [paragraph].
   static TextMeasurementService forParagraph(ui.Paragraph paragraph) {
@@ -205,7 +199,7 @@ abstract class TextMeasurementService {
     // Skip using canvas measurements until the iframe becomes visible.
     // see: https://github.com/flutter/flutter/issues/36341
     if (!window.physicalSize.isEmpty &&
-        enableExperimentalCanvasImplementation &&
+        WebExperiments.instance.useCanvasText &&
         _canUseCanvasMeasurement(paragraph)) {
       return canvasInstance;
     }
@@ -373,7 +367,10 @@ class DomTextMeasurementService extends TextMeasurementService {
   @override
   ui.TextPosition getTextPositionForOffset(EngineParagraph paragraph,
       ui.ParagraphConstraints constraints, ui.Offset offset) {
-    assert(paragraph._plainText == null, 'should only be called for multispan');
+    assert(
+      paragraph._measurementResult.lines == null,
+      'should only be called when the faster lines-based approach is not possible',
+    );
 
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     final ParagraphRuler ruler =
@@ -426,6 +423,8 @@ class DomTextMeasurementService extends TextMeasurementService {
           text,
           startIndex: 0,
           endIndex: text.length,
+          endIndexWithoutNewlines:
+              _excludeTrailing(text, 0, text.length, _newlinePredicate),
           hardBreak: true,
           width: lineWidth,
           left: alignOffset,
@@ -793,6 +792,8 @@ class LinesCalculator {
           _text.substring(_lineStart, breakingPoint) + _style.ellipsis,
           startIndex: _lineStart,
           endIndex: chunkEnd,
+          endIndexWithoutNewlines:
+              _excludeTrailing(_text, _chunkStart, chunkEnd, _newlinePredicate),
           hardBreak: false,
           width: widthOfResultingLine,
           left: alignOffset,
@@ -858,6 +859,7 @@ class LinesCalculator {
       _text.substring(_lineStart, endWithoutNewlines),
       startIndex: _lineStart,
       endIndex: lineEnd,
+      endIndexWithoutNewlines: endWithoutNewlines,
       hardBreak: isHardBreak,
       width: lineWidth,
       left: alignOffset,

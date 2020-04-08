@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Contains the subset of [ui.ParagraphStyle] properties that affect layout.
@@ -243,7 +244,8 @@ class TextDimensions {
 
   /// Applies geometric style properties to the [element].
   void applyStyle(ParagraphGeometricStyle style) {
-    _element.style
+    final html.CssStyleDeclaration elementStyle = _element.style;
+    elementStyle
       ..fontSize = style.fontSize != null ? '${style.fontSize.floor()}px' : null
       ..fontFamily = canonicalizeFontFamily(style.effectiveFontFamily)
       ..fontWeight =
@@ -254,10 +256,16 @@ class TextDimensions {
       ..letterSpacing =
           style.letterSpacing != null ? '${style.letterSpacing}px' : null
       ..wordSpacing =
-          style.wordSpacing != null ? '${style.wordSpacing}px' : null
-      ..textDecoration = style.decoration;
+          style.wordSpacing != null ? '${style.wordSpacing}px' : null;
+    final String decoration = style.decoration;
+    if (browserEngine == BrowserEngine.webkit) {
+      domRenderer.setElementStyle(
+          _element, '-webkit-text-decoration', decoration);
+    } else {
+      elementStyle.textDecoration = decoration;
+    }
     if (style.lineHeight != null) {
-      _element.style.lineHeight = style.lineHeight.toString();
+      elementStyle.lineHeight = style.lineHeight.toString();
     }
     _invalidateBoundsCache();
   }
@@ -276,7 +284,20 @@ class TextDimensions {
   double get width => _readAndCacheMetrics().width;
 
   /// The height of the paragraph being measured.
-  double get height => _readAndCacheMetrics().height;
+  double get height {
+    double cachedHeight = _readAndCacheMetrics().height;
+    if (browserEngine == BrowserEngine.firefox &&
+      // In the flutter tester environment, we use a predictable-size for font
+      // measurement tests.
+      !ui.debugEmulateFlutterTesterEnvironment) {
+      // See subpixel rounding bug :
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=442139
+      // This causes bottom of letters such as 'y' to be cutoff and
+      // incorrect rendering of double underlines.
+      cachedHeight += 1.0;
+    }
+    return cachedHeight;
+  }
 }
 
 /// Performs 4 types of measurements:
@@ -732,7 +753,22 @@ class ParagraphRuler {
     final List<html.Rectangle<num>> clientRects = rangeSpan.getClientRects();
     final List<ui.TextBox> boxes = <ui.TextBox>[];
 
+    final double maxLinesLimit = style.maxLines == null
+        ? double.infinity
+        : style.maxLines * lineHeightDimensions.height;
+
+    html.Rectangle<num> previousRect;
     for (html.Rectangle<num> rect in clientRects) {
+      // If [rect] is an empty box on the same line as the previous box, don't
+      // include it in the result.
+      if (rect.top == previousRect?.top && rect.left == rect.right) {
+        continue;
+      }
+      // As soon as we go beyond [maxLines], stop adding boxes.
+      if (rect.top >= maxLinesLimit) {
+        break;
+      }
+
       boxes.add(ui.TextBox.fromLTRBD(
         rect.left + alignOffset,
         rect.top,
@@ -740,6 +776,7 @@ class ParagraphRuler {
         rect.bottom,
         textDirection,
       ));
+      previousRect = rect;
     }
 
     // Cleanup after measuring the boxes.
@@ -887,8 +924,8 @@ class MeasurementResult {
     @required this.alphabeticBaseline,
     @required this.ideographicBaseline,
     @required this.lines,
-    @required textAlign,
-    @required textDirection,
+    @required ui.TextAlign textAlign,
+    @required ui.TextDirection textDirection,
   })  : assert(constraintWidth != null),
         assert(isSingleLine != null),
         assert(width != null),

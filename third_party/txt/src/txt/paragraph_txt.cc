@@ -796,6 +796,7 @@ void ParagraphTxt::Layout(double width) {
 
     double run_x_offset = 0;
     double justify_x_offset = 0;
+    size_t cluster_unique_id = 0;
     std::vector<PaintRecord> paint_records;
 
     for (auto line_run_it = line_runs.begin(); line_run_it != line_runs.end();
@@ -956,10 +957,10 @@ void ParagraphTxt::Layout(double width) {
           float grapheme_advance =
               glyph_advance / grapheme_code_unit_counts.size();
 
-          glyph_positions.emplace_back(run_x_offset + glyph_x_offset,
-                                       grapheme_advance,
-                                       run.start() + glyph_code_units.start,
-                                       grapheme_code_unit_counts[0], cluster);
+          glyph_positions.emplace_back(
+              run_x_offset + glyph_x_offset, grapheme_advance,
+              run.start() + glyph_code_units.start,
+              grapheme_code_unit_counts[0], cluster_unique_id);
 
           // Compute positions for the additional graphemes in the ligature.
           for (size_t i = 1; i < grapheme_code_unit_counts.size(); ++i) {
@@ -967,8 +968,9 @@ void ParagraphTxt::Layout(double width) {
                 glyph_positions.back().x_pos.end, grapheme_advance,
                 glyph_positions.back().code_units.start +
                     grapheme_code_unit_counts[i - 1],
-                grapheme_code_unit_counts[i], cluster);
+                grapheme_code_unit_counts[i], cluster_unique_id);
           }
+          cluster_unique_id++;
 
           bool at_word_start = false;
           bool at_word_end = false;
@@ -1111,7 +1113,8 @@ void ParagraphTxt::Layout(double width) {
     for (const PaintRecord& paint_record : paint_records) {
       UpdateLineMetrics(paint_record.metrics(), paint_record.style(),
                         max_ascent, max_descent, max_unscaled_ascent,
-                        paint_record.GetPlaceholderRun());
+                        paint_record.GetPlaceholderRun(), line_number,
+                        line_limit);
     }
 
     // If no fonts were actually rendered, then compute a baseline based on the
@@ -1123,7 +1126,7 @@ void ParagraphTxt::Layout(double width) {
       font.setSize(style.font_size);
       font.getMetrics(&metrics);
       UpdateLineMetrics(metrics, style, max_ascent, max_descent,
-                        max_unscaled_ascent, nullptr);
+                        max_unscaled_ascent, nullptr, line_number, line_limit);
     }
 
     // Calculate the baselines. This is only done on the first line.
@@ -1179,7 +1182,9 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
                                      double& max_ascent,
                                      double& max_descent,
                                      double& max_unscaled_ascent,
-                                     PlaceholderRun* placeholder_run) {
+                                     PlaceholderRun* placeholder_run,
+                                     size_t line_number,
+                                     size_t line_limit) {
   if (!strut_.force_strut) {
     double ascent;
     double descent;
@@ -1240,6 +1245,21 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
       ascent = (-metrics.fAscent + metrics.fLeading / 2);
       descent = (metrics.fDescent + metrics.fLeading / 2);
     }
+
+    // Account for text_height_behavior in paragraph_style_.
+    //
+    // Disable first line ascent modifications.
+    if (line_number == 0 && paragraph_style_.text_height_behavior &
+                                TextHeightBehavior::kDisableFirstAscent) {
+      ascent = -metrics.fAscent;
+    }
+    // Disable last line descent modifications.
+    if (line_number == line_limit - 1 &&
+        paragraph_style_.text_height_behavior &
+            TextHeightBehavior::kDisableLastDescent) {
+      descent = metrics.fDescent;
+    }
+
     ComputePlaceholder(placeholder_run, ascent, descent);
 
     max_ascent = std::max(ascent, max_ascent);
@@ -1518,7 +1538,7 @@ void ParagraphTxt::PaintDecorations(SkCanvas* canvas,
                   kDoubleDecorationSpacing / -2.0;
       y_offset +=
           (metrics.fFlags &
-           SkFontMetrics::FontMetricsFlags::kStrikeoutThicknessIsValid_Flag)
+           SkFontMetrics::FontMetricsFlags::kStrikeoutPositionIsValid_Flag)
               ? metrics.fStrikeoutPosition
               // Backup value if the strikeoutposition metric is not
               // available:

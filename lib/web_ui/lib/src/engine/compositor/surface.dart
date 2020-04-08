@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 typedef SubmitCallback = bool Function(SurfaceFrame, SkCanvas);
@@ -47,8 +48,11 @@ class Surface {
   /// The given [size] is in physical pixels.
   SurfaceFrame acquireFrame(ui.Size size) {
     final SkSurface surface = acquireRenderSurface(size);
+    canvasKit.callMethod('setCurrentContext', <int>[surface.context]);
 
-    if (surface == null) return null;
+    if (surface == null) {
+      return null;
+    }
 
     SubmitCallback submitCallback =
         (SurfaceFrame surfaceFrame, SkCanvas canvas) {
@@ -110,10 +114,10 @@ class Surface {
       ..position = 'absolute'
       ..width = '${logicalSize.width.ceil()}px'
       ..height = '${logicalSize.height.ceil()}px';
-    final js.JsObject glContext = canvasKit
+    final int glContext = canvasKit
         .callMethod('GetWebGLContext', <html.CanvasElement>[htmlCanvas]);
     final js.JsObject grContext =
-        canvasKit.callMethod('MakeGrContext', <js.JsObject>[glContext]);
+        canvasKit.callMethod('MakeGrContext', <dynamic>[glContext]);
     final js.JsObject skSurface =
         canvasKit.callMethod('MakeOnScreenGLSurface', <dynamic>[
       grContext,
@@ -135,7 +139,7 @@ class Surface {
       return false;
     }
 
-    canvasKit.callMethod('setCurrentContext', <js.JsObject>[_surface.context]);
+    canvasKit.callMethod('setCurrentContext', <dynamic>[_surface.context]);
     _surface.getCanvas().flush();
     return true;
   }
@@ -144,7 +148,7 @@ class Surface {
 /// A Dart wrapper around Skia's SkSurface.
 class SkSurface {
   final js.JsObject _surface;
-  final js.JsObject _glContext;
+  final int _glContext;
 
   SkSurface(this._surface, this._glContext);
 
@@ -153,7 +157,7 @@ class SkSurface {
     return SkCanvas(skCanvas);
   }
 
-  js.JsObject get context => _glContext;
+  int get context => _glContext;
 
   int width() => _surface.callMethod('width');
   int height() => _surface.callMethod('height');

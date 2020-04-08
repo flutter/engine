@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Defines canvas interface common across canvases that the [SceneBuilder]
@@ -68,6 +69,9 @@ abstract class EngineCanvas {
 
   void drawVertices(
       ui.Vertices vertices, ui.BlendMode blendMode, SurfacePaintData paint);
+
+  void drawPoints(ui.PointMode pointMode, Float32List points,
+      double strokeWidth, ui.Color color);
 
   /// Extension of Canvas API to mark the end of a stream of painting commands
   /// to enable re-use/dispose optimizations.

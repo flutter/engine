@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Mixin used by surfaces that clip their contents using an overflowing DOM
@@ -161,9 +162,11 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       this.elevation, int color, int shadowColor, this.clipBehavior)
       : color = ui.Color(color),
         shadowColor = ui.Color(shadowColor),
+        pathBounds = path.getBounds(),
         super(oldLayer);
 
   final SurfacePath path;
+  final ui.Rect pathBounds;
   final double elevation;
   final ui.Color color;
   final ui.Color shadowColor;
@@ -194,7 +197,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   }
 
   void _applyShadow() {
-    ElevationShadow.applyShadow(rootElement.style, elevation, shadowColor);
+    applyCssShadow(rootElement, pathBounds, elevation, shadowColor);
   }
 
   @override
@@ -278,7 +281,6 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       }
     }
 
-    final ui.Rect pathBounds = path.getBounds();
     final String svgClipPath = _pathToSvgClipPath(path,
         offsetX: -pathBounds.left,
         offsetY: -pathBounds.top,

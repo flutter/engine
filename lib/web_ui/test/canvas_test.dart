@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -10,6 +11,11 @@ import 'package:test/test.dart';
 import 'mock_engine_canvas.dart';
 
 void main() {
+  setUpAll(() {
+    WebExperiments.ensureInitialized();
+    Profiler.ensureInitialized();
+  });
+
   group('EngineCanvas', () {
     MockEngineCanvas mockCanvas;
     ui.Paragraph paragraph;

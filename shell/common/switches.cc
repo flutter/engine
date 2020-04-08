@@ -50,16 +50,17 @@ static const std::string gDartFlagsWhitelist[] = {
 
 // clang-format off
 static const std::string gDartFlagsWhitelist[] = {
+    "--enable_mirrors",
+    "--enable-service-port-fallback",
+    "--lazy_async_stacks",
     "--max_profile_depth",
+    "--no-causal_async_stacks",
     "--profile_period",
     "--random_seed",
-    "--enable_mirrors",
-    "--write-service-info",
     "--sample-buffer-duration",
-    "--no-causal_async_stacks",
-    "--lazy_async_stacks",
     "--trace-reload",
     "--trace-reload-verbose",
+    "--write-service-info",
 };
 // clang-format on
 
@@ -241,6 +242,11 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.disable_service_auth_codes =
       command_line.HasOption(FlagForSwitch(Switch::DisableServiceAuthCodes));
 
+  // Allow fallback to automatic port selection if binding to a specified port
+  // fails.
+  settings.enable_service_port_fallback =
+      command_line.HasOption(FlagForSwitch(Switch::EnableServicePortFallback));
+
   // Checked mode overrides.
   settings.disable_dart_asserts =
       command_line.HasOption(FlagForSwitch(Switch::DisableDartAsserts));
@@ -265,6 +271,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.trace_skia =
       command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::TraceWhitelist),
+                              &settings.trace_whitelist);
 
   settings.trace_systrace =
       command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
