@@ -36,24 +36,24 @@ reboot() {
 
 trap reboot EXIT
 
-echo "$(DATE) -----------START:PAVING----------------"
+echo "$(date) -----------START:PAVING----------------"
 ./fuchsia_ctl -d $device_name pave  -i $1
-echo "$(DATE) -----------END:PAVING----------------"
+echo "$(date) -----------END:PAVING----------------"
 
-echo "$(DATE) -----------START:WAIT_DEVICE_READY----------------"
+echo "$(date) -----------START:WAIT_DEVICE_READY----------------"
 for i in {1..10}; do
   ./fuchsia_ctl -d $device_name ssh -c "echo up" && break || sleep 15;
 done
-echo "$(DATE) -----------END:WAIT_DEVICE_READY----------------"
+echo "$(date) -----------END:WAIT_DEVICE_READY----------------"
 
 # TODO(gw280): Enable tests using JIT runner
 
-echo "$(DATE) -----------START:flutter_runner_tests----------------"
+echo "$(date) -----------START:flutter_runner_tests----------------"
 ./fuchsia_ctl -d $device_name test \
     -f flutter_aot_runner-0.far    \
     -f flutter_runner_tests-0.far  \
     -t flutter_runner_tests
-echo "$(DATE) -----------END:flutter_runner_tests----------------"
+echo "$(date) -----------END:flutter_runner_tests----------------"
 
 # TODO(https://bugs.fuchsia.dev/p/fuchsia/issues/detail?id=47081)
 # Re-enable once the crash is resolved
@@ -64,25 +64,25 @@ echo "$(DATE) -----------END:flutter_runner_tests----------------"
 
 # TODO(https://github.com/flutter/flutter/issues/50032) Enable after the
 # Fuchsia message loop migration is complete.
-echo "$(DATE) -----------START:fml_tests----------------"
+echo "$(date) -----------START:fml_tests----------------"
 ./fuchsia_ctl -d $device_name test \
     -f fml_tests-0.far  \
     -t fml_tests \
     -a "--gtest_filter=-MessageLoop*:Message*:FileTest*"
 
-echo "$(DATE) -----------START:flow_tests----------------"
+echo "$(date) -----------START:flow_tests----------------"
 ./fuchsia_ctl -d $device_name test \
     -f flow_tests-0.far  \
     -t flow_tests
 
-echo "$(DATE) -----------START:runtime_tests----------------"
+echo "$(date) -----------START:runtime_tests----------------"
 ./fuchsia_ctl -d $device_name test \
     -f runtime_tests-0.far  \
     -t runtime_tests
 
 # TODO(https://github.com/flutter/flutter/issues/53399): Re-enable
 # OnServiceProtocolGetSkSLsWorks once it passes on Fuchsia.
-echo "$(DATE) -----------START:shell_tests----------------"
+echo "$(date) -----------START:shell_tests----------------"
 ./fuchsia_ctl -d $device_name test \
     -f shell_tests-0.far  \
     -t shell_tests \
