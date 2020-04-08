@@ -48,7 +48,9 @@ PointerDataDispatcherMaker ShellTestPlatformViewVulkan::GetDispatcherMaker() {
 //              We need to merge this functionality back into //vulkan.
 //              https://github.com/flutter/flutter/issues/51132
 ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
-    fml::RefPtr<vulkan::VulkanProcTable> vk)
+    fml::RefPtr<vulkan::VulkanProcTable> vk,
+    std::shared_ptr<ShellTestExternalViewEmbedder>
+        shell_test_external_view_embedder)
     : valid_(false),
       vk_(std::move(vk)),
       shell_test_external_view_embedder_(shell_test_external_view_embedder) {
