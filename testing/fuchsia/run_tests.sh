@@ -53,7 +53,6 @@ echo "$(date) -----------START:flutter_runner_tests----------------"
     -f flutter_aot_runner-0.far    \
     -f flutter_runner_tests-0.far  \
     -t flutter_runner_tests
-echo "$(date) -----------END:flutter_runner_tests----------------"
 
 # TODO(https://bugs.fuchsia.dev/p/fuchsia/issues/detail?id=47081)
 # Re-enable once the crash is resolved
