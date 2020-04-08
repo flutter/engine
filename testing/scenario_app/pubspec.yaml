@@ -5,7 +5,7 @@ publish_to: none
 # impact the build.
 dependencies:
  sky_engine:
-   path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_engine
+   path: ../../../out/host_profile_unopt/gen/dart-pkg/sky_engine
  sky_services:
-   path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_services
+   path: ../../../out/host_profile_unopt/gen/dart-pkg/sky_services
  vector_math: ^2.0.8
