@@ -30,7 +30,7 @@ void main() async {
     // 'document is not focused' platform exception.
     html.document.querySelector('input').focus();
     await Clipboard.setData(const ClipboardData(text: 'sample text'));
-  });
+  }, skip: true); // https://github.com/flutter/flutter/issues/54296
 
   testWidgets('Should create and dispose view embedder',
       (WidgetTester tester) async {
