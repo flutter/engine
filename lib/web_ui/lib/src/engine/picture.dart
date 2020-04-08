@@ -32,6 +32,7 @@ class EnginePictureRecorder implements ui.PictureRecorder {
       return null;
     }
     _isRecording = false;
+    _canvas.endRecording();
     return EnginePicture(_canvas, cullRect);
   }
 }

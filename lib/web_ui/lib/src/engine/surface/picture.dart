@@ -352,7 +352,7 @@ class PersistedStandardPicture extends PersistedPicture {
 /// to draw shapes and text.
 abstract class PersistedPicture extends PersistedLeafSurface {
   PersistedPicture(this.dx, this.dy, this.picture, this.hints)
-      : localPaintBounds = picture.recordingCanvas.computePaintBounds();
+      : localPaintBounds = picture.recordingCanvas.pictureBounds;
 
   EngineCanvas _canvas;
 

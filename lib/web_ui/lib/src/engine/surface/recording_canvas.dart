@@ -23,8 +23,19 @@ double _measureBorderRadius(double x, double y) {
 ///
 /// See [Canvas] for docs for these methods.
 class RecordingCanvas {
-  /// Maximum paintable bounds for this canvas.
+  /// Computes [_pictureBounds].
   final _PaintBounds _paintBounds;
+
+  /// Maximum paintable bounds for this canvas.
+  ui.Rect _pictureBounds;
+  ui.Rect get pictureBounds {
+    assert(
+      _pictureBounds != null,
+      'Picture bounds not available yet. Call [endRecording] before accessing picture bounds.',
+    );
+    return _pictureBounds;
+  }
+
   final List<PaintCommand> _commands = <PaintCommand>[];
 
   RecordingCanvas(ui.Rect bounds) : _paintBounds = _PaintBounds(bounds);
@@ -53,9 +64,9 @@ class RecordingCanvas {
   bool get didDraw => _didDraw;
   bool _didDraw = false;
 
-  /// Computes paint bounds based on estimated [bounds] and transforms.
-  ui.Rect computePaintBounds() {
-    return _paintBounds.computeBounds();
+  /// Stops recording drawing commands and computes paint bounds.
+  void endRecording() {
+    _pictureBounds = _paintBounds.computeBounds();
   }
 
   /// Applies the recorded commands onto an [engineCanvas].
@@ -88,15 +99,25 @@ class RecordingCanvas {
       print(debugBuf);
     } else {
       try {
-        for (int i = 0, len = _commands.length; i < len; i++) {
-          final PaintCommand command = _commands[i];
-          if (command is DrawCommand) {
-            if (_isOutsideClipRegion(command, clipRect)) {
-              // The drawing command is outside the clip region. No need to apply.
-              continue;
-            }
+        if (rectContainsOther(clipRect, _pictureBounds)) {
+          // No need to check if commands fit in the clip rect if we already
+          // know that the entire picture fits it.
+          for (int i = 0, len = _commands.length; i < len; i++) {
+            _commands[i].apply(engineCanvas);
           }
-          command.apply(engineCanvas);
+        } else {
+          // The picture doesn't fit the clip rect. Check that drawing commands
+          // fit before applying them.
+          for (int i = 0, len = _commands.length; i < len; i++) {
+            final PaintCommand command = _commands[i];
+            if (command is DrawCommand) {
+              if (_isOutsideClipRegion(command, clipRect)) {
+                // The drawing command is outside the clip region. No need to apply.
+                continue;
+              }
+            }
+            command.apply(engineCanvas);
+          }
         }
       } catch (e) {
         // commands should never fail, but...
@@ -212,7 +233,7 @@ class RecordingCanvas {
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     final PaintDrawColor command = PaintDrawColor(color, blendMode);
     _commands.add(command);
-    _paintBounds.grow(_paintBounds.maxPaintBounds, command.bounds);
+    _paintBounds.grow(_paintBounds.maxPaintBounds, command);
   }
 
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaint paint) {
@@ -230,7 +251,7 @@ class RecordingCanvas {
       math.min(p1.dy, p2.dy) - paintSpread,
       math.max(p1.dx, p2.dx) + paintSpread,
       math.max(p1.dy, p2.dy) + paintSpread,
-      command.bounds,
+      command,
     );
     _hasArbitraryPaint = true;
     _didDraw = true;
@@ -241,7 +262,7 @@ class RecordingCanvas {
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawPaint command = PaintDrawPaint(paint.paintData);
-    _paintBounds.grow(_paintBounds.maxPaintBounds, command.bounds);
+    _paintBounds.grow(_paintBounds.maxPaintBounds, command);
     _commands.add(command);
   }
 
@@ -253,9 +274,9 @@ class RecordingCanvas {
     final double paintSpread = _getPaintSpread(paint);
     final PaintDrawRect command = PaintDrawRect(rect, paint.paintData);
     if (paintSpread != 0.0) {
-      _paintBounds.grow(rect.inflate(paintSpread), command.bounds);
+      _paintBounds.grow(rect.inflate(paintSpread), command);
     } else {
-      _paintBounds.grow(rect, command.bounds);
+      _paintBounds.grow(rect, command);
     }
     _commands.add(command);
   }
@@ -271,7 +292,7 @@ class RecordingCanvas {
     final double right = math.max(rrect.left, rrect.right) + paintSpread;
     final double bottom = math.max(rrect.top, rrect.bottom) + paintSpread;
     final PaintDrawRRect command = PaintDrawRRect(rrect, paint.paintData);
-    _paintBounds.growLTRB(left, top, right, bottom, command.bounds);
+    _paintBounds.growLTRB(left, top, right, bottom, command);
     _commands.add(command);
   }
 
@@ -322,7 +343,7 @@ class RecordingCanvas {
       outer.top - paintSpread,
       outer.right + paintSpread,
       outer.bottom + paintSpread,
-      command.bounds,
+      command,
     );
     _commands.add(command);
   }
@@ -333,9 +354,9 @@ class RecordingCanvas {
     final double paintSpread = _getPaintSpread(paint);
     final PaintDrawOval command = PaintDrawOval(rect, paint.paintData);
     if (paintSpread != 0.0) {
-      _paintBounds.grow(rect.inflate(paintSpread), command.bounds);
+      _paintBounds.grow(rect.inflate(paintSpread), command);
     } else {
-      _paintBounds.grow(rect, command.bounds);
+      _paintBounds.grow(rect, command);
     }
     _commands.add(command);
   }
@@ -350,7 +371,7 @@ class RecordingCanvas {
       c.dy - radius - paintSpread,
       c.dx + radius + paintSpread,
       c.dy + radius + paintSpread,
-      command.bounds,
+      command,
     );
     _commands.add(command);
   }
@@ -381,7 +402,7 @@ class RecordingCanvas {
     // Clone path so it can be reused for subsequent draw calls.
     final ui.Path clone = SurfacePath._shallowCopy(path);
     final PaintDrawPath command = PaintDrawPath(clone, paint.paintData);
-    _paintBounds.grow(pathBounds, command.bounds);
+    _paintBounds.grow(pathBounds, command);
     clone.fillType = path.fillType;
     _commands.add(command);
   }
@@ -392,7 +413,7 @@ class RecordingCanvas {
     final double left = offset.dx;
     final double top = offset.dy;
     final command = PaintDrawImage(image, offset, paint.paintData);
-    _paintBounds.growLTRB(left, top, left + image.width, top + image.height, command.bounds);
+    _paintBounds.growLTRB(left, top, left + image.width, top + image.height, command);
     _commands.add(command);
   }
 
@@ -401,7 +422,7 @@ class RecordingCanvas {
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawImageRect command = PaintDrawImageRect(image, src, dst, paint.paintData);
-    _paintBounds.grow(dst, command.bounds);
+    _paintBounds.grow(dst, command);
     _commands.add(command);
   }
 
@@ -424,7 +445,7 @@ class RecordingCanvas {
       top,
       left + engineParagraph.width,
       top + engineParagraph.height,
-      command.bounds,
+      command,
     );
     _commands.add(command);
   }
@@ -436,7 +457,7 @@ class RecordingCanvas {
     final ui.Rect shadowRect =
         computePenumbraBounds(path.getBounds(), elevation);
     final PaintDrawShadow command = PaintDrawShadow(path, color, elevation, transparentOccluder);
-    _paintBounds.grow(shadowRect, command.bounds);
+    _paintBounds.grow(shadowRect, command);
     _commands.add(command);
   }
 
@@ -445,7 +466,7 @@ class RecordingCanvas {
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawVertices command = PaintDrawVertices(vertices, blendMode, paint.paintData);
-    _growPaintBoundsByPoints(vertices.positions, 0, paint, command.bounds);
+    _growPaintBoundsByPoints(vertices.positions, 0, paint, command);
     _commands.add(command);
   }
 
@@ -457,11 +478,11 @@ class RecordingCanvas {
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawPoints command = PaintDrawPoints(pointMode, points, paint.strokeWidth, paint.color);
-    _growPaintBoundsByPoints(points, paint.strokeWidth, paint, command.bounds);
+    _growPaintBoundsByPoints(points, paint.strokeWidth, paint, command);
     _commands.add(command);
   }
 
-  void _growPaintBoundsByPoints(Float32List points, double thickness, SurfacePaint paint, Float32List bounds) {
+  void _growPaintBoundsByPoints(Float32List points, double thickness, SurfacePaint paint, DrawCommand command) {
     double minValueX, maxValueX, minValueY, maxValueY;
     minValueX = maxValueX = points[0];
     minValueY = maxValueY = points[1];
@@ -485,7 +506,7 @@ class RecordingCanvas {
       minValueY - distance - paintSpread,
       maxValueX + distance + paintSpread,
       maxValueY + distance + paintSpread,
-      bounds,
+      command,
     );
   }
 
@@ -510,12 +531,10 @@ abstract class PaintCommand {
 
 /// A [PaintCommand] that puts pixels on the screen (unlike [SaveCommand]).
 abstract class DrawCommand extends PaintCommand {
-  final Float32List bounds = Float32List(4);
-
-  double get leftBound => bounds[0];
-  double get topBound => bounds[1];
-  double get rightBound => bounds[2];
-  double get bottomBound => bounds[3];
+  double leftBound = double.negativeInfinity;
+  double topBound = double.negativeInfinity;
+  double rightBound = double.infinity;
+  double bottomBound = double.infinity;
 }
 
 class PaintSave extends PaintCommand {
@@ -1870,13 +1889,12 @@ class _PaintBounds {
   }
 
   /// Grow painted area to include given rectangle.
-  void grow(ui.Rect r, Float32List bounds) {
-    growLTRB(r.left, r.top, r.right, r.bottom, bounds);
+  void grow(ui.Rect r, DrawCommand command) {
+    growLTRB(r.left, r.top, r.right, r.bottom, command);
   }
 
   /// Grow painted area to include given rectangle.
-  void growLTRB(double left, double top, double right, double bottom, Float32List bounds) {
-    assert(bounds.length == 4);
+  void growLTRB(double left, double top, double right, double bottom, DrawCommand command) {
     if (left == right || top == bottom) {
       return;
     }
@@ -1922,10 +1940,10 @@ class _PaintBounds {
       }
     }
 
-    bounds[0] = transformedPointLeft;
-    bounds[1] = transformedPointTop;
-    bounds[2] = transformedPointRight;
-    bounds[3] = transformedPointBottom;
+    command.leftBound = transformedPointLeft;
+    command.topBound = transformedPointTop;
+    command.rightBound = transformedPointRight;
+    command.bottomBound = transformedPointBottom;
 
     if (_didPaintInsideClipArea) {
       _left = math.min(
