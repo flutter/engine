@@ -152,6 +152,26 @@ class TestCommand extends Command<bool> with ArgUtils {
     }
 
     await _buildTests(targets: targetFiles);
+
+    // Many tabs will be left open after Safari runs, quit Safari during
+    // cleanup.
+    if (browser == 'safari') {
+      cleanupCallbacks.add(() async {
+        // Only close Safari if felt is running in CI environments. Do not close
+        // Safari for the local testing.
+        if (io.Platform.environment['LUCI_CONTEXT'] != null || isCirrus) {
+          print('INFO: Safari tests ran. Quit Safari.');
+          await runProcess(
+            'sudo',
+            ['pkill', '-lf', 'Safari'],
+            workingDirectory: environment.webUiRootDir.path,
+          );
+        } else {
+          print('INFO: Safari tests ran. Please quit Safari tabs.');
+        }
+      });
+    }
+
     if (runAllTests) {
       await _runAllTests();
     } else {

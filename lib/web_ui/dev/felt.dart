@@ -14,15 +14,13 @@ import 'exceptions.dart';
 import 'test_runner.dart';
 import 'utils.dart';
 
-final TestCommand testCommand = TestCommand();
-
 CommandRunner runner = CommandRunner<bool>(
   'felt',
   'Command-line utility for building and testing Flutter web engine.',
 )
   ..addCommand(CleanCommand())
   ..addCommand(LicensesCommand())
-  ..addCommand(testCommand)
+  ..addCommand(TestCommand())
   ..addCommand(BuildCommand());
 
 void main(List<String> args) async {
@@ -51,7 +49,7 @@ void main(List<String> args) async {
   } catch (e) {
     rethrow;
   } finally {
-    await cleanup(browser: testCommand.browser);
+    await cleanup();
     // The exit code is changed by one of the branches.
     if(exitCode != -1) {
       io.exit(exitCode);
@@ -65,7 +63,7 @@ void main(List<String> args) async {
 void _listenToShutdownSignals() async {
   io.ProcessSignal.sigint.watch().listen((_) async {
     print('Received SIGINT. Shutting down.');
-    await cleanup(browser: testCommand.browser);
+    await cleanup();
     io.exit(1);
   });
 
@@ -73,7 +71,7 @@ void _listenToShutdownSignals() async {
   // See https://docs.microsoft.com/en-us/previous-versions/xdkz3x12(v%3Dvs.140)
   if (!io.Platform.isWindows) {
     io.ProcessSignal.sigterm.watch().listen((_) async {
-      await cleanup(browser: testCommand.browser);
+      await cleanup();
       print('Received SIGTERM. Shutting down.');
       io.exit(1);
     });

@@ -163,8 +163,27 @@ mixin ArgUtils<T> on Command<T> {
   }
 }
 
+/// There might be proccesses started during the tests.
+///
+/// Use this list to store those Processes, for cleaning up before shutdown.
+final List<io.Process> processesToCleanUp = List<io.Process>();
+
+/// There might be temporary directories created during the tests.
+///
+/// Use this list to store those directories and for deleteing them before
+/// shutdown.
+final List<io.Directory> temporaryDirectories = List<io.Directory>();
+
+typedef AsyncCallback = Future<void> Function();
+
+/// There might be additional cleanup needs to be done after the tools ran.
+///
+/// Add these operations here to make sure that they will run before felt
+/// exit.
+final List<AsyncCallback> cleanupCallbacks = List<AsyncCallback>();
+
 /// Cleanup the remaning processes, close open browsers, delete temp files.
-void cleanup({String browser = 'chrome'}) async {
+void cleanup() async {
   // Cleanup remaining processes if any.
   if (processesToCleanUp.length > 0) {
     for (io.Process process in processesToCleanUp) {
@@ -178,19 +197,7 @@ void cleanup({String browser = 'chrome'}) async {
     }
   }
 
-  // Many tabs left open after Safari runs, quit safari.
-  if (browser == 'safari') {
-    // Only close Safari if felt is running in CI environments. Do not close
-    // Safari for the local testing.
-    if (io.Platform.environment['LUCI_CONTEXT'] != null || isCirrus) {
-      print('INFO: Safari tests ran. Quit Safari.');
-      await runProcess(
-        'sudo',
-        ['pkill', '-lf', 'Safari'],
-        workingDirectory: environment.webUiRootDir.path,
-      );
-    } else {
-      print('INFO: Safari tests ran. Please quit Safari tabs.');
-    }
-  }
+  cleanupCallbacks.forEach((element) {
+    element.call();
+  });
 }
