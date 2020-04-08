@@ -15,7 +15,7 @@ import 'package:e2e/e2e.dart';
 void main() async {
   E2EWidgetsFlutterBinding.ensureInitialized() as E2EWidgetsFlutterBinding;
 
-  testWidgets('platform message for Clipboard.set/getData reply with future',
+  testWidgets('platform message for Clipboard.setData reply with future',
       (WidgetTester tester) async {
     app.main();
     await tester.pumpAndSettle();
