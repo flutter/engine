@@ -10,7 +10,6 @@ import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
-import 'common.dart';
 import 'environment.dart';
 
 class FilePath {
