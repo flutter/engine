@@ -35,7 +35,8 @@ std::unique_ptr<ShellTestPlatformView> ShellTestPlatformView::Create(
 #ifdef SHELL_ENABLE_VULKAN
     case BackendType::kVulkanBackend:
       return std::make_unique<ShellTestPlatformViewVulkan>(
-          delegate, task_runners, vsync_clock, create_vsync_waiter);
+          delegate, task_runners, vsync_clock, create_vsync_waiter,
+          shell_test_external_view_embedder);
 #endif  // SHELL_ENABLE_VULKAN
     default:
       FML_LOG(FATAL) << "No backends supported for ShellTestPlatformView";
