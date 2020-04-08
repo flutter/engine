@@ -45,6 +45,8 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
               const Text('Hello World',
             ),
+            // Create a text form field since we can't test clipboard unless
+            // html document has focus.
             TextFormField(
               key: const Key('input'),
               enabled: true,
