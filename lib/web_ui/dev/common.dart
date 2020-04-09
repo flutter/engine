@@ -231,8 +231,12 @@ class DevNull implements StringSink {
   void writeln([Object obj = ""]) {}
 }
 
+/// Whether the tests are running on Cirrus CI.
 bool get isCirrus => io.Platform.environment['CIRRUS_CI'] == 'true';
 
+/// Whether the tests are running on LUCI.
 bool get isLuci => io.Platform.environment['LUCI_CONTEXT'] != null;
 
+/// Whether the tests are running on one of the Continuous Integration
+/// environements.
 bool get isCi => isCirrus || isLuci;
