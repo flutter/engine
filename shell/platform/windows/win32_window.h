@@ -175,7 +175,7 @@ class Win32Window {
 
   // Keeps track of the last key code produced by a WM_KEYDOWN or WM_SYSKEYDOWN
   // message.
-  int _keycode_for_char_message = 0;
+  int keycode_for_char_message_ = 0;
 };
 
 }  // namespace flutter

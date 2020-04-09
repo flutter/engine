@@ -201,13 +201,12 @@ Win32Window::MessageHandler(HWND hwnd,
         // a complex Unicode character.
         if ((code_point & 0xFFFFFC00) == 0xD800) {
           lead_surrogate = code_point;
-        }
-        // Merge TrailSurrogate and LeadSurrogate.
-        if (lead_surrogate != 0 && (code_point & 0xFFFFFC00) == 0xDC00) {
+        } else if (lead_surrogate != 0 && (code_point & 0xFFFFFC00) == 0xDC00) {
+          // Merge TrailSurrogate and LeadSurrogate.
           code_point = 0x10000 + ((lead_surrogate & 0x000003FF) << 10) +
                        (code_point & 0x3FF);
+          lead_surrogate = 0;
         }
-        lead_surrogate = 0;
 
         // In an ENG-INTL keyboard, pressing "'" + "e" produces é. In this case,
         // the "'" key is a dead char, and shouldn't be sent to window->OnChar
@@ -218,19 +217,18 @@ Win32Window::MessageHandler(HWND hwnd,
         //
         // As for text input, only the second key press will display a
         // character.
-        if (wparam != VK_BACK &&
-            (message != WM_DEADCHAR && message != WM_SYSDEADCHAR)) {
+        if (wparam != VK_BACK && message != WM_DEADCHAR &&
+            message != WM_SYSDEADCHAR) {
           window->OnChar(code_point);
         }
 
         // All key presses that generate a character should be sent from
         // WM_CHAR. In order to send the full key press information, the keycode
-        // is persisted in a static variable _keycode_for_char_message obtained
+        // is persisted in keycode_for_char_message_ obtained
         // from WM_KEYDOWN.
         const unsigned int scancode = (lparam >> 16) & 0xff;
-        window->OnKey(_keycode_for_char_message, scancode, WM_KEYDOWN,
+        window->OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
                       code_point);
-        _keycode_for_char_message = 0;
         break;
       }
       case WM_KEYDOWN:
@@ -244,7 +242,7 @@ Win32Window::MessageHandler(HWND hwnd,
         // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
         const unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
         if (character > 0 && is_keydown_message) {
-          _keycode_for_char_message = wparam;
+          keycode_for_char_message_ = wparam;
           break;
         }
         unsigned int keyCode(wparam);

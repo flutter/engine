@@ -45,12 +45,15 @@ const int kNumLock = 1 << 12;
 const int kScrollLock = 1 << 13;
 
 namespace {
+/// Calls GetKeyState() an all modifier keys and packs the result in an int,
+/// with the re-defined values declared above for compatibility with the Flutter
+/// framework.
 int GetModsForKeyState() {
   int mods = 0;
 
   if (GetKeyState(VK_SHIFT) < 0)
     mods |= kShift;
-  if (GetAsyncKeyState(VK_LSHIFT) < 0)
+  if (GetKeyState(VK_LSHIFT) < 0)
     mods |= kShiftLeft;
   if (GetKeyState(VK_RSHIFT) < 0)
     mods |= kShiftRight;
