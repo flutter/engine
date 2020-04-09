@@ -225,9 +225,12 @@ Win32Window::MessageHandler(HWND hwnd,
         // All key presses that generate a character should be sent from
         // WM_CHAR. In order to send the full key press information, the keycode
         // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
-        const unsigned int scancode = (lparam >> 16) & 0xff;
-        window->OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
-                      code_point);
+        if (keycode_for_char_message_ != 0) {
+          const unsigned int scancode = (lparam >> 16) & 0xff;
+          window->OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
+                        code_point);
+          keycode_for_char_message_ = 0;
+        }
         break;
       }
       case WM_KEYDOWN:
