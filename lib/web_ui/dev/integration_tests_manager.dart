@@ -57,6 +57,7 @@ class IntegrationTestsManager {
       <String>[
         'pub',
         'get',
+        '--local-engine=host_debug_unopt',
       ],
       workingDirectory: workingDirectory,
     );
