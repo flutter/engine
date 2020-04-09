@@ -232,3 +232,7 @@ class DevNull implements StringSink {
 }
 
 bool get isCirrus => io.Platform.environment['CIRRUS_CI'] == 'true';
+
+bool get isLuci => io.Platform.environment['LUCI_CONTEXT'] != null;
+
+bool get isCi => isCirrus || isLuci;

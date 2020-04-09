@@ -134,7 +134,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   Future<bool> runIntegrationTests() async {
     // TODO(nurhan): https://github.com/flutter/flutter/issues/52983
-    if (io.Platform.environment['LUCI_CONTEXT'] != null || isCirrus) {
+    if (io.Platform.environment['LUCI_CONTEXT'] != null) {
       return true;
     }
 

@@ -47,18 +47,17 @@ class IntegrationTestsManager {
   }
 
   Future<bool> _runPubGet(String workingDirectory) async {
-    final String executable = isCirrus ? environment.pubExecutable : 'flutter';
-    final List<String> arguments = isCirrus
-        ? <String>[
-            'get',
-          ]
-        : <String>[
-            'pub',
-            'get',
-          ];
+    if (isCi) {
+      await _cloneFlutterRepo();
+    }
+    final String executable =
+        isCi ? environment.flutterCommandDir.path : 'flutter';
     final int exitCode = await runProcess(
       executable,
-      arguments,
+      <String>[
+        'pub',
+        'get',
+      ],
       workingDirectory: workingDirectory,
     );
 
@@ -71,12 +70,24 @@ class IntegrationTestsManager {
     }
   }
 
-  void _runDriver() async {
-    startProcess(
-      './chromedriver/chromedriver',
-      ['--port=4444'],
-      workingDirectory: io.Directory.current.path
+  Future<void> _cloneFlutterRepo() async {
+    final int exitCode = await runProcess(
+      environment.cloneScript.path,
+      <String>[
+        // Use .dart_tools to clone the Flutter repo.
+        environment.webUiDartToolDir.path,
+      ],
+      workingDirectory: environment.webUiRootDir.path,
     );
+
+    if (exitCode != 0) {
+      // TODO: throw tool exception.
+    }
+  }
+
+  void _runDriver() async {
+    startProcess('./chromedriver/chromedriver', ['--port=4444'],
+        workingDirectory: io.Directory.current.path);
     print('INFO: Driver started');
   }
 

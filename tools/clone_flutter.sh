@@ -33,10 +33,25 @@ fi
 LATEST_COMMIT_TIME_ENGINE=`git log -1 --date=local --format="%cd"`
 echo "Latest commit time on engine found as $LATEST_COMMIT_TIME_ENGINE"
 
-# Do rest of the task in the root directory
-cd ~
-mkdir -p $FRAMEWORK_PATH
-cd $FRAMEWORK_PATH
+# Check if there is an argument added for repo location.
+# If not use the location that should be set by Cirrus/LUCI.
+FLUTTER_CLONE_REPO=$1
+
+if [[ -z $FLUTTER_CLONE_REPO ]]
+then
+  if [[ -z $FRAMEWORK_PATH ]]
+  then
+    echo "Framework path should be set to run the script."
+    exit 1
+  fi
+  # Do rest of the task in the root directory
+  cd ~
+  mkdir -p $FRAMEWORK_PATH
+  cd $FRAMEWORK_PATH
+else
+  cd $FLUTTER_CLONE_REPO
+fi
+
 # Clone the Flutter Framework.
 git clone https://github.com/flutter/flutter.git
 cd flutter

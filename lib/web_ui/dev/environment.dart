@@ -20,6 +20,7 @@ class Environment {
   factory Environment() {
     final io.File self = io.File.fromUri(io.Platform.script);
     final io.Directory engineSrcDir = self.parent.parent.parent.parent.parent;
+    final io.Directory engineToolsDir = io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'tools'));
     final io.Directory outDir = io.Directory(pathlib.join(engineSrcDir.path, 'out'));
     final io.Directory hostDebugUnoptDir = io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
     final io.Directory dartSdkDir = io.Directory(pathlib.join(hostDebugUnoptDir.path, 'dart-sdk'));
@@ -36,6 +37,7 @@ class Environment {
       self: self,
       webUiRootDir: webUiRootDir,
       engineSrcDir: engineSrcDir,
+      engineToolsDir: engineToolsDir,
       integrationTestsDir: integrationTestsDir,
       outDir: outDir,
       hostDebugUnoptDir: hostDebugUnoptDir,
@@ -47,6 +49,7 @@ class Environment {
     this.self,
     this.webUiRootDir,
     this.engineSrcDir,
+    this.engineToolsDir,
     this.integrationTestsDir,
     this.outDir,
     this.hostDebugUnoptDir,
@@ -61,6 +64,9 @@ class Environment {
 
   /// Path to the engine's "src" directory.
   final io.Directory engineSrcDir;
+
+  /// Path to the engine's "tools" directory.
+  final io.Directory engineToolsDir;
 
   /// Path to the web integration tests.
   final io.Directory integrationTestsDir;
@@ -124,4 +130,21 @@ class Environment {
     webUiDartToolDir.path,
     'goldens',
   ));
+
+  /// Path to the script that clones the Flutter repo.
+  io.File get cloneScript => io.File(pathlib.join(
+    engineToolsDir.path,
+    'clone_flutter.sh',
+  ));
+
+  /// Path to flutter to be used for `flutter pub get`.
+  ///
+  /// Only use [cloneScript] to clone flutter to the engine repo.
+  io.File get flutterCommandDir => io.File(pathlib.join(
+    webUiDartToolDir.path,
+    'flutter'
+    'bin',
+    'flutter',
+  ));
+
 }
