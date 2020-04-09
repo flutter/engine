@@ -392,11 +392,32 @@ class TestCommand extends Command<bool> with ArgUtils {
           '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
         ],
     ];
+    final Stopwatch stopwatch = Stopwatch()..start();
+
+    // Increase the number of worker processes.
+    //
+    // By default build_runner will limit the number of workers to 4, which
+    // doesn't take advantage of multiple CPU cores. 16 is picked because
+    // typically engine contributors will have anywhere from 4 to 56
+    // hyperthreaded CPU cores, i.e. 8-112 hardware threads, and from 16GB
+    // to 132GB of RAM, which should be both not too low and not too high.
+    //
+    // In a testing on a 32-core 132GB workstation this sped up the build
+    // from ~4min to ~1.5min.
+    String maxWorkersPerTask = io.Platform.environment.containsKey('BUILD_MAX_WORKERS_PER_TASK')
+      ? io.Platform.environment['BUILD_MAX_WORKERS_PER_TASK']
+      : '16';
+
     final int exitCode = await runProcess(
       environment.pubExecutable,
       arguments,
       workingDirectory: environment.webUiRootDir.path,
+      environment: <String, String>{
+        'BUILD_MAX_WORKERS_PER_TASK': maxWorkersPerTask,
+      },
     );
+    stopwatch.stop();
+    print('The build took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
 
     if (exitCode != 0) {
       throw ToolException(

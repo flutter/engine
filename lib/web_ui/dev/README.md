@@ -23,12 +23,19 @@ felt build --watch
 
 If you don't want to add `felt` to your path, you can still invoke it using a relative path like `./web_ui/dev/felt <command>`
 
-## Speeding up your builds
+## Speeding up your builds and tests
+
 You can speed up your builds by using more CPU cores. Pass `-j` to specify the desired level of parallelism, like so:
+
 ```
 felt build [-w] -j 100
 ```
+
 If you are a Google employee, you can use an internal instance of Goma to parallelize your builds. Because Goma compiles code on remote servers, this option is effective even on low-powered laptops.
+
+By default, when compiling Dart code to JavaScript, we use 16 `dart2js` workers.
+If you need to increase or reduce the number of workers, set the `BUILD_MAX_WORKERS_PER_TASK`
+environment variable to the desired number.
 
 ## Running web engine tests
 To run all tests on Chrome. This will run both integration tests and the unit tests:
