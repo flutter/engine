@@ -137,10 +137,12 @@ class Environment {
     'clone_flutter.sh',
   ));
 
-  /// Path to flutter to be used for `flutter pub get`.
+  /// Path to flutter.
+  ///
+  /// For example, this can be used to run `flutter pub get`.
   ///
   /// Only use [cloneScript] to clone flutter to the engine repo.
-  io.File get flutterCommandDir => io.File(pathlib.join(
+  io.File get flutterCommand => io.File(pathlib.join(
     webUiDartToolDir.path,
     'flutter',
     'bin',

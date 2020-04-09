@@ -51,7 +51,7 @@ class IntegrationTestsManager {
       await _cloneFlutterRepo();
     }
     final String executable =
-        isCi ? environment.flutterCommandDir.path : 'flutter';
+        isCi ? environment.flutterCommand.path : 'flutter';
     final int exitCode = await runProcess(
       executable,
       <String>[
@@ -187,8 +187,10 @@ class IntegrationTestsManager {
 
   Future<bool> _runTestsInProfileMode(
       io.Directory directory, String testName) async {
+    final String executable =
+        isCi ? environment.flutterCommand.path : 'flutter';
     final int exitCode = await runProcess(
-      'flutter',
+      executable,
       <String>[
         'drive',
         '--target=test_driver/${testName}',
