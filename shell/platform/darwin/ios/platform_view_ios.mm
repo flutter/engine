@@ -99,8 +99,9 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
 
 void PlatformViewIOS::attachView() {
   FML_DCHECK(owner_controller_);
-  FML_DCHECK(owner_controller_.get().isViewLoaded) << "FlutterViewController's view should be loaded "
-                                                      "before attaching to PlatformViewIOS.";
+  FML_DCHECK(owner_controller_.get().isViewLoaded)
+      << "FlutterViewController's view should be loaded "
+         "before attaching to PlatformViewIOS.";
   ios_surface_ =
       [static_cast<FlutterView*>(owner_controller_.get().view) createSurface:ios_context_];
   FML_DCHECK(ios_surface_ != nullptr);
