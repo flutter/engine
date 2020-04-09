@@ -82,6 +82,7 @@ class RecordingCanvas {
   ///
   /// The [clipRect] specifies the clip applied to the picture (screen clip at a minimum).
   void apply(EngineCanvas engineCanvas, ui.Rect clipRect) {
+    assert(_debugRecordingEnded);
     if (_debugDumpPaintCommands) {
       final StringBuffer debugBuf = StringBuffer();
       int skips = 0;
