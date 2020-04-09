@@ -25,7 +25,7 @@ std::unique_ptr<rapidjson::Document> ExtractElement(
   document->Swap(*subtree);
   // Swap the entire document into |extracted|. Unlike the swap above this moves
   // the allocator ownership, so the data won't be deleted when |document| is
-  // destroyed goes out of scope.
+  // destroyed.
   extracted->Swap(*document);
   return extracted;
 }
