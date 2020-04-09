@@ -480,9 +480,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   }
 
   // Any UIKit related code has to run on main thread.
-  // When on a non-main thread, we only allow the rest of the method to run if there is no platform
-  // view.
-  FML_DCHECK([[NSThread currentThread] isMainThread] || views_to_dispose_.empty());
+  // When on a non-main thread, we only allow the rest of the method to run if there is no
+  // Pending UIView operations.
+  FML_DCHECK([[NSThread currentThread] isMainThread] || !HasPendingViewOperations());
 
   DisposeViews();
 

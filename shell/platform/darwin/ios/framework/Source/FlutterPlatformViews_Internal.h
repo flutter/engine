@@ -283,7 +283,7 @@ class FlutterPlatformViewsController {
   // Default to `false`.
   // If `true`, gpu thread and platform thread should be merged during |EndFrame|.
   // Always resets to `false` right after the threads are merged.
-  bool merge_threads_;
+  bool merge_threads_ = false;
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
   // the picture on the layer's canvas.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrContext* gr_context,
