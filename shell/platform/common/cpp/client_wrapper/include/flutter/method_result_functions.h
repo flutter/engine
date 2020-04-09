@@ -22,7 +22,7 @@ using ResultHandlerError = std::function<void(const std::string& error_code,
 template <typename T>
 using ResultHandlerNotImplemented = std::function<void()>;
 
-// An implementatino of MethodResult that pass calls through to provided
+// An implementation of MethodResult that pass calls through to provided
 // function objects, for ease of constructing one-off result handlers.
 template <typename T>
 class MethodResultFunctions : public MethodResult<T> {
