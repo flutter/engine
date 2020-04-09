@@ -99,6 +99,11 @@ class PluginRegistrarManager {
     return static_cast<T*>(registrar_pair.second.get());
   }
 
+  // Destroys all registrar wrappers created by the manager.
+  //
+  // This is intended primarily for use in tests.
+  void Reset() { registrars_.clear(); }
+
  private:
   PluginRegistrarManager();
 
