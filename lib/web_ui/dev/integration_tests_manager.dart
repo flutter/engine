@@ -9,6 +9,7 @@ import 'package:web_driver_installer/chrome_driver_installer.dart';
 import 'chrome_installer.dart';
 import 'common.dart';
 import 'environment.dart';
+import 'exceptions.dart';
 import 'utils.dart';
 
 class IntegrationTestsManager {
@@ -49,6 +50,7 @@ class IntegrationTestsManager {
   Future<bool> _runPubGet(String workingDirectory) async {
     if (isCi) {
       await _cloneFlutterRepo();
+      await _enableWeb(workingDirectory);
     }
     final String executable =
         isCi ? environment.flutterCommand.path : 'flutter';
@@ -73,7 +75,7 @@ class IntegrationTestsManager {
 
   Future<void> _cloneFlutterRepo() async {
     final int exitCode = await runProcess(
-      environment.cloneScript.path,
+      environment.cloneFlutterScript.path,
       <String>[
         // Use .dart_tools to clone the Flutter repo.
         environment.webUiDartToolDir.path,
@@ -82,7 +84,24 @@ class IntegrationTestsManager {
     );
 
     if (exitCode != 0) {
-      // TODO: throw tool exception.
+      throw ToolException('ERROR: Failed to clone flutter repo. Exited with '
+          'exit code $exitCode');
+    }
+  }
+
+  Future<void> _enableWeb(String workingDirectory) async {
+    final int exitCode = await runProcess(
+      environment.flutterCommand.path,
+      <String>[
+        'config',
+        '--enable-web',
+      ],
+      workingDirectory: workingDirectory,
+    );
+
+    if (exitCode != 0) {
+      throw ToolException(
+          'ERROR: Failed to enable web. Exited with exit code $exitCode');
     }
   }
 
