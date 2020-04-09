@@ -64,9 +64,18 @@ class RecordingCanvas {
   bool get didDraw => _didDraw;
   bool _didDraw = false;
 
+  bool _debugRecordingEnded = false;
+
   /// Stops recording drawing commands and computes paint bounds.
+  ///
+  /// This must be called prior to passing the picture to the [SceneBuilder]
+  /// for rendering. In a production app, this is done automatically by
+  /// [PictureRecorder] when the framework calls [PictureRecorder.endRecording].
+  /// However, if you are writing a unit-test and using [RecordingCanvas]
+  /// directly it is up to you to call this method explicitly.
   void endRecording() {
     _pictureBounds = _paintBounds.computeBounds();
+    _debugRecordingEnded = true;
   }
 
   /// Applies the recorded commands onto an [engineCanvas].
@@ -151,12 +160,14 @@ class RecordingCanvas {
   }
 
   void save() {
+    assert(!_debugRecordingEnded);
     _paintBounds.saveTransformsAndClip();
     _commands.add(const PaintSave());
     _saveCount++;
   }
 
   void saveLayerWithoutBounds(SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     // TODO(het): Implement this correctly using another canvas.
     _commands.add(const PaintSave());
@@ -165,6 +176,7 @@ class RecordingCanvas {
   }
 
   void saveLayer(ui.Rect bounds, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     // TODO(het): Implement this correctly using another canvas.
     _commands.add(const PaintSave());
@@ -173,6 +185,7 @@ class RecordingCanvas {
   }
 
   void restore() {
+    assert(!_debugRecordingEnded);
     _paintBounds.restoreTransformsAndClip();
     if (_commands.isNotEmpty && _commands.last is PaintSave) {
       // A restore followed a save without any drawing operations in between.
@@ -187,56 +200,66 @@ class RecordingCanvas {
   }
 
   void translate(double dx, double dy) {
+    assert(!_debugRecordingEnded);
     _paintBounds.translate(dx, dy);
     _commands.add(PaintTranslate(dx, dy));
   }
 
   void scale(double sx, double sy) {
+    assert(!_debugRecordingEnded);
     _paintBounds.scale(sx, sy);
     _commands.add(PaintScale(sx, sy));
   }
 
   void rotate(double radians) {
+    assert(!_debugRecordingEnded);
     _paintBounds.rotateZ(radians);
     _commands.add(PaintRotate(radians));
   }
 
   void transform(Float64List matrix4) {
+    assert(!_debugRecordingEnded);
     _paintBounds.transform(matrix4);
     _commands.add(PaintTransform(matrix4));
   }
 
   void skew(double sx, double sy) {
+    assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     _paintBounds.skew(sx, sy);
     _commands.add(PaintSkew(sx, sy));
   }
 
   void clipRect(ui.Rect rect) {
+    assert(!_debugRecordingEnded);
     _paintBounds.clipRect(rect);
     _hasArbitraryPaint = true;
     _commands.add(PaintClipRect(rect));
   }
 
   void clipRRect(ui.RRect rrect) {
+    assert(!_debugRecordingEnded);
     _paintBounds.clipRect(rrect.outerRect);
     _hasArbitraryPaint = true;
     _commands.add(PaintClipRRect(rrect));
   }
 
   void clipPath(ui.Path path, {bool doAntiAlias = true}) {
+    assert(!_debugRecordingEnded);
     _paintBounds.clipRect(path.getBounds());
     _hasArbitraryPaint = true;
     _commands.add(PaintClipPath(path));
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
+    assert(!_debugRecordingEnded);
     final PaintDrawColor command = PaintDrawColor(color, blendMode);
     _commands.add(command);
     _paintBounds.grow(_paintBounds.maxPaintBounds, command);
   }
 
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     final double paintSpread = math.max(_getPaintSpread(paint), 1.0);
     final PaintDrawLine command = PaintDrawLine(p1, p2, paint.paintData);
     // TODO(yjbanov): This can be optimized. Currently we create a box around
@@ -259,6 +282,7 @@ class RecordingCanvas {
   }
 
   void drawPaint(SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawPaint command = PaintDrawPaint(paint.paintData);
@@ -267,6 +291,7 @@ class RecordingCanvas {
   }
 
   void drawRect(ui.Rect rect, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     if (paint.shader != null) {
       _hasArbitraryPaint = true;
     }
@@ -282,6 +307,7 @@ class RecordingCanvas {
   }
 
   void drawRRect(ui.RRect rrect, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     if (paint.shader != null || !rrect.webOnlyUniformRadii) {
       _hasArbitraryPaint = true;
     }
@@ -297,6 +323,7 @@ class RecordingCanvas {
   }
 
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     // Check the inner bounds are contained within the outer bounds
     // see: https://cs.chromium.org/chromium/src/third_party/skia/src/core/SkCanvas.cpp?l=1787-1789
     ui.Rect innerRect = inner.outerRect;
@@ -349,6 +376,7 @@ class RecordingCanvas {
   }
 
   void drawOval(ui.Rect rect, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
@@ -362,6 +390,7 @@ class RecordingCanvas {
   }
 
   void drawCircle(ui.Offset c, double radius, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
@@ -377,6 +406,7 @@ class RecordingCanvas {
   }
 
   void drawPath(ui.Path path, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     if (paint.shader == null) {
       // For Rect/RoundedRect paths use drawRect/drawRRect code paths for
       // DomCanvas optimization.
@@ -408,6 +438,7 @@ class RecordingCanvas {
   }
 
   void drawImage(ui.Image image, ui.Offset offset, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final double left = offset.dx;
@@ -419,6 +450,7 @@ class RecordingCanvas {
 
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawImageRect command = PaintDrawImageRect(image, src, dst, paint.paintData);
@@ -427,6 +459,7 @@ class RecordingCanvas {
   }
 
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
+    assert(!_debugRecordingEnded);
     final EngineParagraph engineParagraph = paragraph;
     if (!engineParagraph._isLaidOut) {
       // Ignore non-laid out paragraphs. This matches Flutter's behavior.
@@ -452,6 +485,7 @@ class RecordingCanvas {
 
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
+    assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final ui.Rect shadowRect =
@@ -463,6 +497,7 @@ class RecordingCanvas {
 
   void drawVertices(
       ui.Vertices vertices, ui.BlendMode blendMode, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawVertices command = PaintDrawVertices(vertices, blendMode, paint.paintData);
@@ -472,6 +507,7 @@ class RecordingCanvas {
 
   void drawRawPoints(
       ui.PointMode pointMode, Float32List points, SurfacePaint paint) {
+    assert(!_debugRecordingEnded);
     if (paint.strokeWidth == null) {
       return;
     }
