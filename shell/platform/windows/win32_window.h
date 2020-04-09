@@ -172,6 +172,10 @@ class Win32Window {
 
   // Keeps track of mouse state in relation to the window.
   MouseState mouse_state_;
+
+  // Keeps track of the last key code produced by a WM_KEYDOWN or WM_SYSKEYDOWN
+  // message.
+  int _keycode_for_char_message = 0;
 };
 
 }  // namespace flutter

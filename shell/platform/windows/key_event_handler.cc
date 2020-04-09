@@ -28,6 +28,7 @@ namespace flutter {
 // Re-definition of the modifiers for compatibility with the Flutter framework.
 // These have to be in sync with the framework's RawKeyEventDataWindows
 // modifiers definition.
+// https://github.com/flutter/flutter/blob/19ff596979e407c484a32f4071420fca4f4c885f/packages/flutter/lib/src/services/raw_keyboard_windows.dart#L203
 const int kShift = 1 << 0;
 const int kShiftLeft = 1 << 1;
 const int kShiftRight = 1 << 2;
@@ -43,33 +44,8 @@ const int kCapsLock = 1 << 11;
 const int kNumLock = 1 << 12;
 const int kScrollLock = 1 << 13;
 
-KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger)
-    : channel_(
-          std::make_unique<flutter::BasicMessageChannel<rapidjson::Document>>(
-              messenger,
-              kChannelName,
-              &flutter::JsonMessageCodec::GetInstance())) {}
-
-KeyEventHandler::~KeyEventHandler() = default;
-
-void KeyEventHandler::CharHook(Win32FlutterWindow* window,
-                               char32_t code_point) {}
-
-void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
-                                   int key,
-                                   int scancode,
-                                   int action,
-                                   char32_t character) {
-  // TODO: Translate to a cross-platform key code system rather than passing
-  // the native key code.
-  rapidjson::Document event(rapidjson::kObjectType);
-  auto& allocator = event.GetAllocator();
-  event.AddMember(kKeyCodeKey, key, allocator);
-  event.AddMember(kScanCodeKey, scancode, allocator);
-  event.AddMember(kCharacterCodePointKey, character, allocator);
-  event.AddMember(kKeyMapKey, kWindowsKeyMap, allocator);
-
-  // Get all the currently pressed modifiers
+namespace {
+int GetModsForKeyState() {
   int mods = 0;
 
   if (GetKeyState(VK_SHIFT) < 0)
@@ -100,8 +76,36 @@ void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
     mods |= kNumLock;
   if (GetKeyState(VK_SCROLL) < 0)
     mods |= kScrollLock;
+  return mods;
+}
+}  // namespace
 
-  event.AddMember(kModifiersKey, mods, allocator);
+KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger)
+    : channel_(
+          std::make_unique<flutter::BasicMessageChannel<rapidjson::Document>>(
+              messenger,
+              kChannelName,
+              &flutter::JsonMessageCodec::GetInstance())) {}
+
+KeyEventHandler::~KeyEventHandler() = default;
+
+void KeyEventHandler::CharHook(Win32FlutterWindow* window,
+                               char32_t code_point) {}
+
+void KeyEventHandler::KeyboardHook(Win32FlutterWindow* window,
+                                   int key,
+                                   int scancode,
+                                   int action,
+                                   char32_t character) {
+  // TODO: Translate to a cross-platform key code system rather than passing
+  // the native key code.
+  rapidjson::Document event(rapidjson::kObjectType);
+  auto& allocator = event.GetAllocator();
+  event.AddMember(kKeyCodeKey, key, allocator);
+  event.AddMember(kScanCodeKey, scancode, allocator);
+  event.AddMember(kCharacterCodePointKey, character, allocator);
+  event.AddMember(kKeyMapKey, kWindowsKeyMap, allocator);
+  event.AddMember(kModifiersKey, GetModsForKeyState(), allocator);
 
   switch (action) {
     case WM_KEYDOWN:

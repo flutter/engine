@@ -111,9 +111,6 @@ Win32Window::MessageHandler(HWND hwnd,
       reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
   UINT button_pressed = 0;
 
-  // Variable used to store the key code preceding a WM_CHAR message. For more
-  // info, read the comments below in WM_KEYDOWN/UP.
-  static unsigned int keycode_for_char_message = 0;
   if (window != nullptr) {
     switch (message) {
       case kWmDpiChangedBeforeParent:
@@ -211,16 +208,29 @@ Win32Window::MessageHandler(HWND hwnd,
                        (code_point & 0x3FF);
         }
         lead_surrogate = 0;
-        if (wparam != VK_BACK) {
+
+        // In an ENG-INTL keyboard, pressing "'" + "e" produces é. In this case,
+        // the "'" key is a dead char, and shouldn't be sent to window->OnChar
+        // for text input. However, the key event should still be sent to
+        // Flutter. The result would be:
+        // * Key event - key code: 222 (quote) - key label: '
+        // * Key event - key code: 69 (e) - key label: é
+        //
+        // As for text input, only the second key press will display a
+        // character.
+        if (wparam != VK_BACK &&
+            (message != WM_DEADCHAR && message != WM_SYSDEADCHAR)) {
           window->OnChar(code_point);
         }
 
         // All key presses that generate a character should be sent from
         // WM_CHAR. In order to send the full key press information, the keycode
-        // is persisted in a static variable keycode_for_char_message obtained
+        // is persisted in a static variable _keycode_for_char_message obtained
         // from WM_KEYDOWN.
         const unsigned int scancode = (lparam >> 16) & 0xff;
-        window->OnKey(keycode_for_char_message, scancode, WM_KEYDOWN, code_point);
+        window->OnKey(_keycode_for_char_message, scancode, WM_KEYDOWN,
+                      code_point);
+        _keycode_for_char_message = 0;
         break;
       }
       case WM_KEYDOWN:
@@ -234,7 +244,7 @@ Win32Window::MessageHandler(HWND hwnd,
         // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
         const unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
         if (character > 0 && is_keydown_message) {
-          keycode_for_char_message = wparam;
+          _keycode_for_char_message = wparam;
           break;
         }
         unsigned int keyCode(wparam);
