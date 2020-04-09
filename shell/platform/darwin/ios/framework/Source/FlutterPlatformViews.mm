@@ -252,6 +252,9 @@ void FlutterPlatformViewsController::CancelFrame() {
 }
 
 bool FlutterPlatformViewsController::HasPendingViewOperations() {
+  if (!views_to_dispose_.empty()) {
+    return true;
+  }
   if (!views_to_recomposite_.empty()) {
     return true;
   }
