@@ -87,16 +87,6 @@ public class PlatformPlugin {
         public void setClipboardData(@NonNull String text) {
           PlatformPlugin.this.setClipboardData(text);
         }
-
-        @Override
-        public List<Rect> getSystemGestureExclusionRects() {
-          return PlatformPlugin.this.getSystemGestureExclusionRects();
-        }
-
-        @Override
-        public void setSystemGestureExclusionRects(@NonNull ArrayList<Rect> rects) {
-          PlatformPlugin.this.setSystemGestureExclusionRects(rects);
-        }
       };
 
   public PlatformPlugin(Activity activity, PlatformChannel platformChannel) {
@@ -298,25 +288,5 @@ public class PlatformPlugin {
         (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
     ClipData clip = ClipData.newPlainText("text label?", text);
     clipboard.setPrimaryClip(clip);
-  }
-
-  private List<Rect> getSystemGestureExclusionRects() {
-    if (Build.VERSION.SDK_INT >= 29) {
-      Window window = activity.getWindow();
-      View view = window.getDecorView();
-      return view.getSystemGestureExclusionRects();
-    }
-
-    return null;
-  }
-
-  private void setSystemGestureExclusionRects(ArrayList<Rect> rects) {
-    if (Build.VERSION.SDK_INT < 29) {
-      return;
-    }
-
-    Window window = activity.getWindow();
-    View view = window.getDecorView();
-    view.setSystemGestureExclusionRects(rects);
   }
 }
