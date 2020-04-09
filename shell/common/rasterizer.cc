@@ -287,8 +287,8 @@ RasterStatus Rasterizer::DoDraw(
     fml::tracing::TraceEventAsyncComplete(
         "flutter",                    // category
         "SceneDisplayLag",            // name
-        frame_target_time,            // begin_time
-        raster_finish_time,           // end_time
+        raster_finish_time,           // begin_time
+        latest_frame_target_time,     // end_time
         "frame_target_time",          // arg_key_1
         frame_target_time,            // arg_val_1
         "current_frame_target_time",  // arg_key_2
