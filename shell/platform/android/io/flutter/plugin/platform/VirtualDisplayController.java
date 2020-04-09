@@ -96,6 +96,9 @@ class VirtualDisplayController {
   public void resize(final int width, final int height, final Runnable onNewSizeFrameAvailable) {
     boolean isFocused = getView().isFocused();
     final SingleViewPresentation.PresentationState presentationState = presentation.detachState();
+    // Fix ViewRootImpl crash when using AndroidView on some brand devices
+    // described in: https://github.com/flutter/flutter/issues/47154
+    presentation.cancel();
     // We detach the surface to prevent it being destroyed when releasing the vd.
     //
     // setSurface is only available starting API 20. We could support API 19 by re-creating a new
