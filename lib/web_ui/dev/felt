@@ -4,9 +4,6 @@ set -e
 # felt: a command-line utility for building and testing Flutter web engine.
 #       It stands for Flutter Engine Local Tester.
 
-echo "engine path"
-echo $ENGINE_PATH
-
 FELT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 if [ -z "`which gclient`" ]

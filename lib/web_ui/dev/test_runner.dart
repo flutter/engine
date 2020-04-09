@@ -117,7 +117,8 @@ class TestCommand extends Command<bool> with ArgUtils {
         return runIntegrationTests();
       case TestTypesRequested.all:
         // TODO(nurhan): https://github.com/flutter/flutter/issues/53322
-        if (runAllTests) {
+        // TODO(nurhan): Expand browser matrix for felt integration tests.
+        if (runAllTests && isChrome) {
           bool integrationTestResult = await runIntegrationTests();
           bool unitTestResult = await runUnitTests();
           if (integrationTestResult != unitTestResult) {

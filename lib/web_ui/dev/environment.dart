@@ -142,7 +142,7 @@ class Environment {
   /// Only use [cloneScript] to clone flutter to the engine repo.
   io.File get flutterCommandDir => io.File(pathlib.join(
     webUiDartToolDir.path,
-    'flutter'
+    'flutter',
     'bin',
     'flutter',
   ));
