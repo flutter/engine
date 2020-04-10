@@ -88,11 +88,88 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   return UIReturnKeyDefault;
 }
 
-// TODO(LongCatIsLooong): add translation for evey predefined
-// UITextContentType.
 static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
   if (hints == nil || hints.count == 0)
     return @"";
+
+  NSString* hint = hints[0];
+  if (@available(iOS 10.0, *)) {
+    if ([hint isEqualToString:@"addressCityAndState"])
+      return UITextContentTypeAddressCityAndState;
+
+    if ([hint isEqualToString:@"addressState"])
+      return UITextContentTypeAddressState;
+
+    if ([hint isEqualToString:@"addressCity"])
+      return UITextContentTypeAddressCity;
+
+    if ([hint isEqualToString:@"sublocality"])
+      return UITextContentTypeSublocality;
+
+    if ([hint isEqualToString:@"streetAddressLine1"])
+      return UITextContentTypeStreetAddressLine1;
+
+    if ([hint isEqualToString:@"streetAddressLine2"])
+      return UITextContentTypeStreetAddressLine2;
+
+    if ([hint isEqualToString:@"countryName"])
+      return UITextContentTypeCountryName;
+
+    if ([hint isEqualToString:@"fullStreetAddress"])
+      return UITextContentTypeFullStreetAddress;
+
+    if ([hint isEqualToString:@"postalCode"])
+      return UITextContentTypePostalCode;
+
+    if ([hint isEqualToString:@"location"])
+      return UITextContentTypeLocation;
+
+    if ([hint isEqualToString:@"creditCardNumber"])
+      return UITextContentTypeCreditCardNumber;
+
+    if ([hint isEqualToString:@"email"])
+      return UITextContentTypeEmailAddress;
+
+    if ([hint isEqualToString:@"jobTitle"])
+      return UITextContentTypeJobTitle;
+
+    if ([hint isEqualToString:@"givenName"])
+      return UITextContentTypeGivenName;
+
+    if ([hint isEqualToString:@"middleName"])
+      return UITextContentTypeMiddleName;
+
+    if ([hint isEqualToString:@"familyName"])
+      return UITextContentTypeFamilyName;
+
+    if ([hint isEqualToString:@"name"])
+      return UITextContentTypeName;
+
+    if ([hint isEqualToString:@"namePrefix"])
+      return UITextContentTypeNamePrefix;
+
+    if ([hint isEqualToString:@"nameSuffix"])
+      return UITextContentTypeNameSuffix;
+
+    if ([hint isEqualToString:@"nickname"])
+      return UITextContentTypeNickname;
+
+    if ([hint isEqualToString:@"organizationName"])
+      return UITextContentTypeOrganizationName;
+
+    if ([hint isEqualToString:@"telephoneNumber"])
+      return UITextContentTypeTelephoneNumber;
+  }
+
+  if (@available(iOS 11.0, *)) {
+    if ([hint isEqualToString:@"password"])
+      return UITextContentTypePassword;
+  }
+
+  if (@available(iOS 12.0, *)) {
+    if ([hint isEqualToString:@"oneTimeCode"])
+      return UITextContentTypeOneTimeCode;
+  }
 
   return hints[0];
 }
