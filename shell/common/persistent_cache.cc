@@ -106,9 +106,6 @@ static std::shared_ptr<fml::UniqueFD> MakeCacheDirectory(
 std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
   TRACE_EVENT0("flutter", "PersistentCache::LoadSkSLs");
   std::vector<PersistentCache::SkSLCache> result;
-  if (!IsValid()) {
-    return result;
-  }
   fml::FileVisitor visitor = [&result](const fml::UniqueFD& directory,
                                        const std::string& filename) {
     std::pair<bool, std::string> decode_result = fml::Base32Decode(filename);
@@ -127,7 +124,13 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
     }
     return true;
   };
-  fml::VisitFiles(*sksl_cache_directory_, visitor);
+
+  // Only visit sksl_cache_directory_ if this persistent cache is valid.
+  // However, we'd like to continue visit the asset dir even if this persistent
+  // cache is invalid.
+  if (IsValid()) {
+    fml::VisitFiles(*sksl_cache_directory_, visitor);
+  }
 
   fml::UniqueFD root_asset_dir = fml::OpenDirectory(asset_path_.c_str(), false,
                                                     fml::FilePermission::kRead);
