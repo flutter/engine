@@ -628,6 +628,16 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 // physical keyboard.
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
+  // multi-stage text is handled somewhere else.
+  if (_markedTextRange != nil) {
+    return CGRectZero;
+  }
+
+  NSUInteger start = ((FlutterTextPosition*)range.start).index;
+  NSUInteger end = ((FlutterTextPosition*)range.end).index;
+  [_textInputDelegate showAutocorrectionPromptRectForStart:start
+                                                       end:end
+                                                withClient:_textInputClient];
   // TODO(cbracken) Implement.
   return CGRectZero;
 }

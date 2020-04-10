@@ -392,11 +392,9 @@ class EngineWindow extends ui.Window {
             return;
           case 'Clipboard.setData':
             ClipboardMessageHandler().setDataMethodCall(decoded, callback);
-            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'Clipboard.getData':
             ClipboardMessageHandler().getDataMethodCall(callback);
-            _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
         }
         break;
@@ -443,6 +441,10 @@ class EngineWindow extends ui.Window {
             _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             break;
         }
+        // As soon as Flutter starts taking control of the app navigation, we
+        // should reset [_defaultRouteName] to "/" so it doesn't have any
+        // further effect after this point.
+        _defaultRouteName = '/';
         return;
     }
 

@@ -202,17 +202,28 @@ bool ShellTest::GetNeedsReportTimings(Shell* shell) {
   return shell->needs_report_timings_;
 }
 
-void ShellTest::OnServiceProtocolGetSkSLs(
+void ShellTest::OnServiceProtocol(
     Shell* shell,
+    ServiceProtocolEnum some_protocol,
+    fml::RefPtr<fml::TaskRunner> task_runner,
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document& response) {
   std::promise<bool> finished;
-  fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetIOTaskRunner(),
-                                    [shell, params, &response, &finished]() {
-                                      shell->OnServiceProtocolGetSkSLs(
-                                          params, response);
-                                      finished.set_value(true);
-                                    });
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runner, [shell, some_protocol, params, &response, &finished]() {
+        switch (some_protocol) {
+          case ServiceProtocolEnum::kGetSkSLs:
+            shell->OnServiceProtocolGetSkSLs(params, response);
+            break;
+          case ServiceProtocolEnum::kSetAssetBundlePath:
+            shell->OnServiceProtocolSetAssetBundlePath(params, response);
+            break;
+          case ServiceProtocolEnum::kRunInView:
+            shell->OnServiceProtocolRunInView(params, response);
+            break;
+        }
+        finished.set_value(true);
+      });
   finished.get_future().wait();
 }
 
@@ -248,6 +259,10 @@ TaskRunners ShellTest::GetTaskRunnersForFixture() {
       thread_host_.ui_thread->GetTaskRunner(),        // ui
       thread_host_.io_thread->GetTaskRunner()         // io
   };
+}
+
+fml::TimePoint ShellTest::GetLatestFrameTargetTime(Shell* shell) const {
+  return shell->GetLatestFrameTargetTime();
 }
 
 std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,

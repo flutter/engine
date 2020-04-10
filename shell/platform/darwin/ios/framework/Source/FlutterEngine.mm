@@ -603,6 +603,13 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                               arguments:@[ @(client), actionString ]];
 }
 
+- (void)showAutocorrectionPromptRectForStart:(NSUInteger)start
+                                         end:(NSUInteger)end
+                                  withClient:(int)client {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.showAutocorrectionPromptRect"
+                              arguments:@[ @(client), @(start), @(end) ]];
+}
+
 #pragma mark - Screenshot Delegate
 
 - (flutter::Rasterizer::Screenshot)takeScreenshot:(flutter::Rasterizer::ScreenshotType)type
@@ -829,8 +836,8 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                               withId:(NSString*)factoryId
     gestureRecognizersBlockingPolicy:
         (FlutterPlatformViewGestureRecognizersBlockingPolicy)gestureRecognizersBlockingPolicy {
-  [_flutterEngine platformViewsController] -> RegisterViewFactory(factory, factoryId,
-                                                                  gestureRecognizersBlockingPolicy);
+  [_flutterEngine platformViewsController]->RegisterViewFactory(factory, factoryId,
+                                                                gestureRecognizersBlockingPolicy);
 }
 
 @end

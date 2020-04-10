@@ -71,9 +71,23 @@ FLUTTER_ASSERT_ARC
 
   // Verify behavior.
   OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil] withTag:@"field2"]);
-
+  
   // Clean up mocks
   [engine stopMocking];
 }
 
+- (void)testAutocorrectionPromptRectAppears {
+  // Setup test.
+  id engine = OCMClassMock([FlutterEngine class]);
+
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
+  inputView.textInputDelegate = engine;
+  [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
+
+  // Verify behavior.
+  OCMVerify([engine showAutocorrectionPromptRectForStart:0 end:1 withClient:0]);
+
+  // Clean up mocks
+  [engine stopMocking];
+}
 @end

@@ -11,7 +11,9 @@
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/window/platform_message.h"
+#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
@@ -36,6 +38,8 @@ class ShellTest : public ThreadTest {
   void DestroyShell(std::unique_ptr<Shell> shell);
   void DestroyShell(std::unique_ptr<Shell> shell, TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
+
+  fml::TimePoint GetLatestFrameTargetTime(Shell* shell) const;
 
   void SendEnginePlatformMessage(Shell* shell,
                                  fml::RefPtr<PlatformMessage> message);
@@ -72,11 +76,19 @@ class ShellTest : public ThreadTest {
   static bool GetNeedsReportTimings(Shell* shell);
   static void SetNeedsReportTimings(Shell* shell, bool value);
 
+  enum ServiceProtocolEnum {
+    kGetSkSLs,
+    kSetAssetBundlePath,
+    kRunInView,
+  };
+
   // Helper method to test private method Shell::OnServiceProtocolGetSkSLs.
   // (ShellTest is a friend class of Shell.) We'll also make sure that it is
-  // running on the UI thread.
-  static void OnServiceProtocolGetSkSLs(
+  // running on the correct task_runner.
+  static void OnServiceProtocol(
       Shell* shell,
+      ServiceProtocolEnum some_protocol,
+      fml::RefPtr<fml::TaskRunner> task_runner,
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 

@@ -76,8 +76,8 @@ FLUTTER_EXPORT
 @property(nonatomic) UITextSmartDashesType smartDashesType API_AVAILABLE(ios(11.0));
 @property(nonatomic, copy) UITextContentType textContentType API_AVAILABLE(ios(10.0));
 
+
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 
 @end
-
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
