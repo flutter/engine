@@ -1,4 +1,12 @@
 [
+   {
+    "url": "https://maven.google.com/androidx/autofill/autofill/1.0.0/autofill-1.0.0.aar",
+    "out_file_name": "androidx_autofill.aar",
+    "maven_dependency": "androidx.autofill:autofill:1.0.0",
+    "provides": [
+      "androidx.autofill.HintConstants"
+    ]
+  },
   {
     "url": "https://maven.google.com/androidx/lifecycle/lifecycle-common/2.2.0/lifecycle-common-2.2.0.jar",
     "out_file_name": "androidx_lifecycle_common.jar",

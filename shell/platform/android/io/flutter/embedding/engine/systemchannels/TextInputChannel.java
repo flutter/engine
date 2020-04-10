@@ -379,12 +379,81 @@ public class TextInputChannel {
       public final String[] hints;
       public final TextEditState editState;
 
-      // TODO(LongCatIsLooong): add translation for every predefined hint.
       @NonNull
       private static String translateAutofillHint(@NonNull String hint) {
         switch (hint) {
-          default:
-            return hint;
+          case "addressCity":
+            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_LOCALITY;
+          case "addressState":
+            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_REGION;
+          case "birthday":
+            return HintConstants.AUTOFILL_HINT_BIRTH_DATE_FULL;
+          case "birthdayDay":
+            return HintConstants.AUTOFILL_HINT_BIRTH_DATE_DAY;
+          case "birthdayMonth":
+            return HintConstants.AUTOFILL_HINT_BIRTH_DATE_MONTH;
+          case "birthdayYear":
+            return HintConstants.AUTOFILL_HINT_BIRTH_DATE_YEAR;
+          case "countryName":
+            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_COUNTRY;
+          case "creditCardExpirationDate":
+            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_NUMBER;
+          case "creditCardExpirationDay":
+            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DAY;
+          case "creditCardExpirationMonth":
+            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_MONTH;
+          case "creditCardExpirationYear":
+            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_YEAR;
+          case "creditCardNumber":
+            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_NUMBER;
+          case "creditCardSecurityCode":
+            return HintConstants.AUTOFILL_HINT_CREDIT_SECURITY_CODE;
+          case "email":
+            return HintConstants.AUTOFILL_HINT_EMAIL_ADDRESS;
+          case "familyName":
+            return HintConstants.AUTOFILL_HINT_PERSON_NAME_FAMILY;
+          case "fullStreetAddress":
+            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_STREET_ADDRESS;
+          case "gender":
+            return HintConstants.AUTOFILL_HINT_GENDER;
+          case "givenName":
+            return HintConstants.AUTOFILL_HINT_PERSON_NAME_GIVEN;
+          case "middleInitial":
+            return HintConstants.AUTOFILL_HINT_PERSON_NAME_MIDDLE_INITIAL;
+          case "middleName":
+            return HintConstants.AUTOFILL_HINT_PERSON_NAME_MIDDLE;
+          case "name":
+            return HintConstants.AUTOFILL_HINT_PERSON_NAME;
+          case "namePrefix":
+            return HintConstants.AUTOFILL_HINT_PERSON_NAME_PREFIX;
+          case "nameSuffix":
+            return HintConstants.AUTOFILL_HINT_PERSON_NAME_SUFFIX;
+          case "newPassword":
+            return HintConstants.AUTOFILL_HINT_NEW_PASSWORD;
+          case "newUsername":
+            return HintConstants.AUTOFILL_HINT_NEW_USERNAME;
+          case "oneTimeCode":
+            return HintConstants.AUTOFILL_HINT_SMS_OTP;
+          case "password":
+            return HintConstants.AUTOFILL_HINT_PASSWORD;
+          case "postalAddress":
+            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS;
+          case "postalAddressExtended":
+            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_EXTENDED_ADDRESS;
+          case "postalAddressExtendedPostalCode":
+            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_EXTENDED_POSTAL_CODE;
+          case "postalCode":
+            return HintConstants.AUTOFILL_HINT_POSTAL_CODE;
+          case "telephoneNumber":
+            return HintConstants.AUTOFILL_HINT_PHONE_NUMBER;
+          case "telephoneNumberCountryCode":
+            return HintConstants.AUTOFILL_HINT_PHONE_COUNTRY_CODE;
+          case "telephoneNumberDevice":
+            return HintConstants.AUTOFILL_HINT_PHONE_NUMBER_DEVICE;
+          case "telephoneNumberNational":
+            return HintConstants.AUTOFILL_HINT_PHONE_NATIONAL;
+          case "username":
+            return HintConstants.AUTOFILL_HINT_NEW_USERNAME;
         }
       }
 

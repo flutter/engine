@@ -23,6 +23,7 @@ import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
+import androidx.autofill.HintConstants;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 
