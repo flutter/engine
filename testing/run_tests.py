@@ -279,16 +279,16 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
   RunCmd(gn_command, cwd=buildroot_dir)
   RunCmd(ninja_command, cwd=buildroot_dir)
 
-def AssertExpectedJavaVersion():
+def AssertExpectedJavaVersion(java_path):
   EXPECTED_VERSION = '1.8'
   # `java -version` is output to stderr. https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4380614
-  version_output = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT)
+  version_output = subprocess.check_output([java_path, '-version'], stderr=subprocess.STDOUT)
   match = bool(re.compile('version "%s' % EXPECTED_VERSION).search(version_output))
   message = "JUnit tests need to be run with Java %s. Check the `java -version` on your PATH." % EXPECTED_VERSION
   assert match, message
 
-def RunJavaTests(filter, android_variant='android_debug_unopt'):
-  AssertExpectedJavaVersion()
+def RunJavaTests(filter, java_path, android_variant='android_debug_unopt'):
+  AssertExpectedJavaVersion(java_path)
   android_out_dir = os.path.join(out_dir, android_variant)
   EnsureJavaTestsAreBuilt(android_out_dir)
 
@@ -302,7 +302,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
 
   test_class = filter if filter else 'io.flutter.FlutterTestSuite'
   command = [
-    'java',
+    java_path,
     '-Drobolectric.offline=true',
     '-Drobolectric.dependency.dir=' + embedding_deps_dir,
     '-classpath', ':'.join(classpath),
@@ -369,6 +369,9 @@ def main():
       help='A list of Dart test scripts to run.')
   parser.add_argument('--java-filter', type=str, default='',
       help='A single Java test class to run.')
+  parser.add_argument('--java-path', type=str, default=None,
+      help='A Java executable to use instead of the PATH.'
+  )
   parser.add_argument('--android-variant', dest='android_variant', action='store',
       default='android_debug_unopt',
       help='The engine build variant to run java tests for')
@@ -403,7 +406,8 @@ def main():
     if ',' in java_filter or '*' in java_filter:
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
       java_filter = None
-    RunJavaTests(java_filter, args.android_variant)
+    java_path = args.java_path or 'java'
+    RunJavaTests(java_filter, java_path, args.android_variant)
 
   # https://github.com/flutter/flutter/issues/36300
   if 'benchmarks' in types and not IsWindows():

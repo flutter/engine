@@ -29,6 +29,7 @@ import test.io.flutter.embedding.engine.FlutterEngineTest;
 import test.io.flutter.embedding.engine.FlutterShellArgsTest;
 import test.io.flutter.embedding.engine.PluginComponentTest;
 import test.io.flutter.embedding.engine.dart.DartExecutorTest;
+import io.flutter.view.AccessibilityBridgeTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
@@ -56,6 +57,7 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
   SingleViewPresentationTest.class,
   SmokeTest.class,
   TextInputPluginTest.class,
+  AccessibilityBridgeTest.class,
 })
 /** Runs all of the unit tests listed in the {@code @SuiteClasses} annotation. */
 public class FlutterTestSuite {}
