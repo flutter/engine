@@ -581,18 +581,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         result.setMaxTextLength(
             length - semanticsNode.currentValueLength + semanticsNode.maxValueLength);
       }
-    } else {
-      // Non-text fields need to have cursor granularity set in order to allow
-      // different Talkback-driven reading options.
-      int granularities = 0;
-      String valueLabelHint = semanticsNode.getValueLabelHint();
-      if (valueLabelHint != null && !valueLabelHint.equals("")) {
-        granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER;
-        granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD;
-        granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH;
-        granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE;
-      }
-      result.setMovementGranularities(granularities);
     }
 
     // These are non-ops on older devices. Attempting to interact with the text will cause Talkback
