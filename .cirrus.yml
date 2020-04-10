@@ -124,19 +124,7 @@ task:
     - name: web_tests-2-linux
       << : *WEB_SHARD_TEMPLATE
 
-    - name: web_tests-3-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-4-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-5-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-6-linux
-      << : *WEB_SHARD_TEMPLATE
-
-    - name: web_tests-7_last-linux # last Web shard must end with _last
+    - name: web_tests-3_last-linux # last Web shard must end with _last
       << : *WEB_SHARD_TEMPLATE
 
     - name: web_engine_analysis
