@@ -394,6 +394,7 @@ test_fixtures("flutter_tests_fixtures") {
   fixtures = []
 }
 
+# Note: This currently isn't used, it might be removed.
 ios_app("FlutterTests") {
   testonly = true
 
