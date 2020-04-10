@@ -71,7 +71,7 @@ FLUTTER_ASSERT_ARC
 
   // Verify behavior.
   OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil] withTag:@"field2"]);
-  
+
   // Clean up mocks
   [engine stopMocking];
 }
