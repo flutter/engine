@@ -81,10 +81,10 @@ class IntegrationTestsManager {
   /// TODO(nurhan): Use git pull instead if repo exists.
   Future<void> _cloneFlutterRepo() async {
     // Delete directory if exists.
-    if(environment.cloneFlutterScript.existsSync()) {
-      environment.cloneFlutterScript.deleteSync();
+    if(environment.engineDartToolDir.existsSync()) {
+      environment.engineDartToolDir.deleteSync();
     }
-    environment.cloneFlutterScript.createSync();
+    environment.engineDartToolDir.createSync();
 
     final int exitCode = await runProcess(
       environment.cloneFlutterScript.path,
