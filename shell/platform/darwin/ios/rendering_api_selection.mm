@@ -17,6 +17,15 @@ namespace flutter {
 
 #if FLUTTER_SHELL_ENABLE_METAL
 bool ShouldUseMetalRenderer() {
+  // If there is a command line argument that says Metal should not be used, that takes precedence
+  // over everything else. This allows disabling Metal on a per run basis to check for regressions
+  // on an application that has otherwise opted into Metal on an iOS version that supports it.
+  // This would also allow us to conduct shader compilation jank experiments between OpenGL and
+  // Metal.
+  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--disable-metal"]) {
+    return false;
+  }
+
   // Flutter supports Metal on all devices with Apple A7 SoC or above that have been updated to or
   // past iOS 10.0. The processor was selected as it is the first version at which Metal was
   // supported. The iOS version floor was selected due to the availability of features used by Skia.
