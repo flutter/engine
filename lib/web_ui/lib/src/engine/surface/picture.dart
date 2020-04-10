@@ -491,7 +491,7 @@ abstract class PersistedPicture extends PersistedLeafSurface {
 
     // The new cull rect contains area not covered by a previous rect. Perhaps
     // the clip is growing, moving around the picture, or both. In this case
-    // a part of the picture may not been painted. We will need to
+    // a part of the picture may not have been painted. We will need to
     // request a new canvas and paint the picture on it. However, this is also
     // a strong signal that the clip will continue growing as typically
     // Flutter uses animated transitions. So instead of allocating the canvas
@@ -500,12 +500,14 @@ abstract class PersistedPicture extends PersistedLeafSurface {
     // will hit the above case where the new cull rect is fully contained
     // within the cull rect we compute now.
 
-    // If any of the borders moved.
+    // Compute the delta, by which each of the side of the clip rect has "moved"
+    // since the last time we updated the cull rect.
     final double leftwardDelta = oldOptimalLocalCullRect.left - _exactLocalCullRect.left;
     final double upwardDelta = oldOptimalLocalCullRect.top - _exactLocalCullRect.top;
     final double rightwardDelta = _exactLocalCullRect.right - oldOptimalLocalCullRect.right;
     final double bottomwardDelta = _exactLocalCullRect.bottom - oldOptimalLocalCullRect.bottom;
 
+    // Compute the new optimal rect to paint into.
     final ui.Rect newLocalCullRect = ui.Rect.fromLTRB(
       _exactLocalCullRect.left - _predictTrend(leftwardDelta, _exactLocalCullRect.width),
       _exactLocalCullRect.top - _predictTrend(upwardDelta, _exactLocalCullRect.height),
@@ -518,6 +520,9 @@ abstract class PersistedPicture extends PersistedLeafSurface {
     return localCullRectChanged;
   }
 
+  /// Predicts the delta a particular side of a clip rect will move given the
+  /// [delta] it moved by last, and the respective [extent] (width or height)
+  /// of the clip.
   static double _predictTrend(double delta, double extent) {
     if (delta <= 0.0) {
       // Shrinking. Give it 10% of the extent in case the trend is reversed.

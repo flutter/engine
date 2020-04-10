@@ -27,16 +27,24 @@ class RecordingCanvas {
   final _PaintBounds _paintBounds;
 
   /// Maximum paintable bounds for this canvas.
-  ui.Rect _pictureBounds;
   ui.Rect get pictureBounds {
     assert(
-      _pictureBounds != null,
+      !_debugRecordingEnded,
       'Picture bounds not available yet. Call [endRecording] before accessing picture bounds.',
     );
     return _pictureBounds;
   }
+  ui.Rect _pictureBounds;
 
   final List<PaintCommand> _commands = <PaintCommand>[];
+
+  /// In debug mode returns the list of recorded paint commands for testing.
+  List<PaintCommand> get debugPaintCommands {
+    if (assertionsEnabled) {
+      return _commands;
+    }
+    throw UnsupportedError('For debugging only.');
+  }
 
   RecordingCanvas(ui.Rect bounds) : _paintBounds = _PaintBounds(bounds);
 
@@ -64,6 +72,8 @@ class RecordingCanvas {
   bool get didDraw => _didDraw;
   bool _didDraw = false;
 
+  /// When assertions are enabled used to ensure that [endRecording] is called
+  /// before calling [apply] or [pictureBounds].
   bool _debugRecordingEnded = false;
 
   /// Stops recording drawing commands and computes paint bounds.
@@ -75,12 +85,17 @@ class RecordingCanvas {
   /// directly it is up to you to call this method explicitly.
   void endRecording() {
     _pictureBounds = _paintBounds.computeBounds();
-    _debugRecordingEnded = true;
+    if (assertionsEnabled) {
+      _debugRecordingEnded = true;
+    }
   }
 
   /// Applies the recorded commands onto an [engineCanvas].
   ///
-  /// The [clipRect] specifies the clip applied to the picture (screen clip at a minimum).
+  /// The [clipRect] specifies the clip applied to the picture (screen clip at
+  /// a minimum). The commands that fall outside the clip are skipped and are
+  /// not applied to the [engineCanvas]. A command must have a non-zero
+  /// intersection with the clip in order to be applied.
   void apply(EngineCanvas engineCanvas, ui.Rect clipRect) {
     assert(_debugRecordingEnded);
     if (_debugDumpPaintCommands) {
@@ -88,11 +103,12 @@ class RecordingCanvas {
       int skips = 0;
       debugBuf.writeln(
           '--- Applying RecordingCanvas to ${engineCanvas.runtimeType} '
-          'with bounds $_paintBounds and clip $clipRect (w = ${clipRect.width}, h = ${clipRect.height})');
+          'with bounds $_paintBounds and clip $clipRect (w = ${clipRect.width},'
+          ' h = ${clipRect.height})');
       for (int i = 0; i < _commands.length; i++) {
         final PaintCommand command = _commands[i];
         if (command is DrawCommand) {
-          if (_isOutsideClipRegion(command, clipRect)) {
+          if (_isInvisible(command, clipRect)) {
             // The drawing command is outside the clip region. No need to apply.
             debugBuf.writeln('SKIPPED: ctx.$command;');
             skips += 1;
@@ -121,7 +137,7 @@ class RecordingCanvas {
           for (int i = 0, len = _commands.length; i < len; i++) {
             final PaintCommand command = _commands[i];
             if (command is DrawCommand) {
-              if (_isOutsideClipRegion(command, clipRect)) {
+              if (_isInvisible(command, clipRect)) {
                 // The drawing command is outside the clip region. No need to apply.
                 continue;
               }
@@ -140,11 +156,18 @@ class RecordingCanvas {
     engineCanvas.endOfPaint();
   }
 
-  static bool _isOutsideClipRegion(DrawCommand command, ui.Rect clipRect) {
-    return command.rightBound < clipRect.left ||
-      command.bottomBound < clipRect.top ||
-      command.leftBound > clipRect.right ||
-      command.topBound > clipRect.bottom;
+  /// Return true is the [command] is invisible because it is clipped out.
+  static bool _isInvisible(DrawCommand command, ui.Rect clipRect) {
+    if (command.isClippedOut) {
+      return true;
+    }
+
+    // Check top and bottom first because vertical scrolling is more common
+    // than horizontal scrolling.
+    return command.bottomBound < clipRect.top ||
+      command.topBound > clipRect.bottom ||
+      command.rightBound < clipRect.left ||
+      command.leftBound > clipRect.right;
   }
 
   /// Prints recorded commands.
@@ -233,23 +256,26 @@ class RecordingCanvas {
 
   void clipRect(ui.Rect rect) {
     assert(!_debugRecordingEnded);
-    _paintBounds.clipRect(rect);
+    final PaintClipRect command = PaintClipRect(rect);
+    _paintBounds.clipRect(rect, command);
     _hasArbitraryPaint = true;
-    _commands.add(PaintClipRect(rect));
+    _commands.add(command);
   }
 
   void clipRRect(ui.RRect rrect) {
     assert(!_debugRecordingEnded);
-    _paintBounds.clipRect(rrect.outerRect);
+    final PaintClipRRect command = PaintClipRRect(rrect);
+    _paintBounds.clipRect(rrect.outerRect, command);
     _hasArbitraryPaint = true;
-    _commands.add(PaintClipRRect(rrect));
+    _commands.add(command);
   }
 
   void clipPath(ui.Path path, {bool doAntiAlias = true}) {
     assert(!_debugRecordingEnded);
-    _paintBounds.clipRect(path.getBounds());
+    final PaintClipPath command = PaintClipPath(path);
+    _paintBounds.clipRect(path.getBounds(), command);
     _hasArbitraryPaint = true;
-    _commands.add(PaintClipPath(path));
+    _commands.add(command);
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
@@ -566,11 +592,26 @@ abstract class PaintCommand {
   void serializeToCssPaint(List<List<dynamic>> serializedCommands);
 }
 
-/// A [PaintCommand] that puts pixels on the screen (unlike [SaveCommand]).
+/// A [PaintCommand] that affect pixels on the screen (unlike, for example, the
+/// [SaveCommand]).
 abstract class DrawCommand extends PaintCommand {
+  /// Whether the command is completely clipped out of the picture.
+  bool isClippedOut = false;
+
+  /// The left bound of the graphic produced by this command in picture-global
+  /// coordinates.
   double leftBound = double.negativeInfinity;
+
+  /// The top bound of the graphic produced by this command in picture-global
+  /// coordinates.
   double topBound = double.negativeInfinity;
+
+  /// The right bound of the graphic produced by this command in picture-global
+  /// coordinates.
   double rightBound = double.infinity;
+
+  /// The bottom bound of the graphic produced by this command in
+  /// picture-global coordinates.
   double bottomBound = double.infinity;
 }
 
@@ -748,7 +789,7 @@ class PaintSkew extends PaintCommand {
   }
 }
 
-class PaintClipRect extends PaintCommand {
+class PaintClipRect extends DrawCommand {
   final ui.Rect rect;
 
   PaintClipRect(this.rect);
@@ -773,7 +814,7 @@ class PaintClipRect extends PaintCommand {
   }
 }
 
-class PaintClipRRect extends PaintCommand {
+class PaintClipRRect extends DrawCommand {
   final ui.RRect rrect;
 
   PaintClipRRect(this.rrect);
@@ -801,7 +842,7 @@ class PaintClipRRect extends PaintCommand {
   }
 }
 
-class PaintClipPath extends PaintCommand {
+class PaintClipPath extends DrawCommand {
   final SurfacePath path;
 
   PaintClipPath(this.path);
@@ -1881,7 +1922,7 @@ class _PaintBounds {
     _currentMatrix.multiply(skewMatrix);
   }
 
-  void clipRect(ui.Rect rect) {
+  void clipRect(ui.Rect rect, DrawCommand command) {
     // If we have an active transform, calculate screen relative clipping
     // rectangle and union with current clipping rectangle.
     if (!_currentMatrixIsIdentity) {
@@ -1923,6 +1964,14 @@ class _PaintBounds {
         _currentClipBottom = rect.bottom;
       }
     }
+    if (_currentClipLeft >= _currentClipRight || _currentClipTop >= _currentClipBottom) {
+      command.isClippedOut = true;
+    } else {
+      command.leftBound = _currentClipLeft;
+      command.topBound = _currentClipTop;
+      command.rightBound = _currentClipRight;
+      command.bottomBound = _currentClipBottom;
+    }
   }
 
   /// Grow painted area to include given rectangle.
@@ -1933,6 +1982,7 @@ class _PaintBounds {
   /// Grow painted area to include given rectangle.
   void growLTRB(double left, double top, double right, double bottom, DrawCommand command) {
     if (left == right || top == bottom) {
+      command.isClippedOut = true;
       return;
     }
 
@@ -1952,15 +2002,19 @@ class _PaintBounds {
 
     if (_clipRectInitialized) {
       if (transformedPointLeft > _currentClipRight) {
+        command.isClippedOut = true;
         return;
       }
       if (transformedPointRight < _currentClipLeft) {
+        command.isClippedOut = true;
         return;
       }
       if (transformedPointTop > _currentClipBottom) {
+        command.isClippedOut = true;
         return;
       }
       if (transformedPointBottom < _currentClipTop) {
+        command.isClippedOut = true;
         return;
       }
       if (transformedPointLeft < _currentClipLeft) {
