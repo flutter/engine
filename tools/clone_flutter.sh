@@ -35,9 +35,9 @@ echo "Latest commit time on engine found as $LATEST_COMMIT_TIME_ENGINE"
 
 # Check if there is an argument added for repo location.
 # If not use the location that should be set by Cirrus/LUCI.
-FLUTTER_CLONE_REPO=$1
+FLUTTER_CLONE_REPO_PATH=$1
 
-if [[ -z $FLUTTER_CLONE_REPO ]]
+if [[ -z $FLUTTER_CLONE_REPO_PATH ]]
 then
   if [[ -z $FRAMEWORK_PATH ]]
   then
@@ -49,7 +49,7 @@ then
   mkdir -p $FRAMEWORK_PATH
   cd $FRAMEWORK_PATH
 else
-  cd $FLUTTER_CLONE_REPO
+  cd $FLUTTER_CLONE_REPO_PATH
 fi
 
 # Clone the Flutter Framework.
