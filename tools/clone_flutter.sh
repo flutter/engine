@@ -4,13 +4,12 @@ set -x
 
 if [[ "$CIRRUS_CI" = false || -z $CIRRUS_CI ]]
 then
-  echo "This script is aimed to be run on CI environments. Do not run locally."
-  exit 1
+  echo "Cloning Flutter repo to local machine."
 fi
 
 if [[ -z $ENGINE_PATH ]]
 then
-  echo "Engine path should be set to run the script."
+  echo "Please set ENGINE_PATH environment variable."
   exit 1
 fi
 

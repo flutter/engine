@@ -118,6 +118,16 @@ class Environment {
     '.dart_tool',
   ));
 
+    /// Path to the ".dart_tool" directory living under `engine/src/flutter`.
+    ///
+    /// This is a designated area for tool downloads which can be used by
+    /// multiple platforms. For exampe: Flutter repo for e2e tests.
+  io.Directory get engineDartToolDir => io.Directory(pathlib.join(
+    engineSrcDir.path,
+    'flutter',
+    '.dart_tool',
+  ));
+
   /// Path to the "dev" directory containing engine developer tools and
   /// configuration files.
   io.Directory get webUiDevDir => io.Directory(pathlib.join(
@@ -143,7 +153,7 @@ class Environment {
   ///
   /// Only use [cloneFlutterScript] to clone flutter to the engine build.
   io.File get flutterCommand => io.File(pathlib.join(
-    webUiDartToolDir.path,
+    engineDartToolDir.path,
     'flutter',
     'bin',
     'flutter',

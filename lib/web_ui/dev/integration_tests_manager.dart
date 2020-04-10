@@ -77,8 +77,8 @@ class IntegrationTestsManager {
     final int exitCode = await runProcess(
       environment.cloneFlutterScript.path,
       <String>[
-        // Use .dart_tools to clone the Flutter repo.
-        environment.webUiDartToolDir.path,
+        // Use engine/src/flutter/.dart_tools to clone the Flutter repo.
+        environment.engineDartToolDir.path,
       ],
       workingDirectory: environment.webUiRootDir.path,
     );
