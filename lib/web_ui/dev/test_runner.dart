@@ -64,7 +64,7 @@ class TestCommand extends Command<bool> with ArgUtils {
         'can save internet bandwidth. However use with caution. Note that '
         'since flutter repo is always synced to youngest commit older than '
         'the engine commit for the tests running in CI, the tests results '
-        'won\'t be consistent with CIs when this flag ise set. flutter '
+        'won\'t be consistent with CIs when this flag is set. flutter '
         'command should be set in the PATH for this flag to be useful.'
       )
       ..addFlag(
