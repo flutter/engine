@@ -78,7 +78,14 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
     @Override
     public int hashCode() {
-        return selectionStart + (selectionEnd << 8) + (composingStart << 16) + (composingEnd << 24) + text.hashCode();
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + selectionStart;
+      result = prime * result + selectionEnd;
+      result = prime * result + composingStart;
+      result = prime * result + composingEnd;
+      result = prime * result + text.hashCode();
+      return result;
     }
   }
 
