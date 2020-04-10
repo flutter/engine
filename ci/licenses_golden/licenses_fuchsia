@@ -1,4 +1,4 @@
-Signature: 4f1e4147fee10dda274e4946a42065f6
+Signature: d89111449882f51ab420417428d55030
 
 UNUSED LICENSES:
 
@@ -544,6 +544,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.service/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.stats/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/zx/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-default/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-loop-cpp/meta.json
@@ -1554,6 +1555,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.policy/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.service/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.stats/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/zx/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/executor.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/include/lib/async/cpp/executor.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/include/lib/async/cpp/irq.h
@@ -2282,6 +2284,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.common/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.policy/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.service/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.stats/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/zx/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-cpp/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-default/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/async-loop-cpp/meta.json
@@ -3237,9 +3240,13 @@ TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/string_view.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/testonly-syscalls.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/vdso/stream.fidl
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/vdso/zx_common.fidl
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/vdso/zx_syscall.fidl
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/string_view.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/testonly-syscalls.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/vdso/stream.fidl
+FILE: ../../../fuchsia/sdk/linux/arch/x64/vdso/zx_common.fidl
+FILE: ../../../fuchsia/sdk/linux/arch/x64/vdso/zx_syscall.fidl
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/internal/_view_provider_impl.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/noop_view_provider.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/view_provider.dart
@@ -3277,6 +3284,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/pointer.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.update/update.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.url/url.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.weave/auth.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/zx/zx_common.fidl
+FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/validate_string.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/commands_sizing.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/commands_sizing.h
 FILE: ../../../fuchsia/sdk/linux/pkg/zx/include/lib/zx/stream.h
