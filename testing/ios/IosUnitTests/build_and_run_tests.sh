@@ -8,6 +8,13 @@ fi
 
 pushd $PWD
 cd ../../../..
+
+if [ ! -d "out/$FLUTTER_ENGINE" ]; then
+  echo "You must GN to generate out/$FLUTTER_ENGINE"
+  echo "example: ./flutter/tools/gn --ios --simulator --unoptimized"
+  exit 1
+fi
+
 ninja -j 100 -C out/$FLUTTER_ENGINE ios_test_flutter
 popd
 ./run_tests.sh $FLUTTER_ENGINE
