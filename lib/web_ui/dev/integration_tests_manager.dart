@@ -30,7 +30,9 @@ class IntegrationTestsManager {
   /// tests shutdown.
   final io.Directory _drivers;
 
-  IntegrationTestsManager(this._browser)
+  final bool _useSystemFlutter;
+
+  IntegrationTestsManager(this._browser, this._useSystemFlutter)
       : this._browserDriverDir = io.Directory(pathlib.join(
             environment.webUiDartToolDir.path, 'drivers', _browser)),
         this._drivers = io.Directory(
@@ -48,12 +50,12 @@ class IntegrationTestsManager {
   }
 
   Future<bool> _runPubGet(String workingDirectory) async {
-    if (isCi) {
+    if (!_useSystemFlutter) {
       await _cloneFlutterRepo();
       await _enableWeb(workingDirectory);
     }
     final String executable =
-        isCi ? environment.flutterCommand.path : 'flutter';
+        _useSystemFlutter ?  'flutter' : environment.flutterCommand.path;
     final int exitCode = await runProcess(
       executable,
       <String>[
@@ -73,11 +75,21 @@ class IntegrationTestsManager {
     }
   }
 
+  /// Clone flutter repository, use the youngest commit older than the engine
+  /// commit.
+  ///
+  /// Use engine/src/flutter/.dart_tools to clone the Flutter repo.
+  /// TODO(nurhan): Use git pull instead if repo exists.
   Future<void> _cloneFlutterRepo() async {
+    // Delete directory if exists.
+    if(environment.cloneFlutterScript.existsSync()) {
+      environment.cloneFlutterScript.deleteSync();
+    }
+    environment.cloneFlutterScript.createSync();
+
     final int exitCode = await runProcess(
       environment.cloneFlutterScript.path,
       <String>[
-        // Use engine/src/flutter/.dart_tools to clone the Flutter repo.
         environment.engineDartToolDir.path,
       ],
       workingDirectory: environment.webUiRootDir.path,
@@ -208,7 +220,7 @@ class IntegrationTestsManager {
   Future<bool> _runTestsInProfileMode(
       io.Directory directory, String testName) async {
     final String executable =
-        isCi ? environment.flutterCommand.path : 'flutter';
+        _useSystemFlutter ?  'flutter' : environment.flutterCommand.path;
     final int exitCode = await runProcess(
       executable,
       <String>[
