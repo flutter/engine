@@ -75,6 +75,11 @@ class InputConnectionAdaptor extends BaseInputConnection {
           && composingEnd == value.composingEnd
           && text.equals(value.text);
     }
+
+    @Override
+    public int hashCode() {
+        return selectionStart + (selectionEnd << 8) + (composingStart << 16) + (composingEnd << 24) + text.hashCode();
+    }
   }
 
   @SuppressWarnings("deprecation")
