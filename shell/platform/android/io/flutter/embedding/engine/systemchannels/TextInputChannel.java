@@ -3,6 +3,7 @@ package io.flutter.embedding.engine.systemchannels;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.autofill.HintConstants;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -407,7 +408,7 @@ public class TextInputChannel {
           case "creditCardNumber":
             return HintConstants.AUTOFILL_HINT_CREDIT_CARD_NUMBER;
           case "creditCardSecurityCode":
-            return HintConstants.AUTOFILL_HINT_CREDIT_SECURITY_CODE;
+            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_SECURITY_CODE;
           case "email":
             return HintConstants.AUTOFILL_HINT_EMAIL_ADDRESS;
           case "familyName":
@@ -454,6 +455,8 @@ public class TextInputChannel {
             return HintConstants.AUTOFILL_HINT_PHONE_NATIONAL;
           case "username":
             return HintConstants.AUTOFILL_HINT_NEW_USERNAME;
+          default:
+            return hint;
         }
       }
 
