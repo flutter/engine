@@ -37,6 +37,10 @@ _flutter_framework_headers = [
 
 _flutter_framework_headers_copy_dir = "$_flutter_framework_dir/Headers"
 
+# TODO(54502): move this variable into //build/config/ios/ios_sdk.gni
+# Version of iOS that we're targeting for tests.
+ios_testing_deployment_target = "13.0"
+
 source_set("flutter_framework_source") {
   visibility = [ ":*" ]
   cflags_objc = flutter_cflags_objc
@@ -148,12 +152,12 @@ source_set("flutter_framework_source") {
 
 ocmock_path = "../../../../../third_party/ocmock/Source"
 
-# TODO: Clone the OCMock repository so we can add a BUILD.gn to it.
+# TODO(54503): Clone the OCMock repository so we can add a BUILD.gn to it.
 static_library("ocmock") {
   configs -= [ "//build/config/compiler:chromium_code" ]
   cflags = [
     "-fvisibility=default",
-    "-mios-simulator-version-min=13.0",
+    "-mios-simulator-version-min=$ios_testing_deployment_target",
     "-Wno-misleading-indentation",
   ]
   sources = [
@@ -233,15 +237,15 @@ ios_test_flutter_path = rebase_path("$root_out_dir/libios_test_flutter.dylib")
 platform_frameworks_path = "$ios_sdk_path/../../Library/Frameworks/"
 
 # NOTE: This currently only supports simulator targets because of the install_name.
-# TODO: Switch the install_name and make the test runner copy the dynamic library
-#       into the testing bundle.
+# TODO(54504): Switch the install_name and make the test runner copy the dynamic
+#              library into the testing bundle.
 shared_library("ios_test_flutter") {
   visibility = [ ":*" ]
   cflags = [
     "-fvisibility=default",
     "-F$platform_frameworks_path",
     "-fobjc-arc",
-    "-mios-simulator-version-min=13.0",
+    "-mios-simulator-version-min=$ios_testing_deployment_target",
   ]
   ldflags = [
     "-F$platform_frameworks_path",
