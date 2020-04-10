@@ -94,6 +94,7 @@ class IntegrationTestsManager {
       environment.flutterCommand.path,
       <String>[
         'config',
+        '--local-engine=host_debug_unopt',
         '--enable-web',
       ],
       workingDirectory: workingDirectory,
