@@ -25,7 +25,8 @@ namespace flutter {
 // ("https://docs.flutter.io/flutter/services/EventChannel-class.html")
 // counterpart of this channel on the Dart side.
 // The C++ type of stream configuration arguments, events, and error details are
-// templated, but only values supported by the specified MethodCodec can be used.
+// templated, but only values supported by the specified MethodCodec can be
+// used.
 template <typename T>
 class EventChannel {
  public:
@@ -90,9 +91,8 @@ class EventChannel {
           result = codec->EncodeSuccessEnvelope();
           is_listend = false;
         } else {
-          result = 
-            codec->EncodeErrorEnvelope("error",
-                                       "No active stream to cancel", nullptr);
+          result = codec->EncodeErrorEnvelope(
+              "error", "No active stream to cancel", nullptr);
         }
         reply(result->data(), result->size());
       } else {

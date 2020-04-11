@@ -107,9 +107,9 @@ TEST(EventChannelTest, Cancel) {
   bool on_cancel_called = false;
   flutter::StreamHandler<flutter::EncodableValue> handler(
       [&on_listen_called](
-                const flutter::EncodableValue* arguments,
-                std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
-                    events) { on_listen_called = true; },
+          const flutter::EncodableValue* arguments,
+          std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
+              events) { on_listen_called = true; },
       [&on_cancel_called](const flutter::EncodableValue* arguments) {
         on_cancel_called = true;
       });
@@ -147,9 +147,9 @@ TEST(EventChannelTest, ConsecutiveListen) {
   bool on_cancel_called = false;
   flutter::StreamHandler<flutter::EncodableValue> handler(
       [&on_listen_called](
-                const flutter::EncodableValue* arguments,
-                std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
-                    events) { on_listen_called = true; },
+          const flutter::EncodableValue* arguments,
+          std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
+              events) { on_listen_called = true; },
       [&on_cancel_called](const flutter::EncodableValue* arguments) {
         on_cancel_called = true;
       });
