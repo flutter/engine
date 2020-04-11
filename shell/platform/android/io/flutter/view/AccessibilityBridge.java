@@ -631,7 +631,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (semanticsNode.parent != null) {
       Rect parentBounds = semanticsNode.parent.getGlobalRect();
       Rect boundsInParent = new Rect(bounds);
-      boundsInParent.offset(-parentBounds.left, -parentBounds.top);
+      if (parentBounds != null) {
+        boundsInParent.offset(-parentBounds.left, -parentBounds.top);
+      }
       result.setBoundsInParent(boundsInParent);
     } else {
       result.setBoundsInParent(bounds);
