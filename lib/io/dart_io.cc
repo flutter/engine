@@ -12,13 +12,19 @@ using tonic::ToDart;
 
 namespace flutter {
 
-void DartIO::InitForIsolate() {
+void DartIO::InitForIsolate(bool disable_http) {
   Dart_Handle result = Dart_SetNativeResolver(
       Dart_LookupLibrary(ToDart("dart:io")), dart::bin::LookupIONative,
       dart::bin::LookupIONativeSymbol);
-  if (Dart_IsError(result)) {
-    Dart_PropagateError(result);
-  }
+  FML_CHECK(!tonic::LogIfError(result));
+
+  // The SDK expects this field to represent "allow http" so we switch the
+  // value.
+  Dart_Handle allow_http_value = disable_http ? Dart_False() : Dart_True();
+  Dart_Handle set_field_result =
+      Dart_SetField(Dart_LookupLibrary(ToDart("dart:_http")),
+                    ToDart("_embedderAllowsHttp"), allow_http_value);
+  FML_CHECK(!tonic::LogIfError(set_field_result));
 }
 
 }  // namespace flutter
