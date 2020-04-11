@@ -55,11 +55,11 @@ TEST(EventChannelTest, Registration) {
 
   bool on_listen_called = false;
   flutter::StreamHandler<flutter::EncodableValue> handler(
-    [&on_listen_called](
+      [&on_listen_called](
           const flutter::EncodableValue* arguments,
           std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
               events) { on_listen_called = true; },
-    [](const flutter::EncodableValue* arguments) {});
+      [](const flutter::EncodableValue* arguments) {});
   channel.SetStreamHandler(&handler);
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
@@ -83,10 +83,10 @@ TEST(EventChannelTest, Unregistration) {
   EventChannel channel(&messenger, channel_name, &codec);
 
   flutter::StreamHandler<flutter::EncodableValue> handler(
-    [](const flutter::EncodableValue* arguments,
+      [](const flutter::EncodableValue* arguments,
          std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
              events) {},
-    [](const flutter::EncodableValue* arguments) {});
+      [](const flutter::EncodableValue* arguments) {});
   channel.SetStreamHandler(&handler);
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
@@ -105,12 +105,12 @@ TEST(EventChannelTest, Cancel) {
 
   bool on_cancel_called = false;
   flutter::StreamHandler<flutter::EncodableValue> handler(
-    [](const flutter::EncodableValue* arguments,
+      [](const flutter::EncodableValue* arguments,
          std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
              events) {},
-    [&on_cancel_called](const flutter::EncodableValue* arguments) {
-      on_cancel_called = true;
-    });
+      [&on_cancel_called](const flutter::EncodableValue* arguments) {
+        on_cancel_called = true;
+      });
   channel.SetStreamHandler(&handler);
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
