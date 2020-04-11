@@ -6,6 +6,8 @@
 import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
 
+import 'exceptions.dart';
+
 /// Contains various environment variables, such as common file paths and command-line options.
 Environment get environment {
   _environment ??= Environment();
@@ -22,11 +24,11 @@ class Environment {
     final io.Directory hostDebugUnoptDir = io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
     final io.Directory dartSdkDir = io.Directory(pathlib.join(hostDebugUnoptDir.path, 'dart-sdk'));
     final io.Directory webUiRootDir = io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
+    final io.Directory integrationTestsDir = io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'e2etests', 'web'));
 
     for (io.Directory expectedDirectory in <io.Directory>[engineSrcDir, outDir, hostDebugUnoptDir, dartSdkDir, webUiRootDir]) {
       if (!expectedDirectory.existsSync()) {
-        io.stderr.writeln('$expectedDirectory does not exist.');
-        io.exit(1);
+        throw ToolException('$expectedDirectory does not exist.');
       }
     }
 
@@ -34,6 +36,7 @@ class Environment {
       self: self,
       webUiRootDir: webUiRootDir,
       engineSrcDir: engineSrcDir,
+      integrationTestsDir: integrationTestsDir,
       outDir: outDir,
       hostDebugUnoptDir: hostDebugUnoptDir,
       dartSdkDir: dartSdkDir,
@@ -44,6 +47,7 @@ class Environment {
     this.self,
     this.webUiRootDir,
     this.engineSrcDir,
+    this.integrationTestsDir,
     this.outDir,
     this.hostDebugUnoptDir,
     this.dartSdkDir,
@@ -57,6 +61,9 @@ class Environment {
 
   /// Path to the engine's "src" directory.
   final io.Directory engineSrcDir;
+
+  /// Path to the web integration tests.
+  final io.Directory integrationTestsDir;
 
   /// Path to the engine's "out" directory.
   ///

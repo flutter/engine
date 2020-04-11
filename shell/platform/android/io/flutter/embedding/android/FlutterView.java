@@ -12,10 +12,6 @@ import android.graphics.Insets;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.LocaleList;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
-import android.support.annotation.VisibleForTesting;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
@@ -27,6 +23,10 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
@@ -264,7 +264,7 @@ public class FlutterView extends FrameLayout {
     super(context, attrs);
 
     this.flutterTextureView = flutterTextureView;
-    this.renderSurface = flutterSurfaceView;
+    this.renderSurface = flutterTextureView;
 
     init();
   }

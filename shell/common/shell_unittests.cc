@@ -19,14 +19,18 @@
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_test.h"
+#include "flutter/shell/common/shell_test_external_view_embedder.h"
 #include "flutter/shell/common/shell_test_platform_view.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
+#include "flutter/shell/version/version.h"
 #include "flutter/testing/testing.h"
+#include "rapidjson/writer.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -72,7 +76,7 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
                          ThreadHost::Type::Platform | ThreadHost::Type::GPU |
                              ThreadHost::Type::IO | ThreadHost::Type::UI);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
-                           thread_host.gpu_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   auto shell = CreateShell(std::move(settings), std::move(task_runners));
@@ -121,7 +125,7 @@ TEST_F(ShellTest,
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
-                           thread_host.gpu_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
                            thread_host.io_thread->GetTaskRunner());
   auto shell = Shell::Create(
@@ -136,7 +140,7 @@ TEST_F(ShellTest,
               return static_cast<std::unique_ptr<VsyncWaiter>>(
                   std::make_unique<VsyncWaiterFallback>(task_runners));
             },
-            ShellTestPlatformView::BackendType::kDefaultBackend);
+            ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
       },
       [](Shell& shell) {
         return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
@@ -156,7 +160,7 @@ TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   TaskRunners task_runners(
       "test",
       thread_host.platform_thread->GetTaskRunner(),  // platform
-      thread_host.platform_thread->GetTaskRunner(),  // gpu
+      thread_host.platform_thread->GetTaskRunner(),  // raster
       thread_host.ui_thread->GetTaskRunner(),        // ui
       thread_host.io_thread->GetTaskRunner()         // io
   );
@@ -267,21 +271,19 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
       fml::CommandLine::Option("dart-flags", "--verify_after_gc")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
 
-#if !FLUTTER_RELEASE
   // Upon encountering a non-whitelisted Dart flag the process terminates.
   const char* expected =
       "Encountered blacklisted Dart VM flag: --verify_after_gc";
   ASSERT_DEATH(flutter::SettingsFromCommandLine(command_line), expected);
-#else
-  flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
-  EXPECT_EQ(settings.dart_flags.size(), 0u);
-#endif
 }
 
 TEST_F(ShellTest, WhitelistedDartVMFlag) {
   const std::vector<fml::CommandLine::Option> options = {
-      fml::CommandLine::Option("dart-flags",
-                               "--max_profile_depth 1,--random_seed 42")};
+#if !FLUTTER_RELEASE
+    fml::CommandLine::Option("dart-flags",
+                             "--max_profile_depth 1,--random_seed 42")
+#endif
+  };
   fml::CommandLine command_line("", options, std::vector<std::string>());
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
 
@@ -462,6 +464,51 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   int64_t build_start =
       timing.Get(FrameTiming::kBuildStart).ToEpochDelta().ToMicroseconds();
   ASSERT_GT(frame_target_time, build_start);
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest,
+       ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit) {
+  auto settings = CreateSettingsForFixture();
+  fml::AutoResetWaitableEvent endFrameLatch;
+  bool end_frame_called = false;
+  auto end_frame_callback = [&] {
+    end_frame_called = true;
+    endFrameLatch.Signal();
+  };
+  auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      end_frame_callback, PostPrerollResult::kResubmitFrame);
+  auto shell = CreateShell(std::move(settings), GetTaskRunnersForFixture(),
+                           false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  LayerTreeBuilder builder = [&](std::shared_ptr<ContainerLayer> root) {
+    SkPictureRecorder recorder;
+    SkCanvas* recording_canvas =
+        recorder.beginRecording(SkRect::MakeXYWH(0, 0, 80, 80));
+    recording_canvas->drawRect(SkRect::MakeXYWH(0, 0, 80, 80),
+                               SkPaint(SkColor4f::FromColor(SK_ColorRED)));
+    auto sk_picture = recorder.finishRecordingAsPicture();
+    fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
+        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+    auto picture_layer = std::make_shared<PictureLayer>(
+        SkPoint::Make(10, 10),
+        flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
+    root->Add(picture_layer);
+  };
+
+  PumpOneFrame(shell.get(), 100, 100, builder);
+  endFrameLatch.Wait();
+
+  ASSERT_TRUE(end_frame_called);
+
   DestroyShell(std::move(shell));
 }
 
@@ -714,7 +761,7 @@ static size_t GetRasterizerResourceCacheBytesSync(Shell& shell) {
   size_t bytes = 0;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
-      shell.GetTaskRunners().GetGPUTaskRunner(), [&]() {
+      shell.GetTaskRunners().GetRasterTaskRunner(), [&]() {
         if (auto rasterizer = shell.GetRasterizer()) {
           bytes = rasterizer->GetResourceCacheMaxBytes().value_or(0U);
         }
@@ -885,7 +932,7 @@ class MockTexture : public Texture {
 
   ~MockTexture() override = default;
 
-  // Called from GPU thread.
+  // Called from raster thread.
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
@@ -935,7 +982,7 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
       std::make_shared<MockTexture>(0, latch);
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(), [&]() {
+      shell->GetTaskRunners().GetRasterTaskRunner(), [&]() {
         shell->GetPlatformView()->RegisterTexture(mockTexture);
         shell->GetPlatformView()->MarkTextureFrameAvailable(0);
       });
@@ -944,7 +991,7 @@ TEST_F(ShellTest, TextureFrameMarkedAvailableAndUnregister) {
   EXPECT_EQ(mockTexture->frames_available(), 1);
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(),
+      shell->GetTaskRunners().GetRasterTaskRunner(),
       [&]() { shell->GetPlatformView()->UnregisterTexture(0); });
   latch->Wait();
 
@@ -960,7 +1007,7 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
       std::make_shared<fml::DataMapping>(message);
   TaskRunners task_runners("test",                  // label
                            GetCurrentTaskRunner(),  // platform
-                           CreateNewThread(),       // gpu
+                           CreateNewThread(),       // raster
                            CreateNewThread(),       // ui
                            CreateNewThread()        // io
   );
@@ -1029,7 +1076,7 @@ TEST_F(ShellTest, Screenshot) {
   auto screenshot_future = screenshot_promise.get_future();
 
   fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetGPUTaskRunner(),
+      shell->GetTaskRunners().GetRasterTaskRunner(),
       [&screenshot_promise, &shell]() {
         auto rasterizer = shell->GetRasterizer();
         screenshot_promise.set_value(rasterizer->ScreenshotLastLayerTree(
@@ -1127,6 +1174,64 @@ TEST_F(ShellTest, CanDecompressImageFromAsset) {
   RunEngine(shell.get(), std::move(configuration));
   latch.Wait();
   DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
+  // Create 2 dummpy SkSL cache file IE (base32 encoding of A), II (base32
+  // encoding of B) with content x and y.
+  fml::ScopedTemporaryDirectory temp_dir;
+  PersistentCache::SetCacheDirectoryPath(temp_dir.path());
+  PersistentCache::ResetCacheForProcess();
+  std::vector<std::string> components = {"flutter_engine",
+                                         GetFlutterEngineVersion(), "skia",
+                                         GetSkiaVersion(), "sksl"};
+  auto sksl_dir = fml::CreateDirectory(temp_dir.fd(), components,
+                                       fml::FilePermission::kReadWrite);
+  const std::string x = "x";
+  const std::string y = "y";
+  auto x_data = std::make_unique<fml::DataMapping>(
+      std::vector<uint8_t>{x.begin(), x.end()});
+  auto y_data = std::make_unique<fml::DataMapping>(
+      std::vector<uint8_t>{y.begin(), y.end()});
+  ASSERT_TRUE(fml::WriteAtomically(sksl_dir, "IE", *x_data));
+  ASSERT_TRUE(fml::WriteAtomically(sksl_dir, "II", *y_data));
+
+  Settings settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  ServiceProtocol::Handler::ServiceProtocolMap empty_params;
+  rapidjson::Document document;
+  OnServiceProtocol(shell.get(), ServiceProtocolEnum::kGetSkSLs,
+                    shell->GetTaskRunners().GetIOTaskRunner(), empty_params,
+                    document);
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+  DestroyShell(std::move(shell));
+
+  const std::string expected_json1 =
+      "{\"type\":\"GetSkSLs\",\"SkSLs\":{\"II\":\"eQ==\",\"IE\":\"eA==\"}}";
+  const std::string expected_json2 =
+      "{\"type\":\"GetSkSLs\",\"SkSLs\":{\"IE\":\"eA==\",\"II\":\"eQ==\"}}";
+  bool json_is_expected = (expected_json1 == buffer.GetString()) ||
+                          (expected_json2 == buffer.GetString());
+  ASSERT_TRUE(json_is_expected) << buffer.GetString() << " is not equal to "
+                                << expected_json1 << " or " << expected_json2;
+
+  // Cleanup files
+  fml::FileVisitor recursive_cleanup = [&recursive_cleanup](
+                                           const fml::UniqueFD& directory,
+                                           const std::string& filename) {
+    if (fml::IsDirectory(directory, filename.c_str())) {
+      fml::UniqueFD sub_dir =
+          OpenDirectoryReadOnly(directory, filename.c_str());
+      VisitFiles(sub_dir, recursive_cleanup);
+      fml::UnlinkDirectory(directory, filename.c_str());
+    } else {
+      fml::UnlinkFile(directory, filename.c_str());
+    }
+    return true;
+  };
+  VisitFiles(temp_dir.fd(), recursive_cleanup);
 }
 
 }  // namespace testing

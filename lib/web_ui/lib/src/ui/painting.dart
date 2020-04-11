@@ -899,9 +899,8 @@ enum Clip {
 abstract class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
-  factory Paint() => engine.experimentalUseSkia
-    ? engine.SkPaint()
-    : engine.SurfacePaint();
+  factory Paint() =>
+      engine.experimentalUseSkia ? engine.SkPaint() : engine.SurfacePaint();
 
   /// Whether to dither the output when drawing images.
   ///
@@ -1070,8 +1069,6 @@ abstract class Shader {
 /// There are several types of gradients, represented by the various
 /// constructors on this class.
 abstract class Gradient extends Shader {
-  Gradient._() : super._();
-
   /// Creates a linear gradient from `from` to `to`.
   ///
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
@@ -1604,13 +1601,17 @@ String _instantiateImageCodec(
   return null;
 }
 
-Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri) {
+Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
+    {engine.WebOnlyImageCodecChunkCallback chunkCallback}) {
   return engine.futurize((engine.Callback<Codec> callback) =>
-      _instantiateImageCodecFromUrl(uri, callback));
+      _instantiateImageCodecFromUrl(uri, chunkCallback, callback));
 }
 
-String _instantiateImageCodecFromUrl(Uri uri, engine.Callback<Codec> callback) {
-  callback(engine.HtmlCodec(uri.toString()));
+String _instantiateImageCodecFromUrl(
+    Uri uri,
+    engine.WebOnlyImageCodecChunkCallback chunkCallback,
+    engine.Callback<Codec> callback) {
+  callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
   return null;
 }
 

@@ -8,9 +8,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
@@ -20,6 +17,9 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -322,6 +322,10 @@ public class TextInputPlugin {
     }
     // Always apply state to selection which handles updating the selection if needed.
     applyStateToSelection(state);
+    InputConnection connection = getLastInputConnection();
+    if (connection != null && connection instanceof InputConnectionAdaptor) {
+      ((InputConnectionAdaptor) connection).markDirty();
+    }
     // Use updateSelection to update imm on selection if it is not neccessary to restart.
     if (!restartAlwaysRequired && !mRestartInputPending) {
       mImm.updateSelection(

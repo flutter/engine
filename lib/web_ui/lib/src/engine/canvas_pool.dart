@@ -79,6 +79,10 @@ class _CanvasPool extends _SaveStackTracking {
     bool requiresClearRect = false;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
+      // If a canvas is the first element we set z-index = -1 to workaround
+      // blink compositing bug. To make sure this does not leak when reused
+      // reset z-index.
+      _canvas.style.removeProperty('z-index');
       requiresClearRect = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
@@ -503,7 +507,7 @@ class _CanvasPool extends _SaveStackTracking {
             break;
           case PathCommandTypes.ellipse:
             final Ellipse ellipse = command;
-            ctx.ellipse(
+            DomRenderer.ellipse(ctx,
                 ellipse.x,
                 ellipse.y,
                 ellipse.radiusX,
@@ -563,14 +567,14 @@ class _CanvasPool extends _SaveStackTracking {
 
   void drawOval(ui.Rect rect, ui.PaintingStyle style) {
     context.beginPath();
-    context.ellipse(rect.center.dx, rect.center.dy, rect.width / 2,
+    DomRenderer.ellipse(context, rect.center.dx, rect.center.dy, rect.width / 2,
         rect.height / 2, 0, 0, 2.0 * math.pi, false);
     contextHandle.paint(style);
   }
 
   void drawCircle(ui.Offset c, double radius, ui.PaintingStyle style) {
     context.beginPath();
-    context.ellipse(c.dx, c.dy, radius, radius, 0, 0, 2.0 * math.pi, false);
+    DomRenderer.ellipse(context, c.dx, c.dy, radius, radius, 0, 0, 2.0 * math.pi, false);
     contextHandle.paint(style);
   }
 
@@ -613,7 +617,12 @@ class _CanvasPool extends _SaveStackTracking {
         context.save();
         context.filter = 'none';
         context.strokeStyle = '';
-        context.fillStyle = colorToCssString(color);
+        final int red = color.red;
+        final int green = color.green;
+        final int blue = color.blue;
+        // Multiply by 0.4 to make shadows less aggressive (https://github.com/flutter/flutter/issues/52734)
+        final int alpha = (0.4 * color.alpha).round();
+        context.fillStyle = colorComponentsToCssString(red, green, blue, alpha);
         context.shadowBlur = shadow.blurWidth;
         context.shadowColor = colorToCssString(color.withAlpha(0xff));
         context.shadowOffsetX = shadow.offset.dx;

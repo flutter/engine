@@ -5,8 +5,8 @@
 package io.flutter.embedding.engine;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -44,7 +44,8 @@ import java.util.Set;
  * interaction.
  *
  * <p>Multiple {@code FlutterEngine}s may exist, execute Dart code, and render UIs within a single
- * Android app.
+ * Android app. Flutter at this point makes no guarantees on the performance of running multiple
+ * engines. Use at your own risk. See https://github.com/flutter/flutter/issues/37644 for details.
  *
  * <p>To start running Dart and/or Flutter within this {@code FlutterEngine}, get a reference to
  * this engine's {@link DartExecutor} and then use {@link
@@ -224,6 +225,7 @@ public class FlutterEngine {
     textInputChannel = new TextInputChannel(dartExecutor);
 
     this.platformViewsController = platformViewsController;
+    this.platformViewsController.onAttachedToJNI();
 
     this.pluginRegistry =
         new FlutterEnginePluginRegistry(context.getApplicationContext(), this, flutterLoader);
@@ -288,6 +290,7 @@ public class FlutterEngine {
     Log.v(TAG, "Destroying.");
     // The order that these things are destroyed is important.
     pluginRegistry.destroy();
+    platformViewsController.onDetachedFromJNI();
     dartExecutor.onDetachedFromJNI();
     flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.detachFromNativeAndReleaseResources();
