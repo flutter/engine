@@ -48,30 +48,13 @@ class IntegrationTestsManager {
     }
   }
 
-  Future<bool> _runPubGet(String workingDirectory) async {
+  Future<void> _runPubGet(String workingDirectory) async {
     if (!_useSystemFlutter) {
       await _cloneFlutterRepo();
       await _enableWeb(workingDirectory);
     }
-    final String executable =
-        _useSystemFlutter ?  'flutter' : environment.flutterCommand.path;
-    final int exitCode = await runProcess(
-      executable,
-      <String>[
-        'pub',
-        'get',
-        '--local-engine=host_debug_unopt',
-      ],
-      workingDirectory: workingDirectory,
-    );
-
-    if (exitCode != 0) {
-      io.stderr.writeln(
-          'ERROR: Failed to run pub get. Exited with exit code $exitCode');
-      return false;
-    } else {
-      return true;
-    }
+    await runFlutter(workingDirectory, <String>['pub', 'get'],
+        useSystemFlutter: _useSystemFlutter);
   }
 
   /// Clone flutter repository, use the youngest commit older than the engine
@@ -81,7 +64,7 @@ class IntegrationTestsManager {
   /// TODO(nurhan): Use git pull instead if repo exists.
   Future<void> _cloneFlutterRepo() async {
     // Delete directory if exists.
-    if(environment.engineDartToolDir.existsSync()) {
+    if (environment.engineDartToolDir.existsSync()) {
       environment.engineDartToolDir.deleteSync();
     }
     environment.engineDartToolDir.createSync();
@@ -101,20 +84,8 @@ class IntegrationTestsManager {
   }
 
   Future<void> _enableWeb(String workingDirectory) async {
-    final int exitCode = await runProcess(
-      environment.flutterCommand.path,
-      <String>[
-        'config',
-        '--local-engine=host_debug_unopt',
-        '--enable-web',
-      ],
-      workingDirectory: workingDirectory,
-    );
-
-    if (exitCode != 0) {
-      throw ToolException(
-          'ERROR: Failed to enable web. Exited with exit code $exitCode');
-    }
+    await runFlutter(workingDirectory, <String>['config', '--enable-web'],
+        useSystemFlutter: _useSystemFlutter);
   }
 
   void _runDriver() async {
@@ -219,7 +190,7 @@ class IntegrationTestsManager {
   Future<bool> _runTestsInProfileMode(
       io.Directory directory, String testName) async {
     final String executable =
-        _useSystemFlutter ?  'flutter' : environment.flutterCommand.path;
+        _useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
     final int exitCode = await runProcess(
       executable,
       <String>[

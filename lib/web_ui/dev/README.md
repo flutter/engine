@@ -49,7 +49,7 @@ To run integration tests only. For now these tests are only available on Chrome 
 felt test --integration-tests-only
 ```
 
-To skip cloning the flutter repository use the following flag. This flag can save internet bandwidth. However use with caution. Note the tests results will not be consistent with CIs when this flag is set. flutter command should be set in the PATH for this flag to be useful
+To skip cloning the flutter repository use the following flag. This flag can save internet bandwidth. However use with caution. Note the tests results will not be consistent with CIs when this flag is set. flutter command should be set in the PATH for this flag to be useful. This flag can also be used to test local Flutter changes.
 
 ```
 felt test --integration-tests-only --use-system-flutter

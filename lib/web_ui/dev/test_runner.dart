@@ -66,6 +66,7 @@ class TestCommand extends Command<bool> with ArgUtils {
         'the engine commit for the tests running in CI, the tests results '
         'won\'t be consistent with CIs when this flag is set. flutter '
         'command should be set in the PATH for this flag to be useful.'
+        'This flag can also be used to test local Flutter changes.'
       )
       ..addFlag(
         'update-screenshot-goldens',
@@ -219,7 +220,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   /// Use system flutter instead of cloning the repository.
   ///
-  /// Read the flag help for more details.
+  /// Read the flag help for more details. Uses PATH to locate flutter.
   bool get useSystemFlutter => boolArg('use-system-flutter');
 
   /// When running screenshot tests writes them to the file system into
