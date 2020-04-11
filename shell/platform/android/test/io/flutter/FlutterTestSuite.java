@@ -22,6 +22,7 @@ import io.flutter.plugin.editing.TextInputPluginTest;
 import io.flutter.plugin.platform.PlatformPluginTest;
 import io.flutter.plugin.platform.SingleViewPresentationTest;
 import io.flutter.util.PreconditionsTest;
+import io.flutter.view.AccessibilityBridgeTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -29,7 +30,6 @@ import test.io.flutter.embedding.engine.FlutterEngineTest;
 import test.io.flutter.embedding.engine.FlutterShellArgsTest;
 import test.io.flutter.embedding.engine.PluginComponentTest;
 import test.io.flutter.embedding.engine.dart.DartExecutorTest;
-import io.flutter.view.AccessibilityBridgeTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
