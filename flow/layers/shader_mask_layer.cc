@@ -9,11 +9,13 @@ namespace flutter {
 ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
                                  const SkRect& mask_rect,
                                  SkBlendMode blend_mode)
-    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {
-  set_renders_to_save_layer(true);
-}
+    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {}
 
-ShaderMaskLayer::~ShaderMaskLayer() = default;
+void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context);
+  ContainerLayer::Preroll(context, matrix);
+}
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");

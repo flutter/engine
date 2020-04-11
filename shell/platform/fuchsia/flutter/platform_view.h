@@ -42,7 +42,6 @@ class PlatformView final : public flutter::PlatformView,
  public:
   PlatformView(flutter::PlatformView::Delegate& delegate,
                std::string debug_label,
-               fuchsia::ui::views::ViewRefControl view_ref_control,
                fuchsia::ui::views::ViewRef view_ref,
                flutter::TaskRunners task_runners,
                std::shared_ptr<sys::ServiceDirectory> runner_services,
@@ -70,11 +69,17 @@ class PlatformView final : public flutter::PlatformView,
   // |flutter_runner::AccessibilityBridge::Delegate|
   void SetSemanticsEnabled(bool enabled) override;
 
+  // |flutter_runner::AccessibilityBridge::Delegate|
+  void DispatchSemanticsAction(int32_t node_id,
+                               flutter::SemanticsAction action) override;
+
+  // |PlatformView|
+  flutter::PointerDataDispatcherMaker GetDispatcherMaker() override;
+
  private:
   const std::string debug_label_;
   // TODO(MI4-2490): remove once ViewRefControl is passed to Scenic and kept
   // alive there
-  const fuchsia::ui::views::ViewRefControl view_ref_control_;
   const fuchsia::ui::views::ViewRef view_ref_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
 

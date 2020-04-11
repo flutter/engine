@@ -8,8 +8,9 @@
 #include <stdint.h>
 
 #include <memory>
-#include <stack>
+#include <vector>
 
+#include "flutter/flow/layers/container_layer.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/color_filter.h"
@@ -35,33 +36,44 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   static fml::RefPtr<SceneBuilder> create() {
     return fml::MakeRefCounted<SceneBuilder>();
   }
-
   ~SceneBuilder() override;
 
-  fml::RefPtr<EngineLayer> pushTransform(tonic::Float64List& matrix4);
-  fml::RefPtr<EngineLayer> pushOffset(double dx, double dy);
-  fml::RefPtr<EngineLayer> pushClipRect(double left,
-                                        double right,
-                                        double top,
-                                        double bottom,
-                                        int clipBehavior);
-  fml::RefPtr<EngineLayer> pushClipRRect(const RRect& rrect, int clipBehavior);
-  fml::RefPtr<EngineLayer> pushClipPath(const CanvasPath* path,
-                                        int clipBehavior);
-  fml::RefPtr<EngineLayer> pushOpacity(int alpha, double dx = 0, double dy = 0);
-  fml::RefPtr<EngineLayer> pushColorFilter(const ColorFilter* color_filter);
-  fml::RefPtr<EngineLayer> pushBackdropFilter(ImageFilter* filter);
-  fml::RefPtr<EngineLayer> pushShaderMask(Shader* shader,
-                                          double maskRectLeft,
-                                          double maskRectRight,
-                                          double maskRectTop,
-                                          double maskRectBottom,
-                                          int blendMode);
-  fml::RefPtr<EngineLayer> pushPhysicalShape(const CanvasPath* path,
-                                             double elevation,
-                                             int color,
-                                             int shadowColor,
-                                             int clipBehavior);
+  void pushTransform(Dart_Handle layer_handle, tonic::Float64List& matrix4);
+  void pushOffset(Dart_Handle layer_handle, double dx, double dy);
+  void pushClipRect(Dart_Handle layer_handle,
+                    double left,
+                    double right,
+                    double top,
+                    double bottom,
+                    int clipBehavior);
+  void pushClipRRect(Dart_Handle layer_handle,
+                     const RRect& rrect,
+                     int clipBehavior);
+  void pushClipPath(Dart_Handle layer_handle,
+                    const CanvasPath* path,
+                    int clipBehavior);
+  void pushOpacity(Dart_Handle layer_handle,
+                   int alpha,
+                   double dx = 0,
+                   double dy = 0);
+  void pushColorFilter(Dart_Handle layer_handle,
+                       const ColorFilter* color_filter);
+  void pushImageFilter(Dart_Handle layer_handle,
+                       const ImageFilter* image_filter);
+  void pushBackdropFilter(Dart_Handle layer_handle, ImageFilter* filter);
+  void pushShaderMask(Dart_Handle layer_handle,
+                      Shader* shader,
+                      double maskRectLeft,
+                      double maskRectRight,
+                      double maskRectTop,
+                      double maskRectBottom,
+                      int blendMode);
+  void pushPhysicalShape(Dart_Handle layer_handle,
+                         const CanvasPath* path,
+                         double elevation,
+                         int color,
+                         int shadowColor,
+                         int clipBehavior);
 
   void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
 
@@ -98,25 +110,24 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
 #endif
 
   void setRasterizerTracingThreshold(uint32_t frameInterval);
-
   void setCheckerboardRasterCacheImages(bool checkerboard);
   void setCheckerboardOffscreenLayers(bool checkerboard);
 
-  fml::RefPtr<Scene> build();
+  void build(Dart_Handle scene_handle);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   SceneBuilder();
 
-  std::shared_ptr<flutter::ContainerLayer> root_layer_;
-  flutter::ContainerLayer* current_layer_ = nullptr;
+  void AddLayer(std::shared_ptr<Layer> layer);
+  void PushLayer(std::shared_ptr<ContainerLayer> layer);
+  void PopLayer();
 
+  std::vector<std::shared_ptr<ContainerLayer>> layer_stack_;
   int rasterizer_tracing_threshold_ = 0;
   bool checkerboard_raster_cache_images_ = false;
   bool checkerboard_offscreen_layers_ = false;
-
-  void PushLayer(std::shared_ptr<flutter::ContainerLayer> layer);
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneBuilder);
 };

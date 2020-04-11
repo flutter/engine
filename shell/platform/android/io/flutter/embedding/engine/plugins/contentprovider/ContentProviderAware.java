@@ -4,7 +4,7 @@
 
 package io.flutter.embedding.engine.plugins.contentprovider;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * A {@link FlutterPlugin} that wants to know when it is running within a {@link ContentProvider}.
@@ -17,8 +17,8 @@ public interface ContentProviderAware {
   void onAttachedToContentProvider(@NonNull ContentProviderPluginBinding binding);
 
   /**
-   * Callback triggered when a {@code ContentProviderAware} {@link FlutterPlugin} is detached from
-   * a {@link ContentProvider}.
+   * Callback triggered when a {@code ContentProviderAware} {@link FlutterPlugin} is detached from a
+   * {@link ContentProvider}.
    */
   void onDetachedFromContentProvider();
 }

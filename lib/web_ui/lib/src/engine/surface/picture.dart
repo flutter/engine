@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 // TODO(yjbanov): this is currently very naive. We probably want to cache
@@ -17,6 +18,15 @@ const int _kCanvasCacheSize = 30;
 
 /// Canvases available for reuse, capped at [_kCanvasCacheSize].
 final List<BitmapCanvas> _recycledCanvases = <BitmapCanvas>[];
+
+/// Reduces recycled canvas list by 50% to reduce bitmap canvas memory use.
+void _reduceCanvasMemoryUsage() {
+  final int canvasCount = _recycledCanvases.length;
+  for (int i = 0; i < canvasCount; i++) {
+    _recycledCanvases[i].dispose();
+  }
+  _recycledCanvases.clear();
+}
 
 /// A request to repaint a canvas.
 ///
@@ -41,21 +51,26 @@ class _PaintRequest {
 List<_PaintRequest> _paintQueue = <_PaintRequest>[];
 
 void _recycleCanvas(EngineCanvas canvas) {
-  if (canvas is BitmapCanvas && canvas.isReusable()) {
-    _recycledCanvases.add(canvas);
-    if (_recycledCanvases.length > _kCanvasCacheSize) {
-      final BitmapCanvas removedCanvas = _recycledCanvases.removeAt(0);
-      removedCanvas.dispose();
-      if (_debugShowCanvasReuseStats) {
-        DebugCanvasReuseOverlay.instance.disposedCount++;
+  if (canvas is BitmapCanvas) {
+    if (canvas.isReusable()) {
+      _recycledCanvases.add(canvas);
+      if (_recycledCanvases.length > _kCanvasCacheSize) {
+        final BitmapCanvas removedCanvas = _recycledCanvases.removeAt(0);
+        removedCanvas.dispose();
+        if (_debugShowCanvasReuseStats) {
+          DebugCanvasReuseOverlay.instance.disposedCount++;
+        }
       }
-    }
-    if (_debugShowCanvasReuseStats) {
-      DebugCanvasReuseOverlay.instance.inRecycleCount =
-          _recycledCanvases.length;
+      if (_debugShowCanvasReuseStats) {
+        DebugCanvasReuseOverlay.instance.inRecycleCount =
+            _recycledCanvases.length;
+      }
+    } else {
+      canvas.dispose();
     }
   }
 }
+
 
 /// Signature of a function that instantiates a [PersistedPicture].
 typedef PersistedPictureFactory = PersistedPicture Function(
@@ -99,10 +114,6 @@ class PersistedHoudiniPicture extends PersistedPicture {
     // free.
     return existingSurface.picture == picture ? 0.0 : 1.0;
   }
-
-  @override
-  Matrix4 get localTransformInverse =>
-      _localTransformInverse ??= Matrix4.identity();
 
   static void _registerCssPainter() {
     _cssPainterRegistered = true;
@@ -173,10 +184,10 @@ class PersistedStandardPicture extends PersistedPicture {
         // The canvas needs to be resized before painting.
         return 1.0;
       } else {
-        final int newPixelCount = oldCanvas._widthToPhysical(_exactLocalCullRect.width)
-             * oldCanvas._heightToPhysical(_exactLocalCullRect.height);
+        final int newPixelCount = BitmapCanvas._widthToPhysical(_exactLocalCullRect.width)
+             * BitmapCanvas._heightToPhysical(_exactLocalCullRect.height);
         final int oldPixelCount =
-            oldCanvas.widthInBitmapPixels * oldCanvas.heightInBitmapPixels;
+            oldCanvas._widthInBitmapPixels * oldCanvas._heightInBitmapPixels;
 
         if (oldPixelCount == 0) {
           return 1.0;
@@ -275,7 +286,6 @@ class PersistedStandardPicture extends PersistedPicture {
     final ui.Size canvasSize = bounds.size;
     BitmapCanvas bestRecycledCanvas;
     double lastPixelCount = double.infinity;
-
     for (int i = 0; i < _recycledCanvases.length; i++) {
       final BitmapCanvas candidate = _recycledCanvases[i];
       if (!candidate.isReusable()) {
@@ -289,13 +299,21 @@ class PersistedStandardPicture extends PersistedPicture {
       final bool fits = candidate.doesFitBounds(bounds);
       final bool isSmaller = candidatePixelCount < lastPixelCount;
       if (fits && isSmaller) {
-        bestRecycledCanvas = candidate;
-        lastPixelCount = candidatePixelCount;
-        final bool fitsExactly = candidateSize.width == canvasSize.width &&
-            candidateSize.height == canvasSize.height;
-        if (fitsExactly) {
-          // No need to keep looking any more.
-          break;
+        // [isTooSmall] is used to make sure that a small picture doesn't
+        // reuse and hold onto memory of a large canvas.
+        final double requestedPixelCount = bounds.width * bounds.height;
+        final bool isTooSmall = isSmaller &&
+            requestedPixelCount > 1 &&
+            (candidatePixelCount / requestedPixelCount) > 4;
+        if (!isTooSmall) {
+          bestRecycledCanvas = candidate;
+          lastPixelCount = candidatePixelCount;
+          final bool fitsExactly = candidateSize.width == canvasSize.width &&
+              candidateSize.height == canvasSize.height;
+          if (fitsExactly) {
+            // No need to keep looking any more.
+            break;
+          }
         }
       }
     }
@@ -324,7 +342,7 @@ class PersistedStandardPicture extends PersistedPicture {
       _surfaceStatsFor(this)
         ..allocateBitmapCanvasCount += 1
         ..allocatedBitmapSizeInPixels =
-            canvas.widthInBitmapPixels * canvas.heightInBitmapPixels;
+            canvas._widthInBitmapPixels * canvas._heightInBitmapPixels;
     }
     return canvas;
   }
@@ -337,6 +355,11 @@ abstract class PersistedPicture extends PersistedLeafSurface {
       : localPaintBounds = picture.recordingCanvas.computePaintBounds();
 
   EngineCanvas _canvas;
+
+  /// Returns the canvas used by this picture layer.
+  ///
+  /// Useful for tests.
+  EngineCanvas get debugCanvas => _canvas;
 
   final double dx;
   final double dy;
@@ -606,7 +629,7 @@ abstract class PersistedPicture extends PersistedLeafSurface {
     super.debugValidate(validationErrors);
 
     if (picture.recordingCanvas.didDraw) {
-      if (_canvas == null) {
+      if (debugCanvas == null) {
         validationErrors
             .add('$runtimeType has non-trivial picture but it has null canvas');
       }

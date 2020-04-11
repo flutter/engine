@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:isolate';
+import 'dart:ffi';
 import 'dart:core';
 import 'dart:convert';
 
@@ -617,6 +619,113 @@ void scene_with_no_container() {
     builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
     window.render(builder.build());
     signalNativeTest();
+  };
+  window.scheduleFrame();
+}
+
+Picture CreateArcEndCapsPicture() {
+  PictureRecorder baseRecorder = PictureRecorder();
+  Canvas canvas = Canvas(baseRecorder);
+
+  var style = Paint()
+    ..strokeWidth = 12.0
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.miter;
+
+  style.color = Color.fromARGB(255, 255, 0, 0);
+  canvas.drawArc(Rect.fromLTRB(0.0, 0.0, 500.0, 500.0), 1.57, 1.0, false, style);
+
+  return baseRecorder.endRecording();
+
+}
+
+@pragma('vm:entry-point')
+void arc_end_caps_correct() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.addPicture(Offset(0.0, 0.0), CreateArcEndCapsPicture());
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void scene_builder_with_clips() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.pushClipRect(Rect.fromLTRB(10.0, 10.0, 390.0, 290.0));
+    builder.addPlatformView(42, width: 400.0, height: 300.0);
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(400.0, 300.0)));
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void scene_builder_with_complex_clips() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+
+    builder.pushClipRect(Rect.fromLTRB(0.0, 0.0, 1024.0, 600.0));
+    builder.pushOffset(512.0, 0.0);
+    builder.pushClipRect(Rect.fromLTRB(0.0, 0.0, 512.0, 600.0));
+    builder.pushOffset(-256.0, 0.0);
+    builder.pushClipRect(Rect.fromLTRB(0.0, 0.0, 1024.0, 600.0));
+    builder.addPlatformView(42, width: 1024.0, height: 600.0);
+
+    builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(1024.0, 600.0)));
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+void sendObjectToNativeCode(dynamic object) native 'SendObjectToNativeCode';
+
+@pragma('vm:entry-point')
+void objects_can_be_posted() {
+  ReceivePort port = ReceivePort();
+  port.listen((dynamic message){ sendObjectToNativeCode(message); });
+  signalNativeCount(port.sendPort.nativePort);
+}
+
+@pragma('vm:entry-point')
+void empty_scene_posts_zero_layers_to_compositor() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    // Should not render anything.
+    builder.pushClipRect(Rect.fromLTRB(0.0, 0.0, 300.0, 200.0));
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void compositor_can_post_only_platform_views() {
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    builder.addPlatformView(42, width: 300.0, height: 200.0);
+    builder.addPlatformView(24, width: 300.0, height: 200.0);
+    window.render(builder.build());
+  };
+  window.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void render_targets_are_recycled() {
+  int frame_count = 0;
+  window.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    for (int i = 0; i < 10; i++) {
+      builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(30.0, 20.0)));
+      builder.addPlatformView(42 + i, width: 30.0, height: 20.0);
+    }
+    window.render(builder.build());
+    window.scheduleFrame();
+    frame_count++;
+    if (frame_count == 8) {
+      signalNativeTest();
+    }
   };
   window.scheduleFrame();
 }

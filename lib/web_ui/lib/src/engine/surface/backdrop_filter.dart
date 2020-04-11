@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// A surface that applies an image filter to background.
@@ -10,7 +11,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   PersistedBackdropFilter(PersistedBackdropFilter oldLayer, this.filter)
       : super(oldLayer);
 
-  final ui.ImageFilter filter;
+  final EngineImageFilter filter;
 
   /// The dedicated child container element that's separate from the
   /// [rootElement] is used to host child in front of [filterElement] that
@@ -23,10 +24,6 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   Matrix4 _invertedTransform;
   // Reference to transform last used to cache [_invertedTransform].
   Matrix4 _previousTransform;
-
-  @override
-  Matrix4 get localTransformInverse =>
-      _localTransformInverse ??= Matrix4.identity();
 
   @override
   void adoptElements(PersistedBackdropFilter oldSurface) {
@@ -76,21 +73,22 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       ..transform = 'translate(${rect.left}px, ${rect.top}px)'
       ..width = '${rect.width}px'
       ..height = '${rect.height}px';
-    if (browserEngine == BrowserEngine.blink) {
-      // For Chrome render transparent black background.
+    if (browserEngine == BrowserEngine.firefox) {
+      // For FireFox for now render transparent black background.
       // TODO(flutter_web): Switch code to use filter when
-      // https://bugs.chromium.org/p/chromium/issues/detail?id=497522#c213
-      // is fixed.
+      // See https://caniuse.com/#feat=css-backdrop-filter.
       filterElementStyle
         ..backgroundColor = '#000'
         ..opacity = '0.2';
     } else {
-      final EngineImageFilter engineFilter = filter;
       // CSS uses pixel radius for blur. Flutter & SVG use sigma parameters. For
       // Gaussian blur with standard deviation (normal distribution),
       // the blur will fall within 2 * sigma pixels.
-      domRenderer.setElementStyle(_filterElement, 'backdrop-filter',
-          'blur(${math.max(engineFilter.sigmaX, engineFilter.sigmaY) * 2}px)');
+      if (browserEngine == BrowserEngine.webkit) {
+        domRenderer.setElementStyle(_filterElement, '-webkit-backdrop-filter',
+            _imageFilterToCss(filter));
+      }
+      domRenderer.setElementStyle(_filterElement, 'backdrop-filter', _imageFilterToCss(filter));
     }
   }
 

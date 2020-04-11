@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/layers/container_layer.h"
 
 #include "flutter/flow/paint_utils.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -11,12 +10,9 @@
 namespace flutter {
 
 Layer::Layer()
-    : parent_(nullptr),
-      needs_system_composite_(false),
-      paint_bounds_(SkRect::MakeEmpty()),
+    : paint_bounds_(SkRect::MakeEmpty()),
       unique_id_(NextUniqueID()),
-      tree_reads_surface_(false),
-      layer_reads_surface_(false) {}
+      needs_system_composite_(false) {}
 
 Layer::~Layer() = default;
 
@@ -29,29 +25,35 @@ uint64_t Layer::NextUniqueID() {
   return id;
 }
 
-void Layer::set_layer_reads_surface(bool value) {
-  if (layer_reads_surface_ != value) {
-    layer_reads_surface_ = value;
-    UpdateTreeReadsSurface();
-  }
-}
-
-bool Layer::ComputeTreeReadsSurface() const {
-  return layer_reads_surface_;
-}
-
-void Layer::UpdateTreeReadsSurface() {
-  bool new_tree_reads_surface = ComputeTreeReadsSurface();
-
-  if (tree_reads_surface_ != new_tree_reads_surface) {
-    tree_reads_surface_ = new_tree_reads_surface;
-    if (parent_ != nullptr) {
-      parent_->NotifyChildReadback(this);
-    }
-  }
-}
-
 void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
+
+Layer::AutoPrerollSaveLayerState::AutoPrerollSaveLayerState(
+    PrerollContext* preroll_context,
+    bool save_layer_is_active,
+    bool layer_itself_performs_readback)
+    : preroll_context_(preroll_context),
+      save_layer_is_active_(save_layer_is_active),
+      layer_itself_performs_readback_(layer_itself_performs_readback) {
+  if (save_layer_is_active_) {
+    prev_surface_needs_readback_ = preroll_context_->surface_needs_readback;
+    preroll_context_->surface_needs_readback = false;
+  }
+}
+
+Layer::AutoPrerollSaveLayerState Layer::AutoPrerollSaveLayerState::Create(
+    PrerollContext* preroll_context,
+    bool save_layer_is_active,
+    bool layer_itself_performs_readback) {
+  return Layer::AutoPrerollSaveLayerState(preroll_context, save_layer_is_active,
+                                          layer_itself_performs_readback);
+}
+
+Layer::AutoPrerollSaveLayerState::~AutoPrerollSaveLayerState() {
+  if (save_layer_is_active_) {
+    preroll_context_->surface_needs_readback =
+        (prev_surface_needs_readback_ || layer_itself_performs_readback_);
+  }
+}
 
 #if defined(OS_FUCHSIA)
 void Layer::UpdateScene(SceneUpdateContext& context) {}

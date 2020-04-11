@@ -19,11 +19,12 @@ namespace flutter {
 
 class GPUSurfaceMetal : public Surface {
  public:
-  GPUSurfaceMetal(GPUSurfaceDelegate* delegate, fml::scoped_nsobject<CAMetalLayer> layer);
   GPUSurfaceMetal(GPUSurfaceDelegate* delegate,
-                  sk_sp<GrContext> gr_context,
-                  fml::scoped_nsobject<CAMetalLayer> layer);
+                  fml::scoped_nsobject<CAMetalLayer> layer,
+                  sk_sp<GrContext> context,
+                  fml::scoped_nsprotocol<id<MTLCommandQueue>> command_queue);
 
+  // |Surface|
   ~GPUSurfaceMetal() override;
 
  private:
@@ -37,8 +38,7 @@ class GPUSurfaceMetal : public Surface {
   bool IsValid() override;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size,
-                                             const bool needs_readback) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;

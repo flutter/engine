@@ -180,30 +180,12 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
   );
 }
 
-static sk_sp<SkSurface> CreateOffscreenSurface(GrContext* context,
-                                               const SkISize& size) {
-  const SkImageInfo image_info = SkImageInfo::MakeN32(
-      size.fWidth, size.fHeight, kOpaque_SkAlphaType, SkColorSpace::MakeSRGB());
-
-  const SkSurfaceProps surface_props(
-      SkSurfaceProps::InitType::kLegacyFontHost_InitType);
-
-  return SkSurface::MakeRenderTarget(context, SkBudgeted::kNo, image_info, 0,
-                                     kBottomLeft_GrSurfaceOrigin,
-                                     &surface_props);
-}
-
-bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size,
-                                          const bool needs_readback) {
-  bool needs_offscreen = delegate_->UseOffscreenSurface(needs_readback);
+bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   if (onscreen_surface_ != nullptr &&
       size == SkISize::Make(onscreen_surface_->width(),
                             onscreen_surface_->height())) {
     // Surface size appears unchanged. So bail.
-    bool has_offscreen = offscreen_surface_ != nullptr;
-    if (needs_offscreen == has_offscreen) {
-      return true;
-    }
+    return true;
   }
 
   // We need to do some updates.
@@ -211,14 +193,13 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size,
 
   // Either way, we need to get rid of previous surface.
   onscreen_surface_ = nullptr;
-  offscreen_surface_ = nullptr;
 
   if (size.isEmpty()) {
     FML_LOG(ERROR) << "Cannot create surfaces of empty size.";
     return false;
   }
 
-  sk_sp<SkSurface> onscreen_surface, offscreen_surface;
+  sk_sp<SkSurface> onscreen_surface;
 
   onscreen_surface =
       WrapOnscreenSurface(context_.get(),            // GL context
@@ -233,16 +214,7 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size,
     return false;
   }
 
-  if (needs_offscreen) {
-    offscreen_surface = CreateOffscreenSurface(context_.get(), size);
-    if (offscreen_surface == nullptr) {
-      FML_LOG(ERROR) << "Could not create offscreen surface.";
-      return false;
-    }
-  }
-
   onscreen_surface_ = std::move(onscreen_surface);
-  offscreen_surface_ = std::move(offscreen_surface);
 
   return true;
 }
@@ -253,9 +225,7 @@ SkMatrix GPUSurfaceGL::GetRootTransformation() const {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(
-    const SkISize& size,
-    const bool needs_readback) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
   }
@@ -270,7 +240,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(
   // external view embedder may want to render to the root surface.
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
-        nullptr, [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        nullptr, true, [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
           return true;
         });
   }
@@ -278,7 +248,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(
   const auto root_surface_transformation = GetRootTransformation();
 
   sk_sp<SkSurface> surface =
-      AcquireRenderSurface(size, root_surface_transformation, needs_readback);
+      AcquireRenderSurface(size, root_surface_transformation);
 
   if (surface == nullptr) {
     return nullptr;
@@ -292,21 +262,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(
         return weak ? weak->PresentSurface(canvas) : false;
       };
 
-  return std::make_unique<SurfaceFrame>(surface, submit_callback);
+  return std::make_unique<SurfaceFrame>(
+      surface, delegate_->SurfaceSupportsReadback(), submit_callback);
 }
 
 bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
     return false;
-  }
-
-  if (offscreen_surface_ != nullptr) {
-    TRACE_EVENT0("flutter", "CopyTextureOnscreen");
-    SkPaint paint;
-    SkCanvas* onscreen_canvas = onscreen_surface_->getCanvas();
-    onscreen_canvas->clear(SK_ColorTRANSPARENT);
-    onscreen_canvas->drawImage(offscreen_surface_->makeImageSnapshot(), 0, 0,
-                               &paint);
   }
 
   {
@@ -342,19 +304,18 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
 
 sk_sp<SkSurface> GPUSurfaceGL::AcquireRenderSurface(
     const SkISize& untransformed_size,
-    const SkMatrix& root_surface_transformation,
-    const bool needs_readback) {
+    const SkMatrix& root_surface_transformation) {
   const auto transformed_rect = root_surface_transformation.mapRect(
       SkRect::MakeWH(untransformed_size.width(), untransformed_size.height()));
 
   const auto transformed_size =
       SkISize::Make(transformed_rect.width(), transformed_rect.height());
 
-  if (!CreateOrUpdateSurfaces(transformed_size, needs_readback)) {
+  if (!CreateOrUpdateSurfaces(transformed_size)) {
     return nullptr;
   }
 
-  return offscreen_surface_ != nullptr ? offscreen_surface_ : onscreen_surface_;
+  return onscreen_surface_;
 }
 
 // |Surface|

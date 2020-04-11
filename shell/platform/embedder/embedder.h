@@ -861,6 +861,104 @@ typedef struct {
   const char* variant_code;
 } FlutterLocale;
 
+typedef int64_t FlutterEngineDartPort;
+
+typedef enum {
+  kFlutterEngineDartObjectTypeNull,
+  kFlutterEngineDartObjectTypeBool,
+  kFlutterEngineDartObjectTypeInt32,
+  kFlutterEngineDartObjectTypeInt64,
+  kFlutterEngineDartObjectTypeDouble,
+  kFlutterEngineDartObjectTypeString,
+  /// The object will be made available to Dart code as an instance of
+  /// Uint8List.
+  kFlutterEngineDartObjectTypeBuffer,
+} FlutterEngineDartObjectType;
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterEngineDartBuffer).
+  size_t struct_size;
+  /// An opaque baton passed back to the embedder when the
+  /// buffer_collect_callback is invoked. The engine does not interpret this
+  /// field in any way.
+  void* user_data;
+  /// This is an optional field.
+  ///
+  /// When specified, the engine will assume that the buffer is owned by the
+  /// embedder. When the data is no longer needed by any isolate, this callback
+  /// will be made on an internal engine managed thread. The embedder is free to
+  /// collect the buffer here. When this field is specified, it is the embedders
+  /// responsibility to keep the buffer alive and not modify it till this
+  /// callback is invoked by the engine. The user data specified in the callback
+  /// is the value of `user_data` field in this struct.
+  ///
+  /// When NOT specified, the VM creates an internal copy of the buffer. The
+  /// caller is free to modify the buffer as necessary or collect it immediately
+  /// after the call to `FlutterEnginePostDartObject`.
+  ///
+  /// @attention      The buffer_collect_callback is will only be invoked by the
+  ///                 engine when the `FlutterEnginePostDartObject` method
+  ///                 returns kSuccess. In case of non-successful calls to this
+  ///                 method, it is the embedders responsibility to collect the
+  ///                 buffer.
+  VoidCallback buffer_collect_callback;
+  /// A pointer to the bytes of the buffer. When the buffer is owned by the
+  /// embedder (by specifying the `buffer_collect_callback`), Dart code may
+  /// modify that embedder owned buffer. For this reason, it is important that
+  /// this buffer not have page protections that restrict writing to this
+  /// buffer.
+  uint8_t* buffer;
+  /// The size of the buffer.
+  size_t buffer_size;
+} FlutterEngineDartBuffer;
+
+/// This struct specifies the native representation of a Dart object that can be
+/// sent via a send port to any isolate in the VM that has the corresponding
+/// receive port.
+///
+/// All fields in this struct are copied out in the call to
+/// `FlutterEnginePostDartObject` and the caller is free to reuse or collect
+/// this struct after that call.
+typedef struct {
+  FlutterEngineDartObjectType type;
+  union {
+    bool bool_value;
+    int32_t int32_value;
+    int64_t int64_value;
+    double double_value;
+    /// A null terminated string. This string will be copied by the VM in the
+    /// call to `FlutterEnginePostDartObject` and must be collected by the
+    /// embedder after that call is made.
+    const char* string_value;
+    const FlutterEngineDartBuffer* buffer_value;
+  };
+} FlutterEngineDartObject;
+
+/// This enum allows embedders to determine the type of the engine thread in the
+/// FlutterNativeThreadCallback. Based on the thread type, the embedder may be
+/// able to tweak the thread priorities for optimum performance.
+typedef enum {
+  /// The Flutter Engine considers the thread on which the FlutterEngineRun call
+  /// is made to be the platform thread. There is only one such thread per
+  /// engine instance.
+  kFlutterNativeThreadTypePlatform,
+  /// This is the thread the Flutter Engine uses to execute rendering commands
+  /// based on the selected client rendering API. There is only one such thread
+  /// per engine instance.
+  kFlutterNativeThreadTypeRender,
+  /// This is a dedicated thread on which the root Dart isolate is serviced.
+  /// There is only one such thread per engine instance.
+  kFlutterNativeThreadTypeUI,
+  /// Multiple threads are used by the Flutter engine to perform long running
+  /// background tasks.
+  kFlutterNativeThreadTypeWorker,
+} FlutterNativeThreadType;
+
+/// A callback made by the engine in response to
+/// `FlutterEnginePostCallbackOnAllNativeThreads` on all internal thread.
+typedef void (*FlutterNativeThreadCallback)(FlutterNativeThreadType type,
+                                            void* user_data);
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterProjectArgs).
   size_t struct_size;
@@ -1041,11 +1139,18 @@ typedef struct {
   /// absence, platforms views in the scene are ignored and Flutter renders to
   /// the root surface as normal.
   const FlutterCompositor* compositor;
+
+  /// Max size of the old gen heap for the Dart VM in MB, or 0 for unlimited, -1
+  /// for default value.
+  ///
+  /// See also:
+  /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
+  int64_t dart_old_gen_heap_size;
 } FlutterProjectArgs;
 
 //------------------------------------------------------------------------------
 /// @brief      Initialize and run a Flutter engine instance and return a handle
-///             to it. This is a convenience method for the the pair of calls to
+///             to it. This is a convenience method for the pair of calls to
 ///             `FlutterEngineInitialize` and `FlutterEngineRunInitialized`.
 ///
 /// @note       This method of running a Flutter engine works well except in
@@ -1534,6 +1639,97 @@ FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
 ///
 FLUTTER_EXPORT
 bool FlutterEngineRunsAOTCompiledDartCode(void);
+
+//------------------------------------------------------------------------------
+/// @brief      Posts a Dart object to specified send port. The corresponding
+///             receive port for send port can be in any isolate running in the
+///             VM. This isolate can also be the root isolate for an
+///             unrelated engine. The engine parameter is necessary only to
+///             ensure the call is not made when no engine (and hence no VM) is
+///             running.
+///
+///             Unlike the platform messages mechanism, there are no threading
+///             restrictions when using this API. Message can be posted on any
+///             thread and they will be made available to isolate on which the
+///             corresponding send port is listening.
+///
+///             However, it is the embedders responsibility to ensure that the
+///             call is not made during an ongoing call the
+///             `FlutterEngineDeinitialize` or `FlutterEngineShutdown` on
+///             another thread.
+///
+/// @param[in]  engine     A running engine instance.
+/// @param[in]  port       The send port to send the object to.
+/// @param[in]  object     The object to send to the isolate with the
+///                        corresponding receive port.
+///
+/// @return     If the message was posted to the send port.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEnginePostDartObject(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterEngineDartPort port,
+    const FlutterEngineDartObject* object);
+
+//------------------------------------------------------------------------------
+/// @brief      Posts a low memory notification to a running engine instance.
+///             The engine will do its best to release non-critical resources in
+///             response. It is not guaranteed that the resource would have been
+///             collected by the time this call returns however. The
+///             notification is posted to engine subsystems that may be
+///             operating on other threads.
+///
+///             Flutter applications can respond to these notifications by
+///             setting `WidgetsBindingObserver.didHaveMemoryPressure`
+///             observers.
+///
+/// @param[in]  engine     A running engine instance.
+///
+/// @return     If the low memory notification was sent to the running engine
+///             instance.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineNotifyLowMemoryWarning(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
+
+//------------------------------------------------------------------------------
+/// @brief      Schedule a callback to be run on all engine managed threads.
+///             The engine will attempt to service this callback the next time
+///             the message loop for each managed thread is idle. Since the
+///             engine manages the entire lifecycle of multiple threads, there
+///             is no opportunity for the embedders to finely tune the
+///             priorities of threads directly, or, perform other thread
+///             specific configuration (for example, setting thread names for
+///             tracing). This callback gives embedders a chance to affect such
+///             tuning.
+///
+/// @attention  This call is expensive and must be made as few times as
+///             possible. The callback must also return immediately as not doing
+///             so may risk performance issues (especially for callbacks of type
+///             kFlutterNativeThreadTypeUI and kFlutterNativeThreadTypeRender).
+///
+/// @attention  Some callbacks (especially the ones of type
+///             kFlutterNativeThreadTypeWorker) may be called after the
+///             FlutterEngine instance has shut down. Embedders must be careful
+///             in handling the lifecycle of objects associated with the user
+///             data baton.
+///
+/// @attention  In case there are multiple running Flutter engine instances,
+///             their workers are shared.
+///
+/// @param[in]  engine     A running engine instance.
+/// @param[in]  callback   The callback that will get called multiple times on
+///                        each engine managed thread.
+/// @param[in]  user_data  A baton passed by the engine to the callback. This
+///                        baton is not interpreted by the engine in any way.
+///
+/// @return     Returns if the callback was successfully posted to all threads.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEnginePostCallbackOnAllNativeThreads(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterNativeThreadCallback callback,
+    void* user_data);
 
 #if defined(__cplusplus)
 }  // extern "C"

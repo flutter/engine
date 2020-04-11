@@ -16,6 +16,9 @@
 extern "C" {
 #endif
 
+// Indicates that any value is acceptable for an otherwise required property.
+extern const int32_t kFlutterDesktopDontCare;
+
 // Opaque reference to a Flutter window controller.
 typedef struct FlutterDesktopWindowControllerState*
     FlutterDesktopWindowControllerRef;
@@ -26,11 +29,21 @@ typedef struct FlutterDesktopWindow* FlutterDesktopWindowRef;
 // Opaque reference to a Flutter engine instance.
 typedef struct FlutterDesktopEngineState* FlutterDesktopEngineRef;
 
+// Properties representing a generic rectangular size.
+typedef struct {
+  int32_t width;
+  int32_t height;
+} FlutterDesktopSize;
+
 // Properties for configuring a Flutter engine instance.
 typedef struct {
   // The path to the flutter_assets folder for the application to be run.
+  // This can either be an absolute path, or on Windows or Linux, a path
+  // relative to the directory containing the executable.
   const char* assets_path;
   // The path to the icudtl.dat file for the version of Flutter you are using.
+  // This can either be an absolute path, or on Windows or Linux, a path
+  // relative to the directory containing the executable.
   const char* icu_data_path;
   // The switches to pass to the Flutter engine.
   //
@@ -166,6 +179,13 @@ FLUTTER_EXPORT double FlutterDesktopWindowGetScaleFactor(
 FLUTTER_EXPORT void FlutterDesktopWindowSetPixelRatioOverride(
     FlutterDesktopWindowRef flutter_window,
     double pixel_ratio);
+
+// Sets the min/max size of |flutter_window| in screen coordinates. Use
+// kFlutterDesktopDontCare for any dimension you wish to leave unconstrained.
+FLUTTER_EXPORT void FlutterDesktopWindowSetSizeLimits(
+    FlutterDesktopWindowRef flutter_window,
+    FlutterDesktopSize minimum_size,
+    FlutterDesktopSize maximum_size);
 
 // Runs an instance of a headless Flutter engine.
 //

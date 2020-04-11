@@ -12,8 +12,8 @@
 namespace flutter_runner {
 
 // The interface between the Flutter rasterizer and the underlying platform. May
-// be constructed on any thread but will be used by the engine only on the GPU
-// thread.
+// be constructed on any thread but will be used by the engine only on the
+// raster thread.
 class Surface final : public flutter::Surface {
  public:
   Surface(std::string debug_label);
@@ -29,8 +29,7 @@ class Surface final : public flutter::Surface {
 
   // |flutter::Surface|
   std::unique_ptr<flutter::SurfaceFrame> AcquireFrame(
-      const SkISize& size,
-      const bool needs_readback) override;
+      const SkISize& size) override;
 
   // |flutter::Surface|
   GrContext* GetContext() override;

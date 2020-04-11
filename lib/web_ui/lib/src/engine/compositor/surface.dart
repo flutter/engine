@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 typedef SubmitCallback = bool Function(SurfaceFrame, SkCanvas);
@@ -34,27 +35,45 @@ class SurfaceFrame {
 /// created.
 class Surface {
   SkSurface _surface;
+  html.Element htmlElement;
+
+  bool _addedToScene = false;
+
+  /// The default view embedder. Coordinates embedding platform views and
+  /// overlaying subsequent draw operations on top.
+  HtmlViewEmbedder viewEmbedder;
 
   /// Acquire a frame of the given [size] containing a drawable canvas.
   ///
   /// The given [size] is in physical pixels.
   SurfaceFrame acquireFrame(ui.Size size) {
-    final SkSurface surface = _acquireRenderSurface(size);
+    final SkSurface surface = acquireRenderSurface(size);
+    canvasKit.callMethod('setCurrentContext', <int>[surface.context]);
 
-    if (surface == null) return null;
+    if (surface == null) {
+      return null;
+    }
 
-    SubmitCallback submitCallback = (SurfaceFrame surfaceFrame, SkCanvas canvas) {
-      _presentSurface(canvas);
+    SubmitCallback submitCallback =
+        (SurfaceFrame surfaceFrame, SkCanvas canvas) {
+      return _presentSurface(canvas);
     };
 
     return SurfaceFrame(surface, submitCallback);
   }
 
-  SkSurface _acquireRenderSurface(ui.Size size) {
+  SkSurface acquireRenderSurface(ui.Size size) {
     if (!_createOrUpdateSurfaces(size)) {
       return null;
     }
     return _surface;
+  }
+
+  void addToScene() {
+    if (!_addedToScene) {
+      skiaSceneHost.children.insert(0, htmlElement);
+    }
+    _addedToScene = true;
   }
 
   bool _createOrUpdateSurfaces(ui.Size size) {
@@ -69,6 +88,9 @@ class Surface {
 
     _surface?.dispose();
     _surface = null;
+    htmlElement?.remove();
+    htmlElement = null;
+    _addedToScene = false;
 
     if (size.isEmpty) {
       html.window.console.error('Cannot create surfaces of empty size.');
@@ -86,25 +108,33 @@ class Surface {
 
   SkSurface _wrapHtmlCanvas(ui.Size size) {
     final ui.Size logicalSize = size / ui.window.devicePixelRatio;
-    final html.CanvasElement htmlCanvas =
-        html.CanvasElement(width: size.width.ceil(), height: size.height.ceil())
-          ..id = 'flt-sk-canvas';
+    final html.CanvasElement htmlCanvas = html.CanvasElement(
+        width: size.width.ceil(), height: size.height.ceil());
     htmlCanvas.style
       ..position = 'absolute'
       ..width = '${logicalSize.width.ceil()}px'
       ..height = '${logicalSize.height.ceil()}px';
-    final js.JsObject skSurface =
-        canvasKit.callMethod('MakeWebGLCanvasSurface', <dynamic>[
+    final int glContext = canvasKit.callMethod('GetWebGLContext', <dynamic>[
       htmlCanvas,
+      // Default to no anti-aliasing. Paint commands can be explicitly
+      // anti-aliased by setting their `Paint` object's `antialias` property.
+      js.JsObject.jsify({'antialias': 0}),
+    ]);
+    final js.JsObject grContext =
+        canvasKit.callMethod('MakeGrContext', <dynamic>[glContext]);
+    final js.JsObject skSurface =
+        canvasKit.callMethod('MakeOnScreenGLSurface', <dynamic>[
+      grContext,
       size.width,
       size.height,
     ]);
 
+    htmlElement = htmlCanvas;
+
     if (skSurface == null) {
       return null;
     } else {
-      domRenderer.renderScene(htmlCanvas);
-      return SkSurface(skSurface);
+      return SkSurface(skSurface, glContext);
     }
   }
 
@@ -113,6 +143,7 @@ class Surface {
       return false;
     }
 
+    canvasKit.callMethod('setCurrentContext', <dynamic>[_surface.context]);
     _surface.getCanvas().flush();
     return true;
   }
@@ -121,13 +152,16 @@ class Surface {
 /// A Dart wrapper around Skia's SkSurface.
 class SkSurface {
   final js.JsObject _surface;
+  final int _glContext;
 
-  SkSurface(this._surface);
+  SkSurface(this._surface, this._glContext);
 
   SkCanvas getCanvas() {
     final js.JsObject skCanvas = _surface.callMethod('getCanvas');
     return SkCanvas(skCanvas);
   }
+
+  int get context => _glContext;
 
   int width() => _surface.callMethod('width');
   int height() => _surface.callMethod('height');

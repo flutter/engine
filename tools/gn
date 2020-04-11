@@ -44,9 +44,6 @@ def get_out_dir(args):
     if args.enable_vulkan:
         target_dir.append('vulkan')
 
-    if args.enable_metal and args.target_os == 'ios':
-      target_dir.append('metal')
-
     return os.path.join(args.out_dir, 'out', '_'.join(target_dir))
 
 def to_command_line(gn_args):
@@ -98,6 +95,8 @@ def to_gn_args(args):
     gn_args['skia_use_fontconfig'] = args.enable_fontconfig
     gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
     gn_args['flutter_enable_skshaper'] = args.enable_skshaper
+    if args.enable_skshaper:
+      gn_args['skia_use_icu'] = True
     gn_args['is_official_build'] = True    # Disable Skia test utilities.
     gn_args['dart_component_kind'] = 'static_library' # Always link Dart in statically.
     gn_args['is_debug'] = args.unoptimized
@@ -217,10 +216,14 @@ def to_gn_args(args):
       gn_args['use_goma'] = False
       gn_args['goma_dir'] = None
 
-    if args.enable_metal:
+    # Enable Metal on non-simulator iOS builds.
+    if args.target_os == 'ios' and not args.simulator:
       gn_args['skia_use_metal'] = True
       gn_args['shell_enable_metal'] = True
-      gn_args['allow_deprecated_api_calls'] = True
+      # Bitcode enabled builds using the current version of the toolchain leak
+      # C++ symbols decorated with the availability attribute. Disable these
+      # attributes in release modes till the toolchain is updated.
+      gn_args['skia_enable_api_available_macro'] = args.runtime_mode != "release"
 
     if args.enable_vulkan:
       # Enable vulkan in the Flutter shell.
@@ -318,7 +321,6 @@ def parse_args(args):
   parser.add_argument('--operator-new-alignment', dest='operator_new_alignment', type=str, default=None)
 
   parser.add_argument('--enable-vulkan', action='store_true', default=False)
-  parser.add_argument('--enable-metal', action='store_true', default=False)
 
   parser.add_argument('--enable-fontconfig', action='store_true', default=False)
   parser.add_argument('--enable-skshaper', action='store_true', default=False)

@@ -4,10 +4,12 @@
   },
   "sandbox": {
     "features": [
-      "root-ssl-certificates",
-      "deprecated-ambient-replace-as-executable"
+      "config-data",
+      "deprecated-ambient-replace-as-executable",
+      "root-ssl-certificates"
     ],
     "services": [
+      "fuchsia.deprecatedtimezone.Timezone",
       "fuchsia.feedback.CrashReporter",
       "fuchsia.intl.PropertyProvider",
       "fuchsia.logger.LogSink",
@@ -16,7 +18,6 @@
       "fuchsia.posix.socket.Provider",
       "fuchsia.process.Launcher",
       "fuchsia.process.Resolver",
-      "fuchsia.timezone.Timezone",
       "fuchsia.tracing.provider.Registry"
     ]
   }

@@ -36,6 +36,17 @@ ScopedStubFlutterWindowsApi::~ScopedStubFlutterWindowsApi() {
 // Forwarding dummy implementations of the C API.
 
 FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
+    int width,
+    int height,
+    const FlutterDesktopEngineProperties& engine_properties) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->CreateViewController(width, height,
+                                                       engine_properties);
+  }
+  return nullptr;
+}
+
+FlutterDesktopViewControllerRef FlutterDesktopCreateViewControllerLegacy(
     int initial_width,
     int initial_height,
     const char* assets_path,
@@ -43,9 +54,11 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
     const char** arguments,
     size_t argument_count) {
   if (s_stub_implementation) {
+    // This stub will be removed shortly, and the current tests don't need the
+    // arguments, so there's no need to translate them to engine_properties.
+    FlutterDesktopEngineProperties engine_properties;
     return s_stub_implementation->CreateViewController(
-        initial_width, initial_height, assets_path, icu_data_path, arguments,
-        argument_count);
+        initial_width, initial_height, engine_properties);
   }
   return nullptr;
 }
@@ -57,28 +70,31 @@ void FlutterDesktopDestroyViewController(
   }
 }
 
-HWND FlutterDesktopGetHWND(FlutterDesktopViewControllerRef controller) {
-  if (s_stub_implementation) {
-    return s_stub_implementation->FlutterDesktopGetHWND();
-  }
-  return reinterpret_cast<HWND>(-1);
+FlutterDesktopViewRef FlutterDesktopGetView(
+    FlutterDesktopViewControllerRef controller) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopViewRef>(1);
 }
 
 uint64_t FlutterDesktopProcessMessages(
     FlutterDesktopViewControllerRef controller) {
   if (s_stub_implementation) {
-    return s_stub_implementation->FlutterDesktopProcessMessages();
+    return s_stub_implementation->ProcessMessages();
   }
   return 0;
 }
 
-FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
-                                                const char* icu_data_path,
-                                                const char** arguments,
-                                                size_t argument_count) {
+HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef controller) {
   if (s_stub_implementation) {
-    return s_stub_implementation->RunEngine(assets_path, icu_data_path,
-                                            arguments, argument_count);
+    return s_stub_implementation->ViewGetHWND();
+  }
+  return reinterpret_cast<HWND>(-1);
+}
+
+FlutterDesktopEngineRef FlutterDesktopRunEngine(
+    const FlutterDesktopEngineProperties& engine_properties) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->RunEngine(engine_properties);
   }
   return nullptr;
 }
@@ -95,4 +111,10 @@ FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
     const char* plugin_name) {
   // The stub ignores this, so just return an arbitrary non-zero value.
   return reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1);
+}
+
+FlutterDesktopViewRef FlutterDesktopRegistrarGetView(
+    FlutterDesktopPluginRegistrarRef controller) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopViewRef>(1);
 }

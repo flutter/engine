@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
@@ -58,7 +59,9 @@ void main() {
       });
 
       Keyboard.instance.dispose();
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50815
+        skip: browserEngine == BrowserEngine.edge);
 
     test('dispatches keydown to flutter/keyevent channel', () {
       Keyboard.initialize();
@@ -87,7 +90,9 @@ void main() {
       expect(event.defaultPrevented, isFalse);
 
       Keyboard.instance.dispose();
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50815
+        skip: browserEngine == BrowserEngine.edge);
 
     test('dispatches correct meta state', () {
       Keyboard.initialize();
@@ -135,7 +140,9 @@ void main() {
       });
 
       Keyboard.instance.dispose();
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50815
+        skip: browserEngine == BrowserEngine.edge);
 
     test('dispatches repeat events', () {
       Keyboard.initialize();
@@ -186,7 +193,9 @@ void main() {
       ]);
 
       Keyboard.instance.dispose();
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50815
+        skip: browserEngine == BrowserEngine.edge);
 
     test('stops dispatching events after dispose', () {
       Keyboard.initialize();
@@ -233,7 +242,7 @@ void main() {
       Keyboard.instance.dispose();
     });
 
-    test('ignores keyboard events triggered on text fields', () {
+    test('keyboard events should be triggered on text fields', () {
       Keyboard.initialize();
 
       int count = 0;
@@ -251,7 +260,7 @@ void main() {
         );
 
         expect(event.defaultPrevented, isFalse);
-        expect(count, 0);
+        expect(count, 1);
       });
 
       Keyboard.instance.dispose();

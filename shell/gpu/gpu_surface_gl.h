@@ -26,15 +26,14 @@ class GPUSurfaceGL : public Surface {
                GPUSurfaceGLDelegate* delegate,
                bool render_to_surface);
 
+  // |Surface|
   ~GPUSurfaceGL() override;
 
   // |Surface|
   bool IsValid() override;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(
-      const SkISize& size,
-      const bool needs_readback) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;
@@ -52,7 +51,6 @@ class GPUSurfaceGL : public Surface {
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrContext> context_;
   sk_sp<SkSurface> onscreen_surface_;
-  sk_sp<SkSurface> offscreen_surface_;
   bool context_owner_;
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
   // external view embedder may want to render to the root surface. This is a
@@ -62,12 +60,11 @@ class GPUSurfaceGL : public Surface {
   bool valid_ = false;
   fml::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
 
-  bool CreateOrUpdateSurfaces(const SkISize& size, const bool needs_readback);
+  bool CreateOrUpdateSurfaces(const SkISize& size);
 
   sk_sp<SkSurface> AcquireRenderSurface(
       const SkISize& untransformed_size,
-      const SkMatrix& root_surface_transformation,
-      const bool needs_readback);
+      const SkMatrix& root_surface_transformation);
 
   bool PresentSurface(SkCanvas* canvas);
 

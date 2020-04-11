@@ -1,0 +1,18 @@
+# For more information on test and runner configurations:
+#
+# * https://github.com/dart-lang/test/blob/master/pkgs/test/doc/configuration.md#platforms
+
+platforms:
+  - chrome
+  - vm
+
+presets:
+  cirrus:
+    override_platforms:
+      chrome:
+        settings:
+          # Required because Cirrus runs us as root.
+          # https://chromium.googlesource.com/chromium/src/+/master/docs/design/sandbox.md
+          # https://docs.travis-ci.com/user/chrome#Sandboxing
+          arguments: --no-sandbox
+    reporter: expanded

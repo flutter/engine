@@ -80,11 +80,38 @@ AccessibilityBridge::GetNodeAttributes(const flutter::SemanticsNode& node,
 }
 
 fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
-    const flutter::SemanticsNode& node) const {
+    const flutter::SemanticsNode& node,
+    size_t* additional_size) const {
   fuchsia::accessibility::semantics::States states;
-  if (node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
-    states.set_checked(node.HasFlag(flutter::SemanticsFlags::kIsChecked));
+  (*additional_size) += sizeof(fuchsia::accessibility::semantics::States);
+
+  // Set checked state.
+  if (!node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
+    states.set_checked_state(
+        fuchsia::accessibility::semantics::CheckedState::NONE);
+  } else {
+    states.set_checked_state(
+        node.HasFlag(flutter::SemanticsFlags::kIsChecked)
+            ? fuchsia::accessibility::semantics::CheckedState::CHECKED
+            : fuchsia::accessibility::semantics::CheckedState::UNCHECKED);
   }
+
+  // Set selected state.
+  states.set_selected(node.HasFlag(flutter::SemanticsFlags::kIsSelected));
+
+  // Set hidden state.
+  states.set_hidden(node.HasFlag(flutter::SemanticsFlags::kIsHidden));
+
+  // Set value.
+  if (node.value.size() > fuchsia::accessibility::semantics::MAX_VALUE_SIZE) {
+    states.set_value(node.value.substr(
+        0, fuchsia::accessibility::semantics::MAX_VALUE_SIZE));
+    (*additional_size) += fuchsia::accessibility::semantics::MAX_VALUE_SIZE;
+  } else {
+    states.set_value(node.value);
+    (*additional_size) += node.value.size();
+  }
+
   return states;
 }
 
@@ -99,8 +126,8 @@ std::unordered_set<int32_t> AccessibilityBridge::GetDescendants(
 
     auto it = nodes_.find(id);
     if (it != nodes_.end()) {
-      auto const& children = it->second;
-      for (const auto& child : children) {
+      const auto& node = it->second;
+      for (const auto& child : node.children_in_hit_test_order) {
         if (descendents.find(child) == descendents.end()) {
           to_process.push_back(child);
         } else {
@@ -180,10 +207,18 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
   for (const auto& value : update) {
     size_t this_node_size = sizeof(fuchsia::accessibility::semantics::Node);
     const auto& flutter_node = value.second;
-    nodes_[flutter_node.id] =
-        std::vector<int32_t>(flutter_node.childrenInTraversalOrder);
+    // Store the nodes for later hit testing.
+    nodes_[flutter_node.id] = {
+        .id = flutter_node.id,
+        .flags = flutter_node.flags,
+        .rect = flutter_node.rect,
+        .transform = flutter_node.transform,
+        .children_in_hit_test_order = flutter_node.childrenInHitTestOrder,
+    };
     fuchsia::accessibility::semantics::Node fuchsia_node;
     std::vector<uint32_t> child_ids;
+    // Send the nodes in traversal order, so the manager can figure out
+    // traversal.
     for (int32_t flutter_child_id : flutter_node.childrenInTraversalOrder) {
       child_ids.push_back(FlutterIdToFuchsiaId(flutter_child_id));
     }
@@ -191,7 +226,7 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
         .set_location(GetNodeLocation(flutter_node))
         .set_transform(GetNodeTransform(flutter_node))
         .set_attributes(GetNodeAttributes(flutter_node, &this_node_size))
-        .set_states(GetNodeStates(flutter_node))
+        .set_states(GetNodeStates(flutter_node, &this_node_size))
         .set_child_ids(child_ids);
     this_node_size +=
         kNodeIdSize * flutter_node.childrenInTraversalOrder.size();
@@ -221,6 +256,7 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
   }
 
   PruneUnreachableNodes();
+  UpdateScreenRects();
 
   tree_ptr_->UpdateSemanticNodes(std::move(nodes));
   // TODO(dnfield): Implement the callback here
@@ -228,18 +264,142 @@ void AccessibilityBridge::AddSemanticsNodeUpdate(
   tree_ptr_->CommitUpdates([]() {});
 }
 
+void AccessibilityBridge::UpdateScreenRects() {
+  std::unordered_set<int32_t> visited_nodes;
+  UpdateScreenRects(kRootNodeId, SkMatrix44::I(), &visited_nodes);
+}
+
+void AccessibilityBridge::UpdateScreenRects(
+    int32_t node_id,
+    SkMatrix44 parent_transform,
+    std::unordered_set<int32_t>* visited_nodes) {
+  auto it = nodes_.find(node_id);
+  if (it == nodes_.end()) {
+    FML_LOG(ERROR) << "UpdateScreenRects called on unknown node";
+    return;
+  }
+  auto& node = it->second;
+  const auto& current_transform = parent_transform * node.transform;
+
+  const auto& rect = node.rect;
+  SkScalar quad[] = {
+      rect.left(),  rect.top(),     //
+      rect.right(), rect.top(),     //
+      rect.right(), rect.bottom(),  //
+      rect.left(),  rect.bottom(),  //
+  };
+  SkScalar dst[4 * 4];
+  current_transform.map2(quad, 4, dst);
+  node.screen_rect.setLTRB(dst[0], dst[1], dst[8], dst[9]);
+  node.screen_rect.sort();
+  std::vector<SkVector4> points = {
+      current_transform * SkVector4(rect.left(), rect.top(), 0, 1),
+      current_transform * SkVector4(rect.right(), rect.top(), 0, 1),
+      current_transform * SkVector4(rect.right(), rect.bottom(), 0, 1),
+      current_transform * SkVector4(rect.left(), rect.bottom(), 0, 1),
+  };
+
+  visited_nodes->emplace(node_id);
+
+  for (uint32_t child_id : node.children_in_hit_test_order) {
+    if (visited_nodes->find(child_id) == visited_nodes->end()) {
+      UpdateScreenRects(child_id, current_transform, visited_nodes);
+    }
+  }
+}
+
+std::optional<flutter::SemanticsAction>
+AccessibilityBridge::GetFlutterSemanticsAction(
+    fuchsia::accessibility::semantics::Action fuchsia_action,
+    uint32_t node_id) {
+  switch (fuchsia_action) {
+    // The default action associated with the element.
+    case fuchsia::accessibility::semantics::Action::DEFAULT:
+      return flutter::SemanticsAction::kTap;
+    // The secondary action associated with the element. This may correspond to
+    // a long press (touchscreens) or right click (mouse).
+    case fuchsia::accessibility::semantics::Action::SECONDARY:
+      return flutter::SemanticsAction::kLongPress;
+    // Set (input/non-accessibility) focus on this element.
+    case fuchsia::accessibility::semantics::Action::SET_FOCUS:
+      FML_DLOG(WARNING)
+          << "Unsupported action SET_FOCUS sent for accessibility node "
+          << node_id;
+      return {};
+    // Set the element's value.
+    case fuchsia::accessibility::semantics::Action::SET_VALUE:
+      FML_DLOG(WARNING)
+          << "Unsupported action SET_VALUE sent for accessibility node "
+          << node_id;
+      return {};
+    // Scroll node to make it visible.
+    case fuchsia::accessibility::semantics::Action::SHOW_ON_SCREEN:
+      return flutter::SemanticsAction::kShowOnScreen;
+    default:
+      FML_DLOG(WARNING) << "Unexpected action "
+                        << static_cast<int32_t>(fuchsia_action)
+                        << " sent for accessibility node " << node_id;
+      return {};
+  }
+}
+
 // |fuchsia::accessibility::semantics::SemanticListener|
 void AccessibilityBridge::OnAccessibilityActionRequested(
     uint32_t node_id,
     fuchsia::accessibility::semantics::Action action,
     fuchsia::accessibility::semantics::SemanticListener::
-        OnAccessibilityActionRequestedCallback callback) {}
+        OnAccessibilityActionRequestedCallback callback) {
+  if (nodes_.find(node_id) == nodes_.end()) {
+    FML_LOG(ERROR) << "Attempted to send accessibility action "
+                   << static_cast<int32_t>(action)
+                   << " to unkonwn node id: " << node_id;
+    callback(false);
+    return;
+  }
+
+  std::optional<flutter::SemanticsAction> flutter_action =
+      GetFlutterSemanticsAction(action, node_id);
+  if (!flutter_action.has_value()) {
+    callback(false);
+    return;
+  }
+  delegate_.DispatchSemanticsAction(static_cast<int32_t>(node_id),
+                                    flutter_action.value());
+  callback(true);
+}
 
 // |fuchsia::accessibility::semantics::SemanticListener|
 void AccessibilityBridge::HitTest(
     fuchsia::math::PointF local_point,
     fuchsia::accessibility::semantics::SemanticListener::HitTestCallback
-        callback) {}
+        callback) {
+  auto hit_node_id = GetHitNode(kRootNodeId, local_point.x, local_point.y);
+  FML_DCHECK(hit_node_id.has_value());
+  fuchsia::accessibility::semantics::Hit hit;
+  hit.set_node_id(hit_node_id.value_or(kRootNodeId));
+  callback(std::move(hit));
+}
+
+std::optional<int32_t> AccessibilityBridge::GetHitNode(int32_t node_id,
+                                                       float x,
+                                                       float y) {
+  auto it = nodes_.find(node_id);
+  if (it == nodes_.end()) {
+    FML_LOG(ERROR) << "Attempted to hit test unkonwn node id: " << node_id;
+    return {};
+  }
+  auto const& node = it->second;
+  if (node.flags &
+          static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden) ||  //
+      !node.screen_rect.contains(x, y)) {
+    return {};
+  }
+  auto hit = node_id;
+  for (int32_t child_id : node.children_in_hit_test_order) {
+    hit = GetHitNode(child_id, x, y).value_or(hit);
+  }
+  return hit;
+}
 
 // |fuchsia::accessibility::semantics::SemanticListener|
 void AccessibilityBridge::OnSemanticsModeChanged(

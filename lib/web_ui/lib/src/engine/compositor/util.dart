@@ -2,7 +2,99 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
+
+/// An object backed by a [js.JsObject] mapped onto a Skia C++ object in the
+/// WebAssembly heap.
+///
+/// These objects are automatically deleted when no longer used.
+///
+/// Because there is no feedback from JavaScript's GC (no destructors or
+/// finalizers), we pessimistically delete the underlying C++ object before
+/// the Dart object is garbage-collected. The current algorithm deletes objects
+/// at the end of every frame. This allows reusing the C++ objects within the
+/// frame. In the future we may add smarter strategies that will allow us to
+/// reuse C++ objects across frames.
+///
+/// The lifecycle of a C++ object is as follows:
+///
+/// - Create default: when instantiating a C++ object for a Dart object for the
+///   first time, the C++ object is populated with default data (the defaults are
+///   defined by Flutter; Skia defaults are corrected if necessary). The
+///   default object is created by [createDefault].
+/// - Zero or more cycles of delete + resurrect: when a Dart object is reused
+///   after its C++ object is deleted we create a new C++ object populated with
+///   data from the current state of the Dart object. This is done using the
+///   [resurrect] method.
+/// - Final delete: if a Dart object is never reused, it is GC'd after its
+///   underlying C++ object is deleted. This is implemented by [SkiaObjects].
+abstract class SkiaObject {
+  SkiaObject() {
+    _skiaObject = createDefault();
+    SkiaObjects.manage(this);
+  }
+
+  /// The JavaScript object that's mapped onto a Skia C++ object in the WebAssembly heap.
+  js.JsObject get skiaObject {
+    if (_skiaObject == null) {
+      _skiaObject = resurrect();
+      SkiaObjects.manage(this);
+    }
+    return _skiaObject;
+  }
+
+  /// Do not use this field outside this class. Use [skiaObject] instead.
+  js.JsObject _skiaObject;
+
+  /// Instantiates a new Skia-backed JavaScript object containing default
+  /// values.
+  ///
+  /// The object is expected to represent Flutter's defaults. If Skia uses
+  /// different defaults from those used by Flutter, this method is expected
+  /// initialize the object to Flutter's defaults.
+  js.JsObject createDefault();
+
+  /// Creates a new Skia-backed JavaScript object containing data representing
+  /// the current state of the Dart object.
+  js.JsObject resurrect();
+}
+
+/// Singleton that manages the lifecycles of [SkiaObject] instances.
+class SkiaObjects {
+  // TODO(yjbanov): some sort of LRU strategy would allow us to reuse objects
+  //                beyond a single frame.
+  @visibleForTesting
+  static final List<SkiaObject> managedObjects = () {
+    window.rasterizer.addPostFrameCallback(postFrameCleanUp);
+    return <SkiaObject>[];
+  }();
+
+  /// Starts managing the lifecycle of [object].
+  ///
+  /// The object's underlying WASM object is deleted by calling the
+  /// "delete" method when it goes out of scope.
+  ///
+  /// The current implementation deletes objects at the end of every frame.
+  static void manage(SkiaObject object) {
+    managedObjects.add(object);
+  }
+
+  /// Deletes all C++ objects created this frame.
+  static void postFrameCleanUp() {
+    if (managedObjects.isEmpty) {
+      return;
+    }
+
+    for (int i = 0; i < managedObjects.length; i++) {
+      final SkiaObject object = managedObjects[i];
+      object._skiaObject.callMethod('delete');
+      object._skiaObject = null;
+    }
+
+    managedObjects.clear();
+  }
+}
 
 js.JsObject makeSkRect(ui.Rect rect) {
   return js.JsObject(canvasKit['LTRBRect'],
@@ -150,83 +242,6 @@ js.JsObject makeSkBlendMode(ui.BlendMode blendMode) {
   }
 }
 
-js.JsObject makeSkPaint(ui.Paint paint) {
-  if (paint == null) return null;
-
-  final dynamic skPaint = js.JsObject(canvasKit['SkPaint']);
-
-  if (paint.shader != null) {
-    final EngineGradient engineShader = paint.shader;
-    skPaint.callMethod(
-        'setShader', <js.JsObject>[engineShader.createSkiaShader()]);
-  }
-
-  if (paint.color != null) {
-    skPaint.callMethod('setColor', <int>[paint.color.value]);
-  }
-
-  js.JsObject skPaintStyle;
-  switch (paint.style) {
-    case ui.PaintingStyle.stroke:
-      skPaintStyle = canvasKit['PaintStyle']['Stroke'];
-      break;
-    case ui.PaintingStyle.fill:
-      skPaintStyle = canvasKit['PaintStyle']['Fill'];
-      break;
-  }
-  skPaint.callMethod('setStyle', <js.JsObject>[skPaintStyle]);
-
-  js.JsObject skBlendMode = makeSkBlendMode(paint.blendMode);
-  if (skBlendMode != null) {
-    skPaint.callMethod('setBlendMode', <js.JsObject>[skBlendMode]);
-  }
-
-  skPaint.callMethod('setAntiAlias', <bool>[paint.isAntiAlias]);
-
-  if (paint.strokeWidth != 0.0) {
-    skPaint.callMethod('setStrokeWidth', <double>[paint.strokeWidth]);
-  }
-
-  if (paint.maskFilter != null) {
-    final ui.BlurStyle blurStyle = paint.maskFilter.webOnlyBlurStyle;
-    final double sigma = paint.maskFilter.webOnlySigma;
-
-    js.JsObject skBlurStyle;
-    switch (blurStyle) {
-      case ui.BlurStyle.normal:
-        skBlurStyle = canvasKit['BlurStyle']['Normal'];
-        break;
-      case ui.BlurStyle.solid:
-        skBlurStyle = canvasKit['BlurStyle']['Solid'];
-        break;
-      case ui.BlurStyle.outer:
-        skBlurStyle = canvasKit['BlurStyle']['Outer'];
-        break;
-      case ui.BlurStyle.inner:
-        skBlurStyle = canvasKit['BlurStyle']['Inner'];
-        break;
-    }
-
-    final js.JsObject skMaskFilter = canvasKit
-        .callMethod('MakeBlurMaskFilter', <dynamic>[skBlurStyle, sigma, true]);
-    skPaint.callMethod('setMaskFilter', <js.JsObject>[skMaskFilter]);
-  }
-
-  if (paint.imageFilter != null) {
-    final SkImageFilter skImageFilter = paint.imageFilter;
-    skPaint.callMethod(
-        'setImageFilter', <js.JsObject>[skImageFilter.skImageFilter]);
-  }
-
-  if (paint.colorFilter != null) {
-    EngineColorFilter engineFilter = paint.colorFilter;
-    SkColorFilter skFilter = engineFilter._toSkColorFilter();
-    skPaint.callMethod('setColorFilter', <js.JsObject>[skFilter.skColorFilter]);
-  }
-
-  return skPaint;
-}
-
 // Mappings from SkMatrix-index to input-index.
 const List<int> _skMatrixIndexToMatrix4Index = <int>[
   0, 4, 12, // Row 1
@@ -270,10 +285,6 @@ js.JsArray<double> makeSkiaColorStops(List<double> colorStops) {
   jsColorStops.length = colorStops.length;
   return jsColorStops;
 }
-
-// These must be kept in sync with `flow/layers/physical_shape_layer.cc`.
-const double kLightHeight = 600.0;
-const double kLightRadius = 800.0;
 
 void drawSkShadow(
   js.JsObject skCanvas,
