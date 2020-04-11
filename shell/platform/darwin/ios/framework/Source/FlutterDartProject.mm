@@ -132,6 +132,9 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     }
   }
 
+  // On iOS, we ban HTTP by default.
+  settings.disable_http = true;
+
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // There are no ownership concerns here as all mappings are owned by the
   // embedder and not the engine.

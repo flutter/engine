@@ -199,6 +199,8 @@ public class FlutterLoader {
       if (settings.getLogTag() != null) {
         shellArgs.add("--log-tag=" + settings.getLogTag());
       }
+      // On Android, we ban HTTP connections by default.
+      shellArgs.add("--disable-http");
 
       String appStoragePath = PathUtils.getFilesDir(applicationContext);
       String engineCachesPath = PathUtils.getCacheDirectory(applicationContext);
