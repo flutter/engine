@@ -11,8 +11,8 @@
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/logging/dart_error.h"
 
-using tonic::ToDart;
 using tonic::LogIfError;
+using tonic::ToDart;
 
 namespace flutter {
 
