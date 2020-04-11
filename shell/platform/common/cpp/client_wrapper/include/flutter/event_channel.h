@@ -25,7 +25,7 @@ namespace flutter {
 // ("https://docs.flutter.io/flutter/services/EventChannel-class.html")
 // counterpart of this channel on the Dart side.
 // The C++ type of stream configuration arguments, events, and error details are
-// Template, but only values supported by the specified MethodCodec can be used.
+// templated, but only values supported by the specified MethodCodec can be used.
 template <typename T>
 class EventChannel {
  public:
@@ -44,24 +44,26 @@ class EventChannel {
   // Registers a stream handler on this channel.
   // If no handler has been registered, any incoming stream setup requests will
   // be handled silently by providing an empty stream.
-  void SetStreamHandler(StreamHandler<T>* handler) const {
+  void SetStreamHandler(StreamHandler<T>* handler) {
     if (!handler) {
       messenger_->SetMessageHandler(name_, nullptr);
+      is_listened_ = false;
       return;
     }
 
     const MethodCodec<T>* codec = codec_;
     const std::string channel_name = name_;
     const BinaryMessenger* messenger = messenger_;
+    bool& is_listend = is_listened_;
     BinaryMessageHandler binary_handler = [handler, codec, channel_name,
-                                           messenger](
+                                           messenger, &is_listend](
                                               const uint8_t* message,
                                               const size_t message_size,
-                                              BinaryReply reply) mutable {
+                                              BinaryReply reply) {
       constexpr char kOnListenMethod[] = "listen";
       constexpr char kOnCancelMethod[] = "cancel";
 
-      std::unique_ptr<MethodCall<T>> method_call =
+      std::shared_ptr<MethodCall<T>> method_call =
           codec->DecodeMethodCall(message, message_size);
       if (!method_call) {
         std::cerr << "Unable to construct method call from message on channel: "
@@ -71,6 +73,10 @@ class EventChannel {
 
       const std::string& method = method_call->method_name();
       if (method.compare(kOnListenMethod) == 0) {
+        if (is_listend) {
+          handler->onCancel(nullptr);
+        }
+        is_listend = true;
         auto sink = std::make_unique<EventSinkImplementation>(
             messenger, channel_name, codec);
         handler->onListen(method_call->arguments(), std::move(sink));
@@ -78,14 +84,18 @@ class EventChannel {
         auto result = codec->EncodeSuccessEnvelope();
         reply(result->data(), result->size());
       } else if (method.compare(kOnCancelMethod) == 0) {
-        handler->onCancel(method_call->arguments());
-
-        auto result = codec->EncodeSuccessEnvelope();
+        std::unique_ptr<std::vector<uint8_t>> result;
+        if (is_listend) {
+          handler->onCancel(method_call->arguments());
+          result = codec->EncodeSuccessEnvelope();
+          is_listend = false;
+        } else {
+          result = 
+            codec->EncodeErrorEnvelope("error",
+                                       "No active stream to cancel", nullptr);
+        }
         reply(result->data(), result->size());
       } else {
-        std::cerr
-            << "Unknown event channel method call from message on channel: "
-            << channel_name << std::endl;
         reply(nullptr, 0);
       }
     };
@@ -130,6 +140,7 @@ class EventChannel {
   BinaryMessenger* messenger_;
   const std::string name_;
   const MethodCodec<T>* codec_;
+  bool is_listened_;
 };
 
 }  // namespace flutter
