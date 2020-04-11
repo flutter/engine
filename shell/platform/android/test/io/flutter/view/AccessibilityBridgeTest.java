@@ -169,9 +169,9 @@ public class AccessibilityBridgeTest {
         bytes.putFloat(0);
       }
       // children in traversal order.
-      bytes.putInt((byte) 0);
+      bytes.putInt(0);
       // custom actions
-      bytes.putInt((byte) 0);
+      bytes.putInt(0);
       bytes.flip();
       return new TestSemanticsUpdate(bytes, strings.toArray(new String[strings.size()]));
     }
