@@ -741,7 +741,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     if (semanticsNode.hasFlag(Flag.IS_TEXT_FIELD)) {
       result.setText(semanticsNode.getValueLabelHint());
-    } else {
+    } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
       result.setContentDescription(semanticsNode.getValueLabelHint());
     }
 
@@ -1659,7 +1659,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
   // Must match SemanticsFlag in semantics.dart
   // https://github.com/flutter/engine/blob/master/lib/ui/semantics.dart
-  private enum Flag {
+  public enum Flag {
     HAS_CHECKED_STATE(1 << 0),
     IS_CHECKED(1 << 1),
     IS_SELECTED(1 << 2),
