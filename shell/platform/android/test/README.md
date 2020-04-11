@@ -18,15 +18,9 @@ integration tests in other repos.
 3. Add your class to the `@SuiteClasses` annotation in `FlutterTestSuite.java`.
    This makes sure the test is actually executed at run time.
 4. Write your test.
-5. Build and run with `testing/run_tests.py [--type=java] [--java-filter=<test_class_name>] [--java-path=<path/to/java>]`.
+5. Build and run with `testing/run_tests.py [--type=java] [--java-filter=<test_class_name>]`.
 
-### FAQ
-
-### The tests harness says it requires Java 1.8 but I have a newer version?
-
-The Robotelectric tests require 1.8 and by default run_test.py will use the java
-from your PATH. This can be overriden by providing a `--java-path` argument
-pointing at a different java, such as the JRE bundled with Android Studio.
+## Q&A
 
 ### Why are we using Robolectric 3.8 when Robolectric 4+ is current?
 
