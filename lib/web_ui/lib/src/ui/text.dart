@@ -866,14 +866,6 @@ class TextBox {
     this.direction,
   );
 
-  TextBox._(
-    this.left,
-    this.top,
-    this.right,
-    this.bottom,
-    int directionIndex,
-  ) : direction = TextDirection.values[directionIndex];
-
   /// The left edge of the text box, irrespective of direction.
   ///
   /// To get the leading edge (which may depend on the [direction]), consider [start].
@@ -1113,8 +1105,12 @@ class TextRange {
 
   @override
   bool operator ==(dynamic other) {
-    if (identical(this, other)) return true;
-    if (other is! TextRange) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! TextRange) {
+      return false;
+    }
     final TextRange typedOther = other;
     return typedOther.start == start && typedOther.end == end;
   }
@@ -1590,22 +1586,11 @@ abstract class ParagraphBuilder {
 Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
   if (engine.experimentalUseSkia) {
     return engine.skiaFontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
-        (_) => _sendFontChangeMessage()
+        (_) => engine.sendFontChangeMessage()
     );
   } else {
     return _fontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
-      (_) => _sendFontChangeMessage()
+      (_) => engine.sendFontChangeMessage()
     );
   }
-}
-
-final ByteData _fontChangeMessage = engine.JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
-
-FutureOr<void> _sendFontChangeMessage() async {
-  if (window.onPlatformMessage != null)
-    window.onPlatformMessage(
-      'flutter/system',
-      _fontChangeMessage,
-      (_) {},
-    );
 }

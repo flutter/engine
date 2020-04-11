@@ -68,7 +68,8 @@ class IOSSurface : public ExternalViewEmbedder {
                                     std::unique_ptr<flutter::EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
-  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) override;
+  PostPrerollResult PostPrerollAction(
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
   std::vector<SkCanvas*> GetCurrentCanvases() override;
@@ -77,7 +78,13 @@ class IOSSurface : public ExternalViewEmbedder {
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  bool SubmitFrame(GrContext* context) override;
+  bool SubmitFrame(GrContext* context, SkCanvas* background_canvas) override;
+
+  // |ExternalViewEmbedder|
+  void FinishFrame() override;
+
+  // |ExternalViewEmbedder|
+  void EndFrame(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
  public:
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurface);

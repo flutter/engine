@@ -45,7 +45,7 @@ const double kLightOffsetY = -400.0;
 /// This is not a complete physical model. For example, this does not take into
 /// account the size of the shape (this function doesn't even take the shape as
 /// a parameter). It's just a good enough approximation.
-ui.Offset computeShadowOffset(elevation) {
+ui.Offset computeShadowOffset(double elevation) {
   if (elevation == 0.0) {
     return ui.Offset.zero;
   }
@@ -133,7 +133,9 @@ void applyCssShadow(
   if (shadow == null) {
     element.style.boxShadow = 'none';
   } else {
+    // Multiply by 0.4 to make shadows less aggressive (https://github.com/flutter/flutter/issues/52734)
+    final double alpha = 0.4 * color.alpha / 255;
     element.style.boxShadow = '${shadow.offset.dx}px ${shadow.offset.dy}px '
-        '${shadow.blurWidth}px 0px rgb(${color.red}, ${color.green}, ${color.blue})';
+        '${shadow.blurWidth}px 0px rgba(${color.red}, ${color.green}, ${color.blue}, $alpha)';
   }
 }

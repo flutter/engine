@@ -60,8 +60,6 @@ source_set("flutter_windows_source") {
     "window_state.h",
   ]
 
-  defines = [ "USE_RAPID_JSON" ]
-
   configs += [
     "//flutter/shell/platform/common/cpp:desktop_library_implementation",
     "//third_party/angle:gl_prototypes",
@@ -125,11 +123,6 @@ executable("flutter_windows_unittests") {
     ":flutter_windows_headers",
     ":flutter_windows_source",
     "//flutter/testing",
-
-    # TODO(chunhtai): Consider refactoring flutter_root/testing so that there's a testing
-    # target that doesn't require a Dart runtime to be linked in.
-    # https://github.com/flutter/flutter/issues/41414.
-    "//third_party/dart/runtime:libdart_jit",
     "//third_party/rapidjson",
   ]
 }

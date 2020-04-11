@@ -31,12 +31,10 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 #endif  // !defined(DART_PRODUCT)
 
 int main(int argc, const char** argv) {
-  fx_log_init();
   async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
 
   std::unique_ptr<trace::TraceProviderWithFdio> provider;
   {
-    TRACE_DURATION("dart", "CreateTraceProvider");
     bool already_started;
     // Use CreateSynchronously to prevent loss of early events.
     trace::TraceProviderWithFdio::CreateSynchronously(

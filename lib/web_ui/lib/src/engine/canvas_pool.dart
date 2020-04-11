@@ -79,6 +79,10 @@ class _CanvasPool extends _SaveStackTracking {
     bool requiresClearRect = false;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
+      // If a canvas is the first element we set z-index = -1 to workaround
+      // blink compositing bug. To make sure this does not leak when reused
+      // reset z-index.
+      _canvas.style.removeProperty('z-index');
       requiresClearRect = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
@@ -613,7 +617,12 @@ class _CanvasPool extends _SaveStackTracking {
         context.save();
         context.filter = 'none';
         context.strokeStyle = '';
-        context.fillStyle = colorToCssString(color);
+        final int red = color.red;
+        final int green = color.green;
+        final int blue = color.blue;
+        // Multiply by 0.4 to make shadows less aggressive (https://github.com/flutter/flutter/issues/52734)
+        final int alpha = (0.4 * color.alpha).round();
+        context.fillStyle = colorComponentsToCssString(red, green, blue, alpha);
         context.shadowBlur = shadow.blurWidth;
         context.shadowColor = colorToCssString(color.withAlpha(0xff));
         context.shadowOffsetX = shadow.offset.dx;

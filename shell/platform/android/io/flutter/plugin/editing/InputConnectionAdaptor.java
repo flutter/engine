@@ -21,6 +21,8 @@ import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.ExtractedText;
+import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import io.flutter.Log;
@@ -35,9 +37,57 @@ class InputConnectionAdaptor extends BaseInputConnection {
   private int mBatchCount;
   private InputMethodManager mImm;
   private final Layout mLayout;
-
   // Used to determine if Samsung-specific hacks should be applied.
   private final boolean isSamsung;
+
+  private boolean mRepeatCheckNeeded = false;
+  private TextEditingValue mLastSentTextEditngValue;
+  // Data class used to get and store the last-sent values via updateEditingState to
+  // the  framework. These are then compared against to prevent redundant messages
+  // with the same data before any valid operations were made to the contents.
+  private class TextEditingValue {
+    public int selectionStart;
+    public int selectionEnd;
+    public int composingStart;
+    public int composingEnd;
+    public String text;
+
+    public TextEditingValue(Editable editable) {
+      selectionStart = Selection.getSelectionStart(editable);
+      selectionEnd = Selection.getSelectionEnd(editable);
+      composingStart = BaseInputConnection.getComposingSpanStart(editable);
+      composingEnd = BaseInputConnection.getComposingSpanEnd(editable);
+      text = editable.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == this) {
+        return true;
+      }
+      if (!(o instanceof TextEditingValue)) {
+        return false;
+      }
+      TextEditingValue value = (TextEditingValue) o;
+      return selectionStart == value.selectionStart
+          && selectionEnd == value.selectionEnd
+          && composingStart == value.composingStart
+          && composingEnd == value.composingEnd
+          && text.equals(value.text);
+    }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + selectionStart;
+      result = prime * result + selectionEnd;
+      result = prime * result + composingStart;
+      result = prime * result + composingEnd;
+      result = prime * result + text.hashCode();
+      return result;
+    }
+  }
 
   @SuppressWarnings("deprecation")
   public InputConnectionAdaptor(
@@ -74,15 +124,42 @@ class InputConnectionAdaptor extends BaseInputConnection {
     // If the IME is in the middle of a batch edit, then wait until it completes.
     if (mBatchCount > 0) return;
 
-    int selectionStart = Selection.getSelectionStart(mEditable);
-    int selectionEnd = Selection.getSelectionEnd(mEditable);
-    int composingStart = BaseInputConnection.getComposingSpanStart(mEditable);
-    int composingEnd = BaseInputConnection.getComposingSpanEnd(mEditable);
+    TextEditingValue currentValue = new TextEditingValue(mEditable);
 
-    mImm.updateSelection(mFlutterView, selectionStart, selectionEnd, composingStart, composingEnd);
+    // Return if this data has already been sent and no meaningful changes have
+    // occurred to mark this as dirty. This prevents duplicate remote updates of
+    // the same data, which can break formatters that change the length of the
+    // contents.
+    if (mRepeatCheckNeeded && currentValue.equals(mLastSentTextEditngValue)) {
+      return;
+    }
+
+    mImm.updateSelection(
+        mFlutterView,
+        currentValue.selectionStart,
+        currentValue.selectionEnd,
+        currentValue.composingStart,
+        currentValue.composingEnd);
 
     textInputChannel.updateEditingState(
-        mClient, mEditable.toString(), selectionStart, selectionEnd, composingStart, composingEnd);
+        mClient,
+        currentValue.text,
+        currentValue.selectionStart,
+        currentValue.selectionEnd,
+        currentValue.composingStart,
+        currentValue.composingEnd);
+
+    mRepeatCheckNeeded = true;
+    mLastSentTextEditngValue = currentValue;
+  }
+
+  // This should be called whenever a change could have been made to
+  // the value of mEditable, which will make any call of updateEditingState()
+  // ineligible for repeat checking as we do not want to skip sending real changes
+  // to the framework.
+  public void markDirty() {
+    // Disable updateEditngState's repeat-update check
+    mRepeatCheckNeeded = false;
   }
 
   @Override
@@ -107,7 +184,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
   @Override
   public boolean commitText(CharSequence text, int newCursorPosition) {
     boolean result = super.commitText(text, newCursorPosition);
-    updateEditingState();
+    markDirty();
     return result;
   }
 
@@ -116,14 +193,21 @@ class InputConnectionAdaptor extends BaseInputConnection {
     if (Selection.getSelectionStart(mEditable) == -1) return true;
 
     boolean result = super.deleteSurroundingText(beforeLength, afterLength);
-    updateEditingState();
+    markDirty();
+    return result;
+  }
+
+  @Override
+  public boolean deleteSurroundingTextInCodePoints(int beforeLength, int afterLength) {
+    boolean result = super.deleteSurroundingTextInCodePoints(beforeLength, afterLength);
+    markDirty();
     return result;
   }
 
   @Override
   public boolean setComposingRegion(int start, int end) {
     boolean result = super.setComposingRegion(start, end);
-    updateEditingState();
+    markDirty();
     return result;
   }
 
@@ -135,7 +219,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     } else {
       result = super.setComposingText(text, newCursorPosition);
     }
-    updateEditingState();
+    markDirty();
     return result;
   }
 
@@ -155,28 +239,26 @@ class InputConnectionAdaptor extends BaseInputConnection {
         CursorAnchorInfo anchorInfo = builder.build();
         mImm.updateCursorAnchorInfo(mFlutterView, anchorInfo);
       }
-      // TODO(garyq): There is still a duplication case that comes from hiding+showing the keyboard.
-      // The exact behavior to cause it has so far been hard to pinpoint and it happens far more
-      // rarely than the original bug.
-
-      // Temporarily indicate to the IME that the composing region selection should be reset.
-      // The correct selection is then immediately set properly in the updateEditingState() call
-      // in this method. This is a hack to trigger Samsung keyboard's internal cache to clear.
-      // This prevents duplication on keyboard hide+show. See
-      // https://github.com/flutter/flutter/issues/31512
-      //
-      // We only do this if the proper selection will be restored later, eg, when mBatchCount is 0.
-      if (mBatchCount == 0) {
-        mImm.updateSelection(
-            mFlutterView,
-            -1, /*selStart*/
-            -1, /*selEnd*/
-            -1, /*candidatesStart*/
-            -1 /*candidatesEnd*/);
-      }
     }
 
-    updateEditingState();
+    markDirty();
+    return result;
+  }
+
+  // TODO(garyq): Implement a more feature complete version of getExtractedText
+  @Override
+  public ExtractedText getExtractedText(ExtractedTextRequest request, int flags) {
+    ExtractedText extractedText = new ExtractedText();
+    extractedText.selectionStart = Selection.getSelectionStart(mEditable);
+    extractedText.selectionEnd = Selection.getSelectionEnd(mEditable);
+    extractedText.text = mEditable.toString();
+    return extractedText;
+  }
+
+  @Override
+  public boolean clearMetaKeyStates(int states) {
+    boolean result = super.clearMetaKeyStates(states);
+    markDirty();
     return result;
   }
 
@@ -204,7 +286,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
   @Override
   public boolean setSelection(int start, int end) {
     boolean result = super.setSelection(start, end);
-    updateEditingState();
+    markDirty();
     return result;
   }
 
@@ -226,6 +308,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
+    markDirty();
     if (event.getAction() == KeyEvent.ACTION_DOWN) {
       if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
         int selStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
@@ -351,6 +434,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean performContextMenuAction(int id) {
+    markDirty();
     if (id == android.R.id.selectAll) {
       setSelection(0, mEditable.length());
       return true;
@@ -404,6 +488,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean performEditorAction(int actionCode) {
+    markDirty();
     switch (actionCode) {
       case EditorInfo.IME_ACTION_NONE:
         textInputChannel.newline(mClient);

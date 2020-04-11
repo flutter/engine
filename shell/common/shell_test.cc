@@ -202,6 +202,31 @@ bool ShellTest::GetNeedsReportTimings(Shell* shell) {
   return shell->needs_report_timings_;
 }
 
+void ShellTest::OnServiceProtocol(
+    Shell* shell,
+    ServiceProtocolEnum some_protocol,
+    fml::RefPtr<fml::TaskRunner> task_runner,
+    const ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document& response) {
+  std::promise<bool> finished;
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runner, [shell, some_protocol, params, &response, &finished]() {
+        switch (some_protocol) {
+          case ServiceProtocolEnum::kGetSkSLs:
+            shell->OnServiceProtocolGetSkSLs(params, response);
+            break;
+          case ServiceProtocolEnum::kSetAssetBundlePath:
+            shell->OnServiceProtocolSetAssetBundlePath(params, response);
+            break;
+          case ServiceProtocolEnum::kRunInView:
+            shell->OnServiceProtocolRunInView(params, response);
+            break;
+        }
+        finished.set_value(true);
+      });
+  finished.get_future().wait();
+}
+
 std::shared_ptr<txt::FontCollection> ShellTest::GetFontCollection(
     Shell* shell) {
   return shell->weak_engine_->GetFontCollection().GetFontCollection();
@@ -230,10 +255,14 @@ TaskRunners ShellTest::GetTaskRunnersForFixture() {
   return {
       "test",
       thread_host_.platform_thread->GetTaskRunner(),  // platform
-      thread_host_.gpu_thread->GetTaskRunner(),       // gpu
+      thread_host_.raster_thread->GetTaskRunner(),    // raster
       thread_host_.ui_thread->GetTaskRunner(),        // ui
       thread_host_.io_thread->GetTaskRunner()         // io
   };
+}
+
+fml::TimePoint ShellTest::GetLatestFrameTargetTime(Shell* shell) const {
+  return shell->GetLatestFrameTargetTime();
 }
 
 std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
@@ -242,9 +271,12 @@ std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
                      simulate_vsync);
 }
 
-std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
-                                              TaskRunners task_runners,
-                                              bool simulate_vsync) {
+std::unique_ptr<Shell> ShellTest::CreateShell(
+    Settings settings,
+    TaskRunners task_runners,
+    bool simulate_vsync,
+    std::shared_ptr<ShellTestExternalViewEmbedder>
+        shell_test_external_view_embedder) {
   const auto vsync_clock = std::make_shared<ShellTestVsyncClock>();
   CreateVsyncWaiter create_vsync_waiter = [&]() {
     if (simulate_vsync) {
@@ -257,17 +289,18 @@ std::unique_ptr<Shell> ShellTest::CreateShell(Settings settings,
   };
   return Shell::Create(
       task_runners, settings,
-      [vsync_clock, &create_vsync_waiter](Shell& shell) {
+      [vsync_clock, &create_vsync_waiter,
+       shell_test_external_view_embedder](Shell& shell) {
         return ShellTestPlatformView::Create(
             shell, shell.GetTaskRunners(), vsync_clock,
             std::move(create_vsync_waiter),
-            ShellTestPlatformView::BackendType::kDefaultBackend);
+            ShellTestPlatformView::BackendType::kDefaultBackend,
+            shell_test_external_view_embedder);
       },
       [](Shell& shell) {
         return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
       });
 }
-
 void ShellTest::DestroyShell(std::unique_ptr<Shell> shell) {
   DestroyShell(std::move(shell), GetTaskRunnersForFixture());
 }

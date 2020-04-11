@@ -30,6 +30,7 @@
 #include "rapidjson/writer.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/core/SkGraphics.h"
+#include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
 
 namespace flutter {
@@ -55,16 +56,16 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   auto shell =
       std::unique_ptr<Shell>(new Shell(std::move(vm), task_runners, settings));
 
-  // Create the rasterizer on the GPU thread.
+  // Create the rasterizer on the raster thread.
   std::promise<std::unique_ptr<Rasterizer>> rasterizer_promise;
   auto rasterizer_future = rasterizer_promise.get_future();
   std::promise<fml::WeakPtr<SnapshotDelegate>> snapshot_delegate_promise;
   auto snapshot_delegate_future = snapshot_delegate_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetGPUTaskRunner(), [&rasterizer_promise,  //
-                                        &snapshot_delegate_promise,
-                                        on_create_rasterizer,  //
-                                        shell = shell.get()    //
+      task_runners.GetRasterTaskRunner(), [&rasterizer_promise,  //
+                                           &snapshot_delegate_promise,
+                                           on_create_rasterizer,  //
+                                           shell = shell.get()    //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
         std::unique_ptr<Rasterizer> rasterizer(on_create_rasterizer(*shell));
@@ -335,11 +336,11 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  // Generate a WeakPtrFactory for use with the GPU thread. This does not need
-  // to wait on a latch because it can only ever be used from the GPU thread
-  // from this class, so we have ordering guarantees.
+  // Generate a WeakPtrFactory for use with the raster thread. This does not
+  // need to wait on a latch because it can only ever be used from the raster
+  // thread from this class, so we have ordering guarantees.
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetGPUTaskRunner(), fml::MakeCopyable([this]() mutable {
+      task_runners_.GetRasterTaskRunner(), fml::MakeCopyable([this]() mutable {
         this->weak_factory_gpu_ =
             std::make_unique<fml::WeakPtrFactory<Shell>>(this);
       }));
@@ -347,11 +348,11 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
   // Install service protocol handlers.
 
   service_protocol_handlers_[ServiceProtocol::kScreenshotExtensionName] = {
-      task_runners_.GetGPUTaskRunner(),
+      task_runners_.GetRasterTaskRunner(),
       std::bind(&Shell::OnServiceProtocolScreenshot, this,
                 std::placeholders::_1, std::placeholders::_2)};
   service_protocol_handlers_[ServiceProtocol::kScreenshotSkpExtensionName] = {
-      task_runners_.GetGPUTaskRunner(),
+      task_runners_.GetRasterTaskRunner(),
       std::bind(&Shell::OnServiceProtocolScreenshotSKP, this,
                 std::placeholders::_1, std::placeholders::_2)};
   service_protocol_handlers_[ServiceProtocol::kRunInViewExtensionName] = {
@@ -373,6 +374,10 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
           task_runners_.GetUITaskRunner(),
           std::bind(&Shell::OnServiceProtocolGetDisplayRefreshRate, this,
                     std::placeholders::_1, std::placeholders::_2)};
+  service_protocol_handlers_[ServiceProtocol::kGetSkSLsExtensionName] = {
+      task_runners_.GetIOTaskRunner(),
+      std::bind(&Shell::OnServiceProtocolGetSkSLs, this, std::placeholders::_1,
+                std::placeholders::_2)};
 }
 
 Shell::~Shell() {
@@ -392,7 +397,7 @@ Shell::~Shell() {
   ui_latch.Wait();
 
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetGPUTaskRunner(),
+      task_runners_.GetRasterTaskRunner(),
       fml::MakeCopyable([rasterizer = std::move(rasterizer_),
                          weak_factory_gpu = std::move(weak_factory_gpu_),
                          &gpu_latch]() mutable {
@@ -436,7 +441,7 @@ void Shell::NotifyLowMemoryWarning() const {
   // running.
   ::Dart_NotifyLowMemory();
 
-  task_runners_.GetGPUTaskRunner()->PostTask(
+  task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr()]() {
         if (rasterizer) {
           rasterizer->NotifyLowMemoryWarning();
@@ -600,8 +605,8 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // setup/suspension of all activities that may be interacting with the GPU in
   // a synchronous fashion.
   fml::AutoResetWaitableEvent latch;
-  auto gpu_task =
-      fml::MakeCopyable([& waiting_for_first_frame = waiting_for_first_frame_,
+  auto raster_task =
+      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
                          rasterizer = rasterizer_->GetWeakPtr(),  //
                          surface = std::move(surface),            //
                          &latch]() mutable {
@@ -618,30 +623,31 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   // The normal flow executed by this method is that the platform thread is
   // starting the sequence and waiting on the latch. Later the UI thread posts
-  // gpu_task to the GPU thread which signals the latch. If the GPU the and
-  // platform threads are the same this results in a deadlock as the gpu_task
-  // will never be posted to the plaform/gpu thread that is blocked on a latch.
-  // To avoid the described deadlock, if the gpu and the platform threads are
-  // the same, should_post_gpu_task will be false, and then instead of posting a
-  // task to the gpu thread, the ui thread just signals the latch and the
-  // platform/gpu thread follows with executing gpu_task.
-  bool should_post_gpu_task =
-      task_runners_.GetGPUTaskRunner() != task_runners_.GetPlatformTaskRunner();
+  // raster_task to the raster thread which signals the latch. If the raster and
+  // the platform threads are the same this results in a deadlock as the
+  // raster_task will never be posted to the plaform/raster thread that is
+  // blocked on a latch. To avoid the described deadlock, if the raster and the
+  // platform threads are the same, should_post_raster_task will be false, and
+  // then instead of posting a task to the raster thread, the ui thread just
+  // signals the latch and the platform/raster thread follows with executing
+  // raster_task.
+  bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
+                                 task_runners_.GetPlatformTaskRunner();
 
-  auto ui_task = [engine = engine_->GetWeakPtr(),                      //
-                  gpu_task_runner = task_runners_.GetGPUTaskRunner(),  //
-                  gpu_task, should_post_gpu_task,
+  auto ui_task = [engine = engine_->GetWeakPtr(),                            //
+                  raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
+                  raster_task, should_post_raster_task,
                   &latch  //
   ] {
     if (engine) {
       engine->OnOutputSurfaceCreated();
     }
-    // Step 2: Next, tell the GPU thread that it should create a surface for its
-    // rasterizer.
-    if (should_post_gpu_task) {
-      fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, gpu_task);
+    // Step 2: Next, tell the raster thread that it should create a surface for
+    // its rasterizer.
+    if (should_post_raster_task) {
+      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
     } else {
-      // See comment on should_post_gpu_task, in this case we just unblock
+      // See comment on should_post_raster_task, in this case we just unblock
       // the platform thread.
       latch.Signal();
     }
@@ -669,11 +675,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetIOTaskRunner(), io_task);
 
   latch.Wait();
-  if (!should_post_gpu_task) {
-    // See comment on should_post_gpu_task, in this case the gpu_task
+  if (!should_post_raster_task) {
+    // See comment on should_post_raster_task, in this case the raster_task
     // wasn't executed, and we just run it here as the platform thread
-    // is the GPU thread.
-    gpu_task();
+    // is the raster thread.
+    raster_task();
   }
 }
 
@@ -701,9 +707,9 @@ void Shell::OnPlatformViewDestroyed() {
     latch.Signal();
   };
 
-  auto gpu_task = [rasterizer = rasterizer_->GetWeakPtr(),
-                   io_task_runner = task_runners_.GetIOTaskRunner(),
-                   io_task]() {
+  auto raster_task = [rasterizer = rasterizer_->GetWeakPtr(),
+                      io_task_runner = task_runners_.GetIOTaskRunner(),
+                      io_task]() {
     if (rasterizer) {
       rasterizer->Teardown();
     }
@@ -713,28 +719,29 @@ void Shell::OnPlatformViewDestroyed() {
 
   // The normal flow executed by this method is that the platform thread is
   // starting the sequence and waiting on the latch. Later the UI thread posts
-  // gpu_task to the GPU thread triggers signaling the latch(on the IO thread).
-  // If the GPU the and platform threads are the same this results in a deadlock
-  // as the gpu_task will never be posted to the plaform/gpu thread that is
-  // blocked on a latch.  To avoid the described deadlock, if the gpu and the
-  // platform threads are the same, should_post_gpu_task will be false, and then
-  // instead of posting a task to the gpu thread, the ui thread just signals the
-  // latch and the platform/gpu thread follows with executing gpu_task.
-  bool should_post_gpu_task =
-      task_runners_.GetGPUTaskRunner() != task_runners_.GetPlatformTaskRunner();
+  // raster_task to the raster thread triggers signaling the latch(on the IO
+  // thread). If the raster and the platform threads are the same this results
+  // in a deadlock as the raster_task will never be posted to the plaform/raster
+  // thread that is blocked on a latch.  To avoid the described deadlock, if the
+  // raster and the platform threads are the same, should_post_raster_task will
+  // be false, and then instead of posting a task to the raster thread, the ui
+  // thread just signals the latch and the platform/raster thread follows with
+  // executing raster_task.
+  bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
+                                 task_runners_.GetPlatformTaskRunner();
 
   auto ui_task = [engine = engine_->GetWeakPtr(),
-                  gpu_task_runner = task_runners_.GetGPUTaskRunner(), gpu_task,
-                  should_post_gpu_task, &latch]() {
+                  raster_task_runner = task_runners_.GetRasterTaskRunner(),
+                  raster_task, should_post_raster_task, &latch]() {
     if (engine) {
       engine->OnOutputSurfaceDestroyed();
     }
-    // Step 1: Next, tell the GPU thread that its rasterizer should suspend
+    // Step 1: Next, tell the raster thread that its rasterizer should suspend
     // access to the underlying surface.
-    if (should_post_gpu_task) {
-      fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, gpu_task);
+    if (should_post_raster_task) {
+      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
     } else {
-      // See comment on should_post_gpu_task, in this case we just unblock
+      // See comment on should_post_raster_task, in this case we just unblock
       // the platform thread.
       latch.Signal();
     }
@@ -744,11 +751,11 @@ void Shell::OnPlatformViewDestroyed() {
   // surface is about to go away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
   latch.Wait();
-  if (!should_post_gpu_task) {
-    // See comment on should_post_gpu_task, in this case the gpu_task
+  if (!should_post_raster_task) {
+    // See comment on should_post_raster_task, in this case the raster_task
     // wasn't executed, and we just run it here as the platform thread
-    // is the GPU thread.
-    gpu_task();
+    // is the raster thread.
+    raster_task();
     latch.Wait();
   }
 }
@@ -761,7 +768,7 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
   // This is the formula Android uses.
   // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
   size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
-  task_runners_.GetGPUTaskRunner()->PostTask(
+  task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
         if (rasterizer) {
           rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
@@ -854,7 +861,7 @@ void Shell::OnPlatformViewRegisterTexture(
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetGPUTaskRunner()->PostTask(
+  task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), texture] {
         if (rasterizer) {
           if (auto* registry = rasterizer->GetTextureRegistry()) {
@@ -869,7 +876,7 @@ void Shell::OnPlatformViewUnregisterTexture(int64_t texture_id) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetGPUTaskRunner()->PostTask(
+  task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), texture_id]() {
         if (rasterizer) {
           if (auto* registry = rasterizer->GetTextureRegistry()) {
@@ -885,7 +892,7 @@ void Shell::OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   // Tell the rasterizer that one of its textures has a new frame available.
-  task_runners_.GetGPUTaskRunner()->PostTask(
+  task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), texture_id]() {
         auto* registry = rasterizer->GetTextureRegistry();
 
@@ -915,7 +922,7 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  task_runners_.GetGPUTaskRunner()->PostTask(
+  task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), closure = closure]() {
         if (rasterizer) {
           rasterizer->SetNextFrameCallback(std::move(closure));
@@ -924,12 +931,17 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_time) {
+void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
+  // record the target time for use by rasterizer.
+  {
+    std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+    latest_frame_target_time_.emplace(frame_target_time);
+  }
   if (engine_) {
-    engine_->BeginFrame(frame_time);
+    engine_->BeginFrame(frame_target_time);
   }
 }
 
@@ -947,8 +959,8 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   FML_DCHECK(is_setup_);
 
-  task_runners_.GetGPUTaskRunner()->PostTask(
-      [& waiting_for_first_frame = waiting_for_first_frame_,
+  task_runners_.GetRasterTaskRunner()->PostTask(
+      [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
        pipeline = std::move(pipeline)]() {
@@ -967,7 +979,7 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
 void Shell::OnAnimatorDrawLastLayerTree() {
   FML_DCHECK(is_setup_);
 
-  task_runners_.GetGPUTaskRunner()->PostTask(
+  task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr()]() {
         if (rasterizer) {
           rasterizer->DrawLastLayerTree();
@@ -1024,7 +1036,7 @@ void Shell::HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message) {
   if (args == root.MemberEnd() || !args->value.IsInt())
     return;
 
-  task_runners_.GetGPUTaskRunner()->PostTask(
+  task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), max_bytes = args->value.GetInt(),
        response = std::move(message->response())] {
         if (rasterizer) {
@@ -1073,7 +1085,7 @@ void Shell::SetNeedsReportTimings(bool value) {
 
 void Shell::ReportTimings() {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
   auto timings = std::move(unreported_timings_);
   unreported_timings_ = {};
@@ -1085,15 +1097,15 @@ void Shell::ReportTimings() {
 }
 
 size_t Shell::UnreportedFramesCount() const {
-  // Check that this is running on the GPU thread to avoid race conditions.
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  // Check that this is running on the raster thread to avoid race conditions.
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   FML_DCHECK(unreported_timings_.size() % FrameTiming::kCount == 0);
   return unreported_timings_.size() / FrameTiming::kCount;
 }
 
 void Shell::OnFrameRasterized(const FrameTiming& timing) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
   // The C++ callback defined in settings.h and set by Flutter runner. This is
   // independent of the timings report to the Dart side.
@@ -1136,7 +1148,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     // second. Otherwise, the timings of last few frames of an animation may
     // never be reported until the next animation starts.
     frame_timings_report_scheduled_ = true;
-    task_runners_.GetGPUTaskRunner()->PostDelayedTask(
+    task_runners_.GetRasterTaskRunner()->PostDelayedTask(
         [self = weak_factory_gpu_->GetWeakPtr()]() {
           if (!self.get()) {
             return;
@@ -1156,6 +1168,13 @@ fml::Milliseconds Shell::GetFrameBudget() {
   } else {
     return fml::kDefaultFrameBudget;
   }
+}
+
+fml::TimePoint Shell::GetLatestFrameTargetTime() const {
+  std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+  FML_CHECK(latest_frame_target_time_.has_value())
+      << "GetLatestFrameTargetTime called before OnAnimatorBeginFrame";
+  return latest_frame_target_time_.value();
 }
 
 // |ServiceProtocol::Handler|
@@ -1217,7 +1236,7 @@ static void ServiceProtocolFailureError(rapidjson::Document& response,
 bool Shell::OnServiceProtocolScreenshot(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document& response) {
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   auto screenshot = rasterizer_->ScreenshotLastLayerTree(
       Rasterizer::ScreenshotType::CompressedImage, true);
   if (screenshot.data) {
@@ -1238,7 +1257,7 @@ bool Shell::OnServiceProtocolScreenshot(
 bool Shell::OnServiceProtocolScreenshotSKP(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document& response) {
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   auto screenshot = rasterizer_->ScreenshotLastLayerTree(
       Rasterizer::ScreenshotType::SkiaPicture, true);
   if (screenshot.data) {
@@ -1267,16 +1286,6 @@ bool Shell::OnServiceProtocolRunInView(
     return false;
   }
 
-  // TODO(chinmaygarde): In case of hot-reload from .dill files, the packages
-  // file is ignored. Currently, the tool is passing a junk packages file to
-  // pass this check. Update the service protocol interface and remove this
-  // workaround.
-  if (params.count("packagesFile") == 0) {
-    ServiceProtocolParameterError(response,
-                                  "'packagesFile' parameter is missing.");
-    return false;
-  }
-
   if (params.count("assetDirectory") == 0) {
     ServiceProtocolParameterError(response,
                                   "'assetDirectory' parameter is missing.");
@@ -1285,8 +1294,6 @@ bool Shell::OnServiceProtocolRunInView(
 
   std::string main_script_path =
       fml::paths::FromURI(params.at("mainScript").data());
-  std::string packages_path =
-      fml::paths::FromURI(params.at("packagesFile").data());
   std::string asset_directory_path =
       fml::paths::FromURI(params.at("assetDirectory").data());
 
@@ -1305,6 +1312,7 @@ bool Shell::OnServiceProtocolRunInView(
   configuration.AddAssetResolver(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
           asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
+  PersistentCache::UpdateAssetPath(asset_directory_path);
 
   auto& allocator = response.GetAllocator();
   response.SetObject();
@@ -1353,6 +1361,32 @@ bool Shell::OnServiceProtocolGetDisplayRefreshRate(
   return true;
 }
 
+bool Shell::OnServiceProtocolGetSkSLs(
+    const ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document& response) {
+  FML_DCHECK(task_runners_.GetIOTaskRunner()->RunsTasksOnCurrentThread());
+  response.SetObject();
+  response.AddMember("type", "GetSkSLs", response.GetAllocator());
+
+  rapidjson::Value shaders_json(rapidjson::kObjectType);
+  PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
+  std::vector<PersistentCache::SkSLCache> sksls = persistent_cache->LoadSkSLs();
+  for (const auto& sksl : sksls) {
+    size_t b64_size =
+        SkBase64::Encode(sksl.second->data(), sksl.second->size(), nullptr);
+    sk_sp<SkData> b64_data = SkData::MakeUninitialized(b64_size + 1);
+    char* b64_char = static_cast<char*>(b64_data->writable_data());
+    SkBase64::Encode(sksl.second->data(), sksl.second->size(), b64_char);
+    b64_char[b64_size] = 0;  // make it null terminated for printing
+    rapidjson::Value shader_value(b64_char, response.GetAllocator());
+    rapidjson::Value shader_key(PersistentCache::SkKeyToFilePath(*sksl.first),
+                                response.GetAllocator());
+    shaders_json.AddMember(shader_key, shader_value, response.GetAllocator());
+  }
+  response.AddMember("SkSLs", shaders_json, response.GetAllocator());
+  return true;
+}
+
 // Service protocol handler
 bool Shell::OnServiceProtocolSetAssetBundlePath(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
@@ -1373,6 +1407,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
   asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
       fml::OpenDirectory(params.at("assetDirectory").data(), false,
                          fml::FilePermission::kRead)));
+  PersistentCache::UpdateAssetPath(params.at("assetDirectory").data());
 
   if (engine_->UpdateAssetManager(std::move(asset_manager))) {
     response.AddMember("type", "Success", allocator);
@@ -1398,11 +1433,11 @@ Rasterizer::Screenshot Shell::Screenshot(
   fml::AutoResetWaitableEvent latch;
   Rasterizer::Screenshot screenshot;
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetGPUTaskRunner(), [&latch,                        //
-                                         rasterizer = GetRasterizer(),  //
-                                         &screenshot,                   //
-                                         screenshot_type,               //
-                                         base64_encode                  //
+      task_runners_.GetRasterTaskRunner(), [&latch,                        //
+                                            rasterizer = GetRasterizer(),  //
+                                            &screenshot,                   //
+                                            screenshot_type,               //
+                                            base64_encode                  //
   ]() {
         if (rasterizer) {
           screenshot = rasterizer->ScreenshotLastLayerTree(screenshot_type,
@@ -1417,7 +1452,7 @@ Rasterizer::Screenshot Shell::Screenshot(
 fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   FML_DCHECK(is_setup_);
   if (task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread() ||
-      task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread()) {
+      task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread()) {
     return fml::Status(fml::StatusCode::kFailedPrecondition,
                        "WaitForFirstFrame called from thread that can't wait "
                        "because it is responsible for generating the frame.");
@@ -1426,7 +1461,7 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
   bool success = waiting_for_first_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [& waiting_for_first_frame = waiting_for_first_frame_] {
+      [&waiting_for_first_frame = waiting_for_first_frame_] {
         return !waiting_for_first_frame.load();
       });
   if (success) {

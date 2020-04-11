@@ -4,26 +4,52 @@
 
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-#import <QuartzCore/CAEAGLLayer.h>
-
 #include <utility>
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
-#include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
 
 namespace flutter {
+
+PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+    const std::function<void(bool)>& set_semantics_enabled)
+    : AccessibilityBridgePtr(set_semantics_enabled, nullptr) {}
+
+PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+    const std::function<void(bool)>& set_semantics_enabled,
+    AccessibilityBridge* bridge)
+    : accessibility_bridge_(bridge), set_semantics_enabled_(set_semantics_enabled) {
+  if (bridge) {
+    set_semantics_enabled_(true);
+  }
+}
+
+PlatformViewIOS::AccessibilityBridgePtr::~AccessibilityBridgePtr() {
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(false);
+  }
+}
+
+void PlatformViewIOS::AccessibilityBridgePtr::reset(AccessibilityBridge* bridge) {
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(false);
+  }
+  accessibility_bridge_.reset(bridge);
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(true);
+  }
+}
 
 PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
                                  IOSRenderingAPI rendering_api,
                                  flutter::TaskRunners task_runners)
     : PlatformView(delegate, std::move(task_runners)),
-      ios_context_(IOSContext::Create(rendering_api)) {}
+      ios_context_(IOSContext::Create(rendering_api)),
+      accessibility_bridge_([this](bool enabled) { PlatformView::SetSemanticsEnabled(enabled); }) {}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
@@ -92,12 +118,13 @@ PointerDataDispatcherMaker PlatformViewIOS::GetDispatcherMaker() {
 
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
-  RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
+  RegisterTexture(ios_context_->CreateExternalTexture(
+      texture_id, fml::scoped_nsobject<NSObject<FlutterTexture>>{[texture retain]}));
 }
 
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (!ios_surface_) {
     FML_DLOG(INFO) << "Could not CreateRenderingSurface, this PlatformViewIOS "
@@ -120,13 +147,14 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
     return;
   }
   if (enabled && !accessibility_bridge_) {
-    accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-        static_cast<FlutterView*>(owner_controller_.get().view), this,
-        [owner_controller_.get() platformViewsController]);
+    accessibility_bridge_.reset(
+        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
+                                [owner_controller_.get() platformViewsController]));
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
+  } else {
+    PlatformView::SetSemanticsEnabled(enabled);
   }
-  PlatformView::SetSemanticsEnabled(enabled);
 }
 
 // |shell:PlatformView|
@@ -157,7 +185,7 @@ void PlatformViewIOS::OnPreEngineRestart() const {
   if (!owner_controller_) {
     return;
   }
-  [owner_controller_.get() platformViewsController] -> Reset();
+  [owner_controller_.get() platformViewsController]->Reset();
 }
 
 fml::scoped_nsprotocol<FlutterTextInputPlugin*> PlatformViewIOS::GetTextInputPlugin() const {
