@@ -10,7 +10,7 @@ import 'chrome.dart';
 import 'chrome_installer.dart';
 import 'common.dart';
 import 'edge.dart';
-import 'environment.dart';
+import 'package:luci/luci_common.dart';
 import 'edge_installation.dart';
 import 'firefox.dart';
 import 'firefox_installer.dart';

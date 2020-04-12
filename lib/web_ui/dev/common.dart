@@ -10,7 +10,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
-import 'environment.dart';
+import 'package:luci/luci_common.dart';
 
 /// The port number for debugging.
 const int kDevtoolsPort = 12345;

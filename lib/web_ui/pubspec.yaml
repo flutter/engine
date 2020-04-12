@@ -26,3 +26,5 @@ dev_dependencies:
       url: git://github.com/flutter/web_installers.git
       path: packages/web_drivers/
       ref: 90c69a79b2764c93875dc8ed4f4932c27a6f3a86
+  luci:
+    path: ../../tools/luci

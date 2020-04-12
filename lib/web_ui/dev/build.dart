@@ -10,8 +10,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:watcher/watcher.dart';
 
-import 'environment.dart';
-import 'utils.dart';
+import 'package:luci/luci_common.dart';
 
 class BuildCommand extends Command<bool> with ArgUtils {
   BuildCommand() {
@@ -69,7 +68,7 @@ class BuildCommand extends Command<bool> with ArgUtils {
 Future<void> gn() {
   print('Running gn...');
   return runProcess(
-    path.join(environment.flutterDirectory.path, 'tools', 'gn'),
+    path.join(environment.repoDirectory.path, 'tools', 'gn'),
     <String>[
       '--unopt',
       '--full-dart-sdk',

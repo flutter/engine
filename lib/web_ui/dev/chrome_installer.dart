@@ -12,7 +12,7 @@ import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
 import 'common.dart';
-import 'environment.dart';
+import 'package:luci/luci_common.dart';
 import 'exceptions.dart';
 
 class ChromeArgParser extends BrowserArgParser {

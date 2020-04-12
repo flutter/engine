@@ -8,6 +8,7 @@ import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
+import 'package:luci/luci_common.dart';
 import 'package:path/path.dart' as path;
 import 'package:test_core/src/runner/hack_register_platform.dart'
     as hack; // ignore: implementation_imports
@@ -15,12 +16,9 @@ import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_im
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
 
-import 'environment.dart';
-import 'exceptions.dart';
 import 'integration_tests_manager.dart';
 import 'supported_browsers.dart';
 import 'test_platform.dart';
-import 'utils.dart';
 
 /// The type of tests requested by the tool user.
 enum TestTypesRequested {
@@ -314,7 +312,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   void _checkExitCode() {
     if (io.exitCode != 0) {
-      throw ToolException('Process exited with exit code ${io.exitCode}.');
+      throw ToolExit('Process exited with exit code ${io.exitCode}.');
     }
   }
 
@@ -328,7 +326,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      throw ToolException(
+      throw ToolExit(
           'Failed to run pub get. Exited with exit code $exitCode');
     }
   }
@@ -370,7 +368,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      throw ToolException('Failed to compile ${hostDartFile.path}. Compiler '
+      throw ToolExit('Failed to compile ${hostDartFile.path}. Compiler '
           'exited with exit code $exitCode');
     }
 
@@ -399,7 +397,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      throw ToolException(
+      throw ToolExit(
           'Failed to compile tests. Compiler exited with exit code $exitCode');
     }
   }
@@ -458,7 +456,7 @@ const List<String> _kTestFonts = <String>['ahem.ttf', 'Roboto-Regular.ttf'];
 
 void _copyTestFontsIntoWebUi() {
   final String fontsPath = path.join(
-    environment.flutterDirectory.path,
+    environment.repoDirectory.path,
     'third_party',
     'txt',
     'third_party',

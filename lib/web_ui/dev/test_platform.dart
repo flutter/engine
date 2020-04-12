@@ -11,6 +11,7 @@ import 'dart:isolate';
 import 'package:async/async.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:image/image.dart';
+import 'package:luci/luci_common.dart' as luci;
 import 'package:package_resolver/package_resolver.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -40,7 +41,6 @@ import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
 
 import 'browser.dart';
 import 'common.dart';
-import 'environment.dart' as env;
 import 'goldens.dart';
 import 'supported_browsers.dart';
 
@@ -183,14 +183,14 @@ class BrowserPlatform extends PlatformPlugin {
     if (filename.startsWith('__local__')) {
       filename = filename.substring('__local__/'.length);
       goldensDirectory = p.join(
-        env.environment.webUiRootDir.path,
+        luci.environment.webUiRootDir.path,
         'test',
         'golden_files',
       );
     } else {
       await fetchGoldens();
       goldensDirectory = p.join(
-        env.environment.webUiGoldensRepositoryDirectory.path,
+        luci.environment.webUiGoldensRepositoryDirectory.path,
         'engine',
         'web',
       );
@@ -272,7 +272,7 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
               'test_results',
             )
           : p.join(
-              env.environment.webUiDartToolDir.path,
+              luci.environment.webUiDartToolDir.path,
               'test_results',
             );
       Directory(testResultsPath).createSync(recursive: true);
@@ -812,7 +812,7 @@ class BrowserManager {
             suiteConfig, await _environment, suiteChannel, message);
 
         final String mapPath = p.join(
-          env.environment.webUiRootDir.path,
+          luci.environment.webUiRootDir.path,
           'build',
           '$path.browser_test.dart.js.map',
         );

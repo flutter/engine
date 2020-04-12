@@ -11,7 +11,7 @@ import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
 
 import 'common.dart';
-import 'environment.dart';
+import 'package:luci/luci_common.dart';
 
 class EdgeArgParser extends BrowserArgParser {
   static final EdgeArgParser _singletonInstance = EdgeArgParser._();

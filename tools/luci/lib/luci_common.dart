@@ -42,6 +42,7 @@ class Environment {
   factory Environment() {
     final io.File gclientFile = _findGclientFile();
     final io.Directory engineSrcDir = io.Directory(pathlib.join(gclientFile.parent.path, 'src'));
+    final io.Directory engineToolsDir = io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'tools'));
     final io.Directory repoDir = io.Directory(pathlib.join(engineSrcDir.path, 'flutter'));
     final io.Directory outDir = io.Directory(pathlib.join(engineSrcDir.path, 'out'));
     final io.Directory hostDebugUnoptDir = io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
@@ -56,8 +57,8 @@ class Environment {
     }
 
     return Environment._(
-      luciScript: io.File(pathlib.join(repoDir.path, 'tools', 'luci', 'bin', 'luci.dart')),
       engineSrcDir: engineSrcDir,
+      engineToolsDir: engineToolsDir,
       repoDirectory: repoDir,
       webUiRootDir: webUiRootDir,
       integrationTestsDir: integrationTestsDir,
@@ -68,8 +69,8 @@ class Environment {
   }
 
   Environment._({
-    this.luciScript,
     this.engineSrcDir,
+    this.engineToolsDir,
     this.repoDirectory,
     this.webUiRootDir,
     this.integrationTestsDir,
@@ -78,14 +79,14 @@ class Environment {
     this.dartSdkDir,
   });
 
-  /// The `luci.dart` script.
-  final io.File luciScript;
-
   /// Path to the "web_ui" package sources.
   final io.Directory webUiRootDir;
 
   /// Path to the engine's "src" directory.
   final io.Directory engineSrcDir;
+
+  /// Path to the engine's "tools" directory.
+  final io.Directory engineToolsDir;
 
   /// Path to the web integration tests.
   final io.Directory integrationTestsDir;
@@ -142,6 +143,16 @@ class Environment {
     '.dart_tool',
   ));
 
+  /// Path to the ".dart_tool" directory living under `engine/src/flutter`.
+  ///
+  /// This is a designated area for tool downloads which can be used by
+  /// multiple platforms. For exampe: Flutter repo for e2e tests.
+  io.Directory get engineDartToolDir => io.Directory(pathlib.join(
+    engineSrcDir.path,
+    'flutter',
+    '.dart_tool',
+  ));
+
   /// Path to the "dev" directory containing engine developer tools and
   /// configuration files.
   io.Directory get webUiDevDir => io.Directory(pathlib.join(
@@ -153,6 +164,24 @@ class Environment {
   io.Directory get webUiGoldensRepositoryDirectory => io.Directory(pathlib.join(
     webUiDartToolDir.path,
     'goldens',
+  ));
+
+  /// Path to the script that clones the Flutter repo.
+  io.File get cloneFlutterScript => io.File(pathlib.join(
+    engineToolsDir.path,
+    'clone_flutter.sh',
+  ));
+
+  /// Path to flutter.
+  ///
+  /// For example, this can be used to run `flutter pub get`.
+  ///
+  /// Only use [cloneFlutterScript] to clone flutter to the engine build.
+  io.File get flutterCommand => io.File(pathlib.join(
+    engineDartToolDir.path,
+    'flutter',
+    'bin',
+    'flutter',
   ));
 }
 
@@ -259,6 +288,27 @@ Future<String> evalProcess(
   return result.stdout as String;
 }
 
+/// Runs the `flutter` command using the local engine.
+Future<void> runFlutter(
+  String workingDirectory,
+  List<String> arguments, {
+  bool useSystemFlutter = false,
+}) async {
+  final String executable =
+      useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
+  arguments.add('--local-engine=host_debug_unopt');
+  final int exitCode = await runProcess(
+    executable,
+    arguments,
+    workingDirectory: workingDirectory,
+  );
+
+  if (exitCode != 0) {
+    throw ToolExit('ERROR: Failed to run $executable with '
+        'arguments ${arguments.toString()}. Exited with exit code $exitCode');
+  }
+}
+
 /// Thrown by process utility functions, such as [evalProcess], when a process
 /// exits with a non-zero exit code.
 @immutable
@@ -363,4 +413,38 @@ Future<void> cleanup() async {
   for (AsyncCallback callback in cleanupCallbacks) {
     callback.call();
   }
+}
+
+/// Resolves paths relative to other paths.
+class FilePath {
+  /// Resolves relative to the current working directory.
+  FilePath.fromCwd(String relativePath)
+      : _absolutePath = pathlib.absolute(relativePath);
+
+  /// Resolves relative to the `web_ui` directory.
+  FilePath.fromWebUi(String relativePath)
+      : _absolutePath = pathlib.join(environment.webUiRootDir.path, relativePath);
+
+  final String _absolutePath;
+
+  /// Absolute version of this path.
+  String get absolute => _absolutePath;
+
+  /// This path relative to current working directory.
+  String get relativeToCwd => pathlib.relative(_absolutePath);
+
+  /// This path relative to the `web_ui` directory.
+  String get relativeToWebUi =>
+      pathlib.relative(_absolutePath, from: environment.webUiRootDir.path);
+
+  @override
+  int get hashCode => _absolutePath.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    return other is FilePath && _absolutePath == other._absolutePath;
+  }
+
+  @override
+  String toString() => _absolutePath;
 }

@@ -6,13 +6,12 @@
 import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
+import 'package:luci/luci_common.dart';
 
 import 'build.dart';
 import 'clean.dart';
 import 'licenses.dart';
-import 'exceptions.dart';
 import 'test_runner.dart';
-import 'utils.dart';
 
 CommandRunner runner = CommandRunner<bool>(
   'felt',
@@ -42,7 +41,7 @@ void main(List<String> args) async {
   } on UsageException catch (e) {
     print(e);
     exitCode = 64; // Exit code 64 indicates a usage error.
-  } on ToolException catch (e) {
+  } on ToolExit catch (e) {
     io.stderr.writeln(e.message);
     exitCode = 1;
   } catch (e) {

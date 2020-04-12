@@ -11,7 +11,7 @@ import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
 import 'common.dart';
-import 'environment.dart';
+import 'package:luci/luci_common.dart';
 import 'firefox_installer.dart';
 
 void main() async {

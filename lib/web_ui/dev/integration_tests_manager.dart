@@ -3,13 +3,12 @@
 // found in the LICENSE file.
 
 import 'dart:io' as io;
+
+import 'package:luci/luci_common.dart';
 import 'package:path/path.dart' as pathlib;
 import 'package:web_driver_installer/chrome_driver_installer.dart';
 
 import 'chrome_installer.dart';
-import 'environment.dart';
-import 'exceptions.dart';
-import 'utils.dart';
 
 class IntegrationTestsManager {
   final String _browser;
@@ -78,7 +77,7 @@ class IntegrationTestsManager {
     );
 
     if (exitCode != 0) {
-      throw ToolException('ERROR: Failed to clone flutter repo. Exited with '
+      throw ToolExit('ERROR: Failed to clone flutter repo. Exited with '
           'exit code $exitCode');
     }
   }

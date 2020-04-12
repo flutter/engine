@@ -9,8 +9,7 @@ import 'dart:io' as io;
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as path;
 
-import 'environment.dart';
-import 'utils.dart';
+import 'package:luci/luci_common.dart';
 
 class CleanCommand extends Command<bool> with ArgUtils {
   CleanCommand() {

@@ -19,12 +19,3 @@ class DriverException implements Exception {
   @override
   String toString() => message;
 }
-
-class ToolException implements Exception {
-  ToolException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
-}

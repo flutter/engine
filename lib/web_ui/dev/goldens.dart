@@ -8,8 +8,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
-import 'environment.dart';
-import 'utils.dart';
+import 'package:luci/luci_common.dart';
 
 /// How to compares pixels within the image.
 ///
