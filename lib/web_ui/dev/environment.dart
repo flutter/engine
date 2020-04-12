@@ -91,6 +91,9 @@ class Environment {
   /// The "dart2js" executable file.
   String get dart2jsExecutable => pathlib.join(dartSdkDir.path, 'bin', 'dart2js');
 
+  /// The "felt" executable file.
+  String get feltExecutable => pathlib.join(webUiRootDir.path, 'dev', 'felt');
+
   /// Path to where github.com/flutter/engine is checked out inside the engine workspace.
   io.Directory get flutterDirectory => io.Directory(pathlib.join(engineSrcDir.path, 'flutter'));
   io.Directory get webSdkRootDir => io.Directory(pathlib.join(
