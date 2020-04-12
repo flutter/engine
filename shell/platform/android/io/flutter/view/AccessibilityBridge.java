@@ -1659,7 +1659,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
   // Must match SemanticsFlag in semantics.dart
   // https://github.com/flutter/engine/blob/master/lib/ui/semantics.dart
-  public enum Flag {
+  /* Package */ enum Flag {
     HAS_CHECKED_STATE(1 << 0),
     IS_CHECKED(1 << 1),
     IS_SELECTED(1 << 2),
