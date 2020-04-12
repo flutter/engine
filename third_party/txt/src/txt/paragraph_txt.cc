@@ -1733,11 +1733,23 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
       if (line.end_index != line.end_including_newline &&
           line.end_index >= start && line.end_including_newline <= end) {
         SkScalar x = line_widths_[line_number];
-        // Move empty box to center if center aligned and is an empty line.
-        if (x == 0 && !isinf(width_) &&
+
+        // Move box to center if center aligned.
+        if (!isinf(width_) &&
             paragraph_style_.effective_align() == TextAlign::center) {
-          x = width_ / 2;
+          if (paragraph_style_.text_direction == TextDirection::ltr) {
+            x = (width_ + x) / 2;
+          } else {
+            x = (width_ - x) / 2;
+          }
         }
+
+        // Move box to right if right aligned.
+        if (!isinf(width_) &&
+            paragraph_style_.effective_align() == TextAlign::right) {
+          x = width_ - x;
+        }
+
         SkScalar top =
             (line_number > 0) ? line_metrics_[line_number - 1].height : 0;
         SkScalar bottom = line_metrics_[line_number].height;
