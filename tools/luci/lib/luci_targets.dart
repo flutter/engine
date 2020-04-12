@@ -12,21 +12,40 @@ import 'luci_runners.dart';
 /// there's not a lot of relearning to do, but even if we don't at least
 /// we'd be using familiar concepts.
 const List<Target> targets = <Target>[
+  // Runs unit-tests on Linux using Chrome.
   Target(
-    name: '//lib/web_ui:unit_tests_chrome_linux',
+    name: '//lib/web_ui:unit_tests_linux_chrome',
     agentProfiles: kLinuxAgent,
-    runner: WebUnitTestRunner(),
+    runner: WebUnitTestRunner(
+      browser: 'chrome',
+    ),
+    environment: <String, String>{
+      'CHROME_NO_SANDBOX': 'true',
+    },
   ),
+
+  // Runs unit-tests on Linux using Firefox.
   Target(
-    name: '//lib/web_ui:integration_tests_chrome_linux',
+    name: '//lib/web_ui:unit_tests_linux_firefox',
     agentProfiles: kLinuxAgent,
-    runner: WebIntegrationTestsRunner(),
+    runner: WebUnitTestRunner(
+      browser: 'firefox',
+    ),
   ),
+
+  // Runs e2e tests on Linux using Chrome.
   Target(
-    name: '//lib/web_ui:integration_tests_safari_mac',
-    agentProfiles: kMacAgent,
-    runner: WebIntegrationTestsRunner(),
+    name: '//e2etests/web:integration_tests_linux_chrome',
+    agentProfiles: kLinuxAgent,
+    runner: WebIntegrationTestsRunner(
+      browser: 'chrome',
+    ),
+    environment: <String, String>{
+      'CHROME_NO_SANDBOX': 'true',
+    },
   ),
+
+  // Checks license headers in Web engine sources.
   Target(
     name: '//lib/web_ui:check_licenses',
     agentProfiles: kLinuxAgent,

@@ -5,6 +5,10 @@
 A command-line tool for running LUCI build targets. This tool must be run using
 the Dart SDK built as part of `host_debug_unopt`.
 
+`host_debug_unopt` is the only dependency. `luci.dart` should be completely
+self-contained otherwise. It should run `pub get` and invoke compilers as
+necessary. If it doesn't, it's a bug.
+
 Use `dart luci.dart targets` to enumerate available targets. The output is JSON
 encoded. Adding `--pretty` will output in human-readable format.
 

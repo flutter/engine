@@ -26,6 +26,7 @@ class Target {
     @required this.name,
     @required this.agentProfiles,
     @required this.runner,
+    this.environment,
   });
 
   /// A unique name of the target.
@@ -51,12 +52,17 @@ class Target {
   /// Runs this target.
   final TargetRunner runner;
 
+  /// Additional environment variables used when running this target.
+  final Map<String, String> environment;
+
   /// Serializes this target to JSON for digestion by the LUCI recipe.
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'name': name,
-      'agent': agentProfiles,
-      'runner': runner.runtimeType,
+      'agentProfiles': agentProfiles,
+      'runner': runner.runtimeType.toString(),
+      if (environment != null)
+        'environment' : environment,
     };
   }
 }

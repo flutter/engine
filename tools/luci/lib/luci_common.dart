@@ -182,8 +182,10 @@ Future<int> runProcess(
   String executable,
   List<String> arguments, {
   String workingDirectory,
+  Map<String, String> environment,
   bool mustSucceed = false,
 }) async {
+  environment ??= const <String, String>{};
   final io.Process process = await io.Process.start(
     executable,
     arguments,
@@ -192,6 +194,7 @@ Future<int> runProcess(
     // the process is not able to get Dart from path.
     runInShell: io.Platform.isWindows,
     mode: io.ProcessStartMode.inheritStdio,
+    environment: environment,
   );
   final int exitCode = await process.exitCode;
   if (mustSucceed && exitCode != 0) {
@@ -211,8 +214,10 @@ void startProcess(
   String executable,
   List<String> arguments, {
   String workingDirectory,
+  Map<String, String> environment,
   bool mustSucceed = false,
 }) async {
+  environment ??= const <String, String>{};
   final io.Process process = await io.Process.start(
     executable,
     arguments,
@@ -221,6 +226,7 @@ void startProcess(
     // the process is not able to get Dart from path.
     runInShell: io.Platform.isWindows,
     mode: io.ProcessStartMode.inheritStdio,
+    environment: environment,
   );
   processesToCleanUp.add(process);
 }
@@ -232,11 +238,14 @@ Future<String> evalProcess(
   String executable,
   List<String> arguments, {
   String workingDirectory,
+  Map<String, String> environment,
 }) async {
+  environment ??= const <String, String>{};
   final io.ProcessResult result = await io.Process.run(
     executable,
     arguments,
     workingDirectory: workingDirectory,
+    environment: environment,
   );
   if (result.exitCode != 0) {
     throw ProcessException(

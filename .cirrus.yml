@@ -88,11 +88,14 @@ task:
       test_web_engine_script: |
         cd $ENGINE_PATH/src/flutter/web_sdk/web_engine_tester
         $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        cd $ENGINE_PATH/src/flutter/lib/web_ui
+        cd $ENGINE_PATH/src/flutter/tools/luci
         $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        export FELT="$ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dart dev/felt.dart"
-        $FELT check-licenses
-        CHROME_NO_SANDBOX=true $FELT test
+        export LUCI="$ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dart bin/luci.dart"
+        $LUCI targets
+        $LUCI targets --pretty
+        $LUCI run //lib/web_ui:check_licenses
+        $LUCI run //lib/web_ui:unit_tests_linux_chrome
+        $LUCI run //e2etests/web:integration_tests_linux_chrome
       always:
         web_engine_test_artifacts:
           path: test_results/*
@@ -181,10 +184,11 @@ task:
       test_web_engine_firefox_script: |
         cd $ENGINE_PATH/src/flutter/web_sdk/web_engine_tester
         $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        cd $ENGINE_PATH/src/flutter/lib/web_ui
+        cd $ENGINE_PATH/src/flutter/tools/luci
         $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        export FELT="$ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dart dev/felt.dart"
-        $FELT test --browser=firefox
+        export LUCI="$ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dart bin/luci.dart"
+        $LUCI run //lib/web_ui:unit_tests_linux_firefox
+
     - name: build_and_test_android_unopt_debug
       env:
         USE_ANDROID: "True"
