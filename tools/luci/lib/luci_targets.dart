@@ -15,21 +15,21 @@ const List<Target> targets = <Target>[
   Target(
     name: '//lib/web_ui:unit_tests_chrome_linux',
     agentProfiles: kLinuxAgent,
-    runner: UnitTestsRunner(),
+    runner: WebUnitTestRunner(),
   ),
   Target(
     name: '//lib/web_ui:integration_tests_chrome_linux',
     agentProfiles: kLinuxAgent,
-    runner: IntegrationTestsRunner(),
+    runner: WebIntegrationTestsRunner(),
   ),
   Target(
     name: '//lib/web_ui:integration_tests_safari_mac',
     agentProfiles: kMacAgent,
-    runner: IntegrationTestsRunner(),
+    runner: WebIntegrationTestsRunner(),
   ),
   Target(
     name: '//lib/web_ui:check_licenses',
     agentProfiles: kLinuxAgent,
-    runner: CheckLicensesRunner(),
+    runner: WebCheckLicensesRunner(),
   ),
 ];

@@ -21,6 +21,7 @@ const List<String> kWindowsAgent = <String>['windows'];
 /// A build or test target that can be run using `luci.dart run`.
 @sealed
 class Target {
+  /// Creates a concrete build target.
   const Target({
     @required this.name,
     @required this.agentProfiles,
@@ -50,6 +51,7 @@ class Target {
   /// Runs this target.
   final TargetRunner runner;
 
+  /// Serializes this target to JSON for digestion by the LUCI recipe.
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'name': name,
@@ -63,7 +65,9 @@ class Target {
 ///
 /// Implement this class to provide
 abstract class TargetRunner {
-  factory TargetRunner() => throw 'This class must be implemented, not extended.';
+  // Prevents this class from being extended.
+  factory TargetRunner._() => throw 'This class must be implemented, not extended.';
 
+  /// Runs a single target given the target's description.
   Future<void> run(Target target);
 }

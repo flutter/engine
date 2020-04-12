@@ -5,12 +5,13 @@
 /// [TargetRunner] implmentations that run LUCI targets.
 
 // @dart = 2.6
-import 'environment.dart';
+import 'luci_common.dart';
 import 'luci_framework.dart';
-import 'utils.dart';
 
-class UnitTestsRunner implements TargetRunner {
-  const UnitTestsRunner();
+/// Runs Web unit-tests.
+class WebUnitTestRunner implements TargetRunner {
+  /// Creates a Web unit-test runner.
+  const WebUnitTestRunner();
 
   @override
   Future<void> run(Target target) async {
@@ -26,8 +27,10 @@ class UnitTestsRunner implements TargetRunner {
   }
 }
 
-class IntegrationTestsRunner implements TargetRunner {
-  const IntegrationTestsRunner();
+/// Runs Web integration tests.
+class WebIntegrationTestsRunner implements TargetRunner {
+  /// Creates a Web integration test runner.
+  const WebIntegrationTestsRunner();
 
   @override
   Future<void> run(Target target) async {
@@ -43,8 +46,10 @@ class IntegrationTestsRunner implements TargetRunner {
   }
 }
 
-class CheckLicensesRunner implements TargetRunner {
-  const CheckLicensesRunner();
+/// Checks license headers in Web Dart sources.
+class WebCheckLicensesRunner implements TargetRunner {
+  /// Creates a Web license header checker.
+  const WebCheckLicensesRunner();
 
   @override
   Future<void> run(Target target) async {

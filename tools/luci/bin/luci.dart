@@ -11,17 +11,18 @@ import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
 
-import 'luci_framework.dart';
-import 'luci_targets.dart';
-
-CommandRunner runner = CommandRunner<bool>(
-  'luci',
-  'Run CI targets for the Flutter Web Engine.',
-)
-  ..addCommand(TargetsCommand())
-  ..addCommand(RunCommand());
+import 'package:luci/luci_common.dart';
+import 'package:luci/luci_framework.dart';
+import 'package:luci/luci_targets.dart';
 
 Future<void> main(List<String> args) async {
+  final CommandRunner<bool> runner = CommandRunner<bool>(
+    'luci',
+    'Run LUCI targets.',
+  )
+    ..addCommand(TargetsCommand())
+    ..addCommand(RunCommand());
+
   if (args.isEmpty) {
     // Invoked with no arguments. Print usage.
     runner.printUsage();
@@ -30,10 +31,17 @@ Future<void> main(List<String> args) async {
 
   try {
     await runner.run(args);
-  } on LuciException catch(error) {
+  } on ToolExit catch(error) {
     io.stderr.writeln(error.message);
-    io.exit(1);
+    io.exitCode = 1;
+  } finally {
+    await cleanup();
   }
+
+  // Sometimes the Dart VM refuses to quit if there are open "ports" (could be
+  // network, open files, processes, isolates, etc). Calling `exit` explicitly
+  // is the surest way to quit the process.
+  io.exit(io.exitCode);
 }
 
 /// Prints available targets to the standard output in JSON format.
@@ -80,19 +88,10 @@ class RunCommand extends Command<bool> {
   FutureOr<bool> run() async {
     for (final String targetName in targetNames) {
       final Target target = targets.singleWhere((Target t) => t.name == targetName, orElse: () {
-        throw LuciException('Target $targetName not found.');
+        throw ToolExit('Target $targetName not found.');
       });
       await target.runner.run(target);
     }
     return true;
   }
-}
-
-class LuciException implements Exception {
-  LuciException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => '$LuciException: $message';
 }
