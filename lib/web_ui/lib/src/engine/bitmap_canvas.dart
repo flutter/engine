@@ -355,7 +355,7 @@ class BitmapCanvas extends EngineCanvas {
   void drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
     _drawImage(image, p, paint);
     _childOverdraw = true;
-    _canvasPool.allocateExtraCanvas();
+    _canvasPool.closeCurrentCanvas();
   }
 
   html.ImageElement _drawImage(
@@ -437,7 +437,7 @@ class BitmapCanvas extends EngineCanvas {
         restore();
       }
     }
-    _allocateNewCanvas();
+    _closeCurrentCanvas();
   }
 
   // Should be called when we add new html elements into rootElement so that
@@ -450,8 +450,8 @@ class BitmapCanvas extends EngineCanvas {
   //   |--- <img>
   // Any drawing operations after these tags should allocate a new canvas,
   // instead of drawing into earlier canvas.
-  void _allocateNewCanvas() {
-    _canvasPool.allocateExtraCanvas();
+  void _closeCurrentCanvas() {
+    _canvasPool.closeCurrentCanvas();
     _childOverdraw = true;
   }
 
@@ -537,7 +537,7 @@ class BitmapCanvas extends EngineCanvas {
       rootElement.append(paragraphElement);
     }
     _children.add(paragraphElement);
-    _allocateNewCanvas();
+    _closeCurrentCanvas();
   }
 
   /// Paints the [picture] into this canvas.
