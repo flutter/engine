@@ -89,8 +89,9 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
-  if (hints == nil || hints.count == 0)
+  if (hints == nil || hints.count == 0) {
     return @"";
+  }
 
   NSString* hint = hints[0];
   if (@available(iOS 10.0, *)) {

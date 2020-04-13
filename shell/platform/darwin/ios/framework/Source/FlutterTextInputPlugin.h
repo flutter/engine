@@ -10,9 +10,6 @@
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-FLUTTER_EXPORT
-#endif
 @interface FlutterTextInputPlugin : NSObject
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
@@ -39,9 +36,6 @@ FLUTTER_EXPORT
 @end
 
 /** A range of text in the buffer of a Flutter text editing widget. */
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-FLUTTER_EXPORT
-#endif
 @interface FlutterTextRange : UITextRange <NSCopying>
 
 @property(nonatomic, readonly) NSRange range;
