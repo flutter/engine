@@ -19,7 +19,7 @@
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
-#include "flutter/shell/common/pipeline.h"
+#include "flutter/shell/common/layer_tree_holder.h"
 #include "flutter/shell/common/surface.h"
 
 namespace flutter {
@@ -257,8 +257,8 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   /// @param[in]  pipeline  The layer tree pipeline to take the next layer tree
   ///                       to render from.
-  ///
-  void Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline);
+  /// TODO(kaushikiska) fix docs whereever pipeline is mentioned.
+  void Draw(std::shared_ptr<LayerTreeHolder> layer_tree_holder);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously

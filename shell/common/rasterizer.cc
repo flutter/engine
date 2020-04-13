@@ -111,7 +111,7 @@ void Rasterizer::DrawLastLayerTree() {
   DrawToSurface(*last_layer_tree_);
 }
 
-void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
+void Rasterizer::Draw(std::shared_ptr<LayerTreeHolder> layer_tree_holder) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -120,24 +120,16 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   }
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
+  std::unique_ptr<LayerTree> layer_tree = layer_tree_holder->Get();
   RasterStatus raster_status = RasterStatus::kFailed;
-  Pipeline<flutter::LayerTree>::Consumer consumer =
-      [&](std::unique_ptr<LayerTree> layer_tree) {
-        raster_status = DoDraw(std::move(layer_tree));
-      };
+  if (layer_tree) {
+    raster_status = DoDraw(std::move(layer_tree));
+  }
 
-  PipelineConsumeResult consume_result = pipeline->Consume(consumer);
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
   if (raster_status == RasterStatus::kResubmit) {
-    auto front_continuation = pipeline->ProduceIfEmpty();
-    bool result =
-        front_continuation.Complete(std::move(resubmitted_layer_tree_));
-    if (result) {
-      consume_result = PipelineConsumeResult::MoreAvailable;
-    }
-  } else if (raster_status == RasterStatus::kEnqueuePipeline) {
-    consume_result = PipelineConsumeResult::MoreAvailable;
+    layer_tree_holder->ReplaceIfNewer(std::move(resubmitted_layer_tree_));
   }
 
   // Merging the thread as we know the next `Draw` should be run on the platform
@@ -152,18 +144,13 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
 
   // Consume as many pipeline items as possible. But yield the event loop
   // between successive tries.
-  switch (consume_result) {
-    case PipelineConsumeResult::MoreAvailable: {
-      task_runners_.GetRasterTaskRunner()->PostTask(
-          [weak_this = weak_factory_.GetTaskRunnerAffineWeakPtr(), pipeline]() {
-            if (weak_this) {
-              weak_this->Draw(pipeline);
-            }
-          });
-      break;
-    }
-    default:
-      break;
+  if (!layer_tree_holder->IsEmpty()) {
+    task_runners_.GetRasterTaskRunner()->PostTask(
+        [weak_this = weak_factory_.GetWeakPtr(), layer_tree_holder]() {
+          if (weak_this) {
+            weak_this->Draw(layer_tree_holder);
+          }
+        });
   }
 }
 
