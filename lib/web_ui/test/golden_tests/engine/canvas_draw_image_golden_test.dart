@@ -338,7 +338,6 @@ void main() async {
     final Paragraph paragraph2 = createTestParagraph(
         'Should be above...............',
         color: Color(0xFF00FFFF));
-    const double widthConstraint = 300.0;
     paragraph2.layout(const ParagraphConstraints(width: 400.0));
     rc.drawParagraph(paragraph2, const Offset(20, 150));
     rc.restore();
