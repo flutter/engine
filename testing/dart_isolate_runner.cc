@@ -139,11 +139,10 @@ void RunDartCodeInIsolate(DartVMRef& vm_ref,
     return;
   }
 
-  if (!root_isolate->RunInIsolateScope(
-    [&] {
-      return root_isolate->get()->Run(entrypoint, args,
-                                settings.root_isolate_create_callback);
-    })) {
+  if (!root_isolate->RunInIsolateScope([&] {
+        return root_isolate->get()->Run(entrypoint, args,
+                                        settings.root_isolate_create_callback);
+      })) {
     FML_LOG(ERROR) << "Could not run the method \"" << entrypoint
                    << "\" in the isolate.";
     return;
