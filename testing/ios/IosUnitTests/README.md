@@ -16,6 +16,7 @@ of xcode with `IosUnitTests.xcodeproj`.
 
 ## Adding Tests
 
-Add the test file to the source field of the
-`//flutter/shell/platform/darwin/ios:ios_flutter_test` target.  Once it is there
-it will execute with the others.
+When you add a new unit test file, also add a reference to that file in
+shell/platform/darwin/ios/BUILD.gn, under the `sources` list of the
+`ios_flutter_test` target. Once it's there, it will execute with the other
+tests.

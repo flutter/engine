@@ -15,6 +15,6 @@ if [ ! -d "out/$FLUTTER_ENGINE" ]; then
   exit 1
 fi
 
-ninja -j 100 -C out/$FLUTTER_ENGINE ios_test_flutter
+autoninja -C out/$FLUTTER_ENGINE ios_test_flutter
 popd
 ./run_tests.sh $FLUTTER_ENGINE
