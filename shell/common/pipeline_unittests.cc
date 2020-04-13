@@ -98,11 +98,12 @@ TEST(PipelineTest, ProduceIfEmptyDoesNotConsumeWhenQueueIsNotEmpty) {
 
   const int test_val_1 = 1, test_val_2 = 2;
   continuation_1.Complete(std::make_unique<int>(test_val_1));
-  continuation_2.Complete(std::make_unique<int>(test_val_2));
+  bool result = continuation_2.Complete(std::make_unique<int>(test_val_2));
 
   PipelineConsumeResult consume_result_1 = pipeline->Consume(
       [&test_val_1](std::unique_ptr<int> v) { ASSERT_EQ(*v, test_val_1); });
   ASSERT_EQ(consume_result_1, PipelineConsumeResult::Done);
+  ASSERT_EQ(result, false);
 }
 
 TEST(PipelineTest, ProduceIfEmptySuccessfulIfQueueIsEmpty) {
@@ -112,11 +113,12 @@ TEST(PipelineTest, ProduceIfEmptySuccessfulIfQueueIsEmpty) {
   Continuation continuation_1 = pipeline->ProduceIfEmpty();
 
   const int test_val_1 = 1;
-  continuation_1.Complete(std::make_unique<int>(test_val_1));
+  bool result = continuation_1.Complete(std::make_unique<int>(test_val_1));
 
   PipelineConsumeResult consume_result_1 = pipeline->Consume(
       [&test_val_1](std::unique_ptr<int> v) { ASSERT_EQ(*v, test_val_1); });
   ASSERT_EQ(consume_result_1, PipelineConsumeResult::Done);
+  ASSERT_EQ(result, true);
 }
 
 }  // namespace testing
