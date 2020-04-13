@@ -1,9 +1,10 @@
 package io.flutter.embedding.engine.systemchannels;
 
+import android.os.Build;
+import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.autofill.HintConstants;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -134,7 +135,7 @@ public class TextInputChannel {
     channel.invokeMethod("TextInputClient.requestExistingInputState", null);
   }
 
-  private HashMap<Object, Object> createEditingStateJSON(
+  private static HashMap<Object, Object> createEditingStateJSON(
       String text, int selectionStart, int selectionEnd, int composingStart, int composingEnd) {
     HashMap<Object, Object> state = new HashMap<>();
     state.put("text", text);
@@ -316,10 +317,10 @@ public class TextInputChannel {
       }
       Configuration[] fields = null;
       if (!json.isNull("fields")) {
-        final JSONArray fields = json.getJSONArray("fields");
-        fields = new Configuration[fields.length()];
+        final JSONArray jsonFields = json.getJSONArray("fields");
+        fields = new Configuration[jsonFields.length()];
         for (int i = 0; i < fields.length; i++) {
-          fields[i] = Configuration.fromJson(fields.getJSONObject(i));
+          fields[i] = Configuration.fromJson(jsonFields.getJSONObject(i));
         }
       }
       final Integer inputAction = inputActionFromTextInputAction(inputActionName);
@@ -382,81 +383,85 @@ public class TextInputChannel {
 
       @NonNull
       private static String translateAutofillHint(@NonNull String hint) {
-        switch (hint) {
-          case "addressCity":
-            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_LOCALITY;
-          case "addressState":
-            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_REGION;
-          case "birthday":
-            return HintConstants.AUTOFILL_HINT_BIRTH_DATE_FULL;
-          case "birthdayDay":
-            return HintConstants.AUTOFILL_HINT_BIRTH_DATE_DAY;
-          case "birthdayMonth":
-            return HintConstants.AUTOFILL_HINT_BIRTH_DATE_MONTH;
-          case "birthdayYear":
-            return HintConstants.AUTOFILL_HINT_BIRTH_DATE_YEAR;
-          case "countryName":
-            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_COUNTRY;
-          case "creditCardExpirationDate":
-            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_NUMBER;
-          case "creditCardExpirationDay":
-            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DAY;
-          case "creditCardExpirationMonth":
-            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_MONTH;
-          case "creditCardExpirationYear":
-            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_YEAR;
-          case "creditCardNumber":
-            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_NUMBER;
-          case "creditCardSecurityCode":
-            return HintConstants.AUTOFILL_HINT_CREDIT_CARD_SECURITY_CODE;
-          case "email":
-            return HintConstants.AUTOFILL_HINT_EMAIL_ADDRESS;
-          case "familyName":
-            return HintConstants.AUTOFILL_HINT_PERSON_NAME_FAMILY;
-          case "fullStreetAddress":
-            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_STREET_ADDRESS;
-          case "gender":
-            return HintConstants.AUTOFILL_HINT_GENDER;
-          case "givenName":
-            return HintConstants.AUTOFILL_HINT_PERSON_NAME_GIVEN;
-          case "middleInitial":
-            return HintConstants.AUTOFILL_HINT_PERSON_NAME_MIDDLE_INITIAL;
-          case "middleName":
-            return HintConstants.AUTOFILL_HINT_PERSON_NAME_MIDDLE;
-          case "name":
-            return HintConstants.AUTOFILL_HINT_PERSON_NAME;
-          case "namePrefix":
-            return HintConstants.AUTOFILL_HINT_PERSON_NAME_PREFIX;
-          case "nameSuffix":
-            return HintConstants.AUTOFILL_HINT_PERSON_NAME_SUFFIX;
-          case "newPassword":
-            return HintConstants.AUTOFILL_HINT_NEW_PASSWORD;
-          case "newUsername":
-            return HintConstants.AUTOFILL_HINT_NEW_USERNAME;
-          case "oneTimeCode":
-            return HintConstants.AUTOFILL_HINT_SMS_OTP;
-          case "password":
-            return HintConstants.AUTOFILL_HINT_PASSWORD;
-          case "postalAddress":
-            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS;
-          case "postalAddressExtended":
-            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_EXTENDED_ADDRESS;
-          case "postalAddressExtendedPostalCode":
-            return HintConstants.AUTOFILL_HINT_POSTAL_ADDRESS_EXTENDED_POSTAL_CODE;
-          case "postalCode":
-            return HintConstants.AUTOFILL_HINT_POSTAL_CODE;
-          case "telephoneNumber":
-            return HintConstants.AUTOFILL_HINT_PHONE_NUMBER;
-          case "telephoneNumberCountryCode":
-            return HintConstants.AUTOFILL_HINT_PHONE_COUNTRY_CODE;
-          case "telephoneNumberDevice":
-            return HintConstants.AUTOFILL_HINT_PHONE_NUMBER_DEVICE;
-          case "telephoneNumberNational":
-            return HintConstants.AUTOFILL_HINT_PHONE_NATIONAL;
-          case "username":
-            return HintConstants.AUTOFILL_HINT_NEW_USERNAME;
-          default:
-            return hint;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          switch (hint) {
+            case "addressCity":
+              return "addressLocality";
+            case "addressState":
+              return "addressRegion";
+            case "birthday":
+              return "birthDateFull";
+            case "birthdayDay":
+              return "birthDateDay";
+            case "birthdayMonth":
+              return "birthDateMonth";
+            case "birthdayYear":
+              return "birthDateYear";
+            case "countryName":
+              return "addressCountry";
+            case "creditCardExpirationDate":
+              return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DATE;
+            case "creditCardExpirationDay":
+              return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DAY;
+            case "creditCardExpirationMonth":
+              return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_MONTH;
+            case "creditCardExpirationYear":
+              return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_YEAR;
+            case "creditCardNumber":
+              return View.AUTOFILL_HINT_CREDIT_CARD_NUMBER;
+            case "creditCardSecurityCode":
+              return View.AUTOFILL_HINT_CREDIT_CARD_SECURITY_CODE;
+            case "email":
+              return View.AUTOFILL_HINT_EMAIL_ADDRESS;
+            case "familyName":
+              return "personFamilyName";
+            case "fullStreetAddress":
+              return "streetAddress";
+            case "gender":
+              return "gender";
+            case "givenName":
+              return "personGivenName";
+            case "middleInitial":
+              return "personMiddleInitial";
+            case "middleName":
+              return "personMiddleName";
+            case "name":
+              return "personName";
+            case "namePrefix":
+              return "personNamePrefix";
+            case "nameSuffix":
+              return "personNameSuffix";
+            case "newPassword":
+              return "newPassword";
+            case "newUsername":
+              return "newUsername";
+            case "oneTimeCode":
+              return "smsOTPCode";
+            case "password":
+              return View.AUTOFILL_HINT_PASSWORD;
+            case "postalAddress":
+              return View.AUTOFILL_HINT_POSTAL_ADDRESS;
+            case "postalAddressExtended":
+              return "extendedAddress";
+            case "postalAddressExtendedPostalCode":
+              return "extendedPostalCode";
+            case "postalCode":
+              return View.AUTOFILL_HINT_POSTAL_CODE;
+            case "telephoneNumber":
+              return "phoneNumber";
+            case "telephoneNumberCountryCode":
+              return "phoneCountryCode";
+            case "telephoneNumberDevice":
+              return "phoneNumberDevice";
+            case "telephoneNumberNational":
+              return "phoneNational";
+            case "username":
+              return View.AUTOFILL_HINT_USERNAME;
+            default:
+              return hint;
+          }
+        } else {
+          return hint;
         }
       }
 
