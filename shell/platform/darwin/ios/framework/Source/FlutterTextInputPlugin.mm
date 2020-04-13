@@ -94,81 +94,105 @@ static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
 
   NSString* hint = hints[0];
   if (@available(iOS 10.0, *)) {
-    if ([hint isEqualToString:@"addressCityAndState"])
+    if ([hint isEqualToString:@"addressCityAndState"]) {
       return UITextContentTypeAddressCityAndState;
+    }
 
-    if ([hint isEqualToString:@"addressState"])
+    if ([hint isEqualToString:@"addressState"]) {
       return UITextContentTypeAddressState;
+    }
 
-    if ([hint isEqualToString:@"addressCity"])
+    if ([hint isEqualToString:@"addressCity"]) {
       return UITextContentTypeAddressCity;
+    }
 
-    if ([hint isEqualToString:@"sublocality"])
+    if ([hint isEqualToString:@"sublocality"]) {
       return UITextContentTypeSublocality;
+    }
 
-    if ([hint isEqualToString:@"streetAddressLine1"])
+    if ([hint isEqualToString:@"streetAddressLine1"]) {
       return UITextContentTypeStreetAddressLine1;
+    }
 
-    if ([hint isEqualToString:@"streetAddressLine2"])
+    if ([hint isEqualToString:@"streetAddressLine2"]) {
       return UITextContentTypeStreetAddressLine2;
+    }
 
-    if ([hint isEqualToString:@"countryName"])
+    if ([hint isEqualToString:@"countryName"]) {
       return UITextContentTypeCountryName;
+    }
 
-    if ([hint isEqualToString:@"fullStreetAddress"])
+    if ([hint isEqualToString:@"fullStreetAddress"]) {
       return UITextContentTypeFullStreetAddress;
+    }
 
-    if ([hint isEqualToString:@"postalCode"])
+    if ([hint isEqualToString:@"postalCode"]) {
       return UITextContentTypePostalCode;
+    }
 
-    if ([hint isEqualToString:@"location"])
+    if ([hint isEqualToString:@"location"]) {
       return UITextContentTypeLocation;
+    }
 
-    if ([hint isEqualToString:@"creditCardNumber"])
+    if ([hint isEqualToString:@"creditCardNumber"]) {
       return UITextContentTypeCreditCardNumber;
+    }
 
-    if ([hint isEqualToString:@"email"])
+    if ([hint isEqualToString:@"email"]) {
       return UITextContentTypeEmailAddress;
+    }
 
-    if ([hint isEqualToString:@"jobTitle"])
+    if ([hint isEqualToString:@"jobTitle"]) {
       return UITextContentTypeJobTitle;
+    }
 
-    if ([hint isEqualToString:@"givenName"])
+    if ([hint isEqualToString:@"givenName"]) {
       return UITextContentTypeGivenName;
+    }
 
-    if ([hint isEqualToString:@"middleName"])
+    if ([hint isEqualToString:@"middleName"]) {
       return UITextContentTypeMiddleName;
+    }
 
-    if ([hint isEqualToString:@"familyName"])
+    if ([hint isEqualToString:@"familyName"]) {
       return UITextContentTypeFamilyName;
+    }
 
-    if ([hint isEqualToString:@"name"])
+    if ([hint isEqualToString:@"name"]) {
       return UITextContentTypeName;
+    }
 
-    if ([hint isEqualToString:@"namePrefix"])
+    if ([hint isEqualToString:@"namePrefix"]) {
       return UITextContentTypeNamePrefix;
+    }
 
-    if ([hint isEqualToString:@"nameSuffix"])
+    if ([hint isEqualToString:@"nameSuffix"]) {
       return UITextContentTypeNameSuffix;
+    }
 
-    if ([hint isEqualToString:@"nickname"])
+    if ([hint isEqualToString:@"nickname"]) {
       return UITextContentTypeNickname;
+    }
 
-    if ([hint isEqualToString:@"organizationName"])
+    if ([hint isEqualToString:@"organizationName"]) {
       return UITextContentTypeOrganizationName;
+    }
 
-    if ([hint isEqualToString:@"telephoneNumber"])
+    if ([hint isEqualToString:@"telephoneNumber"]) {
       return UITextContentTypeTelephoneNumber;
+    }
   }
 
   if (@available(iOS 11.0, *)) {
-    if ([hint isEqualToString:@"password"])
+    if ([hint isEqualToString:@"password"]) {
       return UITextContentTypePassword;
+    }
   }
 
   if (@available(iOS 12.0, *)) {
-    if ([hint isEqualToString:@"oneTimeCode"])
+    if ([hint isEqualToString:@"oneTimeCode"]) {
       return UITextContentTypeOneTimeCode;
+    }
   }
 
   return hints[0];
@@ -285,7 +309,7 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 }
 
 - (void)setAutofillId:(NSString*)autofillId {
-  _autofillId = [autofillId copy];
+  _autofillId = [[autofillId copy] autorelease];
 }
 
 - (void)setTextInputState:(NSDictionary*)state {
@@ -873,23 +897,26 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
     }
   } else {
     NSAssert(clientUniqueId != nil, @"The client's unique id can't be null");
-    for (FlutterTextInputView* v in _inputViews)
+    for (FlutterTextInputView* v in _inputViews) {
       [v removeFromSuperview];
-    for (UIView* subview in [_inputHider subviews])
+    }
+    for (UIView* subview in [_inputHider subviews]) {
       [subview removeFromSuperview];
+    }
 
     [_inputViews removeAllObjects];
 
     for (NSDictionary* field in fields) {
-      FlutterTextInputView* newInputView = [[FlutterTextInputView alloc] init];
+      FlutterTextInputView* newInputView = [[[FlutterTextInputView alloc] init] autorelease];
       newInputView.textInputDelegate = _textInputDelegate;
       [_inputViews addObject:newInputView];
 
       NSString* autofillId = _uniqueIdFromDictionary(field);
       [newInputView setAutofillId:autofillId];
 
-      if ([clientUniqueId isEqualToString:autofillId])
+      if ([clientUniqueId isEqualToString:autofillId]) {
         _activeView = newInputView;
+      }
 
       [FlutterTextInputPlugin setupInputView:newInputView WithConfiguration:field];
       [_inputHider addSubview:newInputView];
