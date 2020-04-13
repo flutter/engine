@@ -41,7 +41,7 @@ void main(List<String> args) async {
   } on UsageException catch (e) {
     print(e);
     exitCode = 64; // Exit code 64 indicates a usage error.
-  } on ToolExit catch (e) {
+  } on ToolException catch (e) {
     io.stderr.writeln(e.message);
     exitCode = 1;
   } catch (e) {

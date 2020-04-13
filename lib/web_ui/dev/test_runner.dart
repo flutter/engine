@@ -312,7 +312,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   void _checkExitCode() {
     if (io.exitCode != 0) {
-      throw ToolExit('Process exited with exit code ${io.exitCode}.');
+      throw ToolException('Process exited with exit code ${io.exitCode}.');
     }
   }
 
@@ -326,7 +326,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      throw ToolExit(
+      throw ToolException(
           'Failed to run pub get. Exited with exit code $exitCode');
     }
   }
@@ -368,7 +368,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      throw ToolExit('Failed to compile ${hostDartFile.path}. Compiler '
+      throw ToolException('Failed to compile ${hostDartFile.path}. Compiler '
           'exited with exit code $exitCode');
     }
 
@@ -397,7 +397,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     );
 
     if (exitCode != 0) {
-      throw ToolExit(
+      throw ToolException(
           'Failed to compile tests. Compiler exited with exit code $exitCode');
     }
   }

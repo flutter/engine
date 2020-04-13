@@ -77,7 +77,7 @@ class IntegrationTestsManager {
     );
 
     if (exitCode != 0) {
-      throw ToolExit('ERROR: Failed to clone flutter repo. Exited with '
+      throw ToolException('ERROR: Failed to clone flutter repo. Exited with '
           'exit code $exitCode');
     }
   }

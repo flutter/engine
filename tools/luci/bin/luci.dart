@@ -31,7 +31,7 @@ Future<void> main(List<String> args) async {
 
   try {
     await runner.run(args);
-  } on ToolExit catch(error) {
+  } on ToolException catch(error) {
     io.stderr.writeln(error.message);
     io.exitCode = 1;
   } finally {
@@ -88,7 +88,7 @@ class RunCommand extends Command<bool> {
   FutureOr<bool> run() async {
     for (final String targetName in targetNames) {
       final Target target = targets.singleWhere((Target t) => t.name == targetName, orElse: () {
-        throw ToolExit('Target $targetName not found.');
+        throw ToolException('Target $targetName not found.');
       });
       await target.runner.run(target);
     }
