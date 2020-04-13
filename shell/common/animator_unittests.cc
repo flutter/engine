@@ -55,7 +55,7 @@ TEST_F(ShellTest, VSyncTargetTime) {
           return ShellTestPlatformView::Create(
               shell, shell.GetTaskRunners(), vsync_clock,
               std::move(create_vsync_waiter),
-              ShellTestPlatformView::BackendType::kDefaultBackend);
+              ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
         },
         [](Shell& shell) {
           return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
@@ -84,9 +84,13 @@ TEST_F(ShellTest, VSyncTargetTime) {
                                     });
 
   on_target_time_latch.Wait();
-  ASSERT_EQ(ConstantFiringVsyncWaiter::frame_target_time.ToEpochDelta()
-                .ToMicroseconds(),
+  const auto vsync_waiter_target_time =
+      ConstantFiringVsyncWaiter::frame_target_time;
+  ASSERT_EQ(vsync_waiter_target_time.ToEpochDelta().ToMicroseconds(),
             target_time);
+
+  // validate that the latest target time has also been updated.
+  ASSERT_EQ(GetLatestFrameTargetTime(shell.get()), vsync_waiter_target_time);
 
   // teardown.
   DestroyShell(std::move(shell), std::move(task_runners));

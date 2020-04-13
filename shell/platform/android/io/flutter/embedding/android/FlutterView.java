@@ -267,7 +267,7 @@ public class FlutterView extends FrameLayout {
     super(context, attrs);
 
     this.flutterTextureView = flutterTextureView;
-    this.renderSurface = flutterSurfaceView;
+    this.renderSurface = flutterTextureView;
 
     init();
   }

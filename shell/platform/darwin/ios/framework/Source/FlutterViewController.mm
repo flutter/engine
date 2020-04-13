@@ -27,8 +27,11 @@ static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
-
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
+NSNotificationName const FlutterViewControllerHideHomeIndicator =
+    @"FlutterViewControllerHideHomeIndicator";
+NSNotificationName const FlutterViewControllerShowHomeIndicator =
+    @"FlutterViewControllerShowHomeIndicator";
 
 /// Class to coalesce calls for a period of time.
 ///
@@ -91,6 +94,7 @@ NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControl
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
+@property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @end
 
 // The following conditional compilation defines an API 13 concept on earlier API targets so that
@@ -280,11 +284,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
                object:nil];
 
   [center addObserver:self
-             selector:@selector(onLocaleUpdated:)
-                 name:NSCurrentLocaleDidChangeNotification
-               object:nil];
-
-  [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
                  name:UIAccessibilityVoiceOverStatusChanged
                object:nil];
@@ -322,6 +321,16 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [center addObserver:self
              selector:@selector(onUserSettingsChanged:)
                  name:UIContentSizeCategoryDidChangeNotification
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(onHideHomeIndicatorNotification:)
+                 name:FlutterViewControllerHideHomeIndicator
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(onShowHomeIndicatorNotification:)
+                 name:FlutterViewControllerShowHomeIndicator
                object:nil];
 }
 
@@ -548,14 +557,14 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   // thread.
   if (appeared) {
     [self installFirstFrameCallback];
-    [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
-    [_engine.get() platformViewsController] -> SetFlutterViewController(self);
-    [_engine.get() platformView] -> NotifyCreated();
+    [_engine.get() platformViewsController]->SetFlutterView(_flutterView.get());
+    [_engine.get() platformViewsController]->SetFlutterViewController(self);
+    [_engine.get() platformView]->NotifyCreated();
   } else {
     self.displayingFlutterUI = NO;
-    [_engine.get() platformView] -> NotifyDestroyed();
-    [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
-    [_engine.get() platformViewsController] -> SetFlutterViewController(nullptr);
+    [_engine.get() platformView]->NotifyDestroyed();
+    [_engine.get() platformViewsController]->SetFlutterView(nullptr);
+    [_engine.get() platformViewsController]->SetFlutterViewController(nullptr);
   }
 }
 
@@ -595,7 +604,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewDidAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidAppear");
-  [self onLocaleUpdated:nil];
   [self onUserSettingsChanged:nil];
   [self onAccessibilityStatusChanged:nil];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
@@ -959,13 +967,23 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)keyboardWillChangeFrame:(NSNotification*)notification {
   NSDictionary* info = [notification userInfo];
-  CGFloat bottom = CGRectGetHeight([[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue]);
-  CGFloat scale = [UIScreen mainScreen].scale;
+  CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
+  CGRect screenRect = [[UIScreen mainScreen] bounds];
 
-  // The keyboard is treated as an inset since we want to effectively reduce the window size by the
-  // keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
-  // bottom padding.
-  _viewportMetrics.physical_view_inset_bottom = bottom * scale;
+  // Considering the iPad's split keyboard, Flutter needs to check if the keyboard frame is present
+  // in the screen to see if the keyboard is visible.
+  if (CGRectIntersectsRect(keyboardFrame, screenRect)) {
+    CGFloat bottom = CGRectGetHeight(keyboardFrame);
+    CGFloat scale = [UIScreen mainScreen].scale;
+
+    // The keyboard is treated as an inset since we want to effectively reduce the window size by
+    // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
+    // bottom padding.
+    _viewportMetrics.physical_view_inset_bottom = bottom * scale;
+  } else {
+    _viewportMetrics.physical_view_inset_bottom = 0;
+  }
+
   [self updateViewportMetrics];
 }
 
@@ -1018,6 +1036,27 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 }
 
+- (void)onHideHomeIndicatorNotification:(NSNotification*)notification {
+  self.isHomeIndicatorHidden = YES;
+}
+
+- (void)onShowHomeIndicatorNotification:(NSNotification*)notification {
+  self.isHomeIndicatorHidden = NO;
+}
+
+- (void)setIsHomeIndicatorHidden:(BOOL)hideHomeIndicator {
+  if (hideHomeIndicator != _isHomeIndicatorHidden) {
+    _isHomeIndicatorHidden = hideHomeIndicator;
+    if (@available(iOS 11, *)) {
+      [self setNeedsUpdateOfHomeIndicatorAutoHidden];
+    }
+  }
+}
+
+- (BOOL)prefersHomeIndicatorAutoHidden {
+  return self.isHomeIndicatorHidden;
+}
+
 - (BOOL)shouldAutorotate {
   return YES;
 }
@@ -1052,48 +1091,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());
   platformView->SetAccessibilityFeatures(flags);
 #endif
-}
-
-#pragma mark - Locale updates
-
-- (void)onLocaleUpdated:(NSNotification*)notification {
-  NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
-  NSMutableArray<NSString*>* data = [[NSMutableArray new] autorelease];
-
-  // Force prepend the [NSLocale currentLocale] to the front of the list
-  // to ensure we are including the full default locale. preferredLocales
-  // is not guaranteed to include anything beyond the languageCode.
-  NSLocale* currentLocale = [NSLocale currentLocale];
-  NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
-  NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
-  NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
-  NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
-  if (languageCode) {
-    [data addObject:languageCode];
-    [data addObject:(countryCode ? countryCode : @"")];
-    [data addObject:(scriptCode ? scriptCode : @"")];
-    [data addObject:(variantCode ? variantCode : @"")];
-  }
-
-  // Add any secondary locales/languages to the list.
-  for (NSString* localeID in preferredLocales) {
-    NSLocale* currentLocale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
-    NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
-    NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
-    NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
-    NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
-    if (!languageCode) {
-      continue;
-    }
-    [data addObject:languageCode];
-    [data addObject:(countryCode ? countryCode : @"")];
-    [data addObject:(scriptCode ? scriptCode : @"")];
-    [data addObject:(variantCode ? variantCode : @"")];
-  }
-  if (data.count == 0) {
-    return;
-  }
-  [[_engine.get() localizationChannel] invokeMethod:@"setLocale" arguments:data];
 }
 
 #pragma mark - Set user settings

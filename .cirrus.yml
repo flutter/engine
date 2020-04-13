@@ -60,10 +60,23 @@ task:
         cd $ENGINE_PATH/src/out/host_release/
         ./txt_benchmarks --benchmark_format=json > txt_benchmarks.json
         ./fml_benchmarks --benchmark_format=json > fml_benchmarks.json
+        ./shell_benchmarks --benchmark_format=json > shell_benchmarks.json
         cd $ENGINE_PATH/src/flutter/testing/benchmark
         pub get
         dart bin/parse_and_send.dart ../../../out/host_release/txt_benchmarks.json
         dart bin/parse_and_send.dart ../../../out/host_release/fml_benchmarks.json
+        dart bin/parse_and_send.dart ../../../out/host_release/shell_benchmarks.json
+    - name: build_and_test_linux_release
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --runtime-mode=release
+        ninja -C out/host_release
+      test_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/testing/run_tests.sh host_release
+
+    # The following test depends on Flutter framework repo. It may fail if the
+    # framework repo is currently broken.
     - name: build_and_test_linux_unopt_debug
       compile_host_script: |
         cd $ENGINE_PATH/src
@@ -156,6 +169,7 @@ task:
         - $FRAMEWORK_PATH/flutter/bin/flutter config --local-engine=host_debug_unopt --no-analytics --enable-web
         - $FRAMEWORK_PATH/flutter/bin/flutter pub get --local-engine=host_debug_unopt
         - $FRAMEWORK_PATH/flutter/bin/flutter drive -v --target=test_driver/text_editing_e2e.dart -d web-server --release --browser-name=chrome --local-engine=host_debug_unopt
+        - $FRAMEWORK_PATH/flutter/bin/flutter drive -v --target=test_driver/platform_messages_e2e.dart -d web-server --release --browser-name=chrome --local-engine=host_debug_unopt
         - $FRAMEWORK_PATH/flutter/bin/flutter drive -v --target=test_driver/treeshaking_e2e.dart -d web-server --profile --browser-name=chrome --local-engine=host_debug_unopt
         - $FRAMEWORK_PATH/flutter/bin/flutter drive -v --target=test_driver/image_loading_e2e.dart -d web-server --release --browser-name=chrome --local-engine=host_debug_unopt
 
@@ -198,40 +212,3 @@ task:
         cd $ENGINE_PATH/src
         ./flutter/tools/fuchsia/build_fuchsia_artifacts.py --engine-version HEAD --runtime-mode debug --no-lto --archs x64
         cd $ENGINE_PATH/src/flutter
-
-# WINDOWS
-task:
-  gce_instance:
-    image_project: flutter-cirrus
-    image_name: flutter-engine-windows-server-2016
-    zone: us-central1-a
-    platform: windows
-    cpu: 32
-    memory: 32Gb
-    disk: 50
-  env:
-    # Cirrus is somehow not picking up the environment variables set in the VM image.
-    PATH: "c:/depot_tools;c:/MinGit/cmd;$PATH"
-    DEPOT_TOOLS_WIN_TOOLCHAIN: 0
-    GYP_MSVS_OVERRIDE_PATH: "c:/Program Files (x86)/Microsoft Visual Studio/2017/Community"
-    ENGINE_PATH: "c:/flutter/engine"
-  setup_script: |
-    REM robocopy can return 1 for successful copy; suppress its error code.
-    REM move somehow doesn't work as it complains that the file is being used by another process.
-    robocopy %CIRRUS_WORKING_DIR% %ENGINE_PATH%/src/flutter /MIR| (cmd /s /c exit /b 0)
-    cd %ENGINE_PATH%/src
-    gclient sync
-  matrix:
-    - name: build_and_test_windows_unopt_debug
-      compile_host_script: |
-        cd %ENGINE_PATH%/src
-        python flutter/tools/gn --runtime-mode debug --unoptimized
-        ninja -C out/host_debug_unopt
-      test_host_script: |
-        cd %ENGINE_PATH%/src
-        python flutter/testing/run_tests.py --type=engine
-    - name: build_windows_opt_debug
-      compile_host_script: |
-        cd %ENGINE_PATH%/src
-        python flutter/tools/gn --runtime-mode debug
-        ninja -C out/host_debug
