@@ -314,12 +314,12 @@ public class TextInputChannel {
       if (inputActionName == null) {
         throw new JSONException("Configuration JSON missing 'inputAction' property.");
       }
-      Configuration[] allFields = null;
-      if (!json.isNull("allFields")) {
-        final JSONArray fields = json.getJSONArray("allFields");
-        allFields = new Configuration[fields.length()];
-        for (int i = 0; i < allFields.length; i++) {
-          allFields[i] = Configuration.fromJson(fields.getJSONObject(i));
+      Configuration[] fields = null;
+      if (!json.isNull("fields")) {
+        final JSONArray fields = json.getJSONArray("fields");
+        fields = new Configuration[fields.length()];
+        for (int i = 0; i < fields.length; i++) {
+          fields[i] = Configuration.fromJson(fields.getJSONObject(i));
         }
       }
       final Integer inputAction = inputActionFromTextInputAction(inputActionName);
@@ -332,7 +332,7 @@ public class TextInputChannel {
           inputAction,
           json.isNull("actionLabel") ? null : json.getString("actionLabel"),
           json.isNull("autofill") ? null : Autofill.fromJson(json.getJSONObject("autofill")),
-          allFields);
+          fields);
     }
 
     @NonNull
@@ -478,7 +478,7 @@ public class TextInputChannel {
     @Nullable public final Integer inputAction;
     @Nullable public final String actionLabel;
     @Nullable public final Autofill autofill;
-    @Nullable public final Configuration[] allFields;
+    @Nullable public final Configuration[] fields;
 
     public Configuration(
         boolean obscureText,
@@ -489,7 +489,7 @@ public class TextInputChannel {
         @Nullable Integer inputAction,
         @Nullable String actionLabel,
         @Nullable Autofill autofill,
-        @Nullable Configuration[] allFields) {
+        @Nullable Configuration[] fields) {
       this.obscureText = obscureText;
       this.autocorrect = autocorrect;
       this.enableSuggestions = enableSuggestions;
@@ -498,7 +498,7 @@ public class TextInputChannel {
       this.inputAction = inputAction;
       this.actionLabel = actionLabel;
       this.autofill = autofill;
-      this.allFields = allFields;
+      this.fields = fields;
     }
   }
 

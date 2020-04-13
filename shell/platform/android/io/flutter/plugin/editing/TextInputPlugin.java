@@ -436,9 +436,10 @@ public class TextInputPlugin {
   private void updateAutofillConfigurationIfNeeded(TextInputChannel.Configuration configuration) {
     notifyViewExited();
     this.configuration = configuration;
-    final TextInputChannel.Configuration[] configurations = configuration.allFields;
+    final TextInputChannel.Configuration[] configurations = configuration.fields;
 
     if (configuration.autofill == null) {
+      // Disables autofill if the configuration doesn't have an autofill field.
       mAutofillConfigurations = null;
       return;
     }
