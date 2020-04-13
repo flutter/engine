@@ -860,11 +860,11 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 }
 
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
-  NSArray* allFields = configuration[@"allFields"];
+  NSArray* fields = configuration[@"fields"];
   NSString* clientUniqueId = _uniqueIdFromDictionary(configuration);
   bool isSecureTextEntry = [configuration[@"obscureText"] boolValue];
 
-  if (allFields == nil) {
+  if (fields == nil) {
     _activeView = isSecureTextEntry ? _nonAutofillSecureInputView : _nonAutofillInputView;
     [FlutterTextInputPlugin setupInputView:_activeView WithConfiguration:configuration];
 
@@ -880,7 +880,7 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 
     [_inputViews removeAllObjects];
 
-    for (NSDictionary* field in allFields) {
+    for (NSDictionary* field in fields) {
       FlutterTextInputView* newInputView = [[FlutterTextInputView alloc] init];
       newInputView.textInputDelegate = _textInputDelegate;
       [_inputViews addObject:newInputView];

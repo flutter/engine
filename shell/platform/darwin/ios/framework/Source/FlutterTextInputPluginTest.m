@@ -48,7 +48,7 @@ FLUTTER_ASSERT_ARC
             forKey:@"autofill"];
 
   NSMutableDictionary* config = [field1 mutableCopy];
-  [config setValue:@[ field1, field2 ] forKey:@"allFields"];
+  [config setValue:@[ field1, field2 ] forKey:@"fields"];
 
   FlutterMethodCall* setClientCall =
       [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
