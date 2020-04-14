@@ -403,6 +403,16 @@ class EngineWindow extends ui.Window {
         textEditing.channel.handleTextInput(data, callback);
         return;
 
+      case 'flutter/mousecursor':
+        const MethodCodec codec = StandardMethodCodec();
+        final MethodCall decoded = codec.decodeMethodCall(data);
+        final Map<dynamic, dynamic> arguments = decoded.arguments;
+        switch (decoded.method) {
+          case 'activateSystemCursor':
+            MouseCursor.instance.activateSystemCursor(arguments['shapeCode']);
+        }
+        return;
+
       case 'flutter/web_test_e2e':
         const MethodCodec codec = JSONMethodCodec();
         _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(
