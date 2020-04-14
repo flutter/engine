@@ -489,10 +489,11 @@ class BitmapCanvas extends EngineCanvas {
   @override
   void drawParagraph(EngineParagraph paragraph, ui.Offset offset) {
     assert(paragraph._isLaidOut);
-    html.CanvasRenderingContext2D ctx = _canvasPool.context;
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
 
     if (paragraph._drawOnCanvas && _childOverdraw == false) {
+      html.CanvasRenderingContext2D ctx = _canvasPool.context;
+
       final List<EngineLineMetrics> lines = paragraph._measurementResult.lines;
 
       final SurfacePaintData backgroundPaint = paragraph._background?.paintData;
