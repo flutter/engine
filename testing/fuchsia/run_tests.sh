@@ -45,7 +45,7 @@ reboot() {
 trap reboot EXIT
 
 echo "$(date) START:PAVING ------------------------------------------"
-openssl rsa -in /etc/botanist/keys/id_rsa_infra -pubout > key.pub
+ssh-keygen -y -f $pkey > key.pub
 ./fuchsia_ctl -d $device_name pave  -i $1 \
       --public-key "key.pub"
 echo "$(date) END:PAVING --------------------------------------------"
