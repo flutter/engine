@@ -199,7 +199,7 @@ static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
   return hints[0];
 }
 
-static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
+static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   NSDictionary* autofill = dictionary[@"autofill"];
   return autofill == nil ? nil : autofill[@"uniqueIdentifier"];
 }
@@ -256,8 +256,11 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 @end
 
+@interface FlutterTextInputView ()
+@property(nonatomic, copy) NSString* autofillId;
+@end
+
 @implementation FlutterTextInputView {
-  NSString* _autofillId;
   int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
@@ -307,10 +310,6 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 - (void)setTextInputClient:(int)client {
   _textInputClient = client;
-}
-
-- (void)setAutofillId:(NSString*)autofillId {
-  _autofillId = [[autofillId copy] autorelease];
 }
 
 - (void)setTextInputState:(NSDictionary*)state {
@@ -736,10 +735,11 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
     @"text" : [NSString stringWithString:self.text],
   };
 
-  if (_textInputClient == 0 && _autofillId != nil)
+  if (_textInputClient == 0 && _autofillId != nil) {
     [_textInputDelegate updateEditingClient:_textInputClient withState:state withTag:_autofillId];
-  else
+  } else {
     [_textInputDelegate updateEditingClient:_textInputClient withState:state];
+  }
 }
 
 - (BOOL)hasText {
@@ -801,14 +801,15 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 @end
 
-@implementation FlutterTextInputPlugin {
-  FlutterTextInputView* _nonAutofillInputView;
-  FlutterTextInputView* _nonAutofillSecureInputView;
+@interface FlutterTextInputPlugin ()
+@property (nonatomic, retain) FlutterTextInputView* nonAutofillInputView;
+@property (nonatomic, retain) FlutterTextInputView* nonAutofillSecureInputView;
+@property (nonatomic, retain) NSMutableArray<FlutterTextInputView*>* inputViews;
+@property (nonatomic, assign) FlutterTextInputView* activeView;
+@property (nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
+@end
 
-  NSMutableArray<FlutterTextInputView*>* _inputViews;
-  FlutterTextInputView* _activeView;
-  FlutterTextInputViewAccessibilityHider* _inputHider;
-}
+@implementation FlutterTextInputPlugin
 
 @synthesize textInputDelegate = _textInputDelegate;
 
@@ -886,22 +887,22 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
   NSArray* fields = configuration[@"fields"];
-  NSString* clientUniqueId = _uniqueIdFromDictionary(configuration);
+  NSString* clientUniqueId = uniqueIdFromDictionary(configuration);
   bool isSecureTextEntry = [configuration[@"obscureText"] boolValue];
 
   if (fields == nil) {
     _activeView = isSecureTextEntry ? _nonAutofillSecureInputView : _nonAutofillInputView;
-    [FlutterTextInputPlugin setupInputView:_activeView WithConfiguration:configuration];
+    [FlutterTextInputPlugin setupInputView:_activeView withConfiguration:configuration];
 
     if (![_activeView isDescendantOfView:_inputHider]) {
       [_inputHider addSubview:_activeView];
     }
   } else {
     NSAssert(clientUniqueId != nil, @"The client's unique id can't be null");
-    for (FlutterTextInputView* v in _inputViews) {
-      [v removeFromSuperview];
+    for (FlutterTextInputView* view in _inputViews) {
+      [view removeFromSuperview];
     }
-    for (UIView* subview in [_inputHider subviews]) {
+    for (UIView* subview in _inputHider.subviews) {
       [subview removeFromSuperview];
     }
 
@@ -912,14 +913,14 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
       newInputView.textInputDelegate = _textInputDelegate;
       [_inputViews addObject:newInputView];
 
-      NSString* autofillId = _uniqueIdFromDictionary(field);
-      [newInputView setAutofillId:autofillId];
+      NSString* autofillId = uniqueIdFromDictionary(field);
+      newInputView.autofillId = autofillId;
 
       if ([clientUniqueId isEqualToString:autofillId]) {
         _activeView = newInputView;
       }
 
-      [FlutterTextInputPlugin setupInputView:newInputView WithConfiguration:field];
+      [FlutterTextInputPlugin setupInputView:newInputView withConfiguration:field];
       [_inputHider addSubview:newInputView];
     }
   }
@@ -929,7 +930,7 @@ static NSString* _uniqueIdFromDictionary(NSDictionary* dictionary) {
 }
 
 + (void)setupInputView:(FlutterTextInputView*)inputView
-     WithConfiguration:(NSDictionary*)configuration {
+     withConfiguration:(NSDictionary*)configuration {
   NSDictionary* inputType = configuration[@"inputType"];
   NSString* keyboardAppearance = configuration[@"keyboardAppearance"];
   NSDictionary* autofill = configuration[@"autofill"];
