@@ -60,7 +60,7 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
       }
     }
 
-    bool Complete(ResourcePtr resource) {
+    [[nodiscard]] bool Complete(ResourcePtr resource) {
       bool result = false;
       if (continuation_) {
         result = continuation_(std::move(resource), trace_id_);
