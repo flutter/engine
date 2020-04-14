@@ -802,11 +802,11 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 @end
 
 @interface FlutterTextInputPlugin ()
-@property (nonatomic, retain) FlutterTextInputView* nonAutofillInputView;
-@property (nonatomic, retain) FlutterTextInputView* nonAutofillSecureInputView;
-@property (nonatomic, retain) NSMutableArray<FlutterTextInputView*>* inputViews;
-@property (nonatomic, assign) FlutterTextInputView* activeView;
-@property (nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
+@property(nonatomic, retain) FlutterTextInputView* nonAutofillInputView;
+@property(nonatomic, retain) FlutterTextInputView* nonAutofillSecureInputView;
+@property(nonatomic, retain) NSMutableArray<FlutterTextInputView*>* inputViews;
+@property(nonatomic, assign) FlutterTextInputView* activeView;
+@property(nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
 @end
 
 @implementation FlutterTextInputPlugin
