@@ -29,7 +29,7 @@ class RecordingCanvas {
   /// Maximum paintable bounds for this canvas.
   ui.Rect get pictureBounds {
     assert(
-      !_debugRecordingEnded,
+      _debugRecordingEnded,
       'Picture bounds not available yet. Call [endRecording] before accessing picture bounds.',
     );
     return _pictureBounds;
