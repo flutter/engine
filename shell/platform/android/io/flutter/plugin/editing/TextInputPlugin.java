@@ -59,9 +59,11 @@ public class TextInputPlugin {
       @NonNull PlatformViewsController platformViewsController) {
     mView = view;
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       afm = view.getContext().getSystemService(AutofillManager.class);
-    else afm = null;
+    } else {
+      afm = null;
+    }
 
     textInputChannel = new TextInputChannel(dartExecutor);
     textInputChannel.setTextInputMethodHandler(
@@ -302,34 +304,37 @@ public class TextInputPlugin {
   }
 
   private void notifyViewEntered() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
-
-    if (afm != null && needsAutofill()) {
-      final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
-      final int[] offset = new int[2];
-      mView.getLocationOnScreen(offset);
-      Rect rect = new Rect(lastClientRect);
-      rect.offset(offset[0], offset[1]);
-      afm.notifyViewEntered(mView, triggerIdentifier.hashCode(), rect);
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null || !needsAutofill()) {
+      return;
     }
+
+    final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
+    final int[] offset = new int[2];
+    mView.getLocationOnScreen(offset);
+    Rect rect = new Rect(lastClientRect);
+    rect.offset(offset[0], offset[1]);
+    afm.notifyViewEntered(mView, triggerIdentifier.hashCode(), rect);
   }
 
   private void notifyViewExited() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
-
-    if (afm != null && configuration != null && configuration.autofill != null) {
-      final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
-      afm.notifyViewExited(mView, triggerIdentifier.hashCode());
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+        || afm == null
+        || configuration == null
+        || configuration.autofill == null) {
+      return;
     }
+
+    final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
+    afm.notifyViewExited(mView, triggerIdentifier.hashCode());
   }
 
   private void notifyValueChanged(String newValue) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
-
-    if (afm != null && needsAutofill()) {
-      final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
-      afm.notifyValueChanged(mView, triggerIdentifier.hashCode(), AutofillValue.forText(newValue));
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null || !needsAutofill()) {
+      return;
     }
+
+    final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
+    afm.notifyValueChanged(mView, triggerIdentifier.hashCode(), AutofillValue.forText(newValue));
   }
 
   @VisibleForTesting
@@ -417,11 +422,17 @@ public class TextInputPlugin {
             final double tx = (matrix[0] * x + matrix[4] * y + matrix[12]) * w;
             final double ty = (matrix[1] * x + matrix[5] * y + matrix[13]) * w;
 
-            if (tx < minMax[0]) minMax[0] = tx;
-            else if (tx > minMax[1]) minMax[1] = tx;
+            if (tx < minMax[0]) {
+              minMax[0] = tx;
+            } else if (tx > minMax[1]) {
+              minMax[1] = tx;
+            }
 
-            if (ty < minMax[2]) minMax[2] = ty;
-            else if (ty > minMax[3]) minMax[3] = ty;
+            if (ty < minMax[2]) {
+              minMax[2] = ty;
+            } else if (ty > minMax[3]) {
+              minMax[3] = ty;
+            }
           }
         };
 
@@ -456,7 +467,9 @@ public class TextInputPlugin {
     } else {
       for (TextInputChannel.Configuration config : configurations) {
         TextInputChannel.Configuration.Autofill autofill = config.autofill;
-        if (autofill == null) continue;
+        if (autofill == null) {
+          continue;
+        }
 
         mAutofillConfigurations.put(autofill.uniqueIdentifier.hashCode(), config);
       }
@@ -468,9 +481,9 @@ public class TextInputPlugin {
   }
 
   public void onProvideAutofillVirtualStructure(ViewStructure structure, int flags) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
-
-    if (!needsAutofill()) return;
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !needsAutofill()) {
+      return;
+    }
 
     final String triggerIdentifier = configuration.autofill.uniqueIdentifier;
     final AutofillId parentId = structure.getAutofillId();
@@ -478,7 +491,9 @@ public class TextInputPlugin {
       final int autofillId = mAutofillConfigurations.keyAt(i);
       final TextInputChannel.Configuration config = mAutofillConfigurations.valueAt(i);
       final TextInputChannel.Configuration.Autofill autofill = config.autofill;
-      if (autofill == null) continue;
+      if (autofill == null) {
+        continue;
+      }
 
       structure.addChildCount(1);
       final ViewStructure child = structure.newChild(i);
@@ -491,17 +506,23 @@ public class TextInputPlugin {
   }
 
   public void autofill(SparseArray<AutofillValue> values) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      return;
+    }
 
     final TextInputChannel.Configuration.Autofill currentAutofill = configuration.autofill;
-    if (currentAutofill == null) return;
+    if (currentAutofill == null) {
+      return;
+    }
 
     final HashMap<String, TextInputChannel.TextEditState> editingValues = new HashMap<>();
     for (int i = 0; i < values.size(); i++) {
       int virtualId = values.keyAt(i);
 
       final TextInputChannel.Configuration config = mAutofillConfigurations.get(virtualId);
-      if (config == null || config.autofill == null) continue;
+      if (config == null || config.autofill == null) {
+        continue;
+      }
 
       final TextInputChannel.Configuration.Autofill autofill = config.autofill;
       final String value = values.valueAt(i).getTextValue().toString();
@@ -509,8 +530,9 @@ public class TextInputPlugin {
           new TextInputChannel.TextEditState(value, value.length(), value.length());
 
       // The value of the currently focused text field needs to be updated.
-      if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier))
+      if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier)) {
         setTextInputEditingState(mView, newState);
+      }
       editingValues.put(autofill.uniqueIdentifier, newState);
     }
 

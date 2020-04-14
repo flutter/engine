@@ -95,7 +95,10 @@ public class TextInputChannel {
                 final double height = arguments.getDouble("height");
                 final JSONArray jsonMatrix = arguments.getJSONArray("transform");
                 final double[] matrix = new double[16];
-                for (int i = 0; i < 16; i++) matrix[i] = jsonMatrix.getDouble(i);
+                for (int i = 0; i < 16; i++) {
+                  matrix[i] = jsonMatrix.getDouble(i);
+                }
+
                 textInputMethodHandler.setEditableSizeAndTransform(width, height, matrix);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
@@ -383,85 +386,84 @@ public class TextInputChannel {
 
       @NonNull
       private static String translateAutofillHint(@NonNull String hint) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-          switch (hint) {
-            case "addressCity":
-              return "addressLocality";
-            case "addressState":
-              return "addressRegion";
-            case "birthday":
-              return "birthDateFull";
-            case "birthdayDay":
-              return "birthDateDay";
-            case "birthdayMonth":
-              return "birthDateMonth";
-            case "birthdayYear":
-              return "birthDateYear";
-            case "countryName":
-              return "addressCountry";
-            case "creditCardExpirationDate":
-              return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DATE;
-            case "creditCardExpirationDay":
-              return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DAY;
-            case "creditCardExpirationMonth":
-              return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_MONTH;
-            case "creditCardExpirationYear":
-              return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_YEAR;
-            case "creditCardNumber":
-              return View.AUTOFILL_HINT_CREDIT_CARD_NUMBER;
-            case "creditCardSecurityCode":
-              return View.AUTOFILL_HINT_CREDIT_CARD_SECURITY_CODE;
-            case "email":
-              return View.AUTOFILL_HINT_EMAIL_ADDRESS;
-            case "familyName":
-              return "personFamilyName";
-            case "fullStreetAddress":
-              return "streetAddress";
-            case "gender":
-              return "gender";
-            case "givenName":
-              return "personGivenName";
-            case "middleInitial":
-              return "personMiddleInitial";
-            case "middleName":
-              return "personMiddleName";
-            case "name":
-              return "personName";
-            case "namePrefix":
-              return "personNamePrefix";
-            case "nameSuffix":
-              return "personNameSuffix";
-            case "newPassword":
-              return "newPassword";
-            case "newUsername":
-              return "newUsername";
-            case "oneTimeCode":
-              return "smsOTPCode";
-            case "password":
-              return View.AUTOFILL_HINT_PASSWORD;
-            case "postalAddress":
-              return View.AUTOFILL_HINT_POSTAL_ADDRESS;
-            case "postalAddressExtended":
-              return "extendedAddress";
-            case "postalAddressExtendedPostalCode":
-              return "extendedPostalCode";
-            case "postalCode":
-              return View.AUTOFILL_HINT_POSTAL_CODE;
-            case "telephoneNumber":
-              return "phoneNumber";
-            case "telephoneNumberCountryCode":
-              return "phoneCountryCode";
-            case "telephoneNumberDevice":
-              return "phoneNumberDevice";
-            case "telephoneNumberNational":
-              return "phoneNational";
-            case "username":
-              return View.AUTOFILL_HINT_USERNAME;
-            default:
-              return hint;
-          }
-        } else {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
           return hint;
+        }
+        switch (hint) {
+          case "addressCity":
+            return "addressLocality";
+          case "addressState":
+            return "addressRegion";
+          case "birthday":
+            return "birthDateFull";
+          case "birthdayDay":
+            return "birthDateDay";
+          case "birthdayMonth":
+            return "birthDateMonth";
+          case "birthdayYear":
+            return "birthDateYear";
+          case "countryName":
+            return "addressCountry";
+          case "creditCardExpirationDate":
+            return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DATE;
+          case "creditCardExpirationDay":
+            return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_DAY;
+          case "creditCardExpirationMonth":
+            return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_MONTH;
+          case "creditCardExpirationYear":
+            return View.AUTOFILL_HINT_CREDIT_CARD_EXPIRATION_YEAR;
+          case "creditCardNumber":
+            return View.AUTOFILL_HINT_CREDIT_CARD_NUMBER;
+          case "creditCardSecurityCode":
+            return View.AUTOFILL_HINT_CREDIT_CARD_SECURITY_CODE;
+          case "email":
+            return View.AUTOFILL_HINT_EMAIL_ADDRESS;
+          case "familyName":
+            return "personFamilyName";
+          case "fullStreetAddress":
+            return "streetAddress";
+          case "gender":
+            return "gender";
+          case "givenName":
+            return "personGivenName";
+          case "middleInitial":
+            return "personMiddleInitial";
+          case "middleName":
+            return "personMiddleName";
+          case "name":
+            return "personName";
+          case "namePrefix":
+            return "personNamePrefix";
+          case "nameSuffix":
+            return "personNameSuffix";
+          case "newPassword":
+            return "newPassword";
+          case "newUsername":
+            return "newUsername";
+          case "oneTimeCode":
+            return "smsOTPCode";
+          case "password":
+            return View.AUTOFILL_HINT_PASSWORD;
+          case "postalAddress":
+            return View.AUTOFILL_HINT_POSTAL_ADDRESS;
+          case "postalAddressExtended":
+            return "extendedAddress";
+          case "postalAddressExtendedPostalCode":
+            return "extendedPostalCode";
+          case "postalCode":
+            return View.AUTOFILL_HINT_POSTAL_CODE;
+          case "telephoneNumber":
+            return "phoneNumber";
+          case "telephoneNumberCountryCode":
+            return "phoneCountryCode";
+          case "telephoneNumberDevice":
+            return "phoneNumberDevice";
+          case "telephoneNumberNational":
+            return "phoneNational";
+          case "username":
+            return View.AUTOFILL_HINT_USERNAME;
+          default:
+            return hint;
         }
       }
 

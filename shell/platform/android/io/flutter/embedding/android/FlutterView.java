@@ -286,8 +286,9 @@ public class FlutterView extends FrameLayout {
     // FlutterView needs to be focusable so that the InputMethodManager can interact with it.
     setFocusable(true);
     setFocusableInTouchMode(true);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS);
+    }
   }
 
   /**

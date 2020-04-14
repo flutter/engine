@@ -467,7 +467,9 @@ public class TextInputPluginTest {
 
   @Test
   public void autofill_onProvideVirtualViewStructure_single() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      return;
+    }
 
     FlutterView testView = new FlutterView(RuntimeEnvironment.application);
     TextInputPlugin textInputPlugin =
