@@ -494,8 +494,6 @@ class BitmapCanvas extends EngineCanvas {
     if (paragraph._drawOnCanvas && _childOverdraw == false) {
       // !Do not move this assignment above this if clause since, accessing
       // context will generate extra <canvas> tags.
-      html.CanvasRenderingContext2D ctx = _canvasPool.context;
-
       final List<EngineLineMetrics> lines = paragraph._measurementResult.lines;
 
       final SurfacePaintData backgroundPaint = paragraph._background?.paintData;
@@ -506,6 +504,7 @@ class BitmapCanvas extends EngineCanvas {
       }
 
       if (style != _cachedLastStyle) {
+        html.CanvasRenderingContext2D ctx = _canvasPool.context;
         ctx.font = style.cssFontString;
         _cachedLastStyle = style;
       }
