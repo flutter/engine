@@ -205,7 +205,6 @@ void webOnlyInitializeEngine() {
 
   Keyboard.initialize();
   MouseCursor.initialize();
-  print('### initialized');
 }
 
 class _NullTreeSanitizer implements html.NodeTreeSanitizer {
