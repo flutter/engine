@@ -294,7 +294,7 @@ RasterStatus Rasterizer::DoDraw(
     const auto frame_lag =
         (latest_frame_target_time - frame_target_time).ToMillisecondsF();
     const int vsync_transitions_missed = round(frame_lag / frame_budget_millis);
-    fml::tracing::TraceEventAsyncComplete(
+    flutter::tracing::TraceEventAsyncComplete(
         "flutter",                    // category
         "SceneDisplayLag",            // name
         raster_finish_time,           // begin_time

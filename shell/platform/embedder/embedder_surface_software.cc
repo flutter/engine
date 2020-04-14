@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/embedder/embedder_surface_software.h"
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
 namespace flutter {

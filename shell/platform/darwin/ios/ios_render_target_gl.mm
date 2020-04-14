@@ -6,7 +6,7 @@
 
 #include <UIKit/UIKit.h>
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 

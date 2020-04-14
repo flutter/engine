@@ -12,7 +12,7 @@
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/fml/size.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 
 namespace flutter {
 

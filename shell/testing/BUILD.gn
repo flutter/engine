@@ -23,7 +23,6 @@ executable("testing") {
     "//flutter/lib/snapshot",
     "//flutter/shell/common",
     "//flutter/third_party/tonic",
-    "//third_party/dart/runtime:libdart_jit",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
   ]

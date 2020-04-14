@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContext.h"

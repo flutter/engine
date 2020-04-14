@@ -66,9 +66,10 @@ static SkISize GetResizedDimensions(SkISize current_size,
   return current_size;
 }
 
-static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
-                                        const SkISize& resized_dimensions,
-                                        const fml::tracing::TraceFlow& flow) {
+static sk_sp<SkImage> ResizeRasterImage(
+    sk_sp<SkImage> image,
+    const SkISize& resized_dimensions,
+    const flutter::tracing::TraceFlow& flow) {
   FML_DCHECK(!image->isTextureBacked());
 
   TRACE_EVENT0("flutter", __FUNCTION__);
@@ -140,7 +141,7 @@ static sk_sp<SkImage> ImageFromDecompressedData(
     ImageDecoder::ImageInfo info,
     std::optional<uint32_t> target_width,
     std::optional<uint32_t> target_height,
-    const fml::tracing::TraceFlow& flow) {
+    const flutter::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
   auto image = SkImage::MakeRasterData(info.sk_info, data, info.row_bytes);
@@ -161,10 +162,11 @@ static sk_sp<SkImage> ImageFromDecompressedData(
   return ResizeRasterImage(std::move(image), resized_dimensions, flow);
 }
 
-sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
-                                       std::optional<uint32_t> target_width,
-                                       std::optional<uint32_t> target_height,
-                                       const fml::tracing::TraceFlow& flow) {
+sk_sp<SkImage> ImageFromCompressedData(
+    sk_sp<SkData> data,
+    std::optional<uint32_t> target_width,
+    std::optional<uint32_t> target_height,
+    const flutter::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
 
@@ -247,7 +249,7 @@ sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
 static SkiaGPUObject<SkImage> UploadRasterImage(
     sk_sp<SkImage> image,
     fml::WeakPtr<IOManager> io_manager,
-    const fml::tracing::TraceFlow& flow) {
+    const flutter::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
 
@@ -303,7 +305,7 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
 void ImageDecoder::Decode(ImageDescriptor descriptor,
                           const ImageResult& callback) {
   TRACE_EVENT0("flutter", __FUNCTION__);
-  fml::tracing::TraceFlow flow(__FUNCTION__);
+  flutter::tracing::TraceFlow flow(__FUNCTION__);
 
   FML_DCHECK(callback);
   FML_DCHECK(runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
@@ -311,7 +313,7 @@ void ImageDecoder::Decode(ImageDescriptor descriptor,
   // Always service the callback on the UI thread.
   auto result = [callback, ui_runner = runners_.GetUITaskRunner()](
                     SkiaGPUObject<SkImage> image,
-                    fml::tracing::TraceFlow flow) {
+                    flutter::tracing::TraceFlow flow) {
     ui_runner->PostTask(fml::MakeCopyable(
         [callback, image = std::move(image), flow = std::move(flow)]() mutable {
           // We are going to terminate the trace flow here. Flows cannot

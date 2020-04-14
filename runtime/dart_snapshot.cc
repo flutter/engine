@@ -8,9 +8,9 @@
 
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
-#include "flutter/fml/trace_event.h"
 #include "flutter/lib/snapshot/snapshot.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/trace_event/trace_event.h"
 
 namespace flutter {
 

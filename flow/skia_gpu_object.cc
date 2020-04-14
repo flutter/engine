@@ -5,7 +5,7 @@
 #include "flutter/flow/skia_gpu_object.h"
 
 #include "flutter/fml/message_loop.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 
 namespace flutter {
 

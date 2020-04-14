@@ -53,6 +53,7 @@ template("runner") {
     deps = [
              "//flutter/common",
              "//flutter/fml",
+             "//flutter/trace_event",
              "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
              "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
              "$fuchsia_sdk_root/pkg:async",

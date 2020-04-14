@@ -17,7 +17,6 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
-#include "flutter/fml/trace_event.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/start_up.h"
@@ -26,6 +25,7 @@
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
+#include "flutter/trace_event/trace_event.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
@@ -219,7 +219,7 @@ static void PerformInitializationTasks(const Settings& settings) {
     if (!settings.trace_whitelist.empty()) {
       std::vector<std::string> prefixes;
       Tokenize(settings.trace_whitelist, &prefixes, ',');
-      fml::tracing::TraceSetWhitelist(prefixes);
+      flutter::tracing::TraceSetWhitelist(prefixes);
     }
 
     if (!settings.skia_deterministic_rendering_on_cpu) {

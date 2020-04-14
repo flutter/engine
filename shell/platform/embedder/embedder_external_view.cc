@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/embedder/embedder_external_view.h"
-#include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/canvas_spy.h"
+#include "flutter/trace_event/trace_event.h"
 
 namespace flutter {
 

@@ -12,7 +12,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/time/time_delta.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 
 #include "vsync_recorder.h"
 

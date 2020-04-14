@@ -5,11 +5,11 @@
 #include "flutter/runtime/runtime_controller.h"
 
 #include "flutter/fml/message_loop.h"
-#include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/runtime_delegate.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/tonic/dart_message_handler.h"
 
 namespace flutter {

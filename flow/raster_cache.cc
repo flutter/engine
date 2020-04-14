@@ -9,7 +9,7 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"

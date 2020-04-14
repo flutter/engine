@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "runtime/dart/utils/inlines.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"

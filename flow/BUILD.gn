@@ -73,6 +73,7 @@ source_set("flow") {
   deps = [
     "//flutter/common",
     "//flutter/fml",
+    "//flutter/trace_event",
     "//third_party/skia",
   ]
 
@@ -162,7 +163,6 @@ executable("flow_unittests") {
     "//flutter/fml",
     "//flutter/testing:skia",
     "//flutter/testing:testing_lib",
-    "//third_party/dart/runtime:libdart_jit",  # for tracing
     "//third_party/googletest:gtest",
     "//third_party/skia",
   ]

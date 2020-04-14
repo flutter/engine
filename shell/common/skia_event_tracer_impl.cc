@@ -9,7 +9,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/posix_wrappers.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/utils/SkEventTracer.h"
 #include "third_party/skia/include/utils/SkTraceEventPhase.h"
@@ -187,19 +187,19 @@ class FlutterEventTracer : public SkEventTracer {
     switch (phase) {
       case TRACE_EVENT_PHASE_BEGIN:
       case TRACE_EVENT_PHASE_COMPLETE:
-        fml::tracing::TraceEvent0(kSkiaTag, name);
+        flutter::tracing::TraceEvent0(kSkiaTag, name);
         break;
       case TRACE_EVENT_PHASE_END:
-        fml::tracing::TraceEventEnd(name);
+        flutter::tracing::TraceEventEnd(name);
         break;
       case TRACE_EVENT_PHASE_INSTANT:
-        fml::tracing::TraceEventInstant0(kSkiaTag, name);
+        flutter::tracing::TraceEventInstant0(kSkiaTag, name);
         break;
       case TRACE_EVENT_PHASE_ASYNC_BEGIN:
-        fml::tracing::TraceEventAsyncBegin0(kSkiaTag, name, id);
+        flutter::tracing::TraceEventAsyncBegin0(kSkiaTag, name, id);
         break;
       case TRACE_EVENT_PHASE_ASYNC_END:
-        fml::tracing::TraceEventAsyncEnd0(kSkiaTag, name, id);
+        flutter::tracing::TraceEventAsyncEnd0(kSkiaTag, name, id);
         break;
       default:
         break;
@@ -216,7 +216,7 @@ class FlutterEventTracer : public SkEventTracer {
 #if defined(OS_FUCHSIA)
     TRACE_DURATION_END(kSkiaTag, name);
 #else
-    fml::tracing::TraceEventEnd(name);
+    flutter::tracing::TraceEventEnd(name);
 #endif
   }
 

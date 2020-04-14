@@ -261,8 +261,6 @@ FILE: ../../../flutter/fml/time/time_point.cc
 FILE: ../../../flutter/fml/time/time_point.h
 FILE: ../../../flutter/fml/time/time_point_unittest.cc
 FILE: ../../../flutter/fml/time/time_unittest.cc
-FILE: ../../../flutter/fml/trace_event.cc
-FILE: ../../../flutter/fml/trace_event.h
 FILE: ../../../flutter/fml/unique_fd.cc
 FILE: ../../../flutter/fml/unique_fd.h
 FILE: ../../../flutter/fml/unique_object.h
@@ -1264,6 +1262,8 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_linux.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
+FILE: ../../../flutter/trace_event/trace_event.cc
+FILE: ../../../flutter/trace_event/trace_event.h
 FILE: ../../../flutter/vulkan/vulkan_application.cc
 FILE: ../../../flutter/vulkan/vulkan_application.h
 FILE: ../../../flutter/vulkan/vulkan_backbuffer.cc

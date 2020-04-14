@@ -10,7 +10,7 @@
 
 #include "dart_runner.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "logging.h"
 #include "runtime/dart/utils/files.h"
 #include "runtime/dart/utils/tempfs.h"

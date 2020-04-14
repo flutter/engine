@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <string>
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
 namespace flutter_runner {

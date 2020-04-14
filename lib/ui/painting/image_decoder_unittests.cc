@@ -530,7 +530,7 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
-  ASSERT_EQ(ImageFromCompressedData(data, 6, 2, fml::tracing::TraceFlow(""))
+  ASSERT_EQ(ImageFromCompressedData(data, 6, 2, flutter::tracing::TraceFlow(""))
                 ->dimensions(),
             SkISize::Make(6, 2));
 }
@@ -544,7 +544,7 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   auto decode = [data](std::optional<uint32_t> target_width,
                        std::optional<uint32_t> target_height) {
     return ImageFromCompressedData(data, target_width, target_height,
-                                   fml::tracing::TraceFlow(""));
+                                   flutter::tracing::TraceFlow(""));
   };
 
   auto expected_data = OpenFixtureAsSkData("Horizontal.png");

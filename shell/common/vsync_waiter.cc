@@ -5,7 +5,7 @@
 #include "flutter/shell/common/vsync_waiter.h"
 
 #include "flutter/fml/task_runner.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 
 namespace flutter {
 
@@ -108,7 +108,7 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
   }
 
   if (callback) {
-    auto flow_identifier = fml::tracing::TraceNonce();
+    auto flow_identifier = flutter::tracing::TraceNonce();
 
     // The base trace ensures that flows have a root to begin from if one does
     // not exist. The trace viewer will ignore traces that have no base event
@@ -122,7 +122,7 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
         [callback, flow_identifier, frame_start_time, frame_target_time]() {
           FML_TRACE_EVENT("flutter", kVsyncTraceName, "StartTime",
                           frame_start_time, "TargetTime", frame_target_time);
-          fml::tracing::TraceEventAsyncComplete(
+          flutter::tracing::TraceEventAsyncComplete(
               "flutter", "VsyncSchedulingOverhead", fml::TimePoint::Now(),
               frame_start_time);
           callback(frame_start_time, frame_target_time);

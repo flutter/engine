@@ -4,7 +4,7 @@
 
 #include "flutter/shell/common/animator.h"
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
 namespace flutter {

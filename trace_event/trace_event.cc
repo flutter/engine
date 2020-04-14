@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 
 #include <algorithm>
 #include <atomic>
@@ -18,13 +18,13 @@
 #define TIMELINE_ENABLED 1
 #endif
 
-namespace fml {
+namespace flutter {
 namespace tracing {
 
 #if TIMELINE_ENABLED
 
 namespace {
-AsciiTrie gWhitelist;
+fml::AsciiTrie gWhitelist;
 
 inline void FlutterTimelineEvent(const char* label,
                                  int64_t timestamp0,
@@ -297,8 +297,8 @@ void TraceEventEnd(TraceArg name) {}
 
 void TraceEventAsyncComplete(TraceArg category_group,
                              TraceArg name,
-                             TimePoint begin,
-                             TimePoint end) {}
+                             fml::TimePoint begin,
+                             fml::TimePoint end) {}
 
 void TraceEventAsyncBegin0(TraceArg category_group,
                            TraceArg name,
@@ -336,4 +336,4 @@ void TraceEventFlowEnd0(TraceArg category_group, TraceArg name, TraceIDArg id) {
 #endif  // TIMELINE_ENABLED
 
 }  // namespace tracing
-}  // namespace fml
+}  // namespace flutter

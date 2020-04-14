@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <vector>
 #include "flutter/fml/logging.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "font_skia.h"
 #include "txt/platform.h"
 #include "txt/text_style.h"

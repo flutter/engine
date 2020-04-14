@@ -9,12 +9,12 @@
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
 // This is mostly a duplication of FlutterView.

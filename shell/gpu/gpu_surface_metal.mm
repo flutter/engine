@@ -6,7 +6,7 @@
 
 #include <QuartzCore/CAMetalLayer.h>
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/ports/SkCFObject.h"

@@ -14,8 +14,8 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/paths.h"
-#include "flutter/fml/trace_event.h"
 #include "flutter/shell/version/version.h"
+#include "flutter/trace_event/trace_event.h"
 
 namespace flutter {
 

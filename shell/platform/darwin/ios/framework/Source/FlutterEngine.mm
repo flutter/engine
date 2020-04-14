@@ -10,7 +10,6 @@
 
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
-#include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
@@ -27,6 +26,7 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+#include "flutter/trace_event/trace_event.h"
 
 NSString* const FlutterDefaultDartEntrypoint = nil;
 

@@ -19,7 +19,7 @@
 #include "flutter/flow/scene_update_context.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 #include "vulkan_surface_producer.h"
 
 namespace flutter_runner {

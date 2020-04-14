@@ -34,7 +34,6 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
-#include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/switches.h"
@@ -46,6 +45,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
+#include "flutter/trace_event/trace_event.h"
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/writer.h"
 
@@ -1454,15 +1454,15 @@ FlutterEngineResult FlutterEngineReloadSystemFonts(
 }
 
 void FlutterEngineTraceEventDurationBegin(const char* name) {
-  fml::tracing::TraceEvent0("flutter", name);
+  flutter::tracing::TraceEvent0("flutter", name);
 }
 
 void FlutterEngineTraceEventDurationEnd(const char* name) {
-  fml::tracing::TraceEventEnd(name);
+  flutter::tracing::TraceEventEnd(name);
 }
 
 void FlutterEngineTraceEventInstant(const char* name) {
-  fml::tracing::TraceEventInstant0("flutter", name);
+  flutter::tracing::TraceEventInstant0("flutter", name);
 }
 
 FlutterEngineResult FlutterEnginePostRenderThreadTask(

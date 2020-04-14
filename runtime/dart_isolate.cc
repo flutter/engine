@@ -9,7 +9,6 @@
 
 #include "flutter/fml/paths.h"
 #include "flutter/fml/posix_wrappers.h"
-#include "flutter/fml/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"
@@ -17,6 +16,7 @@
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
+#include "flutter/trace_event/trace_event.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/tonic/converter/dart_converter.h"

@@ -4,7 +4,7 @@
 
 #include "flutter/runtime/skia_concurrent_executor.h"
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/trace_event/trace_event.h"
 
 namespace flutter {
 
