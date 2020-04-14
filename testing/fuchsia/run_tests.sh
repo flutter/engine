@@ -10,11 +10,17 @@
 # same directory as the script, as well as the `flutter_aot_runner-0.far` and
 # the `flutter_runner_tests-0.far`. It is written to be run from its own
 # directory, and will fail if run from other directories or via sym-links.
+#
+# This script also expects a private key available at:
+# "/etc/botanist/keys/id_rsa_infra".
 
 set -Ee
 
 # The nodes are named blah-blah--four-word-fuchsia-id
 device_name=${SWARMING_BOT_ID#*--}
+
+# Bot key to pave and ssh the device.
+pkey="/etc/botanist/keys/id_rsa_infra"
 
 if [ -z "$device_name" ]
 then
@@ -29,24 +35,25 @@ reboot() {
 
   ./fuchsia_ctl -d $device_name ssh \
       -c "log_listener --dump_logs yes" \
-      --identity-file "/etc/botanist/id_rsa_infra"
+      --identity-file $pkey
 
   # note: this will set an exit code of 255, which we can ignore.
   ./fuchsia_ctl -d $device_name ssh -c "dm reboot-recovery" \
-      --identity-file "/etc/botanist/id_rsa_infra" || true
+      --identity-file $pkey || true
 }
 
 trap reboot EXIT
 
 echo "$(date) START:PAVING ------------------------------------------"
+openssl rsa -in /etc/botanist/keys/id_rsa_infra -pubout > key.pub
 ./fuchsia_ctl -d $device_name pave  -i $1 \
-      --public-key "/etc/botanist/id_rsa_infra.pub"
+      --public-key "key.pub"
 echo "$(date) END:PAVING --------------------------------------------"
 
 echo "$(date) START:WAIT_DEVICE_READY -------------------------------"
 for i in {1..10}; do
   ./fuchsia_ctl -d $device_name ssh \
-      --identity-file "/etc/botanist/id_rsa_infra" \
+      --identity-file $pkey \
       -c "echo up" && break || sleep 15;
 done
 echo "$(date) END:WAIT_DEVICE_READY ---------------------------------"
@@ -58,7 +65,7 @@ echo "$(date) START:flutter_runner_tests ----------------------------"
     -f flutter_aot_runner-0.far    \
     -f flutter_runner_tests-0.far  \
     -t flutter_runner_testsi       \
-    --identity-file "/etc/botanist/id_rsa_infra" \
+    --identity-file $pkey \
     --timeout-seconds 300
 
 # TODO(https://bugs.fuchsia.dev/p/fuchsia/issues/detail?id=47081)
@@ -75,21 +82,21 @@ echo "$(date) START:fml_tests ---------------------------------------"
     -f fml_tests-0.far  \
     -t fml_tests \
     -a "--gtest_filter=-MessageLoop*:Message*:FileTest*" \
-    --identity-file "/etc/botanist/id_rsa_infra" \
+    --identity-file $pkey \
     --timeout-seconds 300
 
 echo "$(date) START:flow_tests --------------------------------------"
 ./fuchsia_ctl -d $device_name test \
     -f flow_tests-0.far  \
     -t flow_tests \
-    --identity-file "/etc/botanist/id_rsa_infra" \
+    --identity-file $pkey \
     --timeout-seconds 300
 
 echo "$(date) START:runtime_tests -----------------------------------"
 ./fuchsia_ctl -d $device_name test \
     -f runtime_tests-0.far  \
     -t runtime_tests \
-    --identity-file "/etc/botanist/id_rsa_infra" \
+    --identity-file $pkey \
     --timeout-seconds 300
 
 # TODO(https://github.com/flutter/flutter/issues/53399): Re-enable
@@ -100,6 +107,6 @@ echo "$(date) START:shell_tests -------------------------------------"
     -f shell_tests-0.far  \
     -t shell_tests \
     -a "--gtest_filter=-ShellTest.CacheSkSLWorks:ShellTest.SetResourceCacheSize*:ShellTest.OnServiceProtocolGetSkSLsWorks:ShellTest.CanLoadSkSLsFromAsset" \
-    --identity-file "/etc/botanist/id_rsa_infra" \
+    --identity-file $pkey \
     --timeout-seconds 300
 
