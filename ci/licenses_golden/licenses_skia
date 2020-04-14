@@ -1,4 +1,4 @@
-Signature: 2da5a3733cfc3ee9d4098855a1f98d15
+Signature: 230a8c2db3c3cdf4e6f485431a4bfe0a
 
 UNUSED LICENSES:
 
@@ -1237,6 +1237,7 @@ FILE: ../../../third_party/skia/infra/canvaskit/docker/canvaskit-emsdk/Dockerfil
 FILE: ../../../third_party/skia/infra/config/recipes.cfg
 FILE: ../../../third_party/skia/infra/cross-compile/docker/cross-linux-arm64/Dockerfile
 FILE: ../../../third_party/skia/infra/cts/whitelist_devices.json
+FILE: ../../../third_party/skia/infra/docker/debian9/Dockerfile
 FILE: ../../../third_party/skia/infra/gcc/Debian10-mips64el/Dockerfile
 FILE: ../../../third_party/skia/infra/gcc/Debian10-x86/Dockerfile
 FILE: ../../../third_party/skia/infra/gcc/Debian10/Dockerfile
