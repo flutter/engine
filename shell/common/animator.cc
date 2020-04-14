@@ -187,7 +187,7 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   // Commit the pending continuation.
   bool result = producer_continuation_.Complete(std::move(layer_tree));
   if (!result) {
-    FML_DLOG(ERROR) << "Animator failed to commit the pending continuation";
+    FML_DLOG(INFO) << "No pending continuation to commit";
   }
 
   delegate_.OnAnimatorDraw(layer_tree_pipeline_);
