@@ -179,8 +179,8 @@ shared_library("ios_test_flutter") {
   ]
   deps = [
     ":flutter_framework_source",
-    "//build/secondary/third_party/ocmock:ocmock",
     "//flutter/shell/platform/darwin/common:framework_shared",
+    "//third_party/ocmock:ocmock",
     "//third_party/skia",
   ]
   public_configs = [ "//flutter:config" ]
