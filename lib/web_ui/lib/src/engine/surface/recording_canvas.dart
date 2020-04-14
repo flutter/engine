@@ -26,7 +26,11 @@ class RecordingCanvas {
   /// Computes [_pictureBounds].
   final _PaintBounds _paintBounds;
 
-  /// Maximum paintable bounds for this canvas.
+  /// Maximum paintable bounds for the picture painted by this recording.
+  ///
+  /// The bounds contain the full picture. The commands recorded for the picture
+  /// are later pruned based on the clip applied to the picture. See the [apply]
+  /// method for more details.
   ui.Rect get pictureBounds {
     assert(
       _debugRecordingEnded,
@@ -108,7 +112,7 @@ class RecordingCanvas {
       for (int i = 0; i < _commands.length; i++) {
         final PaintCommand command = _commands[i];
         if (command is DrawCommand) {
-          if (_isInvisible(command, clipRect)) {
+          if (command.isInvisible(clipRect)) {
             // The drawing command is outside the clip region. No need to apply.
             debugBuf.writeln('SKIPPED: ctx.$command;');
             skips += 1;
@@ -137,7 +141,7 @@ class RecordingCanvas {
           for (int i = 0, len = _commands.length; i < len; i++) {
             final PaintCommand command = _commands[i];
             if (command is DrawCommand) {
-              if (_isInvisible(command, clipRect)) {
+              if (command.isInvisible(clipRect)) {
                 // The drawing command is outside the clip region. No need to apply.
                 continue;
               }
@@ -154,20 +158,6 @@ class RecordingCanvas {
       }
     }
     engineCanvas.endOfPaint();
-  }
-
-  /// Return true is the [command] is invisible because it is clipped out.
-  static bool _isInvisible(DrawCommand command, ui.Rect clipRect) {
-    if (command.isClippedOut) {
-      return true;
-    }
-
-    // Check top and bottom first because vertical scrolling is more common
-    // than horizontal scrolling.
-    return command.bottomBound < clipRect.top ||
-      command.topBound > clipRect.bottom ||
-      command.rightBound < clipRect.left ||
-      command.leftBound > clipRect.right;
   }
 
   /// Prints recorded commands.
@@ -422,11 +412,12 @@ class RecordingCanvas {
     _didDraw = true;
     final double paintSpread = _getPaintSpread(paint);
     final PaintDrawCircle command = PaintDrawCircle(c, radius, paint.paintData);
+    final double distance = radius + paintSpread;
     _paintBounds.growLTRB(
-      c.dx - radius - paintSpread,
-      c.dy - radius - paintSpread,
-      c.dx + radius + paintSpread,
-      c.dy + radius + paintSpread,
+      c.dx - distance,
+      c.dy - distance,
+      c.dx + distance,
+      c.dy + distance,
       command,
     );
     _commands.add(command);
@@ -613,6 +604,20 @@ abstract class DrawCommand extends PaintCommand {
   /// The bottom bound of the graphic produced by this command in
   /// picture-global coordinates.
   double bottomBound = double.infinity;
+
+  /// Whether this command intersects with the [clipRect].
+  bool isInvisible(ui.Rect clipRect) {
+    if (isClippedOut) {
+      return true;
+    }
+
+    // Check top and bottom first because vertical scrolling is more common
+    // than horizontal scrolling.
+    return bottomBound < clipRect.top ||
+      topBound > clipRect.bottom ||
+      rightBound < clipRect.left ||
+      leftBound > clipRect.right;
+  }
 }
 
 class PaintSave extends PaintCommand {

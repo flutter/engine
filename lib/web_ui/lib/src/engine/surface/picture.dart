@@ -532,8 +532,8 @@ abstract class PersistedPicture extends PersistedLeafSurface {
       // 50% of the extent (protect from extremely slow growth trend such as
       // slow scrolling). Give no more than the full extent (protects from
       // fast scrolling that could lead to overallocation).
-      return math.max(
-        math.min(extent * 0.5, delta * 10.0),
+      return math.min(
+        math.max(extent * 0.5, delta * 10.0),
         extent,
       );
     }
