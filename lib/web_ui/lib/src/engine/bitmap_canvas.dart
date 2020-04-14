@@ -492,6 +492,8 @@ class BitmapCanvas extends EngineCanvas {
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
 
     if (paragraph._drawOnCanvas && _childOverdraw == false) {
+      // !Do not move this assignment above this if clause since, accessing
+      // context will generate extra <canvas> tags.
       html.CanvasRenderingContext2D ctx = _canvasPool.context;
 
       final List<EngineLineMetrics> lines = paragraph._measurementResult.lines;
