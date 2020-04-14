@@ -137,7 +137,8 @@ DartIsolate::DartIsolate(const Settings& settings,
                   settings.log_tag,
                   settings.unhandled_exception_callback,
                   DartVMRef::GetIsolateNameServer()),
-      is_root_isolate_(is_root_isolate) {
+      is_root_isolate_(is_root_isolate),
+      disable_http_(settings.disable_http) {
   phase_ = Phase::Uninitialized;
 }
 
@@ -222,9 +223,9 @@ bool DartIsolate::UpdateThreadPoolNames() const {
   // shells sharing the same (or subset of) threads.
   const auto& task_runners = GetTaskRunners();
 
-  if (auto task_runner = task_runners.GetGPUTaskRunner()) {
+  if (auto task_runner = task_runners.GetRasterTaskRunner()) {
     task_runner->PostTask(
-        [label = task_runners.GetLabel() + std::string{".gpu"}]() {
+        [label = task_runners.GetLabel() + std::string{".raster"}]() {
           Dart_SetThreadName(label.c_str());
         });
   }
@@ -261,7 +262,7 @@ bool DartIsolate::LoadLibraries() {
 
   tonic::DartState::Scope scope(this);
 
-  DartIO::InitForIsolate();
+  DartIO::InitForIsolate(disable_http_);
 
   DartUI::InitForIsolate(IsRootIsolate());
 
@@ -687,7 +688,7 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
               parent_group_data.GetIsolateShutdownCallback())));
 
   TaskRunners null_task_runners(advisory_script_uri,
-                                /* platform= */ nullptr, /* gpu= */ nullptr,
+                                /* platform= */ nullptr, /* raster= */ nullptr,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 
@@ -729,7 +730,7 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
           Dart_CurrentIsolateGroupData());
 
   TaskRunners null_task_runners((*isolate_group_data)->GetAdvisoryScriptURI(),
-                                /* platform= */ nullptr, /* gpu= */ nullptr,
+                                /* platform= */ nullptr, /* raster= */ nullptr,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 

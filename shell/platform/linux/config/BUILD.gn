@@ -7,3 +7,11 @@ import("//build/config/linux/pkg_config.gni")
 pkg_config("x11") {
   packages = [ "x11" ]
 }
+
+pkg_config("gtk") {
+  packages = [ "gtk+-3.0" ]
+}
+
+pkg_config("egl") {
+  packages = [ "egl" ]
+}

@@ -9,7 +9,7 @@ part of engine;
 ///
 /// [BitmapCanvas] signals allocation of first canvas using allocateCanvas.
 /// When a painting command such as drawImage or drawParagraph requires
-/// multiple canvases for correct compositing, it calls [allocateExtraCanvas]
+/// multiple canvases for correct compositing, it calls [closeCurrentCanvas]
 /// and adds the canvas(s) to a [_pool] of active canvas(s).
 ///
 /// To make sure transformations and clips are preserved correctly when a new
@@ -54,9 +54,12 @@ class _CanvasPool extends _SaveStackTracking {
     return _contextHandle;
   }
 
-  // Allocating extra canvas items. Save current canvas so we can dispose
+  // Prevents active canvas to be used for rendering and prepares a new
+  // canvas allocation on next drawing request that will require one.
+  //
+  // Saves current canvas so we can dispose
   // and replay the clip/transform stack on top of new canvas.
-  void allocateExtraCanvas() {
+  void closeCurrentCanvas() {
     assert(_rootElement != null);
     // Place clean copy of current canvas with context stack restored and paint
     // reset into pool.
@@ -79,6 +82,10 @@ class _CanvasPool extends _SaveStackTracking {
     bool requiresClearRect = false;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
+      // If a canvas is the first element we set z-index = -1 to workaround
+      // blink compositing bug. To make sure this does not leak when reused
+      // reset z-index.
+      _canvas.style.removeProperty('z-index');
       requiresClearRect = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
@@ -613,7 +620,12 @@ class _CanvasPool extends _SaveStackTracking {
         context.save();
         context.filter = 'none';
         context.strokeStyle = '';
-        context.fillStyle = colorToCssString(color);
+        final int red = color.red;
+        final int green = color.green;
+        final int blue = color.blue;
+        // Multiply by 0.4 to make shadows less aggressive (https://github.com/flutter/flutter/issues/52734)
+        final int alpha = (0.4 * color.alpha).round();
+        context.fillStyle = colorComponentsToCssString(red, green, blue, alpha);
         context.shadowBlur = shadow.blurWidth;
         context.shadowColor = colorToCssString(color.withAlpha(0xff));
         context.shadowOffsetX = shadow.offset.dx;

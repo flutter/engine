@@ -6,6 +6,8 @@
 import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
 
+import 'exceptions.dart';
+
 /// Contains various environment variables, such as common file paths and command-line options.
 Environment get environment {
   _environment ??= Environment();
@@ -18,15 +20,16 @@ class Environment {
   factory Environment() {
     final io.File self = io.File.fromUri(io.Platform.script);
     final io.Directory engineSrcDir = self.parent.parent.parent.parent.parent;
+    final io.Directory engineToolsDir = io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'tools'));
     final io.Directory outDir = io.Directory(pathlib.join(engineSrcDir.path, 'out'));
     final io.Directory hostDebugUnoptDir = io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
     final io.Directory dartSdkDir = io.Directory(pathlib.join(hostDebugUnoptDir.path, 'dart-sdk'));
     final io.Directory webUiRootDir = io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
+    final io.Directory integrationTestsDir = io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'e2etests', 'web'));
 
     for (io.Directory expectedDirectory in <io.Directory>[engineSrcDir, outDir, hostDebugUnoptDir, dartSdkDir, webUiRootDir]) {
       if (!expectedDirectory.existsSync()) {
-        io.stderr.writeln('$expectedDirectory does not exist.');
-        io.exit(1);
+        throw ToolException('$expectedDirectory does not exist.');
       }
     }
 
@@ -34,6 +37,8 @@ class Environment {
       self: self,
       webUiRootDir: webUiRootDir,
       engineSrcDir: engineSrcDir,
+      engineToolsDir: engineToolsDir,
+      integrationTestsDir: integrationTestsDir,
       outDir: outDir,
       hostDebugUnoptDir: hostDebugUnoptDir,
       dartSdkDir: dartSdkDir,
@@ -44,6 +49,8 @@ class Environment {
     this.self,
     this.webUiRootDir,
     this.engineSrcDir,
+    this.engineToolsDir,
+    this.integrationTestsDir,
     this.outDir,
     this.hostDebugUnoptDir,
     this.dartSdkDir,
@@ -57,6 +64,12 @@ class Environment {
 
   /// Path to the engine's "src" directory.
   final io.Directory engineSrcDir;
+
+  /// Path to the engine's "tools" directory.
+  final io.Directory engineToolsDir;
+
+  /// Path to the web integration tests.
+  final io.Directory integrationTestsDir;
 
   /// Path to the engine's "out" directory.
   ///
@@ -105,6 +118,16 @@ class Environment {
     '.dart_tool',
   ));
 
+    /// Path to the ".dart_tool" directory living under `engine/src/flutter`.
+    ///
+    /// This is a designated area for tool downloads which can be used by
+    /// multiple platforms. For exampe: Flutter repo for e2e tests.
+  io.Directory get engineDartToolDir => io.Directory(pathlib.join(
+    engineSrcDir.path,
+    'flutter',
+    '.dart_tool',
+  ));
+
   /// Path to the "dev" directory containing engine developer tools and
   /// configuration files.
   io.Directory get webUiDevDir => io.Directory(pathlib.join(
@@ -117,4 +140,23 @@ class Environment {
     webUiDartToolDir.path,
     'goldens',
   ));
+
+  /// Path to the script that clones the Flutter repo.
+  io.File get cloneFlutterScript => io.File(pathlib.join(
+    engineToolsDir.path,
+    'clone_flutter.sh',
+  ));
+
+  /// Path to flutter.
+  ///
+  /// For example, this can be used to run `flutter pub get`.
+  ///
+  /// Only use [cloneFlutterScript] to clone flutter to the engine build.
+  io.File get flutterCommand => io.File(pathlib.join(
+    engineDartToolDir.path,
+    'flutter',
+    'bin',
+    'flutter',
+  ));
+
 }

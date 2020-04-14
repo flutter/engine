@@ -12,10 +12,7 @@ source_set("client_wrapper") {
 
   deps = [
     "//flutter/shell/platform/common/cpp:common_cpp_library_headers",
-    "//third_party/rapidjson",
   ]
-
-  defines = [ "USE_RAPID_JSON" ]
 
   configs +=
       [ "//flutter/shell/platform/common/cpp:desktop_library_implementation" ]
@@ -44,12 +41,12 @@ test_fixtures("client_wrapper_fixtures") {
 executable("client_wrapper_unittests") {
   testonly = true
 
-  # TODO: Add more unit tests.
   sources = [
     "basic_message_channel_unittests.cc",
     "encodable_value_unittests.cc",
     "method_call_unittests.cc",
     "method_channel_unittests.cc",
+    "method_result_functions_unittests.cc",
     "plugin_registrar_unittests.cc",
     "standard_message_codec_unittests.cc",
     "standard_method_codec_unittests.cc",
@@ -68,4 +65,6 @@ executable("client_wrapper_unittests") {
     # https://github.com/flutter/flutter/issues/41414.
     "//third_party/dart/runtime:libdart_jit",
   ]
+
+  defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
 }

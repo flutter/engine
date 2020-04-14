@@ -13,6 +13,7 @@ import 'package:yaml/yaml.dart';
 
 import 'common.dart';
 import 'environment.dart';
+import 'exceptions.dart';
 
 class ChromeArgParser extends BrowserArgParser {
   static final ChromeArgParser _singletonInstance = ChromeArgParser._();
@@ -45,7 +46,7 @@ class ChromeArgParser extends BrowserArgParser {
 
   @override
   void parseOptions(ArgResults argResults) {
-    _version = argResults['chrome-version'];
+    _version = argResults['chrome-version'] as String;
   }
 
   @override
@@ -108,7 +109,7 @@ Future<String> _findSystemChromeExecutable() async {
         'Failed to locate system Chrome installation.');
   }
 
-  return which.stdout;
+  return which.stdout as String;
 }
 
 /// Manages the installation of a particular [version] of Chrome.
@@ -226,4 +227,65 @@ Future<String> fetchLatestChromeVersion() async {
   } finally {
     client.close();
   }
+}
+
+/// Get the Chrome Driver version for the system Chrome.
+// TODO(nurhan): https://github.com/flutter/flutter/issues/53179
+Future<String> queryChromeDriverVersion() async {
+  final int chromeVersion = await _querySystemChromeMajorVersion();
+  final io.File lockFile = io.File(
+      path.join(environment.webUiRootDir.path, 'dev', 'driver_version.yaml'));
+  YamlMap _configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
+  final String chromeDriverVersion =
+      _configuration['chrome'][chromeVersion] as String;
+  return chromeDriverVersion;
+}
+
+Future<int> _querySystemChromeMajorVersion() async {
+  String chromeExecutable = '';
+  if (io.Platform.isLinux) {
+    chromeExecutable = 'google-chrome';
+  } else if (io.Platform.isMacOS) {
+    chromeExecutable = await _findChromeExecutableOnMac();
+  } else {
+    throw UnimplementedError('Web installers only work on Linux and Mac.');
+  }
+
+  final io.ProcessResult versionResult =
+      await io.Process.run('$chromeExecutable', <String>['--version']);
+
+  if (versionResult.exitCode != 0) {
+    throw Exception('Failed to locate system Chrome.');
+  }
+  // The output looks like: Google Chrome 79.0.3945.36.
+  final String output = versionResult.stdout as String;
+
+  print('INFO: chrome version in use $output');
+
+  // Version number such as 79.0.3945.36.
+  try {
+    final String versionAsString = output.trim().split(' ').last;
+    final String majorVersion = versionAsString.split('.')[0];
+    return int.parse(majorVersion);
+  } catch (e) {
+    throw Exception(
+        'Was expecting a version of the form Google Chrome 79.0.3945.36., '
+        'received $output');
+  }
+}
+
+/// Find Google Chrome App on Mac.
+Future<String> _findChromeExecutableOnMac() async {
+  io.Directory chromeDirectory = io.Directory('/Applications')
+      .listSync()
+      .whereType<io.Directory>()
+      .firstWhere(
+        (d) => path.basename(d.path).endsWith('Chrome.app'),
+        orElse: () => throw Exception('Failed to locate system Chrome'),
+      );
+
+  final io.File chromeExecutableDir = io.File(
+      path.join(chromeDirectory.path, 'Contents', 'MacOS', 'Google Chrome'));
+
+  return chromeExecutableDir.path;
 }

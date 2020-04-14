@@ -4,6 +4,7 @@
 
 package io.flutter;
 
+import io.flutter.embedding.android.FlutterActivityAndFragmentDelegateTest;
 import io.flutter.embedding.android.FlutterActivityTest;
 import io.flutter.embedding.android.FlutterAndroidComponentTest;
 import io.flutter.embedding.android.FlutterFragmentTest;
@@ -14,7 +15,6 @@ import io.flutter.embedding.engine.FlutterJNITest;
 import io.flutter.embedding.engine.RenderingComponentTest;
 import io.flutter.embedding.engine.plugins.shim.ShimPluginRegistryTest;
 import io.flutter.embedding.engine.renderer.FlutterRendererTest;
-import io.flutter.embedding.engine.systemchannels.PlatformChannelTest;
 import io.flutter.external.FlutterLaunchTests;
 import io.flutter.plugin.common.StandardMessageCodecTest;
 import io.flutter.plugin.editing.InputConnectionAdaptorTest;
@@ -32,8 +32,8 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-  // FlutterActivityAndFragmentDelegateTest.class, //TODO(mklim): Fix and re-enable this
   DartExecutorTest.class,
+  FlutterActivityAndFragmentDelegateTest.class,
   FlutterActivityTest.class,
   FlutterAndroidComponentTest.class,
   FlutterEngineCacheTest.class,
@@ -46,7 +46,6 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
   FlutterRendererTest.class,
   FlutterViewTest.class,
   InputConnectionAdaptorTest.class,
-  PlatformChannelTest.class,
   PlatformPluginTest.class,
   PluginComponentTest.class,
   PreconditionsTest.class,
