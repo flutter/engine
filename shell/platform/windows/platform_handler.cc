@@ -7,6 +7,7 @@
 #include <windows.h>
 
 #include <iostream>
+#include <optional>
 
 #include "flutter/shell/platform/common/cpp/json_method_codec.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
@@ -28,20 +29,70 @@ namespace flutter {
 
 namespace {
 
+// A scoped wrapper for GlobalAlloc/GlobalFree.
+class ScopedGlobalMemory {
+ public:
+  // Allocates |bytes| bytes of global memory with the given flags.
+  ScopedGlobalMemory(unsigned int flags, size_t bytes) {
+    memory_ = ::GlobalAlloc(flags, bytes);
+    if (!memory_) {
+      std::cerr << "Unable to allocate global memory: " << ::GetLastError();
+    }
+  }
+
+  ~ScopedGlobalMemory() {
+    if (memory_) {
+      if (::GlobalFree(memory_) != nullptr) {
+        std::cerr << "Failed to free global allocation: " << ::GetLastError();
+      }
+    }
+  }
+
+  // Prevent copying.
+  ScopedGlobalMemory(ScopedGlobalMemory const&) = delete;
+  ScopedGlobalMemory& operator=(ScopedGlobalMemory const&) = delete;
+
+  // Returns the memory pointer, which will be nullptr if allocation failed.
+  void* get() { return memory_; }
+
+  void* release() {
+    void* memory = memory_;
+    memory_ = nullptr;
+    return memory;
+  }
+
+ private:
+  HGLOBAL memory_;
+};
+
 // A scoped wrapper for GlobalLock/GlobalUnlock.
 class ScopedGlobalLock {
  public:
   // Attempts to acquire a global lock on |memory| for the life of this object.
   ScopedGlobalLock(HGLOBAL memory) {
     source_ = memory;
-    locked_memory_ = ::GlobalLock(memory);
+    if (memory) {
+      locked_memory_ = ::GlobalLock(memory);
+      if (!locked_memory_) {
+        std::cerr << "Unable to acquire global lock: " << ::GetLastError();
+      }
+    }
   }
 
   ~ScopedGlobalLock() {
     if (locked_memory_) {
-      ::GlobalUnlock(source_);
+      if (!::GlobalUnlock(source_)) {
+        DWORD error = ::GetLastError();
+        if (error != NO_ERROR) {
+          std::cerr << "Unable to release global lock: " << ::GetLastError();
+        }
+      }
     }
   }
+
+  // Prevent copying.
+  ScopedGlobalLock(ScopedGlobalLock const&) = delete;
+  ScopedGlobalLock& operator=(ScopedGlobalLock const&) = delete;
 
   // Returns the locked memory pointer, which will be nullptr if acquiring the
   // lock failed.
@@ -59,6 +110,10 @@ class ScopedClipboard {
   ScopedClipboard();
   ~ScopedClipboard();
 
+  // Prevent copying.
+  ScopedClipboard(ScopedClipboard const&) = delete;
+  ScopedClipboard& operator=(ScopedClipboard const&) = delete;
+
   // Attempts to open the clipboard for the given window, returning true if
   // successful.
   bool Open(HWND window);
@@ -68,11 +123,11 @@ class ScopedClipboard {
 
   // Returns string data from the clipboard.
   //
-  // If getting a string fails, returns false and does not change |out_string|.
-  // Get error information with ::GetLastError().
+  // If getting a string fails, returns no value. Get error information with
+  // ::GetLastError().
   //
   // Open(...) must have succeeded to call this method.
-  bool GetString(std::wstring* out_string);
+  std::optional<std::wstring> GetString();
 
   // Sets the string content of the clipboard, returning true on success.
   //
@@ -104,20 +159,18 @@ bool ScopedClipboard::HasString() {
          ::IsClipboardFormatAvailable(CF_TEXT);
 }
 
-bool ScopedClipboard::GetString(std::wstring* out_string) {
-  assert(out_string != nullptr);
+std::optional<std::wstring> ScopedClipboard::GetString() {
   assert(opened_);
 
   HANDLE data = ::GetClipboardData(CF_UNICODETEXT);
   if (data == nullptr) {
-    return false;
+    return std::nullopt;
   }
   ScopedGlobalLock locked_data(data);
   if (!locked_data.get()) {
-    return false;
+    return std::nullopt;
   }
-  *out_string = static_cast<wchar_t*>(locked_data.get());
-  return true;
+  return std::optional<std::wstring>(static_cast<wchar_t*>(locked_data.get()));
 }
 
 bool ScopedClipboard::SetString(const std::wstring string) {
@@ -125,13 +178,20 @@ bool ScopedClipboard::SetString(const std::wstring string) {
   if (!::EmptyClipboard()) {
     return false;
   }
-  size_t null_terminated_byte_count = sizeof(wchar_t) * (string.size() + 1);
-  ScopedGlobalLock destination_memory(
-      ::GlobalAlloc(GMEM_MOVEABLE, null_terminated_byte_count));
-  memcpy(destination_memory.get(), string.c_str(), null_terminated_byte_count);
-  if (!::SetClipboardData(CF_UNICODETEXT, destination_memory.get())) {
+  size_t null_terminated_byte_count =
+      sizeof(decltype(string)::traits_type::char_type) * (string.size() + 1);
+  ScopedGlobalMemory destination_memory(GMEM_MOVEABLE,
+                                        null_terminated_byte_count);
+  ScopedGlobalLock locked_memory(destination_memory.get());
+  if (!locked_memory.get()) {
     return false;
   }
+  memcpy(locked_memory.get(), string.c_str(), null_terminated_byte_count);
+  if (!::SetClipboardData(CF_UNICODETEXT, locked_memory.get())) {
+    return false;
+  }
+  // The clipboard now owns the global memory.
+  destination_memory.release();
   return true;
 }
 
@@ -177,8 +237,8 @@ void PlatformHandler::HandleMethodCall(
       result->Success(&null);
       return;
     }
-    std::wstring clipboard_string;
-    if (!clipboard.GetString(&clipboard_string)) {
+    std::optional<std::wstring> clipboard_string = clipboard.GetString();
+    if (!clipboard_string) {
       rapidjson::Document error_code;
       error_code.SetInt(::GetLastError());
       result->Error(kClipboardError, "Unable to get clipboard data",
@@ -191,7 +251,7 @@ void PlatformHandler::HandleMethodCall(
     rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
     document.AddMember(
         rapidjson::Value(kTextKey, allocator),
-        rapidjson::Value(Utf8FromUtf16(clipboard_string), allocator),
+        rapidjson::Value(Utf8FromUtf16(*clipboard_string), allocator),
         allocator);
     result->Success(&document);
   } else if (method.compare(kSetClipboardDataMethod) == 0) {
