@@ -64,7 +64,7 @@ echo "$(date) START:flutter_runner_tests ----------------------------"
 ./fuchsia_ctl -d $device_name test \
     -f flutter_aot_runner-0.far    \
     -f flutter_runner_tests-0.far  \
-    -t flutter_runner_testsi       \
+    -t flutter_runner_tests        \
     --identity-file $pkey \
     --timeout-seconds 300
 
