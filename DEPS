@@ -530,7 +530,7 @@ deps = {
     'packages': [
       {
         'package': 'flutter/clang/win-amd64',
-        'version': 'git_revision:4e0d9925d6a3561449bdd8def27fd3f3f1b3fb9f'
+        'version': 'git_revision:5ec206df8534d2dd8cb9217c3180e5ddba587393'
       }
     ],
     'condition': 'download_windows_deps',
