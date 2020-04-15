@@ -81,11 +81,11 @@ TEST_F(PictureLayerTest, SimplePicture) {
   EXPECT_FALSE(layer->needs_system_composite());
 
   layer->Paint(paint_context());
-  auto expected_draw_calls = std::vector(
-      {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
-       MockCanvas::DrawCall{1,
-                            MockCanvas::ConcatMatrixData{layer_offset_matrix}},
-       MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
+  auto expected_draw_calls =
+      std::vector({MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
+                   MockCanvas::DrawCall{
+                       1, MockCanvas::ConcatMatrixData{layer_offset_matrix}},
+                   MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
 }
 
