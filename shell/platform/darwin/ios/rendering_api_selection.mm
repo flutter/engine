@@ -17,12 +17,8 @@ namespace flutter {
 
 #if FLUTTER_SHELL_ENABLE_METAL
 bool ShouldUseMetalRenderer() {
-  // If there is a command line argument that says Metal should not be used, that takes precedence
-  // over everything else. This allows disabling Metal on a per run basis to check for regressions
-  // on an application that has otherwise opted into Metal on an iOS version that supports it.
-  // This would also allow us to conduct shader compilation jank experiments between OpenGL and
-  // Metal.
-  if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--disable-metal"]) {
+  // The application can opt-out Metal.
+  if ([[[NSBundle mainBundle] objectForInfoDictionaryKey:@"io.flutter.disable_metal"] boolValue]) {
     return false;
   }
 
