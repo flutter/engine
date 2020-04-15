@@ -65,14 +65,41 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       _invertedTransform = Matrix4.inverted(_transform);
       _previousTransform = _transform;
     }
-    final ui.Rect rect = transformLTRB(_invertedTransform, 0, 0,
-        ui.window.physicalSize.width, ui.window.physicalSize.height);
+    // https://api.flutter.dev/flutter/widgets/BackdropFilter-class.html
+    // Defines the effective area as the parent/ancestor clip or if not
+    // available, the whole screen.
+    //
+    // The CSS backdrop-filter will use isolation boundary defined in
+    // https://drafts.fxtf.org/filter-effects-2/#BackdropFilterProperty
+    // Therefore we need to use parent clip element bounds for
+    // backdrop boundary.
+    final double dpr = ui.window.devicePixelRatio;
+    ui.Rect rect = transformLTRB(_invertedTransform, 0, 0,
+        ui.window.physicalSize.width * dpr, ui.window.physicalSize.height);
+    PersistedSurface parentSurface = parent;
+    String left = '{rect.left}px';
+    String top = '{rect.top}px';
+    String width = '${rect.width}px';
+    String height = '${rect.height}px';
+    while (parentSurface != null) {
+      html.HtmlElement parentElement = parentSurface.rootElement;
+      if (parentElement.tagName == 'flt-clip' || parentElement.tagName == 'FLT-CLIP') {
+        final html.CssStyleDeclaration parentElementStyle = parentElement.style;
+        left = parentElementStyle.left;
+        top = parentElementStyle.top;
+        width = parentElementStyle.width;
+        height = parentElementStyle.height;
+        break;
+      }
+      parentSurface = parentSurface.parent;
+    }
     final html.CssStyleDeclaration filterElementStyle = _filterElement.style;
     filterElementStyle
       ..position = 'absolute'
-      ..transform = 'translate(${rect.left}px, ${rect.top}px)'
-      ..width = '${rect.width}px'
-      ..height = '${rect.height}px';
+      ..left = left
+      ..top = top
+      ..width = width
+      ..height = height;
     if (browserEngine == BrowserEngine.firefox) {
       // For FireFox for now render transparent black background.
       // TODO(flutter_web): Switch code to use filter when
