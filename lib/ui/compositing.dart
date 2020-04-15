@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 /// An opaque object representing a composited scene.
@@ -19,15 +20,13 @@ class Scene extends NativeFieldWrapperClass2 {
   @pragma('vm:entry-point')
   Scene._();
 
-
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
   Future<Image> toImage(int width, int height) {
-    if (width <= 0 || height <= 0)
+    if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
-    return _futurize(
-      (_Callback<Image> callback) => _toImage(width, height, callback)
-    );
+    }
+    return _futurize((_Callback<Image> callback) => _toImage(width, height, callback));
   }
 
   String _toImage(int width, int height, _Callback<Image> callback) native 'Scene_toImage';
@@ -64,13 +63,12 @@ abstract class _EngineLayerWrapper implements EngineLayer {
 
   bool _debugCheckNotUsedAsOldLayer() {
     assert(
-      !_debugWasUsedAsOldLayer,
-      'Layer $runtimeType was previously used as oldLayer.\n'
-      'Once a layer is used as oldLayer, it may not be used again. Instead, '
-      'after calling one of the SceneBuilder.push* methods and passing an oldLayer '
-      'to it, use the layer returned by the method as oldLayer in subsequent '
-      'frames.'
-    );
+        !_debugWasUsedAsOldLayer,
+        'Layer $runtimeType was previously used as oldLayer.\n'
+        'Once a layer is used as oldLayer, it may not be used again. Instead, '
+        'after calling one of the SceneBuilder.push* methods and passing an oldLayer '
+        'to it, use the layer returned by the method as oldLayer in subsequent '
+        'frames.');
     return true;
   }
 }
@@ -142,6 +140,15 @@ class ColorFilterEngineLayer extends _EngineLayerWrapper {
   ColorFilterEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
 }
 
+/// An opaque handle to an image filter engine layer.
+///
+/// Instances of this class are created by [SceneBuilder.pushImageFilter].
+///
+/// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
+class ImageFilterEngineLayer extends _EngineLayerWrapper {
+  ImageFilterEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
 /// An opaque handle to a backdrop filter engine layer.
 ///
 /// Instances of this class are created by [SceneBuilder.pushBackdropFilter].
@@ -179,7 +186,9 @@ class PhysicalShapeEngineLayer extends _EngineLayerWrapper {
 class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SceneBuilder] object.
   @pragma('vm:entry-point')
-  SceneBuilder() { _constructor(); }
+  SceneBuilder() {
+    _constructor();
+  }
   void _constructor() native 'SceneBuilder_constructor';
 
   // Layers used in this scene.
@@ -196,11 +205,10 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       }
 
       assert(
-        !_usedLayers.containsKey(layer),
-        'Layer ${layer.runtimeType} already used.\n'
-        'The layer is already being used as ${_usedLayers[layer]} in this scene.\n'
-        'A layer may only be used once in a given scene.'
-      );
+          !_usedLayers.containsKey(layer),
+          'Layer ${layer.runtimeType} already used.\n'
+          'The layer is already being used as ${_usedLayers[layer]} in this scene.\n'
+          'A layer may only be used once in a given scene.');
 
       _usedLayers[layer] = usage;
       return true;
@@ -267,14 +275,20 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@endtemplate}
   ///
   /// See [pop] for details about the operation stack.
-  TransformEngineLayer pushTransform(Float64List matrix4, { TransformEngineLayer oldLayer }) {
+  TransformEngineLayer pushTransform(
+    Float64List matrix4, {
+    TransformEngineLayer oldLayer,
+  }) {
     assert(_matrix4IsValid(matrix4));
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushTransform'));
-    final TransformEngineLayer layer = TransformEngineLayer._(_pushTransform(matrix4));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushTransform(engineLayer, matrix4);
+    final TransformEngineLayer layer = TransformEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform';
+
+  void _pushTransform(EngineLayer layer, Float64List matrix4) native 'SceneBuilder_pushTransform';
 
   /// Pushes an offset operation onto the operation stack.
   ///
@@ -285,13 +299,20 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  OffsetEngineLayer pushOffset(double dx, double dy, { OffsetEngineLayer oldLayer }) {
+  OffsetEngineLayer pushOffset(
+    double dx,
+    double dy, {
+    OffsetEngineLayer oldLayer,
+  }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushOffset'));
-    final OffsetEngineLayer layer = OffsetEngineLayer._(_pushOffset(dx, dy));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushOffset(engineLayer, dx, dy);
+    final OffsetEngineLayer layer = OffsetEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushOffset(double dx, double dy) native 'SceneBuilder_pushOffset';
+
+  void _pushOffset(EngineLayer layer, double dx, double dy) native 'SceneBuilder_pushOffset';
 
   /// Pushes a rectangular clip operation onto the operation stack.
   ///
@@ -303,19 +324,23 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipRectEngineLayer pushClipRect(Rect rect, {Clip clipBehavior = Clip.antiAlias, ClipRectEngineLayer oldLayer }) {
+  ClipRectEngineLayer pushClipRect(
+    Rect rect, {
+    Clip clipBehavior = Clip.antiAlias,
+    ClipRectEngineLayer oldLayer,
+  }) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipRect'));
-    final ClipRectEngineLayer layer = ClipRectEngineLayer._(_pushClipRect(rect.left, rect.right, rect.top, rect.bottom, clipBehavior.index));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushClipRect(engineLayer, rect.left, rect.right, rect.top, rect.bottom, clipBehavior.index);
+    final ClipRectEngineLayer layer = ClipRectEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushClipRect(double left,
-                            double right,
-                            double top,
-                            double bottom,
-                            int clipBehavior) native 'SceneBuilder_pushClipRect';
+
+  void _pushClipRect(EngineLayer outEngineLayer, double left, double right, double top, double bottom, int clipBehavior)
+      native 'SceneBuilder_pushClipRect';
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///
@@ -327,15 +352,23 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipRRectEngineLayer pushClipRRect(RRect rrect, {Clip clipBehavior = Clip.antiAlias, ClipRRectEngineLayer oldLayer}) {
+  ClipRRectEngineLayer pushClipRRect(
+    RRect rrect, {
+    Clip clipBehavior = Clip.antiAlias,
+    ClipRRectEngineLayer oldLayer,
+  }) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipRRect'));
-    final ClipRRectEngineLayer layer = ClipRRectEngineLayer._(_pushClipRRect(rrect._value32, clipBehavior.index));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushClipRRect(engineLayer, rrect._value32, clipBehavior.index);
+    final ClipRRectEngineLayer layer = ClipRRectEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushClipRRect(Float32List rrect, int clipBehavior) native 'SceneBuilder_pushClipRRect';
+
+  void _pushClipRRect(EngineLayer layer, Float32List rrect, int clipBehavior)
+      native 'SceneBuilder_pushClipRRect';
 
   /// Pushes a path clip operation onto the operation stack.
   ///
@@ -347,15 +380,22 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipPathEngineLayer pushClipPath(Path path, {Clip clipBehavior = Clip.antiAlias, ClipPathEngineLayer oldLayer}) {
+  ClipPathEngineLayer pushClipPath(
+    Path path, {
+    Clip clipBehavior = Clip.antiAlias,
+    ClipPathEngineLayer oldLayer,
+  }) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushClipPath'));
-    final ClipPathEngineLayer layer = ClipPathEngineLayer._(_pushClipPath(path, clipBehavior.index));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushClipPath(engineLayer, path, clipBehavior.index);
+    final ClipPathEngineLayer layer = ClipPathEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushClipPath(Path path, int clipBehavior) native 'SceneBuilder_pushClipPath';
+
+  void _pushClipPath(EngineLayer layer, Path path, int clipBehavior) native 'SceneBuilder_pushClipPath';
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -369,13 +409,20 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  OpacityEngineLayer pushOpacity(int alpha, {Offset offset = Offset.zero, OpacityEngineLayer oldLayer}) {
+  OpacityEngineLayer pushOpacity(
+    int alpha, {
+    Offset offset = Offset.zero,
+    OpacityEngineLayer oldLayer,
+  }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushOpacity'));
-    final OpacityEngineLayer layer = OpacityEngineLayer._(_pushOpacity(alpha, offset.dx, offset.dy));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushOpacity(engineLayer, alpha, offset.dx, offset.dy);
+    final OpacityEngineLayer layer = OpacityEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushOpacity(int alpha, double dx, double dy) native 'SceneBuilder_pushOpacity';
+
+  void _pushOpacity(EngineLayer layer, int alpha, double dx, double dy) native 'SceneBuilder_pushOpacity';
 
   /// Pushes a color filter operation onto the operation stack.
   ///
@@ -387,16 +434,49 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ColorFilterEngineLayer pushColorFilter(ColorFilter filter, { ColorFilterEngineLayer oldLayer }) {
+  ColorFilterEngineLayer pushColorFilter(
+    ColorFilter filter, {
+    ColorFilterEngineLayer oldLayer,
+  }) {
     assert(filter != null);
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushColorFilter'));
     final _ColorFilter nativeFilter = filter._toNativeColorFilter();
     assert(nativeFilter != null);
-    final ColorFilterEngineLayer layer = ColorFilterEngineLayer._(_pushColorFilter(nativeFilter));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushColorFilter(engineLayer, nativeFilter);
+    final ColorFilterEngineLayer layer = ColorFilterEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushColorFilter(_ColorFilter filter) native 'SceneBuilder_pushColorFilter';
+
+  void _pushColorFilter(EngineLayer layer, _ColorFilter filter) native 'SceneBuilder_pushColorFilter';
+
+  /// Pushes an image filter operation onto the operation stack.
+  ///
+  /// The given filter is applied to the children's rasterization before compositing them into
+  /// the scene.
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayer}
+  ///
+  /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
+  ///
+  /// See [pop] for details about the operation stack.
+  ImageFilterEngineLayer pushImageFilter(
+    ImageFilter filter, {
+    ImageFilterEngineLayer oldLayer,
+  }) {
+    assert(filter != null);
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushImageFilter'));
+    final _ImageFilter nativeFilter = filter._toNativeImageFilter();
+    assert(nativeFilter != null);
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushImageFilter(engineLayer, nativeFilter);
+    final ImageFilterEngineLayer layer = ImageFilterEngineLayer._(engineLayer);
+    assert(_debugPushLayer(layer));
+    return layer;
+  }
+
+  void _pushImageFilter(EngineLayer outEngineLayer, _ImageFilter filter) native 'SceneBuilder_pushImageFilter';
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
@@ -408,13 +488,19 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  BackdropFilterEngineLayer pushBackdropFilter(ImageFilter filter, { BackdropFilterEngineLayer oldLayer }) {
+  BackdropFilterEngineLayer pushBackdropFilter(
+    ImageFilter filter, {
+    BackdropFilterEngineLayer oldLayer,
+  }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushBackdropFilter'));
-    final BackdropFilterEngineLayer layer = BackdropFilterEngineLayer._(_pushBackdropFilter(filter));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushBackdropFilter(engineLayer, filter._toNativeImageFilter());
+    final BackdropFilterEngineLayer layer = BackdropFilterEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushBackdropFilter(ImageFilter filter) native 'SceneBuilder_pushBackdropFilter';
+
+  void _pushBackdropFilter(EngineLayer outEngineLayer, _ImageFilter filter) native 'SceneBuilder_pushBackdropFilter';
 
   /// Pushes a shader mask operation onto the operation stack.
   ///
@@ -426,23 +512,36 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ShaderMaskEngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode, { ShaderMaskEngineLayer oldLayer }) {
+  ShaderMaskEngineLayer pushShaderMask(
+    Shader shader,
+    Rect maskRect,
+    BlendMode blendMode, {
+    ShaderMaskEngineLayer oldLayer,
+  }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushShaderMask'));
-    final ShaderMaskEngineLayer layer = ShaderMaskEngineLayer._(_pushShaderMask(shader,
-                           maskRect.left,
-                           maskRect.right,
-                           maskRect.top,
-                           maskRect.bottom,
-                           blendMode.index));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushShaderMask(
+      engineLayer,
+      shader,
+      maskRect.left,
+      maskRect.right,
+      maskRect.top,
+      maskRect.bottom,
+      blendMode.index,
+    );
+    final ShaderMaskEngineLayer layer = ShaderMaskEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushShaderMask(Shader shader,
-                              double maskRectLeft,
-                              double maskRectRight,
-                              double maskRectTop,
-                              double maskRectBottom,
-                              int blendMode) native 'SceneBuilder_pushShaderMask';
+
+  EngineLayer _pushShaderMask(
+      EngineLayer engineLayer,
+      Shader shader,
+      double maskRectLeft,
+      double maskRectRight,
+      double maskRectTop,
+      double maskRectBottom,
+      int blendMode) native 'SceneBuilder_pushShaderMask';
 
   /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
@@ -461,14 +560,31 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   // ignore: deprecated_member_use
-  PhysicalShapeEngineLayer pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = Clip.none, PhysicalShapeEngineLayer oldLayer }) {
+  PhysicalShapeEngineLayer pushPhysicalShape({
+    Path path,
+    double elevation,
+    Color color,
+    Color shadowColor,
+    Clip clipBehavior = Clip.none,
+    PhysicalShapeEngineLayer oldLayer,
+  }) {
     assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushPhysicalShape'));
-    final PhysicalShapeEngineLayer layer = PhysicalShapeEngineLayer._(_pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipBehavior.index));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushPhysicalShape(
+      engineLayer,
+      path,
+      elevation,
+      color.value,
+      shadowColor?.value ?? 0xFF000000,
+      clipBehavior.index,
+    );
+    final PhysicalShapeEngineLayer layer = PhysicalShapeEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
-  EngineLayer _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipBehavior) native
-    'SceneBuilder_pushPhysicalShape';
+
+  EngineLayer _pushPhysicalShape(EngineLayer outEngineLayer, Path path, double elevation, int color, int shadowColor,
+      int clipBehavior) native 'SceneBuilder_pushPhysicalShape';
 
   /// Ends the effect of the most recently pushed operation.
   ///
@@ -482,6 +598,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     }
     _pop();
   }
+
   void _pop() native 'SceneBuilder_pop';
 
   /// Add a retained engine layer subtree from previous frames.
@@ -497,7 +614,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   void addRetained(EngineLayer retainedLayer) {
     assert(retainedLayer is _EngineLayerWrapper);
     assert(() {
-      final _EngineLayerWrapper layer = retainedLayer;
+      final _EngineLayerWrapper layer = retainedLayer as _EngineLayerWrapper;
 
       void recursivelyCheckChildrenUsedOnce(_EngineLayerWrapper parentLayer) {
         _debugCheckUsedOnce(parentLayer, 'retained layer');
@@ -515,9 +632,10 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       return true;
     }());
 
-    final _EngineLayerWrapper wrapper = retainedLayer;
+    final _EngineLayerWrapper wrapper = retainedLayer as _EngineLayerWrapper;
     _addRetained(wrapper._nativeLayer);
   }
+
   void _addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained';
 
   /// Adds an object to the scene that displays performance statistics.
@@ -527,8 +645,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// controls where the statistics are displayed.
   ///
   /// enabledOptions is a bit field with the following bits defined:
-  ///  - 0x01: displayRasterizerStatistics - show GPU thread frame time
-  ///  - 0x02: visualizeRasterizerStatistics - graph GPU thread frame times
+  ///  - 0x01: displayRasterizerStatistics - show raster thread frame time
+  ///  - 0x02: visualizeRasterizerStatistics - graph raster thread frame times
   ///  - 0x04: displayEngineStatistics - show UI thread frame time
   ///  - 0x08: visualizeEngineStatistics - graph UI thread frame times
   /// Set enabledOptions to 0x0F to enable all the currently defined features.
@@ -536,7 +654,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// The "UI thread" is the thread that includes all the execution of
   /// the main Dart isolate (the isolate that can call
   /// [Window.render]). The UI thread frame time is the total time
-  /// spent executing the [Window.onBeginFrame] callback. The "GPU
+  /// spent executing the [Window.onBeginFrame] callback. The "raster
   /// thread" is the thread (running on the CPU) that subsequently
   /// processes the [Scene] provided by the Dart code to turn it into
   /// GPU commands and send it to the GPU.
@@ -545,30 +663,32 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// for more details.
   // Values above must match constants in //engine/src/sky/compositor/performance_overlay_layer.h
   void addPerformanceOverlay(int enabledOptions, Rect bounds) {
-    _addPerformanceOverlay(enabledOptions,
-                           bounds.left,
-                           bounds.right,
-                           bounds.top,
-                           bounds.bottom);
+    _addPerformanceOverlay(enabledOptions, bounds.left, bounds.right, bounds.top, bounds.bottom);
   }
-  void _addPerformanceOverlay(int enabledOptions,
-                              double left,
-                              double right,
-                              double top,
-                              double bottom) native 'SceneBuilder_addPerformanceOverlay';
+
+  void _addPerformanceOverlay(
+    int enabledOptions,
+    double left,
+    double right,
+    double top,
+    double bottom,
+  ) native 'SceneBuilder_addPerformanceOverlay';
 
   /// Adds a [Picture] to the scene.
   ///
   /// The picture is rasterized at the given offset.
-  void addPicture(Offset offset, Picture picture, { bool isComplexHint = false, bool willChangeHint = false }) {
-    int hints = 0;
-    if (isComplexHint)
-      hints |= 1;
-    if (willChangeHint)
-      hints |= 2;
+  void addPicture(
+    Offset offset,
+    Picture picture, {
+    bool isComplexHint = false,
+    bool willChangeHint = false,
+  }) {
+    final int hints = (isComplexHint ? 1 : 0) | (willChangeHint ? 2 : 0);
     _addPicture(offset.dx, offset.dy, picture, hints);
   }
-  void _addPicture(double dx, double dy, Picture picture, int hints) native 'SceneBuilder_addPicture';
+
+  void _addPicture(double dx, double dy, Picture picture, int hints)
+      native 'SceneBuilder_addPicture';
 
   /// Adds a backend texture to the scene.
   ///
@@ -581,11 +701,19 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// previous or new size, to workaround this the framework "freezes" the
   /// texture just before resizing the Android view and un-freezes it when it is
   /// certain that a frame with the new size is ready.
-  void addTexture(int textureId, { Offset offset = Offset.zero, double width = 0.0, double height = 0.0 , bool freeze = false}) {
+  void addTexture(
+    int textureId, {
+    Offset offset = Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
+    bool freeze = false,
+  }) {
     assert(offset != null, 'Offset argument was null');
     _addTexture(offset.dx, offset.dy, width, height, textureId, freeze);
   }
-  void _addTexture(double dx, double dy, double width, double height, int textureId, bool freeze) native 'SceneBuilder_addTexture';
+
+  void _addTexture(double dx, double dy, double width, double height, int textureId, bool freeze)
+      native 'SceneBuilder_addTexture';
 
   /// Adds a platform view (e.g an iOS UIView) to the scene.
   ///
@@ -603,11 +731,18 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// With a platform view in the scene, Quartz has to composite the two Flutter surfaces and the
   /// embedded UIView. In addition to that, on iOS versions greater than 9, the Flutter frames are
   /// synchronized with the UIView frames adding additional performance overhead.
-  void addPlatformView(int viewId, { Offset offset = Offset.zero, double width = 0.0, double height = 0.0}) {
+  void addPlatformView(
+    int viewId, {
+    Offset offset = Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
+  }) {
     assert(offset != null, 'Offset argument was null');
     _addPlatformView(offset.dx, offset.dy, width, height, viewId);
   }
-  void _addPlatformView(double dx, double dy, double width, double height, int viewId) native 'SceneBuilder_addPlatformView';
+
+  void _addPlatformView(double dx, double dy, double width, double height, int viewId)
+      native 'SceneBuilder_addPlatformView';
 
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.
@@ -616,21 +751,13 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     double width = 0.0,
     double height = 0.0,
     SceneHost sceneHost,
-    bool hitTestable = true
+    bool hitTestable = true,
   }) {
-    _addChildScene(offset.dx,
-                   offset.dy,
-                   width,
-                   height,
-                   sceneHost,
-                   hitTestable);
+    _addChildScene(offset.dx, offset.dy, width, height, sceneHost, hitTestable);
   }
-  void _addChildScene(double dx,
-                      double dy,
-                      double width,
-                      double height,
-                      SceneHost sceneHost,
-                      bool hitTestable) native 'SceneBuilder_addChildScene';
+
+  void _addChildScene(double dx, double dy, double width, double height, SceneHost sceneHost,
+      bool hitTestable) native 'SceneBuilder_addChildScene';
 
   /// Sets a threshold after which additional debugging information should be recorded.
   ///
@@ -638,7 +765,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
   /// We'll hopefully be able to figure out how to make this feature more useful
   /// to you.
-  void setRasterizerTracingThreshold(int frameInterval) native 'SceneBuilder_setRasterizerTracingThreshold';
+  void setRasterizerTracingThreshold(int frameInterval)
+      native 'SceneBuilder_setRasterizerTracingThreshold';
 
   /// Sets whether the raster cache should checkerboard cached entries. This is
   /// only useful for debugging purposes.
@@ -655,13 +783,15 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Currently this interface is difficult to use by end-developers. If you're
   /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
-  void setCheckerboardRasterCacheImages(bool checkerboard) native 'SceneBuilder_setCheckerboardRasterCacheImages';
+  void setCheckerboardRasterCacheImages(bool checkerboard)
+      native 'SceneBuilder_setCheckerboardRasterCacheImages';
 
   /// Sets whether the compositor should checkerboard layers that are rendered
   /// to offscreen bitmaps.
   ///
   /// This is only useful for debugging purposes.
-  void setCheckerboardOffscreenLayers(bool checkerboard) native 'SceneBuilder_setCheckerboardOffscreenLayers';
+  void setCheckerboardOffscreenLayers(bool checkerboard)
+      native 'SceneBuilder_setCheckerboardOffscreenLayers';
 
   /// Finishes building the scene.
   ///
@@ -671,7 +801,13 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.
-  Scene build() native 'SceneBuilder_build';
+  Scene build() {
+    final Scene scene = Scene._();
+    _build(scene);
+    return scene;
+  }
+
+  void _build(Scene outScene) native 'SceneBuilder_build';
 }
 
 /// (Fuchsia-only) Hosts content provided by another application.
@@ -688,22 +824,21 @@ class SceneHost extends NativeFieldWrapperClass2 {
   ///
   /// The SceneHost takes ownership of the provided ViewHolder token.
   SceneHost(
-      dynamic viewHolderToken,
-      void Function() viewConnectedCallback,
-      void Function() viewDisconnectedCallback,
-      void Function(bool) viewStateChangedCallback) {
-    _constructor(viewHolderToken, viewConnectedCallback, viewDisconnectedCallback, viewStateChangedCallback);
-  }
-  SceneHost.fromViewHolderToken(
-      dynamic viewHolderToken,
-      void Function() viewConnectedCallback,
-      void Function() viewDisconnectedCallback,
-      void Function(bool) viewStateChangedCallback) {
-    _constructor(viewHolderToken, viewConnectedCallback, viewDisconnectedCallback, viewStateChangedCallback);
+    dynamic viewHolderToken,
+    void Function() viewConnectedCallback,
+    void Function() viewDisconnectedCallback,
+    void Function(bool) viewStateChangedCallback,
+  ) {
+    _constructor(
+        viewHolderToken, viewConnectedCallback, viewDisconnectedCallback, viewStateChangedCallback);
   }
 
-  void _constructor(dynamic viewHolderToken, void Function() viewConnectedCallback, void Function() viewDisconnectedCallback, void Function(bool) viewStateChangedCallback)
-      native 'SceneHost_constructor';
+  void _constructor(
+    dynamic viewHolderToken,
+    void Function() viewConnectedCallback,
+    void Function() viewDisconnectedCallback,
+    void Function(bool) viewStateChangedCallbac,
+  ) native 'SceneHost_constructor';
 
   /// Releases the resources associated with the SceneHost.
   ///
@@ -713,15 +848,12 @@ class SceneHost extends NativeFieldWrapperClass2 {
   /// Set properties on the linked scene.  These properties include its bounds,
   /// as well as whether it can be the target of focus events or not.
   void setProperties(
-      double width,
-      double height,
-      double insetTop,
-      double insetRight,
-      double insetBottom,
-      double insetLeft,
-      bool focusable) native 'SceneHost_setProperties';
-
-  /// Set the opacity of the linked scene.  This opacity value is applied only
-  /// once, when the child scene is composited into our own.
-  void setOpacity(double opacity) native 'SceneHost_setOpacity';
+    double width,
+    double height,
+    double insetTop,
+    double insetRight,
+    double insetBottom,
+    double insetLeft,
+    bool focusable,
+  ) native 'SceneHost_setProperties';
 }

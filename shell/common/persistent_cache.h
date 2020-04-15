@@ -32,7 +32,15 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   static PersistentCache* GetCacheForProcess();
   static void ResetCacheForProcess();
 
+  // This must be called before |GetCacheForProcess|. Otherwise, it won't
+  // affect the cache directory returned by |GetCacheForProcess|.
   static void SetCacheDirectoryPath(std::string path);
+
+  // Convert a binary SkData key into a Base32 encoded string.
+  //
+  // This is used to specify persistent cache filenames and service protocol
+  // json keys.
+  static std::string SkKeyToFilePath(const SkData& data);
 
   ~PersistentCache() override;
 
@@ -57,12 +65,18 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   /// Load all the SkSL shader caches in the right directory.
   std::vector<SkSLCache> LoadSkSLs();
 
+  /// Update the asset path from which PersistentCache can load SkLSs.
+  static void UpdateAssetPath(const std::string& path);
+
   static bool cache_sksl() { return cache_sksl_; }
   static void SetCacheSkSL(bool value);
   static void MarkStrategySet() { strategy_set_ = true; }
 
+  static constexpr char kSkSLSubdirName[] = "sksl";
+
  private:
   static std::string cache_base_path_;
+  static std::string asset_path_;
 
   static std::mutex instance_mutex_;
   static std::unique_ptr<PersistentCache> gPersistentCache;

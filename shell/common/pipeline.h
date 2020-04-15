@@ -78,7 +78,7 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     Continuation continuation_;
     size_t trace_id_;
 
-    ProducerContinuation(Continuation continuation, size_t trace_id)
+    ProducerContinuation(const Continuation& continuation, size_t trace_id)
         : continuation_(continuation), trace_id_(trace_id) {
       TRACE_FLOW_BEGIN("flutter", "PipelineItem", trace_id_);
       TRACE_EVENT_ASYNC_BEGIN0("flutter", "PipelineItem", trace_id_);
@@ -111,24 +111,30 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
         GetNextPipelineTraceID()};         // trace id
   }
 
-  // Pushes task to the front of the pipeline.
-  //
-  // If we exceed the depth completing this continuation, we drop the
-  // last frame to preserve the depth of the pipeline.
-  //
-  // Note: Use |Pipeline::Produce| where possible. This should only be
-  // used to en-queue high-priority resources.
-  ProducerContinuation ProduceToFront() {
+  // Create a `ProducerContinuation` that will only push the task if the queue
+  // is empty.
+  // Prefer using |Produce|. ProducerContinuation returned by this method
+  // doesn't guarantee that the frame will be rendered.
+  ProducerContinuation ProduceIfEmpty() {
+    if (!empty_.TryWait()) {
+      return {};
+    }
+    ++inflight_;
+    FML_TRACE_COUNTER("flutter", "Pipeline Depth",
+                      reinterpret_cast<int64_t>(this),      //
+                      "frames in flight", inflight_.load()  //
+    );
+
     return ProducerContinuation{
-        std::bind(&Pipeline::ProducerCommitFront, this, std::placeholders::_1,
+        std::bind(&Pipeline::ProducerCommitIfEmpty, this, std::placeholders::_1,
                   std::placeholders::_2),  // continuation
         GetNextPipelineTraceID()};         // trace id
   }
 
   using Consumer = std::function<void(ResourcePtr)>;
 
-  FML_WARN_UNUSED_RESULT
-  PipelineConsumeResult Consume(Consumer consumer) {
+  /// @note Procedure doesn't copy all closures.
+  [[nodiscard]] PipelineConsumeResult Consume(const Consumer& consumer) {
     if (consumer == nullptr) {
       return PipelineConsumeResult::NoneAvailable;
     }
@@ -181,13 +187,16 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     available_.Signal();
   }
 
-  void ProducerCommitFront(ResourcePtr resource, size_t trace_id) {
+  void ProducerCommitIfEmpty(ResourcePtr resource, size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
-      queue_.emplace_front(std::move(resource), trace_id);
-      while (queue_.size() > depth_) {
-        queue_.pop_back();
+      if (!queue_.empty()) {
+        // Bail if the queue is not empty, opens up spaces to produce other
+        // frames.
+        empty_.Signal();
+        return;
       }
+      queue_.emplace_back(std::move(resource), trace_id);
     }
 
     // Ensure the queue mutex is not held as that would be a pessimization.

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/vulkan/vulkan_utilities.h"
+#include "flutter/fml/build_config.h"
 
 #include <algorithm>
 #include <unordered_set>
@@ -11,6 +12,8 @@ namespace vulkan {
 
 bool IsDebuggingEnabled() {
 #ifndef NDEBUG
+  return true;
+#elif defined(VULKAN_VALIDATION_LAYERS_ENABLED)
   return true;
 #else
   return false;
@@ -27,7 +30,6 @@ bool ValidationErrorsFatal() {
 #if OS_FUCHSIA
   return false;
 #endif
-
   return true;
 }
 
@@ -41,13 +43,10 @@ static std::vector<std::string> InstanceOrDeviceLayersToEnable(
   // NOTE: The loader is sensitive to the ordering here. Please do not rearrange
   // this list.
 #if OS_FUCHSIA
-  // Fuchsia uses the updated Vulkan loader and validation layers which no
-  // longer includes the image validation layer.
-  const std::vector<std::string> candidates = {
-      "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_parameter_validation",
-      "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation",
-      "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_swapchain",
-      "VK_LAYER_GOOGLE_unique_objects"};
+  // The other layers in the Fuchsia SDK seem to have a bug right now causing
+  // crashes, so it is only recommended that we use VK_LAYER_KHRONOS_validation
+  // until we have a confirmation that they are fixed.
+  const std::vector<std::string> candidates = {"VK_LAYER_KHRONOS_validation"};
 #else
   const std::vector<std::string> candidates = {
       "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_parameter_validation",

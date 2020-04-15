@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 class SkPicture implements ui.Picture {
   final js.JsObject skPicture;
+  final ui.Rect cullRect;
 
   SkPicture(this.skPicture, this.cullRect);
 
@@ -13,16 +15,9 @@ class SkPicture implements ui.Picture {
   int get approximateBytesUsed => 0;
 
   @override
-  final ui.Rect cullRect;
-
-  @override
   void dispose() {
     // TODO: implement dispose
   }
-
-  @override
-  // TODO: implement recordingCanvas
-  RecordingCanvas get recordingCanvas => null;
 
   @override
   Future<ui.Image> toImage(int width, int height) {

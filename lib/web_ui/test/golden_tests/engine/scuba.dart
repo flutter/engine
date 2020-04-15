@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:html' as html;
 
@@ -39,8 +40,19 @@ class EngineScubaTester {
     return EngineScubaTester(viewportSize);
   }
 
-  Future<void> diffScreenshot(String fileName) async {
-    await matchGoldenFile('$fileName.png', region: ui.Rect.fromLTWH(0, 0, viewportSize.width, viewportSize.height));
+  ui.Rect get viewportRegion =>
+      ui.Rect.fromLTWH(0, 0, viewportSize.width, viewportSize.height);
+
+  Future<void> diffScreenshot(
+    String fileName, {
+    ui.Rect region,
+    double maxDiffRatePercent,
+  }) async {
+    await matchGoldenFile(
+      '$fileName.png',
+      region: region ?? viewportRegion,
+      maxDiffRatePercent: maxDiffRatePercent,
+    );
   }
 
   /// Prepares the DOM and inserts all the necessary nodes, then invokes scuba's
@@ -49,18 +61,24 @@ class EngineScubaTester {
   /// It also cleans up the DOM after itself.
   Future<void> diffCanvasScreenshot(
     EngineCanvas canvas,
-    String fileName,
-  ) async {
+    String fileName, {
+    ui.Rect region,
+    double maxDiffRatePercent,
+  }) async {
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');
     try {
       sceneElement.append(canvas.rootElement);
       html.document.body.append(sceneElement);
       String screenshotName = '${fileName}_${canvas.runtimeType}';
-      if (TextMeasurementService.enableExperimentalCanvasImplementation) {
+      if (WebExperiments.instance.useCanvasText) {
         screenshotName += '+canvas_measurement';
       }
-      await diffScreenshot(screenshotName);
+      await diffScreenshot(
+        screenshotName,
+        region: region,
+        maxDiffRatePercent: maxDiffRatePercent,
+      );
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -72,23 +90,26 @@ class EngineScubaTester {
 typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 
 /// Runs the given test [body] with each type of canvas.
-void testEachCanvas(String description, CanvasTest body) {
+void testEachCanvas(String description, CanvasTest body,
+    {double maxDiffRate, bool bSkipHoudini = false}) {
   const ui.Rect bounds = ui.Rect.fromLTWH(0, 0, 600, 800);
   test('$description (bitmap)', () {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
+      WebExperiments.instance.useCanvasText = false;
       return body(BitmapCanvas(bounds));
     } finally {
+      WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
   });
   test('$description (bitmap + canvas measurement)', () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
-      TextMeasurementService.enableExperimentalCanvasImplementation = true;
+      WebExperiments.instance.useCanvasText = true;
       await body(BitmapCanvas(bounds));
     } finally {
-      TextMeasurementService.enableExperimentalCanvasImplementation = false;
+      WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
   });
@@ -100,19 +121,21 @@ void testEachCanvas(String description, CanvasTest body) {
       TextMeasurementService.clearCache();
     }
   });
-  test('$description (houdini)', () {
-    try {
-      TextMeasurementService.initialize(rulerCacheCapacity: 2);
-      return body(HoudiniCanvas(bounds));
-    } finally {
-      TextMeasurementService.clearCache();
-    }
-  });
+  if (!bSkipHoudini) {
+    test('$description (houdini)', () {
+      try {
+        TextMeasurementService.initialize(rulerCacheCapacity: 2);
+        return body(HoudiniCanvas(bounds));
+      } finally {
+        TextMeasurementService.clearCache();
+      }
+    });
+  }
 }
 
 final ui.TextStyle _defaultTextStyle = ui.TextStyle(
   color: const ui.Color(0xFF000000),
-  fontFamily: 'Arial',
+  fontFamily: 'Roboto',
   fontSize: 14,
 );
 
@@ -128,4 +151,14 @@ ui.Paragraph paragraph(
   builder.addText(text);
   builder.pop();
   return builder.build()..layout(ui.ParagraphConstraints(width: maxWidth));
+}
+
+/// Configures the test to use bundled Roboto and Ahem fonts to avoid golden
+/// screenshot differences due to differences in the preinstalled system fonts.
+void setUpStableTestFonts() {
+  setUp(() async {
+    await ui.webOnlyInitializePlatform();
+    ui.webOnlyFontCollection.debugRegisterTestFonts();
+    await ui.webOnlyFontCollection.ensureFontsLoaded();
+  });
 }

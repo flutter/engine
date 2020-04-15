@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of ui;
 
 /// Initializes the platform.
@@ -22,9 +23,10 @@ Future<void> webOnlyInitializePlatform({
 
   assetManager ??= const engine.AssetManager();
   await webOnlySetAssetManager(assetManager);
-  await _fontCollection.ensureFontsLoaded();
   if (engine.experimentalUseSkia) {
     await engine.skiaFontCollection.ensureFontsLoaded();
+  } else {
+    await _fontCollection.ensureFontsLoaded();
   }
 
   _webOnlyIsInitialized = true;
@@ -50,20 +52,21 @@ Future<void> webOnlySetAssetManager(engine.AssetManager assetManager) async {
 
   if (engine.experimentalUseSkia) {
     engine.skiaFontCollection ??= engine.SkiaFontCollection();
+  } else {
+    _fontCollection ??= engine.FontCollection();
+    _fontCollection.clear();
   }
 
-  _fontCollection ??= engine.FontCollection();
 
-  _fontCollection.clear();
   if (_assetManager != null) {
-    await _fontCollection.registerFonts(_assetManager);
-
     if (engine.experimentalUseSkia) {
       await engine.skiaFontCollection.registerFonts(_assetManager);
+    } else {
+      await _fontCollection.registerFonts(_assetManager);
     }
   }
 
-  if (debugEmulateFlutterTesterEnvironment) {
+  if (debugEmulateFlutterTesterEnvironment && !engine.experimentalUseSkia) {
     _fontCollection.debugRegisterTestFonts();
   }
 }

@@ -110,6 +110,8 @@ def CopyGenSnapshotIfExists(source, destination):
   FindFileAndCopyTo('gen_snapshot_product', source_root, destination_base)
   FindFileAndCopyTo('kernel_compiler.dart.snapshot', source_root,
                     destination_base, 'kernel_compiler.snapshot')
+  FindFileAndCopyTo('frontend_server.dart.snapshot', source_root,
+                    destination_base, 'flutter_frontend_server.snapshot')
 
 
 def CopyFlutterTesterBinIfExists(source, destination):
@@ -153,7 +155,7 @@ def BuildBucket(runtime_mode, arch, product):
   CopyToBucket(out_dir, bucket_dir, product)
 
 
-def ProcessCIPDPakcage(upload, engine_version):
+def ProcessCIPDPackage(upload, engine_version):
   # Copy the CIPD YAML template from the source directory to be next to the bucket
   # we are about to package.
   cipd_yaml = os.path.join(_script_dir, 'fuchsia.cipd.yaml')
@@ -171,8 +173,18 @@ def ProcessCIPDPakcage(upload, engine_version):
         os.path.join(_bucket_directory, 'fuchsia.cipd')
     ]
 
-  subprocess.check_call(command, cwd=_bucket_directory)
-
+  # Retry up to three times.  We've seen CIPD fail on verification in some
+  # instances. Normally verification takes slightly more than 1 minute when
+  # it succeeds.
+  num_tries = 3
+  for tries in range(num_tries):
+    try:
+      subprocess.check_call(command, cwd=_bucket_directory)
+      break
+    except subprocess.CalledProcessError:
+      print('Failed %s times' % tries + 1)
+      if tries == num_tries - 1:
+        raise
 
 def GetRunnerTarget(runner_type, product, aot):
   base = '%s/%s:' % (_fuchsia_base, runner_type)
@@ -207,8 +219,10 @@ def BuildTarget(runtime_mode, arch, product, enable_lto):
       runtime_mode,
   ]
 
-  if not enable_lto:
-    flags.append('--no-lto')
+  # Always disable lto until https://github.com/flutter/flutter/issues/44841
+  # gets fixed.
+  # if not enable_lto:
+  flags.append('--no-lto')
 
   RunGN(out_dir, flags)
   BuildNinjaTargets(out_dir, GetTargetsToBuild(product))
@@ -227,7 +241,7 @@ def main():
 
   parser.add_argument(
       '--engine-version',
-      required=True,
+      required=False,
       help='Specifies the flutter engine SHA.')
 
   parser.add_argument(
@@ -270,8 +284,13 @@ def main():
           BuildTarget(runtime_mode, arch, product, enable_lto)
         BuildBucket(runtime_mode, arch, product)
 
-  ProcessCIPDPakcage(args.upload, args.engine_version)
+  if args.upload:
+    if args.engine_version is None:
+      print('--upload requires --engine-version to be specified.')
+      return 1
+    ProcessCIPDPackage(args.upload, args.engine_version)
+  return 0
 
 
 if __name__ == '__main__':
-  main()
+  sys.exit(main())

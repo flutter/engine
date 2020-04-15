@@ -4,6 +4,7 @@
 
 // TODO(dnfield): remove unused_element ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
+// @dart = 2.6
 part of dart.ui;
 
 // Corelib 'print' implementation.
@@ -71,7 +72,7 @@ List<int> saveCompilationTrace() {
   final dynamic result = _saveCompilationTrace();
   if (result is Error)
     throw result;
-  return result;
+  return result as List<int>;
 }
 
 dynamic _saveCompilationTrace() native 'SaveCompilationTrace';

@@ -6,13 +6,15 @@
 
 #include <algorithm>
 
+#include "flutter/shell/platform/embedder/embedder_layers.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
+#include "third_party/skia/include/gpu/GrContext.h"
 
 namespace flutter {
 
 EmbedderExternalViewEmbedder::EmbedderExternalViewEmbedder(
-    CreateRenderTargetCallback create_render_target_callback,
-    PresentCallback present_callback)
+    const CreateRenderTargetCallback& create_render_target_callback,
+    const PresentCallback& present_callback)
     : create_render_target_callback_(create_render_target_callback),
       present_callback_(present_callback) {
   FML_DCHECK(create_render_target_callback_);
@@ -35,15 +37,83 @@ SkMatrix EmbedderExternalViewEmbedder::GetSurfaceTransformation() const {
 }
 
 void EmbedderExternalViewEmbedder::Reset() {
-  pending_recorders_.clear();
-  pending_canvas_spies_.clear();
-  pending_params_.clear();
+  pending_views_.clear();
   composition_order_.clear();
 }
 
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::CancelFrame() {
   Reset();
+}
+
+// |ExternalViewEmbedder|
+void EmbedderExternalViewEmbedder::BeginFrame(SkISize frame_size,
+                                              GrContext* context,
+                                              double device_pixel_ratio) {
+  Reset();
+
+  pending_frame_size_ = frame_size;
+  pending_device_pixel_ratio_ = device_pixel_ratio;
+  pending_surface_transformation_ = GetSurfaceTransformation();
+
+  static const auto kRootViewIdentifier =
+      EmbedderExternalView::ViewIdentifier{};
+
+  pending_views_[kRootViewIdentifier] = std::make_unique<EmbedderExternalView>(
+      pending_frame_size_, pending_surface_transformation_);
+  composition_order_.push_back(kRootViewIdentifier);
+}
+
+// |ExternalViewEmbedder|
+void EmbedderExternalViewEmbedder::PrerollCompositeEmbeddedView(
+    int view_id,
+    std::unique_ptr<EmbeddedViewParams> params) {
+  FML_DCHECK(pending_views_.count(view_id) == 0);
+
+  pending_views_[view_id] = std::make_unique<EmbedderExternalView>(
+      pending_frame_size_,              // frame size
+      pending_surface_transformation_,  // surface xformation
+      view_id,                          // view identifier
+      std::move(params)                 // embedded view params
+  );
+  composition_order_.push_back(view_id);
+}
+
+// |ExternalViewEmbedder|
+SkCanvas* EmbedderExternalViewEmbedder::GetRootCanvas() {
+  auto found = pending_views_.find(EmbedderExternalView::ViewIdentifier{});
+  if (found == pending_views_.end()) {
+    FML_DLOG(WARNING)
+        << "No root canvas could be found. This is extremely unlikely and "
+           "indicates that the external view embedder did not receive the "
+           "notification to begin the frame.";
+    return nullptr;
+  }
+  return found->second->GetCanvas();
+}
+
+// |ExternalViewEmbedder|
+std::vector<SkCanvas*> EmbedderExternalViewEmbedder::GetCurrentCanvases() {
+  std::vector<SkCanvas*> canvases;
+  for (const auto& view : pending_views_) {
+    const auto& external_view = view.second;
+    // This method (for legacy reasons) expects non-root current canvases.
+    if (!external_view->IsRootView()) {
+      canvases.push_back(external_view->GetCanvas());
+    }
+  }
+  return canvases;
+}
+
+// |ExternalViewEmbedder|
+SkCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+  auto found = pending_views_.find(view_id);
+  if (found == pending_views_.end()) {
+    FML_DCHECK(false) << "Attempted to composite a view that was not "
+                         "pre-rolled.";
+    return nullptr;
+  }
+  return found->second->GetCanvas();
 }
 
 static FlutterBackingStoreConfig MakeBackingStoreConfig(
@@ -58,299 +128,145 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
   return config;
 }
 
-static SkISize TransformedSurfaceSize(const SkISize& size,
-                                      const SkMatrix& transformation) {
-  const auto source_rect = SkRect::MakeWH(size.width(), size.height());
-  const auto transformed_rect = transformation.mapRect(source_rect);
-  return SkISize::Make(transformed_rect.width(), transformed_rect.height());
-}
-
 // |ExternalViewEmbedder|
-void EmbedderExternalViewEmbedder::BeginFrame(SkISize frame_size,
-                                              GrContext* context,
-                                              double device_pixel_ratio) {
-  Reset();
+bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context,
+                                               SkCanvas* background_canvas) {
+  auto [matched_render_targets, pending_keys] =
+      render_target_cache_.GetExistingTargetsInCache(pending_views_);
 
-  pending_frame_size_ = frame_size;
-  pending_device_pixel_ratio_ = device_pixel_ratio;
-  pending_surface_transformation_ = GetSurfaceTransformation();
+  // This is where unused render targets will be collected. Control may flow to
+  // the embedder. Here, the embedder has the opportunity to trample on the
+  // OpenGL context.
+  //
+  // For optimum performance, we should tell the render target cache to clear
+  // its unused entries before allocating new ones. This collection step before
+  // allocating new render targets ameliorates peak memory usage within the
+  // frame. But, this causes an issue in a known internal embedder. To work
+  // around this issue while that embedder migrates, collection of render
+  // targets is deferred after the presentation.
+  //
+  // @warning: Embedder may trample on our OpenGL context here.
+  auto deferred_cleanup_render_targets =
+      render_target_cache_.ClearAllRenderTargetsInCache();
 
-  const auto surface_size = TransformedSurfaceSize(
-      pending_frame_size_, pending_surface_transformation_);
+  for (const auto& pending_key : pending_keys) {
+    const auto& external_view = pending_views_.at(pending_key);
 
-  // Decide if we want to discard the previous root render target.
-  if (root_render_target_) {
-    auto surface = root_render_target_->GetRenderSurface();
-    // This is unlikely to happen but the embedder could have given the
-    // rasterizer a render target the previous frame that Skia could not
-    // materialize into a renderable surface. Discard the target and try again.
-    if (!surface) {
-      root_render_target_ = nullptr;
-    } else {
-      auto last_surface_size =
-          SkISize::Make(surface->width(), surface->height());
-      if (surface_size != last_surface_size) {
-        root_render_target_ = nullptr;
-      }
-    }
-  }
-
-  // If there is no root render target, create one now.
-  // TODO(43778): This should now be moved to be later in the submit call.
-  if (!root_render_target_) {
-    root_render_target_ = create_render_target_callback_(
-        context, MakeBackingStoreConfig(surface_size));
-    root_picture_recorder_ = std::make_unique<SkPictureRecorder>();
-    root_picture_recorder_->beginRecording(pending_frame_size_.width(),
-                                           pending_frame_size_.height());
-  }
-}
-
-// |ExternalViewEmbedder|
-void EmbedderExternalViewEmbedder::PrerollCompositeEmbeddedView(
-    int view_id,
-    std::unique_ptr<EmbeddedViewParams> params) {
-  FML_DCHECK(pending_recorders_.count(view_id) == 0);
-  FML_DCHECK(pending_canvas_spies_.count(view_id) == 0);
-  FML_DCHECK(pending_params_.count(view_id) == 0);
-  FML_DCHECK(std::find(composition_order_.begin(), composition_order_.end(),
-                       view_id) == composition_order_.end());
-
-  pending_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
-  SkCanvas* recording_canvas = pending_recorders_[view_id]->beginRecording(
-      pending_frame_size_.width(), pending_frame_size_.height());
-  pending_canvas_spies_[view_id] =
-      std::make_unique<CanvasSpy>(recording_canvas);
-  pending_params_[view_id] = *params;
-  composition_order_.push_back(view_id);
-}
-
-// |ExternalViewEmbedder|
-std::vector<SkCanvas*> EmbedderExternalViewEmbedder::GetCurrentCanvases() {
-  std::vector<SkCanvas*> canvases;
-  for (const auto& spy : pending_canvas_spies_) {
-    canvases.push_back(spy.second->GetSpyingCanvas());
-  }
-  return canvases;
-}
-
-// |ExternalViewEmbedder|
-SkCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
-  auto found = pending_canvas_spies_.find(view_id);
-  if (found == pending_canvas_spies_.end()) {
-    FML_DCHECK(false) << "Attempted to composite a view that was not "
-                         "pre-rolled.";
-    return nullptr;
-  }
-  return found->second->GetSpyingCanvas();
-}
-
-static FlutterLayer MakeBackingStoreLayer(
-    const SkISize& frame_size,
-    const FlutterBackingStore* store,
-    const SkMatrix& surface_transformation,
-    double device_pixel_ratio) {
-  FlutterLayer layer = {};
-
-  layer.struct_size = sizeof(layer);
-  layer.type = kFlutterLayerContentTypeBackingStore;
-  layer.backing_store = store;
-
-  const auto layer_bounds =
-      SkRect::MakeWH(frame_size.width(), frame_size.height());
-
-  const auto transformed_layer_bounds =
-      SkMatrix::Concat(surface_transformation,
-                       SkMatrix::MakeScale(device_pixel_ratio))
-          .mapRect(layer_bounds);
-
-  layer.offset.x = transformed_layer_bounds.x();
-  layer.offset.y = transformed_layer_bounds.y();
-  layer.size.width = transformed_layer_bounds.width();
-  layer.size.height = transformed_layer_bounds.height();
-
-  return layer;
-}
-
-static FlutterPlatformView MakePlatformView(
-    FlutterPlatformViewIdentifier identifier) {
-  FlutterPlatformView view = {};
-
-  view.struct_size = sizeof(view);
-
-  view.identifier = identifier;
-
-  return view;
-}
-
-static FlutterLayer MakePlatformViewLayer(
-    const EmbeddedViewParams& params,
-    const FlutterPlatformView& platform_view,
-    const SkMatrix& surface_transformation,
-    double device_pixel_ratio) {
-  FlutterLayer layer = {};
-
-  layer.struct_size = sizeof(layer);
-  layer.type = kFlutterLayerContentTypePlatformView;
-  layer.platform_view = &platform_view;
-
-  const auto layer_bounds = SkRect::MakeXYWH(params.offsetPixels.x(),    //
-                                             params.offsetPixels.y(),    //
-                                             params.sizePoints.width(),  //
-                                             params.sizePoints.height()  //
-  );
-
-  const auto transformed_layer_bounds =
-      SkMatrix::Concat(surface_transformation,
-                       SkMatrix::MakeScale(device_pixel_ratio))
-          .mapRect(layer_bounds);
-
-  layer.offset.x = transformed_layer_bounds.x();
-  layer.offset.y = transformed_layer_bounds.y();
-  layer.size.width = transformed_layer_bounds.width();
-  layer.size.height = transformed_layer_bounds.height();
-
-  return layer;
-}
-
-// |ExternalViewEmbedder|
-bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
-  std::map<FlutterPlatformViewIdentifier, FlutterPlatformView>
-      presented_platform_views;
-  // Layers may contain pointers to platform views in the collection above.
-  std::vector<FlutterLayer> presented_layers;
-  Registry render_targets_used;
-
-  if (!root_render_target_) {
-    FML_LOG(ERROR)
-        << "Could not acquire the root render target from the embedder.";
-    return false;
-  }
-
-  // Copy the contents of the root picture recorder onto the root surface
-  // while making sure to take into account any surface transformations.
-  if (auto root_canvas = root_render_target_->GetRenderSurface()->getCanvas()) {
-    root_canvas->setMatrix(pending_surface_transformation_);
-    root_canvas->clear(SK_ColorTRANSPARENT);
-    root_canvas->drawPicture(
-        root_picture_recorder_->finishRecordingAsPicture());
-    root_canvas->flush();
-    root_picture_recorder_.reset();
-  }
-
-  {
-    // The root surface is expressed as a layer.
-    presented_layers.push_back(MakeBackingStoreLayer(
-        pending_frame_size_,                     // frame size
-        root_render_target_->GetBackingStore(),  // backing store
-        pending_surface_transformation_,         // surface transformation
-        pending_device_pixel_ratio_              // device pixel ratio
-        ));
-  }
-
-  const auto surface_size = TransformedSurfaceSize(
-      pending_frame_size_, pending_surface_transformation_);
-
-  for (const auto& view_id : composition_order_) {
-    FML_DCHECK(pending_recorders_.count(view_id) == 1);
-    FML_DCHECK(pending_canvas_spies_.count(view_id) == 1);
-    FML_DCHECK(pending_params_.count(view_id) == 1);
-
-    const auto& params = pending_params_.at(view_id);
-    auto& recorder = pending_recorders_.at(view_id);
-
-    auto picture = recorder->finishRecordingAsPicture();
-    if (!picture) {
-      FML_LOG(ERROR) << "Could not finish recording into the picture before "
-                        "on-screen composition.";
-      return false;
-    }
-
-    // Indicate a layer for the platform view. Add to `presented_platform_views`
-    // in order to keep at allocated just for the scope of the current method.
-    // The layers presented to the embedder will contain a back pointer to this
-    // struct. It is safe to deallocate when the embedder callback is done.
-    presented_platform_views[view_id] = MakePlatformView(view_id);
-    presented_layers.push_back(MakePlatformViewLayer(
-        params,                                // embedded view params
-        presented_platform_views.at(view_id),  // platform view
-        pending_surface_transformation_,       // surface transformation
-        pending_device_pixel_ratio_            // device pixel ratio
-        ));
-
-    if (!pending_canvas_spies_.at(view_id)->DidDrawIntoCanvas()) {
-      // Nothing was drawn into the overlay canvas, we don't need to composite
-      // it.
+    // If the external view does not have engine rendered contents, it makes no
+    // sense to ask to embedder to create a render target for us as we don't
+    // intend to render into it and ask the embedder for presentation anyway.
+    // Save some memory.
+    if (!external_view->HasEngineRenderedContents()) {
       continue;
     }
 
-    const auto backing_store_config = MakeBackingStoreConfig(surface_size);
+    // This is the size of render surface we want the embedder to create for
+    // us. As or right now, this is going to always be equal to the frame size
+    // post transformation. But, in case optimizations are applied that make
+    // it so that embedder rendered into surfaces that aren't full screen,
+    // this assumption will break. So it's just best to ask view for its size
+    // directly.
+    const auto render_surface_size = external_view->GetRenderSurfaceSize();
 
-    RegistryKey registry_key(view_id, backing_store_config);
+    const auto backing_store_config =
+        MakeBackingStoreConfig(render_surface_size);
 
-    auto found_render_target = registry_.find(registry_key);
-
-    // Find a cached render target in the registry. If none exists, ask the
-    // embedder for a new one.
-    std::shared_ptr<EmbedderRenderTarget> render_target;
-    if (found_render_target == registry_.end()) {
-      render_target =
-          create_render_target_callback_(context, backing_store_config);
-    } else {
-      render_target = found_render_target->second;
-    }
+    // This is where the embedder will create render targets for us. Control
+    // flow to the embedder makes the engine susceptible to having the embedder
+    // trample on the OpenGL context. Before any Skia operations are performed,
+    // the context must be reset.
+    //
+    // @warning: Embedder may trample on our OpenGL context here.
+    auto render_target =
+        create_render_target_callback_(context, backing_store_config);
 
     if (!render_target) {
-      FML_LOG(ERROR) << "Could not acquire external render target for "
-                        "on-screen composition.";
+      FML_LOG(ERROR) << "Embedder did not return a valid render target.";
       return false;
     }
+    matched_render_targets[pending_key] = std::move(render_target);
+  }
 
-    render_targets_used[registry_key] = render_target;
+  // The OpenGL context could have been trampled by the embedder at this point
+  // as it attempted to collect old render targets and create new ones. Tell
+  // Skia to not rely on existing bindings.
+  if (context) {
+    context->resetContext(kAll_GrBackendState);
+  }
 
-    auto render_surface = render_target->GetRenderSurface();
-    auto render_canvas = render_surface ? render_surface->getCanvas() : nullptr;
-
-    if (!render_canvas) {
+  // Scribble embedder provide render targets. The order in which we scribble
+  // into the buffers is irrelevant to the presentation order.
+  for (const auto& render_target : matched_render_targets) {
+    if (!pending_views_.at(render_target.first)
+             ->Render(*render_target.second)) {
       FML_LOG(ERROR)
-          << "Could not acquire render canvas for on-screen rendering.";
+          << "Could not render into the embedder supplied render target.";
       return false;
     }
-
-    render_canvas->setMatrix(pending_surface_transformation_);
-    render_canvas->clear(SK_ColorTRANSPARENT);
-    render_canvas->drawPicture(picture);
-    render_canvas->flush();
-    // Indicate a layer for the backing store containing contents rendered by
-    // Flutter.
-    presented_layers.push_back(MakeBackingStoreLayer(
-        pending_frame_size_,               // frame size
-        render_target->GetBackingStore(),  // backing store
-        pending_surface_transformation_,   // surface transformation
-        pending_device_pixel_ratio_        // device pixel ratio
-        ));
   }
 
+  // We are going to be transferring control back over to the embedder there the
+  // context may be trampled upon again. Flush all operations to the underlying
+  // rendering API.
+  //
+  // @warning: Embedder may trample on our OpenGL context here.
+  if (context) {
+    context->flush();
+  }
+
+  // Submit the scribbled layer to the embedder for presentation.
+  //
+  // @warning: Embedder may trample on our OpenGL context here.
   {
-    std::vector<const FlutterLayer*> presented_layers_pointers;
-    presented_layers_pointers.reserve(presented_layers.size());
-    for (const auto& layer : presented_layers) {
-      presented_layers_pointers.push_back(&layer);
+    EmbedderLayers presented_layers(pending_frame_size_,
+                                    pending_device_pixel_ratio_,
+                                    pending_surface_transformation_);
+    // In composition order, submit backing stores and platform views to the
+    // embedder.
+    for (const auto& view_id : composition_order_) {
+      // If the external view has a platform view, ask the emebdder to place it
+      // before the Flutter rendered contents for that interleaving level.
+      const auto& external_view = pending_views_.at(view_id);
+      if (external_view->HasPlatformView()) {
+        presented_layers.PushPlatformViewLayer(
+            external_view->GetViewIdentifier()
+                .platform_view_id.value(),           // view id
+            *external_view->GetEmbeddedViewParams()  // view params
+        );
+      }
+
+      // If the view has engine rendered contents, ask the embedder to place
+      // Flutter rendered contents for this interleaving level on top of a
+      // platform view.
+      if (external_view->HasEngineRenderedContents()) {
+        const auto& exteral_render_target = matched_render_targets.at(view_id);
+        presented_layers.PushBackingStoreLayer(
+            exteral_render_target->GetBackingStore());
+      }
     }
-    present_callback_(std::move(presented_layers_pointers));
+
+    // Flush the layer description down to the embedder for presentation.
+    //
+    // @warning: Embedder may trample on our OpenGL context here.
+    presented_layers.InvokePresentCallback(present_callback_);
   }
 
-  registry_ = std::move(render_targets_used);
+  // See why this is necessary in the comment where this collection in realized.
+  //
+  // @warning: Embedder may trample on our OpenGL context here.
+  deferred_cleanup_render_targets.clear();
+
+  // Hold all rendered layers in the render target cache for one frame to
+  // see if they may be reused next frame.
+  for (auto& render_target : matched_render_targets) {
+    render_target_cache_.CacheRenderTarget(render_target.first,
+                                           std::move(render_target.second));
+  }
 
   return true;
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* EmbedderExternalViewEmbedder::GetRootCanvas() {
-  if (!root_picture_recorder_) {
-    return nullptr;
-  }
-  return root_picture_recorder_->getRecordingCanvas();
-}
+void EmbedderExternalViewEmbedder::FinishFrame() {}
 
 }  // namespace flutter

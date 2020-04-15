@@ -34,13 +34,13 @@ class ViewHolder {
   static void Create(zx_koid_t id,
                      fml::RefPtr<fml::TaskRunner> ui_task_runner,
                      fuchsia::ui::views::ViewHolderToken view_holder_token,
-                     BindCallback on_bind_callback);
+                     const BindCallback& on_bind_callback);
   static void Destroy(zx_koid_t id);
   static ViewHolder* FromId(zx_koid_t id);
 
   ViewHolder(fml::RefPtr<fml::TaskRunner> ui_task_runner,
              fuchsia::ui::views::ViewHolderToken view_holder_token,
-             BindCallback on_bind_callback);
+             const BindCallback& on_bind_callback);
   ~ViewHolder() = default;
 
   // Sets the properties/opacity of the child view by issuing a Scenic command.
@@ -51,29 +51,27 @@ class ViewHolder {
                      double insetBottom,
                      double insetLeft,
                      bool focusable);
-  void SetOpacity(double opacity);
 
   // Creates or updates the contained ViewHolder resource using the specified
   // |SceneUpdateContext|.
   void UpdateScene(SceneUpdateContext& context,
                    const SkPoint& offset,
                    const SkSize& size,
+                   SkAlpha opacity,
                    bool hit_testable);
 
  private:
   fml::RefPtr<fml::TaskRunner> ui_task_runner_;
 
-  std::unique_ptr<scenic::OpacityNodeHACK> opacity_node_;
   std::unique_ptr<scenic::EntityNode> entity_node_;
+  std::unique_ptr<scenic::OpacityNodeHACK> opacity_node_;
   std::unique_ptr<scenic::ViewHolder> view_holder_;
 
   fuchsia::ui::views::ViewHolderToken pending_view_holder_token_;
   BindCallback pending_bind_callback_;
 
   fuchsia::ui::gfx::ViewProperties pending_properties_;
-  double pending_opacity_;
   bool has_pending_properties_ = false;
-  bool has_pending_opacity_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ViewHolder);
 };

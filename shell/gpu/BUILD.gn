@@ -2,20 +2,21 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("$flutter_root/shell/config.gni")
+import("//flutter/shell/config.gni")
 
-gpu_dir = "$flutter_root/shell/gpu"
+gpu_dir = "//flutter/shell/gpu"
 
 gpu_common_deps = [
-  "$flutter_root/common",
-  "$flutter_root/flow",
-  "$flutter_root/fml",
-  "$flutter_root/shell/common",
+  "//flutter/common",
+  "//flutter/flow",
+  "//flutter/fml",
+  "//flutter/shell/common",
   "//third_party/skia",
 ]
 
 source_set("gpu_surface_software") {
   sources = [
+    "$gpu_dir/gpu_surface_delegate.h",
     "$gpu_dir/gpu_surface_software.cc",
     "$gpu_dir/gpu_surface_software.h",
     "$gpu_dir/gpu_surface_software_delegate.cc",
@@ -39,13 +40,16 @@ source_set("gpu_surface_gl") {
 
 source_set("gpu_surface_vulkan") {
   sources = [
+    "$gpu_dir/gpu_surface_delegate.h",
     "$gpu_dir/gpu_surface_vulkan.cc",
     "$gpu_dir/gpu_surface_vulkan.h",
+    "$gpu_dir/gpu_surface_vulkan_delegate.cc",
+    "$gpu_dir/gpu_surface_vulkan_delegate.h",
   ]
 
   deps = gpu_common_deps + [
            "//third_party/skia",
-           "$flutter_root/vulkan",
+           "//flutter/vulkan",
          ]
 }
 

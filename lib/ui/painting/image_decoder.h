@@ -13,6 +13,7 @@
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/io_manager.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -55,7 +56,7 @@ class ImageDecoder {
   // concurrently. Texture upload is done on the IO thread and the result
   // returned back on the UI thread. On error, the texture is null but the
   // callback is guaranteed to return on the UI thread.
-  void Decode(ImageDescriptor descriptor, ImageResult result);
+  void Decode(ImageDescriptor descriptor, const ImageResult& result);
 
   fml::WeakPtr<ImageDecoder> GetWeakPtr() const;
 
@@ -67,6 +68,11 @@ class ImageDecoder {
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageDecoder);
 };
+
+sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
+                                       std::optional<uint32_t> target_width,
+                                       std::optional<uint32_t> target_height,
+                                       const fml::tracing::TraceFlow& flow);
 
 }  // namespace flutter
 

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
@@ -471,7 +472,7 @@ class SemanticsFlag {
 
   /// Whether the semantics node represents an image.
   ///
-  /// Both TalkBack and VoiceOver will inform the user the the semantics node
+  /// Both TalkBack and VoiceOver will inform the user the semantics node
   /// represents an image.
   static const SemanticsFlag isImage = SemanticsFlag._(_kIsImageIndex);
 
@@ -804,7 +805,12 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The returned object can be passed to [Window.updateSemantics] to actually
   /// update the semantics retained by the system.
-  SemanticsUpdate build() native 'SemanticsUpdateBuilder_build';
+  SemanticsUpdate build() {
+    final SemanticsUpdate semanticsUpdate = SemanticsUpdate._();
+    _build(semanticsUpdate);
+    return semanticsUpdate;
+  }
+  void _build(SemanticsUpdate outSemanticsUpdate) native 'SemanticsUpdateBuilder_build';
 }
 
 /// An opaque object representing a batch of semantics updates.

@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 #define FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 
+#include <cfloat>
 #include <memory>
 #include <set>
 #include <vector>
@@ -22,6 +23,15 @@ namespace flutter {
 
 class Layer;
 
+// Scenic currently lacks an API to enable rendering of alpha channel; this only
+// happens if there is a OpacityNode higher in the tree with opacity != 1. For
+// now, clamp to a infinitesimally smaller value than 1, which does not cause
+// visual problems in practice.
+constexpr float kOneMinusEpsilon = 1 - FLT_EPSILON;
+
+// How much layers are separated in Scenic z elevation.
+constexpr float kScenicZElevationBetweenLayers = 10.f;
+
 class SceneUpdateContext {
  public:
   class SurfaceProducerSurface {
@@ -37,7 +47,7 @@ class SceneUpdateContext {
     virtual SkISize GetSize() const = 0;
 
     virtual void SignalWritesFinished(
-        std::function<void(void)> on_writes_committed) = 0;
+        const std::function<void(void)>& on_writes_committed) = 0;
 
     virtual scenic::Image* GetImage() = 0;
 
@@ -59,7 +69,7 @@ class SceneUpdateContext {
     // Query a retained entity node (owned by a retained surface) for retained
     // rendering.
     virtual bool HasRetainedNode(const LayerRasterCacheKey& key) const = 0;
-    virtual const scenic::EntityNode& GetRetainedNode(
+    virtual scenic::EntityNode* GetRetainedNode(
         const LayerRasterCacheKey& key) = 0;
 
     virtual void SubmitSurface(
@@ -96,18 +106,7 @@ class SceneUpdateContext {
     float const previous_scale_y_;
   };
 
-  class Shape : public Entity {
-   public:
-    Shape(SceneUpdateContext& context);
-    virtual ~Shape() = default;
-
-    scenic::ShapeNode& shape_node() { return shape_node_; }
-
-   private:
-    scenic::ShapeNode shape_node_;
-  };
-
-  class Frame : public Shape {
+  class Frame : public Entity {
    public:
     // When layer is not nullptr, the frame is associated with a layer subtree
     // rooted with that layer. The frame may then create a surface that will be
@@ -115,18 +114,22 @@ class SceneUpdateContext {
     Frame(SceneUpdateContext& context,
           const SkRRect& rrect,
           SkColor color,
-          float local_elevation = 0.0f,
-          float parent_elevation = 0.0f,
-          float depth = 0.0f,
+          SkAlpha opacity,
+          std::string label,
+          float z_translation = 0.0f,
           Layer* layer = nullptr);
     virtual ~Frame();
+
+    scenic::ContainerNode& embedder_node() override { return opacity_node_; }
 
     void AddPaintLayer(Layer* layer);
 
    private:
-    const SkRRect& rrect_;
+    const SkRRect rrect_;
     SkColor const color_;
+    SkAlpha const opacity_;
 
+    scenic::OpacityNodeHACK opacity_node_;
     std::vector<Layer*> paint_layers_;
     SkRect paint_bounds_;
     Layer* layer_;
@@ -152,15 +155,25 @@ class SceneUpdateContext {
   }
   const fuchsia::ui::gfx::MetricsPtr& metrics() const { return metrics_; }
 
+  void set_dimensions(const SkISize& frame_physical_size,
+                      float frame_physical_depth,
+                      float frame_device_pixel_ratio) {
+    frame_physical_size_ = frame_physical_size;
+    frame_physical_depth_ = frame_physical_depth;
+    frame_device_pixel_ratio_ = frame_device_pixel_ratio;
+  }
+  const SkISize& frame_size() const { return frame_physical_size_; }
+  float frame_physical_depth() const { return frame_physical_depth_; }
+  float frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; }
+
   // TODO(chinmaygarde): This method must submit the surfaces as soon as paint
   // tasks are done. However, given that there is no support currently for
   // Vulkan semaphores, we need to submit all the surfaces after an explicit
   // CPU wait. Once Vulkan semaphores are available, this method must return
   // void and the implementation must submit surfaces on its own as soon as the
   // specific canvas operations are done.
-  FML_WARN_UNUSED_RESULT
-  std::vector<std::unique_ptr<SurfaceProducerSurface>> ExecutePaintTasks(
-      CompositorContext::ScopedFrame& frame);
+  [[nodiscard]] std::vector<std::unique_ptr<SurfaceProducerSurface>>
+  ExecutePaintTasks(CompositorContext::ScopedFrame& frame);
 
   float ScaleX() const { return metrics_->scale_x * top_scale_x_; }
   float ScaleY() const { return metrics_->scale_y * top_scale_y_; }
@@ -172,8 +185,23 @@ class SceneUpdateContext {
   bool HasRetainedNode(const LayerRasterCacheKey& key) const {
     return surface_producer_->HasRetainedNode(key);
   }
-  const scenic::EntityNode& GetRetainedNode(const LayerRasterCacheKey& key) {
+  scenic::EntityNode* GetRetainedNode(const LayerRasterCacheKey& key) {
     return surface_producer_->GetRetainedNode(key);
+  }
+
+  // The cumulative alpha value based on all the parent OpacityLayers.
+  void set_alphaf(float alpha) { alpha_ = alpha; }
+  float alphaf() { return alpha_; }
+
+  // The global scenic elevation at a given point in the traversal.
+  float scenic_elevation() { return scenic_elevation_; }
+
+  void set_scenic_elevation(float elevation) { scenic_elevation_ = elevation; }
+
+  float GetGlobalElevationForNextScenicLayer() {
+    float elevation = topmost_global_scenic_elevation_;
+    topmost_global_scenic_elevation_ += kScenicZElevationBetweenLayers;
+    return elevation;
   }
 
  private:
@@ -194,21 +222,24 @@ class SceneUpdateContext {
   // surface (and thus the entity_node) will be retained for that layer to
   // improve the performance.
   void CreateFrame(scenic::EntityNode entity_node,
-                   scenic::ShapeNode shape_node,
                    const SkRRect& rrect,
                    SkColor color,
+                   SkAlpha opacity,
                    const SkRect& paint_bounds,
                    std::vector<Layer*> paint_layers,
                    Layer* layer);
-  void SetShapeTextureAndColor(scenic::ShapeNode& shape_node,
-                               SkColor color,
-                               SkScalar scale_x,
-                               SkScalar scale_y,
-                               const SkRect& paint_bounds,
-                               std::vector<Layer*> paint_layers,
-                               Layer* layer,
-                               scenic::EntityNode entity_node);
-  void SetShapeColor(scenic::ShapeNode& shape_node, SkColor color);
+  void SetMaterialTextureAndColor(scenic::Material& material,
+                                  SkColor color,
+                                  SkAlpha opacity,
+                                  SkScalar scale_x,
+                                  SkScalar scale_y,
+                                  const SkRect& paint_bounds,
+                                  std::vector<Layer*> paint_layers,
+                                  Layer* layer,
+                                  scenic::EntityNode entity_node);
+  void SetMaterialColor(scenic::Material& material,
+                        SkColor color,
+                        SkAlpha opacity);
   scenic::Image* GenerateImageIfNeeded(SkColor color,
                                        SkScalar scale_x,
                                        SkScalar scale_y,
@@ -225,6 +256,14 @@ class SceneUpdateContext {
   SurfaceProducer* const surface_producer_;
 
   fuchsia::ui::gfx::MetricsPtr metrics_;
+  SkISize frame_physical_size_;
+  float frame_physical_depth_ = 0.0f;
+  float frame_device_pixel_ratio_ =
+      1.0f;  // Ratio between logical and physical pixels.
+
+  float alpha_ = 1.0f;
+  float scenic_elevation_ = 0.f;
+  float topmost_global_scenic_elevation_ = kScenicZElevationBetweenLayers;
 
   std::vector<PaintTask> paint_tasks_;
 

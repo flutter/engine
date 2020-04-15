@@ -26,6 +26,7 @@ class GPUSurfaceGL : public Surface {
                GPUSurfaceGLDelegate* delegate,
                bool render_to_surface);
 
+  // |Surface|
   ~GPUSurfaceGL() override;
 
   // |Surface|
@@ -50,7 +51,6 @@ class GPUSurfaceGL : public Surface {
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrContext> context_;
   sk_sp<SkSurface> onscreen_surface_;
-  sk_sp<SkSurface> offscreen_surface_;
   bool context_owner_;
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
   // external view embedder may want to render to the root surface. This is a

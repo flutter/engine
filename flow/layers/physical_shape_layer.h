@@ -13,13 +13,13 @@ class PhysicalShapeLayer : public ContainerLayer {
  public:
   PhysicalShapeLayer(SkColor color,
                      SkColor shadow_color,
-                     SkScalar device_pixel_ratio,
-                     float viewport_depth,
                      float elevation,
                      const SkPath& path,
                      Clip clip_behavior);
-  ~PhysicalShapeLayer() override;
 
+  static SkRect ComputeShadowBounds(const SkRect& bounds,
+                                    float elevation,
+                                    float pixel_ratio);
   static void DrawShadow(SkCanvas* canvas,
                          const SkPath& path,
                          SkColor color,
@@ -31,23 +31,28 @@ class PhysicalShapeLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
+  bool UsesSaveLayer() const {
+    return clip_behavior_ == Clip::antiAliasWithSaveLayer;
+  }
+
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
 #endif  // defined(OS_FUCHSIA)
 
+  float total_elevation() const { return total_elevation_; }
+
  private:
+#if defined(OS_FUCHSIA)
+  bool child_layer_exists_below_ = false;
+#endif
   SkColor color_;
   SkColor shadow_color_;
-  SkScalar device_pixel_ratio_;
-  float viewport_depth_;
   float elevation_ = 0.0f;
   float total_elevation_ = 0.0f;
   SkPath path_;
   bool isRect_;
   SkRRect frameRRect_;
   Clip clip_behavior_;
-
-  friend class PhysicalShapeLayer_TotalElevation_Test;
 };
 
 }  // namespace flutter

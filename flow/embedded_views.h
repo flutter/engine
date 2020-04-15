@@ -7,8 +7,8 @@
 
 #include <vector>
 
-#include "flutter/fml/gpu_thread_merger.h"
 #include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/raster_thread_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
@@ -19,6 +19,7 @@
 
 namespace flutter {
 
+// TODO(chinmaygarde): Make these enum names match the style guide.
 enum MutatorType { clip_rect, clip_rrect, clip_path, transform, opacity };
 
 // Stores mutation information like clipping or transform.
@@ -142,6 +143,7 @@ class MutatorsStack {
   // Returns an iterator pointing to the bottom of the stack.
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator Bottom()
       const;
+  bool is_empty() const { return vector_.empty(); }
 
   bool operator==(const MutatorsStack& other) const {
     if (vector_.size() != other.vector_.size()) {
@@ -155,7 +157,23 @@ class MutatorsStack {
     return true;
   }
 
+  bool operator==(const std::vector<Mutator>& other) const {
+    if (vector_.size() != other.size()) {
+      return false;
+    }
+    for (size_t i = 0; i < vector_.size(); i++) {
+      if (*vector_[i] != other[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool operator!=(const MutatorsStack& other) const {
+    return !operator==(other);
+  }
+
+  bool operator!=(const std::vector<Mutator>& other) const {
     return !operator==(other);
   }
 
@@ -221,7 +239,7 @@ class ExternalViewEmbedder {
   // after it does any requisite tasks needed to bring itself to a valid state.
   // Returns kSuccess if the view embedder is already in a valid state.
   virtual PostPrerollResult PostPrerollAction(
-      fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
     return PostPrerollResult::kSuccess;
   }
 
@@ -230,7 +248,22 @@ class ExternalViewEmbedder {
   // Must be called on the UI thread.
   virtual SkCanvas* CompositeEmbeddedView(int view_id) = 0;
 
-  virtual bool SubmitFrame(GrContext* context);
+  virtual bool SubmitFrame(GrContext* context, SkCanvas* background_canvas);
+
+  // This is called after submitting the embedder frame and the surface frame.
+  virtual void FinishFrame();
+
+  // This should only be called after |SubmitFrame|.
+  // This method provides the embedder a way to do additional tasks after
+  // |SubmitFrame|. After invoking this method, the current task on the
+  // TaskRunner should end immediately.
+  //
+  // For example on the iOS embedder, threads are merged in this call.
+  // A new frame on the platform thread starts immediately. If the GPU thread
+  // still has some task running, there could be two frames being rendered
+  // concurrently, which causes undefined behaviors.
+  virtual void EndFrame(
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

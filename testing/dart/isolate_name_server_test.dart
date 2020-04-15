@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:isolate';
 import 'dart:ui';
 
@@ -89,8 +90,8 @@ void main() {
     // Test driver.
     final ReceivePort testReceivePort = ReceivePort();
     testReceivePort.listen(expectAsync1<void, dynamic>((dynamic response) {
-      final int code = response[0];
-      final String message = response[1];
+      final int code = response[0] as int;
+      final String message = response[1] as String;
       switch (code) {
         case kStartCode:
           break;

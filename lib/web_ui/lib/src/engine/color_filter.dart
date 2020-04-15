@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// A description of a color filter to apply when drawing a shape or compositing
@@ -114,8 +115,6 @@ class EngineColorFilter implements ui.ColorFilter {
   final int _type;
 
   // The type of SkColorFilter class to create for Skia.
-  // These constants must be kept in sync with ColorFilterType in paint.cc.
-  static const int _TypeNone = 0; // null
   static const int _TypeMode = 1; // MakeModeFilter
   static const int _TypeMatrix = 2; // MakeMatrixFilterRowMajor255
   static const int _TypeLinearToSrgbGamma = 3; // MakeLinearToSRGBGamma

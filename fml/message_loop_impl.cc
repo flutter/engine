@@ -17,6 +17,8 @@
 #include "flutter/fml/platform/darwin/message_loop_darwin.h"
 #elif OS_ANDROID
 #include "flutter/fml/platform/android/message_loop_android.h"
+#elif OS_FUCHSIA
+#include "flutter/fml/platform/fuchsia/message_loop_fuchsia.h"
 #elif OS_LINUX
 #include "flutter/fml/platform/linux/message_loop_linux.h"
 #elif OS_WIN
@@ -30,6 +32,8 @@ fml::RefPtr<MessageLoopImpl> MessageLoopImpl::Create() {
   return fml::MakeRefCounted<MessageLoopDarwin>();
 #elif OS_ANDROID
   return fml::MakeRefCounted<MessageLoopAndroid>();
+#elif OS_FUCHSIA
+  return fml::MakeRefCounted<MessageLoopFuchsia>();
 #elif OS_LINUX
   return fml::MakeRefCounted<MessageLoopLinux>();
 #elif OS_WIN
@@ -50,7 +54,8 @@ MessageLoopImpl::~MessageLoopImpl() {
   task_queue_->Dispose(queue_id_);
 }
 
-void MessageLoopImpl::PostTask(fml::closure task, fml::TimePoint target_time) {
+void MessageLoopImpl::PostTask(const fml::closure& task,
+                               fml::TimePoint target_time) {
   FML_DCHECK(task != nullptr);
   FML_DCHECK(task != nullptr);
   if (terminated_) {
@@ -61,7 +66,8 @@ void MessageLoopImpl::PostTask(fml::closure task, fml::TimePoint target_time) {
   task_queue_->RegisterTask(queue_id_, task, target_time);
 }
 
-void MessageLoopImpl::AddTaskObserver(intptr_t key, fml::closure callback) {
+void MessageLoopImpl::AddTaskObserver(intptr_t key,
+                                      const fml::closure& callback) {
   FML_DCHECK(callback != nullptr);
   FML_DCHECK(MessageLoop::GetCurrent().GetLoopImpl().get() == this)
       << "Message loop task observer must be added on the same thread as the "

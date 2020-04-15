@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 const String _ahemFontFamily = 'Ahem';
@@ -71,6 +72,10 @@ class FontCollection {
             family, 'url(${assetManager.getAssetUrl(asset)})', descriptors);
       }
     }
+  }
+
+  Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
+    return _assetFontManager._loadFontFaceBytes(fontFamily, list);
   }
 
   /// Registers fonts that are used by tests.
@@ -189,6 +194,26 @@ class FontManager {
     }
   }
 
+  // Loads a font from bytes, surfacing errors through the future.
+  Future<void> _loadFontFaceBytes(String family, Uint8List list) {
+    // Since these fonts are loaded by user code, surface the error
+    // through the returned future.
+    final html.FontFace fontFace = html.FontFace(family, list);
+    return fontFace.load().then((_) {
+      html.document.fonts.add(fontFace);
+      // There might be paragraph measurements for this new font before it is
+      // loaded. They were measured using fallback font, so we should clear the
+      // cache.
+      TextMeasurementService.clearCache();
+    }, onError: (dynamic exception) {
+      // Failures here will throw an html.DomException which confusingly
+      // does not implement Exception or Error. Rethrow an Exception so it can
+      // be caught in user code without depending on dart:html or requiring a
+      // catch block without "on".
+      throw Exception(exception.toString());
+    });
+  }
+
   /// Returns a [Future] that completes when all fonts that have been
   /// registered with this font manager have been loaded and are ready to use.
   Future<void> ensureFontsLoaded() {
@@ -220,7 +245,9 @@ class _PolyfillFontManager extends FontManager {
     paragraph.style.position = 'absolute';
     paragraph.style.visibility = 'hidden';
     paragraph.style.fontSize = '72px';
-    paragraph.style.fontFamily = 'sans-serif';
+    final String fallbackFontName = browserEngine == BrowserEngine.ie11 ?
+      'Times New Roman' : 'sans-serif';
+    paragraph.style.fontFamily = fallbackFontName;
     if (descriptors['style'] != null) {
       paragraph.style.fontStyle = descriptors['style'];
     }
@@ -232,7 +259,7 @@ class _PolyfillFontManager extends FontManager {
     html.document.body.append(paragraph);
     final int sansSerifWidth = paragraph.offsetWidth;
 
-    paragraph.style.fontFamily = "'$family', sans-serif";
+    paragraph.style.fontFamily = "'$family', $fallbackFontName";
 
     final Completer<void> completer = Completer<void>();
 
@@ -244,8 +271,10 @@ class _PolyfillFontManager extends FontManager {
         completer.complete();
       } else {
         if (DateTime.now().difference(_fontLoadStart) > _fontLoadTimeout) {
-          completer.completeError(
-              Exception('Timed out trying to load font: $family'));
+          // Let application waiting for fonts continue with fallback.
+          completer.complete();
+          // Throw unhandled exception for logging.
+          throw Exception('Timed out trying to load font: $family');
         } else {
           Timer(_fontLoadRetryDuration, _watchWidth);
         }

@@ -35,9 +35,6 @@
 }
 
 - (void)testPlatformView {
-  //[self checkGolden];
-  [[XCUIDevice sharedDevice] pressButton:XCUIDeviceButtonHome];
-  [self.application activate];
   [self checkGolden];
 }
 
@@ -152,4 +149,25 @@
   [self checkGolden];
 }
 
+@end
+
+@interface PlatformViewRotation : GoldenPlatformViewTests
+@end
+
+@implementation PlatformViewRotation
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  PlatformViewGoldenTestManager* manager =
+      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-rotate"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)tearDown {
+  XCUIDevice.sharedDevice.orientation = UIDeviceOrientationPortrait;
+  [super tearDown];
+}
+
+- (void)testPlatformView {
+  XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
+  [self checkGolden];
+}
 @end

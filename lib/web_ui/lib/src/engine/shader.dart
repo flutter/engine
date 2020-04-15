@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 bool _offsetIsValid(ui.Offset offset) {
@@ -104,12 +105,12 @@ class GradientLinear extends EngineGradient {
         ctx.createLinearGradient(from.dx, from.dy, to.dx, to.dy);
     if (colorStops == null) {
       assert(colors.length == 2);
-      gradient.addColorStop(0, colors[0].toCssString());
-      gradient.addColorStop(1, colors[1].toCssString());
+      gradient.addColorStop(0, colorToCssString(colors[0]));
+      gradient.addColorStop(1, colorToCssString(colors[1]));
       return gradient;
     }
     for (int i = 0; i < colors.length; i++) {
-      gradient.addColorStop(colorStops[i], colors[i].toCssString());
+      gradient.addColorStop(colorStops[i], colorToCssString(colors[i]));
     }
     return gradient;
   }
@@ -118,7 +119,7 @@ class GradientLinear extends EngineGradient {
   List<dynamic> webOnlySerializeToCssPaint() {
     final List<dynamic> serializedColors = <dynamic>[];
     for (int i = 0; i < colors.length; i++) {
-      serializedColors.add(colors[i].toCssString());
+      serializedColors.add(colorToCssString(colors[i]));
     }
     return <dynamic>[
       1,
@@ -142,21 +143,11 @@ class GradientLinear extends EngineGradient {
       jsColors[i] = colors[i].value;
     }
 
-    js.JsArray<double> jsColorStops;
-    if (colorStops == null) {
-      jsColorStops = js.JsArray<double>();
-      jsColorStops.length = 2;
-      jsColorStops[0] = 0;
-      jsColorStops[1] = 1;
-    } else {
-      jsColorStops = js.JsArray<double>.from(colorStops);
-      jsColorStops.length = colorStops.length;
-    }
     return canvasKit.callMethod('MakeLinearGradientShader', <dynamic>[
       makeSkPoint(from),
       makeSkPoint(to),
       jsColors,
-      jsColorStops,
+      makeSkiaColorStops(colorStops),
       tileMode.index,
     ]);
   }
@@ -178,24 +169,27 @@ class GradientRadial extends EngineGradient {
 
   @override
   Object createPaintStyle(html.CanvasRenderingContext2D ctx) {
-    if (matrix4 != null && !Matrix4.fromFloat64List(matrix4).isIdentity()) {
-      throw UnimplementedError(
-          'matrix4 not supported in GradientRadial shader');
-    }
-    if (tileMode != ui.TileMode.clamp) {
-      throw UnimplementedError(
-          'TileMode not supported in GradientRadial shader');
+    if (!experimentalUseSkia) {
+      // The DOM backend does not (yet) support all parameters.
+      if (matrix4 != null && !Matrix4.fromFloat64List(matrix4).isIdentity()) {
+        throw UnimplementedError(
+            'matrix4 not supported in GradientRadial shader');
+      }
+      if (tileMode != ui.TileMode.clamp) {
+        throw UnimplementedError(
+            'TileMode not supported in GradientRadial shader');
+      }
     }
     final html.CanvasGradient gradient = ctx.createRadialGradient(
         center.dx, center.dy, 0, center.dx, center.dy, radius);
     if (colorStops == null) {
       assert(colors.length == 2);
-      gradient.addColorStop(0, colors[0].toCssString());
-      gradient.addColorStop(1, colors[1].toCssString());
+      gradient.addColorStop(0, colorToCssString(colors[0]));
+      gradient.addColorStop(1, colorToCssString(colors[1]));
       return gradient;
     } else {
       for (int i = 0; i < colors.length; i++) {
-        gradient.addColorStop(colorStops[i], colors[i].toCssString());
+        gradient.addColorStop(colorStops[i], colorToCssString(colors[i]));
       }
     }
     return gradient;
@@ -203,7 +197,23 @@ class GradientRadial extends EngineGradient {
 
   @override
   js.JsObject createSkiaShader() {
-    throw UnimplementedError();
+    assert(experimentalUseSkia);
+
+    final js.JsArray<num> jsColors = js.JsArray<num>();
+    jsColors.length = colors.length;
+    for (int i = 0; i < colors.length; i++) {
+      jsColors[i] = colors[i].value;
+    }
+
+    return canvasKit.callMethod('MakeRadialGradientShader', <dynamic>[
+      makeSkPoint(center),
+      radius,
+      jsColors,
+      makeSkiaColorStops(colorStops),
+      tileMode.index,
+      matrix4 != null ? makeSkMatrix(matrix4) : null,
+      0,
+    ]);
   }
 }
 
@@ -228,6 +238,51 @@ class GradientConical extends EngineGradient {
 
   @override
   js.JsObject createSkiaShader() {
-    throw UnimplementedError();
+    assert(experimentalUseSkia);
+
+    final js.JsArray<num> jsColors = js.JsArray<num>();
+    jsColors.length = colors.length;
+    for (int i = 0; i < colors.length; i++) {
+      jsColors[i] = colors[i].value;
+    }
+
+    return canvasKit.callMethod('MakeTwoPointConicalGradient', <dynamic>[
+      makeSkPoint(focal),
+      focalRadius,
+      makeSkPoint(center),
+      radius,
+      jsColors,
+      makeSkiaColorStops(colorStops),
+      tileMode.index,
+      matrix4 != null ? makeSkMatrix(matrix4) : null,
+      0,
+    ]);
+  }
+}
+
+/// Backend implementation of [ui.ImageFilter].
+///
+/// Currently only `blur` is supported.
+class EngineImageFilter implements ui.ImageFilter {
+  EngineImageFilter.blur({this.sigmaX = 0.0, this.sigmaY = 0.0});
+
+  final double sigmaX;
+  final double sigmaY;
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other is! EngineImageFilter) {
+      return false;
+    }
+    final EngineImageFilter typedOther = other;
+    return sigmaX == typedOther.sigmaX && sigmaY == typedOther.sigmaY;
+  }
+
+  @override
+  int get hashCode => ui.hashValues(sigmaX, sigmaY);
+
+  @override
+  String toString() {
+    return 'ImageFilter.blur($sigmaX, $sigmaY)';
   }
 }

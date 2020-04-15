@@ -31,17 +31,61 @@ felt build [-w] -j 100
 If you are a Google employee, you can use an internal instance of Goma to parallelize your builds. Because Goma compiles code on remote servers, this option is effective even on low-powered laptops.
 
 ## Running web engine tests
-To run all tests:
+To run all tests on Chrome. This will run both integration tests and the unit tests:
+
 ```
 felt test
 ```
 
-To run a single test:
+To run unit tests only:
+
+```
+felt test --unit-tests-only
+```
+
+To run integration tests only. For now these tests are only available on Chrome Desktop browsers. These tests will fetch the flutter repository for using `flutter drive` and `flutter pub get` commands. The repository will be synced to the youngest commit older than the engine commit.
+
+```
+felt test --integration-tests-only
+```
+
+To skip cloning the flutter repository use the following flag. This flag can save internet bandwidth. However use with caution. Note the tests results will not be consistent with CIs when this flag is set. flutter command should be set in the PATH for this flag to be useful. This flag can also be used to test local Flutter changes.
+
+```
+felt test --integration-tests-only --use-system-flutter
+```
+
+To run tests on Firefox (this will work only on a Linux device):
+
+```
+felt test --browser=firefox
+```
+
+For Chrome and Firefox, the tests run on a version locked on the [browser_lock.yaml](https://github.com/flutter/engine/blob/master/lib/web_ui/dev/browser_lock.yaml). In order to use another version, add the version argument:
+
+```
+felt test --browser=firefox --firefox-version=70.0.1
+```
+
+To run tests on Safari use the following command. It works on MacOS devices and it uses the Safari installed on the OS. Currently there is no option for using another Safari version.
+
+```
+felt test --browser=safari
+```
+
+To run tests on Windows Edge use the following command. It works on Windows devices and it uses the Edge installed on the OS.
+
+```
+felt_windows.bat test --browser=edge
+```
+
+To run a single test use the following command. Note that it does not work on Windows.
+
 ```
 felt test test/golden_tests/engine/canvas_golden_test.dart
 ```
 
-To debug a test:
+To debug a test on Chrome:
 ```
 felt test --debug test/golden_tests/engine/canvas_golden_test.dart
 ```

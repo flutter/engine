@@ -36,6 +36,11 @@ extern NSString* const FlutterDefaultDartEntrypoint;
  * `FlutterViewController` instances to maintain state and/or asynchronous tasks
  * (such as downloading a large file).
  *
+ * A FlutterEngine can also be used to prewarm the Dart execution environment and reduce the
+ * latency of showing the Flutter screen when a `FlutterViewController` is created and presented.
+ * See http://flutter.dev/docs/development/add-to-app/performance for more details on loading
+ * performance.
+ *
  * Alternatively, you can simply create a new `FlutterViewController` with only a
  * `FlutterDartProject`. That `FlutterViewController` will internally manage its
  * own instance of a FlutterEngine, but will not guarantee survival of the engine
@@ -122,7 +127,7 @@ FLUTTER_EXPORT
  * contains `main()`), using `main()` as the entrypoint (the default for Flutter projects).
  *
  * The first call to this method will create a new Isolate. Subsequent calls will return
- * immediately.
+ * immediately and have no effect.
  *
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
@@ -133,7 +138,7 @@ FLUTTER_EXPORT
  * contains `main()`).
  *
  * The first call to this method will create a new Isolate. Subsequent calls will return
- * immediately.
+ * immediately and have no effect.
  *
  * @param entrypoint The name of a top-level function from the same Dart
  *   library that contains the app's main() function.  If this is FlutterDefaultDartEntrypoint (or
@@ -149,7 +154,7 @@ FLUTTER_EXPORT
  * which may not be the same as the library containing the Dart program's `main()` function.
  *
  * The first call to this method will create a new Isolate. Subsequent calls will return
- * immediately.
+ * immediately and have no effect.
  *
  * @param entrypoint The name of a top-level function from a Dart library.  If this is
  *   FlutterDefaultDartEntrypoint (or nil); this will default to `main()`.  If it is not the app's
@@ -296,11 +301,18 @@ FLUTTER_EXPORT
 @property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
 
 /**
- * The UI Isolate ID of of the engine.
+ * The UI Isolate ID of the engine.
  *
  * This property will be nil if the engine is not running.
  */
 @property(nonatomic, readonly, copy, nullable) NSString* isolateId;
+
+/**
+ * Whether or not GPU calls are allowed.
+ *
+ * Typically this is set when the app is backgrounded and foregrounded.
+ */
+@property(nonatomic, assign) BOOL isGpuDisabled;
 
 @end
 

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
@@ -13,6 +14,17 @@ import 'package:test/test.dart';
 
 void main() {
   group('Keyboard', () {
+    /// Used to save and restore [ui.window.onPlatformMessage] after each test.
+    ui.PlatformMessageCallback savedCallback;
+
+    setUp(() {
+      savedCallback = ui.window.onPlatformMessage;
+    });
+
+    tearDown(() {
+      ui.window.onPlatformMessage = savedCallback;
+    });
+
     test('initializes and disposes', () {
       expect(Keyboard.instance, isNull);
       Keyboard.initialize();
@@ -47,7 +59,9 @@ void main() {
       });
 
       Keyboard.instance.dispose();
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50815
+        skip: browserEngine == BrowserEngine.edge);
 
     test('dispatches keydown to flutter/keyevent channel', () {
       Keyboard.initialize();
@@ -76,7 +90,9 @@ void main() {
       expect(event.defaultPrevented, isFalse);
 
       Keyboard.instance.dispose();
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50815
+        skip: browserEngine == BrowserEngine.edge);
 
     test('dispatches correct meta state', () {
       Keyboard.initialize();
@@ -124,7 +140,9 @@ void main() {
       });
 
       Keyboard.instance.dispose();
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50815
+        skip: browserEngine == BrowserEngine.edge);
 
     test('dispatches repeat events', () {
       Keyboard.initialize();
@@ -175,7 +193,9 @@ void main() {
       ]);
 
       Keyboard.instance.dispose();
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50815
+        skip: browserEngine == BrowserEngine.edge);
 
     test('stops dispatching events after dispose', () {
       Keyboard.initialize();
@@ -204,6 +224,12 @@ void main() {
     test('prevents default when "Tab" is pressed', () {
       Keyboard.initialize();
 
+      int count = 0;
+      ui.window.onPlatformMessage = (String channel, ByteData data,
+          ui.PlatformMessageResponseCallback callback) {
+        count += 1;
+      };
+
       final html.KeyboardEvent event = dispatchKeyboardEvent(
         'keydown',
         key: 'Tab',
@@ -211,14 +237,78 @@ void main() {
       );
 
       expect(event.defaultPrevented, isTrue);
+      expect(count, 1);
+
+      Keyboard.instance.dispose();
+    });
+
+    test('keyboard events should be triggered on text fields', () {
+      Keyboard.initialize();
+
+      int count = 0;
+      ui.window.onPlatformMessage = (String channel, ByteData data,
+          ui.PlatformMessageResponseCallback callback) {
+        count += 1;
+      };
+
+      useTextEditingElement((html.Element element) {
+        final html.KeyboardEvent event = dispatchKeyboardEvent(
+          'keydown',
+          key: 'SomeKey',
+          code: 'SomeCode',
+          target: element,
+        );
+
+        expect(event.defaultPrevented, isFalse);
+        expect(count, 1);
+      });
+
+      Keyboard.instance.dispose();
+    });
+
+    test('the "Tab" key should never be ignored', () {
+      Keyboard.initialize();
+
+      int count = 0;
+      ui.window.onPlatformMessage = (String channel, ByteData data,
+          ui.PlatformMessageResponseCallback callback) {
+        count += 1;
+      };
+
+      useTextEditingElement((html.Element element) {
+        final html.KeyboardEvent event = dispatchKeyboardEvent(
+          'keydown',
+          key: 'Tab',
+          code: 'Tab',
+          target: element,
+        );
+
+        expect(event.defaultPrevented, isTrue);
+        expect(count, 1);
+      });
 
       Keyboard.instance.dispose();
     });
   });
 }
 
+typedef ElementCallback = void Function(html.Element element);
+
+void useTextEditingElement(ElementCallback callback) {
+  final html.InputElement input = html.InputElement();
+  input.classes.add(HybridTextEditing.textEditingClass);
+
+  try {
+    html.document.body.append(input);
+    callback(input);
+  } finally {
+    input.remove();
+  }
+}
+
 html.KeyboardEvent dispatchKeyboardEvent(
   String type, {
+  html.EventTarget target,
   String key,
   String code,
   bool repeat = false,
@@ -227,6 +317,8 @@ html.KeyboardEvent dispatchKeyboardEvent(
   bool isControlPressed = false,
   bool isMetaPressed = false,
 }) {
+  target ??= html.window;
+
   final Function jsKeyboardEvent =
       js_util.getProperty(html.window, 'KeyboardEvent');
   final List<dynamic> eventArgs = <dynamic>[
@@ -239,12 +331,13 @@ html.KeyboardEvent dispatchKeyboardEvent(
       'altKey': isAltPressed,
       'ctrlKey': isControlPressed,
       'metaKey': isMetaPressed,
+      'bubbles': true,
       'cancelable': true,
     }
   ];
   final html.KeyboardEvent event =
       js_util.callConstructor(jsKeyboardEvent, js_util.jsify(eventArgs));
-  html.window.dispatchEvent(event);
+  target.dispatchEvent(event);
 
   return event;
 }

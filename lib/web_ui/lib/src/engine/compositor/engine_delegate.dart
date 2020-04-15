@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 const String assetChannel = 'flutter/assets';
@@ -58,6 +59,7 @@ class Engine extends RuntimeDelegate {
     }
 
     layerTree.frameSize = frameSize;
+    layerTree.devicePixelRatio = _viewportMetrics.devicePixelRatio;
     _animator.render(layerTree);
   }
 

@@ -11,9 +11,11 @@ namespace flutter {
 namespace testing {
 
 RuntimeTest::RuntimeTest()
-    : native_resolver_(std::make_shared<TestDartNativeResolver>()) {}
-
-RuntimeTest::~RuntimeTest() = default;
+    : native_resolver_(std::make_shared<TestDartNativeResolver>()),
+      assets_dir_(fml::OpenDirectory(GetFixturesPath(),
+                                     false,
+                                     fml::FilePermission::kRead)),
+      aot_symbols_(LoadELFSymbolFromFixturesIfNeccessary()) {}
 
 void RuntimeTest::SetSnapshotsAndAssets(Settings& settings) {
   if (!assets_dir_.is_valid()) {
@@ -23,28 +25,10 @@ void RuntimeTest::SetSnapshotsAndAssets(Settings& settings) {
   settings.assets_dir = assets_dir_.get();
 
   // In JIT execution, all snapshots are present within the binary itself and
-  // don't need to be explicitly suppiled by the embedder.
+  // don't need to be explicitly supplied by the embedder. In AOT, these
+  // snapshots will be present in the application AOT dylib.
   if (DartVM::IsRunningPrecompiledCode()) {
-    settings.vm_snapshot_data = [this]() {
-      return fml::FileMapping::CreateReadOnly(assets_dir_, "vm_snapshot_data");
-    };
-
-    settings.isolate_snapshot_data = [this]() {
-      return fml::FileMapping::CreateReadOnly(assets_dir_,
-                                              "isolate_snapshot_data");
-    };
-
-    if (DartVM::IsRunningPrecompiledCode()) {
-      settings.vm_snapshot_instr = [this]() {
-        return fml::FileMapping::CreateReadExecute(assets_dir_,
-                                                   "vm_snapshot_instr");
-      };
-
-      settings.isolate_snapshot_instr = [this]() {
-        return fml::FileMapping::CreateReadExecute(assets_dir_,
-                                                   "isolate_snapshot_instr");
-      };
-    }
+    PrepareSettingsForAOTWithSymbols(settings, aot_symbols_);
   } else {
     settings.application_kernels = [this]() {
       std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
@@ -65,19 +49,6 @@ Settings RuntimeTest::CreateSettingsForFixture() {
   };
   SetSnapshotsAndAssets(settings);
   return settings;
-}
-
-// |testing::ThreadTest|
-void RuntimeTest::SetUp() {
-  assets_dir_ =
-      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
-  ThreadTest::SetUp();
-}
-
-// |testing::ThreadTest|
-void RuntimeTest::TearDown() {
-  ThreadTest::TearDown();
-  assets_dir_.reset();
 }
 
 void RuntimeTest::AddNativeCallback(std::string name,

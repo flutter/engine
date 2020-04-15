@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -38,19 +39,22 @@ import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
 
 import 'browser.dart';
-import 'chrome.dart';
 import 'common.dart';
 import 'environment.dart' as env;
 import 'goldens.dart';
+import 'supported_browsers.dart';
 
 class BrowserPlatform extends PlatformPlugin {
   /// Starts the server.
   ///
   /// [root] is the root directory that the server should serve. It defaults to
   /// the working directory.
-  static Future<BrowserPlatform> start({String root, bool doUpdateScreenshotGoldens: false}) async {
+  static Future<BrowserPlatform> start(String name,
+      {String root, bool doUpdateScreenshotGoldens: false}) async {
+    assert(SupportedBrowsers.instance.supportedBrowserNames.contains(name));
     var server = shelf_io.IOServer(await HttpMultiServer.loopback(0));
     return BrowserPlatform._(
+      name,
       server,
       Configuration.current,
       p.fromUri(await Isolate.resolvePackageUri(
@@ -65,6 +69,9 @@ class BrowserPlatform extends PlatformPlugin {
 
   /// The underlying server.
   final shelf.Server _server;
+
+  /// Name for the running browser. Not final on purpose can be mutated later.
+  String browserName;
 
   /// A randomly-generated secret.
   ///
@@ -97,9 +104,11 @@ class BrowserPlatform extends PlatformPlugin {
   /// Whether to update screenshot golden files.
   final bool doUpdateScreenshotGoldens;
 
-  BrowserPlatform._(this._server, Configuration config, String faviconPath,
+  BrowserPlatform._(
+      String name, this._server, Configuration config, String faviconPath,
       {String root, this.doUpdateScreenshotGoldens})
-      : _config = config,
+      : this.browserName = name,
+        _config = config,
         _root = root == null ? p.current : root,
         _http = config.pubServeUrl == null ? null : HttpClient() {
     var cascade = shelf.Cascade().add(_webSocketHandler.handler);
@@ -109,7 +118,6 @@ class BrowserPlatform extends PlatformPlugin {
       final String staticFilePath =
           config.suiteDefaults.precompiledPath ?? _root;
       cascade = cascade
-          .add(_screeshotHandler)
           .add(packagesDirHandler())
           .add(_jsHandler.handler)
           .add(createStaticHandler(staticFilePath,
@@ -117,6 +125,10 @@ class BrowserPlatform extends PlatformPlugin {
               serveFilesOutsidePath:
                   config.suiteDefaults.precompiledPath != null))
           .add(_wrapperHandler);
+      // Screenshot tests are only enabled in chrome for now.
+      if (name == 'chrome') {
+        cascade = cascade.add(_screeshotHandler);
+      }
     }
 
     var pipeline = shelf.Pipeline()
@@ -130,22 +142,39 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   Future<shelf.Response> _screeshotHandler(shelf.Request request) async {
+    if (browserName != 'chrome') {
+      throw Exception('Screenshots tests are only available in Chrome.');
+    }
+
     if (!request.requestedUri.path.endsWith('/screenshot')) {
       return shelf.Response.notFound(
           'This request is not handled by the screenshot handler');
     }
 
     final String payload = await request.readAsString();
-    final Map<String, dynamic> requestData = json.decode(payload);
-    final String filename = requestData['filename'];
-    final bool write = requestData['write'];
-    final double maxDiffRate = requestData['maxdiffrate'];
-    final Map<String, dynamic> region = requestData['region'];
-    final String result = await _diffScreenshot(filename, write, maxDiffRate ?? kMaxDiffRateFailure, region);
+    final Map<String, dynamic> requestData =
+        json.decode(payload) as Map<String, dynamic>;
+    final String filename = requestData['filename'] as String;
+    final bool write = requestData['write'] as bool;
+    final double maxDiffRate = requestData.containsKey('maxdiffrate')
+        ? (requestData['maxdiffrate'] as num)
+            .toDouble() // can be parsed as either int or double
+        : kMaxDiffRateFailure;
+    final Map<String, dynamic> region =
+        requestData['region'] as Map<String, dynamic>;
+    final PixelComparison pixelComparison = PixelComparison.values.firstWhere(
+        (value) => value.toString() == requestData['pixelComparison']);
+    final String result = await _diffScreenshot(
+        filename, write, maxDiffRate, region, pixelComparison);
     return shelf.Response.ok(json.encode(result));
   }
 
-  Future<String> _diffScreenshot(String filename, bool write, double maxDiffRateFailure, [ Map<String, dynamic> region ]) async {
+  Future<String> _diffScreenshot(
+      String filename,
+      bool write,
+      double maxDiffRateFailure,
+      Map<String, dynamic> region,
+      PixelComparison pixelComparison) async {
     if (doUpdateScreenshotGoldens) {
       write = true;
     }
@@ -188,31 +217,34 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
 
     Map<String, dynamic> captureScreenshotParameters = null;
     if (region != null) {
-      captureScreenshotParameters = {
+      captureScreenshotParameters = <String, dynamic>{
         'format': 'png',
-        'clip': {
+        'clip': <String, dynamic>{
           'x': region['x'],
           'y': region['y'],
           'width': region['width'],
           'height': region['height'],
-          'scale': 1, // This is NOT the DPI of the page, instead it's the "zoom level".
+          'scale':
+              1, // This is NOT the DPI of the page, instead it's the "zoom level".
         },
       };
     }
 
     // Setting hardware-independent screen parameters:
     // https://chromedevtools.github.io/devtools-protocol/tot/Emulation
-    await wipConnection.sendCommand('Emulation.setDeviceMetricsOverride', {
+    await wipConnection
+        .sendCommand('Emulation.setDeviceMetricsOverride', <String, dynamic>{
       'width': kMaxScreenshotWidth,
       'height': kMaxScreenshotHeight,
       'deviceScaleFactor': 1,
       'mobile': false,
     });
-    final wip.WipResponse response =
-        await wipConnection.sendCommand('Page.captureScreenshot', captureScreenshotParameters);
+    final wip.WipResponse response = await wipConnection.sendCommand(
+        'Page.captureScreenshot', captureScreenshotParameters);
 
     // Compare screenshots
-    final Image screenshot = decodePng(base64.decode(response.result['data']));
+    final Image screenshot =
+        decodePng(base64.decode(response.result['data'] as String));
 
     if (write) {
       // Don't even bother with the comparison, just write and return
@@ -226,31 +258,39 @@ To automatically create this file call matchGoldenFile('$filename', write: true)
       }
     }
 
-    ImageDiff diff = ImageDiff(golden: decodeNamedImage(file.readAsBytesSync(), filename), other: screenshot);
+    ImageDiff diff = ImageDiff(
+      golden: decodeNamedImage(file.readAsBytesSync(), filename),
+      other: screenshot,
+      pixelComparison: pixelComparison,
+    );
 
-    if (diff.rate > 0) { // Images are different, so produce some debug info
+    if (diff.rate > 0) {
+      // Images are different, so produce some debug info
       final String testResultsPath = isCirrus
-        ? p.join(
-            Platform.environment['CIRRUS_WORKING_DIR'],
-            'test_results',
-          )
-        : p.join(
-            env.environment.webUiDartToolDir.path,
-            'test_results',
-          );
+          ? p.join(
+              Platform.environment['CIRRUS_WORKING_DIR'],
+              'test_results',
+            )
+          : p.join(
+              env.environment.webUiDartToolDir.path,
+              'test_results',
+            );
       Directory(testResultsPath).createSync(recursive: true);
       final String basename = p.basenameWithoutExtension(file.path);
 
-      final File actualFile = File(p.join(testResultsPath, '$basename.actual.png'));
+      final File actualFile =
+          File(p.join(testResultsPath, '$basename.actual.png'));
       actualFile.writeAsBytesSync(encodePng(screenshot), flush: true);
 
       final File diffFile = File(p.join(testResultsPath, '$basename.diff.png'));
-      diffFile.writeAsBytesSync(encodePng(diff.diff), flush:true);
+      diffFile.writeAsBytesSync(encodePng(diff.diff), flush: true);
 
-      final File expectedFile = File(p.join(testResultsPath, '$basename.expected.png'));
+      final File expectedFile =
+          File(p.join(testResultsPath, '$basename.expected.png'));
       file.copySync(expectedFile.path);
 
-      final File reportFile = File(p.join(testResultsPath, '$basename.report.html'));
+      final File reportFile =
+          File(p.join(testResultsPath, '$basename.report.html'));
       reportFile.writeAsStringSync('''
 Golden file $filename did not match the image generated by the test.
 
@@ -275,16 +315,19 @@ Golden file $filename did not match the image generated by the test.
 ''');
 
       final StringBuffer message = StringBuffer();
-      message.writeln('Golden file $filename did not match the image generated by the test.');
+      message.writeln(
+          'Golden file $filename did not match the image generated by the test.');
       message.writeln(getPrintableDiffFilesInfo(diff.rate, maxDiffRateFailure));
-      message.writeln('You can view the test report in your browser by opening:');
+      message
+          .writeln('You can view the test report in your browser by opening:');
 
       // Cirrus cannot serve HTML pages generated by build jobs, so we
       // archive all the files so that they can be downloaded and inspected
       // locally.
       if (isCirrus) {
         final String taskId = Platform.environment['CIRRUS_TASK_ID'];
-        final String baseArtifactsUrl = 'https://api.cirrus-ci.com/v1/artifact/task/$taskId/web_engine_test/test_results';
+        final String baseArtifactsUrl =
+            'https://api.cirrus-ci.com/v1/artifact/task/$taskId/web_engine_test/test_results';
         final String cirrusReportUrl = '$baseArtifactsUrl/$basename.report.zip';
         message.writeln(cirrusReportUrl);
 
@@ -304,7 +347,8 @@ Golden file $filename did not match the image generated by the test.
         message.writeln(localReportPath);
       }
 
-      message.writeln('To update the golden file call matchGoldenFile(\'$filename\', write: true).');
+      message.writeln(
+          'To update the golden file call matchGoldenFile(\'$filename\', write: true).');
       message.writeln('Golden file: ${expectedFile.path}');
       message.writeln('Actual file: ${actualFile.path}');
 
@@ -372,17 +416,25 @@ Golden file $filename did not match the image generated by the test.
           '</script>.');
     }
 
-    if (_closed) return null;
+    if (_closed) {
+      return null;
+    }
     Uri suiteUrl = url.resolveUri(
         p.toUri(p.withoutExtension(p.relative(path, from: _root)) + '.html'));
 
-    if (_closed) return null;
+    if (_closed) {
+      return null;
+    }
 
     var browserManager = await _browserManagerFor(browser);
-    if (_closed || browserManager == null) return null;
+    if (_closed || browserManager == null) {
+      return null;
+    }
 
     var suite = await browserManager.load(path, suiteUrl, suiteConfig, message);
-    if (_closed) return null;
+    if (_closed) {
+      return null;
+    }
     return suite;
   }
 
@@ -395,14 +447,16 @@ Golden file $filename did not match the image generated by the test.
   ///
   /// If no browser manager is running yet, starts one.
   Future<BrowserManager> _browserManagerFor(Runtime browser) {
-    if (_browserManager != null) return _browserManager;
+    if (_browserManager != null) {
+      return _browserManager;
+    }
 
     var completer = Completer<WebSocketChannel>.sync();
     var path = _webSocketHandler.create(webSocketHandler(completer.complete));
     var webSocketUrl = url.replace(scheme: 'ws').resolve(path);
     var hostUrl = (_config.pubServeUrl == null ? url : _config.pubServeUrl)
         .resolve('packages/web_engine_tester/static/index.html')
-        .replace(queryParameters: {
+        .replace(queryParameters: <String, dynamic>{
       'managerUrl': webSocketUrl.toString(),
       'debug': _config.pauseAfterLoad.toString()
     });
@@ -412,7 +466,7 @@ Golden file $filename did not match the image generated by the test.
 
     // Store null values for browsers that error out so we know not to load them
     // again.
-    _browserManager = future.catchError((_) => null);
+    _browserManager = future.catchError((dynamic _) => null);
 
     return future;
   }
@@ -451,7 +505,7 @@ Golden file $filename did not match the image generated by the test.
     });
   }
 
-  final _closeMemo = AsyncMemoizer();
+  final AsyncMemoizer<dynamic> _closeMemo = AsyncMemoizer<dynamic>();
 }
 
 /// A Shelf handler that provides support for one-time handlers.
@@ -484,11 +538,15 @@ class OneOffHandler {
   /// Dispatches [request] to the appropriate handler.
   FutureOr<shelf.Response> _onRequest(shelf.Request request) {
     var components = p.url.split(request.url.path);
-    if (components.isEmpty) return shelf.Response.notFound(null);
+    if (components.isEmpty) {
+      return shelf.Response.notFound(null);
+    }
 
     var path = components.removeAt(0);
     var handler = _handlers.remove(path);
-    if (handler == null) return shelf.Response.notFound(null);
+    if (handler == null) {
+      return shelf.Response.notFound(null);
+    }
     return handler(request.change(path: path));
   }
 }
@@ -529,13 +587,19 @@ class PathHandler {
     var components = p.url.split(request.url.path);
     for (var i = 0; i < components.length; i++) {
       node = node.children[components[i]];
-      if (node == null) break;
-      if (node.handler == null) continue;
+      if (node == null) {
+        break;
+      }
+      if (node.handler == null) {
+        continue;
+      }
       handler = node.handler;
       handlerIndex = i;
     }
 
-    if (handler == null) return shelf.Response.notFound('Not found.');
+    if (handler == null) {
+      return shelf.Response.notFound('Not found.');
+    }
 
     return handler(
         request.change(path: p.url.joinAll(components.take(handlerIndex + 1))));
@@ -589,7 +653,7 @@ class BrowserManager {
   CancelableCompleter _pauseCompleter;
 
   /// The controller for [_BrowserEnvironment.onRestart].
-  final _onRestartController = StreamController.broadcast();
+  final _onRestartController = StreamController<dynamic>.broadcast();
 
   /// The environment to attach to each suite.
   Future<_BrowserEnvironment> _environment;
@@ -626,17 +690,23 @@ class BrowserManager {
 
     browser.onExit.then((_) {
       throw Exception('${runtime.name} exited before connecting.');
-    }).catchError((error, StackTrace stackTrace) {
-      if (completer.isCompleted) return;
+    }).catchError((dynamic error, StackTrace stackTrace) {
+      if (completer.isCompleted) {
+        return;
+      }
       completer.completeError(error, stackTrace);
     });
 
     future.then((webSocket) {
-      if (completer.isCompleted) return;
+      if (completer.isCompleted) {
+        return;
+      }
       completer.complete(BrowserManager._(browser, runtime, webSocket));
-    }).catchError((error, StackTrace stackTrace) {
+    }).catchError((dynamic error, StackTrace stackTrace) {
       browser.close();
-      if (completer.isCompleted) return;
+      if (completer.isCompleted) {
+        return;
+      }
       completer.completeError(error, stackTrace);
     });
 
@@ -650,7 +720,7 @@ class BrowserManager {
   ///
   /// If [debug] is true, starts the browser in debug mode.
   static Browser _newBrowser(Uri url, Runtime browser, {bool debug = false}) {
-    return Chrome(url, debug: debug);
+    return SupportedBrowsers.instance.getBrowser(browser, url, debug: debug);
   }
 
   /// Creates a new BrowserManager that communicates with [browser] over
@@ -671,10 +741,12 @@ class BrowserManager {
 
     // Whenever we get a message, no matter which child channel it's for, we the
     // know browser is still running code which means the user isn't debugging.
-    _channel = MultiChannel(
+    _channel = MultiChannel<dynamic>(
         webSocket.cast<String>().transform(jsonDocument).changeStream((stream) {
       return stream.map((message) {
-        if (!_closed) _timer.reset();
+        if (!_closed) {
+          _timer.reset();
+        }
         for (var controller in _controllers) {
           controller.setDebugging(false);
         }
@@ -685,7 +757,7 @@ class BrowserManager {
 
     _environment = _loadBrowserEnvironment();
     _channel.stream
-        .listen((message) => _onMessage(message as Map), onDone: close);
+        .listen((dynamic message) => _onMessage(message as Map), onDone: close);
   }
 
   /// Loads [_BrowserEnvironment].
@@ -702,15 +774,17 @@ class BrowserManager {
   Future<RunnerSuite> load(String path, Uri url, SuiteConfiguration suiteConfig,
       Object message) async {
     url = url.replace(
-        fragment: Uri.encodeFull(jsonEncode({
+        fragment: Uri.encodeFull(jsonEncode(<String, dynamic>{
       'metadata': suiteConfig.metadata.serialize(),
       'browser': _runtime.identifier
     })));
 
     var suiteID = _suiteID++;
     RunnerSuiteController controller;
-    closeIframe() {
-      if (_closed) return;
+    void closeIframe() {
+      if (_closed) {
+        return;
+      }
       _controllers.remove(controller);
       _channel.sink.add({'command': 'closeSuite', 'id': suiteID});
     }
@@ -719,8 +793,8 @@ class BrowserManager {
     // case we should unload the iframe.
     var virtualChannel = _channel.virtualChannel();
     var suiteChannelID = virtualChannel.id;
-    var suiteChannel = virtualChannel
-        .transformStream(StreamTransformer.fromHandlers(handleDone: (sink) {
+    var suiteChannel = virtualChannel.transformStream(
+        StreamTransformer<dynamic, dynamic>.fromHandlers(handleDone: (sink) {
       closeIframe();
       sink.close();
     }));
@@ -740,7 +814,7 @@ class BrowserManager {
         final String mapPath = p.join(
           env.environment.webUiRootDir.path,
           'build',
-          '$path.js.map',
+          '$path.browser_test.dart.js.map',
         );
         final JSStackTraceMapper mapper = JSStackTraceMapper(
           await File(mapPath).readAsString(),
@@ -762,9 +836,11 @@ class BrowserManager {
 
   /// An implementation of [Environment.displayPause].
   CancelableOperation _displayPause() {
-    if (_pauseCompleter != null) return _pauseCompleter.operation;
+    if (_pauseCompleter != null) {
+      return _pauseCompleter.operation;
+    }
 
-    _pauseCompleter = CancelableCompleter(onCancel: () {
+    _pauseCompleter = CancelableCompleter<void>(onCancel: () {
       _channel.sink.add({'command': 'resume'});
       _pauseCompleter = null;
     });
@@ -789,7 +865,9 @@ class BrowserManager {
         break;
 
       case 'resume':
-        if (_pauseCompleter != null) _pauseCompleter.complete();
+        if (_pauseCompleter != null) {
+          _pauseCompleter.complete();
+        }
         break;
 
       default:
@@ -804,12 +882,14 @@ class BrowserManager {
   Future close() => _closeMemoizer.runOnce(() {
         _closed = true;
         _timer.cancel();
-        if (_pauseCompleter != null) _pauseCompleter.complete();
+        if (_pauseCompleter != null) {
+          _pauseCompleter.complete();
+        }
         _pauseCompleter = null;
         _controllers.clear();
         return _browser.close();
       });
-  final _closeMemoizer = AsyncMemoizer();
+  final AsyncMemoizer<dynamic> _closeMemoizer = AsyncMemoizer<dynamic>();
 }
 
 /// An implementation of [Environment] for the browser.

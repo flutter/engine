@@ -80,7 +80,6 @@ void SetInterfaceErrorHandler(fidl::Binding<T>& binding, std::string name) {
 PlatformView::PlatformView(
     flutter::PlatformView::Delegate& delegate,
     std::string debug_label,
-    fuchsia::ui::views::ViewRefControl view_ref_control,
     fuchsia::ui::views::ViewRef view_ref,
     flutter::TaskRunners task_runners,
     std::shared_ptr<sys::ServiceDirectory> runner_services,
@@ -95,7 +94,6 @@ PlatformView::PlatformView(
     zx_handle_t vsync_event_handle)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
-      view_ref_control_(std::move(view_ref_control)),
       view_ref_(std::move(view_ref)),
       session_listener_binding_(this, std::move(session_listener_request)),
       session_listener_error_callback_(
@@ -110,15 +108,11 @@ PlatformView::PlatformView(
   SetInterfaceErrorHandler(session_listener_binding_, "SessionListener");
   SetInterfaceErrorHandler(ime_, "Input Method Editor");
   SetInterfaceErrorHandler(text_sync_service_, "Text Sync Service");
-  SetInterfaceErrorHandler(clipboard_, "Clipboard");
   SetInterfaceErrorHandler(parent_environment_service_provider_,
                            "Parent Environment Service Provider");
-  // Access the clipboard.
+  // Access the IME service.
   parent_environment_service_provider_ =
       parent_environment_service_provider_handle.Bind();
-  parent_environment_service_provider_.get()->ConnectToService(
-      fuchsia::modular::Clipboard::Name_,
-      clipboard_.NewRequest().TakeChannel());
 
   parent_environment_service_provider_.get()->ConnectToService(
       fuchsia::ui::input::ImeService::Name_,
@@ -573,7 +567,7 @@ std::unique_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
 // |flutter::PlatformView|
 std::unique_ptr<flutter::Surface> PlatformView::CreateRenderingSurface() {
   // This platform does not repeatly lose and gain a surface connection. So the
-  // surface is setup once during platform view setup and and returned to the
+  // surface is setup once during platform view setup and returned to the
   // shell on the initial (and only) |NotifyCreated| call.
   return std::move(surface_);
 }
@@ -609,6 +603,13 @@ void PlatformView::SetSemanticsEnabled(bool enabled) {
 }
 
 // |flutter::PlatformView|
+// |flutter_runner::AccessibilityBridge::Delegate|
+void PlatformView::DispatchSemanticsAction(int32_t node_id,
+                                           flutter::SemanticsAction action) {
+  flutter::PlatformView::DispatchSemanticsAction(node_id, action, {});
+}
+
+// |flutter::PlatformView|
 void PlatformView::UpdateSemantics(
     flutter::SemanticsNodeUpdates update,
     flutter::CustomAccessibilityActionUpdates actions) {
@@ -638,28 +639,8 @@ void PlatformView::HandleFlutterPlatformChannelPlatformMessage(
     return;
   }
 
-  fml::RefPtr<flutter::PlatformMessageResponse> response = message->response();
-  if (method->value == "Clipboard.setData") {
-    auto text = root["args"]["text"].GetString();
-    clipboard_->Push(text);
-    response->CompleteEmpty();
-  } else if (method->value == "Clipboard.getData") {
-    clipboard_->Peek([response](fidl::StringPtr text) {
-      rapidjson::StringBuffer json_buffer;
-      rapidjson::Writer<rapidjson::StringBuffer> writer(json_buffer);
-      writer.StartArray();
-      writer.StartObject();
-      writer.Key("text");
-      writer.String(text.value_or(""));
-      writer.EndObject();
-      writer.EndArray();
-      std::string result = json_buffer.GetString();
-      response->Complete(std::make_unique<fml::DataMapping>(
-          std::vector<uint8_t>{result.begin(), result.end()}));
-    });
-  } else {
-    response->CompleteEmpty();
-  }
+  // Fuchsia does not handle any platform messages at this time.
+  message->response()->CompleteEmpty();
 }
 
 // Channel handler for kTextInputChannel
@@ -788,6 +769,12 @@ void PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
     FML_DLOG(ERROR) << "Unknown " << message->channel() << " method "
                     << method->value.GetString();
   }
+}
+
+flutter::PointerDataDispatcherMaker PlatformView::GetDispatcherMaker() {
+  return [](flutter::DefaultPointerDataDispatcher::Delegate& delegate) {
+    return std::make_unique<flutter::SmoothPointerDataDispatcher>(delegate);
+  };
 }
 
 }  // namespace flutter_runner

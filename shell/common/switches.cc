@@ -42,6 +42,7 @@ struct SwitchDesc {
 // clang-format off
 static const std::string gDartFlagsWhitelist[] = {
     "--no-causal_async_stacks",
+    "--lazy_async_stacks",
 };
 // clang-format on
 
@@ -49,13 +50,17 @@ static const std::string gDartFlagsWhitelist[] = {
 
 // clang-format off
 static const std::string gDartFlagsWhitelist[] = {
+    "--enable_mirrors",
+    "--enable-service-port-fallback",
+    "--lazy_async_stacks",
     "--max_profile_depth",
+    "--no-causal_async_stacks",
     "--profile_period",
     "--random_seed",
-    "--enable_mirrors",
-    "--write-service-info",
     "--sample-buffer-duration",
-    "--no-causal_async_stacks",
+    "--trace-reload",
+    "--trace-reload-verbose",
+    "--write-service-info",
 };
 // clang-format on
 
@@ -232,10 +237,18 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     }
   }
 
+  settings.disable_http =
+      command_line.HasOption(FlagForSwitch(Switch::DisableHttp));
+
   // Disable need for authentication codes for VM service communication, if
   // specified.
   settings.disable_service_auth_codes =
       command_line.HasOption(FlagForSwitch(Switch::DisableServiceAuthCodes));
+
+  // Allow fallback to automatic port selection if binding to a specified port
+  // fails.
+  settings.enable_service_port_fallback =
+      command_line.HasOption(FlagForSwitch(Switch::EnableServicePortFallback));
 
   // Checked mode overrides.
   settings.disable_dart_asserts =
@@ -258,6 +271,15 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.trace_startup =
       command_line.HasOption(FlagForSwitch(Switch::TraceStartup));
+
+  settings.trace_skia =
+      command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::TraceWhitelist),
+                              &settings.trace_whitelist);
+
+  settings.trace_systrace =
+      command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
 
   settings.skia_deterministic_rendering_on_cpu =
       command_line.HasOption(FlagForSwitch(Switch::SkiaDeterministicRendering));
@@ -350,11 +372,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
 #if !FLUTTER_RELEASE
   command_line.GetOptionValue(FlagForSwitch(Switch::LogTag), &settings.log_tag);
-
-  settings.trace_skia =
-      command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
-  settings.trace_systrace =
-      command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
 #endif
 
   settings.dump_skp_on_shader_compilation =

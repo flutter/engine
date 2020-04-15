@@ -14,7 +14,9 @@
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/win32_task_runner.h"
 
-struct flutter::Win32FlutterWindow;
+namespace flutter {
+struct Win32FlutterWindow;
+}
 
 // Struct for storing state within an instance of the windows native (HWND or
 // CoreWindow) Window.
@@ -53,6 +55,9 @@ struct FlutterDesktopPluginRegistrar {
 
   // The handle for the window associated with this registrar.
   FlutterDesktopView* window;
+
+  // Callback to be called on registrar destruction.
+  FlutterDesktopOnRegistrarDestroyed destruction_handler;
 };
 
 // State associated with the messenger used to communicate with the engine.

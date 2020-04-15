@@ -25,7 +25,7 @@ using MessageReply = std::function<void(const T& reply)>;
 // to the message.
 template <typename T>
 using MessageHandler =
-    std::function<void(const T& message, MessageReply<T> reply)>;
+    std::function<void(const T& message, const MessageReply<T>& reply)>;
 
 // A channel for communicating with the Flutter engine by sending asynchronous
 // messages.
@@ -60,8 +60,16 @@ class BasicMessageChannel {
   }
 
   // Registers a handler that should be called any time a message is
-  // received on this channel.
-  void SetMessageHandler(MessageHandler<T> handler) const {
+  // received on this channel. A null handler will remove any previous handler.
+  //
+  // Note that the BasicMessageChannel does not own the handler, and will not
+  // unregister it on destruction, so the caller is responsible for
+  // unregistering explicitly if it should no longer be called.
+  void SetMessageHandler(const MessageHandler<T>& handler) const {
+    if (!handler) {
+      messenger_->SetMessageHandler(name_, nullptr);
+      return;
+    }
     const auto* codec = codec_;
     std::string channel_name = name_;
     BinaryMessageHandler binary_handler = [handler, codec, channel_name](

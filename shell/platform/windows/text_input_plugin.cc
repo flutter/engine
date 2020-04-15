@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <iostream>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/json_method_codec.h"
+#include "flutter/shell/platform/common/cpp/json_method_codec.h"
 
 static constexpr char kSetEditingStateMethod[] = "TextInput.setEditingState";
 static constexpr char kClearClientMethod[] = "TextInput.clearClient";
@@ -49,7 +49,7 @@ void TextInputPlugin::KeyboardHook(Win32FlutterWindow* window,
                                    int key,
                                    int scancode,
                                    int action,
-                                   int mods) {
+                                   char32_t character) {
   if (active_model_ == nullptr) {
     return;
   }

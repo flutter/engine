@@ -73,7 +73,7 @@ bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
     }
 
     out_vulkan_image->vk_image = {
-        vk_image, [& vulkan_provider = vulkan_provider](VkImage image) {
+        vk_image, [&vulkan_provider = vulkan_provider](VkImage image) {
           vulkan_provider.vk().DestroyImage(vulkan_provider.vk_device(), image,
                                             NULL);
         }};
@@ -254,7 +254,8 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
   };
 
   {
-    TRACE_EVENT0("flutter", "vkAllocateMemory");
+    TRACE_EVENT1("flutter", "vkAllocateMemory", "allocationSize",
+                 alloc_info.allocationSize);
     VkDeviceMemory vk_memory = VK_NULL_HANDLE;
     if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().AllocateMemory(
             vulkan_provider_.vk_device(), &alloc_info, NULL, &vk_memory)) !=
@@ -262,8 +263,8 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
       return false;
     }
 
-    vk_memory_ = {vk_memory, [& vulkan_provider =
-                                  vulkan_provider_](VkDeviceMemory memory) {
+    vk_memory_ = {vk_memory,
+                  [&vulkan_provider = vulkan_provider_](VkDeviceMemory memory) {
                     vulkan_provider.vk().FreeMemory(vulkan_provider.vk_device(),
                                                     memory, NULL);
                   }};
@@ -451,7 +452,7 @@ bool VulkanSurface::FlushSessionAcquireAndReleaseEvents() {
 }
 
 void VulkanSurface::SignalWritesFinished(
-    std::function<void(void)> on_writes_committed) {
+    const std::function<void(void)>& on_writes_committed) {
   FML_DCHECK(on_writes_committed);
 
   if (!valid_) {

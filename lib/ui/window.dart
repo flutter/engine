@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 /// Signature of callbacks that have no arguments and return no data.
@@ -56,12 +57,12 @@ enum FramePhase {
   /// See also [FrameTiming.buildDuration].
   buildFinish,
 
-  /// When the GPU thread starts rasterizing a frame.
+  /// When the raster thread starts rasterizing a frame.
   ///
   /// See also [FrameTiming.rasterDuration].
   rasterStart,
 
-  /// When the GPU thread finishes rasterizing a frame.
+  /// When the raster thread finishes rasterizing a frame.
   ///
   /// See also [FrameTiming.rasterDuration].
   rasterFinish,
@@ -69,7 +70,12 @@ enum FramePhase {
 
 /// Time-related performance metrics of a frame.
 ///
-/// See [Window.onReportTimings] for how to get this.
+/// If you're using the whole Flutter framework, please use
+/// [SchedulerBinding.addTimingsCallback] to get this. It's preferred over using
+/// [Window.onReportTimings] directly because
+/// [SchedulerBinding.addTimingsCallback] allows multiple callbacks. If
+/// [SchedulerBinding] is unavailable, then see [Window.onReportTimings] for how
+/// to get this.
 ///
 /// The metrics in debug mode (`flutter run` without any flags) may be very
 /// different from those in profile and release modes due to the debug overhead.
@@ -109,7 +115,7 @@ class FrameTiming {
   /// {@endtemplate}
   Duration get buildDuration => _rawDuration(FramePhase.buildFinish) - _rawDuration(FramePhase.buildStart);
 
-  /// The duration to rasterize the frame on the GPU thread.
+  /// The duration to rasterize the frame on the raster thread.
   ///
   /// {@macro dart.ui.FrameTiming.fps_smoothness_milliseconds}
   /// {@macro dart.ui.FrameTiming.fps_milliseconds}
@@ -171,18 +177,16 @@ enum AppLifecycleState {
   ///
   /// When the application is in this state, the engine will not call the
   /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
-  ///
-  /// Android apps in this state should assume that they may enter the
-  /// [suspending] state at any time.
   paused,
 
-  /// The application will be suspended momentarily.
+  /// The application is still hosted on a flutter engine but is detached from
+  /// any host views.
   ///
-  /// When the application is in this state, the engine will not call the
-  /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
-  ///
-  /// On iOS, this state is currently unused.
-  suspending,
+  /// When the application is in this state, the engine is running without
+  /// a view. It can either be in the progress of attaching a view when engine
+  /// was first initializes, or after the view being destroyed due to a Navigator
+  /// pop.
+  detached,
 }
 
 /// A representation of distances for each of the four edges of a rectangle,
@@ -469,32 +473,33 @@ class Locale {
   bool operator ==(dynamic other) {
     if (identical(this, other))
       return true;
-    if (other is! Locale)
-      return false;
-    final Locale typedOther = other;
-    return languageCode == typedOther.languageCode
-        && scriptCode == typedOther.scriptCode
-        && countryCode == typedOther.countryCode;
+    return other is Locale
+        && other.languageCode == languageCode
+        && other.scriptCode == scriptCode // scriptCode cannot be ''
+        && (other.countryCode == countryCode // Treat '' as equal to null.
+            || other.countryCode != null && other.countryCode.isEmpty && countryCode == null
+            || countryCode != null && countryCode.isEmpty && other.countryCode == null);
   }
 
   @override
-  int get hashCode => hashValues(languageCode, scriptCode, countryCode);
+  int get hashCode => hashValues(languageCode, scriptCode, countryCode == '' ? null : countryCode);
 
-  static Locale cachedLocale;
-  static String cachedLocaleString;
+  static Locale _cachedLocale;
+  static String _cachedLocaleString;
 
   /// Returns a string representing the locale.
   ///
   /// This identifier happens to be a valid Unicode Locale Identifier using
   /// underscores as separator, however it is intended to be used for debugging
   /// purposes only. For parseable results, use [toLanguageTag] instead.
+  @keepToString
   @override
   String toString() {
-    if (!identical(cachedLocale, this)) {
-      cachedLocale = this;
-      cachedLocaleString = _rawToString('_');
+    if (!identical(_cachedLocale, this)) {
+      _cachedLocale = this;
+      _cachedLocaleString = _rawToString('_');
     }
-    return cachedLocaleString;
+    return _cachedLocaleString;
   }
 
   /// Returns a syntactically valid Unicode BCP47 Locale Identifier.
@@ -506,9 +511,9 @@ class Locale {
 
   String _rawToString(String separator) {
     final StringBuffer out = StringBuffer(languageCode);
-    if (scriptCode != null)
+    if (scriptCode != null && scriptCode.isNotEmpty)
       out.write('$separator$scriptCode');
-    if (_countryCode != null)
+    if (_countryCode != null && _countryCode.isNotEmpty)
       out.write('$separator$countryCode');
     return out.toString();
   }
@@ -933,6 +938,10 @@ class Window {
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
   ///
+  /// It's prefered to use [SchedulerBinding.addTimingsCallback] than to use
+  /// [Window.onReportTimings] directly because
+  /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
+  ///
   /// This can be used to see if the application has missed frames (through
   /// [FrameTiming.buildDuration] and [FrameTiming.rasterDuration]), or high
   /// latencies (through [FrameTiming.totalSpan]).
@@ -1092,10 +1101,10 @@ class Window {
   /// callback was set.
   VoidCallback get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
   VoidCallback _onAccessibilityFeaturesChanged;
-  Zone _onAccessibilityFlagsChangedZone;
+  Zone _onAccessibilityFeaturesChangedZone;
   set onAccessibilityFeaturesChanged(VoidCallback callback) {
     _onAccessibilityFeaturesChanged = callback;
-    _onAccessibilityFlagsChangedZone = Zone.current;
+    _onAccessibilityFeaturesChangedZone = Zone.current;
   }
 
   /// Change the retained semantics data about this window.
@@ -1206,6 +1215,7 @@ class AccessibilityFeatures {
   static const int _kDisableAnimationsIndex = 1 << 2;
   static const int _kBoldTextIndex = 1 << 3;
   static const int _kReduceMotionIndex = 1 << 4;
+  static const int _kHighContrastIndex = 1 << 5;
 
   // A bitfield which represents each enabled feature.
   final int _index;
@@ -1233,6 +1243,11 @@ class AccessibilityFeatures {
   /// Only supported on iOS.
   bool get reduceMotion => _kReduceMotionIndex & _index != 0;
 
+  /// The platform is requesting that UI be rendered with darker colors.
+  ///
+  /// Only supported on iOS.
+  bool get highContrast => _kHighContrastIndex & _index != 0;
+
   @override
   String toString() {
     final List<String> features = <String>[];
@@ -1246,6 +1261,8 @@ class AccessibilityFeatures {
       features.add('boldText');
     if (reduceMotion)
       features.add('reduceMotion');
+    if (highContrast)
+      features.add('highContrast');
     return 'AccessibilityFeatures$features';
   }
 
@@ -1253,8 +1270,8 @@ class AccessibilityFeatures {
   bool operator ==(dynamic other) {
     if (other.runtimeType != runtimeType)
       return false;
-    final AccessibilityFeatures typedOther = other;
-    return _index == typedOther._index;
+    return other is AccessibilityFeatures
+        && other._index == _index;
   }
 
   @override

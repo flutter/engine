@@ -17,12 +17,17 @@ ClipPathLayer::ClipPathLayer(const SkPath& clip_path, Clip clip_behavior)
   FML_DCHECK(clip_behavior != Clip::none);
 }
 
-ClipPathLayer::~ClipPathLayer() = default;
-
 void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+  TRACE_EVENT0("flutter", "ClipPathLayer::Preroll");
+
   SkRect previous_cull_rect = context->cull_rect;
   SkRect clip_path_bounds = clip_path_.getBounds();
-  if (context->cull_rect.intersect(clip_path_bounds)) {
+  children_inside_clip_ = context->cull_rect.intersect(clip_path_bounds);
+  if (children_inside_clip_) {
+    TRACE_EVENT_INSTANT0("flutter", "children inside clip rect");
+
+    Layer::AutoPrerollSaveLayerState save =
+        Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
     context->mutators_stack.PushClipPath(clip_path_);
     SkRect child_paint_bounds = SkRect::MakeEmpty();
     PrerollChildren(context, matrix, &child_paint_bounds);
@@ -38,6 +43,7 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 #if defined(OS_FUCHSIA)
 
 void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
+  TRACE_EVENT0("flutter", "ClipPathLayer::UpdateScene");
   FML_DCHECK(needs_system_composite());
 
   // TODO(liyuqian): respect clip_behavior_
@@ -51,15 +57,20 @@ void ClipPathLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
   FML_DCHECK(needs_painting());
 
+  if (!children_inside_clip_) {
+    TRACE_EVENT_INSTANT0("flutter", "children not inside clip rect, skipping");
+    return;
+  }
+
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->clipPath(clip_path_,
                                           clip_behavior_ != Clip::hardEdge);
 
-  if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
+  if (UsesSaveLayer()) {
     context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
   }
   PaintChildren(context);
-  if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
+  if (UsesSaveLayer()) {
     context.internal_nodes_canvas->restore();
   }
 }

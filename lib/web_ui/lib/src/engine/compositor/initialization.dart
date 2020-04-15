@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// EXPERIMENTAL: Enable the Skia-based rendering backend.
@@ -9,7 +10,11 @@ const bool experimentalUseSkia =
     bool.fromEnvironment('FLUTTER_WEB_USE_SKIA', defaultValue: false);
 
 /// The URL to use when downloading the CanvasKit script and associated wasm.
-const String canvasKitBaseUrl = 'https://unpkg.com/canvaskit-wasm@0.7.0/bin/';
+///
+/// When CanvasKit pushes a new release to NPM, update this URL to reflect the
+/// most recent version. For example, if CanvasKit releases version 0.34.0 to
+/// NPM, update this URL to `https://unpkg.com/canvaskit-wasm@0.34.0/bin/`.
+const String canvasKitBaseUrl = 'https://unpkg.com/canvaskit-wasm@0.12.0/bin/';
 
 /// Initialize the Skia backend.
 ///
@@ -32,6 +37,10 @@ Future<void> initializeSkia() {
       },
     ]);
   });
+
+  /// Add a Skia scene host.
+  skiaSceneHost = html.Element.tag('flt-scene');
+  domRenderer.renderScene(skiaSceneHost);
   return canvasKitCompleter.future;
 }
 
@@ -42,3 +51,6 @@ js.JsObject canvasKit;
 
 /// The Skia font collection.
 SkiaFontCollection skiaFontCollection;
+
+/// The scene host, where the root canvas and overlay canvases are added to.
+html.Element skiaSceneHost;

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:ui/src/engine.dart';
@@ -15,7 +16,7 @@ void main() async {
 
   BitmapCanvas canvas;
 
-  final PaintData niceRRectPaint = PaintData()
+  final SurfacePaintData niceRRectPaint = SurfacePaintData()
     ..color = const Color.fromRGBO(250, 186, 218, 1.0) // #fabada
     ..style = PaintingStyle.fill;
 
@@ -43,7 +44,7 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_rrect_round_square.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('round rect with big radius scale down smaller radius', () async {
     for (int i = 0; i < 5; i++) {
@@ -59,7 +60,7 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_rrect_overlapping_radius.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('diff round rect with big radius scale down smaller radius', () async {
     for (int i = 0; i < 5; i++) {
@@ -82,5 +83,5 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_drrect_overlapping_radius.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 }

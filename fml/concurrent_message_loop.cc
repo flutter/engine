@@ -26,6 +26,10 @@ ConcurrentMessageLoop::ConcurrentMessageLoop(size_t worker_count)
       WorkerMain();
     });
   }
+
+  for (const auto& worker : workers_) {
+    worker_thread_ids_.emplace_back(worker.get_id());
+  }
 }
 
 ConcurrentMessageLoop::~ConcurrentMessageLoop() {
@@ -43,7 +47,7 @@ std::shared_ptr<ConcurrentTaskRunner> ConcurrentMessageLoop::GetTaskRunner() {
   return std::make_shared<ConcurrentTaskRunner>(weak_from_this());
 }
 
-void ConcurrentMessageLoop::PostTask(fml::closure task) {
+void ConcurrentMessageLoop::PostTask(const fml::closure& task) {
   if (!task) {
     return;
   }
@@ -73,25 +77,43 @@ void ConcurrentMessageLoop::PostTask(fml::closure task) {
 void ConcurrentMessageLoop::WorkerMain() {
   while (true) {
     std::unique_lock lock(tasks_mutex_);
-    tasks_condition_.wait(lock,
-                          [&]() { return tasks_.size() > 0 || shutdown_; });
+    tasks_condition_.wait(lock, [&]() {
+      return tasks_.size() > 0 || shutdown_ || HasThreadTasksLocked();
+    });
 
-    if (tasks_.size() == 0) {
-      // This can only be caused by shutdown.
-      FML_DCHECK(shutdown_);
-      break;
+    // Shutdown cannot be read with the task mutex unlocked.
+    bool shutdown_now = shutdown_;
+    fml::closure task;
+    std::vector<fml::closure> thread_tasks;
+
+    if (tasks_.size() != 0) {
+      task = tasks_.front();
+      tasks_.pop();
     }
 
-    auto task = tasks_.front();
-    tasks_.pop();
+    if (HasThreadTasksLocked()) {
+      thread_tasks = GetThreadTasksLocked();
+      FML_DCHECK(!HasThreadTasksLocked());
+    }
 
-    // Don't hold onto the mutex while the task is being executed as it could
-    // itself try to post another tasks to this message loop.
+    // Don't hold onto the mutex while tasks are being executed as they could
+    // themselves try to post more tasks to the message loop.
     lock.unlock();
 
     TRACE_EVENT0("flutter", "ConcurrentWorkerWake");
-    // Execute the one tasks we woke up for.
-    task();
+    // Execute the primary task we woke up for.
+    if (task) {
+      task();
+    }
+
+    // Execute any thread tasks.
+    for (const auto& thread_task : thread_tasks) {
+      thread_task();
+    }
+
+    if (shutdown_now) {
+      break;
+    }
   }
 }
 
@@ -101,13 +123,38 @@ void ConcurrentMessageLoop::Terminate() {
   tasks_condition_.notify_all();
 }
 
+void ConcurrentMessageLoop::PostTaskToAllWorkers(fml::closure task) {
+  if (!task) {
+    return;
+  }
+
+  std::scoped_lock lock(tasks_mutex_);
+  for (const auto& worker_thread_id : worker_thread_ids_) {
+    thread_tasks_[worker_thread_id].emplace_back(task);
+  }
+  tasks_condition_.notify_all();
+}
+
+bool ConcurrentMessageLoop::HasThreadTasksLocked() const {
+  return thread_tasks_.count(std::this_thread::get_id()) > 0;
+}
+
+std::vector<fml::closure> ConcurrentMessageLoop::GetThreadTasksLocked() {
+  auto found = thread_tasks_.find(std::this_thread::get_id());
+  FML_DCHECK(found != thread_tasks_.end());
+  std::vector<fml::closure> pending_tasks;
+  std::swap(pending_tasks, found->second);
+  thread_tasks_.erase(found);
+  return pending_tasks;
+}
+
 ConcurrentTaskRunner::ConcurrentTaskRunner(
     std::weak_ptr<ConcurrentMessageLoop> weak_loop)
     : weak_loop_(std::move(weak_loop)) {}
 
 ConcurrentTaskRunner::~ConcurrentTaskRunner() = default;
 
-void ConcurrentTaskRunner::PostTask(fml::closure task) {
+void ConcurrentTaskRunner::PostTask(const fml::closure& task) {
   if (!task) {
     return;
   }

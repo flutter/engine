@@ -1,16 +1,19 @@
 {
   "program": {
-    "binary": "bin/app"
+    "binary": "bin/app",
+    "env_vars": [
+       "ICU_TIMEZONE_FILES_DIR=/pkg/data/tzdata"
+    ]
   },
   "sandbox": {
     "features": [
-      "vulkan",
-      "deprecated-ambient-replace-as-executable"
+      "deprecated-ambient-replace-as-executable",
+      "vulkan"
     ],
     "services": [
       "fuchsia.accessibility.semantics.SemanticsManager",
       "fuchsia.intl.PropertyProvider",
-      "fuchsia.sys.Launcher"
+      "fuchsia.process.Launcher"
     ]
   }
 }

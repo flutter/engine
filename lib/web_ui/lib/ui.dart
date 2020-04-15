@@ -5,6 +5,7 @@
 /// This library defines the web equivalent of the native dart:ui.
 ///
 /// All types in this library are public.
+// @dart = 2.6
 library ui;
 
 import 'dart:async';
@@ -23,6 +24,7 @@ export 'src/engine.dart'
         webOnlySetPluginHandler,
         webOnlyInitializeEngine;
 
+part 'src/ui/annotations.dart';
 part 'src/ui/canvas.dart';
 part 'src/ui/channel_buffers.dart';
 part 'src/ui/compositing.dart';
@@ -32,6 +34,8 @@ part 'src/ui/initialization.dart';
 part 'src/ui/lerp.dart';
 part 'src/ui/natives.dart';
 part 'src/ui/painting.dart';
+part 'src/ui/path.dart';
+part 'src/ui/path_metrics.dart';
 part 'src/ui/pointer.dart';
 part 'src/ui/semantics.dart';
 part 'src/ui/test_embedding.dart';

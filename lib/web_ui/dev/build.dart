@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 
 import 'package:args/command_runner.dart';
@@ -12,7 +13,7 @@ import 'package:watcher/watcher.dart';
 import 'environment.dart';
 import 'utils.dart';
 
-class BuildCommand extends Command<bool> {
+class BuildCommand extends Command<bool> with ArgUtils {
   BuildCommand() {
     argParser
       ..addFlag(
@@ -34,15 +35,9 @@ class BuildCommand extends Command<bool> {
   @override
   String get description => 'Build the Flutter web engine.';
 
-  bool get isWatchMode => argResults['watch'];
+  bool get isWatchMode => boolArg('watch');
 
-  int getNinjaJobCount() {
-    final String ninjaJobsArg = argResults['ninja-jobs'];
-    if (ninjaJobsArg != null) {
-      return int.tryParse(ninjaJobsArg);
-    }
-    return null;
-  }
+  int getNinjaJobCount() => intArg('ninja-jobs');
 
   @override
   FutureOr<bool> run() async {
@@ -60,6 +55,8 @@ class BuildCommand extends Command<bool> {
       PipelineWatcher(
         dir: libPath.absolute,
         pipeline: buildPipeline,
+        // Ignore font files that are copied whenever tests run.
+        ignore: (event) => event.path.endsWith('.ttf'),
       ).start();
       // Return a never-ending future.
       return Completer<bool>().future;
@@ -143,10 +140,13 @@ class Pipeline {
   }
 }
 
+typedef WatchEventPredicate = bool Function(WatchEvent event);
+
 class PipelineWatcher {
   PipelineWatcher({
     @required this.dir,
     @required this.pipeline,
+    this.ignore,
   }) : watcher = DirectoryWatcher(dir);
 
   /// The path of the directory to watch for changes.
@@ -158,6 +158,10 @@ class PipelineWatcher {
   /// Used to watch a directory for any file system changes.
   final DirectoryWatcher watcher;
 
+  /// A callback that determines whether to rerun the pipeline or not for a
+  /// given [WatchEvent] instance.
+  final WatchEventPredicate ignore;
+
   void start() {
     watcher.events.listen(_onEvent);
   }
@@ -166,6 +170,10 @@ class PipelineWatcher {
   Timer _scheduledPipeline;
 
   void _onEvent(WatchEvent event) {
+    if (ignore != null && ignore(event)) {
+      return;
+    }
+
     final String relativePath = path.relative(event.path, from: dir);
     print('- [${event.type}] ${relativePath}');
 

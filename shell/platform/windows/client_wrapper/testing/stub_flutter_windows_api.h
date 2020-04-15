@@ -29,31 +29,26 @@ class StubFlutterWindowsApi {
 
   virtual ~StubFlutterWindowsApi() {}
 
-  // Called for FlutterDesktopCreateView.
+  // Called for FlutterDesktopCreateViewController.
   virtual FlutterDesktopViewControllerRef CreateViewController(
-      int initial_width,
-      int initial_height,
-      const char* assets_path,
-      const char* icu_data_path,
-      const char** arguments,
-      size_t argument_count) {
+      int width,
+      int height,
+      const FlutterDesktopEngineProperties& engine_properties) {
     return nullptr;
   }
 
   // Called for FlutterDesktopDestroyView.
   virtual void DestroyViewController() {}
 
-  // Called for FlutterDesktopProcessMessages
-  virtual uint64_t FlutterDesktopProcessMessages() { return 0; }
+  // Called for FlutterDesktopProcessMessages.
+  virtual uint64_t ProcessMessages() { return 0; }
 
-  // Called for FlutterDesktopProcessMessages
-  virtual HWND FlutterDesktopGetHWND() { return reinterpret_cast<HWND>(1); }
+  // Called for FlutterDesktopViewGetHWND.
+  virtual HWND ViewGetHWND() { return reinterpret_cast<HWND>(1); }
 
   // Called for FlutterDesktopRunEngine.
-  virtual FlutterDesktopEngineRef RunEngine(const char* assets_path,
-                                            const char* icu_data_path,
-                                            const char** arguments,
-                                            size_t argument_count) {
+  virtual FlutterDesktopEngineRef RunEngine(
+      const FlutterDesktopEngineProperties& engine_properties) {
     return nullptr;
   }
 

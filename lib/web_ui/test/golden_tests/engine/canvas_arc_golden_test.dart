@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:ui/src/engine.dart';
@@ -44,7 +45,7 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_arc_to_point.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
 }
 
@@ -57,7 +58,7 @@ void paintArc(BitmapCanvas canvas, Offset offset,
       Offset(75.0 + distance + offset.dx, 75.0 + distance + offset.dy);
   canvas.drawRect(
       Rect.fromLTRB(startP.dx, startP.dy, endP.dx, endP.dy),
-      PaintData()
+      SurfacePaintData()
         ..strokeWidth = 1
         ..color = Color(0xFFFF9800) // orange
         ..style = PaintingStyle.stroke);
@@ -70,7 +71,7 @@ void paintArc(BitmapCanvas canvas, Offset offset,
       clockwise: clockwise);
   canvas.drawPath(
       path,
-      PaintData()
+      SurfacePaintData()
         ..strokeWidth = 2
         ..color = Color(0x61000000) // black38
         ..style = PaintingStyle.stroke);

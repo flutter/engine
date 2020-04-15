@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async' show Future;
 import 'dart:html';
 
@@ -32,7 +33,8 @@ void main() {
       // Initially there is no accessibility-element
       expect(document.getElementById('accessibility-element'), isNull);
 
-      accessibilityAnnouncements.handleMessage(codec.encodeMessage(testInput));
+      accessibilityAnnouncements.handleMessage(codec,
+          codec.encodeMessage(testInput));
       expect(
         document.getElementById('accessibility-element'),
         isNotNull,

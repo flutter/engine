@@ -14,7 +14,8 @@ namespace flutter {
 class BackdropFilterLayer : public ContainerLayer {
  public:
   BackdropFilterLayer(sk_sp<SkImageFilter> filter);
-  ~BackdropFilterLayer() override;
+
+  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
 

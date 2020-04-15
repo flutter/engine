@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:io';
 
@@ -32,6 +33,8 @@ class Firefox extends Browser {
   /// Starts a new instance of Firefox open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Firefox(Uri url, {bool debug = false}) {
+    version = FirefoxArgParser.instance.version;
+
     assert(version != null);
     var remoteDebuggerCompleter = Completer<Uri>.sync();
     return Firefox._(() async {
@@ -44,20 +47,23 @@ class Firefox extends Browser {
       // https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options#Browser
       //
       var dir = createTempDir();
+      bool isMac = Platform.isMacOS;
       var args = [
         url.toString(),
-        if (!debug) '--headless',
-        '-width $kMaxScreenshotWidth'
+        '--headless',
+        '-width $kMaxScreenshotWidth',
         '-height $kMaxScreenshotHeight',
-        '-new-window',
-        '-new-instance',
+        isMac ? '--new-window' : '-new-window',
+        isMac ? '--new-instance' : '-new-instance',
         '--start-debugger-server $kDevtoolsPort',
       ];
 
-      final Process process = await Process.start(installation.executable, args);
+      final Process process =
+          await Process.start(installation.executable, args,
+            workingDirectory: dir);
 
-      remoteDebuggerCompleter.complete(getRemoteDebuggerUrl(
-          Uri.parse('http://localhost:$kDevtoolsPort')));
+      remoteDebuggerCompleter.complete(
+          getRemoteDebuggerUrl(Uri.parse('http://localhost:$kDevtoolsPort')));
 
       unawaited(process.exitCode
           .then((_) => Directory(dir).deleteSync(recursive: true)));

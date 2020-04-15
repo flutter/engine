@@ -42,8 +42,6 @@ static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 // This should be an exact copy of the Clip enum in painting.dart.
 enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
-class ContainerLayer;
-
 struct PrerollContext {
   RasterCache* raster_cache;
   GrContext* gr_context;
@@ -51,13 +49,28 @@ struct PrerollContext {
   MutatorsStack& mutators_stack;
   SkColorSpace* dst_color_space;
   SkRect cull_rect;
+  bool surface_needs_readback;
 
-  // The following allows us to paint in the end of subtree preroll
+  // These allow us to paint in the end of subtree Preroll.
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
   TextureRegistry& texture_registry;
   const bool checkerboard_offscreen_layers;
+
+  // These allow us to make use of the scene metrics during Preroll.
+  float frame_physical_depth;
+  float frame_device_pixel_ratio;
+
+  // These allow us to track properties like elevation, opacity, and the
+  // prescence of a platform view during Preroll.
   float total_elevation = 0.0f;
+  bool has_platform_view = false;
+  bool is_opaque = true;
+#if defined(OS_FUCHSIA)
+  // True if, during the traversal so far, we have seen a child_scene_layer.
+  // Informs whether a layer needs to be system composited.
+  bool child_scene_layer_exists_below = false;
+#endif  // defined(OS_FUCHSIA)
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -68,6 +81,32 @@ class Layer {
   virtual ~Layer();
 
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
+
+  // Used during Preroll by layers that employ a saveLayer to manage the
+  // PrerollContext settings with values affected by the saveLayer mechanism.
+  // This object must be created before calling Preroll on the children to
+  // set up the state for the children and then restore the state upon
+  // destruction.
+  class AutoPrerollSaveLayerState {
+   public:
+    [[nodiscard]] static AutoPrerollSaveLayerState Create(
+        PrerollContext* preroll_context,
+        bool save_layer_is_active = true,
+        bool layer_itself_performs_readback = false);
+
+    ~AutoPrerollSaveLayerState();
+
+   private:
+    AutoPrerollSaveLayerState(PrerollContext* preroll_context,
+                              bool save_layer_is_active,
+                              bool layer_itself_performs_readback);
+
+    PrerollContext* preroll_context_;
+    bool save_layer_is_active_;
+    bool layer_itself_performs_readback_;
+
+    bool prev_surface_needs_readback_;
+  };
 
   struct PaintContext {
     // When splitting the scene into multiple canvases (e.g when embedding
@@ -89,18 +128,21 @@ class Layer {
     TextureRegistry& texture_registry;
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
+
+    // These allow us to make use of the scene metrics during Paint.
+    float frame_physical_depth;
+    float frame_device_pixel_ratio;
   };
 
   // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also
   // draws a checkerboard over the layer if that is enabled in the PaintContext.
   class AutoSaveLayer {
    public:
-    FML_WARN_UNUSED_RESULT static AutoSaveLayer Create(
-        const PaintContext& paint_context,
-        const SkRect& bounds,
-        const SkPaint* paint);
+    [[nodiscard]] static AutoSaveLayer Create(const PaintContext& paint_context,
+                                              const SkRect& bounds,
+                                              const SkPaint* paint);
 
-    FML_WARN_UNUSED_RESULT static AutoSaveLayer Create(
+    [[nodiscard]] static AutoSaveLayer Create(
         const PaintContext& paint_context,
         const SkCanvas::SaveLayerRec& layer_rec);
 
@@ -125,10 +167,6 @@ class Layer {
   virtual void UpdateScene(SceneUpdateContext& context);
 #endif
 
-  ContainerLayer* parent() const { return parent_; }
-
-  void set_parent(ContainerLayer* parent) { parent_ = parent; }
-
   bool needs_system_composite() const { return needs_system_composite_; }
   void set_needs_system_composite(bool value) {
     needs_system_composite_ = value;
@@ -147,10 +185,9 @@ class Layer {
   uint64_t unique_id() const { return unique_id_; }
 
  private:
-  ContainerLayer* parent_;
-  bool needs_system_composite_;
   SkRect paint_bounds_;
   uint64_t unique_id_;
+  bool needs_system_composite_;
 
   static uint64_t NextUniqueID();
 

@@ -13,34 +13,62 @@
 #include "flutter/flow/view_holder.h"
 #include "flutter/fml/thread_local.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
 namespace {
 
-using SceneHostBindings = std::unordered_map<zx_koid_t, flutter::SceneHost*>;
+struct SceneHostBindingKey {
+  std::string isolate_service_id;
+  zx_koid_t koid;
 
-FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<SceneHostBindings>
-    tls_scene_host_bindings;
-
-void SceneHost_constructor(Dart_NativeArguments args) {
-  // This UI thread / Isolate contains at least 1 SceneHost.  Initialize the
-  // per-Isolate bindings.
-  if (tls_scene_host_bindings.get() == nullptr) {
-    tls_scene_host_bindings.reset(new SceneHostBindings());
+  SceneHostBindingKey(const zx_koid_t koid,
+                      const std::string isolate_service_id) {
+    this->koid = koid;
+    this->isolate_service_id = isolate_service_id;
   }
 
+  bool operator==(const SceneHostBindingKey& other) const {
+    return isolate_service_id == other.isolate_service_id && koid == other.koid;
+  }
+};
+
+struct SceneHostBindingKeyHasher {
+  std::size_t operator()(const SceneHostBindingKey& key) const {
+    std::size_t koid_hash = std::hash<zx_koid_t>()(key.koid);
+    std::size_t isolate_hash = std::hash<std::string>()(key.isolate_service_id);
+    return koid_hash ^ isolate_hash;
+  }
+};
+
+using SceneHostBindings = std::unordered_map<SceneHostBindingKey,
+                                             flutter::SceneHost*,
+                                             SceneHostBindingKeyHasher>;
+
+static SceneHostBindings scene_host_bindings;
+
+void SceneHost_constructor(Dart_NativeArguments args) {
   tonic::DartCallConstructor(&flutter::SceneHost::Create, args);
 }
 
-flutter::SceneHost* GetSceneHost(scenic::ResourceId id) {
-  auto* bindings = tls_scene_host_bindings.get();
-  FML_DCHECK(bindings);
-
-  auto binding = bindings->find(id);
-  if (binding != bindings->end()) {
+flutter::SceneHost* GetSceneHost(scenic::ResourceId id,
+                                 std::string isolate_service_id) {
+  auto binding =
+      scene_host_bindings.find(SceneHostBindingKey(id, isolate_service_id));
+  if (binding == scene_host_bindings.end()) {
+    return nullptr;
+  } else {
     return binding->second;
   }
+}
 
-  return nullptr;
+flutter::SceneHost* GetSceneHostForCurrentIsolate(scenic::ResourceId id) {
+  auto isolate = Dart_CurrentIsolate();
+  if (!isolate) {
+    return nullptr;
+  } else {
+    std::string isolate_service_id = Dart_IsolateServiceId(isolate);
+    return GetSceneHost(id, isolate_service_id);
+  }
 }
 
 void InvokeDartClosure(const tonic::DartPersistentValue& closure) {
@@ -85,10 +113,9 @@ namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, SceneHost);
 
-#define FOR_EACH_BINDING(V)   \
-  V(SceneHost, dispose)       \
-  V(SceneHost, setProperties) \
-  V(SceneHost, setOpacity)
+#define FOR_EACH_BINDING(V) \
+  V(SceneHost, dispose)     \
+  V(SceneHost, setProperties)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -108,7 +135,7 @@ fml::RefPtr<SceneHost> SceneHost::Create(
 }
 
 void SceneHost::OnViewConnected(scenic::ResourceId id) {
-  auto* scene_host = GetSceneHost(id);
+  auto* scene_host = GetSceneHostForCurrentIsolate(id);
 
   if (scene_host && !scene_host->view_connected_callback_.is_empty()) {
     InvokeDartClosure(scene_host->view_connected_callback_);
@@ -116,7 +143,7 @@ void SceneHost::OnViewConnected(scenic::ResourceId id) {
 }
 
 void SceneHost::OnViewDisconnected(scenic::ResourceId id) {
-  auto* scene_host = GetSceneHost(id);
+  auto* scene_host = GetSceneHostForCurrentIsolate(id);
 
   if (scene_host && !scene_host->view_disconnected_callback_.is_empty()) {
     InvokeDartClosure(scene_host->view_disconnected_callback_);
@@ -124,7 +151,7 @@ void SceneHost::OnViewDisconnected(scenic::ResourceId id) {
 }
 
 void SceneHost::OnViewStateChanged(scenic::ResourceId id, bool state) {
-  auto* scene_host = GetSceneHost(id);
+  auto* scene_host = GetSceneHostForCurrentIsolate(id);
 
   if (scene_host && !scene_host->view_state_changed_callback_.is_empty()) {
     InvokeDartFunction(scene_host->view_state_changed_callback_, state);
@@ -135,10 +162,11 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderToken,
                      Dart_Handle viewConnectedCallback,
                      Dart_Handle viewDisconnectedCallback,
                      Dart_Handle viewStateChangedCallback)
-    : gpu_task_runner_(
-          UIDartState::Current()->GetTaskRunners().GetGPUTaskRunner()),
+    : raster_task_runner_(
+          UIDartState::Current()->GetTaskRunners().GetRasterTaskRunner()),
       koid_(GetKoid(viewHolderToken->handle())) {
   auto dart_state = UIDartState::Current();
+  isolate_service_id_ = Dart_IsolateServiceId(Dart_CurrentIsolate());
 
   // Initialize callbacks it they are non-null in Dart.
   if (!Dart_IsNull(viewConnectedCallback)) {
@@ -152,18 +180,17 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderToken,
   }
 
   // This callback will be posted as a task  when the |scenic::ViewHolder|
-  // resource is created and given an id by the GPU thread.
-  auto bind_callback = [scene_host = this](scenic::ResourceId id) {
-    auto* bindings = tls_scene_host_bindings.get();
-    FML_DCHECK(bindings);
-    FML_DCHECK(bindings->find(id) == bindings->end());
-
-    bindings->emplace(std::make_pair(id, scene_host));
+  // resource is created and given an id by the raster thread.
+  auto bind_callback = [scene_host = this,
+                        isolate_service_id =
+                            isolate_service_id_](scenic::ResourceId id) {
+    const auto key = SceneHostBindingKey(id, isolate_service_id);
+    scene_host_bindings.emplace(std::make_pair(key, scene_host));
   };
 
-  // Pass the raw handle to the GPU thead; destroying a |zircon::dart::Handle|
-  // on that thread can cause a race condition.
-  gpu_task_runner_->PostTask(
+  // Pass the raw handle to the raster thread; destroying a
+  // |zircon::dart::Handle| on that thread can cause a race condition.
+  raster_task_runner_->PostTask(
       [id = koid_,
        ui_task_runner =
            UIDartState::Current()->GetTaskRunners().GetUITaskRunner(),
@@ -176,11 +203,9 @@ SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> viewHolderToken,
 }
 
 SceneHost::~SceneHost() {
-  auto* bindings = tls_scene_host_bindings.get();
-  FML_DCHECK(bindings);
-  bindings->erase(koid_);
+  scene_host_bindings.erase(SceneHostBindingKey(koid_, isolate_service_id_));
 
-  gpu_task_runner_->PostTask(
+  raster_task_runner_->PostTask(
       [id = koid_]() { flutter::ViewHolder::Destroy(id); });
 }
 
@@ -195,22 +220,14 @@ void SceneHost::setProperties(double width,
                               double insetBottom,
                               double insetLeft,
                               bool focusable) {
-  gpu_task_runner_->PostTask([id = koid_, width, height, insetTop, insetRight,
-                              insetBottom, insetLeft, focusable]() {
+  raster_task_runner_->PostTask([id = koid_, width, height, insetTop,
+                                 insetRight, insetBottom, insetLeft,
+                                 focusable]() {
     auto* view_holder = flutter::ViewHolder::FromId(id);
     FML_DCHECK(view_holder);
 
     view_holder->SetProperties(width, height, insetTop, insetRight, insetBottom,
                                insetLeft, focusable);
-  });
-}
-
-void SceneHost::setOpacity(double opacity) {
-  gpu_task_runner_->PostTask([id = koid_, opacity]() {
-    auto* view_holder = flutter::ViewHolder::FromId(id);
-    FML_DCHECK(view_holder);
-
-    view_holder->SetOpacity(opacity);
   });
 }
 

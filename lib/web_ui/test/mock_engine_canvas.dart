@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -121,7 +122,7 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawLine(Offset p1, Offset p2, PaintData paint) {
+  void drawLine(Offset p1, Offset p2, SurfacePaintData paint) {
     _called('drawLine', arguments: <String, dynamic>{
       'p1': p1,
       'p2': p2,
@@ -130,17 +131,20 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawPaint(PaintData paint) {
+  void drawPaint(SurfacePaintData paint) {
     _called('drawPaint', arguments: paint);
   }
 
   @override
-  void drawRect(Rect rect, PaintData paint) {
-    _called('drawRect', arguments: paint);
+  void drawRect(Rect rect, SurfacePaintData paint) {
+    _called('drawRect', arguments: <String, dynamic>{
+      'rect': rect,
+      'paint': paint,
+    });
   }
 
   @override
-  void drawRRect(RRect rrect, PaintData paint) {
+  void drawRRect(RRect rrect, SurfacePaintData paint) {
     _called('drawRRect', arguments: <String, dynamic>{
       'rrect': rrect,
       'paint': paint,
@@ -148,7 +152,7 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawDRRect(RRect outer, RRect inner, PaintData paint) {
+  void drawDRRect(RRect outer, RRect inner, SurfacePaintData paint) {
     _called('drawDRRect', arguments: <String, dynamic>{
       'outer': outer,
       'inner': inner,
@@ -157,7 +161,7 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawOval(Rect rect, PaintData paint) {
+  void drawOval(Rect rect, SurfacePaintData paint) {
     _called('drawOval', arguments: <String, dynamic>{
       'rect': rect,
       'paint': paint,
@@ -165,7 +169,7 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawCircle(Offset c, double radius, PaintData paint) {
+  void drawCircle(Offset c, double radius, SurfacePaintData paint) {
     _called('drawCircle', arguments: <String, dynamic>{
       'c': c,
       'radius': radius,
@@ -174,7 +178,7 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawPath(Path path, PaintData paint) {
+  void drawPath(Path path, SurfacePaintData paint) {
     _called('drawPath', arguments: <String, dynamic>{
       'path': path,
       'paint': paint,
@@ -193,7 +197,7 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawImage(Image image, Offset p, PaintData paint) {
+  void drawImage(Image image, Offset p, SurfacePaintData paint) {
     _called('drawImage', arguments: <String, dynamic>{
       'image': image,
       'p': p,
@@ -202,7 +206,7 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawImageRect(Image image, Rect src, Rect dst, PaintData paint) {
+  void drawImageRect(Image image, Rect src, Rect dst, SurfacePaintData paint) {
     _called('drawImageRect', arguments: <String, dynamic>{
       'image': image,
       'src': src,
@@ -220,12 +224,28 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawVertices(Vertices vertices, BlendMode blendMode,
-      PaintData paint) {
+  void drawVertices(
+      Vertices vertices, BlendMode blendMode, SurfacePaintData paint) {
     _called('drawVertices', arguments: <String, dynamic>{
       'vertices': vertices,
       'blendMode': blendMode,
       'paint': paint,
     });
+  }
+
+  @override
+  void drawPoints(PointMode pointMode, Float32List points, double strokeWidth,
+      Color color) {
+    _called('drawPoints', arguments: <String, dynamic>{
+      'pointMode': pointMode,
+      'points': points,
+      'strokeWidth': strokeWidth,
+      'color': color,
+    });
+  }
+
+  @override
+  void endOfPaint() {
+    _called('endOfPaint', arguments: <String, dynamic>{});
   }
 }
