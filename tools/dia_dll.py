@@ -67,7 +67,7 @@ def CopyDiaDllTo(target_dir):
 
 
 def main():
-  CopyDiaDllTo(LLVM_BUILD_DIR)
+  CopyDiaDllTo(os.path.join(LLVM_BUILD_DIR, 'bin'))
   return 0
 
 
