@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <iosfwd>
+#include <iostream>
 #include <limits>
 
 namespace fml {
@@ -119,9 +120,16 @@ class TimeDelta {
  private:
   // Private, use one of the FromFoo() types
   explicit constexpr TimeDelta(int64_t delta) : delta_(delta) {}
+  friend std::ostream& operator<<(std::ostream& out,
+                                  const TimeDelta& time_point);
 
   int64_t delta_ = 0;
 };
+
+std::ostream& operator<<(std::ostream& os, const TimeDelta& time_point) {
+  os << time_point.delta_;
+  return os;
+}
 
 }  // namespace fml
 

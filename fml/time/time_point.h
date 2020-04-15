@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include <iosfwd>
+#include <iostream>
 
 #include "flutter/fml/time/time_delta.h"
 
@@ -61,9 +62,16 @@ class TimePoint {
 
  private:
   explicit constexpr TimePoint(int64_t ticks) : ticks_(ticks) {}
+  friend std::ostream& operator<<(std::ostream& out,
+                                  const TimePoint& time_point);
 
   int64_t ticks_ = 0;
 };
+
+std::ostream& operator<<(std::ostream& os, const TimePoint& time_point) {
+  os << time_point.ticks_;
+  return os;
+}
 
 }  // namespace fml
 
