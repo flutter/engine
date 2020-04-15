@@ -37,14 +37,10 @@ _flutter_framework_headers = [
 
 _flutter_framework_headers_copy_dir = "$_flutter_framework_dir/Headers"
 
-shared_library("create_flutter_framework_dylib") {
+source_set("flutter_framework_source") {
   visibility = [ ":*" ]
-
-  output_name = "Flutter"
-
-  ldflags = [ "-Wl,-install_name,@rpath/Flutter.framework/Flutter" ]
-
-  public = _flutter_framework_headers
+  cflags_objc = flutter_cflags_objc
+  cflags_objcc = flutter_cflags_objcc
 
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
@@ -73,6 +69,8 @@ shared_library("create_flutter_framework_dylib") {
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
     "framework/Source/FlutterViewController_Internal.h",
+    "framework/Source/SemanticsObject.h",
+    "framework/Source/SemanticsObject.mm",
     "framework/Source/accessibility_bridge.h",
     "framework/Source/accessibility_bridge.mm",
     "framework/Source/accessibility_text_entry.h",
@@ -107,6 +105,21 @@ shared_library("create_flutter_framework_dylib") {
 
   sources += _flutter_framework_headers
 
+  defines = [ "FLUTTER_FRAMEWORK=1" ]
+
+  if (shell_enable_metal) {
+    defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
+
+    sources += [
+      "ios_context_metal.h",
+      "ios_context_metal.mm",
+      "ios_external_texture_metal.h",
+      "ios_external_texture_metal.mm",
+      "ios_surface_metal.h",
+      "ios_surface_metal.mm",
+    ]
+  }
+
   deps = [
     ":ios_gpu_configuration",
     "//flutter/common",
@@ -123,21 +136,6 @@ shared_library("create_flutter_framework_dylib") {
 
   public_configs = [ "//flutter:config" ]
 
-  defines = [ "FLUTTER_FRAMEWORK=1" ]
-
-  if (shell_enable_metal) {
-    defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
-
-    sources += [
-      "ios_context_metal.h",
-      "ios_context_metal.mm",
-      "ios_external_texture_metal.h",
-      "ios_external_texture_metal.mm",
-      "ios_surface_metal.h",
-      "ios_surface_metal.mm",
-    ]
-  }
-
   libs = [
     "CoreMedia.framework",
     "CoreVideo.framework",
@@ -146,6 +144,62 @@ shared_library("create_flutter_framework_dylib") {
     "AudioToolbox.framework",
     "QuartzCore.framework",
   ]
+}
+
+ios_test_flutter_path = rebase_path("$root_out_dir/libios_test_flutter.dylib")
+platform_frameworks_path = "$ios_sdk_path/../../Library/Frameworks/"
+
+# NOTE: This currently only supports simulator targets because of the install_name.
+# TODO(54504): Switch the install_name and make the test runner copy the dynamic
+#              library into the testing bundle.
+shared_library("ios_test_flutter") {
+  visibility = [ ":*" ]
+  cflags = [
+    "-fvisibility=default",
+    "-F$platform_frameworks_path",
+    "-fobjc-arc",
+    "-mios-simulator-version-min=$ios_testing_deployment_target",
+  ]
+  ldflags = [
+    "-F$platform_frameworks_path",
+    "-Wl,-framework,XCTest",
+    "-Wl,-install_name,$ios_test_flutter_path",
+  ]
+  configs -= [
+    "//build/config/gcc:symbol_visibility_hidden",
+    "//build/config:symbol_visibility_hidden",
+  ]
+  sources = [
+    "framework/Source/FlutterBinaryMessengerRelayTest.mm",
+    "framework/Source/FlutterEngineTest.mm",
+    "framework/Source/FlutterPluginAppLifeCycleDelegateTest.m",
+    "framework/Source/FlutterTextInputPluginTest.m",
+    "framework/Source/FlutterViewControllerTest.mm",
+    "framework/Source/SemanticsObjectTest.mm",
+  ]
+  deps = [
+    ":flutter_framework_source",
+    "//flutter/shell/platform/darwin/common:framework_shared",
+    "//third_party/ocmock:ocmock",
+    "//third_party/skia",
+  ]
+  public_configs = [ "//flutter:config" ]
+}
+
+shared_library("create_flutter_framework_dylib") {
+  visibility = [ ":*" ]
+
+  output_name = "Flutter"
+
+  ldflags = [ "-Wl,-install_name,@rpath/Flutter.framework/Flutter" ]
+
+  public = _flutter_framework_headers
+
+  deps = [
+    ":flutter_framework_source",
+  ]
+
+  public_configs = [ "//flutter:config" ]
 }
 
 copy("copy_dylib") {
@@ -252,6 +306,7 @@ test_fixtures("flutter_tests_fixtures") {
   fixtures = []
 }
 
+# Note: This currently isn't used, it might be removed.
 ios_app("FlutterTests") {
   testonly = true
 

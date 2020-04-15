@@ -8,6 +8,8 @@
 
 #include <utility>
 
+#include "flutter/fml/time/time_delta.h"
+#include "flutter/fml/time/time_point.h"
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -134,6 +136,16 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
   }
 
+  // Merging the thread as we know the next `Draw` should be run on the platform
+  // thread.
+  if (raster_status == RasterStatus::kResubmit) {
+    auto* external_view_embedder = surface_->GetExternalViewEmbedder();
+    // We know only the `external_view_embedder` can
+    // causes|RasterStatus::kResubmit|. Check to make sure.
+    FML_DCHECK(external_view_embedder != nullptr);
+    external_view_embedder->EndFrame(raster_thread_merger_);
+  }
+
   // Consume as many pipeline items as possible. But yield the event loop
   // between successive tries.
   switch (consume_result) {
@@ -240,6 +252,7 @@ RasterStatus Rasterizer::DoDraw(
   }
 
   FrameTiming timing;
+  const fml::TimePoint frame_target_time = layer_tree->target_time();
   timing.Set(FrameTiming::kBuildStart, layer_tree->build_start());
   timing.Set(FrameTiming::kBuildFinish, layer_tree->build_finish());
   timing.Set(FrameTiming::kRasterStart, fml::TimePoint::Now());
@@ -265,8 +278,35 @@ RasterStatus Rasterizer::DoDraw(
   // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish when
   // Rasterizer::DoDraw finishes. Future work is needed to adapt the timestamp
   // for Fuchsia to capture SceneUpdateContext::ExecutePaintTasks.
-  timing.Set(FrameTiming::kRasterFinish, fml::TimePoint::Now());
+  const auto raster_finish_time = fml::TimePoint::Now();
+  timing.Set(FrameTiming::kRasterFinish, raster_finish_time);
   delegate_.OnFrameRasterized(timing);
+
+  if (raster_finish_time > frame_target_time) {
+    fml::TimePoint latest_frame_target_time =
+        delegate_.GetLatestFrameTargetTime();
+    const auto frame_budget_millis = delegate_.GetFrameBudget().count();
+    if (latest_frame_target_time < raster_finish_time) {
+      latest_frame_target_time =
+          latest_frame_target_time +
+          fml::TimeDelta::FromMillisecondsF(frame_budget_millis);
+    }
+    const auto frame_lag =
+        (latest_frame_target_time - frame_target_time).ToMillisecondsF();
+    const int vsync_transitions_missed = round(frame_lag / frame_budget_millis);
+    fml::tracing::TraceEventAsyncComplete(
+        "flutter",                    // category
+        "SceneDisplayLag",            // name
+        raster_finish_time,           // begin_time
+        latest_frame_target_time,     // end_time
+        "frame_target_time",          // arg_key_1
+        frame_target_time,            // arg_val_1
+        "current_frame_target_time",  // arg_key_2
+        latest_frame_target_time,     // arg_val_2
+        "vsync_transitions_missed",   // arg_key_3
+        vsync_transitions_missed      // arg_val_3
+    );
+  }
 
   // Pipeline pressure is applied from a couple of places:
   // rasterizer: When there are more items as of the time of Consume.

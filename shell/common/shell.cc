@@ -931,12 +931,17 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_time) {
+void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
+  // record the target time for use by rasterizer.
+  {
+    std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+    latest_frame_target_time_.emplace(frame_target_time);
+  }
   if (engine_) {
-    engine_->BeginFrame(frame_time);
+    engine_->BeginFrame(frame_target_time);
   }
 }
 
@@ -1165,6 +1170,13 @@ fml::Milliseconds Shell::GetFrameBudget() {
   }
 }
 
+fml::TimePoint Shell::GetLatestFrameTargetTime() const {
+  std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+  FML_CHECK(latest_frame_target_time_.has_value())
+      << "GetLatestFrameTargetTime called before OnAnimatorBeginFrame";
+  return latest_frame_target_time_.value();
+}
+
 // |ServiceProtocol::Handler|
 fml::RefPtr<fml::TaskRunner> Shell::GetServiceProtocolHandlerTaskRunner(
     std::string_view method) const {
@@ -1300,6 +1312,7 @@ bool Shell::OnServiceProtocolRunInView(
   configuration.AddAssetResolver(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
           asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
+  PersistentCache::UpdateAssetPath(asset_directory_path);
 
   auto& allocator = response.GetAllocator();
   response.SetObject();
@@ -1394,6 +1407,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
   asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
       fml::OpenDirectory(params.at("assetDirectory").data(), false,
                          fml::FilePermission::kRead)));
+  PersistentCache::UpdateAssetPath(params.at("assetDirectory").data());
 
   if (engine_->UpdateAssetManager(std::move(asset_manager))) {
     response.AddMember("type", "Success", allocator);
