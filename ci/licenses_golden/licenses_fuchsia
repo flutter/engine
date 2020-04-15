@@ -1,4 +1,4 @@
-Signature: adc98c90de1d424da0f0546ff7689965
+Signature: 2da6a5acd07c2b9887c4985c26a2708d
 
 UNUSED LICENSES:
 
@@ -2674,7 +2674,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/stream_processor.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/stream_type.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/timeline_function.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mediacodec/codec_factory.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/intent/intent_handler.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module/module_manifest.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/puppet_master.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/story_command.fidl
@@ -3269,6 +3268,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/activity_reporter.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/profile_provider.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.memorypressure/memorypressure.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/session/session_restart_controller.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/socket.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/night_mode.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/events.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/keyboard.fidl
