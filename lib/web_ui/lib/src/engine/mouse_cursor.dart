@@ -20,9 +20,6 @@ class MouseCursor {
   static MouseCursor _instance;
 
   MouseCursor._() {
-    registerHotRestartListener(() {
-      dispose();
-    });
   }
 
   static String _mapShapeCodeToCssValue(int shapeCode) {
@@ -57,14 +54,4 @@ class MouseCursor {
       _mapShapeCodeToCssValue(shapeCode),
     );
   }
-
-  /// Uninitializes the [MouseCursor] singleton.
-  ///
-  /// After calling this method this object becomes unusable and [instance]
-  /// becomes `null`. Call [initialize] again to initialize a new singleton.
-  void dispose() {
-  }
-
-  static const StandardMessageCodec _messageCodec = StandardMessageCodec();
-
 }
