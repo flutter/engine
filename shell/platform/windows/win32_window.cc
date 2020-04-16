@@ -208,17 +208,12 @@ Win32Window::MessageHandler(HWND hwnd,
           lead_surrogate = 0;
         }
 
-        // In an ENG-INTL keyboard, pressing "'" + "e" produces é. In this case,
-        // the "'" key is a dead char, and shouldn't be sent to window->OnChar
-        // for text input. However, the key event should still be sent to
-        // Flutter. The result would be:
-        // * Key event - key code: 222 (quote) - key label: '
-        // * Key event - key code: 69 (e) - key label: é
-        //
-        // As for text input, only the second key press will display a
-        // character.
-        if (wparam != VK_BACK && message != WM_DEADCHAR &&
-            message != WM_SYSDEADCHAR) {
+        // Of the messages handled here, only WM_CHAR should be treated as
+        // characters. WM_SYS*CHAR are not part of text input, and WM_DEADCHAR
+        // will be incorporated into a later WM_CHAR with the full character.
+        // WM_CHAR helpfully includes ASCII control characters for control key
+        // shortcuts, so those need to be filtered out as well.
+        if (message == WM_CHAR && code_point >= U' ') {
           window->OnChar(code_point);
         }
 
