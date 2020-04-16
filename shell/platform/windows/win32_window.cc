@@ -196,24 +196,29 @@ Win32Window::MessageHandler(HWND hwnd,
       case WM_CHAR:
       case WM_SYSCHAR: {
         char32_t code_point = static_cast<char32_t>(wparam);
-        static char32_t lead_surrogate = 0;
+        static char32_t s_pending_lead_surrogate = 0;
         // If code_point is LeadSurrogate, save to combine to potentially form
         // a complex Unicode character.
         if ((code_point & 0xFFFFFC00) == 0xD800) {
-          lead_surrogate = code_point;
-        } else if (lead_surrogate != 0 && (code_point & 0xFFFFFC00) == 0xDC00) {
+          s_pending_lead_surrogate = code_point;
+        } else if (s_pending_lead_surrogate != 0 &&
+                   (code_point & 0xFFFFFC00) == 0xDC00) {
           // Merge TrailSurrogate and LeadSurrogate.
-          code_point = 0x10000 + ((lead_surrogate & 0x000003FF) << 10) +
+          code_point = 0x10000 +
+                       ((s_pending_lead_surrogate & 0x000003FF) << 10) +
                        (code_point & 0x3FF);
-          lead_surrogate = 0;
+          s_pending_lead_surrogate = 0;
         }
 
         // Of the messages handled here, only WM_CHAR should be treated as
         // characters. WM_SYS*CHAR are not part of text input, and WM_DEADCHAR
         // will be incorporated into a later WM_CHAR with the full character.
-        // WM_CHAR helpfully includes ASCII control characters for control key
-        // shortcuts, so those need to be filtered out as well.
-        if (message == WM_CHAR && code_point >= U' ') {
+        // Also filter out:
+        // - Lead surrogates, which like dead keys will be send once combined.
+        // - ASCII control characters, which are sent as WM_CHAR events for all
+        //   control key shortcuts.
+        if (message == WM_CHAR && code_point >= U' ' &&
+            s_pending_lead_surrogate == 0) {
           window->OnChar(code_point);
         }
 
