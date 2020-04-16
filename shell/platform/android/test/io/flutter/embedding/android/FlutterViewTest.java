@@ -7,6 +7,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.ArgumentCaptor;
 
 import android.content.Context;
 import android.content.res.Configuration;
@@ -187,5 +188,23 @@ public class FlutterViewTest {
 
     // Verify results.
     assertEquals(SettingsChannel.PlatformBrightness.dark, reportedBrightness.get());
+  }
+
+  @Test
+  public void setPaddingTopToZeroForFullScreenMode() {
+    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    flutterView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+    FlutterEngine flutterEngine =
+         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    //When
+    flutterView.attachToFlutterEngine(flutterEngine);
+
+    //Then
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor = ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
   }
 }
