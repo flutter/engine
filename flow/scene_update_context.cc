@@ -252,12 +252,12 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
       // instead to make sure layers appear in proper order.
       entity_node().SetTranslation(decomposition.translation().x,  //
                                    decomposition.translation().y,  //
-                                   0.f                               //
+                                   0.f                             //
       );
 
       entity_node().SetScale(decomposition.scale().x,  //
                              decomposition.scale().y,  //
-                             1.f                         //
+                             1.f                       //
       );
       context.top_scale_x_ *= decomposition.scale().x;
       context.top_scale_y_ *= decomposition.scale().y;
