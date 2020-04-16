@@ -341,7 +341,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           contentResolver,
           new AccessibilityViewEmbedder(rootAccessibilityView, MIN_ENGINE_GENERATED_NODE_ID),
           platformViewsAccessibilityDelegate);
-   }
   }
 
   @VisibleForTesting
