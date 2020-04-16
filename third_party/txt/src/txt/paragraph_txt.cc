@@ -1650,6 +1650,10 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
   // RectWidthStyle::kMax.
   TextDirection first_line_dir = TextDirection::ltr;
 
+  // Text direction of the last run of each line so we can determine
+  // line end positions
+  std::map<size_t, TextDirection> line_last_run_directions;
+
   // Lines that are actually in the requested range.
   size_t max_line = 0;
   size_t min_line = INT_MAX;
@@ -1660,6 +1664,9 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     // Check to see if we are finished.
     if (run.code_units.start >= end)
       break;
+
+    line_last_run_directions[run.line_number] = run.direction;
+
     if (run.code_units.end <= start)
       continue;
 
@@ -1735,7 +1742,9 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
         if (glyph_lines_[line_number].positions.empty()) {
           x = GetLineXOffset(0, line_number, false);
         } else {
-          x = glyph_line.positions.back().x_pos.end;
+          x = line_last_run_directions[line_number] == TextDirection::ltr
+                  ? glyph_line.positions.back().x_pos.end
+                  : glyph_line.positions.front().x_pos.start;
         }
         SkScalar top =
             (line_number > 0) ? line_metrics_[line_number - 1].height : 0;
