@@ -881,6 +881,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewCon
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge_ios.h
@@ -1181,6 +1182,9 @@ FILE: ../../../flutter/shell/platform/windows/keyboard_hook_handler.h
 FILE: ../../../flutter/shell/platform/windows/platform_handler.cc
 FILE: ../../../flutter/shell/platform/windows/platform_handler.h
 FILE: ../../../flutter/shell/platform/windows/public/flutter_windows.h
+FILE: ../../../flutter/shell/platform/windows/string_conversion.cc
+FILE: ../../../flutter/shell/platform/windows/string_conversion.h
+FILE: ../../../flutter/shell/platform/windows/string_conversion_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/windows/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/windows/win32_flutter_window.cc
