@@ -44,7 +44,7 @@ import java.util.Map;
  * corresponding platform view and `originId`.
  */
 @Keep
-final class AccessibilityViewEmbedder {
+class AccessibilityViewEmbedder {
   private static final String TAG = "AccessibilityBridge";
 
   private final ReflectionAccessors reflectionAccessors;
