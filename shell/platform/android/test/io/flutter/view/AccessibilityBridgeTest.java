@@ -88,7 +88,8 @@ public class AccessibilityBridgeTest {
     Context context = mock(Context.class);
     when(mockRootView.getContext()).thenReturn(context);
     when(context.getPackageName()).thenReturn("test");
-    AccessibilityBridge accessibilityBridge = setUpBridge(mockRootView, mockManager, mockViewEmbedder);
+    AccessibilityBridge accessibilityBridge =
+        setUpBridge(mockRootView, mockManager, mockViewEmbedder);
 
     // Sent a11y tree with platform view.
     TestSemanticsNode root = new TestSemanticsNode();
@@ -103,7 +104,8 @@ public class AccessibilityBridgeTest {
     // Set a11y focus to platform view.
     View mockView = mock(View.class);
     AccessibilityEvent focusEvent = mock(AccessibilityEvent.class);
-    when(mockViewEmbedder.requestSendAccessibilityEvent(mockView, mockView, focusEvent)).thenReturn(true);
+    when(mockViewEmbedder.requestSendAccessibilityEvent(mockView, mockView, focusEvent))
+        .thenReturn(true);
     when(mockViewEmbedder.getRecordFlutterId(mockView, focusEvent)).thenReturn(42);
     when(focusEvent.getEventType()).thenReturn(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
     accessibilityBridge.externalViewRequestSendAccessibilityEvent(mockView, mockView, focusEvent);
@@ -120,8 +122,10 @@ public class AccessibilityBridgeTest {
     accessibilityBridge.updateSemantics(testSemanticsUpdate.buffer, testSemanticsUpdate.strings);
 
     // Check that unfocus event was sent.
-    ArgumentCaptor<AccessibilityEvent> eventCaptor = ArgumentCaptor.forClass(AccessibilityEvent.class);
-    verify(mockParent, times(2)).requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
+    ArgumentCaptor<AccessibilityEvent> eventCaptor =
+        ArgumentCaptor.forClass(AccessibilityEvent.class);
+    verify(mockParent, times(2))
+        .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
     AccessibilityEvent event = eventCaptor.getAllValues().get(0);
     assertEquals(event.getEventType(), AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
   }
@@ -130,18 +134,21 @@ public class AccessibilityBridgeTest {
     return setUpBridge(null, null, null, null, null, null);
   }
 
-  AccessibilityBridge setUpBridge(View rootAccessibilityView, AccessibilityManager accessibilityManager, AccessibilityViewEmbedder accessibilityViewEmbedder) {
-    return setUpBridge(rootAccessibilityView, null, accessibilityManager, null, accessibilityViewEmbedder, null);
+  AccessibilityBridge setUpBridge(
+      View rootAccessibilityView,
+      AccessibilityManager accessibilityManager,
+      AccessibilityViewEmbedder accessibilityViewEmbedder) {
+    return setUpBridge(
+        rootAccessibilityView, null, accessibilityManager, null, accessibilityViewEmbedder, null);
   }
 
   AccessibilityBridge setUpBridge(
-    View rootAccessibilityView,
-    AccessibilityChannel accessibilityChannel,
-    AccessibilityManager accessibilityManager,
-    ContentResolver contentResolver,
-    AccessibilityViewEmbedder accessibilityViewEmbedder,
-    PlatformViewsAccessibilityDelegate platformViewsAccessibilityDelegate
-  ) {
+      View rootAccessibilityView,
+      AccessibilityChannel accessibilityChannel,
+      AccessibilityManager accessibilityManager,
+      ContentResolver contentResolver,
+      AccessibilityViewEmbedder accessibilityViewEmbedder,
+      PlatformViewsAccessibilityDelegate platformViewsAccessibilityDelegate) {
     if (rootAccessibilityView == null) {
       rootAccessibilityView = mock(View.class);
       Context context = mock(Context.class);
@@ -164,11 +171,12 @@ public class AccessibilityBridgeTest {
       platformViewsAccessibilityDelegate = mock(PlatformViewsAccessibilityDelegate.class);
     }
     return new AccessibilityBridge(
-            rootAccessibilityView,
-            accessibilityChannel,
-            accessibilityManager,
-            contentResolver,
-            accessibilityViewEmbedder, platformViewsAccessibilityDelegate);
+        rootAccessibilityView,
+        accessibilityChannel,
+        accessibilityManager,
+        contentResolver,
+        accessibilityViewEmbedder,
+        platformViewsAccessibilityDelegate);
   }
 
   /// The encoding for semantics is described in platform_view_android.cc
@@ -215,7 +223,7 @@ public class AccessibilityBridgeTest {
     float right = 0.0f;
     float bottom = 0.0f;
     final List<TestSemanticsNode> children = new ArrayList<TestSemanticsNode>();
-    //custom actions not supported.
+    // custom actions not supported.
 
     TestSemanticsUpdate toUpdate() {
       ArrayList<String> strings = new ArrayList<String>();

@@ -334,7 +334,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       // TODO(mattcarrol): Add the annotation once the plumbing is done.
       // https://github.com/flutter/flutter/issues/29618
       PlatformViewsAccessibilityDelegate platformViewsAccessibilityDelegate) {
-    this(rootAccessibilityView, accessibilityChannel, accessibilityManager, contentResolver, new AccessibilityViewEmbedder(rootAccessibilityView, MIN_ENGINE_GENERATED_NODE_ID), platformViewsAccessibilityDelegate);
+      this(
+          rootAccessibilityView,
+          accessibilityChannel,
+          accessibilityManager,
+          contentResolver,
+          new AccessibilityViewEmbedder(rootAccessibilityView, MIN_ENGINE_GENERATED_NODE_ID),
+          platformViewsAccessibilityDelegate);
+   }
   }
 
   @VisibleForTesting
