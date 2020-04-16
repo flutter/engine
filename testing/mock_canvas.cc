@@ -67,8 +67,8 @@ void MockCanvas::didConcat44(const SkScalar matrix[]) {
 }
 #else
 void MockCanvas::didConcat44(const SkM44& matrix) {
-  draw_calls_.emplace_back(DrawCall{current_layer_,
-                                    ConcatMatrix44Data{matrix}});
+  draw_calls_.emplace_back(
+      DrawCall{current_layer_, ConcatMatrix44Data{matrix}});
 }
 #endif
 
