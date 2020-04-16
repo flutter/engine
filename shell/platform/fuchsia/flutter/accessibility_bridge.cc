@@ -283,8 +283,8 @@ void AccessibilityBridge::UpdateScreenRects(
 
   const auto& rect = node.rect;
   SkV4 dst[2] = {
-    current_transform.map(rect.left(),  rect.top(),    0, 1),
-    current_transform.map(rect.right(), rect.bottom(), 0, 1),
+      current_transform.map(rect.left(), rect.top(), 0, 1),
+      current_transform.map(rect.right(), rect.bottom(), 0, 1),
   };
   node.screen_rect.setLTRB(dst[0].x, dst[0].y, dst[1].x, dst[1].y);
   node.screen_rect.sort();
