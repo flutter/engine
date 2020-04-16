@@ -10,14 +10,6 @@
 
 namespace vulkan {
 
-bool IsDebuggingEnabled() {
-#ifndef NDEBUG
-  return true;
-#else
-  return false;
-#endif
-}
-
 // Whether to show Vulkan validation layer info messages in addition
 // to the error messages.
 bool ValidationLayerInfoMessagesEnabled() {

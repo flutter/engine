@@ -25,7 +25,7 @@ VulkanApplication::VulkanApplication(
   std::vector<VkExtensionProperties> supported_extensions =
       GetSupportedInstanceExtensions(vk);
   bool enable_instance_debugging =
-      (enable_validation_layers_ || IsDebuggingEnabled()) &&
+      enable_validation_layers_ &&
       ExtensionSupported(supported_extensions,
                          VulkanDebugReport::DebugExtensionName());
 
