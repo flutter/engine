@@ -10,22 +10,12 @@
 
 namespace vulkan {
 
-static bool sValidationLayersEnabled = false;
-
 bool IsDebuggingEnabled() {
 #ifndef NDEBUG
   return true;
 #else
-  return ValidationLayersEnabled();
+  return false;
 #endif
-}
-
-void SetValidationLayersEnabled(bool enabled) {
-  sValidationLayersEnabled = enabled;
-}
-
-bool ValidationLayersEnabled() {
-  return sValidationLayersEnabled;
 }
 
 // Whether to show Vulkan validation layer info messages in addition
@@ -43,8 +33,9 @@ bool ValidationErrorsFatal() {
 
 static std::vector<std::string> InstanceOrDeviceLayersToEnable(
     const VulkanProcTable& vk,
-    VkPhysicalDevice physical_device) {
-  if (!ValidationLayersEnabled()) {
+    VkPhysicalDevice physical_device,
+    bool enable_validation_layers) {
+  if (!enable_validation_layers) {
     return {};
   }
 
@@ -110,18 +101,19 @@ static std::vector<std::string> InstanceOrDeviceLayersToEnable(
   return available_candidates;
 }
 
-std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk) {
-  return InstanceOrDeviceLayersToEnable(vk, VK_NULL_HANDLE);
+std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk, bool enable_validation_layers) {
+  return InstanceOrDeviceLayersToEnable(vk, VK_NULL_HANDLE, enable_validation_layers);
 }
 
 std::vector<std::string> DeviceLayersToEnable(
     const VulkanProcTable& vk,
-    const VulkanHandle<VkPhysicalDevice>& physical_device) {
+    const VulkanHandle<VkPhysicalDevice>& physical_device,
+    bool enable_validation_layers) {
   if (!physical_device) {
     return {};
   }
 
-  return InstanceOrDeviceLayersToEnable(vk, physical_device);
+  return InstanceOrDeviceLayersToEnable(vk, physical_device, enable_validation_layers);
 }
 
 }  // namespace vulkan

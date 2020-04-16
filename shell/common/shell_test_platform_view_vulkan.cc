@@ -19,9 +19,7 @@ ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(vsync_clock),
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()),
-      shell_test_external_view_embedder_(shell_test_external_view_embedder) {
-        vulkan::SetValidationLayersEnabled(true);
-      }
+      shell_test_external_view_embedder_(shell_test_external_view_embedder) { }
 
 ShellTestPlatformViewVulkan::~ShellTestPlatformViewVulkan() = default;
 
@@ -68,7 +66,8 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
   };
 
   application_ = std::make_unique<vulkan::VulkanApplication>(
-      *vk_, "FlutterTest", std::move(extensions));
+      *vk_, "FlutterTest", std::move(extensions), VK_MAKE_VERSION(1, 0, 0),
+      VK_MAKE_VERSION(1, 1, 0), true);
 
   if (!application_->IsValid() || !vk_->AreInstanceProcsSetup()) {
     // Make certain the application instance was created and it setup the
