@@ -1730,11 +1730,12 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     if (line_box_metrics.find(line_number) == line_box_metrics.end()) {
       if (line.end_index != line.end_including_newline &&
           line.end_index >= start && line.end_including_newline <= end) {
-        SkScalar x = line_widths_[line_number];
-        // Move empty box to center if center aligned and is an empty line.
-        if (x == 0 && !isinf(width_) &&
-            paragraph_style_.effective_align() == TextAlign::center) {
-          x = width_ / 2;
+        SkScalar x;
+        const GlyphLine& glyph_line = glyph_lines_[line_number];
+        if (glyph_lines_[line_number].positions.empty()) {
+          x = GetLineXOffset(0, line_number, false);
+        } else {
+          x = glyph_line.positions.back().x_pos.end;
         }
         SkScalar top =
             (line_number > 0) ? line_metrics_[line_number - 1].height : 0;
