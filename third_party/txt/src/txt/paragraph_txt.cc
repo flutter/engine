@@ -1649,10 +1649,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
   // Text direction of the first line so we can extend the correct side for
   // RectWidthStyle::kMax.
   TextDirection first_line_dir = TextDirection::ltr;
-
-  // Text direction of the last run of each line so we can determine
-  // line end positions
-  std::map<size_t, TextDirection> line_last_run_directions;
+  std::map<size_t, size_t> newline_x_positions;
 
   // Lines that are actually in the requested range.
   size_t max_line = 0;
@@ -1665,7 +1662,9 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     if (run.code_units.start >= end)
       break;
 
-    line_last_run_directions[run.line_number] = run.direction;
+    // Update new line x position with the ending of last bidi run on the line
+    newline_x_positions[run.line_number] =
+        run.direction == TextDirection::ltr ? run.x_pos.end : run.x_pos.start;
 
     if (run.code_units.end <= start)
       continue;
@@ -1738,13 +1737,11 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
       if (line.end_index != line.end_including_newline &&
           line.end_index >= start && line.end_including_newline <= end) {
         SkScalar x;
-        const GlyphLine& glyph_line = glyph_lines_[line_number];
-        if (glyph_lines_[line_number].positions.empty()) {
-          x = GetLineXOffset(0, line_number, false);
+        auto it = newline_x_positions.find(line_number);
+        if (it != newline_x_positions.end()) {
+          x = it->second;
         } else {
-          x = line_last_run_directions[line_number] == TextDirection::ltr
-                  ? glyph_line.positions.back().x_pos.end
-                  : glyph_line.positions.front().x_pos.start;
+          x = GetLineXOffset(0, false);
         }
         SkScalar top =
             (line_number > 0) ? line_metrics_[line_number - 1].height : 0;
