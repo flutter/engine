@@ -19,10 +19,6 @@ class TestBinaryMessenger : public BinaryMessenger {
  public:
   void Send(const std::string& channel,
             const uint8_t* message,
-            const size_t message_size) const override {}
-
-  void Send(const std::string& channel,
-            const uint8_t* message,
             const size_t message_size,
             BinaryReply reply) const override {}
 
@@ -165,7 +161,9 @@ TEST(EventChannelTest, ConsecutiveListen) {
       [](const uint8_t* reply, const size_t reply_size) {});
   EXPECT_EQ(on_listen_called, true);
 
-  // Send dummy listen message.
+  // Send second dummy message to test StreamHandler's onCancel
+  // method is called before onListen method is called.
+  on_listen_called = false;
   message = codec.EncodeMethodCall(call);
   messenger.last_message_handler()(
       message->data(), message->size(),
