@@ -17,7 +17,8 @@ namespace vulkan {
 bool ValidationLayerInfoMessagesEnabled();
 bool ValidationErrorsFatal();
 
-std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk, bool enable_validation_layers);
+std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk,
+                                                bool enable_validation_layers);
 
 std::vector<std::string> DeviceLayersToEnable(
     const VulkanProcTable& vk,

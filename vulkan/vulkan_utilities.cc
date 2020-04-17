@@ -93,8 +93,10 @@ static std::vector<std::string> InstanceOrDeviceLayersToEnable(
   return available_candidates;
 }
 
-std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk, bool enable_validation_layers) {
-  return InstanceOrDeviceLayersToEnable(vk, VK_NULL_HANDLE, enable_validation_layers);
+std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk,
+                                                bool enable_validation_layers) {
+  return InstanceOrDeviceLayersToEnable(vk, VK_NULL_HANDLE,
+                                        enable_validation_layers);
 }
 
 std::vector<std::string> DeviceLayersToEnable(
@@ -105,7 +107,8 @@ std::vector<std::string> DeviceLayersToEnable(
     return {};
   }
 
-  return InstanceOrDeviceLayersToEnable(vk, physical_device, enable_validation_layers);
+  return InstanceOrDeviceLayersToEnable(vk, physical_device,
+                                        enable_validation_layers);
 }
 
 }  // namespace vulkan

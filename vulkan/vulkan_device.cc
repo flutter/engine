@@ -71,7 +71,8 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
 #endif
   };
 
-  auto enabled_layers = DeviceLayersToEnable(vk, physical_device_, enable_validation_layers_);
+  auto enabled_layers =
+      DeviceLayersToEnable(vk, physical_device_, enable_validation_layers_);
 
   const char* layers[enabled_layers.size()];
 

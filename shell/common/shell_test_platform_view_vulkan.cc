@@ -19,7 +19,7 @@ ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(vsync_clock),
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()),
-      shell_test_external_view_embedder_(shell_test_external_view_embedder) { }
+      shell_test_external_view_embedder_(shell_test_external_view_embedder) {}
 
 ShellTestPlatformViewVulkan::~ShellTestPlatformViewVulkan() = default;
 
