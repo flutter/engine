@@ -864,7 +864,6 @@ public class FlutterView extends FrameLayout {
       languageRanges.add(new Locale.LanguageRange(config.locale.toLanguageTag()));
     }
     Locale platformResolvedLocale = Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
-    Log.e("flutter", "V2: " + platformResolvedLocale + " " + languageRanges.get(0).getRange() + " " + Locale.getAvailableLocales()[0].toLanguageTag());
     flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
   }
 

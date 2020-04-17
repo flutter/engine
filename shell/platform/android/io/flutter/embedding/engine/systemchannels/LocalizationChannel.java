@@ -28,6 +28,16 @@ public class LocalizationChannel {
   /** Send the given {@code locales} to Dart. */
   public void sendLocales(@NonNull List<Locale> locales, Locale platformResolvedLocale) {
     Log.v(TAG, "Sending Locales to Flutter.");
+    // Send platformResolvedLocale first as it may be used in the callback
+    // triggered by the user supported locales being updated/set.
+    List<String> platformResolvedLocaleData = new ArrayList<>();
+    platformResolvedLocaleData.add(platformResolvedLocale.getLanguage());
+    platformResolvedLocaleData.add(platformResolvedLocale.getCountry());
+    platformResolvedLocaleData.add(Build.VERSION.SDK_INT >= 21 ? platformResolvedLocale.getScript() : "");
+    platformResolvedLocaleData.add(platformResolvedLocale.getVariant());
+    channel.invokeMethod("setPlatformResolvedLocale", platformResolvedLocaleData);
+
+    // Send the user's preferred locales.
     List<String> data = new ArrayList<>();
     for (Locale locale : locales) {
       Log.v(
@@ -46,12 +56,5 @@ public class LocalizationChannel {
       data.add(locale.getVariant());
     }
     channel.invokeMethod("setLocale", data);
-
-    List<String> platformResolvedLocaleData = new ArrayList<>();
-    platformResolvedLocaleData.add(platformResolvedLocale.getLanguage());
-    platformResolvedLocaleData.add(platformResolvedLocale.getCountry());
-    platformResolvedLocaleData.add(Build.VERSION.SDK_INT >= 21 ? platformResolvedLocale.getScript() : "");
-    platformResolvedLocaleData.add(platformResolvedLocale.getVariant());
-    channel.invokeMethod("setPlatformResolvedLocale", platformResolvedLocaleData);
   }
 }
