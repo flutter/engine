@@ -91,14 +91,14 @@ class RasterCache {
   // 3. The picture is accessed too few times
   // 4. There are too many pictures to be cached in the current frame.
   //    (See also kDefaultPictureCacheLimitPerFrame.)
-  bool Prepare(GrContext* context,
+  virtual bool Prepare(GrContext* context,
                SkPicture* picture,
                const SkMatrix& transformation_matrix,
                SkColorSpace* dst_color_space,
                bool is_complex,
                bool will_change);
 
-  void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
+  virtual void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
 
   // Find the raster cache for the picture and draw it to the canvas.
   //

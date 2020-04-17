@@ -53,6 +53,65 @@ TEST_F(OpacityLayerTest, PaintBeforePreollDies) {
 }
 #endif
 
+TEST_F(OpacityLayerTest, ChildIsCached) {
+  const SkAlpha alpha_half = 255 / 2;
+  auto initial_transform = SkMatrix::MakeTrans(50.0, 25.5);
+  auto other_transform = SkMatrix::MakeScale(1.0, 2.0);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer =
+      std::make_shared<OpacityLayer>(alpha_half, SkPoint::Make(0.0f, 0.0f));
+  layer->Add(mock_layer);
+
+  SkMatrix cache_ctm = initial_transform;
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  cache_ctm = RasterCache::GetIntegralTransCTM(cache_ctm);
+#endif
+
+  EXPECT_EQ(raster_cache()->LayerCacheCount(), 0);
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer.get(), other_transform));
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer.get(), cache_ctm));
+
+  layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->LayerCacheCount(), 1);
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer.get(), other_transform));
+  EXPECT_TRUE(raster_cache()->WasPrepared(mock_layer.get(), cache_ctm));
+}
+
+TEST_F(OpacityLayerTest, ChildrenNotCached) {
+  const SkAlpha alpha_half = 255 / 2;
+  auto initial_transform = SkMatrix::MakeTrans(50.0, 25.5);
+  auto other_transform = SkMatrix::MakeScale(1.0, 2.0);
+  const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  const SkPath child_path2 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
+  auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
+  auto layer =
+      std::make_shared<OpacityLayer>(alpha_half, SkPoint::Make(0.0f, 0.0f));
+  layer->Add(mock_layer1);
+  layer->Add(mock_layer2);
+
+  SkMatrix cache_ctm = initial_transform;
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  cache_ctm = RasterCache::GetIntegralTransCTM(cache_ctm);
+#endif
+
+  EXPECT_EQ(raster_cache()->LayerCacheCount(), 0);
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer1.get(), other_transform));
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer1.get(), cache_ctm));
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer2.get(), other_transform));
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer2.get(), cache_ctm));
+
+  layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->LayerCacheCount(), 1);
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer1.get(), other_transform));
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer1.get(), cache_ctm));
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer2.get(), other_transform));
+  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer2.get(), cache_ctm));
+}
+
 TEST_F(OpacityLayerTest, FullyOpaque) {
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   const SkPoint layer_offset = SkPoint::Make(0.5f, 1.5f);

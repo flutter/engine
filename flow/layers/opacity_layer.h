@@ -39,6 +39,7 @@ class OpacityLayer : public ContainerLayer {
 
  private:
   ContainerLayer* GetChildContainer() const;
+  Layer* GetCacheableChild() const;
 
   SkAlpha alpha_;
   SkPoint offset_;

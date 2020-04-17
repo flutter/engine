@@ -121,7 +121,7 @@ static RasterCacheResult Rasterize(
   return {surface->makeImageSnapshot(), logical_rect};
 }
 
-RasterCacheResult RasterizePicture(SkPicture* picture,
+static RasterCacheResult RasterizePicture(SkPicture* picture,
                                    GrContext* context,
                                    const SkMatrix& ctm,
                                    SkColorSpace* dst_color_space,

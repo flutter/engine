@@ -13,6 +13,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/testing/canvas_test.h"
 #include "flutter/testing/mock_canvas.h"
+#include "flutter/testing/mock_raster_cache.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
@@ -32,9 +33,9 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
  public:
   LayerTestBase()
       : preroll_context_({
-            nullptr, /* raster_cache */
-            nullptr, /* gr_context */
-            nullptr, /* external_view_embedder */
+            raster_cache(), /* raster_cache */
+            nullptr,        /* gr_context */
+            nullptr,        /* external_view_embedder */
             mutators_stack_, TestT::mock_canvas().imageInfo().colorSpace(),
             kGiantRect, /* cull_rect */
             false,      /* layer reads from surface */
@@ -58,6 +59,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
         }) {}
 
   TextureRegistry& texture_regitry() { return texture_registry_; }
+  MockRasterCache* raster_cache() { return &raster_cache_; }
   PrerollContext* preroll_context() { return &preroll_context_; }
   Layer::PaintContext& paint_context() { return paint_context_; }
 
@@ -67,6 +69,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   MutatorsStack mutators_stack_;
   TextureRegistry texture_registry_;
 
+  MockRasterCache raster_cache_;
   PrerollContext preroll_context_;
   Layer::PaintContext paint_context_;
 
