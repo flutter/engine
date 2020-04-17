@@ -48,11 +48,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   {
     set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
-    if (!context->has_platform_view && context->raster_cache &&
-        SkRect::Intersects(context->cull_rect, paint_bounds())) {
-      SkMatrix ctm = child_matrix;
-      context->raster_cache->Prepare(context, container, ctm);
-    }
+    TryToPrepareRasterCache(context, container, child_matrix);
   }
 }
 

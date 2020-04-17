@@ -28,11 +28,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     set_paint_bounds(child_paint_bounds_);
   }
 
-  if (!context->has_platform_view && context->raster_cache &&
-      SkRect::Intersects(context->cull_rect, paint_bounds())) {
-    SkMatrix ctm = matrix;
-    context->raster_cache->Prepare(context, this, ctm);
-  }
+  TryToPrepareRasterCache(context, this, matrix);
 }
 
 void ImageFilterLayer::Paint(PaintContext& context) const {
