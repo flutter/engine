@@ -39,8 +39,8 @@ import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -863,9 +863,10 @@ public class FlutterView extends FrameLayout {
       locales.add(config.locale);
       languageRanges.add(new Locale.LanguageRange(config.locale.toLanguageTag()));
     }
-    Locale platformResolvedLocale;
+    Locale platformResolvedLocale = null;
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-      platformResolvedLocale = Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
+      platformResolvedLocale =
+          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
     }
     flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
   }

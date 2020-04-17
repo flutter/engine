@@ -59,8 +59,8 @@ import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
@@ -393,7 +393,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
   }
 
   @SuppressWarnings("deprecation")
-  private void sendLocalesToFlutter(@NonNull Configuration config) {
+  private void sendLocalesToDart(Configuration config) {
     List<Locale> locales = new ArrayList<>();
     List<Locale.LanguageRange> languageRanges = new ArrayList<>();
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -408,11 +408,12 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
       locales.add(config.locale);
       languageRanges.add(new Locale.LanguageRange(config.locale.toLanguageTag()));
     }
-    Locale platformResolvedLocale;
+    Locale platformResolvedLocale = null;
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-      platformResolvedLocale = Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
+      platformResolvedLocale =
+          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
     }
-    flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
+    localizationChannel.sendLocales(locales, platformResolvedLocale);
   }
 
   @Override
