@@ -30,7 +30,7 @@ public class LocalizationChannel {
     Log.v(TAG, "Sending Locales to Flutter.");
     // Send platformResolvedLocale first as it may be used in the callback
     // triggered by the user supported locales being updated/set.
-    if (platformResolvedLocale == null) {
+    if (platformResolvedLocale != null) {
       List<String> platformResolvedLocaleData = new ArrayList<>();
       platformResolvedLocaleData.add(platformResolvedLocale.getLanguage());
       platformResolvedLocaleData.add(platformResolvedLocale.getCountry());

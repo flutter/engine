@@ -395,24 +395,30 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
   @SuppressWarnings("deprecation")
   private void sendLocalesToDart(Configuration config) {
     List<Locale> locales = new ArrayList<>();
-    List<Locale.LanguageRange> languageRanges = new ArrayList<>();
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
       LocaleList localeList = config.getLocales();
       int localeCount = localeList.size();
       for (int index = 0; index < localeCount; ++index) {
         Locale locale = localeList.get(index);
         locales.add(locale);
-        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
       }
     } else {
       locales.add(config.locale);
-      languageRanges.add(new Locale.LanguageRange(config.locale.toLanguageTag()));
     }
+
+    List<Locale.LanguageRange> languageRanges = new ArrayList<>();
     Locale platformResolvedLocale = null;
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+      LocaleList localeList = config.getLocales();
+      int localeCount = localeList.size();
+      for (int index = 0; index < localeCount; ++index) {
+        Locale locale = localeList.get(index);
+        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
+      }
       platformResolvedLocale =
           Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
     }
+
     localizationChannel.sendLocales(locales, platformResolvedLocale);
   }
 

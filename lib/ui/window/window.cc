@@ -234,7 +234,7 @@ void Window::UpdatePlatformResolvedLocale(
     return;
   tonic::DartState::Scope scope(dart_state);
   tonic::LogIfError(tonic::DartInvokeField(
-      library_.value(), "_updatePlatformResolvedLocales",
+      library_.value(), "_updatePlatformResolvedLocale",
       {
           tonic::ToDart<std::vector<std::string>>(locale),
       }));
