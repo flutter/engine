@@ -99,7 +99,7 @@ void _updateLocales(List<String> locales) {
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updatePlatformResolvedLocales(List<String> localeData) {
-  const int stringsPerLocale = 4;
+  assert(localeData.length == 4);
   final String countryCode = localeData[1];
   final String scriptCode = localeData[2];
 
