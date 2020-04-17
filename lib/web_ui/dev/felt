@@ -77,8 +77,7 @@ then
     ERROR=$(ulimit -n 50000 2>&1 >/dev/null)
     if [[ ! -z $ERROR ]]
     then
-      echo "Problem changing the file limit. Please try to reboot. error: \n$ERROR"
-      exit 1
+      echo "Problem changing the file limit. Please try to reboot to use the higher limits. error: \n$ERROR" 1>&2
     fi
   fi
   ULIMIT_USER=`ulimit -u`
@@ -89,8 +88,7 @@ then
     ERROR2=$(ulimit -u 4096 2>&1 >/dev/null)
     if [[ ! -z $ERROR2 ]]
     then
-      echo "Problem changing the user limit. Please try to reboot. error: \n$ERROR2"
-      exit 1
+      echo "Problem changing the user limit. Please try to reboot to use the higher limits. error: \n$ERROR2" 1>&2
     fi
   fi
   # Set the value back to exit on non zero results.
