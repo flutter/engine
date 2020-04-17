@@ -792,17 +792,21 @@ class Window {
   List<Locale> get locales => _locales;
   List<Locale> _locales;
 
-  /// The locale that the platform's native locale resolution system resolves to.
-  ///
-  /// This value may differ between platforms and is meant to allow flutter locale
-  /// resoltion algorithms to into resolving consistently with other apps on the
-  /// device.
-  ///
-  /// This value may be used in a custom [localeResolutionCallback] or used directly
-  /// in order to arrive at the most appropriate locale for the app.
-  ///
-  /// See [locales], which is the list of locales the user/device prefers.
-  Locale get platformResolvedLocale => _platformResolvedLocale;
+  // The locale that the platform's native locale resolution system resolves to.
+  //
+  // This value may differ between platforms and is meant to allow flutter locale
+  // resoltion algorithms to into resolving consistently with other apps on the
+  // device.
+  //
+  // This value may be used in a custom [localeListResolutionCallback] or used directly
+  // in order to arrive at the most appropriate locale for the app.
+  //
+  // See [locales], which is the list of locales the user/device prefers.
+  //
+  // TODO(garyq) uncomment the platformResolvedLocale getter when this is fully
+  // implemented.
+  // Locale get platformResolvedLocale => _platformResolvedLocale;
+
   Locale _platformResolvedLocale;
 
   /// A callback that is invoked whenever [locale] changes value.
