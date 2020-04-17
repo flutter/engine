@@ -151,7 +151,11 @@ TEST(RasterCache, DeviceRectRoundOut) {
   canvas.setMatrix(ctm);
   canvas.translate(248, 0);
 
-  cache.Get(*picture, ctm).draw(canvas);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  canvas.setMatrix(RasterCache::GetIntegralTransCTM(canvas.getTotalMatrix()));
+#endif
+
+  cache.Get(*picture, canvas.getTotalMatrix()).draw(canvas);
 }
 
 }  // namespace testing
