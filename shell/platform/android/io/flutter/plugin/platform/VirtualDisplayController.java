@@ -202,9 +202,7 @@ class VirtualDisplayController {
     return platformView.getView();
   }
 
-  /***
-   * Dispatches a motion event to the presentation for this controller.
-   */
+  /** Dispatches a motion event to the presentation for this controller. */
   public void dispatchTouchEvent(MotionEvent event) {
     if (presentation == null) return;
     presentation.dispatchTouchEvent(event);
