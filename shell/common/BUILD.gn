@@ -7,7 +7,6 @@ import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/testing/testing.gni")
 import("//flutter/vulkan/config.gni")
 
-
 if (is_fuchsia) {
   import("//build/fuchsia/sdk.gni")
   import("//flutter/tools/fuchsia/fuchsia_archive.gni")
