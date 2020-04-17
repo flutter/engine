@@ -189,7 +189,10 @@ class InputConfiguration {
             flutterInputConfiguration['inputType']['name']),
         inputAction = flutterInputConfiguration['inputAction'],
         obscureText = flutterInputConfiguration['obscureText'],
-        autocorrect = flutterInputConfiguration['autocorrect'];
+        autocorrect = flutterInputConfiguration['autocorrect'] {
+    Map<String, dynamic> autofill = flutterInputConfiguration['autofill'];
+    print('autofill $autofill');
+  }
 
   /// The type of information being edited in the input control.
   final EngineInputType inputType;
@@ -680,6 +683,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     super.initializeTextEditing(inputConfig,
         onChange: onChange, onAction: onAction);
     inputConfig.inputType.configureInputMode(domElement);
+
   }
 
   @override
