@@ -149,7 +149,9 @@ class RuntimeController final : public WindowClient {
   //----------------------------------------------------------------------------
   /// @brief      Forward the specified locale data to the running isolate. If
   ///             the isolate is not running, this data will be saved and
-  ///             flushed to the isolate when it starts running.
+  ///             flushed to the isolate when it starts running. Locale_data
+  ///             consists of groups of 4 strings, each group representing
+  ///             a single locale.
   ///
   /// @deprecated The persistent isolate data must be used for this purpose
   ///             instead.
@@ -163,7 +165,11 @@ class RuntimeController final : public WindowClient {
   //----------------------------------------------------------------------------
   /// @brief      Forward the specified locale data to the running isolate. If
   ///             the isolate is not running, this data will be saved and
-  ///             flushed to the isolate when it starts running.
+  ///             flushed to the isolate when it starts running. Locale_data
+  ///             should consist of a vector of 4 strings, representing
+  ///             languageCode, contryCode, scriptCode, and variant of the
+  ///             locale.
+  ///
   ///
   /// @deprecated The persistent isolate data must be used for this purpose
   ///             instead.
