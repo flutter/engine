@@ -866,7 +866,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   _activeView.textInputDelegate = _textInputDelegate;
 
   if (!_activeView.window) {
-     [keyWindow addSubview:_activeView];
+    [keyWindow addSubview:_activeView];
   }
   [_activeView becomeFirstResponder];
 }

@@ -69,15 +69,12 @@
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
-- (FlutterViewController*)flutterViewControllerForTest:(NSString*)scenarioIdentifier withEngine:(FlutterEngine*)engine {
+- (FlutterViewController*)flutterViewControllerForTest:(NSString*)scenarioIdentifier
+                                            withEngine:(FlutterEngine*)engine {
   if ([scenarioIdentifier isEqualToString:@"tap_status_bar"]) {
-    return [[FlutterViewController alloc] initWithEngine:engine
-                                                                  nibName:nil
-                                                                   bundle:nil];
+    return [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
   } else {
-    return [[NoStatusBarFlutterViewController alloc] initWithEngine:engine
-                                                                             nibName:nil
-                                                                              bundle:nil];
+    return [[NoStatusBarFlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
   }
 }
 
@@ -85,8 +82,9 @@
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"FlutterControllerTest" project:nil];
   [engine run];
 
-  FlutterViewController* flutterViewController = [self flutterViewControllerForTest:scenarioIdentifier withEngine:engine];
-  
+  FlutterViewController* flutterViewController =
+      [self flutterViewControllerForTest:scenarioIdentifier withEngine:engine];
+
   [engine.binaryMessenger
       setMessageHandlerOnChannel:@"waiting_for_status"
             binaryMessageHandler:^(NSData* _Nullable message, FlutterBinaryReply _Nonnull reply) {

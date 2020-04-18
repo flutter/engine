@@ -40,7 +40,8 @@ public class EngineLaunchE2ETest {
         .get()
         .getDartExecutor()
         .setMessageHandler(
-            "waiting_for_status", (byteBuffer, binaryReply) -> statusReceived.complete(Boolean.TRUE));
+            "waiting_for_status",
+            (byteBuffer, binaryReply) -> statusReceived.complete(Boolean.TRUE));
 
     // Launching the entrypoint will run the Dart code that sends the "waiting_for_status" platform
     // message.
