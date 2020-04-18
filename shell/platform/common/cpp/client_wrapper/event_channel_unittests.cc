@@ -51,8 +51,8 @@ TEST(EventChannelTest, Registration) {
   EventChannel channel(&messenger, channel_name, &codec);
 
   bool on_listen_called = false;
-  auto handler =
-    std::make_unique<flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
+  auto handler = std::make_unique<
+      flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
       [&on_listen_called](
           const flutter::EncodableValue* arguments,
           std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&& events)
@@ -93,7 +93,7 @@ TEST(EventChannelTest, Unregistration) {
           -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
         return nullptr;
       },
-      [](const flutter::EncodableValue* arguments) 
+      [](const flutter::EncodableValue* arguments)
           -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
         return nullptr;
       });
