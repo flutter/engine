@@ -21,7 +21,7 @@ using StreamHandlerListen =
 
 template <typename T>
 using StreamHandlerCancel =
-      std::function<std::unique_ptr<StreamHandlerError<T>>(const T* arguments)>;
+    std::function<std::unique_ptr<StreamHandlerError<T>>(const T* arguments)>;
 
 template <typename T>
 class StreamHandlerFunctions : public StreamHandler<T> {
@@ -30,8 +30,7 @@ class StreamHandlerFunctions : public StreamHandler<T> {
   // corresponding StreamHandler outcomes.
   StreamHandlerFunctions(StreamHandlerListen<T> on_listen,
                          StreamHandlerCancel<T> on_cancel)
-      : on_listen_(on_listen),
-        on_cancel_(on_cancel) {}
+      : on_listen_(on_listen), on_cancel_(on_cancel) {}
 
   virtual ~StreamHandlerFunctions() = default;
 
@@ -41,27 +40,27 @@ class StreamHandlerFunctions : public StreamHandler<T> {
 
  protected:
   // |flutter::StreamHandler|
-  std::unique_ptr<StreamHandlerError<T>>
-      OnListenInternal(const T* arguments,
-                       std::unique_ptr<EventSink<T>>&& events) override {
+  std::unique_ptr<StreamHandlerError<T>> OnListenInternal(
+      const T* arguments,
+      std::unique_ptr<EventSink<T>>&& events) override {
     if (on_listen_) {
       return on_listen_(arguments, std::move(events));
     }
 
-    auto error = std::make_unique<StreamHandlerError<T>>
-        ("error", "Not found StreamHandlerListen hander", nullptr);
+    auto error = std::make_unique<StreamHandlerError<T>>(
+        "error", "Not found StreamHandlerListen hander", nullptr);
     return std::move(error);
   }
 
   // |flutter::StreamHandler|
-  std::unique_ptr<StreamHandlerError<T>>
-      OnCancelInternal(const T* arguments) override {
+  std::unique_ptr<StreamHandlerError<T>> OnCancelInternal(
+      const T* arguments) override {
     if (on_cancel_) {
       return on_cancel_(arguments);
     }
  
-    auto error = std::make_unique<StreamHandlerError<T>>
-        ("error", "Not found StreamHandlerCancel hander", nullptr);
+    auto error = std::make_unique<StreamHandlerError<T>>(
+        "error", "Not found StreamHandlerCancel hander", nullptr);
     return std::move(error);
   }
 
