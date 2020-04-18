@@ -187,17 +187,17 @@ TEST(EventChannelTest, ConsecutiveListen) {
       [](const uint8_t* reply, const size_t reply_size) {});
   EXPECT_EQ(on_listen_called, true);
 
-  // Send second dummy message to test StreamHandler's onCancel
-  // method is called before onListen method is called.
+  // Send second dummy message to test StreamHandler's OnCancel
+  // method is called before OnListen method is called.
   on_listen_called = false;
   message = codec.EncodeMethodCall(call);
   messenger.last_message_handler()(
       message->data(), message->size(),
       [](const uint8_t* reply, const size_t reply_size) {});
-  EXPECT_EQ(on_listen_called, true);
 
   // Check results.
   EXPECT_EQ(on_cancel_called, true);
+  EXPECT_EQ(on_listen_called, true);
 }
 
 }  // namespace flutter
