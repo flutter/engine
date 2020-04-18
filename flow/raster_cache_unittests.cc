@@ -52,7 +52,7 @@ TEST(RasterCache, ThresholdIsRespected) {
   ASSERT_FALSE(
       cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true, false));
 
-  // 2st access.
+  // 2nd access.
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 
   cache.SweepAfterFrame();
@@ -162,7 +162,7 @@ TEST(RasterCache, DeviceRectRoundOut) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   canvas.setMatrix(RasterCache::GetIntegralTransCTM(canvas.getTotalMatrix()));
 #endif
-  cache.Draw(*picture, canvas);
+  ASSERT_TRUE(cache.Draw(*picture, canvas));
 }
 
 }  // namespace testing
