@@ -12,7 +12,8 @@
 
 namespace flutter {
 
-// Handler types for each of the StreamHandler outcomes.
+// Handler types for each of the StreamHandler setup and tear-down
+// requests.
 template <typename T>
 using StreamHandlerListen =
     std::function<std::unique_ptr<StreamHandlerError<T>>(
@@ -23,11 +24,13 @@ template <typename T>
 using StreamHandlerCancel =
     std::function<std::unique_ptr<StreamHandlerError<T>>(const T* arguments)>;
 
+// An implementation of StreamHandler that pass calls through to
+// provided function objects.
 template <typename T>
 class StreamHandlerFunctions : public StreamHandler<T> {
  public:
-  // Creates a result object that calls the provided functions for the
-  // corresponding StreamHandler outcomes.
+  // Creates a handler object that calls the provided functions
+  // for the corresponding StreamHandler outcomes.
   StreamHandlerFunctions(StreamHandlerListen<T> on_listen,
                          StreamHandlerCancel<T> on_cancel)
       : on_listen_(on_listen), on_cancel_(on_cancel) {}
