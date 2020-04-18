@@ -18,7 +18,8 @@ struct StreamHandlerError {
   StreamHandlerError(const std::string& error_code,
                      const std::string& error_message,
                      const T* error_details)
-    : error_code(error_code), error_message(error_message),
+    : error_code(error_code),
+      error_message(error_message),
       error_details(error_details) {}
 };
 
@@ -34,16 +35,16 @@ struct StreamHandler {
   // an unsuccessful outcome of invoking the method, possibly nullptr.
   // |arguments| is stream configuration arguments and
   // |events| is an EventSink for emitting events to the Flutter receiver.
-  using OnListen = 
-    std::function<std::unique_ptr<StreamHandlerError<T>>
-      (const T* arguments, std::unique_ptr<EventSink<T>>&& events)>;
+  using OnListen = std::function<std::unique_ptr<StreamHandlerError<T>>(
+      const T* arguments,
+      std::unique_ptr<EventSink<T>>&& events)>;
 
   // Handles a request to tear down the most recently created event stream.
-  // Returns error if representing an unsuccessful outcome of invoking the method,
-  // possibly nullptr.
+  // Returns error if representing an unsuccessful outcome of invoking the
+  // method, possibly nullptr.
   // |arguments| is stream configuration arguments.
   using OnCancel = 
-    std::function<std::unique_ptr<StreamHandlerError<T>>(const T* arguments)>;
+      std::function<std::unique_ptr<StreamHandlerError<T>>(const T* arguments)>;
 
   OnListen onListen;
   OnCancel onCancel;
