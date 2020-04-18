@@ -18,9 +18,9 @@ struct StreamHandlerError {
   StreamHandlerError(const std::string& error_code,
                      const std::string& error_message,
                      const T* error_details)
-    : error_code(error_code),
-      error_message(error_message),
-      error_details(error_details) {}
+      : error_code(error_code),
+        error_message(error_message),
+        error_details(error_details) {}
 };
 
 // Handler of stream setup and tear-down requests.
@@ -43,7 +43,7 @@ struct StreamHandler {
   // Returns error if representing an unsuccessful outcome of invoking the
   // method, possibly nullptr.
   // |arguments| is stream configuration arguments.
-  using OnCancel = 
+  using OnCancel =
       std::function<std::unique_ptr<StreamHandlerError<T>>(const T* arguments)>;
 
   OnListen onListen;

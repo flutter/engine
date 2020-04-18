@@ -56,10 +56,10 @@ class EventChannel {
     const std::string channel_name = name_;
     const BinaryMessenger* messenger = messenger_;
     BinaryMessageHandler binary_handler = [handler, codec, channel_name,
-                                           messenger, this](
-                                              const uint8_t* message,
-                                              const size_t message_size,
-                                              BinaryReply reply) {
+                                           messenger,
+                                           this](const uint8_t* message,
+                                                 const size_t message_size,
+                                                BinaryReply reply) {
       constexpr char kOnListenMethod[] = "listen";
       constexpr char kOnCancelMethod[] = "cancel";
 
@@ -87,7 +87,7 @@ class EventChannel {
         std::unique_ptr<std::vector<uint8_t>> result;
         auto sink = std::make_unique<EventSinkImplementation>(
             messenger, channel_name, codec);
-        auto error = 
+        auto error =
             handler->onListen(method_call->arguments(), std::move(sink));
         if (error) {
           result = codec->EncodeErrorEnvelope(
