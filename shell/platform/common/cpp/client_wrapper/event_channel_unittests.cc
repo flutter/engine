@@ -60,9 +60,10 @@ TEST(EventChannelTest, Registration) {
         on_listen_called = true;
         return nullptr;
       },
-      [](const flutter::EncodableValue* arguments) 
-        -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
-           return nullptr; });
+      [](const flutter::EncodableValue* arguments)
+          -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
+        return nullptr;
+      });
   channel.SetStreamHandler(std::move(handler));
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
@@ -85,15 +86,17 @@ TEST(EventChannelTest, Unregistration) {
   const StandardMethodCodec& codec = StandardMethodCodec::GetInstance();
   EventChannel channel(&messenger, channel_name, &codec);
 
-  auto handler =
-    std::make_unique<flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
+  auto handler = std::make_unique<
+      flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
       [](const flutter::EncodableValue* arguments,
          std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&& events)
-      -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>>
-      { return nullptr; },
+          -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
+        return nullptr;
+      },
       [](const flutter::EncodableValue* arguments) 
-        -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
-           return nullptr; });
+          -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
+        return nullptr;
+      });
   channel.SetStreamHandler(std::move(handler));
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
@@ -112,8 +115,8 @@ TEST(EventChannelTest, Cancel) {
 
   bool on_listen_called = false;
   bool on_cancel_called = false;
-  auto handler =
-    std::make_unique<flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
+  auto handler = std::make_unique<
+      flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
       [&on_listen_called](
           const flutter::EncodableValue* arguments,
           std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&& events)
