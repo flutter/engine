@@ -30,27 +30,43 @@ struct StreamHandlerError {
 // this means that the implementation should register itself with
 // platform-specific event sources onListen() and deregister again onCancel().
 template <typename T>
-struct StreamHandler {
+class StreamHandler {
+ public:
+  StreamHandler() = default;
+  virtual ~StreamHandler() = default;
+
+  // Prevent copying.
+  StreamHandler(StreamHandler const&) = delete;
+  StreamHandler& operator=(StreamHandler const&) = delete;
+
   // Handles a request to set up an event stream. Returns error if representing
   // an unsuccessful outcome of invoking the method, possibly nullptr.
   // |arguments| is stream configuration arguments and
   // |events| is an EventSink for emitting events to the Flutter receiver.
-  using OnListen = std::function<std::unique_ptr<StreamHandlerError<T>>(
+  std::unique_ptr<StreamHandlerError<T>> OnListen(
       const T* arguments,
-      std::unique_ptr<EventSink<T>>&& events)>;
+      std::unique_ptr<StreamHandlerError<T>> error,
+      std::unique_ptr<EventSink<T>>&& events) {
+    return OnListenInternal(arguments, std::move(events));
+  }
 
   // Handles a request to tear down the most recently created event stream.
   // Returns error if representing an unsuccessful outcome of invoking the
   // method, possibly nullptr.
   // |arguments| is stream configuration arguments.
-  using OnCancel =
-      std::function<std::unique_ptr<StreamHandlerError<T>>(const T* arguments)>;
+  std::unique_ptr<StreamHandlerError<T>> OnCancel(const T* arguments) {
+    return OnCancelInternal(arguments);
+  }
 
-  OnListen onListen;
-  OnCancel onCancel;
+ protected:
+  // Implementation of the public interface, to be provided by subclasses.
+  virtual std::unique_ptr<StreamHandlerError<T>>
+      OnListenInternal(const T* arguments,
+                       std::unique_ptr<EventSink<T>>&& events) = 0;
 
-  StreamHandler(OnListen const& onListen, OnCancel const& onCancel)
-      : onListen(onListen), onCancel(onCancel) {}
+  // Implementation of the public interface, to be provided by subclasses.
+  virtual std::unique_ptr<StreamHandlerError<T>>
+      OnCancelInternal(const T* arguments) = 0;
 };
 
 }  // namespace flutter

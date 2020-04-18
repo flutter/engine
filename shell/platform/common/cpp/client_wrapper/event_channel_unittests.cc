@@ -8,6 +8,7 @@
 #include <string>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/binary_messenger.h"
+#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/event_stream_handler_functions.h"
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_method_codec.h"
 #include "gtest/gtest.h"
 
@@ -50,7 +51,8 @@ TEST(EventChannelTest, Registration) {
   EventChannel channel(&messenger, channel_name, &codec);
 
   bool on_listen_called = false;
-  flutter::StreamHandler<flutter::EncodableValue> handler(
+  auto handler =
+    std::make_unique<flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
       [&on_listen_called](
           const flutter::EncodableValue* arguments,
           std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
@@ -62,7 +64,7 @@ TEST(EventChannelTest, Registration) {
       [](const flutter::EncodableValue* arguments) 
         -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
            return nullptr; });
-  channel.SetStreamHandler(&handler);
+  channel.SetStreamHandler(std::move(handler));
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 
@@ -84,7 +86,8 @@ TEST(EventChannelTest, Unregistration) {
   const StandardMethodCodec& codec = StandardMethodCodec::GetInstance();
   EventChannel channel(&messenger, channel_name, &codec);
 
-  flutter::StreamHandler<flutter::EncodableValue> handler(
+  auto handler =
+    std::make_unique<flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
       [](const flutter::EncodableValue* arguments,
          std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
              events) ->
@@ -93,7 +96,7 @@ TEST(EventChannelTest, Unregistration) {
       [](const flutter::EncodableValue* arguments) 
         -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
            return nullptr; });
-  channel.SetStreamHandler(&handler);
+  channel.SetStreamHandler(std::move(handler));
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 
@@ -111,7 +114,8 @@ TEST(EventChannelTest, Cancel) {
 
   bool on_listen_called = false;
   bool on_cancel_called = false;
-  flutter::StreamHandler<flutter::EncodableValue> handler(
+  auto handler =
+    std::make_unique<flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
       [&on_listen_called](
           const flutter::EncodableValue* arguments,
           std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
@@ -125,7 +129,7 @@ TEST(EventChannelTest, Cancel) {
           on_cancel_called = true;
           return nullptr;
         });
-  channel.SetStreamHandler(&handler);
+  channel.SetStreamHandler(std::move(handler));
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 
@@ -157,7 +161,8 @@ TEST(EventChannelTest, ConsecutiveListen) {
 
   bool on_listen_called = false;
   bool on_cancel_called = false;
-  flutter::StreamHandler<flutter::EncodableValue> handler(
+  auto handler =
+    std::make_unique<flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
       [&on_listen_called](
           const flutter::EncodableValue* arguments,
           std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
@@ -171,7 +176,7 @@ TEST(EventChannelTest, ConsecutiveListen) {
           on_cancel_called = true;
           return nullptr;
         });
-  channel.SetStreamHandler(&handler);
+  channel.SetStreamHandler(std::move(handler));
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
 

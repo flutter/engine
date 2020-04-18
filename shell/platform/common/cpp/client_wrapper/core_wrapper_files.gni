@@ -10,6 +10,7 @@ core_cpp_client_wrapper_includes =
                     "include/flutter/engine_method_result.h",
                     "include/flutter/event_channel.h",
                     "include/flutter/event_sink.h",
+                    "include/flutter/event_stream_handler_functions.h",
                     "include/flutter/event_stream_handler.h",
                     "include/flutter/message_codec.h",
                     "include/flutter/method_call.h",

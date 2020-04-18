@@ -784,6 +784,7 @@ FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/event_channel.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/event_sink.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/event_stream_handler.h
+FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/event_stream_handler_functions.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/message_codec.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/method_call.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/include/flutter/method_channel.h
