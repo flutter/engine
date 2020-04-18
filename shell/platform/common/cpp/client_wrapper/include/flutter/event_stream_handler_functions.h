@@ -16,8 +16,8 @@ namespace flutter {
 template <typename T>
 using StreamHandlerListen =
     std::function<std::unique_ptr<StreamHandlerError<T>>(
-      const T* arguments,
-      std::unique_ptr<EventSink<T>>&& events)>;
+        const T* arguments,
+        std::unique_ptr<EventSink<T>>&& events)>;
 
 template <typename T>
 using StreamHandlerCancel =
@@ -58,7 +58,7 @@ class StreamHandlerFunctions : public StreamHandler<T> {
     if (on_cancel_) {
       return on_cancel_(arguments);
     }
- 
+
     auto error = std::make_unique<StreamHandlerError<T>>(
         "error", "Not found StreamHandlerCancel hander", nullptr);
     return std::move(error);

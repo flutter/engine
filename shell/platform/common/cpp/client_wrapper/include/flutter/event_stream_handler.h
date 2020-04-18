@@ -59,13 +59,13 @@ class StreamHandler {
 
  protected:
   // Implementation of the public interface, to be provided by subclasses.
-  virtual std::unique_ptr<StreamHandlerError<T>>
-      OnListenInternal(const T* arguments,
-                       std::unique_ptr<EventSink<T>>&& events) = 0;
+  virtual std::unique_ptr<StreamHandlerError<T>> OnListenInternal(
+      const T* arguments,
+      std::unique_ptr<EventSink<T>>&& events) = 0;
 
   // Implementation of the public interface, to be provided by subclasses.
-  virtual std::unique_ptr<StreamHandlerError<T>>
-      OnCancelInternal(const T* arguments) = 0;
+  virtual std::unique_ptr<StreamHandlerError<T>> OnCancelInternal(
+      const T* arguments) = 0;
 };
 
 }  // namespace flutter
