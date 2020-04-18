@@ -54,8 +54,14 @@ TEST(EventChannelTest, Registration) {
       [&on_listen_called](
           const flutter::EncodableValue* arguments,
           std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
-              events) { on_listen_called = true; },
-      [](const flutter::EncodableValue* arguments) {});
+              events) -> 
+              std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
+                on_listen_called = true;
+                return nullptr;
+              },
+      [](const flutter::EncodableValue* arguments) 
+        -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
+           return nullptr; });
   channel.SetStreamHandler(&handler);
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
@@ -81,8 +87,12 @@ TEST(EventChannelTest, Unregistration) {
   flutter::StreamHandler<flutter::EncodableValue> handler(
       [](const flutter::EncodableValue* arguments,
          std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
-             events) {},
-      [](const flutter::EncodableValue* arguments) {});
+             events) ->
+              std::unique_ptr<StreamHandlerError<flutter::EncodableValue>>
+              { return nullptr; },
+      [](const flutter::EncodableValue* arguments) 
+        -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
+           return nullptr; });
   channel.SetStreamHandler(&handler);
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
@@ -105,10 +115,16 @@ TEST(EventChannelTest, Cancel) {
       [&on_listen_called](
           const flutter::EncodableValue* arguments,
           std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
-              events) { on_listen_called = true; },
-      [&on_cancel_called](const flutter::EncodableValue* arguments) {
-        on_cancel_called = true;
-      });
+              events) -> 
+              std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
+                on_listen_called = true;
+                return nullptr;
+              },
+      [&on_cancel_called](const flutter::EncodableValue* arguments)
+        -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
+          on_cancel_called = true;
+          return nullptr;
+        });
   channel.SetStreamHandler(&handler);
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);
@@ -145,10 +161,16 @@ TEST(EventChannelTest, ConsecutiveListen) {
       [&on_listen_called](
           const flutter::EncodableValue* arguments,
           std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&&
-              events) { on_listen_called = true; },
-      [&on_cancel_called](const flutter::EncodableValue* arguments) {
-        on_cancel_called = true;
-      });
+              events) ->
+              std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
+                on_listen_called = true;
+                return nullptr;
+              },
+      [&on_cancel_called](const flutter::EncodableValue* arguments)
+        -> std::unique_ptr<StreamHandlerError<flutter::EncodableValue>> {
+          on_cancel_called = true;
+          return nullptr;
+        });
   channel.SetStreamHandler(&handler);
   EXPECT_EQ(messenger.last_message_handler_channel(), channel_name);
   EXPECT_NE(messenger.last_message_handler(), nullptr);

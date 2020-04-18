@@ -9,6 +9,19 @@
 
 namespace flutter {
 
+template <typename T>
+struct StreamHandlerError {
+  const std::string& error_code;
+  const std::string& error_message;
+  const T* error_details;
+
+  StreamHandlerError(const std::string& error_code,
+                     const std::string& error_message,
+                     const T* error_details)
+    : error_code(error_code), error_message(error_message),
+      error_details(error_details) {}
+};
+
 // Handler of stream setup and tear-down requests.
 // Implementations must be prepared to accept sequences of alternating calls to
 // onListen() and onCancel(). Implementations should ideally consume no
@@ -17,15 +30,20 @@ namespace flutter {
 // platform-specific event sources onListen() and deregister again onCancel().
 template <typename T>
 struct StreamHandler {
-  // Handles a request to set up an event stream.
+  // Handles a request to set up an event stream. Returns error if representing
+  // an unsuccessful outcome of invoking the method, possibly nullptr.
   // |arguments| is stream configuration arguments and
   // |events| is an EventSink for emitting events to the Flutter receiver.
-  using OnListen = std::function<void(const T* arguments,
-                                      std::unique_ptr<EventSink<T>>&& events)>;
+  using OnListen = 
+    std::function<std::unique_ptr<StreamHandlerError<T>>
+      (const T* arguments, std::unique_ptr<EventSink<T>>&& events)>;
 
   // Handles a request to tear down the most recently created event stream.
+  // Returns error if representing an unsuccessful outcome of invoking the method,
+  // possibly nullptr.
   // |arguments| is stream configuration arguments.
-  using OnCancel = std::function<void(const T* arguments)>;
+  using OnCancel = 
+    std::function<std::unique_ptr<StreamHandlerError<T>>(const T* arguments)>;
 
   OnListen onListen;
   OnCancel onCancel;
