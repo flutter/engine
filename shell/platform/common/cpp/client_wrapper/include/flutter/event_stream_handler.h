@@ -45,7 +45,6 @@ class StreamHandler {
   // |events| is an EventSink for emitting events to the Flutter receiver.
   std::unique_ptr<StreamHandlerError<T>> OnListen(
       const T* arguments,
-      std::unique_ptr<StreamHandlerError<T>> error,
       std::unique_ptr<EventSink<T>>&& events) {
     return OnListenInternal(arguments, std::move(events));
   }
