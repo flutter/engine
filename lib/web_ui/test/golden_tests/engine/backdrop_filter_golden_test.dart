@@ -13,7 +13,7 @@ import 'package:test/test.dart';
 import '../../matchers.dart';
 import 'package:web_engine_tester/golden_tester.dart';
 
-final Rect region = Rect.fromLTWH(0, 0, 500, 100);
+final Rect region = Rect.fromLTWH(0, 0, 500, 500);
 
 void main() async {
   setUp(() async {
@@ -28,37 +28,37 @@ void main() async {
     await webOnlyFontCollection.ensureFontsLoaded();
   });
 
-//  // The black circle on the left should not be blurred since it is outside
-//  // the clip boundary around backdrop filter. However there should be only
-//  // one red dot since the other one should be blurred by filter.
-//  test('Background should only blur at ancestor clip boundary', () async {
-//    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-//    final Picture backgroundPicture = _drawBackground();
-//    builder.addPicture(Offset.zero, backgroundPicture);
-//
-//    builder.pushClipRect(
-//      const Rect.fromLTRB(10, 10, 300, 300),
-//    );
-//    final Picture circles1 = _drawTestPictureWithCircles(30, 30);
-//    builder.addPicture(Offset.zero, circles1);
-//
-//    builder.pushClipRect(
-//      const Rect.fromLTRB(60, 10, 300, 300),
-//    );
-//    builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-//      oldLayer: null);
-//    final Picture circles2 = _drawTestPictureWithCircles(90, 30);
-//    builder.addPicture(Offset.zero, circles2);
-//    builder.pop();
-//    builder.pop();
-//    builder.pop();
-//
-//    html.document.body.append(builder
-//        .build()
-//        .webOnlyRootElement);
-//
-//    await matchGoldenFile('backdrop_filter_clip.png', region: region, write: true);
-//  });
+  // The black circle on the left should not be blurred since it is outside
+  // the clip boundary around backdrop filter. However there should be only
+  // one red dot since the other one should be blurred by filter.
+  test('Background should only blur at ancestor clip boundary', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture backgroundPicture = _drawBackground();
+    builder.addPicture(Offset.zero, backgroundPicture);
+
+    builder.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+    );
+    final Picture circles1 = _drawTestPictureWithCircles(30, 30);
+    builder.addPicture(Offset.zero, circles1);
+
+    builder.pushClipRect(
+      const Rect.fromLTRB(60, 10, 300, 300),
+    );
+    builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+      oldLayer: null);
+    final Picture circles2 = _drawTestPictureWithCircles(90, 30);
+    builder.addPicture(Offset.zero, circles2);
+    builder.pop();
+    builder.pop();
+    builder.pop();
+
+    html.document.body.append(builder
+        .build()
+        .webOnlyRootElement);
+
+    await matchGoldenFile('backdrop_filter_clip.png', region: region);
+  });
 
   test('Background should only blur at ancestor clip boundary after move', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
@@ -91,7 +91,7 @@ void main() async {
     );
     builder2.addPicture(Offset.zero, circles1);
     builder2.pushClipRect(
-      const Rect.fromLTRB(10, 55, 300, 300),
+      const Rect.fromLTRB(10, 75, 300, 300),
       oldLayer: clipEngineLayer2
     );
     builder2.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
@@ -105,7 +105,7 @@ void main() async {
         .build()
         .webOnlyRootElement);
 
-    await matchGoldenFile('backdrop_filter_clip_moved.png', region: region, write: true);
+    await matchGoldenFile('backdrop_filter_clip_moved.png', region: region);
   });
 }
 

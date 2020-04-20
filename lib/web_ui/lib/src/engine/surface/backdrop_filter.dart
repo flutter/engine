@@ -20,7 +20,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   html.Element get childContainer => _childContainer;
   html.Element _childContainer;
   html.Element _filterElement;
-  html.HtmlElement _activeAncestorClipElement;
+  ui.Rect _activeClipBounds;
   // Cached inverted transform for _transform.
   Matrix4 _invertedTransform;
   // Reference to transform last used to cache [_invertedTransform].
@@ -78,21 +78,19 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     ui.Rect rect = transformRect(_invertedTransform, ui.Rect.fromLTRB(0, 0,
         ui.window.physicalSize.width * dpr,
         ui.window.physicalSize.height * dpr));
-    String left = '{rect.left}px';
-    String top = '{rect.top}px';
-    String width = '${rect.width}px';
-    String height = '${rect.height}px';
+    double left = rect.left;
+    double top = rect.top;
+    double width = rect.width;
+    double height = rect.height;
     PersistedContainerSurface parentSurface = parent;
     while (parentSurface != null) {
       if (parentSurface.isClipping) {
         html.HtmlElement parentElement = parentSurface.rootElement;
-        _activeAncestorClipElement = parentElement;
-        final html.CssStyleDeclaration parentElementStyle = parentElement
-            .style;
-        left = parentElementStyle.left;
-        top = parentElementStyle.top;
-        width = parentElementStyle.width;
-        height = parentElementStyle.height;
+        _activeClipBounds = parentSurface._localClipBounds;
+        left = _activeClipBounds.left;
+        top = _activeClipBounds.top;
+        width = _activeClipBounds.width;
+        height = _activeClipBounds.height;
         break;
       }
       parentSurface = parentSurface.parent;
@@ -100,10 +98,10 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     final html.CssStyleDeclaration filterElementStyle = _filterElement.style;
     filterElementStyle
       ..position = 'absolute'
-      ..left = left
-      ..top = top
-      ..width = width
-      ..height = height;
+      ..left = '${left}px'
+      ..top = '${top}px'
+      ..width = '${width}px'
+      ..height = '${height}px';
     if (browserEngine == BrowserEngine.firefox) {
       // For FireFox for now render transparent black background.
       // TODO(flutter_web): Switch code to use filter when
@@ -134,12 +132,11 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       html.HtmlElement parentElement = null;
       while (parentSurface != null) {
         if (parentSurface.isClipping) {
-          parentElement = parentSurface.rootElement;
+          if (parentSurface._localClipBounds != _activeClipBounds) {
+            apply();
+          }
           break;
         }
-      }
-      if (parentElement != _activeAncestorClipElement) {
-        apply();
       }
     }
   }
