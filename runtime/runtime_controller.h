@@ -170,7 +170,7 @@ class RuntimeController final : public WindowClient {
   /// @deprecated The persistent isolate data must be used for this purpose
   ///             instead.
   ///
-  /// @param[in]  locale_data  The locale data. This should consist of avector
+  /// @param[in]  locale_data  The locale data. This should consist of a vector
   ///             of 4 strings, representing languageCode, contryCode,
   ///             scriptCode, and variant of the locale.
   ///
