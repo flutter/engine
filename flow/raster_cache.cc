@@ -242,7 +242,7 @@ bool RasterCache::Draw(const Layer* layer,
   entry.used_this_frame = true;
 
   if (entry.image.is_valid()) {
-    entry.image.draw(canvas);
+    entry.image.draw(canvas, paint);
     return true;
   }
 
