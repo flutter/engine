@@ -134,7 +134,6 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   void _checkForUpdatedAncestorClipElement() {
     // If parent clip element has moved, adjust bounds.
     PersistedContainerSurface parentSurface = parent;
-    html.HtmlElement parentElement = null;
     while (parentSurface != null) {
       if (parentSurface.isClipping) {
         if (parentSurface._localClipBounds != _activeClipBounds) {
@@ -142,6 +141,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
         }
         break;
       }
+      parentSurface = parentSurface.parent;
     }
   }
 
