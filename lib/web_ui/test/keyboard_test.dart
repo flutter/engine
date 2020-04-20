@@ -386,7 +386,7 @@ void main() {
         async.elapse(Duration(milliseconds: 50));
         expect(messages, isEmpty);
 
-        async.elapse(Duration(seconds: 2));
+        async.elapse(Duration(seconds: 3));
         expect(messages, <Map<String, dynamic>>[
           <String, dynamic>{
             'type': 'keyup',
@@ -471,7 +471,7 @@ void main() {
 
         // When repeat events stop for a long-enough period of time, a keyup
         // should be synthesized.
-        async.elapse(Duration(seconds: 2));
+        async.elapse(Duration(seconds: 3));
         expect(messages, <Map<String, dynamic>>[
           <String, dynamic>{
             'type': 'keyup',
@@ -528,7 +528,7 @@ void main() {
 
       // There has been no repeat events for "AltLeft" nor "i". Only "i" should
       // synthesize a keyup event.
-      async.elapse(Duration(seconds: 2));
+      async.elapse(Duration(seconds: 3));
       expect(messages, <Map<String, dynamic>>[
         <String, dynamic>{
           'type': 'keyup',

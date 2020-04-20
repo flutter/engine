@@ -5,7 +5,12 @@
 // @dart = 2.6
 part of engine;
 
-const Duration _keydownCancelDuration = Duration(seconds: 1);
+/// After a keydown is received, this is the duration we wait for a repeat event
+/// before we decide to synthesize a keyup event.
+///
+/// On Linux and Windows, the typical ranges for keyboard repeat delay go up to
+/// 1000ms. On Mac, the range goes up to 2000ms.
+const Duration _keydownCancelDuration = Duration(milliseconds: 1000);
 
 /// Provides keyboard bindings, such as the `flutter/keyevent` channel.
 class Keyboard {
@@ -20,6 +25,10 @@ class Keyboard {
   static Keyboard get instance => _instance;
   static Keyboard _instance;
 
+  /// A mapping of [KeyboardEvent.code] to [Timer].
+  ///
+  /// The timer is for when to synthesize a keyup for the [KeyboardEvent.code]
+  /// if no repeat events were received.
   final Map<String, Timer> _keydownTimers = <String, Timer>{};
 
   html.EventListener _keydownListener;
@@ -60,6 +69,9 @@ class Keyboard {
 
   static const JSONMessageCodec _messageCodec = JSONMessageCodec();
 
+  /// Contains meta state from the latest event.
+  ///
+  /// Initializing with `0x0` which means no meta keys are pressed.
   int _lastMetaState = 0x0;
 
   void _handleHtmlEvent(html.KeyboardEvent event) {
@@ -73,10 +85,10 @@ class Keyboard {
 
     final String timerKey = event.code;
 
-    // Don't synthesize a keyup event for meta keys because the browser always
+    // Don't synthesize a keyup event for modifier keys because the browser always
     // sends a keyup event for those.
-    if (!_isMetaKey(event)) {
-      // When the user clicks a browser/system shortcut (e.g. `cmd+alt+i`) the
+    if (!_isModifierKey(event)) {
+      // When the user enters a browser/system shortcut (e.g. `cmd+alt+i`) the
       // browser doesn't send a keyup for it. This puts the framework in a
       // corrupt state because it thinks the key was never released.
       //
@@ -84,13 +96,13 @@ class Keyboard {
       // while the key is held down by the user. If we don't receive a repeat
       // event within a specific duration ([_keydownCancelDuration]) we assume
       // the user has released the key and we synthesize a keyup event.
+      _keydownTimers[timerKey]?.cancel();
       if (event.type == 'keydown') {
-        _keydownTimers[timerKey]?.cancel();
         _keydownTimers[timerKey] = Timer(_keydownCancelDuration, () {
+          _keydownTimers.remove(timerKey);
           _synthesizeKeyup(event);
         });
       } else {
-        _keydownTimers[timerKey]?.cancel();
         _keydownTimers.remove(timerKey);
       }
     }
@@ -158,7 +170,11 @@ int _getMetaState(html.KeyboardEvent event) {
   return metaState;
 }
 
-bool _isMetaKey(html.KeyboardEvent event) {
+/// Returns true if the [event] was caused by a modifier key.
+///
+/// Modifier keys are shift, alt, ctrl and meta/cmd/win. These are the keys used
+/// to perform keyboard shortcuts (e.g. `cmd+c`, `cmd+l`).
+bool _isModifierKey(html.KeyboardEvent event) {
   final String key = event.key;
   return key == 'Meta' || key == 'Shift' || key == 'Alt' || key == 'Control';
 }
