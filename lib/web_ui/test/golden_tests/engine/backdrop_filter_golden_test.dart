@@ -28,36 +28,88 @@ void main() async {
     await webOnlyFontCollection.ensureFontsLoaded();
   });
 
-  // The black circle on the left should not be blurred since it is outside
-  // the clip boundary around backdrop filter. However there should be only
-  // one red dot since the other one should be blurred by filter.
-  test('Background should only blur at ancestor clip boundary', () async {
+//  // The black circle on the left should not be blurred since it is outside
+//  // the clip boundary around backdrop filter. However there should be only
+//  // one red dot since the other one should be blurred by filter.
+//  test('Background should only blur at ancestor clip boundary', () async {
+//    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+//    final Picture backgroundPicture = _drawBackground();
+//    builder.addPicture(Offset.zero, backgroundPicture);
+//
+//    builder.pushClipRect(
+//      const Rect.fromLTRB(10, 10, 300, 300),
+//    );
+//    final Picture circles1 = _drawTestPictureWithCircles(30, 30);
+//    builder.addPicture(Offset.zero, circles1);
+//
+//    builder.pushClipRect(
+//      const Rect.fromLTRB(60, 10, 300, 300),
+//    );
+//    builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+//      oldLayer: null);
+//    final Picture circles2 = _drawTestPictureWithCircles(90, 30);
+//    builder.addPicture(Offset.zero, circles2);
+//    builder.pop();
+//    builder.pop();
+//    builder.pop();
+//
+//    html.document.body.append(builder
+//        .build()
+//        .webOnlyRootElement);
+//
+//    await matchGoldenFile('backdrop_filter_clip.png', region: region, write: true);
+//  });
+
+  test('Background should only blur at ancestor clip boundary after move', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    _drawBackground(builder);
-    builder.pushClipRect(
+    final Picture backgroundPicture = _drawBackground();
+    builder.addPicture(Offset.zero, backgroundPicture);
+    ClipRectEngineLayer clipEngineLayer = builder.pushClipRect(
       const Rect.fromLTRB(10, 10, 300, 300),
     );
-    _drawTestPictureWithCircles(builder, 30, 30);
-    builder.pushClipRect(
+    final Picture circles1 = _drawTestPictureWithCircles(30, 30);
+    builder.addPicture(Offset.zero, circles1);
+    ClipRectEngineLayer clipEngineLayer2 = builder.pushClipRect(
       const Rect.fromLTRB(60, 10, 300, 300),
     );
-    builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-      oldLayer: null);
-    _drawTestPictureWithCircles(builder, 90, 30);
+    BackdropFilterEngineLayer oldBackdropFilterLayer =
+        builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+        oldLayer: null);
+    final Picture circles2 = _drawTestPictureWithCircles(90, 30);
+    builder.addPicture(Offset.zero, circles2);
     builder.pop();
     builder.pop();
     builder.pop();
+    builder.build();
 
-    html.document.body.append(builder
+    // Now reparent filter layer in next scene.
+    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    builder2.addPicture(Offset.zero, backgroundPicture);
+    builder2.pushClipRect(
+      const Rect.fromLTRB(10, 10, 300, 300),
+      oldLayer: clipEngineLayer
+    );
+    builder2.addPicture(Offset.zero, circles1);
+    builder2.pushClipRect(
+      const Rect.fromLTRB(10, 55, 300, 300),
+      oldLayer: clipEngineLayer2
+    );
+    builder2.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+        oldLayer: oldBackdropFilterLayer);
+    builder2.addPicture(Offset.zero, circles2);
+    builder2.pop();
+    builder2.pop();
+    builder2.pop();
+
+    html.document.body.append(builder2
         .build()
         .webOnlyRootElement);
 
-    await matchGoldenFile('backdrop_filter_clip.png', region: region);
+    await matchGoldenFile('backdrop_filter_clip_moved.png', region: region, write: true);
   });
 }
 
-void _drawTestPictureWithCircles(SceneBuilder builder, double offsetX,
-    double offsetY) {
+Picture _drawTestPictureWithCircles(double offsetX, double offsetY) {
   final EnginePictureRecorder recorder = PictureRecorder();
   final RecordingCanvas canvas =
   recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
@@ -81,14 +133,10 @@ void _drawTestPictureWithCircles(SceneBuilder builder, double offsetX,
       Paint()
         ..style = PaintingStyle.fill
         ..color = const Color.fromRGBO(0, 0, 255, 1));
-  final Picture picture = recorder.endRecording();
-  builder.addPicture(
-    Offset.zero,
-    picture,
-  );
+  return recorder.endRecording();
 }
 
-void _drawBackground(SceneBuilder builder) {
+Picture _drawBackground() {
   final EnginePictureRecorder recorder = PictureRecorder();
   final RecordingCanvas canvas =
   recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
@@ -98,9 +146,5 @@ void _drawBackground(SceneBuilder builder) {
         ..style = PaintingStyle.fill
         ..color = Color(0xFFE0FFE0)
       );
-  final Picture picture = recorder.endRecording();
-  builder.addPicture(
-    Offset.zero,
-    picture,
-  );
+  return recorder.endRecording();
 }
