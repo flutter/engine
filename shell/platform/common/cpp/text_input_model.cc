@@ -31,7 +31,6 @@ static constexpr char kTextInputTypeName[] = "name";
 #if defined(_MSC_VER)
 // TODO(naifu): This temporary code is to solve link error.(VS2015/2017)
 // https://social.msdn.microsoft.com/Forums/vstudio/en-US/8f40dcd8-c67f-4eba-9134-a19b9178e481/vs-2015-rc-linker-stdcodecvt-error
-std::locale::id std::codecvt<char32_t, char, _Mbstatet>::id;
 std::locale::id std::codecvt<char16_t, char, _Mbstatet>::id;
 #endif  // defined(_MSC_VER)
 
@@ -101,15 +100,17 @@ void TextInputModel::DeleteSelected() {
 }
 
 void TextInputModel::AddCodePoint(char32_t c) {
-  // TODO: Consider replacing this with manual conversion code if it
-  std::wstring_convert<
-      std::codecvt_utf16<char32_t, 0x10ffff, std::little_endian>, char32_t>
-      utf32_converter;
-  std::string utf16_bytes = utf32_converter.to_bytes(c);
-  std::u16string character_string(
-      reinterpret_cast<const char16_t*>(utf16_bytes.c_str()),
-      utf16_bytes.length() / sizeof(char16_t));
-  AddText(character_string);
+  if (c <= 0xFFFF) {
+    AddText(std::u16string({static_cast<char16_t>(c)}));
+  } else {
+    char32_t to_decompose = c - 0x10000;
+    AddText(std::u16string({
+        // High surrogate.
+        static_cast<char16_t>((to_decompose >> 10) + 0xd800),
+        // Low surrogate.
+        static_cast<char16_t>((to_decompose % 0x400) + 0xdc00),
+    }));
+  }
 }
 
 void TextInputModel::AddText(const std::u16string& text) {
