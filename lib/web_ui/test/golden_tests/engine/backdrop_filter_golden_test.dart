@@ -4,13 +4,11 @@
 
 // @dart = 2.6
 import 'dart:html' as html;
-import 'dart:math' as math;
 
 import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
 import 'package:test/test.dart';
 
-import '../../matchers.dart';
 import 'package:web_engine_tester/golden_tester.dart';
 
 final Rect region = Rect.fromLTWH(0, 0, 500, 500);
