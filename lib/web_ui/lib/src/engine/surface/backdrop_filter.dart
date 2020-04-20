@@ -127,17 +127,27 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     if (filter != oldSurface.filter) {
       apply();
     } else {
-      // If parent clip element has moved, adjust bounds.
-      PersistedContainerSurface parentSurface = parent;
-      html.HtmlElement parentElement = null;
-      while (parentSurface != null) {
-        if (parentSurface.isClipping) {
-          if (parentSurface._localClipBounds != _activeClipBounds) {
-            apply();
-          }
-          break;
+      _checkForUpdatedAncestorClipElement();
+    }
+  }
+
+  void _checkForUpdatedAncestorClipElement() {
+    // If parent clip element has moved, adjust bounds.
+    PersistedContainerSurface parentSurface = parent;
+    html.HtmlElement parentElement = null;
+    while (parentSurface != null) {
+      if (parentSurface.isClipping) {
+        if (parentSurface._localClipBounds != _activeClipBounds) {
+          apply();
         }
+        break;
       }
     }
+  }
+
+  @override
+  void retain() {
+    super.retain();
+    _checkForUpdatedAncestorClipElement();
   }
 }
