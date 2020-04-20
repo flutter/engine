@@ -20,6 +20,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   html.Element get childContainer => _childContainer;
   html.Element _childContainer;
   html.Element _filterElement;
+  html.HtmlElement _activeAncestorClipElement;
   // Cached inverted transform for _transform.
   Matrix4 _invertedTransform;
   // Reference to transform last used to cache [_invertedTransform].
@@ -74,17 +75,20 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     // Therefore we need to use parent clip element bounds for
     // backdrop boundary.
     final double dpr = ui.window.devicePixelRatio;
-    ui.Rect rect = transformLTRB(_invertedTransform, 0, 0,
-        ui.window.physicalSize.width * dpr, ui.window.physicalSize.height);
-    PersistedSurface parentSurface = parent;
+    ui.Rect rect = transformRect(_invertedTransform, ui.Rect.fromLTRB(0, 0,
+        ui.window.physicalSize.width * dpr,
+        ui.window.physicalSize.height * dpr));
     String left = '{rect.left}px';
     String top = '{rect.top}px';
     String width = '${rect.width}px';
     String height = '${rect.height}px';
+    PersistedContainerSurface parentSurface = parent;
     while (parentSurface != null) {
-      html.HtmlElement parentElement = parentSurface.rootElement;
-      if (parentElement.tagName == 'flt-clip' || parentElement.tagName == 'FLT-CLIP') {
-        final html.CssStyleDeclaration parentElementStyle = parentElement.style;
+      if (parentSurface.isClipping) {
+        html.HtmlElement parentElement = parentSurface.rootElement;
+        _activeAncestorClipElement = parentElement;
+        final html.CssStyleDeclaration parentElementStyle = parentElement
+            .style;
         left = parentElementStyle.left;
         top = parentElementStyle.top;
         width = parentElementStyle.width;
@@ -124,6 +128,19 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     super.update(oldSurface);
     if (filter != oldSurface.filter) {
       apply();
+    } else {
+      // If parent clip element has moved, adjust bounds.
+      PersistedContainerSurface parentSurface = parent;
+      html.HtmlElement parentElement = null;
+      while (parentSurface != null) {
+        if (parentSurface.isClipping) {
+          parentElement = parentSurface.rootElement;
+          break;
+        }
+      }
+      if (parentElement != _activeAncestorClipElement) {
+        apply();
+      }
     }
   }
 }
