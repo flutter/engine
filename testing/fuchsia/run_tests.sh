@@ -37,9 +37,11 @@ reboot() {
       -c "log_listener --dump_logs yes" \
       --identity-file $pkey
 
+  echo "$(date) START:REBOOT ------------------------------------------"
   # note: this will set an exit code of 255, which we can ignore.
   ./fuchsia_ctl -d $device_name ssh -c "dm reboot-recovery" \
       --identity-file $pkey || true
+  echo "$(date) END:REBOOT --------------------------------------------"
 }
 
 trap reboot EXIT
@@ -77,13 +79,13 @@ echo "$(date) START:flutter_runner_tests ----------------------------"
 
 # TODO(https://bugs.fuchsia.dev/p/fuchsia/issues/detail?id=47081)
 # Re-enable once the crash is resolved
-./fuchsia_ctl -d $device_name test \
-    -f flutter_aot_runner-0.far    \
-    -f flutter_runner_scenic_tests-0.far  \
-    -t flutter_runner_scenic_tests \
-    --identity-file $pkey \
-    --timeout-seconds 300 \
-    --packages-directory packages
+#./fuchsia_ctl -d $device_name test \
+#    -f flutter_aot_runner-0.far    \
+#    -f flutter_runner_scenic_tests-0.far  \
+#    -t flutter_runner_scenic_tests \
+#    --identity-file $pkey \
+#    --timeout-seconds 300 \
+#    --packages-directory packages
 
 # TODO(https://github.com/flutter/flutter/issues/50032) Enable after the
 # Fuchsia message loop migration is complete.
