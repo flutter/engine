@@ -149,14 +149,13 @@ class RuntimeController final : public WindowClient {
   //----------------------------------------------------------------------------
   /// @brief      Forward the specified locale data to the running isolate. If
   ///             the isolate is not running, this data will be saved and
-  ///             flushed to the isolate when it starts running. Locale_data
-  ///             consists of groups of 4 strings, each group representing
-  ///             a single locale.
+  ///             flushed to the isolate when it starts running.
   ///
   /// @deprecated The persistent isolate data must be used for this purpose
   ///             instead.
   ///
-  /// @param[in]  locale_data  The locale data
+  /// @param[in]  locale_data  The locale data. This should consist of groups of
+  ///             4 strings, each group representing a single locale.
   ///
   /// @return     If the locale data was forwarded to the running isolate.
   ///
@@ -165,16 +164,15 @@ class RuntimeController final : public WindowClient {
   //----------------------------------------------------------------------------
   /// @brief      Forward the specified locale data to the running isolate. If
   ///             the isolate is not running, this data will be saved and
-  ///             flushed to the isolate when it starts running. Locale_data
-  ///             should consist of a vector of 4 strings, representing
-  ///             languageCode, contryCode, scriptCode, and variant of the
-  ///             locale.
+  ///             flushed to the isolate when it starts running.
   ///
   ///
   /// @deprecated The persistent isolate data must be used for this purpose
   ///             instead.
   ///
-  /// @param[in]  locale_data  The locale data
+  /// @param[in]  locale_data  The locale data. This should consist of avector
+  ///             of 4 strings, representing languageCode, contryCode,
+  ///             scriptCode, and variant of the locale.
   ///
   /// @return     If the locale data was forwarded to the running isolate.
   ///

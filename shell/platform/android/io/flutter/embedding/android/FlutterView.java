@@ -870,6 +870,7 @@ public class FlutterView extends FrameLayout {
         Locale locale = localeList.get(index);
         languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
       }
+      // TODO(garyq) implement a real locale resolution.
       platformResolvedLocale =
           Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
     }
