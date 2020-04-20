@@ -3,34 +3,56 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-void main() {
-  ui.platformViewRegistry.registerViewFactory('ScrollableElement', (int viewId) {
-    final DivElement wrapperDiv = DivElement()
-      ..id = 'wrapper'
-      ..style.overflowY = 'auto';
-    final DivElement scrollableDiv = DivElement()
-      ..id = 'scrollable'
-      ..style.width = '100px'
-      ..style.height = '500px'
-      ..style.backgroundImage = 'linear-gradient(red, orange, yellow, green, blue, indigo, violet)';
-    wrapperDiv.append(scrollableDiv);
-    return wrapperDiv;
-  });
+// ignore: public_member_api_docs
+class HtmlWidgetController {
+  DivElement _wrapperDiv;
+  DivElement _scrollableDiv;
 
-  runApp(MaterialApp(home: HomeScreen()));
+  // ignore: public_member_api_docs
+  void registerFactory() {
+    ui.platformViewRegistry.registerViewFactory('ScrollableElement', (int viewId) {
+      _wrapperDiv = DivElement()
+        ..id = 'wrapper'
+        ..style.overflowY = 'auto';
+      _scrollableDiv = DivElement()
+        ..id = 'scrollable'
+        ..style.width = '100px'
+        ..style.height = '500px'
+        ..style.backgroundImage = 'linear-gradient(red, orange, yellow, green, blue, indigo, violet)';
+      _wrapperDiv.append(_scrollableDiv);
+      return _wrapperDiv;
+    });
+  }
+
+  // ignore: public_member_api_docs
+  void scrollDown(int scrollPosition) {
+    _wrapperDiv.scrollTop = scrollPosition;
+  }
+
+  // ignore: public_member_api_docs
+  int getScrollPos() {
+    return _wrapperDiv.scrollTop;
+  }
 }
 
-class HomeScreen extends StatelessWidget {
+// ignore: public_member_api_docs
+final HtmlWidgetController htmlWidgetController = HtmlWidgetController();
+
+void main() {
+  htmlWidgetController.registerFactory();
+  runApp(MaterialApp(home: _HomeScreen()));
+}
+
+class _HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: Drawer(
-        child: RaisedButton(
-          key: const Key('closeDrawer'),
-          child: const Text('Close'),
-          onPressed: () => Navigator.of(context).pop(),
-        )
-      ),
+          child: RaisedButton(
+        key: const Key('closeDrawer'),
+        child: const Text('Close'),
+        onPressed: () => Navigator.of(context).pop(),
+      )),
       body: Center(
         child: Container(
           width: 100,
@@ -41,7 +63,7 @@ class HomeScreen extends StatelessWidget {
       floatingActionButton: Builder(builder: (BuildContext context) {
         return FloatingActionButton(
           key: const Key('openDrawer'),
-          child: const Icon(Icons.menu, color: Colors.white),
+          child: const Text('Open'),
           onPressed: () {
             Scaffold.of(context).openDrawer();
           },

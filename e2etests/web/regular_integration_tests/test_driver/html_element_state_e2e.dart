@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:e2e/e2e.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,14 +13,13 @@ void main() {
   testWidgets('HtmlElementView does not lose state.', (WidgetTester tester) async {
     app.main();
     await tester.pumpAndSettle();
-    final html.DivElement wrapper = html.querySelector('flt-platform-view').shadowRoot.getElementById('wrapper') as html.DivElement;
-    wrapper.scrollTop = 400;
-    expect(wrapper.scrollTop, 400);
+    app.htmlWidgetController.scrollDown(400);
+    expect(app.htmlWidgetController.getScrollPos(), 400);
     await tester.tap(find.byKey(const Key('openDrawer')));
     await tester.pumpAndSettle();
-    expect(wrapper.scrollTop, 400);
+    expect(app.htmlWidgetController.getScrollPos(), 400);
     await tester.tap(find.byKey(const Key('closeDrawer')));
     await tester.pumpAndSettle();
-    expect(wrapper.scrollTop, 400);
+    expect(app.htmlWidgetController.getScrollPos(), 400);
   });
 }
