@@ -9,6 +9,10 @@ part of engine;
 
 // Some parts of this file were inspired/copied from the AngularDart router.
 
+/// Enable the path based browser location handling.
+const bool usePathStrategy =
+    bool.fromEnvironment('flutter.web.usePathStrategy', defaultValue: false);
+
 /// [LocationStrategy] is responsible for representing and reading route state
 /// from the browser's URL.
 ///
@@ -44,17 +48,7 @@ abstract class LocationStrategy {
 /// to represent its state.
 ///
 /// In order to use this [LocationStrategy] for an app, it needs to be set in
-/// [ui.window.locationStrategy]:
-///
-/// ```dart
-/// import 'package:flutter_web/material.dart';
-/// import 'package:flutter_web/ui.dart' as ui;
-///
-/// void main() {
-///   ui.window.locationStrategy = const ui.HashLocationStrategy();
-///   runApp(MyApp());
-/// }
-/// ```
+/// [engine.window.locationStrategy]:
 class HashLocationStrategy extends LocationStrategy {
   final PlatformLocation _platformLocation;
 
@@ -88,6 +82,63 @@ class HashLocationStrategy extends LocationStrategy {
     return internalUrl.isEmpty
         ? '${_platformLocation.pathname}${_platformLocation.search}'
         : '#$internalUrl';
+  }
+
+  @override
+  void pushState(dynamic state, String title, String url) {
+    _platformLocation.pushState(state, title, prepareExternalUrl(url));
+  }
+
+  @override
+  void replaceState(dynamic state, String title, String url) {
+    _platformLocation.replaceState(state, title, prepareExternalUrl(url));
+  }
+
+  @override
+  Future<void> back() {
+    _platformLocation.back();
+    return _waitForPopState();
+  }
+
+  /// Waits until the next popstate event is fired.
+  ///
+  /// This is useful for example to wait until the browser has handled the
+  /// `history.back` transition.
+  Future<void> _waitForPopState() {
+    final Completer<void> completer = Completer<void>();
+    ui.VoidCallback unsubscribe;
+    unsubscribe = onPopState((_) {
+      unsubscribe();
+      completer.complete();
+    });
+    return completer.future;
+  }
+}
+
+/// This is an implementation of [LocationStrategy] that uses the browser URL's
+/// [path](https://en.wikipedia.org/wiki/Uniform_Resource_Locator#Syntax)
+/// to represent its state.
+///
+/// In order to use this [LocationStrategy] for an app, it needs to be set in
+/// [engine.window.locationStrategy.locationStrategy]:
+class PathLocationStrategy extends LocationStrategy {
+  final PlatformLocation _platformLocation;
+
+  const PathLocationStrategy(
+      [this._platformLocation = const BrowserPlatformLocation()]);
+
+  @override
+  ui.VoidCallback onPopState(html.EventListener fn) {
+    _platformLocation.onPopState(fn);
+    return () => _platformLocation.offPopState(fn);
+  }
+
+  @override
+  String get path => '${_platformLocation.pathname}${_platformLocation.search}';
+
+  @override
+  String prepareExternalUrl(String internalUrl) {
+    return internalUrl.isEmpty ? path : '$internalUrl';
   }
 
   @override
