@@ -87,7 +87,6 @@ bool TextInputModel::SetEditingState(size_t selection_base,
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
       utf16_converter;
   text_ = utf16_converter.from_bytes(text);
-  size_t length = text_.length();
   selection_base_ = text_.begin() + selection_base;
   selection_extent_ = text_.begin() + selection_extent;
   return true;
