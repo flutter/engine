@@ -171,7 +171,7 @@ void main() async {
 
   test('Computes paint bounds for a complex transform', () async {
     final RecordingCanvas rc = RecordingCanvas(screenRect);
-    final Float64List matrix = Float64List(16);
+    final Float32List matrix = Float32List(16);
     // translate(210, 220) , scale(2, 3), rotate(math.pi / 4.0)
     matrix[0] = 1.4;
     matrix[1] = 2.12;

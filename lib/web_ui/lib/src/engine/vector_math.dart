@@ -1045,6 +1045,18 @@ class Matrix4 {
     _m4storage[1] = array[i + 1];
     _m4storage[0] = array[i + 0];
   }
+
+  /// Converts this matrix to a [Float64List].
+  ///
+  /// Generally we try to stick with 32-bit floats inside the engine code
+  /// because it's faster (see [toMatrix32]). However, this method is handy
+  /// in tests that use the public `dart:ui` surface.
+  ///
+  /// This method is not optimized, but also is not meant to be fast, only
+  /// convenient.
+  Float64List toFloat64() {
+    return Float64List.fromList(_m4storage);
+  }
 }
 
 /// 3D column vector.
