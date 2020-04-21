@@ -794,9 +794,9 @@ class Window {
 
   /// The locale that the platform's native locale resolution system resolves to.
   ///
-  /// This value may differ between platforms and is meant to allow flutter locale
-  /// resoltion algorithms to into resolving consistently with other apps on the
-  /// device.
+  /// This value may differ between platforms and is meant to allow Flutter's locale
+  /// resolution algorithms access to a locale that is consistent with other apps
+  /// on the device. Using this property is optional.
   ///
   /// This value may be used in a custom [localeListResolutionCallback] or used directly
   /// in order to arrive at the most appropriate locale for the app.
