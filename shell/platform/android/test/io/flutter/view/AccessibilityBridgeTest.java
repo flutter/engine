@@ -154,7 +154,7 @@ public class AccessibilityBridgeTest {
     accessibilityBridge.updateSemantics(testSemanticsUpdate.buffer, testSemanticsUpdate.strings);
 
     // Pass an out of bounds MotionEvent.
-    assertEquals(accessibilityBridge.onAccessibilityHoverEvent(MotionEvent.obtain(1, 1, 1, -10, -10, 0)), true);
+    accessibilityBridge.onAccessibilityHoverEvent(MotionEvent.obtain(1, 1, 1, -10, -10, 0));
   }
 
   AccessibilityBridge setUpBridge() {
