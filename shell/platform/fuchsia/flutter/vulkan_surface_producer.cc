@@ -63,9 +63,13 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   std::vector<std::string> extensions = {
       VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
   };
+  bool enable_validation_layers = false;
+#ifdef VULKAN_VALIDATION_LAYERS_ENABLED
+  enable_validation_layers = true;
+#endif
   application_ = std::make_unique<vulkan::VulkanApplication>(
       *vk_, "FlutterRunner", std::move(extensions), VK_MAKE_VERSION(1, 0, 0),
-      VK_MAKE_VERSION(1, 1, 0));
+      VK_MAKE_VERSION(1, 1, 0), enable_validation_layers);
 
   if (!application_->IsValid() || !vk_->AreInstanceProcsSetup()) {
     // Make certain the application instance was created and it setup the
