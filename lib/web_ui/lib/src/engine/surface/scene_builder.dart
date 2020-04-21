@@ -108,8 +108,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       // scene to devicepixelratio. Use identity instead since CSS uses
       // logical device pixels.
       if (!ui.debugEmulateFlutterTesterEnvironment) {
-        assert(matrix[0] == window.devicePixelRatio &&
-           matrix[5] == window.devicePixelRatio);
+        assert(matrix4[0] == window.devicePixelRatio &&
+           matrix4[5] == window.devicePixelRatio);
       }
       matrix = Matrix4.identity().storage;
     } else {

@@ -1136,14 +1136,15 @@ abstract class Gradient extends Shader {
     _validateColorStops(colors, colorStops);
     // If focal is null or focal radius is null, this should be treated as a regular radial gradient
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
+    final Float32List matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
       return engine.GradientRadial(
-          center, radius, colors, colorStops, tileMode, engine.toMatrix32(matrix4));
+          center, radius, colors, colorStops, tileMode, matrix32);
     } else {
       assert(center != Offset.zero ||
           focal != Offset.zero); // will result in exception(s) in Skia side
       return engine.GradientConical(focal, focalRadius, center, radius, colors,
-          colorStops, tileMode, engine.toMatrix32(matrix4));
+          colorStops, tileMode, matrix32);
     }
   }
 

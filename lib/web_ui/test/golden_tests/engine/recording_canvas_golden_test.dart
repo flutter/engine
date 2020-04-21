@@ -193,7 +193,7 @@ void main() async {
     rc.drawRect(const Rect.fromLTRB(10, 20, 30, 40), testPaint);
     rc.endRecording();
     expect(rc.pictureBounds,
-        const Rect.fromLTRB(168.0, 283.6, 224.0, 368.4));
+        within(distance: 0.001, from: const Rect.fromLTRB(168.0, 283.6, 224.0, 368.4)));
     await _checkScreenshot(rc, 'complex_transform');
   });
 
@@ -422,7 +422,7 @@ void main() async {
 
     expect(
       rc.pictureBounds,
-      Rect.fromCircle(center: const Offset(50, 50), radius: 20 * math.sqrt(2)),
+      within(distance: 0.001, from: Rect.fromCircle(center: const Offset(50, 50), radius: 20 * math.sqrt(2))),
     );
     await _checkScreenshot(rc, 'clip_rect_rotated');
   });
