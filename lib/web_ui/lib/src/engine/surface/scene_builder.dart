@@ -100,17 +100,22 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
+
+    // TODO(yjbanov): make this final after NNBD ships definite assignment.
+    /*final*/ Float32List matrix;
     if (_surfaceStack.length == 1) {
       // Top level transform contains view configuration to scale
       // scene to devicepixelratio. Use identity instead since CSS uses
       // logical device pixels.
       if (!ui.debugEmulateFlutterTesterEnvironment) {
-        assert(matrix4[0] == window.devicePixelRatio &&
-           matrix4[5] == window.devicePixelRatio);
+        assert(matrix[0] == window.devicePixelRatio &&
+           matrix[5] == window.devicePixelRatio);
       }
-      matrix4 = Matrix4.identity().storage;
+      matrix = Matrix4.identity().storage;
+    } else {
+      matrix = toMatrix32(matrix4);
     }
-    return _pushSurface(PersistedTransform(oldLayer, matrix4));
+    return _pushSurface(PersistedTransform(oldLayer, matrix));
   }
 
   /// Pushes a rectangular clip operation onto the operation stack.
