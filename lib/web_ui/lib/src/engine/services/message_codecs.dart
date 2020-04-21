@@ -177,7 +177,7 @@ class JSONMethodCodec implements MethodCodec {
 ///  * [bool]s
 ///  * [num]s
 ///  * [String]s
-///  * [Uint8List]s, [Int32List]s, [Int64List]s, [Float32List]s
+///  * [Uint8List]s, [Int32List]s, [Int64List]s, [Float64List]s
 ///  * [List]s of supported values
 ///  * [Map]s from supported values to supported values
 ///
@@ -195,7 +195,7 @@ class JSONMethodCodec implements MethodCodec {
 ///  * [Uint8List]\: `byte[]`
 ///  * [Int32List]\: `int[]`
 ///  * [Int64List]\: `long[]`
-///  * [Float32List]\: `double[]`
+///  * [Float64List]\: `double[]`
 ///  * [List]\: `java.util.ArrayList`
 ///  * [Map]\: `java.util.HashMap`
 ///
@@ -207,7 +207,7 @@ class JSONMethodCodec implements MethodCodec {
 ///    32-bit two's complement; `NSNumber numberWithLong:` otherwise
 ///  * [double]\: `NSNumber numberWithDouble:`
 ///  * [String]\: `NSString`
-///  * [Uint8List], [Int32List], [Int64List], [Float32List]\:
+///  * [Uint8List], [Int32List], [Int64List], [Float64List]\:
 ///    `FlutterStandardTypedData`
 ///  * [List]\: `NSArray`
 ///  * [Map]\: `NSDictionary`
@@ -240,7 +240,7 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
   // * Strings are encoded using their UTF-8 representation. First the length
   //   of that in bytes is encoded using the expanding format, then follows the
   //   UTF-8 encoding itself.
-  // * Uint8Lists, Int32Lists, Int64Lists, and Float32Lists are encoded by first
+  // * Uint8Lists, Int32Lists, Int64Lists, and Float64Lists are encoded by first
   //   encoding the list's element count in the expanding format, then the
   //   smallest number of zero bytes needed to align the position in the full
   //   message with a multiple of the number of bytes per element, then the
@@ -263,7 +263,7 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
   static const int _valueUint8List = 8;
   static const int _valueInt32List = 9;
   static const int _valueInt64List = 10;
-  static const int _valueFloat32List = 11;
+  static const int _valueFloat64List = 11;
   static const int _valueList = 12;
   static const int _valueMap = 13;
 
@@ -339,10 +339,10 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
       buffer.putUint8(_valueInt64List);
       writeSize(buffer, value.length);
       buffer.putInt64List(value);
-    } else if (value is Float32List) {
-      buffer.putUint8(_valueFloat32List);
+    } else if (value is Float64List) {
+      buffer.putUint8(_valueFloat64List);
       writeSize(buffer, value.length);
-      buffer.putFloat32List(value);
+      buffer.putFloat64List(value);
     } else if (value is List) {
       buffer.putUint8(_valueList);
       writeSize(buffer, value.length);
@@ -422,9 +422,9 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
         final int length = readSize(buffer);
         result = buffer.getInt64List(length);
         break;
-      case _valueFloat32List:
+      case _valueFloat64List:
         final int length = readSize(buffer);
-        result = buffer.getFloat32List(length);
+        result = buffer.getFloat64List(length);
         break;
       case _valueList:
         final int length = readSize(buffer);
