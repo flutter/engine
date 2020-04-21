@@ -18,7 +18,7 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
 
   if (context->view_embedder == nullptr) {
     FML_LOG(ERROR) << "Trying to embed a platform view but the PrerollContext "
-                      "does not support embedding";
+                      "does not support embedding2";
     return;
   }
   context->has_platform_view = true;
@@ -35,7 +35,7 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
 void PlatformViewLayer::Paint(PaintContext& context) const {
   if (context.view_embedder == nullptr) {
     FML_LOG(ERROR) << "Trying to embed a platform view but the PaintContext "
-                      "does not support embedding";
+                      "does not support embedding2";
     return;
   }
   SkCanvas* canvas = context.view_embedder->CompositeEmbeddedView(view_id_);
