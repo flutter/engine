@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/toolchain/wasm.gni")
 import("//flutter/common/config.gni")
 
 if (is_fuchsia) {
@@ -17,31 +18,31 @@ declare_args() {
 group("flutter") {
   testonly = true
 
-  public_deps = []
+  _public_deps = []
 
   if (!is_fuchsia) {
-    public_deps += [
+    _public_deps += [
       "//flutter/lib/snapshot:generate_snapshot_bin",
       "//flutter/lib/snapshot:kernel_platform_files",
     ]
   }
 
-  public_deps += [
+  _public_deps += [
     "//flutter/shell/platform/embedder:flutter_engine",
     "//flutter/sky",
   ]
 
   if (current_toolchain == host_toolchain) {
-    public_deps += [ "//flutter/tools/font-subset" ]
+    _public_deps += [ "//flutter/tools/font-subset" ]
   }
 
   if (current_toolchain == host_toolchain) {
-    public_deps += [ "//flutter/shell/testing" ]
-    public_deps += [ "//flutter/tools/const_finder" ]
+    _public_deps += [ "//flutter/shell/testing" ]
+    _public_deps += [ "//flutter/tools/const_finder" ]
   }
 
   if (is_fuchsia) {
-    public_deps += [
+    _public_deps += [
       "//flutter/shell/platform/fuchsia",
       "//flutter/shell/testing($host_toolchain)",
     ]
@@ -49,13 +50,13 @@ group("flutter") {
 
   if (!is_fuchsia) {
     if (current_toolchain == host_toolchain) {
-      public_deps += [
+      _public_deps += [
         "//flutter/flutter_frontend_server:frontend_server",
         "//third_party/dart:create_sdk",
       ]
 
       if (full_dart_sdk) {
-        public_deps += [ "//flutter/web_sdk" ]
+        _public_deps += [ "//flutter/web_sdk" ]
       }
     }
   }
@@ -63,13 +64,13 @@ group("flutter") {
   # If on the host, compile all unittests targets.
   if (current_toolchain == host_toolchain) {
     if (is_mac) {
-      public_deps += [
+      _public_deps += [
         "//flutter/shell/platform/darwin:flutter_channels_unittests",
         "//flutter/shell/platform/darwin/macos:flutter_desktop_darwin_unittests",
       ]
     }
 
-    public_deps += [
+    _public_deps += [
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
       "//flutter/lib/ui:ui_unittests",
@@ -85,19 +86,28 @@ group("flutter") {
     ]
 
     if (is_win) {
-      public_deps += [
+      _public_deps += [
         "//flutter/shell/platform/windows:flutter_windows_unittests",
         "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows_unittests",
       ]
     }
 
     if (!is_win) {
-      public_deps += [
+      _public_deps += [
         "//flutter/fml:fml_benchmarks",
         "//flutter/shell/common:shell_benchmarks",
         "//flutter/third_party/txt:txt_benchmarks",
       ]
     }
+  }
+
+  if (is_wasm) {
+    assert(!full_dart_sdk)
+    public_deps = [
+      "//flutter/wasm"
+    ]
+  } else {
+    public_deps = _public_deps
   }
 }
 
