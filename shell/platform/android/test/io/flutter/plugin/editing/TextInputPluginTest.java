@@ -3,10 +3,12 @@ package io.flutter.plugin.editing;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.notNull;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -79,8 +81,9 @@ public class TextInputPluginTest {
 
     FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     TextInputPlugin textInputPlugin =
-        new TextInputPlugin(testView, dartExecutor, mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
@@ -103,9 +106,9 @@ public class TextInputPluginTest {
             RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
     View testView = new View(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
-        new TextInputPlugin(
-            testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
@@ -140,9 +143,9 @@ public class TextInputPluginTest {
             RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
     View testView = new View(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
-        new TextInputPlugin(
-            testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
@@ -189,9 +192,9 @@ public class TextInputPluginTest {
             RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
     View testView = new View(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
-        new TextInputPlugin(
-            testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
@@ -232,9 +235,9 @@ public class TextInputPluginTest {
             RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
     testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
     View testView = new View(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
-        new TextInputPlugin(
-            testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
@@ -268,9 +271,9 @@ public class TextInputPluginTest {
     testImm.setCurrentInputMethodSubtype(null);
 
     View testView = new View(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
-        new TextInputPlugin(
-            testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
@@ -290,6 +293,19 @@ public class TextInputPluginTest {
   }
 
   @Test
+  public void destroy_clearTextInputMethodHandler() {
+    View testView = new View(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    verify(textInputChannel, times(1))
+        .setTextInputMethodHandler(notNull(TextInputChannel.TextInputMethodHandler.class));
+    textInputPlugin.destroy();
+    verify(textInputChannel, times(1))
+        .setTextInputMethodHandler(isNull(TextInputChannel.TextInputMethodHandler.class));
+  }
+
+  @Test
   public void inputConnection_createsActionFromEnter() throws JSONException {
     TestImm testImm =
         Shadow.extract(
@@ -297,8 +313,9 @@ public class TextInputPluginTest {
     FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
     View testView = new View(RuntimeEnvironment.application);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     TextInputPlugin textInputPlugin =
-        new TextInputPlugin(testView, dartExecutor, mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     textInputPlugin.setTextInputClient(
         0,
         new TextInputChannel.Configuration(
@@ -353,58 +370,13 @@ public class TextInputPluginTest {
   }
 
   @Test
-  public void inputConnection_finishComposingTextUpdatesIMM() throws JSONException {
-    ShadowBuild.setManufacturer("samsung");
-    InputMethodSubtype inputMethodSubtype =
-        new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
-    Settings.Secure.putString(
-        RuntimeEnvironment.application.getContentResolver(),
-        Settings.Secure.DEFAULT_INPUT_METHOD,
-        "com.sec.android.inputmethod/.SamsungKeypad");
-    TestImm testImm =
-        Shadow.extract(
-            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
-    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
-    FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
-    View testView = new View(RuntimeEnvironment.application);
-    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
-    TextInputPlugin textInputPlugin =
-        new TextInputPlugin(testView, dartExecutor, mock(PlatformViewsController.class));
-    textInputPlugin.setTextInputClient(
-        0,
-        new TextInputChannel.Configuration(
-            false,
-            false,
-            true,
-            TextInputChannel.TextCapitalization.NONE,
-            new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
-            null,
-            null,
-            null,
-            null));
-    // There's a pending restart since we initialized the text input client. Flush that now.
-    textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("", 0, 0));
-    InputConnection connection = textInputPlugin.createInputConnection(testView, new EditorInfo());
-
-    connection.finishComposingText();
-
-    if (Build.VERSION.SDK_INT >= 21) {
-      CursorAnchorInfo.Builder builder = new CursorAnchorInfo.Builder();
-      builder.setComposingText(-1, "");
-      CursorAnchorInfo anchorInfo = builder.build();
-      assertEquals(testImm.getLastCursorAnchorInfo(), anchorInfo);
-    }
-  }
-
-  @Test
   public void autofill_onProvideVirtualViewStructure() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
 
     FlutterView testView = new FlutterView(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
-        new TextInputPlugin(
-            testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     final TextInputChannel.Configuration.Autofill autofill1 =
         new TextInputChannel.Configuration.Autofill(
             "1", new String[] {"HINT1"}, new TextInputChannel.TextEditState("", 0, 0));
@@ -472,9 +444,9 @@ public class TextInputPluginTest {
     }
 
     FlutterView testView = new FlutterView(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
-        new TextInputPlugin(
-            testView, mock(DartExecutor.class), mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     final TextInputChannel.Configuration.Autofill autofill =
         new TextInputChannel.Configuration.Autofill(
             "1", new String[] {"HINT1"}, new TextInputChannel.TextEditState("", 0, 0));

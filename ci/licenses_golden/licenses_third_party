@@ -1,4 +1,4 @@
-Signature: a15387d361603f161618092ca43df1e2
+Signature: 82cfbfd63bc2e26fcd9eaf0ae77a89a2
 
 UNUSED LICENSES:
 
@@ -7599,6 +7599,9 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/type_testing_stubs_arm.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/type_testing_stubs_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/type_testing_stubs_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_arm.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_ia32.cc
@@ -7622,9 +7625,6 @@ FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.h
 FILE: ../../../third_party/dart/runtime/vm/thread_state.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_state.h
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_arm.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_arm64.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_x64.cc
 FILE: ../../../third_party/dart/samples/ffi/coordinate.dart
 FILE: ../../../third_party/dart/samples/ffi/dylib_utils.dart
 FILE: ../../../third_party/dart/samples/ffi/resource_management/pool.dart
@@ -7723,7 +7723,12 @@ FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/cquery_dri
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/xref_extractor.dart
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/deopt_id.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/print_filter.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/print_filter.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/type_check_mode.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_base.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/constant_propagator_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/reachability_fence_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.h
