@@ -12,9 +12,10 @@ namespace flutter {
 void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
+  // TODO(egarciad): Implement hybrid composition.
+  // https://github.com/flutter/flutter/issues/55270
   TRACE_EVENT0("flutter",
                "AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView");
-
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
   picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_));
 
@@ -28,6 +29,8 @@ SkCanvas* AndroidExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
 
 // |ExternalViewEmbedder|
 std::vector<SkCanvas*> AndroidExternalViewEmbedder::GetCurrentCanvases() {
+  // TODO(egarciad): Implement hybrid composition.
+  // https://github.com/flutter/flutter/issues/55270
   std::vector<SkCanvas*> canvases;
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
@@ -39,6 +42,8 @@ std::vector<SkCanvas*> AndroidExternalViewEmbedder::GetCurrentCanvases() {
 // |ExternalViewEmbedder|
 bool AndroidExternalViewEmbedder::SubmitFrame(GrContext* context,
                                               SkCanvas* background_canvas) {
+  // TODO(egarciad): Implement hybrid composition.
+  // https://github.com/flutter/flutter/issues/55270
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
