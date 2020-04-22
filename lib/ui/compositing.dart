@@ -682,8 +682,10 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     Picture picture, {
     bool isComplexHint = false,
     bool willChangeHint = false,
+    bool isSelectableHint = false,
   }) {
-    final int hints = (isComplexHint ? 1 : 0) | (willChangeHint ? 2 : 0);
+    final int hints = (isComplexHint ? 1 : 0) | (willChangeHint ? 2 : 0) |
+      (isSelectableHint ? 4 : 0);
     _addPicture(offset.dx, offset.dy, picture, hints);
   }
 

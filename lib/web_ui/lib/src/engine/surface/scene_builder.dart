@@ -371,6 +371,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Picture picture, {
     bool isComplexHint = false,
     bool willChangeHint = false,
+    bool isSelectableHint = false,
   }) {
     int hints = 0;
     if (isComplexHint) {
@@ -378,6 +379,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     }
     if (willChangeHint) {
       hints |= 2;
+    }
+    if (isSelectableHint) {
+      hints |= 4;
     }
     _addSurface(persistedPictureFactory(offset.dx, offset.dy, picture, hints));
   }

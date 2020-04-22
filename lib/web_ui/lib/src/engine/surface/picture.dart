@@ -369,7 +369,9 @@ abstract class PersistedPicture extends PersistedLeafSurface {
 
   @override
   html.Element createElement() {
-    return defaultCreateElement('flt-picture');
+    final html.Element element = defaultCreateElement('flt-picture');
+    _applyHints(element);
+    return element;
   }
 
   @override
@@ -568,9 +570,17 @@ abstract class PersistedPicture extends PersistedLeafSurface {
     rootElement.style.transform = 'translate(${dx}px, ${dy}px)';
   }
 
+  void _applyHints(html.Element element) {
+    if((hints & 4) != 0){
+      element.style.userSelect = 'text';
+      element.style.pointerEvents = 'auto';
+    }
+  }
+
   @override
   void apply() {
     _applyTranslate();
+    _applyHints(rootElement);
     _applyPaint(null);
   }
 
