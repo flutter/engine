@@ -406,9 +406,9 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
       locales.add(config.locale);
     }
 
-    List<Locale.LanguageRange> languageRanges = new ArrayList<>();
-    Locale platformResolvedLocale = null;
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+      List<Locale.LanguageRange> languageRanges = new ArrayList<>();
+      Locale platformResolvedLocale = null;
       LocaleList localeList = config.getLocales();
       int localeCount = localeList.size();
       for (int index = 0; index < localeCount; ++index) {
@@ -418,9 +418,12 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
       // TODO(garyq) implement a real locale resolution.
       platformResolvedLocale =
           Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
+
+      localizationChannel.sendLocales(locales, platformResolvedLocale);
+      return;
     }
 
-    localizationChannel.sendLocales(locales, platformResolvedLocale);
+    localizationChannel.sendLocales(locales, null);
   }
 
   @Override

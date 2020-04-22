@@ -861,9 +861,9 @@ public class FlutterView extends FrameLayout {
       locales.add(config.locale);
     }
 
-    List<Locale.LanguageRange> languageRanges = new ArrayList<>();
-    Locale platformResolvedLocale = null;
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+      Locale platformResolvedLocale = null;
+      List<Locale.LanguageRange> languageRanges = new ArrayList<>();
       LocaleList localeList = config.getLocales();
       int localeCount = localeList.size();
       for (int index = 0; index < localeCount; ++index) {
@@ -873,9 +873,12 @@ public class FlutterView extends FrameLayout {
       // TODO(garyq) implement a real locale resolution.
       platformResolvedLocale =
           Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
+
+      flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
+      return;
     }
 
-    flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
+    flutterEngine.getLocalizationChannel().sendLocales(locales, null);
   }
 
   /**
