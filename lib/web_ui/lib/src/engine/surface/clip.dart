@@ -328,10 +328,6 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       // Reset style on prior element since we may have switched between
       // rect/rrect and arbitrary path.
       final html.CssStyleDeclaration style = rootElement.style;
-      style.transform = '';
-      style.left = '';
-      style.top = '';
-      style.borderRadius = '';
       domRenderer.setElementStyle(rootElement, 'clip-path', '');
       domRenderer.setElementStyle(rootElement, '-webkit-clip-path', '');
       _applyShape();
