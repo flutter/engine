@@ -72,14 +72,20 @@ void AndroidExternalViewEmbedder::BeginFrame(SkISize frame_size,
   frame_size_ = frame_size;
 }
 
+void AndroidExternalViewEmbedder::ClearFrame() {
+  composition_order_.clear();
+  picture_recorders_.clear();
+  frame_size_ = SkISize::MakeEmpty();
+}
+
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::CancelFrame() {
-  composition_order_.clear();
+  ClearFrame();
 }
 
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::FinishFrame() {
-  composition_order_.clear();
+  ClearFrame();
 }
 
 // |ExternalViewEmbedder|

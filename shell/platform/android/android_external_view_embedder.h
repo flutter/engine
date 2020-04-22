@@ -61,6 +61,9 @@ class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
   // contains any subsequent operation until the next platform view or the end
   // of the last leaf node in the layer tree.
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
+
+  /// Resets the state.
+  void ClearFrame();
 };
 
 }  // namespace flutter
