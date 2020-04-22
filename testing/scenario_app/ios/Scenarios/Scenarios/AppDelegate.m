@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "AppDelegate.h"
+#import "AppDelegate.h"
+
 #import "FlutterEngine+ScenariosTest.h"
 #import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"

@@ -20,17 +20,17 @@
   // frame.
   XCUIElement* textInputSemanticsObject =
       [[[self.application textFields] matchingIdentifier:@"flutter textfield"] element];
-  XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:5]);
-  XCTAssertEqual([textInputSemanticsObject valueForKey:@"hasKeyboardFocus"], @(NO));
+  XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:3]);
+  XCTAssertEqualObjects([textInputSemanticsObject valueForKey:@"hasKeyboardFocus"], @(NO));
 
   // Since the first mock framework text field isn't focused on, it shouldn't produce a UITextInput
   // in the view hierarchy.
   XCUIElement* delegateTextInput = [[self.application textViews] element];
-  XCTAssertFalse([delegateTextInput waitForExistenceWithTimeout:5]);
+  XCTAssertFalse([delegateTextInput waitForExistenceWithTimeout:3]);
 
   // Nor should there be a keyboard for text entry.
   XCUIElement* keyboard = [[self.application keyboards] element];
-  XCTAssertFalse([keyboard waitForExistenceWithTimeout:5]);
+  XCTAssertFalse([keyboard waitForExistenceWithTimeout:3]);
 
   // The tap location doesn't matter. The mock framework just sends a focused text field on tap.
   [textInputSemanticsObject tap];
@@ -39,18 +39,18 @@
   // UI tests on a XCUIElement).
   textInputSemanticsObject =
       [[[self.application textFields] matchingIdentifier:@"focused flutter textfield"] element];
-  XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:5]);
-  XCTAssertEqual([textInputSemanticsObject valueForKey:@"hasKeyboardFocus"], @(YES));
+  XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:3]);
+  XCTAssertEqualObjects([textInputSemanticsObject valueForKey:@"hasKeyboardFocus"], @(YES));
 
-  // The delegate UITextInput is also inserted on the window and also has keyboard focus to delegate
-  // real text entry events to the framework.
+  // The delegate UITextInput is also inserted on the window but we make only the
+  // TextInputSemanticsObject visible and not the FlutterTextInputView to avoid confusing
+  // accessibility, it shouldn't be visible to the UI test either.
   delegateTextInput = [[self.application textViews] element];
-  XCTAssertTrue([delegateTextInput waitForExistenceWithTimeout:5]);
-  XCTAssertEqual([delegateTextInput valueForKey:@"hasKeyboardFocus"], @(YES));
+  XCTAssertFalse([delegateTextInput waitForExistenceWithTimeout:3]);
 
-  // Since there is focus, the soft keyboard is visible on the simulator.
+  // But since there is focus, the soft keyboard is visible on the simulator.
   keyboard = [[self.application keyboards] element];
-  XCTAssertTrue([keyboard waitForExistenceWithTimeout:5]);
+  XCTAssertTrue([keyboard waitForExistenceWithTimeout:3]);
 }
 
 @end

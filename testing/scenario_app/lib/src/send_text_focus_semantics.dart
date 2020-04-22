@@ -5,8 +5,9 @@
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:scenario_app/src/channel_util.dart';
+import 'package:vector_math/vector_math_64.dart';
 
+import 'channel_util.dart';
 import 'scenario.dart';
 
 /// A scenario that sends back messages when touches are received.
@@ -54,7 +55,7 @@ class SendTextFocusScemantics extends Scenario {
         currentValueLength: 0,
         scrollChildren: 0,
         scrollIndex: 0,
-        transform: Float64List.fromList(<double>[1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 366.5, 0.0, 1.0]),
+        transform: Matrix4.identity().storage,
         elevation: 0.0,
         thickness: 0.0,
         childrenInTraversalOrder: Int32List(0),
@@ -70,7 +71,19 @@ class SendTextFocusScemantics extends Scenario {
   void onPointerDataPacket(PointerDataPacket packet) {
     // This mimics the framework which shows the FlutterTextInputView before
     // updating the TextInputSemanticsObject.
-    sendMethodCall(
+    sendJsonMethodCall(
+      window: window,
+      channel: 'flutter/textinput',
+      method: 'TextInput.setClient',
+      arguments: <dynamic>[
+        1,
+        // The arguments are text field configurations. It doesn't really matter
+        // since we're just testing text field accessibility here.
+        <String, dynamic>{ 'obscureText': false },
+      ]
+    );
+
+    sendJsonMethodCall(
       window: window,
       channel: 'flutter/textinput',
       method: 'TextInput.show',
@@ -92,7 +105,7 @@ class SendTextFocusScemantics extends Scenario {
         currentValueLength: 0,
         scrollChildren: 0,
         scrollIndex: 0,
-        transform: Float64List.fromList(<double>[1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 231.0, 0.0, 1.0]),
+        transform: Matrix4.identity().storage,
         elevation: 0.0,
         thickness: 0.0,
         childrenInTraversalOrder: Int32List(0),

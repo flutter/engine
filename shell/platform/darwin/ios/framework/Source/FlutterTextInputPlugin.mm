@@ -865,7 +865,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
            @"must be part of the responder chain to function");
   _activeView.textInputDelegate = _textInputDelegate;
 
-  if (!_activeView.window) {
+  if (_activeView.window != keyWindow) {
     [keyWindow addSubview:_activeView];
   }
   [_activeView becomeFirstResponder];
@@ -885,7 +885,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
     _activeView = isSecureTextEntry ? _nonAutofillSecureInputView : _nonAutofillInputView;
     [FlutterTextInputPlugin setupInputView:_activeView withConfiguration:configuration];
 
-    if (!_activeView.window) {
+    if (_activeView.window != keyWindow) {
       [keyWindow addSubview:_activeView];
     }
   } else {
