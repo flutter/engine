@@ -344,7 +344,7 @@ String colorToCssString(ui.Color color) {
         return '#00$hexValue';
       case 5:
         return '#0$hexValue';
-      case 6:
+      default:
         return '#$hexValue';
     }
   } else {
