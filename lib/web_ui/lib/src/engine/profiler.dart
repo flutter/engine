@@ -63,7 +63,7 @@ class Profiler {
 
   static bool isBenchmarkMode = const bool.fromEnvironment(
     'FLUTTER_WEB_ENABLE_PROFILING',
-    defaultValue: true,
+    defaultValue: false,
   );
 
   static Profiler ensureInitialized() {
