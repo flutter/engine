@@ -21,26 +21,34 @@ bool ShouldUseMetalRenderer() {
   // past iOS 10.0. The processor was selected as it is the first version at which Metal was
   // supported. The iOS version floor was selected due to the availability of features used by Skia.
   bool ios_version_supports_metal = false;
+#if TARGET_IPHONE_SIMULATOR
+  if (@available(iOS 13.0, *)) {
+#else
   if (@available(iOS 10.0, *)) {
+#endif  // TARGET_IPHONE_SIMULATOR
     auto device = MTLCreateSystemDefaultDevice();
-    ios_version_supports_metal = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v3];
+    // We need to check if the device is here since an ios 13 simulator running on an older version
+    // of macos (below 10.15) will not actually allow metal to be used.
+    if (device != nil) {
+      ios_version_supports_metal = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v3];
+    }
   }
   return ios_version_supports_metal;
 }
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
 IOSRenderingAPI GetRenderingAPIForProcess() {
-#if TARGET_IPHONE_SIMULATOR
-  return IOSRenderingAPI::kSoftware;
-#endif  // TARGET_IPHONE_SIMULATOR
-
 #if FLUTTER_SHELL_ENABLE_METAL
   static bool should_use_metal = ShouldUseMetalRenderer();
   if (should_use_metal) {
     return IOSRenderingAPI::kMetal;
   }
 #endif  // FLUTTER_SHELL_ENABLE_METAL
+#if TARGET_IPHONE_SIMULATOR
+  return IOSRenderingAPI::kSoftware;
+#else
   return IOSRenderingAPI::kOpenGLES;
+#endif  // TARGET_IPHONE_SIMULATOR
 }
 
 Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
@@ -49,8 +57,15 @@ Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
       return [CALayer class];
     case IOSRenderingAPI::kOpenGLES:
       return [CAEAGLLayer class];
-#if !TARGET_IPHONE_SIMULATOR
     case IOSRenderingAPI::kMetal:
+#if TARGET_IPHONE_SIMULATOR
+      // This will always be true since we filter out this case when checking if the device
+      // supports metal.
+      if (@available(iOS 13.0, *)) {
+        return [CAMetalLayer class];
+      }
+      break;
+#else
       return [CAMetalLayer class];
 #endif  // !TARGET_IPHONE_SIMULATOR
     default:

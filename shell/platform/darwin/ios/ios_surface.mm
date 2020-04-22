@@ -39,14 +39,20 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(
   }
 
 #if FLUTTER_SHELL_ENABLE_METAL
-  if ([layer.get() isKindOfClass:[CAMetalLayer class]]) {
-    return std::make_unique<IOSSurfaceMetal>(
-        fml::scoped_nsobject<CAMetalLayer>(
-            reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
-        std::move(context),                                          // context
-        platform_views_controller                                    // platform views controller
-    );
+#if TARGET_IPHONE_SIMULATOR
+  if (@available(iOS 13.0, *)) {
+#endif  // TARGET_IPHONE_SIMULATOR
+    if ([layer.get() isKindOfClass:[CAMetalLayer class]]) {
+      return std::make_unique<IOSSurfaceMetal>(
+          fml::scoped_nsobject<CAMetalLayer>(
+              reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
+          std::move(context),                                          // context
+          platform_views_controller                                    // platform views controller
+      );
+    }
+#if TARGET_IPHONE_SIMULATOR
   }
+#endif  // TARGET_IPHONE_SIMULATOR
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
   return std::make_unique<IOSSurfaceSoftware>(

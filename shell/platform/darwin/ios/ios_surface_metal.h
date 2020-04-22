@@ -13,7 +13,12 @@
 
 namespace flutter {
 
+#if TARGET_IPHONE_SIMULATOR
+class API_AVAILABLE(ios(13.0)) IOSSurfaceMetal final : public IOSSurface,
+                                                       public GPUSurfaceDelegate {
+#else
 class IOSSurfaceMetal final : public IOSSurface, public GPUSurfaceDelegate {
+#endif  // TARGET_IPHONE_SIMULATOR
  public:
   IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
                   std::shared_ptr<IOSContext> context,
