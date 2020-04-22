@@ -14,6 +14,103 @@ FLUTTER_ASSERT_ARC
 @end
 
 @implementation FlutterTextInputPluginTest
+- (void)testSecureInput {
+  // Setup test.
+  id engine = OCMClassMock([FlutterEngine class]);
+  FlutterTextInputPlugin* textInputPlugin = [[FlutterTextInputPlugin alloc] init];
+  textInputPlugin.textInputDelegate = engine;
+
+  NSDictionary* config = @{
+    @"inputType" : @{@"name" : @"TextInuptType.text"},
+    @"keyboardAppearance" : @"Brightness.light",
+    @"obscureText" : @YES,
+    @"inputAction" : @"TextInputAction.unspecified",
+    @"smartDashesType" : @"0",
+    @"smartQuotesType" : @"0",
+    @"autocorrect" : @YES
+  };
+
+  FlutterMethodCall* setClientCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                        arguments:@[ @123, config ]];
+
+  [textInputPlugin handleMethodCall:setClientCall
+                             result:^(id _Nullable result){
+                             }];
+
+  // Find all input views in the input hider view.
+  NSArray<FlutterTextInputView*>* inputFields =
+      [[[textInputPlugin textInputView] superview] subviews];
+
+  // Find the inactive autofillable input field.
+  FlutterTextInputView* inputView = inputFields[0];
+
+  // Verify secureTextEntry is set to the correct value.
+  XCTAssertTrue(inputView.secureTextEntry);
+
+  // Clean up mocks
+  [engine stopMocking];
+}
+- (void)testAutofillInputViews {
+  // Setup test.
+  id engine = OCMClassMock([FlutterEngine class]);
+  FlutterTextInputPlugin* textInputPlugin = [[FlutterTextInputPlugin alloc] init];
+  textInputPlugin.textInputDelegate = engine;
+
+  NSDictionary* template = @{
+    @"inputType" : @{@"name" : @"TextInuptType.text"},
+    @"keyboardAppearance" : @"Brightness.light",
+    @"obscureText" : @NO,
+    @"inputAction" : @"TextInputAction.unspecified",
+    @"smartDashesType" : @"0",
+    @"smartQuotesType" : @"0",
+    @"autocorrect" : @YES
+  };
+
+  NSMutableDictionary* field1 = [template mutableCopy];
+  [field1 setValue:@{
+    @"uniqueIdentifier" : @"field1",
+    @"hints" : @[ @"hint1" ],
+    @"editingValue" : @{@"text" : @""}
+  }
+            forKey:@"autofill"];
+
+  NSMutableDictionary* field2 = [template mutableCopy];
+  [field2 setValue:@{
+    @"uniqueIdentifier" : @"field2",
+    @"hints" : @[ @"hint2" ],
+    @"editingValue" : @{@"text" : @""}
+  }
+            forKey:@"autofill"];
+
+  NSMutableDictionary* config = [field1 mutableCopy];
+  [config setValue:@[ field1, field2 ] forKey:@"fields"];
+
+  FlutterMethodCall* setClientCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                        arguments:@[ @123, config ]];
+
+  [textInputPlugin handleMethodCall:setClientCall
+                             result:^(id _Nullable result){
+                             }];
+
+  // Find all input views in the input hider view.
+  NSArray<FlutterTextInputView*>* inputFields =
+      [[[textInputPlugin textInputView] superview] subviews];
+
+  XCTAssertEqual(inputFields.count, 2);
+
+  // Find the inactive autofillable input field.
+  FlutterTextInputView* inactiveView = inputFields[1];
+  [inactiveView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 0)]
+                    withText:@"Autofilled!"];
+
+  // Verify behavior.
+  OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil] withTag:@"field2"]);
+
+  // Clean up mocks
+  [engine stopMocking];
+}
 
 - (void)testAutocorrectionPromptRectAppears {
   // Setup test.

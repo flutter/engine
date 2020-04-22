@@ -14,12 +14,15 @@ import android.os.Build;
 import android.os.LocaleList;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
+import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewStructure;
 import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
+import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
@@ -37,6 +40,7 @@ import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -283,6 +287,9 @@ public class FlutterView extends FrameLayout {
     // FlutterView needs to be focusable so that the InputMethodManager can interact with it.
     setFocusable(true);
     setFocusableInTouchMode(true);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS);
+    }
   }
 
   /**
@@ -704,7 +711,7 @@ public class FlutterView extends FrameLayout {
     textInputPlugin =
         new TextInputPlugin(
             this,
-            this.flutterEngine.getDartExecutor(),
+            this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
     androidKeyProcessor =
         new AndroidKeyProcessor(this.flutterEngine.getKeyEventChannel(), textInputPlugin);
@@ -853,7 +860,22 @@ public class FlutterView extends FrameLayout {
     } else {
       locales.add(config.locale);
     }
-    flutterEngine.getLocalizationChannel().sendLocales(locales);
+
+    List<Locale.LanguageRange> languageRanges = new ArrayList<>();
+    Locale platformResolvedLocale = null;
+    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+      LocaleList localeList = config.getLocales();
+      int localeCount = localeList.size();
+      for (int index = 0; index < localeCount; ++index) {
+        Locale locale = localeList.get(index);
+        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
+      }
+      // TODO(garyq) implement a real locale resolution.
+      platformResolvedLocale =
+          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
+    }
+
+    flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
   }
 
   /**
@@ -896,6 +918,17 @@ public class FlutterView extends FrameLayout {
 
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
+  }
+
+  @Override
+  public void onProvideAutofillVirtualStructure(ViewStructure structure, int flags) {
+    super.onProvideAutofillVirtualStructure(structure, flags);
+    textInputPlugin.onProvideAutofillVirtualStructure(structure, flags);
+  }
+
+  @Override
+  public void autofill(SparseArray<AutofillValue> values) {
+    textInputPlugin.autofill(values);
   }
 
   /**
