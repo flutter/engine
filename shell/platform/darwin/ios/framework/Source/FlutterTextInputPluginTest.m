@@ -60,7 +60,8 @@ FLUTTER_ASSERT_ARC
 
   // Clean up.
   [engine stopMocking];
-  [[[[textInputPlugin textInputView] superview] subviews] makeObjectsPerformSelector: @selector(removeFromSuperview)];
+  [[[[textInputPlugin textInputView] superview] subviews]
+      makeObjectsPerformSelector:@selector(removeFromSuperview)];
 }
 - (void)testAutofillInputViews {
   // Setup test.
@@ -123,7 +124,8 @@ FLUTTER_ASSERT_ARC
 
   // Clean up.
   [engine stopMocking];
-  [[[[textInputPlugin textInputView] superview] subviews] makeObjectsPerformSelector: @selector(removeFromSuperview)];
+  [[[[textInputPlugin textInputView] superview] subviews]
+      makeObjectsPerformSelector:@selector(removeFromSuperview)];
 }
 
 - (void)testAutocorrectionPromptRectAppears {
