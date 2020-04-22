@@ -4,11 +4,11 @@
 
 #include "flutter/shell/common/persistent_cache.h"
 
-#include <rapidjson/document.h>
 #include <memory>
 #include <string>
 #include <string_view>
 
+#include "rapidjson/document.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
 #include "flutter/fml/base32.h"
@@ -120,6 +120,7 @@ sk_sp<SkData> ParseBase64(const std::string& input) {
   SkBase64 decoder;
   auto error = decoder.decode(input.c_str(), input.length());
   if (error != SkBase64::Error::kNoError) {
+    FML_LOG(ERROR) << "Base64 decode error: " << error;
     FML_LOG(ERROR) << "Base64 can't decode: " << input;
     return nullptr;
   }
