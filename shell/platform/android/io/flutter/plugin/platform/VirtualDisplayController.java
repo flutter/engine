@@ -146,11 +146,10 @@ class VirtualDisplayController {
           public void onViewDetachedFromWindow(View v) {}
         });
 
-    // Initialize a new presentation. We don't want to cancel
-    // the old one before we can properly show the new one to
-    // take over where it left off. Cancelling before the show()
-    // of the new presentation causes the contents to stop, eg,
-    // video stops playing.
+    // Create a new SingleViewPresentation and show() it before we cancel() the existing
+    // presentation. Calling show() and cancel() in this order fixes
+    // https://github.com/flutter/flutter/issues/26345 and maintains seamless transition
+    // of the contents of the presentation.
     SingleViewPresentation newPresentation =
         new SingleViewPresentation(
             context,
@@ -160,8 +159,6 @@ class VirtualDisplayController {
             focusChangeListener,
             isFocused);
     newPresentation.show();
-    // Stop the old presentation to prevent it from triggering callbacks
-    // after it is outdated. This prevents a NPE crash.
     presentation.cancel();
     presentation = newPresentation;
   }
