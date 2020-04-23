@@ -92,18 +92,20 @@ class RasterCache {
   // 4. There are too many pictures to be cached in the current frame.
   //    (See also kDefaultPictureCacheLimitPerFrame.)
   virtual bool Prepare(GrContext* context,
-               SkPicture* picture,
-               const SkMatrix& transformation_matrix,
-               SkColorSpace* dst_color_space,
-               bool is_complex,
-               bool will_change);
+                       SkPicture* picture,
+                       const SkMatrix& transformation_matrix,
+                       SkColorSpace* dst_color_space,
+                       bool is_complex,
+                       bool will_change);
 
-  virtual void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
+  virtual void Prepare(PrerollContext* context,
+                       Layer* layer,
+                       const SkMatrix& ctm);
 
   // Find the raster cache for the picture and draw it to the canvas.
   //
   // Return true if it's found and drawn.
-  bool Draw(const SkPicture& picture, SkCanvas& canvas) const;
+  virtual bool Draw(const SkPicture& picture, SkCanvas& canvas) const;
 
   // Find the raster cache for the layer and draw it to the canvas.
   //
@@ -111,9 +113,9 @@ class RasterCache {
   // draw the raster cache with some opacity).
   //
   // Return true if the layer raster cache is found and drawn.
-  bool Draw(const Layer* layer,
-            SkCanvas& canvas,
-            SkPaint* paint = nullptr) const;
+  virtual bool Draw(const Layer* layer,
+                    SkCanvas& canvas,
+                    SkPaint* paint = nullptr) const;
 
   void SweepAfterFrame();
 

@@ -67,16 +67,20 @@ TEST_F(OpacityLayerTest, ChildIsCached) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   cache_ctm = RasterCache::GetIntegralTransCTM(cache_ctm);
 #endif
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
 
   EXPECT_EQ(raster_cache()->LayerCacheCount(), 0);
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer.get(), other_transform));
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer.get(), cache_ctm));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
 
   layer->Preroll(preroll_context(), initial_transform);
 
   EXPECT_EQ(raster_cache()->LayerCacheCount(), 1);
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer.get(), other_transform));
-  EXPECT_TRUE(raster_cache()->WasPrepared(mock_layer.get(), cache_ctm));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_TRUE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
 }
 
 TEST_F(OpacityLayerTest, ChildrenNotCached) {
@@ -96,20 +100,24 @@ TEST_F(OpacityLayerTest, ChildrenNotCached) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   cache_ctm = RasterCache::GetIntegralTransCTM(cache_ctm);
 #endif
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
 
   EXPECT_EQ(raster_cache()->LayerCacheCount(), 0);
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer1.get(), other_transform));
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer1.get(), cache_ctm));
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer2.get(), other_transform));
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer2.get(), cache_ctm));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
 
   layer->Preroll(preroll_context(), initial_transform);
 
   EXPECT_EQ(raster_cache()->LayerCacheCount(), 1);
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer1.get(), other_transform));
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer1.get(), cache_ctm));
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer2.get(), other_transform));
-  EXPECT_FALSE(raster_cache()->WasPrepared(mock_layer2.get(), cache_ctm));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
 }
 
 TEST_F(OpacityLayerTest, FullyOpaque) {

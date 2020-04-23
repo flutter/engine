@@ -122,10 +122,10 @@ static RasterCacheResult Rasterize(
 }
 
 static RasterCacheResult RasterizePicture(SkPicture* picture,
-                                   GrContext* context,
-                                   const SkMatrix& ctm,
-                                   SkColorSpace* dst_color_space,
-                                   bool checkerboard) {
+                                          GrContext* context,
+                                          const SkMatrix& ctm,
+                                          SkColorSpace* dst_color_space,
+                                          bool checkerboard) {
   return Rasterize(context, ctm, dst_color_space, checkerboard,
                    picture->cullRect(),
                    [=](SkCanvas* canvas) { canvas->drawPicture(picture); });

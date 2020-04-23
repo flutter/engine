@@ -2,30 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/layers/layer.h"
 #include "flutter/testing/mock_raster_cache.h"
+#include "flutter/flow/layers/layer.h"
 
 namespace flutter {
 namespace testing {
 
-// RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
-//                                      const SkRect& logical_rect)
-//     : image_(std::move(image)), logical_rect_(logical_rect) {}
-
-// void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
-//   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
-//   SkAutoCanvasRestore auto_restore(&canvas, true);
-//   SkIRect bounds =
-//       RasterCache::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
-//   FML_DCHECK(
-//       std::abs(bounds.size().width() - image_->dimensions().width()) <= 1 &&
-//       std::abs(bounds.size().height() - image_->dimensions().height()) <= 1);
-//   canvas.resetMatrix();
-//   canvas.drawImage(image_, bounds.fLeft, bounds.fTop, paint);
-// }
-
-MockRasterCache::MockRasterCache()
-    : RasterCache::RasterCache(1, 1000000) { }
+MockRasterCache::MockRasterCache() : RasterCache::RasterCache(1, 1000000) {}
 
 static bool CanRasterizePicture(SkPicture* picture) {
   if (picture == nullptr) {
@@ -73,55 +56,22 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
   return picture->approximateOpCount() > 5;
 }
 
-/// @note Procedure doesn't copy all closures.
-static RasterCacheResult Rasterize(
-    const SkMatrix& ctm,
-    SkColorSpace* dst_color_space,
-    const SkRect& logical_rect) {
-  TRACE_EVENT0("flutter", "RasterCachePopulate");
-  SkIRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
-
-  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      cache_rect.width(), cache_rect.height(), sk_ref_sp(dst_color_space));
-
-  sk_sp<SkData> data = SkData::MakeUninitialized(image_info.computeMinByteSize());
-  sk_sp<SkImage> image = SkImage::MakeRasterData(image_info, data, image_info.minRowBytes());
-
-  return {image, logical_rect};
-}
-
-static RasterCacheResult RasterizePicture(SkPicture* picture,
-                                   const SkMatrix& ctm,
-                                   SkColorSpace* dst_color_space) {
-  return Rasterize(ctm, dst_color_space, picture->cullRect());
-}
-
 void MockRasterCache::Prepare(PrerollContext* context,
                               Layer* layer,
                               const SkMatrix& ctm) {
   LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
-  Entry& entry = layer_cache_[cache_key];
+  MockEntry& entry = layer_cache_[cache_key];
   entry.access_count++;
   entry.used_this_frame = true;
-  if (!entry.image.is_valid()) {
-    entry.image = Rasterize(
-        ctm, context->dst_color_space,
-        layer->paint_bounds());
-  }
-}
-
-bool MockRasterCache::WasPrepared(Layer* layer, const SkMatrix& ctm) {
-  LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
-  // return layer_cache_.contains(cache_key); - Requires STD_VER > 17, C++20
-  return layer_cache_.find(cache_key) != layer_cache_.end();
+  entry.rasterized = true;
 }
 
 bool MockRasterCache::Prepare(GrContext* context,
-                          SkPicture* picture,
-                          const SkMatrix& transformation_matrix,
-                          SkColorSpace* dst_color_space,
-                          bool is_complex,
-                          bool will_change) {
+                              SkPicture* picture,
+                              const SkMatrix& transformation_matrix,
+                              SkColorSpace* dst_color_space,
+                              bool is_complex,
+                              bool will_change) {
   if (!IsPictureWorthRasterizing(picture, will_change, is_complex)) {
     // We only deal with pictures that are worthy of rasterization.
     return false;
@@ -139,42 +89,40 @@ bool MockRasterCache::Prepare(GrContext* context,
   PictureRasterCacheKey cache_key(picture->uniqueID(), transformation_matrix);
 
   // Creates an entry, if not present prior.
-  Entry& entry = picture_cache_[cache_key];
+  MockEntry& entry = picture_cache_[cache_key];
+  entry.rasterized = true;
 
-  if (!entry.image.is_valid()) {
-    entry.image = RasterizePicture(picture, transformation_matrix,
-                                   dst_color_space);
-  }
   return true;
 }
 
-RasterCacheResult MockRasterCache::Get(const SkPicture& picture,
-                                   const SkMatrix& ctm) const {
-  PictureRasterCacheKey cache_key(picture.uniqueID(), ctm);
+bool MockRasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {
+  PictureRasterCacheKey cache_key(picture.uniqueID(), canvas.getTotalMatrix());
   auto it = picture_cache_.find(cache_key);
   if (it == picture_cache_.end()) {
-    return RasterCacheResult();
+    return false;
   }
 
-  Entry& entry = it->second;
+  MockEntry& entry = it->second;
   entry.access_count++;
   entry.used_this_frame = true;
 
-  return entry.image;
+  return entry.rasterized;
 }
 
-RasterCacheResult MockRasterCache::Get(Layer* layer, const SkMatrix& ctm) const {
-  LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
+bool MockRasterCache::Draw(const Layer* layer,
+                           SkCanvas& canvas,
+                           SkPaint* paint) const {
+  LayerRasterCacheKey cache_key(layer->unique_id(), canvas.getTotalMatrix());
   auto it = layer_cache_.find(cache_key);
   if (it == layer_cache_.end()) {
-    return RasterCacheResult();
+    return false;
   }
 
-  Entry& entry = it->second;
+  MockEntry& entry = it->second;
   entry.access_count++;
   entry.used_this_frame = true;
 
-  return entry.image;
+  return entry.rasterized;
 }
 
 void MockRasterCache::SweepAfterFrame() {
@@ -191,8 +139,7 @@ size_t MockRasterCache::GetCachedEntriesCount() const {
   return layer_cache_.size() + picture_cache_.size();
 }
 
-void MockRasterCache::SetCheckboardCacheImages(bool checkerboard) {
-}
+void MockRasterCache::SetCheckboardCacheImages(bool checkerboard) {}
 
 }  // namespace testing
 }  // namespace flutter

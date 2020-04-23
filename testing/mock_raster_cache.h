@@ -6,8 +6,8 @@
 #define TESTING_MOCK_RASTER_CACHE_H_
 
 #include "flutter/flow/raster_cache.h"
-#include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkPicture.h"
 
 namespace flutter {
 namespace testing {
@@ -35,13 +35,15 @@ class MockRasterCache : public RasterCache {
                bool is_complex,
                bool will_change) override;
 
-  void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm) override;
+  void Prepare(PrerollContext* context,
+               Layer* layer,
+               const SkMatrix& ctm) override;
 
-  RasterCacheResult Get(const SkPicture& picture, const SkMatrix& ctm) const override;
+  bool Draw(const SkPicture& picture, SkCanvas& canvas) const override;
 
-  RasterCacheResult Get(Layer* layer, const SkMatrix& ctm) const override;
-
-  bool WasPrepared(Layer* layer, const SkMatrix& ctm);
+  bool Draw(const Layer* layer,
+            SkCanvas& canvas,
+            SkPaint* paint = nullptr) const override;
 
   void SweepAfterFrame();
 
@@ -56,13 +58,11 @@ class MockRasterCache : public RasterCache {
 
   MockRasterCache();
 
- protected:
-
  private:
-  struct Entry {
+  struct MockEntry {
     bool used_this_frame = false;
     size_t access_count = 0;
-    RasterCacheResult image;
+    bool rasterized;
   };
 
   template <class Cache>
@@ -70,7 +70,7 @@ class MockRasterCache : public RasterCache {
     std::vector<typename Cache::iterator> dead;
 
     for (auto it = cache.begin(); it != cache.end(); ++it) {
-      Entry& entry = it->second;
+      MockEntry& entry = it->second;
       if (!entry.used_this_frame) {
         dead.push_back(it);
       }
@@ -82,8 +82,8 @@ class MockRasterCache : public RasterCache {
     }
   }
 
-  mutable PictureRasterCacheKey::Map<Entry> picture_cache_;
-  mutable LayerRasterCacheKey::Map<Entry> layer_cache_;
+  mutable PictureRasterCacheKey::Map<MockEntry> picture_cache_;
+  mutable LayerRasterCacheKey::Map<MockEntry> layer_cache_;
 };
 
 }  // namespace testing
