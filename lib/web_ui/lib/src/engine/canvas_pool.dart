@@ -80,12 +80,15 @@ class _CanvasPool extends _SaveStackTracking {
 
   void _createCanvas() {
     bool requiresClearRect = false;
+    final html.HtmlElement _rootElementFirstChild = _rootElement.firstChild;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
-      // If a canvas is the first element we set z-index = -1 to workaround
-      // blink compositing bug. To make sure this does not leak when reused
-      // reset z-index.
-      _canvas.style.removeProperty('z-index');
+      if (_canvas != _rootElementFirstChild) {
+        // If a canvas is the first element we set z-index = -1 to workaround
+        // blink compositing bug. To make sure this does not leak when reused
+        // reset z-index.
+        _canvas.style.removeProperty('z-index');
+      }
       requiresClearRect = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
@@ -126,8 +129,8 @@ class _CanvasPool extends _SaveStackTracking {
     // Possible Blink bugs that are causing this:
     // * https://bugs.chromium.org/p/chromium/issues/detail?id=370604
     // * https://bugs.chromium.org/p/chromium/issues/detail?id=586601
-    final bool isFirstChildElement = _rootElement.firstChild == null;
-    if (isFirstChildElement) {
+    if (_rootElementFirstChild == null ||
+        _rootElementFirstChild == _canvas) {
       _canvas.style.zIndex = '-1';
     }
     // Before appending canvas, check if canvas is already on rootElement. This
