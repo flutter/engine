@@ -34,8 +34,9 @@ class VsyncWaiter final : public flutter::VsyncWaiter {
   async::Wait session_wait_;
   fml::WeakPtrFactory<VsyncWaiter> weak_factory_;
 
+  // You can check how this impacts performance at go/flutter-fuchsia-fps.
   static constexpr fml::TimeDelta vsync_offset =
-      fml::TimeDelta::FromNanoseconds(0);
+      fml::TimeDelta::FromMicroseconds(13200);
 
   // For accessing the VsyncWaiter via the UI thread, necessary for the callback
   // for AwaitVSync()
