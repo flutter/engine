@@ -93,13 +93,4 @@ class BrowserAutofillHints {
       return flutterAutofillHint;
     }
   }
-
-  String engineToFlutter(String autofillHint) {
-    if(_engineToFlutterMap.containsKey(autofillHint)) {
-      return _engineToFlutterMap[autofillHint];
-    } else {
-      // Use the hints as it is.
-      return autofillHint;
-    }
-  }
 }

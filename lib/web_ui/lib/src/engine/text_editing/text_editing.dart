@@ -52,30 +52,6 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
 /// element.
 ///
 /// They are assigned once during the creation of the DOM element.
-void _hideAutofillForm(html.HtmlElement domElement) {
-  final html.CssStyleDeclaration elementStyle = domElement.style;
-  elementStyle
-    ..whiteSpace = 'pre-wrap'
-    ..alignContent = 'center'
-    ..padding = '0'
-    ..opacity = '1'
-    ..color = 'transparent'
-    ..backgroundColor = 'transparent'
-    ..background = 'transparent'
-    ..outline = 'none'
-    ..border = 'none'
-    ..resize = 'none'
-    ..textShadow = 'transparent'
-    ..transformOrigin = '0 0 0';
-
-  /// This property makes the input's blinking cursor transparent.
-  elementStyle.setProperty('caret-color', 'transparent');
-}
-
-/// These style attributes are constant throughout the life time of an input
-/// element.
-///
-/// They are assigned once during the creation of the DOM element.
 void _hideAutofillElements(html.HtmlElement domElement) {
   final html.CssStyleDeclaration elementStyle = domElement.style;
   elementStyle
@@ -120,7 +96,7 @@ class AutofillGroup {
     final Map<String, Autofill> items = Map<String, Autofill>();
     final html.FormElement formElement = html.FormElement();
 
-    _hideAutofillForm(formElement);
+    _hideAutofillElements(formElement);
 
     for (Map<String, dynamic> field in fields) {
       final Map<String, dynamic> autofillInfo = field['autofill'];
@@ -171,14 +147,11 @@ class AutofillGroup {
     return subscriptions;
   }
 
-  void _handleChange(html.Event event, html.Element domElement, String hint) {
+  void _handleChange(html.Event event, html.Element domElement, String tag) {
     EditingState newEditingState = EditingState.fromDomElement(domElement);
 
     assert(newEditingState != null);
-
-    final String frameworkAutofillHint =
-        BrowserAutofillHints.instance.engineToFlutter(hint);
-    _sendAutofillEditingState(frameworkAutofillHint, newEditingState);
+    _sendAutofillEditingState(tag, newEditingState);
   }
 
   /// Sends the 'TextInputClient.updateEditingStateWithTag' message to the framework.
