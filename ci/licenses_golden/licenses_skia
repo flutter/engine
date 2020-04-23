@@ -1,4 +1,4 @@
-Signature: 7dc34ba1944f5dc2435e61eb03f9c48b
+Signature: 94d6bdf30497f9f7713ef41f9c7a2584
 
 UNUSED LICENSES:
 
@@ -2638,6 +2638,9 @@ FILE: ../../../third_party/skia/bench/SortBench.cpp
 FILE: ../../../third_party/skia/bench/TileBench.cpp
 FILE: ../../../third_party/skia/bench/WritePixelsBench.cpp
 FILE: ../../../third_party/skia/bench/gUniqueGlyphIDs.h
+FILE: ../../../third_party/skia/client_utils/android/FrontBufferedStream.cpp
+FILE: ../../../third_party/skia/client_utils/android/FrontBufferedStream.h
+FILE: ../../../third_party/skia/client_utils/android/SkFrontBufferedStream.h
 FILE: ../../../third_party/skia/dm/DM.cpp
 FILE: ../../../third_party/skia/gm/alphagradients.cpp
 FILE: ../../../third_party/skia/gm/arcofzorro.cpp
@@ -2715,7 +2718,6 @@ FILE: ../../../third_party/skia/include/private/SkOnce.h
 FILE: ../../../third_party/skia/include/private/SkTFitsIn.h
 FILE: ../../../third_party/skia/include/private/SkTLogic.h
 FILE: ../../../third_party/skia/include/utils/SkCanvasStateUtils.h
-FILE: ../../../third_party/skia/include/utils/SkFrontBufferedStream.h
 FILE: ../../../third_party/skia/include/utils/SkLua.h
 FILE: ../../../third_party/skia/include/utils/SkLuaCanvas.h
 FILE: ../../../third_party/skia/samplecode/SampleChart.cpp
@@ -2803,7 +2805,6 @@ FILE: ../../../third_party/skia/src/shaders/SkPerlinNoiseShader.cpp
 FILE: ../../../third_party/skia/src/utils/SkCanvasStack.cpp
 FILE: ../../../third_party/skia/src/utils/SkCanvasStack.h
 FILE: ../../../third_party/skia/src/utils/SkCanvasStateUtils.cpp
-FILE: ../../../third_party/skia/src/utils/SkFrontBufferedStream.cpp
 FILE: ../../../third_party/skia/src/utils/SkLua.cpp
 FILE: ../../../third_party/skia/src/utils/SkLuaCanvas.cpp
 ----------------------------------------------------------------------------------------------------
@@ -5659,8 +5660,8 @@ FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathParser.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathParser.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrInnerPolygonContourParser.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/GrMidpointContourParser.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google Inc.
 
