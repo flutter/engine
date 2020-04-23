@@ -13,173 +13,176 @@ import 'package:test/test.dart';
 import 'matchers.dart';
 
 void main() {
-//  group('SceneBuilder', () {
-//    test('pushOffset implements surface lifecycle', () {
-//      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
-//        return sceneBuilder.pushOffset(10, 20, oldLayer: oldLayer);
-//      }, () {
-//        return '''<s><flt-offset></flt-offset></s>''';
-//      });
-//    });
-//
-//    test('pushTransform implements surface lifecycle', () {
-//      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
-//        return sceneBuilder.pushTransform(
-//            Matrix4.translationValues(10, 20, 0).toFloat64(),
-//            oldLayer: oldLayer);
-//      }, () {
-//        return '''<s><flt-transform></flt-transform></s>''';
-//      });
-//    });
-//
-//    test('pushClipRect implements surface lifecycle', () {
-//      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
-//        return sceneBuilder.pushClipRect(const Rect.fromLTRB(10, 20, 30, 40),
-//            oldLayer: oldLayer);
-//      }, () {
-//        return '''
-//<s>
-//  <clip><clip-i></clip-i></clip>
-//</s>
-//''';
-//      });
-//    });
-//
-//    test('pushClipRRect implements surface lifecycle', () {
-//      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
-//        return sceneBuilder.pushClipRRect(
-//            RRect.fromLTRBR(10, 20, 30, 40, const Radius.circular(3)),
-//            oldLayer: oldLayer);
-//      }, () {
-//        return '''
-//<s>
-//  <rclip><clip-i></clip-i></rclip>
-//</s>
-//''';
-//      });
-//    });
-//
-//    test('pushClipPath implements surface lifecycle', () {
-//      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
-//        final Path path = Path()..addRect(const Rect.fromLTRB(10, 20, 30, 40));
-//        return sceneBuilder.pushClipPath(path, oldLayer: oldLayer);
-//      }, () {
-//        return '''
-//<s>
-//  <flt-clippath>
-//    <svg><defs><clipPath><path></path></clipPath></defs></svg>
-//  </flt-clippath>
-//</s>
-//''';
-//      });
-//    });
-//
-//    test('pushOpacity implements surface lifecycle', () {
-//      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
-//        return sceneBuilder.pushOpacity(10, oldLayer: oldLayer);
-//      }, () {
-//        return '''<s><o></o></s>''';
-//      });
-//    });
-//
-//    test('pushPhysicalShape implements surface lifecycle', () {
-//      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
-//        final Path path = Path()..addRect(const Rect.fromLTRB(10, 20, 30, 40));
-//        return sceneBuilder.pushPhysicalShape(
-//          path: path,
-//          elevation: 2,
-//          color: const Color.fromRGBO(0, 0, 0, 1),
-//          shadowColor: const Color.fromRGBO(0, 0, 0, 1),
-//          oldLayer: oldLayer,
-//        );
-//      }, () {
-//        return '''<s><pshape><clip-i></clip-i></pshape></s>''';
-//      });
-//    });
-//
-//    test('pushBackdropFilter implements surface lifecycle', () {
-//      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
-//        return sceneBuilder.pushBackdropFilter(
-//          ImageFilter.blur(sigmaX: 1.0, sigmaY: 1.0),
-//          oldLayer: oldLayer,
-//        );
-//      }, () {
-//        return '<s><flt-backdrop>'
-//            '<flt-backdrop-filter></flt-backdrop-filter>'
-//            '<flt-backdrop-interior></flt-backdrop-interior>'
-//            '</flt-backdrop></s>';
-//      });
-//    });
-//  });
-//
-//  group('parent child lifecycle', () {
-//    test(
-//        'build, retain, update, and applyPaint are called the right number of times',
-//        () {
-//      final PersistedScene scene1 = PersistedScene(null);
-//      final PersistedClipRect clip1 =
-//          PersistedClipRect(null, const Rect.fromLTRB(10, 10, 20, 20));
-//      final PersistedOpacity opacity = PersistedOpacity(null, 100, Offset.zero);
-//      final MockPersistedPicture picture = MockPersistedPicture();
-//
-//      scene1.appendChild(clip1);
-//      clip1.appendChild(opacity);
-//      opacity.appendChild(picture);
-//
-//      expect(picture.retainCount, 0);
-//      expect(picture.buildCount, 0);
-//      expect(picture.updateCount, 0);
-//      expect(picture.applyPaintCount, 0);
-//
-//      scene1.preroll();
-//      scene1.build();
-//      commitScene(scene1);
-//      expect(picture.retainCount, 0);
-//      expect(picture.buildCount, 1);
-//      expect(picture.updateCount, 0);
-//      expect(picture.applyPaintCount, 1);
-//
-//      // The second scene graph retains the opacity, but not the clip. However,
-//      // because the clip didn't change no repaints should happen.
-//      final PersistedScene scene2 = PersistedScene(scene1);
-//      final PersistedClipRect clip2 =
-//          PersistedClipRect(clip1, const Rect.fromLTRB(10, 10, 20, 20));
-//      clip1.state = PersistedSurfaceState.pendingUpdate;
-//      scene2.appendChild(clip2);
-//      opacity.state = PersistedSurfaceState.pendingRetention;
-//      clip2.appendChild(opacity);
-//
-//      scene2.preroll();
-//      scene2.update(scene1);
-//      commitScene(scene2);
-//      expect(picture.retainCount, 1);
-//      expect(picture.buildCount, 1);
-//      expect(picture.updateCount, 0);
-//      expect(picture.applyPaintCount, 1);
-//
-//      // The third scene graph retains the opacity, and produces a new clip.
-//      // This should cause the picture to repaint despite being retained.
-//      final PersistedScene scene3 = PersistedScene(scene2);
-//      final PersistedClipRect clip3 =
-//          PersistedClipRect(clip2, const Rect.fromLTRB(10, 10, 50, 50));
-//      clip2.state = PersistedSurfaceState.pendingUpdate;
-//      scene3.appendChild(clip3);
-//      opacity.state = PersistedSurfaceState.pendingRetention;
-//      clip3.appendChild(opacity);
-//
-//      scene3.preroll();
-//      scene3.update(scene2);
-//      commitScene(scene3);
-//      expect(picture.retainCount, 2);
-//      expect(picture.buildCount, 1);
-//      expect(picture.updateCount, 0);
-//      expect(picture.applyPaintCount, 2);
-//    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-//        skip: (browserEngine == BrowserEngine.firefox));
-//  });
+  group('SceneBuilder', () {
+    test('pushOffset implements surface lifecycle', () {
+      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
+        return sceneBuilder.pushOffset(10, 20, oldLayer: oldLayer);
+      }, () {
+        return '''<s><flt-offset></flt-offset></s>''';
+      });
+    });
+
+    test('pushTransform implements surface lifecycle', () {
+      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
+        return sceneBuilder.pushTransform(
+            Matrix4.translationValues(10, 20, 0).toFloat64(),
+            oldLayer: oldLayer);
+      }, () {
+        return '''<s><flt-transform></flt-transform></s>''';
+      });
+    });
+
+    test('pushClipRect implements surface lifecycle', () {
+      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
+        return sceneBuilder.pushClipRect(const Rect.fromLTRB(10, 20, 30, 40),
+            oldLayer: oldLayer);
+      }, () {
+        return '''
+<s>
+  <clip><clip-i></clip-i></clip>
+</s>
+''';
+      });
+    });
+
+    test('pushClipRRect implements surface lifecycle', () {
+      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
+        return sceneBuilder.pushClipRRect(
+            RRect.fromLTRBR(10, 20, 30, 40, const Radius.circular(3)),
+            oldLayer: oldLayer);
+      }, () {
+        return '''
+<s>
+  <rclip><clip-i></clip-i></rclip>
+</s>
+''';
+      });
+    });
+
+    test('pushClipPath implements surface lifecycle', () {
+      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
+        final Path path = Path()..addRect(const Rect.fromLTRB(10, 20, 30, 40));
+        return sceneBuilder.pushClipPath(path, oldLayer: oldLayer);
+      }, () {
+        return '''
+<s>
+  <flt-clippath>
+    <svg><defs><clipPath><path></path></clipPath></defs></svg>
+  </flt-clippath>
+</s>
+''';
+      });
+    });
+
+    test('pushOpacity implements surface lifecycle', () {
+      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
+        return sceneBuilder.pushOpacity(10, oldLayer: oldLayer);
+      }, () {
+        return '''<s><o></o></s>''';
+      });
+    });
+
+    test('pushPhysicalShape implements surface lifecycle', () {
+      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
+        final Path path = Path()..addRect(const Rect.fromLTRB(10, 20, 30, 40));
+        return sceneBuilder.pushPhysicalShape(
+          path: path,
+          elevation: 2,
+          color: const Color.fromRGBO(0, 0, 0, 1),
+          shadowColor: const Color.fromRGBO(0, 0, 0, 1),
+          oldLayer: oldLayer,
+        );
+      }, () {
+        return '''<s><pshape><clip-i></clip-i></pshape></s>''';
+      });
+    });
+
+    test('pushBackdropFilter implements surface lifecycle', () {
+      testLayerLifeCycle((SceneBuilder sceneBuilder, EngineLayer oldLayer) {
+        return sceneBuilder.pushBackdropFilter(
+          ImageFilter.blur(sigmaX: 1.0, sigmaY: 1.0),
+          oldLayer: oldLayer,
+        );
+      }, () {
+        return '<s><flt-backdrop>'
+            '<flt-backdrop-filter></flt-backdrop-filter>'
+            '<flt-backdrop-interior></flt-backdrop-interior>'
+            '</flt-backdrop></s>';
+      });
+    });
+  });
+
+  group('parent child lifecycle', () {
+    test(
+        'build, retain, update, and applyPaint are called the right number of times',
+        () {
+      final PersistedScene scene1 = PersistedScene(null);
+      final PersistedClipRect clip1 =
+          PersistedClipRect(null, const Rect.fromLTRB(10, 10, 20, 20));
+      final PersistedOpacity opacity = PersistedOpacity(null, 100, Offset.zero);
+      final MockPersistedPicture picture = MockPersistedPicture();
+
+      scene1.appendChild(clip1);
+      clip1.appendChild(opacity);
+      opacity.appendChild(picture);
+
+      expect(picture.retainCount, 0);
+      expect(picture.buildCount, 0);
+      expect(picture.updateCount, 0);
+      expect(picture.applyPaintCount, 0);
+
+      scene1.preroll();
+      scene1.build();
+      commitScene(scene1);
+      expect(picture.retainCount, 0);
+      expect(picture.buildCount, 1);
+      expect(picture.updateCount, 0);
+      expect(picture.applyPaintCount, 1);
+
+      // The second scene graph retains the opacity, but not the clip. However,
+      // because the clip didn't change no repaints should happen.
+      final PersistedScene scene2 = PersistedScene(scene1);
+      final PersistedClipRect clip2 =
+          PersistedClipRect(clip1, const Rect.fromLTRB(10, 10, 20, 20));
+      clip1.state = PersistedSurfaceState.pendingUpdate;
+      scene2.appendChild(clip2);
+      opacity.state = PersistedSurfaceState.pendingRetention;
+      clip2.appendChild(opacity);
+
+      scene2.preroll();
+      scene2.update(scene1);
+      commitScene(scene2);
+      expect(picture.retainCount, 1);
+      expect(picture.buildCount, 1);
+      expect(picture.updateCount, 0);
+      expect(picture.applyPaintCount, 1);
+
+      // The third scene graph retains the opacity, and produces a new clip.
+      // This should cause the picture to repaint despite being retained.
+      final PersistedScene scene3 = PersistedScene(scene2);
+      final PersistedClipRect clip3 =
+          PersistedClipRect(clip2, const Rect.fromLTRB(10, 10, 50, 50));
+      clip2.state = PersistedSurfaceState.pendingUpdate;
+      scene3.appendChild(clip3);
+      opacity.state = PersistedSurfaceState.pendingRetention;
+      clip3.appendChild(opacity);
+
+      scene3.preroll();
+      scene3.update(scene2);
+      commitScene(scene3);
+      expect(picture.retainCount, 2);
+      expect(picture.buildCount, 1);
+      expect(picture.updateCount, 0);
+      expect(picture.applyPaintCount, 2);
+    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+        skip: (browserEngine == BrowserEngine.firefox));
+  });
 
   group('Compositing order', () {
     // Regression test for https://github.com/flutter/flutter/issues/55058
+    //
+    // When BitmapCanvas uses multiple elements to paint, the very first
+    // canvas needs to have a -1 zIndex so it can preserve compositing order.
     test('First canvas element should retain -1 zIndex after update', () async {
       final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
       final Picture picture1 = _drawPicture();
