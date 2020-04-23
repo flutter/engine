@@ -158,6 +158,19 @@ public class FlutterActivityTest {
     assertEquals(activity.getFlutterEngine(), registeredEngines.get(0));
   }
 
+  @Test
+  public void itDoesNotCrashWhenNoSplashDrawableIsGiven() {
+    Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    // We never supplied the resource key to robolectric so it doesn't exist.
+    SplashScreen splashScreen = flutterActivity.provideSplashScreen();
+    // It should quietly return a null and not crash.
+    assertNull(splashScreen);
+  }
+
   static class FlutterActivityWithProvidedEngine extends FlutterActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

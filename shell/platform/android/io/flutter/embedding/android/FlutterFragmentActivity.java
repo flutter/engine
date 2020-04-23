@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -331,6 +332,10 @@ public class FlutterFragmentActivity extends FragmentActivity
           : null;
     } catch (PackageManager.NameNotFoundException e) {
       // This is never expected to happen.
+      return null;
+    } catch (Resources.NotFoundException e) {
+      // Users don't have to supply a splash screen drawable. If none is given, return null.
+      Log.v(TAG, "No splash drawables found.");
       return null;
     }
   }
