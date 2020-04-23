@@ -80,15 +80,10 @@ class _CanvasPool extends _SaveStackTracking {
 
   void _createCanvas() {
     bool requiresClearRect = false;
-    final html.HtmlElement _rootElementFirstChild = _rootElement.firstChild;
+    bool reused = false;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
-      if (_canvas != _rootElementFirstChild) {
-        // If a canvas is the first element we set z-index = -1 to workaround
-        // blink compositing bug. To make sure this does not leak when reused
-        // reset z-index.
-        _canvas.style.removeProperty('z-index');
-      }
+      reused = true;
       requiresClearRect = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
@@ -119,6 +114,12 @@ class _CanvasPool extends _SaveStackTracking {
         ..height = '${cssHeight}px';
     }
 
+    // Before appending canvas, check if canvas is already on rootElement. This
+    // optimization prevents DOM .append call when a PersistentSurface is
+    // reused. Reading lastChild is faster than append call.
+    if (_rootElement.lastChild != _canvas) {
+      _rootElement.append(_canvas);
+    }
     // When the picture has a 90-degree transform and clip in its
     // ancestor layers, it triggers a bug in Blink and Webkit browsers
     // that results in canvas obscuring text that should be painted on
@@ -129,16 +130,15 @@ class _CanvasPool extends _SaveStackTracking {
     // Possible Blink bugs that are causing this:
     // * https://bugs.chromium.org/p/chromium/issues/detail?id=370604
     // * https://bugs.chromium.org/p/chromium/issues/detail?id=586601
-    if (_rootElementFirstChild == null ||
-        _rootElementFirstChild == _canvas) {
+    if (_rootElement.firstChild == _canvas) {
       _canvas.style.zIndex = '-1';
+    } else if (reused) {
+      // If a canvas is the first element we set z-index = -1 to workaround
+      // blink compositing bug. To make sure this does not leak when reused
+      // reset z-index.
+      _canvas.style.removeProperty('z-index');
     }
-    // Before appending canvas, check if canvas is already on rootElement. This
-    // optimization prevents DOM .append call when a PersistentSurface is
-    // reused. Reading lastChild is faster than append call.
-    if (_rootElement.lastChild != _canvas) {
-      _rootElement.append(_canvas);
-    }
+
     _context = _canvas.context2D;
     _contextHandle = ContextStateHandle(_context);
     _initializeViewport(requiresClearRect);
