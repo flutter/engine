@@ -121,29 +121,24 @@ void Rasterizer::Draw(std::shared_ptr<LayerTreeHolder> layer_tree_holder) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
   std::unique_ptr<LayerTree> layer_tree = layer_tree_holder->Get();
-  RasterStatus raster_status = RasterStatus::kFailed;
-  if (layer_tree) {
-    raster_status = DoDraw(std::move(layer_tree));
-  }
-
-  // if the raster status is to resubmit the frame, we push the frame to the
-  // front of the queue and also change the consume status to more available.
-  if (raster_status == RasterStatus::kResubmit) {
-    layer_tree_holder->ReplaceIfNewer(std::move(resubmitted_layer_tree_));
-  }
+  RasterStatus raster_status =
+      layer_tree ? DoDraw(std::move(layer_tree)) : RasterStatus::kFailed;
 
   // Merging the thread as we know the next `Draw` should be run on the platform
   // thread.
   if (raster_status == RasterStatus::kResubmit) {
+    layer_tree_holder->ReplaceIfNewer(std::move(resubmitted_layer_tree_));
     auto* external_view_embedder = surface_->GetExternalViewEmbedder();
-    // We know only the `external_view_embedder` can
-    // causes|RasterStatus::kResubmit|. Check to make sure.
-    FML_DCHECK(external_view_embedder != nullptr);
+    FML_DCHECK(external_view_embedder != nullptr)
+        << "kResubmit is an invalid raster status without external view "
+           "embedder.";
     external_view_embedder->EndFrame(raster_thread_merger_);
   }
 
-  // Consume as many pipeline items as possible. But yield the event loop
+  // Consume as many layer trees as possible. But yield the event loop
   // between successive tries.
+  // Note: This behaviour is left as-is to be inline with the pipeline
+  // semantics. TODO(kaushikiska): explore removing this block.
   if (!layer_tree_holder->IsEmpty()) {
     task_runners_.GetRasterTaskRunner()->PostTask(
         [weak_this = weak_factory_.GetWeakPtr(), layer_tree_holder]() {
@@ -297,29 +292,6 @@ RasterStatus Rasterizer::DoDraw(
         "vsync_transitions_missed",   // arg_key_3
         vsync_transitions_missed      // arg_val_3
     );
-  }
-
-  // Pipeline pressure is applied from a couple of places:
-  // rasterizer: When there are more items as of the time of Consume.
-  // animator (via shell): Frame gets produces every vsync.
-  // Enqueing here is to account for the following scenario:
-  // T = 1
-  //  - one item (A) in the pipeline
-  //  - rasterizer starts (and merges the threads)
-  //  - pipeline consume result says no items to process
-  // T = 2
-  //  - animator produces (B) to the pipeline
-  //  - applies pipeline pressure via platform thread.
-  // T = 3
-  //   - rasterizes finished (and un-merges the threads)
-  //   - |Draw| for B yields as its on the wrong thread.
-  // This enqueue ensures that we attempt to consume from the right
-  // thread one more time after un-merge.
-  if (raster_thread_merger_) {
-    if (raster_thread_merger_->DecrementLease() ==
-        fml::RasterThreadStatus::kUnmergedNow) {
-      return RasterStatus::kEnqueuePipeline;
-    }
   }
 
   return raster_status;

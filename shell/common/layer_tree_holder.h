@@ -21,7 +21,7 @@ class LayerTreeHolder {
 
   std::unique_ptr<LayerTree> Get();
 
-  void ReplaceIfNewer(std::unique_ptr<LayerTree> layer_tree);
+  void ReplaceIfNewer(std::unique_ptr<LayerTree> proposed_layer_tree);
 
  private:
   mutable std::mutex layer_tree_mutex;

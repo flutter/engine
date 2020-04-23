@@ -11,12 +11,12 @@ std::unique_ptr<LayerTree> LayerTreeHolder::Get() {
   return std::move(layer_tree_);
 }
 
-void LayerTreeHolder::ReplaceIfNewer(std::unique_ptr<LayerTree> layer_tree) {
+void LayerTreeHolder::ReplaceIfNewer(
+    std::unique_ptr<LayerTree> proposed_layer_tree) {
   std::scoped_lock lock(layer_tree_mutex);
-  if (IsEmpty()) {
-    layer_tree_ = std::move(layer_tree);
-  } else if (layer_tree_->target_time() < layer_tree->target_time()) {
-    layer_tree_ = std::move(layer_tree);
+  if (IsEmpty() ||
+      layer_tree_->target_time() < proposed_layer_tree->target_time()) {
+    layer_tree_ = std::move(proposed_layer_tree);
   }
 }
 
