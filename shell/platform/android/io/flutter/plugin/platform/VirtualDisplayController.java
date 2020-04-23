@@ -148,7 +148,9 @@ class VirtualDisplayController {
 
     // Initialize a new presentation. We don't want to cancel
     // the old one before we can properly show the new one to
-    // take over where it left off.
+    // take over where it left off. Cancelling before the show()
+    // of the new presentation causes the contents to stop, eg,
+    // video stops playing.
     SingleViewPresentation newPresentation =
         new SingleViewPresentation(
             context,
@@ -159,7 +161,7 @@ class VirtualDisplayController {
             isFocused);
     newPresentation.show();
     // Stop the old presentation to prevent it from triggering callbacks
-    // after it is outdated.
+    // after it is outdated. This prevents a NPE crash.
     presentation.cancel();
     presentation = newPresentation;
   }
