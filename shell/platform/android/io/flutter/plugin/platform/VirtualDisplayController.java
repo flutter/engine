@@ -145,7 +145,10 @@ class VirtualDisplayController {
           public void onViewDetachedFromWindow(View v) {}
         });
 
-    presentation =
+    // Initialize a new presentation. We don't want to cancel
+    // the old one before we can properly show the new one to
+    // take over where it left off.
+    SingleViewPresentation newPresentation =
         new SingleViewPresentation(
             context,
             virtualDisplay.getDisplay(),
@@ -153,7 +156,11 @@ class VirtualDisplayController {
             presentationState,
             focusChangeListener,
             isFocused);
-    presentation.show();
+    newPresentation.show();
+    // Stop the old presentation to prevent it from triggering callbacks
+    // after it is outdated.
+    presentation.cancel();
+    presentation = newPresentation;
   }
 
   public void dispose() {
