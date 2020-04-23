@@ -81,11 +81,7 @@ class BrowserAutofillHints {
   /// See: https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/autofill.dart
   /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
   String flutterToEngine(String flutterAutofillHint) {
-    if (_flutterToEngineMap.containsKey(flutterAutofillHint)) {
-      return _flutterToEngineMap[flutterAutofillHint];
-    } else {
-      // Use the hints as it is.
-      return flutterAutofillHint;
-    }
+    // Use the hints as it is.
+    return _flutterToEngineMap[flutterAutofillHint] ?? flutterAutofillHint;
   }
 }
