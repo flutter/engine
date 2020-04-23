@@ -5,7 +5,6 @@
 assert(is_fuchsia)
 
 import("//build/fuchsia/sdk.gni")
-import("//flutter/vulkan/config.gni")
 
 # Builds a flutter_runner
 #
@@ -33,10 +32,6 @@ template("flutter_runner") {
   extra_defines = []
   if (defined(invoker.extra_defines)) {
     extra_defines += invoker.extra_defines
-  }
-
-  if (enable_vulkan_validation_layers) {
-    extra_defines += [ "VULKAN_VALIDATION_LAYERS_ENABLED" ]
   }
 
   executable(target_name) {
