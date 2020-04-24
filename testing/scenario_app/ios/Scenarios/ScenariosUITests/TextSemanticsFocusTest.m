@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-FLUTTER_ASSERT_ARC
-
 #import "TextSemanticsFocusTest.h"
+
+FLUTTER_ASSERT_ARC
 
 @implementation TextSemanticsFocusTest
 
