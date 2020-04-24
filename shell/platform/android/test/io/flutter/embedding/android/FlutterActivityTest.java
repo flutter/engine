@@ -7,9 +7,14 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -159,13 +164,43 @@ public class FlutterActivityTest {
   }
 
   @Test
-  public void itDoesNotCrashWhenNoSplashDrawableIsGiven() {
+  public void itDoesNotCrashWhenSplashScreenMetadataIsNotDefined() {
     Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
 
-    // We never supplied the resource key to robolectric so it doesn't exist.
+    // We never supplied the metadata to the robolectric activity info so it doesn't exist.
+    SplashScreen splashScreen = flutterActivity.provideSplashScreen();
+    // It should quietly return a null and not crash.
+    assertNull(splashScreen);
+  }
+
+  @Test
+  public void itDoesNotCrashWhenSplashScreenDrawableDoesNotExist() {
+    Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    ResolveInfo resolveInfo = new ResolveInfo();
+    resolveInfo.activityInfo = new ActivityInfo();
+    resolveInfo.activityInfo.name = "FlutterActivity";
+    resolveInfo.activityInfo.applicationInfo = new ApplicationInfo();
+    resolveInfo.activityInfo.applicationInfo.packageName = "io.flutter.test";
+    resolveInfo.activityInfo.metaData = new Bundle();
+    resolveInfo.activityInfo.metaData.putInt(FlutterActivityLaunchConfigs.NORMAL_THEME_META_DATA_KEY, 1234);
+    shadowOf(RuntimeEnvironment.application.getPackageManager())
+        .addResolveInfoForIntent(intent, resolveInfo);
+
+    System.out.println("++++++ classname " + flutterActivity.getClass().toString());
+    System.out.println("++++++ component name is " + flutterActivity.getComponentName());
+    System.out.println("++++++ package manager is " + RuntimeEnvironment.application.getPackageManager().getClass());
+    ActivityInfo activityInfo =
+    shadowOf(RuntimeEnvironment.application.getPackageManager()).getActivityInfo(flutterActivity.getComponentName(), PackageManager.GET_META_DATA);
+    System.out.println("++++++ activityinfo is " + activityInfo);
+
+    // We never supplied the metadata to the robolectric activity info so it doesn't exist.
     SplashScreen splashScreen = flutterActivity.provideSplashScreen();
     // It should quietly return a null and not crash.
     assertNull(splashScreen);

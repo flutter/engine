@@ -39,7 +39,7 @@ public class FlutterFragmentActivityTest {
   }
 
   @Test
-  public void itDoesNotCrashWhenNoSplashDrawableIsGiven() {
+  public void itDoesNotCrashWhenSplashScreenDrawableDoesNotExist() {
     Intent intent = FlutterFragmentActivity.createDefaultIntent(RuntimeEnvironment.application);
     ActivityController<FlutterFragmentActivity> activityController =
         Robolectric.buildActivity(FlutterFragmentActivity.class, intent);
