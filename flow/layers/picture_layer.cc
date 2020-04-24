@@ -24,9 +24,7 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
 
-    SkMatrix ctm = matrix;
-    ctm.postTranslate(offset_.x(), offset_.y());
-    cache->Prepare(context->gr_context, sk_picture, ctm,
+    cache->Prepare(context->gr_context, sk_picture, matrix,
                    context->dst_color_space, is_complex_, will_change_);
   }
 
