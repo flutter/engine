@@ -101,6 +101,8 @@ class AutofillGroup {
     for (Map<String, dynamic> field in fields) {
       final Map<String, dynamic> autofillInfo = field['autofill'];
       final Autofill autofill = Autofill.fromFrameworkMessage(autofillInfo);
+
+      // The main text editing element will not be created here.
       if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
         EngineInputType engineInputType =
             EngineInputType.fromName(field['inputType']['name']);
@@ -179,15 +181,9 @@ class AutofillGroup {
   // (DONE) add dom elements which are not the main element.
   // (DONE) also add the event handlers.
   // (DONE) why flutter side does not get the values.
-  // (TODO) create a unique id.
-  // (TODO) merge the common items.
+  // (NOPE)looks like not necessary
+  // (DONE) merge the common items.
   // (NOPE) only use the group in input configuration. autofill is useful.
-
-  /// Other alternatives to try if the above do not work try to leave the form on the dom.
-  /// TODO: check if this form is on the dom (unique identifier for form)
-  /// TODO: if not add elements to the dom. add dom elements which are not the main element. also add the event handlers.
-  /// TODO: if form already exits only update the main element.
-  /// TODO: update the main element.
 }
 
 /// Autofill related values.
@@ -804,6 +800,11 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void addEventHandlers() {
+    if (_inputConfiguration.autofillGroup != null) {
+      _subscriptions
+          .addAll(_inputConfiguration.autofillGroup.addEventListeners());
+    }
+
     // Subscribe to text and selection changes.
     _subscriptions.add(domElement.onInput.listen(_handleChange));
 
@@ -908,6 +909,11 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void addEventHandlers() {
+    if (_inputConfiguration.autofillGroup != null) {
+      _subscriptions
+          .addAll(_inputConfiguration.autofillGroup.addEventListeners());
+    }
+
     // Subscribe to text and selection changes.
     _subscriptions.add(domElement.onInput.listen(_handleChange));
 
@@ -938,6 +944,11 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void addEventHandlers() {
+    if (_inputConfiguration.autofillGroup != null) {
+      _subscriptions
+          .addAll(_inputConfiguration.autofillGroup.addEventListeners());
+    }
+
     // Subscribe to text and selection changes.
     _subscriptions.add(domElement.onInput.listen(_handleChange));
 
