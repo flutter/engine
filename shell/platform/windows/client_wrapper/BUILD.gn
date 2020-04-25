@@ -10,9 +10,16 @@ _wrapper_includes = [
   "include/flutter/flutter_view_controller.h",
   "include/flutter/flutter_view.h",
   "include/flutter/plugin_registrar_windows.h",
+  "include/flutter/win32_window_pub.h",
+  "include/flutter/win32_flutter_window_pub.h",
+  "include/flutter/dpi_utils_pub.h",
 ]
 
-_wrapper_sources = [ "flutter_view_controller.cc" ]
+_wrapper_sources = [ "flutter_view_controller.cc",
+"win32_flutter_window_pub.cc",
+"win32_window_pub.cc",
+"dpi_utils_pub.cc",
+ ]
 
 # This code will be merged into .../common/cpp/client_wrapper for client use,
 # so uses header paths that assume the merged state. Include the header
