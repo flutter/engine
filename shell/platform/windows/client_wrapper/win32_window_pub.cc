@@ -42,7 +42,7 @@ void Win32WindowPub::InitializeChild(const char* title,
   if (result == nullptr) {
     auto error = GetLastError();
     LPWSTR message = nullptr;
-    size_t size = FormatMessageW(
+    FormatMessageW(
         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
             FORMAT_MESSAGE_IGNORE_INSERTS,
         NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -251,12 +251,12 @@ Win32WindowPub::MessageHandler(HWND hwnd,
         // Check if this key produces a character. If so, the key press should
         // be sent with the character produced at WM_CHAR. Store the produced
         // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
-        const unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
+        const unsigned int character = MapVirtualKey(static_cast<UINT>(wparam), MAPVK_VK_TO_CHAR);
         if (character > 0 && is_keydown_message) {
-          keycode_for_char_message_ = wparam;
+          keycode_for_char_message_ = static_cast<UINT>(wparam);
           break;
         }
-        unsigned int keyCode(wparam);
+        unsigned int keyCode(static_cast<UINT>(wparam));
         const unsigned int scancode = (lparam >> 16) & 0xff;
         // If the key is a modifier, get its side.
         if (keyCode == VK_SHIFT || keyCode == VK_MENU ||

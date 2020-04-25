@@ -24,12 +24,13 @@ FlutterViewController::FlutterViewController(int width,
   properties.icu_data_path = project.icu_data_path().c_str();
   properties.switches = switch_count > 0 ? switches.data() : nullptr;
   properties.switches_count = switch_count;
-  controller_ = FlutterDesktopCreateViewController(width, height, properties);
+  /*controller_ = FlutterDesktopCreateViewController(width, height, properties);
   if (!controller_) {
     std::cerr << "Failed to create view controller." << std::endl;
     return;
-  }
-  view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
+  }*/
+  //view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
+  child_window_ = std::make_unique<Win32FlutterWindowPub>(width, height);
 }
 
 FlutterViewController::FlutterViewController(
@@ -55,13 +56,14 @@ FlutterViewController::FlutterViewController(
     std::cerr << "Failed to create view controller." << std::endl;
     return;
   }
-  view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
+  //view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
+  child_window_ = std::make_unique<Win32FlutterWindowPub>(width,height);
 }
 
 FlutterViewController::~FlutterViewController() {
-  if (controller_) {
+  /*if (controller_) {
     FlutterDesktopDestroyViewController(controller_);
-  }
+  }*/
 }
 
 std::chrono::nanoseconds FlutterViewController::ProcessMessages() {

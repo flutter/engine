@@ -80,26 +80,26 @@ Win32FlutterWindowPub::~Win32FlutterWindowPub() {
 //  return message;
 //}
 
-// Translates button codes from Win32 API to FlutterPointerMouseButtons.
-static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
-  /*switch (button) {
-    case WM_LBUTTONDOWN:
-    case WM_LBUTTONUP:
-      return kFlutterPointerButtonMousePrimary;
-    case WM_RBUTTONDOWN:
-    case WM_RBUTTONUP:
-      return kFlutterPointerButtonMouseSecondary;
-    case WM_MBUTTONDOWN:
-    case WM_MBUTTONUP:
-      return kFlutterPointerButtonMouseMiddle;
-    case XBUTTON1:
-      return kFlutterPointerButtonMouseBack;
-    case XBUTTON2:
-      return kFlutterPointerButtonMouseForward;
-  }
-  std::cerr << "Mouse button not recognized: " << button << std::endl;*/
-  return 0;
-}
+//// Translates button codes from Win32 API to FlutterPointerMouseButtons.
+//static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
+//  /*switch (button) {
+//    case WM_LBUTTONDOWN:
+//    case WM_LBUTTONUP:
+//      return kFlutterPointerButtonMousePrimary;
+//    case WM_RBUTTONDOWN:
+//    case WM_RBUTTONUP:
+//      return kFlutterPointerButtonMouseSecondary;
+//    case WM_MBUTTONDOWN:
+//    case WM_MBUTTONUP:
+//      return kFlutterPointerButtonMouseMiddle;
+//    case XBUTTON1:
+//      return kFlutterPointerButtonMouseBack;
+//    case XBUTTON2:
+//      return kFlutterPointerButtonMouseForward;
+//  }
+//  std::cerr << "Mouse button not recognized: " << button << std::endl;*/
+//  return 0;
+//}
 
 //// The Flutter Engine calls out to this function when new platform messages
 //// are available.
