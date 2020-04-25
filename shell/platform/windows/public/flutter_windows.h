@@ -22,6 +22,10 @@ extern "C" {
 typedef struct FlutterDesktopViewControllerState*
     FlutterDesktopViewControllerRef;
 
+// Opaque reference to a Flutter window controller.
+typedef struct FlutterDesktopViewControllerState*
+    V2FlutterDesktopViewControllerRef;
+
 // Opaque reference to a Flutter window.
 typedef struct FlutterDesktopView* FlutterDesktopViewRef;
 
@@ -49,6 +53,19 @@ typedef struct {
   // The number of elements in |switches|.
   size_t switches_count;
 } FlutterDesktopEngineProperties;
+
+// Creates a View with the given dimensions running a Flutter Application.
+//
+// This will set up and run an associated Flutter engine using the settings in
+// |engine_properties|.
+//
+// Returns a null pointer in the event of an error.
+FLUTTER_EXPORT FlutterDesktopViewControllerRef
+V2FlutterDesktopCreateViewController(
+    int width,
+    int height,
+    const FlutterDesktopEngineProperties& engine_properties,
+    void* compositor);
 
 // Creates a View with the given dimensions running a Flutter Application.
 //

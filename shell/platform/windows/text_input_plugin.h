@@ -16,7 +16,7 @@
 
 namespace flutter {
 
-class Win32FlutterWindow;
+class FlutterCompView;
 
 // Implements a text input plugin.
 //
@@ -28,14 +28,14 @@ class TextInputPlugin : public KeyboardHookHandler {
   virtual ~TextInputPlugin();
 
   // |KeyboardHookHandler|
-  void KeyboardHook(Win32FlutterWindow* window,
+  void KeyboardHook(FlutterCompView* window,
                     int key,
                     int scancode,
                     int action,
                     char32_t character) override;
 
   // |KeyboardHookHandler|
-  void TextHook(Win32FlutterWindow* window,
+  void TextHook(FlutterCompView* window,
                 const std::u16string& text) override;
 
  private:

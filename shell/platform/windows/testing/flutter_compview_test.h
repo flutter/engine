@@ -4,23 +4,23 @@
 
 #include <windowsx.h>
 
-#include "flutter/shell/platform/windows/win32_flutter_window.h"
+#include "flutter/shell/platform/windows/flutter_comp_view.h"
 
 namespace flutter {
 namespace testing {
 
 /// Test class for Win32FlutterWindow.
-class Win32FlutterWindowTest : public Win32FlutterWindow {
+class FlutterCompViewTest : public FlutterCompView {
  public:
-  Win32FlutterWindowTest(int width, int height);
-  virtual ~Win32FlutterWindowTest();
+  FlutterCompViewTest(int width, int height);
+  virtual ~FlutterCompViewTest();
 
   // Prevent copying.
-  Win32FlutterWindowTest(Win32FlutterWindowTest const&) = delete;
-  Win32FlutterWindowTest& operator=(Win32FlutterWindowTest const&) = delete;
+  FlutterCompViewTest(FlutterCompViewTest const&) = delete;
+  FlutterCompViewTest& operator=(FlutterCompViewTest const&) = delete;
 
-  // |Win32Window|
-  void OnFontChange() override;
+  //// |Win32Window|
+  //void OnFontChange() override;
 
   bool OnFontChangeWasCalled();
 

@@ -2,25 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/windows/win32_task_runner.h"
+#include "flutter/shell/platform/windows/task_runner.h"
 
 #include <atomic>
 #include <utility>
 
 namespace flutter {
 
-Win32TaskRunner::Win32TaskRunner(DWORD main_thread_id,
+TaskRunner::TaskRunner(DWORD main_thread_id,
                                  const TaskExpiredCallback& on_task_expired)
     : main_thread_id_(main_thread_id),
       on_task_expired_(std::move(on_task_expired)) {}
 
-Win32TaskRunner::~Win32TaskRunner() = default;
+TaskRunner::~TaskRunner() = default;
 
-bool Win32TaskRunner::RunsTasksOnCurrentThread() const {
+bool TaskRunner::RunsTasksOnCurrentThread() const {
   return GetCurrentThreadId() == main_thread_id_;
 }
 
-std::chrono::nanoseconds Win32TaskRunner::ProcessTasks() {
+std::chrono::nanoseconds TaskRunner::ProcessTasks() {
   const TaskTimePoint now = TaskTimePoint::clock::now();
 
   std::vector<FlutterTask> expired_tasks;
@@ -65,7 +65,7 @@ std::chrono::nanoseconds Win32TaskRunner::ProcessTasks() {
   }
 }
 
-Win32TaskRunner::TaskTimePoint Win32TaskRunner::TimePointFromFlutterTime(
+TaskRunner::TaskTimePoint TaskRunner::TimePointFromFlutterTime(
     uint64_t flutter_target_time_nanos) {
   const auto now = TaskTimePoint::clock::now();
   const auto flutter_duration =
@@ -73,7 +73,7 @@ Win32TaskRunner::TaskTimePoint Win32TaskRunner::TimePointFromFlutterTime(
   return now + std::chrono::nanoseconds(flutter_duration);
 }
 
-void Win32TaskRunner::PostTask(FlutterTask flutter_task,
+void TaskRunner::PostTask(FlutterTask flutter_task,
                                uint64_t flutter_target_time_nanos) {
   static std::atomic_uint64_t sGlobalTaskOrder(0);
 

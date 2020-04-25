@@ -11,7 +11,7 @@
 
 #include "flutter/shell/platform/common/cpp/json_method_codec.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
-#include "flutter/shell/platform/windows/win32_flutter_window.h"
+#include "flutter/shell/platform/windows/flutter_comp_view.h"
 
 static constexpr char kChannelName[] = "flutter/platform";
 

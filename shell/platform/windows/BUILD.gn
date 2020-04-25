@@ -41,8 +41,6 @@ source_set("flutter_windows_source") {
   sources = [
     "angle_surface_manager.cc",
     "angle_surface_manager.h",
-    "dpi_utils.cc",
-    "dpi_utils.h",
     "flutter_windows.cc",
     "key_event_handler.cc",
     "key_event_handler.h",
@@ -53,13 +51,11 @@ source_set("flutter_windows_source") {
     "string_conversion.h",
     "text_input_plugin.cc",
     "text_input_plugin.h",
-    "win32_flutter_window.cc",
-    "win32_flutter_window.h",
-    "win32_task_runner.cc",
-    "win32_task_runner.h",
-    "win32_window.cc",
-    "win32_window.h",
-    "window_state.h",
+    "flutter_comp_view.cc",
+    "flutter_comp_view.h",
+    "window_state_comp.h",
+    "task_runner.cc",
+    "task_runner.h",
   ]
 
   configs += [
@@ -109,14 +105,10 @@ executable("flutter_windows_unittests") {
   testonly = true
 
   sources = [
-    "dpi_utils_unittests.cc",
     "string_conversion_unittests.cc",
-    "testing/win32_flutter_window_test.cc",
-    "testing/win32_flutter_window_test.h",
-    "testing/win32_window_test.cc",
-    "testing/win32_window_test.h",
-    "win32_flutter_window_unittests.cc",
-    "win32_window_unittests.cc",
+    "testing/flutter_compview_test.cc",
+    "testing/flutter_compview_test.h",
+    "flutter_compview_unittests.cc",
   ]
 
   public_configs = [ "//flutter:config" ]

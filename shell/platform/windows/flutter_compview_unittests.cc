@@ -1,4 +1,4 @@
-#include "flutter/shell/platform/windows/testing/win32_flutter_window_test.h"
+#include "flutter/shell/platform/windows/testing/flutter_compview_test.h"
 #include "gtest/gtest.h"
 
 namespace flutter {

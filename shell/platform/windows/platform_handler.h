@@ -12,13 +12,13 @@
 
 namespace flutter {
 
-class Win32FlutterWindow;
+class FlutterCompView;
 
 // Handler for internal system channels.
 class PlatformHandler {
  public:
   explicit PlatformHandler(flutter::BinaryMessenger* messenger,
-                           Win32FlutterWindow* window);
+                           FlutterCompView* window);
 
  private:
   // Called when a method is called on |channel_|;
@@ -30,7 +30,7 @@ class PlatformHandler {
   std::unique_ptr<flutter::MethodChannel<rapidjson::Document>> channel_;
 
   // A reference to the win32 window.
-  Win32FlutterWindow* window_;
+  FlutterCompView* window_;
 };
 
 }  // namespace flutter

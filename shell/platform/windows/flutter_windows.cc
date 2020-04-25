@@ -18,14 +18,12 @@
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/common/cpp/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/windows/dpi_utils.h"
 #include "flutter/shell/platform/windows/key_event_handler.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
-#include "flutter/shell/platform/windows/win32_flutter_window.h"
-#include "flutter/shell/platform/windows/win32_task_runner.h"
-#include "flutter/shell/platform/windows/window_state.h"
+#include "flutter/shell/platform/windows/task_runner.h"
+#include "flutter/shell/platform/windows/flutter_comp_view.h"
 
 static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 
@@ -38,7 +36,7 @@ static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 // Returns the state object for the engine, or null on failure to start the
 // engine.
 static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
-    flutter::Win32FlutterWindow* window,
+    flutter::FlutterCompView* window,
     const FlutterDesktopEngineProperties& engine_properties) {
   auto state = std::make_unique<FlutterDesktopEngineState>();
 
@@ -58,15 +56,15 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(config.open_gl);
   config.open_gl.make_current = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::Win32FlutterWindow*>(user_data);
+    auto host = static_cast<flutter::FlutterCompView*>(user_data);
     return host->MakeCurrent();
   };
   config.open_gl.clear_current = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::Win32FlutterWindow*>(user_data);
+    auto host = static_cast<flutter::FlutterCompView*>(user_data);
     return host->ClearContext();
   };
   config.open_gl.present = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::Win32FlutterWindow*>(user_data);
+    auto host = static_cast<flutter::FlutterCompView*>(user_data);
     return host->SwapBuffers();
   };
   config.open_gl.fbo_callback = [](void* user_data) -> uint32_t { return 0; };
@@ -75,13 +73,13 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
     return reinterpret_cast<void*>(eglGetProcAddress(what));
   };
   config.open_gl.make_resource_current = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::Win32FlutterWindow*>(user_data);
+    auto host = static_cast<flutter::FlutterCompView*>(user_data);
     return host->MakeResourceCurrent();
   };
 
   // Configure task runner interop.
   auto state_ptr = state.get();
-  state->task_runner = std::make_unique<flutter::Win32TaskRunner>(
+  state->task_runner = std::make_unique<flutter::TaskRunner>(
       GetCurrentThreadId(), [state_ptr](const auto* task) {
         if (FlutterEngineRunTask(state_ptr->engine, task) != kSuccess) {
           std::cerr << "Could not post an engine task." << std::endl;
@@ -92,13 +90,13 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   platform_task_runner.user_data = state->task_runner.get();
   platform_task_runner.runs_task_on_current_thread_callback =
       [](void* user_data) -> bool {
-    return reinterpret_cast<flutter::Win32TaskRunner*>(user_data)
+    return reinterpret_cast<flutter::TaskRunner*>(user_data)
         ->RunsTasksOnCurrentThread();
   };
   platform_task_runner.post_task_callback = [](FlutterTask task,
                                                uint64_t target_time_nanos,
                                                void* user_data) -> void {
-    reinterpret_cast<flutter::Win32TaskRunner*>(user_data)->PostTask(
+    reinterpret_cast<flutter::TaskRunner*>(user_data)->PostTask(
         task, target_time_nanos);
   };
 
@@ -156,6 +154,25 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
     const FlutterDesktopEngineProperties& engine_properties) {
   FlutterDesktopViewControllerRef state =
       flutter::Win32FlutterWindow::CreateWin32FlutterWindow(width, height);
+
+  auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
+
+  if (!engine_state) {
+    return nullptr;
+  }
+  state->view->SetState(engine_state->engine);
+  state->engine_state = std::move(engine_state);
+  return state;
+}
+
+V2FlutterDesktopViewControllerRef V2FlutterDesktopCreateViewController(
+    int width,
+    int height,
+    const FlutterDesktopEngineProperties& engine_properties,
+    void* compositor) {
+  V2FlutterDesktopViewControllerRef state =
+      flutter::FlutterCompView::CreateFlutterCompView(width, height,
+                                                      compositor);
 
   auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
 
