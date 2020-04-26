@@ -316,7 +316,7 @@ public class InputConnectionAdaptorTest {
   @Test
   public void testSendKeyEvent_delKeyDeletesBackward() {
     int selStart = 29;
-    Editable editable = sampleRtlEditable(selStart, selStart);
+    Editable editable = sampleEditable(selStart, selStart, SAMPLE_RTL_TEXT);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
     KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
@@ -334,8 +334,75 @@ public class InputConnectionAdaptorTest {
     assertEquals(Selection.getSelectionStart(editable), 10);
   }
 
+  @Test
+  public void testSendKeyEvent_delKeyDeletesBackwardComplexEmojis() {
+    int selStart = 44;
+    Editable editable = sampleEditable(selStart, selStart, SAMPLE_EMOJI_TEXT);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
+    boolean didConsume;
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 43);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 40);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 29);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 15);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 13);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 11);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 7);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 4);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 2);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 1);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 0);
+  }
+
   private static final String SAMPLE_TEXT =
       "Lorem ipsum dolor sit amet," + "\nconsectetur adipiscing elit.";
+
+  private static final String SAMPLE_EMOJI_TEXT =
+      "\n" // First Character
+          + "\n" // Line Feed
+          + "😂" // Emoji
+          + "✋🏿" // Emoji Modifier
+          + "🇮🇷" // Regional Indicator Symbol even
+          + "🇷" // Regional Indicator Symbol odd
+          + "⚠️" // Variant Selector
+          + "🏴󠁧󠁢󠁥󠁮󠁧󠁿" // Emoji Tag Sequence
+          + "👨‍👩‍👧‍👦" // Zero Width Joiner
+          + "5️⃣" // Keycap
+          + "a"; // Normal Character
 
   private static final String SAMPLE_RTL_TEXT = "متن ساختگی" + "\nبرای تستfor test😊";
 
@@ -345,8 +412,8 @@ public class InputConnectionAdaptorTest {
     return sample;
   }
 
-  private static Editable sampleRtlEditable(int selStart, int selEnd) {
-    SpannableStringBuilder sample = new SpannableStringBuilder(SAMPLE_RTL_TEXT);
+  private static Editable sampleEditable(int selStart, int selEnd, String text) {
+    SpannableStringBuilder sample = new SpannableStringBuilder(text);
     Selection.setSelection(sample, selStart, selEnd);
     return sample;
   }

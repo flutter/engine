@@ -13,7 +13,6 @@ import android.text.InputType;
 import android.text.Layout;
 import android.text.Selection;
 import android.text.TextPaint;
-import android.text.method.TextKeyListener;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
@@ -263,6 +262,136 @@ class InputConnectionAdaptor extends BaseInputConnection {
     return clamped;
   }
 
+  public int getOffsetBefore(int offset) {
+    if (offset <= 1) {
+      return 0;
+    }
+
+    int codePoint = Character.codePointBefore(mEditable, offset);
+    int deleteCharCount = Character.charCount(codePoint);
+    int lastOffset = offset - deleteCharCount;
+
+    if (lastOffset == 0) {
+      return 0;
+    }
+
+    // Line Feed
+    final int LINE_FEED = 0x0A;
+    final int CARRIAGE_RETURN = 0x0D;
+    if (codePoint == LINE_FEED) {
+      codePoint = Character.codePointBefore(mEditable, lastOffset);
+      if (codePoint == CARRIAGE_RETURN) {
+        ++deleteCharCount;
+      }
+      return offset - deleteCharCount;
+    }
+
+    // Flags
+    if (EmojiUtils.isRegionalIndicatorSymbol(codePoint)) {
+      codePoint = Character.codePointBefore(mEditable, lastOffset);
+      lastOffset -= Character.charCount(codePoint);
+      int regionalIndicatorSymbolCount = 1;
+      while (lastOffset > 0 && EmojiUtils.isRegionalIndicatorSymbol(codePoint)) {
+        codePoint = Character.codePointBefore(mEditable, lastOffset);
+        lastOffset -= Character.charCount(codePoint);
+        regionalIndicatorSymbolCount++;
+      }
+      if (regionalIndicatorSymbolCount % 2 == 0) {
+        deleteCharCount += 2;
+      }
+      return offset - deleteCharCount;
+    }
+
+    // Keycaps
+    if (codePoint == EmojiUtils.COMBINING_ENCLOSING_KEYCAP) {
+      codePoint = Character.codePointBefore(mEditable, lastOffset);
+      lastOffset -= Character.charCount(codePoint);
+      if (lastOffset > 0 && EmojiUtils.isVariationSelector(codePoint)) {
+        int tmpCodePoint = Character.codePointBefore(mEditable, lastOffset);
+        if (EmojiUtils.isKeycapBase(tmpCodePoint)) {
+          deleteCharCount += Character.charCount(codePoint) + Character.charCount(tmpCodePoint);
+        }
+      } else if (EmojiUtils.isKeycapBase(codePoint)) {
+        deleteCharCount += Character.charCount(codePoint);
+      }
+      return offset - deleteCharCount;
+    }
+
+    // Emoji Tag Sequence
+    if (codePoint == EmojiUtils.CANCEL_TAG) { // tag_base
+      codePoint = Character.codePointBefore(mEditable, lastOffset);
+      lastOffset -= Character.charCount(codePoint);
+      while (lastOffset > 0 && EmojiUtils.isTagSpecChar(codePoint)) { // tag_spec
+        deleteCharCount += Character.charCount(codePoint);
+        codePoint = Character.codePointBefore(mEditable, lastOffset);
+        lastOffset -= Character.charCount(codePoint);
+      }
+      if (lastOffset == 0) { // tag_end not found. Just delete the end.
+        return 2;
+      }
+      deleteCharCount += Character.charCount(codePoint);
+    }
+
+    if (EmojiUtils.isVariationSelector(codePoint)) {
+      codePoint = Character.codePointBefore(mEditable, lastOffset);
+      if (!EmojiUtils.isVariationBase(codePoint)) {
+        return offset - deleteCharCount;
+      }
+      deleteCharCount += Character.charCount(codePoint);
+
+      lastOffset -= deleteCharCount;
+    }
+
+    if (EmojiUtils.isEmoji(codePoint)) {
+      boolean isZwj = false;
+      int lastSeenVariantSelectorCharCount = 0;
+      do {
+        if (isZwj) {
+          deleteCharCount += Character.charCount(codePoint) + lastSeenVariantSelectorCharCount + 1;
+          isZwj = false;
+        }
+        lastSeenVariantSelectorCharCount = 0;
+        if (EmojiUtils.isEmojiModifier(codePoint)) {
+          codePoint = Character.codePointBefore(mEditable, lastOffset);
+          lastOffset -= Character.charCount(codePoint);
+          if (lastOffset > 0 && EmojiUtils.isVariationSelector(codePoint)) {
+            codePoint = Character.codePointBefore(mEditable, lastOffset);
+            if (!EmojiUtils.isVariationBase(codePoint)) {
+              return offset - deleteCharCount;
+            }
+            lastSeenVariantSelectorCharCount = Character.charCount(codePoint);
+            lastOffset -= Character.charCount(codePoint);
+          }
+          if (EmojiUtils.isEmojiModifierBase(codePoint)) {
+            deleteCharCount += lastSeenVariantSelectorCharCount + Character.charCount(codePoint);
+          }
+          break;
+        }
+
+        if (lastOffset > 0) {
+          codePoint = Character.codePointBefore(mEditable, lastOffset);
+          lastOffset -= Character.charCount(codePoint);
+          if (codePoint == EmojiUtils.ZERO_WIDTH_JOINER) {
+            isZwj = true;
+            codePoint = Character.codePointBefore(mEditable, lastOffset);
+            lastOffset -= Character.charCount(codePoint);
+            if (lastOffset > 0 && EmojiUtils.isVariationSelector(codePoint)) {
+              codePoint = Character.codePointBefore(mEditable, lastOffset);
+              lastSeenVariantSelectorCharCount = Character.charCount(codePoint);
+              lastOffset -= Character.charCount(codePoint);
+            }
+          }
+        }
+
+        if (lastOffset == 0) {
+          break;
+        }
+      } while (isZwj && EmojiUtils.isEmoji(codePoint));
+    }
+
+    return offset - deleteCharCount;
+  }
+
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
     markDirty();
@@ -270,19 +399,18 @@ class InputConnectionAdaptor extends BaseInputConnection {
       if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
         int selStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
         int selEnd = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
+        if (selStart == selEnd && selStart > 0) {
+          // Extend selection to left of the last character
+          selStart = getOffsetBefore(selStart);
+        }
         if (selEnd > selStart) {
           // Delete the selection.
           Selection.setSelection(mEditable, selStart);
           mEditable.delete(selStart, selEnd);
           updateEditingState();
           return true;
-        } else if (selStart > 0) {
-          if (TextKeyListener.getInstance().onKeyDown(null, mEditable, event.getKeyCode(), event)) {
-            updateEditingState();
-            return true;
-          }
-          return false;
         }
+        return false;
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
         int selStart = Selection.getSelectionStart(mEditable);
         int selEnd = Selection.getSelectionEnd(mEditable);
