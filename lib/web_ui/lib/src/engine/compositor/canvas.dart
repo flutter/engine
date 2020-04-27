@@ -122,6 +122,8 @@ class SkCanvas {
   }
 
   void drawImageRect(ui.Image image, ui.Rect src, ui.Rect dst, SkPaint paint) {
+    print("Drawing Image : " + image.toString());
+    print(image.runtimeType);
     final SkImage skImage = image;
     skCanvas.callMethod('drawImageRect', <dynamic>[
       skImage.skImage,

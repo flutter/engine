@@ -1612,6 +1612,10 @@ String _instantiateImageCodecFromUrl(
     Uri uri,
     engine.WebOnlyImageCodecChunkCallback chunkCallback,
     engine.Callback<Codec> callback) {
+  if (engine.experimentalUseSkia) {
+    callback(null);
+    return 'Network Images are not currently supported in CanvasKit';
+  }
   callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
   return null;
 }
