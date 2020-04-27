@@ -313,6 +313,7 @@ Future<void> systemNavigatorPop() {
   return completer.future;
 }
 
+/// A mock implementation of [PlatformLocation] that doesn't access the browser.
 class TestPlatformLocation extends PlatformLocation {
   String pathname;
   String search;
