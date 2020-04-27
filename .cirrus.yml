@@ -87,6 +87,9 @@ task:
         mkdir -p $FRAMEWORK_PATH
         cd $FRAMEWORK_PATH
         git clone https://github.com/flutter/flutter.git
+        # following lines only for hotfix branch!
+        cd $FRAMEWORK_PATH/flutter
+        git checkout flutter-1.17-candidate.3
       test_web_script: |
         cd $FRAMEWORK_PATH/flutter/dev/integration_tests/web
         ../../../bin/flutter config --local-engine=host_debug_unopt --no-analytics --enable-web
