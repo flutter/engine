@@ -7,6 +7,8 @@
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 
+#include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+
 #if FLUTTER_SHELL_ENABLE_METAL
 #include "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
 #endif  // FLUTTER_SHELL_ENABLE_METAL
@@ -39,9 +41,7 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(
   }
 
 #if FLUTTER_SHELL_ENABLE_METAL
-#if TARGET_IPHONE_SIMULATOR
-  if (@available(iOS 13.0, *)) {
-#endif  // TARGET_IPHONE_SIMULATOR
+  if (@available(iOS kMetalOSVersionBaseline, *)) {
     if ([layer.get() isKindOfClass:[CAMetalLayer class]]) {
       return std::make_unique<IOSSurfaceMetal>(
           fml::scoped_nsobject<CAMetalLayer>(
@@ -50,9 +50,7 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(
           platform_views_controller                                    // platform views controller
       );
     }
-#if TARGET_IPHONE_SIMULATOR
   }
-#endif  // TARGET_IPHONE_SIMULATOR
 #endif  // FLUTTER_SHELL_ENABLE_METAL
 
   return std::make_unique<IOSSurfaceSoftware>(

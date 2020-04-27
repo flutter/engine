@@ -21,17 +21,9 @@ bool ShouldUseMetalRenderer() {
   // past iOS 10.0. The processor was selected as it is the first version at which Metal was
   // supported. The iOS version floor was selected due to the availability of features used by Skia.
   bool ios_version_supports_metal = false;
-#if TARGET_IPHONE_SIMULATOR
-  if (@available(iOS 13.0, *)) {
-#else
-  if (@available(iOS 10.0, *)) {
-#endif  // TARGET_IPHONE_SIMULATOR
+  if (@available(iOS kMetalOSVersionBaseline, *)) {
     auto device = MTLCreateSystemDefaultDevice();
-    // We need to check if the device is here since an ios 13 simulator running on an older version
-    // of macos (below 10.15) will not actually allow metal to be used.
-    if (device != nil) {
-      ios_version_supports_metal = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v3];
-    }
+    ios_version_supports_metal = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v3];
   }
   return ios_version_supports_metal;
 }
@@ -44,6 +36,9 @@ IOSRenderingAPI GetRenderingAPIForProcess() {
     return IOSRenderingAPI::kMetal;
   }
 #endif  // FLUTTER_SHELL_ENABLE_METAL
+
+  // OpenGL will be emulated using software rendering by Apple on the simulator, so we use the
+  // Skia software rendering since it performs a little better than the emulated OpenGL.
 #if TARGET_IPHONE_SIMULATOR
   return IOSRenderingAPI::kSoftware;
 #else
@@ -58,16 +53,11 @@ Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
     case IOSRenderingAPI::kOpenGLES:
       return [CAEAGLLayer class];
     case IOSRenderingAPI::kMetal:
-#if TARGET_IPHONE_SIMULATOR
-      // This will always be true since we filter out this case when checking if the device
-      // supports metal.
-      if (@available(iOS 13.0, *)) {
+      if (@available(iOS kMetalOSVersionBaseline, *)) {
         return [CAMetalLayer class];
       }
+      FML_CHECK(false) << "Metal availability should already have been checked";
       break;
-#else
-      return [CAMetalLayer class];
-#endif  // !TARGET_IPHONE_SIMULATOR
     default:
       break;
   }

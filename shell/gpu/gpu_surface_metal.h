@@ -12,16 +12,13 @@
 #include "flutter/shell/common/surface.h"
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
 @class CAMetalLayer;
 
 namespace flutter {
 
-#if TARGET_IPHONE_SIMULATOR
-class API_AVAILABLE(ios(13.0)) GPUSurfaceMetal : public Surface {
-#else
-class GPUSurfaceMetal : public Surface {
-#endif  // TARGET_IPHONE_SIMULATOR
+class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetal : public Surface {
  public:
   GPUSurfaceMetal(GPUSurfaceDelegate* delegate,
                   fml::scoped_nsobject<CAMetalLayer> layer,

@@ -8,17 +8,14 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "third_party/skia/include/gpu/mtl/GrMtlTypes.h"
 
 @class CAMetalLayer;
 
 namespace flutter {
 
-#if TARGET_IPHONE_SIMULATOR
-class API_AVAILABLE(ios(13.0)) IOSSurfaceMetal final : public IOSSurface,
-                                                       public GPUSurfaceDelegate {
-#else
-class IOSSurfaceMetal final : public IOSSurface, public GPUSurfaceDelegate {
-#endif  // TARGET_IPHONE_SIMULATOR
+class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetal final : public IOSSurface,
+                                                              public GPUSurfaceDelegate {
  public:
   IOSSurfaceMetal(fml::scoped_nsobject<CAMetalLayer> layer,
                   std::shared_ptr<IOSContext> context,
