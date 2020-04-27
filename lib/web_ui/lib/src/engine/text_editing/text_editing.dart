@@ -77,7 +77,8 @@ void _hideAutofillElements(html.HtmlElement domElement) {
 /// These values are to be used when autofill is enabled and there is a group of
 /// text fields with more than one text field.
 class AutofillGroup {
-  AutofillGroup({this.formElement, this.elements, this.items});
+  AutofillGroup(
+      {this.formElement, this.elements, this.items, this.singleElement});
 
   final html.FormElement formElement;
 
@@ -85,10 +86,13 @@ class AutofillGroup {
 
   final Map<String, Autofill> items;
 
+  final bool singleElement;
+
   factory AutofillGroup.fromFrameworkMessage(
     Map<String, dynamic> focusedElementAutofill,
     List<dynamic> fields,
   ) {
+    final singleElement = (fields == null);
     final Autofill focusedElement =
         Autofill.fromFrameworkMessage(focusedElementAutofill);
     final Map<String, html.HtmlElement> elements =
@@ -96,25 +100,30 @@ class AutofillGroup {
     final Map<String, Autofill> items = Map<String, Autofill>();
     final html.FormElement formElement = html.FormElement();
 
+    // Don't validate the fields on the form.
+    formElement.noValidate = true;
+
     _hideAutofillElements(formElement);
 
-    for (Map<String, dynamic> field in fields) {
-      final Map<String, dynamic> autofillInfo = field['autofill'];
-      final Autofill autofill = Autofill.fromFrameworkMessage(autofillInfo);
+    if (!singleElement) {
+      for (Map<String, dynamic> field in fields) {
+        final Map<String, dynamic> autofillInfo = field['autofill'];
+        final Autofill autofill = Autofill.fromFrameworkMessage(autofillInfo);
 
-      // The main text editing element will not be created here.
-      if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
-        EngineInputType engineInputType =
-            EngineInputType.fromName(field['inputType']['name']);
+        // The main text editing element will not be created here.
+        if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
+          EngineInputType engineInputType =
+              EngineInputType.fromName(field['inputType']['name']);
 
-        html.HtmlElement htmlElement = engineInputType.createDomElement();
-        autofill.editingState.applyToDomElement(htmlElement);
-        autofill.applyToDomElement(htmlElement);
-        _hideAutofillElements(htmlElement);
+          html.HtmlElement htmlElement = engineInputType.createDomElement();
+          autofill.editingState.applyToDomElement(htmlElement);
+          autofill.applyToDomElement(htmlElement);
+          _hideAutofillElements(htmlElement);
 
-        items[autofill.uniqueIdentifier] = autofill;
-        elements[autofill.uniqueIdentifier] = htmlElement;
-        formElement.append(htmlElement);
+          items[autofill.uniqueIdentifier] = autofill;
+          elements[autofill.uniqueIdentifier] = htmlElement;
+          formElement.append(htmlElement);
+        }
       }
     }
 
@@ -122,17 +131,16 @@ class AutofillGroup {
       formElement: formElement,
       elements: elements,
       items: items,
+      singleElement: singleElement,
     );
   }
 
   void placeForm(html.HtmlElement mainTextEditingElement) {
-    print('place form');
     formElement.append(mainTextEditingElement);
     domRenderer.glassPaneElement.append(formElement);
   }
 
   void removeForm() {
-    print('remove form');
     formElement.remove();
   }
 
@@ -159,8 +167,6 @@ class AutofillGroup {
   /// Sends the 'TextInputClient.updateEditingStateWithTag' message to the framework.
   void _sendAutofillEditingState(String tag, EditingState editingState) {
     if (window._onPlatformMessage != null) {
-      print('sending out: TextInputClient.updateEditingStateWithTag '
-          'tag: $tag editingState: ${editingState.toString()}');
       window.invokeOnPlatformMessage(
         'flutter/textinput',
         const JSONMethodCodec().encodeMethodCall(
@@ -176,14 +182,6 @@ class AutofillGroup {
       );
     }
   }
-
-  // (DONE) First try to approach removing all the forms.
-  // (DONE) add dom elements which are not the main element.
-  // (DONE) also add the event handlers.
-  // (DONE) why flutter side does not get the values.
-  // (NOPE)looks like not necessary
-  // (DONE) merge the common items.
-  // (NOPE) only use the group in input configuration. autofill is useful.
 }
 
 /// Autofill related values.
@@ -204,10 +202,6 @@ class Autofill {
     final List<dynamic> hintsList = autofill['hints'];
     final EditingState editingState =
         EditingState.fromFrameworkMessage(autofill['editingValue']);
-    print('sent hint: ${hintsList[0]}');
-    final String fromMap =
-        BrowserAutofillHints.instance.flutterToEngine(hintsList[0]);
-    print('print from map: $fromMap');
     return Autofill(
         uniqueIdentifier: uniqueIdentifier,
         hint: BrowserAutofillHints.instance.flutterToEngine(hintsList[0]),
@@ -379,10 +373,7 @@ class InputConfiguration {
             flutterInputConfiguration['autofill']),
         autofillGroup = AutofillGroup.fromFrameworkMessage(
             flutterInputConfiguration['autofill'],
-            flutterInputConfiguration['fields']) {
-    bool autofillNull = (autofillGroup == null);
-    print('autofulNull $autofillNull');
-  }
+            flutterInputConfiguration['fields']);
 
   /// The type of information being edited in the input control.
   final EngineInputType inputType;
@@ -527,13 +518,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     assert(!isEnabled);
 
     this._inputConfiguration = inputConfig;
-
-    if (inputConfig == null) {
-      print('received input config null');
-    } else {
-      this._inputConfiguration = inputConfig;
-      print('_inputConfiguration set');
-    }
+    this._inputConfiguration = inputConfig;
 
     domElement = inputConfig.inputType.createDomElement();
     if (inputConfig.obscureText) {
