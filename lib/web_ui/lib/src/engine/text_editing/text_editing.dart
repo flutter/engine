@@ -518,7 +518,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     assert(!isEnabled);
 
     this._inputConfiguration = inputConfig;
-    this._inputConfiguration = inputConfig;
 
     domElement = inputConfig.inputType.createDomElement();
     if (inputConfig.obscureText) {
