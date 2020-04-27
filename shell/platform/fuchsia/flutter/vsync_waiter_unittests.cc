@@ -130,4 +130,43 @@ TEST_F(VsyncWaiterTest, SnapToNextPhaseAfterNowMultiJumpAccountForCeils) {
   EXPECT_EQ(now + fml::TimeDelta::FromNanoseconds(12), next_vsync);
 }
 
+TEST_F(VsyncWaiterTest, ValidVsyncOffset) {
+  const std::string json_string = "{ \"vsync_offset_in_us\" : 9000 } ";
+  const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(9000);
+
+  EXPECT_EQ(flutter_runner::VsyncWaiter::ParseJsonForVsyncOffset(json_string),
+      expected_offset);
+}
+
+TEST_F(VsyncWaiterTest, EmptyJsonString) {
+  const std::string json_string = "";
+  const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
+
+  EXPECT_EQ(flutter_runner::VsyncWaiter::ParseJsonForVsyncOffset(json_string),
+      expected_offset);
+}
+
+TEST_F(VsyncWaiterTest, EmptyVsyncOffset) {
+  const std::string json_string = "{ \"vsync_offset_in_us\" : } ";
+  const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
+
+  EXPECT_EQ(flutter_runner::VsyncWaiter::ParseJsonForVsyncOffset(json_string),
+      expected_offset);
+}
+
+TEST_F(VsyncWaiterTest, NonIntegerVsyncOffset) {
+  const std::string json_string = "{ \"vsync_offset_in_us\" : 3.14159 } ";
+  const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
+
+  EXPECT_EQ(flutter_runner::VsyncWaiter::ParseJsonForVsyncOffset(json_string),
+      expected_offset);
+}
+
+TEST_F(VsyncWaiterTest, NonNumberVsyncOffset) {
+  const std::string json_string = "{ \"vsync_offset_in_us\" : \"not_an_offset\" } ";
+  const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
+
+  EXPECT_EQ(flutter_runner::VsyncWaiter::ParseJsonForVsyncOffset(json_string),
+      expected_offset);
+}
 }  // namespace flutter_runner_test

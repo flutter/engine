@@ -13,6 +13,8 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
+#include "runtime/dart/utils/files.h"
+#include "rapidjson/document.h"
 
 #include "vsync_recorder.h"
 
@@ -50,6 +52,15 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
             std::make_unique<fml::WeakPtrFactory<VsyncWaiter>>(this);
       }));
   session_wait_.set_handler(wait_handler);
+
+  std::string* json_string = new std::string();
+  bool success = dart_utils::ReadFileToString("/config/data/flutter_engine_config", json_string);
+
+  if (success) {
+    vsync_offset_ = ParseJsonForVsyncOffset(*json_string);
+  }
+
+  FML_LOG(INFO) << "Set vsync_offset to " << vsync_offset_.ToMicroseconds() << "us";
 }
 
 VsyncWaiter::~VsyncWaiter() {
@@ -123,6 +134,18 @@ fml::TimePoint VsyncWaiter::SnapToNextPhase(
   }
 }
 
+fml::TimeDelta VsyncWaiter::ParseJsonForVsyncOffset(std::string json_string) {
+  rapidjson::Document document;
+  document.Parse(json_string);
+
+  const std::string key = "vsync_offset_in_us";
+  if (document.IsObject() && document[key].IsInt()) {
+    return fml::TimeDelta::FromMicroseconds(document[key].GetInt());
+  }
+
+  return fml::TimeDelta::FromMicroseconds(0);
+}
+
 void VsyncWaiter::AwaitVSync() {
   VsyncInfo vsync_info = VsyncRecorder::GetInstance().GetCurrentVsyncInfo();
 
@@ -132,7 +155,7 @@ void VsyncWaiter::AwaitVSync() {
   fml::TimePoint next_vsync = SnapToNextPhase(now, last_presentation_time,
                                               vsync_info.presentation_interval);
 
-  auto next_vsync_start_time = next_vsync - vsync_offset;
+  auto next_vsync_start_time = next_vsync - vsync_offset_;
 
   if (now >= next_vsync_start_time)
     next_vsync_start_time =
