@@ -897,7 +897,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   if (@available(iOS 9, *)) {
     // Ignore keyboard notifications related to other apps.
-    if (![info[UIKeyboardIsLocalUserInfoKey] boolValue]) {
+    id isLocal = info[UIKeyboardIsLocalUserInfoKey];
+    if (isLocal && ![isLocal boolValue]) {
       return;
     }
   }
