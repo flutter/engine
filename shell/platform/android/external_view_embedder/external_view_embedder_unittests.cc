@@ -4,7 +4,7 @@
 
 #include "gtest/gtest.h"
 
-#include "flutter/shell/platform/android/external_view_embedder.h"
+#include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 
 namespace flutter {
 namespace testing {
