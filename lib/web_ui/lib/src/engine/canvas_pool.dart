@@ -145,6 +145,8 @@ class _CanvasPool extends _SaveStackTracking {
     _replayClipStack();
   }
 
+  static bool _fontSetTested = false;
+
   @override
   void clear() {
     super.clear();
@@ -152,7 +154,8 @@ class _CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       // Restore to the state where we have only applied the scaling.
       html.CanvasRenderingContext2D ctx = _context;
-      if (ctx != null) {
+      if (ctx != null && _fontSetTested == false) {
+        _fontSetTested = true;
         try {
           ctx.font = '';
         } catch (e) {
