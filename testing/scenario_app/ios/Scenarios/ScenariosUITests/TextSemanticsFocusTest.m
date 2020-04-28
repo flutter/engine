@@ -17,7 +17,6 @@ FLUTTER_ASSERT_ARC
 
 @implementation XCUIElement (ftr_waitForNonExistence)
 - (BOOL)ftr_waitForNonExistenceWithTimeout:(NSTimeInterval)timeout {
-  NSLog(@"Waiting %fs for non-existance of:%@", timeout, [self debugDescription]);
   NSTimeInterval delta = 0.5;
   while (timeout > 0.0) {
     if (!self.exists) {
@@ -26,7 +25,6 @@ FLUTTER_ASSERT_ARC
     usleep(delta * 1000000);
     timeout -= delta;
   }
-  NSLog(@"timeout waiting for:%@", self);
   return NO;
 }
 
