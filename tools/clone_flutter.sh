@@ -2,17 +2,17 @@
 set -e
 set -x
 
-# if [[ "$CIRRUS_CI" = false || -z $CIRRUS_CI ]]
-# then
-#   echo "This script is aimed to be run on CI environments. Do not run locally."
-#   exit 1
-# fi
+if [[ "$CIRRUS_CI" = false || -z $CIRRUS_CI ]]
+then
+  echo "This script is aimed to be run on CI environments. Do not run locally."
+  exit 1
+fi
 
-# if [[ -z $ENGINE_PATH ]]
-# then
-#   echo "Engine path should be set to run the script."
-#   exit 1
-# fi
+if [[ -z $ENGINE_PATH ]]
+then
+  echo "Engine path should be set to run the script."
+  exit 1
+fi
 
 # Go to the engine git repo to get the date of the latest commit.
 cd $ENGINE_PATH/src/flutter
