@@ -33,7 +33,6 @@ configurations {
   embedding
   // Use any of these configurations for dependencies required for testing the embedding.
   embeddingTesting
-  embeddingTesting_duplicated
 }
 
 android {
@@ -50,8 +49,7 @@ android {
 
     // Testing
     embeddingTesting "org.robolectric:android-all:8.1.0-robolectric-4611349"
-    // This is required by the robolectric test.
-    embeddingTesting_duplicated "org.robolectric:android-all:4.1.2_r1-robolectric-r1"
+    embeddingTesting "androidx.fragment:fragment-testing:1.1.0"
     embeddingTesting "org.mockito:mockito-all:1.10.19"
     embeddingTesting ("org.robolectric:robolectric:4.3") {
       // org.hamcrest is added by org.mockito:mockito-all
@@ -71,7 +69,6 @@ task updateDependencies() {
   copy {
     from configurations.embedding
     from configurations.embeddingTesting
-    from configurations.embeddingTesting_duplicated
     into destinationDir
   }
   doLast {
