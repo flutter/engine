@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_TEST_RENDERER_CONTEXT_H_
+#define FLUTTER_SHELL_TEST_RENDERER_CONTEXT_H_
+
+#include "gtest/gtest.h"
 #include "renderer_context_manager.h"
 
 namespace flutter {
@@ -9,7 +13,7 @@ namespace testing {
 
 //------------------------------------------------------------------------------
 /// The renderer context used for testing
-class TestRendererContext : public RendererContext {
+class TestRendererContext : public RendererContext, public ::testing::Test {
  public:
   //------------------------------------------------------------------------------
   /// Represents the current alive context.
@@ -36,6 +40,6 @@ class TestRendererContext : public RendererContext {
  private:
   int context_;
 };
-
-}
-}
+}  // namespace testing
+}  // namespace flutter
+#endif  // FLUTTER_SHELL_TEST_RENDERER_CONTEXT_H_
