@@ -1,4 +1,4 @@
-Signature: 8efd292fa4af5f44bfbd55f33d3a3745
+Signature: 236f23742f05bcbfa62e5043a20a9a4e
 
 UNUSED LICENSES:
 
@@ -2652,7 +2652,6 @@ FILE: ../../../third_party/skia/bench/WritePixelsBench.cpp
 FILE: ../../../third_party/skia/bench/gUniqueGlyphIDs.h
 FILE: ../../../third_party/skia/client_utils/android/FrontBufferedStream.cpp
 FILE: ../../../third_party/skia/client_utils/android/FrontBufferedStream.h
-FILE: ../../../third_party/skia/client_utils/android/SkFrontBufferedStream.h
 FILE: ../../../third_party/skia/dm/DM.cpp
 FILE: ../../../third_party/skia/gm/alphagradients.cpp
 FILE: ../../../third_party/skia/gm/arcofzorro.cpp
@@ -5215,6 +5214,7 @@ FILE: ../../../third_party/skia/modules/skottie/src/animator/TextKeyframeAnimato
 FILE: ../../../third_party/skia/modules/skottie/src/animator/Vec2KeyframeAnimator.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/animator/VectorKeyframeAnimator.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/animator/VectorKeyframeAnimator.h
+FILE: ../../../third_party/skia/modules/skottie/src/effects/BrightnessContrastEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/CornerPinEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/GlowStyles.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/ShadowStyles.cpp
