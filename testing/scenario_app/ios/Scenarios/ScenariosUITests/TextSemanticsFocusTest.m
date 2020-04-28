@@ -7,22 +7,33 @@
 FLUTTER_ASSERT_ARC
 
 @interface XCUIElement (ftr_waitForNonExistence)
-- (BOOL)ftr_waitForNonExistenceWithTimeout:(NSTimeInterval)duration;
+/// Keeps waiting until the element doesn't exist.  Returns NO if the timeout is
+/// reached before it doesn't exist.
+- (BOOL)ftr_waitForNonExistenceWithTimeout:(NSTimeInterval)timeout;
+/// Waits the full duration to ensure something doesn't exist for that duration.
+/// Returns NO if at some point the element exists during the duration.
+- (BOOL)ftr_waitForNonExistenceForDuration:(NSTimeInterval)duration;
 @end
 
 @implementation XCUIElement (ftr_waitForNonExistence)
-- (BOOL)ftr_waitForNonExistenceWithTimeout:(NSTimeInterval)duration {
-  NSLog(@"Waiting %fs for non-existance of:%@", duration, [self debugDescription]);
+- (BOOL)ftr_waitForNonExistenceWithTimeout:(NSTimeInterval)timeout {
+  NSLog(@"Waiting %fs for non-existance of:%@", timeout, [self debugDescription]);
   NSTimeInterval delta = 0.5;
-  while (duration > 0.0) {
+  while (timeout > 0.0) {
     if (!self.exists) {
       return YES;
     }
     usleep(delta * 1000000);
+    timeout -= delta;
   }
   NSLog(@"timeout waiting for:%@", self);
   return NO;
 }
+
+- (BOOL)ftr_waitForNonExistenceForDuration:(NSTimeInterval)duration {
+  return ![self waitForExistenceWithTimeout:duration];
+}
+
 @end
 
 @implementation TextSemanticsFocusTest
@@ -68,7 +79,7 @@ FLUTTER_ASSERT_ARC
   // TextInputSemanticsObject visible and not the FlutterTextInputView to avoid confusing
   // accessibility, it shouldn't be visible to the UI test either.
   delegateTextInput = [[self.application textViews] element];
-  XCTAssertTrue([delegateTextInput ftr_waitForNonExistenceWithTimeout:timeout]);
+  XCTAssertTrue([delegateTextInput ftr_waitForNonExistenceForDuration:3.0]);
 
   // But since there is focus, the soft keyboard is visible on the simulator.
   keyboard = [[self.application keyboards] element];
