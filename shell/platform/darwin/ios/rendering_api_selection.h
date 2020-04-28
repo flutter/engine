@@ -25,9 +25,9 @@ Class GetCoreAnimationLayerClassForRenderingAPI(
 }  // namespace flutter
 
 #if TARGET_OS_SIMULATOR
-#define kMetalOSVersionBaseline 13.0
+#define METAL_IOS_VERSION_BASELINE 13.0
 #else
-#define kMetalOSVersionBaseline 10.0
+#define METAL_IOS_VERSION_BASELINE 10.0
 #endif  // TARGET_OS_SIMULATOR
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_RENDERING_API_SELECTION_H_

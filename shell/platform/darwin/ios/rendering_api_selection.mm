@@ -21,7 +21,7 @@ bool ShouldUseMetalRenderer() {
   // past iOS 10.0. The processor was selected as it is the first version at which Metal was
   // supported. The iOS version floor was selected due to the availability of features used by Skia.
   bool ios_version_supports_metal = false;
-  if (@available(iOS kMetalOSVersionBaseline, *)) {
+  if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
     auto device = MTLCreateSystemDefaultDevice();
     ios_version_supports_metal = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v3];
   }
@@ -53,7 +53,7 @@ Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
     case IOSRenderingAPI::kOpenGLES:
       return [CAEAGLLayer class];
     case IOSRenderingAPI::kMetal:
-      if (@available(iOS kMetalOSVersionBaseline, *)) {
+      if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
         return [CAMetalLayer class];
       }
       FML_CHECK(false) << "Metal availability should already have been checked";

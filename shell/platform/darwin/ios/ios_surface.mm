@@ -41,7 +41,7 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(
   }
 
 #if FLUTTER_SHELL_ENABLE_METAL
-  if (@available(iOS kMetalOSVersionBaseline, *)) {
+  if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
     if ([layer.get() isKindOfClass:[CAMetalLayer class]]) {
       return std::make_unique<IOSSurfaceMetal>(
           fml::scoped_nsobject<CAMetalLayer>(
