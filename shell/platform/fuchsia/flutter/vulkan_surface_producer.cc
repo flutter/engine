@@ -125,6 +125,11 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
 
   context_ = GrContext::MakeVulkan(backend_context);
 
+  if (context_ == nullptr) {
+    FML_LOG(ERROR) << "Failed to create GrContext.";
+    return false;
+  }
+
   // Use local limits specified in this file above instead of flutter defaults.
   context_->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
 
