@@ -6,6 +6,25 @@
 
 FLUTTER_ASSERT_ARC
 
+@interface XCUIElement (ftr_waitForNonExistence)
+-(BOOL)ftr_waitForNonExistenceWithTimeout:(NSTimeInterval)duration;
+@end
+
+@implementation XCUIElement (ftr_waitForNonExistence)
+-(BOOL)ftr_waitForNonExistenceWithTimeout:(NSTimeInterval)duration {
+  NSLog(@"Waiting %fs for non-existance of:%@", duration, [self debugDescription]);
+  NSTimeInterval delta = 0.5;
+  while (duration > 0.0) {
+    if (!self.exists) {
+      return YES;
+    }
+    usleep(delta * 1000000);
+  }
+  NSLog(@"timeout waiting for:%@", self);
+  return NO;
+}
+@end
+
 @implementation TextSemanticsFocusTest
 
 - (void)setUp {
@@ -18,21 +37,22 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testAccessibilityFocusOnTextSemanticsProducesCorrectIosViews {
+  NSTimeInterval timeout = 10.0;
   // Find the initial TextInputSemanticsObject which was sent from the mock framework on first
   // frame.
   XCUIElement* textInputSemanticsObject =
       [[[self.application textFields] matchingIdentifier:@"flutter textfield"] element];
-  XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:3]);
+  XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:timeout]);
   XCTAssertEqualObjects([textInputSemanticsObject valueForKey:@"hasKeyboardFocus"], @(NO));
 
   // Since the first mock framework text field isn't focused on, it shouldn't produce a UITextInput
   // in the view hierarchy.
   XCUIElement* delegateTextInput = [[self.application textViews] element];
-  XCTAssertFalse([delegateTextInput waitForExistenceWithTimeout:3]);
+  XCTAssertTrue([delegateTextInput ftr_waitForNonExistenceWithTimeout:timeout]);
 
   // Nor should there be a keyboard for text entry.
   XCUIElement* keyboard = [[self.application keyboards] element];
-  XCTAssertFalse([keyboard waitForExistenceWithTimeout:3]);
+  XCTAssertTrue([keyboard ftr_waitForNonExistenceWithTimeout:timeout]);
 
   // The tap location doesn't matter. The mock framework just sends a focused text field on tap.
   [textInputSemanticsObject tap];
@@ -41,18 +61,18 @@ FLUTTER_ASSERT_ARC
   // UI tests on a XCUIElement).
   textInputSemanticsObject =
       [[[self.application textFields] matchingIdentifier:@"focused flutter textfield"] element];
-  XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:3]);
+  XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:timeout]);
   XCTAssertEqualObjects([textInputSemanticsObject valueForKey:@"hasKeyboardFocus"], @(YES));
 
   // The delegate UITextInput is also inserted on the window but we make only the
   // TextInputSemanticsObject visible and not the FlutterTextInputView to avoid confusing
   // accessibility, it shouldn't be visible to the UI test either.
   delegateTextInput = [[self.application textViews] element];
-  XCTAssertFalse([delegateTextInput waitForExistenceWithTimeout:3]);
+  XCTAssertTrue([delegateTextInput ftr_waitForNonExistenceWithTimeout:timeout]);
 
   // But since there is focus, the soft keyboard is visible on the simulator.
   keyboard = [[self.application keyboards] element];
-  XCTAssertTrue([keyboard waitForExistenceWithTimeout:3]);
+  XCTAssertTrue([keyboard waitForExistenceWithTimeout:timeout]);
 }
 
 @end
