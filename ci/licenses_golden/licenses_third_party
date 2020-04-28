@@ -1,4 +1,4 @@
-Signature: 0dc4aafe22c57f226f7abdc4a93d2c53
+Signature: 13cc1e9ce93f98ba25dca8dbe67abf74
 
 UNUSED LICENSES:
 
@@ -7712,6 +7712,7 @@ LIBRARY: dart
 ORIGIN: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart
+FILE: ../../../third_party/dart/benchmarks/RuntimeType/dart/RuntimeType.dart
 FILE: ../../../third_party/dart/benchmarks/TypedDataDuplicate/dart/TypedDataDuplicate.dart
 FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/Utf8Decode.dart
 FILE: ../../../third_party/dart/runtime/bin/dartdev_utils.cc
