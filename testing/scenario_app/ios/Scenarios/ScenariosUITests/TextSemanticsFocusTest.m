@@ -65,23 +65,29 @@ FLUTTER_ASSERT_ARC
 
   // The tap location doesn't matter. The mock framework just sends a focused text field on tap.
   [textInputSemanticsObject tap];
+    
+  @try {
+    // The new TextInputSemanticsObject now has keyboard focus (the only trait accessible through
+    // UI tests on a XCUIElement).
+    textInputSemanticsObject =
+        [[[self.application textFields] matchingIdentifier:@"focused flutter textfield"] element];
+    XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:timeout]);
+    XCTAssertEqualObjects([textInputSemanticsObject valueForKey:@"hasKeyboardFocus"], @(YES));
 
-  // The new TextInputSemanticsObject now has keyboard focus (the only trait accessible through
-  // UI tests on a XCUIElement).
-  textInputSemanticsObject =
-      [[[self.application textFields] matchingIdentifier:@"focused flutter textfield"] element];
-  XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:timeout]);
-  XCTAssertEqualObjects([textInputSemanticsObject valueForKey:@"hasKeyboardFocus"], @(YES));
+    // The delegate UITextInput is also inserted on the window but we make only the
+    // TextInputSemanticsObject visible and not the FlutterTextInputView to avoid confusing
+    // accessibility, it shouldn't be visible to the UI test either.
+    delegateTextInput = [[self.application textViews] element];
+    XCTAssertTrue([delegateTextInput ftr_waitForNonExistenceForDuration:3.0]);
 
-  // The delegate UITextInput is also inserted on the window but we make only the
-  // TextInputSemanticsObject visible and not the FlutterTextInputView to avoid confusing
-  // accessibility, it shouldn't be visible to the UI test either.
-  delegateTextInput = [[self.application textViews] element];
-  XCTAssertTrue([delegateTextInput ftr_waitForNonExistenceForDuration:3.0]);
-
-  // But since there is focus, the soft keyboard is visible on the simulator.
-  keyboard = [[self.application keyboards] element];
-  XCTAssertTrue([keyboard waitForExistenceWithTimeout:timeout]);
+    // But since there is focus, the soft keyboard is visible on the simulator.
+    keyboard = [[self.application keyboards] element];
+    XCTAssertTrue([keyboard waitForExistenceWithTimeout:timeout]);
+  } @catch(NSException *e) {
+    NSLog(@"Test failed with accessibility state:");
+    NSLog(@"%@", [self.application debugDescription]);
+    @throw;
+  }
 }
 
 @end
