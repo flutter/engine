@@ -13,8 +13,8 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
-#include "runtime/dart/utils/files.h"
 #include "rapidjson/document.h"
+#include "runtime/dart/utils/files.h"
 
 #include "vsync_recorder.h"
 
@@ -53,14 +53,16 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
       }));
   session_wait_.set_handler(wait_handler);
 
-  std::string* json_string = new std::string();
-  bool success = dart_utils::ReadFileToString("/config/data/flutter_engine_config", json_string);
+  std::string json_string;
+  bool success = dart_utils::ReadFileToString(
+      "/config/data/flutter_engine_config", &json_string);
 
   if (success) {
-    vsync_offset_ = ParseJsonForVsyncOffset(*json_string);
+    vsync_offset_ = ParseJsonForVsyncOffset(json_string);
   }
 
-  FML_LOG(INFO) << "Set vsync_offset to " << vsync_offset_.ToMicroseconds() << "us";
+  FML_LOG(INFO) << "Set vsync_offset to " << vsync_offset_.ToMicroseconds()
+                << "us";
 }
 
 VsyncWaiter::~VsyncWaiter() {
