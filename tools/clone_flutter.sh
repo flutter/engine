@@ -2,27 +2,31 @@
 set -e
 set -x
 
-if [[ "$CIRRUS_CI" = false || -z $CIRRUS_CI ]]
-then
-  echo "This script is aimed to be run on CI environments. Do not run locally."
-  exit 1
-fi
+# if [[ "$CIRRUS_CI" = false || -z $CIRRUS_CI ]]
+# then
+#   echo "This script is aimed to be run on CI environments. Do not run locally."
+#   exit 1
+# fi
 
-if [[ -z $ENGINE_PATH ]]
-then
-  echo "Engine path should be set to run the script."
-  exit 1
-fi
+# if [[ -z $ENGINE_PATH ]]
+# then
+#   echo "Engine path should be set to run the script."
+#   exit 1
+# fi
 
 # Go to the engine git repo to get the date of the latest commit.
 cd $ENGINE_PATH/src/flutter
 
 # Special handling of release branches.
+BRANCH=`git branch`
+echo "git branches $BRANCH"
+
 ENGINE_BRANCH_NAME=`git branch | grep '*' | cut -d ' ' -f2`
 versionregex="^v[[:digit:]]+\."
+releasecandidateregex="^flutter-[[:digit:]]+\.[[:digit:]]+-candidate\.[[:digit:]]+$"
 ON_RELEASE_BRANCH=false
 echo "Engine on branch $ENGINE_BRANCH_NAME"
-if [[ $ENGINE_BRANCH_NAME =~ $versionregex ]]
+if [[ $ENGINE_BRANCH_NAME =~ $versionregex || $ENGINE_BRANCH_NAME =~ $releasecandidateregex ]]
 then
   echo "release branch $ENGINE_BRANCH_NAME"
   ON_RELEASE_BRANCH=true
