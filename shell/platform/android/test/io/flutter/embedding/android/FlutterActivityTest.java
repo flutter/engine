@@ -13,7 +13,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -183,26 +182,28 @@ public class FlutterActivityTest {
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
 
+    // We supply a metadata to the Flutter activity but the value of the metadata references a
+    // drawable ID that does not exist.
     ResolveInfo resolveInfo = new ResolveInfo();
     resolveInfo.activityInfo = new ActivityInfo();
-    resolveInfo.activityInfo.name = "FlutterActivity";
+    resolveInfo.activityInfo.name = flutterActivity.getComponentName().getClassName();
     resolveInfo.activityInfo.applicationInfo = new ApplicationInfo();
-    resolveInfo.activityInfo.applicationInfo.packageName = "io.flutter.test";
+    resolveInfo.activityInfo.applicationInfo.packageName =
+        RuntimeEnvironment.application.getPackageName();
     resolveInfo.activityInfo.metaData = new Bundle();
-    resolveInfo.activityInfo.metaData.putInt(FlutterActivityLaunchConfigs.NORMAL_THEME_META_DATA_KEY, 1234);
+    // 1234 is an arbitrary value that is an invalid drawable ID.
+    resolveInfo.activityInfo.metaData.putInt(
+        FlutterActivityLaunchConfigs.SPLASH_SCREEN_META_DATA_KEY, 1234);
     shadowOf(RuntimeEnvironment.application.getPackageManager())
         .addResolveInfoForIntent(intent, resolveInfo);
+    shadowOf(RuntimeEnvironment.application.getPackageManager())
+        .addOrUpdateActivity(resolveInfo.activityInfo);
+    shadowOf(RuntimeEnvironment.application.getPackageManager())
+        .addActivityIfNotPresent(flutterActivity.getComponentName());
 
-    System.out.println("++++++ classname " + flutterActivity.getClass().toString());
-    System.out.println("++++++ component name is " + flutterActivity.getComponentName());
-    System.out.println("++++++ package manager is " + RuntimeEnvironment.application.getPackageManager().getClass());
-    ActivityInfo activityInfo =
-    shadowOf(RuntimeEnvironment.application.getPackageManager()).getActivityInfo(flutterActivity.getComponentName(), PackageManager.GET_META_DATA);
-    System.out.println("++++++ activityinfo is " + activityInfo);
-
-    // We never supplied the metadata to the robolectric activity info so it doesn't exist.
+    // Trying to build a splash screen off of this invalid data should not crash.
     SplashScreen splashScreen = flutterActivity.provideSplashScreen();
-    // It should quietly return a null and not crash.
+    // It should quietly return a null.
     assertNull(splashScreen);
   }
 

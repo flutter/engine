@@ -485,16 +485,10 @@ public class FlutterActivity extends Activity
   @SuppressWarnings("deprecation")
   private Drawable getSplashScreenFromManifest() {
     try {
-      Log.w(TAG, "----- classname " + getClass().toString());
-      Log.w(TAG, "----- component name is " + getComponentName());
-      Log.w(TAG, "----- package manager is " + getPackageManager().getClass());
       ActivityInfo activityInfo =
-      getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
-      Log.w(TAG, "----- activityinfo is " + activityInfo);
+          getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
       Bundle metadata = activityInfo.metaData;
-      Log.w(TAG, "----- metadata is " + metadata);
       int splashScreenId = metadata != null ? metadata.getInt(SPLASH_SCREEN_META_DATA_KEY) : 0;
-      Log.w(TAG, "----- metadata int is " + splashScreenId);
       return splashScreenId != 0
           ? Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP
               ? getResources().getDrawable(splashScreenId, getTheme())
