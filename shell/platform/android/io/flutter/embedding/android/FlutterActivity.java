@@ -499,7 +499,7 @@ public class FlutterActivity extends Activity
       return null;
     } catch (Resources.NotFoundException e) {
       // Users don't have to supply a splash screen drawable. If none is given, return null.
-      Log.v(TAG, "No splash drawables found.");
+      Log.w(TAG, "Splash drawable not found.");
       return null;
     }
   }
