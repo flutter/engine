@@ -18,8 +18,8 @@ set -x
 cd $ENGINE_PATH/src/flutter
 
 # Special handling of release branches.
-BRANCH=`git branch`
-echo "git branches $BRANCH"
+echo "cirrus branch: $CIRRUS_BRANCH"
+echo "cirrus base branch: $CIRRUS_BASE_BRANCH"
 
 ENGINE_BRANCH_NAME=`git branch | grep '*' | cut -d ' ' -f2`
 versionregex="^v[[:digit:]]+\."
