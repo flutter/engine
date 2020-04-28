@@ -8,13 +8,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.os.Build.VERSION_CODES;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
+import androidx.annotation.RequiresApi;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -41,8 +42,9 @@ import org.robolectric.annotation.Implements;
 // shell/platform/android/embedding_bundle/build.gradle. Remove the older
 // org.robolectric:android-all:4.1.2_r1-robolectric-r1 which doesn't have the right shadow
 // behaviors.
-@Config(manifest = Config.NONE, sdk = VERSION_CODES.O_MR1)
+@Config(manifest = Config.NONE, sdk = 27)
 @RunWith(RobolectricTestRunner.class)
+@TargetApi(27)
 public class FlutterViewTest {
   @Mock FlutterJNI mockFlutterJni;
   @Mock FlutterLoader mockFlutterLoader;
