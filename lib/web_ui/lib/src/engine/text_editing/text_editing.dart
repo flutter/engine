@@ -84,7 +84,7 @@ class AutofillGroup {
 
   final Map<String, html.HtmlElement> elements;
 
-  final Map<String, Autofill> items;
+  final Map<String, AutofillInfo> items;
 
   final bool singleElement;
 
@@ -93,11 +93,10 @@ class AutofillGroup {
     List<dynamic> fields,
   ) {
     final singleElement = (fields == null);
-    final Autofill focusedElement =
-        Autofill.fromFrameworkMessage(focusedElementAutofill);
-    final Map<String, html.HtmlElement> elements =
-        Map<String, html.HtmlElement>();
-    final Map<String, Autofill> items = Map<String, Autofill>();
+    final AutofillInfo focusedElement =
+        AutofillInfo.fromFrameworkMessage(focusedElementAutofill);
+    final Map<String, html.HtmlElement> elements = <String, html.HtmlElement>{};
+    final Map<String, AutofillInfo> items = <String, AutofillInfo>{};
     final html.FormElement formElement = html.FormElement();
 
     // Don't validate the fields on the form.
@@ -108,7 +107,8 @@ class AutofillGroup {
     if (!singleElement) {
       for (Map<String, dynamic> field in fields) {
         final Map<String, dynamic> autofillInfo = field['autofill'];
-        final Autofill autofill = Autofill.fromFrameworkMessage(autofillInfo);
+        final AutofillInfo autofill =
+            AutofillInfo.fromFrameworkMessage(autofillInfo);
 
         // The main text editing element will not be created here.
         if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
@@ -147,20 +147,19 @@ class AutofillGroup {
   List<StreamSubscription<html.Event>> addEventListeners() {
     Iterable<String> keys = elements.keys;
     List<StreamSubscription<html.Event>> subscriptions =
-        List<StreamSubscription<html.Event>>();
+        <StreamSubscription<html.Event>>[];
     keys.forEach((String key) {
       final html.Element element = elements[key];
       subscriptions.add(element.onInput.listen((html.Event e) {
-        _handleChange(e, element, key);
+        _handleChange(element, key);
       }));
     });
     return subscriptions;
   }
 
-  void _handleChange(html.Event event, html.Element domElement, String tag) {
+  void _handleChange(html.Element domElement, String tag) {
     EditingState newEditingState = EditingState.fromDomElement(domElement);
 
-    assert(newEditingState != null);
     _sendAutofillEditingState(tag, newEditingState);
   }
 
@@ -188,8 +187,8 @@ class AutofillGroup {
 ///
 /// These values are to be used when a text field have autofill enabled.
 @visibleForTesting
-class Autofill {
-  Autofill({this.editingState, this.uniqueIdentifier, this.hint});
+class AutofillInfo {
+  AutofillInfo({this.editingState, this.uniqueIdentifier, this.hint});
 
   final EditingState editingState;
 
@@ -197,12 +196,12 @@ class Autofill {
 
   final String hint;
 
-  factory Autofill.fromFrameworkMessage(Map<String, dynamic> autofill) {
+  factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill) {
     final String uniqueIdentifier = autofill['uniqueIdentifier'];
     final List<dynamic> hintsList = autofill['hints'];
     final EditingState editingState =
         EditingState.fromFrameworkMessage(autofill['editingValue']);
-    return Autofill(
+    return AutofillInfo(
         uniqueIdentifier: uniqueIdentifier,
         hint: BrowserAutofillHints.instance.flutterToEngine(hintsList[0]),
         editingState: editingState);
@@ -215,7 +214,11 @@ class Autofill {
       element.name = hint;
       element.id = hint;
       element.autocomplete = hint;
-      element.type = 'text';
+      if (hint.contains('password')) {
+        element.type = 'password';
+      } else {
+        element.type = 'text';
+      }
     } else if (domElement is html.TextAreaElement) {
       html.TextAreaElement element = domElement;
       element.name = hint;
@@ -369,7 +372,7 @@ class InputConfiguration {
         inputAction = flutterInputConfiguration['inputAction'],
         obscureText = flutterInputConfiguration['obscureText'],
         autocorrect = flutterInputConfiguration['autocorrect'],
-        autofill = Autofill.fromFrameworkMessage(
+        autofill = AutofillInfo.fromFrameworkMessage(
             flutterInputConfiguration['autofill']),
         autofillGroup = AutofillGroup.fromFrameworkMessage(
             flutterInputConfiguration['autofill'],
@@ -393,7 +396,7 @@ class InputConfiguration {
   /// supported by Safari.
   final bool autocorrect;
 
-  final Autofill autofill;
+  final AutofillInfo autofill;
 
   final AutofillGroup autofillGroup;
 }
@@ -532,7 +535,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     _setStaticStyleAttributes(domElement);
     _style?.applyToDomElement(domElement);
     if (_inputConfiguration.autofillGroup != null) {
-      _inputConfiguration.autofillGroup?.placeForm(domElement);
+      _inputConfiguration.autofillGroup.placeForm(domElement);
     } else {
       domRenderer.glassPaneElement.append(domElement);
     }
