@@ -48,6 +48,8 @@ void _setStaticStyleAttributes(html.HtmlElement domElement) {
   }
 }
 
+/// Sets attributes to hide autofill elements.
+///
 /// These style attributes are constant throughout the life time of an input
 /// element.
 ///
@@ -76,8 +78,8 @@ void _hideAutofillElements(html.HtmlElement domElement) {
 ///
 /// These values are to be used when autofill is enabled and there is a group of
 /// text fields with more than one text field.
-class AutofillGroup {
-  AutofillGroup(
+class EngineAutofillForm {
+  EngineAutofillForm(
       {this.formElement, this.elements, this.items, this.singleElement});
 
   final html.FormElement formElement;
@@ -88,7 +90,7 @@ class AutofillGroup {
 
   final bool singleElement;
 
-  factory AutofillGroup.fromFrameworkMessage(
+  factory EngineAutofillForm.fromFrameworkMessage(
     Map<String, dynamic> focusedElementAutofill,
     List<dynamic> fields,
   ) {
@@ -127,7 +129,7 @@ class AutofillGroup {
       }
     }
 
-    return AutofillGroup(
+    return EngineAutofillForm(
       formElement: formElement,
       elements: elements,
       items: items,
@@ -374,7 +376,7 @@ class InputConfiguration {
         autocorrect = flutterInputConfiguration['autocorrect'],
         autofill = AutofillInfo.fromFrameworkMessage(
             flutterInputConfiguration['autofill']),
-        autofillGroup = AutofillGroup.fromFrameworkMessage(
+        autofillGroup = EngineAutofillForm.fromFrameworkMessage(
             flutterInputConfiguration['autofill'],
             flutterInputConfiguration['fields']);
 
@@ -398,7 +400,7 @@ class InputConfiguration {
 
   final AutofillInfo autofill;
 
-  final AutofillGroup autofillGroup;
+  final EngineAutofillForm autofillGroup;
 }
 
 typedef _OnChangeCallback = void Function(EditingState editingState);
