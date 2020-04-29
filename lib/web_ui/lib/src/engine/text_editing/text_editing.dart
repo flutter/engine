@@ -94,7 +94,7 @@ class EngineAutofillForm {
     Map<String, dynamic> focusedElementAutofill,
     List<dynamic> fields,
   ) {
-    final singleElement = (fields == null);
+    final bool singleElement = (fields == null);
     final AutofillInfo focusedElement =
         AutofillInfo.fromFrameworkMessage(focusedElementAutofill);
     final Map<String, html.HtmlElement> elements = <String, html.HtmlElement>{};
@@ -1239,12 +1239,15 @@ class HybridTextEditing {
   void _startEditing() {
     assert(!isEditing);
     isEditing = true;
-    editingElement.enable(_configuration,
-        onChange: (EditingState editingState) {
-      channel.updateEditingState(_clientId, editingState);
-    }, onAction: (String inputAction) {
-      channel.performAction(_clientId, inputAction);
-    });
+    editingElement.enable(
+      _configuration,
+      onChange: (EditingState editingState) {
+        channel.updateEditingState(_clientId, editingState);
+      },
+      onAction: (String inputAction) {
+        channel.performAction(_clientId, inputAction);
+      },
+    );
   }
 
   void stopEditing() {
