@@ -75,11 +75,11 @@ class Keyboard {
   int _lastMetaState = 0x0;
 
   void _handleHtmlEvent(html.Event event) {
-    if (!(event is html.KeyboardEvent)) {
+    if (event is! html.KeyboardEvent) {
       return;
     }
 
-    html.KeyboardEvent keyboardEvent = event as html.KeyboardEvent;
+    final html.KeyboardEvent keyboardEvent = event as html.KeyboardEvent;
 
     if (window._onPlatformMessage == null) {
       return;
