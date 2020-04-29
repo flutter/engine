@@ -7,6 +7,7 @@
 #include <android/native_window_jni.h>
 
 #include <utility>
+#include "unicode/brkiter.h"
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/settings.h"
@@ -484,6 +485,28 @@ static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
       );
 }
 
+// Return the index of the first grapheme cluster that precedes the given
+// offset in the text.
+static jint GetTextOffsetBefore(JNIEnv* env,
+                                jclass jcaller,
+                                jstring text,
+                                jint offset) {
+  std::unique_ptr<icu::BreakIterator> breaker;
+  UErrorCode status = U_ZERO_ERROR;
+  breaker.reset(
+      icu::BreakIterator::createCharacterInstance(icu::Locale(), status));
+  if (!U_SUCCESS(status)) {
+    fml::jni::ThrowException(env, "java/lang/IllegalStateException",
+                             "unable to create character iterator");
+    return -1;
+  }
+
+  fml::jni::ScopedJavaStringChars chars(env, text);
+  breaker->setText(
+      icu::UnicodeString(false, chars.chars(), env->GetStringLength(text)));
+  return breaker->preceding(offset);
+}
+
 bool RegisterApi(JNIEnv* env) {
   static const JNINativeMethod flutter_jni_methods[] = {
       // Start of methods from FlutterJNI
@@ -598,6 +621,12 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeLookupCallbackInformation",
           .signature = "(J)Lio/flutter/view/FlutterCallbackInformation;",
           .fnPtr = reinterpret_cast<void*>(&LookupCallbackInformation),
+      },
+
+      {
+          .name = "nativeGetTextOffsetBefore",
+          .signature = "(Ljava/lang/String;I)I",
+          .fnPtr = reinterpret_cast<void*>(&GetTextOffsetBefore),
       },
   };
 

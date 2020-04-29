@@ -165,5 +165,21 @@ std::string GetJavaExceptionInfo(JNIEnv* env, jthrowable java_throwable) {
   return JavaStringToString(env, exception_string.obj());
 }
 
+void ThrowException(JNIEnv* env, const char* class_name, const char* message) {
+  jclass clazz = env->FindClass(class_name);
+  FML_DCHECK(clazz);
+  env->ThrowNew(clazz, message);
+}
+
+ScopedJavaStringChars::ScopedJavaStringChars(JNIEnv* env, jstring str)
+    : env_(env), str_(str) {
+  chars_ = env_->GetStringChars(str_, nullptr);
+  FML_DCHECK(chars_);
+}
+
+ScopedJavaStringChars::~ScopedJavaStringChars() {
+  env_->ReleaseStringChars(str_, chars_);
+}
+
 }  // namespace jni
 }  // namespace fml

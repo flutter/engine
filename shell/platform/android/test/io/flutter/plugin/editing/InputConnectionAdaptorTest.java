@@ -16,6 +16,7 @@ import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
 import android.text.SpannableStringBuilder;
+import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -318,6 +319,13 @@ public class InputConnectionAdaptorTest {
     int selStart = 29;
     Editable editable = sampleRtlEditable(selStart, selStart);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+    adaptor.setGetOffsetBefore(
+        new InputConnectionAdaptor.GetOffsetBefore() {
+          @Override
+          public int getOffsetBefore(String text, int offset) {
+            return TextUtils.getOffsetBefore(text, offset);
+          }
+        });
 
     KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
 

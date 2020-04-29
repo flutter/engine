@@ -146,6 +146,15 @@ public class FlutterJNI {
   @NonNull
   public static native FlutterCallbackInformation nativeLookupCallbackInformation(long handle);
 
+  /**
+   * Return the index of the first grapheme cluster preceding {@code offset} in {@code text}.
+   *
+   * <p>This is similar to {@link android.text.TextUtils#getOffsetBefore(CharSequence, int, int)}
+   * but it uses the engine's ICU library which is up to date and acts consistently on all versions
+   * of Android.
+   */
+  public static native int nativeGetTextOffsetBefore(String text, int offset);
+
   @Nullable private Long nativePlatformViewId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;
   @Nullable private PlatformMessageHandler platformMessageHandler;

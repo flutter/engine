@@ -38,6 +38,21 @@ bool ClearException(JNIEnv* env);
 
 std::string GetJavaExceptionInfo(JNIEnv* env, jthrowable java_throwable);
 
+void ThrowException(JNIEnv* env, const char* class_name, const char* message);
+
+class ScopedJavaStringChars {
+ public:
+  ScopedJavaStringChars(JNIEnv* env, jstring str);
+  ~ScopedJavaStringChars();
+
+  const jchar* chars() { return chars_; }
+
+ private:
+  JNIEnv* env_;
+  jstring str_;
+  const jchar* chars_;
+};
+
 }  // namespace jni
 }  // namespace fml
 

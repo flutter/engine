@@ -13,7 +13,6 @@ import android.text.InputType;
 import android.text.Layout;
 import android.text.Selection;
 import android.text.TextPaint;
-import android.text.method.TextKeyListener;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
@@ -21,7 +20,9 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputMethodManager;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 
 class InputConnectionAdaptor extends BaseInputConnection {
@@ -109,6 +110,23 @@ class InputConnectionAdaptor extends BaseInputConnection {
             0.0f,
             false);
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+  }
+
+  interface GetOffsetBefore {
+    int getOffsetBefore(String text, int offset);
+  }
+
+  private GetOffsetBefore getOffsetBefore =
+      new GetOffsetBefore() {
+        @Override
+        public int getOffsetBefore(String text, int offset) {
+          return FlutterJNI.nativeGetTextOffsetBefore(text, offset);
+        }
+      };
+
+  @VisibleForTesting
+  void setGetOffsetBefore(GetOffsetBefore value) {
+    getOffsetBefore = value;
   }
 
   // Send the current state of the editable to Flutter.
@@ -270,18 +288,16 @@ class InputConnectionAdaptor extends BaseInputConnection {
       if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
         int selStart = clampIndexToEditable(Selection.getSelectionStart(mEditable), mEditable);
         int selEnd = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
+        if (selStart == selEnd && selStart > 0) {
+          // Extend selection to the left of the last character.
+          selStart = getOffsetBefore.getOffsetBefore(mEditable.toString(), selStart);
+        }
         if (selEnd > selStart) {
           // Delete the selection.
           Selection.setSelection(mEditable, selStart);
           mEditable.delete(selStart, selEnd);
           updateEditingState();
           return true;
-        } else if (selStart > 0) {
-          if (TextKeyListener.getInstance().onKeyDown(null, mEditable, event.getKeyCode(), event)) {
-            updateEditingState();
-            return true;
-          }
-          return false;
         }
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
         int selStart = Selection.getSelectionStart(mEditable);
