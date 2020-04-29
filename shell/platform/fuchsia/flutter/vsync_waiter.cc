@@ -131,18 +131,6 @@ fml::TimePoint VsyncWaiter::SnapToNextPhase(
   }
 }
 
-fml::TimeDelta VsyncWaiter::ParseJsonForVsyncOffset(std::string json_string) {
-  rapidjson::Document document;
-  document.Parse(json_string);
-
-  const std::string key = "vsync_offset_in_us";
-  if (document.IsObject() && document[key].IsInt()) {
-    return fml::TimeDelta::FromMicroseconds(document[key].GetInt());
-  }
-
-  return fml::TimeDelta::FromMicroseconds(0);
-}
-
 void VsyncWaiter::AwaitVSync() {
   VsyncInfo vsync_info = VsyncRecorder::GetInstance().GetCurrentVsyncInfo();
 

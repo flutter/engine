@@ -9,7 +9,6 @@
 #include <sstream>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/time/time_delta.h"
 #include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/window/pointer_data.h"
 #include "flutter/lib/ui/window/window.h"

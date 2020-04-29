@@ -618,7 +618,7 @@ void Application::CreateView(
       scenic::ToViewToken(std::move(view_token)),  // view token
       std::move(fdio_ns_),                         // FDIO namespace
       std::move(directory_request_),               // outgoing request
-      product_config_                              // config
+      product_config_                              // product configuration
       ));
 }
 
