@@ -386,8 +386,8 @@ public class FlutterEngine {
   /**
    * System channel to exchange restoration data between framework and engine.
    *
-   * <p> The engine can obtain the current restoration data from the framework via this channel
-   * to store it on disk and - when the app is relaunched - provide the stored data back to the
+   * <p>The engine can obtain the current restoration data from the framework via this channel to
+   * store it on disk and - when the app is relaunched - provide the stored data back to the
    * framework to recreate the original state of the app.
    */
   @NonNull

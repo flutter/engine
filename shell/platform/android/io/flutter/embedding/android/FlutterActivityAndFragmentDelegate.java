@@ -300,7 +300,8 @@ import java.util.Arrays;
 
     Bundle pluginsBundle = null;
     if (bundle != null) {
-      flutterEngine.getRestorationChannel()
+      flutterEngine
+          .getRestorationChannel()
           .setRestorationDataForFramework(bundle.getByteArray(FRAMEWORK_BUNDLE_KEY));
       pluginsBundle = bundle.getBundle(PLUGINS_BUNDLE_KEY);
     }
@@ -456,7 +457,9 @@ import java.util.Arrays;
     Log.v(TAG, "onSaveInstanceState. Giving framework and plugins an opportunity to save state.");
     ensureAlive();
 
-    bundle.putByteArray(FRAMEWORK_BUNDLE_KEY, flutterEngine.getRestorationChannel().getRestorationDataFromFramework());
+    bundle.putByteArray(
+        FRAMEWORK_BUNDLE_KEY,
+        flutterEngine.getRestorationChannel().getRestorationDataFromFramework());
 
     if (host.shouldAttachEngineToActivity()) {
       final Bundle plugins = new Bundle();
