@@ -56,8 +56,8 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
       }));
   session_wait_.set_handler(wait_handler);
 
-  FML_LOG(INFO) << "felipe: Set vsync_offset to "
-                << vsync_offset_.ToMicroseconds() << "us";
+  FML_LOG(INFO) << "Set vsync_offset to " << vsync_offset_.ToMicroseconds()
+                << "us";
 }
 
 VsyncWaiter::~VsyncWaiter() {

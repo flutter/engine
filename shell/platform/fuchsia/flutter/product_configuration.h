@@ -8,16 +8,16 @@
 
 namespace flutter_runner {
 
-  class ProductConfiguration {
-  public:
-    ProductConfiguration() {}
-    ProductConfiguration(std::string path);
+class ProductConfiguration {
+ public:
+  ProductConfiguration() {}
+  ProductConfiguration(std::string path);
 
-    fml::TimeDelta get_vsync_offset() { return vsync_offset_ ; }
+  fml::TimeDelta get_vsync_offset() { return vsync_offset_; }
 
-  private:
-    fml::TimeDelta vsync_offset_ = fml::TimeDelta::Zero();
-  };
+ private:
+  fml::TimeDelta vsync_offset_ = fml::TimeDelta::Zero();
+};
 
-}
+}  // namespace flutter_runner
 #endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_PRODUCT_CONFIGURATION_H_
