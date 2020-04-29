@@ -63,6 +63,8 @@ import java.util.Arrays;
  */
 /* package */ final class FlutterActivityAndFragmentDelegate {
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
+  private static final String FRAMEWORK_BUNDLE_KEY = "framework";
+  private static final String PLUGINS_BUNDLE_KEY = "plugins";
 
   // The FlutterActivity or FlutterFragment that is delegating most of its calls
   // to this FlutterActivityAndFragmentDelegate.
@@ -293,11 +295,18 @@ import java.util.Arrays;
   }
 
   void onActivityCreated(@Nullable Bundle bundle) {
-    Log.v(TAG, "onActivityCreated. Giving plugins an opportunity to restore state.");
+    Log.v(TAG, "onActivityCreated. Giving framework and plugins an opportunity to restore state.");
     ensureAlive();
 
+    Bundle pluginsBundle = null;
+    if (bundle != null) {
+      flutterEngine.getRestorationChannel()
+          .setRestorationDataForFramework(bundle.getByteArray(FRAMEWORK_BUNDLE_KEY));
+      pluginsBundle = bundle.getBundle(PLUGINS_BUNDLE_KEY);
+    }
+
     if (host.shouldAttachEngineToActivity()) {
-      flutterEngine.getActivityControlSurface().onRestoreInstanceState(bundle);
+      flutterEngine.getActivityControlSurface().onRestoreInstanceState(pluginsBundle);
     }
   }
 
@@ -444,11 +453,15 @@ import java.util.Arrays;
   }
 
   void onSaveInstanceState(@Nullable Bundle bundle) {
-    Log.v(TAG, "onSaveInstanceState. Giving plugins an opportunity to save state.");
+    Log.v(TAG, "onSaveInstanceState. Giving framework and plugins an opportunity to save state.");
     ensureAlive();
 
+    bundle.putByteArray(FRAMEWORK_BUNDLE_KEY, flutterEngine.getRestorationChannel().getRestorationDataFromFramework());
+
     if (host.shouldAttachEngineToActivity()) {
-      flutterEngine.getActivityControlSurface().onSaveInstanceState(bundle);
+      final Bundle plugins = new Bundle();
+      flutterEngine.getActivityControlSurface().onSaveInstanceState(plugins);
+      bundle.putBundle(PLUGINS_BUNDLE_KEY, plugins);
     }
   }
 

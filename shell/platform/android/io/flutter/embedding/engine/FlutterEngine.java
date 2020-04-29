@@ -24,6 +24,7 @@ import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
+import io.flutter.embedding.engine.systemchannels.RestorationChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -80,6 +81,7 @@ public class FlutterEngine {
   @NonNull private final LocalizationChannel localizationChannel;
   @NonNull private final MouseCursorChannel mouseCursorChannel;
   @NonNull private final NavigationChannel navigationChannel;
+  @NonNull private final RestorationChannel restorationChannel;
   @NonNull private final PlatformChannel platformChannel;
   @NonNull private final SettingsChannel settingsChannel;
   @NonNull private final SystemChannel systemChannel;
@@ -224,6 +226,7 @@ public class FlutterEngine {
     mouseCursorChannel = new MouseCursorChannel(dartExecutor);
     navigationChannel = new NavigationChannel(dartExecutor);
     platformChannel = new PlatformChannel(dartExecutor);
+    restorationChannel = new RestorationChannel(dartExecutor);
     settingsChannel = new SettingsChannel(dartExecutor);
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
@@ -378,6 +381,18 @@ public class FlutterEngine {
   @NonNull
   public PlatformChannel getPlatformChannel() {
     return platformChannel;
+  }
+
+  /**
+   * System channel to exchange restoration data between framework and engine.
+   *
+   * <p> The engine can obtain the current restoration data from the framework via this channel
+   * to store it on disk and - when the app is relaunched - provide the stored data back to the
+   * framework to recreate the original state of the app.
+   */
+  @NonNull
+  public RestorationChannel getRestorationChannel() {
+    return restorationChannel;
   }
 
   /**
