@@ -12,13 +12,13 @@ import androidx.test.internal.runner.junit4.statement.UiThreadStatement;
 import androidx.test.runner.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.Arrays;
-import java.util.Locale;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -40,10 +40,7 @@ public class EngineLaunchE2ETest {
     // This is required, so `window.locale` in populated in dart.
     UiThreadStatement.runOnUiThread(
         () ->
-            engine
-                .get()
-                .getLocalizationChannel()
-                .sendLocales(Arrays.asList(Locale.US), Locale.US));
+            engine.get().getLocalizationChannel().sendLocales(Arrays.asList(Locale.US), Locale.US));
 
     // The default Dart main entrypoint sends back a platform message on the "waiting_for_status"
     // channel. That will be our launch success assertion condition.
