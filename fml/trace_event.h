@@ -351,6 +351,8 @@ class TraceFlow {
   FML_DISALLOW_COPY_AND_ASSIGN(TraceFlow);
 };
 
+void FlushCachedTimelineEvents();
+
 }  // namespace tracing
 }  // namespace fml
 

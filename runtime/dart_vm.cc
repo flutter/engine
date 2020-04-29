@@ -436,6 +436,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
           nullptr                                    // argument_values
       );
     }
+    fml::tracing::FlushCachedTimelineEvents();
   }
 
   Dart_SetFileModifiedCallback(&DartFileModifiedCallback);

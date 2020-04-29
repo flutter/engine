@@ -26,6 +26,54 @@ namespace tracing {
 namespace {
 AsciiTrie gWhitelist;
 
+struct CachedTimelineEvent
+{
+  const char* label_;
+  int64_t timestamp0_;
+  int64_t timestamp1_or_async_id_;
+  Dart_Timeline_Event_Type type_;
+
+  CachedTimelineEvent(const char* label,
+                      int64_t timestamp0,
+                      int64_t timestamp1_or_async_id,
+                      Dart_Timeline_Event_Type type) {
+    label_ = label;
+    timestamp0_ = timestamp0;
+    timestamp1_or_async_id_ = timestamp1_or_async_id;
+    type_ = type;
+  }
+};
+
+std::vector<std::unique_ptr<CachedTimelineEvent>> gCachedTimelineEvents;
+std::mutex gCachedTimelineEventsMutex;
+
+inline void CacheTimelineEvent(const char* label,
+                               int64_t timestamp0,
+                               int64_t timestamp1_or_async_id,
+                               Dart_Timeline_Event_Type type,
+                               intptr_t argument_count,
+                               const char** argument_names,
+                               const char** argument_values) {
+  const std::lock_guard<std::mutex> lock(gCachedTimelineEventsMutex);
+  // TODO(chenjianguang): Cache events with arguments.
+  std::unique_ptr<CachedTimelineEvent> event =
+      std::make_unique<CachedTimelineEvent>(
+          label, timestamp0, timestamp1_or_async_id, type);
+  gCachedTimelineEvents.push_back(std::move(event));
+}
+
+// Before DartVM has initialized, |Dart_TimelineEvent| is not able to record
+// timeline events but drop them. Thus we need to cache these previous events,
+// and flush them once DartVM init.
+typedef void (*TimelineEventFunction)(const char* label,
+                                      int64_t timestamp0,
+                                      int64_t timestamp1_or_async_id,
+                                      Dart_Timeline_Event_Type type,
+                                      intptr_t argument_count,
+                                      const char** argument_names,
+                                      const char** argument_values);
+TimelineEventFunction gTimelineEventFunction = CacheTimelineEvent;
+
 inline void FlutterTimelineEvent(const char* label,
                                  int64_t timestamp0,
                                  int64_t timestamp1_or_async_id,
@@ -34,11 +82,25 @@ inline void FlutterTimelineEvent(const char* label,
                                  const char** argument_names,
                                  const char** argument_values) {
   if (gWhitelist.Query(label)) {
-    Dart_TimelineEvent(label, timestamp0, timestamp1_or_async_id, type,
-                       argument_count, argument_names, argument_values);
+    gTimelineEventFunction(label, timestamp0, timestamp1_or_async_id, type,
+                           argument_count, argument_names, argument_values);
   }
 }
 }  // namespace
+
+void FlushCachedTimelineEvents() {
+  TRACE_EVENT0("flutter", "FlushCachedTimelineEvents");
+  const std::lock_guard<std::mutex> lock(gCachedTimelineEventsMutex);
+  for (const auto& event : gCachedTimelineEvents) {
+    Dart_TimelineEvent(event->label_, event->timestamp0_,
+                       event->timestamp1_or_async_id_, event->type_,
+                       0, nullptr, nullptr);
+  }
+  gCachedTimelineEvents.clear();
+
+  // Switch timeline event function.
+  gTimelineEventFunction = Dart_TimelineEvent;
+}
 
 void TraceSetWhitelist(const std::vector<std::string>& whitelist) {
   gWhitelist.Fill(whitelist);
@@ -378,6 +440,8 @@ void TraceEventFlowStep0(TraceArg category_group,
 
 void TraceEventFlowEnd0(TraceArg category_group, TraceArg name, TraceIDArg id) {
 }
+
+void FlushCachedTimelineEvents() {}
 
 #endif  // TIMELINE_ENABLED
 
