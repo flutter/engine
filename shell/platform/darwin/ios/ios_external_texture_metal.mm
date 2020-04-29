@@ -134,7 +134,7 @@ void IOSExternalTextureMetal::OnGrContextCreated() {
 
 void IOSExternalTextureMetal::OnGrContextDestroyed() {
   // The image must be reset because it is tied to the onscreen context. But the pixel buffer that
-  // created the image is still around however. In case of context reacquisition, that last pixel
+  // created the image is still around. In case of context reacquisition, that last pixel
   // buffer will be used to materialize the image in case the application fails to provide a new
   // one.
   external_image_.reset();
