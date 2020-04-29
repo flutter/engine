@@ -11,6 +11,8 @@
 #include <flutter_linux/fl_codec.h>
 #include <flutter_linux/fl_dart_project.h>
 #include <flutter_linux/fl_engine.h>
+#include <flutter_linux/fl_json_codec.h>
+#include <flutter_linux/fl_json_method_codec.h>
 #include <flutter_linux/fl_method_channel.h>
 #include <flutter_linux/fl_method_codec.h>
 #include <flutter_linux/fl_standard_codec.h>
