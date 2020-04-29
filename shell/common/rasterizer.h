@@ -184,7 +184,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   /// @return     The weak pointer to the rasterizer.
   ///
-  fml::TaskRunnerWeakPtr<Rasterizer> GetWeakPtr() const;
+  fml::TaskRunnerAffineWeakPtr<Rasterizer> GetWeakPtr() const;
 
   fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 

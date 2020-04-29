@@ -257,7 +257,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   surface->getCanvas()->setMatrix(root_surface_transformation);
 
   SurfaceFrame::SubmitCallback submit_callback =
-      [weak = weak_factory_.GetTaskRunnerWeakPtr()](
+      [weak = weak_factory_.GetTaskRunnerAffineWeakPtr()](
           const SurfaceFrame& surface_frame, SkCanvas* canvas) {
         return weak ? weak->PresentSurface(canvas) : false;
       };

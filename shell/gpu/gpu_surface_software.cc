@@ -57,7 +57,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
   canvas->resetMatrix();
 
   SurfaceFrame::SubmitCallback on_submit =
-      [self = weak_factory_.GetTaskRunnerWeakPtr()](
+      [self = weak_factory_.GetTaskRunnerAffineWeakPtr()](
           const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
     // If the surface itself went away, there is nothing more to do.
     if (!self || !self->IsValid() || canvas == nullptr) {
