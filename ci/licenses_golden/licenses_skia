@@ -1,4 +1,4 @@
-Signature: ce03f4d703afcb0b774add325d4162c9
+Signature: cd98e84241b0e73fb211e783cfe3c01f
 
 UNUSED LICENSES:
 
@@ -2412,8 +2412,6 @@ FILE: ../../../third_party/skia/src/core/SkRecord.cpp
 FILE: ../../../third_party/skia/src/core/SkRecordPattern.h
 FILE: ../../../third_party/skia/src/core/SkRecords.cpp
 FILE: ../../../third_party/skia/src/core/SkSemaphore.cpp
-FILE: ../../../third_party/skia/src/core/SkSharedMutex.cpp
-FILE: ../../../third_party/skia/src/core/SkSharedMutex.h
 FILE: ../../../third_party/skia/src/core/SkSpinlock.cpp
 FILE: ../../../third_party/skia/src/core/SkTDPQueue.h
 FILE: ../../../third_party/skia/src/core/SkTTopoSort.h
@@ -3938,8 +3936,6 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDeviceSpaceEffect.cp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDeviceSpaceEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMatrixEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMatrixEffect.h
-FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.cpp
-FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLUniformHandler.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkManagedResource.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.cpp
@@ -5460,6 +5456,7 @@ FILE: ../../../third_party/skia/docs/examples/unexpected_setAlphaType.cpp
 FILE: ../../../third_party/skia/docs/examples/upscale_checkerboard.cpp
 FILE: ../../../third_party/skia/docs/examples/weird_RRect_bug.cpp
 FILE: ../../../third_party/skia/docs/examples/zero_off_dashing.cpp
+FILE: ../../../third_party/skia/gm/gpu_blur_utils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFinishCallbacks.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFinishCallbacks.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrFillPathShader.cpp
