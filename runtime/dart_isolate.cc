@@ -264,7 +264,7 @@ bool DartIsolate::LoadLibraries() {
 
   DartIO::InitForIsolate(disable_http_);
 
-  DartUI::InitForIsolate(IsRootIsolate());
+  DartUI::InitForIsolate();
 
   const bool is_service_isolate = Dart_IsServiceIsolate(isolate());
 
