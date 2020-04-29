@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verify;
 import android.content.ClipboardManager;
 import android.content.res.AssetManager;
 import android.text.Editable;
+import android.text.Emoji;
 import android.text.InputType;
 import android.text.Selection;
 import android.text.SpannableStringBuilder;
@@ -319,6 +320,43 @@ public class InputConnectionAdaptorTest {
     Editable editable = sampleEditable(selStart, selStart, SAMPLE_RTL_TEXT);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
 
+    adaptor.setTextUtils(
+        new InputConnectionAdaptor.TextUtils() {
+          @Override
+          public boolean isEmoji(int codePoint) {
+            return Emoji.isEmoji(codePoint);
+          }
+
+          @Override
+          public boolean isEmojiModifier(int codePoint) {
+            return Emoji.isEmojiModifier(codePoint);
+          }
+
+          @Override
+          public boolean isEmojiModifierBase(int codePoint) {
+            return Emoji.isEmojiModifierBase(codePoint);
+          }
+
+          @Override
+          public boolean isVariationSelector(int codePoint) {
+            return 0xFE0E <= codePoint && codePoint <= 0xFE0F;
+          }
+
+          @Override
+          public boolean isRegionalIndicatorSymbol(int codePoint) {
+            return Emoji.isRegionalIndicatorSymbol(codePoint);
+          }
+
+          @Override
+          public boolean isTagSpecChar(int codePoint) {
+            return 0xE0020 <= codePoint && codePoint <= 0xE007E;
+          }
+
+          @Override
+          public boolean isKeycapBase(int codePoint) {
+            return ('0' <= codePoint && codePoint <= '9') || codePoint == '#' || codePoint == '*';
+          }
+        });
     KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
 
     for (int i = 0; i < 9; i++) {
@@ -336,12 +374,57 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testSendKeyEvent_delKeyDeletesBackwardComplexEmojis() {
-    int selStart = 44;
+    int selStart = 46;
     Editable editable = sampleEditable(selStart, selStart, SAMPLE_EMOJI_TEXT);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+    adaptor.setTextUtils(
+        new InputConnectionAdaptor.TextUtils() {
+          @Override
+          public boolean isEmoji(int codePoint) {
+            return Emoji.isEmoji(codePoint);
+          }
+
+          @Override
+          public boolean isEmojiModifier(int codePoint) {
+            return Emoji.isEmojiModifier(codePoint);
+          }
+
+          @Override
+          public boolean isEmojiModifierBase(int codePoint) {
+            return Emoji.isEmojiModifierBase(codePoint);
+          }
+
+          @Override
+          public boolean isVariationSelector(int codePoint) {
+            return 0xFE0E <= codePoint && codePoint <= 0xFE0F;
+          }
+
+          @Override
+          public boolean isRegionalIndicatorSymbol(int codePoint) {
+            return Emoji.isRegionalIndicatorSymbol(codePoint);
+          }
+
+          @Override
+          public boolean isTagSpecChar(int codePoint) {
+            return 0xE0020 <= codePoint && codePoint <= 0xE007E;
+          }
+
+          @Override
+          public boolean isKeycapBase(int codePoint) {
+            return ('0' <= codePoint && codePoint <= '9') || codePoint == '#' || codePoint == '*';
+          }
+        });
 
     KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
     boolean didConsume;
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 45);
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 44);
 
     didConsume = adaptor.sendKeyEvent(downKeyDown);
     assertTrue(didConsume);
@@ -402,6 +485,7 @@ public class InputConnectionAdaptorTest {
           + "🏴󠁧󠁢󠁥󠁮󠁧󠁿" // Emoji Tag Sequence
           + "👨‍👩‍👧‍👦" // Zero Width Joiner
           + "5️⃣" // Keycap
+          + "عَ" // Non-Spacing Mark
           + "a"; // Normal Character
 
   private static final String SAMPLE_RTL_TEXT = "متن ساختگی" + "\nبرای تستfor test😊";

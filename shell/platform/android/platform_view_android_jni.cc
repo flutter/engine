@@ -7,6 +7,7 @@
 #include <android/native_window_jni.h>
 
 #include <utility>
+#include "unicode/uchar.h"
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/settings.h"
@@ -484,6 +485,33 @@ static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
       );
 }
 
+static jboolean TextUtilsIsEmoji(JNIEnv* env, jclass jcaller, jint codePoint) {
+  return u_hasBinaryProperty(codePoint, UProperty::UCHAR_EMOJI);
+}
+
+static jboolean TextUtilsIsEmojiModifier(JNIEnv* env,
+                                         jclass jcaller,
+                                         jint codePoint) {
+  return u_hasBinaryProperty(codePoint, UProperty::UCHAR_EMOJI_MODIFIER);
+}
+
+static jboolean TextUtilsIsEmojiModifierBase(JNIEnv* env,
+                                             jclass jcaller,
+                                             jint codePoint) {
+  return u_hasBinaryProperty(codePoint, UProperty::UCHAR_EMOJI_MODIFIER_BASE);
+}
+
+static jboolean TextUtilsIsVariationSelector(JNIEnv* env,
+                                             jclass jcaller,
+                                             jint codePoint) {
+  return u_hasBinaryProperty(codePoint, UProperty::UCHAR_VARIATION_SELECTOR);
+}
+
+static jboolean TextUtilsIsRegionalIndicator(JNIEnv* env,
+                                             jclass jcaller,
+                                             jint codePoint) {
+  return u_hasBinaryProperty(codePoint, UProperty::UCHAR_REGIONAL_INDICATOR);
+}
 bool RegisterApi(JNIEnv* env) {
   static const JNINativeMethod flutter_jni_methods[] = {
       // Start of methods from FlutterJNI
@@ -598,6 +626,33 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeLookupCallbackInformation",
           .signature = "(J)Lio/flutter/view/FlutterCallbackInformation;",
           .fnPtr = reinterpret_cast<void*>(&LookupCallbackInformation),
+      },
+
+      // Start of methods for TextUtils
+      {
+          .name = "nativeTextUtilsIsEmoji",
+          .signature = "(I)Z",
+          .fnPtr = reinterpret_cast<void*>(&TextUtilsIsEmoji),
+      },
+      {
+          .name = "nativeTextUtilsIsEmojiModifier",
+          .signature = "(I)Z",
+          .fnPtr = reinterpret_cast<void*>(&TextUtilsIsEmojiModifier),
+      },
+      {
+          .name = "nativeTextUtilsIsEmojiModifierBase",
+          .signature = "(I)Z",
+          .fnPtr = reinterpret_cast<void*>(&TextUtilsIsEmojiModifierBase),
+      },
+      {
+          .name = "nativeTextUtilsIsVariationSelector",
+          .signature = "(I)Z",
+          .fnPtr = reinterpret_cast<void*>(&TextUtilsIsVariationSelector),
+      },
+      {
+          .name = "nativeTextUtilsIsRegionalIndicator",
+          .signature = "(I)Z",
+          .fnPtr = reinterpret_cast<void*>(&TextUtilsIsRegionalIndicator),
       },
   };
 
