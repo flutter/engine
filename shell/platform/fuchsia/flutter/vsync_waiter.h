@@ -9,8 +9,10 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/vsync_waiter.h"
+#include "product_configuration.h"
 
 namespace flutter_runner {
 
@@ -20,7 +22,8 @@ class VsyncWaiter final : public flutter::VsyncWaiter {
 
   VsyncWaiter(std::string debug_label,
               zx_handle_t session_present_handle,
-              flutter::TaskRunners task_runners);
+              flutter::TaskRunners task_runners,
+              ProductConfiguration product_config);
 
   ~VsyncWaiter() override;
 
@@ -34,9 +37,9 @@ class VsyncWaiter final : public flutter::VsyncWaiter {
  private:
   const std::string debug_label_;
   async::Wait session_wait_;
-  fml::WeakPtrFactory<VsyncWaiter> weak_factory_;
-
   fml::TimeDelta vsync_offset_ = fml::TimeDelta::FromMicroseconds(0);
+
+  fml::WeakPtrFactory<VsyncWaiter> weak_factory_;
 
   // For accessing the VsyncWaiter via the UI thread, necessary for the callback
   // for AwaitVSync()

@@ -20,6 +20,7 @@
 #include "lib/fidl/cpp/binding.h"
 #include "lib/ui/scenic/cpp/id.h"
 
+#include "product_configuration.h"
 #include "surface.h"
 
 namespace flutter_runner {
@@ -53,7 +54,8 @@ class PlatformView final : public flutter::PlatformView,
                OnMetricsUpdate session_metrics_did_change_callback,
                OnSizeChangeHint session_size_change_hint_callback,
                OnEnableWireframe wireframe_enabled_callback,
-               zx_handle_t vsync_event_handle);
+               zx_handle_t vsync_event_handle,
+               ProductConfiguration product_config);
   PlatformView(flutter::PlatformView::Delegate& delegate,
                std::string debug_label,
                flutter::TaskRunners task_runners,
@@ -110,6 +112,8 @@ class PlatformView final : public flutter::PlatformView,
           fml::RefPtr<flutter::PlatformMessage> /* message */)> /* handler */>
       platform_message_handlers_;
   zx_handle_t vsync_event_handle_ = 0;
+
+  ProductConfiguration product_config_;
 
   void RegisterPlatformMessageHandlers();
 

@@ -16,16 +16,19 @@
 #include "rapidjson/document.h"
 #include "runtime/dart/utils/files.h"
 
+#include "product_configuration.h"
 #include "vsync_recorder.h"
 
 namespace flutter_runner {
 
 VsyncWaiter::VsyncWaiter(std::string debug_label,
                          zx_handle_t session_present_handle,
-                         flutter::TaskRunners task_runners)
+                         flutter::TaskRunners task_runners,
+                         ProductConfiguration product_config)
     : flutter::VsyncWaiter(task_runners),
       debug_label_(std::move(debug_label)),
       session_wait_(session_present_handle, SessionPresentSignal),
+      vsync_offset_(product_config.get_vsync_offset()),
       weak_factory_(this),
       weak_factory_ui_(nullptr) {
   auto wait_handler = [&](async_dispatcher_t* dispatcher,   //
@@ -53,16 +56,8 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
       }));
   session_wait_.set_handler(wait_handler);
 
-  std::string json_string;
-  bool success = dart_utils::ReadFileToString(
-      "/config/data/flutter_engine_config", &json_string);
-
-  if (success) {
-    vsync_offset_ = ParseJsonForVsyncOffset(json_string);
-  }
-
-  FML_LOG(INFO) << "Set vsync_offset to " << vsync_offset_.ToMicroseconds()
-                << "us";
+  FML_LOG(INFO) << "felipe: Set vsync_offset to "
+                << vsync_offset_.ToMicroseconds() << "us";
 }
 
 VsyncWaiter::~VsyncWaiter() {
