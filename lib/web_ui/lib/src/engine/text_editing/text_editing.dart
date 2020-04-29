@@ -815,6 +815,11 @@ class TextEditingChannel {
         implementation.hide();
         break;
 
+      case 'TextInput.requestAutofill':
+        // No-op:  This message is sent by the framework to requests the platform autofill UI to appear.
+        // Since autofill UI is a part of the browser, web engine does not need to utilize this method.
+        break;
+
       default:
         throw StateError('Unsupported method call on the flutter/textinput channel: ${call.method}');
     }
@@ -1116,7 +1121,7 @@ class EditableTextGeometry {
     return EditableTextGeometry(
       width: encodedGeometry['width'],
       height: encodedGeometry['height'],
-      globalTransform: Float64List.fromList(transformList),
+      globalTransform: Float32List.fromList(transformList),
     );
   }
 
@@ -1131,7 +1136,7 @@ class EditableTextGeometry {
   ///
   /// For correct sizing this transform must be applied to the [width] and
   /// [height] fields.
-  final Float64List globalTransform;
+  final Float32List globalTransform;
 
   /// Applies this geometry to the DOM element.
   ///
