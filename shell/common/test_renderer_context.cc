@@ -7,7 +7,9 @@
 namespace flutter {
 namespace testing {
 
-int TestRendererContext::currentContext;
+FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<int> current_context;
+
+RendererContextTest::RendererContextTest() = default;
 
 TestRendererContext::TestRendererContext(int context) : context_(context){};
 
@@ -26,10 +28,12 @@ int TestRendererContext::GetContext() {
   return context_;
 };
 
-void TestRendererContext::SetCurrentContext(int context) {
-  currentContext = context;
+int TestRendererContext::GetCurrentContext() {
+  return *(current_context.get());
 };
 
-
-}
-}
+void TestRendererContext::SetCurrentContext(int context) {
+  current_context.reset(new int(context));
+};
+}  // namespace testing
+}  // namespace flutter

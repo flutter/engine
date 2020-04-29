@@ -5,22 +5,22 @@
 #ifndef FLUTTER_SHELL_TEST_RENDERER_CONTEXT_H_
 #define FLUTTER_SHELL_TEST_RENDERER_CONTEXT_H_
 
+#include "flutter/fml/thread_local.h"
 #include "gtest/gtest.h"
 #include "renderer_context_manager.h"
 
 namespace flutter {
 namespace testing {
 
+class RendererContextTest : public ::testing::Test {
+ public:
+  RendererContextTest();
+};
+
 //------------------------------------------------------------------------------
 /// The renderer context used for testing
-class TestRendererContext : public RendererContext, public ::testing::Test {
+class TestRendererContext : public RendererContext {
  public:
-  //------------------------------------------------------------------------------
-  /// Represents the current alive context.
-  ///
-  /// -1 represents no context has been set.
-  static int currentContext;
-
   TestRendererContext(int context);
 
   ~TestRendererContext() override;
@@ -31,14 +31,19 @@ class TestRendererContext : public RendererContext, public ::testing::Test {
 
   int GetContext();
 
+  static int GetCurrentContext();
+
   //------------------------------------------------------------------------------
-  /// Set the current context without going through the |RendererContextManager|.
+  /// Set the current context without going through the
+  /// |RendererContextManager|.
   ///
   /// This is to mimic how other programs outside flutter sets the context.
   static void SetCurrentContext(int context);
 
  private:
   int context_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(TestRendererContext);
 };
 }  // namespace testing
 }  // namespace flutter
