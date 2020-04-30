@@ -153,6 +153,7 @@ FILE: ../../../flutter/fml/memory/ref_counted_internal.h
 FILE: ../../../flutter/fml/memory/ref_counted_unittest.cc
 FILE: ../../../flutter/fml/memory/ref_ptr.h
 FILE: ../../../flutter/fml/memory/ref_ptr_internal.h
+FILE: ../../../flutter/fml/memory/task_runner_checker.cc
 FILE: ../../../flutter/fml/memory/task_runner_checker.h
 FILE: ../../../flutter/fml/memory/task_runner_checker_unittest.cc
 FILE: ../../../flutter/fml/memory/thread_checker.h

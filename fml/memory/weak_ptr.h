@@ -147,14 +147,12 @@ class WeakPtr {
 template <typename T>
 class TaskRunnerAffineWeakPtr : public WeakPtr<T> {
  public:
-  // Copy constructor.
   TaskRunnerAffineWeakPtr(const TaskRunnerAffineWeakPtr<T>& r) = default;
 
   template <typename U>
   TaskRunnerAffineWeakPtr(const TaskRunnerAffineWeakPtr<U>& r)
       : WeakPtr<T>(static_cast<T*>(r.ptr_), r.flag_), checker_(r.checker_) {}
 
-  // Move constructor.
   TaskRunnerAffineWeakPtr(TaskRunnerAffineWeakPtr<T>&& r) = default;
 
   template <typename U>
