@@ -52,42 +52,52 @@ size_t Paragraph::GetAllocationSize() {
 }
 
 double Paragraph::width() {
+  UIDartState::ThrowIfUIOperationsProhited();
   return m_paragraph->GetMaxWidth();
 }
 
 double Paragraph::height() {
+  UIDartState::ThrowIfUIOperationsProhited();
   return m_paragraph->GetHeight();
 }
 
 double Paragraph::longestLine() {
+  UIDartState::ThrowIfUIOperationsProhited();
   return m_paragraph->GetLongestLine();
 }
 
 double Paragraph::minIntrinsicWidth() {
+  UIDartState::ThrowIfUIOperationsProhited();
   return m_paragraph->GetMinIntrinsicWidth();
 }
 
 double Paragraph::maxIntrinsicWidth() {
+  UIDartState::ThrowIfUIOperationsProhited();
   return m_paragraph->GetMaxIntrinsicWidth();
 }
 
 double Paragraph::alphabeticBaseline() {
+  UIDartState::ThrowIfUIOperationsProhited();
   return m_paragraph->GetAlphabeticBaseline();
 }
 
 double Paragraph::ideographicBaseline() {
+  UIDartState::ThrowIfUIOperationsProhited();
   return m_paragraph->GetIdeographicBaseline();
 }
 
 bool Paragraph::didExceedMaxLines() {
+  UIDartState::ThrowIfUIOperationsProhited();
   return m_paragraph->DidExceedMaxLines();
 }
 
 void Paragraph::layout(double width) {
+  UIDartState::ThrowIfUIOperationsProhited();
   m_paragraph->Layout(width);
 }
 
 void Paragraph::paint(Canvas* canvas, double x, double y) {
+  UIDartState::ThrowIfUIOperationsProhited();
   SkCanvas* sk_canvas = canvas->canvas();
   if (!sk_canvas)
     return;
@@ -118,6 +128,7 @@ tonic::Float32List Paragraph::getRectsForRange(unsigned start,
                                                unsigned end,
                                                unsigned boxHeightStyle,
                                                unsigned boxWidthStyle) {
+  UIDartState::ThrowIfUIOperationsProhited();
   std::vector<txt::Paragraph::TextBox> boxes = m_paragraph->GetRectsForRange(
       start, end, static_cast<txt::Paragraph::RectHeightStyle>(boxHeightStyle),
       static_cast<txt::Paragraph::RectWidthStyle>(boxWidthStyle));
@@ -125,12 +136,14 @@ tonic::Float32List Paragraph::getRectsForRange(unsigned start,
 }
 
 tonic::Float32List Paragraph::getRectsForPlaceholders() {
+  UIDartState::ThrowIfUIOperationsProhited();
   std::vector<txt::Paragraph::TextBox> boxes =
       m_paragraph->GetRectsForPlaceholders();
   return EncodeTextBoxes(boxes);
 }
 
 Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
+  UIDartState::ThrowIfUIOperationsProhited();
   Dart_Handle result = Dart_NewListOf(Dart_CoreType_Int, 2);
   txt::Paragraph::PositionWithAffinity pos =
       m_paragraph->GetGlyphPositionAtCoordinate(dx, dy);
@@ -140,6 +153,7 @@ Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
 }
 
 Dart_Handle Paragraph::getWordBoundary(unsigned offset) {
+  UIDartState::ThrowIfUIOperationsProhited();
   txt::Paragraph::Range<size_t> point = m_paragraph->GetWordBoundary(offset);
   Dart_Handle result = Dart_NewListOf(Dart_CoreType_Int, 2);
   Dart_ListSetAt(result, 0, ToDart(point.start));
@@ -148,6 +162,7 @@ Dart_Handle Paragraph::getWordBoundary(unsigned offset) {
 }
 
 Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
+  UIDartState::ThrowIfUIOperationsProhited();
   std::vector<txt::LineMetrics> metrics = m_paragraph->GetLineMetrics();
   int line_start = -1;
   int line_end = -1;
@@ -165,6 +180,7 @@ Dart_Handle Paragraph::getLineBoundary(unsigned offset) {
 }
 
 tonic::Float64List Paragraph::computeLineMetrics() {
+  UIDartState::ThrowIfUIOperationsProhited();
   std::vector<txt::LineMetrics> metrics = m_paragraph->GetLineMetrics();
 
   // Layout:

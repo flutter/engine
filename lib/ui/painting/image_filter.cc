@@ -16,6 +16,7 @@
 namespace flutter {
 
 static void ImageFilter_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhited();
   DartCallConstructor(&ImageFilter::Create, args);
 }
 

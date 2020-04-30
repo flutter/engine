@@ -130,6 +130,7 @@ const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 }  // namespace
 
 static void ParagraphBuilder_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhited();
   DartCallConstructor(&ParagraphBuilder::create, args);
 }
 

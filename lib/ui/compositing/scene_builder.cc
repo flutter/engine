@@ -37,6 +37,7 @@
 namespace flutter {
 
 static void SceneBuilder_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhited();
   DartCallConstructor(&SceneBuilder::create, args);
 }
 

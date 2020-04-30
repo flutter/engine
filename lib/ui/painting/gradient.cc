@@ -17,6 +17,7 @@ typedef CanvasGradient
     Gradient;  // Because the C++ name doesn't match the Dart name.
 
 static void Gradient_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhited();
   DartCallConstructor(&CanvasGradient::Create, args);
 }
 

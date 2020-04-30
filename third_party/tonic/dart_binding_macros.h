@@ -9,6 +9,7 @@
 
 #define DART_NATIVE_CALLBACK(CLASS, METHOD)                 \
   static void CLASS##_##METHOD(Dart_NativeArguments args) { \
+    UIDartState::ThrowIfUIOperationsProhited();             \
     tonic::DartCall(&CLASS::METHOD, args);                  \
   }
 
