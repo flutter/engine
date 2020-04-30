@@ -129,6 +129,41 @@ void SessionConnection::OnSessionSizeChangeHint(float width_change_factor,
                                              height_change_factor);
 }
 
+fml::TimePoint SessionConnection::CalculateNextLatchPoint(
+    fml::TimePoint present_requested_time,
+    fml::TimePoint now,
+    fml::TimePoint last_latch_point_targeted,
+    fml::TimeDelta flutter_frame_build_time,
+    fml::TimeDelta vsync_interval,
+    std::deque<std::pair<fml::TimePoint, fml::TimePoint>>&
+        future_presentation_infos) {
+  fml::TimePoint minimum_latch_point_to_target =
+      std::max(now, present_requested_time + flutter_frame_build_time);
+
+  // Adjust by the last latch point we targeted so we don't inadvertently squash
+  // a frame. We add half a vsync interval to the last latch point due to latch
+  // point fuzziness.
+  minimum_latch_point_to_target =
+      std::max(minimum_latch_point_to_target,
+               last_latch_point_targeted + (vsync_interval / 2));
+
+  auto it = future_presentation_infos.begin();
+  while (it != future_presentation_infos.end()) {
+    fml::TimePoint latch_point = it->first;
+
+    if (latch_point >= minimum_latch_point_to_target) {
+      return latch_point;
+    }
+
+    it++;
+  }
+
+  FML_DCHECK(it == future_presentation_infos.end());
+
+  // It is our first presentation in a "while". Aim for the closest latch point.
+  return minimum_latch_point_to_target;
+}
+
 void SessionConnection::set_enable_wireframe(bool enable) {
   session_wrapper_.Enqueue(
       scenic::NewSetEnableDebugViewBoundsCmd(root_view_.id(), enable));
