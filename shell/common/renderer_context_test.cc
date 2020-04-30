@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "test_renderer_context.h"
+#include "renderer_context_test.h"
 
 namespace flutter {
 namespace testing {

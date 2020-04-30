@@ -9,7 +9,7 @@
 
 #include "flutter/shell/common/renderer_context_manager.h"
 #include "gtest/gtest.h"
-#include "test_renderer_context.h"
+#include "renderer_context_test.h"
 
 namespace flutter {
 namespace testing {

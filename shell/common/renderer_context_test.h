@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_TEST_RENDERER_CONTEXT_H_
-#define FLUTTER_SHELL_TEST_RENDERER_CONTEXT_H_
+#ifndef FLUTTER_SHELL_RENDERER_CONTEXT_TEST_H_
+#define FLUTTER_SHELL_RENDERER_CONTEXT_TEST_H_
 
 #include "flutter/fml/thread_local.h"
 #include "gtest/gtest.h"
@@ -47,4 +47,4 @@ class TestRendererContext : public RendererContext {
 };
 }  // namespace testing
 }  // namespace flutter
-#endif  // FLUTTER_SHELL_TEST_RENDERER_CONTEXT_H_
+#endif  // FLUTTER_SHELL_RENDERER_CONTEXT_TEST_H_
