@@ -13,7 +13,7 @@
 namespace flutter {
 
 static void ColorFilter_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhited();
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&ColorFilter::Create, args);
 }
 

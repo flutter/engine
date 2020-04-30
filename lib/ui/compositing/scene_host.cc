@@ -47,7 +47,7 @@ using SceneHostBindings = std::unordered_map<SceneHostBindingKey,
 static SceneHostBindings scene_host_bindings;
 
 void SceneHost_constructor(Dart_NativeArguments args) {
-  flutter::UIDartState::ThrowIfUIOperationsProhited();
+  flutter::UIDartState::ThrowIfUIOperationsProhibited();
   tonic::DartCallConstructor(&flutter::SceneHost::Create, args);
 }
 

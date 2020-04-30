@@ -36,7 +36,7 @@ class UIDartState : public tonic::DartState {
   Dart_Port main_port() const { return main_port_; }
   // Root isolate of the VM application
   bool IsRootIsolate() const { return is_root_isolate_; }
-  static void ThrowIfUIOperationsProhited();
+  static void ThrowIfUIOperationsProhibited();
 
   void SetDebugName(const std::string name);
 

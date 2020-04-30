@@ -21,7 +21,7 @@ namespace flutter {
 typedef CanvasPathMeasure PathMeasure;
 
 static void PathMeasure_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhited();
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&CanvasPathMeasure::Create, args);
 }
 

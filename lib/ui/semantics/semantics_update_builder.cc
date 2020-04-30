@@ -14,7 +14,7 @@
 namespace flutter {
 
 static void SemanticsUpdateBuilder_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhited();
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&SemanticsUpdateBuilder::create, args);
 }
 

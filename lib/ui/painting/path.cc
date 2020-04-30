@@ -21,7 +21,7 @@ namespace flutter {
 typedef CanvasPath Path;
 
 static void Path_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhited();
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&CanvasPath::CreateNew, args);
 }
 

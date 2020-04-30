@@ -28,7 +28,7 @@ void DecodeInts(const tonic::Int32List& ints, T* out) {
 }  // namespace
 
 static void Vertices_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhited();
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&Vertices::Create, args);
 }
 

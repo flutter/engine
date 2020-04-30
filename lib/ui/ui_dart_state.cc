@@ -64,7 +64,7 @@ void UIDartState::DidSetIsolate() {
   SetDebugName(debug_name.str());
 }
 
-void UIDartState::ThrowIfUIOperationsProhited() {
+void UIDartState::ThrowIfUIOperationsProhibited() {
   if (!UIDartState::Current()->IsRootIsolate()) {
     Dart_ThrowException(
         tonic::ToDart("UI actions are only available on root isolate."));
