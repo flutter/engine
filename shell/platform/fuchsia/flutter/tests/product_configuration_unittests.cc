@@ -21,6 +21,14 @@ TEST_F(ProductConfigurationTest, ValidVsyncOffset) {
   EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
 }
 
+TEST_F(ProductConfigurationTest, InvalidJsonString) {
+  const std::string json_string = "{ \"invalid json string\" }}} ";
+  const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
+
+  ProductConfiguration product_config = ProductConfiguration(json_string);
+  EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
+}
+
 TEST_F(ProductConfigurationTest, EmptyJsonString) {
   const std::string json_string = "";
   const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
@@ -37,17 +45,17 @@ TEST_F(ProductConfigurationTest, EmptyVsyncOffset) {
   EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
 }
 
-TEST_F(ProductConfigurationTest, NonIntegerVsyncOffset) {
-  const std::string json_string = "{ \"vsync_offset_in_us\" : 3.14159 } ";
-  const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
+TEST_F(ProductConfigurationTest, NegativeVsyncOffset) {
+  const std::string json_string = "{ \"vsync_offset_in_us\" : -15410 } ";
+  const fml::TimeDelta expected_offset =
+      fml::TimeDelta::FromMicroseconds(-15410);
 
   ProductConfiguration product_config = ProductConfiguration(json_string);
   EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
 }
 
-TEST_F(ProductConfigurationTest, NonNumberVsyncOffset) {
-  const std::string json_string =
-      "{ \"vsync_offset_in_us\" : \"not_an_offset\" } ";
+TEST_F(ProductConfigurationTest, NonIntegerVsyncOffset) {
+  const std::string json_string = "{ \"vsync_offset_in_us\" : 3.14159 } ";
   const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
 
   ProductConfiguration product_config = ProductConfiguration(json_string);

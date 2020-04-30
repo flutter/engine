@@ -23,7 +23,7 @@ class VsyncWaiter final : public flutter::VsyncWaiter {
   VsyncWaiter(std::string debug_label,
               zx_handle_t session_present_handle,
               flutter::TaskRunners task_runners,
-              ProductConfiguration product_config);
+              fml::TimeDelta vsync_offset);
 
   ~VsyncWaiter() override;
 

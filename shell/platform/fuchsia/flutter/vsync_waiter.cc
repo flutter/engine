@@ -22,11 +22,11 @@ namespace flutter_runner {
 VsyncWaiter::VsyncWaiter(std::string debug_label,
                          zx_handle_t session_present_handle,
                          flutter::TaskRunners task_runners,
-                         ProductConfiguration product_config)
+                         fml::TimeDelta vsync_offset)
     : flutter::VsyncWaiter(task_runners),
       debug_label_(std::move(debug_label)),
       session_wait_(session_present_handle, SessionPresentSignal),
-      vsync_offset_(product_config.get_vsync_offset()),
+      vsync_offset_(vsync_offset),
       weak_factory_(this),
       weak_factory_ui_(nullptr) {
   auto wait_handler = [&](async_dispatcher_t* dispatcher,   //
@@ -54,8 +54,13 @@ VsyncWaiter::VsyncWaiter(std::string debug_label,
       }));
   session_wait_.set_handler(wait_handler);
 
-  FML_LOG(INFO) << "Set vsync_offset to " << vsync_offset_.ToMicroseconds()
-                << "us";
+  if (vsync_offset_ >= fml::TimeDelta::FromSeconds(1)) {
+    FML_LOG(WARNING) << "Given vsync_offset is extremely high: "
+                     << vsync_offset_.ToMilliseconds() << "ms";
+  } else {
+    FML_LOG(INFO) << "Set vsync_offset to " << vsync_offset_.ToMicroseconds()
+                  << "us";
+  }
 }
 
 VsyncWaiter::~VsyncWaiter() {

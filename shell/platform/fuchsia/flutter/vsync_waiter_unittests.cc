@@ -29,9 +29,9 @@ class VsyncWaiterTest : public testing::Test {
 
   std::unique_ptr<flutter::VsyncWaiter> CreateVsyncWaiter(
       flutter::TaskRunners task_runners) {
-    flutter_runner::ProductConfiguration product_config;
     return std::make_unique<flutter_runner::VsyncWaiter>(
-        "VsyncWaiterTest", vsync_event_.get(), task_runners, product_config);
+        "VsyncWaiterTest", vsync_event_.get(), task_runners,
+        fml::TimeDelta::Zero());
   }
 
   void SignalVsyncEvent() {
