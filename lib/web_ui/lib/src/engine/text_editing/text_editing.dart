@@ -80,7 +80,7 @@ void _hideAutofillElements(html.HtmlElement domElement) {
 /// text fields with more than one text field.
 class EngineAutofillForm {
   EngineAutofillForm(
-      {this.formElement, this.elements, this.items, this.singleElement});
+      {this.formElement, this.elements, this.items});
 
   final html.FormElement formElement;
 
@@ -88,12 +88,13 @@ class EngineAutofillForm {
 
   final Map<String, AutofillInfo> items;
 
-  final bool singleElement;
-
   factory EngineAutofillForm.fromFrameworkMessage(
     Map<String, dynamic> focusedElementAutofill,
     List<dynamic> fields,
   ) {
+    // If there is only one text field in the autofill model, `fields` will be
+    // null. `focusedElementAutofill` contains the information about the one
+    // text field.
     final bool singleElement = (fields == null);
     final AutofillInfo focusedElement =
         AutofillInfo.fromFrameworkMessage(focusedElementAutofill);
@@ -101,7 +102,7 @@ class EngineAutofillForm {
     final Map<String, AutofillInfo> items = <String, AutofillInfo>{};
     final html.FormElement formElement = html.FormElement();
 
-    // Don't validate the fields on the form.
+    // Validation is in the framework side.
     formElement.noValidate = true;
 
     _hideAutofillElements(formElement);
@@ -112,7 +113,7 @@ class EngineAutofillForm {
         final AutofillInfo autofill =
             AutofillInfo.fromFrameworkMessage(autofillInfo);
 
-        // The main text editing element will not be created here.
+        // The focused text editing element will not be created here.
         if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
           EngineInputType engineInputType =
               EngineInputType.fromName(field['inputType']['name']);
@@ -133,7 +134,6 @@ class EngineAutofillForm {
       formElement: formElement,
       elements: elements,
       items: items,
-      singleElement: singleElement,
     );
   }
 
@@ -192,10 +192,19 @@ class EngineAutofillForm {
 class AutofillInfo {
   AutofillInfo({this.editingState, this.uniqueIdentifier, this.hint});
 
+  /// The current text and selection state of a text field.
   final EditingState editingState;
 
+  /// Unique value set by the developer.
+  ///
+  /// Used as id of the text field.
   final String uniqueIdentifier;
 
+  /// Attribute used for autofill.
+  ///
+  /// Used as a guidance to the browser as to the type of information expected
+  /// in the field.
+  /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
   final String hint;
 
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill) {
@@ -214,7 +223,7 @@ class AutofillInfo {
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
       element.name = hint;
-      element.id = hint;
+      element.id = uniqueIdentifier;
       element.autocomplete = hint;
       if (hint.contains('password')) {
         element.type = 'password';
