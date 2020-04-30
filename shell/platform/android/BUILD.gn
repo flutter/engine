@@ -65,6 +65,7 @@ shared_library("flutter_shell_native") {
     "//flutter/runtime",
     "//flutter/runtime:libdart",
     "//flutter/shell/common",
+    "//flutter/shell/platform/android/external_view_embedder",
     "//third_party/skia",
   ]
 

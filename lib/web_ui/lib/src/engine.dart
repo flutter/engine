@@ -103,6 +103,8 @@ part 'engine/surface/recording_canvas.dart';
 part 'engine/surface/scene.dart';
 part 'engine/surface/scene_builder.dart';
 part 'engine/surface/surface.dart';
+part 'engine/surface/path.dart';
+part 'engine/surface/surface_stats.dart';
 part 'engine/surface/transform.dart';
 part 'engine/test_embedding.dart';
 part 'engine/text/font_collection.dart';
@@ -113,6 +115,7 @@ part 'engine/text/ruler.dart';
 part 'engine/text/unicode_range.dart';
 part 'engine/text/word_break_properties.dart';
 part 'engine/text/word_breaker.dart';
+part 'engine/text_editing/autofill_hint.dart';
 part 'engine/text_editing/input_type.dart';
 part 'engine/text_editing/text_editing.dart';
 part 'engine/util.dart';
@@ -120,6 +123,16 @@ part 'engine/validators.dart';
 part 'engine/vector_math.dart';
 part 'engine/web_experiments.dart';
 part 'engine/window.dart';
+
+/// A benchmark metric that includes frame-related computations prior to
+/// submitting layer and picture operations to the underlying renderer, such as
+/// HTML and CanvasKit. During this phase we compute transforms, clips, and
+/// other information needed for rendering.
+const String kProfilePrerollFrame = 'preroll_frame';
+
+/// A benchmark metric that includes submitting layer and picture information
+/// to the renderer.
+const String kProfileApplyFrame = 'apply_frame';
 
 bool _engineInitialized = false;
 
@@ -187,8 +200,8 @@ void webOnlyInitializeEngine() {
         final int highResTimeMicroseconds = (1000 * highResTime).toInt();
 
         if (window._onBeginFrame != null) {
-          window
-              .invokeOnBeginFrame(Duration(microseconds: highResTimeMicroseconds));
+          window.invokeOnBeginFrame(
+              Duration(microseconds: highResTimeMicroseconds));
         }
 
         if (window._onDrawFrame != null) {
@@ -208,4 +221,37 @@ void webOnlyInitializeEngine() {
 class _NullTreeSanitizer implements html.NodeTreeSanitizer {
   @override
   void sanitizeTree(html.Node node) {}
+}
+
+/// Converts a matrix represented using [Float64List] to one represented using
+/// [Float32List].
+///
+/// 32-bit precision is sufficient because Flutter Engine itself (as well as
+/// Skia) use 32-bit precision under the hood anyway.
+///
+/// 32-bit matrices require 2x less memory and in V8 they are allocated on the
+/// JavaScript heap, thus avoiding a malloc.
+///
+/// See also:
+/// * https://bugs.chromium.org/p/v8/issues/detail?id=9199
+/// * https://bugs.chromium.org/p/v8/issues/detail?id=2022
+Float32List toMatrix32(Float64List matrix64) {
+  final Float32List matrix32 = Float32List(16);
+  matrix32[15] = matrix64[15];
+  matrix32[14] = matrix64[14];
+  matrix32[13] = matrix64[13];
+  matrix32[12] = matrix64[12];
+  matrix32[11] = matrix64[11];
+  matrix32[10] = matrix64[10];
+  matrix32[9] = matrix64[9];
+  matrix32[8] = matrix64[8];
+  matrix32[7] = matrix64[7];
+  matrix32[6] = matrix64[6];
+  matrix32[5] = matrix64[5];
+  matrix32[4] = matrix64[4];
+  matrix32[3] = matrix64[3];
+  matrix32[2] = matrix64[2];
+  matrix32[1] = matrix64[1];
+  matrix32[0] = matrix64[0];
+  return matrix32;
 }
