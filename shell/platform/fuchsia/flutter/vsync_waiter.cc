@@ -13,8 +13,6 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
-#include "rapidjson/document.h"
-#include "runtime/dart/utils/files.h"
 
 #include "product_configuration.h"
 #include "vsync_recorder.h"

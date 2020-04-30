@@ -4,9 +4,7 @@
 
 #include "product_configuration.h"
 
-#include "flutter/fml/logging.h"
 #include "rapidjson/document.h"
-#include "runtime/dart/utils/files.h"
 
 namespace flutter_runner {
 
