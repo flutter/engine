@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <mutex>
 #include <utility>
 
 #include "flutter/fml/ascii_trie.h"
@@ -26,8 +27,7 @@ namespace tracing {
 namespace {
 AsciiTrie gWhitelist;
 
-struct CachedTimelineEvent
-{
+struct CachedTimelineEvent {
   const char* label_;
   int64_t timestamp0_;
   int64_t timestamp1_or_async_id_;
@@ -57,8 +57,8 @@ inline void CacheTimelineEvent(const char* label,
   const std::lock_guard<std::mutex> lock(gCachedTimelineEventsMutex);
   // TODO(chenjianguang): Cache events with arguments.
   std::unique_ptr<CachedTimelineEvent> event =
-      std::make_unique<CachedTimelineEvent>(
-          label, timestamp0, timestamp1_or_async_id, type);
+      std::make_unique<CachedTimelineEvent>(label, timestamp0,
+                                            timestamp1_or_async_id, type);
   gCachedTimelineEvents.push_back(std::move(event));
 }
 
@@ -93,8 +93,8 @@ void FlushCachedTimelineEvents() {
   const std::lock_guard<std::mutex> lock(gCachedTimelineEventsMutex);
   for (const auto& event : gCachedTimelineEvents) {
     Dart_TimelineEvent(event->label_, event->timestamp0_,
-                       event->timestamp1_or_async_id_, event->type_,
-                       0, nullptr, nullptr);
+                       event->timestamp1_or_async_id_, event->type_, 0, nullptr,
+                       nullptr);
   }
   gCachedTimelineEvents.clear();
 
