@@ -1,4 +1,4 @@
-Signature: e42310bb53625f73303674bbc9475ae2
+Signature: ce550fece442a3656aa95225c88fe704
 
 UNUSED LICENSES:
 
@@ -7758,6 +7758,7 @@ FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
 FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
 FILE: ../../../third_party/dart/runtime/vm/field_table.cc
 FILE: ../../../third_party/dart/runtime/vm/field_table.h
+FILE: ../../../third_party/dart/runtime/vm/heap/tlab.h
 FILE: ../../../third_party/dart/runtime/vm/port_set.h
 FILE: ../../../third_party/dart/runtime/vm/tagged_pointer.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
