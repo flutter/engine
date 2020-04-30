@@ -79,8 +79,7 @@ void _hideAutofillElements(html.HtmlElement domElement) {
 /// These values are to be used when autofill is enabled and there is a group of
 /// text fields with more than one text field.
 class EngineAutofillForm {
-  EngineAutofillForm(
-      {this.formElement, this.elements, this.items});
+  EngineAutofillForm({this.formElement, this.elements, this.items});
 
   final html.FormElement formElement;
 
