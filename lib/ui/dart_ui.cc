@@ -90,8 +90,8 @@ void DartUI::InitForGlobal() {
 
 void DartUI::InitForIsolate() {
   FML_DCHECK(g_natives);
-  Dart_Handle result = Dart_SetNativeResolver(Dart_LookupLibrary(
-      ToDart("dart:ui")), GetNativeFunction, GetSymbol);
+  Dart_Handle result = Dart_SetNativeResolver(
+      Dart_LookupLibrary(ToDart("dart:ui")), GetNativeFunction, GetSymbol);
   if (Dart_IsError(result)) {
     Dart_PropagateError(result);
   }
