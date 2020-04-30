@@ -147,6 +147,8 @@ class WeakPtr {
 template <typename T>
 class TaskRunnerAffineWeakPtr : public WeakPtr<T> {
  public:
+  TaskRunnerAffineWeakPtr() : WeakPtr<T>() {}
+
   TaskRunnerAffineWeakPtr(const TaskRunnerAffineWeakPtr<T>& r) = default;
 
   template <typename U>
@@ -161,6 +163,12 @@ class TaskRunnerAffineWeakPtr : public WeakPtr<T> {
         checker_(r.checker_) {}
 
   ~TaskRunnerAffineWeakPtr() = default;
+
+  TaskRunnerAffineWeakPtr<T>& operator=(const TaskRunnerAffineWeakPtr<T>& r) =
+      default;
+
+  TaskRunnerAffineWeakPtr<T>& operator=(TaskRunnerAffineWeakPtr<T>&& r) =
+      default;
 
  protected:
   void CheckThreadSafety() const override {
