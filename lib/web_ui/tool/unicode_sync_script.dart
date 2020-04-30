@@ -2,20 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(mdebbar): To reduce the size of generated code, we could pack the data
-//   into a smaller format, e.g:
-//
-// ```dart
-// const _rawData = [
-//   0x000A, 0x000A, 1,
-//   0x000B, 0x000C, 2,
-//   0x000D, 0x000D, 3,
-//   0x0020, 0x0020, 4,
-//   // ...
-// ];
-// ```
-//
-// Then we could lazily build the lookup instance on demand.
 // @dart = 2.6
 import 'dart:io';
 
@@ -46,7 +32,7 @@ class PropertyTuple {
 
   final int start;
   final int end;
-  final String property;
+  final EnumValue property;
 
   /// Checks if there's an overlap between this tuple's range and [other]'s
   /// range.
@@ -163,11 +149,13 @@ abstract class PropertiesSyncer {
   final bool _dryRun;
 
   String get prefix;
+  String get enumDocLink;
 
   void perform() async {
     final List<String> lines = await File(_src).readAsLines();
     final List<String> header = extractHeader(lines);
-    final List<PropertyTuple> data = processLines(lines);
+    final PropertyCollection data = PropertyCollection.fromLines(lines);
+
     final String output = template(header, data);
 
     if (_dryRun) {
@@ -178,8 +166,7 @@ abstract class PropertiesSyncer {
     }
   }
 
-  @override
-  String template(List<String> header, List<PropertyTuple> data) {
+  String template(List<String> header, PropertyCollection data) {
     return '''
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
@@ -194,39 +181,40 @@ abstract class PropertiesSyncer {
 // @dart = 2.6
 part of engine;
 
+/// For an explanation of these enum values, see:
+///
+/// * ${enumDocLink}
 enum ${prefix}CharProperty {
-  ${getEnumValues(data).join(',\n  ')}
+  ${getEnumValues(data.enumCollection).join('\n  ')}
 }
 
-const UnicodePropertyLookup<${prefix}CharProperty> ${prefix.toLowerCase()}Lookup =
-    UnicodePropertyLookup<${prefix}CharProperty>(<UnicodeRange<${prefix}CharProperty>>[
-  ${getLookupEntries(data).join(',\n  ')}
-]);
+const String _packed${prefix}BreakProperties =
+  '${packProperties(data)}';
+
+
+UnicodePropertyLookup<${prefix}CharProperty> ${prefix.toLowerCase()}Lookup =
+    UnicodePropertyLookup<${prefix}CharProperty>.fromPackedData(
+  _packed${prefix}BreakProperties,
+  ${prefix}CharProperty.values,
+);
 ''';
   }
 
-  Iterable<String> getEnumValues(List<PropertyTuple> data) {
-    return Set<String>.from(
-            data.map<String>((PropertyTuple tuple) => tuple.property))
-        .map(normalizePropertyName);
-  }
-
-  Iterable<String> getLookupEntries(List<PropertyTuple> data) {
-    data.sort(
-      // Ranges don't overlap so it's safe to sort based on the start of each
-      // range.
-      (PropertyTuple tuple1, PropertyTuple tuple2) =>
-          tuple1.start.compareTo(tuple2.start),
+  Iterable<String> getEnumValues(EnumCollection enumCollection) {
+    return enumCollection.values.map(
+      (EnumValue value) =>
+          '${value.enumName}, // serialized as "${value.serialized}"',
     );
-    verifyNoOverlappingRanges(data);
-    return combineAdjacentRanges(data)
-        .map((PropertyTuple tuple) => generateLookupEntry(tuple));
   }
 
-  String generateLookupEntry(PropertyTuple tuple) {
-    final String propertyStr =
-        '${prefix}CharProperty.${normalizePropertyName(tuple.property)}';
-    return 'UnicodeRange<${prefix}CharProperty>(${toHex(tuple.start)}, ${toHex(tuple.end)}, $propertyStr)';
+  String packProperties(PropertyCollection data) {
+    final StringBuffer buffer = StringBuffer();
+    for (final PropertyTuple tuple in data.tuples) {
+      buffer.write(tuple.start.toRadixString(36).padLeft(4, '0'));
+      buffer.write(tuple.end.toRadixString(36).padLeft(4, '0'));
+      buffer.write(tuple.property.serialized);
+    }
+    return buffer.toString();
   }
 }
 
@@ -236,6 +224,7 @@ class WordBreakPropertiesSyncer extends PropertiesSyncer {
   WordBreakPropertiesSyncer.dry(String src) : super.dry(src);
 
   final String prefix = 'Word';
+  final String enumDocLink = 'http://unicode.org/reports/tr29/#Table_Word_Break_Property_Values';
 }
 
 /// Syncs Unicode's line break properties.
@@ -244,20 +233,131 @@ class LineBreakPropertiesSyncer extends PropertiesSyncer {
   LineBreakPropertiesSyncer.dry(String src) : super.dry(src);
 
   final String prefix = 'Line';
+  final String enumDocLink = 'https://unicode.org/reports/tr14/#DescriptionOfProperties';
+}
+
+/// Holds the collection of properties parsed from the unicode spec file.
+class PropertyCollection {
+  PropertyCollection.fromLines(List<String> lines) {
+    final List<PropertyTuple> unprocessedTuples = lines
+        .map(removeCommentFromLine)
+        .where((String line) => line.isNotEmpty)
+        .map(parseLineIntoPropertyTuple)
+        .toList();
+    tuples = processTuples(unprocessedTuples);
+  }
+
+  List<PropertyTuple> tuples;
+
+  final EnumCollection enumCollection = EnumCollection();
+
+  /// Examples:
+  ///
+  /// 00C0..00D6    ; ALetter
+  /// 037F          ; ALetter
+  ///
+  /// Would be parsed into:
+  ///
+  /// ```dart
+  /// PropertyTuple(192, 214, EnumValue('ALetter'));
+  /// PropertyTuple(895, 895, EnumValue('ALetter'));
+  /// ```
+  PropertyTuple parseLineIntoPropertyTuple(String line) {
+    final List<String> split = line.split(';');
+    final String rangeStr = split[0].trim();
+    final String propertyStr = split[1].trim();
+
+    return PropertyTuple(
+      getRangeStart(rangeStr),
+      getRangeEnd(rangeStr),
+      enumCollection.add(propertyStr),
+    );
+  }
+}
+
+/// Represents the collection of values of an enum.
+class EnumCollection {
+  final List<EnumValue> values = <EnumValue>[];
+
+  EnumValue add(String name) {
+    final int index =
+        values.indexWhere((EnumValue value) => value.name == name);
+    EnumValue value;
+    if (index == -1) {
+      value = EnumValue(values.length, name);
+      values.add(value);
+    } else {
+      value = values[index];
+    }
+    return value;
+  }
+}
+
+/// Represents a single value in an [EnumCollection].
+class EnumValue {
+  EnumValue(this.index, this.name);
+
+  final int index;
+  final String name;
+
+  /// Returns a serialized, compact format of the enum value.
+  ///
+  /// Enum values are serialized based on their index. We start serializing them
+  /// to "A", "B", "C", etc until we reach "Z". Then we continue with "a", "b",
+  /// "c", etc.
+  String get serialized {
+    // "A" <=> 65
+    // "Z" <=> 90
+    // "a" <=> 97
+    // "z" <=> 122
+
+    // We assign uppercase letters to the first 26 enum values.
+    if (index < 26) {
+      return String.fromCharCode(65 + index);
+    }
+    // Enum values above 26 will be assigned a lowercase letter.
+    return String.fromCharCode(97 + index - 26);
+  }
+
+  /// Returns the enum name that'll be used in the Dart code.
+  ///
+  /// ```dart
+  /// enum CharProperty {
+  ///   ALetter, // <-- this is the name returned by this method ("ALetter").
+  ///   Numeric,
+  ///   // etc...
+  /// }
+  /// ```
+  String get enumName {
+    return name.replaceAll('_', '');
+  }
+}
+
+/// Sorts tuples and combines adjacent tuples that have ranges that can be
+/// merged.
+Iterable<PropertyTuple> processTuples(List<PropertyTuple> data) {
+  data.sort(
+    // Ranges don't overlap so it's safe to sort based on the start of each
+    // range.
+    (PropertyTuple tuple1, PropertyTuple tuple2) =>
+        tuple1.start.compareTo(tuple2.start),
+  );
+  verifyNoOverlappingRanges(data);
+  return combineAdjacentRanges(data);
 }
 
 /// Example:
 ///
 /// ```
-/// UnicodeRange<CharProperty>(0x01C4, 0x0293, CharProperty.ALetter),
-/// UnicodeRange<CharProperty>(0x0294, 0x0294, CharProperty.ALetter),
-/// UnicodeRange<CharProperty>(0x0295, 0x02AF, CharProperty.ALetter),
+/// 0x01C4..0x0293; ALetter
+/// 0x0294..0x0294; ALetter
+/// 0x0295..0x02AF; ALetter
 /// ```
 ///
 /// will get combined into:
 ///
 /// ```
-/// UnicodeRange<CharProperty>(0x01C4, 0x02AF, CharProperty.ALetter)
+/// 0x01C4..0x02AF; ALetter
 /// ```
 List<PropertyTuple> combineAdjacentRanges(List<PropertyTuple> data) {
   final List<PropertyTuple> result = <PropertyTuple>[data.first];
@@ -282,10 +382,6 @@ int getRangeEnd(String range) {
   return int.parse(range, radix: 16);
 }
 
-String toHex(int value) {
-  return '0x${value.toRadixString(16).padLeft(4, '0').toUpperCase()}';
-}
-
 void verifyNoOverlappingRanges(List<PropertyTuple> data) {
   for (int i = 1; i < data.length; i++) {
     if (data[i].isOverlapping(data[i - 1])) {
@@ -307,45 +403,7 @@ List<String> extractHeader(List<String> lines) {
   return headerLines;
 }
 
-List<PropertyTuple> processLines(List<String> lines) {
-  return lines
-      .map(removeCommentFromLine)
-      .where((String line) => line.isNotEmpty)
-      .map(parseLineIntoPropertyTuple)
-      .toList();
-}
-
-String normalizePropertyName(String property) {
-  return property.replaceAll('_', '');
-}
-
 String removeCommentFromLine(String line) {
   final int poundIdx = line.indexOf('#');
   return (poundIdx == -1) ? line : line.substring(0, poundIdx);
-}
-
-/// Examples:
-///
-/// 00C0..00D6    ; ALetter
-/// 037F          ; ALetter
-///
-/// Would be parsed into:
-///
-/// ```dart
-/// PropertyTuple(192, 214, 'ALetter');
-/// PropertyTuple(895, 895, 'ALetter');
-/// ```
-PropertyTuple parseLineIntoPropertyTuple(String line) {
-  final List<String> split = line.split(';');
-  final String rangeStr = split[0].trim();
-  final String propertyStr = split[1].trim();
-
-  final List<String> rangeSplit = rangeStr.contains('..')
-      ? rangeStr.split('..')
-      : <String>[rangeStr, rangeStr];
-  return PropertyTuple(
-    int.parse(rangeSplit[0], radix: 16),
-    int.parse(rangeSplit[1], radix: 16),
-    propertyStr,
-  );
 }
