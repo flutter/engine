@@ -20,7 +20,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputMethodManager;
-import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
@@ -34,6 +33,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
   private int mBatchCount;
   private InputMethodManager mImm;
   private final Layout mLayout;
+  private FlutterTextUtils flutterTextUtils;
 
   private boolean mRepeatCheckNeeded = false;
   private TextEditingValue mLastSentTextEditngValue;
@@ -90,7 +90,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
       int client,
       TextInputChannel textInputChannel,
       Editable editable,
-      EditorInfo editorInfo) {
+      EditorInfo editorInfo,
+      FlutterJNI flutterJNI) {
     super(view, true);
     mFlutterView = view;
     mClient = client;
@@ -98,6 +99,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     mEditable = editable;
     mEditorInfo = editorInfo;
     mBatchCount = 0;
+    this.flutterTextUtils = new FlutterTextUtils(flutterJNI);
     // We create a dummy Layout with max width so that the selection
     // shifting acts as if all text were in one line.
     mLayout =
@@ -112,69 +114,13 @@ class InputConnectionAdaptor extends BaseInputConnection {
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
   }
 
-  interface TextUtils {
-    public static final int LINE_FEED = 0x0A;
-    public static final int CARRIAGE_RETURN = 0x0D;
-    public static final int COMBINING_ENCLOSING_KEYCAP = 0x20E3;
-    public static final int CANCEL_TAG = 0xE007F;
-    public static final int ZERO_WIDTH_JOINER = 0x200D;
-
-    public boolean isEmoji(int codePoint);
-
-    public boolean isEmojiModifier(int codePoint);
-
-    public boolean isEmojiModifierBase(int codePoint);
-
-    public boolean isVariationSelector(int codePoint);
-
-    public boolean isRegionalIndicatorSymbol(int codePoint);
-
-    public boolean isTagSpecChar(int codePoint);
-
-    public boolean isKeycapBase(int codePoint);
-  }
-
-  private TextUtils textUtils =
-      new TextUtils() {
-        @Override
-        public boolean isEmoji(int codePoint) {
-          return FlutterJNI.nativeTextUtilsIsEmoji(codePoint);
-        }
-
-        @Override
-        public boolean isEmojiModifier(int codePoint) {
-          return FlutterJNI.nativeTextUtilsIsEmojiModifier(codePoint);
-        }
-
-        @Override
-        public boolean isEmojiModifierBase(int codePoint) {
-          return FlutterJNI.nativeTextUtilsIsEmojiModifierBase(codePoint);
-        }
-
-        @Override
-        public boolean isVariationSelector(int codePoint) {
-          return FlutterJNI.nativeTextUtilsIsVariationSelector(codePoint);
-        }
-
-        @Override
-        public boolean isRegionalIndicatorSymbol(int codePoint) {
-          return FlutterJNI.nativeTextUtilsIsRegionalIndicator(codePoint);
-        }
-
-        @Override
-        public boolean isTagSpecChar(int codePoint) {
-          return 0xE0020 <= codePoint && codePoint <= 0xE007E;
-        }
-
-        @Override
-        public boolean isKeycapBase(int codePoint) {
-          return ('0' <= codePoint && codePoint <= '9') || codePoint == '#' || codePoint == '*';
-        }
-      };
-
-  @VisibleForTesting
-  void setTextUtils(TextUtils value) {
-    textUtils = value;
+  public InputConnectionAdaptor(
+      View view,
+      int client,
+      TextInputChannel textInputChannel,
+      Editable editable,
+      EditorInfo editorInfo) {
+    this(view, client, textInputChannel, editable, editorInfo, new FlutterJNI());
   }
 
   // Send the current state of the editable to Flutter.
@@ -329,134 +275,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
     return clamped;
   }
 
-  public int getOffsetBefore(int offset) {
-    if (offset <= 1) {
-      return 0;
-    }
-
-    int codePoint = Character.codePointBefore(mEditable, offset);
-    int deleteCharCount = Character.charCount(codePoint);
-    int lastOffset = offset - deleteCharCount;
-
-    if (lastOffset == 0) {
-      return 0;
-    }
-
-    // Line Feed
-    if (codePoint == TextUtils.LINE_FEED) {
-      codePoint = Character.codePointBefore(mEditable, lastOffset);
-      if (codePoint == TextUtils.CARRIAGE_RETURN) {
-        ++deleteCharCount;
-      }
-      return offset - deleteCharCount;
-    }
-
-    // Flags
-    if (textUtils.isRegionalIndicatorSymbol(codePoint)) {
-      codePoint = Character.codePointBefore(mEditable, lastOffset);
-      lastOffset -= Character.charCount(codePoint);
-      int regionalIndicatorSymbolCount = 1;
-      while (lastOffset > 0 && textUtils.isRegionalIndicatorSymbol(codePoint)) {
-        codePoint = Character.codePointBefore(mEditable, lastOffset);
-        lastOffset -= Character.charCount(codePoint);
-        regionalIndicatorSymbolCount++;
-      }
-      if (regionalIndicatorSymbolCount % 2 == 0) {
-        deleteCharCount += 2;
-      }
-      return offset - deleteCharCount;
-    }
-
-    // Keycaps
-    if (codePoint == TextUtils.COMBINING_ENCLOSING_KEYCAP) {
-      codePoint = Character.codePointBefore(mEditable, lastOffset);
-      lastOffset -= Character.charCount(codePoint);
-      if (lastOffset > 0 && textUtils.isVariationSelector(codePoint)) {
-        int tmpCodePoint = Character.codePointBefore(mEditable, lastOffset);
-        if (textUtils.isKeycapBase(tmpCodePoint)) {
-          deleteCharCount += Character.charCount(codePoint) + Character.charCount(tmpCodePoint);
-        }
-      } else if (textUtils.isKeycapBase(codePoint)) {
-        deleteCharCount += Character.charCount(codePoint);
-      }
-      return offset - deleteCharCount;
-    }
-
-    // Emoji Tag Sequence
-    if (codePoint == TextUtils.CANCEL_TAG) { // tag_base
-      codePoint = Character.codePointBefore(mEditable, lastOffset);
-      lastOffset -= Character.charCount(codePoint);
-      while (lastOffset > 0 && textUtils.isTagSpecChar(codePoint)) { // tag_spec
-        deleteCharCount += Character.charCount(codePoint);
-        codePoint = Character.codePointBefore(mEditable, lastOffset);
-        lastOffset -= Character.charCount(codePoint);
-      }
-      if (lastOffset == 0) { // tag_end not found. Just delete the end.
-        return 2;
-      }
-      deleteCharCount += Character.charCount(codePoint);
-    }
-
-    if (textUtils.isVariationSelector(codePoint)) {
-      codePoint = Character.codePointBefore(mEditable, lastOffset);
-      if (!textUtils.isEmoji(codePoint)) {
-        return offset - deleteCharCount;
-      }
-      deleteCharCount += Character.charCount(codePoint);
-
-      lastOffset -= deleteCharCount;
-    }
-
-    if (textUtils.isEmoji(codePoint)) {
-      boolean isZwj = false;
-      int lastSeenVariantSelectorCharCount = 0;
-      do {
-        if (isZwj) {
-          deleteCharCount += Character.charCount(codePoint) + lastSeenVariantSelectorCharCount + 1;
-          isZwj = false;
-        }
-        lastSeenVariantSelectorCharCount = 0;
-        if (textUtils.isEmojiModifier(codePoint)) {
-          codePoint = Character.codePointBefore(mEditable, lastOffset);
-          lastOffset -= Character.charCount(codePoint);
-          if (lastOffset > 0 && textUtils.isVariationSelector(codePoint)) {
-            codePoint = Character.codePointBefore(mEditable, lastOffset);
-            if (!textUtils.isEmoji(codePoint)) {
-              return offset - deleteCharCount;
-            }
-            lastSeenVariantSelectorCharCount = Character.charCount(codePoint);
-            lastOffset -= Character.charCount(codePoint);
-          }
-          if (textUtils.isEmojiModifierBase(codePoint)) {
-            deleteCharCount += lastSeenVariantSelectorCharCount + Character.charCount(codePoint);
-          }
-          break;
-        }
-
-        if (lastOffset > 0) {
-          codePoint = Character.codePointBefore(mEditable, lastOffset);
-          lastOffset -= Character.charCount(codePoint);
-          if (codePoint == TextUtils.ZERO_WIDTH_JOINER) {
-            isZwj = true;
-            codePoint = Character.codePointBefore(mEditable, lastOffset);
-            lastOffset -= Character.charCount(codePoint);
-            if (lastOffset > 0 && textUtils.isVariationSelector(codePoint)) {
-              codePoint = Character.codePointBefore(mEditable, lastOffset);
-              lastSeenVariantSelectorCharCount = Character.charCount(codePoint);
-              lastOffset -= Character.charCount(codePoint);
-            }
-          }
-        }
-
-        if (lastOffset == 0) {
-          break;
-        }
-      } while (isZwj && textUtils.isEmoji(codePoint));
-    }
-
-    return offset - deleteCharCount;
-  }
-
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
     markDirty();
@@ -466,7 +284,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
         int selEnd = clampIndexToEditable(Selection.getSelectionEnd(mEditable), mEditable);
         if (selStart == selEnd && selStart > 0) {
           // Extend selection to left of the last character
-          selStart = getOffsetBefore(selStart);
+          selStart = flutterTextUtils.getOffsetBefore(mEditable, selStart);
         }
         if (selEnd > selStart) {
           // Delete the selection.

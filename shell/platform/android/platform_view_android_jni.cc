@@ -485,31 +485,33 @@ static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
       );
 }
 
-static jboolean TextUtilsIsEmoji(JNIEnv* env, jclass jcaller, jint codePoint) {
+static jboolean FlutterTextUtilsIsEmoji(JNIEnv* env,
+                                        jobject obj,
+                                        jint codePoint) {
   return u_hasBinaryProperty(codePoint, UProperty::UCHAR_EMOJI);
 }
 
-static jboolean TextUtilsIsEmojiModifier(JNIEnv* env,
-                                         jclass jcaller,
-                                         jint codePoint) {
+static jboolean FlutterTextUtilsIsEmojiModifier(JNIEnv* env,
+                                                jobject obj,
+                                                jint codePoint) {
   return u_hasBinaryProperty(codePoint, UProperty::UCHAR_EMOJI_MODIFIER);
 }
 
-static jboolean TextUtilsIsEmojiModifierBase(JNIEnv* env,
-                                             jclass jcaller,
-                                             jint codePoint) {
+static jboolean FlutterTextUtilsIsEmojiModifierBase(JNIEnv* env,
+                                                    jobject obj,
+                                                    jint codePoint) {
   return u_hasBinaryProperty(codePoint, UProperty::UCHAR_EMOJI_MODIFIER_BASE);
 }
 
-static jboolean TextUtilsIsVariationSelector(JNIEnv* env,
-                                             jclass jcaller,
-                                             jint codePoint) {
+static jboolean FlutterTextUtilsIsVariationSelector(JNIEnv* env,
+                                                    jobject obj,
+                                                    jint codePoint) {
   return u_hasBinaryProperty(codePoint, UProperty::UCHAR_VARIATION_SELECTOR);
 }
 
-static jboolean TextUtilsIsRegionalIndicator(JNIEnv* env,
-                                             jclass jcaller,
-                                             jint codePoint) {
+static jboolean FlutterTextUtilsIsRegionalIndicator(JNIEnv* env,
+                                                    jobject obj,
+                                                    jint codePoint) {
   return u_hasBinaryProperty(codePoint, UProperty::UCHAR_REGIONAL_INDICATOR);
 }
 bool RegisterApi(JNIEnv* env) {
@@ -628,31 +630,34 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&LookupCallbackInformation),
       },
 
-      // Start of methods for TextUtils
+      // Start of methods for FlutterTextUtils
       {
-          .name = "nativeTextUtilsIsEmoji",
+          .name = "nativeFlutterTextUtilsIsEmoji",
           .signature = "(I)Z",
-          .fnPtr = reinterpret_cast<void*>(&TextUtilsIsEmoji),
+          .fnPtr = reinterpret_cast<void*>(&FlutterTextUtilsIsEmoji),
       },
       {
-          .name = "nativeTextUtilsIsEmojiModifier",
+          .name = "nativeFlutterTextUtilsIsEmojiModifier",
           .signature = "(I)Z",
-          .fnPtr = reinterpret_cast<void*>(&TextUtilsIsEmojiModifier),
+          .fnPtr = reinterpret_cast<void*>(&FlutterTextUtilsIsEmojiModifier),
       },
       {
-          .name = "nativeTextUtilsIsEmojiModifierBase",
+          .name = "nativeFlutterTextUtilsIsEmojiModifierBase",
           .signature = "(I)Z",
-          .fnPtr = reinterpret_cast<void*>(&TextUtilsIsEmojiModifierBase),
+          .fnPtr =
+              reinterpret_cast<void*>(&FlutterTextUtilsIsEmojiModifierBase),
       },
       {
-          .name = "nativeTextUtilsIsVariationSelector",
+          .name = "nativeFlutterTextUtilsIsVariationSelector",
           .signature = "(I)Z",
-          .fnPtr = reinterpret_cast<void*>(&TextUtilsIsVariationSelector),
+          .fnPtr =
+              reinterpret_cast<void*>(&FlutterTextUtilsIsVariationSelector),
       },
       {
-          .name = "nativeTextUtilsIsRegionalIndicator",
+          .name = "nativeFlutterTextUtilsIsRegionalIndicator",
           .signature = "(I)Z",
-          .fnPtr = reinterpret_cast<void*>(&TextUtilsIsRegionalIndicator),
+          .fnPtr =
+              reinterpret_cast<void*>(&FlutterTextUtilsIsRegionalIndicator),
       },
   };
 
