@@ -16,7 +16,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
 #include "isolate_configurator.h"
-#include "product_configuration.h"
+#include "flutter_runner_product_configuration.h"
 #include "thread.h"
 
 namespace flutter_runner {
@@ -39,7 +39,7 @@ class Engine final {
          fuchsia::ui::views::ViewToken view_token,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-         ProductConfiguration product_config);
+         FlutterRunnerProductConfiguration product_config);
   ~Engine();
 
   // Returns the Dart return code for the root isolate if one is present. This

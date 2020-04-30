@@ -18,7 +18,7 @@
 #include "flutter/shell/common/run_configuration.h"
 #include "fuchsia_intl.h"
 #include "platform_view.h"
-#include "product_configuration.h"
+#include "flutter_runner_product_configuration.h"
 #include "runtime/dart/utils/files.h"
 #include "task_runner_adapter.h"
 #include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
@@ -59,7 +59,7 @@ Engine::Engine(Delegate& delegate,
                fuchsia::ui::views::ViewToken view_token,
                UniqueFDIONS fdio_ns,
                fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-               ProductConfiguration product_config)
+               FlutterRunnerProductConfiguration product_config)
     : delegate_(delegate),
       thread_label_(std::move(thread_label)),
       settings_(std::move(settings)),

@@ -14,7 +14,7 @@
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
 
-#include "product_configuration.h"
+#include "flutter_runner_product_configuration.h"
 #include "vsync_recorder.h"
 
 namespace flutter_runner {

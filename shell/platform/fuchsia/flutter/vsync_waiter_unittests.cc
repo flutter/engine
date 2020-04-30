@@ -14,7 +14,7 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiter.h"
-#include "flutter/shell/platform/fuchsia/flutter/product_configuration.h"
+#include "flutter/shell/platform/fuchsia/flutter/flutter_runner_product_configuration.h"
 #include "flutter/shell/platform/fuchsia/flutter/task_runner_adapter.h"
 #include "flutter/shell/platform/fuchsia/flutter/thread.h"
 #include "flutter/shell/platform/fuchsia/flutter/vsync_waiter.h"

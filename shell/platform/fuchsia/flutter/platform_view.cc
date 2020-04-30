@@ -13,7 +13,7 @@
 #include "flutter/lib/ui/window/pointer_data.h"
 #include "flutter/lib/ui/window/window.h"
 #include "logging.h"
-#include "product_configuration.h"
+#include "flutter_runner_product_configuration.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -93,7 +93,7 @@ PlatformView::PlatformView(
     OnSizeChangeHint session_size_change_hint_callback,
     OnEnableWireframe wireframe_enabled_callback,
     zx_handle_t vsync_event_handle,
-    ProductConfiguration product_config)
+    FlutterRunnerProductConfiguration product_config)
     : flutter::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
       view_ref_(std::move(view_ref)),

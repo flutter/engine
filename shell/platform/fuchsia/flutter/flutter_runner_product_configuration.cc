@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "product_configuration.h"
+#include "flutter_runner_product_configuration.h"
 
 #include "rapidjson/document.h"
 
 namespace flutter_runner {
 
-ProductConfiguration::ProductConfiguration(std::string json_string) {
+FlutterRunnerProductConfiguration::FlutterRunnerProductConfiguration(std::string json_string) {
   rapidjson::Document document;
   document.Parse(json_string);
 

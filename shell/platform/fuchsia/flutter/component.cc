@@ -35,7 +35,7 @@
 #include "runtime/dart/utils/tempfs.h"
 #include "runtime/dart/utils/vmo.h"
 
-#include "product_configuration.h"
+#include "flutter_runner_product_configuration.h"
 #include "task_observers.h"
 #include "task_runner_adapter.h"
 #include "thread.h"
@@ -319,7 +319,7 @@ Application::Application(
   std::string json_string;
   if (dart_utils::ReadFileToString(
           "/config/data/frame_scheduling_performance_values", &json_string)) {
-    product_config_ = ProductConfiguration(json_string);
+    product_config_ = FlutterRunnerProductConfiguration(json_string);
   }
 
 #if defined(DART_PRODUCT)
