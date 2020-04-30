@@ -51,7 +51,7 @@ class StreamHandlerFunctions : public StreamHandler<T> {
     }
 
     auto error = std::make_unique<StreamHandlerError<T>>(
-        "error", "Not found StreamHandlerListen hander", nullptr);
+        "error", "No OnListen handler set", nullptr);
     return std::move(error);
   }
 
@@ -63,7 +63,7 @@ class StreamHandlerFunctions : public StreamHandler<T> {
     }
 
     auto error = std::make_unique<StreamHandlerError<T>>(
-        "error", "Not found StreamHandlerCancel hander", nullptr);
+        "error", "No OnCancel handler set", nullptr);
     return std::move(error);
   }
 

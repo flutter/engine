@@ -25,10 +25,10 @@ struct StreamHandlerError {
 
 // Handler of stream setup and tear-down requests.
 // Implementations must be prepared to accept sequences of alternating calls to
-// onListen() and onCancel(). Implementations should ideally consume no
-// resources when the last such call is not onListen(). In typical situations,
+// OnListen() and OnCancel(). Implementations should ideally consume no
+// resources when the last such call is not OnListen(). In typical situations,
 // this means that the implementation should register itself with
-// platform-specific event sources onListen() and deregister again onCancel().
+// platform-specific event sources OnListen() and deregister again OnCancel().
 template <typename T>
 class StreamHandler {
  public:
@@ -39,8 +39,8 @@ class StreamHandler {
   StreamHandler(StreamHandler const&) = delete;
   StreamHandler& operator=(StreamHandler const&) = delete;
 
-  // Handles a request to set up an event stream. Returns error if representing
-  // an unsuccessful outcome of invoking the method, possibly nullptr.
+  // Handles a request to set up an event stream. Returns nullptr on success,
+  // or an error on failure.
   // |arguments| is stream configuration arguments and
   // |events| is an EventSink for emitting events to the Flutter receiver.
   std::unique_ptr<StreamHandlerError<T>> OnListen(
@@ -50,8 +50,7 @@ class StreamHandler {
   }
 
   // Handles a request to tear down the most recently created event stream.
-  // Returns error if representing an unsuccessful outcome of invoking the
-  // method, possibly nullptr.
+  // Returns nullptr on success, or an error on failure.
   // |arguments| is stream configuration arguments.
   std::unique_ptr<StreamHandlerError<T>> OnCancel(const T* arguments) {
     return OnCancelInternal(arguments);

@@ -79,7 +79,8 @@ class EventChannel {
       const std::string& method = method_call->method_name();
       if (method.compare(kOnListenMethod) == 0) {
         if (is_listening_) {
-          auto error = shared_handler->OnCancel(nullptr);
+          std::unique_ptr<StreamHandlerError<T>> error =
+              shared_handler->OnCancel(nullptr);
           if (error) {
             std::cerr << "Failed to cancel existing stream: "
                       << (error->error_code) << ", " << (error->error_message)
@@ -91,7 +92,7 @@ class EventChannel {
         std::unique_ptr<std::vector<uint8_t>> result;
         auto sink = std::make_unique<EventSinkImplementation>(
             messenger, channel_name, codec);
-        auto error =
+        std::unique_ptr<StreamHandlerError<T>> error =
             shared_handler->OnListen(method_call->arguments(), std::move(sink));
         if (error) {
           result = codec->EncodeErrorEnvelope(
@@ -103,7 +104,8 @@ class EventChannel {
       } else if (method.compare(kOnCancelMethod) == 0) {
         std::unique_ptr<std::vector<uint8_t>> result;
         if (is_listening_) {
-          auto error = shared_handler->OnCancel(method_call->arguments());
+          std::unique_ptr<StreamHandlerError<T>> error =
+              shared_handler->OnCancel(method_call->arguments());
           if (error) {
             result = codec->EncodeErrorEnvelope(
                 error->error_code, error->error_message, error->error_details);

@@ -152,8 +152,11 @@ TEST(EventChannelTest, Cancel) {
   EXPECT_EQ(on_cancel_called, true);
 }
 
-// Test that consecutive call of OnListen.
-TEST(EventChannelTest, ConsecutiveListen) {
+// Pseudo test when user re-registers or call OnListen to the same channel.
+// Confirm that OnCancel is called and OnListen is called again
+// when user re-registers the same channel that has already started
+// communication.
+TEST(EventChannelTest, ReRegistration) {
   TestBinaryMessenger messenger;
   const std::string channel_name("some_channel");
   const StandardMethodCodec& codec = StandardMethodCodec::GetInstance();
