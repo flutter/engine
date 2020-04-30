@@ -328,6 +328,8 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       domRenderer.setElementStyle(rootElement, 'clip-path', '');
       domRenderer.setElementStyle(rootElement, '-webkit-clip-path', '');
       _applyShape();
+      // This null check is in update since we don't want to unnecessarily
+      // clear style in apply on first build.
       if (path == null) {
         // Reset style on prior element when path becomes null.
         final html.CssStyleDeclaration style = rootElement.style;
