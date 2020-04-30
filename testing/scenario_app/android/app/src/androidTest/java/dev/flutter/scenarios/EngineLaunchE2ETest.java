@@ -38,6 +38,8 @@ public class EngineLaunchE2ETest {
 
     // Resolve locale to `en_US`.
     // This is required, so `window.locale` in populated in dart.
+    // TODO: Fix race condition between sending this over the channel and starting the entrypoint.
+    // https://github.com/flutter/flutter/issues/55999
     UiThreadStatement.runOnUiThread(
         () ->
             engine.get().getLocalizationChannel().sendLocales(Arrays.asList(Locale.US), Locale.US));
