@@ -13,7 +13,7 @@ import 'package:e2e/e2e.dart';
 void main() {
   E2EWidgetsFlutterBinding.ensureInitialized() as E2EWidgetsFlutterBinding;
 
-  testWidgets('Focused text field creates a native input element',
+  testWidgets('Should detect MacOS platform when running on MacOS',
           (WidgetTester tester) async {
         app.main();
         await tester.pumpAndSettle();
