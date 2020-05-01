@@ -145,6 +145,16 @@ class EngineAutofillForm {
     formElement.remove();
   }
 
+  /// Listens to `onInput` event on the form fields.
+  ///
+  /// Registering to the listeners could have been done in the constructor.
+  /// On the other hand, overall for text editing there is already a lifecycle
+  /// for subscriptions: All the subscriptions of the DOM elements are to the
+  /// `_subscriptions` property of [DefaultTextEditingStrategy].
+  /// [TextEditingStrategy] manages all subscription lifecyle. All
+  /// listeners with no exceptions are added during
+  /// [TextEditingStrategy.addEventHandlers] method call and all
+  /// listeners are removed during [TextEditingStrategy.disable] method call.
   List<StreamSubscription<html.Event>> addEventListeners() {
     Iterable<String> keys = elements.keys;
     List<StreamSubscription<html.Event>> subscriptions =
