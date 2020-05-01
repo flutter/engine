@@ -8,7 +8,8 @@
 
 namespace flutter_runner {
 
-FlutterRunnerProductConfiguration::FlutterRunnerProductConfiguration(std::string json_string) {
+FlutterRunnerProductConfiguration::FlutterRunnerProductConfiguration(
+    std::string json_string) {
   rapidjson::Document document;
   document.Parse(json_string);
 

@@ -17,7 +17,8 @@ TEST_F(FlutterRunnerProductConfigurationTest, ValidVsyncOffset) {
   const std::string json_string = "{ \"vsync_offset_in_us\" : 9000 } ";
   const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(9000);
 
-  FlutterRunnerProductConfiguration product_config = FlutterRunnerProductConfiguration(json_string);
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
   EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
 }
 
@@ -25,7 +26,8 @@ TEST_F(FlutterRunnerProductConfigurationTest, InvalidJsonString) {
   const std::string json_string = "{ \"invalid json string\" }}} ";
   const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
 
-  FlutterRunnerProductConfiguration product_config = FlutterRunnerProductConfiguration(json_string);
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
   EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
 }
 
@@ -33,7 +35,8 @@ TEST_F(FlutterRunnerProductConfigurationTest, EmptyJsonString) {
   const std::string json_string = "";
   const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
 
-  FlutterRunnerProductConfiguration product_config = FlutterRunnerProductConfiguration(json_string);
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
   EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
 }
 
@@ -41,7 +44,8 @@ TEST_F(FlutterRunnerProductConfigurationTest, EmptyVsyncOffset) {
   const std::string json_string = "{ \"vsync_offset_in_us\" : } ";
   const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
 
-  FlutterRunnerProductConfiguration product_config = FlutterRunnerProductConfiguration(json_string);
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
   EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
 }
 
@@ -50,7 +54,8 @@ TEST_F(FlutterRunnerProductConfigurationTest, NegativeVsyncOffset) {
   const fml::TimeDelta expected_offset =
       fml::TimeDelta::FromMicroseconds(-15410);
 
-  FlutterRunnerProductConfiguration product_config = FlutterRunnerProductConfiguration(json_string);
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
   EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
 }
 
@@ -58,7 +63,8 @@ TEST_F(FlutterRunnerProductConfigurationTest, NonIntegerVsyncOffset) {
   const std::string json_string = "{ \"vsync_offset_in_us\" : 3.14159 } ";
   const fml::TimeDelta expected_offset = fml::TimeDelta::FromMicroseconds(0);
 
-  FlutterRunnerProductConfiguration product_config = FlutterRunnerProductConfiguration(json_string);
+  FlutterRunnerProductConfiguration product_config =
+      FlutterRunnerProductConfiguration(json_string);
   EXPECT_EQ(product_config.get_vsync_offset(), expected_offset);
 }
 

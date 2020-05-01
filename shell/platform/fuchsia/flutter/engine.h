@@ -15,8 +15,8 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
-#include "isolate_configurator.h"
 #include "flutter_runner_product_configuration.h"
+#include "isolate_configurator.h"
 #include "thread.h"
 
 namespace flutter_runner {
