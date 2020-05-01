@@ -1,18 +1,25 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.facebook.testing.screenshot'
+
+screenshots {
+    failureDir = "${rootProject.buildDir}/reports/diff_failures"
+    recordDir = "${rootProject.projectDir}/reports/screenshots"
+}
 
 android {
     compileSdkVersion 28
+    ndkVersion "21.0.6113669"
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
     defaultConfig {
         applicationId "dev.flutter.scenarios"
-        minSdkVersion 16
+        minSdkVersion 18
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "dev.flutter.TestRunner"
     }
     buildTypes {
         release {
@@ -32,4 +39,5 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    androidTestImplementation 'com.facebook.testing.screenshot:layout-hierarchy-common:0.12.0'
 }

@@ -43,6 +43,8 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
 };
 
 Scenario _currentScenario = _scenarios['animated_color_square'];
+bool _didReceiveScenarioFromPlatform = false;
+Future<void> sceneCompletedFuture;
 
 void main() {
   assert(window.locale != null);
@@ -60,9 +62,10 @@ void main() {
 
 Future<void> _handlePlatformMessage(
     String name, ByteData data, PlatformMessageResponseCallback callback) async {
-  print(name);
-  print(utf8.decode(data.buffer.asUint8List()));
+  print('$name = ${utf8.decode(data.buffer.asUint8List())}');
   if (name == 'set_scenario' && data != null) {
+    _didReceiveScenarioFromPlatform = true;
+
     final String scenarioName = utf8.decode(data.buffer.asUint8List());
     final Scenario candidateScenario = _scenarios[scenarioName];
     if (candidateScenario != null) {
@@ -77,8 +80,6 @@ Future<void> _handlePlatformMessage(
   } else if (name == 'write_timeline') {
     final String timelineData = await _getTimelineData();
     callback(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
-  } else {
-    _currentScenario?.onPlatformMessage(name, data, callback);
   }
 }
 
@@ -115,17 +116,33 @@ Future<Map<String, dynamic>> _getJson(Uri uri) async {
 }
 
 void _onBeginFrame(Duration duration) {
-  _currentScenario.onBeginFrame(duration);
+  _currentScenario?.onBeginFrame(duration);
 }
 
 void _onDrawFrame() {
-  _currentScenario.onDrawFrame();
+  _currentScenario?.onDrawFrame();
+
+  if (!_didReceiveScenarioFromPlatform) {
+    return;
+  }
+  sceneCompletedFuture?.timeout(Duration.zero, onTimeout: () {});
+  // If no new frames are drawn after 2 second,
+  // consider this to be the last frame.
+  //
+  // As a result, animations will time out, so don't test animations this way!
+  sceneCompletedFuture = Future<void>
+    .delayed(Duration(seconds: 2))
+    .whenComplete(() {
+      final ByteData data = ByteData(1);
+      data.setUint8(0, 1);
+      window.sendPlatformMessage('frame_ready', data, null);
+    });
 }
 
 void _onMetricsChanged() {
-  _currentScenario.onMetricsChanged();
+  _currentScenario?.onMetricsChanged();
 }
 
 void _onPointerDataPacket(PointerDataPacket packet) {
-  _currentScenario.onPointerDataPacket(packet);
+  _currentScenario?.onPointerDataPacket(packet);
 }
