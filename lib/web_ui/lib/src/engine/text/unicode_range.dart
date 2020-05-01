@@ -75,6 +75,10 @@ class UnicodePropertyLookup<P> {
 
   final List<UnicodeRange<P>> ranges;
 
+  /// Take a [text] and an [index], and returns the property of the character
+  /// located at that [index].
+  ///
+  /// If the [index] is out of range, null will be returned.
   P find(String text, int index) {
     if (index < 0 || index >= text.length) {
       return null;

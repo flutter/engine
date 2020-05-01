@@ -50,7 +50,6 @@ class LineBreakResult {
 /// * http://www.unicode.org/reports/tr14/#Algorithm
 /// * https://www.unicode.org/Public/11.0.0/ucd/LineBreak.txt
 LineBreakResult nextLineBreak(String text, int index) {
-  // print(lineLookup.find(text, index));
   // TODO(flutter_web): https://github.com/flutter/flutter/issues/33523
   // This is a hacky/temporary/throw-away implementation to enable us to move fast
   // with the rest of the line-splitting project.
