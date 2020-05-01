@@ -14,7 +14,7 @@ std::unique_ptr<LayerTree> LayerTreeHolder::Get() {
 void LayerTreeHolder::ReplaceIfNewer(
     std::unique_ptr<LayerTree> proposed_layer_tree) {
   std::scoped_lock lock(layer_tree_mutex);
-  if (IsEmpty() ||
+  if (!layer_tree_ ||
       layer_tree_->target_time() < proposed_layer_tree->target_time()) {
     layer_tree_ = std::move(proposed_layer_tree);
   }
