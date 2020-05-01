@@ -185,33 +185,48 @@ part of engine;
 ///
 /// * ${enumDocLink}
 enum ${prefix}CharProperty {
-  ${getEnumValues(data.enumCollection).join('\n  ')}
+  ${_getEnumValues(data.enumCollection).join('\n  ')}
 }
 
 const String _packed${prefix}BreakProperties =
-  '${packProperties(data)}';
+  '${_packProperties(data)}';
 
 
 UnicodePropertyLookup<${prefix}CharProperty> ${prefix.toLowerCase()}Lookup =
     UnicodePropertyLookup<${prefix}CharProperty>.fromPackedData(
   _packed${prefix}BreakProperties,
+  ${_getSingleRangesCount(data)},
   ${prefix}CharProperty.values,
 );
 ''';
   }
 
-  Iterable<String> getEnumValues(EnumCollection enumCollection) {
+  Iterable<String> _getEnumValues(EnumCollection enumCollection) {
     return enumCollection.values.map(
       (EnumValue value) =>
           '${value.enumName}, // serialized as "${value.serialized}"',
     );
   }
 
-  String packProperties(PropertyCollection data) {
+  int _getSingleRangesCount(PropertyCollection data) {
+    int count = 0;
+    for (final PropertyTuple tuple in data.tuples) {
+      if (tuple.start == tuple.end) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  String _packProperties(PropertyCollection data) {
     final StringBuffer buffer = StringBuffer();
     for (final PropertyTuple tuple in data.tuples) {
       buffer.write(tuple.start.toRadixString(36).padLeft(4, '0'));
-      buffer.write(tuple.end.toRadixString(36).padLeft(4, '0'));
+      if (tuple.start == tuple.end) {
+        buffer.write('!');
+      } else {
+        buffer.write(tuple.end.toRadixString(36).padLeft(4, '0'));
+      }
       buffer.write(tuple.property.serialized);
     }
     return buffer.toString();

@@ -66,10 +66,11 @@ class UnicodePropertyLookup<P> {
   /// Creates a [UnicodePropertyLookup] from packed line break data.
   factory UnicodePropertyLookup.fromPackedData(
     String packedData,
+    int singleRangesCount,
     List<P> propertyEnumValues,
   ) {
     return UnicodePropertyLookup<P>(
-      _unpackProperties<P>(packedData, propertyEnumValues),
+      _unpackProperties<P>(packedData, singleRangesCount, propertyEnumValues),
     );
   }
 
@@ -110,26 +111,46 @@ class UnicodePropertyLookup<P> {
 
 List<UnicodeRange<P>> _unpackProperties<P>(
   String packedData,
+  int singleRangesCount,
   List<P> propertyEnumValues,
 ) {
-  // Packed data is structured in chunks of 9 characters each:
+  // Packed data is mostly structured in chunks of 9 characters each:
   //
   // * [0..3]: Range start, encoded as a base36 integer.
   // * [4..7]: Range end, encoded as a base36 integer.
   // * [8]: Index of the property enum value, encoded as a single letter.
-  assert(packedData.length % 9 == 0);
+  //
+  // When the range is a single number (i.e. range start == range end), it gets
+  // packed more efficiently in a chunk of 6 characters:
+  //
+  // * [0..3]: Range start (and range end), encoded as a base 36 integer.
+  // * [4]: "!" to indicate that there's no range end.
+  // * [5]: Index of the property enum value, encoded as a single letter.
 
-  final int itemCount = packedData.length ~/ 9;
+  // `packedData.length + singleRangesCount * 3` would have been the size of the
+  // packed data if the efficient packing of single-range items wasn't applied.
+  assert((packedData.length + singleRangesCount * 3) % 9 == 0);
+
   final List<UnicodeRange<P>> ranges = <UnicodeRange<P>>[];
-  for (int itemNumber = 0; itemNumber < itemCount; itemNumber++) {
-    // This is the index in [packedData] of [itemNumber]'th packed item.
-    final int i = itemNumber * 9;
-
+  int i = 0;
+  while (i < packedData.length) {
     final int rangeStart = _consumeInt(packedData, i);
-    final int rangeEnd = _consumeInt(packedData, i + 4);
-    final int charCode = packedData.codeUnitAt(i + 8);
+    i += 4;
+
+    int rangeEnd;
+    // "!" <=> 33
+    if (packedData.codeUnitAt(i) == 33) {
+      rangeEnd = rangeStart;
+      i++;
+    } else {
+      rangeEnd = _consumeInt(packedData, i);
+      i += 4;
+    }
+    final int charCode = packedData.codeUnitAt(i);
     final P property =
         propertyEnumValues[_getEnumIndexFromPackedValue(charCode)];
+    i++;
+
     ranges.add(UnicodeRange<P>(rangeStart, rangeEnd, property));
   }
   return ranges;
@@ -157,7 +178,7 @@ int _getEnumIndexFromPackedValue(int charCode) {
 }
 
 int _consumeInt(String packedData, int index) {
-  // The implementation is equivalen to:
+  // The implementation is equivalent to:
   //
   // ```dart
   // return int.tryParse(packedData.substring(index, index + 4), radix: 36);
