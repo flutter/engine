@@ -1,4 +1,4 @@
-Signature: 7a46a9ca65870e6282d94142adcc7c53
+Signature: e42310bb53625f73303674bbc9475ae2
 
 UNUSED LICENSES:
 
@@ -68,10 +68,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/dart_internal/LICENSE
+ORIGIN: ../../../third_party/pkg/when/LICENSE
 TYPE: LicenseType.bsd
 ----------------------------------------------------------------------------------------------------
-Copyright 2017, the Dart project authors. All rights reserved.
+Copyright 2015, the Dart project authors. All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
 met:
@@ -97,44 +97,6 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-ORIGIN: ../../../third_party/rapidjson/LICENSE
-TYPE: LicenseType.bsd
-----------------------------------------------------------------------------------------------------
-Tencent is pleased to support the open source community by making RapidJSON available.
-
-Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.  All rights reserved.
-
-If you have downloaded a copy of the RapidJSON binary from Tencent, please note that the RapidJSON binary is licensed under the MIT License.
-If you have downloaded a copy of the RapidJSON source code from Tencent, please note that RapidJSON source code is licensed under the MIT License, except for the third-party components listed below which are subject to different license terms.  Your integration of RapidJSON into your own projects may require compliance with the MIT License, as well as the other licenses applicable to the third-party components included within RapidJSON.
-
-A copy of the MIT License is included in this file.
-
-Other dependencies and licenses:
-
-Open Source Software Licensed Under the BSD License:
-
-The msinttypes r29
-Copyright (c) 2006-2013 Alexander Chemeris
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-* Neither the name of  copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-Terms of the MIT License:
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================================================
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 USED LICENSES:
@@ -580,7 +542,7 @@ POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: angle
 LIBRARY: boringssl
-LIBRARY: observatory_pub_packages
+LIBRARY: khronos
 LIBRARY: vulkan
 LIBRARY: wuffs
 ORIGIN: ../../../flutter/third_party/txt/LICENSE
@@ -654,54 +616,8 @@ FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_4096_sha512_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/rsa_signature_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x25519_test.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/async.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/cache.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/check.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/collection.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/core.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/io.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/iterables.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/mirrors.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/pattern.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/async/collect.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/async/concat.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/async/countdown_timer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/async/enumerate.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/async/future_stream.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/async/iteration.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/async/metronome.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/async/stream_buffer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/async/stream_router.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/cache/cache.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/cache/map_cache.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/collection/bimap.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/collection/delegates/iterable.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/collection/delegates/list.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/collection/delegates/map.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/collection/delegates/queue.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/collection/delegates/set.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/collection/lru_map.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/collection/multimap.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/collection/treeset.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/core/hash.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/core/optional.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/concat.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/count.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/cycle.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/enumerate.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/generating_iterable.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/infinite_iterable.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/merge.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/min_max.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/partition.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/range.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/iterables/zip.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/pattern/glob.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/time/clock.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/time/duration_unit_constants.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/time/util.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/strings.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/time.dart
+FILE: ../../../third_party/khronos/GLES2/gl2platform.h
+FILE: ../../../third_party/khronos/GLES3/gl3platform.h
 FILE: ../../../third_party/vulkan/include/vulkan/vk_platform.h
 FILE: ../../../third_party/vulkan/include/vulkan/vulkan.h
 FILE: ../../../third_party/vulkan/include/vulkan/vulkan_android.h
@@ -1056,41 +972,134 @@ limitations under the License.
 
 ====================================================================================================
 LIBRARY: angle
-LIBRARY: tonic
-ORIGIN: ../../../fuchsia/sdk/linux/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c
-FILE: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.h
-FILE: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl_backend.h
-FILE: ../../../third_party/tonic/typed_data/typed_list.cc
+LIBRARY: khronos
+ORIGIN: ../../../third_party/angle/include/EGL/egl.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/angle/include/EGL/egl.h
+FILE: ../../../third_party/angle/include/EGL/eglext.h
+FILE: ../../../third_party/angle/include/GLES/glext.h
+FILE: ../../../third_party/angle/include/GLES2/gl2.h
+FILE: ../../../third_party/angle/scripts/egl.xml
+FILE: ../../../third_party/khronos/EGL/egl.h
+FILE: ../../../third_party/khronos/EGL/eglext.h
 ----------------------------------------------------------------------------------------------------
-Copyright 2019 The Fuchsia Authors. All rights reserved.
+Copyright (c) 2013-2017 The Khronos Group Inc.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
 
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: angle
+LIBRARY: khronos
+ORIGIN: ../../../third_party/angle/include/EGL/eglplatform.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/angle/include/EGL/eglplatform.h
+FILE: ../../../third_party/khronos/EGL/eglplatform.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2007-2016 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: angle
+LIBRARY: khronos
+ORIGIN: ../../../third_party/angle/include/GLES/gl.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/angle/include/GLES/gl.h
+FILE: ../../../third_party/angle/include/GLES2/gl2ext.h
+FILE: ../../../third_party/angle/include/GLES3/gl3.h
+FILE: ../../../third_party/angle/include/WGL/wgl.h
+FILE: ../../../third_party/khronos/GLES2/gl2.h
+FILE: ../../../third_party/khronos/GLES2/gl2ext.h
+FILE: ../../../third_party/khronos/GLES3/gl3.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2013-2018 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: angle
+LIBRARY: khronos
+ORIGIN: ../../../third_party/angle/include/GLES3/gl31.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/angle/include/GLES3/gl31.h
+FILE: ../../../third_party/angle/include/GLES3/gl32.h
+FILE: ../../../third_party/khronos/GLES3/gl31.h
+FILE: ../../../third_party/khronos/GLES3/gl32.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2013-2016 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 ====================================================================================================
 
 ====================================================================================================
@@ -1572,6 +1581,43 @@ POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: angle
+ORIGIN: ../../../fuchsia/sdk/linux/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c
+FILE: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl.h
+FILE: ../../../third_party/angle/src/common/fuchsia_egl/fuchsia_egl_backend.h
+----------------------------------------------------------------------------------------------------
+Copyright 2019 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: angle
 ORIGIN: ../../../third_party/angle/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/.style.yapf
@@ -1985,126 +2031,6 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: angle
-ORIGIN: ../../../third_party/angle/include/EGL/egl.h
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/angle/include/EGL/egl.h
-FILE: ../../../third_party/angle/include/EGL/eglext.h
-FILE: ../../../third_party/angle/include/GLES/glext.h
-FILE: ../../../third_party/angle/include/GLES2/gl2.h
-FILE: ../../../third_party/angle/scripts/egl.xml
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2013-2017 The Khronos Group Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and/or associated documentation files (the
-"Materials"), to deal in the Materials without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Materials, and to
-permit persons to whom the Materials are furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Materials.
-
-THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: angle
-ORIGIN: ../../../third_party/angle/include/EGL/eglplatform.h
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/angle/include/EGL/eglplatform.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2007-2016 The Khronos Group Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and/or associated documentation files (the
-"Materials"), to deal in the Materials without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Materials, and to
-permit persons to whom the Materials are furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Materials.
-
-THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: angle
-ORIGIN: ../../../third_party/angle/include/GLES/gl.h
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/angle/include/GLES/gl.h
-FILE: ../../../third_party/angle/include/GLES2/gl2ext.h
-FILE: ../../../third_party/angle/include/GLES3/gl3.h
-FILE: ../../../third_party/angle/include/WGL/wgl.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2013-2018 The Khronos Group Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and/or associated documentation files (the
-"Materials"), to deal in the Materials without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Materials, and to
-permit persons to whom the Materials are furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Materials.
-
-THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: angle
-ORIGIN: ../../../third_party/angle/include/GLES3/gl31.h
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/angle/include/GLES3/gl31.h
-FILE: ../../../third_party/angle/include/GLES3/gl32.h
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2013-2016 The Khronos Group Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and/or associated documentation files (the
-"Materials"), to deal in the Materials without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Materials, and to
-permit persons to whom the Materials are furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Materials.
-
-THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
 ====================================================================================================
 
 ====================================================================================================
@@ -7461,6 +7387,12 @@ FILE: ../../../third_party/dart/benchmarks/IsolateJson/dart/sample.json
 FILE: ../../../third_party/dart/benchmarks/IsolateSpawn/dart/helloworld.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateSpawnMemory/dart/helloworld.dart
 FILE: ../../../third_party/dart/benchmarks/SoundSplayTreeSieve/dart/iterable.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/datext_latin1_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/entext_ascii_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/netext_3_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/rutext_2_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/sktext_10k.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/zhtext_10k.dart
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
@@ -7474,6 +7406,26 @@ FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_x86.S
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/ffi_test_functions_helpers.S
 FILE: ../../../third_party/dart/runtime/docs/compiler/images/catch-block-entry-0.png
 FILE: ../../../third_party/dart/runtime/docs/compiler/images/catch-block-entry-1.png
+FILE: ../../../third_party/dart/runtime/docs/images/aot-ic-dictionary.png
+FILE: ../../../third_party/dart/runtime/docs/images/aot-ic-linear.png
+FILE: ../../../third_party/dart/runtime/docs/images/aot-ic-monomorphic.png
+FILE: ../../../third_party/dart/runtime/docs/images/aot-ic-singletarget.png
+FILE: ../../../third_party/dart/runtime/docs/images/aot-ic-unlinked.png
+FILE: ../../../third_party/dart/runtime/docs/images/aot.png
+FILE: ../../../third_party/dart/runtime/docs/images/dart-to-kernel.png
+FILE: ../../../third_party/dart/runtime/docs/images/flutter-cfe.png
+FILE: ../../../third_party/dart/runtime/docs/images/images.graffle!images
+FILE: ../../../third_party/dart/runtime/docs/images/inline-cache-1.png
+FILE: ../../../third_party/dart/runtime/docs/images/isolates.png
+FILE: ../../../third_party/dart/runtime/docs/images/kernel-loaded-1.png
+FILE: ../../../third_party/dart/runtime/docs/images/kernel-loaded-2.png
+FILE: ../../../third_party/dart/runtime/docs/images/kernel-service.png
+FILE: ../../../third_party/dart/runtime/docs/images/optimizing-compilation.png
+FILE: ../../../third_party/dart/runtime/docs/images/raw-function-lazy-compile.png
+FILE: ../../../third_party/dart/runtime/docs/images/snapshot-appjit.png
+FILE: ../../../third_party/dart/runtime/docs/images/snapshot-with-code.png
+FILE: ../../../third_party/dart/runtime/docs/images/snapshot.png
+FILE: ../../../third_party/dart/runtime/docs/images/unoptimized-compilation.png
 FILE: ../../../third_party/dart/runtime/docs/infra/images/isolated-out-browser.png
 FILE: ../../../third_party/dart/runtime/docs/infra/images/isolated-out-link.png
 FILE: ../../../third_party/dart/runtime/observatory/lib/elements.dart
@@ -7484,6 +7436,10 @@ FILE: ../../../third_party/dart/runtime/observatory/web/favicon.ico
 FILE: ../../../third_party/dart/runtime/observatory/web/index.html
 FILE: ../../../third_party/dart/runtime/observatory/web/third_party/trace_viewer_full.html
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.html
+FILE: ../../../third_party/dart/runtime/tools/wiki/styles/style.scss
+FILE: ../../../third_party/dart/runtime/tools/wiki/templates/includes/auto-refresh.html
+FILE: ../../../third_party/dart/runtime/tools/wiki/templates/includes/favicon.html
+FILE: ../../../third_party/dart/runtime/tools/wiki/templates/page.html
 FILE: ../../../third_party/dart/samples/ffi/sqlite/docs/lib/scenario-default.svg
 FILE: ../../../third_party/dart/samples/ffi/sqlite/docs/lib/scenario-full.svg
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions_dart2js.dart
@@ -7623,8 +7579,6 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/slot_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/type_propagator_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/typed_data_aot_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/yield_position_test.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/ffi.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_fingerprints.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_fingerprints.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/graph_intrinsifier.cc
@@ -7645,6 +7599,9 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/type_testing_stubs_arm.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/type_testing_stubs_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/type_testing_stubs_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_arm.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_ia32.cc
@@ -7668,9 +7625,6 @@ FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.h
 FILE: ../../../third_party/dart/runtime/vm/thread_state.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_state.h
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_arm.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_arm64.cc
-FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_x64.cc
 FILE: ../../../third_party/dart/samples/ffi/coordinate.dart
 FILE: ../../../third_party/dart/samples/ffi/dylib_utils.dart
 FILE: ../../../third_party/dart/samples/ffi/resource_management/pool.dart
@@ -7757,14 +7711,73 @@ LIBRARY: dart
 ORIGIN: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart
+FILE: ../../../third_party/dart/benchmarks/RuntimeType/dart/RuntimeType.dart
+FILE: ../../../third_party/dart/benchmarks/TypedDataDuplicate/dart/TypedDataDuplicate.dart
+FILE: ../../../third_party/dart/benchmarks/Utf8Decode/dart/Utf8Decode.dart
+FILE: ../../../third_party/dart/runtime/bin/dartdev_utils.cc
+FILE: ../../../third_party/dart/runtime/bin/dartdev_utils.h
+FILE: ../../../third_party/dart/runtime/bin/exe_utils.cc
+FILE: ../../../third_party/dart/runtime/bin/exe_utils.h
 FILE: ../../../third_party/dart/runtime/observatory/bin/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/bin/main.dart
+FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/cquery_driver.dart
+FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/xref_extractor.dart
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/dispatch_table_generator.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/deopt_id.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/print_filter.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/print_filter.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/api/type_check_mode.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_base.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/constant_propagator_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/reachability_fence_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/abi.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/call.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/call.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/callback.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/callback.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/frame_rebase.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/frame_rebase.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/marshaller.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/marshaller.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_calling_convention.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_calling_convention.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_location.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_location.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/native_type.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/recognized_method.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/write_barrier_elimination_test.cc
+FILE: ../../../third_party/dart/runtime/vm/constants_base.h
+FILE: ../../../third_party/dart/runtime/vm/dispatch_table.cc
+FILE: ../../../third_party/dart/runtime/vm/dispatch_table.h
 FILE: ../../../third_party/dart/runtime/vm/field_table.cc
 FILE: ../../../third_party/dart/runtime/vm/field_table.h
+FILE: ../../../third_party/dart/runtime/vm/port_set.h
+FILE: ../../../third_party/dart/runtime/vm/tagged_pointer.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_macos.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test.h
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_arm64.cc
+FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs_test_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/visitor.cc
+FILE: ../../../third_party/dart/samples/ffi/async/async_test.dart
+FILE: ../../../third_party/dart/samples/ffi/async/sample_async_callback.dart
+FILE: ../../../third_party/dart/samples/ffi/async/sample_native_port_call.dart
+FILE: ../../../third_party/dart/sdk/lib/_http/embedder_config.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/js_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_struct_patch.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/_http/embedder_config.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/js_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/js_patch.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/ffi_struct_patch.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
@@ -7963,8 +7976,8 @@ FILE: ../../../third_party/dart/runtime/vm/code_patcher.h
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/aot_call_specializer.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_base.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_ia32_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_x64_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_x86.cc
@@ -8117,7 +8130,6 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/async_pat
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/core_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/isolate_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/math_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/mirrors_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/foreign_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/interceptors.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/isolate_helper.dart
@@ -8242,7 +8254,6 @@ FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/asyn
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/core_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/isolate_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/math_patch.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/mirrors_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/foreign_helper.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/interceptors.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/isolate_helper.dart
@@ -8456,7 +8467,6 @@ FILE: ../../../third_party/dart/runtime/vm/timeline.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_analysis.cc
 FILE: ../../../third_party/dart/runtime/vm/timeline_analysis.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_test.cc
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/lib/js/dart2js/js_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/developer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/classes.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart
@@ -8466,7 +8476,6 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_run
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/types.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/utils.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/debugger.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/js_mirrors.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/developer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/d8.js
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/jsshell.js
@@ -8492,7 +8501,6 @@ FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/dd
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/ddc_runtime/types.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/ddc_runtime/utils.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/debugger.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/js_mirrors.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/developer_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/preambles/d8.js
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/preambles/jsshell.js
@@ -8652,12 +8660,10 @@ FILE: ../../../third_party/dart/runtime/vm/timeline_linux.cc
 FILE: ../../../third_party/dart/runtime/vm/zone_text_buffer.cc
 FILE: ../../../third_party/dart/runtime/vm/zone_text_buffer.h
 FILE: ../../../third_party/dart/sdk/lib/_http/overrides.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/cli_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/custom_hash_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/identity_hash_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/linked_hash_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/profile.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/cli_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/cli_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/namespace_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/sync_socket_patch.dart
@@ -8674,12 +8680,10 @@ FILE: ../../../third_party/dart/sdk/lib/io/overrides.dart
 FILE: ../../../third_party/dart/sdk/lib/io/sync_socket.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/named_lookup.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_http/overrides.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/cli_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/custom_hash_map.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/identity_hash_map.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/linked_hash_map.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/profile.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/cli_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/bin/cli_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/bin/namespace_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/bin/sync_socket_patch.dart
@@ -9082,9 +9086,7 @@ FILE: ../../../third_party/dart/runtime/vm/uri.cc
 FILE: ../../../third_party/dart/runtime/vm/uri.h
 FILE: ../../../third_party/dart/runtime/vm/uri_test.cc
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_fuchsia.cc
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/lib/js_util/dart2js/js_util_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/developer/service.dart
-FILE: ../../../third_party/dart/sdk/lib/js_util/dart2js/js_util_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/js_util/js_util.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/devfs.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/developer/service.dart
@@ -9410,7 +9412,6 @@ FILE: ../../../third_party/dart/sdk/lib/io/secure_socket.dart
 FILE: ../../../third_party/dart/sdk/lib/io/socket.dart
 FILE: ../../../third_party/dart/sdk/lib/io/stdio.dart
 FILE: ../../../third_party/dart/sdk/lib/io/string_transformer.dart
-FILE: ../../../third_party/dart/sdk/lib/js/dart2js/js_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/js/js.dart
 FILE: ../../../third_party/dart/sdk/lib/math/jenkins_smi_hash.dart
 FILE: ../../../third_party/dart/sdk/lib/math/point.dart
@@ -9841,6 +9842,41 @@ met:
     * Neither the name of Google Inc. nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: dart
+ORIGIN: ../../../third_party/dart/runtime/observatory/web/third_party/webcomponents.min.js
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/runtime/observatory/web/third_party/webcomponents.min.js
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2014 The Polymer Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -17606,8 +17642,121 @@ LIBRARY: khronos
 ORIGIN: ../../../third_party/angle/src/third_party/khronos/GL/wglext.h
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/angle/src/third_party/khronos/GL/wglext.h
+FILE: ../../../third_party/khronos/noninclude/GL/glext.h
+FILE: ../../../third_party/khronos/noninclude/GL/wglext.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2013-2014 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: khronos
+ORIGIN: ../../../third_party/khronos/KHR/khrplatform.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/khronos/KHR/khrplatform.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2008-2009 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: khronos
+ORIGIN: ../../../third_party/khronos/LICENSE
+TYPE: LicenseType.mit
+FILE: ../../../third_party/khronos/DEPS
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2007-2010 The Khronos Group Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and/or associated documentation files (the
+"Materials"), to deal in the Materials without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Materials, and to
+permit persons to whom the Materials are furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Materials.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+
+SGI FREE SOFTWARE LICENSE B (Version 2.0, Sept. 18, 2008)
+
+Copyright (C) 1992 Silicon Graphics, Inc. All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice including the dates of first publication and either
+this permission notice or a reference to http://oss.sgi.com/projects/FreeB
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL SILICON
+GRAPHICS, INC. BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of Silicon Graphics, Inc. shall
+not be used in advertising or otherwise to promote the sale, use or other
+dealings in this Software without prior written authorization from Silicon
+Graphics, Inc.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: khronos
+ORIGIN: ../../../third_party/khronos/noninclude/GL/glxext.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/khronos/noninclude/GL/glxext.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2007-2012 The Khronos Group Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and/or associated documentation files (the
@@ -20461,16 +20610,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
-LIBRARY: observatory_pub_packages
 LIBRARY: pkg
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/comparators.dart + ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/LICENSE
+ORIGIN: ../../../third_party/pkg/when/lib/when.dart + ../../../third_party/pkg/when/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/comparators.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/lib/src/unparsed_frame.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/expected_function.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/group_context.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/example/example.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/example/example.html
 FILE: ../../../third_party/pkg/when/lib/when.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
@@ -20504,1005 +20646,152 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/browser/LICENSE
+LIBRARY: rapidjson
+ORIGIN: ../../../third_party/rapidjson/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/.test_config
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/.test_config
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/.test_config
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/.analysis_options
+FILE: ../../../third_party/rapidjson/.gitmodules
+FILE: ../../../third_party/rapidjson/RapidJSON.pc.in
+FILE: ../../../third_party/rapidjson/RapidJSONConfig.cmake.in
+FILE: ../../../third_party/rapidjson/RapidJSONConfigVersion.cmake.in
+FILE: ../../../third_party/rapidjson/appveyor.yml
+FILE: ../../../third_party/rapidjson/doc/Doxyfile.in
+FILE: ../../../third_party/rapidjson/doc/Doxyfile.zh-cn.in
+FILE: ../../../third_party/rapidjson/doc/diagram/architecture.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/architecture.png
+FILE: ../../../third_party/rapidjson/doc/diagram/insituparsing.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/insituparsing.png
+FILE: ../../../third_party/rapidjson/doc/diagram/iterative-parser-states-diagram.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/iterative-parser-states-diagram.png
+FILE: ../../../third_party/rapidjson/doc/diagram/move1.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/move1.png
+FILE: ../../../third_party/rapidjson/doc/diagram/move2.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/move2.png
+FILE: ../../../third_party/rapidjson/doc/diagram/move3.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/move3.png
+FILE: ../../../third_party/rapidjson/doc/diagram/normalparsing.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/normalparsing.png
+FILE: ../../../third_party/rapidjson/doc/diagram/simpledom.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/simpledom.png
+FILE: ../../../third_party/rapidjson/doc/diagram/tutorial.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/tutorial.png
+FILE: ../../../third_party/rapidjson/doc/diagram/utilityclass.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/utilityclass.png
+FILE: ../../../third_party/rapidjson/doc/logo/rapidjson.png
+FILE: ../../../third_party/rapidjson/doc/logo/rapidjson.svg
+FILE: ../../../third_party/rapidjson/doc/misc/DoxygenLayout.xml
+FILE: ../../../third_party/rapidjson/doc/misc/footer.html
+FILE: ../../../third_party/rapidjson/doc/misc/header.html
+FILE: ../../../third_party/rapidjson/docker/debian/Dockerfile
+FILE: ../../../third_party/rapidjson/example/archiver/archiver.cpp
+FILE: ../../../third_party/rapidjson/example/archiver/archiver.h
+FILE: ../../../third_party/rapidjson/example/archiver/archivertest.cpp
+FILE: ../../../third_party/rapidjson/example/capitalize/capitalize.cpp
+FILE: ../../../third_party/rapidjson/example/condense/condense.cpp
+FILE: ../../../third_party/rapidjson/example/filterkey/filterkey.cpp
+FILE: ../../../third_party/rapidjson/example/filterkeydom/filterkeydom.cpp
+FILE: ../../../third_party/rapidjson/example/jsonx/jsonx.cpp
+FILE: ../../../third_party/rapidjson/example/lookaheadparser/lookaheadparser.cpp
+FILE: ../../../third_party/rapidjson/example/messagereader/messagereader.cpp
+FILE: ../../../third_party/rapidjson/example/parsebyparts/parsebyparts.cpp
+FILE: ../../../third_party/rapidjson/example/pretty/pretty.cpp
+FILE: ../../../third_party/rapidjson/example/prettyauto/prettyauto.cpp
+FILE: ../../../third_party/rapidjson/example/schemavalidator/schemavalidator.cpp
+FILE: ../../../third_party/rapidjson/example/serialize/serialize.cpp
+FILE: ../../../third_party/rapidjson/example/simpledom/simpledom.cpp
+FILE: ../../../third_party/rapidjson/example/simplepullreader/simplepullreader.cpp
+FILE: ../../../third_party/rapidjson/example/simplereader/simplereader.cpp
+FILE: ../../../third_party/rapidjson/example/simplewriter/simplewriter.cpp
+FILE: ../../../third_party/rapidjson/example/sortkeys/sortkeys.cpp
+FILE: ../../../third_party/rapidjson/example/tutorial/tutorial.cpp
+FILE: ../../../third_party/rapidjson/include_dirs.js
+FILE: ../../../third_party/rapidjson/library.json
+FILE: ../../../third_party/rapidjson/package.json
 ----------------------------------------------------------------------------------------------------
-Copyright 2014, the Dart project authors. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
+Tencent is pleased to support the open source community by making RapidJSON available.
 
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
+Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.  All rights reserved.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
+If you have downloaded a copy of the RapidJSON binary from Tencent, please note that the RapidJSON binary is licensed under the MIT License.
+If you have downloaded a copy of the RapidJSON source code from Tencent, please note that RapidJSON source code is licensed under the MIT License, except for the third-party components listed below which are subject to different license terms.  Your integration of RapidJSON into your own projects may require compliance with the MIT License, as well as the other licenses applicable to the third-party components included within RapidJSON.
 
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/browser/lib/dart.js + ../../../third_party/dart/third_party/observatory_pub_packages/packages/browser/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/browser/lib/dart.js
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/browser/lib/interop.js
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/algorithms.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/collection.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/equality.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/iterable_zip.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/algorithms.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/equality.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/iterable_zip.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/unmodifiable_wrappers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/wrappers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/wrappers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/pretty_print.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/context.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/parsed_path.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/path_exception.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/style.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/style/posix.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/style/url.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/style/windows.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/lib/src/chain.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/lib/src/frame.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/lib/src/lazy_trace.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/lib/src/stack_zone_specification.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/lib/src/trace.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/lib/src/utils.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/lib/src/vm_trace.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/lib/stack_trace.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/compact_vm_config.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/html_config.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/html_enhanced_config.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/html_individual_config.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/configuration.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/pretty_print.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/simple_configuration.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/test_case.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/utils.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/unittest.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/vm_config.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
+A copy of the MIT License is included in this file.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
+Other dependencies and licenses:
 
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
+Open Source Software Licensed Under the BSD License:
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/.analysis_options
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/charted-demo-screenshot.png
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/components/demo_chartstate.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/components/demo_chartstate.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/components/demo_custom_axis.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/demo_charts.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/demo_interactive.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_bar_charts.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_bar_charts.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_cartesian_renderers.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_combo_charts.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_combo_charts.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_line_charts.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_line_charts.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_pie_charts.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_pie_charts.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_stacked_bar_charts.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_stacked_bar_charts.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/index.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/layout/treemap_demo.html
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/selection/transitions_demo.html
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2014, Michael Bostock and Google Inc.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of Google Inc. nor the names of its
-  contributors may be used to endorse or promote products derived from this
-  software without specific prior written permission
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL MICHAEL BOSTOCK BE LIABLE FOR ANY DIRECT,
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/components/demo_custom_axis.dart
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/components/demo_custom_axis.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/demo_interactive.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/charts/renderers/demo_cartesian_renderers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/layout/treemap_demo.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/examples/selection/transitions_demo.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charted.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/behaviors/axis_label_tooltip.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/behaviors/chart_tooltip.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/behaviors/hovercard.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/behaviors/line_marker.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/behaviors/mouse_tracker.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/cartesian_renderers/bar_chart_renderer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/cartesian_renderers/bubble_chart_renderer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/cartesian_renderers/cartesian_base_renderer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/cartesian_renderers/line_chart_renderer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/cartesian_renderers/stackedbar_chart_renderer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/cartesian_renderers/stackedline_chart_renderer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/chart_area.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/chart_config.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/chart_data.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/chart_events.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/chart_legend.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/chart_renderer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/chart_series.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/chart_state.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/chart_theme.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/charts.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/data_transformers/aggregation.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/data_transformers/aggregation_item.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/data_transformers/aggregation_transformer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/data_transformers/filter_transformer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/data_transformers/transpose_transformer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/layout_renderers/layout_base_renderer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/layout_renderers/pie_chart_renderer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/src/cartesian_area_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/src/chart_axis_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/src/chart_config_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/src/chart_data_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/src/chart_events_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/src/chart_legend_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/src/chart_series_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/src/chart_state_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/src/layout_area_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/charts/themes/quantum_theme.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/interpolators.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/interpolators/easing.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/interpolators/interpolators.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/scales.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/scales/linear_scale.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/scales/log_scale.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/scales/ordinal_scale.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/scales/time_scale.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/text_metrics.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/text_metrics/segmentation.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/text_metrics/segmentation_data.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/text_metrics/segmentation_utils.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/time_interval.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/timer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/utils.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/utils/bidi_formatter.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/utils/color.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/utils/disposer.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/utils/lists.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/utils/math.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/utils/namespace.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/utils/object_factory.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/core/utils/rect.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/layout/layout.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/layout/src/hierarchy_layout.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/layout/src/pie_layout.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/layout/src/treemap_layout.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/locale/format.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/locale/format/number_format.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/locale/format/time_format.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/locale/languages/en_us.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/locale/locale.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/selection/selection.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/selection/selection_scope.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/selection/src/selection_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/selection/src/transition_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/selection/transition.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/svg/axis.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/svg/shapes.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/svg/shapes/arc.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/svg/shapes/area.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/svg/shapes/line.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/lib/svg/shapes/rect.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/tool/build_unicode_segmentation_data.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/charted/tool/hop_runner.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2013, Google Inc.
+The msinttypes r29
+Copyright (c) 2006-2013 Alexander Chemeris
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
 * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
 * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+* Neither the name of  copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
-* Neither the name of Google Inc. nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Terms of the MIT License:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/.test_config
+LIBRARY: rapidjson
+ORIGIN: ../../../third_party/rapidjson/contrib/natvis/LICENSE
+TYPE: LicenseType.mit
+FILE: ../../../third_party/rapidjson/contrib/natvis/rapidjson.natvis
 ----------------------------------------------------------------------------------------------------
-Copyright 2015, the Dart project authors. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
+The MIT License (MIT)
 
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
+Copyright (c) 2017 Bart Muzzin
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/canonicalized_map.dart + ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/priority_queue.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/canonicalized_map.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/priority_queue.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/queue_list.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/utils.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/.status
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/date_time_patterns.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/logging/.status
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/matcher.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/mirror_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/util.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/benchmark/benchmark.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/characters.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/internal_style.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/utils.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/.status
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/internal_test_case.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/prints_matcher.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/throws_matcher.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/throws_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/util.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/test_environment.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/example/ga.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/lib/src/usage_impl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/lib/src/usage_impl_html.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/lib/src/usage_impl_io.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/lib/usage.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/lib/usage_html.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/lib/usage_io.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/lib/uuid/uuid.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/usage/tool/grind.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
+Derived from:
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
+The MIT License (MIT)
 
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/combined_wrappers/combined_iterable.dart + ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/combined_wrappers/combined_iterable.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/combined_wrappers/combined_list.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/combined_wrappers/combined_map.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/dart_internal/lib/extract_type_arguments.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/meta/lib/dart2js.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/stack_trace/lib/src/lazy_chain.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
+Copyright (c) 2015 mojmir svoboda
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/empty_unmodifiable_set.dart + ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/empty_unmodifiable_set.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/equality_map.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/equality_set.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/functions.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/union_set.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/collection/lib/src/union_set_controller.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/intl/compact_number_format.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/plural_rules.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/order_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/meta/lib/meta.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/observable.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/differs.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/differs/list_differ.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/differs/map_differ.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/internal.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/observable.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/observable_list.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/observable_map.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/records.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/records/list_change_record.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/records/map_change_record.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/records/property_change_record.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/to_observable.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/af.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/am.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ar.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ar_DZ.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/az.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/be.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/bg.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/bn.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/br.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/bs.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ca.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/chr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/cs.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/cy.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/da.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/de.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/de_AT.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/de_CH.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/el.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en_AU.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en_CA.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en_GB.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en_IE.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en_IN.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en_ISO.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en_MY.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en_SG.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en_US.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/en_ZA.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/es.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/es_419.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/es_ES.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/es_MX.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/es_US.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/et.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/eu.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/fa.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/fi.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/fil.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/fr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/fr_CA.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/fr_CH.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ga.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/gl.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/gsw.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/gu.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/haw.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/he.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/hi.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/hr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/hu.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/hy.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/id.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/in.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/is.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/it.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/it_CH.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/iw.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ja.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ka.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/kk.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/km.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/kn.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ko.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ky.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ln.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/lo.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/lt.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/lv.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/mk.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ml.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/mn.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/mo.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/mr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ms.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/mt.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/my.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/nb.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ne.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/nl.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/no.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/no_NO.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/or.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/pa.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/pl.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ps.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/pt.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/pt_BR.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/pt_PT.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ro.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ru.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/sd.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/sh.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/si.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/sk.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/sl.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/sq.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/sr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/sr_Latn.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/sv.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/sw.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ta.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/te.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/th.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/tl.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/tr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/uk.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/ur.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/uz.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/vi.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/zh.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/zh_CN.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/zh_HK.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/zh_TW.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/patterns/zu.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/af.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/am.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ar.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ar_DZ.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/az.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/be.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/bg.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/bn.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/br.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/bs.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ca.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/chr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/cs.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/cy.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/da.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/de.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/de_AT.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/de_CH.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/el.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en_AU.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en_CA.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en_GB.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en_IE.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en_IN.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en_ISO.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en_MY.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en_SG.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en_US.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/en_ZA.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/es.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/es_419.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/es_ES.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/es_MX.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/es_US.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/et.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/eu.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/fa.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/fi.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/fil.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/fr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/fr_CA.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/fr_CH.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ga.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/gl.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/gsw.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/gu.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/haw.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/he.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/hi.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/hr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/hu.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/hy.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/id.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/in.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/is.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/it.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/it_CH.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/iw.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ja.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ka.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/kk.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/km.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/kn.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ko.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ky.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ln.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/lo.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/lt.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/lv.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/mk.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ml.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/mn.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/mr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ms.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/mt.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/my.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/nb.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ne.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/nl.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/no.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/no_NO.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/or.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/pa.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/pl.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ps.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/pt.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/pt_BR.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/pt_PT.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ro.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ru.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/si.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/sk.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/sl.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/sq.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/sr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/sr_Latn.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/sv.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/sw.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ta.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/te.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/th.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/tl.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/tr.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/uk.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/ur.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/uz.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/vi.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/zh.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/zh_CN.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/zh_HK.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/zh_TW.json
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/symbols/zu.json
-----------------------------------------------------------------------------------------------------
-Copyright 2013, the Dart project authors. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/date_symbol_data_custom.dart + ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/date_symbol_data_custom.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2017, the Dart project authors.
-Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/date_symbol_data_local.dart + ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/date_symbol_data_local.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/number_symbols_data.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2014, the Dart project authors.
-Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/locale_list.dart + ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/date_symbol_data_file.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/date_symbol_data_http_request.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/date_symbols.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/intl.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/intl_browser.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/intl_standalone.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/message_lookup_by_library.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/number_symbols.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/locale_list.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/date_format_internal.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/file_data_reader.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/http_request_data_reader.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/intl/bidi_formatter.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/intl/bidi_utils.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/intl/date_format.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/intl/date_format_field.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/intl/date_format_helpers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/intl/number_format.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/intl_helpers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/lib/src/lazy_locale_data.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/intl/tool/generate_locale_data_files.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/logging/lib/logging.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/core_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/custom_matcher.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/description.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/error_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/interfaces.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/iterable_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/map_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/numeric_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/operator_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/string_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/path.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/core_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/description.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/error_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/expect.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/future_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/interfaces.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/iterable_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/map_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/numeric_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/operator_matchers.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/src/matcher/string_matchers.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/equals_matcher.dart + ../../../third_party/dart/third_party/observatory_pub_packages/packages/browser/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/equals_matcher.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/feature_matcher.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/having_matcher.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/matcher/lib/src/type_matcher.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/path_map.dart
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/path/lib/src/path_set.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2018, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/meta/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/observable/lib/src/change_notifier.dart
-----------------------------------------------------------------------------------------------------
-Copyright 2016, the Dart project authors. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/coverage_controller.js + ../../../third_party/dart/third_party/observatory_pub_packages/packages/browser/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/coverage_controller.js
-FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/unittest/lib/test_controller.js
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -21584,6 +20873,121 @@ OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: rapidjson
+ORIGIN: ../../../third_party/rapidjson/license.txt
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/rapidjson/.gitmodules
+FILE: ../../../third_party/rapidjson/RapidJSON.pc.in
+FILE: ../../../third_party/rapidjson/RapidJSONConfig.cmake.in
+FILE: ../../../third_party/rapidjson/RapidJSONConfigVersion.cmake.in
+FILE: ../../../third_party/rapidjson/appveyor.yml
+FILE: ../../../third_party/rapidjson/doc/Doxyfile.in
+FILE: ../../../third_party/rapidjson/doc/Doxyfile.zh-cn.in
+FILE: ../../../third_party/rapidjson/doc/diagram/architecture.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/architecture.png
+FILE: ../../../third_party/rapidjson/doc/diagram/insituparsing.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/insituparsing.png
+FILE: ../../../third_party/rapidjson/doc/diagram/iterative-parser-states-diagram.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/iterative-parser-states-diagram.png
+FILE: ../../../third_party/rapidjson/doc/diagram/move1.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/move1.png
+FILE: ../../../third_party/rapidjson/doc/diagram/move2.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/move2.png
+FILE: ../../../third_party/rapidjson/doc/diagram/move3.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/move3.png
+FILE: ../../../third_party/rapidjson/doc/diagram/normalparsing.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/normalparsing.png
+FILE: ../../../third_party/rapidjson/doc/diagram/simpledom.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/simpledom.png
+FILE: ../../../third_party/rapidjson/doc/diagram/tutorial.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/tutorial.png
+FILE: ../../../third_party/rapidjson/doc/diagram/utilityclass.dot
+FILE: ../../../third_party/rapidjson/doc/diagram/utilityclass.png
+FILE: ../../../third_party/rapidjson/doc/logo/rapidjson.png
+FILE: ../../../third_party/rapidjson/doc/logo/rapidjson.svg
+FILE: ../../../third_party/rapidjson/doc/misc/DoxygenLayout.xml
+FILE: ../../../third_party/rapidjson/doc/misc/footer.html
+FILE: ../../../third_party/rapidjson/doc/misc/header.html
+FILE: ../../../third_party/rapidjson/docker/debian/Dockerfile
+FILE: ../../../third_party/rapidjson/example/archiver/archiver.cpp
+FILE: ../../../third_party/rapidjson/example/archiver/archiver.h
+FILE: ../../../third_party/rapidjson/example/archiver/archivertest.cpp
+FILE: ../../../third_party/rapidjson/example/capitalize/capitalize.cpp
+FILE: ../../../third_party/rapidjson/example/condense/condense.cpp
+FILE: ../../../third_party/rapidjson/example/filterkey/filterkey.cpp
+FILE: ../../../third_party/rapidjson/example/filterkeydom/filterkeydom.cpp
+FILE: ../../../third_party/rapidjson/example/jsonx/jsonx.cpp
+FILE: ../../../third_party/rapidjson/example/lookaheadparser/lookaheadparser.cpp
+FILE: ../../../third_party/rapidjson/example/messagereader/messagereader.cpp
+FILE: ../../../third_party/rapidjson/example/parsebyparts/parsebyparts.cpp
+FILE: ../../../third_party/rapidjson/example/pretty/pretty.cpp
+FILE: ../../../third_party/rapidjson/example/prettyauto/prettyauto.cpp
+FILE: ../../../third_party/rapidjson/example/schemavalidator/schemavalidator.cpp
+FILE: ../../../third_party/rapidjson/example/serialize/serialize.cpp
+FILE: ../../../third_party/rapidjson/example/simpledom/simpledom.cpp
+FILE: ../../../third_party/rapidjson/example/simplepullreader/simplepullreader.cpp
+FILE: ../../../third_party/rapidjson/example/simplereader/simplereader.cpp
+FILE: ../../../third_party/rapidjson/example/simplewriter/simplewriter.cpp
+FILE: ../../../third_party/rapidjson/example/sortkeys/sortkeys.cpp
+FILE: ../../../third_party/rapidjson/example/tutorial/tutorial.cpp
+FILE: ../../../third_party/rapidjson/include_dirs.js
+FILE: ../../../third_party/rapidjson/library.json
+FILE: ../../../third_party/rapidjson/package.json
+----------------------------------------------------------------------------------------------------
+Tencent is pleased to support the open source community by making RapidJSON available.
+
+Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.  All rights reserved.
+
+If you have downloaded a copy of the RapidJSON binary from Tencent, please note that the RapidJSON binary is licensed under the MIT License.
+If you have downloaded a copy of the RapidJSON source code from Tencent, please note that RapidJSON source code is licensed under the MIT License, except for the third-party components listed below which are subject to different license terms.  Your integration of RapidJSON into your own projects may require compliance with the MIT License, as well as the other licenses applicable to the third-party components included within RapidJSON. To avoid the problematic JSON license in your own projects, it's sufficient to exclude the bin/jsonchecker/ directory, as it's the only code under the JSON license.
+A copy of the MIT License is included in this file.
+
+Other dependencies and licenses:
+
+Open Source Software Licensed Under the BSD License:
+
+The msinttypes r29
+Copyright (c) 2006-2013 Alexander Chemeris
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+* Neither the name of  copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Open Source Software Licensed Under the JSON License:
+
+json.org
+Copyright (c) 2002 JSON.org
+All Rights Reserved.
+
+JSON_checker
+Copyright (c) 2002 JSON.org
+All Rights Reserved.
+
+Terms of the JSON License:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+The Software shall be used for Good, not Evil.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Terms of the MIT License:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -22269,201 +21673,6 @@ copyright notice, this list of conditions and the following disclaimer
 in the documentation and/or other materials provided with the
 distribution.
     * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: tonic
-ORIGIN: ../../../third_party/tonic/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/tonic/common/build_config.h
-FILE: ../../../third_party/tonic/converter/dart_converter.cc
-FILE: ../../../third_party/tonic/converter/dart_converter.h
-FILE: ../../../third_party/tonic/dart_message_handler.cc
-FILE: ../../../third_party/tonic/dart_message_handler.h
-FILE: ../../../third_party/tonic/dart_microtask_queue.cc
-FILE: ../../../third_party/tonic/dart_microtask_queue.h
-FILE: ../../../third_party/tonic/file_loader/file_loader.cc
-FILE: ../../../third_party/tonic/file_loader/file_loader.h
-FILE: ../../../third_party/tonic/filesystem/filesystem/eintr_wrapper.h
-FILE: ../../../third_party/tonic/filesystem/filesystem/file.cc
-FILE: ../../../third_party/tonic/filesystem/filesystem/file.h
-FILE: ../../../third_party/tonic/filesystem/filesystem/path.h
-FILE: ../../../third_party/tonic/filesystem/filesystem/path_posix.cc
-FILE: ../../../third_party/tonic/logging/dart_error.cc
-FILE: ../../../third_party/tonic/logging/dart_error.h
-FILE: ../../../third_party/tonic/logging/dart_invoke.cc
-FILE: ../../../third_party/tonic/logging/dart_invoke.h
-FILE: ../../../third_party/tonic/parsers/packages_map.cc
-FILE: ../../../third_party/tonic/parsers/packages_map.h
-FILE: ../../../third_party/tonic/scopes/dart_api_scope.h
-FILE: ../../../third_party/tonic/scopes/dart_isolate_scope.cc
-FILE: ../../../third_party/tonic/scopes/dart_isolate_scope.h
-FILE: ../../../third_party/tonic/typed_data/dart_byte_data.h
-FILE: ../../../third_party/tonic/typed_data/int32_list.h
-FILE: ../../../third_party/tonic/typed_data/typed_list.h
-FILE: ../../../third_party/tonic/typed_data/uint16_list.h
-FILE: ../../../third_party/tonic/typed_data/uint8_list.h
-----------------------------------------------------------------------------------------------------
-Copyright 2016 The Fuchsia Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: tonic
-ORIGIN: ../../../third_party/tonic/common/log.cc + ../../../third_party/tonic/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/tonic/common/log.cc
-FILE: ../../../third_party/tonic/common/log.h
-FILE: ../../../third_party/tonic/common/macros.h
-----------------------------------------------------------------------------------------------------
-Copyright 2018 The Fuchsia Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: tonic
-ORIGIN: ../../../third_party/tonic/file_loader/file_loader_fuchsia.cc + ../../../third_party/tonic/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/tonic/dart_list.cc
-FILE: ../../../third_party/tonic/dart_list.h
-FILE: ../../../third_party/tonic/file_loader/file_loader_fuchsia.cc
-FILE: ../../../third_party/tonic/file_loader/file_loader_posix.cc
-FILE: ../../../third_party/tonic/file_loader/file_loader_win.cc
-FILE: ../../../third_party/tonic/filesystem/filesystem/path_win.cc
-FILE: ../../../third_party/tonic/filesystem/filesystem/portable_unistd.h
-FILE: ../../../third_party/tonic/platform/platform_utils.h
-FILE: ../../../third_party/tonic/platform/platform_utils_posix.cc
-FILE: ../../../third_party/tonic/platform/platform_utils_win.cc
-----------------------------------------------------------------------------------------------------
-Copyright 2017 The Fuchsia Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: tonic
-ORIGIN: ../../../third_party/tonic/typed_data/dart_byte_data.cc + ../../../third_party/tonic/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/tonic/dart_args.h
-FILE: ../../../third_party/tonic/dart_binding_macros.h
-FILE: ../../../third_party/tonic/dart_class_library.cc
-FILE: ../../../third_party/tonic/dart_class_library.h
-FILE: ../../../third_party/tonic/dart_class_provider.cc
-FILE: ../../../third_party/tonic/dart_class_provider.h
-FILE: ../../../third_party/tonic/dart_library_natives.cc
-FILE: ../../../third_party/tonic/dart_library_natives.h
-FILE: ../../../third_party/tonic/dart_persistent_value.cc
-FILE: ../../../third_party/tonic/dart_persistent_value.h
-FILE: ../../../third_party/tonic/dart_state.cc
-FILE: ../../../third_party/tonic/dart_state.h
-FILE: ../../../third_party/tonic/dart_wrappable.cc
-FILE: ../../../third_party/tonic/dart_wrappable.h
-FILE: ../../../third_party/tonic/dart_wrapper_info.h
-FILE: ../../../third_party/tonic/typed_data/dart_byte_data.cc
-FILE: ../../../third_party/tonic/typed_data/float32_list.h
-FILE: ../../../third_party/tonic/typed_data/float64_list.h
-----------------------------------------------------------------------------------------------------
-Copyright 2015 The Fuchsia Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
 contributors may be used to endorse or promote products derived from
 this software without specific prior written permission.
 
@@ -23495,4 +22704,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 368
+Total license count: 355

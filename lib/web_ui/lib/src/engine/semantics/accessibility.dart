@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// Singleton for accessing accessibility announcements from the platform.
@@ -51,9 +52,9 @@ class AccessibilityAnnouncements {
   html.HtmlElement get _domElement => _element ??= _createElement();
 
   /// Decodes the message coming from the 'flutter/accessibility' channel.
-  void handleMessage(ByteData data) {
+  void handleMessage(StandardMessageCodec codec, ByteData data) {
     final Map<dynamic, dynamic> inputMap =
-        const StandardMessageCodec().decodeMessage(data);
+        codec.decodeMessage(data);
     final Map<dynamic, dynamic> dataMap = inputMap['data'];
     final String message = dataMap['message'];
     if (message != null && message.isNotEmpty) {

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// An object backed by a [js.JsObject] mapped onto a Skia C++ object in the
@@ -248,9 +249,22 @@ const List<int> _skMatrixIndexToMatrix4Index = <int>[
   3, 7, 15, // Row 3
 ];
 
-/// Converts a 4x4 Flutter matrix (represented as a [Float64List]) to an
+/// Converts a 4x4 Flutter matrix (represented as a [Float32List]) to an
 /// SkMatrix, which is a 3x3 transform matrix.
-js.JsArray<double> makeSkMatrix(Float64List matrix4) {
+js.JsArray<double> makeSkMatrixFromFloat32(Float32List matrix4) {
+  final js.JsArray<double> skMatrix = js.JsArray<double>();
+  skMatrix.length = 9;
+  for (int i = 0; i < 9; ++i) {
+    final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
+    if (matrix4Index < matrix4.length)
+      skMatrix[i] = matrix4[matrix4Index];
+    else
+      skMatrix[i] = 0.0;
+  }
+  return skMatrix;
+}
+
+js.JsArray<double> makeSkMatrixFromFloat64(Float64List matrix4) {
   final js.JsArray<double> skMatrix = js.JsArray<double>();
   skMatrix.length = 9;
   for (int i = 0; i < 9; ++i) {
@@ -284,10 +298,6 @@ js.JsArray<double> makeSkiaColorStops(List<double> colorStops) {
   jsColorStops.length = colorStops.length;
   return jsColorStops;
 }
-
-// These must be kept in sync with `flow/layers/physical_shape_layer.cc`.
-const double kLightHeight = 600.0;
-const double kLightRadius = 800.0;
 
 void drawSkShadow(
   js.JsObject skCanvas,

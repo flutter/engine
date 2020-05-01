@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 
-import 'package:ui/ui.dart';
+import 'package:ui/ui.dart' hide window;
 import 'package:ui/src/engine.dart';
 
 import 'scuba.dart';
@@ -27,9 +28,11 @@ void main() async {
 
   final TextStyle warningStyle = TextStyle(
     color: const Color(0xFFFF0000),
-    fontFamily: 'Arial',
+    fontFamily: 'Roboto',
     fontSize: 10,
   );
+
+  setUpStableTestFonts();
 
   Paragraph warning(String text) {
     return paragraph(text, textStyle: warningStyle);
@@ -86,7 +89,7 @@ void main() async {
     offset = offset.translate(0, p.height + 10);
 
     // Only the first line is rendered with an ellipsis.
-    if (!TextMeasurementService.enableExperimentalCanvasImplementation) {
+    if (!WebExperiments.instance.useCanvasText) {
       // This is now correct with the canvas-based measurement, so we shouldn't
       // print the "(wrong)" warning.
       p = warning('(wrong)');
@@ -103,7 +106,7 @@ void main() async {
 
     // Only the first two lines are rendered and the ellipsis appears on the 2nd
     // line.
-    if (!TextMeasurementService.enableExperimentalCanvasImplementation) {
+    if (!WebExperiments.instance.useCanvasText) {
       // This is now correct with the canvas-based measurement, so we shouldn't
       // print the "(wrong)" warning.
       p = warning('(wrong)');

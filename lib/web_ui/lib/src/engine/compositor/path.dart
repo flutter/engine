@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// An implementation of [ui.Path] which is backed by an `SkPath`.
@@ -56,17 +57,17 @@ class SkPath implements ui.Path {
 
   @override
   void addOval(ui.Rect oval) {
-    _skPath.callMethod('addOval', <dynamic>[makeSkRect(oval), true, 0]);
+    _skPath.callMethod('addOval', <dynamic>[makeSkRect(oval), false, 1]);
   }
 
   @override
   void addPath(ui.Path path, ui.Offset offset, {Float64List matrix4}) {
     List<double> skMatrix;
     if (matrix4 == null) {
-      skMatrix = makeSkMatrix(
+      skMatrix = makeSkMatrixFromFloat32(
           Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage);
     } else {
-      skMatrix = makeSkMatrix(matrix4);
+      skMatrix = makeSkMatrixFromFloat64(matrix4);
       skMatrix[2] += offset.dx;
       skMatrix[5] += offset.dy;
     }
@@ -174,10 +175,10 @@ class SkPath implements ui.Path {
   void extendWithPath(ui.Path path, ui.Offset offset, {Float64List matrix4}) {
     List<double> skMatrix;
     if (matrix4 == null) {
-      skMatrix = makeSkMatrix(
+      skMatrix = makeSkMatrixFromFloat32(
           Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage);
     } else {
-      skMatrix = makeSkMatrix(matrix4);
+      skMatrix = makeSkMatrixFromFloat64(matrix4);
       skMatrix[2] += offset.dx;
       skMatrix[5] += offset.dy;
     }
@@ -315,7 +316,7 @@ class SkPath implements ui.Path {
   @override
   ui.Path transform(Float64List matrix4) {
     final js.JsObject newPath = _skPath.callMethod('copy');
-    newPath.callMethod('transform', <js.JsArray>[makeSkMatrix(matrix4)]);
+    newPath.callMethod('transform', <js.JsArray>[makeSkMatrixFromFloat64(matrix4)]);
     return SkPath._fromSkPath(newPath);
   }
 

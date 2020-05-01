@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// A virtual canvas that applies operations to multiple canvases at once.
@@ -57,7 +58,7 @@ class SkNWayCanvas {
   }
 
   /// Calls [transform] on all canvases.
-  void transform(Float64List matrix) {
+  void transform(Float32List matrix) {
     for (int i = 0; i < _canvases.length; i++) {
       _canvases[i].transform(matrix);
     }

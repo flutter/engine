@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 bool _offsetIsValid(ui.Offset offset) {
@@ -11,7 +12,7 @@ bool _offsetIsValid(ui.Offset offset) {
   return true;
 }
 
-bool _matrix4IsValid(Float64List matrix4) {
+bool _matrix4IsValid(Float32List matrix4) {
   assert(matrix4 != null, 'Matrix4 argument was null.');
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
@@ -57,7 +58,7 @@ class GradientSweep extends EngineGradient {
   final ui.TileMode tileMode;
   final double startAngle;
   final double endAngle;
-  final Float64List matrix4;
+  final Float32List matrix4;
 
   @override
   js.JsObject createSkiaShader() {
@@ -164,13 +165,13 @@ class GradientRadial extends EngineGradient {
   final List<ui.Color> colors;
   final List<double> colorStops;
   final ui.TileMode tileMode;
-  final Float64List matrix4;
+  final Float32List matrix4;
 
   @override
   Object createPaintStyle(html.CanvasRenderingContext2D ctx) {
     if (!experimentalUseSkia) {
       // The DOM backend does not (yet) support all parameters.
-      if (matrix4 != null && !Matrix4.fromFloat64List(matrix4).isIdentity()) {
+      if (matrix4 != null && !Matrix4.fromFloat32List(matrix4).isIdentity()) {
         throw UnimplementedError(
             'matrix4 not supported in GradientRadial shader');
       }
@@ -210,7 +211,7 @@ class GradientRadial extends EngineGradient {
       jsColors,
       makeSkiaColorStops(colorStops),
       tileMode.index,
-      matrix4 != null ? makeSkMatrix(matrix4) : null,
+      matrix4 != null ? makeSkMatrixFromFloat32(matrix4) : null,
       0,
     ]);
   }
@@ -228,7 +229,7 @@ class GradientConical extends EngineGradient {
   final List<ui.Color> colors;
   final List<double> colorStops;
   final ui.TileMode tileMode;
-  final Float64List matrix4;
+  final Float32List matrix4;
 
   @override
   Object createPaintStyle(html.CanvasRenderingContext2D ctx) {
@@ -237,7 +238,25 @@ class GradientConical extends EngineGradient {
 
   @override
   js.JsObject createSkiaShader() {
-    throw UnimplementedError();
+    assert(experimentalUseSkia);
+
+    final js.JsArray<num> jsColors = js.JsArray<num>();
+    jsColors.length = colors.length;
+    for (int i = 0; i < colors.length; i++) {
+      jsColors[i] = colors[i].value;
+    }
+
+    return canvasKit.callMethod('MakeTwoPointConicalGradient', <dynamic>[
+      makeSkPoint(focal),
+      focalRadius,
+      makeSkPoint(center),
+      radius,
+      jsColors,
+      makeSkiaColorStops(colorStops),
+      tileMode.index,
+      matrix4 != null ? makeSkMatrixFromFloat32(matrix4) : null,
+      0,
+    ]);
   }
 }
 

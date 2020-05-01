@@ -4,18 +4,24 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
+#include "dpi_utils.h"
+
 namespace flutter {
 
-Win32Window::Win32Window() {
-  // Assume Windows 10 1703 or greater for DPI handling.  When running on a
-  // older release of Windows where this context doesn't exist, DPI calls will
-  // fail and Flutter rendering will be impacted until this is fixed.
-  // To handle downlevel correctly, dpi_helper must use the most recent DPI
-  // context available should be used: Windows 1703: Per-Monitor V2, 8.1:
-  // Per-Monitor V1, Windows 7: System See
-  // https://docs.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows
-  // for more information.
+namespace {
+char32_t CodePointFromSurrogatePair(wchar_t high, wchar_t low) {
+  return 0x10000 + ((static_cast<char32_t>(high) & 0x000003FF) << 10) +
+         (low & 0x3FF);
 }
+}  // namespace
+
+Win32Window::Win32Window() {
+  // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
+  // supported, |current_dpi_| should be updated in the
+  // kWmDpiChangedBeforeParent message.
+  current_dpi_ = GetDpiForHWND(nullptr);
+}
+
 Win32Window::~Win32Window() {
   Destroy();
 }
@@ -26,7 +32,7 @@ void Win32Window::InitializeChild(const char* title,
   Destroy();
   std::wstring converted_title = NarrowToWide(title);
 
-  WNDCLASS window_class = ResgisterWindowClass(converted_title);
+  WNDCLASS window_class = RegisterWindowClass(converted_title);
 
   auto* result = CreateWindowEx(
       0, window_class.lpszClassName, converted_title.c_str(),
@@ -54,7 +60,7 @@ std::wstring Win32Window::NarrowToWide(const char* source) {
   return wideTitle;
 }
 
-WNDCLASS Win32Window::ResgisterWindowClass(std::wstring& title) {
+WNDCLASS Win32Window::RegisterWindowClass(std::wstring& title) {
   window_class_name_ = title;
 
   WNDCLASS window_class{};
@@ -82,14 +88,6 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                      reinterpret_cast<LONG_PTR>(cs->lpCreateParams));
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
-
-    // Since the application is running in Per-monitor V2 mode, turn on
-    // automatic titlebar scaling
-    BOOL result = that->dpi_helper_->EnableNonClientDpiScaling(window);
-    if (result != TRUE) {
-      OutputDebugString(L"Failed to enable non-client area autoscaling");
-    }
-    that->current_dpi_ = that->dpi_helper_->GetDpiForWindow(window);
     that->window_handle_ = window;
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     return that->MessageHandler(window, message, wparam, lparam);
@@ -119,18 +117,13 @@ Win32Window::MessageHandler(HWND hwnd,
   auto window =
       reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
   UINT button_pressed = 0;
+
   if (window != nullptr) {
     switch (message) {
-      case WM_DPICHANGED:
-        return HandleDpiChange(window_handle_, wparam, lparam, true);
-        break;
       case kWmDpiChangedBeforeParent:
-        return HandleDpiChange(window_handle_, wparam, lparam, false);
-        break;
-      case WM_DESTROY:
-        window->OnClose();
+        current_dpi_ = GetDpiForHWND(window_handle_);
+        window->OnDpiScale(current_dpi_);
         return 0;
-        break;
       case WM_SIZE:
         width = LOWORD(lparam);
         height = HIWORD(lparam);
@@ -205,35 +198,73 @@ Win32Window::MessageHandler(HWND hwnd,
         // DefWindowProc will send WM_CHAR for this WM_UNICHAR.
         break;
       }
+      case WM_DEADCHAR:
+      case WM_SYSDEADCHAR:
       case WM_CHAR:
       case WM_SYSCHAR: {
-        if (wparam == VK_BACK)
-          break;
-        char32_t code_point = static_cast<char32_t>(wparam);
-        static char32_t lead_surrogate = 0;
-        // If code_point is LeadSurrogate, save and return.
-        if ((code_point & 0xFFFFFC00) == 0xD800) {
-          lead_surrogate = code_point;
-          return TRUE;
+        static wchar_t s_pending_high_surrogate = 0;
+
+        wchar_t character = static_cast<wchar_t>(wparam);
+        std::u16string text({character});
+        char32_t code_point = character;
+        if (IS_HIGH_SURROGATE(character)) {
+          // Save to send later with the trailing surrogate.
+          s_pending_high_surrogate = character;
+        } else if (IS_LOW_SURROGATE(character) &&
+                   s_pending_high_surrogate != 0) {
+          text.insert(text.begin(), s_pending_high_surrogate);
+          // Merge the surrogate pairs for the key event.
+          code_point =
+              CodePointFromSurrogatePair(s_pending_high_surrogate, character);
+          s_pending_high_surrogate = 0;
         }
-        // Merge TrailSurrogate and LeadSurrogate.
-        if (lead_surrogate != 0 && (code_point & 0xFFFFFC00) == 0xDC00) {
-          code_point = 0x10000 + ((lead_surrogate & 0x000003FF) << 10) +
-                       (code_point & 0x3FF);
+
+        // Of the messages handled here, only WM_CHAR should be treated as
+        // characters. WM_SYS*CHAR are not part of text input, and WM_DEADCHAR
+        // will be incorporated into a later WM_CHAR with the full character.
+        // Also filter out:
+        // - Lead surrogates, which like dead keys will be send once combined.
+        // - ASCII control characters, which are sent as WM_CHAR events for all
+        //   control key shortcuts.
+        if (message == WM_CHAR && s_pending_high_surrogate == 0 &&
+            character >= u' ') {
+          window->OnText(text);
         }
-        lead_surrogate = 0;
-        window->OnChar(code_point);
+
+        // All key presses that generate a character should be sent from
+        // WM_CHAR. In order to send the full key press information, the keycode
+        // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
+        if (keycode_for_char_message_ != 0) {
+          const unsigned int scancode = (lparam >> 16) & 0xff;
+          window->OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
+                        code_point);
+          keycode_for_char_message_ = 0;
+        }
         break;
       }
       case WM_KEYDOWN:
       case WM_SYSKEYDOWN:
       case WM_KEYUP:
       case WM_SYSKEYUP:
-        unsigned char scancode = ((unsigned char*)&lparam)[2];
-        unsigned int virtualKey = MapVirtualKey(scancode, MAPVK_VSC_TO_VK);
-        const int key = virtualKey;
-        const int action = message == WM_KEYDOWN ? WM_KEYDOWN : WM_KEYUP;
-        window->OnKey(key, scancode, action, 0);
+        const bool is_keydown_message =
+            (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
+        // Check if this key produces a character. If so, the key press should
+        // be sent with the character produced at WM_CHAR. Store the produced
+        // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
+        const unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
+        if (character > 0 && is_keydown_message) {
+          keycode_for_char_message_ = wparam;
+          break;
+        }
+        unsigned int keyCode(wparam);
+        const unsigned int scancode = (lparam >> 16) & 0xff;
+        // If the key is a modifier, get its side.
+        if (keyCode == VK_SHIFT || keyCode == VK_MENU ||
+            keyCode == VK_CONTROL) {
+          keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
+        }
+        const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
+        window->OnKey(keyCode, scancode, action, 0);
         break;
     }
     return DefWindowProc(hwnd, message, wparam, lparam);
@@ -265,40 +296,6 @@ void Win32Window::Destroy() {
   }
 
   UnregisterClass(window_class_name_.c_str(), nullptr);
-}
-
-// DPI Change handler. on WM_DPICHANGE resize the window
-LRESULT
-Win32Window::HandleDpiChange(HWND hwnd,
-                             WPARAM wparam,
-                             LPARAM lparam,
-                             bool toplevel) {
-  if (hwnd != nullptr) {
-    auto window =
-        reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-
-    UINT uDpi = HIWORD(wparam);
-
-    // The DPI is only passed for DPI change messages on top level windows,
-    // hence call function to get DPI if needed.
-    if (uDpi == 0) {
-      uDpi = dpi_helper_->GetDpiForWindow(hwnd);
-    }
-    current_dpi_ = uDpi;
-    window->OnDpiScale(uDpi);
-
-    if (toplevel) {
-      // Resize the window only for toplevel windows which have a suggested
-      // size.
-      auto lprcNewScale = reinterpret_cast<RECT*>(lparam);
-      LONG newWidth = lprcNewScale->right - lprcNewScale->left;
-      LONG newHeight = lprcNewScale->bottom - lprcNewScale->top;
-
-      SetWindowPos(hwnd, nullptr, lprcNewScale->left, lprcNewScale->top,
-                   newWidth, newHeight, SWP_NOZORDER | SWP_NOACTIVATE);
-    }
-  }
-  return 0;
 }
 
 void Win32Window::HandleResize(UINT width, UINT height) {

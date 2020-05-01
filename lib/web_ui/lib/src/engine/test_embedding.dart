@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 const bool _debugLogHistoryActions = false;
@@ -36,7 +37,7 @@ class TestLocationStrategy extends LocationStrategy {
         history = <TestHistoryEntry>[initialEntry];
 
   @override
-  String get path => ensureLeading(currentEntry.url, '/');
+  String get path => currentEntry.url;
 
   int _currentEntryIndex;
   int get currentEntryIndex => _currentEntryIndex;

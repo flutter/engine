@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart' hide window;
@@ -22,7 +23,7 @@ class PlatformMessage {
   String get methodName => methodCall.method;
 
   /// Shorthand for getting the arguments of the method call.
-  String get methodArguments => methodCall.arguments;
+  dynamic get methodArguments => methodCall.arguments;
 }
 
 /// Intercepts platform messages sent from the engine to the framework.

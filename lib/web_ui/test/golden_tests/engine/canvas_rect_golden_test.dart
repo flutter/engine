@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:ui/src/engine.dart';
@@ -29,8 +30,7 @@ void main() async {
 
     html.document.body.append(canvas.rootElement);
     await matchGoldenFile('canvas_rect_flipped.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
-
+  });
 }
 
 void paintRects(BitmapCanvas canvas) {

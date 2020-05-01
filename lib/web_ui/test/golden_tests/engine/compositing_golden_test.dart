@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:math' as math;
 
@@ -38,14 +39,14 @@ void main() async {
     html.document.body.append(builder.build().webOnlyRootElement);
 
     await matchGoldenFile('compositing_shifted_clip_rect.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('pushClipRect with offset and transform', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
 
     builder.pushOffset(0, 60);
     builder.pushTransform(
-      Matrix4.diagonal3Values(1, -1, 1).storage,
+      Matrix4.diagonal3Values(1, -1, 1).toFloat64(),
     );
     builder.pushClipRect(
       const Rect.fromLTRB(10, 10, 60, 60),
@@ -59,7 +60,7 @@ void main() async {
 
     await matchGoldenFile('compositing_clip_rect_with_offset_and_transform.png',
         region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('pushClipRRect', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
@@ -72,7 +73,7 @@ void main() async {
     html.document.body.append(builder.build().webOnlyRootElement);
 
     await matchGoldenFile('compositing_shifted_clip_rrect.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('pushPhysicalShape', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
@@ -101,7 +102,7 @@ void main() async {
 
     await matchGoldenFile('compositing_shifted_physical_shape_clip.png',
         region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('pushImageFilter', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
@@ -114,7 +115,7 @@ void main() async {
     html.document.body.append(builder.build().webOnlyRootElement);
 
     await matchGoldenFile('compositing_image_filter.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   group('Cull rect computation', () {
     _testCullRectComputation();
@@ -245,7 +246,7 @@ void _testCullRectComputation() {
 
     final PersistedStandardPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, const Rect.fromLTRB(40, 40, 70, 70));
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   // Draw a picture inside a layer clip but position the picture such that its
   // paint bounds overflow the layer clip. Verify that the cull rect is the
@@ -275,7 +276,7 @@ void _testCullRectComputation() {
 
     final PersistedStandardPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect, const Rect.fromLTRB(50, 40, 70, 70));
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   // Draw a picture inside a layer clip that's positioned inside the clip using
   // an offset layer. Verify that the cull rect is the intersection between the
@@ -307,7 +308,7 @@ void _testCullRectComputation() {
     final PersistedStandardPicture picture = enumeratePictures().single;
     expect(picture.optimalLocalCullRect,
         const Rect.fromLTRB(-15.0, -20.0, 15.0, 0.0));
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   // Draw a picture inside a layer clip that's positioned an offset layer such
   // that the picture is push completely outside the clip area. Verify that the
@@ -346,7 +347,7 @@ void _testCullRectComputation() {
     builder.pushOffset(80, 50);
 
     builder.pushTransform(
-      Matrix4.rotationZ(-math.pi / 4).storage,
+      Matrix4.rotationZ(-math.pi / 4).toFloat64(),
     );
 
     builder.pushClipRect(
@@ -354,7 +355,7 @@ void _testCullRectComputation() {
     );
 
     builder.pushTransform(
-      Matrix4.rotationZ(math.pi / 4).storage,
+      Matrix4.rotationZ(math.pi / 4).toFloat64(),
     );
 
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
@@ -383,7 +384,7 @@ void _testCullRectComputation() {
       within(
           distance: 0.05, from: const Rect.fromLTRB(-14.1, -14.1, 14.1, 14.1)),
     );
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   test('pushClipPath', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
@@ -398,19 +399,24 @@ void _testCullRectComputation() {
     html.document.body.append(builder.build().webOnlyRootElement);
 
     await matchGoldenFile('compositing_clip_path.png', region: region);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   // Draw a picture inside a rotated clip. Verify that the cull rect is big
   // enough to fit the rotated clip.
   test('clips correctly when using 3d transforms', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+
+    builder.pushTransform(Matrix4.diagonal3Values(
+        EngineWindow.browserDevicePixelRatio,
+        EngineWindow.browserDevicePixelRatio, 1.0).toFloat64());
+
     // TODO(yjbanov): see the TODO below.
     // final double screenWidth = html.window.innerWidth.toDouble();
     // final double screenHeight = html.window.innerHeight.toDouble();
 
     final Matrix4 scaleTransform = Matrix4.identity().scaled(0.5, 0.2);
     builder.pushTransform(
-      scaleTransform.storage,
+      scaleTransform.toFloat64(),
     );
 
     builder.pushOffset(400, 200);
@@ -420,14 +426,14 @@ void _testCullRectComputation() {
     );
 
     builder.pushTransform(
-      Matrix4.rotationY(45.0 * math.pi / 180.0).storage,
+      Matrix4.rotationY(45.0 * math.pi / 180.0).toFloat64()
     );
 
     builder.pushClipRect(
       const Rect.fromLTRB(-140, -140, 140, 140),
     );
 
-    builder.pushTransform(Matrix4.translationValues(0, 0, -50).storage);
+    builder.pushTransform(Matrix4.translationValues(0, 0, -50).toFloat64());
 
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
       canvas.drawPaint(Paint()
@@ -498,6 +504,7 @@ void _testCullRectComputation() {
     builder.pop(); // pushClipRect
     builder.pop(); // pushOffset
     builder.pop(); // pushTransform scale
+    builder.pop(); // pushTransform scale devicepixelratio
     html.document.body.append(builder.build().webOnlyRootElement);
 
     await matchGoldenFile('compositing_3d_rotate1.png', region: region);
@@ -513,7 +520,7 @@ void _testCullRectComputation() {
     //       from: Rect.fromLTRB(
     //           -140, -140, screenWidth - 360.0, screenHeight + 40.0)),
     // );
-  }, timeout: const Timeout(Duration(seconds: 10)));
+  });
 
   // This test reproduces text blurriness when two pieces of text appear inside
   // two nested clips:
@@ -592,11 +599,10 @@ void _testCullRectComputation() {
       await matchGoldenFile(
         'compositing_draw_high_quality_text.png',
         region: canvasSize,
-        maxDiffRate: 0.0,
+        maxDiffRatePercent: 0.0,
         pixelComparison: PixelComparison.precise,
       );
     },
-    timeout: const Timeout(Duration(seconds: 10)),
     testOn: 'chrome',
   );
 }

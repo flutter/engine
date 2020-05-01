@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// An implementation of [ui.Canvas] that is backed by a CanvasKit canvas.
@@ -83,10 +84,10 @@ class CanvasKitCanvas implements ui.Canvas {
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
-    _transform(matrix4);
+    _transform(toMatrix32(matrix4));
   }
 
-  void _transform(Float64List matrix4) {
+  void _transform(Float32List matrix4) {
     _canvas.transform(matrix4);
   }
 
@@ -144,7 +145,7 @@ class CanvasKitCanvas implements ui.Canvas {
     _drawLine(p1, p2, paint);
   }
 
-  void _drawLine(ui.Offset p1, ui.Offset p2, paint) {
+  void _drawLine(ui.Offset p1, ui.Offset p2, ui.Paint paint) {
     _canvas.drawLine(p1, p2, paint);
   }
 

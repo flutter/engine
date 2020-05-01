@@ -26,8 +26,8 @@ class CanvasSpy {
  public:
   CanvasSpy(SkCanvas* target_canvas);
 
-  //------------------------------------------------------------------------------
-  /// @brief      Returns true if any non trasnparent content has been drawn
+  //----------------------------------------------------------------------------
+  /// @brief      Returns true if any non transparent content has been drawn
   /// into
   ///             the spying canvas. Note that this class does tries to detect
   ///             empty canvases but in some cases may return true even for
@@ -35,7 +35,7 @@ class CanvasSpy {
   ///             canvas).
   bool DidDrawIntoCanvas();
 
-  //------------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
   /// @brief      The returned canvas delegate all operations to the target
   /// canvas
   ///             while spying on them.
@@ -71,6 +71,9 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void didConcat(const SkMatrix&) override;
+  void didConcat44(const SkM44&) override;
+  void didScale(SkScalar, SkScalar) override;
+  void didTranslate(SkScalar, SkScalar) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void didSetMatrix(const SkMatrix&) override;
@@ -125,19 +128,6 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
   void onDrawPath(const SkPath&, const SkPaint&) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawBitmap(const SkBitmap&,
-                    SkScalar left,
-                    SkScalar top,
-                    const SkPaint*) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawBitmapRect(const SkBitmap&,
-                        const SkRect* src,
-                        const SkRect& dst,
-                        const SkPaint*,
-                        SrcRectConstraint) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawImage(const SkImage*,
                    SkScalar left,
                    SkScalar top,
@@ -149,12 +139,6 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
                        const SkRect& dst,
                        const SkPaint*,
                        SrcRectConstraint) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawBitmapLattice(const SkBitmap&,
-                           const Lattice&,
-                           const SkRect&,
-                           const SkPaint*) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawImageLattice(const SkImage*,
@@ -169,15 +153,7 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
                        const SkPaint*) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawBitmapNine(const SkBitmap&,
-                        const SkIRect& center,
-                        const SkRect& dst,
-                        const SkPaint*) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawVerticesObject(const SkVertices*,
-                            const SkVertices::Bone bones[],
-                            int boneCount,
                             SkBlendMode,
                             const SkPaint&) override;
 

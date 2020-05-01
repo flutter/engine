@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// The implementation of [ui.Paint] used by the CanvasKit backend.
@@ -30,6 +31,7 @@ class SkPaint extends SkiaObject implements ui.Paint {
 
   @override
   ui.PaintingStyle get style => _style;
+
   @override
   set style(ui.PaintingStyle value) {
     _style = value;

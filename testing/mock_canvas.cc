@@ -60,6 +60,23 @@ void MockCanvas::didConcat(const SkMatrix& matrix) {
   draw_calls_.emplace_back(DrawCall{current_layer_, ConcatMatrixData{matrix}});
 }
 
+void MockCanvas::didConcat44(const SkM44& matrix) {
+  draw_calls_.emplace_back(
+      DrawCall{current_layer_, ConcatMatrix44Data{matrix}});
+}
+
+void MockCanvas::didScale(SkScalar x, SkScalar y) {
+  SkMatrix m;
+  m.setScale(x, y);
+  this->didConcat(m);
+}
+
+void MockCanvas::didTranslate(SkScalar x, SkScalar y) {
+  SkMatrix m;
+  m.setTranslate(x, y);
+  this->didConcat(m);
+}
+
 void MockCanvas::didSetMatrix(const SkMatrix& matrix) {
   draw_calls_.emplace_back(DrawCall{current_layer_, SetMatrixData{matrix}});
 }
@@ -207,25 +224,10 @@ void MockCanvas::onDrawRRect(const SkRRect&, const SkPaint&) {
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawBitmap(const SkBitmap&,
-                              SkScalar,
-                              SkScalar,
-                              const SkPaint*) {
-  FML_DCHECK(false);
-}
-
 void MockCanvas::onDrawImage(const SkImage*,
                              SkScalar,
                              SkScalar,
                              const SkPaint*) {
-  FML_DCHECK(false);
-}
-
-void MockCanvas::onDrawBitmapRect(const SkBitmap&,
-                                  const SkRect*,
-                                  const SkRect&,
-                                  const SkPaint*,
-                                  SrcRectConstraint) {
   FML_DCHECK(false);
 }
 
@@ -244,13 +246,6 @@ void MockCanvas::onDrawImageNine(const SkImage*,
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawBitmapNine(const SkBitmap&,
-                                  const SkIRect&,
-                                  const SkRect&,
-                                  const SkPaint*) {
-  FML_DCHECK(false);
-}
-
 void MockCanvas::onDrawImageLattice(const SkImage*,
                                     const Lattice&,
                                     const SkRect&,
@@ -258,16 +253,7 @@ void MockCanvas::onDrawImageLattice(const SkImage*,
   FML_DCHECK(false);
 }
 
-void MockCanvas::onDrawBitmapLattice(const SkBitmap&,
-                                     const Lattice&,
-                                     const SkRect&,
-                                     const SkPaint*) {
-  FML_DCHECK(false);
-}
-
 void MockCanvas::onDrawVerticesObject(const SkVertices*,
-                                      const SkVertices::Bone[],
-                                      int,
                                       SkBlendMode,
                                       const SkPaint&) {
   FML_DCHECK(false);
@@ -343,6 +329,16 @@ bool operator==(const MockCanvas::ConcatMatrixData& a,
 
 std::ostream& operator<<(std::ostream& os,
                          const MockCanvas::ConcatMatrixData& data) {
+  return os << data.matrix;
+}
+
+bool operator==(const MockCanvas::ConcatMatrix44Data& a,
+                const MockCanvas::ConcatMatrix44Data& b) {
+  return a.matrix == b.matrix;
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         const MockCanvas::ConcatMatrix44Data& data) {
   return os << data.matrix;
 }
 

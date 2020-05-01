@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:ui/ui.dart' hide TextStyle;
@@ -20,7 +21,8 @@ void main() async {
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
       bool write = false}) async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
-    rc.apply(engineCanvas);
+    rc.endRecording();
+    rc.apply(engineCanvas, screenRect);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');

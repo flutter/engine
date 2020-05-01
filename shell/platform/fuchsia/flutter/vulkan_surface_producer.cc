@@ -32,7 +32,7 @@ constexpr int kGrCacheMaxCount = 8192;
 //     "SkiaCacheBytes" field in the ("flutter", "SurfacePool") trace counter
 //     (compare it to the bytes value here)
 // then you should consider increasing the size of the GPU resource cache.
-constexpr size_t kGrCacheMaxByteSize = 16 * (1 << 20);
+constexpr size_t kGrCacheMaxByteSize = 1024 * 600 * 12 * 4;
 
 }  // namespace
 
@@ -63,9 +63,13 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   std::vector<std::string> extensions = {
       VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
   };
+
+  // On Fuchsia, the validation layers need to be packaged as part of the
+  // flutter_runner in order to work. As a result, we can use the presence
+  // of the layers to mean that we want the layers enabled.
   application_ = std::make_unique<vulkan::VulkanApplication>(
       *vk_, "FlutterRunner", std::move(extensions), VK_MAKE_VERSION(1, 0, 0),
-      VK_MAKE_VERSION(1, 1, 0));
+      VK_MAKE_VERSION(1, 1, 0), true /* enable_validation_layers */);
 
   if (!application_->IsValid() || !vk_->AreInstanceProcsSetup()) {
     // Make certain the application instance was created and it setup the
@@ -118,11 +122,17 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   backend_context.fGraphicsQueueIndex =
       logical_device_->GetGraphicsQueueIndex();
   backend_context.fMinAPIVersion = application_->GetAPIVersion();
+  backend_context.fMaxAPIVersion = application_->GetAPIVersion();
   backend_context.fFeatures = skia_features;
   backend_context.fGetProc = std::move(getProc);
   backend_context.fOwnsInstanceAndDevice = false;
 
   context_ = GrContext::MakeVulkan(backend_context);
+
+  if (context_ == nullptr) {
+    FML_LOG(ERROR) << "Failed to create GrContext.";
+    return false;
+  }
 
   // Use local limits specified in this file above instead of flutter defaults.
   context_->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);

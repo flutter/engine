@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of dart.ui;
 
 /// Signature of callbacks that have no arguments and return no data.
@@ -56,12 +57,12 @@ enum FramePhase {
   /// See also [FrameTiming.buildDuration].
   buildFinish,
 
-  /// When the GPU thread starts rasterizing a frame.
+  /// When the raster thread starts rasterizing a frame.
   ///
   /// See also [FrameTiming.rasterDuration].
   rasterStart,
 
-  /// When the GPU thread finishes rasterizing a frame.
+  /// When the raster thread finishes rasterizing a frame.
   ///
   /// See also [FrameTiming.rasterDuration].
   rasterFinish,
@@ -114,7 +115,7 @@ class FrameTiming {
   /// {@endtemplate}
   Duration get buildDuration => _rawDuration(FramePhase.buildFinish) - _rawDuration(FramePhase.buildStart);
 
-  /// The duration to rasterize the frame on the GPU thread.
+  /// The duration to rasterize the frame on the raster thread.
   ///
   /// {@macro dart.ui.FrameTiming.fps_smoothness_milliseconds}
   /// {@macro dart.ui.FrameTiming.fps_milliseconds}
@@ -474,12 +475,14 @@ class Locale {
       return true;
     return other is Locale
         && other.languageCode == languageCode
-        && other.scriptCode == scriptCode
-        && other.countryCode == countryCode;
+        && other.scriptCode == scriptCode // scriptCode cannot be ''
+        && (other.countryCode == countryCode // Treat '' as equal to null.
+            || other.countryCode != null && other.countryCode.isEmpty && countryCode == null
+            || countryCode != null && countryCode.isEmpty && other.countryCode == null);
   }
 
   @override
-  int get hashCode => hashValues(languageCode, scriptCode, countryCode);
+  int get hashCode => hashValues(languageCode, scriptCode, countryCode == '' ? null : countryCode);
 
   static Locale _cachedLocale;
   static String _cachedLocaleString;
@@ -489,6 +492,7 @@ class Locale {
   /// This identifier happens to be a valid Unicode Locale Identifier using
   /// underscores as separator, however it is intended to be used for debugging
   /// purposes only. For parseable results, use [toLanguageTag] instead.
+  @keepToString
   @override
   String toString() {
     if (!identical(_cachedLocale, this)) {
@@ -507,9 +511,9 @@ class Locale {
 
   String _rawToString(String separator) {
     final StringBuffer out = StringBuffer(languageCode);
-    if (scriptCode != null)
+    if (scriptCode != null && scriptCode.isNotEmpty)
       out.write('$separator$scriptCode');
-    if (_countryCode != null)
+    if (_countryCode != null && _countryCode.isNotEmpty)
       out.write('$separator$countryCode');
     return out.toString();
   }
@@ -787,6 +791,19 @@ class Window {
   ///    observe when this value changes.
   List<Locale> get locales => _locales;
   List<Locale> _locales;
+
+  /// The locale that the platform's native locale resolution system resolves to.
+  ///
+  /// This value may differ between platforms and is meant to allow Flutter's locale
+  /// resolution algorithms access to a locale that is consistent with other apps
+  /// on the device. Using this property is optional.
+  ///
+  /// This value may be used in a custom [localeListResolutionCallback] or used directly
+  /// in order to arrive at the most appropriate locale for the app.
+  ///
+  /// See [locales], which is the list of locales the user/device prefers.
+  Locale get platformResolvedLocale => _platformResolvedLocale;
+  Locale _platformResolvedLocale;
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -1097,10 +1114,10 @@ class Window {
   /// callback was set.
   VoidCallback get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
   VoidCallback _onAccessibilityFeaturesChanged;
-  Zone _onAccessibilityFlagsChangedZone;
+  Zone _onAccessibilityFeaturesChangedZone;
   set onAccessibilityFeaturesChanged(VoidCallback callback) {
     _onAccessibilityFeaturesChanged = callback;
-    _onAccessibilityFlagsChangedZone = Zone.current;
+    _onAccessibilityFeaturesChangedZone = Zone.current;
   }
 
   /// Change the retained semantics data about this window.
@@ -1211,6 +1228,7 @@ class AccessibilityFeatures {
   static const int _kDisableAnimationsIndex = 1 << 2;
   static const int _kBoldTextIndex = 1 << 3;
   static const int _kReduceMotionIndex = 1 << 4;
+  static const int _kHighContrastIndex = 1 << 5;
 
   // A bitfield which represents each enabled feature.
   final int _index;
@@ -1238,6 +1256,11 @@ class AccessibilityFeatures {
   /// Only supported on iOS.
   bool get reduceMotion => _kReduceMotionIndex & _index != 0;
 
+  /// The platform is requesting that UI be rendered with darker colors.
+  ///
+  /// Only supported on iOS.
+  bool get highContrast => _kHighContrastIndex & _index != 0;
+
   @override
   String toString() {
     final List<String> features = <String>[];
@@ -1251,6 +1274,8 @@ class AccessibilityFeatures {
       features.add('boldText');
     if (reduceMotion)
       features.add('reduceMotion');
+    if (highContrast)
+      features.add('highContrast');
     return 'AccessibilityFeatures$features';
   }
 

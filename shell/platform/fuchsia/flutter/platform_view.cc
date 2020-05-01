@@ -578,12 +578,18 @@ void PlatformView::HandlePlatformMessage(
   if (!message) {
     return;
   }
-  auto found = platform_message_handlers_.find(message->channel());
+  const std::string channel = message->channel();
+  auto found = platform_message_handlers_.find(channel);
   if (found == platform_message_handlers_.end()) {
-    FML_LOG(ERROR)
-        << "Platform view received message on channel '" << message->channel()
-        << "' with no registered handler. And empty response will be "
-           "generated. Please implement the native message handler.";
+    const bool already_errored = unregistered_channels_.count(channel);
+    if (!already_errored) {
+      FML_LOG(INFO)
+          << "Platform view received message on channel '" << message->channel()
+          << "' with no registered handler. And empty response will be "
+             "generated. Please implement the native message handler. This "
+             "message will appear only once per channel.";
+      unregistered_channels_.insert(channel);
+    }
     flutter::PlatformView::HandlePlatformMessage(std::move(message));
     return;
   }
@@ -600,6 +606,13 @@ void PlatformView::SetSemanticsEnabled(bool enabled) {
   } else {
     SetAccessibilityFeatures(0);
   }
+}
+
+// |flutter::PlatformView|
+// |flutter_runner::AccessibilityBridge::Delegate|
+void PlatformView::DispatchSemanticsAction(int32_t node_id,
+                                           flutter::SemanticsAction action) {
+  flutter::PlatformView::DispatchSemanticsAction(node_id, action, {});
 }
 
 // |flutter::PlatformView|

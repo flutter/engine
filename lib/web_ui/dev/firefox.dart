@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 import 'dart:io';
 
@@ -46,18 +47,20 @@ class Firefox extends Browser {
       // https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options#Browser
       //
       var dir = createTempDir();
+      bool isMac = Platform.isMacOS;
       var args = [
         url.toString(),
         '--headless',
         '-width $kMaxScreenshotWidth',
         '-height $kMaxScreenshotHeight',
-        '-new-window',
-        '-new-instance',
+        isMac ? '--new-window' : '-new-window',
+        isMac ? '--new-instance' : '-new-instance',
         '--start-debugger-server $kDevtoolsPort',
       ];
 
       final Process process =
-          await Process.start(installation.executable, args);
+          await Process.start(installation.executable, args,
+            workingDirectory: dir);
 
       remoteDebuggerCompleter.complete(
           getRemoteDebuggerUrl(Uri.parse('http://localhost:$kDevtoolsPort')));

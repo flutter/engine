@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of ui;
 
 /// Defines how a list of points is interpreted when drawing a set of points.
@@ -76,8 +77,9 @@ class Vertices {
         _mode = mode,
         _colors = _int32ListFromColors(colors),
         _indices = indices != null ? Uint16List.fromList(indices) : null,
-        _positions = _offsetListToInt32List(positions),
-        _textureCoordinates = _offsetListToInt32List(textureCoordinates) {
+        _positions = engine.offsetListToFloat32List(positions),
+        _textureCoordinates =
+            engine.offsetListToFloat32List(textureCoordinates) {
     engine.initWebGl();
   }
 
@@ -123,19 +125,6 @@ class Vertices {
         _colors = colors,
         _indices = indices {
     engine.initWebGl();
-  }
-
-  static Float32List _offsetListToInt32List(List<Offset> offsetList) {
-    if (offsetList == null) {
-      return null;
-    }
-    final int length = offsetList.length;
-    final floatList = Float32List(length * 2);
-    for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
-      floatList[destIndex] = offsetList[i].dx;
-      floatList[destIndex + 1] = offsetList[i].dy;
-    }
-    return floatList;
   }
 
   static Int32List _int32ListFromColors(List<Color> colors) {
@@ -471,10 +460,10 @@ class Canvas {
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
-    _transform(matrix4);
+    _transform(engine.toMatrix32(matrix4));
   }
 
-  void _transform(Float64List matrix4) {
+  void _transform(Float32List matrix4) {
     _canvas.transform(matrix4);
   }
 
@@ -950,7 +939,8 @@ class Canvas {
     assert(pointMode != null);
     assert(points != null);
     assert(paint != null);
-    throw UnimplementedError();
+    final Float32List pointList = engine.offsetListToFloat32List(points);
+    drawRawPoints(pointMode, pointList, paint);
   }
 
   /// Draws a sequence of points according to the given [PointMode].
@@ -969,11 +959,13 @@ class Canvas {
     if (points.length % 2 != 0) {
       throw ArgumentError('"points" must have an even number of values.');
     }
-    throw UnimplementedError();
+    _canvas.drawRawPoints(pointMode, points, paint);
   }
 
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
-    if (vertices == null) return;
+    if (vertices == null) {
+      return;
+    }
     //assert(vertices != null); // vertices is checked on the engine side
     assert(paint != null);
     assert(blendMode != null);

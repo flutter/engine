@@ -9,6 +9,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/macros.h"
+#include "flutter/testing/elf_loader.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/thread_test.h"
 
@@ -24,10 +25,11 @@ class RuntimeTest : public ThreadTest {
   void AddNativeCallback(std::string name, Dart_NativeFunction callback);
 
  private:
-  void SetSnapshotsAndAssets(Settings& settings);
-
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
   fml::UniqueFD assets_dir_;
+  ELFAOTSymbols aot_symbols_;
+
+  void SetSnapshotsAndAssets(Settings& settings);
 
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeTest);
 };

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of ui;
 
 /// Base class for [Size] and [Offset], which are both ways to describe
@@ -12,7 +13,8 @@ abstract class OffsetBase {
   ///
   /// The first argument sets the horizontal component, and the second the
   /// vertical component.
-  const OffsetBase(this._dx, this._dy);
+  const OffsetBase(double dx, double dy)
+      : _dx = dx, _dy = dy;
 
   final double _dx;
   final double _dy;
@@ -1084,6 +1086,7 @@ class RRect {
           blRadiusY: radiusY,
           brRadiusX: radiusX,
           brRadiusY: radiusY,
+          uniformRadii: radiusX == radiusY,
         );
 
   /// Construct a rounded rectangle from its left, top, right, and bottom edges,
@@ -1103,6 +1106,7 @@ class RRect {
           blRadiusY: radius.y,
           brRadiusX: radius.x,
           brRadiusY: radius.y,
+          uniformRadii: radius.x == radius.y,
         );
 
   /// Construct a rounded rectangle from its bounding box and the same radii
@@ -1121,6 +1125,7 @@ class RRect {
           blRadiusY: radiusY,
           brRadiusX: radiusX,
           brRadiusY: radiusY,
+          uniformRadii: radiusX == radiusY,
         );
 
   /// Construct a rounded rectangle from its bounding box and a radius that is
@@ -1139,6 +1144,7 @@ class RRect {
           blRadiusY: radius.y,
           brRadiusX: radius.x,
           brRadiusY: radius.y,
+          uniformRadii: radius.x == radius.y,
         );
 
   /// Construct a rounded rectangle from its left, top, right, and bottom edges,
@@ -1167,6 +1173,13 @@ class RRect {
           blRadiusY: bottomLeft.y,
           brRadiusX: bottomRight.x,
           brRadiusY: bottomRight.y,
+          uniformRadii: topLeft.x == topLeft.y &&
+            topLeft.x == topRight.x &&
+            topLeft.x == topRight.y &&
+            topLeft.x == bottomLeft.x &&
+            topLeft.x == bottomLeft.y &&
+            topLeft.x == bottomRight.x &&
+            topLeft.x == bottomRight.y,
         );
 
   /// Construct a rounded rectangle from its bounding box and and topLeft,
@@ -1191,6 +1204,13 @@ class RRect {
           blRadiusY: bottomLeft.y,
           brRadiusX: bottomRight.x,
           brRadiusY: bottomRight.y,
+          uniformRadii: topLeft.x == topLeft.y &&
+              topLeft.x == topRight.x &&
+              topLeft.x == topRight.y &&
+              topLeft.x == bottomLeft.x &&
+              topLeft.x == bottomLeft.y &&
+              topLeft.x == bottomRight.x &&
+              topLeft.x == bottomRight.y,
         );
 
   const RRect._raw({
@@ -1206,6 +1226,7 @@ class RRect {
     this.brRadiusY = 0.0,
     this.blRadiusX = 0.0,
     this.blRadiusY = 0.0,
+    bool uniformRadii = false,
   })  : assert(left != null),
         assert(top != null),
         assert(right != null),
@@ -1217,7 +1238,8 @@ class RRect {
         assert(brRadiusX != null),
         assert(brRadiusY != null),
         assert(blRadiusX != null),
-        assert(blRadiusY != null);
+        assert(blRadiusY != null),
+        this.webOnlyUniformRadii = uniformRadii;
 
   /// The offset of the left edge of this rectangle from the x axis.
   final double left;
@@ -1263,6 +1285,10 @@ class RRect {
 
   /// The bottom-left vertical radius.
   final double blRadiusY;
+
+  /// If radii is equal for all corners.
+  // webOnly
+  final bool webOnlyUniformRadii;
 
   /// The bottom-left [Radius].
   Radius get blRadius => Radius.elliptical(blRadiusX, blRadiusY);

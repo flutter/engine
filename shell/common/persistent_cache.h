@@ -9,6 +9,7 @@
 #include <mutex>
 #include <set>
 
+#include "flutter/assets/asset_manager.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/fml/unique_fd.h"
@@ -32,7 +33,15 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   static PersistentCache* GetCacheForProcess();
   static void ResetCacheForProcess();
 
+  // This must be called before |GetCacheForProcess|. Otherwise, it won't
+  // affect the cache directory returned by |GetCacheForProcess|.
   static void SetCacheDirectoryPath(std::string path);
+
+  // Convert a binary SkData key into a Base32 encoded string.
+  //
+  // This is used to specify persistent cache filenames and service protocol
+  // json keys.
+  static std::string SkKeyToFilePath(const SkData& data);
 
   ~PersistentCache() override;
 
@@ -57,12 +66,21 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   /// Load all the SkSL shader caches in the right directory.
   std::vector<SkSLCache> LoadSkSLs();
 
+  /// Set the asset manager from which PersistentCache can load SkLSs. A nullptr
+  /// can be provided to clear the asset manager.
+  static void SetAssetManager(std::shared_ptr<AssetManager> value);
+
   static bool cache_sksl() { return cache_sksl_; }
   static void SetCacheSkSL(bool value);
   static void MarkStrategySet() { strategy_set_ = true; }
 
+  static constexpr char kSkSLSubdirName[] = "sksl";
+  static constexpr char kAssetFileName[] = "io.flutter.shaders.json";
+
  private:
   static std::string cache_base_path_;
+
+  static std::shared_ptr<AssetManager> asset_manager_;
 
   static std::mutex instance_mutex_;
   static std::unique_ptr<PersistentCache> gPersistentCache;

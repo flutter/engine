@@ -4,19 +4,23 @@
 
 assert(is_linux)
 
-import("$flutter_root/shell/platform/glfw/config.gni")
+import("//flutter/shell/platform/glfw/config.gni")
 
 group("linux") {
+  deps = [
+    ":flutter_linux_gtk",
+    ":publish_headers_linux",
+  ]
   if (build_glfw_shell) {
-    deps = [
+    deps += [
       ":flutter_linux_glfw",
-      "$flutter_root/shell/platform/glfw:publish_headers_glfw",
-      "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
+      "//flutter/shell/platform/glfw:publish_headers_glfw",
+      "//flutter/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
     ]
   }
 }
 
-# Temporary workraround for the issue describe in
+# Temporary workaround for the issue describe in
 # https://github.com/flutter/flutter/issues/14509 and
 # https://github.com/flutter/flutter/issues/14438
 # Remove once the build infrastructure moves to Ubuntu 18.04 or newer, where
@@ -29,11 +33,61 @@ config("disable_fatal_link_warnings") {
 if (build_glfw_shell) {
   shared_library("flutter_linux_glfw") {
     deps = [
-      "$flutter_root/shell/platform/glfw:flutter_glfw",
+      "//flutter/shell/platform/glfw:flutter_glfw",
     ]
 
     configs += [ ":disable_fatal_link_warnings" ]
 
-    public_configs = [ "$flutter_root:config" ]
+    public_configs = [ "//flutter:config" ]
   }
+}
+
+_public_headers = [
+  "public/flutter_linux/fl_dart_project.h",
+  "public/flutter_linux/fl_view.h",
+  "public/flutter_linux/flutter_linux.h",
+]
+
+config("relative_flutter_linux_headers") {
+  include_dirs = [ "public" ]
+}
+
+source_set("flutter_linux") {
+  public = _public_headers
+
+  sources = [
+    "fl_dart_project.cc",
+    "fl_engine.cc",
+    "fl_renderer.cc",
+    "fl_renderer_x11.cc",
+    "fl_view.cc",
+  ]
+
+  configs += [
+    "//flutter/shell/platform/linux/config:gtk",
+    "//flutter/shell/platform/linux/config:egl",
+    "//third_party/khronos:khronos_headers",
+  ]
+
+  # Set flag to stop headers being directly included (library users should not do this)
+  defines = [ "FLUTTER_LINUX_COMPILATION" ]
+
+  deps = [
+    "//flutter/shell/platform/embedder:embedder_with_symbol_prefix",
+  ]
+}
+
+shared_library("flutter_linux_gtk") {
+  deps = [
+    ":flutter_linux",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
+copy("publish_headers_linux") {
+  sources = _public_headers
+  outputs = [
+    "$root_out_dir/flutter_linux/{{source_file_part}}",
+  ]
 }

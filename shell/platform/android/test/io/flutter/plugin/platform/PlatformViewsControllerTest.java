@@ -1,20 +1,19 @@
 package io.flutter.plugin.platform;
 
-import android.view.View;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
-import org.robolectric.annotation.Config;
-
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@Config(manifest=Config.NONE)
+import android.view.View;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Config;
+
+@Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class PlatformViewsControllerTest {
   @Test
@@ -57,5 +56,27 @@ public class PlatformViewsControllerTest {
     verify(fakeVdController1, times(1)).onFlutterViewDetached();
     verify(fakeVdController2, times(1)).onFlutterViewAttached(eq(fakeFlutterView));
     verify(fakeVdController2, times(1)).onFlutterViewDetached();
+  }
+
+  @Test
+  public void itCancelsOldPresentationOnResize() {
+    // Setup test structure.
+    // Create a fake View that represents the View that renders a Flutter UI.
+    View fakeFlutterView = new View(RuntimeEnvironment.systemContext);
+
+    // Create fake VirtualDisplayControllers. This requires internal knowledge of
+    // PlatformViewsController. We know that all PlatformViewsController does is
+    // forward view attachment/detachment calls to it's VirtualDisplayControllers.
+    //
+    // TODO(mattcarroll): once PlatformViewsController is refactored into testable
+    // pieces, remove this test and avoid verifying private behavior.
+    VirtualDisplayController fakeVdController1 = mock(VirtualDisplayController.class);
+
+    SingleViewPresentation presentation = fakeVdController1.presentation;
+
+    fakeVdController1.resize(10, 10, null);
+
+    assertEquals(fakeVdController1.presentation != presentation, true);
+    assertEquals(presentation.isShowing(), false);
   }
 }

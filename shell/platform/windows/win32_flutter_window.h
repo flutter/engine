@@ -33,10 +33,10 @@ class Win32FlutterWindow : public Win32Window {
   // Create flutter Window for use as child window
   Win32FlutterWindow(int width, int height);
 
-  ~Win32FlutterWindow();
+  virtual ~Win32FlutterWindow();
 
-  static FlutterDesktopViewControllerRef
-  Win32FlutterWindow::CreateWin32FlutterWindow(int width, int height);
+  static FlutterDesktopViewControllerRef CreateWin32FlutterWindow(int width,
+                                                                  int height);
 
   // |Win32Window|
   void OnDpiScale(unsigned int dpi) override;
@@ -57,16 +57,13 @@ class Win32FlutterWindow : public Win32Window {
   void OnPointerLeave() override;
 
   // |Win32Window|
-  void OnChar(char32_t code_point) override;
+  void OnText(const std::u16string& text) override;
 
   // |Win32Window|
-  void OnKey(int key, int scancode, int action, int mods) override;
+  void OnKey(int key, int scancode, int action, char32_t character) override;
 
   // |Win32Window|
   void OnScroll(double delta_x, double delta_y) override;
-
-  // |Win32Window|
-  void OnClose();
 
   // |Win32Window|
   void OnFontChange() override;
@@ -85,9 +82,6 @@ class Win32FlutterWindow : public Win32Window {
   // Create a surface for Flutter engine to render into.
   void CreateRenderSurface();
 
-  // Destroy current rendering surface if one has been allocated.
-  void DestroyRenderSurface();
-
   // Callbacks for clearing context, settings context and swapping buffers.
   bool ClearContext();
   bool MakeCurrent();
@@ -99,6 +93,9 @@ class Win32FlutterWindow : public Win32Window {
   void SendWindowMetrics();
 
  private:
+  // Destroy current rendering surface if one has been allocated.
+  void DestroyRenderSurface();
+
   // Reports a mouse movement to Flutter engine.
   void SendPointerMove(double x, double y);
 
@@ -115,11 +112,11 @@ class Win32FlutterWindow : public Win32Window {
   // event is called.
   void SendPointerLeave();
 
-  // Reports a keyboard character to Flutter engine.
-  void SendChar(char32_t code_point);
+  // Reports text input to Flutter engine.
+  void SendText(const std::u16string& text);
 
   // Reports a raw keyboard message to Flutter engine.
-  void SendKey(int key, int scancode, int action, int mods);
+  void SendKey(int key, int scancode, int action, char32_t character);
 
   // Reports scroll wheel events to Flutter engine.
   void SendScroll(double delta_x, double delta_y);
@@ -174,9 +171,6 @@ class Win32FlutterWindow : public Win32Window {
 
   // should we forword input messages or not
   bool process_events_ = false;
-
-  // flag indicating if the message loop should be running
-  bool messageloop_running_ = false;
 };
 
 }  // namespace flutter

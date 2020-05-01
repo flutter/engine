@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -180,7 +181,7 @@ void main() {
     final bool areEqual =
         await fuzzyGoldenImageCompare(image, 'canvas_test_gradient.png');
     expect(areEqual, true);
-  });
+  }, skip: !Platform.isLinux); // https://github.com/flutter/flutter/issues/53784
 
   test('Simple dithered gradient', () async {
     Paint.enableDithering = true;
@@ -196,5 +197,5 @@ void main() {
     final bool areEqual =
         await fuzzyGoldenImageCompare(image, 'canvas_test_dithered_gradient.png');
     expect(areEqual, true);
-  });
+  }, skip: !Platform.isLinux); // https://github.com/flutter/flutter/issues/53784
 }

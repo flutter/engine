@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// A tree of [Layer]s that, together with a [Size] compose a frame.
@@ -68,8 +69,12 @@ class Frame {
 
   /// Rasterize the given layer tree into this frame.
   bool raster(LayerTree layerTree, {bool ignoreRasterCache = false}) {
-    layerTree.preroll(this, ignoreRasterCache: ignoreRasterCache);
-    layerTree.paint(this, ignoreRasterCache: ignoreRasterCache);
+    timeAction<void>(kProfilePrerollFrame, () {
+      layerTree.preroll(this, ignoreRasterCache: ignoreRasterCache);
+    });
+    timeAction<void>(kProfileApplyFrame, () {
+      layerTree.paint(this, ignoreRasterCache: ignoreRasterCache);
+    });
     return true;
   }
 }

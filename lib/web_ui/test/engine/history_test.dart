@@ -2,7 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
+@TestOn('!safari')
+// TODO(nurhan): https://github.com/flutter/flutter/issues/51169
+
 import 'dart:async';
+import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
@@ -24,7 +29,7 @@ const MethodCodec codec = JSONMethodCodec();
 void emptyCallback(ByteData date) {}
 
 void main() {
-  group('BrowserHistory', () {
+  group('$BrowserHistory', () {
     final PlatformMessagesSpy spy = PlatformMessagesSpy();
 
     setUp(() {
@@ -56,7 +61,9 @@ void main() {
 
       // The flutter entry is the current entry.
       expect(strategy.currentEntry, flutterEntry);
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        skip: browserEngine == BrowserEngine.edge);
 
     test('browser back button pops routes correctly', () async {
       strategy =
@@ -90,7 +97,9 @@ void main() {
       // The url of the current entry (flutter entry) should go back to /home.
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        skip: browserEngine == BrowserEngine.edge);
 
     test('multiple browser back clicks', () async {
       strategy =
@@ -151,7 +160,10 @@ void main() {
       // 3. The active entry doesn't belong to our history anymore because we
       // navigated past it.
       expect(strategy.currentEntryIndex, -1);
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        skip: browserEngine == BrowserEngine.edge ||
+            browserEngine == BrowserEngine.webkit);
 
     test('handle user-provided url', () async {
       strategy =
@@ -160,7 +172,7 @@ void main() {
       await _strategy.simulateUserTypingUrl('/page3');
       // This delay is necessary to wait for [BrowserHistory] because it
       // performs a `back` operation which results in a new event loop.
-      await Future.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
       // 1. The engine sends a `pushRoute` platform message.
       expect(spy.messages, hasLength(1));
       expect(spy.messages[0].channel, 'flutter/navigation');
@@ -190,7 +202,9 @@ void main() {
       expect(strategy.currentEntryIndex, 1);
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
-    });
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        skip: browserEngine == BrowserEngine.edge);
 
     test('user types unknown url', () async {
       strategy =
@@ -199,7 +213,7 @@ void main() {
       await _strategy.simulateUserTypingUrl('/unknown');
       // This delay is necessary to wait for [BrowserHistory] because it
       // performs a `back` operation which results in a new event loop.
-      await Future.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
       // 1. The engine sends a `pushRoute` platform message.
       expect(spy.messages, hasLength(1));
       expect(spy.messages[0].channel, 'flutter/navigation');
@@ -212,6 +226,43 @@ void main() {
       expect(strategy.currentEntryIndex, 1);
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
+    },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        skip: browserEngine == BrowserEngine.edge);
+  });
+
+  group('$HashLocationStrategy', () {
+    TestPlatformLocation location;
+
+    setUp(() {
+      location = TestPlatformLocation();
+    });
+
+    tearDown(() {
+      location = null;
+    });
+
+    test('leading slash is optional', () {
+      final HashLocationStrategy strategy = HashLocationStrategy(location);
+
+      location.hash = '#/';
+      expect(strategy.path, '/');
+
+      location.hash = '#/foo';
+      expect(strategy.path, '/foo');
+
+      location.hash = '#foo';
+      expect(strategy.path, 'foo');
+    });
+
+    test('path should not be empty', () {
+      final HashLocationStrategy strategy = HashLocationStrategy(location);
+
+      location.hash = '';
+      expect(strategy.path, '/');
+
+      location.hash = '#';
+      expect(strategy.path, '/');
     });
   });
 }
@@ -260,4 +311,39 @@ Future<void> systemNavigatorPop() {
     (_) => completer.complete(),
   );
   return completer.future;
+}
+
+/// A mock implementation of [PlatformLocation] that doesn't access the browser.
+class TestPlatformLocation extends PlatformLocation {
+  String pathname;
+  String search;
+  String hash;
+
+  void onPopState(html.EventListener fn) {
+    throw UnimplementedError();
+  }
+
+  void offPopState(html.EventListener fn) {
+    throw UnimplementedError();
+  }
+
+  void onHashChange(html.EventListener fn) {
+    throw UnimplementedError();
+  }
+
+  void offHashChange(html.EventListener fn) {
+    throw UnimplementedError();
+  }
+
+  void pushState(dynamic state, String title, String url) {
+    throw UnimplementedError();
+  }
+
+  void replaceState(dynamic state, String title, String url) {
+    throw UnimplementedError();
+  }
+
+  void back() {
+    throw UnimplementedError();
+  }
 }

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 class LayerScene implements ui.Scene {
@@ -204,7 +205,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     Float64List matrix4, {
     ui.EngineLayer oldLayer,
   }) {
-    final Matrix4 matrix = Matrix4.fromList(matrix4);
+    final Matrix4 matrix = Matrix4.fromFloat32List(toMatrix32(matrix4));
     pushLayer(TransformLayer(matrix));
     return null;
   }

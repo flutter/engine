@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
@@ -21,14 +22,15 @@ void main() async {
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
     final engine.EngineCanvas engineCanvas = engine.BitmapCanvas(screenRect);
 
-    rc.apply(engineCanvas);
+    rc.endRecording();
+    rc.apply(engineCanvas, screenRect);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');
     try {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
-      await matchGoldenFile('$fileName.png', region: region, maxDiffRate: 0.2);
+      await matchGoldenFile('$fileName.png', region: region, maxDiffRatePercent: 0.0);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -100,6 +102,6 @@ engine.HtmlImage createTestImage({int width = 200, int height = 150}) {
   ctx.fillRect(2 * width / 3, 0, width / 3, height);
   ctx.fill();
   html.ImageElement imageElement = html.ImageElement();
-  imageElement.src = js_util.callMethod(canvas, 'toDataURL', []);
+  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]);
   return engine.HtmlImage(imageElement, width, height);
 }

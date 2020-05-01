@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 class EngineLineMetrics implements ui.LineMetrics {
@@ -15,14 +16,16 @@ class EngineLineMetrics implements ui.LineMetrics {
     this.left,
     this.baseline,
     this.lineNumber,
-  })  : text = null,
+  })  : displayText = null,
         startIndex = -1,
-        endIndex = -1;
+        endIndex = -1,
+        endIndexWithoutNewlines = -1;
 
   EngineLineMetrics.withText(
-    this.text, {
+    this.displayText, {
     @required this.startIndex,
     @required this.endIndex,
+    @required this.endIndexWithoutNewlines,
     @required this.hardBreak,
     this.ascent,
     this.descent,
@@ -32,14 +35,17 @@ class EngineLineMetrics implements ui.LineMetrics {
     @required this.left,
     this.baseline,
     @required this.lineNumber,
-  })  : assert(text != null),
+  })  : assert(displayText != null),
+        assert(startIndex != null),
+        assert(endIndex != null),
+        assert(endIndexWithoutNewlines != null),
         assert(hardBreak != null),
         assert(width != null),
         assert(left != null),
         assert(lineNumber != null && lineNumber >= 0);
 
-  /// The textual content representing this line.
-  final String text;
+  /// The text to be rendered on the screen representing this line.
+  final String displayText;
 
   /// The index (inclusive) in the text where this line begins.
   final int startIndex;
@@ -49,6 +55,10 @@ class EngineLineMetrics implements ui.LineMetrics {
   /// When the line contains an overflow, then [endIndex] goes until the end of
   /// the text and doesn't stop at the overflow cutoff.
   final int endIndex;
+
+  /// The index (exclusive) in the text where this line ends, ignoring newline
+  /// characters.
+  final int endIndexWithoutNewlines;
 
   @override
   final bool hardBreak;
@@ -79,7 +89,7 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   @override
   int get hashCode => ui.hashValues(
-        text,
+        displayText,
         startIndex,
         endIndex,
         hardBreak,
@@ -103,7 +113,7 @@ class EngineLineMetrics implements ui.LineMetrics {
       return false;
     }
     final EngineLineMetrics typedOther = other;
-    return text == typedOther.text &&
+    return displayText == typedOther.displayText &&
         startIndex == typedOther.startIndex &&
         endIndex == typedOther.endIndex &&
         hardBreak == typedOther.hardBreak &&
@@ -167,6 +177,8 @@ class EngineParagraph implements ui.Paragraph {
   /// The measurement result of the last layout operation.
   MeasurementResult _measurementResult;
 
+  bool get _hasLineMetrics => _measurementResult?.lines != null;
+
   @override
   double get width => _measurementResult?.width ?? -1;
 
@@ -188,7 +200,7 @@ class EngineParagraph implements ui.Paragraph {
 
   @override
   double get longestLine {
-    if (_measurementResult.lines != null) {
+    if (_hasLineMetrics) {
       double maxWidth = 0.0;
       for (ui.LineMetrics metrics in _measurementResult.lines) {
         if (maxWidth < metrics.width) {
@@ -196,12 +208,6 @@ class EngineParagraph implements ui.Paragraph {
         }
       }
       return maxWidth;
-    }
-
-    // In the single-line case, the longest line is equal to the maximum
-    // intrinsic width of the paragraph.
-    if (_measurementResult.isSingleLine) {
-      return _measurementResult.maxIntrinsicWidth;
     }
 
     // If we don't have any line metrics information, there's no way to know the
@@ -234,11 +240,31 @@ class EngineParagraph implements ui.Paragraph {
 
   @override
   void layout(ui.ParagraphConstraints constraints) {
+    // When constraint width has a decimal place, we floor it to avoid getting
+    // a layout width that's higher than the constraint width.
+    //
+    // For example, if constraint width is `30.8` and the text has a width of
+    // `30.5` then the TextPainter in the framework will ceil the `30.5` width
+    // which will result in a width of `40.0` that's higher than the constraint
+    // width.
+    constraints = ui.ParagraphConstraints(
+      width: constraints.width.floorToDouble(),
+    );
+
     if (constraints == _lastUsedConstraints) {
       return;
     }
 
+    Stopwatch stopwatch;
+    if (Profiler.isBenchmarkMode) {
+      stopwatch = Stopwatch()..start();
+    }
     _measurementResult = _measurementService.measure(this, constraints);
+    if (Profiler.isBenchmarkMode) {
+      stopwatch.stop();
+      Profiler.instance.benchmark('text_layout', stopwatch.elapsedMicroseconds);
+    }
+
     _lastUsedConstraints = constraints;
 
     if (_geometricStyle.maxLines != null) {
@@ -288,7 +314,7 @@ class EngineParagraph implements ui.Paragraph {
   /// - Paragraphs that have a non-null word-spacing.
   /// - Paragraphs with a background.
   bool get _drawOnCanvas {
-    if (_measurementResult.lines == null) {
+    if (!_hasLineMetrics) {
       return false;
     }
 
@@ -333,23 +359,85 @@ class EngineParagraph implements ui.Paragraph {
   }) {
     assert(boxHeightStyle != null);
     assert(boxWidthStyle != null);
-    if (_plainText == null || start == end) {
+    // Zero-length ranges and invalid ranges return an empty list.
+    if (start == end || start < 0 || end < 0) {
       return <ui.TextBox>[];
+    }
+
+    // For rich text, we can't measure the boxes. So for now, we'll just return
+    // a placeholder box to stop exceptions from being thrown in the framework.
+    // https://github.com/flutter/flutter/issues/55587
+    if (_plainText == null) {
+      return <ui.TextBox>[
+        ui.TextBox.fromLTRBD(0, 0, 0, _lineHeight, _textDirection)
+      ];
     }
 
     final int length = _plainText.length;
     // Ranges that are out of bounds should return an empty list.
-    if (start < 0 || end < 0 || start > length || end > length) {
+    if (start > length || end > length) {
       return <ui.TextBox>[];
     }
 
-    return _measurementService.measureBoxesForRange(
-      this,
-      _lastUsedConstraints,
-      start: start,
-      end: end,
-      alignOffset: _alignOffset,
-      textDirection: _textDirection,
+    // Fallback to the old, DOM-based box measurements when there's no line
+    // metrics.
+    if (!_hasLineMetrics) {
+      return _measurementService.measureBoxesForRange(
+        this,
+        _lastUsedConstraints,
+        start: start,
+        end: end,
+        alignOffset: _alignOffset,
+        textDirection: _textDirection,
+      );
+    }
+
+    final List<EngineLineMetrics> lines = _measurementResult.lines;
+    if (start >= lines.last.endIndex) {
+      return <ui.TextBox>[];
+    }
+
+    final EngineLineMetrics startLine = _getLineForIndex(start);
+    EngineLineMetrics endLine = _getLineForIndex(end);
+
+    // If the range end is exactly at the beginning of a line, we shouldn't
+    // include any boxes from that line.
+    if (end == endLine.startIndex) {
+      endLine = lines[endLine.lineNumber - 1];
+    }
+
+    final List<ui.TextBox> boxes = <ui.TextBox>[];
+    for (int i = startLine.lineNumber; i <= endLine.lineNumber; i++) {
+      boxes.add(_getBoxForLine(lines[i], start, end));
+    }
+    return boxes;
+  }
+
+  ui.TextBox _getBoxForLine(EngineLineMetrics line, int start, int end) {
+    final double widthBeforeBox = start <= line.startIndex
+        ? 0.0
+        : _measurementService.measureSubstringWidth(
+            this, line.startIndex, start);
+    final double widthAfterBox = end >= line.endIndexWithoutNewlines
+        ? 0.0
+        : _measurementService.measureSubstringWidth(
+            this, end, line.endIndexWithoutNewlines);
+
+    final double top = line.lineNumber * _lineHeight;
+
+    //               |<------------------ line.width ------------------>|
+    // |-------------|------------------|-------------|-----------------|
+    // |<-line.left->|<-widthBeforeBox->|<-box width->|<-widthAfterBox->|
+    // |-------------|------------------|-------------|-----------------|
+    //
+    //                                   ^^^^^^^^^^^^^
+    //                          This is the box we want to return.
+    return ui.TextBox.fromLTRBD(
+      line.left + widthBeforeBox,
+      top,
+      line.left + line.width - widthAfterBox,
+      top + _lineHeight,
+      _textDirection,
     );
   }
 
@@ -367,17 +455,62 @@ class EngineParagraph implements ui.Paragraph {
 
   @override
   ui.TextPosition getPositionForOffset(ui.Offset offset) {
-    if (_plainText == null) {
+    final List<EngineLineMetrics> lines = _measurementResult.lines;
+    if (!_hasLineMetrics) {
       return getPositionForMultiSpanOffset(offset);
     }
-    final double dx = offset.dx - _alignOffset;
+
+    // [offset] is above all the lines.
+    if (offset.dy < 0) {
+      return ui.TextPosition(
+        offset: 0,
+        affinity: ui.TextAffinity.downstream,
+      );
+    }
+
+    final int lineNumber = offset.dy ~/ _measurementResult.lineHeight;
+
+    // [offset] is below all the lines.
+    if (lineNumber >= lines.length) {
+      return ui.TextPosition(
+        offset: _plainText.length,
+        affinity: ui.TextAffinity.upstream,
+      );
+    }
+
+    final EngineLineMetrics lineMetrics = lines[lineNumber];
+    final double lineLeft = lineMetrics.left;
+    final double lineRight = lineLeft + lineMetrics.width;
+
+    // [offset] is to the left of the line.
+    if (offset.dx <= lineLeft) {
+      return ui.TextPosition(
+        offset: lineMetrics.startIndex,
+        affinity: ui.TextAffinity.downstream,
+      );
+    }
+
+    // [offset] is to the right of the line.
+    if (offset.dx >= lineRight) {
+      return ui.TextPosition(
+        offset: lineMetrics.endIndexWithoutNewlines,
+        affinity: ui.TextAffinity.upstream,
+      );
+    }
+
+    // If we reach here, it means the [offset] is somewhere within the line. The
+    // code below will do a binary search to find where exactly the [offset]
+    // falls within the line.
+
+    final double dx = offset.dx - lineMetrics.left;
     final TextMeasurementService instance = _measurementService;
 
-    int low = 0;
-    int high = _plainText.length;
+    int low = lineMetrics.startIndex;
+    int high = lineMetrics.endIndexWithoutNewlines;
     do {
       final int current = (low + high) ~/ 2;
-      final double width = instance.measureSubstringWidth(this, 0, current);
+      final double width =
+          instance.measureSubstringWidth(this, lineMetrics.startIndex, current);
       if (width < dx) {
         low = current;
       } else if (width > dx) {
@@ -392,8 +525,10 @@ class EngineParagraph implements ui.Paragraph {
       return ui.TextPosition(offset: high, affinity: ui.TextAffinity.upstream);
     }
 
-    final double lowWidth = instance.measureSubstringWidth(this, 0, low);
-    final double highWidth = instance.measureSubstringWidth(this, 0, high);
+    final double lowWidth =
+        instance.measureSubstringWidth(this, lineMetrics.startIndex, low);
+    final double highWidth =
+        instance.measureSubstringWidth(this, lineMetrics.startIndex, high);
 
     if (dx - lowWidth < highWidth - dx) {
       // The offset is closer to the low index.
@@ -425,18 +560,26 @@ class EngineParagraph implements ui.Paragraph {
     return ui.TextRange(start: start, end: end);
   }
 
+  EngineLineMetrics _getLineForIndex(int index) {
+    assert(_hasLineMetrics);
+    final List<EngineLineMetrics> lines = _measurementResult.lines;
+    assert(index >= 0);
+
+    for (int i = 0; i < lines.length; i++) {
+      final EngineLineMetrics line = lines[i];
+      if (index >= line.startIndex && index < line.endIndex) {
+        return line;
+      }
+    }
+
+    return lines.last;
+  }
+
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
-    final List<EngineLineMetrics> lines = _measurementResult.lines;
-    if (lines != null) {
-      final int offset = position.offset;
-
-      for (int i = 0; i < lines.length; i++) {
-        final EngineLineMetrics line = lines[i];
-        if (offset >= line.startIndex && offset < line.endIndex) {
-          return ui.TextRange(start: line.startIndex, end: line.endIndex);
-        }
-      }
+    if (_hasLineMetrics) {
+      final EngineLineMetrics line = _getLineForIndex(position.offset);
+      return ui.TextRange(start: line.startIndex, end: line.endIndex);
     }
     return ui.TextRange.empty;
   }
@@ -457,6 +600,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
+    ui.TextHeightBehavior textHeightBehavior,
     ui.FontWeight fontWeight,
     ui.FontStyle fontStyle,
     ui.StrutStyle strutStyle,
@@ -470,6 +614,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         _fontFamily = fontFamily,
         _fontSize = fontSize,
         _height = height,
+        _textHeightBehavior = textHeightBehavior,
         // TODO(b/128317744): add support for strut style.
         _strutStyle = strutStyle,
         _ellipsis = ellipsis,
@@ -483,6 +628,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   final String _fontFamily;
   final double _fontSize;
   final double _height;
+  final ui.TextHeightBehavior _textHeightBehavior;
   final EngineStrutStyle _strutStyle;
   final String _ellipsis;
   final ui.Locale _locale;
@@ -536,13 +682,26 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         _fontFamily == typedOther._fontFamily ||
         _fontSize == typedOther._fontSize ||
         _height == typedOther._height ||
+        _textHeightBehavior == typedOther._textHeightBehavior ||
         _ellipsis == typedOther._ellipsis ||
         _locale == typedOther._locale;
   }
 
   @override
-  int get hashCode =>
-      ui.hashValues(_fontFamily, _fontSize, _height, _ellipsis, _locale);
+  int get hashCode {
+    return ui.hashValues(
+        _textAlign,
+        _textDirection,
+        _fontWeight,
+        _fontStyle,
+        _maxLines,
+        _fontFamily,
+        _fontSize,
+        _height,
+        _textHeightBehavior,
+        _ellipsis,
+        _locale);
+  }
 
   @override
   String toString() {
@@ -553,6 +712,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
           'fontWeight: ${_fontWeight ?? "unspecified"}, '
           'fontStyle: ${_fontStyle ?? "unspecified"}, '
           'maxLines: ${_maxLines ?? "unspecified"}, '
+          'textHeightBehavior: ${_textHeightBehavior ?? "unspecified"}, '
           'fontFamily: ${_fontFamily ?? "unspecified"}, '
           'fontSize: ${_fontSize != null ? _fontSize.toStringAsFixed(1) : "unspecified"}, '
           'height: ${_height != null ? "${_height.toStringAsFixed(1)}x" : "unspecified"}, '
@@ -1363,7 +1523,12 @@ void _applyTextStyleToElement({
       final String textDecoration =
           _textDecorationToCssString(style._decoration, style._decorationStyle);
       if (textDecoration != null) {
-        cssStyle.textDecoration = textDecoration;
+        if (browserEngine == BrowserEngine.webkit) {
+          domRenderer.setElementStyle(
+              element, '-webkit-text-decoration', textDecoration);
+        } else {
+          cssStyle.textDecoration = textDecoration;
+        }
         final ui.Color decorationColor = style._decorationColor;
         if (decorationColor != null) {
           cssStyle.textDecorationColor = colorToCssString(decorationColor);

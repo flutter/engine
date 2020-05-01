@@ -1,21 +1,8 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// @dart = 2.6
 part of engine;
-
-// TODO(hterkelsen): Get rid of this once we can register font families with
-//     custom names.
-/// CanvasKit does not yet allow us to specify family names when registering
-/// fonts. CanvasKit reads the font name from the font's bytes. So, we map
-/// some common family names to how they are registered in the Gallery app.
-const Map<String, String> _fontFamilyOverrides = <String, String>{
-  'GoogleSans': 'Google Sans',
-  'GoogleSansDisplay': 'Google Sans Display',
-  'MaterialIcons': 'Material Icons',
-  'LibreFranklin': 'Libre Franklin',
-  'AbrilFatface': 'Abril Fatface',
-  'packages/cupertino_icons/CupertinoIcons': 'CupertinoIcons',
-};
 
 class SkParagraphStyle implements ui.ParagraphStyle {
   SkParagraphStyle({
@@ -25,6 +12,7 @@ class SkParagraphStyle implements ui.ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
+    ui.TextHeightBehavior textHeightBehavior,
     ui.FontWeight fontWeight,
     ui.FontStyle fontStyle,
     ui.StrutStyle strutStyle,
@@ -38,6 +26,7 @@ class SkParagraphStyle implements ui.ParagraphStyle {
       fontFamily,
       fontSize,
       height,
+      textHeightBehavior,
       fontWeight,
       fontStyle,
       ellipsis,
@@ -70,8 +59,8 @@ class SkParagraphStyle implements ui.ParagraphStyle {
         !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
       fontFamily = 'Roboto';
     }
-    if (_fontFamilyOverrides.containsKey(fontFamily)) {
-      fontFamily = _fontFamilyOverrides[fontFamily];
+    if (skiaFontCollection.fontFamilyOverrides.containsKey(fontFamily)) {
+      fontFamily = skiaFontCollection.fontFamilyOverrides[fontFamily];
     }
     skTextStyle['fontFamilies'] = [fontFamily];
 
@@ -85,6 +74,7 @@ class SkParagraphStyle implements ui.ParagraphStyle {
     String fontFamily,
     double fontSize,
     double height,
+    ui.TextHeightBehavior textHeightBehavior,
     ui.FontWeight fontWeight,
     ui.FontStyle fontStyle,
     String ellipsis,
@@ -127,6 +117,10 @@ class SkParagraphStyle implements ui.ParagraphStyle {
 
     if (height != null) {
       skParagraphStyle['heightMultiplier'] = height;
+    }
+
+    if (textHeightBehavior != null) {
+      skParagraphStyle['textHeightBehavior'] = textHeightBehavior.encode();
     }
 
     if (maxLines != null) {
@@ -206,12 +200,13 @@ class SkTextStyle implements ui.TextStyle {
       fontFamily = 'Roboto';
     }
 
-    if (_fontFamilyOverrides.containsKey(fontFamily)) {
-      fontFamily = _fontFamilyOverrides[fontFamily];
+    if (skiaFontCollection.fontFamilyOverrides.containsKey(fontFamily)) {
+      fontFamily = skiaFontCollection.fontFamilyOverrides[fontFamily];
     }
     List<String> fontFamilies = <String>[fontFamily];
-    if (fontFamilyFallback != null) {
-      fontFamilies.addAll(fontFamilies);
+    if (fontFamilyFallback != null &&
+        !fontFamilyFallback.every((font) => fontFamily == font)) {
+      fontFamilies.addAll(fontFamilyFallback);
     }
 
     style['fontFamilies'] = fontFamilies;
@@ -336,6 +331,10 @@ class SkParagraph implements ui.Paragraph {
     ui.BoxHeightStyle boxHeightStyle: ui.BoxHeightStyle.tight,
     ui.BoxWidthStyle boxWidthStyle: ui.BoxWidthStyle.tight,
   }) {
+    if (start < 0 || end < 0) {
+      return const <ui.TextBox>[];
+    }
+
     js.JsObject heightStyle;
     switch (boxHeightStyle) {
       case ui.BoxHeightStyle.tight:
@@ -406,10 +405,21 @@ class SkParagraph implements ui.Paragraph {
   @override
   void layout(ui.ParagraphConstraints constraints) {
     assert(constraints.width != null);
+
+    // Infinite width breaks layout, just use a very large number instead.
+    // TODO(het): Remove this once https://bugs.chromium.org/p/skia/issues/detail?id=9874
+    //            is fixed.
+    double width;
+    const double largeFiniteWidth = 1000000;
+    if (constraints.width.isInfinite) {
+      width = largeFiniteWidth;
+    } else {
+      width = constraints.width;
+    }
     // TODO(het): CanvasKit throws an exception when laid out with
     // a font that wasn't registered.
     try {
-      skParagraph.callMethod('layout', <double>[constraints.width]);
+      skParagraph.callMethod('layout', <double>[width]);
     } catch (e) {
       html.window.console.warn('CanvasKit threw an exception while laying '
           'out the paragraph. The font was "$_fontFamily". Exception:\n$e');

@@ -44,6 +44,7 @@ enum class AccessibilityFeatureFlag : int32_t {
   kDisableAnimations = 1 << 2,
   kBoldText = 1 << 3,
   kReduceMotion = 1 << 4,
+  kHighContrast = 1 << 5,
 };
 
 class WindowClient {
@@ -76,6 +77,7 @@ class Window final {
   void DidCreateIsolate();
   void UpdateWindowMetrics(const ViewportMetrics& metrics);
   void UpdateLocales(const std::vector<std::string>& locales);
+  void UpdatePlatformResolvedLocale(const std::vector<std::string>& locale);
   void UpdateUserSettingsData(const std::string& data);
   void UpdateLifecycleState(const std::string& data);
   void UpdateSemanticsEnabled(bool enabled);

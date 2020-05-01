@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 /// This composites HTML views into the [ui.Scene].
@@ -313,7 +314,9 @@ class HtmlViewEmbedder {
   /// Ensures we add a container of SVG path defs to the DOM so they can
   /// be referred to in clip-path: url(#blah).
   void _ensureSvgPathDefs() {
-    if (_svgPathDefs != null) return;
+    if (_svgPathDefs != null) {
+      return;
+    }
     _svgPathDefs = html.Element.html(
       '<svg width="0" height="0"><defs id="sk_path_defs"></defs></svg>',
       treeSanitizer: _NullTreeSanitizer(),
@@ -396,8 +399,12 @@ class EmbeddedViewParams {
   final MutatorsStack mutators;
 
   bool operator ==(dynamic other) {
-    if (identical(this, other)) return true;
-    if (other is! EmbeddedViewParams) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! EmbeddedViewParams) {
+      return false;
+    }
 
     EmbeddedViewParams typedOther = other;
     return offset == typedOther.offset &&
@@ -453,8 +460,12 @@ class Mutator {
   double get alphaFloat => alpha / 255.0;
 
   bool operator ==(dynamic other) {
-    if (identical(this, other)) return true;
-    if (other is! Mutator) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Mutator) {
+      return false;
+    }
 
     final Mutator typedOther = other;
     if (type != typedOther.type) {
@@ -514,8 +525,12 @@ class MutatorsStack extends Iterable<Mutator> {
   }
 
   bool operator ==(dynamic other) {
-    if (identical(other, this)) return true;
-    if (other is! MutatorsStack) return false;
+    if (identical(other, this)) {
+      return true;
+    }
+    if (other is! MutatorsStack) {
+      return false;
+    }
 
     final MutatorsStack typedOther = other;
     if (_mutators.length != typedOther._mutators.length) {

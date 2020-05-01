@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of engine;
 
 // TODO(yjbanov): this is currently very naive. We probably want to cache
@@ -17,6 +18,15 @@ const int _kCanvasCacheSize = 30;
 
 /// Canvases available for reuse, capped at [_kCanvasCacheSize].
 final List<BitmapCanvas> _recycledCanvases = <BitmapCanvas>[];
+
+/// Reduces recycled canvas list by 50% to reduce bitmap canvas memory use.
+void _reduceCanvasMemoryUsage() {
+  final int canvasCount = _recycledCanvases.length;
+  for (int i = 0; i < canvasCount; i++) {
+    _recycledCanvases[i].dispose();
+  }
+  _recycledCanvases.clear();
+}
 
 /// A request to repaint a canvas.
 ///
@@ -41,21 +51,26 @@ class _PaintRequest {
 List<_PaintRequest> _paintQueue = <_PaintRequest>[];
 
 void _recycleCanvas(EngineCanvas canvas) {
-  if (canvas is BitmapCanvas && canvas.isReusable()) {
-    _recycledCanvases.add(canvas);
-    if (_recycledCanvases.length > _kCanvasCacheSize) {
-      final BitmapCanvas removedCanvas = _recycledCanvases.removeAt(0);
-      removedCanvas.dispose();
-      if (_debugShowCanvasReuseStats) {
-        DebugCanvasReuseOverlay.instance.disposedCount++;
+  if (canvas is BitmapCanvas) {
+    if (canvas.isReusable()) {
+      _recycledCanvases.add(canvas);
+      if (_recycledCanvases.length > _kCanvasCacheSize) {
+        final BitmapCanvas removedCanvas = _recycledCanvases.removeAt(0);
+        removedCanvas.dispose();
+        if (_debugShowCanvasReuseStats) {
+          DebugCanvasReuseOverlay.instance.disposedCount++;
+        }
       }
-    }
-    if (_debugShowCanvasReuseStats) {
-      DebugCanvasReuseOverlay.instance.inRecycleCount =
-          _recycledCanvases.length;
+      if (_debugShowCanvasReuseStats) {
+        DebugCanvasReuseOverlay.instance.inRecycleCount =
+            _recycledCanvases.length;
+      }
+    } else {
+      canvas.dispose();
     }
   }
 }
+
 
 /// Signature of a function that instantiates a [PersistedPicture].
 typedef PersistedPictureFactory = PersistedPicture Function(
@@ -130,7 +145,7 @@ class PersistedHoudiniPicture extends PersistedPicture {
     _canvas = canvas;
     domRenderer.clearDom(rootElement);
     rootElement.append(_canvas.rootElement);
-    picture.recordingCanvas.apply(_canvas);
+    picture.recordingCanvas.apply(_canvas, _optimalLocalCullRect);
     canvas.commit();
   }
 }
@@ -216,7 +231,7 @@ class PersistedStandardPicture extends PersistedPicture {
     _canvas = DomCanvas();
     domRenderer.clearDom(rootElement);
     rootElement.append(_canvas.rootElement);
-    picture.recordingCanvas.apply(_canvas);
+    picture.recordingCanvas.apply(_canvas, _optimalLocalCullRect);
   }
 
   void _applyBitmapPaint(EngineCanvas oldCanvas) {
@@ -229,7 +244,7 @@ class PersistedStandardPicture extends PersistedPicture {
       oldCanvas.bounds = _optimalLocalCullRect;
       _canvas = oldCanvas;
       _canvas.clear();
-      picture.recordingCanvas.apply(_canvas);
+      picture.recordingCanvas.apply(_canvas, _optimalLocalCullRect);
     } else {
       // We can't use the old canvas because the size has changed, so we put
       // it in a cache for later reuse.
@@ -250,7 +265,7 @@ class PersistedStandardPicture extends PersistedPicture {
           domRenderer.clearDom(rootElement);
           rootElement.append(_canvas.rootElement);
           _canvas.clear();
-          picture.recordingCanvas.apply(_canvas);
+          picture.recordingCanvas.apply(_canvas, _optimalLocalCullRect);
         },
       ));
     }
@@ -271,7 +286,6 @@ class PersistedStandardPicture extends PersistedPicture {
     final ui.Size canvasSize = bounds.size;
     BitmapCanvas bestRecycledCanvas;
     double lastPixelCount = double.infinity;
-
     for (int i = 0; i < _recycledCanvases.length; i++) {
       final BitmapCanvas candidate = _recycledCanvases[i];
       if (!candidate.isReusable()) {
@@ -285,13 +299,21 @@ class PersistedStandardPicture extends PersistedPicture {
       final bool fits = candidate.doesFitBounds(bounds);
       final bool isSmaller = candidatePixelCount < lastPixelCount;
       if (fits && isSmaller) {
-        bestRecycledCanvas = candidate;
-        lastPixelCount = candidatePixelCount;
-        final bool fitsExactly = candidateSize.width == canvasSize.width &&
-            candidateSize.height == canvasSize.height;
-        if (fitsExactly) {
-          // No need to keep looking any more.
-          break;
+        // [isTooSmall] is used to make sure that a small picture doesn't
+        // reuse and hold onto memory of a large canvas.
+        final double requestedPixelCount = bounds.width * bounds.height;
+        final bool isTooSmall = isSmaller &&
+            requestedPixelCount > 1 &&
+            (candidatePixelCount / requestedPixelCount) > 4;
+        if (!isTooSmall) {
+          bestRecycledCanvas = candidate;
+          lastPixelCount = candidatePixelCount;
+          final bool fitsExactly = candidateSize.width == canvasSize.width &&
+              candidateSize.height == canvasSize.height;
+          if (fitsExactly) {
+            // No need to keep looking any more.
+            break;
+          }
         }
       }
     }
@@ -330,9 +352,14 @@ class PersistedStandardPicture extends PersistedPicture {
 /// to draw shapes and text.
 abstract class PersistedPicture extends PersistedLeafSurface {
   PersistedPicture(this.dx, this.dy, this.picture, this.hints)
-      : localPaintBounds = picture.recordingCanvas.computePaintBounds();
+      : localPaintBounds = picture.recordingCanvas.pictureBounds;
 
   EngineCanvas _canvas;
+
+  /// Returns the canvas used by this picture layer.
+  ///
+  /// Useful for tests.
+  EngineCanvas get debugCanvas => _canvas;
 
   final double dx;
   final double dy;
@@ -464,7 +491,7 @@ abstract class PersistedPicture extends PersistedLeafSurface {
 
     // The new cull rect contains area not covered by a previous rect. Perhaps
     // the clip is growing, moving around the picture, or both. In this case
-    // a part of the picture may not been painted. We will need to
+    // a part of the picture may not have been painted. We will need to
     // request a new canvas and paint the picture on it. However, this is also
     // a strong signal that the clip will continue growing as typically
     // Flutter uses animated transitions. So instead of allocating the canvas
@@ -473,30 +500,43 @@ abstract class PersistedPicture extends PersistedLeafSurface {
     // will hit the above case where the new cull rect is fully contained
     // within the cull rect we compute now.
 
-    // If any of the borders moved.
-    // TODO(yjbanov): consider switching to Mouad's snap-to-10px strategy. It
-    //                might be sufficient, if not more effective.
-    const double kPredictedGrowthFactor = 3.0;
-    final double leftwardTrend = kPredictedGrowthFactor *
-        math.max(oldOptimalLocalCullRect.left - _exactLocalCullRect.left, 0);
-    final double upwardTrend = kPredictedGrowthFactor *
-        math.max(oldOptimalLocalCullRect.top - _exactLocalCullRect.top, 0);
-    final double rightwardTrend = kPredictedGrowthFactor *
-        math.max(_exactLocalCullRect.right - oldOptimalLocalCullRect.right, 0);
-    final double bottomwardTrend = kPredictedGrowthFactor *
-        math.max(
-            _exactLocalCullRect.bottom - oldOptimalLocalCullRect.bottom, 0);
+    // Compute the delta, by which each of the side of the clip rect has "moved"
+    // since the last time we updated the cull rect.
+    final double leftwardDelta = oldOptimalLocalCullRect.left - _exactLocalCullRect.left;
+    final double upwardDelta = oldOptimalLocalCullRect.top - _exactLocalCullRect.top;
+    final double rightwardDelta = _exactLocalCullRect.right - oldOptimalLocalCullRect.right;
+    final double bottomwardDelta = _exactLocalCullRect.bottom - oldOptimalLocalCullRect.bottom;
 
+    // Compute the new optimal rect to paint into.
     final ui.Rect newLocalCullRect = ui.Rect.fromLTRB(
-      oldOptimalLocalCullRect.left - leftwardTrend,
-      oldOptimalLocalCullRect.top - upwardTrend,
-      oldOptimalLocalCullRect.right + rightwardTrend,
-      oldOptimalLocalCullRect.bottom + bottomwardTrend,
+      _exactLocalCullRect.left - _predictTrend(leftwardDelta, _exactLocalCullRect.width),
+      _exactLocalCullRect.top - _predictTrend(upwardDelta, _exactLocalCullRect.height),
+      _exactLocalCullRect.right + _predictTrend(rightwardDelta, _exactLocalCullRect.width),
+      _exactLocalCullRect.bottom + _predictTrend(bottomwardDelta, _exactLocalCullRect.height),
     ).intersect(localPaintBounds);
 
     final bool localCullRectChanged = _optimalLocalCullRect != newLocalCullRect;
     _optimalLocalCullRect = newLocalCullRect;
     return localCullRectChanged;
+  }
+
+  /// Predicts the delta a particular side of a clip rect will move given the
+  /// [delta] it moved by last, and the respective [extent] (width or height)
+  /// of the clip.
+  static double _predictTrend(double delta, double extent) {
+    if (delta <= 0.0) {
+      // Shrinking. Give it 10% of the extent in case the trend is reversed.
+      return extent * 0.1;
+    } else {
+      // Growing. Predict 10 more frames of similar deltas. Give it at least
+      // 50% of the extent (protect from extremely slow growth trend such as
+      // slow scrolling). Give no more than the full extent (protects from
+      // fast scrolling that could lead to overallocation).
+      return math.min(
+        math.max(extent * 0.5, delta * 10.0),
+        extent,
+      );
+    }
   }
 
   /// Number of bitmap pixel painted by this picture.
@@ -602,7 +642,7 @@ abstract class PersistedPicture extends PersistedLeafSurface {
     super.debugValidate(validationErrors);
 
     if (picture.recordingCanvas.didDraw) {
-      if (_canvas == null) {
+      if (debugCanvas == null) {
         validationErrors
             .add('$runtimeType has non-trivial picture but it has null canvas');
       }

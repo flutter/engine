@@ -4,6 +4,7 @@
 
 // TODO(dnfield): Remove unused_import ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
+// @dart = 2.6
 part of dart.ui;
 
 // ignore: unused_element
@@ -97,6 +98,22 @@ void _updateLocales(List<String> locales) {
 
 @pragma('vm:entry-point')
 // ignore: unused_element
+void _updatePlatformResolvedLocale(List<String> localeData) {
+  if (localeData.length != 4) {
+    return;
+  }
+  final String countryCode = localeData[1];
+  final String scriptCode = localeData[2];
+
+  window._platformResolvedLocale = Locale.fromSubtags(
+    languageCode: localeData[0],
+    countryCode: countryCode.isEmpty ? null : countryCode,
+    scriptCode: scriptCode.isEmpty ? null : scriptCode,
+  );
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
 void _updateUserSettingsData(String jsonData) {
   final Map<String, dynamic> data = json.decode(jsonData) as Map<String, dynamic>;
   if (data.isEmpty) {
@@ -145,7 +162,7 @@ void _updateAccessibilityFeatures(int values) {
   if (newFeatures == window._accessibilityFeatures)
     return;
   window._accessibilityFeatures = newFeatures;
-  _invoke(window.onAccessibilityFeaturesChanged, window._onAccessibilityFlagsChangedZone);
+  _invoke(window.onAccessibilityFeaturesChanged, window._onAccessibilityFeaturesChangedZone);
 }
 
 @pragma('vm:entry-point')
@@ -229,7 +246,7 @@ void _runMainZoned(Function startMainIsolateFunction,
                    Function userMainFunction,
                    List<String> args) {
   startMainIsolateFunction((){
-    runZoned<void>(() {
+    runZonedGuarded<void>(() {
       if (userMainFunction is _BinaryFunction) {
         // This seems to be undocumented but supported by the command line VM.
         // Let's do the same in case old entry-points are ported to Flutter.
@@ -239,7 +256,7 @@ void _runMainZoned(Function startMainIsolateFunction,
       } else {
         userMainFunction();
       }
-    }, onError: (Object error, StackTrace stackTrace) {
+    }, (Object error, StackTrace stackTrace) {
       _reportUnhandledException(error.toString(), stackTrace.toString());
     });
   }, null);
@@ -275,22 +292,7 @@ void _invoke1<A>(void callback(A a), Zone zone, A arg) {
   }
 }
 
-/// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
-// ignore: unused_element
-void _invoke2<A1, A2>(void callback(A1 a1, A2 a2), Zone zone, A1 arg1, A2 arg2) {
-  if (callback == null)
-    return;
-
-  assert(zone != null);
-
-  if (identical(zone, Zone.current)) {
-    callback(arg1, arg2);
-  } else {
-    zone.runBinaryGuarded<A1, A2>(callback, arg1, arg2);
-  }
-}
-
-/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2] and [arg3].
+/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
 void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1, A2 arg2, A3 arg3) {
   if (callback == null)
     return;

@@ -49,17 +49,12 @@ void PictureLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-  if (context.raster_cache) {
-    const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
-    RasterCacheResult result = context.raster_cache->Get(*picture(), ctm);
-    if (result.is_valid()) {
-      TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
-
-      result.draw(*context.leaf_nodes_canvas);
-      return;
-    }
+  if (context.raster_cache &&
+      context.raster_cache->Draw(*picture(), *context.leaf_nodes_canvas)) {
+    TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
+    return;
   }
-  context.leaf_nodes_canvas->drawPicture(picture());
+  picture()->playback(context.leaf_nodes_canvas);
 }
 
 }  // namespace flutter

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:async';
 
 import 'package:args/command_runner.dart';
@@ -12,7 +13,7 @@ import 'package:watcher/watcher.dart';
 import 'environment.dart';
 import 'utils.dart';
 
-class BuildCommand extends Command<bool> {
+class BuildCommand extends Command<bool> with ArgUtils {
   BuildCommand() {
     argParser
       ..addFlag(
@@ -34,15 +35,9 @@ class BuildCommand extends Command<bool> {
   @override
   String get description => 'Build the Flutter web engine.';
 
-  bool get isWatchMode => argResults['watch'];
+  bool get isWatchMode => boolArg('watch');
 
-  int getNinjaJobCount() {
-    final String ninjaJobsArg = argResults['ninja-jobs'];
-    if (ninjaJobsArg != null) {
-      return int.tryParse(ninjaJobsArg);
-    }
-    return null;
-  }
+  int getNinjaJobCount() => intArg('ninja-jobs');
 
   @override
   FutureOr<bool> run() async {
