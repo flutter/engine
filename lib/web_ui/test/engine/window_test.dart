@@ -222,4 +222,11 @@ void main() {
 
     await completer.future;
   });
+
+  test('locale and locales return locales', () {
+    // Only test that we got some locales. We can't test the contents because
+    // not all contributors may be in the same locale.
+    expect(window.locale, isA<ui.Locale>());
+    expect(window.locales, isNotEmpty);
+  });
 }
