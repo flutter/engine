@@ -5,6 +5,8 @@
 @ECHO OFF
 SETLOCAL
 
+:: These steps needs to be removed from LUCI runs.
+
 FOR /F "tokens=1-2 delims=:" %%a in ('where gclient') DO SET GCLIENT_PATH=%%b
 IF %GCLIENT_PATH%==[] (ECHO "ERROR: gclient is not in your PATH")
 
@@ -66,6 +68,6 @@ ECHO "Running \`pub get\` in 'engine/src/flutter/web_sdk/web_engine_tester'"
 cd "%FLUTTER_DIR%web_sdk\web_engine_tester"
 CALL %PUB_DIR% get
 ECHO "Running \`pub get\` in 'engine/src/flutter/lib/web_ui'"
-cd %WEB_UI_DIR% 
+cd %WEB_UI_DIR%
 CALL %PUB_DIR% get
 EXIT /B 0
