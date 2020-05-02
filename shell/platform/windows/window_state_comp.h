@@ -37,6 +37,8 @@ struct FlutterDesktopViewControllerState {
 struct FlutterDesktopView {
   // The window that (indirectly) owns this state object.
   flutter::FlutterCompView* window;
+
+  void* externalwindow;
 };
 
 // Struct for storing state of a Flutter engine instance.

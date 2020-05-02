@@ -8,13 +8,8 @@ namespace flutter {
 // constant for machines running at 100% scaling.
 constexpr int base_dpi = 96;
 
-FlutterCompView::FlutterCompView(int width, int height, void* compositor) {
+FlutterCompView::FlutterCompView(int width, int height) {
   surface_manager = std::make_unique<AngleSurfaceManager>();
-
-  compositor_.Attach(static_cast<ABI::Windows::UI::Composition::ICompositor*>(compositor));
-
-  //TODO: use C++/Winrt copy_from_abi once C++.Winrt is supportrf
-  //winrt::copy_from_abi(compositor_, compositor);
 
   width_ = width;
   height_ = height;
@@ -22,6 +17,29 @@ FlutterCompView::FlutterCompView(int width, int height, void* compositor) {
 
 FlutterCompView::~FlutterCompView() {
   DestroyRenderSurface();
+   if (plugin_registrar_ && plugin_registrar_->destruction_handler) {
+    plugin_registrar_->destruction_handler(plugin_registrar_.get());
+  }
+}
+
+FlutterDesktopViewControllerRef FlutterCompView::CreateFlutterCompViewHwnd(
+    const int width,
+    const int height,
+    void* externalWindow,
+    HWND windowrendertarget) {
+
+  auto state = std::make_unique<FlutterDesktopViewControllerState>();
+  state->view =
+      std::make_unique<flutter::FlutterCompView>(width, height);
+
+  state->view->window_rendertarget_ = windowrendertarget;
+
+  // a window wrapper for the state block, distinct from the
+  // window_wrapper handed to plugin_registrar.
+  state->view_wrapper = std::make_unique<FlutterDesktopView>();
+  state->view_wrapper->window = state->view.get();
+  state->view_wrapper->externalwindow = externalWindow;
+  return state.release();
 }
 
 FlutterDesktopViewControllerRef FlutterCompView::CreateFlutterCompView(
@@ -29,7 +47,15 @@ FlutterDesktopViewControllerRef FlutterCompView::CreateFlutterCompView(
     const int height,
     void* compositor) {
   auto state = std::make_unique<FlutterDesktopViewControllerState>();
-  state->view = std::make_unique<flutter::FlutterCompView>(width, height, compositor);
+  state->view = std::make_unique<flutter::FlutterCompView>(width, height);
+  
+  if (compositor != nullptr) {
+    state->view->compositor_.Attach(
+        static_cast<ABI::Windows::UI::Composition::ICompositor*>(compositor));
+  }
+
+  // TODO: use C++/Winrt copy_from_abi once C++.Winrt is supportrf
+  // winrt::copy_from_abi(compositor_, compositor);
 
   // a window wrapper for the state block, distinct from the
   // window_wrapper handed to plugin_registrar.
@@ -38,7 +64,7 @@ FlutterDesktopViewControllerRef FlutterCompView::CreateFlutterCompView(
   return state.release();
 }
 
-void FlutterCompView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
+void FlutterCompView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng, void* externalwindow) {
   engine_ = eng;
 
   auto messenger = std::make_unique<FlutterDesktopMessenger>();
@@ -49,6 +75,7 @@ void FlutterCompView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
 
   window_wrapper_ = std::make_unique<FlutterDesktopView>();
   window_wrapper_->window = this;
+  window_wrapper_->externalwindow = externalwindow;
 
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
   plugin_registrar_->messenger = std::move(messenger);
@@ -67,11 +94,6 @@ void FlutterCompView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
       internal_plugin_messenger, this);
 
   process_events_ = true;
-
-  //HACK for UWP
-  if (compositor_ != nullptr) {
-      SendWindowMetrics(width_, height_);
-  }
 }
 
 FlutterDesktopPluginRegistrarRef FlutterCompView::GetRegistrar() {
@@ -89,27 +111,6 @@ static FlutterDesktopMessage ConvertToDesktopMessage(
   message.response_handle = engine_message.response_handle;
   return message;
 }
-
-//// Translates button codes from Win32 API to FlutterPointerMouseButtons.
-//static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
-//  switch (button) {
-//    case WM_LBUTTONDOWN:
-//    case WM_LBUTTONUP:
-//      return kFlutterPointerButtonMousePrimary;
-//    case WM_RBUTTONDOWN:
-//    case WM_RBUTTONUP:
-//      return kFlutterPointerButtonMouseSecondary;
-//    case WM_MBUTTONDOWN:
-//    case WM_MBUTTONUP:
-//      return kFlutterPointerButtonMouseMiddle;
-//    case XBUTTON1:
-//      return kFlutterPointerButtonMouseBack;
-//    case XBUTTON2:
-//      return kFlutterPointerButtonMouseForward;
-//  }
-//  std::cerr << "Mouse button not recognized: " << button << std::endl;
-//  return 0;
-//}
 
 // The Flutter Engine calls out to this function when new platform messages
 // are available.
@@ -139,7 +140,6 @@ void FlutterCompView::OnPointerDown(double x,
                                     double y,
                                     FlutterPointerMouseButtons flutter_button) {
   if (process_events_) {
-   /* uint64_t flutter_button = ConvertWinButtonToFlutterButton(button);*/
     if  (flutter_button != 0) {
       uint64_t mouse_buttons = GetMouseState().buttons | flutter_button;
       SetMouseButtons(mouse_buttons);
@@ -152,7 +152,6 @@ void FlutterCompView::OnPointerUp(double x,
                                         double y,
           FlutterPointerMouseButtons flutter_button) {
  if (process_events_) {
-   /* uint64_t flutter_button = ConvertWinButtonToFlutterButton(button);*/
     if (flutter_button != 0) {
       uint64_t mouse_buttons = GetMouseState().buttons & ~flutter_button;
       SetMouseButtons(mouse_buttons);
@@ -167,9 +166,9 @@ void FlutterCompView::OnPointerLeave() {
   }
 }
 
-void FlutterCompView::OnChar(char32_t code_point) {
+void FlutterCompView::OnText(const std::u16string& text) {
   if (process_events_) {
-    SendChar(code_point);
+    SendText(text);
   }
 }
 
@@ -182,9 +181,9 @@ void FlutterCompView::OnKey(int key,
   }
 }
 
-void FlutterCompView::OnScroll(double delta_x, double delta_y) {
+void FlutterCompView::OnScroll(double x, double y, double delta_x, double delta_y) {
   if (process_events_) {
-    SendScroll(delta_x, delta_y);
+    SendScroll(x, y, delta_x, delta_y);
   }
 }
 
@@ -196,34 +195,21 @@ void FlutterCompView::OnFontChange() {
 }
 
 // Sends new size  information to FlutterEngine.
-void FlutterCompView::SendWindowMetrics(size_t width, size_t height) {
+void FlutterCompView::SendWindowMetrics(size_t width, size_t height, double dpiScale) {
   if (engine_ == nullptr) {
     return;
   }
 
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  //event.width = 320;  // GetCurrentWidth(); TODO
-  //event.height = 240; //GetCurrentHeight(); TODO
-  event.width = width;   // GetCurrentWidth(); TODO
-  event.height = height;  // GetCurrentHeight(); TODO
-  event.pixel_ratio = 1.2;  // static_cast<double>(GetCurrentDPI()) / base_dpi; TODO
+  event.width = width;
+  event.height = height;
+  event.pixel_ratio = dpiScale;  
   auto result = FlutterEngineSendWindowMetricsEvent(engine_, &event);
 
-
-  SizeHostVisual(width, height);
-}
-
-// Updates |event_data| with the current location of the mouse cursor.
-void FlutterCompView::SetEventLocationFromCursorPosition(
-    FlutterPointerEvent* event_data) {
-  //POINT point;
-  //GetCursorPos(&point);
-
-  //ScreenToClient(GetWindowHandle(), &point); TODO
-
-  //event_data->x = point.x;
-  //event_data->y = point.y;
+  if (flutter_host_ != nullptr) {
+    SizeHostVisual(width, height);
+  }
 }
 
 // Set's |event_data|'s phase to either kMove or kHover depending on the current
@@ -275,9 +261,9 @@ void FlutterCompView::SendPointerLeave() {
   SendPointerEventWithData(event);
 }
 
-void FlutterCompView::SendChar(char32_t code_point) {
+void FlutterCompView::SendText(const std::u16string& code_point) {
   for (const auto& handler : keyboard_hook_handlers_) {
-    handler->CharHook(this, code_point);
+    handler->TextHook(this, code_point);
   }
 }
 
@@ -287,14 +273,15 @@ void FlutterCompView::SendKey(int key, int scancode, int action, int mods) {
   }
 }
 
-void FlutterCompView::SendScroll(double delta_x, double delta_y) {
+void FlutterCompView::SendScroll(double x, double y, double delta_x, double delta_y) {
   FlutterPointerEvent event = {};
-  SetEventLocationFromCursorPosition(&event);
   SetEventPhaseFromCursorButtonState(&event);
   event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
   // TODO: See if this can be queried from the OS; this value is chosen
   // arbitrarily to get something that feels reasonable.
   const int kScrollOffsetMultiplier = 20;
+  event.x = x;
+  event.y = y;
   event.scroll_delta_x = delta_x * kScrollOffsetMultiplier;
   event.scroll_delta_y = delta_y * kScrollOffsetMultiplier;
   SendPointerEventWithData(event);
@@ -380,6 +367,20 @@ void FlutterCompView::SizeHostVisual(size_t width, size_t height) {
   (SUCCEEDED(hr));
 }
 
+void FlutterCompView::CreateRenderSurface() {
+  if (compositor_ != nullptr) {
+    CreateRenderSurfaceUWP();
+  } else {
+    CreateRenderSurfaceHWND();
+  }
+}
+
+void FlutterCompView::CreateRenderSurfaceHWND() {
+   //TODO: seems like we shouldn't get this from the window_wrapper as that is mainly used for plugins
+  render_surface =
+      surface_manager->CreateSurface(static_cast<HWND>(window_rendertarget_));
+}
+
 // TODO: move this into visual_flutter_host class when that exists
 // TODO: can we use c++/winrt in here (requires newer windows SDK and c++17
 // support in compiler toolchain)
@@ -401,9 +402,6 @@ void FlutterCompView::CreateRenderSurfaceUWP() {
     hr = flutter_host_.As(&visualPtr);
     (SUCCEEDED(hr));
     hr = visualPtr->put_Size({static_cast<float>(width_), static_cast<float>(height_)});
-    (SUCCEEDED(hr));
-
-    hr = visualPtr->put_Offset({40, 20});
     (SUCCEEDED(hr));
 
     render_surface = surface_manager->CreateSurface(flutter_host_.Get());

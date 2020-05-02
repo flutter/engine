@@ -20,8 +20,6 @@
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 //#include "flutter/shell/platform/windows/window_state.h"
-#include "flutter/shell/platform/windows/window_state_comp.h"
-
 #include <dispatcherqueue.h>
 #include <versionhelpers.h>
 #include <windows.foundation.metadata.h>
@@ -29,9 +27,11 @@
 #include <windows.ui.composition.interop.h>
 #include <wrl.h>
 
+#include "flutter/shell/platform/windows/window_state_comp.h"
+
 namespace flutter {
 
-    class RoHelper {
+class RoHelper {
  public:
   RoHelper();
   ~RoHelper();
@@ -110,18 +110,21 @@ struct MouseState {
 class FlutterCompView {
  public:
   // Create flutter Window for use as child window
-  FlutterCompView(int width, int height, void* compositor);
+  FlutterCompView(int width, int height);
 
   ~FlutterCompView();
 
-  static FlutterDesktopViewControllerRef CreateFlutterCompView(
-      int width,
-      int height,
-      void* compositor);
+  static FlutterDesktopViewControllerRef
+  CreateFlutterCompView(int width, int height, void* compositor);
+
+  static FlutterDesktopViewControllerRef CreateFlutterCompViewHwnd(int width,
+                                                                   int height,
+                                                                   void* externalwindow,
+                                                                   HWND windowrendertarget);
 
   // Configures the window instance with an instance of a running Flutter engine
   // returning a configured FlutterDesktopWindowControllerRef.
-  void SetState(FLUTTER_API_SYMBOL(FlutterEngine) state);
+  void SetState(FLUTTER_API_SYMBOL(FlutterEngine) state, void* externalwindow);
 
   // Returns the currently configured Plugin Registrar.
   FlutterDesktopPluginRegistrarRef GetRegistrar();
@@ -130,8 +133,7 @@ class FlutterCompView {
   // messages.
   void HandlePlatformMessage(const FlutterPlatformMessage*);
 
-  // Create a surface for Flutter engine to render into.
-  void CreateRenderSurfaceUWP();
+  void CreateRenderSurface();
 
   // Destroy current rendering surface if one has been allocated.
   void DestroyRenderSurface();
@@ -144,7 +146,7 @@ class FlutterCompView {
 
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
-  void SendWindowMetrics(size_t width, size_t height);
+  void SendWindowMetrics(size_t width, size_t height, double dpiscale);
 
   Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ISpriteVisual>
   GetFlutterHost();
@@ -161,24 +163,28 @@ class FlutterCompView {
   // TODO
   void OnPointerLeave();
 
-   // TODO
-  void OnChar(char32_t code_point);
+  // TODO
+  void OnText(const std::u16string&);
 
   // TODO
   void OnKey(int key, int scancode, int action, char32_t character);
 
   // TODO
-  void OnScroll(double delta_x, double delta_y);
+  void OnScroll(double x, double y, double delta_x, double delta_y);
 
   // TODO
   void OnFontChange();
 
  private:
+  // Create a surface for Flutter engine to render into.
+  void CreateRenderSurfaceUWP();
 
-// Reports a mouse movement to Flutter engine.
+  void CreateRenderSurfaceHWND();
+
+  // Reports a mouse movement to Flutter engine.
   void SendPointerMove(double x, double y);
 
-   // Reports mouse press to Flutter engine.
+  // Reports mouse press to Flutter engine.
   void SendPointerDown(double x, double y);
 
   // Reports mouse release to Flutter engine.
@@ -192,16 +198,13 @@ class FlutterCompView {
   void SendPointerLeave();
 
   // Reports a keyboard character to Flutter engine.
-  void SendChar(char32_t code_point);
+  void SendText(const std::u16string&);
 
   // Reports a raw keyboard message to Flutter engine.
   void SendKey(int key, int scancode, int action, int mods);
 
   // Reports scroll wheel events to Flutter engine.
-  void SendScroll(double delta_x, double delta_y);
-
-  // Updates |event_data| with the current location of the mouse cursor.
-  void SetEventLocationFromCursorPosition(FlutterPointerEvent* event_data);
+  void SendScroll(double x, double y, double delta_x, double delta_y);
 
   // Set's |event_data|'s phase to either kMove or kHover depending on the
   // current
@@ -234,7 +237,6 @@ class FlutterCompView {
   // Updates the currently pressed buttons.
   void SetMouseButtons(uint64_t buttons) { mouse_state_.buttons = buttons; }
 
-
   // Updates the size of the compositor host visual
   void SizeHostVisual(size_t width, size_t height);
 
@@ -254,7 +256,7 @@ class FlutterCompView {
   // been added since it was last removed).
   bool pointer_currently_added_ = false;
 
-    // Set to true to be notified when the mouse leaves the window.
+  // Set to true to be notified when the mouse leaves the window.
   bool tracking_mouse_leave_ = false;
 
   // Keeps track of mouse state in relation to the window.
@@ -285,11 +287,13 @@ class FlutterCompView {
   // flag indicating if the message loop should be running
   bool messageloop_running_ = false;
 
-  Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ICompositor> compositor_ {nullptr};
+  Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ICompositor>
+      compositor_{nullptr};
+
+  HWND window_rendertarget_;
 
   Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ISpriteVisual>
       flutter_host_{nullptr};
-
 
   int width_ = 0, height_ = 0;
 };

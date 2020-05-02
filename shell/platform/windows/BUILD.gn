@@ -94,6 +94,8 @@ shared_library("flutter_windows") {
     ":flutter_windows_source",
   ]
 
+  libs = [ "windowsapp.lib" ]
+
   public_configs = [ "//flutter:config" ]
 }
 
@@ -120,6 +122,8 @@ executable("flutter_windows_unittests") {
     "//flutter/testing",
     "//third_party/rapidjson",
   ]
+
+  libs = [ "windowsapp.lib" ]
 }
 
 shared_library("flutter_windows_glfw") {

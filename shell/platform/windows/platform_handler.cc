@@ -198,7 +198,7 @@ bool ScopedClipboard::SetString(const std::wstring string) {
 }  // namespace
 
 PlatformHandler::PlatformHandler(flutter::BinaryMessenger* messenger,
-                                 Win32FlutterWindow* window)
+                                 FlutterCompView* window)
     : channel_(std::make_unique<flutter::MethodChannel<rapidjson::Document>>(
           messenger,
           kChannelName,
@@ -215,71 +215,75 @@ PlatformHandler::PlatformHandler(flutter::BinaryMessenger* messenger,
 void PlatformHandler::HandleMethodCall(
     const flutter::MethodCall<rapidjson::Document>& method_call,
     std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result) {
-  const std::string& method = method_call.method_name();
-  if (method.compare(kGetClipboardDataMethod) == 0) {
-    // Only one string argument is expected.
-    const rapidjson::Value& format = method_call.arguments()[0];
 
-    if (strcmp(format.GetString(), kTextPlainFormat) != 0) {
-      result->Error(kClipboardError, kUnknownClipboardFormatMessage);
-      return;
-    }
-
-    ScopedClipboard clipboard;
-    if (!clipboard.Open(window_->GetWindowHandle())) {
-      rapidjson::Document error_code;
-      error_code.SetInt(::GetLastError());
-      result->Error(kClipboardError, "Unable to open clipboard", &error_code);
-      return;
-    }
-    if (!clipboard.HasString()) {
-      rapidjson::Document null;
-      result->Success(&null);
-      return;
-    }
-    std::optional<std::wstring> clipboard_string = clipboard.GetString();
-    if (!clipboard_string) {
-      rapidjson::Document error_code;
-      error_code.SetInt(::GetLastError());
-      result->Error(kClipboardError, "Unable to get clipboard data",
-                    &error_code);
-      return;
-    }
-
-    rapidjson::Document document;
-    document.SetObject();
-    rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-    document.AddMember(
-        rapidjson::Value(kTextKey, allocator),
-        rapidjson::Value(Utf8FromUtf16(*clipboard_string), allocator),
-        allocator);
-    result->Success(&document);
-  } else if (method.compare(kSetClipboardDataMethod) == 0) {
-    const rapidjson::Value& document = *method_call.arguments();
-    rapidjson::Value::ConstMemberIterator itr = document.FindMember(kTextKey);
-    if (itr == document.MemberEnd()) {
-      result->Error(kClipboardError, kUnknownClipboardFormatMessage);
-      return;
-    }
-
-    ScopedClipboard clipboard;
-    if (!clipboard.Open(window_->GetWindowHandle())) {
-      rapidjson::Document error_code;
-      error_code.SetInt(::GetLastError());
-      result->Error(kClipboardError, "Unable to open clipboard", &error_code);
-      return;
-    }
-    if (!clipboard.SetString(Utf16FromUtf8(itr->value.GetString()))) {
-      rapidjson::Document error_code;
-      error_code.SetInt(::GetLastError());
-      result->Error(kClipboardError, "Unable to set clipboard data",
-                    &error_code);
-      return;
-    }
-    result->Success();
-  } else {
     result->NotImplemented();
-  }
+    return;
+
+  //const std::string& method = method_call.method_name();
+  //if (method.compare(kGetClipboardDataMethod) == 0) {
+  //  // Only one string argument is expected.
+  //  const rapidjson::Value& format = method_call.arguments()[0];
+
+  //  if (strcmp(format.GetString(), kTextPlainFormat) != 0) {
+  //    result->Error(kClipboardError, kUnknownClipboardFormatMessage);
+  //    return;
+  //  }
+
+  //  ScopedClipboard clipboard;
+  //  if (!clipboard.Open(window_->GetWindowHandle())) {
+  //    rapidjson::Document error_code;
+  //    error_code.SetInt(::GetLastError());
+  //    result->Error(kClipboardError, "Unable to open clipboard", &error_code);
+  //    return;
+  //  }
+  //  if (!clipboard.HasString()) {
+  //    rapidjson::Document null;
+  //    result->Success(&null);
+  //    return;
+  //  }
+  //  std::optional<std::wstring> clipboard_string = clipboard.GetString();
+  //  if (!clipboard_string) {
+  //    rapidjson::Document error_code;
+  //    error_code.SetInt(::GetLastError());
+  //    result->Error(kClipboardError, "Unable to get clipboard data",
+  //                  &error_code);
+  //    return;
+  //  }
+
+  //  rapidjson::Document document;
+  //  document.SetObject();
+  //  rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+  //  document.AddMember(
+  //      rapidjson::Value(kTextKey, allocator),
+  //      rapidjson::Value(Utf8FromUtf16(*clipboard_string), allocator),
+  //      allocator);
+  //  result->Success(&document);
+  //} else if (method.compare(kSetClipboardDataMethod) == 0) {
+  //  const rapidjson::Value& document = *method_call.arguments();
+  //  rapidjson::Value::ConstMemberIterator itr = document.FindMember(kTextKey);
+  //  if (itr == document.MemberEnd()) {
+  //    result->Error(kClipboardError, kUnknownClipboardFormatMessage);
+  //    return;
+  //  }
+
+  //  ScopedClipboard clipboard;
+  //  if (!clipboard.Open(window_->GetWindowHandle())) {
+  //    rapidjson::Document error_code;
+  //    error_code.SetInt(::GetLastError());
+  //    result->Error(kClipboardError, "Unable to open clipboard", &error_code);
+  //    return;
+  //  }
+  //  if (!clipboard.SetString(Utf16FromUtf8(itr->value.GetString()))) {
+  //    rapidjson::Document error_code;
+  //    error_code.SetInt(::GetLastError());
+  //    result->Error(kClipboardError, "Unable to set clipboard data",
+  //                  &error_code);
+  //    return;
+  //  }
+  //  result->Success();
+  //} else {
+  //  result->NotImplemented();
+  //}
 }
 
 }  // namespace flutter

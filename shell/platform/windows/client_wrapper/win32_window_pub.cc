@@ -121,6 +121,7 @@ Win32WindowPub::MessageHandler(HWND hwnd,
   if (window != nullptr) {
     switch (message) {
       case kWmDpiChangedBeforeParent:
+      // TODO may need add after parent
         current_dpi_ = pubdpi::GetDpiForHWND(window_handle_);
         window->OnDpiScale(current_dpi_);
         return 0;
@@ -290,6 +291,7 @@ HWND Win32WindowPub::GetWindowHandle() {
 }
 
 void Win32WindowPub::Destroy() {
+    //TODO.. unparent?
   if (window_handle_) {
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;

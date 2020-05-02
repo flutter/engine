@@ -2,16 +2,48 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
+
 #include "include/flutter/flutter_view_controller.h"
+#include <dispatcherqueue.h>
+#include <Unknwn.h>
+#include <winrt/Windows.UI.Composition.Desktop.h>
+#include <windows.ui.composition.interop.h>
+
+
+using namespace winrt;
+using namespace Windows::UI;
+using namespace Windows::UI::Composition;
+using namespace Windows::UI::Composition::Desktop;
 
 #include <algorithm>
 #include <iostream>
 
 namespace flutter {
 
+auto CreateDispatcherQueueController() {
+  namespace abi = ABI::Windows::System;
+
+  DispatcherQueueOptions options{sizeof(DispatcherQueueOptions),
+                                 DQTYPE_THREAD_CURRENT, DQTAT_COM_STA};
+
+  Windows::System::DispatcherQueueController controller{nullptr};
+  check_hresult(CreateDispatcherQueueController(
+      options, reinterpret_cast<abi::IDispatcherQueueController**>(
+                   put_abi(controller))));
+  return controller;
+}
+
+// Compositor overload
 FlutterViewController::FlutterViewController(int width,
                                              int height,
-                                             const DartProject& project) {
+                                             const DartProject& project,
+                                             void* compositor) {
+  if (compositor == nullptr) {
+    std::cerr << "Failed to create view controller: compositor can't be null." << std::endl;
+    return;
+  }
+  
   std::vector<const char*> switches;
   std::transform(
       project.engine_switches().begin(), project.engine_switches().end(),
@@ -24,46 +56,58 @@ FlutterViewController::FlutterViewController(int width,
   properties.icu_data_path = project.icu_data_path().c_str();
   properties.switches = switch_count > 0 ? switches.data() : nullptr;
   properties.switches_count = switch_count;
-  /*controller_ = FlutterDesktopCreateViewController(width, height, properties);
+
+  child_window_ =
+      std::make_unique<Win32FlutterWindowPub>(width, height, compositor_);
+
+  controller_ = V2FlutterDesktopCreateViewControllerComposition(
+      width, height, properties,
+      static_cast<void*>(winrt::get_abi(compositor_)),child_window_.get());
   if (!controller_) {
     std::cerr << "Failed to create view controller." << std::endl;
     return;
-  }*/
-  //view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
-  child_window_ = std::make_unique<Win32FlutterWindowPub>(width, height);
+  }
+  view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
+
+  child_window_->SetViewComposition(view_.get());
 }
 
-FlutterViewController::FlutterViewController(
-    const std::string& icu_data_path,
-    int width,
-    int height,
-    const std::string& assets_path,
-    const std::vector<std::string>& arguments) {
-  if (controller_) {
-    std::cerr << "Only one Flutter view can exist at a time." << std::endl;
-  }
-
-  std::vector<const char*> engine_arguments;
+// Window overload
+FlutterViewController::FlutterViewController(int width,
+                                             int height,
+                                             const DartProject& project,
+                                             HWND parentwindow) {
+  std::vector<const char*> switches;
   std::transform(
-      arguments.begin(), arguments.end(), std::back_inserter(engine_arguments),
+      project.engine_switches().begin(), project.engine_switches().end(),
+      std::back_inserter(switches),
       [](const std::string& arg) -> const char* { return arg.c_str(); });
-  size_t arg_count = engine_arguments.size();
+  size_t switch_count = switches.size();
 
-  controller_ = FlutterDesktopCreateViewControllerLegacy(
-      width, height, assets_path.c_str(), icu_data_path.c_str(),
-      arg_count > 0 ? &engine_arguments[0] : nullptr, arg_count);
+  FlutterDesktopEngineProperties properties = {};
+  properties.assets_path = project.assets_path().c_str();
+  properties.icu_data_path = project.icu_data_path().c_str();
+  properties.switches = switch_count > 0 ? switches.data() : nullptr;
+  properties.switches_count = switch_count;
+
+  child_window_ =
+      std::make_unique<Win32FlutterWindowPub>(width, height);
+
+  controller_ = V2CreateViewControllerWindow(
+      width, height, properties,
+      child_window_.get(),child_window_->GetWindowHandle());
   if (!controller_) {
     std::cerr << "Failed to create view controller." << std::endl;
     return;
   }
-  //view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
-  child_window_ = std::make_unique<Win32FlutterWindowPub>(width,height);
+  view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
+  child_window_->SetView(view_.get());
 }
 
 FlutterViewController::~FlutterViewController() {
-  /*if (controller_) {
+  if (controller_) {
     FlutterDesktopDestroyViewController(controller_);
-  }*/
+  }
 }
 
 std::chrono::nanoseconds FlutterViewController::ProcessMessages() {

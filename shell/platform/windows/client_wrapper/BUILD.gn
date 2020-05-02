@@ -50,6 +50,8 @@ source_set("client_wrapper_windows") {
   ]
 }
 
+
+
 # Copies the Windows client wrapper code to the output directory.
 publish_client_wrapper_extension("publish_wrapper_windows") {
   public = _wrapper_includes
@@ -75,6 +77,10 @@ test_fixtures("client_wrapper_windows_fixtures") {
 
 executable("client_wrapper_windows_unittests") {
   testonly = true
+
+  cflags = ["/EHsc"]
+
+  libs = [ "windowsapp.lib", "CoreMessaging.lib" ]
 
   sources = [
     "dart_project_unittests.cc",

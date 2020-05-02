@@ -7,24 +7,34 @@
 
 #include <windowsx.h>
 
+#include <iostream>
 #include <string>
 #include <vector>
 
-// #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
-// #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
-// #include "flutter/shell/platform/embedder/embedder.h"
-// #include "flutter/shell/platform/windows/angle_surface_manager.h"
-// #include "flutter/shell/platform/windows/key_event_handler.h"
-// #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
-// #include "flutter/shell/platform/windows/platform_handler.h"
-// #include "flutter/shell/platform/windows/public/flutter_windows.h"
-// #include "flutter/shell/platform/windows/text_input_plugin.h"
-// #include "flutter/shell/platform/windows/win32_window.h"
-// #include "flutter/shell/platform/windows/window_state.h"
+#include <Unknwn.h>
+#include <winrt/Windows.UI.Composition.h>
+#include <winrt/Windows.UI.Composition.Desktop.h>
+#include <windows.ui.composition.h>
+#include <windows.ui.composition.desktop.h>
 
+#include <flutter_windows.h>
 #include "win32_window_pub.h"
 
 namespace flutter {
+
+    //TODO these should not be copied and pasted.. confirm with stuart per constants in flutter_windows.h
+    typedef enum {
+  kFlutterPointerButtonMousePrimary = 1 << 0,
+  kFlutterPointerButtonMouseSecondary = 1 << 1,
+  kFlutterPointerButtonMouseMiddle = 1 << 2,
+  kFlutterPointerButtonMouseBack = 1 << 3,
+  kFlutterPointerButtonMouseForward = 1 << 4,
+  /// If a mouse has more than five buttons, send higher bit shifted values
+  /// corresponding to the button number: 1 << 5 for the 6th, etc.
+} FlutterPointerMouseButtons;
+
+//Forward declare to avoid circular references
+class FlutterView;
 
 // A win32 flutter child window used as implementatin for flutter view.  In the
 // future, there will likely be a CoreWindow-based FlutterWindow as well.  At
@@ -33,12 +43,24 @@ namespace flutter {
 class Win32FlutterWindowPub : public Win32WindowPub {
  public:
   // Create flutter Window for use as child window
-  Win32FlutterWindowPub(int width, int height);
+  Win32FlutterWindowPub(
+      int width,
+      int height,
+      winrt::Windows::UI::Composition::Compositor const& compositor);
+
+    // Create flutter Window for use as child window
+  Win32FlutterWindowPub(
+      int width,
+      int height);
 
   virtual ~Win32FlutterWindowPub();
 
   /*static FlutterDesktopViewControllerRef CreateWin32FlutterWindow(int width,
                                                                   int height);*/
+
+  void SetView(FlutterView* view);
+
+  void SetViewComposition(FlutterView* view);
 
   // |Win32WindowPub|
   void OnDpiScale(unsigned int dpi) override;
@@ -70,6 +92,10 @@ class Win32FlutterWindowPub : public Win32WindowPub {
   // |Win32WindowPub|
   void OnFontChange() override;
 
+  winrt::Windows::UI::Composition::Compositor const& compositor_;
+
+  winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget target_{nullptr};
+
   //// Configures the window instance with an instance of a running Flutter engine
   //// returning a configured FlutterDesktopWindowControllerRef.
   //void SetState(FLUTTER_API_SYMBOL(FlutterEngine) state);
@@ -92,27 +118,28 @@ class Win32FlutterWindowPub : public Win32WindowPub {
 
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
- // void SendWindowMetrics();
+  void SendWindowMetrics();
 
- //private:
+  private:
+  FlutterView* flutter_view_;
  // // Destroy current rendering surface if one has been allocated.
  // void DestroyRenderSurface();
 
  // // Reports a mouse movement to Flutter engine.
- // void SendPointerMove(double x, double y);
+  void SendPointerMove(double x, double y);
 
  // // Reports mouse press to Flutter engine.
- // void SendPointerDown(double x, double y);
+  void SendPointerDown(double x, double y, uint64_t btn);
 
  // // Reports mouse release to Flutter engine.
- // void SendPointerUp(double x, double y);
+  void SendPointerUp(double x, double y, uint64_t btn);
 
  // // Reports mouse left the window client area.
  // //
  // // Win32 api doesn't have "mouse enter" event. Therefore, there is no
  // // SendPointerEnter method. A mouse enter event is tracked then the "move"
  // // event is called.
- // void SendPointerLeave();
+  void SendPointerLeave();
 
  // // Reports text input to Flutter engine.
  // void SendText(const std::u16string& text);
@@ -120,11 +147,8 @@ class Win32FlutterWindowPub : public Win32WindowPub {
  // // Reports a raw keyboard message to Flutter engine.
  // void SendKey(int key, int scancode, int action, char32_t character);
 
- // // Reports scroll wheel events to Flutter engine.
- // void SendScroll(double delta_x, double delta_y);
-
  // // Updates |event_data| with the current location of the mouse cursor.
- // void SetEventLocationFromCursorPosition(FlutterPointerEvent* event_data);
+  void GetEventLocationFromCursorPosition(POINT& location);
 
  // // Set's |event_data|'s phase to either kMove or kHover depending on the
  // // current

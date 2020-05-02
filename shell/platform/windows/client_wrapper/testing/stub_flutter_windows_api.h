@@ -30,12 +30,72 @@ class StubFlutterWindowsApi {
   virtual ~StubFlutterWindowsApi() {}
 
   // Called for FlutterDesktopCreateViewController.
-  virtual FlutterDesktopViewControllerRef CreateViewController(
+  virtual FlutterDesktopViewControllerRef V2CreateViewControllerWindow(
       int width,
       int height,
-      const FlutterDesktopEngineProperties& engine_properties) {
+      const FlutterDesktopEngineProperties& engine_properties,
+      void* hostwindow,
+      HWND windowrendertarget) {
     return nullptr;
   }
+
+  virtual FlutterDesktopViewControllerRef
+  V2FlutterDesktopCreateViewControllerComposition(
+      int width,
+      int height,
+      const FlutterDesktopEngineProperties& engine_properties,
+      void* compositor,
+      void* hostwindow) {
+    return nullptr;
+  }
+
+  virtual void* V2FlutterDesktopViewGetVisual(FlutterDesktopViewRef view) {
+    return nullptr;
+  }
+
+  // TODO
+  virtual void V2FlutterDesktopSendWindowMetrics(
+     FlutterDesktopViewRef view,
+     size_t width,
+     size_t height,
+                                                 double dpiScale) {}
+
+  virtual void V2FlutterDesktopSendPointerMove(FlutterDesktopViewRef view,
+                                               double x,
+                                               double y) {}
+
+  virtual void V2FlutterDesktopSendPointerDown(FlutterDesktopViewRef view,
+                                               double x,
+                                               double y,
+                                               uint64_t btn) {}
+
+  virtual void V2FlutterDesktopSendPointerUp(FlutterDesktopViewRef view,
+                                             double x,
+                                             double y,
+                                             uint64_t btn) {}
+
+  virtual void V2FlutterDesktopSendPointerLeave(FlutterDesktopViewRef view) {}
+
+  // TODO
+  virtual void V2FlutterDesktopSendScroll(FlutterDesktopViewRef view,
+                                          double x,
+                                          double y,
+                                          double delta_x,
+                                          double delta_y) {}
+  // TODO
+  virtual void V2FlutterDesktopSendFontChange(FlutterDesktopViewRef view) {}
+
+  // TODO
+  virtual void V2FlutterDesktopSendText(FlutterDesktopViewRef view,
+                                        const char16_t* code_point,
+                                        size_t size) {}
+
+  // TODO
+  virtual void V2FlutterDesktopSendKey(FlutterDesktopViewRef view,
+                                       int key,
+                                       int scancode,
+                                       int action,
+                                       char32_t character) {}
 
   // Called for FlutterDesktopDestroyView.
   virtual void DestroyViewController() {}
@@ -49,6 +109,10 @@ class StubFlutterWindowsApi {
   // Called for FlutterDesktopRunEngine.
   virtual FlutterDesktopEngineRef RunEngine(
       const FlutterDesktopEngineProperties& engine_properties) {
+    return nullptr;
+  }
+
+  virtual void* V2FlutterDesktopGetExternalWindow(FlutterDesktopViewRef view) {
     return nullptr;
   }
 

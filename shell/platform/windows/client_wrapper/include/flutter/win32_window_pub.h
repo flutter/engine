@@ -141,6 +141,8 @@ class Win32WindowPub {
   // Updates the currently pressed buttons.
   void SetMouseButtons(uint64_t buttons) { mouse_state_.buttons = buttons; }
 
+
+
  private:
   // Release OS resources asociated with window.
   void Destroy();
@@ -163,6 +165,9 @@ class Win32WindowPub {
 
   // Member variable to hold window handle.
   HWND window_handle_ = nullptr;
+
+    // Member variable to hold window handle.
+  HWND parent_content_ = nullptr;
 
   // Member variable to hold the window title.
   std::wstring window_class_name_;

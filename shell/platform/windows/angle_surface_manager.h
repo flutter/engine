@@ -14,6 +14,7 @@
 
 // Windows platform specific includes
 #include <windows.h>
+#include <windows.ui.composition.h>
 
 namespace flutter {
 
@@ -32,6 +33,12 @@ class AngleSurfaceManager {
   // asociated with window, in the appropriate format for display in a
   // HWND-backed window.
   EGLSurface CreateSurface(HWND window);
+
+  // Creates and returns an EGLSurface wrapper and backing DirectX 11 SwapChain
+  // asociated with a compositor visual.
+  EGLSurface CreateSurface(
+      ABI::Windows::UI::Composition::ISpriteVisual* visual);
+
 
   // queries EGL for the dimensions of surface in physical
   // pixels returning width and height as out params.

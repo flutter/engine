@@ -131,7 +131,7 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   args.platform_message_callback =
       [](const FlutterPlatformMessage* engine_message,
          void* user_data) -> void {
-    auto window = reinterpret_cast<flutter::Win32FlutterWindow*>(user_data);
+    auto window = reinterpret_cast<flutter::FlutterCompView*>(user_data);
     return window->HandlePlatformMessage(engine_message);
   };
   args.custom_task_runners = &custom_task_runners;
@@ -148,28 +148,13 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   return state;
 }
 
-FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
-    int width,
-    int height,
-    const FlutterDesktopEngineProperties& engine_properties) {
-  FlutterDesktopViewControllerRef state =
-      flutter::Win32FlutterWindow::CreateWin32FlutterWindow(width, height);
-
-  auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
-
-  if (!engine_state) {
-    return nullptr;
-  }
-  state->view->SetState(engine_state->engine);
-  state->engine_state = std::move(engine_state);
-  return state;
-}
-
-V2FlutterDesktopViewControllerRef V2FlutterDesktopCreateViewController(
+V2FlutterDesktopViewControllerRef
+V2FlutterDesktopCreateViewControllerComposition(
     int width,
     int height,
     const FlutterDesktopEngineProperties& engine_properties,
-    void* compositor) {
+    void* compositor,
+    void* externalWindow) {
   V2FlutterDesktopViewControllerRef state =
       flutter::FlutterCompView::CreateFlutterCompView(width, height,
                                                       compositor);
@@ -179,30 +164,84 @@ V2FlutterDesktopViewControllerRef V2FlutterDesktopCreateViewController(
   if (!engine_state) {
     return nullptr;
   }
-  state->view->SetState(engine_state->engine);
+  state->view_wrapper->externalwindow = externalWindow;
+  state->view->SetState(engine_state->engine, externalWindow);
   state->engine_state = std::move(engine_state);
   return state;
 }
 
-FlutterDesktopViewControllerRef FlutterDesktopCreateViewControllerLegacy(
-    int initial_width,
-    int initial_height,
-    const char* assets_path,
-    const char* icu_data_path,
-    const char** arguments,
-    size_t argument_count) {
-  std::filesystem::path assets_path_fs = std::filesystem::u8path(assets_path);
-  std::filesystem::path icu_data_path_fs =
-      std::filesystem::u8path(icu_data_path);
-  FlutterDesktopEngineProperties engine_properties = {};
-  engine_properties.assets_path = assets_path_fs.c_str();
-  engine_properties.icu_data_path = icu_data_path_fs.c_str();
-  engine_properties.switches = arguments;
-  engine_properties.switches_count = argument_count;
+V2FlutterDesktopViewControllerRef V2CreateViewControllerWindow(
+    int width,
+    int height,
+    const FlutterDesktopEngineProperties& engine_properties,
+    void* externalWindow,
+    HWND windowrendertarget) {
+  V2FlutterDesktopViewControllerRef state =
+      flutter::FlutterCompView::CreateFlutterCompViewHwnd(width, height, externalWindow, static_cast<HWND>(windowrendertarget));
 
-  return FlutterDesktopCreateViewController(initial_width, initial_height,
-                                            engine_properties);
+  auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
+
+  if (!engine_state) {
+    return nullptr;
+  }
+  state->view_wrapper->externalwindow = externalWindow;
+  state->view->SetState(engine_state->engine, externalWindow);
+  state->engine_state = std::move(engine_state);
+  return state;
 }
+
+void V2FlutterDesktopSendWindowMetrics(FlutterDesktopViewRef view,
+                                     size_t width,
+                                     size_t height,
+                                     double dpiScale) {
+  view->window->SendWindowMetrics(width, height, dpiScale);
+}
+
+void V2FlutterDesktopSendPointerMove(FlutterDesktopViewRef view,
+                                   double x,
+                                   double y) {
+  view->window->OnPointerMove(x, y);
+}
+
+void V2FlutterDesktopSendPointerDown(FlutterDesktopViewRef view,
+                                   double x,
+                                   double y,
+                                   uint64_t btn) {
+  view->window->OnPointerDown(x, y,
+                              static_cast<FlutterPointerMouseButtons>(btn));
+}
+
+void V2FlutterDesktopSendPointerUp(FlutterDesktopViewRef view,
+                                 double x,
+                                 double y,
+                                 uint64_t btn) {
+  view->window->OnPointerUp(x, y, static_cast<FlutterPointerMouseButtons>(btn));
+}
+
+// TODO
+void V2FlutterDesktopSendPointerLeave(FlutterDesktopViewRef view) {
+  view->window->OnPointerLeave();
+}
+
+//FlutterDesktopViewControllerRef FlutterDesktopCreateViewControllerLegacy(
+//    int initial_width,
+//    int initial_height,
+//    const char* assets_path,
+//    const char* icu_data_path,
+//    const char** arguments,
+//    size_t argument_count) {
+//  std::filesystem::path assets_path_fs = std::filesystem::u8path(assets_path);
+//  std::filesystem::path icu_data_path_fs =
+//      std::filesystem::u8path(icu_data_path);
+//  FlutterDesktopEngineProperties engine_properties = {};
+//  engine_properties.assets_path = assets_path_fs.c_str();
+//  engine_properties.icu_data_path = icu_data_path_fs.c_str();
+//  engine_properties.switches = arguments;
+//  engine_properties.switches_count = argument_count;
+//
+//  return FlutterDesktopCreateViewController(initial_width, initial_height,
+//                                            engine_properties);
+//}
 
 uint64_t FlutterDesktopProcessMessages(
     FlutterDesktopViewControllerRef controller) {
@@ -230,16 +269,46 @@ FlutterDesktopViewRef FlutterDesktopGetView(
   return controller->view_wrapper.get();
 }
 
-HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
-  return view->window->GetWindowHandle();
+// TODO return something more strongly typed
+void* V2FlutterDesktopViewGetVisual(FlutterDesktopViewRef view) {
+  return (void*)view->window->GetFlutterHost().Get();
 }
 
-UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
-  return flutter::GetDpiForHWND(hwnd);
+// TODO return something more strongly typed
+void* V2FlutterDesktopGetExternalWindow(FlutterDesktopViewRef view) {
+  return (void*)view->externalwindow;
 }
 
-UINT FlutterDesktopGetDpiForMonitor(HMONITOR monitor) {
-  return flutter::GetDpiForMonitor(monitor);
+// TODO
+void V2FlutterDesktopSendScroll(FlutterDesktopViewRef view,
+                              double x,
+                              double y,
+                              double delta_x,
+                              double delta_y) {
+  view->window->OnScroll(x, y, delta_x, delta_y);
+}
+
+// TODO
+void V2FlutterDesktopSendFontChange(FlutterDesktopViewRef view) {
+  view->window->OnFontChange();
+}
+
+// TODO
+void V2FlutterDesktopSendText(FlutterDesktopViewRef view,
+                            const char16_t* code_point,
+                            size_t size) {
+  std::u16string str;
+  str.append(code_point, size);
+  view->window->OnText(str);
+}
+
+// TODO
+void V2FlutterDesktopSendKey(FlutterDesktopViewRef view,
+                           int key,
+                           int scancode,
+                           int action,
+                           char32_t character) {
+  view->window->OnKey(key, scancode, action, character);
 }
 
 void FlutterDesktopResyncOutputStreams() {

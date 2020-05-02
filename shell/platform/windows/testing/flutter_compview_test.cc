@@ -4,7 +4,7 @@ namespace flutter {
 namespace testing {
 
 FlutterCompViewTest::FlutterCompViewTest(int width, int height)
-    : FlutterCompView(width, height, nullptr){};
+    : FlutterCompView(width, height){};
 
 FlutterCompViewTest::~FlutterCompViewTest() = default;
 

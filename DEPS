@@ -422,6 +422,7 @@ deps = {
 
    'src/third_party/angle':
    Var('github_git') + '/google/angle.git' + '@' + '3ea90d609720b7b9b9d05ca094860382f2425294',
+   #Var('github_git') + '/clarkezone/angle.git' + '@' + 'cf00b8ccd9ff59645e7fab8837ca4547e1954695',
 
   'src/third_party/pkg/when':
    Var('dart_git') + '/when.git' + '@' + '0.2.0',

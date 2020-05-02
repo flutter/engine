@@ -35,33 +35,124 @@ ScopedStubFlutterWindowsApi::~ScopedStubFlutterWindowsApi() {
 
 // Forwarding dummy implementations of the C API.
 
-FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
+FlutterDesktopViewControllerRef V2CreateViewControllerWindow(
     int width,
     int height,
-    const FlutterDesktopEngineProperties& engine_properties) {
+    const FlutterDesktopEngineProperties& engine_properties,
+    void* hostwindow,
+    HWND windowrendertarget) {
   if (s_stub_implementation) {
-    return s_stub_implementation->CreateViewController(width, height,
-                                                       engine_properties);
+    return s_stub_implementation->V2CreateViewControllerWindow(width, height,
+                                                       engine_properties, hostwindow, windowrendertarget);
   }
   return nullptr;
 }
 
-FlutterDesktopViewControllerRef FlutterDesktopCreateViewControllerLegacy(
-    int initial_width,
-    int initial_height,
-    const char* assets_path,
-    const char* icu_data_path,
-    const char** arguments,
-    size_t argument_count) {
+FlutterDesktopViewControllerRef V2FlutterDesktopCreateViewControllerComposition(
+    int width,
+    int height,
+    const FlutterDesktopEngineProperties& engine_properties,
+    void* compositor,
+    void* hostwindow) {
   if (s_stub_implementation) {
-    // This stub will be removed shortly, and the current tests don't need the
-    // arguments, so there's no need to translate them to engine_properties.
-    FlutterDesktopEngineProperties engine_properties;
-    return s_stub_implementation->CreateViewController(
-        initial_width, initial_height, engine_properties);
+    return s_stub_implementation
+        ->V2FlutterDesktopCreateViewControllerComposition(width, height,
+                                                       engine_properties, compositor, hostwindow);
   }
   return nullptr;
 }
+
+void* V2FlutterDesktopViewGetVisual(FlutterDesktopViewRef view) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopViewGetVisual(view);
+  }
+  return nullptr;
+}
+
+void V2FlutterDesktopSendWindowMetrics(
+    FlutterDesktopViewRef view,
+    size_t width,
+    size_t height,
+    double dpiScale) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopSendWindowMetrics(view, width, height, dpiScale);
+  }
+}
+
+void V2FlutterDesktopSendPointerMove(FlutterDesktopViewRef view,
+                                                    double x,
+                                     double y) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopSendPointerMove(
+            view, x, y);
+  }
+}
+
+void V2FlutterDesktopSendPointerDown(
+    FlutterDesktopViewRef view,
+    double x,
+    double y,
+    uint64_t btn) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopSendPointerDown(view, x, y, btn);
+  }
+}
+
+void V2FlutterDesktopSendPointerUp(
+    FlutterDesktopViewRef view,
+    double x,
+    double y,
+    uint64_t btn) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopSendPointerUp(view, x, y,
+                                                                  btn);
+  }
+}
+
+void V2FlutterDesktopSendPointerLeave(FlutterDesktopViewRef view) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopSendPointerLeave(view);
+  }
+}
+
+void V2FlutterDesktopSendScroll(FlutterDesktopViewRef view,
+                                               double x,
+                                               double y,
+                                               double delta_x,
+                                double delta_y) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopSendScroll(view, x, y,
+                                                                  delta_x, delta_y);
+  }
+}
+
+void V2FlutterDesktopSendFontChange(FlutterDesktopViewRef view) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopSendFontChange(view);
+  }
+}
+
+void V2FlutterDesktopSendText(FlutterDesktopViewRef view,
+                                             const char16_t* code_point,
+                              size_t size) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopSendText(view, code_point,
+                                                                  size);
+  }
+}
+
+void V2FlutterDesktopSendKey(FlutterDesktopViewRef view,
+                                            int key,
+                                            int scancode,
+                                            int action,
+                             char32_t character) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopSendKey(view, key, scancode, action, character
+                                                           );
+  }
+}
+
+
 
 void FlutterDesktopDestroyViewController(
     FlutterDesktopViewControllerRef controller) {
@@ -91,6 +182,13 @@ HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef controller) {
   return reinterpret_cast<HWND>(-1);
 }
 
+void* V2FlutterDesktopGetExternalWindow(FlutterDesktopViewRef view) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->V2FlutterDesktopGetExternalWindow(view);
+  }
+  return static_cast<HWND>(nullptr);
+}
+
 FlutterDesktopEngineRef FlutterDesktopRunEngine(
     const FlutterDesktopEngineProperties& engine_properties) {
   if (s_stub_implementation) {
@@ -118,3 +216,4 @@ FlutterDesktopViewRef FlutterDesktopRegistrarGetView(
   // The stub ignores this, so just return an arbitrary non-zero value.
   return reinterpret_cast<FlutterDesktopViewRef>(1);
 }
+

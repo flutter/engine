@@ -6,6 +6,8 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_CLIENT_WRAPPER_INCLUDE_FLUTTER_FLUTTER_VIEW_CONTROLLER_H_
 
 #include <flutter_windows.h>
+#include <windows.ui.composition.h>
+#include <winrt/Windows.UI.Composition.h>
 
 #include <chrono>
 #include <string>
@@ -32,14 +34,14 @@ class FlutterViewController : public PluginRegistry {
   // |dart_project| will be used to configure the engine backing this view.
   explicit FlutterViewController(int width,
                                  int height,
-                                 const DartProject& project);
+                                 const DartProject& project,
+                                 void* compositor);
 
-  // DEPRECATED. Will be removed soon; use the version above.
-  explicit FlutterViewController(const std::string& icu_data_path,
-                                 int width,
+  //TODO
+  explicit FlutterViewController(int width,
                                  int height,
-                                 const std::string& assets_path,
-                                 const std::vector<std::string>& arguments);
+                                 const DartProject& project,
+                                 HWND parentwindow);
 
   virtual ~FlutterViewController();
 
@@ -47,7 +49,7 @@ class FlutterViewController : public PluginRegistry {
   FlutterViewController(FlutterViewController const&) = delete;
   FlutterViewController& operator=(FlutterViewController const&) = delete;
 
-  FlutterView* view() { return nullptr; /*return view_.get();*/ }
+  FlutterView* view() { return view_.get(); }
 
   // Processes any pending events in the Flutter engine, and returns the
   // nanosecond delay until the next scheduled event (or  max, if none).
@@ -66,10 +68,15 @@ class FlutterViewController : public PluginRegistry {
   FlutterDesktopViewControllerRef controller_ = nullptr;
 
   //// The owned FlutterView.
-  //std::unique_ptr<FlutterView> view_;
+  std::unique_ptr<FlutterView> view_;
 
   // The owned Flutter child window
   std::unique_ptr<Win32FlutterWindowPub> child_window_;
+
+  winrt::Windows::UI::Composition::Compositor compositor_{nullptr};
+
+  winrt::Windows::System::DispatcherQueueController dispatcherController_{
+      nullptr};
 };
 
 }  // namespace flutter

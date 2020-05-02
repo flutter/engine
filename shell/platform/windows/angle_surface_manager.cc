@@ -184,6 +184,35 @@ EGLSurface AngleSurfaceManager::CreateSurface(HWND window) {
   return surface;
 }
 
+EGLSurface AngleSurfaceManager::CreateSurface(
+    ABI::Windows::UI::Composition::ISpriteVisual* visual) {
+  auto displayExtensions = eglQueryString(egl_display_, EGL_EXTENSIONS);
+
+  // Check that the EGL_ANGLE_windows_ui_composition display extension is
+  // available
+  if (strstr(displayExtensions, "EGL_ANGLE_windows_ui_composition") ==
+      nullptr) {
+    OutputDebugString(L"EGL: Composition display check failed");
+  }
+
+  if (visual == nullptr || !initialize_succeeded_) {
+    return EGL_NO_SURFACE;
+  }
+
+  EGLSurface surface = EGL_NO_SURFACE;
+
+  const EGLint surfaceAttributes[] = {EGL_NONE};
+
+  surface = eglCreateWindowSurface(
+      egl_display_, egl_config_,
+      static_cast<EGLNativeWindowType>((void*)visual), surfaceAttributes);
+  if (surface == EGL_NO_SURFACE) {
+    OutputDebugString(L"Surface creation failed.");
+  }
+
+  return surface;
+}
+
 void AngleSurfaceManager::GetSurfaceDimensions(const EGLSurface surface,
                                                EGLint* width,
                                                EGLint* height) {
