@@ -1,4 +1,4 @@
-Signature: c42fa733395630c5e1b4a33f8b6e85b7
+Signature: 62b7ad773b2a08d942a58236b04e5bb1
 
 UNUSED LICENSES:
 
@@ -1044,6 +1044,7 @@ FILE: ../../../third_party/skia/infra/bots/isolate_go.isolate
 FILE: ../../../third_party/skia/infra/bots/jobs.json
 FILE: ../../../third_party/skia/infra/bots/lottie_web.isolate
 FILE: ../../../third_party/skia/infra/bots/pathkit.isolate
+FILE: ../../../third_party/skia/infra/bots/perf_puppeteer.isolate
 FILE: ../../../third_party/skia/infra/bots/perf_skia_bundled.isolate
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm-Release-Android_API26.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-arm-Release-Android_ASAN.json
@@ -2759,7 +2760,6 @@ FILE: ../../../third_party/skia/src/core/SkStringUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkStringUtils.h
 FILE: ../../../third_party/skia/src/core/SkTDynamicHash.h
 FILE: ../../../third_party/skia/src/core/SkTMultiMap.h
-FILE: ../../../third_party/skia/src/core/SkTypefacePriv.h
 FILE: ../../../third_party/skia/src/core/SkValidatingReadBuffer.h
 FILE: ../../../third_party/skia/src/core/SkValidationUtils.h
 FILE: ../../../third_party/skia/src/effects/SkLumaColorFilter.cpp
@@ -3905,6 +3905,8 @@ FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCaps.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCaps.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCommandList.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCommandList.h
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DDescriptorHeap.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DDescriptorHeap.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DGpu.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DOpsRenderPass.cpp
@@ -3937,6 +3939,8 @@ FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDeviceSpaceEffect.cp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDeviceSpaceEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMatrixEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrMatrixEffect.h
+FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.cpp
+FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLUniformHandler.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkManagedResource.h
 FILE: ../../../third_party/skia/src/sksl/SkSLSPIRVtoHLSL.cpp
@@ -6297,7 +6301,9 @@ FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/job_builder.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/nano_flags.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/schema.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/task_builder.go
-FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_skottie_wasm/perf_skottie_wasm.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/fm_driver/fm_driver.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_skottie_frames/perf_puppeteer_skottie_frames.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_skottie_frames/perf_puppeteer_skottie_frames_test.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 The Chromium Authors. All rights reserved.
 
