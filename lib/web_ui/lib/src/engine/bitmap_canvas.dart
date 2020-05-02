@@ -358,12 +358,52 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPool.closeCurrentCanvas();
   }
 
-  html.ImageElement _drawImage(
+  html.HtmlElement _drawImage(
       ui.Image image, ui.Offset p, SurfacePaintData paint) {
     final HtmlImage htmlImage = image;
-    final html.Element imgElement = htmlImage.cloneImageElement();
     final ui.BlendMode blendMode = paint.blendMode;
+    final ui.ColorFilter colorFilter = paint.colorFilter;
+    final ui.BlendMode colorFilterBlendMode = (colorFilter != null &&
+        colorFilter is EngineColorFilter && colorFilter._blendMode != null)
+        ? colorFilter._blendMode : null;
+    html.HtmlElement imgElement;
+    if (colorFilterBlendMode != ui.BlendMode.srcIn &&
+        colorFilterBlendMode != ui.BlendMode.saturation
+            && colorFilter is EngineColorFilter) {
+      // When blending with color we can't use an image element.
+      // Instead use a div element with background image, color and
+      // background blend mode.
+      imgElement = html.DivElement();
+      imgElement.style
+          ..position = 'absolute'
+          ..backgroundImage = "url('${htmlImage.imgElement.src}')"
+          ..backgroundBlendMode =
+            _stringForBlendMode(colorFilterBlendMode)
+          ..backgroundColor = colorToCssString(colorFilter._color);
+    } else {
+      imgElement = htmlImage.cloneImageElement();
+    }
     imgElement.style.mixBlendMode = _stringForBlendMode(blendMode);
+    if (colorFilter != null && colorFilter is EngineColorFilter &&
+        (colorFilter._blendMode == ui.BlendMode.srcIn ||
+            colorFilter._blendMode == ui.BlendMode.saturation)) {
+      // For srcIn blendMode, we use an svg filter to apply to image element.
+      String svgFilter;
+      bool isSaturationFilter = colorFilter._blendMode == ui.BlendMode.saturation;
+      if (isSaturationFilter) {
+        svgFilter = _saturationFilterToSvg(colorFilter._color);
+      } else {
+        svgFilter = _srcInColorFilterToSvg(colorFilter._color);
+      }
+      final html.Element filterElement =
+          html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+      rootElement.append(filterElement);
+      _children.add(filterElement);
+      imgElement.style.filter = 'url(#_fcf${_filterIdCounter})';
+      if (isSaturationFilter) {
+        imgElement.style.backgroundColor = colorToCssString(colorFilter._color);
+      }
+    }
     if (_canvasPool.isClipped) {
       // Reset width/height since they may have been previously set.
       imgElement.style..removeProperty('width')..removeProperty('height');
@@ -398,7 +438,14 @@ class BitmapCanvas extends EngineCanvas {
     if (dst.width == image.width &&
         dst.height == image.height &&
         !requiresClipping) {
-      drawImage(image, dst.topLeft, paint);
+      html.Element imgElement = _drawImage(image, dst.topLeft, paint);
+      _childOverdraw = true;
+      _canvasPool.closeCurrentCanvas();
+      if (imgElement is! html.ImageElement) {
+        imgElement.style.backgroundSize =
+        '${dst.width.toStringAsFixed(2)}px '
+            '${dst.height.toStringAsFixed(2)}px';
+      }
     } else {
       if (requiresClipping) {
         save();
@@ -417,7 +464,7 @@ class BitmapCanvas extends EngineCanvas {
         }
       }
 
-      final html.ImageElement imgElement =
+      final html.Element imgElement =
           _drawImage(image, ui.Offset(targetLeft, targetTop), paint);
       // To scale set width / height on destination image.
       // For clipping we need to scale according to
@@ -430,9 +477,14 @@ class BitmapCanvas extends EngineCanvas {
         targetHeight *= image.height / src.height;
       }
       final html.CssStyleDeclaration imageStyle = imgElement.style;
+      final String widthPx = '${targetWidth.toStringAsFixed(2)}px';
+      final String heightPx = '${targetHeight.toStringAsFixed(2)}px';
       imageStyle
-        ..width = '${targetWidth.toStringAsFixed(2)}px'
-        ..height = '${targetHeight.toStringAsFixed(2)}px';
+        ..width = widthPx
+        ..height = heightPx;
+      if (imgElement is! html.ImageElement) {
+        imgElement.style.backgroundSize = '$widthPx $heightPx';
+      }
       if (requiresClipping) {
         restore();
       }
@@ -795,4 +847,50 @@ String _maskFilterToCss(ui.MaskFilter maskFilter) {
     return 'none';
   }
   return 'blur(${maskFilter.webOnlySigma}px)';
+}
+
+int _filterIdCounter = 0;
+
+// The color matrix changes colors based on the following:
+//
+// | R' |     | r1 r2 r3 r4 r5 |   | R |
+// | G' |     | g1 g2 g3 g4 g5 |   | G |
+// | B' |  =  | b1 b2 b3 b4 b5 | * | B |
+// | A' |     | a1 a2 a3 a4 a5 |   | A |
+// | 1  |     | 0  0  0  0  1  |   | 1 |
+//
+// R' = r1*R + r2*G + r3*B + r4*A + r5
+// G' = g1*R + g2*G + g3*B + g4*A + g5
+// B' = b1*R + b2*G + b3*B + b4*A + b5
+// A' = a1*R + a2*G + a3*B + a4*A + a5
+//
+String _srcInColorFilterToSvg(ui.Color color) {
+  _filterIdCounter += 1;
+  final double r = color.red / 255.0;
+  final double b = color.blue / 255.0;
+  final double g = color.green / 255.0;
+  final double a = color.alpha / 255.0;
+  return '<svg width="0" height="0">'
+      '<filter id="_fcf$_filterIdCounter">'
+      '<feColorMatrix values="0 0 0 0 $r ' // Ignore input, set it to absolute.
+          '0 0 0 0 $g '
+          '0 0 0 0 $b '
+          '0 0 0 1 0"/>' // alpha is identical.
+      '</filter></svg>';
+}
+
+String _saturationFilterToSvg(ui.Color color) {
+  _filterIdCounter += 1;
+  final double r = color.red / 255.0;
+  final double b = color.blue / 255.0;
+  final double g = color.green / 255.0;
+  final double cMax = math.max(r, math.max(b, g));
+  final double cMin = math.min(r, math.min(b, g));
+  final double delta = cMax - cMin;
+  final double lightness = (cMax + cMin) / 2.0;
+  final double saturation = delta / (1.0 - (2 * lightness - 1.0).abs());
+  return '<svg width="0" height="0">'
+      '<filter id="_fcf$_filterIdCounter">'
+      '<feColorMatrix in="SourceGraphic" type="saturate" values="$saturation"/>'
+      '</filter></svg>';
 }
