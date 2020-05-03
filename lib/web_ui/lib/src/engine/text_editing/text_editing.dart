@@ -91,6 +91,12 @@ class EngineAutofillForm {
     Map<String, dynamic> focusedElementAutofill,
     List<dynamic> fields,
   ) {
+    // Autofill value can be null if focused text element does not have an
+    // autofill hint set.
+    if(focusedElementAutofill == null) {
+      return null;
+    }
+
     // If there is only one text field in the autofill model, `fields` will be
     // null. `focusedElementAutofill` contains the information about the one
     // text field.
@@ -217,6 +223,11 @@ class AutofillInfo {
   final String hint;
 
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill) {
+    // Autofill value can be null if no TextFields is set with autofill hint.
+    if(autofill == null) {
+      return null;
+    }
+
     final String uniqueIdentifier = autofill['uniqueIdentifier'];
     final List<dynamic> hintsList = autofill['hints'];
     final EditingState editingState =
@@ -392,7 +403,7 @@ class InputConfiguration {
         inputAction = flutterInputConfiguration['inputAction'],
         obscureText = flutterInputConfiguration['obscureText'],
         autocorrect = flutterInputConfiguration['autocorrect'],
-        autofill = AutofillInfo.fromFrameworkMessage(
+        autofill =  AutofillInfo.fromFrameworkMessage(
             flutterInputConfiguration['autofill']),
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
             flutterInputConfiguration['autofill'],
@@ -547,7 +558,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       domElement.setAttribute('type', 'password');
     }
 
-    inputConfig.autofill.applyToDomElement(domElement);
+    inputConfig.autofill?.applyToDomElement(domElement);
 
     final String autocorrectValue = inputConfig.autocorrect ? 'on' : 'off';
     domElement.setAttribute('autocorrect', autocorrectValue);
