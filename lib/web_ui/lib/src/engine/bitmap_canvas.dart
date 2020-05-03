@@ -353,7 +353,11 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
-    _drawImage(image, p, paint);
+    final html.HtmlElement imageElement = _drawImage(image, p, paint);
+    if (paint.colorFilter != null) {
+      _applyTargetSize(imageElement, image.width.toDouble(),
+          image.height.toDouble());
+    }
     _childOverdraw = true;
     _canvasPool.closeCurrentCanvas();
   }
@@ -525,17 +529,19 @@ class BitmapCanvas extends EngineCanvas {
         src.top != 0 ||
         src.width != image.width ||
         src.height != image.height;
+    // If source and destination sizes are identical, we can skip the longer
+    // code path that sets the size of the element and clips.
+    //
+    // If there is a color filter set however, we maybe using background-image
+    // to render therefore we have to explicitely set width/height of the
+    // element for blending to work with background-color.
     if (dst.width == image.width &&
         dst.height == image.height &&
-        !requiresClipping) {
+        !requiresClipping &&
+        paint.colorFilter == null) {
       html.Element imgElement = _drawImage(image, dst.topLeft, paint);
       _childOverdraw = true;
       _canvasPool.closeCurrentCanvas();
-      if (imgElement is! html.ImageElement) {
-        imgElement.style.backgroundSize =
-        '${dst.width.toStringAsFixed(2)}px '
-            '${dst.height.toStringAsFixed(2)}px';
-      }
     } else {
       if (requiresClipping) {
         save();
@@ -566,20 +572,30 @@ class BitmapCanvas extends EngineCanvas {
         targetWidth *= image.width / src.width;
         targetHeight *= image.height / src.height;
       }
-      final html.CssStyleDeclaration imageStyle = imgElement.style;
-      final String widthPx = '${targetWidth.toStringAsFixed(2)}px';
-      final String heightPx = '${targetHeight.toStringAsFixed(2)}px';
-      imageStyle
-        ..width = widthPx
-        ..height = heightPx;
-      if (imgElement is! html.ImageElement) {
-        imgElement.style.backgroundSize = '$widthPx $heightPx';
-      }
+      _applyTargetSize(imgElement, targetWidth, targetHeight);
       if (requiresClipping) {
         restore();
       }
     }
     _closeCurrentCanvas();
+  }
+
+  void _applyTargetSize(html.HtmlElement imageElement, double targetWidth,
+      double targetHeight) {
+    final html.CssStyleDeclaration imageStyle = imageElement.style;
+    final String widthPx = '${targetWidth.toStringAsFixed(2)}px';
+    final String heightPx = '${targetHeight.toStringAsFixed(2)}px';
+    imageStyle
+      // left,top are set to 0 (although position is absolute) because
+      // Chrome will glitch if you leave them out, reproducable with
+      // canvas_image_blend_test on row 6,  MacOS / Chrome 81.04.
+      ..left = "0px"
+      ..top = "0px"
+      ..width = widthPx
+      ..height = heightPx;
+    if (imageElement is! html.ImageElement) {
+      imageElement.style.backgroundSize = '$widthPx $heightPx';
+    }
   }
 
   // Should be called when we add new html elements into rootElement so that
