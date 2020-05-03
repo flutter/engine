@@ -300,18 +300,20 @@ void FlutterDesktopResyncOutputStreams() {
   std::ios::sync_with_stdio();
 }
 
-FlutterDesktopEngineRef FlutterDesktopRunEngine(
-    const FlutterDesktopEngineProperties& engine_properties) {
-  auto engine = RunFlutterEngine(nullptr, engine_properties);
-  return engine.release();
-}
+////TODO: do we still need this?  Appears to be dead code
+//FlutterDesktopEngineRef FlutterDesktopRunEngine(
+//    const FlutterDesktopEngineProperties& engine_properties) {
+//  auto engine = RunFlutterEngine(nullptr, engine_properties);
+//  return engine.release();
+//}
 
-bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
-  std::cout << "Shutting down flutter engine process." << std::endl;
-  auto result = FlutterEngineShutdown(engine_ref->engine);
-  delete engine_ref;
-  return (result == kSuccess);
-}
+////TODO: do we still need this?  Appears to be dead code
+//bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
+//  std::cout << "Shutting down flutter engine process." << std::endl;
+//  auto result = FlutterEngineShutdown(engine_ref->engine);
+//  delete engine_ref;
+//  return (result == kSuccess);
+//}
 
 void FlutterDesktopRegistrarEnableInputBlocking(
     FlutterDesktopPluginRegistrarRef registrar,

@@ -33,7 +33,7 @@ typedef struct FlutterDesktopView* FlutterDesktopViewRef;
 // Opaque reference to a Flutter engine instance.
 typedef struct FlutterDesktopEngineState* FlutterDesktopEngineRef;
 
-// Opaque reference to host specific state
+// Opaque reference to runner / host specific state
 typedef void* HostEnvironmentState;
 
 // Properties for configuring a Flutter engine instance.
@@ -59,11 +59,14 @@ typedef struct {
 } FlutterDesktopEngineProperties;
 
 // Creates a View with the given dimensions running a Flutter Application.
+// callable from Win32 runner on Windows 1703 or later or UWP host runner.
 //
 // This will set up and run an associated Flutter engine using the settings in
 // |engine_properties|.
 //
-// View supplied must be integrated into host visual tree
+// |visual| supplied must be integrated into host visual tree prior to making this call
+//
+// |hostwindow| specifies environment state supplied will be available to plugins that request it via Win32FlutterView.
 //
 // Returns a null pointer in the event of an error.
 FLUTTER_EXPORT FlutterDesktopViewControllerRef
@@ -75,9 +78,15 @@ V2CreateViewControllerVisual(
     HostEnvironmentState hoststate);
 
 // Creates a View with the given dimensions running a Flutter Application.
+// Callable from Win32 host runner down to Windows 7.
 //
 // This will set up and run an associated Flutter engine using the settings in
 // |engine_properties|.
+//
+// |windowrendertarget| is used to specify the render target for the view.
+//
+// |hostwindow| specifies environment state supplied will be available to plugins that request it
+// via Win32FlutterView.
 //
 // Returns a null pointer in the event of an error.
 FLUTTER_EXPORT FlutterDesktopViewControllerRef
@@ -89,7 +98,8 @@ V2CreateViewControllerWindow(
     HostEnvironmentState hostwindow
     );
 
-// Return backing HWND for manipulation in host application.
+// Returns runner / host-specific state supplied when creating a viewcontroller.
+// Typically used by plugins
 FLUTTER_EXPORT
 HostEnvironmentState V2FlutterDesktopGetHostState(FlutterDesktopViewRef view);
 
@@ -99,21 +109,25 @@ FLUTTER_EXPORT void V2FlutterDesktopSendWindowMetrics(FlutterDesktopViewRef view
                                                     size_t height,
                                                     double dpiScale);
 
+//TODO
 FLUTTER_EXPORT void V2FlutterDesktopSendPointerMove(FlutterDesktopViewRef view,
                                                   double x,
                                                   double y);
 
+//TODO
 FLUTTER_EXPORT void V2FlutterDesktopSendPointerDown(
     FlutterDesktopViewRef view,
     double x,
     double y,
     uint64_t btn);  // TODO: can / should this be a FlutterPointerMouseButtons
 
+//TODO
 FLUTTER_EXPORT void V2FlutterDesktopSendPointerUp(FlutterDesktopViewRef view,
                                                 double x,
                                                 double y,
                                                 uint64_t btn);  //TODO typedef per above
 
+// TODO
 FLUTTER_EXPORT void V2FlutterDesktopSendPointerLeave(FlutterDesktopViewRef view);
 
 // TODO
@@ -137,28 +151,6 @@ FLUTTER_EXPORT void V2FlutterDesktopSendKey(FlutterDesktopViewRef view,
                                           int scancode,
                                           int action,
                                           char32_t character);
-
-
-// Creates a View with the given dimensions running a Flutter Application.
-//
-// This will set up and run an associated Flutter engine using the settings in
-// |engine_properties|.
-//
-// Returns a null pointer in the event of an error.
-//FLUTTER_EXPORT FlutterDesktopViewControllerRef
-//FlutterDesktopCreateViewController(
-//    int width,
-//    int height,
-//    const FlutterDesktopEngineProperties& engine_properties);
-
-//// DEPRECATED. Will be removed soon; switch to the version above.
-//FLUTTER_EXPORT FlutterDesktopViewControllerRef
-//FlutterDesktopCreateViewControllerLegacy(int initial_width,
-//                                         int initial_height,
-//                                         const char* assets_path,
-//                                         const char* icu_data_path,
-//                                         const char** arguments,
-//                                         size_t argument_count);
 
 // Shuts down the engine instance associated with |controller|, and cleans up
 // associated state.
@@ -192,16 +184,18 @@ FlutterDesktopProcessMessages(FlutterDesktopViewControllerRef controller);
 // (e.g., after an AllocConsole call).
 FLUTTER_EXPORT void FlutterDesktopResyncOutputStreams();
 
-// Runs an instance of a headless Flutter engine.
-//
-// Returns a null pointer in the event of an error.
-FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopRunEngine(
-    const FlutterDesktopEngineProperties& engine_properties);
+// This is dead code that never gets called.
+//// Runs an instance of a headless Flutter engine.
+////
+//// Returns a null pointer in the event of an error.
+//FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopRunEngine(
+//    const FlutterDesktopEngineProperties& engine_properties);
 
-// Shuts down the given engine instance. Returns true if the shutdown was
-// successful. |engine_ref| is no longer valid after this call.
-FLUTTER_EXPORT bool FlutterDesktopShutDownEngine(
-    FlutterDesktopEngineRef engine_ref);
+//This is dead code that never gets called.  The ViewController shuts down the engine now
+//// Shuts down the given engine instance. Returns true if the shutdown was
+//// successful. |engine_ref| is no longer valid after this call.
+//FLUTTER_EXPORT bool FlutterDesktopShutDownEngine(
+//    FlutterDesktopEngineRef engine_ref);
 
 // Returns the view associated with this registrar's engine instance
 // This is a Windows-specific extension to flutter_plugin_registrar.h.

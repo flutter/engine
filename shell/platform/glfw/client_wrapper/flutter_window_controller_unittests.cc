@@ -37,7 +37,7 @@ class TestGlfwApi : public testing::StubFlutterGlfwApi {
 
 }  // namespace
 
-TEST(FlutterViewControllerTest, CreateDestroy) {
+TEST(Win32FlutterViewControllerTest, CreateDestroy) {
   const std::string icu_data_path = "fake/path/to/icu";
   testing::ScopedStubFlutterGlfwApi scoped_api_stub(
       std::make_unique<TestGlfwApi>());
