@@ -39,8 +39,7 @@ class StubFlutterWindowsApi {
     return nullptr;
   }
 
-  virtual FlutterDesktopViewControllerRef
-  V2FlutterDesktopCreateViewControllerComposition(
+  virtual FlutterDesktopViewControllerRef V2CreateViewControllerVisual(
       int width,
       int height,
       const FlutterDesktopEngineProperties& engine_properties,
@@ -112,7 +111,7 @@ class StubFlutterWindowsApi {
     return nullptr;
   }
 
-  virtual void* V2FlutterDesktopGetExternalWindow(FlutterDesktopViewRef view) {
+  virtual HostEnvironmentState V2FlutterDesktopGetHostState(FlutterDesktopViewRef view) {
     return nullptr;
   }
 

@@ -104,10 +104,8 @@ struct MouseState {
   uint64_t buttons = 0;
 };
 
-// A win32 flutter child window used as implementatin for flutter view.  In the
-// future, there will likely be a CoreWindow-based FlutterWindow as well.  At
-// the point may make sense to dependency inject the native window rather than
-// inherit.
+// A windowing neutral flutter child video used as implementation for flutter view that works
+// with win32 hwnds and Windows::UI::Composition visuals
 class FlutterCompView {
  public:
   // Create flutter Window for use as child window
@@ -295,15 +293,7 @@ class FlutterCompView {
 
   winrt::Windows::UI::Composition::Visual flutter_host_{nullptr};
 
-  /*Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ISpriteVisual>
-      flutter_host_{nullptr};*/
-
-  //Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ICompositor>
-  //    compositor_{nullptr};
-
   HWND window_rendertarget_;
-
-  
 
   int width_ = 0, height_ = 0;
 };

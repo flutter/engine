@@ -29,7 +29,8 @@ class FlutterView {
 
   // Returns the backing HWND for the view.
   HWND GetNativeWindow() {
-    void* windowptr = V2FlutterDesktopGetExternalWindow(view_);
+    // Retreive our hosting state from the backing view
+    HostEnvironmentState windowptr = V2FlutterDesktopGetHostState(view_);
     Win32FlutterWindowPub* ptr = static_cast<Win32FlutterWindowPub*>(windowptr);
     return ptr->GetWindowHandle();
   }

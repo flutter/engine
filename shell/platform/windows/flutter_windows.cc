@@ -150,8 +150,6 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   return state;
 }
 
-//TODO search for V2FlutterDesktopCreateViewControllerComposition
-
 V2FlutterDesktopViewControllerRef V2CreateViewControllerVisual(
     int width,
     int height,
@@ -177,8 +175,9 @@ V2FlutterDesktopViewControllerRef V2CreateViewControllerWindow(
     int width,
     int height,
     const FlutterDesktopEngineProperties& engine_properties,
-    void* externalWindow,
-    HWND windowrendertarget) {
+    HWND windowrendertarget,
+    HostEnvironmentState externalWindow
+    ) {
   V2FlutterDesktopViewControllerRef state =
       flutter::FlutterCompView::CreateFlutterCompViewHwnd(width, height, externalWindow, static_cast<HWND>(windowrendertarget));
 
@@ -226,26 +225,6 @@ void V2FlutterDesktopSendPointerLeave(FlutterDesktopViewRef view) {
   view->window->OnPointerLeave();
 }
 
-//FlutterDesktopViewControllerRef FlutterDesktopCreateViewControllerLegacy(
-//    int initial_width,
-//    int initial_height,
-//    const char* assets_path,
-//    const char* icu_data_path,
-//    const char** arguments,
-//    size_t argument_count) {
-//  std::filesystem::path assets_path_fs = std::filesystem::u8path(assets_path);
-//  std::filesystem::path icu_data_path_fs =
-//      std::filesystem::u8path(icu_data_path);
-//  FlutterDesktopEngineProperties engine_properties = {};
-//  engine_properties.assets_path = assets_path_fs.c_str();
-//  engine_properties.icu_data_path = icu_data_path_fs.c_str();
-//  engine_properties.switches = arguments;
-//  engine_properties.switches_count = argument_count;
-//
-//  return FlutterDesktopCreateViewController(initial_width, initial_height,
-//                                            engine_properties);
-//}
-
 uint64_t FlutterDesktopProcessMessages(
     FlutterDesktopViewControllerRef controller) {
   return controller->engine_state->task_runner->ProcessTasks().count();
@@ -273,8 +252,9 @@ FlutterDesktopViewRef FlutterDesktopGetView(
 }
 
 // TODO return something more strongly typed
-void* V2FlutterDesktopGetExternalWindow(FlutterDesktopViewRef view) {
-  return (void*)view->externalwindow;
+HostEnvironmentState V2FlutterDesktopGetHostState(
+    FlutterDesktopViewRef view) {
+  return (HostEnvironmentState)view->externalwindow;
 }
 
 // TODO

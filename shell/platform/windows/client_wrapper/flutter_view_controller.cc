@@ -87,9 +87,13 @@ FlutterViewController::FlutterViewController(int width,
   child_window_ =
       std::make_unique<Win32FlutterWindowPub>(width, height);
 
+  HostEnvironmentState host_state =
+      static_cast<HostEnvironmentState>(child_window_.get());
+
   controller_ = V2CreateViewControllerWindow(
       width, height, properties,
-      child_window_.get(),child_window_->GetWindowHandle());
+      child_window_->GetWindowHandle(),
+      host_state);
   if (!controller_) {
     std::cerr << "Failed to create view controller." << std::endl;
     return;

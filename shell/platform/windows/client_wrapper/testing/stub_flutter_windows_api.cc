@@ -48,15 +48,15 @@ FlutterDesktopViewControllerRef V2CreateViewControllerWindow(
   return nullptr;
 }
 
-FlutterDesktopViewControllerRef V2FlutterDesktopCreateViewControllerComposition(
+FlutterDesktopViewControllerRef V2CreateViewControllerVisual(
     int width,
     int height,
     const FlutterDesktopEngineProperties& engine_properties,
     void* compositor,
     void* hostwindow) {
   if (s_stub_implementation) {
-    return s_stub_implementation
-        ->V2FlutterDesktopCreateViewControllerComposition(width, height,
+    return s_stub_implementation->V2CreateViewControllerVisual(
+        width, height,
                                                        engine_properties, compositor, hostwindow);
   }
   return nullptr;
@@ -182,11 +182,11 @@ HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef controller) {
   return reinterpret_cast<HWND>(-1);
 }
 
-void* V2FlutterDesktopGetExternalWindow(FlutterDesktopViewRef view) {
+void* V2FlutterDesktopGetHostState(FlutterDesktopViewRef view) {
   if (s_stub_implementation) {
-    return s_stub_implementation->V2FlutterDesktopGetExternalWindow(view);
+    return s_stub_implementation->V2FlutterDesktopGetHostState(view);
   }
-  return static_cast<HWND>(nullptr);
+  return static_cast<HostEnvironmentState>(nullptr);
 }
 
 FlutterDesktopEngineRef FlutterDesktopRunEngine(

@@ -73,8 +73,10 @@ class FlutterViewController : public PluginRegistry {
   // The owned Flutter child window
   std::unique_ptr<Win32FlutterWindowPub> child_window_;
 
+  // Compositor smart pointer
   winrt::Windows::UI::Composition::Compositor compositor_{nullptr};
 
+  // DispatcherQueueController smart pointer
   winrt::Windows::System::DispatcherQueueController dispatcherController_{
       nullptr};
 };

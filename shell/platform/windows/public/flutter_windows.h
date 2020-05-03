@@ -85,16 +85,13 @@ V2CreateViewControllerWindow(
     int width,
     int height,
     const FlutterDesktopEngineProperties& engine_properties,
-    void* hostwindow,
-    HWND windowrendertarget); //TODO: typedef
-
-//// Return backing HWND for manipulation in host application.
-//FLUTTER_EXPORT
-//void* V2FlutterDesktopViewGetVisual(FlutterDesktopViewRef view);
+    HWND windowrendertarget,
+    HostEnvironmentState hostwindow
+    );
 
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT
-void* V2FlutterDesktopGetExternalWindow(FlutterDesktopViewRef view);
+HostEnvironmentState V2FlutterDesktopGetHostState(FlutterDesktopViewRef view);
 
 //TODO
 FLUTTER_EXPORT void V2FlutterDesktopSendWindowMetrics(FlutterDesktopViewRef view,
