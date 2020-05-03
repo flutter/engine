@@ -1,12 +1,5 @@
 #include "include/flutter/win32_flutter_window_pub.h"
 
-// TODO move these to headers
-#include <Unknwn.h>
-#include <windows.ui.composition.h>
-#include <windows.ui.composition.interop.h>
-#include <winrt/Windows.UI.Composition.Desktop.h>
-#include <winrt/Windows.UI.Composition.h>
-
 #include <chrono>
 
 #include "include/flutter/flutter_view.h"
@@ -19,12 +12,18 @@ CreateDesktopWindowTarget(
     HWND window) {
   namespace abi = ABI::Windows::UI::Composition::Desktop;
 
-  auto interop = compositor.as<abi::ICompositorDesktopInterop>();
+  // attempt workaround for https://bugs.llvm.org/show_bug.cgi?id=38490
+
+  //auto interop = compositor.as<abi::ICompositorDesktopInterop>();
+  winrt::com_ptr<abi::ICompositorDesktopInterop> interop;
+  //winrt::check_hresult(compositor.as(__uuidof(interop), interop.put_void()));
   winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget target{nullptr};
+  /*
   winrt::check_hresult(interop->CreateDesktopWindowTarget(
       window, true,
       reinterpret_cast<abi::IDesktopWindowTarget**>(winrt::put_abi(target))));
-  return target;
+  return target;*/
+  return nullptr;
 }
 
 // The Windows DPI system is based on this
