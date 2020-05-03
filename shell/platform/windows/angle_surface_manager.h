@@ -39,7 +39,6 @@ class AngleSurfaceManager {
   EGLSurface CreateSurface(
       ABI::Windows::UI::Composition::ISpriteVisual* visual);
 
-
   // queries EGL for the dimensions of surface in physical
   // pixels returning width and height as out params.
   void GetSurfaceDimensions(const EGLSurface surface,

@@ -9,8 +9,8 @@ TEST(FlutterWindowsViewTest, CreateDestroy) {
   ASSERT_TRUE(TRUE);
 }
 
-//TODO MOVE to wrapper
-//TEST(FlutterWindowsViewTest, CanFontChange) {
+// TODO MOVE to wrapper
+// TEST(FlutterWindowsViewTest, CanFontChange) {
 //  FlutterWindowsViewTest window(800, 600);
 //  HWND hwnd = window.GetWindowHandle();
 //  LRESULT result = SendMessage(hwnd, WM_FONTCHANGE, NULL, NULL);

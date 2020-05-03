@@ -104,8 +104,8 @@ struct MouseState {
   uint64_t buttons = 0;
 };
 
-// A windowing neutral flutter child video used as implementation for flutter view that works
-// with win32 hwnds and Windows::UI::Composition visuals
+// A windowing neutral flutter child video used as implementation for flutter
+// view that works with win32 hwnds and Windows::UI::Composition visuals
 class FlutterWindowsView {
  public:
   // Create flutter Window for use as child window
@@ -286,7 +286,7 @@ class FlutterWindowsView {
   // flag indicating if the message loop should be running
   bool messageloop_running_ = false;
 
-  winrt::Windows::UI::Composition::Compositor compositor_ {nullptr};
+  winrt::Windows::UI::Composition::Compositor compositor_{nullptr};
 
   winrt::Windows::UI::Composition::Visual flutter_host_{nullptr};
 

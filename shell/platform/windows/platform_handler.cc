@@ -10,8 +10,8 @@
 #include <optional>
 
 #include "flutter/shell/platform/common/cpp/json_method_codec.h"
-#include "flutter/shell/platform/windows/string_conversion.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
+#include "flutter/shell/platform/windows/string_conversion.h"
 
 static constexpr char kChannelName[] = "flutter/platform";
 
@@ -215,12 +215,11 @@ PlatformHandler::PlatformHandler(flutter::BinaryMessenger* messenger,
 void PlatformHandler::HandleMethodCall(
     const flutter::MethodCall<rapidjson::Document>& method_call,
     std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result) {
+  result->NotImplemented();
+  return;
 
-    result->NotImplemented();
-    return;
-
-  //const std::string& method = method_call.method_name();
-  //if (method.compare(kGetClipboardDataMethod) == 0) {
+  // const std::string& method = method_call.method_name();
+  // if (method.compare(kGetClipboardDataMethod) == 0) {
   //  // Only one string argument is expected.
   //  const rapidjson::Value& format = method_call.arguments()[0];
 

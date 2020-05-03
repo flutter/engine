@@ -20,12 +20,12 @@
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/common/cpp/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/key_event_handler.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
-#include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/task_runner.h"
-#include "flutter/shell/platform/windows/flutter_windows_view.h"
+#include "flutter/shell/platform/windows/text_input_plugin.h"
 
 static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 
@@ -158,7 +158,7 @@ V2FlutterDesktopViewControllerRef V2CreateViewControllerVisual(
     HostEnvironmentState externalWindow) {
   V2FlutterDesktopViewControllerRef state =
       flutter::FlutterWindowsView::CreateFlutterWindowsView(width, height,
-                                                      visual);
+                                                            visual);
 
   auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
 
@@ -176,10 +176,10 @@ V2FlutterDesktopViewControllerRef V2CreateViewControllerWindow(
     int height,
     const FlutterDesktopEngineProperties& engine_properties,
     HWND windowrendertarget,
-    HostEnvironmentState externalWindow
-    ) {
+    HostEnvironmentState externalWindow) {
   V2FlutterDesktopViewControllerRef state =
-      flutter::FlutterWindowsView::CreateFlutterWindowsViewHwnd(width, height, externalWindow, static_cast<HWND>(windowrendertarget));
+      flutter::FlutterWindowsView::CreateFlutterWindowsViewHwnd(
+          width, height, externalWindow, static_cast<HWND>(windowrendertarget));
 
   auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
 
@@ -193,30 +193,30 @@ V2FlutterDesktopViewControllerRef V2CreateViewControllerWindow(
 }
 
 void V2FlutterDesktopSendWindowMetrics(FlutterDesktopViewRef view,
-                                     size_t width,
-                                     size_t height,
-                                     double dpiScale) {
+                                       size_t width,
+                                       size_t height,
+                                       double dpiScale) {
   view->window->SendWindowMetrics(width, height, dpiScale);
 }
 
 void V2FlutterDesktopSendPointerMove(FlutterDesktopViewRef view,
-                                   double x,
-                                   double y) {
+                                     double x,
+                                     double y) {
   view->window->OnPointerMove(x, y);
 }
 
 void V2FlutterDesktopSendPointerDown(FlutterDesktopViewRef view,
-                                   double x,
-                                   double y,
-                                   uint64_t btn) {
+                                     double x,
+                                     double y,
+                                     uint64_t btn) {
   view->window->OnPointerDown(x, y,
                               static_cast<FlutterPointerMouseButtons>(btn));
 }
 
 void V2FlutterDesktopSendPointerUp(FlutterDesktopViewRef view,
-                                 double x,
-                                 double y,
-                                 uint64_t btn) {
+                                   double x,
+                                   double y,
+                                   uint64_t btn) {
   view->window->OnPointerUp(x, y, static_cast<FlutterPointerMouseButtons>(btn));
 }
 
@@ -252,17 +252,16 @@ FlutterDesktopViewRef FlutterDesktopGetView(
 }
 
 // TODO return something more strongly typed
-HostEnvironmentState V2FlutterDesktopGetHostState(
-    FlutterDesktopViewRef view) {
+HostEnvironmentState V2FlutterDesktopGetHostState(FlutterDesktopViewRef view) {
   return (HostEnvironmentState)view->externalwindow;
 }
 
 // TODO
 void V2FlutterDesktopSendScroll(FlutterDesktopViewRef view,
-                              double x,
-                              double y,
-                              double delta_x,
-                              double delta_y) {
+                                double x,
+                                double y,
+                                double delta_x,
+                                double delta_y) {
   view->window->OnScroll(x, y, delta_x, delta_y);
 }
 
@@ -273,8 +272,8 @@ void V2FlutterDesktopSendFontChange(FlutterDesktopViewRef view) {
 
 // TODO
 void V2FlutterDesktopSendText(FlutterDesktopViewRef view,
-                            const char16_t* code_point,
-                            size_t size) {
+                              const char16_t* code_point,
+                              size_t size) {
   std::u16string str;
   str.append(code_point, size);
   view->window->OnText(str);
@@ -282,10 +281,10 @@ void V2FlutterDesktopSendText(FlutterDesktopViewRef view,
 
 // TODO
 void V2FlutterDesktopSendKey(FlutterDesktopViewRef view,
-                           int key,
-                           int scancode,
-                           int action,
-                           char32_t character) {
+                             int key,
+                             int scancode,
+                             int action,
+                             char32_t character) {
   view->window->OnKey(key, scancode, action, character);
 }
 
@@ -301,14 +300,14 @@ void FlutterDesktopResyncOutputStreams() {
 }
 
 ////TODO: do we still need this?  Appears to be dead code
-//FlutterDesktopEngineRef FlutterDesktopRunEngine(
+// FlutterDesktopEngineRef FlutterDesktopRunEngine(
 //    const FlutterDesktopEngineProperties& engine_properties) {
 //  auto engine = RunFlutterEngine(nullptr, engine_properties);
 //  return engine.release();
 //}
 
 ////TODO: do we still need this?  Appears to be dead code
-//bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
+// bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
 //  std::cout << "Shutting down flutter engine process." << std::endl;
 //  auto result = FlutterEngineShutdown(engine_ref->engine);
 //  delete engine_ref;

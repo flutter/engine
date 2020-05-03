@@ -11,11 +11,11 @@
 #include "flutter/shell/platform/windows/key_event_handler.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
-#include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/task_runner.h"
+#include "flutter/shell/platform/windows/text_input_plugin.h"
 
 namespace flutter {
-    struct FlutterWindowsView;
+struct FlutterWindowsView;
 }
 
 // Struct for storing state within an instance of the windows native (HWND or

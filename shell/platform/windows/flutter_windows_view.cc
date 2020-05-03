@@ -17,20 +17,18 @@ FlutterWindowsView::FlutterWindowsView(int width, int height) {
 
 FlutterWindowsView::~FlutterWindowsView() {
   DestroyRenderSurface();
-   if (plugin_registrar_ && plugin_registrar_->destruction_handler) {
+  if (plugin_registrar_ && plugin_registrar_->destruction_handler) {
     plugin_registrar_->destruction_handler(plugin_registrar_.get());
   }
 }
 
-FlutterDesktopViewControllerRef FlutterWindowsView::CreateFlutterWindowsViewHwnd(
-    const int width,
-    const int height,
-    void* externalWindow,
-    HWND windowrendertarget) {
-
+FlutterDesktopViewControllerRef
+FlutterWindowsView::CreateFlutterWindowsViewHwnd(const int width,
+                                                 const int height,
+                                                 void* externalWindow,
+                                                 HWND windowrendertarget) {
   auto state = std::make_unique<FlutterDesktopViewControllerState>();
-  state->view =
-      std::make_unique<flutter::FlutterWindowsView>(width, height);
+  state->view = std::make_unique<flutter::FlutterWindowsView>(width, height);
 
   state->view->window_rendertarget_ = windowrendertarget;
 
@@ -54,14 +52,15 @@ FlutterDesktopViewControllerRef FlutterWindowsView::CreateFlutterWindowsView(
   state->view_wrapper = std::make_unique<FlutterDesktopView>();
   state->view_wrapper->window = state->view.get();
 
-  // retreieve compositor from parent visual, store it and use it to create a child that we store for rendering
+  // retreieve compositor from parent visual, store it and use it to create a
+  // child that we store for rendering
   namespace wuc = winrt::Windows::UI::Composition;
   wuc::Visual parentVisual{nullptr};
 
   winrt::copy_from_abi(parentVisual, *reinterpret_cast<void**>(&visual));
   state->view->compositor_ = state->view->flutter_host_.Compositor();
   state->view->flutter_host_ = state->view->compositor_.CreateSpriteVisual();
-  
+
   // add the host visual we created as a child of the visual passed in to us
   wuc::SpriteVisual sv{nullptr};
   parentVisual.as(sv);
@@ -70,7 +69,8 @@ FlutterDesktopViewControllerRef FlutterWindowsView::CreateFlutterWindowsView(
   return state.release();
 }
 
-void FlutterWindowsView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng, void* externalwindow) {
+void FlutterWindowsView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng,
+                                  void* externalwindow) {
   engine_ = eng;
 
   auto messenger = std::make_unique<FlutterDesktopMessenger>();
@@ -131,9 +131,9 @@ void FlutterWindowsView::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(message,
-                                     [this] { this->process_events_ = false; },
-                                     [this] { this->process_events_ = true; });
+  message_dispatcher_->HandleMessage(
+      message, [this] { this->process_events_ = false; },
+      [this] { this->process_events_ = true; });
 }
 
 void FlutterWindowsView::OnPointerMove(double x, double y) {
@@ -142,22 +142,24 @@ void FlutterWindowsView::OnPointerMove(double x, double y) {
   }
 }
 
-void FlutterWindowsView::OnPointerDown(double x,
-                                    double y,
-                                    FlutterPointerMouseButtons flutter_button) {
+void FlutterWindowsView::OnPointerDown(
+    double x,
+    double y,
+    FlutterPointerMouseButtons flutter_button) {
   if (process_events_) {
-    if  (flutter_button != 0) {
+    if (flutter_button != 0) {
       uint64_t mouse_buttons = GetMouseState().buttons | flutter_button;
       SetMouseButtons(mouse_buttons);
       SendPointerDown(x, y);
     }
   }
-      }
+}
 
-void FlutterWindowsView::OnPointerUp(double x,
-                                        double y,
-          FlutterPointerMouseButtons flutter_button) {
- if (process_events_) {
+void FlutterWindowsView::OnPointerUp(
+    double x,
+    double y,
+    FlutterPointerMouseButtons flutter_button) {
+  if (process_events_) {
     if (flutter_button != 0) {
       uint64_t mouse_buttons = GetMouseState().buttons & ~flutter_button;
       SetMouseButtons(mouse_buttons);
@@ -187,7 +189,10 @@ void FlutterWindowsView::OnKey(int key,
   }
 }
 
-void FlutterWindowsView::OnScroll(double x, double y, double delta_x, double delta_y) {
+void FlutterWindowsView::OnScroll(double x,
+                                  double y,
+                                  double delta_x,
+                                  double delta_y) {
   if (process_events_) {
     SendScroll(x, y, delta_x, delta_y);
   }
@@ -201,7 +206,9 @@ void FlutterWindowsView::OnFontChange() {
 }
 
 // Sends new size  information to FlutterEngine.
-void FlutterWindowsView::SendWindowMetrics(size_t width, size_t height, double dpiScale) {
+void FlutterWindowsView::SendWindowMetrics(size_t width,
+                                           size_t height,
+                                           double dpiScale) {
   if (engine_ == nullptr) {
     return;
   }
@@ -210,7 +217,7 @@ void FlutterWindowsView::SendWindowMetrics(size_t width, size_t height, double d
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
-  event.pixel_ratio = dpiScale;  
+  event.pixel_ratio = dpiScale;
   auto result = FlutterEngineSendWindowMetricsEvent(engine_, &event);
 
   if (flutter_host_ != nullptr) {
@@ -257,7 +264,7 @@ void FlutterWindowsView::SendPointerUp(double x, double y) {
   event.y = y;
   SendPointerEventWithData(event);
   if (event.phase == FlutterPointerPhase::kUp) {
-    SetMouseFlutterStateDown(false); 
+    SetMouseFlutterStateDown(false);
   }
 }
 
@@ -279,7 +286,10 @@ void FlutterWindowsView::SendKey(int key, int scancode, int action, int mods) {
   }
 }
 
-void FlutterWindowsView::SendScroll(double x, double y, double delta_x, double delta_y) {
+void FlutterWindowsView::SendScroll(double x,
+                                    double y,
+                                    double delta_x,
+                                    double delta_y) {
   FlutterPointerEvent event = {};
   SetEventPhaseFromCursorButtonState(&event);
   event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
@@ -295,7 +305,7 @@ void FlutterWindowsView::SendScroll(double x, double y, double delta_x, double d
 
 void FlutterWindowsView::SendPointerEventWithData(
     const FlutterPointerEvent& event_data) {
-    //TODO
+  // TODO
   MouseState mouse_state = GetMouseState();
   // If sending anything other than an add, and the pointer isn't already added,
   // synthesize an add to satisfy Flutter's expectations about events.
@@ -370,10 +380,8 @@ void FlutterWindowsView::CreateRenderSurfaceHWND() {
 }
 
 void FlutterWindowsView::CreateRenderSurfaceUWP() {
-
   if (surface_manager && render_surface == EGL_NO_SURFACE) {
-    
-    //TODO: replace ROHelper with regen'd c++/WinRT with downlevel
+    // TODO: replace ROHelper with regen'd c++/WinRT with downlevel
     RoHelper helper;
     HSTRING act;
     HSTRING_HEADER header;
@@ -382,7 +390,8 @@ void FlutterWindowsView::CreateRenderSurfaceUWP() {
         {static_cast<float>(width_), static_cast<float>(height_)});
 
     render_surface = surface_manager->CreateSurface(
-        static_cast<ABI::Windows::UI::Composition::ISpriteVisual*>(winrt::get_abi(flutter_host_)));
+        static_cast<ABI::Windows::UI::Composition::ISpriteVisual*>(
+            winrt::get_abi(flutter_host_)));
   }
 }
 
