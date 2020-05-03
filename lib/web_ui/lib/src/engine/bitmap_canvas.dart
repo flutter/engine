@@ -362,105 +362,6 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPool.closeCurrentCanvas();
   }
 
-  html.HtmlElement _createBackgroundImageWithBlend(HtmlImage image,
-      ui.Color filterColor, ui.BlendMode colorFilterBlendMode,
-      SurfacePaintData paint) {
-    // When blending with color we can't use an image element.
-    // Instead use a div element with background image, color and
-    // background blend mode.
-    final html.HtmlElement imgElement = html.DivElement();
-    final html.CssStyleDeclaration style = imgElement.style;
-    switch (colorFilterBlendMode) {
-      case ui.BlendMode.clear:
-      case ui.BlendMode.dstOut:
-        style.position = 'absolute';
-        break;
-      case ui.BlendMode.src:
-      case ui.BlendMode.srcOver:
-        style
-            ..position = 'absolute'
-            ..backgroundColor = colorToCssString(filterColor);
-        break;
-      case ui.BlendMode.dst:
-      case ui.BlendMode.dstIn:
-        style
-          ..position = 'absolute'
-          ..backgroundImage = "url('${image.imgElement.src}')";
-        break;
-      default:
-        style
-          ..position = 'absolute'
-          ..backgroundImage = "url('${image.imgElement.src}')"
-          ..backgroundBlendMode = _stringForBlendMode(colorFilterBlendMode)
-          ..backgroundColor = colorToCssString(filterColor);
-        break;
-    }
-    return imgElement;
-  }
-
-  html.HtmlElement _createImageElementWithSvgFilter(HtmlImage image,
-      ui.Color filterColor, ui.BlendMode colorFilterBlendMode,
-      SurfacePaintData paint) {
-    // For srcIn blendMode, we use an svg filter to apply to image element.
-    String svgFilter;
-    bool isSaturationFilter = false;
-    switch (colorFilterBlendMode) {
-      case ui.BlendMode.srcIn:
-      case ui.BlendMode.srcATop:
-        svgFilter = _srcInColorFilterToSvg(filterColor);
-        break;
-      case ui.BlendMode.srcOut:
-        svgFilter = _srcOutColorFilterToSvg(filterColor);
-        break;
-      case ui.BlendMode.xor:
-        svgFilter = _xorColorFilterToSvg(filterColor);
-        break;
-      case ui.BlendMode.plus:
-        // Porter duff source + destination.
-        svgFilter = _compositeColorFilterToSvg(filterColor, 0, 1, 1, 0);
-        break;
-      case ui.BlendMode.modulate:
-        // Porter duff source * destination but preserves alpha.
-        svgFilter = _modulateColorFilterToSvg(filterColor);
-        break;
-      case ui.BlendMode.overlay:
-        // Since overlay is the same as hard-light by swapping layers,
-        // pass hard-light blend function.
-        svgFilter = _blendColorFilterToSvg(filterColor, 'hard-light',
-            swapLayers: true);
-        break;
-      // Several of the filters below (although supported) do not render the
-      // same (close but not exact) as native flutter when used as blend mode
-      // for a background-image with a background color. They only look
-      // identical when feBlend is used within an svg filter definition.
-      //
-      // Saturation filter uses destination when source is transparent.
-      // cMax = math.max(r, math.max(b, g));
-      // cMin = math.min(r, math.min(b, g));
-      // delta = cMax - cMin;
-      // lightness = (cMax + cMin) / 2.0;
-      // saturation = delta / (1.0 - (2 * lightness - 1.0).abs());
-      case ui.BlendMode.saturation:
-      case ui.BlendMode.colorDodge:
-      case ui.BlendMode.colorBurn:
-      case ui.BlendMode.hue:
-      case ui.BlendMode.color:
-      case ui.BlendMode.luminosity:
-        svgFilter = _blendColorFilterToSvg(filterColor, _stringForBlendMode(colorFilterBlendMode));
-        break;
-    }
-    final html.Element filterElement =
-    html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
-    rootElement.append(filterElement);
-    _children.add(filterElement);
-    final html.HtmlElement imgElement = image.cloneImageElement();
-    imgElement.style.filter = 'url(#_fcf${_filterIdCounter})';
-    if (colorFilterBlendMode == ui.BlendMode.saturation) {
-      imgElement.style.backgroundColor = colorToCssString(filterColor);
-    }
-    return imgElement;
-  }
-
   html.HtmlElement _drawImage(
       ui.Image image, ui.Offset p, SurfacePaintData paint) {
     final HtmlImage htmlImage = image;
@@ -596,6 +497,120 @@ class BitmapCanvas extends EngineCanvas {
     if (imageElement is! html.ImageElement) {
       imageElement.style.backgroundSize = '$widthPx $heightPx';
     }
+  }
+
+  // Creates a Div element to render an image using background-image css
+  // attribute to be able to use background blend mode(s) when possible.
+  //
+  // Example: <div style="
+  //               position:absolute;
+  //               background-image:url(....);
+  //               background-blend-mode:"darken"
+  //               background-color: #RRGGBB">
+  //
+  // Special cases:
+  // For clear,dstOut it generates a blank element.
+  // For src,srcOver it only sets background-color attribute.
+  // For dst,dstIn , it only sets source not background color.
+  html.HtmlElement _createBackgroundImageWithBlend(HtmlImage image,
+      ui.Color filterColor, ui.BlendMode colorFilterBlendMode,
+      SurfacePaintData paint) {
+    // When blending with color we can't use an image element.
+    // Instead use a div element with background image, color and
+    // background blend mode.
+    final html.HtmlElement imgElement = html.DivElement();
+    final html.CssStyleDeclaration style = imgElement.style;
+    switch (colorFilterBlendMode) {
+      case ui.BlendMode.clear:
+      case ui.BlendMode.dstOut:
+        style.position = 'absolute';
+        break;
+      case ui.BlendMode.src:
+      case ui.BlendMode.srcOver:
+        style
+            ..position = 'absolute'
+            ..backgroundColor = colorToCssString(filterColor);
+        break;
+      case ui.BlendMode.dst:
+      case ui.BlendMode.dstIn:
+        style
+          ..position = 'absolute'
+          ..backgroundImage = "url('${image.imgElement.src}')";
+        break;
+      default:
+        style
+          ..position = 'absolute'
+          ..backgroundImage = "url('${image.imgElement.src}')"
+          ..backgroundBlendMode = _stringForBlendMode(colorFilterBlendMode)
+          ..backgroundColor = colorToCssString(filterColor);
+        break;
+    }
+    return imgElement;
+  }
+
+  // Creates an image element and an svg filter to apply on the element.
+  html.HtmlElement _createImageElementWithSvgFilter(HtmlImage image,
+      ui.Color filterColor, ui.BlendMode colorFilterBlendMode,
+      SurfacePaintData paint) {
+    // For srcIn blendMode, we use an svg filter to apply to image element.
+    String svgFilter;
+    bool isSaturationFilter = false;
+    switch (colorFilterBlendMode) {
+      case ui.BlendMode.srcIn:
+      case ui.BlendMode.srcATop:
+        svgFilter = _srcInColorFilterToSvg(filterColor);
+        break;
+      case ui.BlendMode.srcOut:
+        svgFilter = _srcOutColorFilterToSvg(filterColor);
+        break;
+      case ui.BlendMode.xor:
+        svgFilter = _xorColorFilterToSvg(filterColor);
+        break;
+      case ui.BlendMode.plus:
+        // Porter duff source + destination.
+        svgFilter = _compositeColorFilterToSvg(filterColor, 0, 1, 1, 0);
+        break;
+      case ui.BlendMode.modulate:
+        // Porter duff source * destination but preserves alpha.
+        svgFilter = _modulateColorFilterToSvg(filterColor);
+        break;
+      case ui.BlendMode.overlay:
+        // Since overlay is the same as hard-light by swapping layers,
+        // pass hard-light blend function.
+        svgFilter = _blendColorFilterToSvg(filterColor, 'hard-light',
+            swapLayers: true);
+        break;
+      // Several of the filters below (although supported) do not render the
+      // same (close but not exact) as native flutter when used as blend mode
+      // for a background-image with a background color. They only look
+      // identical when feBlend is used within an svg filter definition.
+      //
+      // Saturation filter uses destination when source is transparent.
+      // cMax = math.max(r, math.max(b, g));
+      // cMin = math.min(r, math.min(b, g));
+      // delta = cMax - cMin;
+      // lightness = (cMax + cMin) / 2.0;
+      // saturation = delta / (1.0 - (2 * lightness - 1.0).abs());
+      case ui.BlendMode.saturation:
+      case ui.BlendMode.colorDodge:
+      case ui.BlendMode.colorBurn:
+      case ui.BlendMode.hue:
+      case ui.BlendMode.color:
+      case ui.BlendMode.luminosity:
+        svgFilter = _blendColorFilterToSvg(filterColor,
+            _stringForBlendMode(colorFilterBlendMode));
+        break;
+    }
+    final html.Element filterElement =
+    html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+    rootElement.append(filterElement);
+    _children.add(filterElement);
+    final html.HtmlElement imgElement = image.cloneImageElement();
+    imgElement.style.filter = 'url(#_fcf${_filterIdCounter})';
+    if (colorFilterBlendMode == ui.BlendMode.saturation) {
+      imgElement.style.backgroundColor = colorToCssString(filterColor);
+    }
+    return imgElement;
   }
 
   // Should be called when we add new html elements into rootElement so that
