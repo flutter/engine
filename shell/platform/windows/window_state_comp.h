@@ -15,14 +15,14 @@
 #include "flutter/shell/platform/windows/task_runner.h"
 
 namespace flutter {
-    struct FlutterCompView;
+    struct FlutterWindowsView;
 }
 
 // Struct for storing state within an instance of the windows native (HWND or
 // CoreWindow) Window.
 struct FlutterDesktopViewControllerState {
   // The win32 window that owns this state object.
-  std::unique_ptr<flutter::FlutterCompView> view;
+  std::unique_ptr<flutter::FlutterWindowsView> view;
 
   // The state associate with the engine backing the view.
   std::unique_ptr<FlutterDesktopEngineState> engine_state;
@@ -36,7 +36,7 @@ struct FlutterDesktopViewControllerState {
 // to all of the controller-based functionality.
 struct FlutterDesktopView {
   // The window that (indirectly) owns this state object.
-  flutter::FlutterCompView* window;
+  flutter::FlutterWindowsView* window;
 
   void* externalwindow;
 };

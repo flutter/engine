@@ -1,4 +1,4 @@
-#include "flutter/shell/platform/windows/flutter_windows_view.h"
+#include "flutter/shell/platform/windows/flutter_comp_view.h"
 
 #include <chrono>
 
@@ -70,8 +70,7 @@ FlutterDesktopViewControllerRef FlutterWindowsView::CreateFlutterWindowsView(
   return state.release();
 }
 
-void FlutterWindowsView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng,
-                                  void* externalwindow) {
+void FlutterWindowsView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng, void* externalwindow) {
   engine_ = eng;
 
   auto messenger = std::make_unique<FlutterDesktopMessenger>();
@@ -143,8 +142,7 @@ void FlutterWindowsView::OnPointerMove(double x, double y) {
   }
 }
 
-void FlutterWindowsView::OnPointerDown(
-    double x,
+void FlutterWindowsView::OnPointerDown(double x,
                                     double y,
                                     FlutterPointerMouseButtons flutter_button) {
   if (process_events_) {
@@ -156,8 +154,7 @@ void FlutterWindowsView::OnPointerDown(
   }
       }
 
-void FlutterWindowsView::OnPointerUp(
-          double x,
+void FlutterWindowsView::OnPointerUp(double x,
                                         double y,
           FlutterPointerMouseButtons flutter_button) {
  if (process_events_) {
@@ -190,10 +187,7 @@ void FlutterWindowsView::OnKey(int key,
   }
 }
 
-void FlutterWindowsView::OnScroll(double x,
-                                  double y,
-                                  double delta_x,
-                                  double delta_y) {
+void FlutterWindowsView::OnScroll(double x, double y, double delta_x, double delta_y) {
   if (process_events_) {
     SendScroll(x, y, delta_x, delta_y);
   }
@@ -207,9 +201,7 @@ void FlutterWindowsView::OnFontChange() {
 }
 
 // Sends new size  information to FlutterEngine.
-void FlutterWindowsView::SendWindowMetrics(size_t width,
-                                           size_t height,
-                                           double dpiScale) {
+void FlutterWindowsView::SendWindowMetrics(size_t width, size_t height, double dpiScale) {
   if (engine_ == nullptr) {
     return;
   }
@@ -287,10 +279,7 @@ void FlutterWindowsView::SendKey(int key, int scancode, int action, int mods) {
   }
 }
 
-void FlutterWindowsView::SendScroll(double x,
-                                    double y,
-                                    double delta_x,
-                                    double delta_y) {
+void FlutterWindowsView::SendScroll(double x, double y, double delta_x, double delta_y) {
   FlutterPointerEvent event = {};
   SetEventPhaseFromCursorButtonState(&event);
   event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;

@@ -19,8 +19,9 @@ class TestWindowsApi : public testing::StubFlutterWindowsApi {
       int width,
       int height,
       const FlutterDesktopEngineProperties& engine_properties,
-      void* hostwindow,
-      HWND windowrendertarget) override {
+      HWND windowrendertarget,
+      HostEnvironmentState hostwindow
+      ) override {
     return reinterpret_cast<FlutterDesktopViewControllerRef>(1);
   }
 };

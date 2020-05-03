@@ -39,11 +39,11 @@ FlutterDesktopViewControllerRef V2CreateViewControllerWindow(
     int width,
     int height,
     const FlutterDesktopEngineProperties& engine_properties,
-    void* hostwindow,
-    HWND windowrendertarget) {
+    HWND windowrendertarget,
+    HostEnvironmentState state) {
   if (s_stub_implementation) {
     return s_stub_implementation->V2CreateViewControllerWindow(width, height,
-                                                       engine_properties, hostwindow, windowrendertarget);
+                                                       engine_properties, windowrendertarget, state);
   }
   return nullptr;
 }
@@ -52,12 +52,12 @@ FlutterDesktopViewControllerRef V2CreateViewControllerVisual(
     int width,
     int height,
     const FlutterDesktopEngineProperties& engine_properties,
-    void* compositor,
-    void* hostwindow) {
+    ABI::Windows::UI::Composition::IVisual* visual,
+    HostEnvironmentState state) {
   if (s_stub_implementation) {
     return s_stub_implementation->V2CreateViewControllerVisual(
         width, height,
-                                                       engine_properties, compositor, hostwindow);
+                                                       engine_properties, visual, state);
   }
   return nullptr;
 }

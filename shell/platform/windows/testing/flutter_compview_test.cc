@@ -3,16 +3,16 @@
 namespace flutter {
 namespace testing {
 
-FlutterCompViewTest::FlutterCompViewTest(int width, int height)
-    : FlutterCompView(width, height){};
+FlutterWindowsViewTest::FlutterWindowsViewTest(int width, int height)
+    : FlutterWindowsView(width, height){};
 
-FlutterCompViewTest::~FlutterCompViewTest() = default;
+FlutterWindowsViewTest::~FlutterWindowsViewTest() = default;
 
-//void FlutterCompViewTest::OnFontChange() {
+//void FlutterWindowsViewTest::OnFontChange() {
 //  on_font_change_called_ = true;
 //}
 
-bool FlutterCompViewTest::OnFontChangeWasCalled() {
+bool FlutterWindowsViewTest::OnFontChangeWasCalled() {
   return true; //TODO create an actual test
   //return on_font_change_called_;
 }

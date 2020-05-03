@@ -7,6 +7,8 @@
 
 #include <memory>
 
+#include <windows.ui.composition.h>
+
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 
 namespace flutter {
@@ -34,8 +36,9 @@ class StubFlutterWindowsApi {
       int width,
       int height,
       const FlutterDesktopEngineProperties& engine_properties,
-      void* hostwindow,
-      HWND windowrendertarget) {
+      HWND windowrendertarget,
+      HostEnvironmentState state
+      ) {
     return nullptr;
   }
 
@@ -43,8 +46,9 @@ class StubFlutterWindowsApi {
       int width,
       int height,
       const FlutterDesktopEngineProperties& engine_properties,
-      void* compositor,
-      void* hostwindow) {
+      ABI::Windows::UI::Composition::IVisual* visual,
+      HostEnvironmentState state
+) {
     return nullptr;
   }
 

@@ -36,7 +36,7 @@ static constexpr char kInternalConsistencyError[] =
 
 namespace flutter {
 
-void TextInputPlugin::TextHook(FlutterCompView* window,
+void TextInputPlugin::TextHook(FlutterWindowsView* window,
                                const std::u16string& text) {
   if (active_model_ == nullptr) {
     return;
@@ -45,7 +45,7 @@ void TextInputPlugin::TextHook(FlutterCompView* window,
   SendStateUpdate(*active_model_);
 }
 
-void TextInputPlugin::KeyboardHook(FlutterCompView* window,
+void TextInputPlugin::KeyboardHook(FlutterWindowsView* window,
                                    int key,
                                    int scancode,
                                    int action,

@@ -25,7 +25,7 @@
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/task_runner.h"
-#include "flutter/shell/platform/windows/flutter_comp_view.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 
@@ -38,7 +38,7 @@ static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 // Returns the state object for the engine, or null on failure to start the
 // engine.
 static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
-    flutter::FlutterCompView* window,
+    flutter::FlutterWindowsView* window,
     const FlutterDesktopEngineProperties& engine_properties) {
   auto state = std::make_unique<FlutterDesktopEngineState>();
 
@@ -58,15 +58,15 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(config.open_gl);
   config.open_gl.make_current = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::FlutterCompView*>(user_data);
+    auto host = static_cast<flutter::FlutterWindowsView*>(user_data);
     return host->MakeCurrent();
   };
   config.open_gl.clear_current = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::FlutterCompView*>(user_data);
+    auto host = static_cast<flutter::FlutterWindowsView*>(user_data);
     return host->ClearContext();
   };
   config.open_gl.present = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::FlutterCompView*>(user_data);
+    auto host = static_cast<flutter::FlutterWindowsView*>(user_data);
     return host->SwapBuffers();
   };
   config.open_gl.fbo_callback = [](void* user_data) -> uint32_t { return 0; };
@@ -75,7 +75,7 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
     return reinterpret_cast<void*>(eglGetProcAddress(what));
   };
   config.open_gl.make_resource_current = [](void* user_data) -> bool {
-    auto host = static_cast<flutter::FlutterCompView*>(user_data);
+    auto host = static_cast<flutter::FlutterWindowsView*>(user_data);
     return host->MakeResourceCurrent();
   };
 
@@ -133,7 +133,7 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   args.platform_message_callback =
       [](const FlutterPlatformMessage* engine_message,
          void* user_data) -> void {
-    auto window = reinterpret_cast<flutter::FlutterCompView*>(user_data);
+    auto window = reinterpret_cast<flutter::FlutterWindowsView*>(user_data);
     return window->HandlePlatformMessage(engine_message);
   };
   args.custom_task_runners = &custom_task_runners;
@@ -157,7 +157,7 @@ V2FlutterDesktopViewControllerRef V2CreateViewControllerVisual(
     ABI::Windows::UI::Composition::IVisual* visual,
     HostEnvironmentState externalWindow) {
   V2FlutterDesktopViewControllerRef state =
-      flutter::FlutterCompView::CreateFlutterCompView(width, height,
+      flutter::FlutterWindowsView::CreateFlutterWindowsView(width, height,
                                                       visual);
 
   auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
@@ -179,7 +179,7 @@ V2FlutterDesktopViewControllerRef V2CreateViewControllerWindow(
     HostEnvironmentState externalWindow
     ) {
   V2FlutterDesktopViewControllerRef state =
-      flutter::FlutterCompView::CreateFlutterCompViewHwnd(width, height, externalWindow, static_cast<HWND>(windowrendertarget));
+      flutter::FlutterWindowsView::CreateFlutterWindowsViewHwnd(width, height, externalWindow, static_cast<HWND>(windowrendertarget));
 
   auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
 
