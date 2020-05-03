@@ -150,9 +150,6 @@ class FlutterWindowsView {
   // dimensions in physical
   void SendWindowMetrics(size_t width, size_t height, double dpiscale);
 
-  Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ISpriteVisual>
-  GetFlutterHost();
-
   // TODO
   void OnPointerMove(double x, double y);
 
