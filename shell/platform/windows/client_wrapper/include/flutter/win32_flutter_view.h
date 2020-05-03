@@ -13,19 +13,19 @@
 namespace flutter {
 
 // A view displaying Flutter content.
-class FlutterView {
+class Win32FlutterView {
  public:
-  explicit FlutterView(
+  explicit Win32FlutterView(
       FlutterDesktopViewRef view
       )
       : view_(view) {
   }
 
-  virtual ~FlutterView() = default;
+  virtual ~Win32FlutterView() = default;
 
   // Prevent copying.
-  FlutterView(FlutterView const&) = delete;
-  FlutterView& operator=(FlutterView const&) = delete;
+  Win32FlutterView(Win32FlutterView const&) = delete;
+  Win32FlutterView& operator=(Win32FlutterView const&) = delete;
 
   // Returns the backing HWND for the view.
   HWND GetNativeWindow() {

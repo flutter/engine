@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "dart_project.h"
-#include "flutter_view.h"
+#include "win32_flutter_view.h"
 #include "plugin_registrar.h"
 #include "plugin_registry.h"
 #include "win32_flutter_window_pub.h"
@@ -26,30 +26,30 @@ namespace flutter {
 // This is the primary wrapper class for the desktop C API.
 // If you use this class, you should not call any of the setup or teardown
 // methods in the C API directly, as this class will do that internally.
-class FlutterViewController : public PluginRegistry {
+class Win32FlutterViewController : public PluginRegistry {
  public:
   // Creates a FlutterView that can be parented into a Windows View hierarchy
   // either using HWNDs or in the future into a CoreWindow, or using compositor.
   //
   // |dart_project| will be used to configure the engine backing this view.
-  explicit FlutterViewController(int width,
+  explicit Win32FlutterViewController(int width,
                                  int height,
                                  const DartProject& project,
                                  void* compositor);
 
   //TODO
-  explicit FlutterViewController(int width,
+  explicit Win32FlutterViewController(int width,
                                  int height,
                                  const DartProject& project,
                                  HWND parentwindow);
 
-  virtual ~FlutterViewController();
+  virtual ~Win32FlutterViewController();
 
   // Prevent copying.
-  FlutterViewController(FlutterViewController const&) = delete;
-  FlutterViewController& operator=(FlutterViewController const&) = delete;
+  Win32FlutterViewController(Win32FlutterViewController const&) = delete;
+  Win32FlutterViewController& operator=(Win32FlutterViewController const&) = delete;
 
-  FlutterView* view() { return view_.get(); }
+  Win32FlutterView* view() { return view_.get(); }
 
   // Processes any pending events in the Flutter engine, and returns the
   // nanosecond delay until the next scheduled event (or  max, if none).
@@ -68,7 +68,7 @@ class FlutterViewController : public PluginRegistry {
   FlutterDesktopViewControllerRef controller_ = nullptr;
 
   //// The owned FlutterView.
-  std::unique_ptr<FlutterView> view_;
+  std::unique_ptr<Win32FlutterView> view_;
 
   // The owned Flutter child window
   std::unique_ptr<Win32FlutterWindowPub> child_window_;

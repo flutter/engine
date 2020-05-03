@@ -35,7 +35,7 @@ namespace flutter {
 } FlutterPointerMouseButtons;
 
 //Forward declare to avoid circular references
-class FlutterView;
+class Win32FlutterView;
 
 // A win32 flutter child window used as implementatin for flutter view.  In the
 // future, there will likely be a CoreWindow-based FlutterWindow as well.  At
@@ -57,7 +57,7 @@ class Win32FlutterWindowPub : public Win32WindowPub {
   virtual ~Win32FlutterWindowPub();
 
   //TODO
-  void SetView(FlutterView* view);
+  void SetView(Win32FlutterView* view);
 
   // |Win32WindowPub|
   void OnDpiScale(unsigned int dpi) override;
@@ -100,7 +100,7 @@ class Win32FlutterWindowPub : public Win32WindowPub {
   void SendWindowMetrics();
 
   private:
-  FlutterView* flutter_view_;
+  Win32FlutterView* flutter_view_;
  // // Destroy current rendering surface if one has been allocated.
  // void DestroyRenderSurface();
 

@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-#include "include/flutter/flutter_view.h"
+#include "include/flutter/win32_flutter_view.h"
 
 namespace flutter {
 
@@ -35,7 +35,7 @@ Win32FlutterWindowPub::Win32FlutterWindowPub(
     int height,
     winrt::Windows::UI::Composition::Compositor const& compositor)
     : compositor_(compositor), flutter_view_(nullptr) {
-  Win32WindowPub::InitializeChild("FLUTTERVIEW", width, height);
+  Win32WindowPub::InitializeChild("Win32FlutterView", width, height);
 
     // Create Window target, set visual returned from the engine as the root
   target_ =
@@ -47,10 +47,10 @@ Win32FlutterWindowPub::Win32FlutterWindowPub(
 
 Win32FlutterWindowPub::Win32FlutterWindowPub(int width, int height)
     : compositor_(nullptr), flutter_view_(nullptr) {
-  Win32WindowPub::InitializeChild("FLUTTERVIEW", width, height);
+  Win32WindowPub::InitializeChild("Win32FlutterView", width, height);
 }
 
-void Win32FlutterWindowPub::SetView(FlutterView* view) {
+void Win32FlutterWindowPub::SetView(Win32FlutterView* view) {
   flutter_view_ = view;
 }
 

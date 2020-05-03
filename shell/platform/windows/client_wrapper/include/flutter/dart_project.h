@@ -43,7 +43,7 @@ class DartProject {
   // flexible options for project structures are needed later without it
   // being a breaking change. Provide access to internal classes that need
   // them.
-  friend class FlutterViewController;
+  friend class Win32FlutterViewController;
   friend class DartProjectTest;
 
   const std::wstring& assets_path() const { return assets_path_; }

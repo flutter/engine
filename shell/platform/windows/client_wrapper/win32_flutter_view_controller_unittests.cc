@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_view_controller.h"
+#include "flutter/shell/platform/windows/client_wrapper/include/flutter/win32_flutter_view_controller.h"
 #include "flutter/shell/platform/windows/client_wrapper/testing/stub_flutter_windows_api.h"
 #include "gtest/gtest.h"
 
@@ -28,20 +28,20 @@ class TestWindowsApi : public testing::StubFlutterWindowsApi {
 
 }  // namespace
 
-TEST(FlutterViewControllerTest, CreateDestroy) {
+TEST(Win32FlutterViewControllerTest, CreateDestroy) {
   DartProject project(L"data");
   testing::ScopedStubFlutterWindowsApi scoped_api_stub(
       std::make_unique<TestWindowsApi>());
   auto test_api = static_cast<TestWindowsApi*>(scoped_api_stub.stub());
-  { FlutterViewController controller(100, 100, project, static_cast<void*>(nullptr)); }
+  { Win32FlutterViewController controller(100, 100, project, static_cast<void*>(nullptr)); }
 }
 
-TEST(FlutterViewControllerTest, GetView) {
+TEST(Win32FlutterViewControllerTest, GetView) {
   DartProject project(L"data");
   testing::ScopedStubFlutterWindowsApi scoped_api_stub(
       std::make_unique<TestWindowsApi>());
   auto test_api = static_cast<TestWindowsApi*>(scoped_api_stub.stub());
-  FlutterViewController controller(100, 100, project, static_cast<HWND>(nullptr));
+  Win32FlutterViewController controller(100, 100, project, static_cast<HWND>(nullptr));
   EXPECT_NE(controller.view(), nullptr);
 }
 

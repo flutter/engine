@@ -7,15 +7,15 @@ import("//flutter/testing/testing.gni")
 
 _wrapper_includes = [
   "include/flutter/dart_project.h",
-  "include/flutter/flutter_view_controller.h",
-  "include/flutter/flutter_view.h",
+  "include/flutter/win32_flutter_view_controller.h",
+  "include/flutter/win32_flutter_view.h",
   "include/flutter/plugin_registrar_windows.h",
   "include/flutter/win32_window_pub.h",
   "include/flutter/win32_flutter_window_pub.h",
   "include/flutter/dpi_utils_pub.h",
 ]
 
-_wrapper_sources = [ "flutter_view_controller.cc",
+_wrapper_sources = [ "win32_flutter_view_controller.cc",
 "win32_flutter_window_pub.cc",
 "win32_window_pub.cc",
 "dpi_utils_pub.cc",
@@ -84,8 +84,8 @@ executable("client_wrapper_windows_unittests") {
 
   sources = [
     "dart_project_unittests.cc",
-    "flutter_view_controller_unittests.cc",
-    "flutter_view_unittests.cc",
+    "win32_flutter_view_controller_unittests.cc",
+    "win32_flutter_view_unittests.cc",
     "plugin_registrar_windows_unittests.cc",
   ]
 

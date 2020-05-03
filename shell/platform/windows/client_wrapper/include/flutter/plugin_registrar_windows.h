@@ -9,7 +9,7 @@
 
 #include <memory>
 
-#include "flutter_view.h"
+#include "win32_flutter_view.h"
 #include "plugin_registrar.h"
 
 namespace flutter {
@@ -23,7 +23,7 @@ class PluginRegistrarWindows : public PluginRegistrar {
   explicit PluginRegistrarWindows(
       FlutterDesktopPluginRegistrarRef core_registrar)
       : PluginRegistrar(core_registrar) {
-    view_ = std::make_unique<FlutterView>(
+    view_ = std::make_unique<Win32FlutterView>(
         FlutterDesktopRegistrarGetView(core_registrar));
   }
 
@@ -33,11 +33,11 @@ class PluginRegistrarWindows : public PluginRegistrar {
   PluginRegistrarWindows(PluginRegistrarWindows const&) = delete;
   PluginRegistrarWindows& operator=(PluginRegistrarWindows const&) = delete;
 
-  FlutterView* GetView() { return view_.get(); }
+  Win32FlutterView* GetView() { return view_.get(); }
 
  private:
   // The associated FlutterView, if any.
-  std::unique_ptr<FlutterView> view_;
+  std::unique_ptr<Win32FlutterView> view_;
 };
 
 }  // namespace flutter

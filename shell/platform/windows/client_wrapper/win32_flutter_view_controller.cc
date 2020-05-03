@@ -4,7 +4,7 @@
 
 #include <memory>
 
-#include "include/flutter/flutter_view_controller.h"
+#include "include/flutter/win32_flutter_view_controller.h"
 #include <dispatcherqueue.h>
 #include <Unknwn.h>
 #include <winrt/Windows.UI.Composition.Desktop.h>
@@ -30,7 +30,7 @@ auto CreateDispatcherQueueController() {
 }
 
 // Compositor overload
-FlutterViewController::FlutterViewController(int width,
+Win32FlutterViewController::Win32FlutterViewController(int width,
                                              int height,
                                              const DartProject& project,
                                              void* compositor) {
@@ -67,12 +67,12 @@ FlutterViewController::FlutterViewController(int width,
     std::cerr << "Failed to create view controller." << std::endl;
     return;
   }
-  view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
+  view_ = std::make_unique<Win32FlutterView>(FlutterDesktopGetView(controller_));
   child_window_->SetView(view_.get());
 }
 
 // Window overload
-FlutterViewController::FlutterViewController(int width,
+Win32FlutterViewController::Win32FlutterViewController(int width,
                                              int height,
                                              const DartProject& project,
                                              HWND parentwindow) {
@@ -103,21 +103,21 @@ FlutterViewController::FlutterViewController(int width,
     std::cerr << "Failed to create view controller." << std::endl;
     return;
   }
-  view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
+  view_ = std::make_unique<Win32FlutterView>(FlutterDesktopGetView(controller_));
   child_window_->SetView(view_.get());
 }
 
-FlutterViewController::~FlutterViewController() {
+Win32FlutterViewController::~Win32FlutterViewController() {
   if (controller_) {
     FlutterDesktopDestroyViewController(controller_);
   }
 }
 
-std::chrono::nanoseconds FlutterViewController::ProcessMessages() {
+std::chrono::nanoseconds Win32FlutterViewController::ProcessMessages() {
   return std::chrono::nanoseconds(FlutterDesktopProcessMessages(controller_));
 }
 
-FlutterDesktopPluginRegistrarRef FlutterViewController::GetRegistrarForPlugin(
+FlutterDesktopPluginRegistrarRef Win32FlutterViewController::GetRegistrarForPlugin(
     const std::string& plugin_name) {
   if (!controller_) {
     std::cerr << "Cannot get plugin registrar without a window; call "
