@@ -56,12 +56,8 @@ class Win32FlutterWindowPub : public Win32WindowPub {
 
   virtual ~Win32FlutterWindowPub();
 
-  /*static FlutterDesktopViewControllerRef CreateWin32FlutterWindow(int width,
-                                                                  int height);*/
-
+  //TODO
   void SetView(FlutterView* view);
-
-  void SetViewComposition(FlutterView* view);
 
   // |Win32WindowPub|
   void OnDpiScale(unsigned int dpi) override;
@@ -96,6 +92,8 @@ class Win32FlutterWindowPub : public Win32WindowPub {
   winrt::Windows::UI::Composition::Compositor compositor_;
 
   winrt::Windows::UI::Composition::Desktop::DesktopWindowTarget target_{nullptr};
+
+  winrt::Windows::UI::Composition::SpriteVisual host_visual_{nullptr};
 
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical

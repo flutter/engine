@@ -11,11 +11,6 @@
 #include <windows.ui.composition.interop.h>
 
 
-using namespace winrt;
-using namespace Windows::UI;
-using namespace Windows::UI::Composition;
-using namespace Windows::UI::Composition::Desktop;
-
 #include <algorithm>
 #include <iostream>
 
@@ -27,10 +22,10 @@ auto CreateDispatcherQueueController() {
   DispatcherQueueOptions options{sizeof(DispatcherQueueOptions),
                                  DQTYPE_THREAD_CURRENT, DQTAT_COM_STA};
 
-  Windows::System::DispatcherQueueController controller{nullptr};
-  check_hresult(CreateDispatcherQueueController(
+  winrt::Windows::System::DispatcherQueueController controller{nullptr};
+  winrt::check_hresult(CreateDispatcherQueueController(
       options, reinterpret_cast<abi::IDispatcherQueueController**>(
-                   put_abi(controller))));
+                   winrt::put_abi(controller))));
   return controller;
 }
 
@@ -60,16 +55,15 @@ FlutterViewController::FlutterViewController(int width,
   child_window_ =
       std::make_unique<Win32FlutterWindowPub>(width, height, compositor_);
 
-  controller_ = V2FlutterDesktopCreateViewControllerComposition(
+  controller_ = V2CreateViewControllerVisual(
       width, height, properties,
-      static_cast<void*>(winrt::get_abi(compositor_)),child_window_.get());
+      static_cast<ABI::Windows::UI::Composition::IVisual*>(winrt::get_abi(compositor_)),child_window_.get());
   if (!controller_) {
     std::cerr << "Failed to create view controller." << std::endl;
     return;
   }
   view_ = std::make_unique<FlutterView>(FlutterDesktopGetView(controller_));
-
-  child_window_->SetViewComposition(view_.get());
+  child_window_->SetView(view_.get());
 }
 
 // Window overload

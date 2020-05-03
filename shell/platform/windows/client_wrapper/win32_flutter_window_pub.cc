@@ -36,6 +36,13 @@ Win32FlutterWindowPub::Win32FlutterWindowPub(
     winrt::Windows::UI::Composition::Compositor const& compositor)
     : compositor_(compositor), flutter_view_(nullptr) {
   Win32WindowPub::InitializeChild("FLUTTERVIEW", width, height);
+
+    // Create Window target, set visual returned from the engine as the root
+  target_ =
+      CreateDesktopWindowTarget(compositor_, Win32WindowPub::GetWindowHandle());
+
+  host_visual_ = compositor_.CreateSpriteVisual();
+  target_.Root(host_visual_);
 }
 
 Win32FlutterWindowPub::Win32FlutterWindowPub(int width, int height)
@@ -45,27 +52,6 @@ Win32FlutterWindowPub::Win32FlutterWindowPub(int width, int height)
 
 void Win32FlutterWindowPub::SetView(FlutterView* view) {
   flutter_view_ = view;
-}
-
-// Called after view has been created.  Binds the child HWND represented by this
-// class to a composition visual that is passed to Flutter Engine
-void Win32FlutterWindowPub::SetViewComposition(FlutterView* view) {
-  // Create Window target, set visual returned from the engine as the root
-  target_ =
-      CreateDesktopWindowTarget(compositor_, Win32WindowPub::GetWindowHandle());
-
-  void* pointer = view->GetVisual(); //TODO: change this to push
-
-  winrt::com_ptr<ABI::Windows::UI::Composition::ISpriteVisual> rawAbi = nullptr;
-
-  winrt::Windows::UI::Composition::ISpriteVisual abiFlutterVisual = nullptr;
-
-  winrt::copy_from_abi(abiFlutterVisual, pointer);
-
-  winrt::Windows::UI::Composition::Visual flutterVisual = nullptr;
-  abiFlutterVisual.as(flutterVisual);
-
-  target_.Root(flutterVisual);
 }
 
 Win32FlutterWindowPub::~Win32FlutterWindowPub() {}

@@ -45,22 +45,28 @@ FlutterDesktopViewControllerRef FlutterCompView::CreateFlutterCompViewHwnd(
 FlutterDesktopViewControllerRef FlutterCompView::CreateFlutterCompView(
     const int width,
     const int height,
-    void* compositor) {
+    ABI::Windows::UI::Composition::IVisual* visual) {
   auto state = std::make_unique<FlutterDesktopViewControllerState>();
   state->view = std::make_unique<flutter::FlutterCompView>(width, height);
-  
-  if (compositor != nullptr) {
-    state->view->compositor_.Attach(
-        static_cast<ABI::Windows::UI::Composition::ICompositor*>(compositor));
-  }
-
-  // TODO: use C++/Winrt copy_from_abi once C++.Winrt is supportrf
-  // winrt::copy_from_abi(compositor_, compositor);
 
   // a window wrapper for the state block, distinct from the
   // window_wrapper handed to plugin_registrar.
   state->view_wrapper = std::make_unique<FlutterDesktopView>();
   state->view_wrapper->window = state->view.get();
+
+  // retreieve compositor from parent visual, store it and use it to create a child that we store for rendering
+  namespace wuc = winrt::Windows::UI::Composition;
+  wuc::Visual parentVisual{nullptr};
+
+  winrt::copy_from_abi(parentVisual, *reinterpret_cast<void**>(&visual));
+  state->view->compositor_ = state->view->flutter_host_.Compositor();
+  state->view->flutter_host_ = state->view->compositor_.CreateSpriteVisual();
+  
+  // add the host visual we created as a child of the visual passed in to us
+  wuc::SpriteVisual sv{nullptr};
+  parentVisual.as(sv);
+  sv.Children().InsertAtTop(state->view->flutter_host_);
+
   return state.release();
 }
 
@@ -353,18 +359,8 @@ bool FlutterCompView::SwapBuffers() {
   return surface_manager->SwapBuffers(render_surface);
 }
 
-Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ISpriteVisual>
-FlutterCompView::GetFlutterHost() {
-  return flutter_host_;
-}
-
 void FlutterCompView::SizeHostVisual(size_t width, size_t height) {
-  Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::IVisual> visualPtr;
-
-  auto hr = flutter_host_.As(&visualPtr);
-  (SUCCEEDED(hr));
-  hr = visualPtr->put_Size({static_cast<float>(width), static_cast<float>(height)});
-  (SUCCEEDED(hr));
+  flutter_host_.Size({static_cast<float>(width), static_cast<float>(height)});
 }
 
 void FlutterCompView::CreateRenderSurface() {
@@ -376,35 +372,24 @@ void FlutterCompView::CreateRenderSurface() {
 }
 
 void FlutterCompView::CreateRenderSurfaceHWND() {
-   //TODO: seems like we shouldn't get this from the window_wrapper as that is mainly used for plugins
   render_surface =
       surface_manager->CreateSurface(static_cast<HWND>(window_rendertarget_));
 }
 
-// TODO: move this into visual_flutter_host class when that exists
-// TODO: can we use c++/winrt in here (requires newer windows SDK and c++17
-// support in compiler toolchain)
-// TODO: do we still need RoHelper with the above?
 void FlutterCompView::CreateRenderSurfaceUWP() {
 
   if (surface_manager && render_surface == EGL_NO_SURFACE) {
-    // render_surface = surface_manager->CreateSurface(GetWindowHandle());
-
+    
+    //TODO: replace ROHelper with regen'd c++/WinRT with downlevel
     RoHelper helper;
     HSTRING act;
     HSTRING_HEADER header;
 
-    auto hr = compositor_->CreateSpriteVisual(flutter_host_.GetAddressOf());
-    (SUCCEEDED(hr));
+    flutter_host_.Size(
+        {static_cast<float>(width_), static_cast<float>(height_)});
 
-    Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::IVisual> visualPtr;
-
-    hr = flutter_host_.As(&visualPtr);
-    (SUCCEEDED(hr));
-    hr = visualPtr->put_Size({static_cast<float>(width_), static_cast<float>(height_)});
-    (SUCCEEDED(hr));
-
-    render_surface = surface_manager->CreateSurface(flutter_host_.Get());
+    render_surface = surface_manager->CreateSurface(
+        static_cast<ABI::Windows::UI::Composition::ISpriteVisual*>(winrt::get_abi(flutter_host_)));
   }
 }
 

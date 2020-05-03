@@ -13,6 +13,7 @@
 #include "flutter_plugin_registrar.h"
 
 #include "Windows.h"
+#include "windows.ui.composition.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -31,6 +32,9 @@ typedef struct FlutterDesktopView* FlutterDesktopViewRef;
 
 // Opaque reference to a Flutter engine instance.
 typedef struct FlutterDesktopEngineState* FlutterDesktopEngineRef;
+
+// Opaque reference to host specific state
+typedef void* HostEnvironmentState;
 
 // Properties for configuring a Flutter engine instance.
 typedef struct {
@@ -59,14 +63,16 @@ typedef struct {
 // This will set up and run an associated Flutter engine using the settings in
 // |engine_properties|.
 //
+// View supplied must be integrated into host visual tree
+//
 // Returns a null pointer in the event of an error.
 FLUTTER_EXPORT FlutterDesktopViewControllerRef
-V2FlutterDesktopCreateViewControllerComposition(
+V2CreateViewControllerVisual(
     int width,
     int height,
     const FlutterDesktopEngineProperties& engine_properties,
-    void* compositor, //TODO: typedef
-    void* hostwindow); //TODO: typedef
+    ABI::Windows::UI::Composition::IVisual* visual,
+    HostEnvironmentState hoststate);
 
 // Creates a View with the given dimensions running a Flutter Application.
 //
@@ -82,9 +88,9 @@ V2CreateViewControllerWindow(
     void* hostwindow,
     HWND windowrendertarget); //TODO: typedef
 
-// Return backing HWND for manipulation in host application.
-FLUTTER_EXPORT
-void* V2FlutterDesktopViewGetVisual(FlutterDesktopViewRef view);
+//// Return backing HWND for manipulation in host application.
+//FLUTTER_EXPORT
+//void* V2FlutterDesktopViewGetVisual(FlutterDesktopViewRef view);
 
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT

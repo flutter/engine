@@ -14,6 +14,8 @@
 #include <iostream>
 #include <vector>
 
+#include <windows.ui.composition.h>
+
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/common/cpp/path_utils.h"
@@ -148,16 +150,17 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   return state;
 }
 
-V2FlutterDesktopViewControllerRef
-V2FlutterDesktopCreateViewControllerComposition(
+//TODO search for V2FlutterDesktopCreateViewControllerComposition
+
+V2FlutterDesktopViewControllerRef V2CreateViewControllerVisual(
     int width,
     int height,
     const FlutterDesktopEngineProperties& engine_properties,
-    void* compositor,
-    void* externalWindow) {
+    ABI::Windows::UI::Composition::IVisual* visual,
+    HostEnvironmentState externalWindow) {
   V2FlutterDesktopViewControllerRef state =
       flutter::FlutterCompView::CreateFlutterCompView(width, height,
-                                                      compositor);
+                                                      visual);
 
   auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
 
@@ -267,11 +270,6 @@ FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
 FlutterDesktopViewRef FlutterDesktopGetView(
     FlutterDesktopViewControllerRef controller) {
   return controller->view_wrapper.get();
-}
-
-// TODO return something more strongly typed
-void* V2FlutterDesktopViewGetVisual(FlutterDesktopViewRef view) {
-  return (void*)view->window->GetFlutterHost().Get();
 }
 
 // TODO return something more strongly typed

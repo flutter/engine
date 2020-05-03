@@ -25,6 +25,7 @@
 #include <windows.foundation.metadata.h>
 #include <windows.ui.composition.h>
 #include <windows.ui.composition.interop.h>
+#include <winrt/Windows.UI.Composition.h>
 #include <wrl.h>
 
 #include "flutter/shell/platform/windows/window_state_comp.h"
@@ -114,13 +115,16 @@ class FlutterCompView {
 
   ~FlutterCompView();
 
-  static FlutterDesktopViewControllerRef
-  CreateFlutterCompView(int width, int height, void* compositor);
+  static FlutterDesktopViewControllerRef CreateFlutterCompView(
+      int width,
+      int height,
+      ABI::Windows::UI::Composition::IVisual* visual);
 
-  static FlutterDesktopViewControllerRef CreateFlutterCompViewHwnd(int width,
-                                                                   int height,
-                                                                   void* externalwindow,
-                                                                   HWND windowrendertarget);
+  static FlutterDesktopViewControllerRef CreateFlutterCompViewHwnd(
+      int width,
+      int height,
+      void* externalwindow,
+      HWND windowrendertarget);
 
   // Configures the window instance with an instance of a running Flutter engine
   // returning a configured FlutterDesktopWindowControllerRef.
@@ -287,13 +291,19 @@ class FlutterCompView {
   // flag indicating if the message loop should be running
   bool messageloop_running_ = false;
 
-  Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ICompositor>
-      compositor_{nullptr};
+  winrt::Windows::UI::Composition::Compositor compositor_ {nullptr};
+
+  winrt::Windows::UI::Composition::Visual flutter_host_{nullptr};
+
+  /*Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ISpriteVisual>
+      flutter_host_{nullptr};*/
+
+  //Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ICompositor>
+  //    compositor_{nullptr};
 
   HWND window_rendertarget_;
 
-  Microsoft::WRL::ComPtr<ABI::Windows::UI::Composition::ISpriteVisual>
-      flutter_host_{nullptr};
+  
 
   int width_ = 0, height_ = 0;
 };

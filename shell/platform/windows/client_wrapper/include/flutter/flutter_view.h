@@ -34,10 +34,6 @@ class FlutterView {
     return ptr->GetWindowHandle();
   }
 
-  void* GetVisual() {
-      return V2FlutterDesktopViewGetVisual(view_);
-  }
-
   void SendWindowMetrics(size_t width, size_t height, double dpiScale) {
     V2FlutterDesktopSendWindowMetrics(view_, width, height, dpiScale);
   }
