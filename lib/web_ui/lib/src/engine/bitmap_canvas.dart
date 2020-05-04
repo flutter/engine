@@ -441,7 +441,7 @@ class BitmapCanvas extends EngineCanvas {
         dst.height == image.height &&
         !requiresClipping &&
         paint.colorFilter == null) {
-      html.Element imgElement = _drawImage(image, dst.topLeft, paint);
+      _drawImage(image, dst.topLeft, paint);
       _childOverdraw = true;
       _canvasPool.closeCurrentCanvas();
     } else {
@@ -555,7 +555,6 @@ class BitmapCanvas extends EngineCanvas {
       SurfacePaintData paint) {
     // For srcIn blendMode, we use an svg filter to apply to image element.
     String svgFilter;
-    bool isSaturationFilter = false;
     switch (colorFilterBlendMode) {
       case ui.BlendMode.srcIn:
       case ui.BlendMode.srcATop:
@@ -600,6 +599,8 @@ class BitmapCanvas extends EngineCanvas {
       case ui.BlendMode.luminosity:
         svgFilter = _blendColorFilterToSvg(filterColor,
             _stringForBlendMode(colorFilterBlendMode));
+        break;
+      default:
         break;
     }
     final html.Element filterElement =
