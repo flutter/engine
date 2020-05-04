@@ -271,6 +271,15 @@ class _CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       _canvas.style.zIndex = '-1';
     }
+    if (canvasCount != 0) {
+      html.Element prevSibling = (_pool != null ? _pool[0] : _canvas).previousElementSibling;
+      int index = -canvasCount;
+      while (prevSibling != null) {
+        index--;
+        prevSibling.style.zIndex = '$index';
+        prevSibling = prevSibling.previousElementSibling;
+      }
+    }
     _restoreContextSave();
   }
 
