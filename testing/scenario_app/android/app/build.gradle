@@ -8,7 +8,6 @@ screenshots {
 
 android {
     compileSdkVersion 28
-    ndkVersion "21.0.6113669"
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
