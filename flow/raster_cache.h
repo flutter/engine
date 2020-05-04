@@ -21,7 +21,7 @@ class RasterCacheResult {
  public:
   RasterCacheResult() = default;
 
-  RasterCacheResult(const RasterCacheResult& other) = default;
+  // SkRasterCacheResult(const RasterCacheResult& other) = default;
 
   RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);
 
@@ -42,6 +42,34 @@ class RasterCacheResult {
 
 struct PrerollContext;
 
+class RasterCacheRasterizer {
+ public:
+  const virtual RasterCacheResult RasterizePicture(
+      SkPicture* picture, GrContext* context, const SkMatrix& ctm,
+      SkColorSpace* dst_color_space, bool checkerboard) const = 0;
+
+  const virtual RasterCacheResult RasterizeLayer(PrerollContext* context,
+                                                 Layer* layer,
+                                                 const SkMatrix& ctm,
+                                                 bool checkerboard) const = 0;
+};
+
+class SkRasterCacheRasterizer : public RasterCacheRasterizer {
+ public:
+  const RasterCacheResult RasterizePicture(SkPicture* picture,
+                                           GrContext* context,
+                                           const SkMatrix& ctm,
+                                           SkColorSpace* dst_color_space,
+                                           bool checkerboard) const override;
+
+  const RasterCacheResult RasterizeLayer(PrerollContext* context,
+                                           Layer* layer,
+                                           const SkMatrix& ctm,
+                                           bool checkerboard) const override;
+
+  static SkRasterCacheRasterizer instance;
+};
+
 class RasterCache {
  public:
   // The default max number of picture raster caches to be generated per frame.
@@ -51,6 +79,11 @@ class RasterCache {
   static constexpr int kDefaultPictureCacheLimitPerFrame = 3;
 
   explicit RasterCache(
+      size_t access_threshold = 3,
+      size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame);
+
+  explicit RasterCache(
+      RasterCacheRasterizer* rasterizer,
       size_t access_threshold = 3,
       size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame);
 
@@ -129,7 +162,7 @@ class RasterCache {
   struct Entry {
     bool used_this_frame = false;
     size_t access_count = 0;
-    RasterCacheResult image;
+    RasterCacheResult* image;
   };
 
   template <class Cache>
@@ -149,6 +182,7 @@ class RasterCache {
     }
   }
 
+  const RasterCacheRasterizer* rasterizer_;
   const size_t access_threshold_;
   const size_t picture_cache_limit_per_frame_;
   size_t picture_cached_this_frame_ = 0;

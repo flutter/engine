@@ -35,7 +35,16 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
 
 RasterCache::RasterCache(size_t access_threshold,
                          size_t picture_cache_limit_per_frame)
-    : access_threshold_(access_threshold),
+    : rasterizer_(&SkRasterCacheRasterizer::instance),
+      access_threshold_(access_threshold),
+      picture_cache_limit_per_frame_(picture_cache_limit_per_frame),
+      checkerboard_images_(false) {}
+
+RasterCache::RasterCache(RasterCacheRasterizer* rasterizer,
+                         size_t access_threshold,
+                         size_t picture_cache_limit_per_frame)
+    : rasterizer_(rasterizer),
+      access_threshold_(access_threshold),
       picture_cache_limit_per_frame_(picture_cache_limit_per_frame),
       checkerboard_images_(false) {}
 
@@ -121,27 +130,21 @@ static RasterCacheResult Rasterize(
   return {surface->makeImageSnapshot(), logical_rect};
 }
 
-static RasterCacheResult RasterizePicture(SkPicture* picture,
-                                          GrContext* context,
-                                          const SkMatrix& ctm,
-                                          SkColorSpace* dst_color_space,
-                                          bool checkerboard) {
+SkRasterCacheRasterizer SkRasterCacheRasterizer::instance;
+
+const RasterCacheResult SkRasterCacheRasterizer::RasterizePicture(
+    SkPicture* picture, GrContext* context, const SkMatrix& ctm,
+    SkColorSpace* dst_color_space, bool checkerboard) const {
   return Rasterize(context, ctm, dst_color_space, checkerboard,
                    picture->cullRect(),
                    [=](SkCanvas* canvas) { canvas->drawPicture(picture); });
 }
 
-void RasterCache::Prepare(PrerollContext* context,
-                          Layer* layer,
-                          const SkMatrix& ctm) {
-  LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
-  Entry& entry = layer_cache_[cache_key];
-  entry.access_count++;
-  entry.used_this_frame = true;
-  if (!entry.image.is_valid()) {
-    entry.image = Rasterize(
-        context->gr_context, ctm, context->dst_color_space,
-        checkerboard_images_, layer->paint_bounds(),
+const RasterCacheResult SkRasterCacheRasterizer::RasterizeLayer(
+    PrerollContext* context, Layer* layer, const SkMatrix& ctm,
+    bool checkerboard) const {
+  return Rasterize(context->gr_context, ctm, context->dst_color_space,
+                   checkerboard, layer->paint_bounds(),
         [layer, context](SkCanvas* canvas) {
           SkISize canvas_size = canvas->getBaseLayerSize();
           SkNWayCanvas internal_nodes_canvas(canvas_size.width(),
@@ -163,6 +166,18 @@ void RasterCache::Prepare(PrerollContext* context,
             layer->Paint(paintContext);
           }
         });
+}
+
+void RasterCache::Prepare(PrerollContext* context,
+                          Layer* layer,
+                          const SkMatrix& ctm) {
+  LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
+  Entry& entry = layer_cache_[cache_key];
+  entry.access_count++;
+  entry.used_this_frame = true;
+  if (!entry.image.is_valid()) {
+    entry.image = rasterizer_->RasterizeLayer(context, layer, ctm,
+                                              checkerboard_images_);
   }
 }
 
@@ -203,8 +218,9 @@ bool RasterCache::Prepare(GrContext* context,
   }
 
   if (!entry.image.is_valid()) {
-    entry.image = RasterizePicture(picture, context, transformation_matrix,
-                                   dst_color_space, checkerboard_images_);
+    entry.image = rasterizer_->RasterizePicture(
+        picture, context, transformation_matrix, dst_color_space,
+        checkerboard_images_);
     picture_cached_this_frame_++;
   }
   return true;
