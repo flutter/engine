@@ -15,18 +15,18 @@
 // They are intentionally designed to be meaningless integers.
 //
 // They must be kept in sync with Flutter framework's mouse_cursor.dart
-static int const kSystemShapeNone = 0x334c4a4c;
-static int const kSystemShapeBasic = 0xf17aaabc;
-static int const kSystemShapeClick = 0xa8affc08;
-static int const kSystemShapeText = 0x1cb251ec;
-static int const kSystemShapeForbidden = 0x7fa3b767;
-static int const kSystemShapeGrab = 0x28b91f80;
-static int const kSystemShapeGrabbing = 0x6631ce3e;
+static int const kSystemShapeNone = 0x334c4a;
+static int const kSystemShapeBasic = 0xf17aaa;
+static int const kSystemShapeClick = 0xa8affc;
+static int const kSystemShapeText = 0x1cb251;
+static int const kSystemShapeForbidden = 0x350f9d;
+static int const kSystemShapeGrab = 0x28b91f;
+static int const kSystemShapeGrabbing = 0x6631ce;
 
 static NSString* const kMouseCursorChannel = @"flutter/mousecursor";
 
-static NSString* const kActivateShapeMethod = @"activateShape";
-static NSString* const kShapeKey = @"shape";
+static NSString* const kActivateSystemCursorMethod = @"activateSystemCursor";
+static NSString* const kShapeCodeKey = @"shapeCode";
 static NSString* const kDeviceKey = @"device";
 
 @interface FlutterMouseCursorDeviceState : NSObject
@@ -124,8 +124,8 @@ static NSString* const kDeviceKey = @"device";
 - (void)handleMethodCall:(nonnull FlutterMethodCall*)call result:(FlutterResult)result {
   BOOL handled = YES;
   NSString* method = call.method;
-  if ([method isEqualToString:kActivateShapeMethod]) {
-    result([self activateShape:call.arguments]);
+  if ([method isEqualToString:kActivateSystemCursorMethod]) {
+    result([self activateSystemCursor:call.arguments]);
   } else {
     handled = NO;
     NSLog(@"Unhandled mouse cursor method '%@'", method);
@@ -133,37 +133,37 @@ static NSString* const kDeviceKey = @"device";
   }
 }
 
-- (id)activateShape:(nonnull NSDictionary*)arguments {
+- (id)activateSystemCursor:(nonnull NSDictionary*)arguments {
   if (!arguments) {
     return [FlutterError
         errorWithCode:@"error"
               message:@"Missing arguments"
-              details:@"Missing arguments while trying to activate shape"];
+              details:@"Missing arguments while trying to activate system cursor"];
   }
-  NSNumber* shapeArg = arguments[kShapeKey];
-  if (!shapeArg) {
+  NSNumber* shapeCodeArg = arguments[kShapeCodeKey];
+  if (!shapeCodeArg) {
     return [FlutterError
         errorWithCode:@"error"
               message:@"Missing argument"
-              details:@"Missing argument shape while trying to activate shape"];
+              details:@"Missing argument shapeCode while trying to activate system cursor"];
   }
   NSNumber* deviceArg = arguments[kDeviceKey];
   if (!deviceArg) {
     return [FlutterError
         errorWithCode:@"error"
               message:@"Missing argument"
-              details:@"Missing argument device while trying to activate shape"];
+              details:@"Missing argument device while trying to activate system cursor"];
   }
-  NSNumber *noNoneShape = [shapeArg intValue] == kSystemShapeNone ?
+  NSNumber *noNoneShape = [shapeCodeArg intValue] == kSystemShapeNone ?
     [NSNumber numberWithInt:kSystemShapeBasic] :
-    shapeArg;
-  NSCursor* shapeObject = [self resolveShape:noNoneShape];
+    shapeCodeArg;
+  NSCursor* shapeObject = [self resolveShapeCode:noNoneShape];
   if (shapeObject == nil) {
     // Unregistered shape. Return false to request fallback.
     return @(NO);
   }
   [self ensureDevice:deviceArg withShapeObject:shapeObject];
-  if ([shapeArg intValue] == kSystemShapeNone) {
+  if ([shapeCodeArg intValue] == kSystemShapeNone) {
     [_deviceState hide];
   } else {
     [_deviceState activateShape:shapeObject];
@@ -171,7 +171,7 @@ static NSString* const kDeviceKey = @"device";
   return @(YES);
 }
 
-- (nullable NSCursor*)resolveShape:(NSNumber*)shape {
+- (nullable NSCursor*)resolveShapeCode:(NSNumber*)shape {
   NSCursor *cachedObject = _shapeObjects[shape];
   if (cachedObject)
     return cachedObject;
