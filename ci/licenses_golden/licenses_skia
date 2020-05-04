@@ -1,4 +1,4 @@
-Signature: b91ba126693a54401e846ff6709c9953
+Signature: 0cb4cd83b3e77c70df80976b9d4a6276
 
 UNUSED LICENSES:
 
@@ -2760,7 +2760,6 @@ FILE: ../../../third_party/skia/src/core/SkStringUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkStringUtils.h
 FILE: ../../../third_party/skia/src/core/SkTDynamicHash.h
 FILE: ../../../third_party/skia/src/core/SkTMultiMap.h
-FILE: ../../../third_party/skia/src/core/SkTypefacePriv.h
 FILE: ../../../third_party/skia/src/core/SkValidatingReadBuffer.h
 FILE: ../../../third_party/skia/src/core/SkValidationUtils.h
 FILE: ../../../third_party/skia/src/effects/SkLumaColorFilter.cpp

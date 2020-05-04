@@ -360,6 +360,7 @@ class BitmapCanvas extends EngineCanvas {
     }
     _childOverdraw = true;
     _canvasPool.closeCurrentCanvas();
+    _cachedLastStyle = null;
   }
 
   html.HtmlElement _drawImage(
