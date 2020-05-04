@@ -209,7 +209,7 @@ void main() {
       expect(contentAfterReuse.querySelector('canvas').style.zIndex, '-1');
     });
 
-    test('First canvas element should retain -1 zIndex after update', () async {
+    test('Multiple canvas elements should retain zIndex after update', () async {
       final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
       final Picture picture1 = _drawPathImagePath();
       EngineLayer oldLayer = builder.pushClipRect(
@@ -219,7 +219,7 @@ void main() {
       builder.pop();
 
       html.HtmlElement content = builder.build().webOnlyRootElement;
-      expect(content.querySelector('canvas').style.zIndex, '-1');
+      expect(content.querySelector('canvas').style.zIndex, '-2');
 
       // Force update to scene which will utilize reuse code path.
       final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
@@ -234,9 +234,8 @@ void main() {
       html.HtmlElement contentAfterReuse = builder2.build().webOnlyRootElement;
       List<html.CanvasElement> list =
           contentAfterReuse.querySelectorAll('canvas');
-      print(contentAfterReuse.innerHtml);
-      expect(list[0].style.zIndex, '-1');
-      expect(list[1].style.zIndex, '');
+      expect(list[0].style.zIndex, '-2');
+      expect(list[1].style.zIndex, '-1');
     });
   });
 
