@@ -5,8 +5,6 @@
 @ECHO OFF
 SETLOCAL
 
-:: These steps needs to be removed from LUCI runs.
-
 FOR /F "tokens=1-2 delims=:" %%a in ('where gclient') DO SET GCLIENT_PATH=%%b
 IF %GCLIENT_PATH%==[] (ECHO "ERROR: gclient is not in your PATH")
 
@@ -50,16 +48,18 @@ FOR /F "tokens=1 delims=:" %%a in ('git rev-parse HEAD') DO SET REVISION=%%a
 SET orTempValue=1
 IF NOT EXIST %OUT_DIR% (SET orTempValue=0)
 IF NOT EXIST %HOST_DEBUG_UNOPT_DIR% (SET orTempValue=0)
-IF %orTempValue%==0 (
-  ECHO "Compiling the Dart SDK."
-  CALL gclient sync
-  CALL python %GN% --unoptimized --full-dart-sdk
-  CALL ninja -C %HOST_DEBUG_UNOPT_DIR%)
 
+:: Do not compile the Dart SDK on LUCI.
+IF %LUCI_CONTEXT%==[] (
+  IF %orTempValue%==0 (
+    ECHO "Compiling the Dart SDK."
+    CALL gclient sync
+    CALL python %GN% --unoptimized --full-dart-sdk
+    CALL ninja -C %HOST_DEBUG_UNOPT_DIR%))
 :: TODO(nurhan): The batch script does not support snanphot option.
 :: Support snapshot option.
 CALL :installdeps
-IF %1==test (%DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* --browser=edge) ELSE ( %DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* )
+IF %1==test (%DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* --browser=chrome) ELSE ( %DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* )
 
 EXIT /B 0
 
