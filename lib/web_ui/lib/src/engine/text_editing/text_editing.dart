@@ -253,7 +253,8 @@ class AutofillInfo {
     } else if (domElement is html.TextAreaElement) {
       html.TextAreaElement element = domElement;
       element.name = hint;
-      element.id = hint;
+      element.id = uniqueIdentifier;
+      element.setAttribute('autocomplete', hint);
     }
   }
 }

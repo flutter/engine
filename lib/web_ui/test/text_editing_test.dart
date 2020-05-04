@@ -787,6 +787,12 @@ void main() {
       expect(spy.messages, isEmpty);
     });
 
+    // TODO: setClient, setEditingState, show, setEditingState, clearClient with autofill
+    // (1) one autofill value
+    // (2) multiple autofill values
+    // check if all the fields are set properly.
+    // (3) autofill for syncing autofill state back to flutter.
+
     test(
         'setClient, setEditableSizeAndTransform, setStyle, setEditingState, show, clearClient',
         () {
@@ -1212,6 +1218,211 @@ void main() {
       expect(spy.messages, isEmpty);
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
+    });
+  });
+
+  group('EngineAutofillForm', () {
+    Map<String, dynamic> testAutofillValue(String hint, String uniqueId) =>
+        <String, dynamic>{
+          'uniqueIdentifier': uniqueId,
+          'hints': [hint],
+          'editingValue': {
+            'text': 'Test',
+            'selectionBase': 0,
+            'selectionExtent': 0,
+            'selectionAffinity': 'TextAffinity.downstream',
+            'selectionIsDirectional': false,
+            'composingBase': -1,
+            'composingExtent': -1,
+          },
+        };
+
+    Map<String, dynamic> testFieldValue(String hint, String uniqueId) =>
+        <String, dynamic>{
+          'inputType': {
+            'name': 'TextInputType.text',
+            'signed': null,
+            'decimal': null
+          },
+          'autofill': testAutofillValue(hint, uniqueId)
+        };
+
+    List<dynamic> testFields(List<String> hints, List<String> uniqueIds) {
+      final List<dynamic> testFields = <dynamic>[];
+
+      expect(hints.length, equals(uniqueIds.length));
+
+      for (int i = 0; i < hints.length; i++) {
+        testFields.add(testFieldValue(hints[i], uniqueIds[i]));
+      }
+
+      return testFields;
+    }
+
+    test('validate multi element form', () {
+      final List<dynamic> fields = testFields(
+          ['username', 'password', 'newPassword'],
+          ['field1', 'fields2', 'field3']);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              testAutofillValue('username', 'field1'), fields);
+
+      // Number of elements if number of fields sent to the constructor minus
+      // one (for the focused text element).
+      expect(autofillForm.elements, hasLength(2));
+      expect(autofillForm.items, hasLength(2));
+      expect(autofillForm.formElement, isNotNull);
+
+      final FormElement form = autofillForm.formElement;
+      expect(form.childNodes, hasLength(2));
+
+      final InputElement firstElement = form.childNodes.first;
+      // Autofill value is applied to the element.
+      expect(firstElement.name,
+          BrowserAutofillHints.instance.flutterToEngine('password'));
+      expect(firstElement.id, 'fields2');
+      expect(firstElement.type, 'password');
+      expect(firstElement.autocomplete,
+          BrowserAutofillHints.instance.flutterToEngine('password'));
+
+      // Editing state is applied to the element.
+      expect(firstElement.value, 'Test');
+      expect(firstElement.selectionStart, 0);
+      expect(firstElement.selectionEnd, 0);
+
+      // Element is hidden.
+      final CssStyleDeclaration css = firstElement.style;
+      expect(css.color, 'transparent');
+      expect(css.outline, 'none');
+    });
+
+    test('place remove form', () {
+      final List<dynamic> fields = testFields(
+          ['username', 'password', 'newPassword'],
+          ['field1', 'fields2', 'field3']);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              testAutofillValue('username', 'field1'), fields);
+
+      final InputElement testInputElement = InputElement();
+      autofillForm.placeForm(testInputElement);
+
+      // The focused element is appended to the form,
+      final FormElement form = autofillForm.formElement;
+      expect(form.childNodes, hasLength(3));
+
+      final FormElement formOnDom = document.getElementsByTagName('form')[0];
+      // Form is attached to the DOM.
+      expect(form, equals(formOnDom));
+
+      autofillForm.removeForm();
+      expect(document.getElementsByTagName('form'), isEmpty);
+    });
+
+    test('Validate single element form', () {
+      final List<dynamic> fields = testFields(['username'], ['field1']);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              testAutofillValue('username', 'field1'), fields);
+
+      // The focused element is the only field. Form should be empty after
+      // the initialization (focus element is appended later).
+      expect(autofillForm.elements, isEmpty);
+      expect(autofillForm.items, isEmpty);
+      expect(autofillForm.formElement, isNotNull);
+
+      final FormElement form = autofillForm.formElement;
+      expect(form.childNodes, isEmpty);
+    });
+
+    test('Return null if no focused element', () {
+      final List<dynamic> fields = testFields(['username'], ['field1']);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(null, fields);
+
+      expect(autofillForm, isNull);
+    });
+  });
+
+  group('AutofillInfo', () {
+    const String testHint = 'streetAddressLine2';
+    const String testId = 'EditableText-659836579';
+    const String testPasswordHint = 'password';
+
+    Map<String, dynamic> testAutofillValue(String hint, String uniqueId) =>
+        <String, dynamic>{
+          'uniqueIdentifier': uniqueId,
+          'hints': [hint],
+          'editingValue': {
+            'text': 'Test',
+            'selectionBase': 0,
+            'selectionExtent': 0,
+            'selectionAffinity': 'TextAffinity.downstream',
+            'selectionIsDirectional': false,
+            'composingBase': -1,
+            'composingExtent': -1,
+          },
+        };
+
+    test('autofill has correct value', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          testAutofillValue(testHint, testId));
+
+      // Hint sent from the framework is converted to the hint compatible with
+      // browsers.
+      expect(autofillInfo.hint,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+      expect(autofillInfo.uniqueIdentifier, testId);
+    });
+
+    test('input with autofill hint', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          testAutofillValue(testHint, testId));
+
+      final InputElement testInputElement = InputElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      // Hint sent from the framework is converted to the hint compatible with
+      // browsers.
+      expect(testInputElement.name,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+      expect(testInputElement.id, testId);
+      expect(testInputElement.type, 'text');
+      expect(testInputElement.autocomplete,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+    });
+
+    test('textarea with autofill hint', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          testAutofillValue(testHint, testId));
+
+      final TextAreaElement testInputElement = TextAreaElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      // Hint sent from the framework is converted to the hint compatible with
+      // browsers.
+      expect(testInputElement.name,
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+      expect(testInputElement.id, testId);
+      expect(testInputElement.getAttribute('autocomplete'),
+          BrowserAutofillHints.instance.flutterToEngine(testHint));
+    });
+
+    test('password autofill hint', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          testAutofillValue(testPasswordHint, testId));
+
+      final InputElement testInputElement = InputElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      // Hint sent from the framework is converted to the hint compatible with
+      // browsers.
+      expect(testInputElement.name,
+          BrowserAutofillHints.instance.flutterToEngine(testPasswordHint));
+      expect(testInputElement.id, testId);
+      expect(testInputElement.type, 'password');
+      expect(testInputElement.getAttribute('autocomplete'),
+          BrowserAutofillHints.instance.flutterToEngine(testPasswordHint));
     });
   });
 
