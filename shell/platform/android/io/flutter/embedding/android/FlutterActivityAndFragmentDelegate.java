@@ -25,6 +25,7 @@ import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
+import io.flutter.embedding.engine.systemchannels.RestorationChannel;
 import io.flutter.plugin.platform.PlatformPlugin;
 import java.util.Arrays;
 
@@ -229,7 +230,8 @@ import java.util.Arrays;
         new FlutterEngine(
             host.getContext(),
             host.getFlutterShellArgs().toArray(),
-            /*automaticallyRegisterPlugins=*/ false);
+            /*automaticallyRegisterPlugins=*/ false,
+            /*willProvideRestorationData=*/ host.shouldRestoreAndSaveState());
     isFlutterEngineFromHost = false;
   }
 
@@ -299,11 +301,15 @@ import java.util.Arrays;
     ensureAlive();
 
     Bundle pluginsBundle = null;
+    byte[] frameworkBundle = null;
     if (bundle != null) {
-      flutterEngine
-          .getRestorationChannel()
-          .setRestorationDataForFramework(bundle.getByteArray(FRAMEWORK_BUNDLE_KEY));
       pluginsBundle = bundle.getBundle(PLUGINS_BUNDLE_KEY);
+      frameworkBundle = bundle.getByteArray(FRAMEWORK_BUNDLE_KEY);
+    }
+
+    final RestorationChannel restorationChannel = flutterEngine.getRestorationChannel();
+    if (host.shouldRestoreAndSaveState() && !restorationChannel.hasRestorationDataBeenSet()) {
+      restorationChannel.setRestorationData(frameworkBundle);
     }
 
     if (host.shouldAttachEngineToActivity()) {
@@ -457,9 +463,11 @@ import java.util.Arrays;
     Log.v(TAG, "onSaveInstanceState. Giving framework and plugins an opportunity to save state.");
     ensureAlive();
 
-    bundle.putByteArray(
-        FRAMEWORK_BUNDLE_KEY,
-        flutterEngine.getRestorationChannel().getRestorationDataFromFramework());
+    if (host.shouldRestoreAndSaveState()) {
+      bundle.putByteArray(
+          FRAMEWORK_BUNDLE_KEY,
+          flutterEngine.getRestorationChannel().getRestorationData());
+    }
 
     if (host.shouldAttachEngineToActivity()) {
       final Bundle plugins = new Bundle();
@@ -820,5 +828,15 @@ import java.util.Arrays;
 
     /** Invoked by this delegate when its {@link FlutterView} stops painting pixels. */
     void onFlutterUiNoLongerDisplayed();
+
+    /**
+     * Whether instance state saving and restoration is enabled.
+     *
+     * <p>When this returns true, the instance state provided to {@code onActivityCreated(Bundle)}
+     * will be forwarded to the framework via the {@code RestorationChannel} and during
+     * @{@code onSaveInstanceState(Bundle)} the current framework instance state obtained from
+     * {@code RestorationChannel} will be stored in the provided bundle.
+     */
+    boolean shouldRestoreAndSaveState();
   }
 }

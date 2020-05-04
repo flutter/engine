@@ -21,23 +21,65 @@ import io.flutter.plugin.common.StandardMethodCodec;
 public class RestorationChannel {
   private static final String TAG = "RestorationChannel";
 
-  public RestorationChannel(@NonNull DartExecutor dartExecutor) {
+  public RestorationChannel(@NonNull DartExecutor dartExecutor, @NonNull boolean waitForRestorationData) {
+    this.waitForRestorationData = waitForRestorationData;
     MethodChannel channel =
         new MethodChannel(dartExecutor, "flutter/restoration", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(handler);
   }
 
-  private byte[] dataForFramework;
-  private byte[] dataFromFramework;
+  /**
+   * Whether {@code setRestorationData} will be called to provide restoration data for
+   * the framework.
+   *
+   * <p>When this is set to true, the channel will delay answering any requests for restoration data
+   * by the framework until {@code setRestorationData} has been called. It must be set
+   * to false if the engine never calls {@code setRestorationData}. If it has been set
+   * to true, but it later turns out that there is no restoration data,
+   * {@code setRestorationData} must be called with null.
+   */
+  public final boolean waitForRestorationData;
+
+  private byte[] restorationData;
+  private MethodChannel.Result pendingResult;
+  private boolean engineHasProvidedData = false;
+  private boolean frameworkHasRequestedData = false;
+
+  /**
+   * Whether {@code setRestorationData} has been called.
+   */
+  public boolean hasRestorationDataBeenSet() {
+    return engineHasProvidedData;
+  }
 
   /** Obtain the most current restoration data that the framework has provided. */
-  public byte[] getRestorationDataFromFramework() {
-    return dataFromFramework;
+  public byte[] getRestorationData() {
+    return restorationData;
   }
 
   /** Set the restoration data that will be sent to the framework when the framework requests it. */
-  public void setRestorationDataForFramework(byte[] data) {
-    dataForFramework = data;
+  public void setRestorationData(byte[] data) {
+    if (!waitForRestorationData || engineHasProvidedData) {
+      Log.e(TAG, "Channel has not been configured to wait for restoration data or data has already been provided.");
+      return;
+    }
+    engineHasProvidedData = true;
+    if (pendingResult != null) {
+      pendingResult.success(data);
+      pendingResult = null;
+    } else {
+      restorationData = data;
+    }
+  }
+
+
+  /** Clears the current restoration data.
+   *
+   * <p>This should be called just prior to a hot restart. Otherwise, after the hot restart the
+   * state prior to the hot restart will get restored.
+   */
+  public void clearData() {
+    restorationData = null;
   }
 
   private final MethodChannel.MethodCallHandler handler =
@@ -49,12 +91,15 @@ public class RestorationChannel {
           Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
             case "put":
-              dataFromFramework = (byte[]) args;
+              restorationData = (byte[]) args;
               result.success(null);
               break;
             case "get":
-              result.success(dataForFramework);
-              dataForFramework = null;
+              if (engineHasProvidedData || !waitForRestorationData) {
+                result.success(restorationData);
+              } else {
+                pendingResult = result;
+              }
               break;
             default:
               result.notImplemented();

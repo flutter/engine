@@ -104,6 +104,7 @@ public class FlutterEngine {
           }
 
           platformViewsController.onPreEngineRestart();
+          restorationChannel.clearData();
         }
       };
 
@@ -162,6 +163,25 @@ public class FlutterEngine {
   }
 
   /**
+   * Same as {@link #FlutterEngine(Context, String[], boolean)} with added support for configuring
+   * whether the engine will receive restoration data.
+   */
+  public FlutterEngine(
+      @NonNull Context context,
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins,
+      boolean willProvideRestorationData) {
+    this(
+        context,
+        FlutterLoader.getInstance(),
+        new FlutterJNI(),
+        new PlatformViewsController(),
+        dartVmArgs,
+        automaticallyRegisterPlugins,
+        willProvideRestorationData);
+  }
+
+  /**
    * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[])} but with no Dart
    * VM flags.
    *
@@ -196,6 +216,27 @@ public class FlutterEngine {
         automaticallyRegisterPlugins);
   }
 
+  /**
+   * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[], boolean)}, plus
+   * the ability to provide a custom {@code PlatformViewsController}.
+   */
+  public FlutterEngine(
+    @NonNull Context context,
+    @NonNull FlutterLoader flutterLoader,
+    @NonNull FlutterJNI flutterJNI,
+    @NonNull PlatformViewsController platformViewsController,
+    @Nullable String[] dartVmArgs,
+    boolean automaticallyRegisterPlugins) {
+    this(
+      context,
+      flutterLoader,
+      flutterJNI,
+      platformViewsController,
+      dartVmArgs,
+      automaticallyRegisterPlugins,
+      false);
+  }
+
   /** Fully configurable {@code FlutterEngine} constructor. */
   public FlutterEngine(
       @NonNull Context context,
@@ -203,7 +244,8 @@ public class FlutterEngine {
       @NonNull FlutterJNI flutterJNI,
       @NonNull PlatformViewsController platformViewsController,
       @Nullable String[] dartVmArgs,
-      boolean automaticallyRegisterPlugins) {
+      boolean automaticallyRegisterPlugins,
+      boolean willProvideRestorationData) {
     this.flutterJNI = flutterJNI;
     flutterLoader.startInitialization(context.getApplicationContext());
     flutterLoader.ensureInitializationComplete(context, dartVmArgs);
@@ -226,7 +268,7 @@ public class FlutterEngine {
     mouseCursorChannel = new MouseCursorChannel(dartExecutor);
     navigationChannel = new NavigationChannel(dartExecutor);
     platformChannel = new PlatformChannel(dartExecutor);
-    restorationChannel = new RestorationChannel(dartExecutor);
+    restorationChannel = new RestorationChannel(dartExecutor, willProvideRestorationData);
     settingsChannel = new SettingsChannel(dartExecutor);
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);
