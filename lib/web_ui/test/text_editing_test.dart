@@ -1757,21 +1757,3 @@ Map<String, dynamic> createOneFieldValue(String hint, String uniqueId) =>
       },
       'autofill': createAutofillInfo(hint, uniqueId)
     };
-
-// Map<String, dynamic> createFlutterConfig(
-//   String inputType, {
-//   bool obscureText = false,
-//   bool autocorrect = true,
-//   String inputAction,
-// }) {
-//   return <String, dynamic>{
-//     'inputType': <String, String>{
-//       'name': 'TextInputType.$inputType',
-//     },
-//     'obscureText': obscureText,
-//     'autocorrect': autocorrect,
-//     'inputAction': inputAction ?? 'TextInputAction.done',
-//   };
-// }
-
-//autofill: {uniqueIdentifier: EditableText-659836579, hints: [streetAddressLine2], editingValue: {text: , selectionBase: 0, selectionExtent: 0, selectionAffinity: TextAffinity.downstream, selectionIsDirectional: false, composingBase: -1, composingExtent: -1}}
