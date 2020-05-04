@@ -91,7 +91,7 @@ public class TextPlatformViewActivity extends TestableFlutterActivity {
 
   private void notifyAfterVsync() {
     // Once the `frame_ready` message is received from Dart,
-    // wait one frame, so the Android texture are rendered.
+    // wait one frame + 1s, so the Android texture are rendered.
     Choreographer.getInstance()
         .postFrameCallbackDelayed(
             new Choreographer.FrameCallback() {
