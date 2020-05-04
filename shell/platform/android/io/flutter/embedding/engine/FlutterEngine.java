@@ -217,24 +217,24 @@ public class FlutterEngine {
   }
 
   /**
-   * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[], boolean)}, plus
-   * the ability to provide a custom {@code PlatformViewsController}.
+   * Same as {@link #FlutterEngine(Context, FlutterLoader, FlutterJNI, String[], boolean)}, plus the
+   * ability to provide a custom {@code PlatformViewsController}.
    */
   public FlutterEngine(
-    @NonNull Context context,
-    @NonNull FlutterLoader flutterLoader,
-    @NonNull FlutterJNI flutterJNI,
-    @NonNull PlatformViewsController platformViewsController,
-    @Nullable String[] dartVmArgs,
-    boolean automaticallyRegisterPlugins) {
+      @NonNull Context context,
+      @NonNull FlutterLoader flutterLoader,
+      @NonNull FlutterJNI flutterJNI,
+      @NonNull PlatformViewsController platformViewsController,
+      @Nullable String[] dartVmArgs,
+      boolean automaticallyRegisterPlugins) {
     this(
-      context,
-      flutterLoader,
-      flutterJNI,
-      platformViewsController,
-      dartVmArgs,
-      automaticallyRegisterPlugins,
-      false);
+        context,
+        flutterLoader,
+        flutterJNI,
+        platformViewsController,
+        dartVmArgs,
+        automaticallyRegisterPlugins,
+        false);
   }
 
   /** Fully configurable {@code FlutterEngine} constructor. */

@@ -465,8 +465,7 @@ import java.util.Arrays;
 
     if (host.shouldRestoreAndSaveState()) {
       bundle.putByteArray(
-          FRAMEWORK_BUNDLE_KEY,
-          flutterEngine.getRestorationChannel().getRestorationData());
+          FRAMEWORK_BUNDLE_KEY, flutterEngine.getRestorationChannel().getRestorationData());
     }
 
     if (host.shouldAttachEngineToActivity()) {
@@ -830,12 +829,12 @@ import java.util.Arrays;
     void onFlutterUiNoLongerDisplayed();
 
     /**
-     * Whether instance state saving and restoration is enabled.
+     * Whether state restoration is enabled.
      *
      * <p>When this returns true, the instance state provided to {@code onActivityCreated(Bundle)}
-     * will be forwarded to the framework via the {@code RestorationChannel} and during
-     * @{@code onSaveInstanceState(Bundle)} the current framework instance state obtained from
-     * {@code RestorationChannel} will be stored in the provided bundle.
+     * will be forwarded to the framework via the {@code RestorationChannel} and during {@code
+     * onSaveInstanceState(Bundle)} the current framework instance state obtained from {@code
+     * RestorationChannel} will be stored in the provided bundle.
      */
     boolean shouldRestoreAndSaveState();
   }
