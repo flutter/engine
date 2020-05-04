@@ -153,6 +153,9 @@ FILE: ../../../flutter/fml/memory/ref_counted_internal.h
 FILE: ../../../flutter/fml/memory/ref_counted_unittest.cc
 FILE: ../../../flutter/fml/memory/ref_ptr.h
 FILE: ../../../flutter/fml/memory/ref_ptr_internal.h
+FILE: ../../../flutter/fml/memory/task_runner_checker.cc
+FILE: ../../../flutter/fml/memory/task_runner_checker.h
+FILE: ../../../flutter/fml/memory/task_runner_checker_unittest.cc
 FILE: ../../../flutter/fml/memory/thread_checker.h
 FILE: ../../../flutter/fml/memory/weak_ptr.h
 FILE: ../../../flutter/fml/memory/weak_ptr_internal.cc
@@ -494,6 +497,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/ruler.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/unicode_range.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_break_properties.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_breaker.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/autofill_hint.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_type.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_editing.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/util.dart
@@ -585,6 +589,11 @@ FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
+FILE: ../../../flutter/shell/common/renderer_context_manager.cc
+FILE: ../../../flutter/shell/common/renderer_context_manager.h
+FILE: ../../../flutter/shell/common/renderer_context_manager_unittests.cc
+FILE: ../../../flutter/shell/common/renderer_context_test.cc
+FILE: ../../../flutter/shell/common/renderer_context_test.h
 FILE: ../../../flutter/shell/common/run_configuration.cc
 FILE: ../../../flutter/shell/common/run_configuration.h
 FILE: ../../../flutter/shell/common/shell.cc
@@ -640,8 +649,6 @@ FILE: ../../../flutter/shell/platform/android/android_environment_gl.h
 FILE: ../../../flutter/shell/platform/android/android_exports.lst
 FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.h
-FILE: ../../../flutter/shell/platform/android/android_external_view_embedder.cc
-FILE: ../../../flutter/shell/platform/android/android_external_view_embedder.h
 FILE: ../../../flutter/shell/platform/android/android_native_window.cc
 FILE: ../../../flutter/shell/platform/android/android_native_window.h
 FILE: ../../../flutter/shell/platform/android/android_shell_holder.cc
@@ -656,6 +663,9 @@ FILE: ../../../flutter/shell/platform/android/android_surface_vulkan.cc
 FILE: ../../../flutter/shell/platform/android/android_surface_vulkan.h
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.cc
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
+FILE: ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder.cc
+FILE: ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder.h
+FILE: ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder_unittests.cc
 FILE: ../../../flutter/shell/platform/android/flutter_main.cc
 FILE: ../../../flutter/shell/platform/android/flutter_main.h
 FILE: ../../../flutter/shell/platform/android/io/flutter/Log.java
@@ -1076,6 +1086,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/compositor_context.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/flutter_runner_fakes.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/flutter_runner_product_configuration.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/flutter_runner_product_configuration.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl_unittest.cc
@@ -1160,9 +1172,19 @@ FILE: ../../../flutter/shell/platform/glfw/platform_handler.h
 FILE: ../../../flutter/shell/platform/glfw/public/flutter_glfw.h
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
+FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger.cc
+FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_dart_project.cc
+FILE: ../../../flutter/shell/platform/linux/fl_engine.cc
+FILE: ../../../flutter/shell/platform/linux/fl_engine_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_renderer.cc
+FILE: ../../../flutter/shell/platform/linux/fl_renderer.h
+FILE: ../../../flutter/shell/platform/linux/fl_renderer_x11.cc
+FILE: ../../../flutter/shell/platform/linux/fl_renderer_x11.h
 FILE: ../../../flutter/shell/platform/linux/fl_view.cc
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_engine.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_view.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/flutter_linux.h
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.cc
