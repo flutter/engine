@@ -889,6 +889,28 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
     PersistedSurface nextSibling;
 
+    // Inserts the DOM node of the child before the DOM node of the next sibling
+    // if it has moved as a result of the update. Does nothing if the new child
+    // is already in the right location in the DOM tree.
+    void insertDomNodeIfMoved(PersistedSurface newChild) {
+      assert(newChild.rootElement != null);
+      assert(newChild.parent == this);
+      final bool reparented = newChild.rootElement.parent != containerElement;
+      // Do not check for sibling if reparented. It's obvious that we moved.
+      final bool moved = reparented ||
+          newChild.rootElement.nextElementSibling != nextSibling?.rootElement;
+      if (moved) {
+        if (nextSibling == null) {
+          // We're at the end of the list.
+          containerElement.append(newChild.rootElement);
+        } else {
+          // We're in the middle of the list.
+          containerElement.insertBefore(
+              newChild.rootElement, nextSibling.rootElement);
+        }
+      }
+    }
+
     final Map<PersistedSurface, PersistedSurface> matches =
         _matchChildren(oldSurface);
 
@@ -925,40 +947,15 @@ abstract class PersistedContainerSurface extends PersistedSurface {
               debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
         }
       }
+      insertDomNodeIfMoved(newChild);
       assert(newChild.rootElement != null);
       assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active,
           PersistedSurfaceState.pendingRetention));
+      nextSibling = newChild;
     }
 
     // Remove elements that were not reused this frame.
     _discardActiveChildren(oldSurface);
-
-    // Inserts the DOM node of the child before the DOM node of the next sibling
-    // if it has moved as a result of the update. Does nothing if the new child
-    // is already in the right location in the DOM tree.
-    for (int bottomInNew = _children.length - 1; bottomInNew >= 0; bottomInNew--) {
-      final PersistedSurface newChild = _children[bottomInNew];
-      assert(newChild.rootElement != null);
-      assert(newChild.parent == this);
-      assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active,
-          PersistedSurfaceState.pendingRetention));
-      final bool reparented = newChild.rootElement.parent != containerElement;
-      // Do not check for sibling if reparented. It's obvious that we moved.
-      final bool moved = reparented ||
-          newChild.rootElement.nextElementSibling != nextSibling?.rootElement;
-      if (moved) {
-        if (nextSibling == null) {
-          // We're at the end of the list.
-          containerElement.append(newChild.rootElement);
-        } else {
-          // We're in the middle of the list.
-          containerElement.insertBefore(
-              newChild.rootElement, nextSibling.rootElement);
-        }
-      }
-      nextSibling = newChild;
-    }
-
   }
 
   Map<PersistedSurface, PersistedSurface> _matchChildren(
