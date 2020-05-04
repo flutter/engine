@@ -887,12 +887,10 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     // Memoize container element for efficiency. [childContainer] is polymorphic
     final html.Element containerElement = childContainer;
 
-    PersistedSurface nextSibling;
-
     // Inserts the DOM node of the child before the DOM node of the next sibling
     // if it has moved as a result of the update. Does nothing if the new child
     // is already in the right location in the DOM tree.
-    void insertDomNodeIfMoved(PersistedSurface newChild) {
+    void insertDomNodeIfMoved(PersistedSurface newChild, PersistedSurface nextSibling) {
       assert(newChild.rootElement != null);
       assert(newChild.parent == this);
       final bool reparented = newChild.rootElement.parent != containerElement;
@@ -918,6 +916,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         bottomInNew >= 0;
         bottomInNew--) {
       final PersistedSurface newChild = _children[bottomInNew];
+      final PersistedSurface nextSibling = (bottomInNew == _children.length - 1)? null : _children[bottomInNew + 1];
       if (newChild.isPendingRetention) {
         newChild.retain();
         assert(debugAssertSurfaceState(
@@ -947,11 +946,10 @@ abstract class PersistedContainerSurface extends PersistedSurface {
               debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
         }
       }
-      insertDomNodeIfMoved(newChild);
+      insertDomNodeIfMoved(newChild, nextSibling);
       assert(newChild.rootElement != null);
       assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active,
           PersistedSurfaceState.pendingRetention));
-      nextSibling = newChild;
     }
 
     // Remove elements that were not reused this frame.
