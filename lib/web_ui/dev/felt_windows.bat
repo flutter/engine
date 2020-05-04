@@ -59,7 +59,7 @@ IF %LUCI_CONTEXT%==[] (
 :: TODO(nurhan): The batch script does not support snanphot option.
 :: Support snapshot option.
 CALL :installdeps
-IF %1==test (%DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* --browser=chrome) ELSE ( %DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* )
+IF %1==test (%DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* --browser=edge) ELSE ( %DART_SDK_DIR%\bin\dart "%DEV_DIR%\felt.dart" %* )
 
 EXIT /B 0
 
