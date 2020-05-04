@@ -44,7 +44,7 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
 
 Scenario _currentScenario = _scenarios['animated_color_square'];
 bool _didReceiveScenarioFromPlatform = false;
-Future<void> sceneCompletedFuture;
+Future<void> _sceneCompletedFuture;
 
 void main() {
   assert(window.locale != null);
@@ -125,13 +125,13 @@ void _onDrawFrame() {
   if (!_didReceiveScenarioFromPlatform) {
     return;
   }
-  sceneCompletedFuture?.timeout(Duration.zero, onTimeout: () {});
+  _sceneCompletedFuture?.timeout(Duration.zero, onTimeout: () {});
   // If no new frames are drawn after 2 second,
   // consider this to be the last frame.
   //
   // As a result, animations will time out, so don't test animations this way!
-  sceneCompletedFuture = Future<void>
-    .delayed(Duration(seconds: 2))
+  _sceneCompletedFuture = Future<void>
+    .delayed(const Duration(seconds: 2))
     .whenComplete(() {
       final ByteData data = ByteData(1);
       data.setUint8(0, 1);
