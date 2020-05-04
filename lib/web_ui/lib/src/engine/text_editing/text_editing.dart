@@ -93,7 +93,7 @@ class EngineAutofillForm {
   ) {
     // Autofill value can be null if focused text element does not have an
     // autofill hint set.
-    if(focusedElementAutofill == null) {
+    if (focusedElementAutofill == null) {
       return null;
     }
 
@@ -224,7 +224,7 @@ class AutofillInfo {
 
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill) {
     // Autofill value can be null if no TextFields is set with autofill hint.
-    if(autofill == null) {
+    if (autofill == null) {
       return null;
     }
 
@@ -238,17 +238,21 @@ class AutofillInfo {
         editingState: editingState);
   }
 
-  void applyToDomElement(html.HtmlElement domElement) {
+  void applyToDomElement(html.HtmlElement domElement,
+      {bool focusedElement = false}) {
     domElement.id = hint;
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
       element.name = hint;
       element.id = uniqueIdentifier;
       element.autocomplete = hint;
-      if (hint.contains('password')) {
-        element.type = 'password';
-      } else {
-        element.type = 'text';
+      // Do not change the element type for the focused element.
+      if (focusedElement == false) {
+        if (hint.contains('password')) {
+          element.type = 'password';
+        } else {
+          element.type = 'text';
+        }
       }
     } else if (domElement is html.TextAreaElement) {
       html.TextAreaElement element = domElement;
@@ -404,7 +408,7 @@ class InputConfiguration {
         inputAction = flutterInputConfiguration['inputAction'],
         obscureText = flutterInputConfiguration['obscureText'],
         autocorrect = flutterInputConfiguration['autocorrect'],
-        autofill =  AutofillInfo.fromFrameworkMessage(
+        autofill = AutofillInfo.fromFrameworkMessage(
             flutterInputConfiguration['autofill']),
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
             flutterInputConfiguration['autofill'],
@@ -559,7 +563,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       domElement.setAttribute('type', 'password');
     }
 
-    inputConfig.autofill?.applyToDomElement(domElement);
+    inputConfig.autofill?.applyToDomElement(domElement, focusedElement: true);
 
     final String autocorrectValue = inputConfig.autocorrect ? 'on' : 'off';
     domElement.setAttribute('autocorrect', autocorrectValue);
