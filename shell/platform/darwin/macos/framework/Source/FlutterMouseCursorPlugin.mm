@@ -29,60 +29,6 @@ static NSString* const kActivateSystemCursorMethod = @"activateSystemCursor";
 static NSString* const kShapeCodeKey = @"shapeCode";
 static NSString* const kDeviceKey = @"device";
 
-@interface FlutterMouseCursorDeviceState : NSObject
-
-- (nonnull instancetype)initWithDevice:(int)device
-                                 shape:(nonnull NSCursor*)shape;
-
-- (void)dispose;
-
-- (void)activateShape: (nonnull NSCursor *)targetShape;
-
-@property(readonly) int device;
-
-@property() NSCursor *shape;
-
-@end
-
-@implementation FlutterMouseCursorDeviceState {
-  BOOL _hidden;
-}
-
-- (nonnull instancetype)initWithDevice:(int)device
-                                 shape:(nonnull NSCursor*)shape {
-  _device = device;
-  _shape = shape;
-  _hidden = NO;
-  [_shape set];
-  return self;
-}
-
-- (void)dispose {
-  if (_hidden)
-    [NSCursor unhide];
-}
-
-- (void)activateShape: (nonnull NSCursor *)targetShape {
-  if (targetShape == _shape && !_hidden)
-    return;
-  [targetShape set];
-  if (_hidden) {
-    [NSCursor unhide];
-  }
-  _shape = targetShape;
-  _hidden = NO;
-}
-
-- (void)hide {
-  if (!_hidden) {
-    [NSCursor hide];
-  }
-  _hidden = YES;
-}
-
-#pragma mark - Private
-
-@end
 
 @interface FlutterMouseCursorPlugin ()
 /**
@@ -97,11 +43,13 @@ static NSString* const kDeviceKey = @"device";
 
 @property() NSMutableDictionary *shapeObjects;
 
-@property() FlutterMouseCursorDeviceState *deviceState;
+@property() NSCursor *shape;
 
 @end
 
 @implementation FlutterMouseCursorPlugin
+
+BOOL _hidden;
 
 - (instancetype)initWithViewController:(nonnull FlutterViewController*)viewController {
   self = [super init];
@@ -154,21 +102,15 @@ static NSString* const kDeviceKey = @"device";
               message:@"Missing argument"
               details:@"Missing argument device while trying to activate system cursor"];
   }
-  NSNumber *noNoneShape = [shapeCodeArg intValue] == kSystemShapeNone ?
-    [NSNumber numberWithInt:kSystemShapeBasic] :
-    shapeCodeArg;
-  NSCursor* shapeObject = [self resolveShapeCode:noNoneShape];
+  if ([shapeCodeArg intValue] == kSystemShapeNone) {
+    return [self hide];
+  }
+  NSCursor* shapeObject = [self resolveShapeCode:shapeCodeArg];
   if (shapeObject == nil) {
     // Unregistered shape. Return false to request fallback.
     return @(NO);
   }
-  [self ensureDevice:deviceArg withShapeObject:shapeObject];
-  if ([shapeCodeArg intValue] == kSystemShapeNone) {
-    [_deviceState hide];
-  } else {
-    [_deviceState activateShape:shapeObject];
-  }
-  return @(YES);
+  return [self activateShapeObject:shapeObject];
 }
 
 - (nullable NSCursor*)resolveShapeCode:(NSNumber*)shape {
@@ -182,17 +124,24 @@ static NSString* const kDeviceKey = @"device";
   return systemObject;
 }
 
-- (void)ensureDevice:(NSNumber*)device
-     withShapeObject:(nonnull NSCursor*)shapeObject {
-  // MacOS only supports one device. Destroy the old when the new one is different.
-  if (_deviceState.device != [device intValue]) {
-    [_deviceState dispose];
-    _deviceState = nil;
+- (id)activateShapeObject: (nonnull NSCursor *)targetShape {
+  if (targetShape == _shape && !_hidden)
+    return @(YES);
+  [targetShape set];
+  if (_hidden) {
+    [NSCursor unhide];
   }
-  if (!_deviceState) {
-    _deviceState = [[FlutterMouseCursorDeviceState alloc] initWithDevice:[device intValue]
-                                                                   shape:shapeObject];
+  _shape = targetShape;
+  _hidden = NO;
+  return @(YES);
+}
+
+- (id)hide {
+  if (!_hidden) {
+    [NSCursor hide];
   }
+  _hidden = YES;
+  return @(YES);
 }
 
 #pragma mark - Static
