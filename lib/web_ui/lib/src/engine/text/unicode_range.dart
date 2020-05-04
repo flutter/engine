@@ -5,6 +5,14 @@
 // @dart = 2.6
 part of engine;
 
+const int _kChar_0 = 48;
+const int _kChar_9 = 57;
+const int _kChar_A = 65;
+const int _kChar_Z = 90;
+const int _kChar_a = 97;
+const int _kChar_z = 122;
+const int _kCharBang = 33;
+
 enum _ComparisonResult {
   inside,
   higher,
@@ -132,14 +140,14 @@ List<UnicodeRange<P>> _unpackProperties<P>(
   assert((packedData.length + singleRangesCount * 3) % 9 == 0);
 
   final List<UnicodeRange<P>> ranges = <UnicodeRange<P>>[];
+  final int dataLength = packedData.length;
   int i = 0;
-  while (i < packedData.length) {
+  while (i < dataLength) {
     final int rangeStart = _consumeInt(packedData, i);
     i += 4;
 
     int rangeEnd;
-    // "!" <=> 33
-    if (packedData.codeUnitAt(i) == 33) {
+    if (packedData.codeUnitAt(i) == _kCharBang) {
       rangeEnd = rangeStart;
       i++;
     } else {
@@ -160,21 +168,15 @@ int _getEnumIndexFromPackedValue(int charCode) {
   // This has to stay in sync with [EnumValue.serialized] in
   // `tool/unicode_sync_script.dart`.
 
-  // "A" <=> 65
-  // "Z" <=> 90
-  // "a" <=> 97
-  // "z" <=> 122
-
-  assert(
-    (charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122),
-  );
+  assert((charCode >= _kChar_A && charCode <= _kChar_Z) ||
+      (charCode >= _kChar_a && charCode <= _kChar_z));
 
   // Uppercase letters were assigned to the first 26 enum values.
-  if (charCode <= 90) {
-    return charCode - 65;
+  if (charCode <= _kChar_Z) {
+    return charCode - _kChar_A;
   }
   // Lowercase letters were assigned to enum values above 26.
-  return 26 + charCode - 97;
+  return 26 + charCode - _kChar_a;
 }
 
 int _consumeInt(String packedData, int index) {
@@ -196,16 +198,12 @@ int _consumeInt(String packedData, int index) {
 /// Does the same thing as [int.parse(str, 36)] but takes only a single
 /// character as a [charCode] integer.
 int _getIntFromCharCode(int charCode) {
-  // "0" <=> 48
-  // "9" <=> 57
-  // "a" <=> 97
-  // "z" <=> 122
-  assert(
-    (charCode >= 48 && charCode <= 57) || (charCode >= 97 && charCode <= 122),
-  );
-  if (charCode <= 57) {
-    return charCode - 48;
+  assert((charCode >= _kChar_0 && charCode <= _kChar_9) ||
+      (charCode >= _kChar_a && charCode <= _kChar_z));
+
+  if (charCode <= _kChar_9) {
+    return charCode - _kChar_0;
   }
   // "a" starts from 10 and remaining letters go up from there.
-  return charCode - 97 + 10;
+  return charCode - _kChar_a + 10;
 }

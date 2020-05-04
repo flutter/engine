@@ -8,6 +8,9 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
 
+const int _kChar_A = 65;
+const int _kChar_a = 97;
+
 final ArgParser argParser = ArgParser()
   ..addOption(
     'words',
@@ -27,32 +30,31 @@ final ArgParser argParser = ArgParser()
   );
 
 /// A tuple that holds a [start] and [end] of a unicode range and a [property].
-class PropertyTuple {
-  const PropertyTuple(this.start, this.end, this.property);
+class UnicodeRange {
+  const UnicodeRange(this.start, this.end, this.property);
 
   final int start;
   final int end;
   final EnumValue property;
 
-  /// Checks if there's an overlap between this tuple's range and [other]'s
-  /// range.
-  bool isOverlapping(PropertyTuple other) {
+  /// Checks if there's an overlap between this range and the [other] range.
+  bool isOverlapping(UnicodeRange other) {
     return start <= other.end && end >= other.start;
   }
 
-  /// Checks if the [other] tuple is adjacent to this tuple.
+  /// Checks if the [other] range is adjacent to this range.
   ///
-  /// Two tuples are considered adjacent if:
-  /// - The new tuple's range immediately follows this tuple's range, and
-  /// - The new tuple has the same property as this tuple.
-  bool isAdjacent(PropertyTuple other) {
+  /// Two ranges are considered adjacent if:
+  /// - The new range immediately follows this range, and
+  /// - The new range has the same property as this range.
+  bool isAdjacent(UnicodeRange other) {
     return other.start == end + 1 && property == other.property;
   }
 
-  /// Merges the ranges of the 2 [PropertyTuples] if they are adjacent.
-  PropertyTuple extendRange(PropertyTuple extension) {
+  /// Merges the ranges of the 2 [UnicodeRange]s if they are adjacent.
+  UnicodeRange extendRange(UnicodeRange extension) {
     assert(isAdjacent(extension));
-    return PropertyTuple(start, extension.end, property);
+    return UnicodeRange(start, extension.end, property);
   }
 }
 
@@ -114,12 +116,14 @@ PropertiesSyncer getSyncer(
 ) {
   if (wordBreakProperties == null && lineBreakProperties == null) {
     print(
-        'Expecting either a word break properties file or a line break properties file. None was given.');
+        'Expecting either a word break properties file or a line break properties file. None was given.\n');
+    print(argParser.usage);
     exit(64);
   }
   if (wordBreakProperties != null && lineBreakProperties != null) {
     print(
-        'Expecting either a word break properties file or a line break properties file. Both were given.');
+        'Expecting either a word break properties file or a line break properties file. Both were given.\n');
+    print(argParser.usage);
     exit(64);
   }
   if (wordBreakProperties != null) {
@@ -210,8 +214,8 @@ UnicodePropertyLookup<${prefix}CharProperty> ${prefix.toLowerCase()}Lookup =
 
   int _getSingleRangesCount(PropertyCollection data) {
     int count = 0;
-    for (final PropertyTuple tuple in data.tuples) {
-      if (tuple.start == tuple.end) {
+    for (final UnicodeRange range in data.ranges) {
+      if (range.start == range.end) {
         count++;
       }
     }
@@ -220,14 +224,14 @@ UnicodePropertyLookup<${prefix}CharProperty> ${prefix.toLowerCase()}Lookup =
 
   String _packProperties(PropertyCollection data) {
     final StringBuffer buffer = StringBuffer();
-    for (final PropertyTuple tuple in data.tuples) {
-      buffer.write(tuple.start.toRadixString(36).padLeft(4, '0'));
-      if (tuple.start == tuple.end) {
+    for (final UnicodeRange range in data.ranges) {
+      buffer.write(range.start.toRadixString(36).padLeft(4, '0'));
+      if (range.start == range.end) {
         buffer.write('!');
       } else {
-        buffer.write(tuple.end.toRadixString(36).padLeft(4, '0'));
+        buffer.write(range.end.toRadixString(36).padLeft(4, '0'));
       }
-      buffer.write(tuple.property.serialized);
+      buffer.write(range.property.serialized);
     }
     return buffer.toString();
   }
@@ -239,7 +243,8 @@ class WordBreakPropertiesSyncer extends PropertiesSyncer {
   WordBreakPropertiesSyncer.dry(String src) : super.dry(src);
 
   final String prefix = 'Word';
-  final String enumDocLink = 'http://unicode.org/reports/tr29/#Table_Word_Break_Property_Values';
+  final String enumDocLink =
+      'http://unicode.org/reports/tr29/#Table_Word_Break_Property_Values';
 }
 
 /// Syncs Unicode's line break properties.
@@ -248,21 +253,22 @@ class LineBreakPropertiesSyncer extends PropertiesSyncer {
   LineBreakPropertiesSyncer.dry(String src) : super.dry(src);
 
   final String prefix = 'Line';
-  final String enumDocLink = 'https://unicode.org/reports/tr14/#DescriptionOfProperties';
+  final String enumDocLink =
+      'https://unicode.org/reports/tr14/#DescriptionOfProperties';
 }
 
 /// Holds the collection of properties parsed from the unicode spec file.
 class PropertyCollection {
   PropertyCollection.fromLines(List<String> lines) {
-    final List<PropertyTuple> unprocessedTuples = lines
+    final List<UnicodeRange> unprocessedRanges = lines
         .map(removeCommentFromLine)
         .where((String line) => line.isNotEmpty)
-        .map(parseLineIntoPropertyTuple)
+        .map(parseLineIntoUnicodeRange)
         .toList();
-    tuples = processTuples(unprocessedTuples);
+    ranges = processRanges(unprocessedRanges);
   }
 
-  List<PropertyTuple> tuples;
+  List<UnicodeRange> ranges;
 
   final EnumCollection enumCollection = EnumCollection();
 
@@ -274,15 +280,15 @@ class PropertyCollection {
   /// Would be parsed into:
   ///
   /// ```dart
-  /// PropertyTuple(192, 214, EnumValue('ALetter'));
-  /// PropertyTuple(895, 895, EnumValue('ALetter'));
+  /// UnicodeRange(192, 214, EnumValue('ALetter'));
+  /// UnicodeRange(895, 895, EnumValue('ALetter'));
   /// ```
-  PropertyTuple parseLineIntoPropertyTuple(String line) {
+  UnicodeRange parseLineIntoUnicodeRange(String line) {
     final List<String> split = line.split(';');
     final String rangeStr = split[0].trim();
     final String propertyStr = split[1].trim();
 
-    return PropertyTuple(
+    return UnicodeRange(
       getRangeStart(rangeStr),
       getRangeEnd(rangeStr),
       enumCollection.add(propertyStr),
@@ -321,17 +327,12 @@ class EnumValue {
   /// to "A", "B", "C", etc until we reach "Z". Then we continue with "a", "b",
   /// "c", etc.
   String get serialized {
-    // "A" <=> 65
-    // "Z" <=> 90
-    // "a" <=> 97
-    // "z" <=> 122
-
     // We assign uppercase letters to the first 26 enum values.
     if (index < 26) {
-      return String.fromCharCode(65 + index);
+      return String.fromCharCode(_kChar_A + index);
     }
     // Enum values above 26 will be assigned a lowercase letter.
-    return String.fromCharCode(97 + index - 26);
+    return String.fromCharCode(_kChar_a + index - 26);
   }
 
   /// Returns the enum name that'll be used in the Dart code.
@@ -348,14 +349,14 @@ class EnumValue {
   }
 }
 
-/// Sorts tuples and combines adjacent tuples that have ranges that can be
-/// merged.
-Iterable<PropertyTuple> processTuples(List<PropertyTuple> data) {
+/// Sorts ranges and combines adjacent ranges that have the same property and
+/// can be merged.
+Iterable<UnicodeRange> processRanges(List<UnicodeRange> data) {
   data.sort(
     // Ranges don't overlap so it's safe to sort based on the start of each
     // range.
-    (PropertyTuple tuple1, PropertyTuple tuple2) =>
-        tuple1.start.compareTo(tuple2.start),
+    (UnicodeRange range1, UnicodeRange range2) =>
+        range1.start.compareTo(range2.start),
   );
   verifyNoOverlappingRanges(data);
   return combineAdjacentRanges(data);
@@ -374,8 +375,8 @@ Iterable<PropertyTuple> processTuples(List<PropertyTuple> data) {
 /// ```
 /// 0x01C4..0x02AF; ALetter
 /// ```
-List<PropertyTuple> combineAdjacentRanges(List<PropertyTuple> data) {
-  final List<PropertyTuple> result = <PropertyTuple>[data.first];
+List<UnicodeRange> combineAdjacentRanges(List<UnicodeRange> data) {
+  final List<UnicodeRange> result = <UnicodeRange>[data.first];
   for (int i = 1; i < data.length; i++) {
     if (result.last.isAdjacent(data[i])) {
       result.last = result.last.extendRange(data[i]);
@@ -397,7 +398,7 @@ int getRangeEnd(String range) {
   return int.parse(range, radix: 16);
 }
 
-void verifyNoOverlappingRanges(List<PropertyTuple> data) {
+void verifyNoOverlappingRanges(List<UnicodeRange> data) {
   for (int i = 1; i < data.length; i++) {
     if (data[i].isOverlapping(data[i - 1])) {
       throw Exception('Data contains overlapping ranges.');
