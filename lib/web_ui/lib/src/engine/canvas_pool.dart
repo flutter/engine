@@ -33,6 +33,8 @@ class _CanvasPool extends _SaveStackTracking {
 
   html.HtmlElement _rootElement;
   int _saveContextCount = 0;
+  // Used to set z-index to 0 for first canvas.
+  int _activeCanvasCount = 0;
 
   _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
 
@@ -130,7 +132,7 @@ class _CanvasPool extends _SaveStackTracking {
     // Possible Blink bugs that are causing this:
     // * https://bugs.chromium.org/p/chromium/issues/detail?id=370604
     // * https://bugs.chromium.org/p/chromium/issues/detail?id=586601
-    if (_rootElement.firstChild == _canvas) {
+    if (_activeCanvasCount == 0) {
       _canvas.style.zIndex = '-1';
     } else if (reused) {
       // If a canvas is the first element we set z-index = -1 to workaround
@@ -138,7 +140,7 @@ class _CanvasPool extends _SaveStackTracking {
       // reset z-index.
       _canvas.style.removeProperty('z-index');
     }
-
+    _activeCanvasCount++;
     _context = _canvas.context2D;
     _contextHandle = ContextStateHandle(_context);
     _initializeViewport(requiresClearRect);
@@ -260,6 +262,7 @@ class _CanvasPool extends _SaveStackTracking {
     _canvas = null;
     _context = null;
     _contextHandle = null;
+    _activeCanvasCount = 0;
   }
 
   void endOfPaint() {
