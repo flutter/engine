@@ -912,6 +912,9 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     final Map<PersistedSurface, PersistedSurface> matches =
         _matchChildren(oldSurface);
 
+    List<_ChildSiblingPair> retainedChildPairs = <_ChildSiblingPair>[];
+    List<_ChildSiblingPair> notRetainedChildPairs = <_ChildSiblingPair>[];
+
     for (int bottomInNew = _children.length - 1;
         bottomInNew >= 0;
         bottomInNew--) {
@@ -946,7 +949,12 @@ abstract class PersistedContainerSurface extends PersistedSurface {
               debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
         }
       }
-      insertDomNodeIfMoved(newChild, nextSibling);
+      final newChildPair = _ChildSiblingPair(newChild: newChild, nextSibling: nextSibling);
+      if (newChild.isPendingRetention) {
+        retainedChildPairs.add(newChildPair);
+      } else {
+        notRetainedChildPairs.add(newChildPair);
+      }
       assert(newChild.rootElement != null);
       assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active,
           PersistedSurfaceState.pendingRetention));
@@ -954,6 +962,18 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
     // Remove elements that were not reused this frame.
     _discardActiveChildren(oldSurface);
+
+    // Move unretained children first as retained children may contain an engine layer
+    // which could lose state if it's DOM node is moved. @see Flutter.Layer._addToSceneWithRetainedRendering
+    final int notRetainedChildCount =  notRetainedChildPairs.length;
+    for (int i = 0; i < notRetainedChildCount; i++) {
+      insertDomNodeIfMoved(notRetainedChildPairs[i].newChild, notRetainedChildPairs[i].nextSibling);
+    }
+    final int retainedChildCount = retainedChildPairs.length;
+    for (int i = 0; i < retainedChildCount; i++) {
+      insertDomNodeIfMoved(retainedChildPairs[i].newChild, retainedChildPairs[i].nextSibling);
+    }
+
   }
 
   Map<PersistedSurface, PersistedSurface> _matchChildren(
@@ -1103,4 +1123,15 @@ class _PersistedSurfaceMatch {
   /// The score of how well [newChild] matched the old child as computed by
   /// [PersistedSurface.matchForUpdate].
   final double matchQuality;
+}
+
+class _ChildSiblingPair {
+  _ChildSiblingPair({
+    this.newChild,
+    this.nextSibling,
+  });
+
+  final PersistedSurface newChild;
+
+  final PersistedSurface nextSibling;
 }
