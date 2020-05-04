@@ -787,11 +787,84 @@ void main() {
       expect(spy.messages, isEmpty);
     });
 
-    // TODO: setClient, setEditingState, show, setEditingState, clearClient with autofill
-    // (1) one autofill value
-    // (2) multiple autofill values
-    // check if all the fields are set properly.
-    // (3) autofill for syncing autofill state back to flutter.
+    test(
+        'singleTextField Autofill: setClient, setEditingState, show, '
+        'setEditingState, clearClient', () {
+      // Create a configuration with focused element has autofil hint.
+      final Map<String, dynamic> flutterSingleAutofillElementConfig =
+          createFlutterConfig('text', autofillHint: 'username');
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterSingleAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // The second [setEditingState] should override the first one.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'abcd', 2, 3);
+
+      final FormElement formElement = document.getElementsByTagName('form')[0];
+      expect(formElement.childNodes, hasLength(1));
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      // Confirm that [HybridTextEditing] didn't send any messages.
+      expect(spy.messages, isEmpty);
+      expect(document.getElementsByTagName('form'), isEmpty);
+    });
+
+    test(
+        'multiTextField Autofill: setClient, setEditingState, show, '
+        'setEditingState, clearClient', () {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'username',
+              autofillHintsForFields: [
+            'username',
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // The second [setEditingState] should override the first one.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'abcd', 2, 3);
+
+      final FormElement formElement = document.getElementsByTagName('form')[0];
+      expect(formElement.childNodes, hasLength(4));
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      // Confirm that [HybridTextEditing] didn't send any messages.
+      expect(spy.messages, isEmpty);
+      expect(document.getElementsByTagName('form'), isEmpty);
+    });
 
     test(
         'setClient, setEditableSizeAndTransform, setStyle, setEditingState, show, clearClient',
@@ -1046,6 +1119,69 @@ void main() {
       hideKeyboard();
     });
 
+    test('multiTextField Autofill sync updates back to Flutter', () {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final String hintForFirstElement = 'username';
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig('text',
+              autofillHint: 'email',
+              autofillHintsForFields: [
+            hintForFirstElement,
+            'email',
+            'name',
+            'telephoneNumber'
+          ]);
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, flutterMultiAutofillElementConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      // The second [setEditingState] should override the first one.
+      checkInputEditingState(
+          textEditing.editingElement.domElement, 'abcd', 2, 3);
+
+      final FormElement formElement = document.getElementsByTagName('form')[0];
+      expect(formElement.childNodes, hasLength(4));
+
+      // Autofill one of the form elements.
+      InputElement element = formElement.childNodes.first;
+      expect(element.autocomplete,
+          BrowserAutofillHints.instance.flutterToEngine(hintForFirstElement));
+      element.value = 'something';
+      element.dispatchEvent(Event.eventType('Event', 'input'));
+
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName,
+          'TextInputClient.updateEditingStateWithTag');
+      expect(
+        spy.messages[0].methodArguments,
+        <dynamic>[
+          0, // Client ID
+          <String, dynamic>{
+            element.autocomplete: <String, dynamic>{
+              'text': 'something',
+              'selectionBase': 9,
+              'selectionExtent': 9
+            }
+          },
+        ],
+      );
+
+      spy.messages.clear();
+      hideKeyboard();
+    });
+
     test('Multi-line mode also works', () {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterMultilineConfig]);
@@ -1222,50 +1358,13 @@ void main() {
   });
 
   group('EngineAutofillForm', () {
-    Map<String, dynamic> testAutofillValue(String hint, String uniqueId) =>
-        <String, dynamic>{
-          'uniqueIdentifier': uniqueId,
-          'hints': [hint],
-          'editingValue': {
-            'text': 'Test',
-            'selectionBase': 0,
-            'selectionExtent': 0,
-            'selectionAffinity': 'TextAffinity.downstream',
-            'selectionIsDirectional': false,
-            'composingBase': -1,
-            'composingExtent': -1,
-          },
-        };
-
-    Map<String, dynamic> testFieldValue(String hint, String uniqueId) =>
-        <String, dynamic>{
-          'inputType': {
-            'name': 'TextInputType.text',
-            'signed': null,
-            'decimal': null
-          },
-          'autofill': testAutofillValue(hint, uniqueId)
-        };
-
-    List<dynamic> testFields(List<String> hints, List<String> uniqueIds) {
-      final List<dynamic> testFields = <dynamic>[];
-
-      expect(hints.length, equals(uniqueIds.length));
-
-      for (int i = 0; i < hints.length; i++) {
-        testFields.add(testFieldValue(hints[i], uniqueIds[i]));
-      }
-
-      return testFields;
-    }
-
     test('validate multi element form', () {
-      final List<dynamic> fields = testFields(
+      final List<dynamic> fields = createFieldValues(
           ['username', 'password', 'newPassword'],
           ['field1', 'fields2', 'field3']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              testAutofillValue('username', 'field1'), fields);
+              createAutofillInfo('username', 'field1'), fields);
 
       // Number of elements if number of fields sent to the constructor minus
       // one (for the focused text element).
@@ -1297,12 +1396,12 @@ void main() {
     });
 
     test('place remove form', () {
-      final List<dynamic> fields = testFields(
+      final List<dynamic> fields = createFieldValues(
           ['username', 'password', 'newPassword'],
           ['field1', 'fields2', 'field3']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              testAutofillValue('username', 'field1'), fields);
+              createAutofillInfo('username', 'field1'), fields);
 
       final InputElement testInputElement = InputElement();
       autofillForm.placeForm(testInputElement);
@@ -1320,10 +1419,10 @@ void main() {
     });
 
     test('Validate single element form', () {
-      final List<dynamic> fields = testFields(['username'], ['field1']);
+      final List<dynamic> fields = createFieldValues(['username'], ['field1']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              testAutofillValue('username', 'field1'), fields);
+              createAutofillInfo('username', 'field1'), fields);
 
       // The focused element is the only field. Form should be empty after
       // the initialization (focus element is appended later).
@@ -1336,7 +1435,7 @@ void main() {
     });
 
     test('Return null if no focused element', () {
-      final List<dynamic> fields = testFields(['username'], ['field1']);
+      final List<dynamic> fields = createFieldValues(['username'], ['field1']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(null, fields);
 
@@ -1349,24 +1448,9 @@ void main() {
     const String testId = 'EditableText-659836579';
     const String testPasswordHint = 'password';
 
-    Map<String, dynamic> testAutofillValue(String hint, String uniqueId) =>
-        <String, dynamic>{
-          'uniqueIdentifier': uniqueId,
-          'hints': [hint],
-          'editingValue': {
-            'text': 'Test',
-            'selectionBase': 0,
-            'selectionExtent': 0,
-            'selectionAffinity': 'TextAffinity.downstream',
-            'selectionIsDirectional': false,
-            'composingBase': -1,
-            'composingExtent': -1,
-          },
-        };
-
     test('autofill has correct value', () {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
-          testAutofillValue(testHint, testId));
+          createAutofillInfo(testHint, testId));
 
       // Hint sent from the framework is converted to the hint compatible with
       // browsers.
@@ -1377,7 +1461,7 @@ void main() {
 
     test('input with autofill hint', () {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
-          testAutofillValue(testHint, testId));
+          createAutofillInfo(testHint, testId));
 
       final InputElement testInputElement = InputElement();
       autofillInfo.applyToDomElement(testInputElement);
@@ -1394,7 +1478,7 @@ void main() {
 
     test('textarea with autofill hint', () {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
-          testAutofillValue(testHint, testId));
+          createAutofillInfo(testHint, testId));
 
       final TextAreaElement testInputElement = TextAreaElement();
       autofillInfo.applyToDomElement(testInputElement);
@@ -1410,7 +1494,7 @@ void main() {
 
     test('password autofill hint', () {
       final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
-          testAutofillValue(testPasswordHint, testId));
+          createAutofillInfo(testPasswordHint, testId));
 
       final InputElement testInputElement = InputElement();
       autofillInfo.applyToDomElement(testInputElement);
@@ -1610,11 +1694,17 @@ void checkTextAreaEditingState(
   expect(textarea.selectionEnd, end);
 }
 
+/// Creates an [InputConfiguration] for using in the tests.
+///
+/// For simplicity this method is using `autofillHint` as the `uniqueId` for
+/// simplicity.
 Map<String, dynamic> createFlutterConfig(
   String inputType, {
   bool obscureText = false,
   bool autocorrect = true,
   String inputAction,
+  String autofillHint,
+  List<String> autofillHintsForFields,
 }) {
   return <String, dynamic>{
     'inputType': <String, String>{
@@ -1623,5 +1713,65 @@ Map<String, dynamic> createFlutterConfig(
     'obscureText': obscureText,
     'autocorrect': autocorrect,
     'inputAction': inputAction ?? 'TextInputAction.done',
+    if (autofillHint != null)
+      'autofill': createAutofillInfo(autofillHint, autofillHint),
+    if (autofillHintsForFields != null)
+      'fields':
+          createFieldValues(autofillHintsForFields, autofillHintsForFields),
   };
 }
+
+Map<String, dynamic> createAutofillInfo(String hint, String uniqueId) =>
+    <String, dynamic>{
+      'uniqueIdentifier': uniqueId,
+      'hints': [hint],
+      'editingValue': {
+        'text': 'Test',
+        'selectionBase': 0,
+        'selectionExtent': 0,
+        'selectionAffinity': 'TextAffinity.downstream',
+        'selectionIsDirectional': false,
+        'composingBase': -1,
+        'composingExtent': -1,
+      },
+    };
+
+List<dynamic> createFieldValues(List<String> hints, List<String> uniqueIds) {
+  final List<dynamic> testFields = <dynamic>[];
+
+  expect(hints.length, equals(uniqueIds.length));
+
+  for (int i = 0; i < hints.length; i++) {
+    testFields.add(createOneFieldValue(hints[i], uniqueIds[i]));
+  }
+
+  return testFields;
+}
+
+Map<String, dynamic> createOneFieldValue(String hint, String uniqueId) =>
+    <String, dynamic>{
+      'inputType': {
+        'name': 'TextInputType.text',
+        'signed': null,
+        'decimal': null
+      },
+      'autofill': createAutofillInfo(hint, uniqueId)
+    };
+
+// Map<String, dynamic> createFlutterConfig(
+//   String inputType, {
+//   bool obscureText = false,
+//   bool autocorrect = true,
+//   String inputAction,
+// }) {
+//   return <String, dynamic>{
+//     'inputType': <String, String>{
+//       'name': 'TextInputType.$inputType',
+//     },
+//     'obscureText': obscureText,
+//     'autocorrect': autocorrect,
+//     'inputAction': inputAction ?? 'TextInputAction.done',
+//   };
+// }
+
+//autofill: {uniqueIdentifier: EditableText-659836579, hints: [streetAddressLine2], editingValue: {text: , selectionBase: 0, selectionExtent: 0, selectionAffinity: TextAffinity.downstream, selectionIsDirectional: false, composingBase: -1, composingExtent: -1}}
