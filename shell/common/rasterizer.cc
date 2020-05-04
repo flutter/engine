@@ -53,8 +53,8 @@ Rasterizer::Rasterizer(
 
 Rasterizer::~Rasterizer() = default;
 
-fml::WeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
-  return weak_factory_.GetWeakPtr();
+fml::TaskRunnerAffineWeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
+  return weak_factory_.GetTaskRunnerAffineWeakPtr();
 }
 
 fml::WeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate() const {
@@ -131,7 +131,11 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // front of the queue and also change the consume status to more available.
   if (raster_status == RasterStatus::kResubmit) {
     auto front_continuation = pipeline->ProduceIfEmpty();
-    front_continuation.Complete(std::move(resubmitted_layer_tree_));
+    bool result =
+        front_continuation.Complete(std::move(resubmitted_layer_tree_));
+    if (result) {
+      consume_result = PipelineConsumeResult::MoreAvailable;
+    }
   } else if (raster_status == RasterStatus::kEnqueuePipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
   }
@@ -151,7 +155,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
       task_runners_.GetRasterTaskRunner()->PostTask(
-          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
+          [weak_this = weak_factory_.GetTaskRunnerAffineWeakPtr(), pipeline]() {
             if (weak_this) {
               weak_this->Draw(pipeline);
             }
