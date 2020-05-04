@@ -99,6 +99,8 @@ void SessionConnection::Present(
                    next_present_session_trace_id_);
   next_present_session_trace_id_++;
 
+  present_requested_time_ = fml::TimePoint::Now();
+
   // Throttle frame submission to Scenic if we already have the maximum amount
   // of frames in flight. This allows the paint tasks for this frame to execute
   // in parallel with the presentation of previous frame but still provides
@@ -201,10 +203,36 @@ void SessionConnection::PresentSession() {
   // Flush all session ops. Paint tasks may not yet have executed but those are
   // fenced. The compositor can start processing ops while we finalize paint
   // tasks.
+
+  fml::TimePoint next_latch_point = CalculateNextLatchPoint(
+      fml::TimePoint::Now(), present_requested_time_,
+      last_latch_point_targeted_,
+      fml::TimeDelta::FromMilliseconds(10),     // flutter_frame_build_time
+      fml::TimeDelta::FromMicroseconds(16667),  // vsync_interval
+      future_presentation_infos_);
+
+  last_latch_point_targeted_ = next_latch_point;
+
   session_wrapper_.Present2(
-      /*requested_presentation_time=*/0,
-      /*requested_prediction_span=*/0,
+      /*requested_presentation_time=*/next_latch_point.ToEpochDelta()
+          .ToNanoseconds(),
+      /*requested_prediction_span=*/10 *
+          16'666'667,  // Ask for 10 frames of data
       [this](fuchsia::scenic::scheduling::FuturePresentationTimes info) {
+        // Clear |future_presentation_infos_| and replace it with the updated
+        // information.
+        std::deque<std::pair<fml::TimePoint, fml::TimePoint>>().swap(
+            future_presentation_infos_);
+
+        for (fuchsia::scenic::scheduling::PresentationInfo& presentation_info :
+             info.future_presentations) {
+          future_presentation_infos_.push_back(
+              {fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromNanoseconds(
+                   presentation_info.latch_point())),
+               fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromNanoseconds(
+                   presentation_info.presentation_time()))});
+        }
+
         frames_in_flight_allowed_ = info.remaining_presents_in_flight_allowed;
         VsyncRecorder::GetInstance().UpdateNextPresentationInfo(
             std::move(info));
