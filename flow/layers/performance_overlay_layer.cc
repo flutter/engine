@@ -97,4 +97,11 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
                      options_ & kDisplayEngineStatistics, "UI", font_path_);
 }
 
+void PerformanceOverlayLayer::Preroll(PrerollContext* context,
+                                      const SkMatrix& matrix) {
+#if defined(OS_FUCHSIA)
+  CheckForChildLayerBelow(context);
+#endif
+}
+
 }  // namespace flutter
