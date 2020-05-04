@@ -80,10 +80,8 @@ class _CanvasPool extends _SaveStackTracking {
 
   void _createCanvas() {
     bool requiresClearRect = false;
-    bool reused = false;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
-      reused = true;
       requiresClearRect = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
