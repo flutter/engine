@@ -4207,5 +4207,63 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreInStableOrder) {
   latch.Wait();
 }
 
+TEST_F(EmbedderTest, InvalidAOTDataSourcesMustReturnError) {
+  FlutterEngineAOTDataSource data_in;
+  FlutterEngineAOTData data_out;
+
+  // Invalid FlutterEngineAOTDataSourceType type specified.
+  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out),
+            kInvalidArguments);
+
+  data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
+
+  // Invalid ELF path specified.
+  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out),
+            kInvalidArguments);
+
+  data_in.elf_path = "";
+
+  // Invalid ELF path specified.
+  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out),
+            kInvalidArguments);
+
+  data_in.elf_path = "/dev/null";
+
+  // Could not read ELF file.
+  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out),
+            kInvalidArguments);
+}
+
+TEST_F(EmbedderTest, MustNotRunWithMultipleAotSources) {
+  auto& context = GetEmbedderContext();
+
+  EmbedderConfigBuilder builder(
+      context, EmbedderConfigBuilder::InitializationPreference::kSnapshotsAndElfInitialize);
+  
+  builder.SetSoftwareRendererConfig();
+  
+  auto engine = builder.LaunchEngine();
+  ASSERT_FALSE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest, CanLaunchAndShutdownWithValidElfSource) {
+  auto& context = GetEmbedderContext();
+
+  fml::AutoResetWaitableEvent latch;
+  context.AddIsolateCreateCallback([&latch]() { latch.Signal(); });
+
+  EmbedderConfigBuilder builder(
+      context, EmbedderConfigBuilder::InitializationPreference::kElfInitialize);
+
+  builder.SetSoftwareRendererConfig();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Wait for the root isolate to launch.
+  latch.Wait();
+  engine.reset();
+}
+
 }  // namespace testing
 }  // namespace flutter

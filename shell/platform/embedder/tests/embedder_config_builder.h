@@ -31,13 +31,15 @@ using UniqueEngine = fml::UniqueObject<FlutterEngine, UniqueEngineTraits>;
 class EmbedderConfigBuilder {
  public:
   enum class InitializationPreference {
-    kInitialize,
+    kSnapshotsInitialize,
+    kElfInitialize,
+    kSnapshotsAndElfInitialize,
     kNoInitialize,
   };
 
   EmbedderConfigBuilder(EmbedderTestContext& context,
                         InitializationPreference preference =
-                            InitializationPreference::kInitialize);
+                            InitializationPreference::kSnapshotsInitialize);
 
   ~EmbedderConfigBuilder();
 
@@ -50,6 +52,8 @@ class EmbedderConfigBuilder {
   void SetAssetsPath();
 
   void SetSnapshots();
+
+  void SetAotDataElf();
 
   void SetIsolateCreateCallbackHook();
 

@@ -11,6 +11,7 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/native_library.h"
+#include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
 
 #if OS_WIN
@@ -532,6 +533,71 @@ struct _FlutterPlatformMessageResponseHandle {
   fml::RefPtr<flutter::PlatformMessage> message;
 };
 
+struct LoadedELFDeleter {
+  void operator()(Dart_LoadedElf* elf) { ::Dart_UnloadELF(elf); }
+};
+
+using UniqueLoadedELF = std::unique_ptr<Dart_LoadedElf, LoadedELFDeleter>;
+
+struct _FlutterEngineAOTData {
+  UniqueLoadedELF loaded_elf = nullptr;
+  const uint8_t* vm_snapshot_data = nullptr;
+  const uint8_t* vm_snapshot_instrs = nullptr;
+  const uint8_t* vm_isolate_data = nullptr;
+  const uint8_t* vm_isolate_instrs = nullptr;
+};
+
+FlutterEngineResult FlutterEngineCreateAOTData(
+    const FlutterEngineAOTDataSource* source,
+    FlutterEngineAOTData* data_out) {
+  switch (source->type) {
+    case kFlutterEngineAOTDataSourceTypeElfPath: {
+      if (!source->elf_path || !fml::IsFile(source->elf_path)) {
+        return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Invalid ELF path specified.");
+      }
+
+      auto aot_data = new _FlutterEngineAOTData();
+      const char* error = nullptr;
+
+      auto loaded_elf =
+        Dart_LoadELF(source->elf_path,              // file path
+                     0,                             // file offset
+                     &error,                        // error (out)
+                     &aot_data->vm_snapshot_data,   // vm snapshot data (out)
+                     &aot_data->vm_snapshot_instrs, // vm snapshot instr (out)
+                     &aot_data->vm_isolate_data,    // vm isolate data (out)
+                     &aot_data->vm_isolate_instrs   // vm isolate instr (out)
+        );
+
+      if (loaded_elf == nullptr) {
+        delete aot_data;
+        return LOG_EMBEDDER_ERROR(kInvalidArguments, error);
+      }
+
+      aot_data->loaded_elf.reset(loaded_elf);
+
+      *data_out = aot_data;
+    }  break;
+    default:
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Invalid FlutterEngineAOTDataSourceType type specified.");
+  }
+
+  return kSuccess;
+}
+
+FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
+  data->loaded_elf = nullptr;
+  data->vm_snapshot_data = nullptr;
+  data->vm_snapshot_instrs = nullptr;
+  data->vm_isolate_data = nullptr;
+  data->vm_isolate_instrs = nullptr;
+  return kSuccess;
+}
+
 void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
                                       flutter::Settings& settings) {
   // There are no ownership concerns here as all mappings are owned by the
@@ -543,6 +609,20 @@ void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
   };
 
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
+    if (SAFE_ACCESS(args, aot_data, nullptr) != nullptr) {
+      settings.vm_snapshot_data = make_mapping_callback(
+          args->aot_data->vm_snapshot_data, 0);
+
+      settings.vm_snapshot_instr = make_mapping_callback(
+          args->aot_data->vm_snapshot_instrs, 0);
+
+      settings.isolate_snapshot_data = make_mapping_callback(
+          args->aot_data->vm_isolate_data, 0);
+
+      settings.isolate_snapshot_instr = make_mapping_callback(
+          args->aot_data->vm_isolate_instrs, 0);
+    }
+
     if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
       settings.vm_snapshot_data = make_mapping_callback(
           args->vm_snapshot_data, SAFE_ACCESS(args, vm_snapshot_data_size, 0));
@@ -658,6 +738,16 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   }
 
   flutter::Settings settings = flutter::SettingsFromCommandLine(command_line);
+
+  if (SAFE_ACCESS(args, aot_data, nullptr)) {
+    if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) ||
+        SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) ||
+        SAFE_ACCESS(args, isolate_snapshot_data, nullptr) ||
+        SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr)) {
+          return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                    "Multiple AOT sources specified.");
+    }
+  }
 
   PopulateSnapshotMappingCallbacks(args, settings);
 

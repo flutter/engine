@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
 
+#include "flutter/fml/paths.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
@@ -75,16 +76,30 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   // to do this manually.
   AddCommandLineArgument("embedder_unittest");
 
-  if (preference == InitializationPreference::kInitialize) {
+  if (preference != InitializationPreference::kNoInitialize) {
     SetAssetsPath();
-    SetSnapshots();
     SetIsolateCreateCallbackHook();
     SetSemanticsCallbackHooks();
     AddCommandLineArgument("--disable-observatory");
   }
+  
+  if (preference == InitializationPreference::kSnapshotsInitialize) {
+    SetSnapshots();
+  }
+  else if (preference == InitializationPreference::kElfInitialize) {
+    SetAotDataElf();
+  }
+  else if (preference == InitializationPreference::kSnapshotsAndElfInitialize) {
+    SetSnapshots();
+    SetAotDataElf();
+  }
 }
 
-EmbedderConfigBuilder::~EmbedderConfigBuilder() = default;
+EmbedderConfigBuilder::~EmbedderConfigBuilder() {
+  if (project_args_.aot_data) {
+    FlutterEngineCollectAOTData(project_args_.aot_data);
+  }
+}
 
 FlutterProjectArgs& EmbedderConfigBuilder::GetProjectArgs() {
   return project_args_;
@@ -130,6 +145,20 @@ void EmbedderConfigBuilder::SetSnapshots() {
     project_args_.isolate_snapshot_instructions = mapping->GetMapping();
     project_args_.isolate_snapshot_instructions_size = mapping->GetSize();
   }
+}
+
+void EmbedderConfigBuilder::SetAotDataElf() {
+  FlutterEngineAOTDataSource data_in;
+  FlutterEngineAOTData data_out;
+
+  const auto elf_path =
+      fml::paths::JoinPaths({GetFixturesPath(), kAOTAppELFFileName});
+
+  data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
+  data_in.elf_path = elf_path.c_str();
+
+  FlutterEngineCreateAOTData(&data_in, &data_out);
+  project_args_.aot_data = data_out;
 }
 
 void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
