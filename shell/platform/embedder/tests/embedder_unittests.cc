@@ -4215,6 +4215,7 @@ TEST_F(EmbedderTest, InvalidAOTDataSourcesMustReturnError) {
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
 
   data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
+  data_in.elf_path = nullptr;
 
   // Invalid ELF path specified.
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
