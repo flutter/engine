@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package io.flutter.plugin.editing;
+package io.flutter.plugin.mouse;
 
 import android.content.Context;
+import android.view.PointerIcon;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import java.util.HashMap;
@@ -27,7 +28,7 @@ public class MouseCursorPlugin {
     this.context = context;
 
     this.mouseCursorChannel = mouseCursorChannel;
-    mouseCursorChannel.setMouseCursorMethodHandler(
+    mouseCursorChannel.setMethodHandler(
       new MouseCursorChannel.MouseCursorMethodHandler() {
         @Override
         public void activateSystemCursor(@NonNull Integer shapeCode) {
@@ -54,7 +55,7 @@ public class MouseCursorPlugin {
 
   static Integer _mapShapeCodeToPlatformConstant(int shapeCode) {
     // Shape codes are hard-coded identifiers for system cursors.
-    // 
+    //
     // The shape code values must be kept in sync with flutter's
     // rendering/mouse_cursor.dart
     switch (shapeCode) {
@@ -82,7 +83,7 @@ public class MouseCursorPlugin {
    * <p>The MouseCursorPlugin instance should not be used after calling this.
    */
   public void destroy() {
-    mouseCursorChannel.setMouseCursorMethodHandler(null);
+    mouseCursorChannel.setMethodHandler(null);
   }
 
   public interface MouseCursorViewDelegate {

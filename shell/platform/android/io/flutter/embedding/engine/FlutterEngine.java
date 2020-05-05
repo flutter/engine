@@ -78,6 +78,7 @@ public class FlutterEngine {
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final LifecycleChannel lifecycleChannel;
   @NonNull private final LocalizationChannel localizationChannel;
+  @NonNull private final MouseCursorChannel mouseCursorChannel;
   @NonNull private final NavigationChannel navigationChannel;
   @NonNull private final PlatformChannel platformChannel;
   @NonNull private final SettingsChannel settingsChannel;
@@ -219,6 +220,7 @@ public class FlutterEngine {
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
+    mouseCursorChannel = new MouseCursorChannel(dartExecutor);
     navigationChannel = new NavigationChannel(dartExecutor);
     platformChannel = new PlatformChannel(dartExecutor);
     settingsChannel = new SettingsChannel(dartExecutor);
