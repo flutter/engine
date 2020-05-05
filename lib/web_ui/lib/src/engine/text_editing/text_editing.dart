@@ -161,7 +161,7 @@ class EngineAutofillForm {
   /// listeners with no exceptions are added during
   /// [TextEditingStrategy.addEventHandlers] method call and all
   /// listeners are removed during [TextEditingStrategy.disable] method call.
-  List<StreamSubscription<html.Event>> addEventListeners() {
+  List<StreamSubscription<html.Event>> addInputEventListeners() {
     Iterable<String> keys = elements.keys;
     List<StreamSubscription<html.Event>> subscriptions =
         <StreamSubscription<html.Event>>[];
@@ -592,7 +592,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   void addEventHandlers() {
     if (_inputConfiguration.autofillGroup != null) {
       _subscriptions
-          .addAll(_inputConfiguration.autofillGroup.addEventListeners());
+          .addAll(_inputConfiguration.autofillGroup.addInputEventListeners());
     }
 
     // Subscribe to text and selection changes.
@@ -825,7 +825,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   void addEventHandlers() {
     if (_inputConfiguration.autofillGroup != null) {
       _subscriptions
-          .addAll(_inputConfiguration.autofillGroup.addEventListeners());
+          .addAll(_inputConfiguration.autofillGroup.addInputEventListeners());
     }
 
     // Subscribe to text and selection changes.
@@ -934,7 +934,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   void addEventHandlers() {
     if (_inputConfiguration.autofillGroup != null) {
       _subscriptions
-          .addAll(_inputConfiguration.autofillGroup.addEventListeners());
+          .addAll(_inputConfiguration.autofillGroup.addInputEventListeners());
     }
 
     // Subscribe to text and selection changes.
@@ -969,7 +969,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   void addEventHandlers() {
     if (_inputConfiguration.autofillGroup != null) {
       _subscriptions
-          .addAll(_inputConfiguration.autofillGroup.addEventListeners());
+          .addAll(_inputConfiguration.autofillGroup.addInputEventListeners());
     }
 
     // Subscribe to text and selection changes.

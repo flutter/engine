@@ -1381,8 +1381,13 @@ void main() {
           BrowserAutofillHints.instance.flutterToEngine('password'));
       expect(firstElement.id, 'fields2');
       expect(firstElement.type, 'password');
-      expect(firstElement.autocomplete,
-          BrowserAutofillHints.instance.flutterToEngine('password'));
+      if (browserEngine == BrowserEngine.firefox) {
+        expect(firstElement.name,
+            BrowserAutofillHints.instance.flutterToEngine('password'));
+      } else {
+        expect(firstElement.autocomplete,
+            BrowserAutofillHints.instance.flutterToEngine('password'));
+      }
 
       // Editing state is applied to the element.
       expect(firstElement.value, 'Test');
@@ -1472,8 +1477,13 @@ void main() {
           BrowserAutofillHints.instance.flutterToEngine(testHint));
       expect(testInputElement.id, testId);
       expect(testInputElement.type, 'text');
-      expect(testInputElement.autocomplete,
-          BrowserAutofillHints.instance.flutterToEngine(testHint));
+             if (browserEngine == BrowserEngine.firefox) {
+        expect(testInputElement.name,
+            BrowserAutofillHints.instance.flutterToEngine('testHint'));
+      } else {
+        expect(testInputElement.autocomplete,
+            BrowserAutofillHints.instance.flutterToEngine('testHint'));
+      }
     });
 
     test('textarea with autofill hint', () {
