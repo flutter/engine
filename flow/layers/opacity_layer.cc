@@ -35,6 +35,10 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
 
+  // Similar to what's done in TransformLayer::Preroll, we have to apply the
+  // reverse transformation to the cull rect to properly cull child layers.
+  context->cull_rect = context->cull_rect.makeOffset(-offset_.fX, -offset_.fY);
+
   context->is_opaque = parent_is_opaque && (alpha_ == SK_AlphaOPAQUE);
   context->mutators_stack.PushTransform(
       SkMatrix::MakeTrans(offset_.fX, offset_.fY));
@@ -50,6 +54,9 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
     TryToPrepareRasterCache(context, container, child_matrix);
   }
+
+  // Restore cull_rect
+  context->cull_rect = context->cull_rect.makeOffset(offset_.fX, offset_.fY);
 }
 
 void OpacityLayer::Paint(PaintContext& context) const {
