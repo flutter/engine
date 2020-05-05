@@ -33,7 +33,8 @@ class _CanvasPool extends _SaveStackTracking {
 
   html.HtmlElement _rootElement;
   int _saveContextCount = 0;
-  int _activeCanvasCount = 0;
+  // Number of elements that have been added to flt-canvas.
+  int _activeElementCount = 0;
 
   _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
 
@@ -73,6 +74,7 @@ class _CanvasPool extends _SaveStackTracking {
       _context = null;
       _contextHandle = null;
     }
+    _activeElementCount++;
   }
 
   void allocateCanvas(html.HtmlElement rootElement) {
@@ -85,6 +87,7 @@ class _CanvasPool extends _SaveStackTracking {
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
       requiresClearRect = true;
+      reused = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
       // allocated. This is done for the following reasons:
@@ -121,7 +124,7 @@ class _CanvasPool extends _SaveStackTracking {
       _rootElement.append(_canvas);
     }
 
-    if (_activeCanvasCount == 0 && _canvas == _rootElement.firstChild) {
+    if (_activeElementCount == 0) {
       _canvas.style.zIndex = '-1';
     } else if (reused) {
       // If a canvas is the first element we set z-index = -1 to workaround
@@ -129,7 +132,7 @@ class _CanvasPool extends _SaveStackTracking {
       // reset z-index.
       _canvas.style.removeProperty('z-index');
     }
-    ++_activeCanvasCount;
+    ++_activeElementCount;
 
     _context = _canvas.context2D;
     _contextHandle = ContextStateHandle(_context);
@@ -252,7 +255,7 @@ class _CanvasPool extends _SaveStackTracking {
     _canvas = null;
     _context = null;
     _contextHandle = null;
-    _activeCanvasCount = 0;
+    _activeElementCount = 0;
   }
 
   void endOfPaint() {
