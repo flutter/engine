@@ -45,11 +45,6 @@ struct _FlBinaryMessengerResponseHandle {
   const FlutterPlatformMessageResponseHandle* response_handle;
 };
 
-static void engine_weak_notify_cb(gpointer user_data, GObject* object) {
-  FlBinaryMessenger* self = FL_BINARY_MESSENGER(user_data);
-  self->engine = nullptr;
-}
-
 static FlBinaryMessengerResponseHandle* response_handle_new(
     const FlutterPlatformMessageResponseHandle* response_handle) {
   FlBinaryMessengerResponseHandle* handle =
@@ -62,6 +57,11 @@ static FlBinaryMessengerResponseHandle* response_handle_new(
 
 static void response_handle_free(FlBinaryMessengerResponseHandle* handle) {
   g_free(handle);
+}
+
+static void engine_weak_notify_cb(gpointer user_data, GObject* object) {
+  FlBinaryMessenger* self = FL_BINARY_MESSENGER(user_data);
+  self->engine = nullptr;
 }
 
 static gboolean fl_binary_messenger_platform_message_callback(
