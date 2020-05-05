@@ -64,8 +64,8 @@ import java.util.Arrays;
  */
 /* package */ final class FlutterActivityAndFragmentDelegate {
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
-  private static final String FRAMEWORK_BUNDLE_KEY = "framework";
-  private static final String PLUGINS_BUNDLE_KEY = "plugins";
+  private static final String FRAMEWORK_RESTORATION_BUNDLE_KEY = "framework";
+  private static final String PLUGINS_RESTORATION_BUNDLE_KEY = "plugins";
 
   // The FlutterActivity or FlutterFragment that is delegating most of its calls
   // to this FlutterActivityAndFragmentDelegate.
@@ -303,8 +303,8 @@ import java.util.Arrays;
     Bundle pluginsBundle = null;
     byte[] frameworkBundle = null;
     if (bundle != null) {
-      pluginsBundle = bundle.getBundle(PLUGINS_BUNDLE_KEY);
-      frameworkBundle = bundle.getByteArray(FRAMEWORK_BUNDLE_KEY);
+      pluginsBundle = bundle.getBundle(PLUGINS_RESTORATION_BUNDLE_KEY);
+      frameworkBundle = bundle.getByteArray(FRAMEWORK_RESTORATION_BUNDLE_KEY);
     }
 
     final RestorationChannel restorationChannel = flutterEngine.getRestorationChannel();
@@ -465,13 +465,13 @@ import java.util.Arrays;
 
     if (host.shouldRestoreAndSaveState()) {
       bundle.putByteArray(
-          FRAMEWORK_BUNDLE_KEY, flutterEngine.getRestorationChannel().getRestorationData());
+          FRAMEWORK_RESTORATION_BUNDLE_KEY, flutterEngine.getRestorationChannel().getRestorationData());
     }
 
     if (host.shouldAttachEngineToActivity()) {
       final Bundle plugins = new Bundle();
       flutterEngine.getActivityControlSurface().onSaveInstanceState(plugins);
-      bundle.putBundle(PLUGINS_BUNDLE_KEY, plugins);
+      bundle.putBundle(PLUGINS_RESTORATION_BUNDLE_KEY, plugins);
     }
   }
 
@@ -835,6 +835,11 @@ import java.util.Arrays;
      * will be forwarded to the framework via the {@code RestorationChannel} and during {@code
      * onSaveInstanceState(Bundle)} the current framework instance state obtained from {@code
      * RestorationChannel} will be stored in the provided bundle.
+     *
+     * <p>This may only be set to true if the engine in used has the
+     * {@code FlutterEngine.willProvideRestorationData} flag set to true.
+     *
+     * <p>This defaults to true, unless a cached engine is used.
      */
     boolean shouldRestoreAndSaveState();
   }

@@ -17,6 +17,18 @@ import io.flutter.plugin.common.StandardMethodCodec;
  * <p>The engine can obtain the current restoration data from the framework via this channel to
  * store it on disk and - when the app is relaunched - provide the stored data back to the framework
  * to recreate the original state of the app.
+ *
+ * <p>The channel only accepts restoration data for the engine when {@code waitForRestorationData}
+ * is set to true. If it is not set, it will send null to the framework as initial restoration data.
+ * When it is set to true, it will wait until {@code setRestorationData(byte[])} has been called
+ * before responding to restoration data requests from the framework. In other words, if
+ * {@code waitForRestorationData} is true, {@code setRestorationData(byte[])} must be called
+ * (possibly with null as argument if no restoration data is available).
+ *
+ * <p>Restoration data for the framework can only be set once via
+ * {@code setRestorationData(byte[])}. The current restoration data provided by the framework can be
+ * read via {@code getRestorationData()}.
+ *
  */
 public class RestorationChannel {
   private static final String TAG = "RestorationChannel";
@@ -38,6 +50,9 @@ public class RestorationChannel {
    * the engine never calls {@code setRestorationData}. If it has been set to true, but it later
    * turns out that there is no restoration data, {@code setRestorationData} must be called with
    * null.
+   *
+   * <p>When constructing an engine set this to true if you want to provide restoration data to
+   * the framework by calling {@code setRestorationData(byte[])}.
    */
   public final boolean waitForRestorationData;
 
@@ -46,7 +61,7 @@ public class RestorationChannel {
   private boolean engineHasProvidedData = false;
   private boolean frameworkHasRequestedData = false;
 
-  /** Whether {@code setRestorationData} has been called. */
+  /** Whether {@code setRestorationData(byte[])} has been called. */
   public boolean hasRestorationDataBeenSet() {
     return engineHasProvidedData;
   }
