@@ -1155,8 +1155,13 @@ void main() {
 
       // Autofill one of the form elements.
       InputElement element = formElement.childNodes.first;
-      expect(element.autocomplete,
-          BrowserAutofillHints.instance.flutterToEngine(hintForFirstElement));
+      if (browserEngine == BrowserEngine.firefox) {
+        expect(element.name,
+            BrowserAutofillHints.instance.flutterToEngine(hintForFirstElement));
+      } else {
+        expect(element.autocomplete,
+            BrowserAutofillHints.instance.flutterToEngine(hintForFirstElement));
+      }
       element.value = 'something';
       element.dispatchEvent(Event.eventType('Event', 'input'));
 
@@ -1397,7 +1402,7 @@ void main() {
       // Element is hidden.
       final CssStyleDeclaration css = firstElement.style;
       expect(css.color, 'transparent');
-      expect(css.outline, 'none');
+      expect(css.backgroundColor, 'transparent');
     });
 
     test('place remove form', () {
@@ -1479,10 +1484,10 @@ void main() {
       expect(testInputElement.type, 'text');
              if (browserEngine == BrowserEngine.firefox) {
         expect(testInputElement.name,
-            BrowserAutofillHints.instance.flutterToEngine('testHint'));
+            BrowserAutofillHints.instance.flutterToEngine(testHint));
       } else {
         expect(testInputElement.autocomplete,
-            BrowserAutofillHints.instance.flutterToEngine('testHint'));
+            BrowserAutofillHints.instance.flutterToEngine(testHint));
       }
     });
 
