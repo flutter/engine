@@ -82,14 +82,13 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     SetSemanticsCallbackHooks();
     AddCommandLineArgument("--disable-observatory");
   }
-  
+
   if (preference == InitializationPreference::kSnapshotsInitialize) {
     SetSnapshots();
-  }
-  else if (preference == InitializationPreference::kElfInitialize) {
+  } else if (preference == InitializationPreference::kElfInitialize) {
     SetAotDataElf();
-  }
-  else if (preference == InitializationPreference::kSnapshotsAndElfInitialize) {
+  } else if (preference ==
+             InitializationPreference::kSnapshotsAndElfInitialize) {
     SetSnapshots();
     SetAotDataElf();
   }

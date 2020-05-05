@@ -553,23 +553,22 @@ FlutterEngineResult FlutterEngineCreateAOTData(
   switch (source->type) {
     case kFlutterEngineAOTDataSourceTypeElfPath: {
       if (!source->elf_path || !fml::IsFile(source->elf_path)) {
-        return LOG_EMBEDDER_ERROR(
-          kInvalidArguments,
-          "Invalid ELF path specified.");
+        return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                  "Invalid ELF path specified.");
       }
 
       auto aot_data = new _FlutterEngineAOTData();
       const char* error = nullptr;
 
-      auto loaded_elf =
-        Dart_LoadELF(source->elf_path,              // file path
-                     0,                             // file offset
-                     &error,                        // error (out)
-                     &aot_data->vm_snapshot_data,   // vm snapshot data (out)
-                     &aot_data->vm_snapshot_instrs, // vm snapshot instr (out)
-                     &aot_data->vm_isolate_data,    // vm isolate data (out)
-                     &aot_data->vm_isolate_instrs   // vm isolate instr (out)
-        );
+      auto loaded_elf = Dart_LoadELF(
+          source->elf_path,               // file path
+          0,                              // file offset
+          &error,                         // error (out)
+          &aot_data->vm_snapshot_data,    // vm snapshot data (out)
+          &aot_data->vm_snapshot_instrs,  // vm snapshot instr (out)
+          &aot_data->vm_isolate_data,     // vm isolate data (out)
+          &aot_data->vm_isolate_instrs    // vm isolate instr (out)
+      );
 
       if (loaded_elf == nullptr) {
         delete aot_data;
@@ -579,7 +578,7 @@ FlutterEngineResult FlutterEngineCreateAOTData(
       aot_data->loaded_elf.reset(loaded_elf);
 
       *data_out = aot_data;
-    }  break;
+    } break;
     default:
       return LOG_EMBEDDER_ERROR(
           kInvalidArguments,
@@ -610,17 +609,17 @@ void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
 
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
     if (SAFE_ACCESS(args, aot_data, nullptr) != nullptr) {
-      settings.vm_snapshot_data = make_mapping_callback(
-          args->aot_data->vm_snapshot_data, 0);
+      settings.vm_snapshot_data =
+          make_mapping_callback(args->aot_data->vm_snapshot_data, 0);
 
-      settings.vm_snapshot_instr = make_mapping_callback(
-          args->aot_data->vm_snapshot_instrs, 0);
+      settings.vm_snapshot_instr =
+          make_mapping_callback(args->aot_data->vm_snapshot_instrs, 0);
 
-      settings.isolate_snapshot_data = make_mapping_callback(
-          args->aot_data->vm_isolate_data, 0);
+      settings.isolate_snapshot_data =
+          make_mapping_callback(args->aot_data->vm_isolate_data, 0);
 
-      settings.isolate_snapshot_instr = make_mapping_callback(
-          args->aot_data->vm_isolate_instrs, 0);
+      settings.isolate_snapshot_instr =
+          make_mapping_callback(args->aot_data->vm_isolate_instrs, 0);
     }
 
     if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
@@ -744,8 +743,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) ||
         SAFE_ACCESS(args, isolate_snapshot_data, nullptr) ||
         SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr)) {
-          return LOG_EMBEDDER_ERROR(kInvalidArguments,
-                                    "Multiple AOT sources specified.");
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Multiple AOT sources specified.");
     }
   }
 

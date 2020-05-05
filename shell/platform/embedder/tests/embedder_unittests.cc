@@ -4212,26 +4212,22 @@ TEST_F(EmbedderTest, InvalidAOTDataSourcesMustReturnError) {
   FlutterEngineAOTData data_out;
 
   // Invalid FlutterEngineAOTDataSourceType type specified.
-  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out),
-            kInvalidArguments);
+  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
 
   data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
 
   // Invalid ELF path specified.
-  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out),
-            kInvalidArguments);
+  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
 
   data_in.elf_path = "";
 
   // Invalid ELF path specified.
-  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out),
-            kInvalidArguments);
+  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
 
   data_in.elf_path = "/dev/null";
 
   // Could not read ELF file.
-  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out),
-            kInvalidArguments);
+  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
 }
 
 TEST_F(EmbedderTest, MustNotRunWithMultipleAotSources) {
@@ -4242,10 +4238,11 @@ TEST_F(EmbedderTest, MustNotRunWithMultipleAotSources) {
   auto& context = GetEmbedderContext();
 
   EmbedderConfigBuilder builder(
-      context, EmbedderConfigBuilder::InitializationPreference::kSnapshotsAndElfInitialize);
-  
+      context, EmbedderConfigBuilder::InitializationPreference::
+                   kSnapshotsAndElfInitialize);
+
   builder.SetSoftwareRendererConfig();
-  
+
   auto engine = builder.LaunchEngine();
   ASSERT_FALSE(engine.is_valid());
 }
