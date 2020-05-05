@@ -59,6 +59,9 @@ static void response_handle_free(FlBinaryMessengerResponseHandle* handle) {
   g_free(handle);
 }
 
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(FlBinaryMessengerResponseHandle,
+                              response_handle_free);
+
 static void engine_weak_notify_cb(gpointer user_data, GObject* object) {
   FlBinaryMessenger* self = FL_BINARY_MESSENGER(user_data);
   self->engine = nullptr;
@@ -145,12 +148,15 @@ G_MODULE_EXPORT gboolean fl_binary_messenger_send_response(
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(self), FALSE);
   g_return_val_if_fail(response_handle != nullptr, FALSE);
 
+  // Take reference to ensure it is freed
+  g_autoptr(FlBinaryMessengerResponseHandle) owned_response_handle =
+      response_handle;
+
   if (self->engine == nullptr)
     return TRUE;
 
   gboolean result = fl_engine_send_platform_message_response(
-      self->engine, response_handle->response_handle, response, error);
-  response_handle_free(response_handle);
+      self->engine, owned_response_handle->response_handle, response, error);
 
   return result;
 }
