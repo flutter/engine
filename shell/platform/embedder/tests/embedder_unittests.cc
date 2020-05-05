@@ -4235,6 +4235,10 @@ TEST_F(EmbedderTest, InvalidAOTDataSourcesMustReturnError) {
 }
 
 TEST_F(EmbedderTest, MustNotRunWithMultipleAotSources) {
+  if (!DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
   auto& context = GetEmbedderContext();
 
   EmbedderConfigBuilder builder(
@@ -4247,6 +4251,10 @@ TEST_F(EmbedderTest, MustNotRunWithMultipleAotSources) {
 }
 
 TEST_F(EmbedderTest, CanLaunchAndShutdownWithValidElfSource) {
+  if (!DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
   auto& context = GetEmbedderContext();
 
   fml::AutoResetWaitableEvent latch;

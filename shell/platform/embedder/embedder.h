@@ -1196,8 +1196,10 @@ typedef struct {
   /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
   int64_t dart_old_gen_heap_size;
 
-  /// The AOT data to be used in AOT operation. This object should be obtained
-  /// via the `FlutterEngineCreateAOTData` method.
+  /// The AOT data to be used in AOT operation.
+  ///
+  /// Embedders should instantiate and destroy this object via the
+  /// FlutterEngineCreateAOTData and FlutterEngineCollectAOTData methods.
   FlutterEngineAOTData aot_data;
 } FlutterProjectArgs;
 
