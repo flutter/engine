@@ -61,8 +61,8 @@ void main() async {
     [BlendMode.hue, BlendMode.saturation, BlendMode.color,
     BlendMode.luminosity]];
 
-  for (int blendGroup = 0; blendGroup < 8; ++blendGroup) {
-    test('Draw image with Group1 blend modes', () async {
+  for (int blendGroup = 0; blendGroup < 4; ++blendGroup) {
+    test('Draw image with Group$blendGroup blend modes', () async {
       final RecordingCanvas rc = RecordingCanvas(
           const Rect.fromLTRB(0, 0, 400, 400));
       rc.save();
@@ -101,7 +101,8 @@ void main() async {
               ..colorFilter = EngineColorFilter.mode(black, blendMode));
       }
       rc.restore();
-      await _checkScreenshot(rc, 'canvas_image_blend_group$blendGroup');
+      await _checkScreenshot(rc, 'canvas_image_blend_group$blendGroup',
+          maxDiffRatePercent: 8.0);
     });
   }
 }
