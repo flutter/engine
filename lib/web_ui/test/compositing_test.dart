@@ -219,7 +219,7 @@ void main() {
       builder.pop();
 
       html.HtmlElement content = builder.build().webOnlyRootElement;
-      expect(content.querySelector('canvas').style.zIndex, '-2');
+      expect(content.querySelector('canvas').style.zIndex, '-1');
 
       // Force update to scene which will utilize reuse code path.
       final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
@@ -234,8 +234,8 @@ void main() {
       html.HtmlElement contentAfterReuse = builder2.build().webOnlyRootElement;
       List<html.CanvasElement> list =
           contentAfterReuse.querySelectorAll('canvas');
-      expect(list[0].style.zIndex, '-2');
-      expect(list[1].style.zIndex, '-1');
+      expect(list[0].style.zIndex, '-1');
+      expect(list[1].style.zIndex, '');
     });
   });
 
