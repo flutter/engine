@@ -106,6 +106,7 @@ void main() async {
   }
 }
 
+// 50x50 pixel flutter logo image.
 const String _flutterLogoBase64 =
     'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAKRlWElm'
     'TU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAg'
