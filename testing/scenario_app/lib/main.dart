@@ -62,7 +62,8 @@ void main() {
 
 Future<void> _handlePlatformMessage(
     String name, ByteData data, PlatformMessageResponseCallback callback) async {
-  print('$name = ${utf8.decode(data.buffer.asUint8List())}');
+  print(name);
+  print(utf8.decode(data.buffer.asUint8List()));
   if (name == 'set_scenario' && data != null) {
     _didReceiveScenarioFromPlatform = true;
 
@@ -80,6 +81,8 @@ Future<void> _handlePlatformMessage(
   } else if (name == 'write_timeline') {
     final String timelineData = await _getTimelineData();
     callback(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
+  } else {
+    _currentScenario?.onPlatformMessage(name, data, callback);
   }
 }
 
