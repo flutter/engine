@@ -137,6 +137,7 @@ fml::TimePoint SessionConnection::CalculateNextLatchPoint(
     fml::TimePoint last_latch_point_targeted,
     fml::TimeDelta flutter_frame_build_time,
     fml::TimeDelta vsync_interval,
+    fml::TimeDelta max_e2e_latency,
     std::deque<std::pair<fml::TimePoint, fml::TimePoint>>&
         future_presentation_infos) {
   fml::TimePoint minimum_latch_point_to_target =
@@ -149,9 +150,16 @@ fml::TimePoint SessionConnection::CalculateNextLatchPoint(
       std::max(minimum_latch_point_to_target,
                last_latch_point_targeted + (vsync_interval / 2));
 
+  fml::TimePoint max_vsync_time = present_requested_time + max_e2e_latency;
+
   auto it = future_presentation_infos.begin();
   while (it != future_presentation_infos.end()) {
     fml::TimePoint latch_point = it->first;
+    fml::TimePoint vsync_time = it->second;
+
+    if (vsync_time > max_vsync_time) {
+      break;
+    }
 
     if (latch_point >= minimum_latch_point_to_target) {
       return latch_point;
@@ -160,9 +168,9 @@ fml::TimePoint SessionConnection::CalculateNextLatchPoint(
     it++;
   }
 
-  FML_DCHECK(it == future_presentation_infos.end());
+  FML_DCHECK(it == future_presentation_infos.end() || it->second > max_vsync_time);
 
-  // It is our first presentation in a "while". Aim for the closest latch point.
+  // Aim for the closest latch point.
   return minimum_latch_point_to_target;
 }
 
@@ -207,17 +215,16 @@ void SessionConnection::PresentSession() {
   fml::TimePoint next_latch_point = CalculateNextLatchPoint(
       fml::TimePoint::Now(), present_requested_time_,
       last_latch_point_targeted_,
-      fml::TimeDelta::FromMilliseconds(10),     // flutter_frame_build_time
-      fml::TimeDelta::FromMicroseconds(16667),  // vsync_interval
+      fml::TimeDelta::FromMicroseconds(6000),     // flutter_frame_build_time
+      fml::TimeDelta::FromMicroseconds(16667),  // vsync_interval: 1 frame
+      fml::TimeDelta::FromMicroseconds(16667 * 2),  // max_e2e_latency: 2 frames
       future_presentation_infos_);
 
   last_latch_point_targeted_ = next_latch_point;
 
   session_wrapper_.Present2(
-      /*requested_presentation_time=*/next_latch_point.ToEpochDelta()
-          .ToNanoseconds(),
-      /*requested_prediction_span=*/10 *
-          16'666'667,  // Ask for 10 frames of data
+      /*requested_presentation_time=*/next_latch_point.ToEpochDelta().ToNanoseconds(),
+      /*requested_prediction_span=*/10 * 16'666'667,  // 10 frames of data
       [this](fuchsia::scenic::scheduling::FuturePresentationTimes info) {
         // Clear |future_presentation_infos_| and replace it with the updated
         // information.
