@@ -563,6 +563,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
   RemoveUnusedLayers();
+
   // Organize the layers by their z indexes.
   BringLayersIntoView(platform_view_layers);
   // Mark all layers as available, so they can be used in the next frame.
@@ -576,6 +577,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
 void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
   UIView* flutter_view = flutter_view_.get();
   auto zIndex = 0;
+  active_composition_order_.clear();
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t platform_view_id = composition_order_[i];
     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
