@@ -995,7 +995,7 @@ String _srcInColorFilterToSvg(ui.Color color) {
       '<feColorMatrix values="0 0 0 0 1 ' // Ignore input, set it to absolute.
           '0 0 0 0 1 '
           '0 0 0 0 1 '
-          '0 0 0 1 0" result="destalpha"/>' // Just take alpha channel of of destination
+          '0 0 0 1 0" result="destalpha"/>' // Just take alpha channel of destination
       '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
       '</feFlood>'
       '<feComposite in="flood" in2="destalpha" '
