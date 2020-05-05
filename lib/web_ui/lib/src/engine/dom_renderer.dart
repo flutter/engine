@@ -27,6 +27,7 @@ class DomRenderer {
   static const int vibrateHeavyImpact = 30;
   static const int vibrateSelectionClick = 10;
 
+  /// Fires when browser language preferences change.
   static const html.EventStreamProvider<html.Event> languageChangeEvent =
       const html.EventStreamProvider<html.Event>('languagechange');
 

@@ -140,20 +140,6 @@ class EngineWindow extends ui.Window {
   @override
   double get physicalDepth => double.maxFinite;
 
-  // Called by DomRenderer when browser languages change.
-  void _updateLocales() {
-    _locales = html.window.navigator.languages
-      .map((String locale) {
-        final parts = locale.split('-');
-        if (parts.length > 1) {
-          return ui.Locale(parts[0], parts[1]);
-        } else {
-          return ui.Locale(parts[0]);
-        }
-      })
-      .toList();
-  }
-
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
   final BrowserHistory _browserHistory = BrowserHistory();
@@ -257,6 +243,19 @@ class EngineWindow extends ui.Window {
   List<ui.Locale> get locales => _locales;
   List<ui.Locale> _locales = parseBrowserLanguages();
 
+  /// Sets locales to `null`.
+  ///
+  /// `null` is not a valid value for locales. This is only used for testing
+  /// locale update logic.
+  void debugResetLocales() {
+    _locales = null;
+  }
+
+  // Called by DomRenderer when browser languages change.
+  void _updateLocales() {
+    _locales = parseBrowserLanguages();
+  }
+
   static List<ui.Locale> parseBrowserLanguages() {
     // TODO(yjbanov): find a solution for IE
     if (!js_util.hasProperty(html.window.navigator, 'languages')) {
@@ -265,14 +264,16 @@ class EngineWindow extends ui.Window {
 
     final List<ui.Locale> locales = <ui.Locale>[];
     for (final String language in html.window.navigator.languages) {
-      if (language.contains('_')) {
-        final List<String> parts = language.split('_');
+      final List<String> parts = language.split('-');
+      if (parts.length > 1) {
         locales.add(ui.Locale(parts.first, parts.last));
       } else {
         locales.add(ui.Locale(language));
       }
     }
 
+    // To make it easier for the app code, let's not leave the locales list
+    // empty. This way there's fewer corner cases for apps to handle.
     if (locales.isEmpty) {
       locales.add(_defaultLocale);
     }
@@ -444,7 +445,7 @@ class EngineWindow extends ui.Window {
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
   static ui.PlatformMessageResponseCallback/*?*/ _zonedPlatformMessageResponseCallback(ui.PlatformMessageResponseCallback/*?*/ callback) {
-    if (callback == null)
+    if (callback == null) {
       return null;
     }
 
