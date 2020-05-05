@@ -563,7 +563,6 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
   RemoveUnusedLayers();
-
   // Organize the layers by their z indexes.
   BringLayersIntoView(platform_view_layers);
   // Mark all layers as available, so they can be used in the next frame.
