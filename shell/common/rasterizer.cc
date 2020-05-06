@@ -4,12 +4,11 @@
 
 #include "flutter/shell/common/rasterizer.h"
 
-#include "flutter/shell/common/persistent_cache.h"
-
 #include <utility>
 
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
+#include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -292,6 +291,29 @@ RasterStatus Rasterizer::DoDraw(
         "vsync_transitions_missed",   // arg_key_3
         vsync_transitions_missed      // arg_val_3
     );
+  }
+
+  // Pipeline pressure is applied from a couple of places:
+  // rasterizer: When there are more items as of the time of Consume.
+  // animator (via shell): Frame gets produces every vsync.
+  // Enqueing here is to account for the following scenario:
+  // T = 1
+  //  - one item (A) in the pipeline
+  //  - rasterizer starts (and merges the threads)
+  //  - pipeline consume result says no items to process
+  // T = 2
+  //  - animator produces (B) to the pipeline
+  //  - applies pipeline pressure via platform thread.
+  // T = 3
+  //   - rasterizes finished (and un-merges the threads)
+  //   - |Draw| for B yields as its on the wrong thread.
+  // This enqueue ensures that we attempt to consume from the right
+  // thread one more time after un-merge.
+  if (raster_thread_merger_) {
+    if (raster_thread_merger_->DecrementLease() ==
+        fml::RasterThreadStatus::kUnmergedNow) {
+      return RasterStatus::kEnqueuePipeline;
+    }
   }
 
   return raster_status;

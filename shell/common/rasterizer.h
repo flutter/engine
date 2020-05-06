@@ -238,10 +238,10 @@ class Rasterizer final : public SnapshotDelegate {
   ///             layer tree directly?
   ///
   ///             The layer tree holder is a thread safe way to produce frame
-  ///             workloads from the UI thread and raster them on the raster
+  ///             workloads from the UI thread and rasterize them on the raster
   ///             thread. To account for scenarious where the UI thread
   ///             continues to produce the frames while a raster task is queued,
-  ///             `Rasterizer::DoDraw` that gets executed on the raster thread,
+  ///             `Rasterizer::DoDraw` that gets executed on the raster thread
   ///             must pick up the newest layer tree produced by the UI thread.
   ///             If we were to pass the layer tree as opposed to the holder, it
   ///             would result in stale frames being rendered.
