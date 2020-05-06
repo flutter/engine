@@ -246,6 +246,9 @@ fml::WeakPtr<AccessibilityBridge> AccessibilityBridge::GetWeakPtr() {
 }
 
 void AccessibilityBridge::clearState() {
+  for (SemanticsObject* object in objects_.get().allValues) {
+    object.platformViewSemanticsContainer = nil;
+  }
   [objects_ removeAllObjects];
   previous_route_id_ = 0;
   previous_routes_.clear();
