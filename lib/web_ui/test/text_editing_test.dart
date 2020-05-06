@@ -1174,7 +1174,7 @@ void main() {
         <dynamic>[
           0, // Client ID
           <String, dynamic>{
-            element.autocomplete: <String, dynamic>{
+            hintForFirstElement: <String, dynamic>{
               'text': 'something',
               'selectionBase': 9,
               'selectionExtent': 9
