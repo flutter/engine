@@ -68,6 +68,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   flutter::ViewportMetrics _viewportMetrics;
+  flutter::ScreenMetrics _screenMetrics;
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
@@ -831,6 +832,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Handle view resizing
 
+- (void)updateScreenMetrics {
+  [_engine.get() updateScreenMetrics:_screenMetrics];
+}
+
 - (void)updateViewportMetrics {
   [_engine.get() updateViewportMetrics:_viewportMetrics];
 }
@@ -845,19 +850,29 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)viewDidLayoutSubviews {
-  CGSize viewSize = self.view.bounds.size;
-  CGFloat scale = [UIScreen mainScreen].scale;
+  CGRect viewBounds = self.view.bounds;
+  CGRect screenBounds = self.view.window.screen.bounds;
+  CGFloat scale = self.view.window.screen.scale;
 
   // Purposefully place this not visible.
-  _scrollView.get().frame = CGRectMake(0.0, 0.0, viewSize.width, 0.0);
+  _scrollView.get().frame = CGRectMake(0.0, 0.0, viewBounds.size.width, 0.0);
   _scrollView.get().contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
 
   // First time since creation that the dimensions of its view is known.
   bool firstViewBoundsUpdate = !_viewportMetrics.physical_width;
+  _screenMetrics.device_pixel_ratio = scale;
+  _screenMetrics.physical_left = screenBounds.origin.x;
+  _screenMetrics.physical_top = screenBounds.origin.y;
+  _screenMetrics.physical_width = screenBounds.size.width;
+  _screenMetrics.physical_height = screenBounds.size.height;
   _viewportMetrics.device_pixel_ratio = scale;
-  _viewportMetrics.physical_width = viewSize.width * scale;
-  _viewportMetrics.physical_height = viewSize.height * scale;
+  _viewportMetrics.physical_left = viewBounds.origin.x;
+  _viewportMetrics.physical_top = viewBounds.origin.y;
+  _viewportMetrics.physical_width = viewBounds.size.width * scale;
+  _viewportMetrics.physical_height = viewBounds.size.height * scale;
 
+  [self updateScreenPadding];
+  [self updateScreenMetrics];
   [self updateViewportPadding];
   [self updateViewportMetrics];
 
@@ -888,9 +903,26 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)viewSafeAreaInsetsDidChange {
+  [self updateScreenPadding];
+  [self updateScreenMetrics];
   [self updateViewportPadding];
   [self updateViewportMetrics];
   [super viewSafeAreaInsetsDidChange];
+}
+
+// Updates _screenMetrics physical padding.
+//
+// Screen padding represents the iOS safe area insets.
+- (void)updateScreenPadding {
+  CGFloat scale = [UIScreen mainScreen].scale;
+  if (@available(iOS 11, *)) {
+    _screenMetrics.physical_padding_top = self.view.safeAreaInsets.top * scale;
+    _screenMetrics.physical_padding_left = self.view.safeAreaInsets.left * scale;
+    _screenMetrics.physical_padding_right = self.view.safeAreaInsets.right * scale;
+    _screenMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
+  } else {
+    _screenMetrics.physical_padding_top = [self statusBarPadding] * scale;
+  }
 }
 
 // Updates _viewportMetrics physical padding.
@@ -933,16 +965,21 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     // The keyboard is treated as an inset since we want to effectively reduce the window size by
     // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
     // bottom padding.
-    _viewportMetrics.physical_view_inset_bottom = bottom * scale;
+    _screenMetrics.physical_view_inset_bottom = bottom * scale;
+    _viewportMetrics.physical_view_inset_bottom = _screenMetrics.physical_view_inset_bottom;
   } else {
+    _screenMetrics.physical_view_inset_bottom = 0;
     _viewportMetrics.physical_view_inset_bottom = 0;
   }
 
+  [self updateScreenMetrics];
   [self updateViewportMetrics];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
+  _screenMetrics.physical_view_inset_bottom = 0;
   _viewportMetrics.physical_view_inset_bottom = 0;
+  [self updateScreenMetrics];
   [self updateViewportMetrics];
 }
 

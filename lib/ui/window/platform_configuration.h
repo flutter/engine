@@ -15,8 +15,10 @@
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
+#include "flutter/lib/ui/window/screen.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
+#include "lib/ui/window/screen_metrics.h"
 #include "third_party/tonic/dart_persistent_value.h"
 
 namespace tonic {
@@ -96,24 +98,60 @@ class PlatformConfiguration final {
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
-  //----------------------------------------------------------------------------
-  /// @brief Retrieves the Window.
-  ///
-  /// @return the Window.
-  const Window& get_window() const { return *window_; }
+  typedef std::unordered_map<int64_t, std::shared_ptr<Screen>> ScreenMap;
+  typedef std::unordered_map<int64_t, std::shared_ptr<Window>> WindowMap;
 
   //----------------------------------------------------------------------------
-  /// @brief Sets the viewport metrics of the Window.
+  /// @brief Retrieves the Window with the window ID given by window_id.
   ///
-  /// @param[in] window_metrics The viewport metrics to replace the old ones
-  ///            with.
-  void SetWindowMetrics(const ViewportMetrics& window_metrics);
+  /// @param[in] window_id  The identifier for the Window to retrieve.
+  ///
+  /// @return a shared_ptr to the Window, or nullptr if none is found.
+  std::shared_ptr<Window> window(int64_t window_id);
+
+  //----------------------------------------------------------------------------
+  /// @brief Retrieves the Screen with the screen ID given by window_id.
+  ///
+  /// @param[in] screen_id  The identifier for the screen to retrieve.
+  ///
+  /// @return A shared_ptr to the Screen, or nullptr if none is found.
+  std::shared_ptr<Screen> screen(int64_t screen_id);
+
+  //----------------------------------------------------------------------------
+  /// @brief Sets the viewport metrics of all viewports that exist. Any windows
+  ///        not in this list are assumed to no longer exist, and will be
+  ///        removed.
+  ///
+  /// @param[in] windows The list of viewport metrics to replace the old list
+  /// with.
+  void SetWindowMetrics(const std::vector<ViewportMetrics>& viewport_metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief Retrieves the map of window id to window.
+  ///
+  /// @return a const reference to the map of windows that exist.
+  const WindowMap& windows() { return windows_; }
+
+  //----------------------------------------------------------------------------
+  /// @brief Sets the screen metrics of all screens that exist. Any screens not
+  ///        in this list are assumed to no longer exist, and will be removed.
+  ///
+  /// @param[in] windows The list of windows to replace the old list with.
+  void SetScreenMetrics(const std::vector<ScreenMetrics>& screen_metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief Retrieves the map of screen id to screen.
+  ///
+  /// @return a const reference to the map of screens that exist.
+  const ScreenMap& screens() { return screens_; }
 
  private:
   PlatformConfigurationClient* client_;
   tonic::DartPersistentValue library_;
+  ViewportMetrics viewport_metrics_;
 
-  std::unique_ptr<Window> window_;
+  WindowMap windows_;
+  ScreenMap screens_;
 
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;

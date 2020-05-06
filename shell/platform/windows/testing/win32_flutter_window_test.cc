@@ -3,8 +3,11 @@
 namespace flutter {
 namespace testing {
 
-Win32FlutterWindowTest::Win32FlutterWindowTest(int width, int height)
-    : Win32FlutterWindow(width, height){};
+Win32FlutterWindowTest::Win32FlutterWindowTest(int left,
+                                               int top,
+                                               int width,
+                                               int height)
+    : Win32FlutterWindow(left, top, width, height){};
 
 Win32FlutterWindowTest::~Win32FlutterWindowTest() = default;
 

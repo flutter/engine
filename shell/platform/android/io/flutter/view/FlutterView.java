@@ -94,7 +94,31 @@ public class FlutterView extends SurfaceView
   private static final String TAG = "FlutterView";
 
   static final class ViewportMetrics {
+    int viewId = 0;
     float devicePixelRatio = 1.0f;
+    int physicalLeft = 0;
+    int physicalTop = 0;
+    int physicalWidth = 0;
+    int physicalHeight = 0;
+    int physicalPaddingTop = 0;
+    int physicalPaddingRight = 0;
+    int physicalPaddingBottom = 0;
+    int physicalPaddingLeft = 0;
+    int physicalViewInsetTop = 0;
+    int physicalViewInsetRight = 0;
+    int physicalViewInsetBottom = 0;
+    int physicalViewInsetLeft = 0;
+    int systemGestureInsetTop = 0;
+    int systemGestureInsetRight = 0;
+    int systemGestureInsetBottom = 0;
+    int systemGestureInsetLeft = 0;
+  }
+
+  static final class ScreenMetrics {
+    int screenId = 0;
+    float devicePixelRatio = 1.0f;
+    int physicalLeft = 0;
+    int physicalTop = 0;
     int physicalWidth = 0;
     int physicalHeight = 0;
     int physicalPaddingTop = 0;
@@ -128,6 +152,7 @@ public class FlutterView extends SurfaceView
   private final AndroidTouchProcessor androidTouchProcessor;
   private AccessibilityBridge mAccessibilityNodeProvider;
   private final SurfaceHolder.Callback mSurfaceCallback;
+  private final ScreenMetrics mScreenMetrics;
   private final ViewportMetrics mMetrics;
   private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
   private final List<FirstFrameListener> mFirstFrameListeners;
@@ -170,8 +195,10 @@ public class FlutterView extends SurfaceView
     dartExecutor = mNativeView.getDartExecutor();
     flutterRenderer = new FlutterRenderer(mNativeView.getFlutterJNI());
     mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().nativeGetIsSoftwareRenderingEnabled();
+    mScreenMetrics = new ScreenMetrics();
+    mScreenMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
     mMetrics = new ViewportMetrics();
-    mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
+    mMetrics.devicePixelRatio = mScreenMetrics.devicePixelRatio;
     setFocusable(true);
     setFocusableInTouchMode(true);
 
@@ -413,7 +440,7 @@ public class FlutterView extends SurfaceView
   }
 
   float getDevicePixelRatio() {
-    return mMetrics.devicePixelRatio;
+    return mScreenMetrics.devicePixelRatio;
   }
 
   public FlutterNativeView detach() {
@@ -506,9 +533,15 @@ public class FlutterView extends SurfaceView
 
   @Override
   protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
+    // TODO(gspencergoog): Currently, there is only one screen, and it is always
+    // the same size as the window. This will change as screen support is added.
+    // See https://github.com/flutter/flutter/issues/60131
     mMetrics.physicalWidth = width;
     mMetrics.physicalHeight = height;
+    mScreenMetrics.physicalWidth = width;
+    mScreenMetrics.physicalHeight = height;
     updateViewportMetrics();
+    updateScreenMetrics();
     super.onSizeChanged(width, height, oldWidth, oldHeight);
   }
 
@@ -599,35 +632,47 @@ public class FlutterView extends SurfaceView
     }
 
     // The padding on top should be removed when the statusbar is hidden.
-    mMetrics.physicalPaddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
-    mMetrics.physicalPaddingRight =
+    mScreenMetrics.physicalPaddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
+    mScreenMetrics.physicalPaddingRight =
         zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
             ? 0
             : insets.getSystemWindowInsetRight();
-    mMetrics.physicalPaddingBottom = 0;
-    mMetrics.physicalPaddingLeft =
+    mScreenMetrics.physicalPaddingBottom = 0;
+    mScreenMetrics.physicalPaddingLeft =
         zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
             ? 0
             : insets.getSystemWindowInsetLeft();
 
     // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
-    mMetrics.physicalViewInsetTop = 0;
-    mMetrics.physicalViewInsetRight = 0;
+    mScreenMetrics.physicalViewInsetTop = 0;
+    mScreenMetrics.physicalViewInsetRight = 0;
     // We perform hidden navbar and keyboard handling if the navbar is set to hidden. Otherwise,
     // the navbar padding should always be provided.
-    mMetrics.physicalViewInsetBottom =
+    mScreenMetrics.physicalViewInsetBottom =
         navigationBarHidden
             ? guessBottomKeyboardInset(insets)
             : insets.getSystemWindowInsetBottom();
-    mMetrics.physicalViewInsetLeft = 0;
+    mScreenMetrics.physicalViewInsetLeft = 0;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       Insets systemGestureInsets = insets.getSystemGestureInsets();
-      mMetrics.systemGestureInsetTop = systemGestureInsets.top;
-      mMetrics.systemGestureInsetRight = systemGestureInsets.right;
-      mMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
-      mMetrics.systemGestureInsetLeft = systemGestureInsets.left;
+      mScreenMetrics.systemGestureInsetTop = systemGestureInsets.top;
+      mScreenMetrics.systemGestureInsetRight = systemGestureInsets.right;
+      mScreenMetrics.systemGestureInsetBottom = systemGestureInsets.bottom;
+      mScreenMetrics.systemGestureInsetLeft = systemGestureInsets.left;
     }
+    // TODO(gspencergoog): Currently, there is only one screen, and it is always
+    // the same size as the window. This will change as screen support is added.
+    // See https://github.com/flutter/flutter/issues/60131
+    mMetrics.physicalPaddingTop = mScreenMetrics.physicalPaddingTop;
+    mMetrics.physicalPaddingRight = mScreenMetrics.physicalPaddingRight;
+    mMetrics.physicalPaddingBottom = mScreenMetrics.physicalPaddingBottom;
+    mMetrics.physicalPaddingLeft = mScreenMetrics.physicalPaddingLeft;
+    mMetrics.physicalViewInsetTop = mScreenMetrics.physicalViewInsetTop;
+    mMetrics.physicalViewInsetRight = mScreenMetrics.physicalViewInsetRight;
+    mMetrics.physicalViewInsetBottom = mScreenMetrics.physicalViewInsetBottom;
+    mMetrics.physicalViewInsetLeft = mScreenMetrics.physicalViewInsetLeft;
+    updateScreenMetrics();
     updateViewportMetrics();
     return super.onApplyWindowInsets(insets);
   }
@@ -636,17 +681,29 @@ public class FlutterView extends SurfaceView
   @SuppressWarnings("deprecation")
   protected boolean fitSystemWindows(Rect insets) {
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
+      // TODO(gspencergoog): Currently, there is only one screen, and it is always
+      // the same size as the window. This will change as screen support is added.
+      // See https://github.com/flutter/flutter/issues/60131
       // Status bar, left/right system insets partially obscure content (padding).
-      mMetrics.physicalPaddingTop = insets.top;
-      mMetrics.physicalPaddingRight = insets.right;
-      mMetrics.physicalPaddingBottom = 0;
-      mMetrics.physicalPaddingLeft = insets.left;
+      mScreenMetrics.physicalPaddingTop = insets.top;
+      mScreenMetrics.physicalPaddingRight = insets.right;
+      mScreenMetrics.physicalPaddingBottom = 0;
+      mScreenMetrics.physicalPaddingLeft = insets.left;
 
       // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
-      mMetrics.physicalViewInsetTop = 0;
-      mMetrics.physicalViewInsetRight = 0;
-      mMetrics.physicalViewInsetBottom = insets.bottom;
-      mMetrics.physicalViewInsetLeft = 0;
+      mScreenMetrics.physicalViewInsetTop = 0;
+      mScreenMetrics.physicalViewInsetRight = 0;
+      mScreenMetrics.physicalViewInsetBottom = insets.bottom;
+      mScreenMetrics.physicalViewInsetLeft = 0;
+      mMetrics.physicalPaddingTop = mScreenMetrics.physicalPaddingTop;
+      mMetrics.physicalPaddingRight = mScreenMetrics.physicalPaddingRight;
+      mMetrics.physicalPaddingBottom = mScreenMetrics.physicalPaddingBottom;
+      mMetrics.physicalPaddingLeft = mScreenMetrics.physicalPaddingLeft;
+      mMetrics.physicalViewInsetTop = mScreenMetrics.physicalViewInsetTop;
+      mMetrics.physicalViewInsetRight = mScreenMetrics.physicalViewInsetRight;
+      mMetrics.physicalViewInsetBottom = mScreenMetrics.physicalViewInsetBottom;
+      mMetrics.physicalViewInsetLeft = mScreenMetrics.physicalViewInsetLeft;
+      updateScreenMetrics();
       updateViewportMetrics();
       return true;
     } else {
@@ -696,7 +753,10 @@ public class FlutterView extends SurfaceView
     mNativeView
         .getFlutterJNI()
         .setViewportMetrics(
+            mMetrics.viewId,
             mMetrics.devicePixelRatio,
+            mMetrics.physicalLeft,
+            mMetrics.physicalTop,
             mMetrics.physicalWidth,
             mMetrics.physicalHeight,
             mMetrics.physicalPaddingTop,
@@ -711,6 +771,31 @@ public class FlutterView extends SurfaceView
             mMetrics.systemGestureInsetRight,
             mMetrics.systemGestureInsetBottom,
             mMetrics.systemGestureInsetLeft);
+  }
+
+  private void updateScreenMetrics() {
+    if (!isAttached()) return;
+    mNativeView
+        .getFlutterJNI()
+        .setScreenMetrics(
+            mScreenMetrics.screenId,
+            mScreenMetrics.devicePixelRatio,
+            mScreenMetrics.physicalLeft,
+            mScreenMetrics.physicalTop,
+            mScreenMetrics.physicalWidth,
+            mScreenMetrics.physicalHeight,
+            mScreenMetrics.physicalPaddingTop,
+            mScreenMetrics.physicalPaddingRight,
+            mScreenMetrics.physicalPaddingBottom,
+            mScreenMetrics.physicalPaddingLeft,
+            mScreenMetrics.physicalViewInsetTop,
+            mScreenMetrics.physicalViewInsetRight,
+            mScreenMetrics.physicalViewInsetBottom,
+            mScreenMetrics.physicalViewInsetLeft,
+            mScreenMetrics.systemGestureInsetTop,
+            mScreenMetrics.systemGestureInsetRight,
+            mScreenMetrics.systemGestureInsetBottom,
+            mScreenMetrics.systemGestureInsetLeft);
   }
 
   // Called by FlutterNativeView to notify first Flutter frame rendered.

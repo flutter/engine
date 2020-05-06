@@ -11,6 +11,8 @@ void Win32WindowTest::OnDpiScale(unsigned int dpi){};
 
 void Win32WindowTest::OnResize(unsigned int width, unsigned int height) {}
 
+void Win32WindowTest::OnMove(unsigned int left, unsigned int top) {}
+
 void Win32WindowTest::OnPointerMove(double x, double y) {}
 
 void Win32WindowTest::OnPointerDown(double x, double y, UINT button) {}

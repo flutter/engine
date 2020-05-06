@@ -651,7 +651,19 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   /// @param[in]  metrics  The metrics
   ///
-  void SetViewportMetrics(const ViewportMetrics& metrics);
+  void SetViewportMetrics(const std::vector<ViewportMetrics>& metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Updates the screen metrics for the currently running Flutter
+  ///             application. The screen metrics detail the size and positions
+  ///             of the screens that the rendering viewport is on, as well as
+  ///             edge insets, if present.
+  ///
+  /// @see        `ScreenMetrics`
+  ///
+  /// @param[in]  metrics  The list of screen metrics to set.
+  ///
+  void SetScreenMetrics(const std::vector<ScreenMetrics>& metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has sent it a message.
@@ -765,7 +777,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string last_entry_point_;
   std::string last_entry_point_library_;
   std::string initial_route_;
-  ViewportMetrics viewport_metrics_;
+  std::vector<ScreenMetrics> screen_metrics_;
+  std::vector<ViewportMetrics> viewport_metrics_;
   std::shared_ptr<AssetManager> asset_manager_;
   bool activity_running_;
   bool have_surface_;

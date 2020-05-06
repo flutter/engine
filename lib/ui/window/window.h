@@ -22,7 +22,7 @@ class Window final {
 
   ~Window();
 
-  const uint64_t get_window_id() const { return viewport_metrics_.view_id; }
+  int64_t window_id() const { return viewport_metrics_.view_id; }
 
   const ViewportMetrics& viewport_metrics() const { return viewport_metrics_; }
 

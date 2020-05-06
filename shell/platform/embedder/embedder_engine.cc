@@ -100,7 +100,8 @@ bool EmbedderEngine::NotifyDestroyed() {
   return true;
 }
 
-bool EmbedderEngine::SetViewportMetrics(flutter::ViewportMetrics metrics) {
+bool EmbedderEngine::SetViewportMetrics(
+    const std::vector<flutter::ViewportMetrics>& metrics) {
   if (!IsValid()) {
     return false;
   }
@@ -110,6 +111,20 @@ bool EmbedderEngine::SetViewportMetrics(flutter::ViewportMetrics metrics) {
     return false;
   }
   platform_view->SetViewportMetrics(std::move(metrics));
+  return true;
+}
+
+bool EmbedderEngine::SetScreenMetrics(
+    const std::vector<flutter::ScreenMetrics>& metrics) {
+  if (!IsValid()) {
+    return false;
+  }
+
+  auto platform_view = shell_->GetPlatformView();
+  if (!platform_view) {
+    return false;
+  }
+  platform_view->SetScreenMetrics(std::move(metrics));
   return true;
 }
 

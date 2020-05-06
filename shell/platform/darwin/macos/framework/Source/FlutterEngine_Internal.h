@@ -22,7 +22,12 @@
 @property(nonatomic, readonly, nullable) NSOpenGLContext* resourceContext;
 
 /**
- * Informs the engine that the associated view controller's view size has changed.
+ * Informs the engine that the associated view controller's screen metrics have changed.
+ */
+- (void)updateScreenMetrics;
+
+/**
+ * Informs the engine that the associated view controller's view metrics have changed.
  */
 - (void)updateWindowMetrics;
 

@@ -90,16 +90,31 @@ gboolean fl_engine_start(FlEngine* engine, GError** error);
 /**
  * fl_engine_send_window_metrics_event:
  * @engine: an #FlEngine.
+ * @window_id: the window identifier for the window to be updated.
+ * @left: left edge of the window in pixels from the origin of the screen.
+ * @top: top edge of the window in pixels from the origin of the screen.
  * @width: width of the window in pixels.
  * @height: height of the window in pixels.
- * @pixel_ratio: scale factor for window.
+ * @pixel_ratio: scale factor for the window.
  *
  * Sends a window metrics event to the engine.
  */
 void fl_engine_send_window_metrics_event(FlEngine* engine,
+                                         int64_t window_id,
+                                         size_t left,
+                                         size_t top,
                                          size_t width,
                                          size_t height,
                                          double pixel_ratio);
+
+/**
+ * fl_engine_update_screen_metrics:
+ * @engine: a #FlEngine
+ *
+ * Updates the screen metrics for all of the monitors attached to the display
+ * that this engine is running on.
+ */
+void fl_engine_update_screen_metrics(FlEngine* engine, GdkDisplay* display);
 
 /**
  * fl_engine_send_mouse_pointer_event:

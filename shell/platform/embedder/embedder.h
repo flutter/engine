@@ -345,9 +345,35 @@ typedef struct {
   size_t width;
   /// Physical height of the window.
   size_t height;
-  /// Scale factor for the physical screen.
+  /// Pixel density scale factor for the window.
   double pixel_ratio;
+  /// Physical horizontal location of the left side of the window.
+  int64_t left;
+  /// Physical vertical location of the top of the window.
+  int64_t top;
+  /// The id for the window that corresponds to these metrics.
+  size_t window_id;
 } FlutterWindowMetricsEvent;
+
+/// The order, type, and size of these struct members must remain the same, and
+/// members should not be removed. This is to allow for forward and backward
+/// compatibility between the engine and the embedder.
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterScreenMetricsEvent).
+  size_t struct_size;
+  /// The id for the screen that corresponds to these metrics.
+  size_t screen_id;
+  /// Physical horizontal location of the left side of the window.
+  int64_t left;
+  /// Physical vertical location of the top of the window.
+  int64_t top;
+  /// Physical width of the screen.
+  size_t width;
+  /// Physical height of the screen.
+  size_t height;
+  /// Pixel density scale factor for the physical screen.
+  double pixel_ratio;
+} FlutterScreenMetricsEvent;
 
 /// The phase of the pointer event.
 typedef enum {
@@ -1371,9 +1397,16 @@ FlutterEngineResult FlutterEngineRunInitialized(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
 FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSendScreenMetricsEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterScreenMetricsEvent* metrics_events,
+    size_t events_count);
+
+FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterWindowMetricsEvent* event);
+    const FlutterWindowMetricsEvent* metrics_events,
+    size_t events_count);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPointerEvent(

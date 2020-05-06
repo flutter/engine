@@ -19,8 +19,11 @@ struct ViewportMetrics {
   ViewportMetrics() = default;
   ViewportMetrics(const ViewportMetrics& other) = default;
 
-  // Create a 2D ViewportMetrics instance.
-  ViewportMetrics(double p_device_pixel_ratio,
+  // Create a 2D ViewportMetrics instance that includes padding and insets
+  ViewportMetrics(int64_t p_view_id,
+                  double p_device_pixel_ratio,
+                  double p_physical_left,
+                  double p_physical_top,
                   double p_physical_width,
                   double p_physical_height,
                   double p_physical_padding_top,
@@ -36,8 +39,11 @@ struct ViewportMetrics {
                   double p_physical_system_gesture_inset_bottom,
                   double p_physical_system_gesture_inset_left);
 
-  // Create a ViewportMetrics instance that contains z information.
-  ViewportMetrics(double p_device_pixel_ratio,
+  // Create a ViewportMetrics instance that contains z (depth) information.
+  ViewportMetrics(int64_t p_view_id,
+                  double p_device_pixel_ratio,
+                  double p_physical_left,
+                  double p_physical_top,
                   double p_physical_width,
                   double p_physical_height,
                   double p_physical_depth,
@@ -54,11 +60,17 @@ struct ViewportMetrics {
 
   // Create a ViewportMetrics instance that doesn't include depth, padding, or
   // insets.
-  ViewportMetrics(double p_device_pixel_ratio,
+  ViewportMetrics(int64_t view_id,
+                  double p_device_pixel_ratio,
+                  double p_physical_left,
+                  double p_physical_top,
                   double p_physical_width,
                   double p_physical_height);
 
+  int64_t view_id = -1;
   double device_pixel_ratio = 1.0;
+  double physical_left = 0;
+  double physical_top = 0;
   double physical_width = 0;
   double physical_height = 0;
   double physical_depth = kUnsetDepth;

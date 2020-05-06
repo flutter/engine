@@ -272,20 +272,34 @@ void Engine::OnOutputSurfaceDestroyed() {
   StopAnimator();
 }
 
-void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
-  bool dimensions_changed =
-      viewport_metrics_.physical_height != metrics.physical_height ||
-      viewport_metrics_.physical_width != metrics.physical_width ||
-      viewport_metrics_.physical_depth != metrics.physical_depth ||
-      viewport_metrics_.device_pixel_ratio != metrics.device_pixel_ratio;
-  viewport_metrics_ = metrics;
-  runtime_controller_->SetViewportMetrics(viewport_metrics_);
+void Engine::SetScreenMetrics(const std::vector<ScreenMetrics>& metrics) {
+  screen_metrics_ = metrics;
+  runtime_controller_->SetScreenMetrics(screen_metrics_);
+}
+
+void Engine::SetViewportMetrics(const std::vector<ViewportMetrics>& metrics) {
+  bool dimensions_changed = true;
+  if (metrics.size() == viewport_metrics_.size()) {
+    dimensions_changed = false;
+    for (size_t i = 0; i < metrics.size(); ++i) {
+      const ViewportMetrics& oldMetrics = viewport_metrics_[i];
+      const ViewportMetrics& newMetrics = metrics[i];
+      if (oldMetrics.physical_height != newMetrics.physical_height ||
+          oldMetrics.physical_width != newMetrics.physical_width ||
+          oldMetrics.physical_depth != newMetrics.physical_depth ||
+          oldMetrics.device_pixel_ratio != newMetrics.device_pixel_ratio) {
+        dimensions_changed = true;
+      }
+    }
+  }
   if (animator_) {
     if (dimensions_changed)
       animator_->SetDimensionChangePending();
     if (have_surface_)
       ScheduleFrame();
   }
+  viewport_metrics_ = metrics;
+  runtime_controller_->SetViewportMetrics(metrics);
 }
 
 void Engine::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {

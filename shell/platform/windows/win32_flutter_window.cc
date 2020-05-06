@@ -38,9 +38,9 @@ static HCURSOR GetCursorByName(const std::string& cursor_name) {
 
 }  // namespace
 
-Win32FlutterWindow::Win32FlutterWindow(int width, int height)
+Win32FlutterWindow::Win32FlutterWindow(int left, int top, int width, int height)
     : binding_handler_delegate_(nullptr) {
-  Win32Window::InitializeChild("FLUTTERVIEW", width, height);
+  Win32Window::InitializeChild("FLUTTERVIEW", left, top, width, height);
   current_cursor_ = ::LoadCursor(nullptr, IDC_ARROW);
 }
 
@@ -58,8 +58,12 @@ float Win32FlutterWindow::GetDpiScale() {
   return static_cast<float>(GetCurrentDPI()) / static_cast<float>(base_dpi);
 }
 
-PhysicalWindowBounds Win32FlutterWindow::GetPhysicalWindowBounds() {
-  return {GetCurrentWidth(), GetCurrentHeight()};
+PhysicalBounds Win32FlutterWindow::GetWindowBounds() {
+  return GetCurrentWindowBounds();
+}
+
+PhysicalBounds Win32FlutterWindow::GetScreenBounds() {
+  return GetCurrentScreenBounds();
 }
 
 void Win32FlutterWindow::UpdateFlutterCursor(const std::string& cursor_name) {
@@ -94,6 +98,14 @@ void Win32FlutterWindow::OnDpiScale(unsigned int dpi){};
 void Win32FlutterWindow::OnResize(unsigned int width, unsigned int height) {
   if (binding_handler_delegate_ != nullptr) {
     binding_handler_delegate_->OnWindowSizeChanged(width, height);
+  }
+}
+
+// When DesktopWindow notifies that a WM_Move message has come in
+// lets FlutterEngine know about the new location.
+void Win32FlutterWindow::OnMove(unsigned int left, unsigned int top) {
+  if (binding_handler_delegate_ != nullptr) {
+    binding_handler_delegate_->OnWindowLocationChanged(left, top);
   }
 }
 

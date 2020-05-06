@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
+#include "shell/platform/windows/window_binding_handler.h"
 #include "win32_dpi_utils.h"
 
 namespace flutter {
@@ -27,6 +28,8 @@ Win32Window::~Win32Window() {
 }
 
 void Win32Window::InitializeChild(const char* title,
+                                  unsigned int left,
+                                  unsigned int top,
                                   unsigned int width,
                                   unsigned int height) {
   Destroy();
@@ -34,10 +37,10 @@ void Win32Window::InitializeChild(const char* title,
 
   WNDCLASS window_class = RegisterWindowClass(converted_title);
 
-  auto* result = CreateWindowEx(
-      0, window_class.lpszClassName, converted_title.c_str(),
-      WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT, width, height,
-      HWND_MESSAGE, nullptr, window_class.hInstance, this);
+  auto* result =
+      CreateWindowEx(0, window_class.lpszClassName, converted_title.c_str(),
+                     WS_CHILD | WS_VISIBLE, left, top, width, height,
+                     HWND_MESSAGE, nullptr, window_class.hInstance, this);
 
   if (result == nullptr) {
     auto error = GetLastError();
@@ -113,7 +116,6 @@ Win32Window::MessageHandler(HWND hwnd,
                             WPARAM const wparam,
                             LPARAM const lparam) noexcept {
   int xPos = 0, yPos = 0;
-  UINT width = 0, height = 0;
   auto window =
       reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
   UINT button_pressed = 0;
@@ -121,16 +123,16 @@ Win32Window::MessageHandler(HWND hwnd,
   if (window != nullptr) {
     switch (message) {
       case kWmDpiChangedBeforeParent:
-        current_dpi_ = GetDpiForHWND(window_handle_);
-        window->OnDpiScale(current_dpi_);
+        window->HandleDpiChange();
         return 0;
       case WM_SIZE:
-        width = LOWORD(lparam);
-        height = HIWORD(lparam);
-
-        current_width_ = width;
-        current_height_ = height;
-        window->HandleResize(width, height);
+        window->HandleResize(LOWORD(lparam), HIWORD(lparam));
+        break;
+      case WM_MOVE:
+        window->HandleMove(LOWORD(lparam), HIWORD(lparam));
+        break;
+      case WM_DISPLAYCHANGE:
+        window->HandleDisplayChange();
         break;
       case WM_FONTCHANGE:
         window->OnFontChange();
@@ -281,16 +283,16 @@ Win32Window::MessageHandler(HWND hwnd,
   return DefWindowProc(window_handle_, message, wparam, lparam);
 }
 
-UINT Win32Window::GetCurrentDPI() {
+UINT GetCurrentDPI() {
   return current_dpi_;
 }
 
-UINT Win32Window::GetCurrentWidth() {
-  return current_width_;
+PhysicalBounds Win32Window::GetCurrentWindowBounds() {
+  return window_bounds_;
 }
 
-UINT Win32Window::GetCurrentHeight() {
-  return current_height_;
+PhysicalBounds Win32Window::GetCurrentScreenBounds() {
+  return screen_bounds_;
 }
 
 HWND Win32Window::GetWindowHandle() {
@@ -307,9 +309,33 @@ void Win32Window::Destroy() {
 }
 
 void Win32Window::HandleResize(UINT width, UINT height) {
-  current_width_ = width;
-  current_height_ = height;
+  window_bounds_.width = width;
+  window_bounds_.height = height;
   OnResize(width, height);
+}
+
+void Win32Window::HandleMove(UINT left, UINT top) {
+  window_bounds_.left = left;
+  window_bounds_.top = top;
+  OnMove(left, top);
+}
+
+void Win32Window::HandleDpiChange(UINT dpi) {
+  current_dpi_ = GetDpiForHWND(window_handle_);
+  window->OnDpiScale(current_dpi_);
+}
+
+void HandleDisplayChange() {
+  HMONITOR monitor =
+      GetMonitorFromWindow(window_handle_, MONITOR_DEFAULTTONEAREST);
+  MONITORINFO info;
+  info.cbSize = sizeof(info);
+  if (GetMonitorInfo(monitor, &info)) {
+    screen_bounds_.left = info.rcMonitor.left;
+    screen_bounds_.top = info.rcMonitor.top;
+    screen_bounds_.width = info.rcMonitor.right - info.rcMonitor.left;
+    screen_bounds_.height = info.rcMonitor.bottom - info.rcMonitor.top;
+  }
 }
 
 Win32Window* Win32Window::GetThisFromHandle(HWND const window) noexcept {

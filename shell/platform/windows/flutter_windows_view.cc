@@ -1,6 +1,7 @@
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 #include <chrono>
+#include "shell/platform/windows/window_binding_handler.h"
 
 namespace flutter {
 
@@ -68,10 +69,7 @@ void FlutterWindowsView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
   cursor_handler_ = std::make_unique<flutter::CursorHandler>(
       internal_plugin_messenger, binding_handler_.get());
 
-  PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
-
-  SendWindowMetrics(bounds.width, bounds.height,
-                    binding_handler_->GetDpiScale());
+  SendWindowMetrics();
 }
 
 FlutterDesktopPluginRegistrarRef FlutterWindowsView::GetRegistrar() {
@@ -107,9 +105,8 @@ void FlutterWindowsView::HandlePlatformMessage(
       message, [this] {}, [this] {});
 }
 
-void FlutterWindowsView::OnWindowSizeChanged(size_t width,
-                                             size_t height) const {
-  SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+void FlutterWindowsView::OnWindowBoundsChanged(PhysicalBounds bounds) const {
+  SendWindowMetrics();
 }
 
 void FlutterWindowsView::OnPointerMove(double x, double y) {
@@ -168,20 +165,42 @@ void FlutterWindowsView::OnFontChange() {
   FlutterEngineReloadSystemFonts(engine_);
 }
 
-// Sends new size  information to FlutterEngine.
-void FlutterWindowsView::SendWindowMetrics(size_t width,
-                                           size_t height,
-                                           double dpiScale) const {
+// Sends new window size information to FlutterEngine.
+void FlutterWindowsView::SendWindowMetrics() const {
   if (engine_ == nullptr) {
     return;
   }
 
+  PhysicalBounds bounds = binding_handler_->GetWindowBounds();
+
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  event.width = width;
-  event.height = height;
-  event.pixel_ratio = dpiScale;
-  auto result = FlutterEngineSendWindowMetricsEvent(engine_, &event);
+  event.window_id = 0;
+  event.left = bounds.left;
+  event.top = bounds.top;
+  event.width = bounds.width;
+  event.height = bounds.height;
+  event.pixel_ratio = binding_handler_->GetDpiScale();
+  FlutterEngineSendWindowMetricsEvent(engine_, &event, 1);
+}
+
+// Sends new screen size information to FlutterEngine.
+void FlutterWindowsView::SendScreenMetrics() const {
+  if (engine_ == nullptr) {
+    return;
+  }
+
+  PhysicalBounds bounds = binding_handler_->GetScreenBounds();
+
+  FlutterScreenMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.screen_id = 0;
+  event.left = bounds.left;
+  event.top = bounds.top;
+  event.width = bounds.width;
+  event.height = bounds.height;
+  event.pixel_ratio = binding_handler_->GetDpiScale();
+  FlutterEngineSendScreenMetricsEvent(engine_, &event, 1);
 }
 
 // Set's |event_data|'s phase to either kMove or kHover depending on the current

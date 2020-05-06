@@ -12,6 +12,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
+#include "flutter/lib/ui/window/screen_metrics.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
@@ -28,6 +29,7 @@
 
 - (flutter::Shell&)shell;
 
+- (void)updateScreenMetrics:(flutter::ScreenMetrics)screenMetrics;
 - (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics;
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet;
 

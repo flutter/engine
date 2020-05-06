@@ -17,9 +17,15 @@ namespace flutter {
 
 class FlutterWindowsView;
 
-// Structure containing physical bounds of a Window
-struct PhysicalWindowBounds {
+// Structure containing physical bounds of a Window or Screen
+struct PhysicalBounds {
+  /// Physical horizontal location of the left side of the window.
+  size_t left;
+  /// Physical vertical location of the top of the window.
+  size_t top;
+  /// Physical width of the window.
   size_t width;
+  /// Physical height of the window.
   size_t height;
 };
 
@@ -39,11 +45,12 @@ class WindowBindingHandler {
   // window.
   virtual WindowsRenderTarget GetRenderTarget() = 0;
 
-  // Returns the scale factor for the backing window.
-  virtual float GetDpiScale() = 0;
+  // Returns the metrics of the backing window in physical pixels.
+  virtual PhysicalBounds GetWindowBounds() = 0;
 
-  // Returns the bounds of the backing window in physical pixels.
-  virtual PhysicalWindowBounds GetPhysicalWindowBounds() = 0;
+  // Returns the metrics of the screen that this window is on, in physical
+  // pixels.
+  virtual PhysicalBounds GetScreenBounds() = 0;
 
   // Sets the cursor that should be used when the mouse is over the Flutter
   // content. See mouse_cursor.dart for the values and meanings of cursor_name.

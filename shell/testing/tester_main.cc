@@ -235,7 +235,9 @@ int RunTester(const flutter::Settings& settings,
                    });
 
   // 800x600 at 3x resolution.
-  shell->GetPlatformView()->SetViewportMetrics({3.0, 2400, 1800});
+  shell->GetPlatformView()->SetScreenMetrics({{0, 3.0, 0.0, 0.0, 2400, 1800}});
+  shell->GetPlatformView()->SetViewportMetrics(
+      {{0, 3.0, 0.0, 0.0, 2400, 1800}});
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();

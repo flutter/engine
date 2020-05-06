@@ -11,6 +11,7 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/lib/ui/window/screen_metrics.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
@@ -183,6 +184,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (fml::WeakPtr<FlutterEngine>)getWeakPtr {
   return _weakFactory->GetWeakPtr();
+}
+
+- (void)updateScreenMetrics:(flutter::ScreenMetrics)screenMetrics {
+  if (!self.platformView) {
+    return;
+  }
+  self.platformView->SetScreenMetrics(std::move(screenMetrics));
 }
 
 - (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics {

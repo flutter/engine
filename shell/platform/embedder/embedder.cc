@@ -1112,30 +1112,115 @@ FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
   return kSuccess;
 }
 
-FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
+FlutterEngineResult FlutterEngineSendScreenMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterWindowMetricsEvent* flutter_metrics) {
-  if (engine == nullptr || flutter_metrics == nullptr) {
+    const FlutterScreenMetricsEvent* metrics_events,
+    size_t events_count) {
+  if (engine == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
-
-  flutter::ViewportMetrics metrics;
-
-  metrics.physical_width = SAFE_ACCESS(flutter_metrics, width, 0.0);
-  metrics.physical_height = SAFE_ACCESS(flutter_metrics, height, 0.0);
-  metrics.device_pixel_ratio = SAFE_ACCESS(flutter_metrics, pixel_ratio, 1.0);
-
-  if (metrics.device_pixel_ratio <= 0.0) {
-    return LOG_EMBEDDER_ERROR(
-        kInvalidArguments,
-        "Device pixel ratio was invalid. It must be greater than zero.");
+  if (metrics_events == nullptr || events_count == 0) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Invalid screen metrics events.");
   }
 
-  return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
-             std::move(metrics))
+  const FlutterScreenMetricsEvent* current = metrics_events;
+  std::vector<flutter::ScreenMetrics> metrics_vector;
+  for (size_t i = 0; i < events_count; ++i) {
+    flutter::ScreenMetrics screen_metrics;
+
+    screen_metrics.screen_id = SAFE_ACCESS(current, screen_id, 0);
+    screen_metrics.physical_left = SAFE_ACCESS(current, left, 0.0);
+    screen_metrics.physical_top = SAFE_ACCESS(current, top, 0.0);
+    screen_metrics.physical_width = SAFE_ACCESS(current, width, 0.0);
+    screen_metrics.physical_height = SAFE_ACCESS(current, height, 0.0);
+    screen_metrics.device_pixel_ratio = SAFE_ACCESS(current, pixel_ratio, 1.0);
+
+    if (screen_metrics.screen_id < 0) {
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Window screen id must be set to a positive integer.");
+    }
+    if (screen_metrics.device_pixel_ratio <= 0.0) {
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Device pixel ratio was invalid. It must be greater than zero.");
+    }
+    if (screen_metrics.physical_width < 0.0) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Device width was invalid. It must be greater "
+                                "than or equal to zero.");
+    }
+    if (screen_metrics.physical_height < 0.0) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Device height was invalid. It must be greater "
+                                "than or equal to zero.");
+    }
+    metrics_vector.push_back(std::move(screen_metrics));
+    current = reinterpret_cast<const FlutterScreenMetricsEvent*>(
+        reinterpret_cast<const uint8_t*>(current) + current->struct_size);
+  }
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetScreenMetrics(
+             std::move(metrics_vector))
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInvalidArguments,
-                                  "Viewport metrics were invalid.");
+                                  "Screen metrics were invalid.");
+}
+
+FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterWindowMetricsEvent* metrics_events,
+    size_t events_count) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+  if (metrics_events == nullptr || events_count == 0) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Invalid screen metrics events.");
+  }
+
+  const FlutterWindowMetricsEvent* current = metrics_events;
+  std::vector<flutter::ViewportMetrics> metrics_vector;
+  for (size_t i = 0; i < events_count; ++i) {
+    flutter::ViewportMetrics viewport_metrics;
+
+    viewport_metrics.view_id = SAFE_ACCESS(current, window_id, 0);
+    viewport_metrics.physical_left = SAFE_ACCESS(current, left, 0.0);
+    viewport_metrics.physical_top = SAFE_ACCESS(current, top, 0.0);
+    viewport_metrics.physical_width = SAFE_ACCESS(current, width, 0.0);
+    viewport_metrics.physical_height = SAFE_ACCESS(current, height, 0.0);
+    viewport_metrics.device_pixel_ratio =
+        SAFE_ACCESS(current, pixel_ratio, 1.0);
+
+    if (viewport_metrics.view_id < 0) {
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Window screen id must be set to a positive integer.");
+    }
+    if (viewport_metrics.device_pixel_ratio <= 0.0) {
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Device pixel ratio was invalid. It must be greater than zero.");
+    }
+    if (viewport_metrics.physical_width < 0.0) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Device width was invalid. It must be greater "
+                                "than or equal to zero.");
+    }
+    if (viewport_metrics.physical_height < 0.0) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Device height was invalid. It must be greater "
+                                "than or equal to zero.");
+    }
+    metrics_vector.push_back(std::move(viewport_metrics));
+    current = reinterpret_cast<const FlutterWindowMetricsEvent*>(
+        reinterpret_cast<const uint8_t*>(current) + current->struct_size);
+  }
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
+             std::move(metrics_vector))
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                  "Screen metrics were invalid.");
 }
 
 // Returns the flutter::PointerData::Change for the given FlutterPointerPhase.

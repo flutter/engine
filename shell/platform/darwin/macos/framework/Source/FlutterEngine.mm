@@ -253,6 +253,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     return NO;
   }
 
+  [self updateScreenMetrics];
   [self updateWindowMetrics];
   return YES;
 }
@@ -264,6 +265,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     [self shutDownEngine];
     _resourceContext = nil;
   }
+  [self updateScreenMetrics];
   [self updateWindowMetrics];
 }
 
@@ -295,16 +297,43 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     return;
   }
   NSView* view = _viewController.view;
-  CGSize scaledSize = [view convertRectToBacking:view.bounds].size;
-  double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
+  CGRect scaledBounds = [view convertRectToBacking:view.bounds];
 
-  const FlutterWindowMetricsEvent event = {
-      .struct_size = sizeof(event),
-      .width = static_cast<size_t>(scaledSize.width),
-      .height = static_cast<size_t>(scaledSize.height),
-      .pixel_ratio = pixelRatio,
+  const FlutterWindowMetricsEvent windowMetricsEvent = {
+      .struct_size = sizeof(windowMetricsEvent),
+      .width = static_cast<size_t>(scaledBounds.size.width),
+      .height = static_cast<size_t>(scaledBounds.size.height),
+      .pixel_ratio = static_cast<double>(view.window.screen.backingScaleFactor),
+      .left = static_cast<size_t>(scaledBounds.origin.x),
+      .top = static_cast<size_t>(scaledBounds.origin.y),
+      .window_id = 0,
   };
-  FlutterEngineSendWindowMetricsEvent(_engine, &event);
+
+  // TODO(gspencergoog): Currently, there is only one window. This will change
+  // as multi-window support is added. See
+  // https://github.com/flutter/flutter/issues/60131
+  FlutterEngineSendWindowMetricsEvent(_engine, &windowMetricsEvent, 1);
+}
+
+- (void)updateScreenMetrics {
+  if (!_engine) {
+    return;
+  }
+  NSView* view = _viewController.view;
+  CGRect screenBounds = view.window.screen.frame;
+
+  // TODO(gspencergoog): Currently, there is only one screen. This will change as
+  // screen support is added. See https://github.com/flutter/flutter/issues/60131
+  const FlutterScreenMetricsEvent screenMetricsEvent = {
+      .struct_size = sizeof(screenMetricsEvent),
+      .screen_id = 0,
+      .left = static_cast<size_t>(screenBounds.origin.x),
+      .top = static_cast<size_t>(screenBounds.origin.y),
+      .width = static_cast<size_t>(screenBounds.size.width),
+      .height = static_cast<size_t>(screenBounds.size.height),
+      .pixel_ratio = static_cast<double>(view.window.screen.backingScaleFactor),
+  };
+  FlutterEngineSendScreenMetricsEvent(_engine, &screenMetricsEvent, 1);
 }
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {

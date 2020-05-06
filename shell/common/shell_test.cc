@@ -100,18 +100,23 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
                              LayerTreeBuilder builder) {
-  PumpOneFrame(shell, {1.0, width, height}, std::move(builder));
+  PumpOneFrame(shell, {{0, 1.0, 0.0, 0.0, width, height}},
+               {{0, 1.0, 0.0, 0.0, width, height}}, std::move(builder));
 }
 
-void ShellTest::PumpOneFrame(Shell* shell,
-                             flutter::ViewportMetrics viewport_metrics,
-                             LayerTreeBuilder builder) {
+void ShellTest::PumpOneFrame(
+    Shell* shell,
+    std::vector<flutter::ScreenMetrics> screen_metrics,
+    std::vector<flutter::ViewportMetrics> viewport_metrics,
+    LayerTreeBuilder builder) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->weak_engine_, viewport_metrics]() {
+      [&latch, engine = shell->weak_engine_, screen_metrics,
+       viewport_metrics]() {
+        engine->SetScreenMetrics(std::move(screen_metrics));
         engine->SetViewportMetrics(std::move(viewport_metrics));
         const auto frame_begin_time = fml::TimePoint::Now();
         const auto frame_end_time =
@@ -126,11 +131,14 @@ void ShellTest::PumpOneFrame(Shell* shell,
   fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, runtime_delegate, &builder, viewport_metrics]() {
+        // TODO(gspencergoog): Currently, there is only one window. This will
+        // change as multi-window support is added. See
+        // https://github.com/flutter/flutter/issues/60131
         auto layer_tree = std::make_unique<LayerTree>(
-            SkISize::Make(viewport_metrics.physical_width,
-                          viewport_metrics.physical_height),
-            static_cast<float>(viewport_metrics.physical_depth),
-            static_cast<float>(viewport_metrics.device_pixel_ratio));
+            SkISize::Make(viewport_metrics[0].physical_width,
+                          viewport_metrics[0].physical_height),
+            static_cast<float>(viewport_metrics[0].physical_depth),
+            static_cast<float>(viewport_metrics[0].device_pixel_ratio));
         SkMatrix identity;
         identity.setIdentity();
         auto root_layer = std::make_shared<TransformLayer>(identity);

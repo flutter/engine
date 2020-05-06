@@ -446,8 +446,12 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewDestroyed() override;
 
   // |PlatformView::Delegate|
+  void OnPlatformViewSetScreenMetrics(
+      const std::vector<ScreenMetrics>& metrics) override;
+
+  // |PlatformView::Delegate|
   void OnPlatformViewSetViewportMetrics(
-      const ViewportMetrics& metrics) override;
+      const std::vector<ViewportMetrics>& metrics) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchPlatformMessage(

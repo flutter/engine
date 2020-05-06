@@ -12,7 +12,7 @@ namespace testing {
 /// Test class for Win32FlutterWindow.
 class Win32FlutterWindowTest : public Win32FlutterWindow {
  public:
-  Win32FlutterWindowTest(int width, int height);
+  Win32FlutterWindowTest(int left, int top, int width, int height);
   virtual ~Win32FlutterWindowTest();
 
   // Prevent copying.

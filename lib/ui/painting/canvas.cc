@@ -426,10 +426,13 @@ void Canvas::drawShadow(const CanvasPath* path,
     Dart_ThrowException(
         ToDart("Canvas.drawShader called with non-genuine Path."));
   }
+  // TODO(gspencergoog): Currently, there is only one window. This will change
+  // as multi-window support is added. See
+  // https://github.com/flutter/flutter/issues/60131
   SkScalar dpr = UIDartState::Current()
                      ->platform_configuration()
-                     ->get_window()
-                     .viewport_metrics()
+                     ->window(0)
+                     ->viewport_metrics()
                      .device_pixel_ratio;
   external_allocation_size_ += path->path().approximateBytesUsed();
   flutter::PhysicalShapeLayer::DrawShadow(canvas_, path->path(), color,

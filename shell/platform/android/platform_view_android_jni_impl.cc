@@ -239,7 +239,10 @@ static jobject LookupCallbackInformation(JNIEnv* env,
 static void SetViewportMetrics(JNIEnv* env,
                                jobject jcaller,
                                jlong shell_holder,
+                               jlong view_id,
                                jfloat devicePixelRatio,
+                               jint physicalLeft,
+                               jint physicalTop,
                                jint physicalWidth,
                                jint physicalHeight,
                                jint physicalPaddingTop,
@@ -255,7 +258,10 @@ static void SetViewportMetrics(JNIEnv* env,
                                jint systemGestureInsetBottom,
                                jint systemGestureInsetLeft) {
   const flutter::ViewportMetrics metrics{
+      static_cast<int64_t>(view_id),
       static_cast<double>(devicePixelRatio),
+      static_cast<double>(physicalLeft),
+      static_cast<double>(physicalTop),
       static_cast<double>(physicalWidth),
       static_cast<double>(physicalHeight),
       static_cast<double>(physicalPaddingTop),
@@ -272,7 +278,52 @@ static void SetViewportMetrics(JNIEnv* env,
       static_cast<double>(systemGestureInsetLeft),
   };
 
-  ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(metrics);
+  ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics({metrics});
+}
+
+static void SetScreenMetrics(JNIEnv* env,
+                             jobject jcaller,
+                             jlong shell_holder,
+                             jlong screen_id,
+                             jfloat devicePixelRatio,
+                             jint physicalLeft,
+                             jint physicalTop,
+                             jint physicalWidth,
+                             jint physicalHeight,
+                             jint physicalPaddingTop,
+                             jint physicalPaddingRight,
+                             jint physicalPaddingBottom,
+                             jint physicalPaddingLeft,
+                             jint physicalViewInsetTop,
+                             jint physicalViewInsetRight,
+                             jint physicalViewInsetBottom,
+                             jint physicalViewInsetLeft,
+                             jint systemGestureInsetTop,
+                             jint systemGestureInsetRight,
+                             jint systemGestureInsetBottom,
+                             jint systemGestureInsetLeft) {
+  const flutter::ScreenMetrics metrics{
+      static_cast<int64_t>(screen_id),
+      static_cast<double>(devicePixelRatio),
+      static_cast<double>(physicalLeft),
+      static_cast<double>(physicalTop),
+      static_cast<double>(physicalWidth),
+      static_cast<double>(physicalHeight),
+      static_cast<double>(physicalPaddingTop),
+      static_cast<double>(physicalPaddingRight),
+      static_cast<double>(physicalPaddingBottom),
+      static_cast<double>(physicalPaddingLeft),
+      static_cast<double>(physicalViewInsetTop),
+      static_cast<double>(physicalViewInsetRight),
+      static_cast<double>(physicalViewInsetBottom),
+      static_cast<double>(physicalViewInsetLeft),
+      static_cast<double>(systemGestureInsetTop),
+      static_cast<double>(systemGestureInsetRight),
+      static_cast<double>(systemGestureInsetBottom),
+      static_cast<double>(systemGestureInsetLeft),
+  };
+
+  ANDROID_SHELL_HOLDER->GetPlatformView()->SetScreenMetrics({metrics});
 }
 
 static jobject GetBitmap(JNIEnv* env, jobject jcaller, jlong shell_holder) {
@@ -582,8 +633,13 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeSetViewportMetrics",
-          .signature = "(JFIIIIIIIIIIIIII)V",
+          .signature = "(JJFIIIIIIIIIIIIIIII)V",
           .fnPtr = reinterpret_cast<void*>(&SetViewportMetrics),
+      },
+      {
+          .name = "nativeSetScreenMetrics",
+          .signature = "(JJFIIIIIIIIIIIIIIII)V",
+          .fnPtr = reinterpret_cast<void*>(&SetScreenMetrics),
       },
       {
           .name = "nativeDispatchPointerDataPacket",

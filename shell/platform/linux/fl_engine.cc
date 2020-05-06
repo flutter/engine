@@ -5,6 +5,8 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 
+#include <vector>
+
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
@@ -513,6 +515,9 @@ GBytes* fl_engine_send_platform_message_finish(FlEngine* self,
 }
 
 void fl_engine_send_window_metrics_event(FlEngine* self,
+                                         int64_t window_id,
+                                         size_t left,
+                                         size_t top,
                                          size_t width,
                                          size_t height,
                                          double pixel_ratio) {
@@ -523,10 +528,43 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
 
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(FlutterWindowMetricsEvent);
+  event.window_id = window_id;
+  event.left = left;
+  event.top = top;
   event.width = width;
   event.height = height;
   event.pixel_ratio = pixel_ratio;
-  FlutterEngineSendWindowMetricsEvent(self->engine, &event);
+
+  // TODO(gspencergoog): Currently, there is only one window. This will change
+  // as multi-window support is added. See
+  // https://github.com/flutter/flutter/issues/60131
+  FlutterEngineSendWindowMetricsEvent(self->engine, &event, 1);
+}
+
+void fl_engine_update_screen_metrics(FlEngine* self, GdkDisplay* display) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+  g_return_if_fail(GDK_IS_DISPLAY(display));
+
+  size_t num_monitors =
+      static_cast<size_t>(gdk_display_get_n_monitors(display));
+  std::vector<FlutterScreenMetricsEvent> events(num_monitors);
+  for (size_t monitor_index = 0; monitor_index < num_monitors;
+       ++monitor_index) {
+    GdkMonitor* monitor = gdk_display_get_monitor(display, monitor_index);
+    GdkRectangle geometry;
+    gdk_monitor_get_geometry(monitor, &geometry);
+    events[monitor_index] = {
+        sizeof(FlutterScreenMetricsEvent),
+        monitor_index,
+        geometry.x,
+        geometry.y,
+        static_cast<size_t>(geometry.width),
+        static_cast<size_t>(geometry.height),
+        static_cast<double>(gdk_monitor_get_scale_factor(monitor)),
+    };
+  }
+  FlutterEngineSendScreenMetricsEvent(self->engine, events.data(),
+                                      events.size());
 }
 
 void fl_engine_send_mouse_pointer_event(FlEngine* self,

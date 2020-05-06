@@ -5,6 +5,7 @@
 #ifndef FLUTTER_RUNTIME_PLATFORM_DATA_H_
 #define FLUTTER_RUNTIME_PLATFORM_DATA_H_
 
+#include "flutter/lib/ui/window/screen_metrics.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 
 #include <memory>
@@ -30,7 +31,8 @@ struct PlatformData {
 
   ~PlatformData();
 
-  ViewportMetrics viewport_metrics;
+  std::vector<ScreenMetrics> screen_metrics;
+  std::vector<ViewportMetrics> viewport_metrics;
   std::string language_code;
   std::string country_code;
   std::string script_code;

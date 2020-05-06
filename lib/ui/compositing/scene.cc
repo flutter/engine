@@ -42,10 +42,13 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
              bool checkerboardOffscreenLayers) {
+  // TODO(gspencergoog): Currently, there is only one window. This will change
+  // as multi-window support is added. See
+  // https://github.com/flutter/flutter/issues/60131
   auto viewport_metrics = UIDartState::Current()
                               ->platform_configuration()
-                              ->get_window()
-                              .viewport_metrics();
+                              ->window(0)
+                              ->viewport_metrics();
 
   layer_tree_ = std::make_unique<LayerTree>(
       SkISize::Make(viewport_metrics.physical_width,

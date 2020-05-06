@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <string>
+#include "shell/platform/windows/window_binding_handler.h"
 
 namespace flutter {
 
@@ -24,7 +25,12 @@ class Win32Window {
   // Initializes as a child window with size using |width| and |height| and
   // |title| to identify the windowclass.  Does not show window, window must be
   // parented into window hierarchy by caller.
+  //
+  // Use CW_USEDEFAULT for the left, top, width, and height values to allow the
+  // system to position and size the window with default values.
   void InitializeChild(const char* title,
+                       unsigned int left,
+                       unsigned int top,
                        unsigned int width,
                        unsigned int height);
 
@@ -72,6 +78,9 @@ class Win32Window {
   // Called when a resize occurs.
   virtual void OnResize(UINT width, UINT height) = 0;
 
+  // Called when the window moves.
+  virtual void OnMove(UINT left, UINT top) = 0;
+
   // Called when the pointer moves within the
   // window bounds.
   virtual void OnPointerMove(double x, double y) = 0;
@@ -101,11 +110,12 @@ class Win32Window {
   // Called when the system font change.
   virtual void OnFontChange() = 0;
 
+  // Gets the current DPI value for the window.
   UINT GetCurrentDPI();
 
-  UINT GetCurrentWidth();
+  PhysicalBounds GetCurrentWindowBounds();
 
-  UINT GetCurrentHeight();
+  PhysicalBounds GetCurrentScreenBounds();
 
  private:
   // Release OS resources asociated with window.
@@ -117,11 +127,20 @@ class Win32Window {
   // Stores new width and height and calls |OnResize| to notify inheritors
   void HandleResize(UINT width, UINT height);
 
+  // Stores new location and calls |OnMove| to notify inheritors
+  void HandleMove(UINT left, UINT top);
+
+  // Handles a change to the display information.
+  void HandleDisplayChange();
+
+  // Handles a change to the display information.
+  void HandleDpiChange();
+
   // Retrieves a class instance pointer for |window|
   static Win32Window* GetThisFromHandle(HWND const window) noexcept;
-  int current_dpi_ = 0;
-  int current_width_ = 0;
-  int current_height_ = 0;
+
+  PhysicalBounds window_bounds_;
+  PhysicalBounds screen_bounds_;
 
   // WM_DPICHANGED_BEFOREPARENT defined in more recent Windows
   // SDK

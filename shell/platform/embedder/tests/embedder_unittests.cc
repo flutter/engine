@@ -655,7 +655,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLFramebuffer) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -748,7 +748,7 @@ TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -820,7 +820,7 @@ TEST_F(EmbedderTest, RasterCacheEnabled) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -921,7 +921,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToOpenGLTexture) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -1013,7 +1013,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderToSoftwareBuffer) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -1306,7 +1306,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownScene) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -1480,7 +1480,7 @@ TEST_F(EmbedderTest,
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -1601,7 +1601,7 @@ TEST_F(EmbedderTest, CustomCompositorMustWorkWithCustomTaskRunner) {
     event.width = 800;
     event.height = 600;
     event.pixel_ratio = 1.0;
-    ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+    ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
               kSuccess);
     ASSERT_TRUE(engine.is_valid());
     sync_latch.Signal();
@@ -1675,7 +1675,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithRootLayerOnly) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -1784,7 +1784,7 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderWithPlatformLayerOnBottom) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -1964,7 +1964,7 @@ TEST_F(EmbedderTest,
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -1993,7 +1993,7 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositor) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("scene_without_custom_compositor.png",
@@ -2026,7 +2026,7 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorWithTransformation) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture(
@@ -2052,7 +2052,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithoutCompositor) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("gradient.png", renderered_scene));
@@ -2085,7 +2085,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithoutCompositorWithXform) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", renderered_scene));
@@ -2111,7 +2111,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositor) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("gradient.png", renderered_scene));
@@ -2146,7 +2146,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", renderered_scene));
@@ -2248,7 +2248,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("gradient.png", renderered_scene));
@@ -2359,7 +2359,7 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", renderered_scene));
@@ -2460,7 +2460,7 @@ TEST_F(EmbedderTest, VerifyB141980393) {
   event.width = flutter_application_rect.width();
   event.height = flutter_application_rect.height();
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -2513,7 +2513,7 @@ TEST_F(EmbedderTest, CaDeinitializeAnEngine) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kInvalidArguments);
   engine.reset();
 }
@@ -2555,7 +2555,7 @@ TEST_F(EmbedderTest, CanCreateEmbedderWithCustomRenderTaskRunner) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   task_latch.Wait();
   ASSERT_TRUE(task_executed);
@@ -2615,7 +2615,7 @@ TEST_F(EmbedderTest,
     event.width = 800;
     event.height = 600;
     event.pixel_ratio = 1.0;
-    ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+    ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
               kSuccess);
   });
 
@@ -2720,13 +2720,28 @@ TEST_F(EmbedderTest,
 
   auto engine = builder.LaunchEngine();
 
-  // Send a window metrics events so frames may be scheduled.
-  FlutterWindowMetricsEvent event = {};
-  event.struct_size = sizeof(event);
-  event.width = 400 * 2.0;
-  event.height = 300 * 2.0;
-  event.pixel_ratio = 2.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  // Send screen and window metrics events so frames may be scheduled.
+  FlutterScreenMetricsEvent screen_metrics_event = {};
+  screen_metrics_event.struct_size = sizeof(screen_metrics_event);
+  screen_metrics_event.screen_id = 0;
+  screen_metrics_event.left = 0.0;
+  screen_metrics_event.top = 0.0;
+  screen_metrics_event.width = 400 * 2.0;
+  screen_metrics_event.height = 300 * 2.0;
+  screen_metrics_event.pixel_ratio = 2.0;
+  ASSERT_EQ(FlutterEngineSendScreenMetricsEvent(engine.get(),
+                                                &screen_metrics_event, 1),
+            kSuccess);
+  FlutterWindowMetricsEvent window_metrics_event = {};
+  window_metrics_event.struct_size = sizeof(window_metrics_event);
+  window_metrics_event.window_id = 0;
+  window_metrics_event.left = 0.0;
+  window_metrics_event.top = 0.0;
+  window_metrics_event.width = 400 * 2.0;
+  window_metrics_event.height = 300 * 2.0;
+  window_metrics_event.pixel_ratio = 2.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(),
+                                                &window_metrics_event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -2815,13 +2830,28 @@ TEST_F(
 
   auto engine = builder.LaunchEngine();
 
-  // Send a window metrics events so frames may be scheduled.
-  FlutterWindowMetricsEvent event = {};
-  event.struct_size = sizeof(event);
-  event.width = 400 * 2.0;
-  event.height = 300 * 2.0;
-  event.pixel_ratio = 2.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  // Send screen and window metrics events so frames may be scheduled.
+  FlutterScreenMetricsEvent screen_metrics_event = {};
+  screen_metrics_event.struct_size = sizeof(screen_metrics_event);
+  screen_metrics_event.screen_id = 0;
+  screen_metrics_event.left = 0.0;
+  screen_metrics_event.top = 0.0;
+  screen_metrics_event.width = 400 * 2.0;
+  screen_metrics_event.height = 300 * 2.0;
+  screen_metrics_event.pixel_ratio = 2.0;
+  ASSERT_EQ(FlutterEngineSendScreenMetricsEvent(engine.get(),
+                                                &screen_metrics_event, 1),
+            kSuccess);
+  FlutterWindowMetricsEvent window_metrics_event = {};
+  window_metrics_event.struct_size = sizeof(window_metrics_event);
+  window_metrics_event.window_id = 0;
+  window_metrics_event.left = 0.0;
+  window_metrics_event.top = 0.0;
+  window_metrics_event.width = 400 * 2.0;
+  window_metrics_event.height = 300 * 2.0;
+  window_metrics_event.pixel_ratio = 2.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(),
+                                                &window_metrics_event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -2995,7 +3025,7 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
   event.width = 1024;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -3037,7 +3067,7 @@ TEST_F(EmbedderTest,
   event.width = 1024;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -3075,7 +3105,7 @@ TEST_F(EmbedderTest,
   event.width = 1024;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -3181,7 +3211,7 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValid) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -3271,13 +3301,28 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValidWithPixelRatio) {
 
   auto engine = builder.LaunchEngine();
 
-  // Send a window metrics events so frames may be scheduled.
-  FlutterWindowMetricsEvent event = {};
-  event.struct_size = sizeof(event);
-  event.width = 800;
-  event.height = 600;
-  event.pixel_ratio = 2.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  // Send screen and window metrics events so frames may be scheduled.
+  FlutterScreenMetricsEvent screen_metrics_event = {};
+  screen_metrics_event.struct_size = sizeof(screen_metrics_event);
+  screen_metrics_event.screen_id = 0;
+  screen_metrics_event.left = 0.0;
+  screen_metrics_event.top = 0.0;
+  screen_metrics_event.width = 400 * 2.0;
+  screen_metrics_event.height = 300 * 2.0;
+  screen_metrics_event.pixel_ratio = 2.0;
+  ASSERT_EQ(FlutterEngineSendScreenMetricsEvent(engine.get(),
+                                                &screen_metrics_event, 1),
+            kSuccess);
+  FlutterWindowMetricsEvent window_metrics_event = {};
+  window_metrics_event.struct_size = sizeof(window_metrics_event);
+  window_metrics_event.window_id = 0;
+  window_metrics_event.left = 0.0;
+  window_metrics_event.top = 0.0;
+  window_metrics_event.width = 400 * 2.0;
+  window_metrics_event.height = 300 * 2.0;
+  window_metrics_event.pixel_ratio = 2.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(),
+                                                &window_metrics_event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -3374,13 +3419,28 @@ TEST_F(EmbedderTest,
 
   auto engine = builder.LaunchEngine();
 
-  // Send a window metrics events so frames may be scheduled.
-  FlutterWindowMetricsEvent event = {};
-  event.struct_size = sizeof(event);
-  event.width = 800;
-  event.height = 600;
-  event.pixel_ratio = 2.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  // Send screen and window metrics events so frames may be scheduled.
+  FlutterScreenMetricsEvent screen_metrics_event = {};
+  screen_metrics_event.struct_size = sizeof(screen_metrics_event);
+  screen_metrics_event.screen_id = 0;
+  screen_metrics_event.left = 0.0;
+  screen_metrics_event.top = 0.0;
+  screen_metrics_event.width = 400 * 2.0;
+  screen_metrics_event.height = 300 * 2.0;
+  screen_metrics_event.pixel_ratio = 2.0;
+  ASSERT_EQ(FlutterEngineSendScreenMetricsEvent(engine.get(),
+                                                &screen_metrics_event, 1),
+            kSuccess);
+  FlutterWindowMetricsEvent window_metrics_event = {};
+  window_metrics_event.struct_size = sizeof(window_metrics_event);
+  window_metrics_event.window_id = 0;
+  window_metrics_event.left = 0.0;
+  window_metrics_event.top = 0.0;
+  window_metrics_event.width = 400 * 2.0;
+  window_metrics_event.height = 300 * 2.0;
+  window_metrics_event.pixel_ratio = 2.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(),
+                                                &window_metrics_event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -3408,7 +3468,7 @@ TEST_F(EmbedderTest, EmptySceneIsAcceptable) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   latch.Wait();
 }
@@ -3434,7 +3494,7 @@ TEST_F(EmbedderTest, SceneWithNoRootContainerIsAcceptable) {
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   latch.Wait();
 }
@@ -3467,7 +3527,7 @@ TEST_F(EmbedderTest, ArcEndCapsAreDrawnCorrectly) {
   event.width = 1024;
   event.height = 800;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("arc_end_caps.png", scene_image));
@@ -3591,7 +3651,7 @@ TEST_F(EmbedderTest, ClipsAreCorrectlyCalculated) {
   event.width = 400;
   event.height = 300;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   latch.Wait();
@@ -3673,7 +3733,7 @@ TEST_F(EmbedderTest, ComplexClipsAreCorrectlyCalculated) {
   event.width = 400;
   event.height = 300;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   latch.Wait();
@@ -4023,7 +4083,7 @@ TEST_F(EmbedderTest, CompositorCanPostZeroLayersForPresentation) {
   event.width = 300;
   event.height = 200;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
   latch.Wait();
@@ -4086,7 +4146,7 @@ TEST_F(EmbedderTest, CompositorCanPostOnlyPlatformViews) {
   event.width = 300;
   event.height = 200;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
   latch.Wait();
@@ -4125,7 +4185,7 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreRecycled) {
   event.width = 300;
   event.height = 200;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   latch.Wait();
@@ -4202,7 +4262,7 @@ TEST_F(EmbedderTest, CompositorRenderTargetsAreInStableOrder) {
   event.width = 300;
   event.height = 200;
   event.pixel_ratio = 1.0;
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event, 1),
             kSuccess);
 
   latch.Wait();

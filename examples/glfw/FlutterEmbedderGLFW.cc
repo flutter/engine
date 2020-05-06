@@ -68,14 +68,43 @@ static void GLFWKeyCallback(GLFWwindow* window,
 }
 
 void GLFWwindowSizeCallback(GLFWwindow* window, int width, int height) {
+  int left, top;
+  glfwGetWindowPos(window, &left, &top);
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
+  event.window_id = 0;
+  event.left = left * g_pixelRatio;
+  event.top = top * g_pixelRatio;
   event.width = width * g_pixelRatio;
   event.height = height * g_pixelRatio;
   event.pixel_ratio = g_pixelRatio;
+
+  // TODO(gspencergoog): Currently, there is only one window. This will change
+  // as multi-window support is added. See
+  // https://github.com/flutter/flutter/issues/60131
   FlutterEngineSendWindowMetricsEvent(
-      reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)),
-      &event);
+      reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)), &event,
+      1);
+}
+
+void GLFWwindowPosCallback(GLFWwindow* window, int left, int top) {
+  int width, height;
+  glfwGetWindowSize(window, &width, &height);
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.window_id = 0;
+  event.left = left * g_pixelRatio;
+  event.top = top * g_pixelRatio;
+  event.width = width * g_pixelRatio;
+  event.height = height * g_pixelRatio;
+  event.pixel_ratio = g_pixelRatio;
+
+  // TODO(gspencergoog): Currently, there is only one window. This will change
+  // as multi-window support is added. See
+  // https://github.com/flutter/flutter/issues/60131
+  FlutterEngineSendWindowMetricsEvent(
+      reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)), &event,
+      1);
 }
 
 bool RunFlutter(GLFWwindow* window,
@@ -150,6 +179,7 @@ int main(int argc, const char* argv[]) {
 
   glfwSetKeyCallback(window, GLFWKeyCallback);
   glfwSetWindowSizeCallback(window, GLFWwindowSizeCallback);
+  glfwSetWindowPosCallback(window, GLFWwindowPosCallback);
   glfwSetMouseButtonCallback(window, GLFWmouseButtonCallback);
 
   while (!glfwWindowShouldClose(window)) {

@@ -7,7 +7,9 @@
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_message_response_dart.h"
+#include "flutter/lib/ui/window/screen.h"
 #include "flutter/lib/ui/window/window.h"
+#include "lib/ui/window/screen_metrics.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_library_natives.h"
@@ -188,18 +190,13 @@ PlatformConfigurationClient::~PlatformConfigurationClient() {}
 
 PlatformConfiguration::PlatformConfiguration(
     PlatformConfigurationClient* client)
-    : client_(client), window_(new Window({1.0, 0.0, 0.0})) {}
+    : client_(client) {}
 
 PlatformConfiguration::~PlatformConfiguration() {}
 
 void PlatformConfiguration::DidCreateIsolate() {
   library_.Set(tonic::DartState::Current(),
                Dart_LookupLibrary(tonic::ToDart("dart:ui")));
-}
-
-void PlatformConfiguration::SetWindowMetrics(
-    const ViewportMetrics& window_metrics) {
-  window_->UpdateWindowMetrics(library_, window_metrics);
 }
 
 void PlatformConfiguration::UpdateLocales(
@@ -437,6 +434,104 @@ void PlatformConfiguration::RegisterNatives(
       {"PlatformConfiguration_computePlatformResolvedLocale",
        _ComputePlatformResolvedLocale, 2, true},
   });
+}
+
+void PlatformConfiguration::SetWindowMetrics(
+    const std::vector<ViewportMetrics>& window_metrics) {
+  WindowMap updated;
+  for (const auto& metrics : window_metrics) {
+    WindowMap::iterator found = windows_.find(metrics.view_id);
+    if (found == windows_.end()) {
+      // A new window that needs to be added
+      std::shared_ptr<Window> new_window = std::make_shared<Window>(metrics);
+      updated.insert(std::make_pair(metrics.view_id, new_window));
+      new_window->UpdateWindowMetrics(library_, metrics);
+    } else {
+      // An existing window that needs to be updated, add it to the updated
+      // list, and remove it from the existing screens.
+      (*found).second->UpdateWindowMetrics(library_, metrics);
+      updated.insert(*found);
+      windows_.erase(found);
+    }
+  }
+
+  // Anything left in windows_ didn't exist in the window_metrics supplied, and
+  // so will be removed.
+  std::vector<int64_t> removed_ids;
+  for (const auto& entry : windows_) {
+    removed_ids.push_back(entry.first);
+  }
+
+  windows_.swap(updated);
+
+  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
+  if (!dart_state) {
+    return;
+  }
+  tonic::DartState::Scope scope(dart_state);
+  if (!removed_ids.empty()) {
+    tonic::LogIfError(tonic::DartInvokeField(library_.value(), "_removeWindows",
+                                             {
+                                                 tonic::ToDart(removed_ids),
+                                             }));
+  }
+}
+
+void PlatformConfiguration::SetScreenMetrics(
+    const std::vector<ScreenMetrics>& screen_metrics) {
+  ScreenMap updated;
+  for (const auto& metrics : screen_metrics) {
+    ScreenMap::iterator found = screens_.find(metrics.screen_id);
+    if (found == screens_.end()) {
+      // A new screen that needs to be added
+      std::shared_ptr<Screen> new_screen = std::make_shared<Screen>(metrics);
+      updated.insert(std::make_pair(metrics.screen_id, new_screen));
+      new_screen->UpdateScreenMetrics(library_, metrics);
+    } else {
+      // An existing screen that needs to be updated, add it to the updated
+      // list, and remove it from the existing screens.
+      (*found).second->UpdateScreenMetrics(library_, metrics);
+      updated.insert(*found);
+      screens_.erase(found);
+    }
+  }
+
+  // Anything left in screens_ didn't exist in the screen_metrics supplied, and
+  // so will be removed.
+  std::vector<int64_t> removed_ids;
+  for (const auto& entry : screens_) {
+    removed_ids.push_back(entry.first);
+  }
+
+  screens_.swap(updated);
+
+  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
+  if (!dart_state) {
+    return;
+  }
+  tonic::DartState::Scope scope(dart_state);
+  if (!removed_ids.empty()) {
+    tonic::LogIfError(tonic::DartInvokeField(library_.value(), "_removeScreens",
+                                             {
+                                                 tonic::ToDart(removed_ids),
+                                             }));
+  }
+}
+
+std::shared_ptr<Window> PlatformConfiguration::window(int64_t window_id) {
+  if (windows_.find(window_id) == windows_.end()) {
+    FML_DLOG(WARNING) << "Unable to find window with id " << window_id;
+    return nullptr;
+  }
+  return windows_.at(window_id);
+}
+
+std::shared_ptr<Screen> PlatformConfiguration::screen(int64_t screen_id) {
+  if (screens_.find(screen_id) == screens_.end()) {
+    FML_DLOG(WARNING) << "Unable to find screen with id " << screen_id;
+    return nullptr;
+  }
+  return screens_.at(screen_id);
 }
 
 }  // namespace flutter

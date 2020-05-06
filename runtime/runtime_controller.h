@@ -136,6 +136,17 @@ class RuntimeController final : public PlatformConfigurationClient {
   std::unique_ptr<RuntimeController> Clone() const;
 
   //----------------------------------------------------------------------------
+  /// @brief      Forward the specified screen metrics to the running isolate.
+  ///             If the isolate is not running, these metrics will be saved and
+  ///             flushed to the isolate when it starts.
+  ///
+  /// @param[in]  metrics  The screen metrics for all screens.
+  ///
+  /// @return     If the screen metrics were forwarded to the running isolate.
+  ///
+  bool SetScreenMetrics(const std::vector<ScreenMetrics>& metrics);
+
+  //----------------------------------------------------------------------------
   /// @brief      Forward the specified viewport metrics to the running isolate.
   ///             If the isolate is not running, these metrics will be saved and
   ///             flushed to the isolate when it starts.
@@ -144,7 +155,7 @@ class RuntimeController final : public PlatformConfigurationClient {
   ///
   /// @return     If the window metrics were forwarded to the running isolate.
   ///
-  bool SetViewportMetrics(const ViewportMetrics& metrics);
+  bool SetViewportMetrics(const std::vector<ViewportMetrics>& metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Forward the specified locale data to the running isolate. If

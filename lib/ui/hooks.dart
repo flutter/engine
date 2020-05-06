@@ -11,7 +11,10 @@ part of dart.ui;
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateWindowMetrics(
+  Object windowId,
   double devicePixelRatio,
+  double left,
+  double top,
   double width,
   double height,
   double depth,
@@ -28,25 +31,6 @@ void _updateWindowMetrics(
   double systemGestureInsetBottom,
   double systemGestureInsetLeft,
 ) {
-  print('''
-Updated window metrics:
-  devicePixelRatio: $devicePixelRatio
-  width: $width
-  height: $height
-  depth: $depth
-  viewPaddingTop: $viewPaddingTop
-  viewPaddingRight: $viewPaddingRight
-  viewPaddingBottom: $viewPaddingBottom
-  viewPaddingLeft: $viewPaddingLeft
-  viewInsetTop: $viewInsetTop
-  viewInsetRight: $viewInsetRight
-  viewInsetBottom: $viewInsetBottom
-  viewInsetLeft: $viewInsetLeft
-  systemGestureInsetTop: $systemGestureInsetTop
-  systemGestureInsetRight: $systemGestureInsetRight
-  systemGestureInsetBottom: $systemGestureInsetBottom
-  systemGestureInsetLeft: $systemGestureInsetLeft
-''');
   window
     .._devicePixelRatio = devicePixelRatio
     .._physicalSize = Size(width, height)
@@ -72,6 +56,48 @@ Updated window metrics:
         bottom: math.max(0.0, systemGestureInsetBottom),
         left: math.max(0.0, systemGestureInsetLeft));
   _invoke(window.onMetricsChanged, window._onMetricsChangedZone);
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
+void _removeWindows(List<Object> removedIds) {
+  // TODO(gspencergoog): Remove given IDs from screen metrics once dart::ui
+  // understands screens. See https://github.com/flutter/flutter/issues/60131
+  print('Removed windows: $removedIds');
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
+void _updateScreenMetrics(
+    Object screenId,
+    double left,
+    double top,
+    double width,
+    double height,
+    double devicePixelRatio,
+    double viewPaddingTop,
+    double viewPaddingRight,
+    double viewPaddingBottom,
+    double viewPaddingLeft,
+    double viewInsetTop,
+    double viewInsetRight,
+    double viewInsetBottom,
+    double viewInsetLeft,
+    double systemGestureInsetTop,
+    double systemGestureInsetRight,
+    double systemGestureInsetBottom,
+    double systemGestureInsetLeft,
+    ) {
+  // TODO(gspencergoog): Once dart:ui understands screens, set their metrics
+  // here. See https://github.com/flutter/flutter/issues/60131
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
+void _removeScreens(List<Object> removedIds) {
+  // TODO(gspencergoog): Remove given IDs from screen metrics once dart::ui
+  // understands screens. See https://github.com/flutter/flutter/issues/60131
+  print('Removed screens: $removedIds');
 }
 
 typedef _LocaleClosure = String? Function();

@@ -68,7 +68,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   bool SwapBuffers();
 
   // |WindowBindingHandlerDelegate|
-  void OnWindowSizeChanged(size_t width, size_t height) const override;
+  void OnWindowBoundsChanged(PhysicalBounds bounds) const override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerMove(double x, double y) override;
@@ -120,8 +120,12 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   };
 
   // Sends a window metrics update to the Flutter engine using current window
-  // dimensions in physical
-  void SendWindowMetrics(size_t width, size_t height, double dpiscale) const;
+  // dimensions and location in physical coordinates.
+  void SendWindowMetrics() const;
+
+  // Sends a screen metrics update to the Flutter engine using current screen
+  // dimensions and location in physical coordinates.
+  void SendScreenMetrics() const;
 
   // Reports a mouse movement to Flutter engine.
   void SendPointerMove(double x, double y);

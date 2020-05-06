@@ -4,6 +4,9 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
+#include <gdk/gdk.h>
+#include <gdk/gdkx.h>
+
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
@@ -13,8 +16,6 @@
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
-
-#include <gdk/gdkx.h>
 
 static constexpr int kMicrosecondsPerMillisecond = 1000;
 
@@ -32,6 +33,12 @@ struct _FlView {
 
   // Pointer button state recorded for sending status updates.
   int64_t button_state;
+
+  // The engine view id that this view has.
+  int64_t view_id;
+
+  // Bounds given by the latest GtkConfigureEvent.
+  GdkRectangle current_bounds;
 
   // Flutter system channel handlers.
   FlKeyEventPlugin* key_event_plugin;
@@ -101,12 +108,30 @@ static gboolean fl_view_send_pointer_button_event(FlView* self,
 
 // Updates the engine with the current window metrics.
 static void fl_view_send_window_metrics(FlView* self) {
-  GtkAllocation allocation;
-  gtk_widget_get_allocation(GTK_WIDGET(self), &allocation);
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
   fl_engine_send_window_metrics_event(
-      self->engine, allocation.width * scale_factor,
-      allocation.height * scale_factor, scale_factor);
+      self->engine, self->view_id, self->current_bounds.x * scale_factor,
+      self->current_bounds.y * scale_factor,
+      self->current_bounds.width * scale_factor,
+      self->current_bounds.height * scale_factor, scale_factor);
+}
+
+static gboolean fl_view_configure_event(GtkWidget* widget,
+                                        GdkEventConfigure* configure,
+                                        gpointer userdata) {
+  FlView* self = FL_VIEW(userdata);
+  self->current_bounds.x = configure->x;
+  self->current_bounds.y = configure->y;
+  self->current_bounds.width = configure->width;
+  self->current_bounds.height = configure->height;
+  fl_view_send_window_metrics(self);
+  return false;
+}
+
+static void fl_view_on_monitors_changed(GdkDisplay* display,
+                                        GdkMonitor* monitor,
+                                        gpointer userdata) {
+  fl_engine_update_screen_metrics(((FlView*)userdata)->engine, display);
 }
 
 // Implements FlPluginRegistry::get_registrar_for_plugin.
@@ -235,15 +260,29 @@ static void fl_view_realize(GtkWidget* widget) {
   fl_renderer_x11_set_window(
       self->renderer, GDK_X11_WINDOW(gtk_widget_get_window(GTK_WIDGET(self))));
 
-  if (!fl_engine_start(self->engine, &error))
+  // TODO(gspencergoog): Currently, there is only one view (one window). This
+  // will change as multi-window support is added. See
+  // https://github.com/flutter/flutter/issues/60131
+  self->view_id = 0;
+  self->current_bounds = {0, 0, 0, 0};
+  if (!fl_engine_start(self->engine, &error)) {
     g_warning("Failed to start Flutter engine: %s", error->message);
+  }
+
+  g_signal_connect(gtk_widget_get_toplevel(widget), "configure-event",
+                   G_CALLBACK(fl_view_configure_event), (gpointer)self);
+
+  GdkDisplay* display = gdk_window_get_display(window);
+  g_signal_connect(G_OBJECT(display), "monitor-added",
+                   G_CALLBACK(fl_view_on_monitors_changed), (gpointer)self);
+  g_signal_connect(G_OBJECT(display), "monitor-removed",
+                   G_CALLBACK(fl_view_on_monitors_changed), (gpointer)self);
+  fl_engine_update_screen_metrics(self->engine, display);
 }
 
 // Implements GtkWidget::size-allocate.
 static void fl_view_size_allocate(GtkWidget* widget,
                                   GtkAllocation* allocation) {
-  FlView* self = FL_VIEW(widget);
-
   gtk_widget_set_allocation(widget, allocation);
 
   if (gtk_widget_get_realized(widget) && gtk_widget_get_has_window(widget)) {
@@ -251,8 +290,6 @@ static void fl_view_size_allocate(GtkWidget* widget,
                            allocation->y, allocation->width,
                            allocation->height);
   }
-
-  fl_view_send_window_metrics(self);
 }
 
 // Implements GtkWidget::button_press_event.

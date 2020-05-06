@@ -2,22 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/lib/ui/window/window.h"
+#include "flutter/lib/ui/window/screen.h"
 
-#include "lib/ui/window/viewport_metrics.h"
+#include "lib/ui/window/screen_metrics.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
 namespace flutter {
+Screen::Screen(ScreenMetrics metrics) : screen_metrics_(metrics) {}
 
-Window::Window(ViewportMetrics metrics) : viewport_metrics_(metrics) {}
+Screen::~Screen() {}
 
-Window::~Window() {}
-
-void Window::UpdateWindowMetrics(const tonic::DartPersistentValue& library,
-                                 const ViewportMetrics& metrics) {
-  viewport_metrics_ = metrics;
+void Screen::UpdateScreenMetrics(const tonic::DartPersistentValue& library,
+                                 const ScreenMetrics& metrics) {
+  screen_metrics_ = metrics;
 
   std::shared_ptr<tonic::DartState> dart_state = library.dart_state().lock();
   if (!dart_state) {
@@ -25,15 +24,14 @@ void Window::UpdateWindowMetrics(const tonic::DartPersistentValue& library,
   }
   tonic::DartState::Scope scope(dart_state);
   tonic::LogIfError(tonic::DartInvokeField(
-      library.value(), "_updateWindowMetrics",
+      library.value(), "_updateScreenMetrics",
       {
-          tonic::ToDart(metrics.view_id),
-          tonic::ToDart(metrics.device_pixel_ratio),
+          tonic::ToDart(metrics.screen_id),
           tonic::ToDart(metrics.physical_left),
           tonic::ToDart(metrics.physical_top),
           tonic::ToDart(metrics.physical_width),
           tonic::ToDart(metrics.physical_height),
-          tonic::ToDart(metrics.physical_depth),
+          tonic::ToDart(metrics.device_pixel_ratio),
           tonic::ToDart(metrics.physical_padding_top),
           tonic::ToDart(metrics.physical_padding_right),
           tonic::ToDart(metrics.physical_padding_bottom),

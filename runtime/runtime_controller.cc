@@ -132,7 +132,8 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 }
 
 bool RuntimeController::FlushRuntimeStateToIsolate() {
-  return SetViewportMetrics(platform_data_.viewport_metrics) &&
+  return SetScreenMetrics(platform_data_.screen_metrics) &&
+         SetViewportMetrics(platform_data_.viewport_metrics) &&
          SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
          SetAccessibilityFeatures(
@@ -141,14 +142,31 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetLifecycleState(platform_data_.lifecycle_state);
 }
 
-bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
+bool RuntimeController::SetScreenMetrics(
+    const std::vector<ScreenMetrics>& metrics) {
+  platform_data_.screen_metrics = metrics;
+
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->SetScreenMetrics(metrics);
+    return true;
+  }
+  FML_DLOG(ERROR) << "Unable to set ScreenMetrics on screens";
+  return false;
+}
+
+bool RuntimeController::SetViewportMetrics(
+    const std::vector<ViewportMetrics>& metrics) {
   platform_data_.viewport_metrics = metrics;
+
+  if (metrics.empty()) {
+    return true;
+  }
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     platform_configuration->SetWindowMetrics(metrics);
     return true;
   }
-
+  FML_DLOG(ERROR) << "Unable to set ViewportMetrics on views";
   return false;
 }
 

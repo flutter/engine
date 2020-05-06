@@ -6,14 +6,19 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_DELEGATE_H_
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "shell/platform/windows/window_binding_handler.h"
 
 namespace flutter {
 
 class WindowBindingHandlerDelegate {
  public:
-  // Notifies delegate that backing window size has changed.
-  // Typically called by currently configured WindowBindingHandler
-  virtual void OnWindowSizeChanged(size_t width, size_t height) const = 0;
+  // Notifies delegate that backing window bounds have changed.
+  // Typically called by the currently configured WindowBindingHandler
+  virtual void OnWindowBoundsChanged(PhysicalBounds bounds) const = 0;
+
+  // Notifies delegate that screen bounds for the current window have changed.
+  // Typically called by the currently configured WindowBindingHandler
+  virtual void OnScreenBoundsChanged(PhysicalBounds bounds) const = 0;
 
   // Notifies delegate that backing window mouse has moved.
   // Typically called by currently configured WindowBindingHandler

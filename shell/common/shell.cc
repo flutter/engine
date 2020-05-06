@@ -770,13 +770,33 @@ void Shell::OnPlatformViewDestroyed() {
 }
 
 // |PlatformView::Delegate|
-void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
+void Shell::OnPlatformViewSetScreenMetrics(
+    const std::vector<ScreenMetrics>& metrics) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  task_runners_.GetUITaskRunner()->PostTask(
+      [engine = engine_->GetWeakPtr(), metrics]() {
+        if (engine) {
+          engine->SetScreenMetrics(metrics);
+        }
+      });
+}
+
+// |PlatformView::Delegate|
+void Shell::OnPlatformViewSetViewportMetrics(
+    const std::vector<ViewportMetrics>& metrics) {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  // TODO(gspencergoog): Currently, there is only one window. This will change
+  // as multi-window support is added. See
+  // https://github.com/flutter/flutter/issues/60131
+
   // This is the formula Android uses.
   // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
-  size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
+  size_t max_bytes =
+      metrics[0].physical_width * metrics[0].physical_height * 12 * 4;
   task_runners_.GetRasterTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
         if (rasterizer) {

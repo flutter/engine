@@ -194,9 +194,18 @@ FlutterEngineResult FlutterEngineRunInitialized(
   return kSuccess;
 }
 
+FlutterEngineResult FlutterEngineSendScreenMetricsEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterScreenMetricsEvent* events,
+    size_t num_events) {
+  EXPECT_TRUE(engine->running);
+  return kSuccess;
+}
+
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterWindowMetricsEvent* event) {
+    const FlutterWindowMetricsEvent* event,
+    size_t events_count) {
   EXPECT_TRUE(engine->running);
   return kSuccess;
 }

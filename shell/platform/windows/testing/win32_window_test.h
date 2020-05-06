@@ -30,6 +30,9 @@ class Win32WindowTest : public Win32Window {
   void OnResize(unsigned int width, unsigned int height) override;
 
   // |Win32Window|
+  void OnMove(unsigned int left, unsigned int top) override;
+
+  // |Win32Window|
   void OnPointerMove(double x, double y) override;
 
   // |Win32Window|
