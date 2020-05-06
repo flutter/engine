@@ -1,4 +1,4 @@
-Signature: a72621aae4369572f66bc2af43582aba
+Signature: 01cd9dd2ea127dd5ea91fc9f45465ddb
 
 UNUSED LICENSES:
 
@@ -2749,6 +2749,7 @@ FILE: ../../../third_party/skia/src/core/SkDrawLooper.cpp
 FILE: ../../../third_party/skia/src/core/SkFontStream.h
 FILE: ../../../third_party/skia/src/core/SkGpuBlurUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkGpuBlurUtils.h
+FILE: ../../../third_party/skia/src/core/SkLegacyGpuBlurUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixUtils.h
 FILE: ../../../third_party/skia/src/core/SkMessageBus.h
 FILE: ../../../third_party/skia/src/core/SkMipMap.cpp
@@ -5202,6 +5203,7 @@ FILE: ../../../third_party/skia/gm/strokerect_anisotropic.cpp
 FILE: ../../../third_party/skia/gm/verifiers/gmverifier.cpp
 FILE: ../../../third_party/skia/gm/verifiers/gmverifier.h
 FILE: ../../../third_party/skia/include/core/SkM44.h
+FILE: ../../../third_party/skia/modules/skottie/include/ExternalLayer.h
 FILE: ../../../third_party/skia/modules/skottie/src/Adapter.h
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.h
