@@ -42,7 +42,7 @@ constexpr char kFontChange[] = "fontsChange";
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
     TaskRunners task_runners,
-    const WindowData window_data,
+    const PlatformData platform_data,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
@@ -133,7 +133,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
       fml::MakeCopyable([&engine_promise,                                 //
                          shell = shell.get(),                             //
                          &dispatcher_maker,                               //
-                         &window_data,                                    //
+                         &platform_data,                                  //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          vsync_waiter = std::move(vsync_waiter),          //
                          &weak_io_manager_future,                         //
@@ -154,7 +154,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
             *shell->GetDartVM(),            //
             std::move(isolate_snapshot),    //
             task_runners,                   //
-            window_data,                    //
+            platform_data,                  //
             shell->GetSettings(),           //
             std::move(animator),            //
             weak_io_manager_future.get(),   //
@@ -241,17 +241,17 @@ std::unique_ptr<Shell> Shell::Create(
     Settings settings,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer) {
-  return Shell::Create(std::move(task_runners),                //
-                       WindowData{/* default window data */},  //
-                       std::move(settings),                    //
-                       std::move(on_create_platform_view),     //
-                       std::move(on_create_rasterizer)         //
+  return Shell::Create(std::move(task_runners),                    //
+                       PlatformData{/* default platform data */},  //
+                       std::move(settings),                        //
+                       std::move(on_create_platform_view),         //
+                       std::move(on_create_rasterizer)             //
   );
 }
 
 std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
-    const WindowData window_data,
+    const PlatformData platform_data,
     Settings settings,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
@@ -266,7 +266,7 @@ std::unique_ptr<Shell> Shell::Create(
   auto vm_data = vm->GetVMData();
 
   return Shell::Create(std::move(task_runners),        //
-                       std::move(window_data),         //
+                       std::move(platform_data),       //
                        std::move(settings),            //
                        vm_data->GetIsolateSnapshot(),  // isolate snapshot
                        on_create_platform_view,        //
@@ -277,7 +277,7 @@ std::unique_ptr<Shell> Shell::Create(
 
 std::unique_ptr<Shell> Shell::Create(
     TaskRunners task_runners,
-    const WindowData window_data,
+    const PlatformData platform_data,
     Settings settings,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
@@ -301,7 +301,7 @@ std::unique_ptr<Shell> Shell::Create(
                          vm = std::move(vm),                              //
                          &shell,                                          //
                          task_runners = std::move(task_runners),          //
-                         window_data,                                     //
+                         platform_data,                                   //
                          settings,                                        //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          on_create_platform_view,                         //
@@ -309,7 +309,7 @@ std::unique_ptr<Shell> Shell::Create(
   ]() mutable {
         shell = CreateShellOnPlatformThread(std::move(vm),
                                             std::move(task_runners),      //
-                                            window_data,                  //
+                                            platform_data,                //
                                             settings,                     //
                                             std::move(isolate_snapshot),  //
                                             on_create_platform_view,      //
