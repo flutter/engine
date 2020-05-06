@@ -200,6 +200,15 @@ FLUTTER_EXPORT void FlutterDesktopWindowSetSizeLimits(
 FLUTTER_EXPORT FlutterDesktopEngineRef
 FlutterDesktopRunEngine(const FlutterDesktopEngineProperties& properties);
 
+// Waits for and processes the next event before |timeout_milliseconds|.
+//
+// If |timeout_milliseconds| is zero, it will wait for the next event
+// indefinitely. A non-zero timeout is needed only if processing unrelated to
+// the event loop is necessary (e.g., to handle events from another source).
+FLUTTER_EXPORT void FlutterDesktopRunEngineEventLoopWithTimeout(
+    FlutterDesktopEngineRef engine,
+    uint32_t timeout_milliseconds);
+
 // Shuts down the given engine instance. Returns true if the shutdown was
 // successful. |engine_ref| is no longer valid after this call.
 FLUTTER_EXPORT bool FlutterDesktopShutDownEngine(

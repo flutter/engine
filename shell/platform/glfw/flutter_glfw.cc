@@ -18,6 +18,7 @@
 #include "flutter/shell/platform/common/cpp/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/glfw/glfw_event_loop.h"
+#include "flutter/shell/platform/glfw/headless_event_loop.h"
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 #include "flutter/shell/platform/glfw/keyboard_hook_handler.h"
 #include "flutter/shell/platform/glfw/platform_handler.h"
@@ -71,9 +72,6 @@ struct FlutterDesktopWindowControllerState {
   // Handler for the flutter/platform channel.
   std::unique_ptr<flutter::PlatformHandler> platform_handler;
 
-  // The event loop for the main thread that allows for delayed task execution.
-  std::unique_ptr<flutter::GLFWEventLoop> event_loop;
-
   // Whether or not the pointer has been added (or if tracking is enabled,
   // has been added since it was last removed).
   bool pointer_currently_added = false;
@@ -109,6 +107,9 @@ struct FlutterDesktopWindow {
 struct FlutterDesktopEngineState {
   // The handle to the Flutter engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
+
+  // The event loop for the main thread that allows for delayed task execution.
+  std::unique_ptr<flutter::EventLoop> event_loop;
 };
 
 // State associated with the plugin registrar.
@@ -200,6 +201,24 @@ static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
     event.pixel_ratio = controller->window_wrapper->pixel_ratio_override;
   }
   FlutterEngineSendWindowMetricsEvent(controller->engine->engine, &event);
+}
+
+// Populates |task_runner| with a description that uses |engine_state|'s event
+// loop to run tasks.
+static void ConfigurePlatformTaskRunner(
+    FlutterTaskRunnerDescription* task_runner,
+    FlutterDesktopEngineState* engine_state) {
+  task_runner->struct_size = sizeof(FlutterTaskRunnerDescription);
+  task_runner->user_data = engine_state;
+  task_runner->runs_task_on_current_thread_callback = [](void* state) -> bool {
+    return reinterpret_cast<FlutterDesktopEngineState*>(state)
+        ->event_loop->RunsTasksOnCurrentThread();
+  };
+  task_runner->post_task_callback =
+      [](FlutterTask task, uint64_t target_time_nanos, void* state) -> void {
+    reinterpret_cast<FlutterDesktopEngineState*>(state)->event_loop->PostTask(
+        task, target_time_nanos);
+  };
 }
 
 // When GLFW calls back to the window with a framebuffer size change, notify
@@ -607,36 +626,23 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   // GLFWMakeResourceContextCurrent immediately.
   state->resource_window = CreateShareWindowForWindow(window);
 
+  state->engine = std::make_unique<FlutterDesktopEngineState>();
+
   // Create an event loop for the window. It is not running yet.
-  state->event_loop = std::make_unique<flutter::GLFWEventLoop>(
+  state->engine->event_loop = std::make_unique<flutter::GLFWEventLoop>(
       std::this_thread::get_id(),  // main GLFW thread
-      [state = state.get()](const auto* task) {
-        if (FlutterEngineRunTask(state->engine->engine, task) != kSuccess) {
+      [engine_state = state->engine.get()](const auto* task) {
+        if (FlutterEngineRunTask(engine_state->engine, task) != kSuccess) {
           std::cerr << "Could not post an engine task." << std::endl;
         }
       });
-
-  // Configure task runner interop.
   FlutterTaskRunnerDescription platform_task_runner = {};
-  platform_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
-  platform_task_runner.user_data = state.get();
-  platform_task_runner.runs_task_on_current_thread_callback =
-      [](void* state) -> bool {
-    return reinterpret_cast<FlutterDesktopWindowControllerState*>(state)
-        ->event_loop->RunsTasksOnCurrentThread();
-  };
-  platform_task_runner.post_task_callback =
-      [](FlutterTask task, uint64_t target_time_nanos, void* state) -> void {
-    reinterpret_cast<FlutterDesktopWindowControllerState*>(state)
-        ->event_loop->PostTask(task, target_time_nanos);
-  };
-
+  ConfigurePlatformTaskRunner(&platform_task_runner, state->engine.get());
   FlutterCustomTaskRunners custom_task_runners = {};
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
 
   // Start the engine.
-  state->engine = std::make_unique<FlutterDesktopEngineState>();
   state->engine->engine =
       RunFlutterEngine(window, engine_properties, &custom_task_runners);
   if (state->engine->engine == nullptr) {
@@ -785,12 +791,8 @@ void FlutterDesktopWindowSetSizeLimits(FlutterDesktopWindowRef flutter_window,
 bool FlutterDesktopRunWindowEventLoopWithTimeout(
     FlutterDesktopWindowControllerRef controller,
     uint32_t timeout_milliseconds) {
-  std::chrono::nanoseconds wait_duration =
-      timeout_milliseconds == 0
-          ? std::chrono::nanoseconds::max()
-          : std::chrono::milliseconds(timeout_milliseconds);
-  controller->event_loop->WaitForEvents(wait_duration);
-
+  FlutterDesktopRunEngineEventLoopWithTimeout(controller->engine.get(),
+                                              timeout_milliseconds);
   return !glfwWindowShouldClose(controller->window.get());
 }
 
@@ -818,14 +820,38 @@ FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
 
 FlutterDesktopEngineRef FlutterDesktopRunEngine(
     const FlutterDesktopEngineProperties& properties) {
-  auto engine =
-      RunFlutterEngine(nullptr, properties, nullptr /* custom task runners */);
+  auto engine_state = new FlutterDesktopEngineState();
+
+  engine_state->event_loop = std::make_unique<flutter::HeadlessEventLoop>(
+      std::this_thread::get_id(), [state = engine_state](const auto* task) {
+        if (FlutterEngineRunTask(state->engine, task) != kSuccess) {
+          std::cerr << "Could not post an engine task." << std::endl;
+        }
+      });
+
+  // Configure task runner interop.
+  FlutterTaskRunnerDescription platform_task_runner = {};
+  ConfigurePlatformTaskRunner(&platform_task_runner, engine_state);
+  FlutterCustomTaskRunners custom_task_runners = {};
+  custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
+  custom_task_runners.platform_task_runner = &platform_task_runner;
+
+  auto engine = RunFlutterEngine(nullptr, properties, &custom_task_runners);
   if (engine == nullptr) {
     return nullptr;
   }
-  auto engine_state = new FlutterDesktopEngineState();
   engine_state->engine = engine;
   return engine_state;
+}
+
+void FlutterDesktopRunEngineEventLoopWithTimeout(
+    FlutterDesktopEngineRef engine,
+    uint32_t timeout_milliseconds) {
+  std::chrono::nanoseconds wait_duration =
+      timeout_milliseconds == 0
+          ? std::chrono::nanoseconds::max()
+          : std::chrono::milliseconds(timeout_milliseconds);
+  engine->event_loop->WaitForEvents(wait_duration);
 }
 
 bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
