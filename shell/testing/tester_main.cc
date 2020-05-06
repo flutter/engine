@@ -235,11 +235,8 @@ int RunTester(const flutter::Settings& settings,
                      }
                    });
 
-  flutter::ViewportMetrics metrics;
-  metrics.device_pixel_ratio = 3.0;
-  metrics.physical_width = 2400;   // 800 at 3x resolution
-  metrics.physical_height = 1800;  // 600 at 3x resolution
-  shell->GetPlatformView()->SetViewportMetrics(metrics);
+  // 800x600 at 3x resolution.
+  shell->GetPlatformView()->SetViewportMetrics({3.0, 2400, 1800});
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();

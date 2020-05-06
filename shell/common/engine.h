@@ -295,7 +295,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          TaskRunners task_runners,
-         const WindowData window_data,
+         const PlatformData platform_data,
          Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
