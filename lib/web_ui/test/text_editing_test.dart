@@ -1121,14 +1121,14 @@ void main() {
 
     test('multiTextField Autofill sync updates back to Flutter', () {
       // Create a configuration with an AutofillGroup of four text fields.
-      final String hintForFirstElement = 'username';
+      final String hintForFirstElement = 'familyName';
       final Map<String, dynamic> flutterMultiAutofillElementConfig =
           createFlutterConfig('text',
               autofillHint: 'email',
               autofillHintsForFields: [
             hintForFirstElement,
             'email',
-            'name',
+            'givenName',
             'telephoneNumber'
           ]);
       final MethodCall setClient = MethodCall('TextInput.setClient',
