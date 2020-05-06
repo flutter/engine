@@ -234,11 +234,16 @@ int RunTester(const flutter::Settings& settings,
                      }
                    });
 
-  flutter::ViewportMetrics metrics;
-  metrics.device_pixel_ratio = 3.0;
-  metrics.physical_width = 2400;   // 800 at 3x resolution
-  metrics.physical_height = 1800;  // 600 at 3x resolution
-  shell->GetPlatformView()->SetViewportMetrics(metrics);
+  flutter::ScreenMetrics screen_metrics;
+  screen_metrics.device_pixel_ratio = 3.0;
+  screen_metrics.physical_width = 2400;   // 800 at 3x resolution
+  screen_metrics.physical_height = 1800;  // 600 at 3x resolution
+  shell->GetPlatformView()->SetScreenMetrics(screen_metrics);
+
+  flutter::ViewportMetrics window_metrics;
+  window_metrics.physical_width = 2400;   // 800 at 3x resolution
+  window_metrics.physical_height = 1800;  // 600 at 3x resolution
+  shell->GetPlatformView()->SetViewportMetrics(window_metrics);
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();

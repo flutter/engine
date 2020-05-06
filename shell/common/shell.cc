@@ -788,6 +788,29 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
 }
 
 // |PlatformView::Delegate|
+void Shell::OnPlatformViewSetScreenMetrics(const ScreenMetrics& metrics) {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  // This is the formula Android uses.
+  // https://android.googlesource.com/platform/frameworks/base/+/master/libs/hwui/renderthread/CacheManager.cpp#41
+  size_t max_bytes = metrics.physical_width * metrics.physical_height * 12 * 4;
+  task_runners_.GetRasterTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr(), max_bytes] {
+        if (rasterizer) {
+          rasterizer->SetResourceCacheMaxBytes(max_bytes, false);
+        }
+      });
+
+  task_runners_.GetUITaskRunner()->PostTask(
+      [engine = engine_->GetWeakPtr(), metrics]() {
+        if (engine) {
+          engine->SetScreenMetrics(metrics);
+        }
+      });
+}
+
+// |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchPlatformMessage(
     fml::RefPtr<PlatformMessage> message) {
   FML_DCHECK(is_setup_);

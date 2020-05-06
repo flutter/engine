@@ -8,10 +8,10 @@ part of dart.ui;
 /// Signature of callbacks that have no arguments and return no data.
 typedef VoidCallback = void Function();
 
-/// Signature for [Window.onBeginFrame].
+/// Signature for [FlutterWindow.onBeginFrame].
 typedef FrameCallback = void Function(Duration duration);
 
-/// Signature for [Window.onReportTimings].
+/// Signature for [FlutterWindow.onReportTimings].
 ///
 /// {@template dart.ui.TimingsCallback.list}
 /// The callback takes a list of [FrameTiming] because it may not be
@@ -25,19 +25,19 @@ typedef FrameCallback = void Function(Duration duration);
 /// {@endtemplate}
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 
-/// Signature for [Window.onPointerDataPacket].
+/// Signature for [FlutterWindow.onPointerDataPacket].
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 
-/// Signature for [Window.onSemanticsAction].
+/// Signature for [FlutterWindow.onSemanticsAction].
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
 
 /// Signature for responses to platform messages.
 ///
-/// Used as a parameter to [Window.sendPlatformMessage] and
-/// [Window.onPlatformMessage].
+/// Used as a parameter to [FlutterWindow.sendPlatformMessage] and
+/// [FlutterWindow.onPlatformMessage].
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 
-/// Signature for [Window.onPlatformMessage].
+/// Signature for [FlutterWindow.onPlatformMessage].
 typedef PlatformMessageCallback = void Function(String name, ByteData? data, PlatformMessageResponseCallback? callback);
 
 // Signature for _setNeedsReportTimings.
@@ -72,10 +72,10 @@ enum FramePhase {
 ///
 /// If you're using the whole Flutter framework, please use
 /// [SchedulerBinding.addTimingsCallback] to get this. It's preferred over using
-/// [Window.onReportTimings] directly because
+/// [FlutterWindow.onReportTimings] directly because
 /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks. If
-/// [SchedulerBinding] is unavailable, then see [Window.onReportTimings] for how
-/// to get this.
+/// [SchedulerBinding] is unavailable, then see [FlutterWindow.onReportTimings]
+/// for how to get this.
 ///
 /// The metrics in debug mode (`flutter run` without any flags) may be very
 /// different from those in profile and release modes due to the debug overhead.
@@ -88,9 +88,10 @@ class FrameTiming {
   /// [FramePhase.values].
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
-  /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
+  /// To get the [FrameTiming] of your app, see [FlutterWindow.onReportTimings].
   FrameTiming(List<int> timestamps)
-      : assert(timestamps.length == FramePhase.values.length), _timestamps = timestamps;
+      : assert(timestamps.length == FramePhase.values.length),
+        _timestamps = timestamps;
 
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
   /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
@@ -100,11 +101,11 @@ class FrameTiming {
 
   /// The duration to build the frame on the UI thread.
   ///
-  /// The build starts approximately when [Window.onBeginFrame] is called. The
-  /// [Duration] in the [Window.onBeginFrame] callback is exactly the
+  /// The build starts approximately when [FlutterWindow.onBeginFrame] is called. The
+  /// [Duration] in the [FlutterWindow.onBeginFrame] callback is exactly the
   /// `Duration(microseconds: timestampInMicroseconds(FramePhase.buildStart))`.
   ///
-  /// The build finishes when [Window.render] is called.
+  /// The build finishes when [FlutterWindow.render] is called.
   ///
   /// {@template dart.ui.FrameTiming.fps_smoothness_milliseconds}
   /// To ensure smooth animations of X fps, this should not exceed 1000/X
@@ -176,7 +177,7 @@ enum AppLifecycleState {
   /// user input, and running in the background.
   ///
   /// When the application is in this state, the engine will not call the
-  /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
+  /// [FlutterWindow.onBeginFrame] and [FlutterWindow.onDrawFrame] callbacks.
   paused,
 
   /// The application is still hosted on a flutter engine but is detached from
@@ -191,8 +192,8 @@ enum AppLifecycleState {
 
 /// A representation of distances for each of the four edges of a rectangle,
 /// used to encode the view insets and padding that applications should place
-/// around their user interface, as exposed by [Window.viewInsets] and
-/// [Window.padding]. View insets and padding are preferably read via
+/// around their user interface, as exposed by [FlutterWindow.viewInsets] and
+/// [FlutterWindow.padding]. View insets and padding are preferably read via
 /// [MediaQuery.of].
 ///
 /// For a generic class that represents distances around a rectangle, see the
@@ -244,7 +245,7 @@ class WindowPadding {
 ///
 /// See also:
 ///
-///  * [Window.locale], which specifies the system's currently selected
+///  * [FlutterWindow.locale], which specifies the system's currently selected
 ///    [Locale].
 class Locale {
   /// Creates a new Locale object. The first argument is the
@@ -495,7 +496,7 @@ class Locale {
   ///
   /// This identifier happens to be a valid Unicode Locale Identifier using
   /// underscores as separator, however it is intended to be used for debugging
-  /// purposes only. For parseable results, use [toLanguageTag] instead.
+  /// purposes only. For parsable results, use [toLanguageTag] instead.
   @keepToString
   @override
   String toString() {
@@ -523,67 +524,75 @@ class Locale {
   }
 }
 
-/// The most basic interface to the host operating system's user interface.
+/// A view into which a Flutter [Scene] is drawn.
 ///
-/// It exposes the size of the display, the core scheduler API, the input event
-/// callback, the graphics drawing API, and other such core services.
+/// Each [FlutterView] has its own layer tree that is rendered into an area
+/// inside of the [FlutterWindow] whenever [render] is called with a [Scene].
 ///
-/// There is a single Window instance in the system, which you can
-/// obtain from `WidgetsBinding.instance.window`.
-///
-/// There is also a [window] singleton object in `dart:ui` if `WidgetsBinding`
-/// is unavailable. But we strongly advise to avoid statically referencing it.
-/// See the document of [window] for more details of why it should be avoided.
+/// New views can be created by the [PlatformDispatcher], using
+/// [PlatformDispatcher.createView].
 ///
 /// ## Insets and Padding
 ///
 /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/widgets/window_padding.mp4}
 ///
-/// In this diagram, the black areas represent system UI that the app cannot
-/// draw over. The red area represents view padding that the application may not
+/// In this illustration, the black areas represent system UI that the app
+/// cannot draw over. The red area represents view padding that the view may not
 /// be able to detect gestures in and may not want to draw in. The grey area
-/// represents the system keyboard, which can cover over the bottom view
-/// padding when visible.
+/// represents the system keyboard, which can cover over the bottom view padding
+/// when visible.
 ///
-/// The [Window.viewInsets] are the physical pixels which the operating
+/// The [FlutterWindow.viewInsets] are the physical pixels which the operating
 /// system reserves for system UI, such as the keyboard, which would fully
 /// obscure any content drawn in that area.
 ///
-/// The [Window.viewPadding] are the physical pixels on each side of the display
-/// that may be partially obscured by system UI or by physical intrusions into
-/// the display, such as an overscan region on a television or a "notch" on a
-/// phone. Unlike the insets, these areas may have portions that show the user
-/// application painted pixels without being obscured, such as a notch at the
-/// top of a phone that covers only a subset of the area. Insets, on the other
-/// hand, either partially or fully obscure the window, such as an opaque
-/// keyboard or a partially transluscent statusbar, which cover an area without
-/// gaps.
+/// The [FlutterWindow.viewPadding] are the physical pixels on each side of the
+/// display that may be partially obscured by system UI or by physical
+/// intrusions into the display, such as an overscan region on a television or a
+/// "notch" on a phone. Unlike the insets, these areas may have portions that
+/// show the user view-painted pixels without being obscured, such as a
+/// notch at the top of a phone that covers only a subset of the area. Insets,
+/// on the other hand, either partially or fully obscure the window, such as an
+/// opaque keyboard or a partially translucent status bar, which cover an area
+/// without gaps.
 ///
-/// The [Window.padding] property is computed from both [Window.viewInsets] and
-/// [Window.viewPadding]. It will allow a view inset to consume view padding
-/// where appropriate, such as when a phone's keyboard is covering the bottom
-/// view padding and so "absorbs" it.
+/// The [FlutterWindow.padding] property is computed from both
+/// [FlutterWindow.viewInsets] and [FlutterWindow.viewPadding]. It will allow a
+/// view inset to consume view padding where appropriate, such as when a phone's
+/// keyboard is covering the bottom view padding and so "absorbs" it.
 ///
 /// Clients that want to position elements relative to the view padding
-/// regardless of the view insets should use the [Window.viewPadding] property,
-/// e.g. if you wish to draw a widget at the center of the screen with respect
-/// to the iPhone "safe area" regardless of whether the keyboard is showing.
+/// regardless of the view insets should use the [FlutterWindow.viewPadding]
+/// property, e.g. if you wish to draw a widget at the center of the screen with
+/// respect to the iPhone "safe area" regardless of whether the keyboard is
+/// showing.
 ///
-/// [Window.padding] is useful for clients that want to know how much padding
-/// should be accounted for without concern for the current inset(s) state, e.g.
-/// determining whether a gesture should be considered for scrolling purposes.
-/// This value varies based on the current state of the insets. For example, a
-/// visible keyboard will consume all gestures in the bottom part of the
-/// [Window.viewPadding] anyway, so there is no need to account for that in the
-/// [Window.padding], which is always safe to use for such calculations.
-class Window {
-  Window._() {
-    _setNeedsReportTimings = _nativeSetNeedsReportTimings;
-  }
+/// [FlutterWindow.padding] is useful for clients that want to know how much
+/// padding should be accounted for without concern for the current inset(s)
+/// state, e.g. determining whether a gesture should be considered for scrolling
+/// purposes. This value varies based on the current state of the insets. For
+/// example, a visible keyboard will consume all gestures in the bottom part of
+/// the [FlutterWindow.viewPadding] anyway, so there is no need to account for
+/// that in the [FlutterWindow.padding], which is always safe to use for such
+/// calculations.
+///
+/// See also:
+///
+///  * [FlutterWindow], a special case of a [FlutterView] that is represented on
+///    the platform as a separate window which can host other [FlutterView]s.
+abstract class FlutterView {
+  /// The platform dispatcher that this view is registered with, and gets its
+  /// information from.
+  PlatformDispatcher get platformDispatcher;
 
-  /// The number of device pixels for each logical pixel. This number might not
-  /// be a power of two. Indeed, it might not even be an integer. For example,
-  /// the Nexus 6 has a device pixel ratio of 3.5.
+  /// The configuration of this view.
+  ViewConfiguration get viewConfiguration;
+
+  /// The number of device pixels for each logical pixel for the screen this
+  /// view is displayed on.
+  ///
+  /// This number might not be a power of two. Indeed, it might not even be an
+  /// integer. For example, the Nexus 6 has a device pixel ratio of 3.5.
   ///
   /// Device pixels are also referred to as physical pixels. Logical pixels are
   /// also referred to as device-independent or resolution-independent pixels.
@@ -604,30 +613,51 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  double get devicePixelRatio => _devicePixelRatio;
-  double _devicePixelRatio = 1.0;
+  double get devicePixelRatio => viewConfiguration.screen.configuration.devicePixelRatio;
 
-  /// The dimensions of the rectangle into which the application will be drawn,
-  /// in physical pixels.
+  /// The dimensions and location of the rectangle into which the scene rendered
+  /// in this view will be drawn on the screen, in physical pixels.
   ///
   /// When this changes, [onMetricsChanged] is called.
   ///
-  /// At startup, the size of the application window may not be known before Dart
+  /// At startup, the size and location of the view may not be known before Dart
   /// code runs. If this value is observed early in the application lifecycle,
-  /// it may report [Size.zero].
+  /// it may report [Rect.zero].
   ///
   /// This value does not take into account any on-screen keyboards or other
   /// system UI. The [padding] and [viewInsets] properties provide a view into
-  /// how much of each side of the application may be obscured by system UI.
+  /// how much of each side of the view may be obscured by system UI.
   ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  Size get physicalSize => _physicalSize;
-  Size _physicalSize = Size.zero;
+  Rect get physicalGeometry => viewConfiguration.geometry;
 
-  /// The physical depth is the maximum elevation that the Window allows.
+  /// The dimensions of the rectangle into which the scene rendered in this view
+  /// will be drawn on the screen, in physical pixels.
+  ///
+  /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// At startup, the size of the view may not be known before Dart code runs.
+  /// If this value is observed early in the application lifecycle, it may
+  /// report [Size.zero].
+  ///
+  /// This value does not take into account any on-screen keyboards or other
+  /// system UI. The [padding] and [viewInsets] properties provide information
+  /// about how much of each side of the view may be obscured by system UI.
+  ///
+  /// This value is the same as [physicalGeometry.size].
+  ///
+  /// See also:
+  ///
+  ///  * [physicalGeometry], which reports the location of the view as well as
+  ///    its size.
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  Size get physicalSize => viewConfiguration.geometry.size;
+
+  /// The physical depth is the maximum elevation that the `FlutterView` allows.
   ///
   /// Physical layers drawn at or above this elevation will have their elevation
   /// clamped to this value. This can happen if the physical layer itself has
@@ -636,21 +666,19 @@ class Window {
   /// depth.
   ///
   /// The default value is [double.maxFinite], which is used for platforms that
-  /// do not specify a maximum elevation. This property is currently on expected
-  /// to be set to a non-default value on Fuchsia.
-  double get physicalDepth => _physicalDepth;
-  double _physicalDepth = double.maxFinite;
+  /// do not specify a maximum elevation. This property is currently only
+  /// expected to be set to a non-default value on the Fuchsia platform.
+  double get physicalDepth => viewConfiguration.depth;
 
   /// The number of physical pixels on each side of the display rectangle into
-  /// which the application can render, but over which the operating system
-  /// will likely place system UI, such as the keyboard, that fully obscures
-  /// any content.
+  /// which the view can render, but over which the operating system will likely
+  /// place system UI, such as the keyboard, that fully obscures any content.
   ///
   /// When this property changes, [onMetricsChanged] is called.
   ///
-  /// The relationship between this [Window.viewInsets], [Window.viewPadding],
-  /// and [Window.padding] are described in more detail in the documentation for
-  /// [Window].
+  /// The relationship between this [FlutterWindow.viewInsets],
+  /// [FlutterWindow.viewPadding], and [FlutterWindow.padding] are described in
+  /// more detail in the documentation for [FlutterWindow].
   ///
   /// See also:
   ///
@@ -659,25 +687,24 @@ class Window {
   ///  * [MediaQuery.of], a simpler mechanism for the same.
   ///  * [Scaffold], which automatically applies the view insets in material
   ///    design applications.
-  WindowPadding get viewInsets => _viewInsets;
-  WindowPadding _viewInsets = WindowPadding.zero;
+  WindowPadding get viewInsets => viewConfiguration.viewInsets;
 
   /// The number of physical pixels on each side of the display rectangle into
-  /// which the application can render, but which may be partially obscured by
-  /// system UI (such as the system notification area), or or physical
-  /// intrusions in the display (e.g. overscan regions on television screens or
-  /// phone sensor housings).
+  /// which the view can render, but which may be partially obscured by system
+  /// UI (such as the system notification area), or or physical intrusions in
+  /// the display (e.g. overscan regions on television screens or phone sensor
+  /// housings).
   ///
-  /// Unlike [Window.padding], this value does not change relative to
-  /// [Window.viewInsets]. For example, on an iPhone X, it will not change in
-  /// response to the soft keyboard being visible or hidden, whereas
-  /// [Window.padding] will.
+  /// Unlike [FlutterWindow.padding], this value does not change relative to
+  /// [FlutterWindow.viewInsets]. For example, on an iPhone X, it will not
+  /// change in response to the soft keyboard being visible or hidden, whereas
+  /// [FlutterWindow.padding] will.
   ///
   /// When this property changes, [onMetricsChanged] is called.
   ///
-  /// The relationship between this [Window.viewInsets], [Window.viewPadding],
-  /// and [Window.padding] are described in more detail in the documentation for
-  /// [Window].
+  /// The relationship between this [FlutterWindow.viewInsets],
+  /// [FlutterWindow.viewPadding], and [FlutterWindow.padding] are described in
+  /// more detail in the documentation for [FlutterWindow].
   ///
   /// See also:
   ///
@@ -686,12 +713,11 @@ class Window {
   ///  * [MediaQuery.of], a simpler mechanism for the same.
   ///  * [Scaffold], which automatically applies the padding in material design
   ///    applications.
-  WindowPadding get viewPadding => _viewPadding;
-  WindowPadding _viewPadding = WindowPadding.zero;
+  WindowPadding get viewPadding => viewConfiguration.viewPadding;
 
   /// The number of physical pixels on each side of the display rectangle into
-  /// which the application can render, but where the operating system will
-  /// consume input gestures for the sake of system navigation.
+  /// which the view can render, but where the operating system will consume
+  /// input gestures for the sake of system navigation.
   ///
   /// For example, an operating system might use the vertical edges of the
   /// screen, where swiping inwards from the edges takes users backward
@@ -704,28 +730,27 @@ class Window {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   ///  * [MediaQuery.of], a simpler mechanism for the same.
-  WindowPadding get systemGestureInsets => _systemGestureInsets;
-  WindowPadding _systemGestureInsets = WindowPadding.zero;
+  WindowPadding get systemGestureInsets => viewConfiguration.systemGestureInsets;
 
   /// The number of physical pixels on each side of the display rectangle into
-  /// which the application can render, but which may be partially obscured by
-  /// system UI (such as the system notification area), or or physical
-  /// intrusions in the display (e.g. overscan regions on television screens or
-  /// phone sensor housings).
+  /// which the view can render, but which may be partially obscured by system
+  /// UI (such as the system notification area), or or physical intrusions in
+  /// the display (e.g. overscan regions on television screens or phone sensor
+  /// housings).
   ///
-  /// This value is calculated by taking
-  /// `max(0.0, Window.viewPadding - Window.viewInsets)`. This will treat a
-  /// system IME that increases the bottom inset as consuming that much of the
-  /// bottom padding. For example, on an iPhone X, [Window.padding.bottom] is
-  /// the same as [Window.viewPadding.bottom] when the soft keyboard is not
-  /// drawn (to account for the bottom soft button area), but will be `0.0` when
-  /// the soft keyboard is visible.
+  /// This value is calculated by taking `max(0.0, FlutterView.viewPadding -
+  /// FlutterView.viewInsets)`. This will treat a system IME that increases the
+  /// bottom inset as consuming that much of the bottom padding. For example, on
+  /// an iPhone X, [FlutterView.padding.bottom] is the same as
+  /// [FlutterView.viewPadding.bottom] when the soft keyboard is not drawn (to
+  /// account for the bottom soft button area), but will be `0.0` when the soft
+  /// keyboard is visible.
   ///
   /// When this changes, [onMetricsChanged] is called.
   ///
-  /// The relationship between this [Window.viewInsets], [Window.viewPadding],
-  /// and [Window.padding] are described in more detail in the documentation for
-  /// [Window].
+  /// The relationship between this [FlutterWindow.viewInsets],
+  /// [FlutterWindow.viewPadding], and [FlutterWindow.padding] are described in
+  /// more detail in the documentation for [FlutterWindow].
   ///
   /// See also:
   ///
@@ -734,54 +759,167 @@ class Window {
   ///  * [MediaQuery.of], a simpler mechanism for the same.
   ///  * [Scaffold], which automatically applies the padding in material design
   ///    applications.
-  WindowPadding get padding => _padding;
-  WindowPadding _padding = WindowPadding.zero;
+  WindowPadding get padding => viewConfiguration.padding;
 
-  /// A callback that is invoked whenever the [devicePixelRatio],
-  /// [physicalSize], [padding], [viewInsets], or [systemGestureInsets]
-  /// values change, for example when the device is rotated or when the
-  /// application is resized (e.g. when showing applications side-by-side
-  /// on Android).
+  /// Updates the view's rendering on the GPU with the newly provided
+  /// [Scene].
   ///
-  /// The engine invokes this callback in the same zone in which the callback
-  /// was set.
+  /// This function must be called within the scope of the
+  /// [PlatformDispatcher.onBeginFrame] or [PlatformDispatcher.onDrawFrame]
+  /// callbacks being invoked. If this function is called a second time during a
+  /// single [PlatformDispatcher.onBeginFrame]/[PlatformDispatcher.onDrawFrame]
+  /// callback sequence or called outside the scope of those callbacks, the call
+  /// will be ignored.
   ///
-  /// The framework registers with this callback and updates the layout
-  /// appropriately.
+  /// To record graphical operations, first create a [PictureRecorder], then
+  /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
+  /// After issuing all the graphical operations, call the
+  /// [PictureRecorder.endRecording] function on the [PictureRecorder] to obtain
+  /// the final [Picture] that represents the issued graphical operations.
+  ///
+  /// Next, create a [SceneBuilder], and add the [Picture] to it using
+  /// [SceneBuilder.addPicture]. With the [SceneBuilder.build] method you can
+  /// then obtain a [Scene] object, which you can display to the user via this
+  /// [render] function.
   ///
   /// See also:
   ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    register for notifications when this is called.
-  ///  * [MediaQuery.of], a simpler mechanism for the same.
-  VoidCallback? get onMetricsChanged => _onMetricsChanged;
-  VoidCallback? _onMetricsChanged;
-  Zone _onMetricsChangedZone = Zone.root;
+  ///  * [SchedulerBinding], the Flutter framework class which manages the
+  ///    scheduling of frames.
+  ///  * [RendererBinding], the Flutter framework class which manages layout and
+  ///    painting.
+  void render(Scene scene) => platformDispatcher.render(scene, this);
+
+  /// Dispose of this view, closing it permanently.
+  ///
+  /// This function should be called in response to a call to
+  /// [PlatformDispatcher.onViewDisposed], or to permanently dispose of a view
+  /// that the application would like to close.
+  void dispose() => platformDispatcher.disposeView(this);
+}
+
+/// A type of [FlutterView] that can be hosted inside of a [FlutterWindow], into
+/// which a Flutter [Scene] is drawn.
+///
+/// A [FlutterWindowView] has its own layer tree that is rendered into an area
+/// inside of a [FlutterWindow] when [render] is called with a [Scene].
+///
+/// A [FlutterWindow] is a subclass of a [FlutterView] that is a separate window
+/// which can host other [FlutterView]s.
+///
+/// A `FlutterWindowView` can only be created by [PlatformDispatcher.createView]
+/// where the requested configuration includes a parent [FlutterWindow] set as
+/// the [ViewConfiguration.window].
+class FlutterWindowView extends FlutterView {
+  FlutterWindowView._({Object viewId, this.platformDispatcher})
+      : _viewId = viewId;
+
+  /// The opaque ID for this view.
+  final Object _viewId;
+
+  @override
+  final PlatformDispatcher platformDispatcher;
+
+  @override
+  ViewConfiguration get viewConfiguration {
+    assert(platformDispatcher._viewConfigurations.containsKey(_viewId));
+    return platformDispatcher._viewConfigurations[_viewId];
+  }
+}
+
+/// A top-level platform window displaying a Flutter layer tree drawn from a
+/// [Scene].
+///
+/// The current list of all Flutter views for the application is available from
+/// `WidgetsBinding.instance.platformDispatcher.views`. Only views that are of
+/// type [FlutterWindow] are top level platform windows.
+///
+/// There is also a [PlatformDispatcher.instance] singleton object in `dart:ui`
+/// if `WidgetsBinding` is unavailable, but we strongly advise avoiding a static
+/// reference to it. See the documentation for [PlatformDispatcher.instance] for
+/// more details about why it should be avoided.
+///
+/// See also:
+///
+///  * [PlatformDispatcher], which manages the current list of [FlutterView]
+///    (and thus [FlutterWindow]) instances.
+class FlutterWindow extends FlutterView {
+  FlutterWindow._({Object windowId, this.platformDispatcher})
+      : _windowId = windowId;
+
+  /// The opaque ID for this view.
+  final Object _windowId;
+
+  @override
+  final PlatformDispatcher platformDispatcher;
+
+  /// The configuration of this view.
+  @override
+  ViewConfiguration get viewConfiguration {
+    assert(platformDispatcher._viewConfigurations.containsKey(_windowId));
+    return platformDispatcher._viewConfigurations[_windowId];
+  }
+}
+
+/// A [FlutterWindow] that includes access to setting callbacks and retrieving
+/// properties that reside on the [PlatformDispatcher].
+///
+/// It is the type of the legacy global [window] singleton, and the
+/// `WidgetsBinding.instance.window` singleton.
+///
+/// This class provides backward compatibility with code that was written before
+/// Flutter supported multiple top level windows. New code should refer to the
+/// [WidgetsBinding.instance.platformDispatcher] or [FlutterWindow] class
+/// directly.
+///
+/// There is also a [PlatformDispatcher.instance] singleton object in `dart:ui`
+/// if `WidgetsBinding` is unavailable. But we strongly advise avoiding a static
+/// reference to it. See the documentation for [PlatformDispatcher.instance] for
+/// more details about why it should be avoided.
+class SingletonFlutterWindow extends FlutterWindow {
+  SingletonFlutterWindow._({Object windowId, PlatformDispatcher platformDispatcher})
+      : super._(windowId: windowId, platformDispatcher: platformDispatcher);
+
+  /// A callback that is invoked whenever the [devicePixelRatio],
+  /// [physicalSize], [padding], [viewInsets], or [systemGestureInsets]
+  /// values change.
+  ///
+  /// {@template flutter.lib.ui.window.forwardWarning}
+  ///
+  /// See [PlatformDispatcher.onMetricsChanged] for more information.
+  VoidCallback? get onMetricsChanged => platformDispatcher.onMetricsChanged;
   set onMetricsChanged(VoidCallback? callback) {
-    _onMetricsChanged = callback;
-    _onMetricsChangedZone = Zone.current;
+    platformDispatcher.onMetricsChanged = callback;
   }
 
   /// The system-reported default locale of the device.
   ///
-  /// This establishes the language and formatting conventions that application
+  /// {@template flutter.lib.ui.window.accessorForwardWarning}
+  /// Accessing this value returns the value contained in the
+  /// [PlatformDispatcher] singleton, so instead of getting it from here, you
+  /// should consider getting it from
+  /// `WidgetsBinding.instance.platformDispatcher` instead (or, as a last resort
+  /// when `WidgetsBinding` isn't available, from
+  /// [PlatformDispatcher.instance]). The reason this value forwards to the
+  /// [PlatformDispatcher] is to avoid breaking code that was written before
+  /// Flutter supported multiple windows.
+  /// {@endtemplate}
+  ///
+  /// This establishes the language and formatting conventions that window
   /// should, if possible, use to render their user interface.
   ///
   /// This is the first locale selected by the user and is the user's
   /// primary locale (the locale the device UI is displayed in)
   ///
-  /// This is equivalent to `locales.first` and will provide an empty non-null locale
-  /// if the [locales] list has not been set or is empty.
-  Locale? get locale {
-    if (_locales != null && _locales!.isNotEmpty) {
-      return _locales!.first;
-    }
-    return null;
-  }
+  /// This is equivalent to `locales.first` and will provide an empty non-null
+  /// locale if the [locales] list has not been set or is empty.
+  Locale? get locale => platformDispatcher.locale;
 
   /// The full system-reported supported locales of the device.
   ///
-  /// This establishes the language and formatting conventions that application
+  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  ///
+  /// This establishes the language and formatting conventions that window
   /// should, if possible, use to render their user interface.
   ///
   /// The list is ordered in order of priority, with lower-indexed locales being
@@ -793,8 +931,7 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<Locale>? get locales => _locales;
-  List<Locale>? _locales;
+  List<Locale>? get locales => platformDispatcher.locales;
 
   /// Performs the platform-native locale resolution.
   ///
@@ -816,15 +953,17 @@ class Window {
 
     if (result.isNotEmpty) {
       return Locale.fromSubtags(
-        languageCode: result[0],
-        countryCode: result[1] == '' ? null : result[1],
-        scriptCode: result[2] == '' ? null : result[2]);
+          languageCode: result[0],
+          countryCode: result[1] == '' ? null : result[1],
+          scriptCode: result[2] == '' ? null : result[2]);
     }
     return null;
   }
   List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) native 'Window_computePlatformResolvedLocale';
 
   /// A callback that is invoked whenever [locale] changes value.
+  ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -833,31 +972,24 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback? get onLocaleChanged => _onLocaleChanged;
-  VoidCallback? _onLocaleChanged;
-  Zone _onLocaleChangedZone = Zone.root;
+  VoidCallback? get onLocaleChanged => platformDispatcher.onLocaleChanged;
   set onLocaleChanged(VoidCallback? callback) {
-    _onLocaleChanged = callback;
-    _onLocaleChangedZone = Zone.current;
+    platformDispatcher.onLocaleChanged = callback;
   }
 
   /// The lifecycle state immediately after dart isolate initialization.
+  ///
+  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
   ///
   /// This property will not be updated as the lifecycle changes.
   ///
   /// It is used to initialize [SchedulerBinding.lifecycleState] at startup
   /// with any buffered lifecycle state events.
-  String get initialLifecycleState {
-    _initialLifecycleStateAccessed = true;
-    return _initialLifecycleState;
-  }
-  late String _initialLifecycleState;
-  /// Tracks if the initial state has been accessed. Once accessed, we
-  /// will stop updating the [initialLifecycleState], as it is not the
-  /// preferred way to access the state.
-  bool _initialLifecycleStateAccessed = false;
+  String get initialLifecycleState => platformDispatcher.initialLifecycleState;
 
   /// The system-reported text scale.
+  ///
+  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
   ///
   /// This establishes the text scaling factor to use when rendering text,
   /// according to the user's platform preferences.
@@ -869,18 +1001,20 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  double get textScaleFactor => _textScaleFactor;
-  double _textScaleFactor = 1.0;
+  double get textScaleFactor => platformDispatcher.textScaleFactor;
 
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.
   ///
+  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  ///
   /// This option is used by [showTimePicker].
-  bool get alwaysUse24HourFormat => _alwaysUse24HourFormat;
-  bool _alwaysUse24HourFormat = false;
+  bool get alwaysUse24HourFormat => platformDispatcher.alwaysUse24HourFormat;
 
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
+  ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
   ///
@@ -888,20 +1022,22 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback? get onTextScaleFactorChanged => _onTextScaleFactorChanged;
-  VoidCallback? _onTextScaleFactorChanged;
-  Zone _onTextScaleFactorChangedZone = Zone.root;
+  VoidCallback? get onTextScaleFactorChanged => platformDispatcher.onTextScaleFactorChanged;
   set onTextScaleFactorChanged(VoidCallback? callback) {
-    _onTextScaleFactorChanged = callback;
-    _onTextScaleFactorChangedZone = Zone.current;
+    platformDispatcher.onTextScaleFactorChanged = callback;
   }
 
   /// The setting indicating the current brightness mode of the host platform.
-  /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
-  Brightness get platformBrightness => _platformBrightness;
-  Brightness _platformBrightness = Brightness.light;
+  ///
+  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  ///
+  /// If the platform has no preference, [platformBrightness] defaults to
+  /// [Brightness.light].
+  Brightness get platformBrightness => platformDispatcher.platformBrightness;
 
   /// A callback that is invoked whenever [platformBrightness] changes value.
+  ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -910,19 +1046,20 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback? get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
-  VoidCallback? _onPlatformBrightnessChanged;
-  Zone _onPlatformBrightnessChangedZone = Zone.root;
+  VoidCallback? get onPlatformBrightnessChanged => platformDispatcher.onPlatformBrightnessChanged;
   set onPlatformBrightnessChanged(VoidCallback? callback) {
-    _onPlatformBrightnessChanged = callback;
-    _onPlatformBrightnessChangedZone = Zone.current;
+    platformDispatcher.onPlatformBrightnessChanged = callback;
   }
 
-  /// A callback that is invoked to notify the application that it is an
-  /// appropriate time to provide a scene using the [SceneBuilder] API and the
-  /// [render] method. When possible, this is driven by the hardware VSync
-  /// signal. This is only called if [scheduleFrame] has been called since the
-  /// last time this callback was invoked.
+  /// A callback that is invoked to notify the window that it is an appropriate
+  /// time to provide a scene using the [SceneBuilder] API and the [render]
+  /// method.
+  ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
+  ///
+  /// When possible, this is driven by the hardware VSync signal. This is only
+  /// called if [scheduleFrame] has been called since the last time this
+  /// callback was invoked.
   ///
   /// The [onDrawFrame] callback is invoked immediately after [onBeginFrame],
   /// after draining any microtasks (e.g. completions of any [Future]s) queued
@@ -937,18 +1074,18 @@ class Window {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  FrameCallback? get onBeginFrame => _onBeginFrame;
-  FrameCallback? _onBeginFrame;
-  Zone _onBeginFrameZone = Zone.root;
+  FrameCallback? get onBeginFrame => platformDispatcher.onBeginFrame;
   set onBeginFrame(FrameCallback? callback) {
-    _onBeginFrame = callback;
-    _onBeginFrameZone = Zone.current;
+    platformDispatcher.onBeginFrame = callback;
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
-  /// completed and after the microtask queue has been drained. This can be
-  /// used to implement a second phase of frame rendering that happens
-  /// after any deferred work queued by the [onBeginFrame] phase.
+  /// completed and after the microtask queue has been drained.
+  ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
+  ///
+  /// This can be used to implement a second phase of frame rendering that
+  /// happens after any deferred work queued by the [onBeginFrame] phase.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -959,22 +1096,21 @@ class Window {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  VoidCallback? get onDrawFrame => _onDrawFrame;
-  VoidCallback? _onDrawFrame;
-  Zone _onDrawFrameZone = Zone.root;
+  VoidCallback? get onDrawFrame => platformDispatcher.onDrawFrame;
   set onDrawFrame(VoidCallback? callback) {
-    _onDrawFrame = callback;
-    _onDrawFrameZone = Zone.current;
+    platformDispatcher.onDrawFrame = callback;
   }
 
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
   ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
+  ///
   /// It's prefered to use [SchedulerBinding.addTimingsCallback] than to use
-  /// [Window.onReportTimings] directly because
+  /// [FlutterWindow.onReportTimings] directly because
   /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
   ///
-  /// This can be used to see if the application has missed frames (through
+  /// This can be used to see if the window has missed frames (through
   /// [FrameTiming.buildDuration] and [FrameTiming.rasterDuration]), or high
   /// latencies (through [FrameTiming.totalSpan]).
   ///
@@ -988,21 +1124,14 @@ class Window {
   /// Flutter spends less than 0.1ms every 1 second to report the timings
   /// (measured on iPhone6S). The 0.1ms is about 0.6% of 16ms (frame budget for
   /// 60fps), or 0.01% CPU usage per second.
-  TimingsCallback? get onReportTimings => _onReportTimings;
-  TimingsCallback? _onReportTimings;
-  Zone _onReportTimingsZone = Zone.root;
+  TimingsCallback? get onReportTimings => platformDispatcher.onReportTimings;
   set onReportTimings(TimingsCallback? callback) {
-    if ((callback == null) != (_onReportTimings == null)) {
-      _setNeedsReportTimings(callback != null);
-    }
-    _onReportTimings = callback;
-    _onReportTimingsZone = Zone.current;
+    platformDispatcher.onReportTimings = callback;
   }
 
-  late _SetNeedsReportTimingsFunc _setNeedsReportTimings;
-  void _nativeSetNeedsReportTimings(bool value) native 'Window_setNeedsReportTimings';
-
   /// A callback that is invoked when pointer data is available.
+  ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1011,16 +1140,15 @@ class Window {
   ///
   ///  * [GestureBinding], the Flutter framework class which manages pointer
   ///    events.
-  PointerDataPacketCallback? get onPointerDataPacket => _onPointerDataPacket;
-  PointerDataPacketCallback? _onPointerDataPacket;
-  Zone _onPointerDataPacketZone = Zone.root;
+  PointerDataPacketCallback? get onPointerDataPacket => platformDispatcher.onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback) {
-    _onPointerDataPacket = callback;
-    _onPointerDataPacketZone = Zone.current;
+    platformDispatcher.onPointerDataPacket = callback;
   }
 
   /// The route or path that the embedder requested when the application was
   /// launched.
+  ///
+  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
   ///
   /// This will be the string "`/`" if no particular route was requested.
   ///
@@ -1049,117 +1177,90 @@ class Window {
   ///  * [Navigator], a widget that handles routing.
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
-  String get defaultRouteName => _defaultRouteName();
-  String _defaultRouteName() native 'Window_defaultRouteName';
+  String get initialRouteName => platformDispatcher.initialRouteName;
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame]
   /// and [onDrawFrame] callbacks be invoked.
   ///
-  /// See also:
-  ///
-  ///  * [SchedulerBinding], the Flutter framework class which manages the
-  ///    scheduling of frames.
-  void scheduleFrame() native 'Window_scheduleFrame';
-
-  /// Updates the application's rendering on the GPU with the newly provided
-  /// [Scene]. This function must be called within the scope of the
-  /// [onBeginFrame] or [onDrawFrame] callbacks being invoked. If this function
-  /// is called a second time during a single [onBeginFrame]/[onDrawFrame]
-  /// callback sequence or called outside the scope of those callbacks, the call
-  /// will be ignored.
-  ///
-  /// To record graphical operations, first create a [PictureRecorder], then
-  /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
-  /// After issuing all the graphical operations, call the
-  /// [PictureRecorder.endRecording] function on the [PictureRecorder] to obtain
-  /// the final [Picture] that represents the issued graphical operations.
-  ///
-  /// Next, create a [SceneBuilder], and add the [Picture] to it using
-  /// [SceneBuilder.addPicture]. With the [SceneBuilder.build] method you can
-  /// then obtain a [Scene] object, which you can display to the user via this
-  /// [render] function.
+  /// {@template flutter.lib.ui.window.functionForwardWarning}
+  /// Calling this function calls the same function on the [PlatformDispatcher]
+  /// singleton, so instead of calling it here, you should consider calling it
+  /// on `WidgetsBinding.instance.platformDispatcher` instead (or, as a last
+  /// resort when `WidgetsBinding` isn't available, on
+  /// [PlatformDispatcher.instance]). The reason this function forwards to the
+  /// [PlatformDispatcher] is to avoid breaking code that was written before
+  /// Flutter supported multiple windows.
+  /// {@endtemplate}
   ///
   /// See also:
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
-  ///  * [RendererBinding], the Flutter framework class which manages layout and
-  ///    painting.
-  void render(Scene scene) native 'Window_render';
+  void scheduleFrame() => platformDispatcher.scheduleFrame();
 
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.
   ///
+  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  ///
   /// The [onSemanticsEnabledChanged] callback is called whenever this value
   /// changes.
-  bool get semanticsEnabled => _semanticsEnabled;
-  bool _semanticsEnabled = false;
+  bool get semanticsEnabled => platformDispatcher.semanticsEnabled;
 
   /// A callback that is invoked when the value of [semanticsEnabled] changes.
   ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
+  ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  VoidCallback? get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
-  VoidCallback? _onSemanticsEnabledChanged;
-  Zone _onSemanticsEnabledChangedZone = Zone.root;
+  VoidCallback? get onSemanticsEnabledChanged => platformDispatcher.onSemanticsEnabledChanged;
   set onSemanticsEnabledChanged(VoidCallback? callback) {
-    _onSemanticsEnabledChanged = callback;
-    _onSemanticsEnabledChangedZone = Zone.current;
+    platformDispatcher.onSemanticsEnabledChanged = callback;
   }
 
   /// A callback that is invoked whenever the user requests an action to be
   /// performed.
+  ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
   ///
   /// This callback is used when the user expresses the action they wish to
   /// perform based on the semantics supplied by [updateSemantics].
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  SemanticsActionCallback? get onSemanticsAction => _onSemanticsAction;
-  SemanticsActionCallback? _onSemanticsAction;
-  Zone _onSemanticsActionZone = Zone.root;
+  SemanticsActionCallback? get onSemanticsAction => platformDispatcher.onSemanticsAction;
   set onSemanticsAction(SemanticsActionCallback? callback) {
-    _onSemanticsAction = callback;
-    _onSemanticsActionZone = Zone.current;
+    platformDispatcher.onSemanticsAction = callback;
   }
 
   /// Additional accessibility features that may be enabled by the platform.
-  AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
-  // The zero value matches the default value in `window_data.h`.
-  AccessibilityFeatures _accessibilityFeatures = const AccessibilityFeatures._(0);
+  AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
+  ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  VoidCallback? get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
-  VoidCallback? _onAccessibilityFeaturesChanged;
-  Zone _onAccessibilityFeaturesChangedZone = Zone.root;
+  VoidCallback? get onAccessibilityFeaturesChanged => platformDispatcher.onAccessibilityFeaturesChanged;
   set onAccessibilityFeaturesChanged(VoidCallback? callback) {
-    _onAccessibilityFeaturesChanged = callback;
-    _onAccessibilityFeaturesChangedZone = Zone.current;
+    platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
 
   /// Change the retained semantics data about this window.
+  ///
+  /// {@macro flutter.lib.ui.window.functionForwardWarning}
   ///
   /// If [semanticsEnabled] is true, the user has requested that this function
   /// be called whenever the semantic content of this window changes.
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) native 'Window_updateSemantics';
-
-  /// Set the debug name associated with this window's root isolate.
-  ///
-  /// Normally debug names are automatically generated from the Dart port, entry
-  /// point, and source file. For example: `main.dart$main-1234`.
-  ///
-  /// This can be combined with flutter tools `--isolate-filter` flag to debug
-  /// specific root isolates. For example: `flutter attach --isolate-filter=[name]`.
-  /// Note that this does not rename any child isolates of the root.
-  void setIsolateDebugName(String name) native 'Window_setIsolateDebugName';
+  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 
   /// Sends a message to a platform-specific plugin.
+  ///
+  /// {@macro flutter.lib.ui.window.functionForwardWarning}
   ///
   /// The `name` parameter determines which plugin receives the message. The
   /// `data` parameter contains the message payload and is typically UTF-8
@@ -1169,19 +1270,15 @@ class Window {
   /// The framework invokes [callback] in the same zone in which this method
   /// was called.
   void sendPlatformMessage(String name,
-                           ByteData? data,
-                           PlatformMessageResponseCallback? callback) {
-    final String? error =
-        _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
-    if (error != null)
-      throw Exception(error);
+      ByteData? data,
+      PlatformMessageResponseCallback? callback) {
+    platformDispatcher.sendPlatformMessage(name, data, callback);
   }
-  String? _sendPlatformMessage(String name,
-                              PlatformMessageResponseCallback? callback,
-                              ByteData? data) native 'Window_sendPlatformMessage';
 
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.
+  ///
+  /// {@macro flutter.lib.ui.window.forwardWarning}
   ///
   /// The `name` parameter determines which plugin sent the message. The `data`
   /// parameter is the payload and is typically UTF-8 encoded JSON but can be
@@ -1193,43 +1290,10 @@ class Window {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  PlatformMessageCallback? get onPlatformMessage => _onPlatformMessage;
-  PlatformMessageCallback? _onPlatformMessage;
-  Zone _onPlatformMessageZone = Zone.root;
+  PlatformMessageCallback? get onPlatformMessage => platformDispatcher.onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback) {
-    _onPlatformMessage = callback;
-    _onPlatformMessageZone = Zone.current;
+    platformDispatcher.onPlatformMessage = callback;
   }
-
-  /// Called by [_dispatchPlatformMessage].
-  void _respondToPlatformMessage(int responseId, ByteData? data)
-      native 'Window_respondToPlatformMessage';
-
-  /// Wraps the given [callback] in another callback that ensures that the
-  /// original callback is called in the zone it was registered in.
-  static PlatformMessageResponseCallback? _zonedPlatformMessageResponseCallback(PlatformMessageResponseCallback? callback) {
-    if (callback == null)
-      return null;
-
-    // Store the zone in which the callback is being registered.
-    final Zone registrationZone = Zone.current;
-
-    return (ByteData? data) {
-      registrationZone.runUnaryGuarded(callback, data);
-    };
-  }
-
-
-  /// The embedder can specify data that the isolate can request synchronously
-  /// on launch. This accessor fetches that data.
-  ///
-  /// This data is persistent for the duration of the Flutter application and is
-  /// available even after isolate restarts. Because of this lifecycle, the size
-  /// of this data must be kept to a minimum.
-  ///
-  /// For asynchronous communication between the embedder and isolate, a
-  /// platform channel may be used.
-  ByteData? getPersistentIsolateData() native 'Window_getPersistentIsolateData';
 }
 
 /// Additional accessibility features that may be enabled by the platform.
@@ -1326,7 +1390,16 @@ enum Brightness {
   light,
 }
 
-/// The [Window] singleton.
+/// The [SingletonFlutterWindow] representing the "only" window on platforms
+/// where there is only one window, such as single-display mobile devices.
+///
+/// This is a legacy object for code that was written before Flutter supported
+/// multiple windows. New code should use the API on
+/// `WidgetsBinding.instance.platformDispatcher`, or, where that is not
+/// available, on [PlatformDispatcher.instance].
+///
+/// On platforms with more than one window, this window typically represents the
+/// first window created, but it may not be visible.
 ///
 /// Please try to avoid statically referencing this and instead use a
 /// binding for dependency resolution such as `WidgetsBinding.instance.window`.
@@ -1338,7 +1411,13 @@ enum Brightness {
 /// reasonable for a future of Flutter where we legitimately want to select an
 /// appropriate implementation at runtime.
 ///
-/// The only place that `WidgetsBinding.instance.window` is inappropriate is if
-/// a `Window` is required before invoking `runApp()`. In that case, it is
-/// acceptable (though unfortunate) to use this object statically.
-final Window window = Window._();
+/// The only place that using `WidgetsBinding.instance.platformDispatcher` is
+/// inappropriate is if access to these APIs is required before invoking
+/// `runApp()`. In that case, it is acceptable (though unfortunate) to use the
+/// [PlatformDispatcher.instance] object statically.
+///
+/// See also:
+///
+///  * [PlatformDispatcher.views], contains the current list of Flutter windows
+///    belonging to the application.
+final SingletonFlutterWindow window = SingletonFlutterWindow._(windowId: 0, platformDispatcher: PlatformDispatcher.instance);

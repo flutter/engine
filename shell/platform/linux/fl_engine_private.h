@@ -92,11 +92,23 @@ gboolean fl_engine_start(FlEngine* engine, GError** error);
  * @engine: an #FlEngine.
  * @width: width of the window in pixels.
  * @height: height of the window in pixels.
- * @pixel_ratio: scale factor for window.
  *
  * Sends a window metrics event to the engine.
  */
 void fl_engine_send_window_metrics_event(FlEngine* engine,
+                                         size_t width,
+                                         size_t height);
+
+/**
+ * fl_engine_send_screen_metrics_event:
+ * @engine: a #FlEngine
+ * @width: width of the screen in pixels.
+ * @height: height of the screen in pixels.
+ * @pixel_ratio: scale factor for screen.
+ *
+ * Sends a screen metrics event to the engine.
+ */
+void fl_engine_send_screen_metrics_event(FlEngine* engine,
                                          size_t width,
                                          size_t height,
                                          double pixel_ratio);

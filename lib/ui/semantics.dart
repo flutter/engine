@@ -609,7 +609,7 @@ class SemanticsFlag {
 /// An object that creates [SemanticsUpdate] objects.
 ///
 /// Once created, the [SemanticsUpdate] objects can be passed to
-/// [Window.updateSemantics] to update the semantics conveyed to the user.
+/// [FlutterWindow.updateSemantics] to update the semantics conveyed to the user.
 @pragma('vm:entry-point')
 class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SemanticsUpdateBuilder] object.
@@ -637,9 +637,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The `actions` are a bit field of [SemanticsAction]s that can be undertaken
   /// by this node. If the user wishes to undertake one of these actions on this
-  /// node, the [Window.onSemanticsAction] will be called with `id` and one of
+  /// node, the [FlutterWindow.onSemanticsAction] will be called with `id` and one of
   /// the possible [SemanticsAction]s. Because the semantics tree is maintained
-  /// asynchronously, the [Window.onSemanticsAction] callback might be called
+  /// asynchronously, the [FlutterWindow.onSemanticsAction] callback might be called
   /// with an action that is no longer possible.
   ///
   /// The `label` is a string that describes this node. The `value` property
@@ -816,7 +816,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
-  /// The returned object can be passed to [Window.updateSemantics] to actually
+  /// The returned object can be passed to [FlutterWindow.updateSemantics] to actually
   /// update the semantics retained by the system.
   SemanticsUpdate build() {
     final SemanticsUpdate semanticsUpdate = SemanticsUpdate._();
@@ -831,7 +831,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 /// To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
 ///
 /// Semantics updates can be applied to the system's retained semantics tree
-/// using the [Window.updateSemantics] method.
+/// using the [FlutterWindow.updateSemantics] method.
 @pragma('vm:entry-point')
 class SemanticsUpdate extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated

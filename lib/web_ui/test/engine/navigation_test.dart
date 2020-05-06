@@ -16,11 +16,11 @@ void emptyCallback(ByteData date) {}
 
 void main() {
   setUp(() {
-    engine.window.locationStrategy = _strategy = engine.TestLocationStrategy();
+    engine.EnginePlatformDispatcher.instance.locationStrategy = _strategy = engine.TestLocationStrategy();
   });
 
   tearDown(() {
-    engine.window.locationStrategy = _strategy = null;
+    engine.EnginePlatformDispatcher.instance.locationStrategy = _strategy = null;
   });
 
   test('Tracks pushed, replaced and popped routes', () {

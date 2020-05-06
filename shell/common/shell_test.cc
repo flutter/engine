@@ -5,7 +5,6 @@
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/common/shell_test.h"
-#include "flutter/shell/common/shell_test_platform_view.h"
 
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
@@ -13,6 +12,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/common/shell_test_platform_view.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "flutter/testing/testing.h"
 
@@ -126,21 +126,22 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
                              LayerTreeBuilder builder) {
-  PumpOneFrame(shell,
-               flutter::ViewportMetrics{1, width, height, flutter::kUnsetDepth,
-                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-               std::move(builder));
+  PumpOneFrame(shell, flutter::ViewportMetrics(width, height),
+               flutter::ScreenMetrics(1.0, width, height), std::move(builder));
 }
 
 void ShellTest::PumpOneFrame(Shell* shell,
                              flutter::ViewportMetrics viewport_metrics,
+                             flutter::ScreenMetrics screen_metrics,
                              LayerTreeBuilder builder) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->weak_engine_, viewport_metrics]() {
+      [&latch, engine = shell->weak_engine_, viewport_metrics,
+       screen_metrics]() {
+        engine->SetScreenMetrics(std::move(screen_metrics));
         engine->SetViewportMetrics(std::move(viewport_metrics));
         const auto frame_begin_time = fml::TimePoint::Now();
         const auto frame_end_time =
@@ -154,12 +155,12 @@ void ShellTest::PumpOneFrame(Shell* shell,
   // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
   fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, runtime_delegate, &builder, viewport_metrics]() {
+      [&latch, runtime_delegate, &builder, viewport_metrics, screen_metrics]() {
         auto layer_tree = std::make_unique<LayerTree>(
             SkISize::Make(viewport_metrics.physical_width,
                           viewport_metrics.physical_height),
             static_cast<float>(viewport_metrics.physical_depth),
-            static_cast<float>(viewport_metrics.device_pixel_ratio));
+            static_cast<float>(screen_metrics.device_pixel_ratio));
         SkMatrix identity;
         identity.setIdentity();
         auto root_layer = std::make_shared<TransformLayer>(identity);

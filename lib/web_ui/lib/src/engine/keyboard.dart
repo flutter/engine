@@ -81,7 +81,7 @@ class Keyboard {
 
     final html.KeyboardEvent keyboardEvent = event as html.KeyboardEvent;
 
-    if (window._onPlatformMessage == null) {
+    if (EnginePlatformDispatcher.instance._onPlatformMessage == null) {
       return;
     }
 
@@ -122,7 +122,7 @@ class Keyboard {
       'metaState': _lastMetaState,
     };
 
-    window.invokeOnPlatformMessage('flutter/keyevent',
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
         _messageCodec.encodeMessage(eventData), _noopCallback);
   }
 
@@ -145,7 +145,7 @@ class Keyboard {
       'metaState': _lastMetaState,
     };
 
-    window.invokeOnPlatformMessage('flutter/keyevent',
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
         _messageCodec.encodeMessage(eventData), _noopCallback);
   }
 }

@@ -21,6 +21,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+#include "lib/ui/window/screen_metrics.h"
 
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 
@@ -29,6 +30,7 @@
 - (flutter::Shell&)shell;
 
 - (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics;
+- (void)updateScreenMetrics:(flutter::ScreenMetrics)screenMetrics;
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet;
 
 - (fml::RefPtr<fml::TaskRunner>)platformTaskRunner;

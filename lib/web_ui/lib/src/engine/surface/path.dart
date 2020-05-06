@@ -669,7 +669,7 @@ class SurfacePath implements ui.Path {
     // If device pixel ratio has changed we can't reuse prior raw recorder.
     if (_rawRecorder != null &&
         _rawRecorder._devicePixelRatio !=
-            EngineWindow.browserDevicePixelRatio) {
+            EnginePlatformDispatcher.browserDevicePixelRatio) {
       _rawRecorder = null;
     }
     final double dpr = window.devicePixelRatio;

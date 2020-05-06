@@ -34,7 +34,7 @@ Future<developer.ServiceExtensionResponse> _scheduleFrame(
     Map<String, String> parameters
     ) async {
   // Schedule the frame.
-  window.scheduleFrame();
+  PlatformDispatcher.instance.scheduleFrame();
   // Always succeed.
   return developer.ServiceExtensionResponse.result(json.encode(<String, String>{
     'type': 'Success',
@@ -45,7 +45,7 @@ Future<developer.ServiceExtensionResponse> _scheduleFrame(
 void _setupHooks() {  // ignore: unused_element
   assert(() {
     // In debug mode, register the schedule frame extension.
-    developer.registerExtension('ext.ui.window.scheduleFrame', _scheduleFrame);
+    developer.registerExtension('ext.ui.PlatformDispatcher.instance.scheduleFrame', _scheduleFrame);
     return true;
   }());
 }

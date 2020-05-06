@@ -15,21 +15,27 @@ const MethodCodec codec = JSONMethodCodec();
 
 void emptyCallback(ByteData date) {}
 
-void main() {
-  test('window.defaultRouteName should not change', () {
-    window.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
-    expect(window.defaultRouteName, '/initial');
+TestLocationStrategy _strategy;
+TestLocationStrategy get strategy => _strategy;
+set strategy(TestLocationStrategy newStrategy) {
+  EnginePlatformDispatcher.instance.locationStrategy = _strategy = newStrategy;
+}
 
-    // Changing the URL in the address bar later shouldn't affect [window.defaultRouteName].
+void main() {
+  test('window.initialRouteName should not change', () {
+    window.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
+    expect(window.initialRouteName, '/initial');
+
+    // Changing the URL in the address bar later shouldn't affect [window.initialRouteName].
     window.locationStrategy.replaceState(null, null, '/newpath');
-    expect(window.defaultRouteName, '/initial');
+    expect(window.initialRouteName, '/initial');
   });
 
-  test('window.defaultRouteName should reset after navigation platform message', () {
+  test('window.initialRouteName should reset after navigation platform message', () {
     window.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
     // Reading it multiple times should return the same value.
-    expect(window.defaultRouteName, '/initial');
-    expect(window.defaultRouteName, '/initial');
+    expect(window.initialRouteName, '/initial');
+    expect(window.initialRouteName, '/initial');
 
     window.sendPlatformMessage(
       'flutter/navigation',
@@ -39,9 +45,9 @@ void main() {
       )),
       emptyCallback,
     );
-    // After a navigation platform message, [window.defaultRouteName] should
+    // After a navigation platform message, [window.initialRouteName] should
     // reset to "/".
-    expect(window.defaultRouteName, '/');
+    expect(window.initialRouteName, '/');
   });
 
   test('can disable location strategy', () async {

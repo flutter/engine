@@ -5,11 +5,12 @@
 #ifndef FLUTTER_RUNTIME_WINDOW_DATA_H_
 #define FLUTTER_RUNTIME_WINDOW_DATA_H_
 
-#include "flutter/lib/ui/window/viewport_metrics.h"
-
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "flutter/lib/ui/window/screen_metrics.h"
+#include "flutter/lib/ui/window/viewport_metrics.h"
 
 namespace flutter {
 
@@ -31,6 +32,7 @@ struct WindowData {
   ~WindowData();
 
   ViewportMetrics viewport_metrics;
+  ScreenMetrics screen_metrics;
   std::string language_code;
   std::string country_code;
   std::string script_code;

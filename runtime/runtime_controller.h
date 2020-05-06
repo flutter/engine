@@ -14,8 +14,8 @@
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
-#include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/window_data.h"
 #include "rapidjson/document.h"
@@ -140,11 +140,22 @@ class RuntimeController final : public WindowClient {
   ///             If the isolate is not running, these metrics will be saved and
   ///             flushed to the isolate when it starts.
   ///
-  /// @param[in]  metrics  The metrics.
+  /// @param[in]  metrics  The window's viewport metrics.
   ///
   /// @return     If the window metrics were forwarded to the running isolate.
   ///
   bool SetViewportMetrics(const ViewportMetrics& metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Forward the specified screen metrics to the running isolate.
+  ///             If the isolate is not running, these metrics will be saved and
+  ///             flushed to the isolate when it starts.
+  ///
+  /// @param[in]  metrics  The screen metrics.
+  ///
+  /// @return     If the screen metrics were forwarded to the running isolate.
+  ///
+  bool SetScreenMetrics(const ScreenMetrics& metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Forward the specified locale data to the running isolate. If
@@ -474,11 +485,12 @@ class RuntimeController final : public WindowClient {
   std::shared_ptr<const fml::Mapping> persistent_isolate_data_;
 
   Window* GetWindowIfAvailable();
+  PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
   bool FlushRuntimeStateToIsolate();
 
   // |WindowClient|
-  std::string DefaultRouteName() override;
+  std::string InitialRouteName() override;
 
   // |WindowClient|
   void ScheduleFrame() override;

@@ -2,12 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-
 #include <vector>
 
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/embedder/embedder.h"
@@ -298,13 +297,21 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   CGSize scaledSize = [view convertRectToBacking:view.bounds].size;
   double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
 
-  const FlutterWindowMetricsEvent event = {
-      .struct_size = sizeof(event),
+  // The screen is currently always the same size as the window.
+  const FlutterScreenMetricsEvent screenMetricsEvent = {
+      .struct_size = sizeof(screenMetricsEvent),
       .width = static_cast<size_t>(scaledSize.width),
       .height = static_cast<size_t>(scaledSize.height),
       .pixel_ratio = pixelRatio,
   };
-  FlutterEngineSendWindowMetricsEvent(_engine, &event);
+  FlutterEngineSendScreenMetricsEvent(_engine, &screenMetricsEvent);
+
+  const FlutterWindowMetricsEvent windowMetricsEvent = {
+      .struct_size = sizeof(windowMetricsEvent),
+      .width = static_cast<size_t>(scaledSize.width),
+      .height = static_cast<size_t>(scaledSize.height),
+  };
+  FlutterEngineSendWindowMetricsEvent(_engine, &windowMetricsEvent);
 }
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {

@@ -23,7 +23,7 @@ Future<void> _initializePlatform({
   engine.AssetManager? assetManager,
 }) async {
   if (!debugEmulateFlutterTesterEnvironment) {
-    engine.window.locationStrategy = const engine.HashLocationStrategy();
+    engine.EnginePlatformDispatcher.instance.locationStrategy = const engine.HashLocationStrategy();
   }
 
   engine.initializeEngine();

@@ -51,6 +51,8 @@ class EmbedderEngine {
 
   bool SetViewportMetrics(flutter::ViewportMetrics metrics);
 
+  bool SetScreenMetrics(flutter::ScreenMetrics metrics);
+
   bool DispatchPointerDataPacket(
       std::unique_ptr<flutter::PointerDataPacket> packet);
 

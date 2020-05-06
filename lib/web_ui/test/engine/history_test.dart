@@ -18,7 +18,7 @@ import '../spy.dart';
 TestLocationStrategy _strategy;
 TestLocationStrategy get strategy => _strategy;
 set strategy(TestLocationStrategy newStrategy) {
-  window.locationStrategy = _strategy = newStrategy;
+  EnginePlatformDispatcher.instance.locationStrategy = _strategy = newStrategy;
 }
 
 const Map<String, bool> originState = <String, bool>{'origin': true};

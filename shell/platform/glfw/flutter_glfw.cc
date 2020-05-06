@@ -198,10 +198,23 @@ static double GetScreenCoordinatesPerInch() {
 static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
                               int width,
                               int height) {
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = width;
+  event.height = height;
+  FlutterEngineSendWindowMetricsEvent(controller->engine->flutter_engine,
+                                      &event);
+}
+
+// Sends a window metrics update to the Flutter engine using the given
+// framebuffer size and the current window information in |state|.
+static void SendScreenMetrics(FlutterDesktopWindowControllerState* controller,
+                              int width,
+                              int height) {
   double dpi = controller->window_wrapper->pixels_per_screen_coordinate *
                controller->monitor_screen_coordinates_per_inch;
 
-  FlutterWindowMetricsEvent event = {};
+  FlutterScreenMetricsEvent event = {};
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
@@ -213,7 +226,7 @@ static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
   } else {
     event.pixel_ratio = controller->window_wrapper->pixel_ratio_override;
   }
-  FlutterEngineSendWindowMetricsEvent(controller->engine->flutter_engine,
+  FlutterEngineSendScreenMetricsEvent(controller->engine->flutter_engine,
                                       &event);
 }
 
@@ -246,6 +259,7 @@ static void GLFWFramebufferSizeCallback(GLFWwindow* window,
   controller->window_wrapper->pixels_per_screen_coordinate =
       width > 0 ? width_px / width : 1;
 
+  SendScreenMetrics(controller, width_px, height_px);
   SendWindowMetrics(controller, width_px, height_px);
   controller->window_wrapper->skip_next_window_refresh = true;
 }
@@ -262,6 +276,7 @@ void GLFWWindowRefreshCallback(GLFWwindow* window) {
   int width_px, height_px;
   glfwGetFramebufferSize(window, &width_px, &height_px);
   if (width_px > 0 && height_px > 0) {
+    SendScreenMetrics(controller, width_px, height_px);
     SendWindowMetrics(controller, width_px, height_px);
   }
 }
@@ -880,6 +895,7 @@ void FlutterDesktopWindowSetPixelRatioOverride(
   glfwGetFramebufferSize(flutter_window->window, &width_px, &height_px);
   if (width_px > 0 && height_px > 0) {
     auto* controller = GetWindowController(flutter_window->window);
+    SendScreenMetrics(controller, width_px, height_px);
     SendWindowMetrics(controller, width_px, height_px);
   }
 }

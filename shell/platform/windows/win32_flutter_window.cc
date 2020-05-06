@@ -195,12 +195,27 @@ void Win32FlutterWindow::SendWindowMetrics() {
     return;
   }
 
-  FlutterWindowMetricsEvent event = {};
-  event.struct_size = sizeof(event);
-  event.width = GetCurrentWidth();
-  event.height = GetCurrentHeight();
-  event.pixel_ratio = static_cast<double>(GetCurrentDPI()) / base_dpi;
-  auto result = FlutterEngineSendWindowMetricsEvent(engine_, &event);
+  FlutterWindowMetricsEvent window_metrics_event = {};
+  window_metrics_event.struct_size = sizeof(window_metrics_event);
+  window_metrics_event.width = GetCurrentWidth();
+  window_metrics_event.height = GetCurrentHeight();
+  auto result =
+      FlutterEngineSendWindowMetricsEvent(engine_, &window_metrics_event);
+}
+
+void Win32FlutterWindow::SendScreenMetrics() {
+  if (engine_ == nullptr) {
+    return;
+  }
+
+  FlutterScreenMetricsEvent screen_metrics_event = {};
+  screen_metrics_event.struct_size = sizeof(screen_metrics_event);
+  screen_metrics_event.width = GetCurrentWidth();
+  screen_metrics_event.height = GetCurrentHeight();
+  screen_metrics_event.pixel_ratio =
+      static_cast<double>(GetCurrentDPI()) / base_dpi;
+  auto result =
+      FlutterEngineSendScreenMetricsEvent(engine_, &screen_metrics_event);
 }
 
 // Updates |event_data| with the current location of the mouse cursor.

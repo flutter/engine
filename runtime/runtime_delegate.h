@@ -19,7 +19,7 @@ namespace flutter {
 
 class RuntimeDelegate {
  public:
-  virtual std::string DefaultRouteName() = 0;
+  virtual std::string InitialRouteName() = 0;
 
   virtual void ScheduleFrame(bool regenerate_layer_tree = true) = 0;
 

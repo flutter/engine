@@ -32,11 +32,11 @@ List<int> _to64(num value) {
 class PlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
-  /// The [window] parameter must not be null.
-  PlatformViewScenario(Window window, String text, {int id = 0})
-      : assert(window != null),
-        super(window) {
-    createPlatformView(window, text, id);
+  /// The [dispatcher] parameter must not be null.
+  PlatformViewScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    createPlatformView(dispatcher, text, id);
   }
 
   @override
@@ -53,11 +53,11 @@ class PlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin 
 class PlatformViewNoOverlayIntersectionScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
-  /// The [window] parameter must not be null.
-  PlatformViewNoOverlayIntersectionScenario(Window window, String text, {int id = 0})
-      : assert(window != null),
-        super(window) {
-    createPlatformView(window, text, id);
+  /// The [dispatcher] parameter must not be null.
+  PlatformViewNoOverlayIntersectionScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    createPlatformView(dispatcher, text, id);
   }
 
   @override
@@ -78,11 +78,11 @@ class PlatformViewNoOverlayIntersectionScenario extends Scenario with _BasePlatf
 class PlatformViewPartialIntersectionScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
-  /// The [window] parameter must not be null.
-  PlatformViewPartialIntersectionScenario(Window window, String text, {int id = 0})
-      : assert(window != null),
-        super(window) {
-    createPlatformView(window, text, id);
+  /// The [dispatcher] parameter must not be null.
+  PlatformViewPartialIntersectionScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    createPlatformView(dispatcher, text, id);
   }
 
   @override
@@ -103,11 +103,11 @@ class PlatformViewPartialIntersectionScenario extends Scenario with _BasePlatfor
 class PlatformViewTwoIntersectingOverlaysScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
-  /// The [window] parameter must not be null.
-  PlatformViewTwoIntersectingOverlaysScenario(Window window, String text, {int id = 0})
-      : assert(window != null),
-        super(window) {
-    createPlatformView(window, text, id);
+  /// The [dispatcher] parameter must not be null.
+  PlatformViewTwoIntersectingOverlaysScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    createPlatformView(dispatcher, text, id);
   }
 
   @override
@@ -141,11 +141,11 @@ class PlatformViewTwoIntersectingOverlaysScenario extends Scenario with _BasePla
 class PlatformViewOneOverlayTwoIntersectingOverlaysScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
-  /// The [window] parameter must not be null.
-  PlatformViewOneOverlayTwoIntersectingOverlaysScenario(Window window, String text, {int id = 0})
-      : assert(window != null),
-        super(window) {
-    createPlatformView(window, text, id);
+  /// The [dispatcher] parameter must not be null.
+  PlatformViewOneOverlayTwoIntersectingOverlaysScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    createPlatformView(dispatcher, text, id);
   }
 
   @override
@@ -184,11 +184,11 @@ class PlatformViewOneOverlayTwoIntersectingOverlaysScenario extends Scenario wit
 class MultiPlatformViewWithoutOverlaysScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
-  /// The [window] parameter must not be null.
-  MultiPlatformViewWithoutOverlaysScenario(Window window, String text, {int id = 0})
-      : assert(window != null),
-        super(window) {
-    createPlatformView(window, text, id);
+  /// The [dispatcher] parameter must not be null.
+  MultiPlatformViewWithoutOverlaysScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    createPlatformView(dispatcher, text, id);
   }
 
   @override
@@ -223,11 +223,11 @@ class MultiPlatformViewWithoutOverlaysScenario extends Scenario with _BasePlatfo
 class PlatformViewMaxOverlaysScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
-  /// The [window] parameter must not be null.
-  PlatformViewMaxOverlaysScenario(Window window, String text, {int id = 0})
-      : assert(window != null),
-        super(window) {
-    createPlatformView(window, text, id);
+  /// The [dispatcher] parameter must not be null.
+  PlatformViewMaxOverlaysScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    createPlatformView(dispatcher, text, id);
   }
 
   @override
@@ -271,12 +271,12 @@ class PlatformViewMaxOverlaysScenario extends Scenario with _BasePlatformViewSce
 class MultiPlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
-  /// The [window] parameter must not be null.
-  MultiPlatformViewScenario(Window window, {this.firstId, this.secondId})
-      : assert(window != null),
-        super(window) {
-    createPlatformView(window, 'platform view 1', firstId);
-    createPlatformView(window, 'platform view 2', secondId);
+  /// The [dispatcher] parameter must not be null.
+  MultiPlatformViewScenario(PlatformDispatcher dispatcher, {this.firstId, this.secondId})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    createPlatformView(dispatcher, 'platform view 1', firstId);
+    createPlatformView(dispatcher, 'platform view 2', secondId);
   }
 
   /// The platform view identifier to use for the first platform view.
@@ -307,12 +307,12 @@ class MultiPlatformViewScenario extends Scenario with _BasePlatformViewScenarioM
 class MultiPlatformViewBackgroundForegroundScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
-  /// The [window] parameter must not be null.
-  MultiPlatformViewBackgroundForegroundScenario(Window window, {this.firstId, this.secondId})
-      : assert(window != null),
-        super(window) {
-    createPlatformView(window, 'platform view 1', firstId);
-    createPlatformView(window, 'platform view 2', secondId);
+  /// The [dispatcher] parameter must not be null.
+  MultiPlatformViewBackgroundForegroundScenario(PlatformDispatcher dispatcher, {this.firstId, this.secondId})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    createPlatformView(dispatcher, 'platform view 1', firstId);
+    createPlatformView(dispatcher, 'platform view 2', secondId);
     _nextFrame = _firstFrame;
   }
 
@@ -394,10 +394,10 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario with _BaseP
 /// Platform view with clip rect.
 class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenarioMixin {
   /// Constructs a platform view with clip rect scenario.
-  PlatformViewClipRectScenario(Window window, String text, {int id = 0})
-      : assert(window != null),
-        super(window) {
-    createPlatformView(window, text, id);
+  PlatformViewClipRectScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    createPlatformView(dispatcher, text, id);
   }
 
   @override
@@ -412,8 +412,8 @@ class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenar
 /// Platform view with clip rrect.
 class PlatformViewClipRRectScenario extends PlatformViewScenario {
   /// Constructs a platform view with clip rrect scenario.
-  PlatformViewClipRRectScenario(Window window, String text, {int id = 0})
-      : super(window, text, id: id);
+  PlatformViewClipRRectScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : super(dispatcher, text, id: id);
 
   @override
   void onBeginFrame(Duration duration) {
@@ -438,8 +438,8 @@ class PlatformViewClipRRectScenario extends PlatformViewScenario {
 /// Platform view with clip path.
 class PlatformViewClipPathScenario extends PlatformViewScenario {
   /// Constructs a platform view with clip rrect scenario.
-  PlatformViewClipPathScenario(Window window, String text, {int id = 0})
-      : super(window, text, id: id);
+  PlatformViewClipPathScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : super(dispatcher, text, id: id);
 
   @override
   void onBeginFrame(Duration duration) {
@@ -462,8 +462,8 @@ class PlatformViewClipPathScenario extends PlatformViewScenario {
 /// Platform view with transform.
 class PlatformViewTransformScenario extends PlatformViewScenario {
   /// Constructs a platform view with transform scenario.
-  PlatformViewTransformScenario(Window window, String text, {int id = 0})
-      : super(window, text, id: id);
+  PlatformViewTransformScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : super(dispatcher, text, id: id);
 
   @override
   void onBeginFrame(Duration duration) {
@@ -484,8 +484,8 @@ class PlatformViewTransformScenario extends PlatformViewScenario {
 /// Platform view with opacity.
 class PlatformViewOpacityScenario extends PlatformViewScenario {
   /// Constructs a platform view with transform scenario.
-  PlatformViewOpacityScenario(Window window, String text, {int id = 0})
-      : super(window, text, id: id);
+  PlatformViewOpacityScenario(PlatformDispatcher dispatcher, String text, {int id = 0})
+      : super(dispatcher, text, id: id);
 
   @override
   void onBeginFrame(Duration duration) {
@@ -506,16 +506,16 @@ class PlatformViewForTouchIOSScenario extends Scenario
   bool _accept;
   /// Creates the PlatformView scenario.
   ///
-  /// The [window] parameter must not be null.
-  PlatformViewForTouchIOSScenario(Window window, String text, {int id = 0, bool accept, bool rejectUntilTouchesEnded = false})
-      : assert(window != null),
+  /// The [dispatcher] parameter must not be null.
+  PlatformViewForTouchIOSScenario(PlatformDispatcher dispatcher, String text, {int id = 0, bool accept, bool rejectUntilTouchesEnded = false})
+      : assert(dispatcher != null),
        _accept = accept,
       _viewId = id,
-        super(window) {
+        super(dispatcher) {
     if (rejectUntilTouchesEnded) {
-      createPlatformView(window, text, id, viewType: 'scenarios/textPlatformView_blockPolicyUntilTouchesEnded');
+      createPlatformView(dispatcher, text, id, viewType: 'scenarios/textPlatformView_blockPolicyUntilTouchesEnded');
     } else {
-      createPlatformView(window, text, id);
+      createPlatformView(dispatcher, text, id);
     }
   }
 
@@ -567,7 +567,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
   /// It prepare a TextPlatformView so it can be added to the SceneBuilder in `onBeginFrame`.
   /// Call this method in the constructor of the platform view related scenarios
   /// to perform necessary set up.
-  void createPlatformView(Window window, String text, int id, {String viewType = 'scenarios/textPlatformView'}) {
+  void createPlatformView(PlatformDispatcher dispatcher, String text, int id, {String viewType = 'scenarios/textPlatformView'}) {
     const int _valueInt32 = 3;
     const int _valueFloat64 = 6;
     const int _valueString = 7;
@@ -618,7 +618,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
       ...utf8.encode(text),
     ]);
 
-    window.sendPlatformMessage(
+    dispatcher.sendPlatformMessage(
       'flutter/platform_views',
       message.buffer.asByteData(),
       (ByteData response) {

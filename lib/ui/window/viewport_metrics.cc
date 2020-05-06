@@ -8,7 +8,8 @@
 
 namespace flutter {
 
-ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
+ViewportMetrics::ViewportMetrics(double p_physical_left,
+                                 double p_physical_top,
                                  double p_physical_width,
                                  double p_physical_height,
                                  double p_physical_padding_top,
@@ -23,7 +24,8 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_system_gesture_inset_right,
                                  double p_physical_system_gesture_inset_bottom,
                                  double p_physical_system_gesture_inset_left)
-    : device_pixel_ratio(p_device_pixel_ratio),
+    : physical_left(p_physical_left),
+      physical_top(p_physical_top),
       physical_width(p_physical_width),
       physical_height(p_physical_height),
       physical_padding_top(p_physical_padding_top),
@@ -43,10 +45,10 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
   // Ensure we don't have nonsensical dimensions.
   FML_DCHECK(physical_width >= 0);
   FML_DCHECK(physical_height >= 0);
-  FML_DCHECK(device_pixel_ratio > 0);
 }
 
-ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
+ViewportMetrics::ViewportMetrics(double p_physical_left,
+                                 double p_physical_top,
                                  double p_physical_width,
                                  double p_physical_height,
                                  double p_physical_depth,
@@ -60,7 +62,8 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_view_inset_right,
                                  double p_physical_view_inset_bottom,
                                  double p_physical_view_inset_left)
-    : device_pixel_ratio(p_device_pixel_ratio),
+    : physical_left(p_physical_left),
+      physical_top(p_physical_top),
       physical_width(p_physical_width),
       physical_height(p_physical_height),
       physical_depth(p_physical_depth),
@@ -77,7 +80,14 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
   // Ensure we don't have nonsensical dimensions.
   FML_DCHECK(physical_width >= 0);
   FML_DCHECK(physical_height >= 0);
-  FML_DCHECK(device_pixel_ratio > 0);
+}
+
+ViewportMetrics::ViewportMetrics(double p_physical_width,
+                                 double p_physical_height)
+    : physical_width(p_physical_width), physical_height(p_physical_height) {
+  // Ensure we don't have nonsensical dimensions.
+  FML_DCHECK(physical_width >= 0);
+  FML_DCHECK(physical_height >= 0);
 }
 
 }  // namespace flutter

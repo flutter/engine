@@ -450,6 +450,9 @@ class Shell final : public PlatformView::Delegate,
       const ViewportMetrics& metrics) override;
 
   // |PlatformView::Delegate|
+  void OnPlatformViewSetScreenMetrics(const ScreenMetrics& metrics) override;
+
+  // |PlatformView::Delegate|
   void OnPlatformViewDispatchPlatformMessage(
       fml::RefPtr<PlatformMessage> message) override;
 

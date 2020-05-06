@@ -287,6 +287,20 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
   }
 }
 
+void Engine::SetScreenMetrics(const ScreenMetrics& metrics) {
+  bool dimensions_changed =
+      screen_metrics_.physical_height != metrics.physical_height ||
+      screen_metrics_.physical_width != metrics.physical_width;
+  screen_metrics_ = metrics;
+  runtime_controller_->SetScreenMetrics(screen_metrics_);
+  if (animator_) {
+    if (dimensions_changed)
+      animator_->SetDimensionChangePending();
+    if (have_surface_)
+      ScheduleFrame();
+  }
+}
+
 void Engine::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   if (message->channel() == kLifecycleChannel) {
     if (HandleLifecyclePlatformMessage(message.get()))
@@ -432,7 +446,7 @@ void Engine::StartAnimatorIfPossible() {
     animator_->Start();
 }
 
-std::string Engine::DefaultRouteName() {
+std::string Engine::InitialRouteName() {
   if (!initial_route_.empty()) {
     return initial_route_;
   }

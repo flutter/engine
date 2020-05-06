@@ -10,7 +10,7 @@ import 'package:meta/meta.dart';
 /// Util method to replicate the behavior of a `MethodChannel` in the Flutter
 /// framework.
 void sendJsonMethodCall({
-  @required Window window,
+  @required SingletonFlutterWindow window,
   @required String channel,
   @required String method,
   dynamic arguments,

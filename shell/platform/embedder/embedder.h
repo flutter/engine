@@ -336,9 +336,18 @@ typedef struct {
   size_t width;
   /// Physical height of the window.
   size_t height;
+} FlutterWindowMetricsEvent;
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterScreenMetricsEvent).
+  size_t struct_size;
+  /// Physical width of the screen.
+  size_t width;
+  /// Physical height of the screen.
+  size_t height;
   /// Scale factor for the physical screen.
   double pixel_ratio;
-} FlutterWindowMetricsEvent;
+} FlutterScreenMetricsEvent;
 
 /// The phase of the pointer event.
 typedef enum {
@@ -1320,6 +1329,11 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* event);
+
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSendScreenMetricsEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterScreenMetricsEvent* event);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPointerEvent(

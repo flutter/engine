@@ -8,6 +8,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "third_party/tonic/dart_message_handler.h"
@@ -49,20 +50,21 @@ RuntimeController::RuntimeController(
   // It will be run at a later point when the engine provides a run
   // configuration and then runs the isolate.
   auto strong_root_isolate =
-      DartIsolate::CreateRootIsolate(vm_->GetVMData()->GetSettings(),  //
-                                     isolate_snapshot_,                //
-                                     task_runners_,                    //
-                                     std::make_unique<Window>(this),   //
-                                     snapshot_delegate_,               //
-                                     io_manager_,                      //
-                                     unref_queue_,                     //
-                                     image_decoder_,                   //
-                                     p_advisory_script_uri,            //
-                                     p_advisory_script_entrypoint,     //
-                                     nullptr,                          //
-                                     isolate_create_callback_,         //
-                                     isolate_shutdown_callback_        //
-                                     )
+      DartIsolate::CreateRootIsolate(
+          vm_->GetVMData()->GetSettings(),                //
+          isolate_snapshot_,                              //
+          task_runners_,                                  //
+          std::make_unique<PlatformConfiguration>(this),  //
+          snapshot_delegate_,                             //
+          io_manager_,                                    //
+          unref_queue_,                                   //
+          image_decoder_,                                 //
+          p_advisory_script_uri,                          //
+          p_advisory_script_entrypoint,                   //
+          nullptr,                                        //
+          isolate_create_callback_,                       //
+          isolate_shutdown_callback_                      //
+          )
           .lock();
 
   FML_CHECK(strong_root_isolate) << "Could not create root isolate.";
@@ -74,9 +76,9 @@ RuntimeController::RuntimeController(
     root_isolate_return_code_ = {true, code};
   });
 
-  if (auto* window = GetWindowIfAvailable()) {
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     tonic::DartState::Scope scope(strong_root_isolate);
-    window->DidCreateIsolate();
+    platform_configuration->DidCreateIsolate();
     if (!FlushRuntimeStateToIsolate()) {
       FML_DLOG(ERROR) << "Could not setup initial isolate state.";
     }
@@ -129,7 +131,8 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 }
 
 bool RuntimeController::FlushRuntimeStateToIsolate() {
-  return SetViewportMetrics(window_data_.viewport_metrics) &&
+  return SetScreenMetrics(window_data_.screen_metrics) &&
+         SetViewportMetrics(window_data_.viewport_metrics) &&
          SetLocales(window_data_.locale_data) &&
          SetSemanticsEnabled(window_data_.semantics_enabled) &&
          SetAccessibilityFeatures(window_data_.accessibility_feature_flags_) &&
@@ -147,12 +150,23 @@ bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
   return false;
 }
 
+bool RuntimeController::SetScreenMetrics(const ScreenMetrics& metrics) {
+  window_data_.screen_metrics = metrics;
+
+  if (auto* platformConfiguration = GetPlatformConfigurationIfAvailable()) {
+    // Currently only supports a single screen.
+    platformConfiguration->get_screen(0)->UpdateScreenMetrics(metrics);
+    return true;
+  }
+  return false;
+}
+
 bool RuntimeController::SetLocales(
     const std::vector<std::string>& locale_data) {
   window_data_.locale_data = locale_data;
 
-  if (auto* window = GetWindowIfAvailable()) {
-    window->UpdateLocales(locale_data);
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->UpdateLocales(locale_data);
     return true;
   }
 
@@ -162,8 +176,9 @@ bool RuntimeController::SetLocales(
 bool RuntimeController::SetUserSettingsData(const std::string& data) {
   window_data_.user_settings_data = data;
 
-  if (auto* window = GetWindowIfAvailable()) {
-    window->UpdateUserSettingsData(window_data_.user_settings_data);
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->UpdateUserSettingsData(
+        window_data_.user_settings_data);
     return true;
   }
 
@@ -173,8 +188,8 @@ bool RuntimeController::SetUserSettingsData(const std::string& data) {
 bool RuntimeController::SetLifecycleState(const std::string& data) {
   window_data_.lifecycle_state = data;
 
-  if (auto* window = GetWindowIfAvailable()) {
-    window->UpdateLifecycleState(window_data_.lifecycle_state);
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->UpdateLifecycleState(window_data_.lifecycle_state);
     return true;
   }
 
@@ -184,8 +199,9 @@ bool RuntimeController::SetLifecycleState(const std::string& data) {
 bool RuntimeController::SetSemanticsEnabled(bool enabled) {
   window_data_.semantics_enabled = enabled;
 
-  if (auto* window = GetWindowIfAvailable()) {
-    window->UpdateSemanticsEnabled(window_data_.semantics_enabled);
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->UpdateSemanticsEnabled(
+        window_data_.semantics_enabled);
     return true;
   }
 
@@ -194,8 +210,8 @@ bool RuntimeController::SetSemanticsEnabled(bool enabled) {
 
 bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
   window_data_.accessibility_feature_flags_ = flags;
-  if (auto* window = GetWindowIfAvailable()) {
-    window->UpdateAccessibilityFeatures(
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->UpdateAccessibilityFeatures(
         window_data_.accessibility_feature_flags_);
     return true;
   }
@@ -204,16 +220,16 @@ bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
 }
 
 bool RuntimeController::BeginFrame(fml::TimePoint frame_time) {
-  if (auto* window = GetWindowIfAvailable()) {
-    window->BeginFrame(frame_time);
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->BeginFrame(frame_time);
     return true;
   }
   return false;
 }
 
 bool RuntimeController::ReportTimings(std::vector<int64_t> timings) {
-  if (auto* window = GetWindowIfAvailable()) {
-    window->ReportTimings(std::move(timings));
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->ReportTimings(std::move(timings));
     return true;
   }
   return false;
@@ -239,10 +255,10 @@ bool RuntimeController::NotifyIdle(int64_t deadline) {
 
 bool RuntimeController::DispatchPlatformMessage(
     fml::RefPtr<PlatformMessage> message) {
-  if (auto* window = GetWindowIfAvailable()) {
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage",
                  "mode", "basic");
-    window->DispatchPlatformMessage(std::move(message));
+    platform_configuration->DispatchPlatformMessage(std::move(message));
     return true;
   }
   return false;
@@ -250,10 +266,10 @@ bool RuntimeController::DispatchPlatformMessage(
 
 bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
-  if (auto* window = GetWindowIfAvailable()) {
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
                  "mode", "basic");
-    window->DispatchPointerDataPacket(packet);
+    platform_configuration->DispatchPointerDataPacket(packet);
     return true;
   }
   return false;
@@ -264,21 +280,31 @@ bool RuntimeController::DispatchSemanticsAction(int32_t id,
                                                 std::vector<uint8_t> args) {
   TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction", "mode",
                "basic");
-  if (auto* window = GetWindowIfAvailable()) {
-    window->DispatchSemanticsAction(id, action, std::move(args));
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->DispatchSemanticsAction(id, action,
+                                                    std::move(args));
     return true;
   }
   return false;
 }
 
-Window* RuntimeController::GetWindowIfAvailable() {
+PlatformConfiguration*
+RuntimeController::GetPlatformConfigurationIfAvailable() {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
-  return root_isolate ? root_isolate->window() : nullptr;
+  return root_isolate ? root_isolate->platform_configuration() : nullptr;
+}
+
+Window* RuntimeController::GetWindowIfAvailable() {
+  // This only handles the one window for now.
+  PlatformConfiguration* platform_configuration =
+      GetPlatformConfigurationIfAvailable();
+  return platform_configuration ? platform_configuration->get_window(0)
+                                : nullptr;
 }
 
 // |WindowClient|
-std::string RuntimeController::DefaultRouteName() {
-  return client_.DefaultRouteName();
+std::string RuntimeController::InitialRouteName() {
+  return client_.InitialRouteName();
 }
 
 // |WindowClient|

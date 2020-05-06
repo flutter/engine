@@ -13,7 +13,7 @@ import 'scenario.dart';
 /// A scenario that sends back messages when touches are received.
 class SendTextFocusScemantics extends Scenario {
   /// Constructor for `SendTextFocusScemantics`.
-  SendTextFocusScemantics(Window window) : super(window);
+  SendTextFocusScemantics(PlatformDispatcher dispatcher) : super(dispatcher);
 
   @override
   void onBeginFrame(Duration duration) {

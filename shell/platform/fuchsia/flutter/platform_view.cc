@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "lib/ui/window/screen_metrics.h"
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "platform_view.h"
@@ -186,23 +187,38 @@ void PlatformView::UpdateViewportMetrics(
 void PlatformView::FlushViewportMetrics() {
   const auto scale = metrics_.scale;
   const auto scale_z = metrics_.scale_z;
-
-  SetViewportMetrics({
-      scale,                                // device_pixel_ratio
-      metrics_.size.width * scale,          // physical_width
-      metrics_.size.height * scale,         // physical_height
-      metrics_.size.depth * scale_z,        // physical_depth
-      metrics_.padding.top * scale,         // physical_padding_top
-      metrics_.padding.right * scale,       // physical_padding_right
-      metrics_.padding.bottom * scale,      // physical_padding_bottom
-      metrics_.padding.left * scale,        // physical_padding_left
-      metrics_.view_inset.front * scale_z,  // physical_view_inset_front
-      metrics_.view_inset.back * scale_z,   // physical_view_inset_back
-      metrics_.view_inset.top * scale,      // physical_view_inset_top
-      metrics_.view_inset.right * scale,    // physical_view_inset_right
-      metrics_.view_inset.bottom * scale,   // physical_view_inset_bottom
-      metrics_.view_inset.left * scale      // physical_view_inset_left
-  });
+  const flutter::ScreenMetrics screen_metrics{
+      "",                                  // display_name
+      scale,                               // device_pixel_ratio
+      0,                                   // physical_left
+      0,                                   // physical_top
+      metrics_.size.width * scale,         // physical_width
+      metrics_.size.height * scale,        // physical_height
+      metrics_.padding.top * scale,        // physical_padding_top
+      metrics_.padding.right * scale,      // physical_padding_right
+      metrics_.padding.bottom * scale,     // physical_padding_bottom
+      metrics_.padding.left * scale,       // physical_padding_left
+      metrics_.view_inset.top * scale,     // physical_view_inset_top
+      metrics_.view_inset.right * scale,   // physical_view_inset_right
+      metrics_.view_inset.bottom * scale,  // physical_view_inset_bottom
+      metrics_.view_inset.left * scale     // physical_view_inset_left
+  };
+  SetScreenMetrics(screen_metrics);
+  SetViewportMetrics(
+      {0,  // physical_left
+       0,  // physical_top
+       screen_metrics.physical_width, screen_metrics.physical_height,
+       metrics_.size.depth * scale_z,  // physical_depth
+       screen_metrics.physical_padding_top,
+       screen_metrics.physical_padding_right,
+       screen_metrics.physical_padding_bottom,
+       screen_metrics.physical_padding_left,
+       metrics_.view_inset.front * scale_z,  // physical_view_inset_front
+       metrics_.view_inset.back * scale_z,   // physical_view_inset_back
+       screen_metrics.physical_view_inset_top,
+       screen_metrics.physical_view_inset_right,
+       screen_metrics.physical_view_inset_bottom,
+       screen_metrics.physical_view_inset_left});
 }
 
 // |fuchsia::ui::input::InputMethodEditorClient|

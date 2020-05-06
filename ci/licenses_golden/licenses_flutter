@@ -362,10 +362,12 @@ FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
 FILE: ../../../flutter/lib/ui/painting/vertices_unittests.cc
+FILE: ../../../flutter/lib/ui/platform_dispatcher.dart
 FILE: ../../../flutter/lib/ui/plugins.dart
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.cc
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.h
 FILE: ../../../flutter/lib/ui/pointer.dart
+FILE: ../../../flutter/lib/ui/screen.dart
 FILE: ../../../flutter/lib/ui/semantics.dart
 FILE: ../../../flutter/lib/ui/semantics/custom_accessibility_action.cc
 FILE: ../../../flutter/lib/ui/semantics/custom_accessibility_action.h
@@ -392,6 +394,8 @@ FILE: ../../../flutter/lib/ui/ui_benchmarks.cc
 FILE: ../../../flutter/lib/ui/ui_dart_state.cc
 FILE: ../../../flutter/lib/ui/ui_dart_state.h
 FILE: ../../../flutter/lib/ui/window.dart
+FILE: ../../../flutter/lib/ui/window/platform_configuration.cc
+FILE: ../../../flutter/lib/ui/window/platform_configuration.h
 FILE: ../../../flutter/lib/ui/window/platform_message.cc
 FILE: ../../../flutter/lib/ui/window/platform_message.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response.cc
@@ -405,6 +409,10 @@ FILE: ../../../flutter/lib/ui/window/pointer_data_packet.h
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.h
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter_unittests.cc
+FILE: ../../../flutter/lib/ui/window/screen.cc
+FILE: ../../../flutter/lib/ui/window/screen.h
+FILE: ../../../flutter/lib/ui/window/screen_metrics.cc
+FILE: ../../../flutter/lib/ui/window/screen_metrics.h
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.h
 FILE: ../../../flutter/lib/ui/window/window.cc
@@ -439,6 +447,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/picture_recorder.dar
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/platform_message.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/raster_cache.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/rasterizer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/screen_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/util.dart
@@ -457,12 +466,14 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/mouse_cursor.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/path_to_svg.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_converter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/profiler.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/rrect_renderer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/screen.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/accessibility.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/checkable.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/image.dart
@@ -529,7 +540,9 @@ FILE: ../../../flutter/lib/web_ui/lib/src/ui/natives.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/path.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/path_metrics.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/ui/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/pointer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/ui/screen.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/semantics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/test_embedding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/text.dart

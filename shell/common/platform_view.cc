@@ -60,6 +60,10 @@ void PlatformView::SetViewportMetrics(const ViewportMetrics& metrics) {
   delegate_.OnPlatformViewSetViewportMetrics(metrics);
 }
 
+void PlatformView::SetScreenMetrics(const ScreenMetrics& metrics) {
+  delegate_.OnPlatformViewSetScreenMetrics(metrics);
+}
+
 void PlatformView::NotifyCreated() {
   std::unique_ptr<Surface> surface;
 

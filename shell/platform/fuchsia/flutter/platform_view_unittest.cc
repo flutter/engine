@@ -50,6 +50,8 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   void OnPlatformViewSetViewportMetrics(
       const flutter::ViewportMetrics& metrics) {}
   // |flutter::PlatformView::Delegate|
+  void OnPlatformViewSetScreenMetrics(const flutter::ScreenMetrics& metrics) {}
+  // |flutter::PlatformView::Delegate|
   void OnPlatformViewDispatchPlatformMessage(
       fml::RefPtr<flutter::PlatformMessage> message) {}
   // |flutter::PlatformView::Delegate|

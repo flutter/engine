@@ -677,7 +677,8 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get(), {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  PumpOneFrame(shell.get(), flutter::ViewportMetrics(0, 0),
+               flutter::ScreenMetrics(1.0, 0, 0));
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_FALSE(result.ok());
@@ -796,7 +797,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+            flutter::ViewportMetrics(400, 200));
       });
   PumpOneFrame(shell.get());
 
@@ -816,7 +817,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 800, 400, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+            flutter::ViewportMetrics(800, 400));
       });
   PumpOneFrame(shell.get());
 
@@ -835,7 +836,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+            flutter::ViewportMetrics(400, 200));
       });
   PumpOneFrame(shell.get());
 
@@ -864,7 +865,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, 400, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+            flutter::ViewportMetrics(400, 200));
       });
   PumpOneFrame(shell.get());
 

@@ -5,7 +5,7 @@
       "name": "args",
       "rootUri": "../../../../third_party/dart/third_party/pkg/args",
       "packageUri": "lib/",
-      "languageVersion": "2.0"
+      "languageVersion": "2.3"
     },
     {
       "name": "kernel",
@@ -17,7 +17,7 @@
       "name": "meta",
       "rootUri": "../../../../third_party/dart/pkg/meta",
       "packageUri": "lib/",
-      "languageVersion": "1.12"
+      "languageVersion": "2.9"
     },
     {
       "name": "path",
@@ -32,7 +32,7 @@
       "languageVersion": "2.4"
     }
   ],
-  "generated": "2020-01-16T19:11:54.963296Z",
+  "generated": "2020-05-13T00:38:22.592345Z",
   "generator": "pub",
-  "generatorVersion": "2.7.0"
+  "generatorVersion": "2.9.0-7.0.dev.flutter-092ed38a87"
 }

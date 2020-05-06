@@ -20,6 +20,7 @@ dev_dependencies:
   build_web_compilers: 2.11.0
   yaml: 2.2.1
   watcher: 0.9.7+15
+  http_multi_server: 2.2.0
   web_engine_tester:
     path: ../../web_sdk/web_engine_tester
   simulators:

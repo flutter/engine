@@ -89,8 +89,12 @@ class Win32FlutterWindow : public Win32Window {
   bool SwapBuffers();
 
   // Sends a window metrics update to the Flutter engine using current window
-  // dimensions in physical
+  // dimensions in physical pixels.
   void SendWindowMetrics();
+
+  // Sends a screen metrics update to the Flutter engine using current screen
+  // dimensions in physical pixels.
+  void SendScreenMetrics();
 
  private:
   // Destroy current rendering surface if one has been allocated.

@@ -12,9 +12,9 @@ import 'scenario.dart';
 /// Sends the recieved locale data back as semantics information.
 class LocaleInitialization extends Scenario {
   /// Constructor
-  LocaleInitialization(Window window)
-      : assert(window != null),
-        super(window);
+  LocaleInitialization(PlatformDispatcher dispatcher)
+      : assert(dispatcher != null),
+        super(dispatcher);
 
   int _tapCount = 0;
 

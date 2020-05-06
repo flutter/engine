@@ -1123,6 +1123,25 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
 
   metrics.physical_width = SAFE_ACCESS(flutter_metrics, width, 0.0);
   metrics.physical_height = SAFE_ACCESS(flutter_metrics, height, 0.0);
+
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
+             std::move(metrics))
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                  "Viewport metrics were invalid.");
+}
+
+FlutterEngineResult FlutterEngineSendScreenMetricsEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterScreenMetricsEvent* flutter_metrics) {
+  if (engine == nullptr || flutter_metrics == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+
+  flutter::ScreenMetrics metrics;
+
+  metrics.physical_width = SAFE_ACCESS(flutter_metrics, width, 0.0);
+  metrics.physical_height = SAFE_ACCESS(flutter_metrics, height, 0.0);
   metrics.device_pixel_ratio = SAFE_ACCESS(flutter_metrics, pixel_ratio, 1.0);
 
   if (metrics.device_pixel_ratio <= 0.0) {
@@ -1131,11 +1150,11 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
         "Device pixel ratio was invalid. It must be greater than zero.");
   }
 
-  return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetScreenMetrics(
              std::move(metrics))
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInvalidArguments,
-                                  "Viewport metrics were invalid.");
+                                  "Screen metrics were invalid.");
 }
 
 // Returns the flutter::PointerData::Change for the given FlutterPointerPhase.

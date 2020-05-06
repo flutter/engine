@@ -27,26 +27,27 @@ part 'engine/browser_location.dart';
 part 'engine/canvas_pool.dart';
 part 'engine/clipboard.dart';
 part 'engine/color_filter.dart';
-part 'engine/compositor/canvas.dart';
 part 'engine/compositor/canvas_kit_canvas.dart';
+part 'engine/compositor/canvas.dart';
 part 'engine/compositor/color_filter.dart';
 part 'engine/compositor/embedded_views.dart';
 part 'engine/compositor/fonts.dart';
-part 'engine/compositor/image.dart';
 part 'engine/compositor/image_filter.dart';
+part 'engine/compositor/image.dart';
 part 'engine/compositor/initialization.dart';
-part 'engine/compositor/layer.dart';
 part 'engine/compositor/layer_scene_builder.dart';
 part 'engine/compositor/layer_tree.dart';
+part 'engine/compositor/layer.dart';
 part 'engine/compositor/n_way_canvas.dart';
-part 'engine/compositor/path.dart';
 part 'engine/compositor/painting.dart';
 part 'engine/compositor/path_metrics.dart';
-part 'engine/compositor/picture.dart';
+part 'engine/compositor/path.dart';
 part 'engine/compositor/picture_recorder.dart';
+part 'engine/compositor/picture.dart';
 part 'engine/compositor/platform_message.dart';
 part 'engine/compositor/raster_cache.dart';
 part 'engine/compositor/rasterizer.dart';
+part 'engine/compositor/screen_metrics.dart';
 part 'engine/compositor/surface.dart';
 part 'engine/compositor/text.dart';
 part 'engine/compositor/util.dart';
@@ -65,12 +66,14 @@ part 'engine/mouse_cursor.dart';
 part 'engine/onscreen_logging.dart';
 part 'engine/path_to_svg.dart';
 part 'engine/picture.dart';
+part 'engine/platform_dispatcher.dart';
 part 'engine/platform_views.dart';
 part 'engine/plugins.dart';
 part 'engine/pointer_binding.dart';
 part 'engine/pointer_converter.dart';
 part 'engine/profiler.dart';
 part 'engine/rrect_renderer.dart';
+part 'engine/screen.dart';
 part 'engine/semantics/accessibility.dart';
 part 'engine/semantics/checkable.dart';
 part 'engine/semantics/image.dart';
@@ -78,8 +81,8 @@ part 'engine/semantics/incrementable.dart';
 part 'engine/semantics/label_and_value.dart';
 part 'engine/semantics/live_region.dart';
 part 'engine/semantics/scrollable.dart';
-part 'engine/semantics/semantics.dart';
 part 'engine/semantics/semantics_helper.dart';
+part 'engine/semantics/semantics.dart';
 part 'engine/semantics/tappable.dart';
 part 'engine/semantics/text_field.dart';
 part 'engine/services/buffers.dart';
@@ -97,17 +100,20 @@ part 'engine/surface/offset.dart';
 part 'engine/surface/opacity.dart';
 part 'engine/surface/painting.dart';
 part 'engine/surface/path_metrics.dart';
+part 'engine/surface/path.dart';
 part 'engine/surface/picture.dart';
 part 'engine/surface/platform_view.dart';
 part 'engine/surface/recording_canvas.dart';
 part 'engine/surface/render_vertices.dart';
-part 'engine/surface/scene.dart';
 part 'engine/surface/scene_builder.dart';
-part 'engine/surface/surface.dart';
-part 'engine/surface/path.dart';
+part 'engine/surface/scene.dart';
 part 'engine/surface/surface_stats.dart';
+part 'engine/surface/surface.dart';
 part 'engine/surface/transform.dart';
 part 'engine/test_embedding.dart';
+part 'engine/text_editing/autofill_hint.dart';
+part 'engine/text_editing/input_type.dart';
+part 'engine/text_editing/text_editing.dart';
 part 'engine/text/font_collection.dart';
 part 'engine/text/line_break_properties.dart';
 part 'engine/text/line_breaker.dart';
@@ -117,9 +123,6 @@ part 'engine/text/ruler.dart';
 part 'engine/text/unicode_range.dart';
 part 'engine/text/word_break_properties.dart';
 part 'engine/text/word_breaker.dart';
-part 'engine/text_editing/autofill_hint.dart';
-part 'engine/text_editing/input_type.dart';
-part 'engine/text_editing/text_editing.dart';
 part 'engine/util.dart';
 part 'engine/validators.dart';
 part 'engine/vector_math.dart';
@@ -201,17 +204,17 @@ void initializeEngine() {
         // microsecond precision, and only then convert to `int`.
         final int highResTimeMicroseconds = (1000 * highResTime).toInt();
 
-        if (window._onBeginFrame != null) {
-          window.invokeOnBeginFrame(
+        if (EnginePlatformDispatcher.instance._onBeginFrame != null) {
+          EnginePlatformDispatcher.instance.invokeOnBeginFrame(
               Duration(microseconds: highResTimeMicroseconds));
         }
 
-        if (window._onDrawFrame != null) {
+        if (EnginePlatformDispatcher.instance._onDrawFrame != null) {
           // TODO(yjbanov): technically Flutter flushes microtasks between
           //                onBeginFrame and onDrawFrame. We don't, which hasn't
           //                been an issue yet, but eventually we'll have to
           //                implement it properly.
-          window.invokeOnDrawFrame();
+          EnginePlatformDispatcher.instance.invokeOnDrawFrame();
         }
       });
     }

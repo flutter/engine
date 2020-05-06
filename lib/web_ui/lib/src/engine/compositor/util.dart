@@ -66,7 +66,7 @@ class SkiaObjects {
   //                beyond a single frame.
   @visibleForTesting
   static final List<SkiaObject> managedObjects = () {
-    window.rasterizer.addPostFrameCallback(postFrameCleanUp);
+    EnginePlatformDispatcher.instance.rasterizer.addPostFrameCallback(postFrameCleanUp);
     return <SkiaObject>[];
   }();
 

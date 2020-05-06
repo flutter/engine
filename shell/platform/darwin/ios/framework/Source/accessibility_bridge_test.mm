@@ -74,6 +74,7 @@ class MockDelegate : public PlatformView::Delegate {
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}
   void OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) override {}
+  void OnPlatformViewSetScreenMetrics(const ScreenMetrics& metrics) override {}
   void OnPlatformViewDispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) override {}
   void OnPlatformViewDispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet) override {
   }

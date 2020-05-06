@@ -17,6 +17,7 @@
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
+#include "flutter/lib/ui/window/screen_metrics.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/vsync_waiter.h"
@@ -98,6 +99,15 @@ class PlatformView {
     ///
     virtual void OnPlatformViewSetViewportMetrics(
         const ViewportMetrics& metrics) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Notifies the delegate the screen metrics of the platform
+    ///             screen have been updated.
+    ///
+    /// @param[in]  metrics  The updated screen metrics.
+    ///
+    virtual void OnPlatformViewSetScreenMetrics(
+        const ScreenMetrics& metrics) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform has dispatched a
@@ -380,6 +390,18 @@ class PlatformView {
   /// @param[in]  metrics  The updated viewport metrics.
   ///
   void SetViewportMetrics(const ViewportMetrics& metrics);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to specify the updated screen metrics. In
+  ///             response to this call, on the raster thread, the rasterizer
+  ///             may need to be reconfigured to the updated viewport dimensions
+  ///             if they are affected by the change in screen metrics. On the
+  ///             UI thread, the framework may need to start generating a new
+  ///             frame for the updated viewport metrics as well.
+  ///
+  /// @param[in]  metrics  The updated screen metrics.
+  ///
+  void SetScreenMetrics(const ScreenMetrics& metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to notify the shell that a platform view
