@@ -997,9 +997,8 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 //------------------------------------------------------------------------------
 /// @brief      Collects the AOT data.
 ///
-/// @warning    The embedder must ensure that this call is made only after all
-///             FlutterEngine instance launched using this data have been shut
-///             down.
+/// @warning    The embedder must ensure that this call is made only after the
+///             FlutterEngine instance launched using this data is shut down.
 ///
 /// @param[in]  data   The data to collect.
 ///
@@ -1200,6 +1199,8 @@ typedef struct {
   ///
   /// Embedders should instantiate and destroy this object via the
   /// FlutterEngineCreateAOTData and FlutterEngineCollectAOTData methods.
+  ///
+  /// Embedders can provide either snapshot buffers or aot_data, but not both.
   FlutterEngineAOTData aot_data;
 } FlutterProjectArgs;
 

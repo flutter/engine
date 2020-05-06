@@ -14,7 +14,7 @@
 namespace flutter {
 namespace testing {
 
-static constexpr const char* kAOTAppELFFileName = "app_elf_snapshot.so";
+inline constexpr const char* kAOTAppELFFileName = "app_elf_snapshot.so";
 
 struct LoadedELFDeleter {
   void operator()(Dart_LoadedElf* elf) { ::Dart_UnloadELF(elf); }

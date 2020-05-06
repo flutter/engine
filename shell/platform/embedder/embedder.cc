@@ -557,10 +557,10 @@ FlutterEngineResult FlutterEngineCreateAOTData(
                                   "Invalid ELF path specified.");
       }
 
-      auto aot_data = new _FlutterEngineAOTData();
+      auto aot_data = std::make_unique<_FlutterEngineAOTData>();
       const char* error = nullptr;
 
-      auto loaded_elf = Dart_LoadELF(
+      Dart_LoadedElf* loaded_elf = Dart_LoadELF(
           source->elf_path,               // file path
           0,                              // file offset
           &error,                         // error (out)
@@ -571,21 +571,19 @@ FlutterEngineResult FlutterEngineCreateAOTData(
       );
 
       if (loaded_elf == nullptr) {
-        delete aot_data;
         return LOG_EMBEDDER_ERROR(kInvalidArguments, error);
       }
 
       aot_data->loaded_elf.reset(loaded_elf);
 
-      *data_out = aot_data;
+      *data_out = aot_data.release();
+      return kSuccess;
     } break;
-    default:
-      return LOG_EMBEDDER_ERROR(
-          kInvalidArguments,
-          "Invalid FlutterEngineAOTDataSourceType type specified.");
   }
 
-  return kSuccess;
+  return LOG_EMBEDDER_ERROR(
+      kInvalidArguments,
+      "Invalid FlutterEngineAOTDataSourceType type specified.");
 }
 
 FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
