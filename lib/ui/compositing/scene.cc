@@ -44,7 +44,7 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              bool checkerboardOffscreenLayers) {
   auto viewport_metrics = UIDartState::Current()
                               ->platform_configuration()
-                              ->window()
+                              ->get_window()
                               .viewport_metrics();
 
   layer_tree_ = std::make_unique<LayerTree>(
