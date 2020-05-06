@@ -969,7 +969,7 @@ typedef enum {
 typedef struct {
   FlutterEngineAOTDataSourceType type;
   union {
-    /// Path to an ELF library file
+    /// Absolute path to an ELF library file
     const char* elf_path;
   };
 } FlutterEngineAOTDataSource;

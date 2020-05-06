@@ -534,7 +534,11 @@ struct _FlutterPlatformMessageResponseHandle {
 };
 
 struct LoadedELFDeleter {
-  void operator()(Dart_LoadedElf* elf) { ::Dart_UnloadELF(elf); }
+  void operator()(Dart_LoadedElf* elf) {
+    if (elf) {
+      ::Dart_UnloadELF(elf);
+    }
+  }
 };
 
 using UniqueLoadedELF = std::unique_ptr<Dart_LoadedElf, LoadedELFDeleter>;
@@ -550,6 +554,15 @@ struct _FlutterEngineAOTData {
 FlutterEngineResult FlutterEngineCreateAOTData(
     const FlutterEngineAOTDataSource* source,
     FlutterEngineAOTData* data_out) {
+  if (!flutter::DartVM::IsRunningPrecompiledCode()) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "AOT data can only be created in AOT mode.");
+  } else if (!source) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Null source specified.");
+  } else if (!data_out) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Null data_out specified.");
+  }
+
   switch (source->type) {
     case kFlutterEngineAOTDataSourceTypeElfPath: {
       if (!source->elf_path || !fml::IsFile(source->elf_path)) {
@@ -587,11 +600,13 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 }
 
 FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
-  data->loaded_elf = nullptr;
-  data->vm_snapshot_data = nullptr;
-  data->vm_snapshot_instrs = nullptr;
-  data->vm_isolate_data = nullptr;
-  data->vm_isolate_instrs = nullptr;
+  if (data) {
+    data->loaded_elf = nullptr;
+    data->vm_snapshot_data = nullptr;
+    data->vm_snapshot_instrs = nullptr;
+    data->vm_isolate_data = nullptr;
+    data->vm_isolate_instrs = nullptr;
+  }
   return kSuccess;
 }
 
@@ -741,8 +756,10 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) ||
         SAFE_ACCESS(args, isolate_snapshot_data, nullptr) ||
         SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr)) {
-      return LOG_EMBEDDER_ERROR(kInvalidArguments,
-                                "Multiple AOT sources specified.");
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Multiple AOT sources specified. Embedders should provide either "
+          "*_snapshot_* buffers or aot_data, not both.");
     }
   }
 
