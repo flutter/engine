@@ -65,15 +65,8 @@ group("flutter") {
   # If on the host, compile all unittests targets.
   if (current_toolchain == host_toolchain) {
     if (is_mac) {
-<<<<<<< HEAD
-      _public_deps += [
-        "//flutter/shell/platform/darwin:flutter_channels_unittests",
-        "//flutter/shell/platform/darwin/macos:flutter_desktop_darwin_unittests",
-      ]
-=======
       public_deps +=
           [ "//flutter/shell/platform/darwin:flutter_channels_unittests" ]
->>>>>>> upstream/master
     }
 
     _public_deps += [
@@ -88,7 +81,6 @@ group("flutter") {
       "//flutter/third_party/txt:txt_unittests",
     ]
 
-<<<<<<< HEAD
     if (is_win) {
       _public_deps += [
         "//flutter/shell/platform/windows:flutter_windows_unittests",
@@ -96,8 +88,6 @@ group("flutter") {
       ]
     }
 
-=======
->>>>>>> upstream/master
     if (!is_win) {
       _public_deps += [
         "//flutter/fml:fml_benchmarks",

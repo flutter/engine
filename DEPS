@@ -667,7 +667,9 @@ hooks = [
       'activate',
       'latest',
       '--embedded', # Makes the installation hermetic to //third_party/emsdk
-    ]
+    ],
+  },
+  {
     'name': 'dia_dll',
     'pattern': '.',
     'condition': 'download_windows_deps',
