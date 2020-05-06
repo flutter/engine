@@ -1078,8 +1078,7 @@ void ParagraphTxt::Layout(double width) {
     }  // for each in line_runs
 
     // Adjust the glyph positions based on the alignment of the line.
-    double line_x_offset =
-        GetLineXOffset(run_x_offset, line_number, justify_line);
+    double line_x_offset = GetLineXOffset(run_x_offset, justify_line);
     if (line_x_offset) {
       for (CodeUnitRun& code_unit_run : line_code_unit_runs) {
         code_unit_run.Shift(line_x_offset);
@@ -1273,7 +1272,6 @@ void ParagraphTxt::UpdateLineMetrics(const SkFontMetrics& metrics,
 };
 
 double ParagraphTxt::GetLineXOffset(double line_total_advance,
-                                    size_t line_number,
                                     bool justify_line) {
   if (isinf(width_))
     return 0;
@@ -1651,6 +1649,7 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
   // Text direction of the first line so we can extend the correct side for
   // RectWidthStyle::kMax.
   TextDirection first_line_dir = TextDirection::ltr;
+  std::map<size_t, size_t> newline_x_positions;
 
   // Lines that are actually in the requested range.
   size_t max_line = 0;
@@ -1662,6 +1661,11 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     // Check to see if we are finished.
     if (run.code_units.start >= end)
       break;
+
+    // Update new line x position with the ending of last bidi run on the line
+    newline_x_positions[run.line_number] =
+        run.direction == TextDirection::ltr ? run.x_pos.end : run.x_pos.start;
+
     if (run.code_units.end <= start)
       continue;
 
@@ -1732,11 +1736,12 @@ std::vector<Paragraph::TextBox> ParagraphTxt::GetRectsForRange(
     if (line_box_metrics.find(line_number) == line_box_metrics.end()) {
       if (line.end_index != line.end_including_newline &&
           line.end_index >= start && line.end_including_newline <= end) {
-        SkScalar x = line_widths_[line_number];
-        // Move empty box to center if center aligned and is an empty line.
-        if (x == 0 && !isinf(width_) &&
-            paragraph_style_.effective_align() == TextAlign::center) {
-          x = width_ / 2;
+        SkScalar x;
+        auto it = newline_x_positions.find(line_number);
+        if (it != newline_x_positions.end()) {
+          x = it->second;
+        } else {
+          x = GetLineXOffset(0, false);
         }
         SkScalar top =
             (line_number > 0) ? line_metrics_[line_number - 1].height : 0;

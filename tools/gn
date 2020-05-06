@@ -141,7 +141,13 @@ def to_gn_args(args):
     gn_args['is_official_build'] = True    # Disable Skia test utilities.
     gn_args['is_debug'] = args.unoptimized
     gn_args['android_full_debug'] = args.target_os == 'android' and args.unoptimized
-    gn_args['is_clang'] = not sys.platform.startswith(('cygwin', 'win'))
+    if args.clang is None:
+      # Android gen_snapshot currently isn't buildable with clang on Windows.
+      # For everything else, default to clang.
+      gn_args['is_clang'] = not (sys.platform.startswith(('cygwin', 'win')) and
+                                 args.target_os == 'android')
+    else:
+      gn_args['is_clang'] = args.clang
 
     if args.target_os == 'android' or args.target_os == 'ios':
       gn_args['skia_gl_standard'] = 'gles'
@@ -261,6 +267,21 @@ def to_gn_args(args):
     if sys.platform == 'darwin':
       if args.build_glfw_shell:
         gn_args['build_glfw_shell'] = True
+    # Whether to build trained Dart SDK snapshots of dart2js and dartdevc,
+    # including the web sdk kernel and source files.
+    if args.target_os is None:
+      # dart_platform_sdk is not declared for Android targets.
+      gn_args['dart_platform_sdk'] = not args.full_dart_sdk
+    gn_args['full_dart_sdk'] = args.full_dart_sdk
+
+    # Desktop embeddings can have more dependencies than the engine library,
+    # which can be problematic in some build environments (e.g., building on
+    # Linux will bring in pkg-config dependencies at generation time). These
+    # flags allow preventing those those targets from being part of the build
+    # tree.
+    gn_args['enable_desktop_embeddings'] = not args.disable_desktop_embeddings
+    if args.build_glfw_shell is not None:
+      gn_args['build_glfw_shell'] = args.build_glfw_shell
 
     if not is_wasm:
       gn_args['stripped_symbols'] = args.stripped
@@ -322,8 +343,8 @@ def parse_args(args):
   parser.add_argument('--lto', default=True, action='store_true')
   parser.add_argument('--no-lto', dest='lto', action='store_false')
 
-  parser.add_argument('--clang', default=True, action='store_true')
-  parser.add_argument('--no-clang', dest='clang', action='store_false')
+  parser.add_argument('--clang', action='store_const', const=True)
+  parser.add_argument('--no-clang', dest='clang', action='store_const', const=False)
 
   parser.add_argument('--clang-static-analyzer', default=False, action='store_true')
   parser.add_argument('--no-clang-static-analyzer', dest='clang_static_analyzer', action='store_false')
@@ -353,8 +374,12 @@ def parse_args(args):
                       help='The IDE files to generate using GN. Use `gn gen help` and look for the --ide flag to' +
                       ' see supported IDEs. If this flag is not specified, a platform specific default is selected.')
 
-  parser.add_argument('--build-glfw-shell', dest='build_glfw_shell', default=False, action='store_true',
-                      help='Force building the GLFW shell on desktop platforms where it is not built by default.')
+  parser.add_argument('--disable-desktop-embeddings', default=False, action='store_true',
+                      help='Do not include desktop embeddings in the build.')
+  parser.add_argument('--build-glfw-shell', action='store_const', const=True,
+                      help='Build the GLFW shell on supported platforms where it is not built by default.')
+  parser.add_argument('--no-build-glfw-shell', dest='build_glfw_shell', action='store_const', const=False,
+                      help='Do not build the GLFW shell on platforms where it is built by default.')
 
   parser.add_argument('--bitcode', default=False, action='store_true',
                       help='Enable bitcode for iOS targets. On debug runtime modes, this will be a marker only.')

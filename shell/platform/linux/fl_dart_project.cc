@@ -6,13 +6,6 @@
 
 #include <gmodule.h>
 
-/**
- * FlDartProject:
- *
- * #FlDartProject represents a Dart project. It is used provide information
- * about the application when creating a #FlView.
- */
-
 struct _FlDartProject {
   GObject parent_instance;
 
@@ -29,13 +22,13 @@ static void fl_dart_project_set_path(FlDartProject* self, const gchar* path) {
   if (g_path_is_absolute(path))
     self->path = g_strdup(path);
   else {
-    g_autoptr(GError) error = NULL;
+    g_autoptr(GError) error = nullptr;
     g_autofree gchar* exe_path = g_file_read_link("/proc/self/exe", &error);
-    if (exe_path == NULL)
+    if (exe_path == nullptr)
       g_critical("Failed to determine location of executable: %s",
                  error->message);
     g_autofree gchar* dir = g_path_get_dirname(exe_path);
-    self->path = g_build_filename(dir, path, NULL);
+    self->path = g_build_filename(dir, path, nullptr);
   }
 }
 
@@ -112,63 +105,22 @@ static void fl_dart_project_class_init(FlDartProjectClass* klass) {
 
 static void fl_dart_project_init(FlDartProject* self) {}
 
-/**
- * fl_dart_project_new:
- * @path: a file path, e.g. "my_dart_project"
- *
- * Create a Flutter project. The project path should contain the following
- * top-level items:
- * - icudtl.dat (provided as a resource by the Flutter tool)
- * - flutter_assets (as built by the Flutter tool)
- *
- * The path can either be absolute, or relative to the directory containing the
- * running executable.
- *
- * Returns: a new #FlDartProject
- */
 G_MODULE_EXPORT FlDartProject* fl_dart_project_new(const gchar* path) {
   return static_cast<FlDartProject*>(
       g_object_new(fl_dart_project_get_type(), "path", path, nullptr));
 }
 
-/**
- * fl_dart_project_get_path:
- * @view: a #FlDartProject
- *
- * Get the path to the directory containing the Flutter application.
- *
- * Returns: (type filename): a file path, e.g. "/projects/my_dart_project"
- */
 G_MODULE_EXPORT const gchar* fl_dart_project_get_path(FlDartProject* self) {
   g_return_val_if_fail(FL_IS_DART_PROJECT(self), nullptr);
   return self->path;
 }
 
-/**
- * fl_dart_project_get_assets_path:
- * @view: a #FlDartProject
- *
- * Get the path to the directory containing the assets used in the Flutter
- * application.
- *
- * Returns: (type filename): a file path, e.g.
- * "/projects/my_dart_project/assets"
- */
 G_MODULE_EXPORT gchar* fl_dart_project_get_assets_path(FlDartProject* self) {
   g_return_val_if_fail(FL_IS_DART_PROJECT(self), nullptr);
-  return g_build_filename(self->path, "flutter_assets", NULL);
+  return g_build_filename(self->path, "flutter_assets", nullptr);
 }
 
-/**
- * fl_dart_project_get_icu_data_path:
- * @view: a #FlDartProject
- *
- * Get the path to the ICU data file in the Flutter application.
- *
- * Returns: (type filename): a file path, e.g.
- * "/projects/my_dart_project/icudtl.dat"
- */
 G_MODULE_EXPORT gchar* fl_dart_project_get_icu_data_path(FlDartProject* self) {
   g_return_val_if_fail(FL_IS_DART_PROJECT(self), nullptr);
-  return g_build_filename(self->path, "icudtl.dat", NULL);
+  return g_build_filename(self->path, "icudtl.dat", nullptr);
 }

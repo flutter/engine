@@ -9,8 +9,8 @@ part of engine;
 ///
 /// [BitmapCanvas] signals allocation of first canvas using allocateCanvas.
 /// When a painting command such as drawImage or drawParagraph requires
-/// multiple canvases for correct compositing, it calls [allocateExtraCanvas]
-/// and adds the canvas(s) to a [_pool] of active canvas(s).
+/// multiple canvases for correct compositing, it calls [closeCurrentCanvas]
+/// and adds the canvas(s) to [_activeCanvasList].
 ///
 /// To make sure transformations and clips are preserved correctly when a new
 /// canvas is allocated, [_CanvasPool] replays the current stack on the newly
@@ -25,7 +25,7 @@ class _CanvasPool extends _SaveStackTracking {
   ContextStateHandle _contextHandle;
   final int _widthInBitmapPixels, _heightInBitmapPixels;
   // List of canvases that have been allocated and used in this paint cycle.
-  List<html.CanvasElement> _pool;
+  List<html.CanvasElement> _activeCanvasList;
   // List of canvases available to reuse from prior paint cycle.
   List<html.CanvasElement> _reusablePool;
   // Current canvas element or null if marked for lazy allocation.
@@ -33,6 +33,8 @@ class _CanvasPool extends _SaveStackTracking {
 
   html.HtmlElement _rootElement;
   int _saveContextCount = 0;
+  // Number of elements that have been added to flt-canvas.
+  int _activeElementCount = 0;
 
   _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
 
@@ -54,21 +56,25 @@ class _CanvasPool extends _SaveStackTracking {
     return _contextHandle;
   }
 
-  // Allocating extra canvas items. Save current canvas so we can dispose
+  // Prevents active canvas to be used for rendering and prepares a new
+  // canvas allocation on next drawing request that will require one.
+  //
+  // Saves current canvas so we can dispose
   // and replay the clip/transform stack on top of new canvas.
-  void allocateExtraCanvas() {
+  void closeCurrentCanvas() {
     assert(_rootElement != null);
     // Place clean copy of current canvas with context stack restored and paint
     // reset into pool.
     if (_canvas != null) {
       _restoreContextSave();
       _contextHandle.reset();
-      _pool ??= [];
-      _pool.add(_canvas);
+      _activeCanvasList ??= [];
+      _activeCanvasList.add(_canvas);
       _canvas = null;
       _context = null;
       _contextHandle = null;
     }
+    _activeElementCount++;
   }
 
   void allocateCanvas(html.HtmlElement rootElement) {
@@ -77,13 +83,11 @@ class _CanvasPool extends _SaveStackTracking {
 
   void _createCanvas() {
     bool requiresClearRect = false;
+    bool reused = false;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
-      // If a canvas is the first element we set z-index = -1 to workaround
-      // blink compositing bug. To make sure this does not leak when reused
-      // reset z-index.
-      _canvas.style.removeProperty('z-index');
       requiresClearRect = true;
+      reused = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
       // allocated. This is done for the following reasons:
@@ -113,21 +117,23 @@ class _CanvasPool extends _SaveStackTracking {
         ..height = '${cssHeight}px';
     }
 
-    // When the picture has a 90-degree transform and clip in its
-    // ancestor layers, it triggers a bug in Blink and Webkit browsers
-    // that results in canvas obscuring text that should be painted on
-    // top. Setting z-index to any negative value works around the bug.
-    // This workaround only works with the first canvas. If more than
-    // one element have negative z-index, the bug is triggered again.
-    //
-    // Possible Blink bugs that are causing this:
-    // * https://bugs.chromium.org/p/chromium/issues/detail?id=370604
-    // * https://bugs.chromium.org/p/chromium/issues/detail?id=586601
-    final bool isFirstChildElement = _rootElement.firstChild == null;
-    if (isFirstChildElement) {
-      _canvas.style.zIndex = '-1';
+    // Before appending canvas, check if canvas is already on rootElement. This
+    // optimization prevents DOM .append call when a PersistentSurface is
+    // reused. Reading lastChild is faster than append call.
+    if (_rootElement.lastChild != _canvas) {
+      _rootElement.append(_canvas);
     }
-    _rootElement.append(_canvas);
+
+    if (_activeElementCount == 0) {
+      _canvas.style.zIndex = '-1';
+    } else if (reused) {
+      // If a canvas is the first element we set z-index = -1 to workaround
+      // blink compositing bug. To make sure this does not leak when reused
+      // reset z-index.
+      _canvas.style.removeProperty('z-index');
+    }
+    ++_activeElementCount;
+
     _context = _canvas.context2D;
     _contextHandle = ContextStateHandle(_context);
     _initializeViewport(requiresClearRect);
@@ -239,16 +245,17 @@ class _CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       _restoreContextSave();
       _contextHandle.reset();
-      _pool ??= [];
-      _pool.add(_canvas);
+      _activeCanvasList ??= [];
+      _activeCanvasList.add(_canvas);
       _context = null;
       _contextHandle = null;
     }
-    _reusablePool = _pool;
-    _pool = null;
+    _reusablePool = _activeCanvasList;
+    _activeCanvasList = null;
     _canvas = null;
     _context = null;
     _contextHandle = null;
+    _activeElementCount = 0;
   }
 
   void endOfPaint() {
@@ -366,7 +373,7 @@ class _CanvasPool extends _SaveStackTracking {
   }
 
   @override
-  void transform(Float64List matrix4) {
+  void transform(Float32List matrix4) {
     super.transform(matrix4);
     // Canvas2D transform API:
     //
@@ -494,8 +501,14 @@ class _CanvasPool extends _SaveStackTracking {
   /// 'Runs' the given [path] by applying all of its commands to the canvas.
   void _runPath(html.CanvasRenderingContext2D ctx, SurfacePath path) {
     ctx.beginPath();
-    for (Subpath subpath in path.subpaths) {
-      for (PathCommand command in subpath.commands) {
+    final List<Subpath> subpaths = path.subpaths;
+    final int subpathCount = subpaths.length;
+    for (int subPathIndex = 0; subPathIndex < subpathCount; subPathIndex++) {
+      final Subpath subpath = subpaths[subPathIndex];
+      final List<PathCommand> commands = subpath.commands;
+      final int commandCount = commands.length;
+      for (int c = 0; c < commandCount; c++) {
+        final PathCommand command = commands[c];
         switch (command.type) {
           case PathCommandTypes.bezierCurveTo:
             final BezierCurveTo curve = command;
@@ -580,14 +593,28 @@ class _CanvasPool extends _SaveStackTracking {
 
   void drawPath(ui.Path path, ui.PaintingStyle style) {
     _runPath(context, path);
-    contextHandle.paint(style);
+    contextHandle.paintPath(style, path.fillType);
   }
 
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
     final SurfaceShadowData shadow = computeShadow(path.getBounds(), elevation);
     if (shadow != null) {
-      // TODO(het): Shadows with transparent occluders are not supported
+      // On April 2020 Web canvas 2D did not support shadow color alpha. So
+      // instead we apply alpha separately using globalAlpha, then paint a
+      // solid shadow.
+      final ui.Color shadowColor = toShadowColor(color);
+      final double opacity = shadowColor.alpha / 255;
+      final String solidColor = colorComponentsToCssString(
+        shadowColor.red,
+        shadowColor.green,
+        shadowColor.blue,
+        255,
+      );
+      context.save();
+      context.globalAlpha = opacity;
+
+      // TODO(hterkelsen): Shadows with transparent occluders are not supported
       // on webkit since filter is unsupported.
       if (transparentOccluder && browserEngine != BrowserEngine.webkit) {
         // We paint shadows using a path and a mask filter instead of the
@@ -596,17 +623,17 @@ class _CanvasPool extends _SaveStackTracking {
         // paint the shadow without the path itself, but if we use a non-zero
         // alpha for the paint the path is painted in addition to the shadow,
         // which is undesirable.
-        context.save();
         context.translate(shadow.offset.dx, shadow.offset.dy);
         context.filter = _maskFilterToCss(
             ui.MaskFilter.blur(ui.BlurStyle.normal, shadow.blurWidth));
         context.strokeStyle = '';
-        context.fillStyle = colorToCssString(color);
-        _runPath(context, path);
-        context.fill();
-        context.restore();
+        context.fillStyle = solidColor;
       } else {
-        // TODO(het): We fill the path with this paint, then later we clip
+        // TODO(yjbanov): the following comment by hterkelsen makes sense, but
+        //                somehow we lost the implementation described in it.
+        //                Perhaps we should revisit this and actually do what
+        //                the comment says.
+        // TODO(hterkelsen): We fill the path with this paint, then later we clip
         // by the same path and fill it with a fully opaque color (we know
         // the color is fully opaque because `transparentOccluder` is false.
         // However, due to anti-aliasing of the clip, a few pixels of the
@@ -614,23 +641,20 @@ class _CanvasPool extends _SaveStackTracking {
         // the opaque occluder. For that reason, we fill with the shadow color,
         // and set the shadow color to fully opaque. This way, the visible
         // pixels are less opaque and less noticeable.
-        context.save();
         context.filter = 'none';
         context.strokeStyle = '';
-        final int red = color.red;
-        final int green = color.green;
-        final int blue = color.blue;
-        // Multiply by 0.4 to make shadows less aggressive (https://github.com/flutter/flutter/issues/52734)
-        final int alpha = (0.4 * color.alpha).round();
-        context.fillStyle = colorComponentsToCssString(red, green, blue, alpha);
+        context.fillStyle = solidColor;
         context.shadowBlur = shadow.blurWidth;
-        context.shadowColor = colorToCssString(color.withAlpha(0xff));
+        context.shadowColor = solidColor;
         context.shadowOffsetX = shadow.offset.dx;
         context.shadowOffsetY = shadow.offset.dy;
-        _runPath(context, path);
-        context.fill();
-        context.restore();
       }
+      _runPath(context, path);
+      context.fill();
+
+      // This also resets globalAlpha and shadow attributes. See:
+      // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/save#Drawing_state
+      context.restore();
     }
   }
 
@@ -644,19 +668,19 @@ class _CanvasPool extends _SaveStackTracking {
     if (browserEngine == BrowserEngine.webkit && _canvas != null) {
       _canvas.width = _canvas.height = 0;
     }
-    _clearPool();
+    _clearActiveCanvasList();
   }
 
-  void _clearPool() {
-    if (_pool != null) {
-      for (html.CanvasElement c in _pool) {
+  void _clearActiveCanvasList() {
+    if (_activeCanvasList != null) {
+      for (html.CanvasElement c in _activeCanvasList) {
         if (browserEngine == BrowserEngine.webkit) {
           c.width = c.height = 0;
         }
         c.remove();
       }
     }
-    _pool = null;
+    _activeCanvasList = null;
   }
 }
 
@@ -735,6 +759,18 @@ class ContextStateHandle {
       context.stroke();
     } else {
       context.fill();
+    }
+  }
+
+  void paintPath(ui.PaintingStyle style, ui.PathFillType pathFillType) {
+    if (style == ui.PaintingStyle.stroke) {
+      context.stroke();
+    } else {
+      if (pathFillType == ui.PathFillType.nonZero) {
+        context.fill();
+      } else {
+        context.fill('evenodd');
+      }
     }
   }
 
@@ -830,7 +866,7 @@ class _SaveStackTracking {
   @mustCallSuper
   void skew(double sx, double sy) {
     final Matrix4 skewMatrix = Matrix4.identity();
-    final Float64List storage = skewMatrix.storage;
+    final Float32List storage = skewMatrix.storage;
     storage[1] = sy;
     storage[4] = sx;
     _currentTransform.multiply(skewMatrix);
@@ -838,8 +874,8 @@ class _SaveStackTracking {
 
   /// Multiplies the [currentTransform] matrix by another matrix.
   @mustCallSuper
-  void transform(Float64List matrix4) {
-    _currentTransform.multiply(Matrix4.fromFloat64List(matrix4));
+  void transform(Float32List matrix4) {
+    _currentTransform.multiply(Matrix4.fromFloat32List(matrix4));
   }
 
   /// Adds a rectangle to clipping stack.

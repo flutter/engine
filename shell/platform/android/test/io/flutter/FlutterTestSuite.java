@@ -15,7 +15,6 @@ import io.flutter.embedding.engine.FlutterJNITest;
 import io.flutter.embedding.engine.RenderingComponentTest;
 import io.flutter.embedding.engine.plugins.shim.ShimPluginRegistryTest;
 import io.flutter.embedding.engine.renderer.FlutterRendererTest;
-import io.flutter.embedding.engine.systemchannels.PlatformChannelTest;
 import io.flutter.external.FlutterLaunchTests;
 import io.flutter.plugin.common.StandardMessageCodecTest;
 import io.flutter.plugin.editing.InputConnectionAdaptorTest;
@@ -23,6 +22,7 @@ import io.flutter.plugin.editing.TextInputPluginTest;
 import io.flutter.plugin.platform.PlatformPluginTest;
 import io.flutter.plugin.platform.SingleViewPresentationTest;
 import io.flutter.util.PreconditionsTest;
+import io.flutter.view.AccessibilityBridgeTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -47,7 +47,6 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
   FlutterRendererTest.class,
   FlutterViewTest.class,
   InputConnectionAdaptorTest.class,
-  PlatformChannelTest.class,
   PlatformPluginTest.class,
   PluginComponentTest.class,
   PreconditionsTest.class,
@@ -57,6 +56,7 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
   SingleViewPresentationTest.class,
   SmokeTest.class,
   TextInputPluginTest.class,
+  AccessibilityBridgeTest.class,
 })
 /** Runs all of the unit tests listed in the {@code @SuiteClasses} annotation. */
 public class FlutterTestSuite {}

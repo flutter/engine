@@ -27,70 +27,18 @@ static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
-
 NSNotificationName const FlutterViewControllerWillDealloc = @"FlutterViewControllerWillDealloc";
-
-/// Class to coalesce calls for a period of time.
-///
-/// This is used to filter out the conflicting notifications that can get sent
-/// in rapid succession when the app gets foregrounded.
-@interface FlutterCoalescer : NSObject
-@property(nonatomic, assign) BOOL isTriggered;
-@property(nonatomic, assign) BOOL isCoalescing;
-@property(nonatomic, copy) dispatch_block_t block;
-@end
-
-@implementation FlutterCoalescer
-- (instancetype)initWithBlock:(dispatch_block_t)block {
-  self = [super init];
-  if (self) {
-    self.block = block;
-  }
-  return self;
-}
-
-- (void)dealloc {
-  [_block release];
-  [super dealloc];
-}
-
-- (void)trigger {
-  if (_isCoalescing) {
-    _isTriggered = YES;
-  } else {
-    _isTriggered = NO;
-    if (_block) {
-      _block();
-    }
-  }
-}
-
-- (void)coalesceForSeconds:(double)seconds {
-  if (self.isCoalescing || !self.block) {
-    return;
-  }
-  self.isCoalescing = YES;
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, seconds * NSEC_PER_SEC),
-                 dispatch_get_main_queue(), ^{
-                   if (self.isTriggered && self.block) {
-                     self.block();
-                   }
-                   self.isTriggered = NO;
-                   self.isCoalescing = NO;
-                 });
-}
-
-- (void)invalidate {
-  self.block = nil;
-}
-
-@end  // FlutterCoalescer
+NSNotificationName const FlutterViewControllerHideHomeIndicator =
+    @"FlutterViewControllerHideHomeIndicator";
+NSNotificationName const FlutterViewControllerShowHomeIndicator =
+    @"FlutterViewControllerShowHomeIndicator";
 
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
+@property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @end
 
 // The following conditional compilation defines an API 13 concept on earlier API targets so that
@@ -123,9 +71,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
   NSMutableSet<NSNumber*>* _ongoingTouches;
-  // Coalescer that filters out superfluous keyboard notifications when the app
-  // is being foregrounded.
-  fml::scoped_nsobject<FlutterCoalescer> _updateViewportMetrics;
   // This scroll view is a workaround to accomodate iOS 13 and higher.  There isn't a way to get
   // touches on the status bar to trigger scrolling to the top of a scroll view.  We place a
   // UIScrollView with height zero and a content offset so we can get those events. See also:
@@ -222,11 +167,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   _statusBarStyle = UIStatusBarStyleDefault;
 
   [self setupNotificationCenterObservers];
-
-  __block FlutterViewController* blockSelf = self;
-  _updateViewportMetrics.reset([[FlutterCoalescer alloc] initWithBlock:^{
-    [blockSelf updateViewportMetricsImplementation];
-  }]);
 }
 
 - (FlutterEngine*)engine {
@@ -317,6 +257,16 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [center addObserver:self
              selector:@selector(onUserSettingsChanged:)
                  name:UIContentSizeCategoryDidChangeNotification
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(onHideHomeIndicatorNotification:)
+                 name:FlutterViewControllerHideHomeIndicator
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(onShowHomeIndicatorNotification:)
+                 name:FlutterViewControllerShowHomeIndicator
                object:nil];
 }
 
@@ -654,7 +604,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
                                                     userInfo:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_ongoingTouches release];
-  [_updateViewportMetrics invalidate];
   [super dealloc];
 }
 
@@ -681,7 +630,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
-  [_updateViewportMetrics coalesceForSeconds:0.5];
 }
 
 // Make this transition only while this current view controller is visible.
@@ -872,13 +820,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
-  [_updateViewportMetrics trigger];
-}
-
-/// The direct implementation of updateViewportMetrics, it doesn't conform to
-/// the coalescing logic when foregrounding the app.  Most calls should be
-/// directed to [updateViewportMetrics].
-- (void)updateViewportMetricsImplementation {
   [_engine.get() updateViewportMetrics:_viewportMetrics];
 }
 
@@ -906,7 +847,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   _viewportMetrics.physical_height = viewSize.height * scale;
 
   [self updateViewportPadding];
-  [self updateViewportMetricsImplementation];
+  [self updateViewportMetrics];
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
@@ -953,13 +894,32 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)keyboardWillChangeFrame:(NSNotification*)notification {
   NSDictionary* info = [notification userInfo];
-  CGFloat bottom = CGRectGetHeight([[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue]);
-  CGFloat scale = [UIScreen mainScreen].scale;
 
-  // The keyboard is treated as an inset since we want to effectively reduce the window size by the
-  // keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
-  // bottom padding.
-  _viewportMetrics.physical_view_inset_bottom = bottom * scale;
+  if (@available(iOS 9, *)) {
+    // Ignore keyboard notifications related to other apps.
+    id isLocal = info[UIKeyboardIsLocalUserInfoKey];
+    if (isLocal && ![isLocal boolValue]) {
+      return;
+    }
+  }
+
+  CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
+  CGRect screenRect = [[UIScreen mainScreen] bounds];
+
+  // Considering the iPad's split keyboard, Flutter needs to check if the keyboard frame is present
+  // in the screen to see if the keyboard is visible.
+  if (CGRectIntersectsRect(keyboardFrame, screenRect)) {
+    CGFloat bottom = CGRectGetHeight(keyboardFrame);
+    CGFloat scale = [UIScreen mainScreen].scale;
+
+    // The keyboard is treated as an inset since we want to effectively reduce the window size by
+    // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
+    // bottom padding.
+    _viewportMetrics.physical_view_inset_bottom = bottom * scale;
+  } else {
+    _viewportMetrics.physical_view_inset_bottom = 0;
+  }
+
   [self updateViewportMetrics];
 }
 
@@ -1010,6 +970,27 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       }
     }
   }
+}
+
+- (void)onHideHomeIndicatorNotification:(NSNotification*)notification {
+  self.isHomeIndicatorHidden = YES;
+}
+
+- (void)onShowHomeIndicatorNotification:(NSNotification*)notification {
+  self.isHomeIndicatorHidden = NO;
+}
+
+- (void)setIsHomeIndicatorHidden:(BOOL)hideHomeIndicator {
+  if (hideHomeIndicator != _isHomeIndicatorHidden) {
+    _isHomeIndicatorHidden = hideHomeIndicator;
+    if (@available(iOS 11, *)) {
+      [self setNeedsUpdateOfHomeIndicatorAutoHidden];
+    }
+  }
+}
+
+- (BOOL)prefersHomeIndicatorAutoHidden {
+  return self.isHomeIndicatorHidden;
 }
 
 - (BOOL)shouldAutorotate {

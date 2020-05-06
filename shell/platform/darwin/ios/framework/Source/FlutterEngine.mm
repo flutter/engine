@@ -534,6 +534,11 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                               arguments:@[ @(client), state ]];
 }
 
+- (void)updateEditingClient:(int)client withState:(NSDictionary*)state withTag:(NSString*)tag {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingStateWithTag"
+                              arguments:@[ @(client), @{tag : state} ]];
+}
+
 - (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state
                   withClient:(int)client
                 withPosition:(NSDictionary*)position {
@@ -596,6 +601,13 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   }
   [_textInputChannel.get() invokeMethod:@"TextInputClient.performAction"
                               arguments:@[ @(client), actionString ]];
+}
+
+- (void)showAutocorrectionPromptRectForStart:(NSUInteger)start
+                                         end:(NSUInteger)end
+                                  withClient:(int)client {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.showAutocorrectionPromptRect"
+                              arguments:@[ @(client), @(start), @(end) ]];
 }
 
 #pragma mark - Screenshot Delegate

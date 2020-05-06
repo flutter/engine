@@ -19,9 +19,12 @@ void Win32WindowTest::OnPointerUp(double x, double y, UINT button) {}
 
 void Win32WindowTest::OnPointerLeave() {}
 
-void Win32WindowTest::OnChar(char32_t code_point) {}
+void Win32WindowTest::OnText(const std::u16string& text) {}
 
-void Win32WindowTest::OnKey(int key, int scancode, int action, int mods) {}
+void Win32WindowTest::OnKey(int key,
+                            int scancode,
+                            int action,
+                            char32_t character) {}
 
 void Win32WindowTest::OnScroll(double delta_x, double delta_y) {}
 

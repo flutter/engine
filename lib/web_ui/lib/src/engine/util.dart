@@ -58,7 +58,7 @@ String matrix4ToCssTransform(Matrix4 matrix) {
 /// Applies a transform to the [element].
 ///
 /// See [float64ListToCssTransform] for details on how the CSS value is chosen.
-void setElementTransform(html.Element element, Float64List matrix4) {
+void setElementTransform(html.Element element, Float32List matrix4) {
   element.style
     ..transformOrigin = '0 0 0'
     ..transform = float64ListToCssTransform(matrix4);
@@ -73,7 +73,7 @@ void setElementTransform(html.Element element, Float64List matrix4) {
 /// See also:
 ///  * https://github.com/flutter/flutter/issues/32274
 ///  * https://bugs.chromium.org/p/chromium/issues/detail?id=1040222
-String float64ListToCssTransform(Float64List matrix) {
+String float64ListToCssTransform(Float32List matrix) {
   assert(matrix.length == 16);
   final TransformKind transformKind = transformKindOf(matrix);
   if (transformKind == TransformKind.transform2d) {
@@ -105,9 +105,9 @@ enum TransformKind {
 }
 
 /// Detects the kind of transform the [matrix] performs.
-TransformKind transformKindOf(Float64List matrix) {
+TransformKind transformKindOf(Float32List matrix) {
   assert(matrix.length == 16);
-  final Float64List m = matrix;
+  final Float32List m = matrix;
 
   // If matrix contains scaling, rotation, z translation or
   // perspective transform, it is not considered simple.
@@ -152,7 +152,7 @@ TransformKind transformKindOf(Float64List matrix) {
 }
 
 /// Returns `true` is the [matrix] describes an identity transformation.
-bool isIdentityFloat64ListTransform(Float64List matrix) {
+bool isIdentityFloat32ListTransform(Float32List matrix) {
   assert(matrix.length == 16);
   return transformKindOf(matrix) == TransformKind.identity;
 }
@@ -164,15 +164,15 @@ bool isIdentityFloat64ListTransform(Float64List matrix) {
 /// permitted. However, it is inefficient to construct a matrix for an identity
 /// transform. Consider removing the CSS `transform` property from elements
 /// that apply identity transform.
-String float64ListToCssTransform2d(Float64List matrix) {
+String float64ListToCssTransform2d(Float32List matrix) {
   assert (transformKindOf(matrix) != TransformKind.complex);
   return 'matrix(${matrix[0]},${matrix[1]},${matrix[4]},${matrix[5]},${matrix[12]},${matrix[13]})';
 }
 
 /// Converts [matrix] to a 3D CSS transform value.
-String float64ListToCssTransform3d(Float64List matrix) {
+String float64ListToCssTransform3d(Float32List matrix) {
   assert(matrix.length == 16);
-  final Float64List m = matrix;
+  final Float32List m = matrix;
   if (m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[2] == 0.0 &&
@@ -203,26 +203,39 @@ bool get assertionsEnabled {
   return k;
 }
 
+final Float32List _tempRectData = Float32List(4);
+
 /// Transforms a [ui.Rect] given the effective [transform].
 ///
 /// The resulting rect is aligned to the pixel grid, i.e. two of
 /// its sides are vertical and two are horizontal. In the presence of rotations
 /// the rectangle is inflated such that it fits the rotated rectangle.
 ui.Rect transformRect(Matrix4 transform, ui.Rect rect) {
-  return transformLTRB(transform, rect.left, rect.top, rect.right, rect.bottom);
+  _tempRectData[0] = rect.left;
+  _tempRectData[1] = rect.top;
+  _tempRectData[2] = rect.right;
+  _tempRectData[3] = rect.bottom;
+  transformLTRB(transform, _tempRectData);
+  return ui.Rect.fromLTRB(
+    _tempRectData[0],
+    _tempRectData[1],
+    _tempRectData[2],
+    _tempRectData[3],
+  );
 }
+
+/// Temporary storage for intermediate data used by [transformLTRB].
+///
+/// WARNING: do not use this outside [transformLTRB]. Sharing this variable in
+/// other contexts will lead to bugs.
+final Float32List _tempPointData = Float32List(16);
+final Matrix4 _tempPointMatrix = Matrix4.fromFloat32List(_tempPointData);
 
 /// Transforms a rectangle given the effective [transform].
 ///
 /// This is the same as [transformRect], except that the rect is specified
 /// in terms of left, top, right, and bottom edge offsets.
-ui.Rect transformLTRB(
-    Matrix4 transform, double left, double top, double right, double bottom) {
-  assert(left != null);
-  assert(top != null);
-  assert(right != null);
-  assert(bottom != null);
-
+void transformLTRB(Matrix4 transform, Float32List ltrb) {
   // Construct a matrix where each row represents a vector pointing at
   // one of the four corners of the (left, top, right, bottom) rectangle.
   // Using the row-major order allows us to multiply the matrix in-place
@@ -230,50 +243,46 @@ ui.Rect transformLTRB(
   // library has a convenience function `multiplyTranspose` that performs
   // the multiplication without copying. This way we compute the positions
   // of all four points in a single matrix-by-matrix multiplication at the
-  // cost of one `Matrix4` instance and one `Float64List` instance.
+  // cost of one `Matrix4` instance and one `Float32List` instance.
   //
   // The rejected alternative was to use `Vector3` for each point and
   // multiply by the current transform. However, that would cost us four
-  // `Vector3` instances, four `Float64List` instances, and four
+  // `Vector3` instances, four `Float32List` instances, and four
   // matrix-by-vector multiplications.
   //
-  // `Float64List` initializes the array with zeros, so we do not have to
+  // `Float32List` initializes the array with zeros, so we do not have to
   // fill in every single element.
-  final Float64List pointData = Float64List(16);
 
   // Row 0: top-left
-  pointData[0] = left;
-  pointData[4] = top;
-  pointData[12] = 1;
+  _tempPointData[0] = ltrb[0];
+  _tempPointData[4] = ltrb[1];
+  _tempPointData[8] = 0;
+  _tempPointData[12] = 1;
 
   // Row 1: top-right
-  pointData[1] = right;
-  pointData[5] = top;
-  pointData[13] = 1;
+  _tempPointData[1] = ltrb[2];
+  _tempPointData[5] = ltrb[1];
+  _tempPointData[9] = 0;
+  _tempPointData[13] = 1;
 
   // Row 2: bottom-left
-  pointData[2] = left;
-  pointData[6] = bottom;
-  pointData[14] = 1;
+  _tempPointData[2] = ltrb[0];
+  _tempPointData[6] = ltrb[3];
+  _tempPointData[10] = 0;
+  _tempPointData[14] = 1;
 
   // Row 3: bottom-right
-  pointData[3] = right;
-  pointData[7] = bottom;
-  pointData[15] = 1;
+  _tempPointData[3] = ltrb[2];
+  _tempPointData[7] = ltrb[3];
+  _tempPointData[11] = 0;
+  _tempPointData[15] = 1;
 
-  final Matrix4 pointMatrix = Matrix4.fromFloat64List(pointData);
-  pointMatrix.multiplyTranspose(transform);
+  _tempPointMatrix.multiplyTranspose(transform);
 
-  return ui.Rect.fromLTRB(
-    math.min(math.min(math.min(pointData[0], pointData[1]), pointData[2]),
-        pointData[3]),
-    math.min(math.min(math.min(pointData[4], pointData[5]), pointData[6]),
-        pointData[7]),
-    math.max(math.max(math.max(pointData[0], pointData[1]), pointData[2]),
-        pointData[3]),
-    math.max(math.max(math.max(pointData[4], pointData[5]), pointData[6]),
-        pointData[7]),
-  );
+  ltrb[0] = math.min(math.min(math.min(_tempPointData[0], _tempPointData[1]), _tempPointData[2]), _tempPointData[3]);
+  ltrb[1] = math.min(math.min(math.min(_tempPointData[4], _tempPointData[5]), _tempPointData[6]), _tempPointData[7]);
+  ltrb[2] = math.max(math.max(math.max(_tempPointData[0], _tempPointData[1]), _tempPointData[2]), _tempPointData[3]);
+  ltrb[3] = math.max(math.max(math.max(_tempPointData[4], _tempPointData[5]), _tempPointData[6]), _tempPointData[7]);
 }
 
 /// Returns true if [rect] contains every point that is also contained by the
@@ -322,7 +331,22 @@ String colorToCssString(ui.Color color) {
   }
   final int value = color.value;
   if ((0xff000000 & value) == 0xff000000) {
-    return _colorToCssStringRgbOnly(color);
+    final String hexValue = (value & 0xFFFFFF).toRadixString(16);
+    final int hexValueLength = hexValue.length;
+    switch (hexValueLength) {
+      case 1:
+        return '#00000$hexValue';
+      case 2:
+        return '#0000$hexValue';
+      case 3:
+        return '#000$hexValue';
+      case 4:
+        return '#00$hexValue';
+      case 5:
+        return '#0$hexValue';
+      default:
+        return '#$hexValue';
+    }
   } else {
     final double alpha = ((value >> 24) & 0xFF) / 255.0;
     final StringBuffer sb = StringBuffer();
@@ -337,16 +361,6 @@ String colorToCssString(ui.Color color) {
     sb.write(')');
     return sb.toString();
   }
-}
-
-/// Returns the CSS value of this color without the alpha component.
-///
-/// This is useful when painting shadows as on the Web shadow opacity combines
-/// with the paint opacity.
-String _colorToCssStringRgbOnly(ui.Color color) {
-  final int value = color.value;
-  final String paddedValue = '00000${value.toRadixString(16)}';
-  return '#${paddedValue.substring(paddedValue.length - 6)}';
 }
 
 /// Converts color components to a CSS compatible attribute value.
@@ -447,11 +461,23 @@ void applyWebkitClipFix(html.Element containerElement) {
 
 final ByteData _fontChangeMessage = JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
 
+// Font load callbacks will typically arrive in sequence, we want to prevent
+// sendFontChangeMessage of causing multiple synchronous rebuilds.
+// This flag ensures we properly schedule a single call to framework.
+bool _fontChangeScheduled = false;
+
 FutureOr<void> sendFontChangeMessage() async {
   if (window._onPlatformMessage != null)
-    window.invokeOnPlatformMessage(
-      'flutter/system',
-      _fontChangeMessage,
-      (_) {},
-    );
+    if (!_fontChangeScheduled) {
+      _fontChangeScheduled = true;
+      // Batch updates into next animationframe.
+      html.window.requestAnimationFrame((num _) {
+        _fontChangeScheduled = false;
+        window.invokeOnPlatformMessage(
+          'flutter/system',
+          _fontChangeMessage,
+              (_) {},
+        );
+      });
+    }
 }

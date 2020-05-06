@@ -53,8 +53,8 @@ Rasterizer::Rasterizer(
 
 Rasterizer::~Rasterizer() = default;
 
-fml::WeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
-  return weak_factory_.GetWeakPtr();
+fml::TaskRunnerAffineWeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
+  return weak_factory_.GetTaskRunnerAffineWeakPtr();
 }
 
 fml::WeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate() const {
@@ -131,9 +131,23 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   // front of the queue and also change the consume status to more available.
   if (raster_status == RasterStatus::kResubmit) {
     auto front_continuation = pipeline->ProduceIfEmpty();
-    front_continuation.Complete(std::move(resubmitted_layer_tree_));
+    bool result =
+        front_continuation.Complete(std::move(resubmitted_layer_tree_));
+    if (result) {
+      consume_result = PipelineConsumeResult::MoreAvailable;
+    }
   } else if (raster_status == RasterStatus::kEnqueuePipeline) {
     consume_result = PipelineConsumeResult::MoreAvailable;
+  }
+
+  // Merging the thread as we know the next `Draw` should be run on the platform
+  // thread.
+  if (raster_status == RasterStatus::kResubmit) {
+    auto* external_view_embedder = surface_->GetExternalViewEmbedder();
+    // We know only the `external_view_embedder` can
+    // causes|RasterStatus::kResubmit|. Check to make sure.
+    FML_DCHECK(external_view_embedder != nullptr);
+    external_view_embedder->EndFrame(raster_thread_merger_);
   }
 
   // Consume as many pipeline items as possible. But yield the event loop
@@ -141,7 +155,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
       task_runners_.GetRasterTaskRunner()->PostTask(
-          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
+          [weak_this = weak_factory_.GetTaskRunnerAffineWeakPtr(), pipeline]() {
             if (weak_this) {
               weak_this->Draw(pipeline);
             }
@@ -287,8 +301,8 @@ RasterStatus Rasterizer::DoDraw(
     fml::tracing::TraceEventAsyncComplete(
         "flutter",                    // category
         "SceneDisplayLag",            // name
-        frame_target_time,            // begin_time
-        raster_finish_time,           // end_time
+        raster_finish_time,           // begin_time
+        latest_frame_target_time,     // end_time
         "frame_target_time",          // arg_key_1
         frame_target_time,            // arg_val_1
         "current_frame_target_time",  // arg_key_2

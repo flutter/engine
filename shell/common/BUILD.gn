@@ -5,6 +5,7 @@
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/testing/testing.gni")
+import("//flutter/vulkan/config.gni")
 
 if (is_fuchsia) {
   import("//build/fuchsia/sdk.gni")
@@ -96,6 +97,8 @@ source_set("common") {
     "pointer_data_dispatcher.h",
     "rasterizer.cc",
     "rasterizer.h",
+    "renderer_context_manager.cc",
+    "renderer_context_manager.h",
     "run_configuration.cc",
     "run_configuration.h",
     "shell.cc",
@@ -189,8 +192,13 @@ if (enable_unittests) {
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",
+      "renderer_context_manager_unittests.cc",
+      "renderer_context_test.cc",
+      "renderer_context_test.h",
       "shell_test.cc",
       "shell_test.h",
+      "shell_test_external_view_embedder.cc",
+      "shell_test_external_view_embedder.h",
       "shell_test_platform_view.cc",
       "shell_test_platform_view.h",
       "shell_unittests.cc",
@@ -201,6 +209,7 @@ if (enable_unittests) {
     deps = [
       ":shell_unittests_fixtures",
       ":shell_unittests_gpu_configuration",
+      "//flutter/assets",
       "//flutter/common",
       "//flutter/flow",
       "//flutter/fml/dart",
@@ -265,6 +274,11 @@ if (enable_unittests) {
           dest = "assets/shelltest_screenshot.png"
         },
       ]
+
+      if (test_enable_vulkan) {
+        libraries = vulkan_validation_libs
+        resources += vulkan_icds
+      }
     }
   }
 
