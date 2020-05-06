@@ -28,6 +28,25 @@ void _updateWindowMetrics(
   double systemGestureInsetBottom,
   double systemGestureInsetLeft,
 ) {
+  print('''
+Updated window metrics:
+  devicePixelRatio: $devicePixelRatio
+  width: $width
+  height: $height
+  depth: $depth
+  viewPaddingTop: $viewPaddingTop
+  viewPaddingRight: $viewPaddingRight
+  viewPaddingBottom: $viewPaddingBottom
+  viewPaddingLeft: $viewPaddingLeft
+  viewInsetTop: $viewInsetTop
+  viewInsetRight: $viewInsetRight
+  viewInsetBottom: $viewInsetBottom
+  viewInsetLeft: $viewInsetLeft
+  systemGestureInsetTop: $systemGestureInsetTop
+  systemGestureInsetRight: $systemGestureInsetRight
+  systemGestureInsetBottom: $systemGestureInsetBottom
+  systemGestureInsetLeft: $systemGestureInsetLeft
+''');
   window
     .._devicePixelRatio = devicePixelRatio
     .._physicalSize = Size(width, height)
