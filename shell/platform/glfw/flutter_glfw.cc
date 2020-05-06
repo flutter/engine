@@ -49,8 +49,8 @@ struct FlutterDesktopWindowControllerState {
   UniqueGLFWwindowPtr resource_window =
       UniqueGLFWwindowPtr(nullptr, glfwDestroyWindow);
 
-  // The handle to the Flutter engine instance.
-  FLUTTER_API_SYMBOL(FlutterEngine) engine;
+  // The state associated with the engine.
+  std::unique_ptr<FlutterDesktopEngineState> engine;
 
   // The window handle given to API clients.
   std::unique_ptr<FlutterDesktopWindow> window_wrapper;
@@ -133,7 +133,7 @@ struct FlutterDesktopMessenger {
 };
 
 // Retrieves state bag for the window in question from the GLFWWindow.
-static FlutterDesktopWindowControllerState* GetSavedWindowState(
+static FlutterDesktopWindowControllerState* GetWindowController(
     GLFWwindow* window) {
   return reinterpret_cast<FlutterDesktopWindowControllerState*>(
       glfwGetWindowUserPointer(window));
@@ -181,25 +181,25 @@ static double GetScreenCoordinatesPerInch() {
 
 // Sends a window metrics update to the Flutter engine using the given
 // framebuffer size and the current window information in |state|.
-static void SendWindowMetrics(FlutterDesktopWindowControllerState* state,
+static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
                               int width,
                               int height) {
-  double dpi = state->window_wrapper->pixels_per_screen_coordinate *
-               state->monitor_screen_coordinates_per_inch;
+  double dpi = controller->window_wrapper->pixels_per_screen_coordinate *
+               controller->monitor_screen_coordinates_per_inch;
 
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
-  if (state->window_wrapper->pixel_ratio_override == 0.0) {
+  if (controller->window_wrapper->pixel_ratio_override == 0.0) {
     // The Flutter pixel_ratio is defined as DPI/dp. Limit the ratio to a
     // minimum of 1 to avoid rendering a smaller UI on standard resolution
     // monitors.
     event.pixel_ratio = std::max(dpi / kDpPerInch, 1.0);
   } else {
-    event.pixel_ratio = state->window_wrapper->pixel_ratio_override;
+    event.pixel_ratio = controller->window_wrapper->pixel_ratio_override;
   }
-  FlutterEngineSendWindowMetricsEvent(state->engine, &event);
+  FlutterEngineSendWindowMetricsEvent(controller->engine->engine, &event);
 }
 
 // When GLFW calls back to the window with a framebuffer size change, notify
@@ -209,19 +209,19 @@ static void GLFWFramebufferSizeCallback(GLFWwindow* window,
                                         int height_px) {
   int width;
   glfwGetWindowSize(window, &width, nullptr);
-  auto* state = GetSavedWindowState(window);
-  state->window_wrapper->pixels_per_screen_coordinate =
+  auto* controller = GetWindowController(window);
+  controller->window_wrapper->pixels_per_screen_coordinate =
       width > 0 ? width_px / width : 1;
 
-  SendWindowMetrics(state, width_px, height_px);
-  state->window_wrapper->skip_next_window_refresh = true;
+  SendWindowMetrics(controller, width_px, height_px);
+  controller->window_wrapper->skip_next_window_refresh = true;
 }
 
 // Indicates that the window needs to be redrawn.
 void GLFWWindowRefreshCallback(GLFWwindow* window) {
-  auto* state = GetSavedWindowState(window);
-  if (state->window_wrapper->skip_next_window_refresh) {
-    state->window_wrapper->skip_next_window_refresh = false;
+  auto* controller = GetWindowController(window);
+  if (controller->window_wrapper->skip_next_window_refresh) {
+    controller->window_wrapper->skip_next_window_refresh = false;
     return;
   }
   // There's no engine API to request a redraw explicitly, so instead send a
@@ -229,7 +229,7 @@ void GLFWWindowRefreshCallback(GLFWwindow* window) {
   int width_px, height_px;
   glfwGetFramebufferSize(window, &width_px, &height_px);
   if (width_px > 0 && height_px > 0) {
-    SendWindowMetrics(state, width_px, height_px);
+    SendWindowMetrics(controller, width_px, height_px);
   }
 }
 
@@ -239,10 +239,10 @@ void GLFWWindowRefreshCallback(GLFWwindow* window) {
 // coordinates; they will be adjusted to pixel values before being sent.
 static void SendPointerEventWithData(GLFWwindow* window,
                                      const FlutterPointerEvent& event_data) {
-  auto* state = GetSavedWindowState(window);
+  auto* controller = GetWindowController(window);
   // If sending anything other than an add, and the pointer isn't already added,
   // synthesize an add to satisfy Flutter's expectations about events.
-  if (!state->pointer_currently_added &&
+  if (!controller->pointer_currently_added &&
       event_data.phase != FlutterPointerPhase::kAdd) {
     FlutterPointerEvent event = {};
     event.phase = FlutterPointerPhase::kAdd;
@@ -252,7 +252,7 @@ static void SendPointerEventWithData(GLFWwindow* window,
   }
   // Don't double-add (e.g., if events are delivered out of order, so an add has
   // already been synthesized).
-  if (state->pointer_currently_added &&
+  if (controller->pointer_currently_added &&
       event_data.phase == FlutterPointerPhase::kAdd) {
     return;
   }
@@ -266,18 +266,18 @@ static void SendPointerEventWithData(GLFWwindow* window,
           .count();
   // Convert all screen coordinates to pixel coordinates.
   double pixels_per_coordinate =
-      state->window_wrapper->pixels_per_screen_coordinate;
+      controller->window_wrapper->pixels_per_screen_coordinate;
   event.x *= pixels_per_coordinate;
   event.y *= pixels_per_coordinate;
   event.scroll_delta_x *= pixels_per_coordinate;
   event.scroll_delta_y *= pixels_per_coordinate;
 
-  FlutterEngineSendPointerEvent(state->engine, &event, 1);
+  FlutterEngineSendPointerEvent(controller->engine->engine, &event, 1);
 
   if (event_data.phase == FlutterPointerPhase::kAdd) {
-    state->pointer_currently_added = true;
+    controller->pointer_currently_added = true;
   } else if (event_data.phase == FlutterPointerPhase::kRemove) {
-    state->pointer_currently_added = false;
+    controller->pointer_currently_added = false;
   }
 }
 
@@ -337,7 +337,7 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
   // If mouse tracking isn't already enabled, turn it on for the duration of
   // the drag to generate kMove events.
   bool hover_enabled =
-      GetSavedWindowState(window)->window_wrapper->hover_tracking_enabled;
+      GetWindowController(window)->window_wrapper->hover_tracking_enabled;
   if (!hover_enabled) {
     glfwSetCursorPosCallback(
         window, (action == GLFW_PRESS) ? GLFWCursorPositionCallback : nullptr);
@@ -370,7 +370,7 @@ static void GLFWScrollCallback(GLFWwindow* window,
 // Passes character input events to registered handlers.
 static void GLFWCharCallback(GLFWwindow* window, unsigned int code_point) {
   for (const auto& handler :
-       GetSavedWindowState(window)->keyboard_hook_handlers) {
+       GetWindowController(window)->keyboard_hook_handlers) {
     handler->CharHook(window, code_point);
   }
 }
@@ -382,7 +382,7 @@ static void GLFWKeyCallback(GLFWwindow* window,
                             int action,
                             int mods) {
   for (const auto& handler :
-       GetSavedWindowState(window)->keyboard_hook_handlers) {
+       GetWindowController(window)->keyboard_hook_handlers) {
     handler->KeyboardHook(window, key, scancode, action, mods);
   }
 }
@@ -402,7 +402,7 @@ static void GLFWAssignEventCallbacks(GLFWwindow* window) {
   glfwSetCharCallback(window, GLFWCharCallback);
   glfwSetMouseButtonCallback(window, GLFWMouseButtonCallback);
   glfwSetScrollCallback(window, GLFWScrollCallback);
-  if (GetSavedWindowState(window)->window_wrapper->hover_tracking_enabled) {
+  if (GetWindowController(window)->window_wrapper->hover_tracking_enabled) {
     SetHoverCallbacksEnabled(window, true);
   }
 }
@@ -429,10 +429,10 @@ static void GLFWOnFlutterPlatformMessage(
   }
 
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(user_data);
-  auto state = GetSavedWindowState(window);
+  auto controller = GetWindowController(window);
 
   auto message = ConvertToDesktopMessage(*engine_message);
-  state->message_dispatcher->HandleMessage(
+  controller->message_dispatcher->HandleMessage(
       message, [window] { GLFWClearEventCallbacks(window); },
       [window] { GLFWAssignEventCallbacks(window); });
 }
@@ -445,7 +445,7 @@ static bool GLFWMakeContextCurrent(void* user_data) {
 
 static bool GLFWMakeResourceContextCurrent(void* user_data) {
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(user_data);
-  glfwMakeContextCurrent(GetSavedWindowState(window)->resource_window.get());
+  glfwMakeContextCurrent(GetWindowController(window)->resource_window.get());
   return true;
 }
 
@@ -611,7 +611,7 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   state->event_loop = std::make_unique<flutter::GLFWEventLoop>(
       std::this_thread::get_id(),  // main GLFW thread
       [state = state.get()](const auto* task) {
-        if (FlutterEngineRunTask(state->engine, task) != kSuccess) {
+        if (FlutterEngineRunTask(state->engine->engine, task) != kSuccess) {
           std::cerr << "Could not post an engine task." << std::endl;
         }
       });
@@ -636,9 +636,10 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   custom_task_runners.platform_task_runner = &platform_task_runner;
 
   // Start the engine.
-  state->engine =
+  state->engine = std::make_unique<FlutterDesktopEngineState>();
+  state->engine->engine =
       RunFlutterEngine(window, engine_properties, &custom_task_runners);
-  if (state->engine == nullptr) {
+  if (state->engine->engine == nullptr) {
     return nullptr;
   }
 
@@ -647,7 +648,7 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   auto messenger = std::make_unique<FlutterDesktopMessenger>();
   state->message_dispatcher =
       std::make_unique<flutter::IncomingMessageDispatcher>(messenger.get());
-  messenger->engine = state->engine;
+  messenger->engine = state->engine->engine;
   messenger->dispatcher = state->message_dispatcher.get();
 
   state->window_wrapper = std::make_unique<FlutterDesktopWindow>();
@@ -690,7 +691,7 @@ void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
   if (registrar->destruction_handler) {
     registrar->destruction_handler(registrar);
   }
-  FlutterEngineShutdown(controller->engine);
+  FlutterEngineShutdown(controller->engine->engine);
   delete controller;
 }
 
@@ -768,8 +769,8 @@ void FlutterDesktopWindowSetPixelRatioOverride(
   int width_px, height_px;
   glfwGetFramebufferSize(flutter_window->window, &width_px, &height_px);
   if (width_px > 0 && height_px > 0) {
-    auto* state = GetSavedWindowState(flutter_window->window);
-    SendWindowMetrics(state, width_px, height_px);
+    auto* controller = GetWindowController(flutter_window->window);
+    SendWindowMetrics(controller, width_px, height_px);
   }
 }
 
@@ -801,6 +802,11 @@ FlutterDesktopWindowRef FlutterDesktopGetWindow(
   return controller->window_wrapper.get();
 }
 
+FlutterDesktopEngineRef FlutterDesktopGetEngine(
+    FlutterDesktopWindowControllerRef controller) {
+  return controller->engine.get();
+}
+
 FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
     FlutterDesktopWindowControllerRef controller,
     const char* plugin_name) {
@@ -823,7 +829,6 @@ FlutterDesktopEngineRef FlutterDesktopRunEngine(
 }
 
 bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
-  std::cout << "Shutting down flutter engine process." << std::endl;
   auto result = FlutterEngineShutdown(engine_ref->engine);
   delete engine_ref;
   return (result == kSuccess);

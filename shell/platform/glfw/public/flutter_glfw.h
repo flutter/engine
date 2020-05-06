@@ -119,6 +119,13 @@ FLUTTER_EXPORT bool FlutterDesktopRunWindowEventLoopWithTimeout(
 FLUTTER_EXPORT FlutterDesktopWindowRef
 FlutterDesktopGetWindow(FlutterDesktopWindowControllerRef controller);
 
+// Returns the handle for the engine running in
+// FlutterDesktopWindowControllerRef.
+//
+// Its lifetime is the same as the |controller|'s.
+FLUTTER_EXPORT FlutterDesktopEngineRef
+FlutterDesktopGetEngine(FlutterDesktopWindowControllerRef controller);
+
 // Returns the plugin registrar handle for the plugin with the given name.
 //
 // The name must be unique across the application.
