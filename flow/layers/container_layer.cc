@@ -91,7 +91,7 @@ void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
 void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
   auto update_scene_layers = [&] {
     // Paint all of the layers which need to be drawn into the container.
-    // These may be flattened down to a containing
+    // These may be flattened down to a containing Scenic Frame.
     for (auto& layer : layers_) {
       if (layer->needs_system_composite()) {
         layer->UpdateScene(context);

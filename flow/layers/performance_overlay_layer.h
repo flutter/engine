@@ -30,7 +30,6 @@ class PerformanceOverlayLayer : public Layer {
                                    const char* font_path = nullptr);
 
   void Paint(PaintContext& context) const override;
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
  private:
   int options_;
