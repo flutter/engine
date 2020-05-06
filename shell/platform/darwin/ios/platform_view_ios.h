@@ -59,7 +59,8 @@ class PlatformViewIOS final : public PlatformView {
 
   /**
    * Updates the `FlutterViewController` currently attached to the `FlutterEngine` owning
-   * this PlatformViewIOS.
+   * this PlatformViewIOS. This should be updated when the `FlutterEngine`
+   * is given a new `FlutterViewController`.
    */
   void SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller);
 
