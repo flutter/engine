@@ -172,7 +172,9 @@ class GradientLinear extends EngineGradient {
 }
 
 // TODO(flutter_web): For transforms and tile modes implement as webgl
-// shader instead. See https://github.com/flutter/flutter/issues/32819
+// For now only GradientRotation is supported in flutter which is implemented
+// for linear gradient.
+// See https://github.com/flutter/flutter/issues/32819
 class GradientRadial extends EngineGradient {
   GradientRadial(this.center, this.radius, this.colors, this.colorStops,
       this.tileMode, this.matrix4)
@@ -188,11 +190,6 @@ class GradientRadial extends EngineGradient {
   @override
   Object createPaintStyle(html.CanvasRenderingContext2D ctx) {
     if (!experimentalUseSkia) {
-      // The DOM backend does not (yet) support all parameters.
-      if (matrix4 != null && !Matrix4.fromFloat32List(matrix4).isIdentity()) {
-        throw UnimplementedError(
-            'matrix4 not supported in GradientRadial shader');
-      }
       if (tileMode != ui.TileMode.clamp) {
         throw UnimplementedError(
             'TileMode not supported in GradientRadial shader');
