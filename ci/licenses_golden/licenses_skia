@@ -1,4 +1,4 @@
-Signature: 98c36e68b77885e4eb6670493815819f
+Signature: e55857f698935b30676c6baeba26dc00
 
 UNUSED LICENSES:
 
@@ -1300,6 +1300,7 @@ FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/confetti.json
 FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/drinks.json
 FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/lego_loader.json
 FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/onboarding.json
+FILE: ../../../third_party/skia/modules/canvaskit/perf/canvas.bench.js
 FILE: ../../../third_party/skia/modules/canvaskit/perf/matrix.bench.js
 FILE: ../../../third_party/skia/modules/canvaskit/postamble.js
 FILE: ../../../third_party/skia/modules/canvaskit/preamble.js
@@ -1329,6 +1330,8 @@ FILE: ../../../third_party/skia/modules/skparagraph/include/ParagraphStyle.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextShadow.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TextStyle.h
 FILE: ../../../third_party/skia/modules/skparagraph/include/TypefaceFontProvider.h
+FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.cpp
+FILE: ../../../third_party/skia/modules/skparagraph/src/Decorations.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/FontCollection.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/src/Iterators.h
 FILE: ../../../third_party/skia/modules/skparagraph/src/OneLineShaper.cpp
@@ -3881,8 +3884,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/bench/GrQuadBench.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/bench/CreateBackendTextureBench.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/bench/CreateBackendTextureBench.cpp
 FILE: ../../../third_party/skia/bench/GrQuadBench.cpp
 FILE: ../../../third_party/skia/experimental/skottiekit/skottiekit_bindings.cpp
 FILE: ../../../third_party/skia/gm/crbug_1041204.cpp
@@ -4617,9 +4621,6 @@ FILE: ../../../third_party/skia/docs/examples/Path_Iter_isCloseLine.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_Iter_isClosedContour.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_Iter_next.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_Iter_setPath.cpp
-FILE: ../../../third_party/skia/docs/examples/Path_RawIter_conicWeight.cpp
-FILE: ../../../third_party/skia/docs/examples/Path_RawIter_next.cpp
-FILE: ../../../third_party/skia/docs/examples/Path_RawIter_peek.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_SegmentMask.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_Verb.cpp
 FILE: ../../../third_party/skia/docs/examples/Path_addArc.cpp
@@ -5201,6 +5202,7 @@ FILE: ../../../third_party/skia/gm/strokerect_anisotropic.cpp
 FILE: ../../../third_party/skia/gm/verifiers/gmverifier.cpp
 FILE: ../../../third_party/skia/gm/verifiers/gmverifier.h
 FILE: ../../../third_party/skia/include/core/SkM44.h
+FILE: ../../../third_party/skia/modules/skottie/include/ExternalLayer.h
 FILE: ../../../third_party/skia/modules/skottie/src/Adapter.h
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.h

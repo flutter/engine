@@ -490,6 +490,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/surface_stats.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/transform.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/test_embedding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/font_collection.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/line_break_properties.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/line_breaker.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/measurement.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/paragraph.dart
@@ -558,8 +559,6 @@ FILE: ../../../flutter/runtime/service_protocol.cc
 FILE: ../../../flutter/runtime/service_protocol.h
 FILE: ../../../flutter/runtime/skia_concurrent_executor.cc
 FILE: ../../../flutter/runtime/skia_concurrent_executor.h
-FILE: ../../../flutter/runtime/start_up.cc
-FILE: ../../../flutter/runtime/start_up.h
 FILE: ../../../flutter/runtime/test_font_data.cc
 FILE: ../../../flutter/runtime/test_font_data.h
 FILE: ../../../flutter/runtime/window_data.cc
@@ -702,9 +701,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/D
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/FlutterLoader.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/ResourceCleaner.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/ResourceExtractor.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/ResourcePaths.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/FlutterPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/PluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/activity/ActivityAware.java
@@ -753,6 +750,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/PluginReg
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StandardMessageCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StandardMethodCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StringCodec.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/FlutterTextUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputConnectionAdaptor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/AccessibilityEventsDelegate.java
@@ -905,6 +903,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_messa
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/module.modulemap
@@ -1172,7 +1172,10 @@ FILE: ../../../flutter/shell/platform/glfw/platform_handler.h
 FILE: ../../../flutter/shell/platform/glfw/public/flutter_glfw.h
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
+FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger.cc
+FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_dart_project.cc
+FILE: ../../../flutter/shell/platform/linux/fl_dart_project_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_engine.cc
 FILE: ../../../flutter/shell/platform/linux/fl_engine_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_renderer.cc
@@ -1180,6 +1183,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_renderer.h
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_x11.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer_x11.h
 FILE: ../../../flutter/shell/platform/linux/fl_view.cc
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_engine.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_view.h
@@ -1219,6 +1223,8 @@ FILE: ../../../flutter/shell/platform/windows/win32_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_window.h
 FILE: ../../../flutter/shell/platform/windows/win32_window_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/window_state.h
+FILE: ../../../flutter/shell/profiling/sampling_profiler.cc
+FILE: ../../../flutter/shell/profiling/sampling_profiler.h
 FILE: ../../../flutter/shell/version/version.cc
 FILE: ../../../flutter/shell/version/version.h
 FILE: ../../../flutter/sky/packages/flutter_services/lib/empty.dart
