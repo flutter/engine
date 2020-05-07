@@ -479,13 +479,11 @@ public class FlutterView extends FrameLayout {
 
     // Status bar (top) and left/right system insets should partially obscure the content (padding).
     viewportMetrics.paddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
-    // viewportMetrics.paddingRight = insets.getSystemWindowInsetRight();
     viewportMetrics.paddingRight =
         zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
             ? 0
             : insets.getSystemWindowInsetRight();
     viewportMetrics.paddingBottom = 0;
-    // viewportMetrics.paddingLeft = insets.getSystemWindowInsetLeft();
     viewportMetrics.paddingLeft =
         zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
             ? 0
@@ -494,7 +492,6 @@ public class FlutterView extends FrameLayout {
     // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
     viewportMetrics.viewInsetTop = 0;
     viewportMetrics.viewInsetRight = 0;
-    // viewportMetrics.viewInsetBottom = insets.getSystemWindowInsetBottom();
     viewportMetrics.viewInsetBottom =
         navigationBarHidden
             ? calculateBottomKeyboardInset(insets)
