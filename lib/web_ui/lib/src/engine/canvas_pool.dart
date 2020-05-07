@@ -135,7 +135,7 @@ class _CanvasPool extends _SaveStackTracking {
     ++_activeElementCount;
 
     _context = _canvas.context2D;
-    _contextHandle = ContextStateHandle(_context);
+    _contextHandle = ContextStateHandle(this, _context);
     _initializeViewport(requiresClearRect);
     _replayClipStack();
   }
@@ -624,7 +624,7 @@ class _CanvasPool extends _SaveStackTracking {
         // alpha for the paint the path is painted in addition to the shadow,
         // which is undesirable.
         context.translate(shadow.offset.dx, shadow.offset.dy);
-        context.filter = _maskFilterToCss(
+        context.filter = _maskFilterToCanvasFilter(
             ui.MaskFilter.blur(ui.BlurStyle.normal, shadow.blurWidth));
         context.strokeStyle = '';
         context.fillStyle = solidColor;
@@ -690,8 +690,10 @@ class _CanvasPool extends _SaveStackTracking {
 // to initialize current values.
 //
 class ContextStateHandle {
-  html.CanvasRenderingContext2D context;
-  ContextStateHandle(this.context);
+  final html.CanvasRenderingContext2D context;
+  final _CanvasPool _canvasPool;
+
+  ContextStateHandle(this._canvasPool, this.context);
   ui.BlendMode _currentBlendMode = ui.BlendMode.srcOver;
   ui.StrokeCap _currentStrokeCap = ui.StrokeCap.butt;
   ui.StrokeJoin _currentStrokeJoin = ui.StrokeJoin.miter;
@@ -700,7 +702,6 @@ class ContextStateHandle {
   Object _currentFillStyle;
   Object _currentStrokeStyle;
   double _currentLineWidth = 1.0;
-  String _currentFilter = 'none';
 
   set blendMode(ui.BlendMode blendMode) {
     if (blendMode != _currentBlendMode) {
@@ -747,10 +748,94 @@ class ContextStateHandle {
     }
   }
 
-  set filter(String filter) {
-    if (_currentFilter != filter) {
-      _currentFilter = filter;
-      context.filter = filter;
+  num _shadowBlur = 0;
+  set shadowBlur(num value) {
+    if (value != _shadowBlur) {
+      context.shadowBlur = value;
+      _shadowBlur = value;
+    }
+  }
+
+  num _shadowOffsetX = 0;
+  set shadowOffsetX(num value) {
+    if (value != _shadowOffsetX) {
+      context.shadowOffsetX = value;
+      _shadowOffsetX = value;
+    }
+  }
+
+  num _shadowOffsetY = 0;
+  set shadowOffsetY(num value) {
+    if (value != _shadowOffsetY) {
+      context.shadowOffsetY = value;
+      _shadowOffsetY = value;
+    }
+  }
+
+  ui.Color _shadowColor = const ui.Color(0x00000000);
+  set shadowColor(ui.Color value) {
+    if (value != _shadowColor) {
+      context.shadowColor = colorToCssString(value);
+      _shadowColor = value;
+    }
+  }
+
+  ui.MaskFilter _currentFilter;
+
+  void paintWithMaskFilter(SurfacePaintData paint, void Function() painter) {
+    final ui.MaskFilter maskFilter = paint?.maskFilter;
+    if (browserEngine != BrowserEngine.webkit) {
+      if (_currentFilter != maskFilter) {
+        context.filter = _maskFilterToCanvasFilter(maskFilter);
+        painter();
+        _currentFilter = maskFilter;
+      }
+    } else {
+      // WebKit does not support the `filter` property. Instead we apply a
+      // shadow to the shape of the same color as the paint and the same blur
+      // as the mask filter.
+      //
+      // Note that on WebKit the cached value of _currentFilter is not useful.
+      // Instead we destructure it into the shadow properties and cache those.
+      if (maskFilter != null) {
+        context.save();
+        shadowBlur = maskFilter.webOnlySigma * 2.0;
+        if (paint?.color != null) {
+          // Shadow color must not have an alpha.
+          shadowColor = paint.color.withAlpha(255);
+        }
+
+        // On the web a shadow must always be painted together with the shape
+        // that casts it. In order to paint just the shadow, we offset the shape
+        // by a large enough value that it moved outside the canvas bounds, then
+        // offset the shadow in the opposite direction such that it lands exactly
+        // where the shape is.
+        const double kOutsideTheBoundsOffset = 10000;
+
+        context.translate(-kOutsideTheBoundsOffset, 0);
+
+        // Shadow offset is not affected by the current canvas context transform.
+        // We have to apply the transform ourselves. To do that we transform the
+        // tip of the vector from the shape to the shadow, then we transform the
+        // origin (0, 0). The desired shadow offset is the difference between the
+        // two. In vector notation, this is:
+        //
+        // transformedShadowDelta = M*shadowDelta - M*origin.
+        final Float32List tempVector = Float32List(2);
+        tempVector[0] = kOutsideTheBoundsOffset * window.devicePixelRatio;
+        _canvasPool.currentTransform.transform2(tempVector);
+        shadowOffsetX = tempVector[0];
+        shadowOffsetY = tempVector[1];
+
+        tempVector[0] = tempVector[1] = 0;
+        _canvasPool.currentTransform.transform2(tempVector);
+        shadowOffsetX = _shadowOffsetX - tempVector[0];
+        shadowOffsetY = _shadowOffsetY - tempVector[1];
+        painter();
+        context.restore();
+      } else {
+        painter();
+      }
     }
   }
 
@@ -782,8 +867,10 @@ class ContextStateHandle {
     _currentFillStyle = context.fillStyle;
     context.strokeStyle = '';
     _currentStrokeStyle = context.strokeStyle;
-    context.filter = 'none';
-    _currentFilter = 'none';
+    shadowBlur = 0;
+    shadowColor = const ui.Color(0x000000);
+    shadowOffsetX = 0;
+    shadowOffsetY = 0;
     context.globalCompositeOperation = 'source-over';
     _currentBlendMode = ui.BlendMode.srcOver;
     context.lineWidth = 1.0;

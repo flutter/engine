@@ -198,14 +198,13 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   /// Sets the global paint styles to correspond to [paint].
-  void _applyPaint(SurfacePaintData paint) {
+  void _withPaint(SurfacePaintData paint, void Function() painter) {
     ContextStateHandle contextHandle = _canvasPool.contextHandle;
     contextHandle
       ..lineWidth = paint.strokeWidth ?? 1.0
       ..blendMode = paint.blendMode
       ..strokeCap = paint.strokeCap
-      ..strokeJoin = paint.strokeJoin
-      ..filter = _maskFilterToCss(paint.maskFilter);
+      ..strokeJoin = paint.strokeJoin;
 
     if (paint.shader != null) {
       final EngineGradient engineShader = paint.shader;
@@ -221,6 +220,8 @@ class BitmapCanvas extends EngineCanvas {
       contextHandle.fillStyle = '';
       contextHandle.strokeStyle = '';
     }
+
+    contextHandle.paintWithMaskFilter(paint, painter);
   }
 
   @override
@@ -299,50 +300,58 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaintData paint) {
-    _applyPaint(paint);
-    _canvasPool.strokeLine(p1, p2);
+    _withPaint(paint, () {
+      _canvasPool.strokeLine(p1, p2);
+    });
   }
 
   @override
   void drawPaint(SurfacePaintData paint) {
-    _applyPaint(paint);
-    _canvasPool.fill();
+    _withPaint(paint, () {
+      _canvasPool.fill();
+    });
   }
 
   @override
   void drawRect(ui.Rect rect, SurfacePaintData paint) {
-    _applyPaint(paint);
-    _canvasPool.drawRect(rect, paint.style);
+    _withPaint(paint, () {
+      _canvasPool.drawRect(rect, paint.style);
+    });
   }
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    _applyPaint(paint);
-    _canvasPool.drawRRect(rrect, paint.style);
+    _withPaint(paint, () {
+      _canvasPool.drawRRect(rrect, paint.style);
+    });
   }
 
   @override
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaintData paint) {
-    _applyPaint(paint);
-    _canvasPool.drawDRRect(outer, inner, paint.style);
+    _withPaint(paint, () {
+      _canvasPool.drawDRRect(outer, inner, paint.style);
+    });
   }
 
   @override
   void drawOval(ui.Rect rect, SurfacePaintData paint) {
-    _applyPaint(paint);
-    _canvasPool.drawOval(rect, paint.style);
+    _withPaint(paint, () {
+      _canvasPool.drawOval(rect, paint.style);
+    });
   }
 
   @override
   void drawCircle(ui.Offset c, double radius, SurfacePaintData paint) {
-    _applyPaint(paint);
-    _canvasPool.drawCircle(c, radius, paint.style);
+    _withPaint(paint, () {
+      _canvasPool.drawCircle(c, radius, paint.style);
+    });
   }
 
   @override
   void drawPath(ui.Path path, SurfacePaintData paint) {
-    _applyPaint(paint);
-    _canvasPool.drawPath(path, paint.style);
+    _withPaint(paint, () {
+      _canvasPool.drawPath(path, paint.style);
+    });
   }
 
   @override
@@ -478,8 +487,8 @@ class BitmapCanvas extends EngineCanvas {
       if (requiresClipping) {
         restore();
       }
+      _closeCurrentCanvas();
     }
-    _closeCurrentCanvas();
   }
 
   void _applyTargetSize(html.HtmlElement imageElement, double targetWidth,
@@ -683,14 +692,15 @@ class BitmapCanvas extends EngineCanvas {
         ctx.font = style.cssFontString;
         _cachedLastStyle = style;
       }
-      _applyPaint(paragraph._paint.paintData);
+      _withPaint(paragraph._paint.paintData, () {
+        double y = offset.dy + paragraph.alphabeticBaseline;
+        final int len = lines.length;
+        for (int i = 0; i < len; i++) {
+          _drawTextLine(style, lines[i], offset.dx, y);
+          y += paragraph._lineHeight;
+        }
+      });
 
-      double y = offset.dy + paragraph.alphabeticBaseline;
-      final int len = lines.length;
-      for (int i = 0; i < len; i++) {
-        _drawTextLine(style, lines[i], offset.dx, y);
-        y += paragraph._lineHeight;
-      }
       return;
     }
 
@@ -777,15 +787,16 @@ class BitmapCanvas extends EngineCanvas {
       ..lineWidth = strokeWidth
       ..blendMode = ui.BlendMode.srcOver
       ..strokeCap = ui.StrokeCap.round
-      ..strokeJoin = ui.StrokeJoin.round
-      ..filter = '';
+      ..strokeJoin = ui.StrokeJoin.round;
     final String cssColor = colorToCssString(color);
     if (pointMode == ui.PointMode.points) {
       contextHandle.fillStyle = cssColor;
     } else {
       contextHandle.strokeStyle = cssColor;
     }
-    _canvasPool.drawPoints(pointMode, points, strokeWidth / 2.0);
+    contextHandle.paintWithMaskFilter(null, () {
+      _canvasPool.drawPoints(pointMode, points, strokeWidth / 2.0);
+    });
   }
 
   @override
@@ -969,11 +980,19 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
   return <html.Element>[root]..addAll(clipDefs);
 }
 
-String _maskFilterToCss(ui.MaskFilter maskFilter) {
-  if (maskFilter == null) {
+/// Converts a [maskFilter] to the value to be used on a `<canvas>`.
+///
+/// Only supported in non-WebKit browsers.
+String _maskFilterToCanvasFilter(ui.MaskFilter maskFilter) {
+  assert(
+    browserEngine != BrowserEngine.webkit,
+    'WebKit (Safari) does not support `filter` canvas property.',
+  );
+  if (maskFilter != null) {
+    return 'blur(${maskFilter.webOnlySigma}px)';
+  } else {
     return 'none';
   }
-  return 'blur(${maskFilter.webOnlySigma}px)';
 }
 
 int _filterIdCounter = 0;
