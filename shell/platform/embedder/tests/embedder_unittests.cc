@@ -4241,11 +4241,11 @@ TEST_F(EmbedderTest, InvalidAOTDataSourcesMustReturnError) {
   ASSERT_EQ(data_in.elf_path, "");
   ASSERT_EQ(data_out, nullptr);
 
-  // Could not read ELF file.
-  data_in.elf_path = "/dev/null";
+  // Could not find VM snapshot data.
+  data_in.elf_path = "/bin/true";
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
   ASSERT_EQ(data_in.type, kFlutterEngineAOTDataSourceTypeElfPath);
-  ASSERT_EQ(data_in.elf_path, "/dev/null");
+  ASSERT_EQ(data_in.elf_path, "/bin/true");
   ASSERT_EQ(data_out, nullptr);
 }
 
