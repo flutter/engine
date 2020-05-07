@@ -857,12 +857,12 @@ FlutterDesktopEngineRef FlutterDesktopGetEngine(
 }
 
 FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
-    FlutterDesktopWindowControllerRef controller,
+    FlutterDesktopEngineRef engine,
     const char* plugin_name) {
   // Currently, one registrar acts as the registrar for all plugins, so the
   // name is ignored. It is part of the API to reduce churn in the future when
   // aligning more closely with the Flutter registrar system.
-  return controller->engine->plugin_registrar.get();
+  return engine->plugin_registrar.get();
 }
 
 FlutterDesktopEngineRef FlutterDesktopRunEngine(

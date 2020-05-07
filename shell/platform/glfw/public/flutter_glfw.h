@@ -130,7 +130,7 @@ FlutterDesktopGetEngine(FlutterDesktopWindowControllerRef controller);
 //
 // The name must be unique across the application.
 FLUTTER_EXPORT FlutterDesktopPluginRegistrarRef
-FlutterDesktopGetPluginRegistrar(FlutterDesktopWindowControllerRef controller,
+FlutterDesktopGetPluginRegistrar(FlutterDesktopEngineRef engine,
                                  const char* plugin_name);
 
 // Enables or disables hover tracking.
