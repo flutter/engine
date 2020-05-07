@@ -383,7 +383,7 @@ public class FlutterView extends FrameLayout {
     sendViewportMetricsToFlutter();
   }
 
-  // TODO(garyq): Add support for notch cutout API
+  // TODO(garyq): Add support for notch cutout API: https://github.com/flutter/flutter/issues/56592
   // Decide if we want to zero the padding of the sides. When in Landscape orientation,
   // android may decide to place the software navigation bars on the side. When the nav
   // bar is hidden, the reported insets should be removed to prevent extra useless space
