@@ -981,8 +981,8 @@ typedef struct _FlutterEngineAOTData* FlutterEngineAOTData;
 //------------------------------------------------------------------------------
 /// @brief      Creates the necessary data structures to launch a Flutter Dart
 ///             application in AOT mode. The data may only be collected after
-///             the FlutterEngine instance launched using this data is shut
-///             down.
+///             all FlutterEngine instances launched using this data have been
+///             terminated.
 ///
 /// @param[in]  source    The source of the AOT data.
 /// @param[out] data_out  The AOT data on success. Unchanged on failure.
@@ -997,8 +997,11 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 //------------------------------------------------------------------------------
 /// @brief      Collects the AOT data.
 ///
-/// @warning    The embedder must ensure that this call is made only after the
-///             FlutterEngine instance launched using this data is shut down.
+/// @warning    The embedder must ensure that this call is made only after all
+///             FlutterEngine instances launched using this data have been
+///             terminated, and that all of those instances were launched with
+///             the FlutterProjectArgs::shutdown_dart_vm_when_done flag set to
+///             true.
 ///
 /// @param[in]  data   The data to collect.
 ///
