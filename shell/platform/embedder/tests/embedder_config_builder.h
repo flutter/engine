@@ -31,14 +31,15 @@ using UniqueEngine = fml::UniqueObject<FlutterEngine, UniqueEngineTraits>;
 class EmbedderConfigBuilder {
  public:
   enum class InitializationPreference {
-    kInitialize,
+    kSnapshotsInitialize,
+    kAOTDataInitialize,
     kMultiAOTInitialize,
     kNoInitialize,
   };
 
   EmbedderConfigBuilder(EmbedderTestContext& context,
                         InitializationPreference preference =
-                            InitializationPreference::kInitialize);
+                            InitializationPreference::kSnapshotsInitialize);
 
   ~EmbedderConfigBuilder();
 

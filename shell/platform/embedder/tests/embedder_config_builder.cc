@@ -82,12 +82,13 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     SetSemanticsCallbackHooks();
     AddCommandLineArgument("--disable-observatory");
 
-    if (DartVM::IsRunningPrecompiledCode()) {
-      SetAotDataElf();
-    }
-    if (!DartVM::IsRunningPrecompiledCode() ||
+    if (preference == InitializationPreference::kSnapshotsInitialize ||
         preference == InitializationPreference::kMultiAOTInitialize) {
       SetSnapshots();
+    }
+    if (preference == InitializationPreference::kAOTDataInitialize ||
+        preference == InitializationPreference::kMultiAOTInitialize) {
+      SetAotDataElf();
     }
   }
 }

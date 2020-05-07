@@ -4301,7 +4301,9 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
   fml::AutoResetWaitableEvent latch;
   context.AddIsolateCreateCallback([&latch]() { latch.Signal(); });
 
-  EmbedderConfigBuilder builder(context);
+  EmbedderConfigBuilder builder(
+      context,
+      EmbedderConfigBuilder::InitializationPreference::kAOTDataInitialize);
 
   builder.SetSoftwareRendererConfig();
 
