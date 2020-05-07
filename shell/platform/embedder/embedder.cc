@@ -533,7 +533,7 @@ struct _FlutterPlatformMessageResponseHandle {
   fml::RefPtr<flutter::PlatformMessage> message;
 };
 
-struct LoadedELFDeleter {
+struct LoadedElfDeleter {
   void operator()(Dart_LoadedElf* elf) {
     if (elf) {
       ::Dart_UnloadELF(elf);
@@ -541,10 +541,10 @@ struct LoadedELFDeleter {
   }
 };
 
-using UniqueLoadedELF = std::unique_ptr<Dart_LoadedElf, LoadedELFDeleter>;
+using UniqueLoadedElf = std::unique_ptr<Dart_LoadedElf, LoadedElfDeleter>;
 
 struct _FlutterEngineAOTData {
-  UniqueLoadedELF loaded_elf = nullptr;
+  UniqueLoadedElf loaded_elf = nullptr;
   const uint8_t* vm_snapshot_data = nullptr;
   const uint8_t* vm_snapshot_instrs = nullptr;
   const uint8_t* vm_isolate_data = nullptr;
