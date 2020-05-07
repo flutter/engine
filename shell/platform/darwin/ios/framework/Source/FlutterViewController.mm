@@ -512,7 +512,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   }
 
   FML_DCHECK([_engine.get() viewController] == self)
-      << "FlutterViewController shown but is not attached to a FlutterEngine";
+      << "FlutterViewController's view is loaded but is not attached to a FlutterEngine";
   [_engine.get() attachView];
 
   [super viewDidLoad];
