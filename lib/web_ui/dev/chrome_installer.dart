@@ -162,6 +162,16 @@ class ChromeInstaller {
   final io.Directory versionDir;
 
   bool get isInstalled {
+    if (versionDir.existsSync()) {
+      print('version dir exits: ${versionDir.path.toString()}');
+      final String chromeexecutable = PlatformBinding.instance.getChromeExecutablePath(versionDir);
+      print('chromeexecutable dir : ${chromeexecutable}');
+      io.File chrome = io.File(chromeexecutable);
+      if(chrome.existsSync()) {
+        print('chrome found');
+      }
+    }
+
     return versionDir.existsSync();
   }
 
@@ -178,11 +188,18 @@ class ChromeInstaller {
 
   Future<void> install() async {
     if (versionDir.existsSync()) {
-      versionDir.deleteSync(recursive: true);
+      print('version dir exits: ${versionDir.path.toString()}'); 
+      final String chromeexecutable = PlatformBinding.instance.getChromeExecutablePath(versionDir); 
+      print('chromeexecutable dir : ${chromeexecutable}'); 
+      io.File chrome = io.File(chromeexecutable); 
+      if(chrome.existsSync()) { 
+        print('chrome found'); 
+      }
     }
 
     versionDir.createSync(recursive: true);
     final String url = PlatformBinding.instance.getChromeDownloadUrl(version);
+    print('urlchromedownload: $url');
     final StreamedResponse download = await client.send(Request(
       'GET',
       Uri.parse(url),
