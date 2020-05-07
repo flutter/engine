@@ -4223,6 +4223,7 @@ TEST_F(EmbedderTest, InvalidAOTDataSourcesMustReturnError) {
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, nullptr), kInvalidArguments);
 
   // Invalid FlutterEngineAOTDataSourceType type specified.
+  data_in.type = FlutterEngineAOTDataSourceType(-1);
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
   ASSERT_EQ(data_out, nullptr);
 
