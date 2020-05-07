@@ -88,7 +88,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     }
     if (preference == InitializationPreference::kAOTDataInitialize ||
         preference == InitializationPreference::kMultiAOTInitialize) {
-      SetAotDataElf();
+      SetAOTDataElf();
     }
   }
 }
@@ -141,7 +141,7 @@ void EmbedderConfigBuilder::SetSnapshots() {
   }
 }
 
-void EmbedderConfigBuilder::SetAotDataElf() {
+void EmbedderConfigBuilder::SetAOTDataElf() {
   project_args_.aot_data = context_.GetAOTData();
 }
 

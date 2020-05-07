@@ -53,7 +53,7 @@ class EmbedderConfigBuilder {
 
   void SetSnapshots();
 
-  void SetAotDataElf();
+  void SetAOTDataElf();
 
   void SetIsolateCreateCallbackHook();
 
