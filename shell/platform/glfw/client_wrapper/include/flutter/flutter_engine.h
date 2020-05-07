@@ -47,8 +47,12 @@ class FlutterEngine : public PluginRegistry {
       const std::string& plugin_name) override;
 
  private:
+  using UniqueEnginePtr = std::unique_ptr<FlutterDesktopEngineState,
+                                          bool (*)(FlutterDesktopEngineState*)>;
+
   // Handle for interacting with the C API's engine reference.
-  FlutterDesktopEngineRef engine_ = nullptr;
+  UniqueEnginePtr engine_ =
+      UniqueEnginePtr(nullptr, FlutterDesktopShutDownEngine);
 };
 
 }  // namespace flutter

@@ -11,9 +11,7 @@ namespace flutter {
 
 FlutterEngine::FlutterEngine() {}
 
-FlutterEngine::~FlutterEngine() {
-  ShutDown();
-}
+FlutterEngine::~FlutterEngine() {}
 
 bool FlutterEngine::Start(const std::string& icu_data_path,
                           const std::string& assets_path,
@@ -37,7 +35,8 @@ bool FlutterEngine::Start(const std::string& icu_data_path,
     c_engine_properties.switches_count = engine_switches.size();
   }
 
-  engine_ = FlutterDesktopRunEngine(c_engine_properties);
+  engine_ = UniqueEnginePtr(FlutterDesktopRunEngine(c_engine_properties),
+                            FlutterDesktopShutDownEngine);
   if (!engine_) {
     std::cerr << "Failed to start engine." << std::endl;
     return false;
@@ -46,10 +45,7 @@ bool FlutterEngine::Start(const std::string& icu_data_path,
 }
 
 void FlutterEngine::ShutDown() {
-  if (engine_) {
-    FlutterDesktopShutDownEngine(engine_);
-    engine_ = nullptr;
-  }
+  engine_ = nullptr;
 }
 
 FlutterDesktopPluginRegistrarRef FlutterEngine::GetRegistrarForPlugin(
@@ -60,7 +56,7 @@ FlutterDesktopPluginRegistrarRef FlutterEngine::GetRegistrarForPlugin(
               << std::endl;
     return nullptr;
   }
-  return FlutterDesktopGetPluginRegistrar(engine_, plugin_name.c_str());
+  return FlutterDesktopGetPluginRegistrar(engine_.get(), plugin_name.c_str());
 }
 
 void FlutterEngine::RunEventLoopWithTimeout(std::chrono::milliseconds timeout) {
@@ -79,7 +75,8 @@ void FlutterEngine::RunEventLoopWithTimeout(std::chrono::milliseconds timeout) {
   } else {
     timeout_milliseconds = static_cast<uint32_t>(timeout.count());
   }
-  FlutterDesktopRunEngineEventLoopWithTimeout(engine_, timeout_milliseconds);
+  FlutterDesktopRunEngineEventLoopWithTimeout(engine_.get(),
+                                              timeout_milliseconds);
 }
 
 }  // namespace flutter
