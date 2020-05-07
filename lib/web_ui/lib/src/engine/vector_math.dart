@@ -180,6 +180,30 @@ class Matrix4 {
     _m4storage[0] = arg0;
   }
 
+  /// Sets the entire matrix to the column values.
+  void setColumns(Vector4 arg0, Vector4 arg1, Vector4 arg2, Vector4 arg3) {
+    final Float64List arg0Storage = arg0._v4storage;
+    final Float64List arg1Storage = arg1._v4storage;
+    final Float64List arg2Storage = arg2._v4storage;
+    final Float64List arg3Storage = arg3._v4storage;
+    _m4storage[0] = arg0Storage[0];
+    _m4storage[1] = arg0Storage[1];
+    _m4storage[2] = arg0Storage[2];
+    _m4storage[3] = arg0Storage[3];
+    _m4storage[4] = arg1Storage[0];
+    _m4storage[5] = arg1Storage[1];
+    _m4storage[6] = arg1Storage[2];
+    _m4storage[7] = arg1Storage[3];
+    _m4storage[8] = arg2Storage[0];
+    _m4storage[9] = arg2Storage[1];
+    _m4storage[10] = arg2Storage[2];
+    _m4storage[11] = arg2Storage[3];
+    _m4storage[12] = arg3Storage[0];
+    _m4storage[13] = arg3Storage[1];
+    _m4storage[14] = arg3Storage[2];
+    _m4storage[15] = arg3Storage[3];
+  }
+
   /// Sets the entire matrix to the matrix in [arg].
   void setFrom(Matrix4 arg) {
     final Float64List argStorage = arg._m4storage;
@@ -1397,4 +1421,468 @@ class Vector3 {
   double get x => _v3storage[0];
   double get y => _v3storage[1];
   double get z => _v3storage[2];
+}
+
+/// 4D column vector.
+class Vector4 {
+  final Float64List _v4storage;
+
+  /// Set the values of [result] to the minimum of [a] and [b] for each line.
+  static void min(Vector4 a, Vector4 b, Vector4 result) {
+    result
+      ..x = math.min(a.x, b.x)
+      ..y = math.min(a.y, b.y)
+      ..z = math.min(a.z, b.z)
+      ..w = math.min(a.w, b.w);
+  }
+
+  /// Set the values of [result] to the maximum of [a] and [b] for each line.
+  static void max(Vector4 a, Vector4 b, Vector4 result) {
+    result
+      ..x = math.max(a.x, b.x)
+      ..y = math.max(a.y, b.y)
+      ..z = math.max(a.z, b.z)
+      ..w = math.max(a.w, b.w);
+  }
+
+  /// Interpolate between [min] and [max] with the amount of [a] using a linear
+  /// interpolation and store the values in [result].
+  static void mix(Vector4 min, Vector4 max, double a, Vector4 result) {
+    result
+      ..x = min.x + a * (max.x - min.x)
+      ..y = min.y + a * (max.y - min.y)
+      ..z = min.z + a * (max.z - min.z)
+      ..w = min.w + a * (max.w - min.w);
+  }
+
+  /// The components of the vector.
+  @override
+  Float64List get storage => _v4storage;
+
+  /// Construct a new vector with the specified values.
+  factory Vector4(double x, double y, double z, double w) =>
+      Vector4.zero()..setValues(x, y, z, w);
+
+  /// Initialized with values from [array] starting at [offset].
+  factory Vector4.array(List<double> array, [int offset = 0]) =>
+      Vector4.zero()..copyFromArray(array, offset);
+
+  /// Zero vector.
+  Vector4.zero() : _v4storage = Float64List(4);
+
+  /// Constructs the identity vector.
+  factory Vector4.identity() => Vector4.zero()..setIdentity();
+
+  /// Splat [value] into all lanes of the vector.
+  factory Vector4.all(double value) => Vector4.zero()..splat(value);
+
+  /// Copy of [other].
+  factory Vector4.copy(Vector4 other) => Vector4.zero()..setFrom(other);
+
+  /// Constructs Vector4 with given Float64List as [storage].
+  Vector4.fromFloat64List(this._v4storage);
+
+  /// Constructs Vector4 with a [storage] that views given [buffer] starting at
+  /// [offset]. [offset] has to be multiple of [Float64List.bytesPerElement].
+  Vector4.fromBuffer(ByteBuffer buffer, int offset)
+      : _v4storage = Float64List.view(buffer, offset, 4);
+
+  /// Generate random vector in the range (0, 0, 0, 0) to (1, 1, 1, 1). You can
+  /// optionally pass your own random number generator.
+  factory Vector4.random([math.Random rng]) {
+    rng ??= math.Random();
+    return Vector4(
+        rng.nextDouble(), rng.nextDouble(), rng.nextDouble(), rng.nextDouble());
+  }
+
+  /// Set the values of the vector.
+  void setValues(double x_, double y_, double z_, double w_) {
+    _v4storage[3] = w_;
+    _v4storage[2] = z_;
+    _v4storage[1] = y_;
+    _v4storage[0] = x_;
+  }
+
+  /// Zero the vector.
+  void setZero() {
+    _v4storage[0] = 0.0;
+    _v4storage[1] = 0.0;
+    _v4storage[2] = 0.0;
+    _v4storage[3] = 0.0;
+  }
+
+  /// Set to the identity vector.
+  void setIdentity() {
+    _v4storage[0] = 0.0;
+    _v4storage[1] = 0.0;
+    _v4storage[2] = 0.0;
+    _v4storage[3] = 1.0;
+  }
+
+  /// Set the values by copying them from [other].
+  void setFrom(Vector4 other) {
+    final Float64List otherStorage = other._v4storage;
+    _v4storage[3] = otherStorage[3];
+    _v4storage[2] = otherStorage[2];
+    _v4storage[1] = otherStorage[1];
+    _v4storage[0] = otherStorage[0];
+  }
+
+  /// Splat [arg] into all lanes of the vector.
+  void splat(double arg) {
+    _v4storage[3] = arg;
+    _v4storage[2] = arg;
+    _v4storage[1] = arg;
+    _v4storage[0] = arg;
+  }
+
+  /// Returns a printable string
+  @override
+  String toString() => '${_v4storage[0]},${_v4storage[1]},'
+      '${_v4storage[2]},${_v4storage[3]}';
+
+  /// Check if two vectors are the same.
+  @override
+  bool operator ==(Object other) =>
+      (other is Vector4) &&
+          (_v4storage[0] == other._v4storage[0]) &&
+          (_v4storage[1] == other._v4storage[1]) &&
+          (_v4storage[2] == other._v4storage[2]) &&
+          (_v4storage[3] == other._v4storage[3]);
+
+  /// Negate.
+  Vector4 operator -() => clone()..negate();
+
+  /// Subtract two vectors.
+  Vector4 operator -(Vector4 other) => clone()..sub(other);
+
+  /// Add two vectors.
+  Vector4 operator +(Vector4 other) => clone()..add(other);
+
+  /// Scale.
+  Vector4 operator /(double scale) => clone()..scale(1.0 / scale);
+
+  /// Scale.
+  Vector4 operator *(double scale) => clone()..scale(scale);
+
+  /// Access the component of the vector at the index [i].
+  double operator [](int i) => _v4storage[i];
+
+  /// Set the component of the vector at the index [i].
+  void operator []=(int i, double v) {
+    _v4storage[i] = v;
+  }
+
+  /// Set the length of the vector. A negative [value] will change the vectors
+  /// orientation and a [value] of zero will set the vector to zero.
+  set length(double value) {
+    if (value == 0.0) {
+      setZero();
+    } else {
+      var l = length;
+      if (l == 0.0) {
+        return;
+      }
+      l = value / l;
+      _v4storage[0] *= l;
+      _v4storage[1] *= l;
+      _v4storage[2] *= l;
+      _v4storage[3] *= l;
+    }
+  }
+
+  /// Length.
+  double get length => math.sqrt(length2);
+
+  /// Length squared.
+  double get length2 {
+    double sum;
+    sum = _v4storage[0] * _v4storage[0];
+    sum += _v4storage[1] * _v4storage[1];
+    sum += _v4storage[2] * _v4storage[2];
+    sum += _v4storage[3] * _v4storage[3];
+    return sum;
+  }
+
+  /// Normalizes this.
+  double normalize() {
+    final double l = length;
+    if (l == 0.0) {
+      return 0.0;
+    }
+    final double d = 1.0 / l;
+    _v4storage[0] *= d;
+    _v4storage[1] *= d;
+    _v4storage[2] *= d;
+    _v4storage[3] *= d;
+    return l;
+  }
+
+  /// Normalizes this. Returns length of vector before normalization.
+  /// DEPRCATED: Use [normalize].
+  @Deprecated('Use normalize() insteaed.')
+  double normalizeLength() => normalize();
+
+  /// Normalizes copy of this.
+  Vector4 normalized() => clone()..normalize();
+
+  /// Normalize vector into [out].
+  Vector4 normalizeInto(Vector4 out) {
+    out
+      ..setFrom(this)
+      ..normalize();
+    return out;
+  }
+
+  /// Distance from this to [arg]
+  double distanceTo(Vector4 arg) => math.sqrt(distanceToSquared(arg));
+
+  /// Squared distance from this to [arg]
+  double distanceToSquared(Vector4 arg) {
+    final Float64List argStorage = arg._v4storage;
+    final double dx = _v4storage[0] - argStorage[0];
+    final double dy = _v4storage[1] - argStorage[1];
+    final double dz = _v4storage[2] - argStorage[2];
+    final double dw = _v4storage[3] - argStorage[3];
+
+    return dx * dx + dy * dy + dz * dz + dw * dw;
+  }
+
+  /// Inner product.
+  double dot(Vector4 other) {
+    final Float64List otherStorage = other._v4storage;
+    double sum;
+    sum = _v4storage[0] * otherStorage[0];
+    sum += _v4storage[1] * otherStorage[1];
+    sum += _v4storage[2] * otherStorage[2];
+    sum += _v4storage[3] * otherStorage[3];
+    return sum;
+  }
+
+  /// Multiplies this by [arg].
+  void applyMatrix4(Matrix4 arg) {
+    final double v1 = _v4storage[0];
+    final double v2 = _v4storage[1];
+    final double v3 = _v4storage[2];
+    final double v4 = _v4storage[3];
+    final Float64List argStorage = arg.storage;
+    _v4storage[0] = argStorage[0] * v1 +
+        argStorage[4] * v2 +
+        argStorage[8] * v3 +
+        argStorage[12] * v4;
+    _v4storage[1] = argStorage[1] * v1 +
+        argStorage[5] * v2 +
+        argStorage[9] * v3 +
+        argStorage[13] * v4;
+    _v4storage[2] = argStorage[2] * v1 +
+        argStorage[6] * v2 +
+        argStorage[10] * v3 +
+        argStorage[14] * v4;
+    _v4storage[3] = argStorage[3] * v1 +
+        argStorage[7] * v2 +
+        argStorage[11] * v3 +
+        argStorage[15] * v4;
+  }
+
+  /// Relative error between this and [correct]
+  double relativeError(Vector4 correct) {
+    final double correct_norm = correct.length;
+    final double diff_norm = (this - correct).length;
+    return diff_norm / correct_norm;
+  }
+
+  /// Absolute error between this and [correct]
+  double absoluteError(Vector4 correct) => (this - correct).length;
+
+  /// True if any component is infinite.
+  bool get isInfinite {
+    var is_infinite = false;
+    is_infinite = is_infinite || _v4storage[0].isInfinite;
+    is_infinite = is_infinite || _v4storage[1].isInfinite;
+    is_infinite = is_infinite || _v4storage[2].isInfinite;
+    is_infinite = is_infinite || _v4storage[3].isInfinite;
+    return is_infinite;
+  }
+
+  /// True if any component is NaN.
+  bool get isNaN {
+    var is_nan = false;
+    is_nan = is_nan || _v4storage[0].isNaN;
+    is_nan = is_nan || _v4storage[1].isNaN;
+    is_nan = is_nan || _v4storage[2].isNaN;
+    is_nan = is_nan || _v4storage[3].isNaN;
+    return is_nan;
+  }
+
+  void add(Vector4 arg) {
+    final Float64List argStorage = arg._v4storage;
+    _v4storage[0] = _v4storage[0] + argStorage[0];
+    _v4storage[1] = _v4storage[1] + argStorage[1];
+    _v4storage[2] = _v4storage[2] + argStorage[2];
+    _v4storage[3] = _v4storage[3] + argStorage[3];
+  }
+
+  /// Add [arg] scaled by [factor] to this.
+  void addScaled(Vector4 arg, double factor) {
+    final Float64List argStorage = arg._v4storage;
+    _v4storage[0] = _v4storage[0] + argStorage[0] * factor;
+    _v4storage[1] = _v4storage[1] + argStorage[1] * factor;
+    _v4storage[2] = _v4storage[2] + argStorage[2] * factor;
+    _v4storage[3] = _v4storage[3] + argStorage[3] * factor;
+  }
+
+  /// Subtract [arg] from this.
+  void sub(Vector4 arg) {
+    final Float64List argStorage = arg._v4storage;
+    _v4storage[0] = _v4storage[0] - argStorage[0];
+    _v4storage[1] = _v4storage[1] - argStorage[1];
+    _v4storage[2] = _v4storage[2] - argStorage[2];
+    _v4storage[3] = _v4storage[3] - argStorage[3];
+  }
+
+  /// Multiply this by [arg].
+  void multiply(Vector4 arg) {
+    final Float64List argStorage = arg._v4storage;
+    _v4storage[0] = _v4storage[0] * argStorage[0];
+    _v4storage[1] = _v4storage[1] * argStorage[1];
+    _v4storage[2] = _v4storage[2] * argStorage[2];
+    _v4storage[3] = _v4storage[3] * argStorage[3];
+  }
+
+  /// Divide this by [arg].
+  void div(Vector4 arg) {
+    final Float64List argStorage = arg._v4storage;
+    _v4storage[0] = _v4storage[0] / argStorage[0];
+    _v4storage[1] = _v4storage[1] / argStorage[1];
+    _v4storage[2] = _v4storage[2] / argStorage[2];
+    _v4storage[3] = _v4storage[3] / argStorage[3];
+  }
+
+  /// Scale this by [arg].
+  void scale(double arg) {
+    _v4storage[0] = _v4storage[0] * arg;
+    _v4storage[1] = _v4storage[1] * arg;
+    _v4storage[2] = _v4storage[2] * arg;
+    _v4storage[3] = _v4storage[3] * arg;
+  }
+
+  /// Create a copy of this scaled by [arg].
+  Vector4 scaled(double arg) => clone()..scale(arg);
+
+  /// Negate this.
+  void negate() {
+    _v4storage[0] = -_v4storage[0];
+    _v4storage[1] = -_v4storage[1];
+    _v4storage[2] = -_v4storage[2];
+    _v4storage[3] = -_v4storage[3];
+  }
+
+  /// Set this to the absolute.
+  void absolute() {
+    _v4storage[3] = _v4storage[3].abs();
+    _v4storage[2] = _v4storage[2].abs();
+    _v4storage[1] = _v4storage[1].abs();
+    _v4storage[0] = _v4storage[0].abs();
+  }
+
+  /// Clamp each entry n in this in the range [min[n]]-[max[n]].
+  void clamp(Vector4 min, Vector4 max) {
+    final Float64List minStorage = min.storage;
+    final Float64List maxStorage = max.storage;
+    _v4storage[0] =
+        _v4storage[0].clamp(minStorage[0], maxStorage[0]).toDouble();
+    _v4storage[1] =
+        _v4storage[1].clamp(minStorage[1], maxStorage[1]).toDouble();
+    _v4storage[2] =
+        _v4storage[2].clamp(minStorage[2], maxStorage[2]).toDouble();
+    _v4storage[3] =
+        _v4storage[3].clamp(minStorage[3], maxStorage[3]).toDouble();
+  }
+
+  /// Clamp entries in this in the range [min]-[max].
+  void clampScalar(double min, double max) {
+    _v4storage[0] = _v4storage[0].clamp(min, max).toDouble();
+    _v4storage[1] = _v4storage[1].clamp(min, max).toDouble();
+    _v4storage[2] = _v4storage[2].clamp(min, max).toDouble();
+    _v4storage[3] = _v4storage[3].clamp(min, max).toDouble();
+  }
+
+  /// Floor entries in this.
+  void floor() {
+    _v4storage[0] = _v4storage[0].floorToDouble();
+    _v4storage[1] = _v4storage[1].floorToDouble();
+    _v4storage[2] = _v4storage[2].floorToDouble();
+    _v4storage[3] = _v4storage[3].floorToDouble();
+  }
+
+  /// Ceil entries in this.
+  void ceil() {
+    _v4storage[0] = _v4storage[0].ceilToDouble();
+    _v4storage[1] = _v4storage[1].ceilToDouble();
+    _v4storage[2] = _v4storage[2].ceilToDouble();
+    _v4storage[3] = _v4storage[3].ceilToDouble();
+  }
+
+  /// Round entries in this.
+  void round() {
+    _v4storage[0] = _v4storage[0].roundToDouble();
+    _v4storage[1] = _v4storage[1].roundToDouble();
+    _v4storage[2] = _v4storage[2].roundToDouble();
+    _v4storage[3] = _v4storage[3].roundToDouble();
+  }
+
+  /// Round entries in this towards zero.
+  void roundToZero() {
+    _v4storage[0] = _v4storage[0] < 0.0
+        ? _v4storage[0].ceilToDouble()
+        : _v4storage[0].floorToDouble();
+    _v4storage[1] = _v4storage[1] < 0.0
+        ? _v4storage[1].ceilToDouble()
+        : _v4storage[1].floorToDouble();
+    _v4storage[2] = _v4storage[2] < 0.0
+        ? _v4storage[2].ceilToDouble()
+        : _v4storage[2].floorToDouble();
+    _v4storage[3] = _v4storage[3] < 0.0
+        ? _v4storage[3].ceilToDouble()
+        : _v4storage[3].floorToDouble();
+  }
+
+  /// Create a copy of this.
+  Vector4 clone() => Vector4.copy(this);
+
+  /// Copy this
+  Vector4 copyInto(Vector4 arg) {
+    final Float64List argStorage = arg._v4storage;
+    argStorage[0] = _v4storage[0];
+    argStorage[1] = _v4storage[1];
+    argStorage[2] = _v4storage[2];
+    argStorage[3] = _v4storage[3];
+    return arg;
+  }
+
+  /// Copies this into [array] starting at [offset].
+  void copyIntoArray(List<double> array, [int offset = 0]) {
+    array[offset + 0] = _v4storage[0];
+    array[offset + 1] = _v4storage[1];
+    array[offset + 2] = _v4storage[2];
+    array[offset + 3] = _v4storage[3];
+  }
+
+  /// Copies elements from [array] into this starting at [offset].
+  void copyFromArray(List<double> array, [int offset = 0]) {
+    _v4storage[0] = array[offset + 0];
+    _v4storage[1] = array[offset + 1];
+    _v4storage[2] = array[offset + 2];
+    _v4storage[3] = array[offset + 3];
+  }
+
+  set x(double arg) => _v4storage[0] = arg;
+  set y(double arg) => _v4storage[1] = arg;
+  set z(double arg) => _v4storage[2] = arg;
+  set w(double arg) => _v4storage[3] = arg;
+
+  double get x => _v4storage[0];
+  double get y => _v4storage[1];
+  double get z => _v4storage[2];
+  double get w => _v4storage[3];
 }

@@ -173,9 +173,13 @@ class Vertices {
   }
 
   VertexMode get mode => _mode;
+
   Int32List get colors => _colors;
+
   Float32List get positions => _positions;
+
   Float32List get textureCoordinates => _textureCoordinates;
+
   Uint16List get indices => _indices;
 }
 
@@ -1001,7 +1005,53 @@ class Canvas {
     }
 
     // TODO(het): Do we need to support this?
-    throw UnimplementedError();
+    final src = Rect.fromLTWH(
+      0,
+      0,
+      atlas.width.toDouble(),
+      atlas.height.toDouble(),
+    );
+
+    for (int i = 0; i < rectCount; ++i) {
+      RSTransform transform = transforms[i];
+      Rect rect = rects[i];
+      Color color = colors[i];
+
+      this.save();
+
+      // a c 0 e
+      // b d 0 f
+      // 0 0 1 0
+      // 0 0 0 1
+      //  [scale-x    skew-x      trans-x]   [X]   [X']
+      //  [skew-y     scale-y     trans-y] * [Y] = [Y']
+      //  [persp-0    persp-1     persp-2]   [1]   [1 ]
+      // github.com/google/skia@f4c66cc/-/blob/src/core/SkMatrix.cpp#L217
+
+      paint.blendMode = blendMode;
+      paint.color = color;
+      print(colors.length);
+//      paint.shader = Gradient.sweep(rect.center, colors);
+
+      engine.Matrix4 matrix4 = engine.Matrix4.identity()
+        ..setColumns(
+          engine.Vector4(transform.scos, transform.ssin, 0, 0),
+          engine.Vector4(-transform.ssin, transform.scos, 0, 0),
+          engine.Vector4(0, 0, 1, 0),
+          engine.Vector4(transform.tx, transform.ty, 0, 1),
+        );
+
+      this.transform(matrix4.storage);
+
+      this.drawImageRect(
+        atlas,
+        src,
+        rect,
+        paint,
+      );
+
+      this.restore();
+    }
   }
 
   /// Draws part of an image - the [atlas] - onto the canvas.
