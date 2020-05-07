@@ -5,7 +5,6 @@
 // @dart = 2.6
 part of engine;
 
-
 /// Provides mouse cursor bindings, such as the `flutter/mousecursor` channel.
 class MouseCursor {
   /// Initializes the [MouseCursor] singleton.
@@ -19,12 +18,11 @@ class MouseCursor {
   static MouseCursor get instance => _instance;
   static MouseCursor _instance;
 
-  MouseCursor._() {
-  }
+  MouseCursor._() {}
 
   static String _mapShapeCodeToCssValue(int shapeCode) {
     // Shape codes are hard-coded identifiers for system cursors.
-    // 
+    //
     // The shape code values must be kept in sync with flutter's
     // rendering/mouse_cursor.dart
     switch (shapeCode) {
