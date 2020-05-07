@@ -1016,6 +1016,7 @@ class Canvas {
       RSTransform transform = transforms[i];
       Rect rect = rects[i];
       Color color = colors[i];
+      assert(engine.rectIsValid(rect));
 
       this.save();
 
@@ -1030,8 +1031,6 @@ class Canvas {
 
       paint.blendMode = blendMode;
       paint.color = color;
-      print(colors.length);
-//      paint.shader = Gradient.sweep(rect.center, colors);
 
       engine.Matrix4 matrix4 = engine.Matrix4.identity()
         ..setColumns(
