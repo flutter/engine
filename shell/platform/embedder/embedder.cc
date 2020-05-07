@@ -591,7 +591,7 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 
       *data_out = aot_data.release();
       return kSuccess;
-    } break;
+    }
   }
 
   return LOG_EMBEDDER_ERROR(
