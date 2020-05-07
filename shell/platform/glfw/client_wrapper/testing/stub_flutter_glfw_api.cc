@@ -149,6 +149,14 @@ FlutterDesktopEngineRef FlutterDesktopRunEngine(
   return nullptr;
 }
 
+void FlutterDesktopRunEngineEventLoopWithTimeout(
+    FlutterDesktopEngineRef engine,
+    uint32_t timeout_milliseconds) {
+  if (s_stub_implementation) {
+    s_stub_implementation->RunEngineEventLoopWithTimeout(timeout_milliseconds);
+  }
+}
+
 bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
   if (s_stub_implementation) {
     return s_stub_implementation->ShutDownEngine();
