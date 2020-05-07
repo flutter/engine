@@ -18,6 +18,7 @@ import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
@@ -26,7 +27,6 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
-import android.view.Surface;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -464,6 +464,8 @@ public class FlutterView extends FrameLayout {
   @SuppressLint({"InlinedApi", "NewApi"})
   @NonNull
   public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
+    WindowInsets newInsets = super.onApplyWindowInsets(insets);
+
     boolean statusBarHidden = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
     boolean navigationBarHidden =
         (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) != 0;
@@ -473,9 +475,6 @@ public class FlutterView extends FrameLayout {
     if (navigationBarHidden) {
       zeroSides = calculateShouldZeroSides();
     }
-
-    WindowInsets newInsets = super.onApplyWindowInsets(insets);
-
 
     // Status bar (top) and left/right system insets should partially obscure the content (padding).
     viewportMetrics.paddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
