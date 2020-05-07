@@ -37,9 +37,9 @@ import org.xmlpull.v1.XmlSerializer;
  * <p>The workaround takes a full screenshot of the device and removes the status and action bars.
  */
 public class ScreenshotUtil {
-  private XmlSerializer mXmlSerializer;
+  private XmlSerializer serializer;
   private AlbumImpl album;
-  private OutputStream mOutputStream;
+  private OutputStream streamOutput;
 
   private static ScreenshotUtil instance;
   private static int BUFFER_SIZE = 1 << 16; // 64K
@@ -55,82 +55,85 @@ public class ScreenshotUtil {
 
   /** Starts the album, which contains the screenshots in a zip file, and a metadata.xml file. */
   void init() {
-    if (mXmlSerializer != null) {
+    if (serializer != null) {
       return;
     }
     album = AlbumImpl.create(Registry.getRegistry().instrumentation.getContext(), "default");
+    // Delete all screenshots in the device associated with this album.
     album.cleanup();
 
-    mXmlSerializer = Xml.newSerializer();
+    serializer = Xml.newSerializer();
     try {
-      mOutputStream =
+      streamOutput =
           new BufferedOutputStream(new FileOutputStream(album.getMetadataFile()), BUFFER_SIZE);
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
     try {
-      mXmlSerializer.setOutput(mOutputStream, "utf-8");
-      mXmlSerializer.startDocument("utf-8", null);
+      serializer.setOutput(streamOutput, "utf-8");
+      serializer.startDocument("utf-8", null);
       // Start tag <screenshots>.
-      mXmlSerializer.startTag(null, "screenshots");
+      serializer.startTag(null, "screenshots");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
   void writeText(String tagName, String value) throws IOException {
-    if (mXmlSerializer == null) {
-      throw new RuntimeException("ScreenshotUtil must be initialized.");
+    if (serializer == null) {
+      throw new RuntimeException("ScreenshotUtil must be initialized. Call init().");
     }
-    mXmlSerializer.startTag(null, tagName);
-    mXmlSerializer.text(value);
-    mXmlSerializer.endTag(null, tagName);
+    serializer.startTag(null, tagName);
+    serializer.text(value);
+    serializer.endTag(null, tagName);
   }
 
   void writeBitmap(Bitmap bitmap, String name, String testClass, String testName)
       throws IOException {
-    if (mXmlSerializer == null) {
-      throw new RuntimeException("ScreenshotUtil must be initialized.");
+    if (serializer == null) {
+      throw new RuntimeException("ScreenshotUtil must be initialized. Call init().");
     }
     album.writeBitmap(name, 0, 0, bitmap);
 
-    mXmlSerializer.startTag(null, "screenshot");
+    serializer.startTag(null, "screenshot");
     writeText("name", name);
     writeText("test_class", testClass);
     writeText("test_name", testName);
     writeText("tile_width", "1");
     writeText("tile_height", "1");
-    mXmlSerializer.endTag(null, "screenshot");
+    serializer.endTag(null, "screenshot");
   }
 
   /** Finishes metadata.xml. */
   void flush() {
-    if (mXmlSerializer == null) {
-      throw new RuntimeException("ScreenshotUtil must be initialized.");
+    if (serializer == null) {
+      throw new RuntimeException("ScreenshotUtil must be initialized. Call init().");
     }
     try {
       // End tag </screenshots>
-      mXmlSerializer.endTag(null, "screenshots");
-      mXmlSerializer.endDocument();
-      mXmlSerializer.flush();
+      serializer.endTag(null, "screenshots");
+      serializer.endDocument();
+      serializer.flush();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
     try {
-      mOutputStream.close();
+      streamOutput.close();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
 
     album.flush();
 
-    mXmlSerializer = null;
-    mOutputStream = null;
+    serializer = null;
+    streamOutput = null;
     album = null;
   }
 
   private static int getStatusBarHeight() {
     final Context context = InstrumentationRegistry.getTargetContext();
+    // Resource name defined in
+    // https://android.googlesource.com/platform/frameworks/base/+/master/core/res/res/values/dimens.xml#34
     final int resourceId =
         context.getResources().getIdentifier("status_bar_height", "dimen", "android");
     int statusBarHeight = 0;

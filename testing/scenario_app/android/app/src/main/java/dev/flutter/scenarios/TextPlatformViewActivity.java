@@ -84,14 +84,11 @@ public class TextPlatformViewActivity extends TestableFlutterActivity {
         new BasicMessageChannel<>(
             getFlutterEngine().getDartExecutor(), "set_scenario", StringCodec.INSTANCE);
     channel.send(launchIntent.getStringExtra("scenario"));
-    getFlutterEngine()
-        .getDartExecutor()
-        .setMessageHandler("frame_ready", (byteBuffer, binaryReply) -> notifyAfterVsync());
+    notifyFlutterRenderedAfterVsync();
   }
 
-  private void notifyAfterVsync() {
-    // Once the `frame_ready` message is received from Dart,
-    // wait one frame + 1s, so the Android texture are rendered.
+  private void notifyFlutterRenderedAfterVsync() {
+    // Wait 1s after the next frame, so the Android texture are rendered.
     Choreographer.getInstance()
         .postFrameCallbackDelayed(
             new Choreographer.FrameCallback() {

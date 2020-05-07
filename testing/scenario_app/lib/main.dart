@@ -43,8 +43,6 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
 };
 
 Scenario _currentScenario = _scenarios['animated_color_square'];
-bool _didReceiveScenarioFromPlatform = false;
-Future<void> _sceneCompletedFuture;
 
 void main() {
   assert(window.locale != null);
@@ -65,8 +63,6 @@ Future<void> _handlePlatformMessage(
   print(name);
   print(utf8.decode(data.buffer.asUint8List()));
   if (name == 'set_scenario' && data != null) {
-    _didReceiveScenarioFromPlatform = true;
-
     final String scenarioName = utf8.decode(data.buffer.asUint8List());
     final Scenario candidateScenario = _scenarios[scenarioName];
     if (candidateScenario != null) {
@@ -124,22 +120,6 @@ void _onBeginFrame(Duration duration) {
 
 void _onDrawFrame() {
   _currentScenario?.onDrawFrame();
-
-  if (!_didReceiveScenarioFromPlatform) {
-    return;
-  }
-  _sceneCompletedFuture?.timeout(Duration.zero, onTimeout: () {});
-  // If no new frames are drawn after 2 second,
-  // consider this to be the last frame.
-  //
-  // As a result, animations will time out, so don't test animations this way!
-  _sceneCompletedFuture = Future<void>
-    .delayed(const Duration(seconds: 2))
-    .whenComplete(() {
-      final ByteData data = ByteData(1);
-      data.setUint8(0, 1);
-      window.sendPlatformMessage('frame_ready', data, null);
-    });
 }
 
 void _onMetricsChanged() {
