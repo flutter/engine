@@ -388,14 +388,14 @@ public class FlutterView extends FrameLayout {
   // android may decide to place the software navigation bars on the side. When the nav
   // bar is hidden, the reported insets should be removed to prevent extra useless space
   // on the sides.
-  enum ZeroSides {
+  private enum ZeroSides {
     NONE,
     LEFT,
     RIGHT,
     BOTH
   }
 
-  ZeroSides calculateShouldZeroSides() {
+  private ZeroSides calculateShouldZeroSides() {
     // We get both orientation and rotation because rotation is all 4
     // rotations relative to default rotation while orientation is portrait
     // or landscape. By combining both, we can obtain a more precise measure
@@ -431,7 +431,7 @@ public class FlutterView extends FrameLayout {
   // can be used.
   @TargetApi(20)
   @RequiresApi(20)
-  int calculateBottomKeyboardInset(WindowInsets insets) {
+  private int calculateBottomKeyboardInset(WindowInsets insets) {
     int screenHeight = getRootView().getHeight();
     // Magic number due to this being a heuristic. This should be replaced, but we have not
     // found a clean way to do it yet (Sept. 2018)
