@@ -212,7 +212,7 @@ FLUTTER_EXPORT void FlutterDesktopRunEngineEventLoopWithTimeout(
 // Shuts down the given engine instance. Returns true if the shutdown was
 // successful. |engine_ref| is no longer valid after this call.
 FLUTTER_EXPORT bool FlutterDesktopShutDownEngine(
-    FlutterDesktopEngineRef engine_ref);
+    FlutterDesktopEngineRef engine);
 
 // Returns the window associated with this registrar's engine instance.
 // This is a GLFW shell-specific extension to flutter_plugin_registrar.h
