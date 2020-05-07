@@ -28,16 +28,6 @@ struct UniqueEngineTraits {
 
 using UniqueEngine = fml::UniqueObject<FlutterEngine, UniqueEngineTraits>;
 
-struct AOTDataDeleter {
-  void operator()(FlutterEngineAOTData aot_data) {
-    if (aot_data) {
-      FlutterEngineCollectAOTData(aot_data);
-    }
-  }
-};
-
-using UniqueAOTData = std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter>;
-
 class EmbedderConfigBuilder {
  public:
   enum class InitializationPreference {
@@ -97,7 +87,6 @@ class EmbedderConfigBuilder {
   FlutterCustomTaskRunners custom_task_runners_ = {};
   FlutterCompositor compositor_ = {};
   std::vector<std::string> command_line_arguments_;
-  UniqueAOTData aot_data_;
 
   UniqueEngine SetupEngine(bool run) const;
 

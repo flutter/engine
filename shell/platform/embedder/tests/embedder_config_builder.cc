@@ -4,7 +4,6 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
 
-#include "flutter/fml/paths.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "third_party/skia/include/core/SkBitmap.h"
@@ -142,19 +141,7 @@ void EmbedderConfigBuilder::SetSnapshots() {
 }
 
 void EmbedderConfigBuilder::SetAotDataElf() {
-  FlutterEngineAOTDataSource data_in = {};
-  FlutterEngineAOTData data_out = nullptr;
-
-  const auto elf_path =
-      fml::paths::JoinPaths({GetFixturesPath(), kAOTAppELFFileName});
-
-  data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
-  data_in.elf_path = elf_path.c_str();
-
-  ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kSuccess);
-
-  aot_data_.reset(data_out);
-  project_args_.aot_data = data_out;
+  project_args_.aot_data = context_.GetAOTData();
 }
 
 void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
