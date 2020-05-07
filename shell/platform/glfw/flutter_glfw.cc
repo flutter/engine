@@ -555,15 +555,15 @@ static void GLFWErrorCallback(int error_code, const char* description) {
 
 // Starts an instance of the Flutter Engine.
 //
-// Configures the engine according to |engine_propreties| and providing
-// |task_runners| to schedule engine tasks.
+// Configures the engine according to |engine_propreties| and using |event_loop|
+// to schedule engine tasks.
 //
 // Returns true on success, in which case |engine_state|'s 'engine' field will
 // be updated to point to the started engine.
 static bool RunFlutterEngine(
     FlutterDesktopEngineState* engine_state,
     const FlutterDesktopEngineProperties& engine_properties,
-    const FlutterCustomTaskRunners* task_runners) {
+    std::unique_ptr<flutter::EventLoop> event_loop) {
   // FlutterProjectArgs is expecting a full argv, so when processing it for
   // flags the first item is treated as the executable and ignored. Add a dummy
   // value so that all provided arguments are used.
@@ -592,6 +592,14 @@ static bool RunFlutterEngine(
   std::string assets_path_string = assets_path.u8string();
   std::string icu_path_string = icu_path.u8string();
 
+  // Configure a task runner using the event loop.
+  engine_state->event_loop = std::move(event_loop);
+  FlutterTaskRunnerDescription platform_task_runner = {};
+  ConfigurePlatformTaskRunner(&platform_task_runner, engine_state);
+  FlutterCustomTaskRunners task_runners = {};
+  task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
+  task_runners.platform_task_runner = &platform_task_runner;
+
   FlutterRendererConfig config = {};
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(config.open_gl);
@@ -612,7 +620,7 @@ static bool RunFlutterEngine(
   args.command_line_argc = static_cast<int>(argv.size());
   args.command_line_argv = &argv[0];
   args.platform_message_callback = EngineOnFlutterPlatformMessage;
-  args.custom_task_runners = task_runners;
+  args.custom_task_runners = &task_runners;
   FLUTTER_API_SYMBOL(FlutterEngine) engine = nullptr;
   auto result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config, &args,
                                  engine_state, &engine);
@@ -624,6 +632,10 @@ static bool RunFlutterEngine(
   engine_state->engine = engine;
   return true;
 }
+
+// Populates |state|'s helper object fields that are common to normal and
+// headless mode.
+static void SetUpCommonEngineState(FlutterDesktopEngineState* state) {}
 
 bool FlutterDesktopInit() {
   // Before making any GLFW calls, set up a logging error handler.
@@ -667,24 +679,20 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
   state->engine->window_controller = state.get();
 
   // Create an event loop for the window. It is not running yet.
-  state->engine->event_loop = std::make_unique<flutter::GLFWEventLoop>(
+  auto event_loop = std::make_unique<flutter::GLFWEventLoop>(
       std::this_thread::get_id(),  // main GLFW thread
       [engine_state = state->engine.get()](const auto* task) {
         if (FlutterEngineRunTask(engine_state->engine, task) != kSuccess) {
           std::cerr << "Could not post an engine task." << std::endl;
         }
       });
-  FlutterTaskRunnerDescription platform_task_runner = {};
-  ConfigurePlatformTaskRunner(&platform_task_runner, state->engine.get());
-  FlutterCustomTaskRunners custom_task_runners = {};
-  custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
-  custom_task_runners.platform_task_runner = &platform_task_runner;
 
   // Start the engine.
   if (!RunFlutterEngine(state->engine.get(), engine_properties,
-                        &custom_task_runners)) {
+                        std::move(event_loop))) {
     return nullptr;
   }
+  SetUpCommonEngineState(state->engine.get());
 
   // TODO: Restructure the internals to follow the structure of the C++ API, so
   // that this isn't a tangle of references.
@@ -859,7 +867,7 @@ FlutterDesktopEngineRef FlutterDesktopRunEngine(
     const FlutterDesktopEngineProperties& properties) {
   auto engine_state = std::make_unique<FlutterDesktopEngineState>();
 
-  engine_state->event_loop = std::make_unique<flutter::HeadlessEventLoop>(
+  auto event_loop = std::make_unique<flutter::HeadlessEventLoop>(
       std::this_thread::get_id(),
       [state = engine_state.get()](const auto* task) {
         if (FlutterEngineRunTask(state->engine, task) != kSuccess) {
@@ -867,16 +875,11 @@ FlutterDesktopEngineRef FlutterDesktopRunEngine(
         }
       });
 
-  // Configure task runner interop.
-  FlutterTaskRunnerDescription platform_task_runner = {};
-  ConfigurePlatformTaskRunner(&platform_task_runner, engine_state.get());
-  FlutterCustomTaskRunners custom_task_runners = {};
-  custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
-  custom_task_runners.platform_task_runner = &platform_task_runner;
-
-  if (!RunFlutterEngine(engine_state.get(), properties, &custom_task_runners)) {
+  if (!RunFlutterEngine(engine_state.get(), properties,
+                        std::move(event_loop))) {
     return nullptr;
   }
+  SetUpCommonEngineState(engine_state.get());
   return engine_state.release();
 }
 
