@@ -9,6 +9,7 @@ import 'package:web_driver_installer/chrome_driver_installer.dart';
 import 'chrome_installer.dart';
 import 'environment.dart';
 import 'exceptions.dart';
+import 'common.dart';
 import 'utils.dart';
 
 class IntegrationTestsManager {
@@ -200,6 +201,8 @@ class IntegrationTestsManager {
         'web-server',
         '--profile',
         '--browser-name=$_browser',
+        if (isLuci) '--chrome-binary=${chromeExecutableForLUCI()}',
+        if (isLuci) '--no-headless',
         '--local-engine=host_debug_unopt',
       ],
       workingDirectory: directory.path,

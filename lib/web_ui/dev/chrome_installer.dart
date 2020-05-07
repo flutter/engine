@@ -12,6 +12,7 @@ import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
 import 'common.dart';
+import 'utils.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 
@@ -22,19 +23,20 @@ class ChromeArgParser extends BrowserArgParser {
   static ChromeArgParser get instance => _singletonInstance;
 
   String _version;
+  int _pinnedChromeBuildNumber;
 
   ChromeArgParser._();
 
   @override
   void populateOptions(ArgParser argParser) {
     final YamlMap browserLock = BrowserLock.instance.configuration;
-    final int pinnedChromeVersion =
+    _pinnedChromeBuildNumber =
         PlatformBinding.instance.getChromeBuild(browserLock);
 
     argParser
       ..addOption(
         'chrome-version',
-        defaultsTo: '$pinnedChromeVersion',
+        defaultsTo: '$pinnedChromeBuildNumber',
         help: 'The Chrome version to use while running tests. If the requested '
             'version has not been installed, it will be downloaded and installed '
             'automatically. A specific Chrome build version number, such as 695653, '
@@ -51,6 +53,8 @@ class ChromeArgParser extends BrowserArgParser {
 
   @override
   String get version => _version;
+
+  String get pinnedChromeBuildNumber => _pinnedChromeBuildNumber.toString();
 }
 
 /// Returns the installation of Chrome, installing it if necessary.
@@ -164,10 +168,11 @@ class ChromeInstaller {
   bool get isInstalled {
     if (versionDir.existsSync()) {
       print('version dir exits: ${versionDir.path.toString()}');
-      final String chromeexecutable = PlatformBinding.instance.getChromeExecutablePath(versionDir);
+      final String chromeexecutable =
+          PlatformBinding.instance.getChromeExecutablePath(versionDir);
       print('chromeexecutable dir : ${chromeexecutable}');
       io.File chrome = io.File(chromeexecutable);
-      if(chrome.existsSync()) {
+      if (chrome.existsSync()) {
         print('chrome found');
       }
     }
@@ -188,12 +193,13 @@ class ChromeInstaller {
 
   Future<void> install() async {
     if (versionDir.existsSync()) {
-      print('version dir exits: ${versionDir.path.toString()}'); 
-      final String chromeexecutable = PlatformBinding.instance.getChromeExecutablePath(versionDir); 
-      print('chromeexecutable dir : ${chromeexecutable}'); 
-      io.File chrome = io.File(chromeexecutable); 
-      if(chrome.existsSync()) { 
-        print('chrome found'); 
+      print('version dir exits: ${versionDir.path.toString()}');
+      final String chromeexecutable =
+          PlatformBinding.instance.getChromeExecutablePath(versionDir);
+      print('chromeexecutable dir : ${chromeexecutable}');
+      io.File chrome = io.File(chromeexecutable);
+      if (chrome.existsSync()) {
+        print('chrome found');
       }
     }
 
@@ -258,9 +264,32 @@ Future<String> queryChromeDriverVersion() async {
   return chromeDriverVersion;
 }
 
+/// Make sure LUCI bot has the pinned Chrome version and return the executable.
+///
+/// We are using CIPD packages in LUCI. The pinned chrome version from the
+/// `browser_lock.yaml` file will already be installed in the LUCI bot.
+/// Verify if Chrome is installed and use it for the integration tests.
+String chromeExecutableForLUCI() {
+  // Note that build number and major version is different for Chrome.
+  // For example for a build number `753189`, major version is 83.
+  final String buildNumber = ChromeArgParser.instance.pinnedChromeBuildNumber;
+  final ChromeInstaller chromeInstaller = ChromeInstaller(version: buildNumber);
+  if (chromeInstaller.isInstalled) {
+    print(
+        'Found exabutable in LUCI: ${chromeInstaller.getInstallation().executable}');
+    return chromeInstaller.getInstallation().executable;
+  } else {
+    throw BrowserInstallerException(
+        'Failed to locate pinned Chrome build: $buildNumber on LUCI.');
+  }
+}
+
 Future<int> _querySystemChromeMajorVersion() async {
   String chromeExecutable = '';
-  if (io.Platform.isLinux) {
+  // LUCI used the Chrome from CIPD packages.
+  if (isLuci) {
+    chromeExecutable = chromeExecutableForLUCI();
+  } else if (io.Platform.isLinux) {
     chromeExecutable = 'google-chrome';
   } else if (io.Platform.isMacOS) {
     chromeExecutable = await _findChromeExecutableOnMac();
