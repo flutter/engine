@@ -902,6 +902,10 @@ abstract class PersistedContainerSurface extends PersistedSurface {
           // We're at the end of the list.
           containerElement.append(newChild.rootElement);
         } else {
+          // Ensure that the surface sibling is also DOM sibling.
+          if (nextSibling.rootElement.parent != containerElement) {
+            containerElement.append(nextSibling.rootElement);
+          }
           // We're in the middle of the list.
           containerElement.insertBefore(
               newChild.rootElement, nextSibling.rootElement);
