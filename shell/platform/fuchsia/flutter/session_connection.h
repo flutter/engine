@@ -78,7 +78,6 @@ class SessionConnection final {
       fml::TimePoint last_latch_point_targeted,
       fml::TimeDelta flutter_frame_build_time,
       fml::TimeDelta vsync_interval,
-      fml::TimeDelta max_e2e_latency,
       std::deque<std::pair<fml::TimePoint, fml::TimePoint>>&
           future_presentation_infos);
 

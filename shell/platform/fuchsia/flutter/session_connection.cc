@@ -137,29 +137,19 @@ fml::TimePoint SessionConnection::CalculateNextLatchPoint(
     fml::TimePoint last_latch_point_targeted,
     fml::TimeDelta flutter_frame_build_time,
     fml::TimeDelta vsync_interval,
-    fml::TimeDelta max_e2e_latency,
     std::deque<std::pair<fml::TimePoint, fml::TimePoint>>&
         future_presentation_infos) {
+  // The minimum latch point is the largest of:
+  // * Now
+  // * The beginning of the frame + frame build time
+  // * The last latch point
   fml::TimePoint minimum_latch_point_to_target =
-      std::max(now, present_requested_time + flutter_frame_build_time);
-
-  // Adjust by the last latch point we targeted so we don't inadvertently squash
-  // a frame. We add half a vsync interval to the last latch point due to latch
-  // point fuzziness.
-  minimum_latch_point_to_target =
-      std::max(minimum_latch_point_to_target,
-               last_latch_point_targeted + (vsync_interval / 2));
-
-  fml::TimePoint max_vsync_time = present_requested_time + max_e2e_latency;
+      std::max(std::max(now, present_requested_time + flutter_frame_build_time),
+               last_latch_point_targeted);
 
   auto it = future_presentation_infos.begin();
   while (it != future_presentation_infos.end()) {
     fml::TimePoint latch_point = it->first;
-    fml::TimePoint vsync_time = it->second;
-
-    if (vsync_time > max_vsync_time) {
-      break;
-    }
 
     if (latch_point >= minimum_latch_point_to_target) {
       return latch_point;
@@ -168,9 +158,10 @@ fml::TimePoint SessionConnection::CalculateNextLatchPoint(
     it++;
   }
 
-  FML_DCHECK(it == future_presentation_infos.end() || it->second > max_vsync_time);
+  FML_DCHECK(it == future_presentation_infos.end());
 
-  // Aim for the closest latch point.
+  // We could not find a suitable latch point in the list given to us from
+  // Scenic, so aim for the smallest safe value.
   return minimum_latch_point_to_target;
 }
 
@@ -212,19 +203,21 @@ void SessionConnection::PresentSession() {
   // fenced. The compositor can start processing ops while we finalize paint
   // tasks.
 
+  fml::TimeDelta presentation_interval =
+      VsyncRecorder::GetInstance().GetCurrentVsyncInfo().presentation_interval;
+
   fml::TimePoint next_latch_point = CalculateNextLatchPoint(
       fml::TimePoint::Now(), present_requested_time_,
       last_latch_point_targeted_,
-      fml::TimeDelta::FromMicroseconds(6000),     // flutter_frame_build_time
-      fml::TimeDelta::FromMicroseconds(16667),  // vsync_interval: 1 frame
-      fml::TimeDelta::FromMicroseconds(16667 * 2),  // max_e2e_latency: 2 frames
-      future_presentation_infos_);
+      fml::TimeDelta::FromMicroseconds(0),  // flutter_frame_build_time
+      presentation_interval, future_presentation_infos_);
 
   last_latch_point_targeted_ = next_latch_point;
 
   session_wrapper_.Present2(
-      /*requested_presentation_time=*/next_latch_point.ToEpochDelta().ToNanoseconds(),
-      /*requested_prediction_span=*/10 * 16'666'667,  // 10 frames of data
+      /*requested_presentation_time=*/next_latch_point.ToEpochDelta()
+          .ToNanoseconds(),
+      /*requested_prediction_span=*/presentation_interval.ToNanoseconds() * 10,
       [this](fuchsia::scenic::scheduling::FuturePresentationTimes info) {
         // Clear |future_presentation_infos_| and replace it with the updated
         // information.
