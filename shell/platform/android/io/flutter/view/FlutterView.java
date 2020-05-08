@@ -578,7 +578,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
   // can be used.
   @TargetApi(20)
   @RequiresApi(20)
-  private int calculateBottomKeyboardInset(WindowInsets insets) {
+  private int guessBottomKeyboardInset(WindowInsets insets) {
     int screenHeight = getRootView().getHeight();
     // Magic number due to this being a heuristic. This should be replaced, but we have not
     // found a clean way to do it yet (Sept. 2018)
@@ -632,7 +632,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     // the navbar padding should always be provided.
     mMetrics.physicalViewInsetBottom =
         navigationBarHidden
-            ? calculateBottomKeyboardInset(insets)
+            ? guessBottomKeyboardInset(insets)
             : insets.getSystemWindowInsetBottom();
     mMetrics.physicalViewInsetLeft = 0;
 

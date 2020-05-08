@@ -431,7 +431,7 @@ public class FlutterView extends FrameLayout {
   // can be used.
   @TargetApi(20)
   @RequiresApi(20)
-  private int calculateBottomKeyboardInset(WindowInsets insets) {
+  private int guessBottomKeyboardInset(WindowInsets insets) {
     int screenHeight = getRootView().getHeight();
     // Magic number due to this being a heuristic. This should be replaced, but we have not
     // found a clean way to do it yet (Sept. 2018)
@@ -493,7 +493,7 @@ public class FlutterView extends FrameLayout {
     viewportMetrics.viewInsetRight = 0;
     viewportMetrics.viewInsetBottom =
         navigationBarHidden
-            ? calculateBottomKeyboardInset(insets)
+            ? guessBottomKeyboardInset(insets)
             : insets.getSystemWindowInsetBottom();
     viewportMetrics.viewInsetLeft = 0;
 
