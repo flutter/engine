@@ -37,11 +37,11 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.shadows.ShadowDisplay;
-import org.robolectric.Shadows;
 
 // TODO(xster): we have 2 versions of robolectric Android shadows in
 // shell/platform/android/embedding_bundle/build.gradle. Remove the older
@@ -288,10 +288,15 @@ public class FlutterViewTest {
   public void systemInsetHandlesFullscreenNavbarRight() {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
-    ShadowDisplay display = Shadows.shadowOf(((WindowManager)RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay());
+    ShadowDisplay display =
+        Shadows.shadowOf(
+            ((WindowManager)
+                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay());
     display.setRotation(1);
     assertEquals(0, flutterView.getSystemUiVisibility());
-    when(flutterView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+    when(flutterView.getWindowSystemUiVisibility())
+        .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
 
 
@@ -332,10 +337,15 @@ public class FlutterViewTest {
   public void systemInsetHandlesFullscreenNavbarLeft() {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
-    ShadowDisplay display = Shadows.shadowOf(((WindowManager)RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay());
+    ShadowDisplay display =
+        Shadows.shadowOf(
+            ((WindowManager)
+                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay());
     display.setRotation(3);
     assertEquals(0, flutterView.getSystemUiVisibility());
-    when(flutterView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+    when(flutterView.getWindowSystemUiVisibility())
+        .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
 
 
