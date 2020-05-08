@@ -11,6 +11,7 @@
 #include <flutter_linux/fl_binary_messenger.h>
 #include <flutter_linux/fl_dart_project.h>
 #include <flutter_linux/fl_engine.h>
+#include <flutter_linux/fl_json_message_codec.h>
 #include <flutter_linux/fl_message_codec.h>
 #include <flutter_linux/fl_method_channel.h>
 #include <flutter_linux/fl_method_codec.h>
