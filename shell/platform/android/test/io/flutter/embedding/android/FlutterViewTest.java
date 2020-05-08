@@ -9,11 +9,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.View;
@@ -44,8 +42,6 @@ import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 import org.robolectric.shadows.ShadowDisplay;
 import org.robolectric.Shadows;
-
-import java.io.*;
 
 // TODO(xster): we have 2 versions of robolectric Android shadows in
 // shell/platform/android/embedding_bundle/build.gradle. Remove the older
@@ -291,12 +287,15 @@ public class FlutterViewTest {
   @Test
   public void systemInsetHandlesFullscreenNavbar() {
     RuntimeEnvironment.setQualifiers("+land");
-    FlutterView flutterView = new FlutterView(RuntimeEnvironment.systemContext);
-    ShadowDisplay display = Shadows.shadowOf(((DisplayManager)RuntimeEnvironment.systemContext.getSystemService(Context.DISPLAY_SERVICE)).getDisplays()[0]);
+    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    ShadowDisplay display = Shadows.shadowOf(((WindowManager)RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay());
+    // ShadowDisplay display = Shadows.shadowOf(((DisplayManager)RuntimeEnvironment.systemContext.getSystemService(Context.DISPLAY_SERVICE)).getDisplays()[0]);
     display.setRotation(90);
     assert(display.getDefaultDisplay().getRotation() == Surface.ROTATION_90);
-    assert(((DisplayManager)RuntimeEnvironment.systemContext.getSystemService(Context.DISPLAY_SERVICE)).getDisplays().length == 1);
     assertEquals(0, flutterView.getSystemUiVisibility());
+    when(flutterView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+    when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
+
 
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
@@ -312,6 +311,7 @@ public class FlutterViewTest {
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
 
+    assert(flutterView.calculateShouldZeroSides() == FlutterView.ZeroSides.RIGHT);
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
     when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
@@ -324,7 +324,7 @@ public class FlutterViewTest {
     // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is reported as-is.
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
     // Padding bottom is always 0.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
@@ -336,7 +336,7 @@ public class FlutterViewTest {
     // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is reported as-is.
-    assertEquals(100, viewportMetricsCaptor.getValue().paddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
     // Padding bottom is always 0.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
     assertEquals(0, viewportMetricsCaptor.getValue().paddingLeft);
