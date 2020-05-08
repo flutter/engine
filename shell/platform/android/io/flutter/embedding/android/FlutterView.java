@@ -6,7 +6,6 @@ package io.flutter.embedding.android;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Insets;
@@ -422,7 +421,7 @@ public class FlutterView extends FrameLayout {
     return ZeroSides.NONE;
   }
 
-  // TODO(garyq): Use clean ways to detect keyboard instead of heuristics if possible
+  // TODO(garyq): Use new Android R getInsets API
   // TODO(garyq): The keyboard detection may interact strangely with
   //   https://github.com/flutter/flutter/issues/22061
 

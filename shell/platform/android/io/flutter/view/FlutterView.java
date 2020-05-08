@@ -569,7 +569,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     return ZeroSides.NONE;
   }
 
-  // TODO(garyq): Use clean ways to detect keyboard instead of heuristics if possible
+  // TODO(garyq): Use new Android R getInsets API
   // TODO(garyq): The keyboard detection may interact strangely with
   //   https://github.com/flutter/flutter/issues/22061
 

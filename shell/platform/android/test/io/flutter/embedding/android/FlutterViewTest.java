@@ -387,12 +387,4 @@ public class FlutterViewTest {
   // production classes' view hierarchy.
   @Implements(ViewGroup.class)
   public static class ShadowFullscreenViewGroup extends ShadowFullscreenView {}
-
-  // @Implements(Display.class)
-  // public static class ShadowFlutterDisplay {
-  //   @Implementation
-  //   public int getRotation() {
-  //     return 90;
-  //   }
-  // }
 }
