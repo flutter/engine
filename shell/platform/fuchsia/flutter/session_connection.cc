@@ -140,9 +140,9 @@ fml::TimePoint SessionConnection::CalculateNextLatchPoint(
     std::deque<std::pair<fml::TimePoint, fml::TimePoint>>&
         future_presentation_infos) {
   // The minimum latch point is the largest of:
-  // * Now
-  // * The beginning of the frame + frame build time
-  // * The last latch point
+  // Now
+  // When we expect the Flutter work for the frame to be completed
+  // The last latch point targeted
   fml::TimePoint minimum_latch_point_to_target =
       std::max(std::max(now, present_requested_time + flutter_frame_build_time),
                last_latch_point_targeted);

@@ -94,8 +94,10 @@ class SessionConnection final {
 
   zx_handle_t vsync_event_handle_;
 
-  fml::TimePoint last_latch_point_targeted_ = fml::TimePoint::Min();
-  fml::TimePoint present_requested_time_ = fml::TimePoint::Min();
+  fml::TimePoint last_latch_point_targeted_ =
+      fml::TimePoint::FromEpochDelta(fml::TimeDelta::Zero());
+  fml::TimePoint present_requested_time_ =
+      fml::TimePoint::FromEpochDelta(fml::TimeDelta::Zero());
 
   std::deque<std::pair<fml::TimePoint, fml::TimePoint>>
       future_presentation_infos_ = {};
