@@ -7,7 +7,6 @@
 #import <objc/message.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 
 // System shape are constant integers used by the framework to represent a shape
 // of system cursors.
@@ -15,13 +14,13 @@
 // They are intentionally designed to be meaningless integers.
 //
 // They must be kept in sync with Flutter framework's mouse_cursor.dart
-static int const kSystemShapeNone = 0x334c4a;
-static int const kSystemShapeBasic = 0xf17aaa;
-static int const kSystemShapeClick = 0xa8affc;
-static int const kSystemShapeText = 0x1cb251;
-static int const kSystemShapeForbidden = 0x350f9d;
-static int const kSystemShapeGrab = 0x28b91f;
-static int const kSystemShapeGrabbing = 0x6631ce;
+static const int kSystemShapeNone = 0x334c4a;
+static const int kSystemShapeBasic = 0xf17aaa;
+static const int kSystemShapeClick = 0xa8affc;
+static const int kSystemShapeText = 0x1cb251;
+static const int kSystemShapeForbidden = 0x350f9d;
+static const int kSystemShapeGrab = 0x28b91f;
+static const int kSystemShapeGrabbing = 0x6631ce;
 
 static NSString* const kMouseCursorChannel = @"flutter/mousecursor";
 
@@ -29,27 +28,47 @@ static NSString* const kActivateSystemCursorMethod = @"activateSystemCursor";
 static NSString* const kShapeCodeKey = @"shapeCode";
 static NSString* const kDeviceKey = @"device";
 
+// Maps a Flutter's constant to a platform's cursor object.
+//
+// Returns nil for unknown constants, including kSystemShapeNone.
+static NSCursor* resolveSystemShape(NSNumber* platformConstant) {
+  switch ([platformConstant intValue]) {
+    case kSystemShapeBasic:
+      return [NSCursor arrowCursor];
+    case kSystemShapeClick:
+      return [NSCursor pointingHandCursor];
+    case kSystemShapeText:
+      return [NSCursor IBeamCursor];
+    case kSystemShapeForbidden:
+      return [NSCursor operationNotAllowedCursor];
+    case kSystemShapeGrab:
+      return [NSCursor openHandCursor];
+    case kSystemShapeGrabbing:
+      return [NSCursor closedHandCursor];
+  }
+  return nil;
+}
 
 @interface FlutterMouseCursorPlugin ()
 /**
  * The channel used to communicate with Flutter.
  */
-@property() FlutterMethodChannel* channel;
+@property(nonatomic) FlutterMethodChannel* channel;
 
 /**
  * The FlutterViewController to manage input for.
  */
 @property(nonatomic, weak) FlutterViewController* flutterViewController;
 
-@property() NSMutableDictionary *shapeObjects;
+@property(nonatomic) NSMutableDictionary *shapeObjects;
 
-@property() NSCursor *shape;
+@property(nonatomic) NSCursor *shape;
+
+@property(nonatomic) BOOL hidden;
 
 @end
 
 @implementation FlutterMouseCursorPlugin
-
-BOOL _hidden;
 
 - (instancetype)initWithViewController:(nonnull FlutterViewController*)viewController {
   self = [super init];
@@ -70,13 +89,10 @@ BOOL _hidden;
 #pragma mark - Private
 
 - (void)handleMethodCall:(nonnull FlutterMethodCall*)call result:(FlutterResult)result {
-  BOOL handled = YES;
   NSString* method = call.method;
   if ([method isEqualToString:kActivateSystemCursorMethod]) {
     result([self activateSystemCursor:call.arguments]);
   } else {
-    handled = NO;
-    NSLog(@"Unhandled mouse cursor method '%@'", method);
     result(FlutterMethodNotImplemented);
   }
 }
@@ -117,7 +133,7 @@ BOOL _hidden;
   NSCursor *cachedObject = _shapeObjects[shape];
   if (cachedObject)
     return cachedObject;
-  NSCursor *systemObject = [FlutterMouseCursorPlugin resolveSystemShape:shape];
+  NSCursor *systemObject = resolveSystemShape(shape);
   if (!systemObject)
     return nil;
   _shapeObjects[shape] = systemObject;
@@ -142,30 +158,6 @@ BOOL _hidden;
   }
   _hidden = YES;
   return @(YES);
-}
-
-#pragma mark - Static
-
-// Does not handle kSystemShapeNone.
-// Returns null for default.
-+ (nullable NSCursor*)resolveSystemShape:(NSNumber*)platformConstant {
-  switch ([platformConstant intValue]) {
-    case kSystemShapeBasic:
-      return [NSCursor arrowCursor];
-    case kSystemShapeClick:
-      return [NSCursor pointingHandCursor];
-    case kSystemShapeText:
-      return [NSCursor IBeamCursor];
-    case kSystemShapeForbidden:
-      return [NSCursor operationNotAllowedCursor];
-    case kSystemShapeGrab:
-      return [NSCursor openHandCursor];
-    case kSystemShapeGrabbing:
-      return [NSCursor closedHandCursor];
-    default:
-      break;
-  }
-  return nil;
 }
 
 @end
