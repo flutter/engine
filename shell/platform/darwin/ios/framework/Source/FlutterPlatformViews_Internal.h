@@ -242,8 +242,8 @@ class FlutterPlatformViewsController {
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
 
-  // Returns true if there are embedded in the scene at current frame
-  // Or there will be embedded in the next frame.
+  // Returns true if there are embedded views in the scene at current frame
+  // Or there will be embedded views in the next frame.
   // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
   // Make this method check if there are pending view operations instead.
   // Also rename it to `HasPendingViewOperations`.
