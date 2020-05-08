@@ -20,7 +20,6 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/runtime/start_up.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
@@ -175,12 +174,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   return shell;
 }
 
-static void RecordStartupTimestamp() {
-  if (engine_main_enter_ts == 0) {
-    engine_main_enter_ts = Dart_TimelineGetMicros();
-  }
-}
-
 static void Tokenize(const std::string& input,
                      std::vector<std::string>* results,
                      char delimiter) {
@@ -197,7 +190,7 @@ static void Tokenize(const std::string& input,
 // TODO(chinmaygarde): The unfortunate side effect of this call is that settings
 // that cause shell initialization failures will still lead to some of their
 // settings being applied.
-static void PerformInitializationTasks(const Settings& settings) {
+static void PerformInitializationTasks(Settings& settings) {
   {
     fml::LogSettings log_settings;
     log_settings.min_log_level =
@@ -207,7 +200,10 @@ static void PerformInitializationTasks(const Settings& settings) {
 
   static std::once_flag gShellSettingsInitialization = {};
   std::call_once(gShellSettingsInitialization, [&settings] {
-    RecordStartupTimestamp();
+    if (settings.engine_start_timestamp.count() == 0) {
+      settings.engine_start_timestamp =
+          std::chrono::microseconds(Dart_TimelineGetMicros());
+    }
 
     tonic::SetLogHandler(
         [](const char* message) { FML_LOG(ERROR) << message; });
@@ -575,7 +571,7 @@ const TaskRunners& Shell::GetTaskRunners() const {
   return task_runners_;
 }
 
-fml::WeakPtr<Rasterizer> Shell::GetRasterizer() const {
+fml::TaskRunnerAffineWeakPtr<Rasterizer> Shell::GetRasterizer() const {
   FML_DCHECK(is_setup_);
   return weak_rasterizer_;
 }
@@ -1149,7 +1145,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     // never be reported until the next animation starts.
     frame_timings_report_scheduled_ = true;
     task_runners_.GetRasterTaskRunner()->PostDelayedTask(
-        [self = weak_factory_gpu_->GetWeakPtr()]() {
+        [self = weak_factory_gpu_->GetTaskRunnerAffineWeakPtr()]() {
           if (!self.get()) {
             return;
           }
@@ -1312,7 +1308,6 @@ bool Shell::OnServiceProtocolRunInView(
   configuration.AddAssetResolver(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
           asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
-  PersistentCache::UpdateAssetPath(asset_directory_path);
 
   auto& allocator = response.GetAllocator();
   response.SetObject();
@@ -1407,7 +1402,6 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
   asset_manager->PushFront(std::make_unique<DirectoryAssetBundle>(
       fml::OpenDirectory(params.at("assetDirectory").data(), false,
                          fml::FilePermission::kRead)));
-  PersistentCache::UpdateAssetPath(params.at("assetDirectory").data());
 
   if (engine_->UpdateAssetManager(std::move(asset_manager))) {
     response.AddMember("type", "Success", allocator);

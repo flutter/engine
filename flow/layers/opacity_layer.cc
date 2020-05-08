@@ -35,6 +35,10 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
 
+  // Similar to what's done in TransformLayer::Preroll, we have to apply the
+  // reverse transformation to the cull rect to properly cull child layers.
+  context->cull_rect = context->cull_rect.makeOffset(-offset_.fX, -offset_.fY);
+
   context->is_opaque = parent_is_opaque && (alpha_ == SK_AlphaOPAQUE);
   context->mutators_stack.PushTransform(
       SkMatrix::MakeTrans(offset_.fX, offset_.fY));
@@ -48,12 +52,11 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   {
     set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
-    if (!context->has_platform_view && context->raster_cache &&
-        SkRect::Intersects(context->cull_rect, paint_bounds())) {
-      SkMatrix ctm = child_matrix;
-      context->raster_cache->Prepare(context, container, ctm);
-    }
+    TryToPrepareRasterCache(context, container, child_matrix);
   }
+
+  // Restore cull_rect
+  context->cull_rect = context->cull_rect.makeOffset(offset_.fX, offset_.fY);
 }
 
 void OpacityLayer::Paint(PaintContext& context) const {
@@ -66,14 +69,10 @@ void OpacityLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->translate(offset_.fX, offset_.fY);
 
-  if (context.raster_cache) {
-    ContainerLayer* container = GetChildContainer();
-    const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
-    RasterCacheResult child_cache = context.raster_cache->Get(container, ctm);
-    if (child_cache.is_valid()) {
-      child_cache.draw(*context.leaf_nodes_canvas, &paint);
-      return;
-    }
+  if (context.raster_cache &&
+      context.raster_cache->Draw(GetChildContainer(),
+                                 *context.leaf_nodes_canvas, &paint)) {
+    return;
   }
 
   // Skia may clip the content with saveLayerBounds (although it's not a

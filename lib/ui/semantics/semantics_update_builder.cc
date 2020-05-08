@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
+#include "flutter/lib/ui/ui_dart_state.h"
 
 #include "third_party/skia/include/core/SkScalar.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -13,6 +14,7 @@
 namespace flutter {
 
 static void SemanticsUpdateBuilder_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&SemanticsUpdateBuilder::create, args);
 }
 
@@ -95,7 +97,11 @@ void SemanticsUpdateBuilder::updateNode(
   node.increasedValue = increasedValue;
   node.decreasedValue = decreasedValue;
   node.textDirection = textDirection;
-  node.transform.setColMajord(transform.data());
+  SkScalar scalarTransform[16];
+  for (int i = 0; i < 16; ++i) {
+    scalarTransform[i] = transform.data()[i];
+  }
+  node.transform = SkM44::ColMajor(scalarTransform);
   node.childrenInTraversalOrder =
       std::vector<int32_t>(childrenInTraversalOrder.data(),
                            childrenInTraversalOrder.data() +

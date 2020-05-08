@@ -52,6 +52,7 @@ import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
+import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.editing.TextInputPlugin;
@@ -59,6 +60,7 @@ import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
@@ -216,7 +218,8 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
     PlatformViewsController platformViewsController =
         mNativeView.getPluginRegistry().getPlatformViewsController();
-    mTextInputPlugin = new TextInputPlugin(this, dartExecutor, platformViewsController);
+    mTextInputPlugin =
+        new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
     androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
     androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
     mNativeView
@@ -402,7 +405,22 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     } else {
       locales.add(config.locale);
     }
-    localizationChannel.sendLocales(locales);
+
+    Locale platformResolvedLocale = null;
+    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+      List<Locale.LanguageRange> languageRanges = new ArrayList<>();
+      LocaleList localeList = config.getLocales();
+      int localeCount = localeList.size();
+      for (int index = 0; index < localeCount; ++index) {
+        Locale locale = localeList.get(index);
+        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
+      }
+      // TODO(garyq) implement a real locale resolution.
+      platformResolvedLocale =
+          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
+    }
+
+    localizationChannel.sendLocales(locales, platformResolvedLocale);
   }
 
   @Override

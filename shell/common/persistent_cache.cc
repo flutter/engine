@@ -8,6 +8,9 @@
 #include <string>
 #include <string_view>
 
+#include "rapidjson/document.h"
+#include "third_party/skia/include/utils/SkBase64.h"
+
 #include "flutter/fml/base32.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
@@ -20,7 +23,8 @@
 namespace flutter {
 
 std::string PersistentCache::cache_base_path_;
-std::string PersistentCache::asset_path_;
+
+std::shared_ptr<AssetManager> PersistentCache::asset_manager_;
 
 std::mutex PersistentCache::instance_mutex_;
 std::unique_ptr<PersistentCache> PersistentCache::gPersistentCache;
@@ -103,21 +107,35 @@ static std::shared_ptr<fml::UniqueFD> MakeCacheDirectory(
 }
 }  // namespace
 
+sk_sp<SkData> ParseBase32(const std::string& input) {
+  std::pair<bool, std::string> decode_result = fml::Base32Decode(input);
+  if (!decode_result.first) {
+    FML_LOG(ERROR) << "Base32 can't decode: " << input;
+    return nullptr;
+  }
+  const std::string& data_string = decode_result.second;
+  return SkData::MakeWithCopy(data_string.data(), data_string.length());
+}
+
+sk_sp<SkData> ParseBase64(const std::string& input) {
+  SkBase64 decoder;
+  auto error = decoder.decode(input.c_str(), input.length());
+  if (error != SkBase64::Error::kNoError) {
+    FML_LOG(ERROR) << "Base64 decode error: " << error;
+    FML_LOG(ERROR) << "Base64 can't decode: " << input;
+    return nullptr;
+  }
+  return SkData::MakeWithCopy(decoder.getData(), decoder.getDataSize());
+}
+
 std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
   TRACE_EVENT0("flutter", "PersistentCache::LoadSkSLs");
   std::vector<PersistentCache::SkSLCache> result;
   fml::FileVisitor visitor = [&result](const fml::UniqueFD& directory,
                                        const std::string& filename) {
-    std::pair<bool, std::string> decode_result = fml::Base32Decode(filename);
-    if (!decode_result.first) {
-      FML_LOG(ERROR) << "Base32 can't decode: " << filename;
-      return true;  // continue to visit other files
-    }
-    const std::string& data_string = decode_result.second;
-    sk_sp<SkData> key =
-        SkData::MakeWithCopy(data_string.data(), data_string.length());
+    sk_sp<SkData> key = ParseBase32(filename);
     sk_sp<SkData> data = LoadFile(directory, filename);
-    if (data != nullptr) {
+    if (key != nullptr && data != nullptr) {
       result.push_back({key, data});
     } else {
       FML_LOG(ERROR) << "Failed to load: " << filename;
@@ -132,15 +150,31 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
     fml::VisitFiles(*sksl_cache_directory_, visitor);
   }
 
-  fml::UniqueFD root_asset_dir = fml::OpenDirectory(asset_path_.c_str(), false,
-                                                    fml::FilePermission::kRead);
-  fml::UniqueFD sksl_asset_dir =
-      fml::OpenDirectoryReadOnly(root_asset_dir, kSkSLSubdirName);
-  if (sksl_asset_dir.is_valid()) {
-    FML_LOG(INFO) << "Found sksl asset directory. Loading SkSLs from it...";
-    fml::VisitFiles(sksl_asset_dir, visitor);
+  std::unique_ptr<fml::Mapping> mapping = nullptr;
+  if (asset_manager_ != nullptr) {
+    mapping = asset_manager_->GetAsMapping(kAssetFileName);
+  }
+  if (mapping == nullptr) {
+    FML_LOG(INFO) << "No sksl asset found.";
   } else {
-    FML_LOG(INFO) << "No sksl asset directory found.";
+    FML_LOG(INFO) << "Found sksl asset. Loading SkSLs from it...";
+    rapidjson::Document json_doc;
+    rapidjson::ParseResult parse_result =
+        json_doc.Parse(reinterpret_cast<const char*>(mapping->GetMapping()),
+                       mapping->GetSize());
+    if (parse_result != rapidjson::ParseErrorCode::kParseErrorNone) {
+      FML_LOG(ERROR) << "Failed to parse json file: " << kAssetFileName;
+    } else {
+      for (auto& item : json_doc["data"].GetObject()) {
+        sk_sp<SkData> key = ParseBase32(item.name.GetString());
+        sk_sp<SkData> sksl = ParseBase64(item.value.GetString());
+        if (key != nullptr && sksl != nullptr) {
+          result.push_back({key, sksl});
+        } else {
+          FML_LOG(ERROR) << "Failed to load: " << item.name.GetString();
+        }
+      }
+    }
   }
 
   return result;
@@ -299,9 +333,9 @@ fml::RefPtr<fml::TaskRunner> PersistentCache::GetWorkerTaskRunner() const {
   return worker;
 }
 
-void PersistentCache::UpdateAssetPath(const std::string& path) {
-  FML_LOG(INFO) << "PersistentCache::UpdateAssetPath: " << path;
-  asset_path_ = path;
+void PersistentCache::SetAssetManager(std::shared_ptr<AssetManager> value) {
+  TRACE_EVENT_INSTANT0("flutter", "PersistentCache::SetAssetManager");
+  asset_manager_ = value;
 }
 
 }  // namespace flutter

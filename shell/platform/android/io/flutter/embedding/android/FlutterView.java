@@ -40,6 +40,7 @@ import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -399,10 +400,11 @@ public class FlutterView extends FrameLayout {
   @SuppressLint({"InlinedApi", "NewApi"})
   @NonNull
   public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
+    boolean statusBarHidden = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
     // Status bar (top) and left/right system insets should partially obscure the content (padding).
-    viewportMetrics.paddingTop = insets.getSystemWindowInsetTop();
+    viewportMetrics.paddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
     viewportMetrics.paddingRight = insets.getSystemWindowInsetRight();
     viewportMetrics.paddingBottom = 0;
     viewportMetrics.paddingLeft = insets.getSystemWindowInsetLeft();
@@ -710,7 +712,7 @@ public class FlutterView extends FrameLayout {
     textInputPlugin =
         new TextInputPlugin(
             this,
-            this.flutterEngine.getDartExecutor(),
+            this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
     androidKeyProcessor =
         new AndroidKeyProcessor(this.flutterEngine.getKeyEventChannel(), textInputPlugin);
@@ -859,7 +861,22 @@ public class FlutterView extends FrameLayout {
     } else {
       locales.add(config.locale);
     }
-    flutterEngine.getLocalizationChannel().sendLocales(locales);
+
+    Locale platformResolvedLocale = null;
+    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+      List<Locale.LanguageRange> languageRanges = new ArrayList<>();
+      LocaleList localeList = config.getLocales();
+      int localeCount = localeList.size();
+      for (int index = 0; index < localeCount; ++index) {
+        Locale locale = localeList.get(index);
+        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
+      }
+      // TODO(garyq) implement a real locale resolution.
+      platformResolvedLocale =
+          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
+    }
+
+    flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
   }
 
   /**

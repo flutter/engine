@@ -65,6 +65,7 @@ shared_library("flutter_shell_native") {
     "//flutter/runtime",
     "//flutter/runtime:libdart",
     "//flutter/shell/common",
+    "//flutter/shell/platform/android/external_view_embedder",
     "//third_party/skia",
   ]
 
@@ -151,9 +152,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/dart/DartMessenger.java",
   "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
   "io/flutter/embedding/engine/loader/FlutterLoader.java",
-  "io/flutter/embedding/engine/loader/ResourceCleaner.java",
   "io/flutter/embedding/engine/loader/ResourceExtractor.java",
-  "io/flutter/embedding/engine/loader/ResourcePaths.java",
   "io/flutter/embedding/engine/plugins/FlutterPlugin.java",
   "io/flutter/embedding/engine/plugins/PluginRegistry.java",
   "io/flutter/embedding/engine/plugins/activity/ActivityAware.java",
@@ -202,6 +201,7 @@ android_java_sources = [
   "io/flutter/plugin/common/StandardMessageCodec.java",
   "io/flutter/plugin/common/StandardMethodCodec.java",
   "io/flutter/plugin/common/StringCodec.java",
+  "io/flutter/plugin/editing/FlutterTextUtils.java",
   "io/flutter/plugin/editing/InputConnectionAdaptor.java",
   "io/flutter/plugin/editing/TextInputPlugin.java",
   "io/flutter/plugin/platform/AccessibilityEventsDelegate.java",
