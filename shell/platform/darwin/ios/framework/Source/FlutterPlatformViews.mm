@@ -251,21 +251,9 @@ void FlutterPlatformViewsController::CancelFrame() {
   composition_order_ = active_composition_order_;
 }
 
-bool FlutterPlatformViewsController::HasPendingViewOperations() {
-  // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
-  // This method also needs to consider if there are pending changes in overlays. Details in the
-  // above issue.
-  if (!views_to_dispose_.empty()) {
-    return true;
-  }
-  if (!views_to_recomposite_.empty()) {
-    return true;
-  }
-  return active_composition_order_ != composition_order_;
-}
-
 // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
-// Remove this method is the issue above is resloved.
+// Make this method check if there are pending view operations instead.
+// Also rename it to `HasPendingViewOperations`.
 bool FlutterPlatformViewsController::HasPlatformViewThisOrNextFrame() {
   return composition_order_.size() > 0 || active_composition_order_.size() > 0;
 }
@@ -275,8 +263,7 @@ const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
 PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
-  // Switch `HasPlatformViewThisOrNextFrame` to `HasPendingViewOperations` when the issue above is
-  // resolved.
+  // Rename `has_platform_view` to `view_mutated` when the above issue is resolved.
   const bool has_platform_view = HasPlatformViewThisOrNextFrame();
   if (has_platform_view) {
     if (raster_thread_merger->IsMerged()) {
@@ -497,9 +484,6 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   // Any UIKit related code has to run on main thread.
   // When on a non-main thread, we only allow the rest of the method to run if there is no
   // Pending UIView operations.
-  // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
-  // Switch `HasPlatformViewThisOrNextFrame` to `HasPendingViewOperations` when the issue above is
-  // resolved.
   FML_DCHECK([[NSThread currentThread] isMainThread] || !HasPlatformViewThisOrNextFrame());
 
   DisposeViews();

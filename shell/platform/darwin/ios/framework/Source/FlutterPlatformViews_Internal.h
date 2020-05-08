@@ -242,14 +242,11 @@ class FlutterPlatformViewsController {
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
 
-  // This will return true after pre-roll if any of the embedded views
-  // have mutated for last layer tree.
-  bool HasPendingViewOperations();
-
   // Returns true if there are embedded in the scene at current frame
   // Or there will be embedded in the next frame.
   // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
-  // Remove this method is the issue above is resloved.
+  // Make this method check if there are pending view operations instead.
+  // Also rename it to `HasPendingViewOperations`.
   bool HasPlatformViewThisOrNextFrame();
 
   // Traverse the `mutators_stack` and return the number of clip operations.
