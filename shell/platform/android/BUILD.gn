@@ -454,9 +454,7 @@ action("robolectric_tests") {
     jar_path + ".md5.stamp",
   ]
 
-  additional_jar_files = [
-    "robolectric.properties",
-  ]
+  additional_jar_files = [ "robolectric.properties" ]
 
   _jar_dependencies = [
                         android_sdk_jar,
