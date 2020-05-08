@@ -31,7 +31,7 @@ bool TaskRunnerChecker::RunsOnTheSameThread(TaskQueueId queue_a,
     return true;
   }
   return false;
-}
+};
 
 TaskQueueId TaskRunnerChecker::InitTaskQueueId() {
   MessageLoop::EnsureInitializedForCurrentThread();

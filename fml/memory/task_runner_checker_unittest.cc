@@ -4,7 +4,6 @@
 
 #define FML_USED_ON_EMBEDDER
 
-
 #include <gtest/gtest.h>
 
 #include <thread>
@@ -26,7 +25,7 @@ TEST(TaskRunnerCheckerTests, RunsOnCurrentTaskRunner) {
 TEST(TaskRunnerCheckerTests, FailsTheCheckIfOnDifferentTaskRunner) {
   TaskRunnerChecker checker;
   EXPECT_EQ(checker.RunsOnCreationTaskRunner(), true);
-  fml::MessageLoop* loop;
+  fml::MessageLoop* loop = nullptr;
   fml::AutoResetWaitableEvent latch;
   std::thread anotherThread([&]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -64,6 +63,56 @@ TEST(TaskRunnerCheckerTests, RunsOnDifferentThreadsReturnsFalse) {
   });
   latch.Wait();
   anotherThread.join();
+}
+
+TEST(TaskRunnerCheckerTests, MergedTaskRunnersRunsOnTheSameThread) {
+  fml::MessageLoop* loop1 = nullptr;
+  fml::AutoResetWaitableEvent latch1;
+  fml::AutoResetWaitableEvent term1;
+  std::thread thread1([&loop1, &latch1, &term1]() {
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    loop1 = &fml::MessageLoop::GetCurrent();
+    latch1.Signal();
+    term1.Wait();
+  });
+
+  fml::MessageLoop* loop2 = nullptr;
+  fml::AutoResetWaitableEvent latch2;
+  fml::AutoResetWaitableEvent term2;
+  std::thread thread2([&loop2, &latch2, &term2]() {
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    loop2 = &fml::MessageLoop::GetCurrent();
+    latch2.Signal();
+    term2.Wait();
+  });
+
+  latch1.Wait();
+  latch2.Wait();
+  fml::TaskQueueId qid1 = loop1->GetTaskRunner()->GetTaskQueueId();
+  fml::TaskQueueId qid2 = loop2->GetTaskRunner()->GetTaskQueueId();
+  const auto raster_thread_merger_ =
+      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+  const int kNumFramesMerged = 5;
+
+  raster_thread_merger_->MergeWithLease(kNumFramesMerged);
+
+  // merged, running on the same thread
+  EXPECT_EQ(TaskRunnerChecker::RunsOnTheSameThread(qid1, qid2), true);
+
+  for (int i = 0; i < kNumFramesMerged; i++) {
+    ASSERT_TRUE(raster_thread_merger_->IsMerged());
+    raster_thread_merger_->DecrementLease();
+  }
+
+  ASSERT_FALSE(raster_thread_merger_->IsMerged());
+
+  // un-merged, not running on the same thread
+  EXPECT_EQ(TaskRunnerChecker::RunsOnTheSameThread(qid1, qid2), false);
+
+  term1.Signal();
+  term2.Signal();
+  thread1.join();
+  thread2.join();
 }
 
 }  // namespace testing
