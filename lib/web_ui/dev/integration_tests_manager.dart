@@ -202,7 +202,7 @@ class IntegrationTestsManager {
         '--profile',
         '--browser-name=$_browser',
         if (isLuci) '--chrome-binary=${chromeExecutableForLUCI()}',
-        if (isLuci) '--no-headless',
+        if (isLuci) '--headless',
         '--local-engine=host_debug_unopt',
       ],
       workingDirectory: directory.path,
