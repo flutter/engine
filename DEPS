@@ -138,7 +138,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '71c54fdf2bcb63c70217c0beb8deec73787439b4',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'e32b5c320d36bdb7a21ecfc7a2f86787f63e8dd6',
 
    # Fuchsia compatibility
    #
@@ -499,7 +499,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/embedding_bundle',
-        'version': 'last_updated:2020-05-04T18:53:14-0700'
+        'version': 'last_updated:2020-03-13T15:42:26-0700'
        }
      ],
      'condition': 'download_android_deps',

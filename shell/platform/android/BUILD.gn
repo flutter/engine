@@ -455,7 +455,7 @@ action("robolectric_tests") {
   ]
 
   additional_jar_files = [
-    "test/io/flutter/robolectric.properties",
+    "robolectric.properties",
   ]
 
   _jar_dependencies = [

@@ -308,7 +308,6 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   command = [
     'java',
     '-Drobolectric.offline=true',
-    '-Drobolectric.enabledSdks=28',
     '-Drobolectric.dependency.dir=' + embedding_deps_dir,
     '-classpath', ':'.join(classpath),
     '-Drobolectric.logging=stdout',
