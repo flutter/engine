@@ -49,6 +49,9 @@ android {
     embedding "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
 
     // Testing
+    // TODO(xster): remove these android-all compile time dependencies.
+    // Use https://github.com/robolectric/robolectric/blob/master/robolectric/src/main/java/org/robolectric/plugins/LegacyDependencyResolver.java#L24
+    // and specify them as runtime dependencies.
     embeddingTesting "org.robolectric:android-all:8.1.0-robolectric-4611349"
     // Get robolectric shadows for SDK=16 used by PlatformPluginTest.
     embeddingTesting_v16 "org.robolectric:android-all:4.1.2_r1-robolectric-r1"

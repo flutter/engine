@@ -39,6 +39,7 @@ import org.robolectric.annotation.Implements;
 
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
+@TargetApi(29)
 public class FlutterViewTest {
   @Mock FlutterJNI mockFlutterJni;
   @Mock FlutterLoader mockFlutterLoader;
