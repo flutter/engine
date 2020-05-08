@@ -285,13 +285,11 @@ public class FlutterViewTest {
   }
 
   @Test
-  public void systemInsetHandlesFullscreenNavbar() {
+  public void systemInsetHandlesFullscreenNavbarRight() {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     ShadowDisplay display = Shadows.shadowOf(((WindowManager)RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay());
-    // ShadowDisplay display = Shadows.shadowOf(((DisplayManager)RuntimeEnvironment.systemContext.getSystemService(Context.DISPLAY_SERVICE)).getDisplays()[0]);
-    display.setRotation(90);
-    assert(display.getDefaultDisplay().getRotation() == Surface.ROTATION_90);
+    display.setRotation(1);
     assertEquals(0, flutterView.getSystemUiVisibility());
     when(flutterView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
@@ -311,7 +309,6 @@ public class FlutterViewTest {
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
 
-    assert(flutterView.calculateShouldZeroSides() == FlutterView.ZeroSides.RIGHT);
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
     when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
@@ -321,27 +318,58 @@ public class FlutterViewTest {
 
     flutterView.onApplyWindowInsets(windowInsets);
 
-    // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    // Top padding is reported as-is.
+    // Top padding is removed due to full screen.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
     // Padding bottom is always 0.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingLeft);
+    // Right paddiong is zero because the rotation is 270deg
     assertEquals(0, viewportMetricsCaptor.getValue().paddingRight);
+  }
 
-    display.setRotation(270);
+  @Test
+  public void systemInsetHandlesFullscreenNavbarLeft() {
+    RuntimeEnvironment.setQualifiers("+land");
+    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
+    ShadowDisplay display = Shadows.shadowOf(((WindowManager)RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay());
+    display.setRotation(3);
+    assertEquals(0, flutterView.getSystemUiVisibility());
+    when(flutterView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+    when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
+
+
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    // When we attach a new FlutterView to the engine without any system insets, the viewport
+    // metrics
+    // default to 0.
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+    assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
+
+    // Then we simulate the system applying a window inset.
+    WindowInsets windowInsets = mock(WindowInsets.class);
+    when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
+    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(100);
+    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(100);
+    when(windowInsets.getSystemWindowInsetRight()).thenReturn(100);
+
     flutterView.onApplyWindowInsets(windowInsets);
 
-    // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    // Top padding is reported as-is.
+    // Top padding is removed due to full screen.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingTop);
     // Padding bottom is always 0.
     assertEquals(0, viewportMetricsCaptor.getValue().paddingBottom);
+    // Left paddiong is zero because the rotation is 270deg
     assertEquals(0, viewportMetricsCaptor.getValue().paddingLeft);
     assertEquals(100, viewportMetricsCaptor.getValue().paddingRight);
-
   }
 
   /*
@@ -359,4 +387,12 @@ public class FlutterViewTest {
   // production classes' view hierarchy.
   @Implements(ViewGroup.class)
   public static class ShadowFullscreenViewGroup extends ShadowFullscreenView {}
+
+  // @Implements(Display.class)
+  // public static class ShadowFlutterDisplay {
+  //   @Implementation
+  //   public int getRotation() {
+  //     return 90;
+  //   }
+  // }
 }
