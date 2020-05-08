@@ -174,10 +174,6 @@ struct KeyboardState {
   // The project to run in this controller's engine.
   FlutterDartProject* _project;
 
-  // The plugin used to handle mouse cursor. This is not an FlutterPlugin, so must be owned
-  // separately.
-  FlutterMouseCursorPlugin* _mouseCursorPlugin;
-
   // The plugin used to handle text input. This is not an FlutterPlugin, so must be owned
   // separately.
   FlutterTextInputPlugin* _textInputPlugin;
@@ -355,7 +351,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)addInternalPlugins {
-  _mouseCursorPlugin = [[FlutterMouseCursorPlugin alloc] initWithViewController:self];
+  [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
   _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:self];
   _keyEventChannel =
       [FlutterBasicMessageChannel messageChannelWithName:@"flutter/keyevent"

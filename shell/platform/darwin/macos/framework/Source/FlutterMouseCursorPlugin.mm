@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
-
 #import <objc/message.h>
 
+#import "FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 
 // System shape are constant integers used by the framework to represent a shape
@@ -30,11 +29,11 @@ static NSString* const kDeviceKey = @"device";
 
 // Maps a Flutter's constant to a platform's cursor object.
 //
-// Returns nil for unknown constants, including kSystemShapeNone.
+// Returns the arrow cursor for unknown constants, including kSystemShapeNone.
 static NSCursor* resolveSystemShape(NSNumber* platformConstant) {
   switch ([platformConstant intValue]) {
     case kSystemShapeBasic:
-      return [NSCursor arrowCursor];
+      break;
     case kSystemShapeClick:
       return [NSCursor pointingHandCursor];
     case kSystemShapeText:
@@ -46,7 +45,7 @@ static NSCursor* resolveSystemShape(NSNumber* platformConstant) {
     case kSystemShapeGrabbing:
       return [NSCursor closedHandCursor];
   }
-  return nil;
+  return [NSCursor arrowCursor];;
 }
 
 @interface FlutterMouseCursorPlugin ()
@@ -56,46 +55,23 @@ static NSCursor* resolveSystemShape(NSNumber* platformConstant) {
 @property(nonatomic) FlutterMethodChannel* channel;
 
 /**
- * The FlutterViewController to manage input for.
+ * Whether the cursor is currently hidden. 
  */
-@property(nonatomic, weak) FlutterViewController* flutterViewController;
-
-@property(nonatomic) NSMutableDictionary *shapeObjects;
-
-@property(nonatomic) NSCursor *shape;
-
 @property(nonatomic) BOOL hidden;
 
 @end
 
 @implementation FlutterMouseCursorPlugin
 
-- (instancetype)initWithViewController:(nonnull FlutterViewController*)viewController {
+- (instancetype)initWithChannel:(FlutterMethodChannel *)channel {
   self = [super init];
-  if (self != nil) {
-    _flutterViewController = viewController;
-    _channel = [FlutterMethodChannel methodChannelWithName:kMouseCursorChannel
-                                           binaryMessenger:viewController.engine.binaryMessenger
-                                                     codec:[FlutterStandardMethodCodec sharedInstance]];
-    __weak FlutterMouseCursorPlugin* weakSelf = self;
-    [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [weakSelf handleMethodCall:call result:result];
-    }];
-    _shapeObjects = [[NSMutableDictionary alloc] init];
+  if (self) {
+    _channel = channel;
   }
   return self;
 }
 
 #pragma mark - Private
-
-- (void)handleMethodCall:(nonnull FlutterMethodCall*)call result:(FlutterResult)result {
-  NSString* method = call.method;
-  if ([method isEqualToString:kActivateSystemCursorMethod]) {
-    result([self activateSystemCursor:call.arguments]);
-  } else {
-    result(FlutterMethodNotImplemented);
-  }
-}
 
 - (id)activateSystemCursor:(nonnull NSDictionary*)arguments {
   if (!arguments) {
@@ -105,59 +81,53 @@ static NSCursor* resolveSystemShape(NSNumber* platformConstant) {
               details:@"Missing arguments while trying to activate system cursor"];
   }
   NSNumber* shapeCodeArg = arguments[kShapeCodeKey];
-  if (!shapeCodeArg) {
-    return [FlutterError
-        errorWithCode:@"error"
-              message:@"Missing argument"
-              details:@"Missing argument shapeCode while trying to activate system cursor"];
-  }
   NSNumber* deviceArg = arguments[kDeviceKey];
-  if (!deviceArg) {
+  if (!shapeCodeArg || !deviceArg) {
     return [FlutterError
         errorWithCode:@"error"
               message:@"Missing argument"
-              details:@"Missing argument device while trying to activate system cursor"];
+              details:@"Missing argument while trying to activate system cursor"];
   }
   if ([shapeCodeArg intValue] == kSystemShapeNone) {
-    return [self hide];
-  }
-  NSCursor* shapeObject = [self resolveShapeCode:shapeCodeArg];
-  if (shapeObject == nil) {
-    // Unregistered shape. Return false to request fallback.
-    return @(NO);
-  }
-  return [self activateShapeObject:shapeObject];
-}
-
-- (nullable NSCursor*)resolveShapeCode:(NSNumber*)shape {
-  NSCursor *cachedObject = _shapeObjects[shape];
-  if (cachedObject)
-    return cachedObject;
-  NSCursor *systemObject = resolveSystemShape(shape);
-  if (!systemObject)
+    [self hide];
     return nil;
-  _shapeObjects[shape] = systemObject;
-  return systemObject;
+  }
+  NSCursor* shapeObject = resolveSystemShape(shapeCodeArg);
+  [self activateShapeObject:shapeObject];
+  return nil;
 }
 
-- (id)activateShapeObject: (nonnull NSCursor *)targetShape {
-  if (targetShape == _shape && !_hidden)
-    return @(YES);
+- (void)activateShapeObject: (nonnull NSCursor *)targetShape {
   [targetShape set];
   if (_hidden) {
     [NSCursor unhide];
   }
-  _shape = targetShape;
   _hidden = NO;
-  return @(YES);
 }
 
-- (id)hide {
+- (void)hide {
   if (!_hidden) {
     [NSCursor hide];
   }
   _hidden = YES;
-  return @(YES);
+}
+
+#pragma mark - FlutterPlugin implementation
+
++ (void)registerWithRegistrar:(id<FlutterPluginRegistrar>)registrar {
+  FlutterMethodChannel *channel = [FlutterMethodChannel methodChannelWithName:kMouseCursorChannel
+                                                              binaryMessenger:registrar.messenger];
+  FlutterMouseCursorPlugin *instance = [[FlutterMouseCursorPlugin alloc] initWithChannel:channel];
+  [registrar addMethodCallDelegate:instance channel:channel];
+}
+
+- (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result {
+  NSString* method = call.method;
+  if ([method isEqualToString:kActivateSystemCursorMethod]) {
+    result([self activateSystemCursor:call.arguments]);
+  } else {
+    result(FlutterMethodNotImplemented);
+  }
 }
 
 @end

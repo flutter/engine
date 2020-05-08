@@ -11,16 +11,7 @@
  *
  * Responsible for bridging the native macOS mouse cursor system with the
  * Flutter framework mouse cursor classes, via system channels.
- *
- * This is not an FlutterPlugin since it needs access to FlutterViewController
- * internals, so needs to be managed differently.
  */
-@interface FlutterMouseCursorPlugin : NSObject
-
-/**
- * Initializes a mouse cursor plugin that coordinates key event handling with
- * |viewController|.
- */
-- (nonnull instancetype)initWithViewController:(nonnull FlutterViewController*)viewController;
+@interface FlutterMouseCursorPlugin : NSObject <FlutterPlugin>
 
 @end
