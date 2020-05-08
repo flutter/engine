@@ -152,7 +152,7 @@ def CopyToBucket(src, dst, product=False):
   CopyToBucketWithMode(src, dst, True, product, 'dart')
 
 
-def CopyDepsToBucket(src, dst, arch):
+def CopyVulkanDepsToBucket(src, dst, arch):
   sdk_path = GetFuchsiaSDKPath()
   deps_bucket_path = os.path.join(_bucket_directory, dst)
   if not os.path.exists(deps_bucket_path):
@@ -165,7 +165,7 @@ def BuildBucket(runtime_mode, arch, product):
   bucket_dir = 'flutter/%s/%s/' % (arch, runtime_mode)
   deps_dir = 'flutter/%s/deps/' % (arch)
   CopyToBucket(out_dir, bucket_dir, product)
-  CopyDepsToBucket(out_dir, deps_dir, arch)
+  CopyVulkanDepsToBucket(out_dir, deps_dir, arch)
 
 
 def ProcessCIPDPackage(upload, engine_version):
