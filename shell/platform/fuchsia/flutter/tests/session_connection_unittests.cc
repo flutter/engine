@@ -207,7 +207,7 @@ TEST(CalculateNextLatchPointTest, DelayedPresentRequestWithLongFrameBuildTime) {
             TimePointToInt(last_latch_point_targeted));
 }
 
-TEST(CalculateNextLatchPointTest, LastLastPointTargettedLate) {
+TEST(CalculateNextLatchPointTest, LastLastPointTargetedLate) {
   fml::TimePoint present_requested_time = TimePointFromInt(2000);
   fml::TimePoint now = TimePointFromInt(2000);
   fml::TimePoint last_latch_point_targeted = TimePointFromInt(2600);
