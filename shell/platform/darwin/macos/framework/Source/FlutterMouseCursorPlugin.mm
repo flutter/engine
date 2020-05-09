@@ -7,45 +7,36 @@
 #import "FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 
-// System shape are constant integers used by the framework to represent a shape
-// of system cursors.
-//
-// They are intentionally designed to be meaningless integers.
-//
-// They must be kept in sync with Flutter framework's mouse_cursor.dart
-static const int kSystemShapeNone = 0x334c4a;
-static const int kSystemShapeBasic = 0xf17aaa;
-static const int kSystemShapeClick = 0xa8affc;
-static const int kSystemShapeText = 0x1cb251;
-static const int kSystemShapeForbidden = 0x350f9d;
-static const int kSystemShapeGrab = 0x28b91f;
-static const int kSystemShapeGrabbing = 0x6631ce;
-
 static NSString* const kMouseCursorChannel = @"flutter/mousecursor";
 
 static NSString* const kActivateSystemCursorMethod = @"activateSystemCursor";
-static NSString* const kShapeCodeKey = @"shapeCode";
+static NSString* const kKindKey = @"kind";
 static NSString* const kDeviceKey = @"device";
+
+static NSString* const kKindValueNone = @"none";
+
+static NSMutableDictionary* cachedSystemCursors;
 
 // Maps a Flutter's constant to a platform's cursor object.
 //
 // Returns the arrow cursor for unknown constants, including kSystemShapeNone.
-static NSCursor* resolveSystemShape(NSNumber* platformConstant) {
-  switch ([platformConstant intValue]) {
-    case kSystemShapeBasic:
-      break;
-    case kSystemShapeClick:
-      return [NSCursor pointingHandCursor];
-    case kSystemShapeText:
-      return [NSCursor IBeamCursor];
-    case kSystemShapeForbidden:
-      return [NSCursor operationNotAllowedCursor];
-    case kSystemShapeGrab:
-      return [NSCursor openHandCursor];
-    case kSystemShapeGrabbing:
-      return [NSCursor closedHandCursor];
-  }
-  return [NSCursor arrowCursor];;
+static NSCursor* mapKindToCursor(NSString* kind) {
+  // The following mapping must be kept in sync with Flutter framework's
+  // mouse_cursor.dart
+  if ([kind isEqualToString:@"basic"])
+    return [NSCursor arrowCursor];
+  else if ([kind isEqualToString:@"click"])
+    return [NSCursor pointingHandCursor];
+  else if ([kind isEqualToString:@"text"])
+    return [NSCursor IBeamCursor];
+  else if ([kind isEqualToString:@"forbidden"])
+    return [NSCursor operationNotAllowedCursor];
+  else if ([kind isEqualToString:@"grab"])
+    return [NSCursor openHandCursor];
+  else if ([kind isEqualToString:@"grabbing"])
+    return [NSCursor closedHandCursor];
+  else
+    return [NSCursor arrowCursor];
 }
 
 @interface FlutterMouseCursorPlugin ()
@@ -80,19 +71,19 @@ static NSCursor* resolveSystemShape(NSNumber* platformConstant) {
               message:@"Missing arguments"
               details:@"Missing arguments while trying to activate system cursor"];
   }
-  NSNumber* shapeCodeArg = arguments[kShapeCodeKey];
+  NSString* kindArg = arguments[kKindKey];
   NSNumber* deviceArg = arguments[kDeviceKey];
-  if (!shapeCodeArg || !deviceArg) {
+  if (!kindArg || !deviceArg) {
     return [FlutterError
         errorWithCode:@"error"
               message:@"Missing argument"
               details:@"Missing argument while trying to activate system cursor"];
   }
-  if ([shapeCodeArg intValue] == kSystemShapeNone) {
+  if ([kindArg isEqualToString:kKindValueNone]) {
     [self hide];
     return nil;
   }
-  NSCursor* shapeObject = resolveSystemShape(shapeCodeArg);
+  NSCursor* shapeObject = [FlutterMouseCursorPlugin resolveKindToCursor:kindArg];
   [self activateShapeObject:shapeObject];
   return nil;
 }
@@ -110,6 +101,19 @@ static NSCursor* resolveSystemShape(NSNumber* platformConstant) {
     [NSCursor hide];
   }
   _hidden = YES;
+}
+
++ (NSCursor*)resolveKindToCursor:(NSString*)kind {
+  if (cachedSystemCursors == nil) {
+    cachedSystemCursors = [NSMutableDictionary dictionary];
+  }
+  
+  NSCursor* cachedValue = [cachedSystemCursors objectForKey:kind];
+  if (cachedValue == nil) {
+    cachedValue = mapKindToCursor(kind);
+    [cachedSystemCursors setValue:cachedValue forKey:kind];
+  }
+  return cachedValue;
 }
 
 #pragma mark - FlutterPlugin implementation
