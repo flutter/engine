@@ -351,6 +351,13 @@ class TraceFlow {
   FML_DISALLOW_COPY_AND_ASSIGN(TraceFlow);
 };
 
+//------------------------------------------------------------------------------
+/// @brief      Before DartVM has initialized, |Dart_TimelineEvent| is not able
+///             to record events but drop them since |TimelineRecorder| not yet
+///             created. To resolve this issue, we need to cache these early
+///             events, then call this method after |Dart_Initialize| to flush
+///             the cached events.
+///
 void FlushCachedTimelineEvents();
 
 }  // namespace tracing

@@ -47,7 +47,7 @@ struct CachedTimelineEvent {
 std::vector<std::unique_ptr<CachedTimelineEvent>> gCachedTimelineEvents;
 std::mutex gCachedTimelineEventsMutex;
 
-inline void CacheTimelineEvent(const char* label,
+static void CacheTimelineEvent(const char* label,
                                int64_t timestamp0,
                                int64_t timestamp1_or_async_id,
                                Dart_Timeline_Event_Type type,
@@ -62,9 +62,6 @@ inline void CacheTimelineEvent(const char* label,
   gCachedTimelineEvents.push_back(std::move(event));
 }
 
-// Before DartVM has initialized, |Dart_TimelineEvent| is not able to record
-// timeline events but drop them. Thus we need to cache these previous events,
-// and flush them once DartVM init.
 typedef void (*TimelineEventFunction)(const char* label,
                                       int64_t timestamp0,
                                       int64_t timestamp1_or_async_id,
