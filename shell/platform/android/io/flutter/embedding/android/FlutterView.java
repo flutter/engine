@@ -402,7 +402,10 @@ public class FlutterView extends FrameLayout {
     // of the rotation.
     Context context = getContext();
     int orientation = context.getResources().getConfiguration().orientation;
-    int rotation = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
+    int rotation =
+        ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
+            .getDefaultDisplay()
+            .getRotation();
 
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
       if (rotation == Surface.ROTATION_90) {

@@ -12,13 +12,10 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.view.Display;
-import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowManager;
-import android.hardware.display.DisplayManager;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -299,15 +296,13 @@ public class FlutterViewTest {
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
 
-
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
 
-    // When we attach a new FlutterView to the engine without any system insets, the viewport
-    // metrics
-    // default to 0.
+    // When we attach a new FlutterView to the engine without any system insets,
+    // the viewport metrics default to 0.
     flutterView.attachToFlutterEngine(flutterEngine);
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
@@ -348,15 +343,13 @@ public class FlutterViewTest {
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
 
-
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
 
-    // When we attach a new FlutterView to the engine without any system insets, the viewport
-    // metrics
-    // default to 0.
+    // When we attach a new FlutterView to the engine without any system insets,
+    // the viewport metrics default to 0.
     flutterView.attachToFlutterEngine(flutterEngine);
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);

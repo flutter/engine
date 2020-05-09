@@ -29,8 +29,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewStructure;
-import android.view.WindowManager;
 import android.view.WindowInsets;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.autofill.AutofillValue;
@@ -550,7 +550,10 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     // of the rotation.
     Context context = getContext();
     int orientation = context.getResources().getConfiguration().orientation;
-    int rotation = ((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
+    int rotation =
+        ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
+            .getDefaultDisplay()
+            .getRotation();
 
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
       if (rotation == Surface.ROTATION_90) {
