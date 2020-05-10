@@ -43,7 +43,11 @@ class IntegrationTestsManager {
       print('WARNING: integration tests are only supported on chrome for now');
       return false;
     } else {
-      await prepareDriver();
+      if (isLuci) {
+        await runDriverOnLUCI();
+      } else {
+        await prepareDriver();
+      }
       // TODO(nurhan): https://github.com/flutter/flutter/issues/52987
       return await _runTests();
     }
@@ -89,9 +93,24 @@ class IntegrationTestsManager {
         useSystemFlutter: _useSystemFlutter);
   }
 
-  void _runDriver() async {
+  /// Start the Chrome Driver on LUCI/
+  ///
+  /// Driver should already exist on LUCI as a CIPD package. No need to install.
+  ///
+  /// Throw an error if directory does not exists.
+  void runDriverOnLUCI() {
+    print('INFO: Checking driver on path: ${_browserDriverDir.path}');
+    if (!_browserDriverDir.existsSync()) {
+      throw StateError('Failed to locate Chrome driver on LUCI.');
+    }
+    print('INFO: Starting the driver on path: ${_browserDriverDir.path}');
+    _runDriver(_browserDriverDir.path);
+    print('INFO: Driver started');
+  }
+
+  void _runDriver(String workingDirectory) async {
     startProcess('./chromedriver/chromedriver', ['--port=4444'],
-        workingDirectory: io.Directory.current.path);
+        workingDirectory: workingDirectory);
     print('INFO: Driver started');
   }
 
@@ -111,7 +130,7 @@ class IntegrationTestsManager {
     ChromeDriverInstaller chromeDriverInstaller =
         ChromeDriverInstaller.withVersion(chromeDriverVersion);
     await chromeDriverInstaller.install(alwaysInstall: true);
-    await _runDriver();
+    await _runDriver(io.Directory.current.path);
     io.Directory.current = temp;
   }
 

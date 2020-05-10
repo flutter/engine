@@ -279,7 +279,7 @@ String chromeExecutableForLUCI() {
         'Found exabutable in LUCI: ${chromeInstaller.getInstallation().executable}');
     return chromeInstaller.getInstallation().executable;
   } else {
-    throw BrowserInstallerException(
+    throw StateError(
         'Failed to locate pinned Chrome build: $buildNumber on LUCI.');
   }
 }
