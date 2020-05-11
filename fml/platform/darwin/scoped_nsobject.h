@@ -37,20 +37,26 @@ namespace fml {
 // We check for bad uses of scoped_nsobject and NSAutoreleasePool at compile
 // time with a template specialization (see below).
 
+id ObjcRetain(id object);
+
+id ObjcAutorelease(id object);
+
+void ObjcRelease(id object);
+
 template <typename NST>
 class scoped_nsprotocol {
  public:
   explicit scoped_nsprotocol(NST object = nil) : object_(object) {}
 
-  scoped_nsprotocol(const scoped_nsprotocol<NST>& that) : object_([that.object_ retain]) {}
+  scoped_nsprotocol(const scoped_nsprotocol<NST>& that) : object_(ObjcRetain(that.object_)) {}
 
   template <typename NSU>
-  scoped_nsprotocol(const scoped_nsprotocol<NSU>& that) : object_([that.get() retain]) {}
+  scoped_nsprotocol(const scoped_nsprotocol<NSU>& that) : object_(ObjcRetain(that.get())) {}
 
-  ~scoped_nsprotocol() { [object_ release]; }
+  ~scoped_nsprotocol() { ObjcRelease(object_); }
 
   scoped_nsprotocol& operator=(const scoped_nsprotocol<NST>& that) {
-    reset([that.get() retain]);
+    reset(ObjcRetain(that.get()));
     return *this;
   }
 
@@ -59,7 +65,7 @@ class scoped_nsprotocol {
     // either already have an ownership claim over whatever it passes to this
     // method, or call it with the |RETAIN| policy which will have ensured that
     // the object is retained once more when reaching this point.
-    [object_ release];
+    ObjcRelease(object_);
     object_ = object;
   }
 
@@ -86,7 +92,7 @@ class scoped_nsprotocol {
   }
 
   // Shift reference to the autorelease pool to be released later.
-  NST autorelease() { return [release() autorelease]; }
+  NST autorelease() { return ObjcAutorelease(release()); }
 
  private:
   NST object_;
@@ -141,6 +147,8 @@ class scoped_nsobject<id> : public scoped_nsprotocol<id> {
   }
 };
 
+#if !__has_feature(objc_arc)
+
 // Do not use scoped_nsobject for NSAutoreleasePools, use
 // ScopedNSAutoreleasePool instead. This is a compile time check. See details
 // at top of header.
@@ -150,6 +158,8 @@ class scoped_nsobject<NSAutoreleasePool> {
   explicit scoped_nsobject(NSAutoreleasePool* object = nil);
   FML_DISALLOW_COPY_AND_ASSIGN(scoped_nsobject);
 };
+
+#endif  // !__has_feature(objc_arc)
 
 }  // namespace fml
 
