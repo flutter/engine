@@ -6,6 +6,16 @@
 
 namespace fml {
 
-//
+id ObjcRetain(id object) {
+  return [object retain];
+}
+
+id ObjcAutorelease(id object) {
+  return [object autorelease];
+}
+
+void ObjcRelease(id object) {
+  [object release];
+}
 
 }  // namespace fml
