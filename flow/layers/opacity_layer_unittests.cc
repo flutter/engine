@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/opacity_layer.h"
 
+#include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -325,6 +326,19 @@ TEST_F(OpacityLayerTest, Readback) {
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
+}
+
+TEST_F(OpacityLayerTest, CullRectIsTransformed) {
+  auto clipRectLayer = std::make_shared<ClipRectLayer>(
+      SkRect::MakeLTRB(0, 0, 10, 10), flutter::hardEdge);
+  auto opacityLayer =
+      std::make_shared<OpacityLayer>(128, SkPoint::Make(20, 20));
+  auto mockLayer = std::make_shared<MockLayer>(SkPath());
+  clipRectLayer->Add(opacityLayer);
+  opacityLayer->Add(mockLayer);
+  clipRectLayer->Preroll(preroll_context(), SkMatrix::I());
+  EXPECT_EQ(mockLayer->parent_cull_rect().fLeft, -20);
+  EXPECT_EQ(mockLayer->parent_cull_rect().fTop, -20);
 }
 
 }  // namespace testing
