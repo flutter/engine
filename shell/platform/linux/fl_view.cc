@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
+#include "flutter/shell/platform/linux/fl_accessibility_channel.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
@@ -31,6 +32,7 @@ struct _FlView {
   int64_t button_state;
 
   // Flutter system channel handlers.
+  FlAccessibilityChannel* accessibility_channel;
   FlKeyEventPlugin* key_event_plugin;
 };
 
@@ -113,6 +115,7 @@ static void fl_view_constructed(GObject* object) {
 
   // Create system channel handlers
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
+  self->accessibility_channel = fl_accessibility_channel_new(messenger);
   self->key_event_plugin = fl_key_event_plugin_new(messenger);
 }
 
@@ -155,6 +158,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
   g_clear_object(&self->engine);
+  g_clear_object(&self->accessibility_channel);
   g_clear_object(&self->key_event_plugin);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);

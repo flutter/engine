@@ -74,6 +74,7 @@ source_set("flutter_linux") {
   public = _public_headers
 
   sources = [
+    "fl_accessibility_channel.cc",
     "fl_basic_message_channel.cc",
     "fl_binary_codec.cc",
     "fl_binary_messenger.cc",
