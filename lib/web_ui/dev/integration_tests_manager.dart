@@ -108,7 +108,6 @@ class IntegrationTestsManager {
     }
     print('INFO: Starting the driver on path: ${_browserDriverDir.path}');
     _runDriver(_browserDriverDir.path);
-    print('INFO: Driver started');
   }
 
   void _runDriver(String workingDirectory) async {
@@ -176,6 +175,8 @@ class IntegrationTestsManager {
         .toList();
 
     final List<String> e2eTestsToRun = List<String>();
+    final List<String> blackList =
+        blackListsMap[getBlackListMapKey(_browser)] ?? <String>[];
 
     // The following loops over the contents of the directory and saves an
     // expected driver file name for each e2e test assuming any dart file
@@ -185,7 +186,13 @@ class IntegrationTestsManager {
     for (io.File f in entities) {
       final String basename = pathlib.basename(f.path);
       if (!basename.contains('_test.dart') && basename.endsWith('.dart')) {
-        e2eTestsToRun.add(basename);
+        // Do not add the basename if it is in the blacklist.
+        if (!blackList.contains(basename)) {
+          e2eTestsToRun.add(basename);
+        } else {
+          print('Test $basename is skipped since it is blacklisted for '
+              '${getBlackListMapKey(_browser)}');
+        }
       }
     }
 
@@ -346,3 +353,22 @@ class IntegrationTestsManager {
     }
   }
 }
+
+/// Prepares a key for the [blackList] map.
+///
+/// Uses the browser name and the operating system name.
+String getBlackListMapKey(String browser) =>
+    '${browser}-${io.Platform.operatingSystem}';
+
+const Map<String, List<String>> blackListsMap = <String, List<String>>{
+  'chrome-linux': [
+    'target_platform_ios_e2e.dart',
+    'target_platform_macos_e2e.dart',
+    'target_platform_android_e2e.dart',
+  ],
+  'chrome-macos': [
+    'target_platform_ios_e2e.dart',
+    'target_platform_macos_e2e.dart',
+    'target_platform_android_e2e.dart',
+  ],
+};
