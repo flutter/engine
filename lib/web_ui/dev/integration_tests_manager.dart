@@ -34,7 +34,10 @@ class IntegrationTestsManager {
 
   IntegrationTestsManager(this._browser, this._useSystemFlutter)
       : this._browserDriverDir = io.Directory(pathlib.join(
-            environment.webUiDartToolDir.path, 'drivers', _browser)),
+            environment.webUiDartToolDir.path,
+            'drivers',
+            _browser,
+            '${_browser}driver-${io.Platform.operatingSystem.toString()}')),
         this._drivers = io.Directory(
             pathlib.join(environment.webUiDartToolDir.path, 'drivers'));
 
