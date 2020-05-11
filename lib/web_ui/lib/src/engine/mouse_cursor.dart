@@ -20,36 +20,26 @@ class MouseCursor {
 
   MouseCursor._() {}
 
-  static String _mapShapeCodeToCssValue(int shapeCode) {
-    // Shape codes are hard-coded identifiers for system cursors.
-    //
-    // The shape code values must be kept in sync with flutter's
-    // rendering/mouse_cursor.dart
-    switch (shapeCode) {
-      case /* none */ 0x334c4a:
-        return 'none';
-      case /* basic */ 0xf17aaa:
-        return 'default';
-      case /* click */ 0xa8affc:
-        return 'pointer';
-      case /* text */ 0x1cb251:
-        return 'text';
-      case /* forbidden */ 0x350f9d:
-        return 'not-allowed';
-      case /* grab */ 0x28b91f:
-        return 'grab';
-      case /* grabbing */ 0x6631ce:
-        return 'grabbing';
-      default:
-        return 'default';
-    }
+  // The kind values must be kept in sync with flutter's
+  // rendering/mouse_cursor.dart
+  static const Map<String, String> _kindToCssValueMap = <String, String>{
+    'none': 'none',
+    'basic': 'default',
+    'click': 'pointer',
+    'text': 'text',
+    'forbidden': 'not-allowed',
+    'grab': 'grab',
+    'grabbing': 'grabbing',
+  };
+  static String _mapKindToCssValue(String kind) {
+    return _kindToCssValueMap[kind] ?? 'default';
   }
 
-  void activateSystemCursor(int shapeCode) {
+  void activateSystemCursor(String kind) {
     domRenderer.setElementStyle(
       domRenderer.glassPaneElement,
       'cursor',
-      _mapShapeCodeToCssValue(shapeCode),
+      _mapKindToCssValue(kind),
     );
   }
 }
