@@ -179,11 +179,15 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterTextInputPluginTest.m",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
+    "framework/Source/accessibility_bridge_test.mm",
   ]
   deps = [
     ":flutter_framework_source",
     "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/third_party/tonic",
+    "//flutter/third_party/txt",
     "//third_party/ocmock:ocmock",
+    "//third_party/rapidjson",
     "//third_party/skia",
   ]
   public_configs = [ "//flutter:config" ]
