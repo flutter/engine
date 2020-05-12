@@ -15,6 +15,7 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.view.TextureRegistry;
 
 @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
@@ -61,7 +62,7 @@ class VirtualDisplayController {
   private final TextureRegistry.SurfaceTextureEntry textureEntry;
   private final OnFocusChangeListener focusChangeListener;
   private VirtualDisplay virtualDisplay;
-  private SingleViewPresentation presentation;
+  @VisibleForTesting SingleViewPresentation presentation;
   private Surface surface;
 
   private VirtualDisplayController(
@@ -144,7 +145,11 @@ class VirtualDisplayController {
           public void onViewDetachedFromWindow(View v) {}
         });
 
-    presentation =
+    // Create a new SingleViewPresentation and show() it before we cancel() the existing
+    // presentation. Calling show() and cancel() in this order fixes
+    // https://github.com/flutter/flutter/issues/26345 and maintains seamless transition
+    // of the contents of the presentation.
+    SingleViewPresentation newPresentation =
         new SingleViewPresentation(
             context,
             virtualDisplay.getDisplay(),
@@ -152,7 +157,9 @@ class VirtualDisplayController {
             presentationState,
             focusChangeListener,
             isFocused);
-    presentation.show();
+    newPresentation.show();
+    presentation.cancel();
+    presentation = newPresentation;
   }
 
   public void dispose() {
