@@ -96,15 +96,15 @@ class IntegrationTestsManager {
         useSystemFlutter: _useSystemFlutter);
   }
 
-  /// Start the Chrome Driver on LUCI/
+  /// Start the Chrome Driver on LUCI.
   ///
   /// Driver should already exist on LUCI as a CIPD package. No need to install.
   ///
   /// Throw an error if directory does not exists.
   void runDriverOnLUCI() {
-    print('INFO: Checking driver on path: ${_browserDriverDir.path}');
     if (!_browserDriverDir.existsSync()) {
-      throw StateError('Failed to locate Chrome driver on LUCI.');
+      throw StateError('Failed to locate Chrome driver on LUCI on path:'
+          '${_browserDriverDir.path}');
     }
     print('INFO: Starting the driver on path: ${_browserDriverDir.path}');
     _runDriver(_browserDriverDir.path);
@@ -190,7 +190,7 @@ class IntegrationTestsManager {
         if (!blackList.contains(basename)) {
           e2eTestsToRun.add(basename);
         } else {
-          print('Test $basename is skipped since it is blacklisted for '
+          print('INFO: Test $basename is skipped since it is blacklisted for '
               '${getBlackListMapKey(_browser)}');
         }
       }
