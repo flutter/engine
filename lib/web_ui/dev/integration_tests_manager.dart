@@ -360,6 +360,16 @@ class IntegrationTestsManager {
 String getBlackListMapKey(String browser) =>
     '${browser}-${io.Platform.operatingSystem}';
 
+/// Tests that should be skipped run for a specific platform-browser
+/// combination.
+///
+/// These tests might be failing or might have been implemented for a specific
+/// configuration.
+///
+/// For example a mobile browser only tests will be added to blacklist for
+/// `chrome-linux`, `safari-macos` and `chrome-macos`.
+///
+/// Note that integration tests are only running on chrome for now.
 const Map<String, List<String>> blackListsMap = <String, List<String>>{
   'chrome-linux': [
     'target_platform_ios_e2e.dart',
