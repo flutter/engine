@@ -180,18 +180,22 @@ class ChromeInstaller {
   }
 
   Future<void> install() async {
-    if (versionDir.existsSync()) {
-      print('version dir exits: ${versionDir.path.toString()}');
-      final String chromeexecutable =
-          PlatformBinding.instance.getChromeExecutablePath(versionDir);
-      print('chromeexecutable dir : ${chromeexecutable}');
-      io.File chrome = io.File(chromeexecutable);
-      if (chrome.existsSync()) {
-        print('chrome found');
-      }
+    if (versionDir.existsSync() && !isLuci) {
+      versionDir.deleteSync(recursive: true);
+      versionDir.createSync(recursive: true);
+    } else if (versionDir.existsSync() && isLuci) {
+      print('INFO: Chrome version directory in LUCI: '
+          '${versionDir.path}');
+    } else if(!versionDir.existsSync() && isLuci) {
+      // Chrome should have been deployed as a CIPD package on LUCI.
+      // Throw if it does not exists.
+      throw StateError('Failed to locate Chrome on LUCI on path:'
+          '${versionDir.path}');
+    } else {
+      // If the directory does not exists and felt is not running on LUCI.
+      versionDir.createSync(recursive: true);
     }
 
-    versionDir.createSync(recursive: true);
     final String url = PlatformBinding.instance.getChromeDownloadUrl(version);
     final StreamedResponse download = await client.send(Request(
       'GET',
@@ -262,8 +266,7 @@ String chromeExecutableForLUCI() {
   final String buildNumber = ChromeArgParser.instance.pinnedChromeBuildNumber;
   final ChromeInstaller chromeInstaller = ChromeInstaller(version: buildNumber);
   if (chromeInstaller.isInstalled) {
-    print(
-        'INFO: Found chrome executable for LUCI: '
+    print('INFO: Found chrome executable for LUCI: '
         '${chromeInstaller.getInstallation().executable}');
     return chromeInstaller.getInstallation().executable;
   } else {
