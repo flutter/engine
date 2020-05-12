@@ -11,17 +11,37 @@
 
 namespace flutter {
 
+/**
+ * @brief Holds the next `flutter::LayerTree` that needs to be rasterized. The
+ * accesses to `LayerTreeHolder` are thread safe. This is important as this
+ * component is accessed from both the UI and the Raster threads.
+ *
+ * A typical flow of events through this component would be:
+ *  1. `flutter::Animator` pushed a layer tree to be rendered during each
+ * `Animator::Render` call.
+ *  2. `flutter::Rasterizer::Draw` consumes the pushed layer tree via `Pop`.
+ *
+ * It is important to note that if a layer tree held by this class is yet to be
+ * consumed, it can be overriden by a newer layer tree produced by the
+ * `Animator`. The newness of the layer tree is determined by the target time.
+ */
 class LayerTreeHolder {
  public:
-  LayerTreeHolder() = default;
+  LayerTreeHolder();
 
-  ~LayerTreeHolder() = default;
+  ~LayerTreeHolder();
 
+  /**
+   * @brief Checks if a layer tree is currently held.
+   *
+   * @return true is no layer tree is held.
+   * @return false if there is a layer tree waiting to be consumed.
+   */
   bool IsEmpty() const;
 
-  std::unique_ptr<LayerTree> Get();
+  [[nodiscard]] std::unique_ptr<LayerTree> Pop();
 
-  void ReplaceIfNewer(std::unique_ptr<LayerTree> proposed_layer_tree);
+  void PushIfNewer(std::unique_ptr<LayerTree> proposed_layer_tree);
 
  private:
   mutable std::mutex layer_tree_mutex;

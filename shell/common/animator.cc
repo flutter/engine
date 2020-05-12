@@ -154,7 +154,7 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
                                 last_frame_target_time_);
   }
 
-  layer_tree_holder_->ReplaceIfNewer(std::move(layer_tree));
+  layer_tree_holder_->PushIfNewer(std::move(layer_tree));
   delegate_.OnAnimatorDraw(layer_tree_holder_, last_frame_target_time_);
 }
 

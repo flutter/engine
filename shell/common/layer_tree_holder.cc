@@ -6,12 +6,16 @@
 
 namespace flutter {
 
-std::unique_ptr<LayerTree> LayerTreeHolder::Get() {
+LayerTreeHolder::LayerTreeHolder() = default;
+
+LayerTreeHolder::~LayerTreeHolder() = default;
+
+std::unique_ptr<LayerTree> LayerTreeHolder::Pop() {
   std::scoped_lock lock(layer_tree_mutex);
   return std::move(layer_tree_);
 }
 
-void LayerTreeHolder::ReplaceIfNewer(
+void LayerTreeHolder::PushIfNewer(
     std::unique_ptr<LayerTree> proposed_layer_tree) {
   std::scoped_lock lock(layer_tree_mutex);
   if (!layer_tree_ ||

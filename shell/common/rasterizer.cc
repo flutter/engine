@@ -119,14 +119,14 @@ void Rasterizer::Draw(std::shared_ptr<LayerTreeHolder> layer_tree_holder) {
   }
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
-  std::unique_ptr<LayerTree> layer_tree = layer_tree_holder->Get();
+  std::unique_ptr<LayerTree> layer_tree = layer_tree_holder->Pop();
   RasterStatus raster_status =
       layer_tree ? DoDraw(std::move(layer_tree)) : RasterStatus::kFailed;
 
   // Merging the thread as we know the next `Draw` should be run on the platform
   // thread.
   if (raster_status == RasterStatus::kResubmit) {
-    layer_tree_holder->ReplaceIfNewer(std::move(resubmitted_layer_tree_));
+    layer_tree_holder->PushIfNewer(std::move(resubmitted_layer_tree_));
     auto* external_view_embedder = surface_->GetExternalViewEmbedder();
     FML_DCHECK(external_view_embedder != nullptr)
         << "kResubmit is an invalid raster status without external view "
