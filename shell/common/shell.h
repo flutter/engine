@@ -419,6 +419,9 @@ class Shell final : public PlatformView::Delegate,
   // and read from the raster thread.
   std::atomic<float> display_refresh_rate_ = 0.0f;
 
+  std::unique_ptr<fml::AutoResetWaitableEvent>
+      platform_view_destroy_raster_task_latch;
+
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
 
@@ -525,6 +528,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |Rasterizer::Delegate|
   fml::TimePoint GetLatestFrameTargetTime() const override;
+
+  // |Rasterizer::Delegate|
+  void OnTaskRunnerWillMerge() const override;
 
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(

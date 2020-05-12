@@ -132,6 +132,7 @@ void Rasterizer::Draw(std::shared_ptr<LayerTreeHolder> layer_tree_holder) {
         << "kResubmit is an invalid raster status without external view "
            "embedder.";
     external_view_embedder->EndFrame(raster_thread_merger_);
+    delegate_.OnTaskRunnerWillMerge();
   }
 
   // Consume as many layer trees as possible. But yield the event loop

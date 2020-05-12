@@ -15,6 +15,7 @@
 #include "flutter/fml/log_settings.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
+#include "flutter/fml/memory/task_runner_checker.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
@@ -595,7 +596,6 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-
   // Note:
   // This is a synchronous operation because certain platforms depend on
   // setup/suspension of all activities that may be interacting with the GPU in
@@ -627,8 +627,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // then instead of posting a task to the raster thread, the ui thread just
   // signals the latch and the platform/raster thread follows with executing
   // raster_task.
-  bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
-                                 task_runners_.GetPlatformTaskRunner();
+  bool should_post_raster_task = !fml::TaskRunnerChecker::RunsOnTheSameThread(
+      task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
+      task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
 
   auto ui_task = [engine = engine_->GetWeakPtr(),                            //
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
@@ -677,6 +678,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     // is the raster thread.
     raster_task();
   }
+  platform_view_destroy_raster_task_latch.release();
 }
 
 // |PlatformView::Delegate|
@@ -684,76 +686,119 @@ void Shell::OnPlatformViewDestroyed() {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewDestroyed");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-
+  // Makes sure the latch has been released from the last usage in
+  // |OnPlatformViewCreated| or |OnPlatformViewDestroyed|.
+  FML_DCHECK(platform_view_destroy_raster_task_latch == nullptr);
   // Note:
   // This is a synchronous operation because certain platforms depend on
   // setup/suspension of all activities that may be interacting with the GPU in
   // a synchronous fashion.
+  platform_view_destroy_raster_task_latch =
+      std::make_unique<fml::AutoResetWaitableEvent>();
 
-  fml::AutoResetWaitableEvent latch;
+  // The raster_task has been successfully executed.
+  // This will be set from the raster thread in `raster_task` and accessed from
+  // the `platform thread` In step 1c.
+  std::atomic<bool> raster_task_finished(false);
 
-  auto io_task = [io_manager = io_manager_.get(), &latch]() {
+  fml::AutoResetWaitableEvent io_latch;
+  auto io_task = [io_manager = io_manager_.get(), &io_latch]() {
     // Execute any pending Skia object deletions while GPU access is still
     // allowed.
     io_manager->GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers().SetIfFalse(
             [&] { io_manager->GetSkiaUnrefQueue()->Drain(); }));
-    // Step 3: All done. Signal the latch that the platform thread is waiting
-    // on.
-    latch.Signal();
+    // Step 3: All done. Signal the latch that the platform thread is
+    // waiting on.
+    io_latch.Signal();
   };
 
+  // When `raster_task_has_run_on_platform_thread` is true, the threads are
+  // merged. And the `raster_task` has been run on the platform thread.
+  bool raster_task_has_run_on_platform_thread = false;
   auto raster_task = [rasterizer = rasterizer_->GetWeakPtr(),
-                      io_task_runner = task_runners_.GetIOTaskRunner(),
-                      io_task]() {
+                      &raster_task_has_run_on_platform_thread,
+                      latch = platform_view_destroy_raster_task_latch.get(),
+                      &raster_task_finished]() {
+    // If the `raster_task` has been run once on the platform thread, we simply
+    // bail here.
+    //
+    // The only time `raster_task` runs twice is when the threads are merging
+    // while the 1st `raster_task` is being posted from the ui_thread. The
+    // platform thread will execute a 2nd raster_task because the threads are
+    // merged (Step 1c). And the 1st raster_task is scheduled to run after the
+    // new raster_task on the same thread as the 2nd `raster_task`.
+    if (raster_task_has_run_on_platform_thread) {
+      return;
+    }
+
     if (rasterizer) {
       rasterizer->Teardown();
     }
-    // Step 2: Next, tell the IO thread to complete its remaining work.
-    fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
+    raster_task_finished = true;
+    FML_DCHECK(latch != nullptr);
+    latch->Signal();
   };
 
   // The normal flow executed by this method is that the platform thread is
   // starting the sequence and waiting on the latch. Later the UI thread posts
   // raster_task to the raster thread triggers signaling the latch(on the IO
-  // thread). If the raster and the platform threads are the same this results
-  // in a deadlock as the raster_task will never be posted to the plaform/raster
-  // thread that is blocked on a latch.  To avoid the described deadlock, if the
-  // raster and the platform threads are the same, should_post_raster_task will
-  // be false, and then instead of posting a task to the raster thread, the ui
-  // thread just signals the latch and the platform/raster thread follows with
-  // executing raster_task.
-  bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
-                                 task_runners_.GetPlatformTaskRunner();
+  // thread). If the raster and the platform threads are merged, this results
+  // in a deadlock as the raster_task will never be posted to the
+  // platform/raster thread that is blocked on a latch.  To avoid the described
+  // deadlock, if the raster and the platform threads are merged thread_merged
+  // will be true, and then instead of posting a task to the raster thread, the
+  // ui thread just signals the latch and the platform/raster thread follows
+  // with executing raster_task.
+  bool threads_merged = fml::TaskRunnerChecker::RunsOnTheSameThread(
+      task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
+      task_runners_.GetPlatformTaskRunner()->GetTaskQueueId());
 
   auto ui_task = [engine = engine_->GetWeakPtr(),
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),
-                  raster_task, should_post_raster_task, &latch]() {
+                  raster_task, threads_merged,
+                  latch = platform_view_destroy_raster_task_latch.get()]() {
     if (engine) {
       engine->OnOutputSurfaceDestroyed();
     }
-    // Step 1: Next, tell the raster thread that its rasterizer should suspend
+    // Step 1a: Next, tell the raster thread that its rasterizer should suspend
     // access to the underlying surface.
-    if (should_post_raster_task) {
+    if (!threads_merged) {
       fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
     } else {
-      // See comment on should_post_raster_task, in this case we just unblock
-      // the platform thread.
-      latch.Signal();
+      // Step 1b: See comment on thread_merged, in this case we just unblock
+      // the platform thread, and goes to Step 1c.
+      latch->Signal();
     }
   };
 
-  // Step 0: Post a task onto the UI thread to tell the engine that its output
-  // surface is about to go away.
+  // Step 0: Post a task onto the UI thread to tell the engine that its
+  // output surface is about to go away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
-  latch.Wait();
-  if (!should_post_raster_task) {
-    // See comment on should_post_raster_task, in this case the raster_task
-    // wasn't executed, and we just run it here as the platform thread
-    // is the raster thread.
+  // The latch wait can be signaled in 1 of the 3 situations.
+  // 1. The threads are merged before the `ui_task` has run. Signaled from
+  // ui_task.
+  // 2. The threads are unmerged before the `ui_task` has run, and keeps
+  // unmerged until the raster_task has finished
+  //    on the raster thread. Signaled from raster_task.
+  // 3. The threads are merging while the `ui_task` is running. The `ui_task`
+  // did not know the threads are merged, so it did not
+  // signal in Step 1b. Signaled by |Shell::OnTaskRunnerWillMerge|.
+  platform_view_destroy_raster_task_latch->Wait();
+
+  if (!raster_task_finished) {
+    // Step 1c: Directly run the raster_task on the platform thread as the
+    // raster thread and the platform thread are merged.
     raster_task();
-    latch.Wait();
+    raster_task_has_run_on_platform_thread = true;
   }
+  // Step 2: Next, tell the IO thread to complete its remaining work.
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetIOTaskRunner(), io_task);
+  io_latch.Wait();
+
+  // Release the latch, next |shell::OnPlatformViewDestroyed| will create a new
+  // one.
+  platform_view_destroy_raster_task_latch.release();
 }
 
 // |PlatformView::Delegate|
@@ -1181,6 +1226,13 @@ fml::TimePoint Shell::GetLatestFrameTargetTime() const {
   FML_CHECK(latest_frame_target_time_.has_value())
       << "GetLatestFrameTargetTime called before OnAnimatorBeginFrame";
   return latest_frame_target_time_.value();
+}
+
+void Shell::OnTaskRunnerWillMerge() const {
+  if (platform_view_destroy_raster_task_latch == nullptr) {
+    return;
+  }
+  platform_view_destroy_raster_task_latch->Signal();
 }
 
 // |ServiceProtocol::Handler|

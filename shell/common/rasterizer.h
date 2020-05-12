@@ -73,6 +73,15 @@ class Rasterizer final : public SnapshotDelegate {
     /// Target time for the latest frame. See also `Shell::OnAnimatorBeginFrame`
     /// for when this time gets updated.
     virtual fml::TimePoint GetLatestFrameTargetTime() const = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Notifies the delegate that the raster_task_runner will be
+    /// merged
+    ///             into the platform_task_runner at the next frame.
+    ///             This is triggered at the end of the current `Draw` and it is
+    ///             always called on the raster thread.
+    ///
+    virtual void OnTaskRunnerWillMerge() const = 0;
   };
 
   // TODO(dnfield): remove once embedders have caught up.
@@ -86,6 +95,7 @@ class Rasterizer final : public SnapshotDelegate {
     fml::TimePoint GetLatestFrameTargetTime() const override {
       return fml::TimePoint::FromEpochDelta(fml::TimeDelta::Zero());
     }
+    void OnTaskRunnerWillMerge() const override {}
   };
 
   //----------------------------------------------------------------------------

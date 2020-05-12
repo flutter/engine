@@ -52,6 +52,7 @@ class ShellTest : public ThreadTest {
 
   static void PlatformViewNotifyCreated(
       Shell* shell);  // This creates the surface
+  static void PlatformViewNotifyDestroyed(Shell* shell);
   static void RunEngine(Shell* shell, RunConfiguration configuration);
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
