@@ -28,7 +28,7 @@ G_DECLARE_FINAL_TYPE(FlMethodChannel,
 /**
  * FlMethodChannel:
  *
- * #FlMethodChannel is an object that allows calling methods in Dart code.
+ * #FlMethodChannel is an object that allows method calls to and from Dart code.
  *
  * The following example shows how to call and handle methods on a channel.
  * See #FlMethodResponse for how to handle errors in more detail.
@@ -105,7 +105,8 @@ G_DECLARE_FINAL_TYPE(FlMethodChannel,
  * Function called when a method call is received. Respond to the method call
  * with fl_method_call_respond(). If the response is not occurring in this
  * callback take a reference to @method_call and release that once it has been
- * responded to.
+ * responded to.Failing to respond before the last reference to @method_call is
+ * dropped is a programming error.
  */
 typedef void (*FlMethodChannelMethodCallHandler)(FlMethodChannel* channel,
                                                  FlMethodCall* method_call,
