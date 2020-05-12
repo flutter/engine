@@ -207,6 +207,7 @@ TEST_F(ShellTest, CanLoadSkSLsFromAsset) {
 
 TEST_F(ShellTest, CanRemoveOldPersistentCache) {
   fml::ScopedTemporaryDirectory base_dir;
+  ASSERT_TRUE(base_dir.fd().is_valid());
 
   fml::CreateDirectory(base_dir.fd(),
                        {"flutter_engine", GetFlutterEngineVersion(), "skia"},
@@ -221,8 +222,7 @@ TEST_F(ShellTest, CanRemoveOldPersistentCache) {
   PersistentCache::SetCacheDirectoryPath(base_dir.path());
   PersistentCache::ResetCacheForProcess();
 
-  auto engine_dir =
-      fml::OpenDirectoryReadOnly(base_dir.fd(), "flutter_engine");
+  auto engine_dir = fml::OpenDirectoryReadOnly(base_dir.fd(), "flutter_engine");
   auto current_dir =
       fml::OpenDirectoryReadOnly(engine_dir, GetFlutterEngineVersion());
   auto old_dir = fml::OpenDirectoryReadOnly(engine_dir, kOldEngineVersion);

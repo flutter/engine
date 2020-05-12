@@ -94,8 +94,7 @@ static void FreeOldCacheDirectory(const fml::UniqueFD& cache_base_dir) {
       auto dir = fml::OpenDirectory(directory, filename.c_str(), false,
                                     fml::FilePermission::kReadWrite);
       if (dir.is_valid()) {
-        fml::RemoveFilesInDirectory(dir);
-        fml::UnlinkDirectory(directory, filename.c_str());
+        fml::RemoveDirectoryRecursively(directory, filename.c_str());
       }
     }
     return true;
