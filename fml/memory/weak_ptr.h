@@ -139,7 +139,7 @@ class WeakPtr {
   // Copy/move construction/assignment supported.
 };
 
-// Forward declaration, so |TaskRunnerAffineWeakPtrFactory<T>| can friend it.
+// Forward declaration, so |TaskRunnerAffineWeakPtr<T>| can friend it.
 template <typename T>
 class TaskRunnerAffineWeakPtrFactory;
 
