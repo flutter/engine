@@ -208,7 +208,12 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
     }
 
     flutterRenderer.stopRenderingToSurface();
-    renderSurface.release();
-    renderSurface = null;
+    // in some devices go to background will invoke onSurfaceTextureDestroyed before detachFromFlutterEngine
+    // so disconnectSurfaceFromRenderer will be invoked twice
+    // renderSurface will be null make crash NullPointerException
+    if(renderSurface != null){
+      renderSurface.release();
+      renderSurface = null;
+    }
   }
 }
