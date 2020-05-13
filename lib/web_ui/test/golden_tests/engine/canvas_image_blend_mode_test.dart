@@ -113,14 +113,13 @@ void main() async {
     rc.save();
     rc.drawRect(Rect.fromLTWH(0, 50, 200, 50), Paint()
       ..color = white);
-    BlendMode blendMode = BlendMode.dstIn;
     rc.drawImage(createTestImage(), Offset(0, 50),
         Paint()
-          ..colorFilter = EngineColorFilter.mode(red, blendMode));
+          ..colorFilter = EngineColorFilter.mode(red, BlendMode.srcIn));
 
     final Paragraph paragraph = createTestParagraph();
-    const double textLeft = 5.0;
-    const double textTop = 7.0;
+    const double textLeft = 80.0;
+    const double textTop = 50.0;
     const double widthConstraint = 300.0;
     paragraph.layout(const ParagraphConstraints(width: widthConstraint));
     rc.drawParagraph(paragraph, const Offset(textLeft, textTop));
