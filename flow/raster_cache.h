@@ -17,21 +17,32 @@
 
 namespace flutter {
 
+// |RasterCacheResult| contains the result of rendering a layer or a picture
+// at a given transform by an instance of |RasterCacheImageDelegate| and
+// provides the capability to render the result to a given |SkCanvas|.
 class RasterCacheResult {
  public:
-  RasterCacheResult() = default;
+  virtual ~RasterCacheResult() = default;
 
-  // SkRasterCacheResult(const RasterCacheResult& other) = default;
+  // Draw the rendered result to the |SkCanvas| using the properties of the
+  // |SkPaint|.
+  virtual void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const = 0;
 
-  RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);
+  // Return the size of the cached result to help manage the cache memory
+  // consumption.
+  virtual SkISize image_dimensions() const = 0;
+};
 
-  operator bool() const { return static_cast<bool>(image_); }
+// |SkRasterCacheResult| is the typical implementation of |SkRasterCacheResult|
+// created from an |SkRasterCacheImageDelegate| and storing the result as
+// pixels in an |SkImage|.
+class SkRasterCacheResult : public RasterCacheResult {
+ public:
+  SkRasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);
 
-  bool is_valid() const { return static_cast<bool>(image_); };
+  void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const override;
 
-  void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const;
-
-  SkISize image_dimensions() const {
+  SkISize image_dimensions() const override {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);
   };
 
@@ -42,32 +53,42 @@ class RasterCacheResult {
 
 struct PrerollContext;
 
-class RasterCacheRasterizer {
+// The |RasterCacheImageDelegate| creates and retruns a cached result of
+// rendering the supplied |Layer| or |SkPicture|.
+class RasterCacheImageDelegate {
  public:
-  const virtual RasterCacheResult RasterizePicture(
-      SkPicture* picture, GrContext* context, const SkMatrix& ctm,
-      SkColorSpace* dst_color_space, bool checkerboard) const = 0;
+  virtual std::unique_ptr<RasterCacheResult> RasterizePicture(
+      SkPicture* picture,
+      GrContext* context,
+      const SkMatrix& ctm,
+      SkColorSpace* dst_color_space,
+      bool checkerboard) const = 0;
 
-  const virtual RasterCacheResult RasterizeLayer(PrerollContext* context,
-                                                 Layer* layer,
-                                                 const SkMatrix& ctm,
-                                                 bool checkerboard) const = 0;
+  virtual std::unique_ptr<RasterCacheResult> RasterizeLayer(
+      PrerollContext* context,
+      Layer* layer,
+      const SkMatrix& ctm,
+      bool checkerboard) const = 0;
 };
 
-class SkRasterCacheRasterizer : public RasterCacheRasterizer {
+// The |SkRasterCacheImageDelegate| creates and returns rendered results
+// for |Layer| and |SkPicture| objects stored as |SkImage| objects.
+class SkRasterCacheImageDelegate : public RasterCacheImageDelegate {
  public:
-  const RasterCacheResult RasterizePicture(SkPicture* picture,
-                                           GrContext* context,
-                                           const SkMatrix& ctm,
-                                           SkColorSpace* dst_color_space,
-                                           bool checkerboard) const override;
+  std::unique_ptr<RasterCacheResult> RasterizePicture(
+      SkPicture* picture,
+      GrContext* context,
+      const SkMatrix& ctm,
+      SkColorSpace* dst_color_space,
+      bool checkerboard) const override;
 
-  const RasterCacheResult RasterizeLayer(PrerollContext* context,
-                                           Layer* layer,
-                                           const SkMatrix& ctm,
-                                           bool checkerboard) const override;
+  std::unique_ptr<RasterCacheResult> RasterizeLayer(
+      PrerollContext* context,
+      Layer* layer,
+      const SkMatrix& ctm,
+      bool checkerboard) const override;
 
-  static SkRasterCacheRasterizer instance;
+  static SkRasterCacheImageDelegate instance;
 };
 
 class RasterCache {
@@ -78,12 +99,29 @@ class RasterCache {
   // multiple frames.
   static constexpr int kDefaultPictureCacheLimitPerFrame = 3;
 
+  // Create a default |RasterCache| object that caches |Layer| and |SkPicture|
+  // objects using a |SkRasterCacheImageDelegate|.
+  //
+  // @param access_threshold
+  //     the number of attempts to cache a given |SkPicture| before inserting
+  //     it into the cache. The defalt value of 3 will only cache a picture
+  //     on the 3rd time it appears in consecutive frames.
+  // @param picture_cache_limit_per_frame
+  //     the maximum number of |SkPicture| objects to render into the cache
+  //     per frame. The default value of 3 will rasterize at most 3 pictures
+  //     in a given frame and leave the rest for caching in subsequent frames.
+  //
+  // @see |kDefaultPictureCacheLimitPerFrame|
   explicit RasterCache(
       size_t access_threshold = 3,
       size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame);
 
+  // Create a |RasterCache| object that uses a specified implementation of
+  // |RasterCacheImageDelegate|.
+  //
+  // @see |RasterCache(size_t, size_t)|
   explicit RasterCache(
-      RasterCacheRasterizer* rasterizer,
+      RasterCacheImageDelegate* delegate,
       size_t access_threshold = 3,
       size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame);
 
@@ -124,21 +162,19 @@ class RasterCache {
   // 3. The picture is accessed too few times
   // 4. There are too many pictures to be cached in the current frame.
   //    (See also kDefaultPictureCacheLimitPerFrame.)
-  virtual bool Prepare(GrContext* context,
-                       SkPicture* picture,
-                       const SkMatrix& transformation_matrix,
-                       SkColorSpace* dst_color_space,
-                       bool is_complex,
-                       bool will_change);
+  bool Prepare(GrContext* context,
+               SkPicture* picture,
+               const SkMatrix& transformation_matrix,
+               SkColorSpace* dst_color_space,
+               bool is_complex,
+               bool will_change);
 
-  virtual void Prepare(PrerollContext* context,
-                       Layer* layer,
-                       const SkMatrix& ctm);
+  void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
 
   // Find the raster cache for the picture and draw it to the canvas.
   //
   // Return true if it's found and drawn.
-  virtual bool Draw(const SkPicture& picture, SkCanvas& canvas) const;
+  bool Draw(const SkPicture& picture, SkCanvas& canvas) const;
 
   // Find the raster cache for the layer and draw it to the canvas.
   //
@@ -146,9 +182,9 @@ class RasterCache {
   // draw the raster cache with some opacity).
   //
   // Return true if the layer raster cache is found and drawn.
-  virtual bool Draw(const Layer* layer,
-                    SkCanvas& canvas,
-                    SkPaint* paint = nullptr) const;
+  bool Draw(const Layer* layer,
+            SkCanvas& canvas,
+            SkPaint* paint = nullptr) const;
 
   void SweepAfterFrame();
 
@@ -158,11 +194,15 @@ class RasterCache {
 
   size_t GetCachedEntriesCount() const;
 
+  size_t GetLayerCachedEntriesCount() const;
+
+  size_t GetPictureCachedEntriesCount() const;
+
  private:
   struct Entry {
     bool used_this_frame = false;
     size_t access_count = 0;
-    RasterCacheResult* image;
+    std::unique_ptr<RasterCacheResult> image;
   };
 
   template <class Cache>
@@ -182,7 +222,7 @@ class RasterCache {
     }
   }
 
-  const RasterCacheRasterizer* rasterizer_;
+  const RasterCacheImageDelegate* delegate_;
   const size_t access_threshold_;
   const size_t picture_cache_limit_per_frame_;
   size_t picture_cached_this_frame_ = 0;

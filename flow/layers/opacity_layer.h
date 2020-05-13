@@ -38,7 +38,27 @@ class OpacityLayer : public ContainerLayer {
 #endif  // defined(OS_FUCHSIA)
 
  private:
+  // Returns the |ContainerLayer| used to hold all of the children of the
+  // |OpacityLayer|. Typically these layers should only have a single child
+  // according to the contract of the associated Flutter widget, but the
+  // engine API cannot enforce that contract and must be prepared to support
+  // the possibility of adding more than one child. In either case, the
+  // child container will hold all children. Note that since the child
+  // container is created fresh with each new |OpacityLayer|, it may not
+  // be the best choice to cache to speed up rendering during an animation.
+  //
+  // @see |GetCacheableChild()|
   ContainerLayer* GetChildContainer() const;
+
+  // Returns the best choice for a |Layer| object that can represent all
+  // children and remain stable if the |OpacityLayer| is reconstructed in
+  // new scenes. The |OpacityLayer| needs to be recreated on frames where
+  // its opacity values change, but it often contains the same child on
+  // each such frame. Since the child container is created fresh when
+  // each |OpacityLayer| is constructed, that |Layer| will not be stable
+  // even if the same child is used. This method will determine if there
+  // is a stable child and return that |Layer| so that caching will be
+  // more successful.
   Layer* GetCacheableChild() const;
 
   SkAlpha alpha_;

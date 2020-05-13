@@ -12,78 +12,42 @@
 namespace flutter {
 namespace testing {
 
-// Mock |RasterCache|, useful for writing tests that impact the Flutter engine
-// raster_cache without requiring a GPU.
-//
-// The |MockCanvas| stores a list of Engine Layers and Pictures that have been
-// inserted into the cache that the test can later verify against the expected
-// list of cached objects.
-class MockRasterCache : public RasterCache {
+// A |RasterCacheResult| implementation that represents a cached |Layer| or
+// |SkPicture| without the overhead of storage. This implementation is used
+// by |MockRasterCacheImageDelegate| only for testing proper usage of the
+// |RasterCache| in layer unit tests.
+class MockRasterCacheResult : public RasterCacheResult {
  public:
-  // Return true if the cache is generated.
-  //
-  // We may return false and not generate the cache if
-  // 1. The picture is not worth rasterizing
-  // 2. The matrix is singular
-  // 3. The picture is accessed too few times
-  // 4. There are too many pictures to be cached in the current frame.
-  //    (See also kDefaultPictureCacheLimitPerFrame.)
-  bool Prepare(GrContext* context,
-               SkPicture* picture,
-               const SkMatrix& transformation_matrix,
-               SkColorSpace* dst_color_space,
-               bool is_complex,
-               bool will_change) override;
+  MockRasterCacheResult(SkIRect device_rect);
 
-  void Prepare(PrerollContext* context,
-               Layer* layer,
-               const SkMatrix& ctm) override;
+  void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const override{};
 
-  bool Draw(const SkPicture& picture, SkCanvas& canvas) const override;
-
-  bool Draw(const Layer* layer,
-            SkCanvas& canvas,
-            SkPaint* paint = nullptr) const override;
-
-  void SweepAfterFrame();
-
-  void Clear();
-
-  int PictureCacheCount() { return picture_cache_.size(); }
-  int LayerCacheCount() { return layer_cache_.size(); }
-
-  void SetCheckboardCacheImages(bool checkerboard);
-
-  size_t GetCachedEntriesCount() const;
-
-  MockRasterCache();
+  SkISize image_dimensions() const override { return device_rect_.size(); };
 
  private:
-  struct MockEntry {
-    bool used_this_frame = false;
-    size_t access_count = 0;
-    bool rasterized;
-  };
+  SkIRect device_rect_;
+};
 
-  template <class Cache>
-  static void SweepOneCacheAfterFrame(Cache& cache) {
-    std::vector<typename Cache::iterator> dead;
+// A |RasterCacheImageDelegate| implementation that simulates the act of
+// rendering a |Layer| or |SkPicture| without the overhead of rasterization
+// or storage. This implementation is used only for testing proper usage of
+// the |RasterCache| in layer unit tests.
+class MockRasterCacheImageDelegate : public RasterCacheImageDelegate {
+ public:
+  std::unique_ptr<RasterCacheResult> RasterizePicture(
+      SkPicture* picture,
+      GrContext* context,
+      const SkMatrix& ctm,
+      SkColorSpace* dst_color_space,
+      bool checkerboard) const override;
 
-    for (auto it = cache.begin(); it != cache.end(); ++it) {
-      MockEntry& entry = it->second;
-      if (!entry.used_this_frame) {
-        dead.push_back(it);
-      }
-      entry.used_this_frame = false;
-    }
+  std::unique_ptr<RasterCacheResult> RasterizeLayer(
+      PrerollContext* context,
+      Layer* layer,
+      const SkMatrix& ctm,
+      bool checkerboard) const override;
 
-    for (auto it : dead) {
-      cache.erase(it);
-    }
-  }
-
-  mutable PictureRasterCacheKey::Map<MockEntry> picture_cache_;
-  mutable LayerRasterCacheKey::Map<MockEntry> layer_cache_;
+  static MockRasterCacheImageDelegate instance;
 };
 
 }  // namespace testing

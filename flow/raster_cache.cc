@@ -17,11 +17,11 @@
 
 namespace flutter {
 
-RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
-                                     const SkRect& logical_rect)
+SkRasterCacheResult::SkRasterCacheResult(sk_sp<SkImage> image,
+                                         const SkRect& logical_rect)
     : image_(std::move(image)), logical_rect_(logical_rect) {}
 
-void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
+void SkRasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);
   SkIRect bounds =
@@ -35,15 +35,15 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
 
 RasterCache::RasterCache(size_t access_threshold,
                          size_t picture_cache_limit_per_frame)
-    : rasterizer_(&SkRasterCacheRasterizer::instance),
+    : delegate_(&SkRasterCacheImageDelegate::instance),
       access_threshold_(access_threshold),
       picture_cache_limit_per_frame_(picture_cache_limit_per_frame),
       checkerboard_images_(false) {}
 
-RasterCache::RasterCache(RasterCacheRasterizer* rasterizer,
+RasterCache::RasterCache(RasterCacheImageDelegate* delegate,
                          size_t access_threshold,
                          size_t picture_cache_limit_per_frame)
-    : rasterizer_(rasterizer),
+    : delegate_(delegate),
       access_threshold_(access_threshold),
       picture_cache_limit_per_frame_(picture_cache_limit_per_frame),
       checkerboard_images_(false) {}
@@ -95,7 +95,7 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
 }
 
 /// @note Procedure doesn't copy all closures.
-static RasterCacheResult Rasterize(
+static std::unique_ptr<RasterCacheResult> Rasterize(
     GrContext* context,
     const SkMatrix& ctm,
     SkColorSpace* dst_color_space,
@@ -114,7 +114,7 @@ static RasterCacheResult Rasterize(
           : SkSurface::MakeRaster(image_info);
 
   if (!surface) {
-    return {};
+    return nullptr;
   }
 
   SkCanvas* canvas = surface->getCanvas();
@@ -127,45 +127,51 @@ static RasterCacheResult Rasterize(
     DrawCheckerboard(canvas, logical_rect);
   }
 
-  return {surface->makeImageSnapshot(), logical_rect};
+  return std::make_unique<SkRasterCacheResult>(surface->makeImageSnapshot(),
+                                               logical_rect);
 }
 
-SkRasterCacheRasterizer SkRasterCacheRasterizer::instance;
+SkRasterCacheImageDelegate SkRasterCacheImageDelegate::instance;
 
-const RasterCacheResult SkRasterCacheRasterizer::RasterizePicture(
-    SkPicture* picture, GrContext* context, const SkMatrix& ctm,
-    SkColorSpace* dst_color_space, bool checkerboard) const {
+std::unique_ptr<RasterCacheResult> SkRasterCacheImageDelegate::RasterizePicture(
+    SkPicture* picture,
+    GrContext* context,
+    const SkMatrix& ctm,
+    SkColorSpace* dst_color_space,
+    bool checkerboard) const {
   return Rasterize(context, ctm, dst_color_space, checkerboard,
                    picture->cullRect(),
                    [=](SkCanvas* canvas) { canvas->drawPicture(picture); });
 }
 
-const RasterCacheResult SkRasterCacheRasterizer::RasterizeLayer(
-    PrerollContext* context, Layer* layer, const SkMatrix& ctm,
+std::unique_ptr<RasterCacheResult> SkRasterCacheImageDelegate::RasterizeLayer(
+    PrerollContext* context,
+    Layer* layer,
+    const SkMatrix& ctm,
     bool checkerboard) const {
-  return Rasterize(context->gr_context, ctm, context->dst_color_space,
-                   checkerboard, layer->paint_bounds(),
-        [layer, context](SkCanvas* canvas) {
-          SkISize canvas_size = canvas->getBaseLayerSize();
-          SkNWayCanvas internal_nodes_canvas(canvas_size.width(),
-                                             canvas_size.height());
-          internal_nodes_canvas.addCanvas(canvas);
-          Layer::PaintContext paintContext = {
-              (SkCanvas*)&internal_nodes_canvas,
-              canvas,
-              context->gr_context,
-              nullptr,
-              context->raster_time,
-              context->ui_time,
-              context->texture_registry,
-              context->has_platform_view ? nullptr : context->raster_cache,
-              context->checkerboard_offscreen_layers,
-              context->frame_physical_depth,
-              context->frame_device_pixel_ratio};
-          if (layer->needs_painting()) {
-            layer->Paint(paintContext);
-          }
-        });
+  return Rasterize(
+      context->gr_context, ctm, context->dst_color_space, checkerboard,
+      layer->paint_bounds(), [layer, context](SkCanvas* canvas) {
+        SkISize canvas_size = canvas->getBaseLayerSize();
+        SkNWayCanvas internal_nodes_canvas(canvas_size.width(),
+                                           canvas_size.height());
+        internal_nodes_canvas.addCanvas(canvas);
+        Layer::PaintContext paintContext = {
+            (SkCanvas*)&internal_nodes_canvas,
+            canvas,
+            context->gr_context,
+            nullptr,
+            context->raster_time,
+            context->ui_time,
+            context->texture_registry,
+            context->has_platform_view ? nullptr : context->raster_cache,
+            context->checkerboard_offscreen_layers,
+            context->frame_physical_depth,
+            context->frame_device_pixel_ratio};
+        if (layer->needs_painting()) {
+          layer->Paint(paintContext);
+        }
+      });
 }
 
 void RasterCache::Prepare(PrerollContext* context,
@@ -175,9 +181,9 @@ void RasterCache::Prepare(PrerollContext* context,
   Entry& entry = layer_cache_[cache_key];
   entry.access_count++;
   entry.used_this_frame = true;
-  if (!entry.image.is_valid()) {
-    entry.image = rasterizer_->RasterizeLayer(context, layer, ctm,
-                                              checkerboard_images_);
+  if (!entry.image) {
+    entry.image =
+        delegate_->RasterizeLayer(context, layer, ctm, checkerboard_images_);
   }
 }
 
@@ -217,10 +223,10 @@ bool RasterCache::Prepare(GrContext* context,
     return false;
   }
 
-  if (!entry.image.is_valid()) {
-    entry.image = rasterizer_->RasterizePicture(
-        picture, context, transformation_matrix, dst_color_space,
-        checkerboard_images_);
+  if (!entry.image) {
+    entry.image =
+        delegate_->RasterizePicture(picture, context, transformation_matrix,
+                                    dst_color_space, checkerboard_images_);
     picture_cached_this_frame_++;
   }
   return true;
@@ -237,8 +243,8 @@ bool RasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {
   entry.access_count++;
   entry.used_this_frame = true;
 
-  if (entry.image.is_valid()) {
-    entry.image.draw(canvas);
+  if (entry.image) {
+    entry.image->draw(canvas);
     return true;
   }
 
@@ -258,8 +264,8 @@ bool RasterCache::Draw(const Layer* layer,
   entry.access_count++;
   entry.used_this_frame = true;
 
-  if (entry.image.is_valid()) {
-    entry.image.draw(canvas, paint);
+  if (entry.image) {
+    entry.image->draw(canvas, paint);
     return true;
   }
 
@@ -280,6 +286,14 @@ void RasterCache::Clear() {
 
 size_t RasterCache::GetCachedEntriesCount() const {
   return layer_cache_.size() + picture_cache_.size();
+}
+
+size_t RasterCache::GetLayerCachedEntriesCount() const {
+  return layer_cache_.size();
+}
+
+size_t RasterCache::GetPictureCachedEntriesCount() const {
+  return picture_cache_.size();
 }
 
 void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
@@ -303,15 +317,19 @@ void RasterCache::TraceStatsToTimeline() const {
   size_t picture_cache_bytes = 0;
 
   for (const auto& item : layer_cache_) {
-    const auto dimensions = item.second.image.image_dimensions();
     layer_cache_count++;
-    layer_cache_bytes += dimensions.width() * dimensions.height() * 4;
+    if (item.second.image) {
+      const auto dimensions = item.second.image->image_dimensions();
+      layer_cache_bytes += dimensions.width() * dimensions.height() * 4;
+    }
   }
 
   for (const auto& item : picture_cache_) {
-    const auto dimensions = item.second.image.image_dimensions();
     picture_cache_count++;
-    picture_cache_bytes += dimensions.width() * dimensions.height() * 4;
+    if (item.second.image) {
+      const auto dimensions = item.second.image->image_dimensions();
+      picture_cache_bytes += dimensions.width() * dimensions.height() * 4;
+    }
   }
 
   FML_TRACE_COUNTER("flutter", "RasterCache",
