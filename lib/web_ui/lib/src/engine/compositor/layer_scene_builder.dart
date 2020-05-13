@@ -176,6 +176,18 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
+  ui.LinkEngineLayer pushLink({
+    String destination,
+    String label,
+    int target,
+    ui.Rect rect,
+    ui.LinkEngineLayer oldLayer,
+  }) {
+    // TODO: implement.
+    return null;
+  }
+
+  @override
   ui.PhysicalShapeEngineLayer pushPhysicalShape({
     ui.Path path,
     double elevation,

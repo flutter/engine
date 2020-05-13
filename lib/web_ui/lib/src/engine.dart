@@ -93,6 +93,7 @@ part 'engine/surface/backdrop_filter.dart';
 part 'engine/surface/clip.dart';
 part 'engine/surface/debug_canvas_reuse_overlay.dart';
 part 'engine/surface/image_filter.dart';
+part 'engine/surface/link.dart';
 part 'engine/surface/offset.dart';
 part 'engine/surface/opacity.dart';
 part 'engine/surface/painting.dart';

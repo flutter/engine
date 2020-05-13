@@ -182,6 +182,24 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     return _pushSurface(PersistedOpacity(oldLayer, alpha, offset));
   }
 
+  ///
+  @override
+  ui.LinkEngineLayer pushLink({
+    String destination,
+    String label,
+    int target,
+    ui.Rect rect,
+    ui.LinkEngineLayer oldLayer,
+  }) {
+    return _pushSurface(PersistedLink(
+      oldLayer,
+      destination: destination,
+      label: label,
+      target: target,
+      rect: rect,
+    ));
+  }
+
   /// Pushes a color filter operation onto the operation stack.
   ///
   /// The given color is applied to the objects' rasterization using the given

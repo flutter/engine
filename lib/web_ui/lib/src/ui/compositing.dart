@@ -40,6 +40,9 @@ abstract class TransformEngineLayer implements EngineLayer {}
 /// {@macro dart.ui.sceneBuilder.oldLayerCompatibility}
 abstract class OffsetEngineLayer implements EngineLayer {}
 
+///
+abstract class LinkEngineLayer implements EngineLayer {}
+
 /// An opaque handle to a clip rect engine layer.
 ///
 /// Instances of this class are created by [SceneBuilder.pushClipRect].
@@ -129,6 +132,15 @@ abstract class SceneBuilder {
     double dx,
     double dy, {
     OffsetEngineLayer oldLayer,
+  });
+
+  ///
+  LinkEngineLayer pushLink({
+    String destination,
+    String label,
+    int target,
+    Rect rect,
+    LinkEngineLayer oldLayer,
   });
 
   /// Pushes a transform operation onto the operation stack.
