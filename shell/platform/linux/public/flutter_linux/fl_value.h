@@ -363,12 +363,13 @@ double fl_value_get_float(FlValue* value);
 
 /**
  * fl_value_get_string:
- * @value: an #FlValue of type #FL_VALUE_TYPE_STRING
+ * @value: an #FlValue of type #FL_VALUE_TYPE_STRING or #FL_VALUE_TYPE_NULL.
  *
  * Gets the UTF-8 text contained in @value. Calling this with an #FlValue
- * that is not of type #FL_VALUE_TYPE_STRING is a programming error.
+ * that is not of type #FL_VALUE_TYPE_STRING or #FL_VALUE_TYPE_NULL is a
+ * programming error.
  *
- * Returns: a UTF-8 encoded string.
+ * Returns: a UTF-8 encoded string or %NULL if the type is #FL_VALUE_TYPE_NULL.
  */
 const gchar* fl_value_get_string(FlValue* value);
 
@@ -376,18 +377,21 @@ const gchar* fl_value_get_string(FlValue* value);
  * fl_value_get_length:
  * @value: an #FlValue of type #FL_VALUE_TYPE_UINT8_LIST,
  * #FL_VALUE_TYPE_INT32_LIST, #FL_VALUE_TYPE_INT64_LIST,
- * #FL_VALUE_TYPE_FLOAT_LIST, #FL_VALUE_TYPE_LIST or #FL_VALUE_TYPE_MAP.
+ * #FL_VALUE_TYPE_FLOAT_LIST, #FL_VALUE_TYPE_LIST, #FL_VALUE_TYPE_MAP or
+ * #FL_VALUE_TYPE_NULL.
  *
- * Gets the number of elements @value contains. This is only valid for list
- * and map types. Calling this with other types is a programming error.
+ * Gets the number of elements @value contains. This is only valid for the
+ * list/map types and the #FL_VALUE_TYPE_NULL. Calling this with other types is
+ * a programming error.
  *
- * Returns: the number of elements inside @value.
+ * Returns: the number of elements inside @value or zero for
+ * #FL_VALUE_TYPE_NULL.
  */
 size_t fl_value_get_length(FlValue* value);
 
 /**
  * fl_value_get_uint8_list:
- * @value: an #FlValue of type #FL_VALUE_TYPE_UINT8_LIST
+ * @value: an #FlValue of type #FL_VALUE_TYPE_UINT8_LIST or #FL_VALUE_TYPE_NULL.
  *
  * Gets the array of unisigned 8 bit integers @value contains. The data
  * contains fl_get_length() elements. Calling this with an #FlValue that is
@@ -399,7 +403,7 @@ const uint8_t* fl_value_get_uint8_list(FlValue* value);
 
 /**
  * fl_value_get_int32_list:
- * @value: an #FlValue of type #FL_VALUE_TYPE_INT32_LIST
+ * @value: an #FlValue of type #FL_VALUE_TYPE_INT32_LIST or #FL_VALUE_TYPE_NULL.
  *
  * Gets the array of 32 bit integers @value contains. The data contains
  * fl_get_length() elements. Calling this with an #FlValue that is not of
@@ -411,7 +415,7 @@ const int32_t* fl_value_get_int32_list(FlValue* value);
 
 /**
  * fl_value_get_int64_list:
- * @value: an #FlValue of type #FL_VALUE_TYPE_INT64_LIST
+ * @value: an #FlValue of type #FL_VALUE_TYPE_INT64_LIST or #FL_VALUE_TYPE_NULL.
  *
  * Gets the array of 64 bit integers @value contains. The data contains
  * fl_get_length() elements. Calling this with an #FlValue that is not of
@@ -423,7 +427,7 @@ const int64_t* fl_value_get_int64_list(FlValue* value);
 
 /**
  * fl_value_get_float_list:
- * @value: an #FlValue of type #FL_VALUE_TYPE_FLOAT_LIST
+ * @value: an #FlValue of type #FL_VALUE_TYPE_FLOAT_LIST or #FL_VALUE_TYPE_NULL.
  *
  * Gets the array of floating point numbers @value contains. The data
  * contains fl_get_length() elements. Calling this with an #FlValue that is
@@ -440,7 +444,8 @@ const double* fl_value_get_float_list(FlValue* value);
  *
  * Gets a child element of the list. It is a programming error to request an
  * index that is outside the size of the list as returned from
- * fl_value_get_length().
+ * fl_value_get_length(). Calling this with an #FlValue that is
+ * not of type #FL_VALUE_TYPE_LIST is a programming error.
  *
  * Returns: an #FlValue
  */
@@ -453,6 +458,8 @@ FlValue* fl_value_get_list_value(FlValue* value, size_t index);
  *
  * Gets an key from the map. It is a programming error to request an index that
  * is outside the size of the list as returned from fl_value_get_length().
+ * Calling this with an #FlValue that is not of type #FL_VALUE_TYPE_MAP is a
+ * programming error.
  *
  * Returns: an #FlValue
  */
@@ -464,7 +471,9 @@ FlValue* fl_value_get_map_key(FlValue* value, size_t index);
  * @index: an index in the map.
  *
  * Gets a value from the map. It is a programming error to request an index that
- * is outside the size of the list as returned from fl_value_get_length().
+ * is outside the size of the map as returned from fl_value_get_length().
+ * Calling this with an #FlValue that is not of type #FL_VALUE_TYPE_MAP is a
+ * programming error.
  *
  * Returns: an #FlValue
  */
@@ -472,11 +481,12 @@ FlValue* fl_value_get_map_value(FlValue* value, size_t index);
 
 /**
  * fl_value_lookup:
- * @value: an #FlValue of type #FL_VALUE_TYPE_MAP
+ * @value: an #FlValue of type #FL_VALUE_TYPE_MAP or #FL_VALUE_TYPE_NULL.
  * @key: a key value
  *
  * Gets the map entry that matches @key. Keys are checked using
- * fl_value_equal().
+ * fl_value_equal(). Calling this with an #FlValue that is
+ * not of type #FL_VALUE_TYPE_MAP or #FL_VALUE_TYPE_NULL is a programming error.
  *
  * Map lookups are not optimised for performance - if have a large map or need
  * frequent access you should copy the data into another structure, e.g.
@@ -488,11 +498,12 @@ FlValue* fl_value_lookup(FlValue* value, FlValue* key);
 
 /**
  * fl_value_lookup_string:
- * @value: an #FlValue of type #FL_VALUE_TYPE_MAP
+ * @value: an #FlValue of type #FL_VALUE_TYPE_MAP or #FL_VALUE_TYPE_NULL.
  * @key: a key value
  *
  * Gets the map entry that matches @key. Keys are checked using
- * fl_value_equal().
+ * fl_value_equal(). Calling this with an #FlValue that is
+ * not of type #FL_VALUE_TYPE_MAP or #FL_VALUE_TYPE_NULL is a programming error.
  *
  * Map lookups are not optimised for performance - if have a large map or need
  * frequent access you should copy the data into another structure, e.g.

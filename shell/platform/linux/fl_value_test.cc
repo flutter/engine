@@ -150,6 +150,11 @@ TEST(FlValueTest, StringSizedZeroLength) {
   EXPECT_STREQ(fl_value_get_string(value), "");
 }
 
+TEST(FlValueTest, StringNull) {
+  g_autoptr(FlValue) value = fl_value_new_null();
+  EXPECT_EQ(fl_value_get_string(value), nullptr);
+}
+
 TEST(FlValueTest, StringEqual) {
   g_autoptr(FlValue) value1 = fl_value_new_string("hello");
   g_autoptr(FlValue) value2 = fl_value_new_string("hello");
@@ -177,6 +182,12 @@ TEST(FlValueTest, Uint8ListNullptr) {
   g_autoptr(FlValue) value = fl_value_new_uint8_list(nullptr, 0);
   ASSERT_EQ(fl_value_get_type(value), FL_VALUE_TYPE_UINT8_LIST);
   ASSERT_EQ(fl_value_get_length(value), static_cast<size_t>(0));
+}
+
+TEST(FlValueTest, Uint8ListNull) {
+  g_autoptr(FlValue) value = fl_value_new_null();
+  EXPECT_EQ(fl_value_get_length(value), static_cast<size_t>(0));
+  EXPECT_EQ(fl_value_get_uint8_list(value), nullptr);
 }
 
 TEST(FlValueTest, Uint8ListEqual) {
@@ -233,6 +244,12 @@ TEST(FlValueTest, Int32ListNullptr) {
   ASSERT_EQ(fl_value_get_length(value), static_cast<size_t>(0));
 }
 
+TEST(FlValueTest, Int32ListNull) {
+  g_autoptr(FlValue) value = fl_value_new_null();
+  EXPECT_EQ(fl_value_get_length(value), static_cast<size_t>(0));
+  EXPECT_EQ(fl_value_get_int32_list(value), nullptr);
+}
+
 TEST(FlValueTest, Int32ListEqual) {
   int32_t data1[] = {0, G_MAXINT32, G_MININT32};
   g_autoptr(FlValue) value1 = fl_value_new_int32_list(data1, 3);
@@ -287,6 +304,12 @@ TEST(FlValueTest, Int64ListNullptr) {
   ASSERT_EQ(fl_value_get_length(value), static_cast<size_t>(0));
 }
 
+TEST(FlValueTest, Int64ListNull) {
+  g_autoptr(FlValue) value = fl_value_new_null();
+  EXPECT_EQ(fl_value_get_length(value), static_cast<size_t>(0));
+  EXPECT_EQ(fl_value_get_int64_list(value), nullptr);
+}
+
 TEST(FlValueTest, Int64ListEqual) {
   int64_t data1[] = {0, G_MAXINT64, G_MININT64};
   g_autoptr(FlValue) value1 = fl_value_new_int64_list(data1, 3);
@@ -338,6 +361,12 @@ TEST(FlValueTest, FloatListNullptr) {
   g_autoptr(FlValue) value = fl_value_new_float_list(nullptr, 0);
   ASSERT_EQ(fl_value_get_type(value), FL_VALUE_TYPE_FLOAT_LIST);
   ASSERT_EQ(fl_value_get_length(value), static_cast<size_t>(0));
+}
+
+TEST(FlValueTest, FloatListNull) {
+  g_autoptr(FlValue) value = fl_value_new_null();
+  EXPECT_EQ(fl_value_get_length(value), static_cast<size_t>(0));
+  EXPECT_EQ(fl_value_get_float_list(value), nullptr);
 }
 
 TEST(FlValueTest, FloatListEqual) {
@@ -598,6 +627,13 @@ TEST(FlValueTest, MapLookupString) {
   EXPECT_EQ(fl_value_get_int(v), 2);
   v = fl_value_lookup_string(value, "four");
   ASSERT_EQ(v, nullptr);
+}
+
+TEST(FlValueTest, MapNull) {
+  g_autoptr(FlValue) value = fl_value_new_null();
+  g_autoptr(FlValue) two_key = fl_value_new_string("two");
+  EXPECT_EQ(fl_value_lookup(value, two_key), nullptr);
+  EXPECT_EQ(fl_value_lookup_string(value, nullptr), nullptr);
 }
 
 TEST(FlValueTest, MapEqual) {

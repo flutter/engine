@@ -452,42 +452,63 @@ G_MODULE_EXPORT double fl_value_get_float(FlValue* self) {
 
 G_MODULE_EXPORT const gchar* fl_value_get_string(FlValue* self) {
   g_return_val_if_fail(self != nullptr, nullptr);
-  g_return_val_if_fail(self->type == FL_VALUE_TYPE_STRING, nullptr);
+  g_return_val_if_fail(
+      self->type == FL_VALUE_TYPE_STRING || self->type == FL_VALUE_TYPE_NULL,
+      nullptr);
+  if (self->type == FL_VALUE_TYPE_NULL)
+    return nullptr;
   FlValueString* v = reinterpret_cast<FlValueString*>(self);
   return v->value;
 }
 
 G_MODULE_EXPORT const uint8_t* fl_value_get_uint8_list(FlValue* self) {
   g_return_val_if_fail(self != nullptr, nullptr);
-  g_return_val_if_fail(self->type == FL_VALUE_TYPE_UINT8_LIST, nullptr);
+  g_return_val_if_fail(self->type == FL_VALUE_TYPE_UINT8_LIST ||
+                           self->type == FL_VALUE_TYPE_NULL,
+                       nullptr);
+  if (self->type == FL_VALUE_TYPE_NULL)
+    return nullptr;
   FlValueUint8List* v = reinterpret_cast<FlValueUint8List*>(self);
   return v->values;
 }
 
 G_MODULE_EXPORT const int32_t* fl_value_get_int32_list(FlValue* self) {
   g_return_val_if_fail(self != nullptr, nullptr);
-  g_return_val_if_fail(self->type == FL_VALUE_TYPE_INT32_LIST, nullptr);
+  g_return_val_if_fail(self->type == FL_VALUE_TYPE_INT32_LIST ||
+                           self->type == FL_VALUE_TYPE_NULL,
+                       nullptr);
+  if (self->type == FL_VALUE_TYPE_NULL)
+    return nullptr;
   FlValueInt32List* v = reinterpret_cast<FlValueInt32List*>(self);
   return v->values;
 }
 
 G_MODULE_EXPORT const int64_t* fl_value_get_int64_list(FlValue* self) {
   g_return_val_if_fail(self != nullptr, nullptr);
-  g_return_val_if_fail(self->type == FL_VALUE_TYPE_INT64_LIST, nullptr);
+  g_return_val_if_fail(self->type == FL_VALUE_TYPE_INT64_LIST ||
+                           self->type == FL_VALUE_TYPE_NULL,
+                       nullptr);
+  if (self->type == FL_VALUE_TYPE_NULL)
+    return nullptr;
   FlValueInt64List* v = reinterpret_cast<FlValueInt64List*>(self);
   return v->values;
 }
 
 G_MODULE_EXPORT const double* fl_value_get_float_list(FlValue* self) {
   g_return_val_if_fail(self != nullptr, nullptr);
-  g_return_val_if_fail(self->type == FL_VALUE_TYPE_FLOAT_LIST, nullptr);
+  g_return_val_if_fail(self->type == FL_VALUE_TYPE_FLOAT_LIST ||
+                           self->type == FL_VALUE_TYPE_NULL,
+                       nullptr);
+  if (self->type == FL_VALUE_TYPE_NULL)
+    return nullptr;
   FlValueFloatList* v = reinterpret_cast<FlValueFloatList*>(self);
   return v->values;
 }
 
 G_MODULE_EXPORT size_t fl_value_get_length(FlValue* self) {
   g_return_val_if_fail(self != nullptr, 0);
-  g_return_val_if_fail(self->type == FL_VALUE_TYPE_UINT8_LIST ||
+  g_return_val_if_fail(self->type == FL_VALUE_TYPE_NULL ||
+                           self->type == FL_VALUE_TYPE_UINT8_LIST ||
                            self->type == FL_VALUE_TYPE_INT32_LIST ||
                            self->type == FL_VALUE_TYPE_INT64_LIST ||
                            self->type == FL_VALUE_TYPE_FLOAT_LIST ||
@@ -496,6 +517,8 @@ G_MODULE_EXPORT size_t fl_value_get_length(FlValue* self) {
                        0);
 
   switch (self->type) {
+    case FL_VALUE_TYPE_NULL:
+      return 0;
     case FL_VALUE_TYPE_UINT8_LIST: {
       FlValueUint8List* v = reinterpret_cast<FlValueUint8List*>(self);
       return v->values_length;
@@ -520,7 +543,6 @@ G_MODULE_EXPORT size_t fl_value_get_length(FlValue* self) {
       FlValueMap* v = reinterpret_cast<FlValueMap*>(self);
       return v->keys->len;
     }
-    case FL_VALUE_TYPE_NULL:
     case FL_VALUE_TYPE_BOOL:
     case FL_VALUE_TYPE_INT:
     case FL_VALUE_TYPE_FLOAT:
@@ -557,7 +579,12 @@ G_MODULE_EXPORT FlValue* fl_value_get_map_value(FlValue* self, size_t index) {
 
 G_MODULE_EXPORT FlValue* fl_value_lookup(FlValue* self, FlValue* key) {
   g_return_val_if_fail(self != nullptr, nullptr);
-  g_return_val_if_fail(self->type == FL_VALUE_TYPE_MAP, nullptr);
+  g_return_val_if_fail(
+      self->type == FL_VALUE_TYPE_MAP || self->type == FL_VALUE_TYPE_NULL,
+      nullptr);
+
+  if (self->type == FL_VALUE_TYPE_NULL)
+    return nullptr;
 
   ssize_t index = fl_value_lookup_index(self, key);
   if (index < 0)
@@ -567,6 +594,13 @@ G_MODULE_EXPORT FlValue* fl_value_lookup(FlValue* self, FlValue* key) {
 
 FlValue* fl_value_lookup_string(FlValue* self, const gchar* key) {
   g_return_val_if_fail(self != nullptr, nullptr);
+  g_return_val_if_fail(
+      self->type == FL_VALUE_TYPE_MAP || self->type == FL_VALUE_TYPE_NULL,
+      nullptr);
+
+  if (self->type == FL_VALUE_TYPE_NULL)
+    return nullptr;
+
   g_autoptr(FlValue) string_key = fl_value_new_string(key);
   return fl_value_lookup(self, string_key);
 }
