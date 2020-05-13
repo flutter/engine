@@ -629,12 +629,18 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     );
   }
 
-  void _addPlatformViewtoScene(SceneBuilder sceneBuilder, int viewId, double width, double height) {
-    final Offset offset = const Offset(50, 50);
+  void _addPlatformViewtoScene(
+    SceneBuilder sceneBuilder,
+    int viewId,
+    double width,
+    double height, {
+    Offset overlayOffset,
+  }) {
+    overlayOffset ??= const Offset(50, 50);
     if (Platform.isIOS) {
-      sceneBuilder.addPlatformView(viewId, offset: offset, width: width, height: height);
+      sceneBuilder.addPlatformView(viewId, offset: overlayOffset, width: width, height: height);
     } else if (Platform.isAndroid && _textureId != null) {
-      sceneBuilder.addTexture(_textureId, offset: offset, width: width, height: height);
+      sceneBuilder.addTexture(_textureId, offset: overlayOffset, width: width, height: height);
     } else {
       throw UnsupportedError('Platform ${Platform.operatingSystem} is not supported');
     }
@@ -647,7 +653,13 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     Offset overlayOffset,
   }) {
     overlayOffset ??= const Offset(50, 50);
-    _addPlatformViewtoScene(sceneBuilder, viewId, 500, 500);
+    _addPlatformViewtoScene(
+      sceneBuilder,
+      viewId,
+      500,
+      500,
+      overlayOffset: overlayOffset,
+    );
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.drawCircle(
