@@ -77,6 +77,22 @@ class EngineWindow extends ui.Window {
     }
   }
 
+  void computeOnScreenKeyboardInsets() {
+    double windowInnerHeight;
+    if (html.window.visualViewport != null) {
+      windowInnerHeight = html.window.visualViewport.height * devicePixelRatio;
+    } else {
+      windowInnerHeight = html.window.innerHeight * devicePixelRatio;
+    }
+    final double bottomPadding = _physicalSize.height - windowInnerHeight;
+    _viewInsets = ui.WindowPadding.forKeyboard(
+        bottom: bottomPadding, left: 0, right: 0, top: 0);
+  }
+
+  @override
+  ui.WindowPadding get viewInsets => _viewInsets;
+  ui.WindowPadding _viewInsets =  ui.WindowPadding.zero;
+
   /// Lazily populated and cleared at the end of the frame.
   ui.Size _physicalSize;
 

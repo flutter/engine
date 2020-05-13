@@ -466,9 +466,20 @@ flt-glass-pane * {
 
   /// Called immediately after browser window metrics change.
   void _metricsDidChange(html.Event event) {
-    window._computePhysicalSize();
-    if (window._onMetricsChanged != null) {
-      window.invokeOnMetricsChanged();
+    // When there is a text editing going on in mobile devices, do not change
+    // the physicalSize but change the viewInsets. See:
+    // https://api.flutter.dev/flutter/dart-ui/Window/viewInsets.html
+    // https://api.flutter.dev/flutter/dart-ui/Window/physicalSize.html
+   if(!textEditing.isEditing && !isDesktop) {
+      window._computePhysicalSize();
+      if (window._onMetricsChanged != null) {
+        window.invokeOnMetricsChanged();
+      }
+    } else {
+      window.computeOnScreenKeyboardInsets();
+      if (window._onMetricsChanged != null) {
+        window.invokeOnMetricsChanged();
+      }
     }
   }
 

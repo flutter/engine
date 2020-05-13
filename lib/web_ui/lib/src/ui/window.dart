@@ -122,6 +122,8 @@ class WindowPadding {
   static const WindowPadding zero =
       WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
+  WindowPadding.forKeyboard({this.left, this.top, this.right, this.bottom});
+
   @override
   String toString() {
     return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
