@@ -470,7 +470,7 @@ flt-glass-pane * {
     // the physicalSize but change the viewInsets. See:
     // https://api.flutter.dev/flutter/dart-ui/Window/viewInsets.html
     // https://api.flutter.dev/flutter/dart-ui/Window/physicalSize.html
-   if(!textEditing.isEditing && !isDesktop) {
+    if(!textEditing.isEditing && !isDesktop) {
       window._computePhysicalSize();
       if (window._onMetricsChanged != null) {
         window.invokeOnMetricsChanged();
