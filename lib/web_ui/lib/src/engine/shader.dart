@@ -318,7 +318,7 @@ js.JsObject _skTileMode(ui.TileMode tm) {
 
 /// Backend implementation of [ui.ImageShader].
 class EngineImageShader implements ui.ImageShader, EngineShader {
-  EngineImageShader(ui.Image image, this.tileModeX, this.tileModeY, 
+  EngineImageShader(ui.Image image, this.tileModeX, this.tileModeY,
       this.matrix4) : _skImage = image as SkImage;
 
   final ui.TileMode tileModeX;
@@ -326,6 +326,6 @@ class EngineImageShader implements ui.ImageShader, EngineShader {
   final Float64List matrix4;
   final SkImage _skImage;
 
-  js.JsObject createSkiaShader() => _skImage.skImage.callMethod('makeShader', 
+  js.JsObject createSkiaShader() => _skImage.skImage.callMethod('makeShader',
       <dynamic>[_skTileMode(tileModeX), _skTileMode(tileModeY)]);
 }
