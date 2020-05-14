@@ -52,7 +52,7 @@ Future<void> _handlePlatformMessage(
       callback(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
     break;
     default:
-      throw 'Unimplemented channel: $name.';
+      currentScenario?.onPlatformMessage(name, data, callback);
   }
 }
 
