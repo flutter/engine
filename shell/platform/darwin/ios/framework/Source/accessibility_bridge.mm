@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
 
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
@@ -14,21 +15,33 @@ FLUTTER_ASSERT_NOT_ARC
 
 namespace flutter {
 
+struct AccessibilityBridge::AccessibilityBridgeImpl {
+  AccessibilityBridgeImpl() : objects([[NSMutableDictionary alloc] init]) {}
+  fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects;
+  fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel;
+};
+
+namespace {
+void DeleteAccessibilityBridgeImpl(AccessibilityBridge::AccessibilityBridgeImpl* pimpl) {
+  delete pimpl;
+}
+}  // namespace
+
 AccessibilityBridge::AccessibilityBridge(UIView* view,
                                          PlatformViewIOS* platform_view,
                                          FlutterPlatformViewsController* platform_views_controller)
-    : view_(view),
+    : pimpl_(new AccessibilityBridgeImpl(), DeleteAccessibilityBridgeImpl),
+      view_(view),
       platform_view_(platform_view),
       platform_views_controller_(platform_views_controller),
-      objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
       previous_routes_({}) {
-  accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
+  pimpl_->accessibility_channel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->GetOwnerViewController().get().engine.binaryMessenger
                 codec:[FlutterStandardMessageCodec sharedInstance]]);
-  [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
+  [pimpl_->accessibility_channel.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
   }];
 }
@@ -97,7 +110,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     }
   }
 
-  SemanticsObject* root = objects_.get()[@(kRootNodeId)];
+  SemanticsObject* root = pimpl_->objects.get()[@(kRootNodeId)];
 
   bool routeChanged = false;
   SemanticsObject* lastAdded = nil;
@@ -130,10 +143,11 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     view_.accessibilityElements = nil;
   }
 
-  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
+  NSMutableArray<NSNumber*>* doomed_uids =
+      [NSMutableArray arrayWithArray:[pimpl_->objects.get() allKeys]];
   if (root)
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
-  [objects_ removeObjectsForKeys:doomed_uids];
+  [pimpl_->objects removeObjectsForKeys:doomed_uids];
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
   if (routeChanged) {
@@ -197,10 +211,10 @@ static bool DidFlagChange(const flutter::SemanticsNode& oldNode,
 
 SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
                                                         flutter::SemanticsNodeUpdates& updates) {
-  SemanticsObject* object = objects_.get()[@(uid)];
+  SemanticsObject* object = pimpl_->objects.get()[@(uid)];
   if (!object) {
     object = CreateObject(updates[uid], GetWeakPtr());
-    objects_.get()[@(uid)] = object;
+    pimpl_->objects.get()[@(uid)] = object;
   } else {
     // Existing node case
     auto nodeEntry = updates.find(object.node.id);
@@ -215,7 +229,7 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
         // SemanticsObject implementation. Instead, we replace it with a new
         // instance.
         SemanticsObject* newSemanticsObject = CreateObject(node, GetWeakPtr());
-        ReplaceSemanticsObject(object, newSemanticsObject, objects_.get());
+        ReplaceSemanticsObject(object, newSemanticsObject, pimpl_->objects.get());
         object = newSemanticsObject;
       }
     }
@@ -243,7 +257,7 @@ fml::WeakPtr<AccessibilityBridge> AccessibilityBridge::GetWeakPtr() {
 }
 
 void AccessibilityBridge::clearState() {
-  [objects_ removeAllObjects];
+  [pimpl_->objects removeAllObjects];
   previous_route_id_ = 0;
   previous_routes_.clear();
 }

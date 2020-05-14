@@ -9,7 +9,7 @@
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "third_party/ocmock/Source/OCMock/OCMock.h"
 
-FLUTTER_ASSERT_ARC
+FLUTTER_ASSERT_NOT_ARC
 
 namespace flutter {
 namespace {

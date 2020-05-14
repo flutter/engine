@@ -14,12 +14,10 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge_ios.h"
 #include "third_party/skia/include/core/SkRect.h"
@@ -36,6 +34,7 @@ class PlatformViewIOS;
  */
 class AccessibilityBridge final : public AccessibilityBridgeIos {
  public:
+  struct AccessibilityBridgeImpl;
   AccessibilityBridge(UIView* view,
                       PlatformViewIOS* platform_view,
                       FlutterPlatformViewsController* platform_views_controller);
@@ -66,11 +65,10 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
                                         NSMutableArray<NSNumber*>* doomed_uids);
   void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
 
+  std::unique_ptr<AccessibilityBridgeImpl, void (*)(AccessibilityBridgeImpl*)> pimpl_;
   UIView* view_;
   PlatformViewIOS* platform_view_;
   FlutterPlatformViewsController* platform_views_controller_;
-  fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
-  fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;
   int32_t previous_route_id_;
   std::unordered_map<int32_t, flutter::CustomAccessibilityAction> actions_;
