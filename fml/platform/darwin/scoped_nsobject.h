@@ -63,6 +63,7 @@ using scoped_nsprotocol_memory_management = scoped_nsprotocol_mrc_memory_managem
 template <typename NST>
 class scoped_nsprotocol {
   using Memory = scoped_nsprotocol_memory_management<NST>;
+
  public:
   explicit scoped_nsprotocol(NST object = nil) : object_(object) {}
 
