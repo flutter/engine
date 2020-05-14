@@ -304,8 +304,8 @@ class EngineImageFilter implements ui.ImageFilter {
   }
 }
 
-js.JsObject _skTileMode(ui.TileMode tm) {
-  switch(tm) {
+js.JsObject _skTileMode(ui.TileMode tileMode) {
+  switch(tileMode) {
     case ui.TileMode.clamp:
       return canvasKit['TileMode']['Clamp'];
     case ui.TileMode.repeated:
