@@ -157,7 +157,7 @@ void TextInputPlugin::HandleMethodCall(
           input_type_info_json->value.FindMember(kTextInputTypeName);
       if (input_type_json != input_type_info_json->value.MemberEnd() &&
           input_type_json->value.IsString()) {
-        input_type = input_type->value.GetString();
+        input_type = input_type_json->value.GetString();
       }
     }
     active_model_ = std::make_unique<TextInputModel>(input_type, input_action);
