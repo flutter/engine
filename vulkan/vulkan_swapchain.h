@@ -56,11 +56,11 @@ class VulkanSwapchain {
 
   /// Submit a previously acquired. There must not be consecutive calls to
   /// |Submit| without and interleaving |AcquireFrame|.
-  FML_WARN_UNUSED_RESULT
-  bool Submit();
+  [[nodiscard]] bool Submit();
 
   SkISize GetSize() const;
 
+#if OS_ANDROID
  private:
   const VulkanProcTable& vk;
   const VulkanDevice& device_;
@@ -88,6 +88,7 @@ class VulkanSwapchain {
                                      sk_sp<SkColorSpace> color_space) const;
 
   VulkanBackbuffer* GetNextBackbuffer();
+#endif  // OS_ANDROID
 
   FML_DISALLOW_COPY_AND_ASSIGN(VulkanSwapchain);
 };

@@ -10,8 +10,9 @@
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
 #include "flutter/shell/platform/android/android_surface.h"
+#include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 
-namespace shell {
+namespace flutter {
 
 class AndroidSurfaceSoftware final : public AndroidSurface,
                                      public GPUSurfaceSoftwareDelegate {
@@ -20,42 +21,46 @@ class AndroidSurfaceSoftware final : public AndroidSurface,
 
   ~AndroidSurfaceSoftware() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool IsValid() const override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool ResourceContextMakeCurrent() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool ResourceContextClearCurrent() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   void TeardownOnScreenContext() override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool OnScreenSurfaceResize(const SkISize& size) const override;
 
-  // |shell::AndroidSurface|
+  // |AndroidSurface|
   bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) override;
 
-  // |shell::GPUSurfaceSoftwareDelegate|
+  // |GPUSurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
 
-  // |shell::GPUSurfaceSoftwareDelegate|
+  // |GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
+
+  // |GPUSurfaceSoftwareDelegate|
+  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
  private:
   sk_sp<SkSurface> sk_surface_;
   fml::RefPtr<AndroidNativeWindow> native_window_;
   SkColorType target_color_type_;
   SkAlphaType target_alpha_type_;
+  std::unique_ptr<AndroidExternalViewEmbedder> external_view_embedder_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceSoftware);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_SOFTWARE_H_

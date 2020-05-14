@@ -12,13 +12,11 @@
 #include "flutter/fml/time/time_point.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
-namespace flow {
-
-static const double kOneFrameMS = 1e3 / 60.0;
+namespace flutter {
 
 class Stopwatch {
  public:
-  Stopwatch();
+  Stopwatch(fml::Milliseconds frame_budget = fml::kDefaultFrameBudget);
 
   ~Stopwatch();
 
@@ -27,6 +25,8 @@ class Stopwatch {
   fml::TimeDelta CurrentLap() const { return fml::TimePoint::Now() - start_; }
 
   fml::TimeDelta MaxDelta() const;
+
+  fml::TimeDelta AverageDelta() const;
 
   void InitVisualizeSurface(const SkRect& rect) const;
 
@@ -39,9 +39,15 @@ class Stopwatch {
   void SetLapTime(const fml::TimeDelta& delta);
 
  private:
+  inline double UnitFrameInterval(double time_ms) const;
+  inline double UnitHeight(double time_ms, double max_height) const;
+
   fml::TimePoint start_;
   std::vector<fml::TimeDelta> laps_;
   size_t current_sample_;
+
+  fml::Milliseconds frame_budget_;
+
   // Mutable data cache for performance optimization of the graphs. Prevents
   // expensive redrawing of old data.
   mutable bool cache_dirty_;
@@ -90,6 +96,6 @@ class CounterValues {
   FML_DISALLOW_COPY_AND_ASSIGN(CounterValues);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_INSTRUMENTATION_H_

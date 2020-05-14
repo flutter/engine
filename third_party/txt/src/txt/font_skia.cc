@@ -15,6 +15,7 @@
  */
 
 #include "font_skia.h"
+#include "third_party/skia/include/core/SkFont.h"
 
 #include <minikin/MinikinFont.h>
 
@@ -47,33 +48,33 @@ FontSkia::FontSkia(sk_sp<SkTypeface> typeface)
 
 FontSkia::~FontSkia() = default;
 
-static void FontSkia_SetSkiaPaint(sk_sp<SkTypeface> typeface,
-                                  SkPaint* skPaint,
-                                  const minikin::MinikinPaint& paint) {
-  skPaint->setTypeface(std::move(typeface));
-  skPaint->setTextEncoding(SkPaint::kGlyphID_TextEncoding);
+static void FontSkia_SetSkiaFont(sk_sp<SkTypeface> typeface,
+                                 SkFont* skFont,
+                                 const minikin::MinikinPaint& paint) {
+  skFont->setTypeface(std::move(typeface));
+  skFont->setLinearMetrics((paint.paintFlags & minikin::LinearTextFlag) != 0);
   // TODO: set more paint parameters from Minikin
-  skPaint->setTextSize(paint.size);
+  skFont->setSize(paint.size);
 }
 
 float FontSkia::GetHorizontalAdvance(uint32_t glyph_id,
                                      const minikin::MinikinPaint& paint) const {
-  SkPaint skPaint;
+  SkFont skFont;
   uint16_t glyph16 = glyph_id;
   SkScalar skWidth;
-  FontSkia_SetSkiaPaint(typeface_, &skPaint, paint);
-  skPaint.getTextWidths(&glyph16, sizeof(glyph16), &skWidth, NULL);
+  FontSkia_SetSkiaFont(typeface_, &skFont, paint);
+  skFont.getWidths(&glyph16, 1, &skWidth);
   return skWidth;
 }
 
 void FontSkia::GetBounds(minikin::MinikinRect* bounds,
                          uint32_t glyph_id,
                          const minikin::MinikinPaint& paint) const {
-  SkPaint skPaint;
+  SkFont skFont;
   uint16_t glyph16 = glyph_id;
   SkRect skBounds;
-  FontSkia_SetSkiaPaint(typeface_, &skPaint, paint);
-  skPaint.getTextWidths(&glyph16, sizeof(glyph16), NULL, &skBounds);
+  FontSkia_SetSkiaFont(typeface_, &skFont, paint);
+  skFont.getWidths(&glyph16, 1, NULL, &skBounds);
   bounds->mLeft = skBounds.fLeft;
   bounds->mTop = skBounds.fTop;
   bounds->mRight = skBounds.fRight;

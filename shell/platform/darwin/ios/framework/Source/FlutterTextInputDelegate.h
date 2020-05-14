@@ -21,11 +21,23 @@ typedef NS_ENUM(NSInteger, FlutterTextInputAction) {
   FlutterTextInputActionNewline,
 };
 
+typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
+  FlutterFloatingCursorDragStateStart,
+  FlutterFloatingCursorDragStateUpdate,
+  FlutterFloatingCursorDragStateEnd,
+};
+
 @protocol FlutterTextInputDelegate <NSObject>
 
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state;
+- (void)updateEditingClient:(int)client withState:(NSDictionary*)state withTag:(NSString*)tag;
 - (void)performAction:(FlutterTextInputAction)action withClient:(int)client;
-
+- (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state
+                  withClient:(int)client
+                withPosition:(NSDictionary*)point;
+- (void)showAutocorrectionPromptRectForStart:(NSUInteger)start
+                                         end:(NSUInteger)end
+                                  withClient:(int)client;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTDELEGATE_H_

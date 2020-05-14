@@ -2,44 +2,52 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/fml/mapping.h"
+#include "flutter/fml/synchronization/count_down_latch.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
+#include "flutter/runtime/runtime_test.h"
+#include "flutter/testing/dart_isolate_runner.h"
 #include "flutter/testing/testing.h"
 #include "flutter/testing/thread_test.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/scopes/dart_isolate_scope.h"
 
-#define CURRENT_TEST_NAME                                           \
-  std::string {                                                     \
-    ::testing::UnitTest::GetInstance()->current_test_info()->name() \
-  }
+namespace flutter {
+namespace testing {
 
-namespace blink {
-
-using DartIsolateTest = ::testing::ThreadTest;
+using DartIsolateTest = RuntimeTest;
 
 TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
-  Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
-  auto vm = DartVM::ForProcess(settings);
-  ASSERT_TRUE(vm);
-  TaskRunners task_runners(CURRENT_TEST_NAME,       //
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  ASSERT_TRUE(vm_ref);
+  auto vm_data = vm_ref.GetVMData();
+  ASSERT_TRUE(vm_data);
+  TaskRunners task_runners(GetCurrentTestName(),    //
                            GetCurrentTaskRunner(),  //
                            GetCurrentTaskRunner(),  //
                            GetCurrentTaskRunner(),  //
                            GetCurrentTaskRunner()   //
   );
   auto weak_isolate = DartIsolate::CreateRootIsolate(
-      vm.get(),                  // vm
-      vm->GetIsolateSnapshot(),  // isolate snapshot
-      vm->GetSharedSnapshot(),   // shared snapshot
-      std::move(task_runners),   // task runners
-      nullptr,                   // window
-      {},                        // snapshot delegate
-      {},                        // resource context
-      nullptr,                   // unref qeueue
-      "main.dart",               // advisory uri
-      "main"                     // advisory entrypoint
+      vm_data->GetSettings(),             // settings
+      vm_data->GetIsolateSnapshot(),      // isolate snapshot
+      std::move(task_runners),            // task runners
+      nullptr,                            // window
+      {},                                 // snapshot delegate
+      {},                                 // io manager
+      {},                                 // unref queue
+      {},                                 // image decoder
+      "main.dart",                        // advisory uri
+      "main",                             // advisory entrypoint,
+      nullptr,                            // flags
+      settings.isolate_create_callback,   // isolate create callback
+      settings.isolate_shutdown_callback  // isolate shutdown callback
   );
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);
@@ -48,28 +56,32 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
 }
 
 TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
-  Settings settings = {};
-  settings.task_observer_add = [](intptr_t, fml::closure) {};
-  settings.task_observer_remove = [](intptr_t) {};
-  auto vm = DartVM::ForProcess(settings);
-  ASSERT_TRUE(vm);
-  TaskRunners task_runners(CURRENT_TEST_NAME,       //
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  ASSERT_TRUE(vm_ref);
+  auto vm_data = vm_ref.GetVMData();
+  ASSERT_TRUE(vm_data);
+  TaskRunners task_runners(GetCurrentTestName(),    //
                            GetCurrentTaskRunner(),  //
                            GetCurrentTaskRunner(),  //
                            GetCurrentTaskRunner(),  //
                            GetCurrentTaskRunner()   //
   );
   auto weak_isolate = DartIsolate::CreateRootIsolate(
-      vm.get(),                  // vm
-      vm->GetIsolateSnapshot(),  // isolate snapshot
-      vm->GetSharedSnapshot(),   // shared snapshot
-      std::move(task_runners),   // task runners
-      nullptr,                   // window
-      {},                        // snapshot delegate
-      {},                        // resource context
-      nullptr,                   // unref qeueue
-      "main.dart",               // advisory uri
-      "main"                     // advisory entrypoint
+      vm_data->GetSettings(),             // settings
+      vm_data->GetIsolateSnapshot(),      // isolate snapshot
+      std::move(task_runners),            // task runners
+      nullptr,                            // window
+      {},                                 // snapshot delegate
+      {},                                 // io manager
+      {},                                 // unref queue
+      {},                                 // image decoder
+      "main.dart",                        // advisory uri
+      "main",                             // advisory entrypoint
+      nullptr,                            // flags
+      settings.isolate_create_callback,   // isolate create callback
+      settings.isolate_shutdown_callback  // isolate shutdown callback
   );
   auto root_isolate = weak_isolate.lock();
   ASSERT_TRUE(root_isolate);
@@ -83,4 +95,186 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
   ASSERT_EQ(destruction_callback_count, 1u);
 }
 
-}  // namespace blink
+TEST_F(DartIsolateTest, IsolateCanLoadAndRunDartCode) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  const auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  TaskRunners task_runners(GetCurrentTestName(),    //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner()   //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
+                                      {}, GetFixturesPath());
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+}
+
+TEST_F(DartIsolateTest, IsolateCannotLoadAndRunUnknownDartEntrypoint) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  const auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  TaskRunners task_runners(GetCurrentTestName(),    //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner()   //
+  );
+  auto isolate =
+      RunDartCodeInIsolate(vm_ref, settings, task_runners, "thisShouldNotExist",
+                           {}, GetFixturesPath());
+  ASSERT_FALSE(isolate);
+}
+
+TEST_F(DartIsolateTest, CanRunDartCodeCodeSynchronously) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  const auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  TaskRunners task_runners(GetCurrentTestName(),    //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner(),  //
+                           GetCurrentTaskRunner()   //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners, "main",
+                                      {}, GetFixturesPath());
+
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+  ASSERT_TRUE(isolate->RunInIsolateScope([]() -> bool {
+    if (tonic::LogIfError(::Dart_Invoke(Dart_RootLibrary(),
+                                        tonic::ToDart("sayHi"), 0, nullptr))) {
+      return false;
+    }
+    return true;
+  }));
+}
+
+TEST_F(DartIsolateTest, CanRegisterNativeCallback) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyNative",
+                    CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments args) {
+                      FML_LOG(ERROR) << "Hello from Dart!";
+                      latch.Signal();
+                    })));
+  const auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  auto thread = CreateNewThread();
+  TaskRunners task_runners(GetCurrentTestName(),  //
+                           thread,                //
+                           thread,                //
+                           thread,                //
+                           thread                 //
+  );
+  auto isolate =
+      RunDartCodeInIsolate(vm_ref, settings, task_runners,
+                           "canRegisterNativeCallback", {}, GetFixturesPath());
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+  latch.Wait();
+}
+
+TEST_F(DartIsolateTest, CanSaveCompilationTrace) {
+  if (DartVM::IsRunningPrecompiledCode()) {
+    // Can only save compilation traces in JIT modes.
+    GTEST_SKIP();
+    return;
+  }
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyNative",
+                    CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments args) {
+                      ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(
+                          Dart_GetNativeArgument(args, 0)));
+                      latch.Signal();
+                    })));
+
+  const auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  auto thread = CreateNewThread();
+  TaskRunners task_runners(GetCurrentTestName(),  //
+                           thread,                //
+                           thread,                //
+                           thread,                //
+                           thread                 //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
+                                      "testCanSaveCompilationTrace", {},
+                                      GetFixturesPath());
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+
+  latch.Wait();
+}
+
+TEST_F(DartIsolateTest, CanLaunchSecondaryIsolates) {
+  fml::CountDownLatch latch(3);
+  fml::AutoResetWaitableEvent child_shutdown_latch;
+  fml::AutoResetWaitableEvent root_isolate_shutdown_latch;
+  AddNativeCallback("NotifyNative",
+                    CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments args) {
+                      latch.CountDown();
+                    })));
+  AddNativeCallback(
+      "PassMessage", CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments args) {
+        auto message = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        ASSERT_EQ("Hello from code is secondary isolate.", message);
+        latch.CountDown();
+      })));
+  auto settings = CreateSettingsForFixture();
+  settings.root_isolate_shutdown_callback = [&root_isolate_shutdown_latch]() {
+    root_isolate_shutdown_latch.Signal();
+  };
+  settings.isolate_shutdown_callback = [&child_shutdown_latch]() {
+    child_shutdown_latch.Signal();
+  };
+  auto vm_ref = DartVMRef::Create(settings);
+  auto thread = CreateNewThread();
+  TaskRunners task_runners(GetCurrentTestName(),  //
+                           thread,                //
+                           thread,                //
+                           thread,                //
+                           thread                 //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
+                                      "testCanLaunchSecondaryIsolate", {},
+                                      GetFixturesPath());
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+  child_shutdown_latch.Wait();  // wait for child isolate to shutdown first
+  ASSERT_FALSE(root_isolate_shutdown_latch.IsSignaledForTest());
+  latch.Wait();  // wait for last NotifyNative called by main isolate
+  // root isolate will be auto-shutdown
+}
+
+TEST_F(DartIsolateTest, CanRecieveArguments) {
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyNative",
+                    CREATE_NATIVE_ENTRY(([&latch](Dart_NativeArguments args) {
+                      ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(
+                          Dart_GetNativeArgument(args, 0)));
+                      latch.Signal();
+                    })));
+
+  const auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  auto thread = CreateNewThread();
+  TaskRunners task_runners(GetCurrentTestName(),  //
+                           thread,                //
+                           thread,                //
+                           thread,                //
+                           thread                 //
+  );
+  auto isolate = RunDartCodeInIsolate(vm_ref, settings, task_runners,
+                                      "testCanRecieveArguments", {"arg1"},
+                                      GetFixturesPath());
+  ASSERT_TRUE(isolate);
+  ASSERT_EQ(isolate->get()->GetPhase(), DartIsolate::Phase::Running);
+
+  latch.Wait();
+}
+
+}  // namespace testing
+}  // namespace flutter

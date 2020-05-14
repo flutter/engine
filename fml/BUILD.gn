@@ -2,9 +2,17 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+if (is_fuchsia) {
+  import("//build/fuchsia/sdk.gni")
+  import("//flutter/tools/fuchsia/fuchsia_archive.gni")
+}
+import("//flutter/testing/testing.gni")
+
 source_set("fml") {
   sources = [
-    "arraysize.h",
+    "ascii_trie.cc",
+    "ascii_trie.h",
+    "backtrace.h",
     "base32.cc",
     "base32.h",
     "build_config.h",
@@ -12,10 +20,14 @@ source_set("fml") {
     "command_line.cc",
     "command_line.h",
     "compiler_specific.h",
+    "concurrent_message_loop.cc",
+    "concurrent_message_loop.h",
+    "delayed_task.cc",
+    "delayed_task.h",
     "eintr_wrapper.h",
-    "export.h",
     "file.cc",
     "file.h",
+    "hash_combine.h",
     "icu_util.cc",
     "icu_util.h",
     "log_level.h",
@@ -31,6 +43,8 @@ source_set("fml") {
     "memory/ref_counted_internal.h",
     "memory/ref_ptr.h",
     "memory/ref_ptr_internal.h",
+    "memory/task_runner_checker.cc",
+    "memory/task_runner_checker.h",
     "memory/thread_checker.h",
     "memory/weak_ptr.h",
     "memory/weak_ptr_internal.cc",
@@ -41,17 +55,23 @@ source_set("fml") {
     "message_loop.h",
     "message_loop_impl.cc",
     "message_loop_impl.h",
+    "message_loop_task_queues.cc",
+    "message_loop_task_queues.h",
     "native_library.h",
     "paths.cc",
     "paths.h",
-    "string_view.cc",
-    "string_view.h",
+    "posix_wrappers.h",
+    "raster_thread_merger.cc",
+    "raster_thread_merger.h",
+    "size.h",
     "synchronization/atomic_object.h",
     "synchronization/count_down_latch.cc",
     "synchronization/count_down_latch.h",
+    "synchronization/semaphore.cc",
+    "synchronization/semaphore.h",
     "synchronization/shared_mutex.h",
-    "synchronization/thread_annotations.h",
-    "synchronization/thread_checker.h",
+    "synchronization/sync_switch.cc",
+    "synchronization/sync_switch.h",
     "synchronization/waitable_event.cc",
     "synchronization/waitable_event.h",
     "task_runner.cc",
@@ -68,7 +88,14 @@ source_set("fml") {
     "unique_fd.cc",
     "unique_fd.h",
     "unique_object.h",
+    "wakeable.h",
   ]
+
+  if (is_mac || is_ios || is_linux) {
+    sources += [ "backtrace.cc" ]
+  } else {
+    sources += [ "backtrace_stub.cc" ]
+  }
 
   public_deps = []
 
@@ -81,7 +108,10 @@ source_set("fml") {
 
   configs += [ "//third_party/icu:icu_config" ]
 
-  public_configs = [ "$flutter_root:config" ]
+  public_configs = [
+    "//flutter:config",
+    "//flutter/common:flutter_config",
+  ]
 
   libs = []
 
@@ -92,6 +122,9 @@ source_set("fml") {
   }
 
   if (is_ios || is_mac) {
+    cflags_objc = flutter_cflags_objc
+    cflags_objcc = flutter_cflags_objcc
+
     sources += [
       "platform/darwin/cf_utils.cc",
       "platform/darwin/cf_utils.h",
@@ -104,6 +137,8 @@ source_set("fml") {
       "platform/darwin/scoped_block.mm",
       "platform/darwin/scoped_nsobject.h",
       "platform/darwin/scoped_nsobject.mm",
+      "platform/darwin/string_range_sanitization.h",
+      "platform/darwin/string_range_sanitization.mm",
     ]
 
     libs += [ "Foundation.framework" ]
@@ -127,13 +162,10 @@ source_set("fml") {
   }
 
   if (is_android) {
-    # Don't filter away these Linux sources on Android.
-    set_sources_assignment_filter([])
     sources += [
       "platform/linux/timerfd.cc",
       "platform/linux/timerfd.h",
     ]
-    set_sources_assignment_filter(sources_assignment_filter)
   }
 
   if (is_linux) {
@@ -147,9 +179,20 @@ source_set("fml") {
   }
 
   if (is_fuchsia) {
-    sources += [ "platform/fuchsia/paths_fuchsia.cc" ]
+    sources += [
+      "platform/fuchsia/message_loop_fuchsia.cc",
+      "platform/fuchsia/message_loop_fuchsia.h",
+      "platform/fuchsia/paths_fuchsia.cc",
+    ]
 
-    public_deps += [ "//zircon/public/lib/trace-provider" ]
+    public_deps += [
+      "$fuchsia_sdk_root/pkg:async-cpp",
+      "$fuchsia_sdk_root/pkg:async-loop-cpp",
+      "$fuchsia_sdk_root/pkg:async-loop-default",
+      "$fuchsia_sdk_root/pkg:trace",
+      "$fuchsia_sdk_root/pkg:trace-engine",
+      "$fuchsia_sdk_root/pkg:zx",
+    ]
   }
 
   if (is_win) {
@@ -162,34 +205,51 @@ source_set("fml") {
       "platform/win/message_loop_win.h",
       "platform/win/native_library_win.cc",
       "platform/win/paths_win.cc",
+      "platform/win/posix_wrappers_win.cc",
       "platform/win/wstring_conversion.h",
     ]
+
+    if (is_win) {
+      # For wstring_conversion. See issue #50053.
+      defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
+    }
   } else {
     sources += [
       "platform/posix/file_posix.cc",
       "platform/posix/mapping_posix.cc",
       "platform/posix/native_library_posix.cc",
       "platform/posix/paths_posix.cc",
+      "platform/posix/posix_wrappers_posix.cc",
     ]
   }
+}
+
+test_fixtures("fml_fixtures") {
+  fixtures = []
 }
 
 executable("fml_unittests") {
   testonly = true
 
   sources = [
+    "ascii_trie_unittests.cc",
+    "backtrace_unittests.cc",
     "base32_unittest.cc",
     "command_line_unittest.cc",
     "file_unittest.cc",
+    "hash_combine_unittests.cc",
     "memory/ref_counted_unittest.cc",
+    "memory/task_runner_checker_unittest.cc",
     "memory/weak_ptr_unittest.cc",
+    "message_loop_task_queues_merge_unmerge_unittests.cc",
+    "message_loop_task_queues_unittests.cc",
     "message_loop_unittests.cc",
     "message_unittests.cc",
     "paths_unittests.cc",
-    "string_view_unittest.cc",
+    "raster_thread_merger_unittests.cc",
     "synchronization/count_down_latch_unittests.cc",
-    "synchronization/thread_annotations_unittest.cc",
-    "synchronization/thread_checker_unittest.cc",
+    "synchronization/semaphore_unittest.cc",
+    "synchronization/sync_switch_unittest.cc",
     "synchronization/waitable_event_unittest.cc",
     "thread_local_unittests.cc",
     "thread_unittests.cc",
@@ -198,9 +258,46 @@ executable("fml_unittests") {
     "time/time_unittest.cc",
   ]
 
+  if (is_mac) {
+    sources += [
+      "platform/darwin/cf_utils_unittests.mm",
+      "platform/darwin/string_range_sanitization_unittests.mm",
+    ]
+  }
+
   deps = [
-    "$flutter_root/fml",
-    "$flutter_root/testing",
-    "//third_party/dart/runtime:libdart_jit",
+    ":fml_fixtures",
+    "//flutter/fml",
+    "//flutter/fml/dart",
+    "//flutter/runtime:libdart",
+    "//flutter/testing",
+  ]
+
+  if (is_fuchsia) {
+    libs = [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+  }
+}
+
+if (is_fuchsia) {
+  fuchsia_test_archive("fml_tests") {
+    deps = [
+      ":fml_unittests",
+    ]
+
+    binary = "fml_unittests"
+  }
+}
+
+executable("fml_benchmarks") {
+  testonly = true
+
+  sources = [
+    "message_loop_task_queues_benchmark.cc",
+  ]
+
+  deps = [
+    "//flutter/benchmarking",
+    "//flutter/fml",
+    "//flutter/runtime:libdart",
   ]
 }

@@ -10,7 +10,7 @@
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 
-namespace blink {
+namespace flutter {
 
 typedef CanvasImage Image;
 
@@ -42,10 +42,13 @@ void CanvasImage::dispose() {
 
 size_t CanvasImage::GetAllocationSize() {
   if (auto image = image_.get()) {
-    return image->width() * image->height() * 4;
+    const auto& info = image->imageInfo();
+    const auto kMipmapOverhead = 4.0 / 3.0;
+    const size_t image_byte_size = info.computeMinByteSize() * kMipmapOverhead;
+    return image_byte_size + sizeof(this);
   } else {
     return sizeof(CanvasImage);
   }
 }
 
-}  // namespace blink
+}  // namespace flutter

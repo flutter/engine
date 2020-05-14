@@ -10,16 +10,18 @@
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace flow {
+namespace flutter {
 
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
 
-Stopwatch::Stopwatch() : start_(fml::TimePoint::Now()), current_sample_(0) {
+Stopwatch::Stopwatch(fml::Milliseconds frame_budget)
+    : start_(fml::TimePoint::Now()), current_sample_(0) {
   const fml::TimeDelta delta = fml::TimeDelta::Zero();
   laps_.resize(kMaxSamples, delta);
   cache_dirty_ = true;
   prev_drawn_sample_index_ = 0;
+  frame_budget_ = frame_budget;
 }
 
 Stopwatch::~Stopwatch() = default;
@@ -42,13 +44,13 @@ const fml::TimeDelta& Stopwatch::LastLap() const {
   return laps_[(current_sample_ - 1) % kMaxSamples];
 }
 
-static inline constexpr double UnitFrameInterval(double frame_time_ms) {
-  return frame_time_ms * 60.0 * 1e-3;
+double Stopwatch::UnitFrameInterval(double raster_time_ms) const {
+  return raster_time_ms / frame_budget_.count();
 }
 
-static inline double UnitHeight(double frame_time_ms,
-                                double max_unit_interval) {
-  double unitHeight = UnitFrameInterval(frame_time_ms) / max_unit_interval;
+double Stopwatch::UnitHeight(double raster_time_ms,
+                             double max_unit_interval) const {
+  double unitHeight = UnitFrameInterval(raster_time_ms) / max_unit_interval;
   if (unitHeight > 1.0)
     unitHeight = 1.0;
   return unitHeight;
@@ -61,6 +63,14 @@ fml::TimeDelta Stopwatch::MaxDelta() const {
       max_delta = laps_[i];
   }
   return max_delta;
+}
+
+fml::TimeDelta Stopwatch::AverageDelta() const {
+  fml::TimeDelta sum;  // default to 0
+  for (size_t i = 0; i < kMaxSamples; i++) {
+    sum = sum + laps_[i];
+  }
+  return sum / kMaxSamples;
 }
 
 // Initialize the SkSurface for drawing into. Draws the base background and any
@@ -89,7 +99,8 @@ void Stopwatch::InitVisualizeSurface(const SkRect& rect) const {
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
-  const double max_interval = kOneFrameMS * 3.0;
+  const double one_frame_ms = frame_budget_.count();
+  const double max_interval = one_frame_ms * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
   // Draw the old data to initially populate the graph.
@@ -138,7 +149,8 @@ void Stopwatch::Visualize(SkCanvas& canvas, const SkRect& rect) const {
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
-  const double max_interval = kOneFrameMS * 3.0;
+  const double one_frame_ms = frame_budget_.count();
+  const double max_interval = one_frame_ms * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
   const double sample_unit_width = (1.0 / kMaxSamples);
@@ -171,9 +183,10 @@ void Stopwatch::Visualize(SkCanvas& canvas, const SkRect& rect) const {
   paint.setStyle(SkPaint::Style::kStroke_Style);
   paint.setColor(0xCC000000);
 
-  if (max_interval > kOneFrameMS) {
+  if (max_interval > one_frame_ms) {
     // Paint the horizontal markers
-    size_t frame_marker_count = static_cast<size_t>(max_interval / kOneFrameMS);
+    size_t frame_marker_count =
+        static_cast<size_t>(max_interval / one_frame_ms);
 
     // Limit the number of markers displayed. After a certain point, the graph
     // becomes crowded
@@ -183,7 +196,7 @@ void Stopwatch::Visualize(SkCanvas& canvas, const SkRect& rect) const {
     for (size_t frame_index = 0; frame_index < frame_marker_count;
          frame_index++) {
       const double frame_height =
-          height * (1.0 - (UnitFrameInterval((frame_index + 1) * kOneFrameMS) /
+          height * (1.0 - (UnitFrameInterval((frame_index + 1) * one_frame_ms) /
                            max_unit_interval));
       cache_canvas->drawLine(x, y + frame_height, width, y + frame_height,
                              paint);
@@ -303,4 +316,4 @@ int64_t CounterValues::GetMinValue() const {
   return min;
 }
 
-}  // namespace flow
+}  // namespace flutter

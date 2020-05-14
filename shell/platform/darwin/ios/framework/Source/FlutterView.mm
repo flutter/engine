@@ -17,13 +17,9 @@
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-@interface FlutterView () <UIInputViewAudioFeedback>
-
-@end
-
-@implementation FlutterView
-
-id<FlutterViewEngineDelegate> _delegate;
+@implementation FlutterView {
+  id<FlutterViewEngineDelegate> _delegate;
+}
 
 - (instancetype)init {
   @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
@@ -56,49 +52,28 @@ id<FlutterViewEngineDelegate> _delegate;
 }
 
 - (void)layoutSubviews {
-  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
-    CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
-    layer.allowsGroupOpacity = YES;
+  if ([self.layer isKindOfClass:NSClassFromString(@"CAEAGLLayer")] ||
+      [self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
     CGFloat screenScale = [UIScreen mainScreen].scale;
-    layer.contentsScale = screenScale;
-    layer.rasterizationScale = screenScale;
+    self.layer.allowsGroupOpacity = YES;
+    self.layer.contentsScale = screenScale;
+    self.layer.rasterizationScale = screenScale;
   }
 
   [super layoutSubviews];
 }
 
 + (Class)layerClass {
-#if TARGET_IPHONE_SIMULATOR
-  return [CALayer class];
-#else   // TARGET_IPHONE_SIMULATOR
-  return [CAEAGLLayer class];
-#endif  // TARGET_IPHONE_SIMULATOR
+  return flutter::GetCoreAnimationLayerClassForRenderingAPI();
 }
 
-- (std::unique_ptr<shell::IOSSurface>)createSurface {
-  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
-    fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
-        reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
-    if (shell::IsIosEmbeddedViewsPreviewEnabled()) {
-      // TODO(amirh): We can lower this to iOS 8.0 once we have a Metal rendering backend.
-      // https://github.com/flutter/flutter/issues/24132
-      if (@available(iOS 9.0, *)) {
-        // TODO(amirh): only do this if there's an embedded view.
-        // https://github.com/flutter/flutter/issues/24133
-        eagl_layer.get().presentsWithTransaction = YES;
-      }
-    }
-    return std::make_unique<shell::IOSSurfaceGL>(std::move(eagl_layer),
-                                                 [_delegate platformViewsController]);
-  } else {
-    fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
-    return std::make_unique<shell::IOSSurfaceSoftware>(std::move(layer),
-                                                       [_delegate platformViewsController]);
-  }
-}
-
-- (BOOL)enableInputClicksWhenVisible {
-  return YES;
+- (std::unique_ptr<flutter::IOSSurface>)createSurface:
+    (std::shared_ptr<flutter::IOSContext>)ios_context {
+  return flutter::IOSSurface::Create(
+      std::move(ios_context),                              // context
+      fml::scoped_nsobject<CALayer>{[self.layer retain]},  // layer
+      [_delegate platformViewsController]                  // platform views controller
+  );
 }
 
 - (void)drawLayer:(CALayer*)layer inContext:(CGContextRef)context {
@@ -108,7 +83,7 @@ id<FlutterViewEngineDelegate> _delegate;
     return;
   }
 
-  auto screenshot = [_delegate takeScreenshot:shell::Rasterizer::ScreenshotType::UncompressedImage
+  auto screenshot = [_delegate takeScreenshot:flutter::Rasterizer::ScreenshotType::UncompressedImage
                               asBase64Encoded:NO];
 
   if (!screenshot.data || screenshot.data->isEmpty() || screenshot.frame_size.isEmpty()) {

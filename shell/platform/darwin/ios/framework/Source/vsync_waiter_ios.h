@@ -12,23 +12,26 @@
 
 @class VSyncClient;
 
-namespace shell {
+namespace flutter {
 
 class VsyncWaiterIOS final : public VsyncWaiter {
  public:
-  VsyncWaiterIOS(blink::TaskRunners task_runners);
+  VsyncWaiterIOS(flutter::TaskRunners task_runners);
 
   ~VsyncWaiterIOS() override;
 
  private:
   fml::scoped_nsobject<VSyncClient> client_;
 
-  // |shell::VsyncWaiter|
+  // |VsyncWaiter|
   void AwaitVSync() override;
+
+  // |VsyncWaiter|
+  float GetDisplayRefreshRate() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterIOS);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_VSYNC_WAITER_IOS_H_

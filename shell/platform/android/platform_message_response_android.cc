@@ -7,7 +7,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 
-namespace shell {
+namespace flutter {
 
 PlatformMessageResponseAndroid::PlatformMessageResponseAndroid(
     int response_id,
@@ -19,7 +19,7 @@ PlatformMessageResponseAndroid::PlatformMessageResponseAndroid(
 
 PlatformMessageResponseAndroid::~PlatformMessageResponseAndroid() = default;
 
-// |blink::PlatformMessageResponse|
+// |flutter::PlatformMessageResponse|
 void PlatformMessageResponseAndroid::Complete(
     std::unique_ptr<fml::Mapping> data) {
   platform_task_runner_->PostTask(
@@ -51,7 +51,7 @@ void PlatformMessageResponseAndroid::Complete(
       }));
 }
 
-// |blink::PlatformMessageResponse|
+// |flutter::PlatformMessageResponse|
 void PlatformMessageResponseAndroid::CompleteEmpty() {
   platform_task_runner_->PostTask(
       fml::MakeCopyable([response = response_id_,              //
@@ -72,4 +72,4 @@ void PlatformMessageResponseAndroid::CompleteEmpty() {
                                                  response, nullptr);
       }));
 }
-}  // namespace shell
+}  // namespace flutter

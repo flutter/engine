@@ -3,15 +3,18 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
+#include "flutter/lib/ui/ui_dart_state.h"
 
+#include "third_party/skia/include/core/SkScalar.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 
-namespace blink {
+namespace flutter {
 
 static void SemanticsUpdateBuilder_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&SemanticsUpdateBuilder::create, args);
 }
 
@@ -39,8 +42,11 @@ void SemanticsUpdateBuilder::updateNode(
     int id,
     int flags,
     int actions,
+    int maxValueLength,
+    int currentValueLength,
     int textSelectionBase,
     int textSelectionExtent,
+    int platformViewId,
     int scrollChildren,
     int scrollIndex,
     double scrollPosition,
@@ -50,6 +56,8 @@ void SemanticsUpdateBuilder::updateNode(
     double top,
     double right,
     double bottom,
+    double elevation,
+    double thickness,
     std::string label,
     std::string hint,
     std::string value,
@@ -60,25 +68,40 @@ void SemanticsUpdateBuilder::updateNode(
     const tonic::Int32List& childrenInTraversalOrder,
     const tonic::Int32List& childrenInHitTestOrder,
     const tonic::Int32List& localContextActions) {
+  FML_CHECK(transform.data() && SkScalarsAreFinite(*transform.data(), 9))
+      << "Semantics update transform was not set or not finite.";
+  FML_CHECK(scrollChildren == 0 ||
+            (scrollChildren > 0 && childrenInHitTestOrder.data()))
+      << "Semantics update contained scrollChildren but did not have "
+         "childrenInHitTestOrder";
   SemanticsNode node;
   node.id = id;
   node.flags = flags;
   node.actions = actions;
+  node.maxValueLength = maxValueLength;
+  node.currentValueLength = currentValueLength;
   node.textSelectionBase = textSelectionBase;
   node.textSelectionExtent = textSelectionExtent;
+  node.platformViewId = platformViewId;
   node.scrollChildren = scrollChildren;
   node.scrollIndex = scrollIndex;
   node.scrollPosition = scrollPosition;
   node.scrollExtentMax = scrollExtentMax;
   node.scrollExtentMin = scrollExtentMin;
   node.rect = SkRect::MakeLTRB(left, top, right, bottom);
+  node.elevation = elevation;
+  node.thickness = thickness;
   node.label = label;
   node.hint = hint;
   node.value = value;
   node.increasedValue = increasedValue;
   node.decreasedValue = decreasedValue;
   node.textDirection = textDirection;
-  node.transform.setColMajord(transform.data());
+  SkScalar scalarTransform[16];
+  for (int i = 0; i < 16; ++i) {
+    scalarTransform[i] = transform.data()[i];
+  }
+  node.transform = SkM44::ColMajor(scalarTransform);
   node.childrenInTraversalOrder =
       std::vector<int32_t>(childrenInTraversalOrder.data(),
                            childrenInTraversalOrder.data() +
@@ -104,8 +127,9 @@ void SemanticsUpdateBuilder::updateCustomAction(int id,
   actions_[id] = action;
 }
 
-fml::RefPtr<SemanticsUpdate> SemanticsUpdateBuilder::build() {
-  return SemanticsUpdate::create(std::move(nodes_), std::move(actions_));
+void SemanticsUpdateBuilder::build(Dart_Handle semantics_update_handle) {
+  SemanticsUpdate::create(semantics_update_handle, std::move(nodes_),
+                          std::move(actions_));
 }
 
-}  // namespace blink
+}  // namespace flutter

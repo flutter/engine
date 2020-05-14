@@ -16,9 +16,12 @@
 
 #include "txt_test_utils.h"
 
+#include <sstream>
+
 #include "third_party/skia/include/core/SkTypeface.h"
 #include "txt/asset_font_manager.h"
 #include "txt/typeface_font_asset_provider.h"
+#include "utils/MacUtils.h"
 #include "utils/WindowsUtils.h"
 
 #if !defined(_WIN32)
@@ -114,6 +117,14 @@ std::shared_ptr<FontCollection> GetTestFontCollection() {
       sk_make_sp<AssetFontManager>(std::move(font_provider)));
 
   return collection;
+}
+
+// Build a paragraph and return it as a ParagraphTxt usable by tests that need
+// access to ParagraphTxt internals.
+std::unique_ptr<ParagraphTxt> BuildParagraph(
+    txt::ParagraphBuilderTxt& builder) {
+  return std::unique_ptr<txt::ParagraphTxt>(
+      static_cast<txt::ParagraphTxt*>(builder.Build().release()));
 }
 
 }  // namespace txt

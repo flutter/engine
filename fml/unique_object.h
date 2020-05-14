@@ -14,10 +14,10 @@
 namespace fml {
 
 // struct UniqueFooTraits {
-//   // This function should be fast an inline.
+//   // This function should be fast and inline.
 //   static int InvalidValue() { return 0; }
 //
-//   // This function should be fast an inline.
+//   // This function should be fast and inline.
 //   static bool IsValid(const T& value) { return value != InvalidValue(); }
 //
 //   // This free function will not be called if f == InvalidValue()!
@@ -78,7 +78,7 @@ class UniqueObject {
   // Release the object. The return value is the current object held by this
   // object. After this operation, this object will hold an invalid value, and
   // will not own the object any more.
-  T release() FML_WARN_UNUSED_RESULT {
+  [[nodiscard]] T release() {
     T old_generic = data_.generic;
     data_.generic = Traits::InvalidValue();
     return old_generic;

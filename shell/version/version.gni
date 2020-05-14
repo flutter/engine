@@ -3,42 +3,44 @@
 # found in the LICENSE file.
 
 declare_args() {
-  shell_engine_version = ""
+  engine_version = ""
 
-  shell_skia_version = ""
+  skia_version = ""
 
-  shell_dart_version = ""
+  dart_version = ""
 }
 
-if (shell_engine_version == "") {
-  shell_engine_version_lines =
-      exec_script("$flutter_root/build/git_revision.py",
+_flutter_root = "//flutter"
+
+if (engine_version == "") {
+  engine_version_lines =
+      exec_script("//flutter/build/git_revision.py",
                   [
                     "--repository",
-                    rebase_path(flutter_root, "", flutter_root),
+                    rebase_path(_flutter_root, "", _flutter_root),
                   ],
                   "list lines")
-  shell_engine_version = shell_engine_version_lines[0]
+  engine_version = engine_version_lines[0]
 }
 
-if (shell_skia_version == "") {
-  shell_skia_version_lines =
-      exec_script("$flutter_root/build/git_revision.py",
+if (skia_version == "") {
+  skia_version_lines =
+      exec_script("//flutter/build/git_revision.py",
                   [
                     "--repository",
-                    rebase_path("//third_party/skia", "", flutter_root),
+                    rebase_path("//third_party/skia", "", _flutter_root),
                   ],
                   "list lines")
-  shell_skia_version = shell_skia_version_lines[0]
+  skia_version = skia_version_lines[0]
 }
 
-if (shell_dart_version == "") {
-  shell_dart_version_lines =
-      exec_script("$flutter_root/build/git_revision.py",
+if (dart_version == "") {
+  dart_version_lines =
+      exec_script("//flutter/build/git_revision.py",
                   [
                     "--repository",
-                    rebase_path("//third_party/dart", "", flutter_root),
+                    rebase_path("//third_party/dart", "", _flutter_root),
                   ],
                   "list lines")
-  shell_dart_version = shell_dart_version_lines[0]
+  dart_version = dart_version_lines[0]
 }

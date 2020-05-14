@@ -19,11 +19,11 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/logging/dart_invoke.h"
-#include "third_party/tonic/typed_data/uint8_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 #include "txt/asset_font_manager.h"
 #include "txt/test_font_manager.h"
 
-namespace blink {
+namespace flutter {
 
 namespace {
 
@@ -39,6 +39,7 @@ void LoadFontFromList(tonic::Uint8List& font_data,
 }
 
 void _LoadFontFromList(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   tonic::DartCallStatic(LoadFontFromList, args);
 }
 
@@ -46,7 +47,7 @@ void _LoadFontFromList(Dart_NativeArguments args) {
 
 FontCollection::FontCollection()
     : collection_(std::make_shared<txt::FontCollection>()) {
-  collection_->SetDefaultFontManager(SkFontMgr::RefDefault());
+  collection_->SetupDefaultFontManager();
 
   dynamic_font_manager_ = sk_make_sp<txt::DynamicFontManager>();
   collection_->SetDynamicFontManager(dynamic_font_manager_);
@@ -129,17 +130,24 @@ void FontCollection::RegisterFonts(
 }
 
 void FontCollection::RegisterTestFonts() {
-  sk_sp<SkTypeface> test_typeface =
-      SkTypeface::MakeFromStream(GetTestFontData());
+  std::vector<sk_sp<SkTypeface>> test_typefaces;
+  std::vector<std::unique_ptr<SkStreamAsset>> font_data = GetTestFontData();
+  for (auto& font : font_data) {
+    test_typefaces.push_back(SkTypeface::MakeFromStream(std::move(font)));
+  }
 
   std::unique_ptr<txt::TypefaceFontAssetProvider> font_provider =
       std::make_unique<txt::TypefaceFontAssetProvider>();
 
-  font_provider->RegisterTypeface(std::move(test_typeface),
-                                  GetTestFontFamilyName());
+  size_t index = 0;
+  std::vector<std::string> names = GetTestFontFamilyNames();
+  for (sk_sp<SkTypeface> typeface : test_typefaces) {
+    font_provider->RegisterTypeface(std::move(typeface), names[index]);
+    index++;
+  }
 
-  collection_->SetTestFontManager(sk_make_sp<txt::TestFontManager>(
-      std::move(font_provider), GetTestFontFamilyName()));
+  collection_->SetTestFontManager(
+      sk_make_sp<txt::TestFontManager>(std::move(font_provider), names));
 
   collection_->DisableFontFallback();
 }
@@ -158,6 +166,7 @@ void FontCollection::LoadFontFromList(const uint8_t* font_data,
   } else {
     font_provider.RegisterTypeface(typeface, family_name);
   }
+  collection_->ClearFontFamilyCache();
 }
 
-}  // namespace blink
+}  // namespace flutter

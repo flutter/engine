@@ -2,6 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/fuchsia/sdk.gni")
+import("//flutter/shell/platform/config.gni")
+
 group("platform") {
   if (is_mac || is_ios) {
     deps = [
@@ -12,13 +15,19 @@ group("platform") {
       "android",
     ]
   } else if (is_linux) {
-    deps = [
-      "embedder",
-    ]
-  } else if (is_win || is_fuchsia) {
-    # There is no platform target on Windows. Fuchsia has its own runner
-    # implementation.
     deps = []
+    if (enable_desktop_embeddings) {
+      deps += [ "linux" ]
+    }
+  } else if (is_win) {
+    deps = []
+    if (enable_desktop_embeddings) {
+      deps += [ "windows" ]
+    }
+  } else if (is_fuchsia) {
+    deps = [
+      "fuchsia",
+    ]
   } else {
     assert(false, "Unknown/Unsupported platform.")
   }

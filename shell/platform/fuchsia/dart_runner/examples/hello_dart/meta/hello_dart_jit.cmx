@@ -1,0 +1,14 @@
+{
+  "program": {
+    "data": "data/hello_dart_jit"
+  },
+  "sandbox": {
+    "features": [
+      "deprecated-ambient-replace-as-executable"
+    ],
+    "services": [
+      "fuchsia.intl.PropertyProvider",
+      "fuchsia.sys.Environment"
+    ]
+  }
+}

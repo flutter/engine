@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_COMMON_VERSION_H_
 #define FLUTTER_SHELL_COMMON_VERSION_H_
 
-namespace shell {
+namespace flutter {
 
 const char* GetFlutterEngineVersion();
 
@@ -13,6 +13,6 @@ const char* GetSkiaVersion();
 
 const char* GetDartVersion();
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_COMMON_VERSION_H_

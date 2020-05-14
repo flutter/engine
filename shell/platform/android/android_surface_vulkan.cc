@@ -10,10 +10,12 @@
 #include "flutter/shell/gpu/gpu_surface_vulkan.h"
 #include "flutter/vulkan/vulkan_native_surface_android.h"
 
-namespace shell {
+namespace flutter {
 
 AndroidSurfaceVulkan::AndroidSurfaceVulkan()
-    : proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
+    : proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {
+  external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>();
+}
 
 AndroidSurfaceVulkan::~AndroidSurfaceVulkan() = default;
 
@@ -21,12 +23,10 @@ bool AndroidSurfaceVulkan::IsValid() const {
   return proc_table_->HasAcquiredMandatoryProcAddresses();
 }
 
-// |shell::AndroidSurface|
 void AndroidSurfaceVulkan::TeardownOnScreenContext() {
   // Nothing to do.
 }
 
-// |shell::AndroidSurface|
 std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
   if (!IsValid()) {
     return nullptr;
@@ -45,7 +45,7 @@ std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
   }
 
   auto gpu_surface = std::make_unique<GPUSurfaceVulkan>(
-      proc_table_, std::move(vulkan_surface_android));
+      this, std::move(vulkan_surface_android), true);
 
   if (!gpu_surface->IsValid()) {
     return nullptr;
@@ -54,28 +54,32 @@ std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
   return gpu_surface;
 }
 
-// |shell::AndroidSurface|
 bool AndroidSurfaceVulkan::OnScreenSurfaceResize(const SkISize& size) const {
   return true;
 }
 
-// |shell::AndroidSurface|
 bool AndroidSurfaceVulkan::ResourceContextMakeCurrent() {
   FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
   return false;
 }
 
-// |shell::AndroidSurface|
 bool AndroidSurfaceVulkan::ResourceContextClearCurrent() {
   FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
   return false;
 }
 
-// |shell::AndroidSurface|
 bool AndroidSurfaceVulkan::SetNativeWindow(
     fml::RefPtr<AndroidNativeWindow> window) {
   native_window_ = std::move(window);
   return native_window_ && native_window_->IsValid();
 }
 
-}  // namespace shell
+ExternalViewEmbedder* AndroidSurfaceVulkan::GetExternalViewEmbedder() {
+  return external_view_embedder_.get();
+}
+
+fml::RefPtr<vulkan::VulkanProcTable> AndroidSurfaceVulkan::vk() {
+  return proc_table_;
+}
+
+}  // namespace flutter

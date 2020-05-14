@@ -6,8 +6,12 @@
 
 namespace txt {
 
-std::string GetDefaultFontFamily() {
-  return "Arial";
+std::vector<std::string> GetDefaultFontFamilies() {
+  return {"Arial"};
+}
+
+sk_sp<SkFontMgr> GetDefaultFontManager() {
+  return SkFontMgr::RefDefault();
 }
 
 }  // namespace txt

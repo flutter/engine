@@ -7,7 +7,7 @@
   <key>CFBundleExecutable</key>
   <string>FlutterEmbedder</string>
   <key>CFBundleIdentifier</key>
-  <string>io.flutter.flutter_embedder</string>
+  <string>io.flutter.flutter-embedder</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
@@ -24,5 +24,9 @@
   <string>1</string>
   <key>NSHumanReadableCopyright</key>
   <string>Copyright 2013 The Flutter Authors. All rights reserved.</string>
+  <key>FlutterEngine</key>
+  <string>{0}</string>
+  <key>ClangVersion</key>
+  <string>{1}</string>
 </dict>
 </plist>

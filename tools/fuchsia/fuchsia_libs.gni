@@ -1,0 +1,85 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/tools/fuchsia/clang.gni")
+
+fuchsia_sdk_base = "//fuchsia/sdk/$host_os/arch/$target_cpu"
+fuchsia_sdk_dist = "$fuchsia_sdk_base/dist"
+sysroot_lib = "$fuchsia_sdk_base/sysroot/lib"
+sysroot_dist_lib = "$fuchsia_sdk_base/sysroot/dist/lib"
+
+common_libs = [
+  {
+    name = "libasync-default.so"
+    path = rebase_path("$fuchsia_sdk_dist")
+  },
+  {
+    name = "libtrace-engine.so"
+    path = rebase_path("$fuchsia_sdk_dist")
+  },
+  {
+    name = "libfdio.so"
+    path = rebase_path("$fuchsia_sdk_dist")
+  },
+  {
+    name = "libmemfs.so"
+    path = rebase_path("$fuchsia_sdk_dist")
+  },
+  {
+    name = "libsyslog.so"
+    path = rebase_path("$fuchsia_sdk_dist")
+  },
+  {
+    name = "libvulkan.so"
+    path = rebase_path("$fuchsia_sdk_dist")
+  },
+  {
+    name = "libtrace-provider-so.so"
+    path = rebase_path("$fuchsia_sdk_dist")
+  },
+  {
+    name = "ld.so.1"
+    path = rebase_path("$sysroot_dist_lib")
+  },
+
+  # Note, we use the md5 hashes here because of gn limitations of json parsing.
+  # This is a hack, and we can migrate to a better way soon.
+  {
+    name = "libc++.so.2"
+    path = rebase_path(
+            "$clang_base/${clang_manifest_json.md5_33bfe15b05ada4ed326fbc33adb39b95}")
+  },
+  {
+    name = "libc++abi.so.1"
+    path = rebase_path(
+            "$clang_base/${clang_manifest_json.md5_916c01a85e3353f124776599819ecb1c}")
+  },
+  {
+    name = "libunwind.so.1"
+    path = rebase_path(
+            "$clang_base/${clang_manifest_json.md5_beb70f40d525448b39ea87d9f5811e56}")
+  },
+]
+
+vulkan_dist = "$fuchsia_sdk_base/dist"
+
+# Note that the other validation libraries in the Fuchsia SDK seem to have a bug right
+# now causing crashes, so it is only recommended that we use
+# VkLayer_khronos_validation.so until we have a confirmation that they are fixed.
+vulkan_validation_libs = [
+  {
+    name = "VkLayer_khronos_validation.so"
+    path = rebase_path("$vulkan_dist")
+  },
+]
+
+vulkan_data_dir =
+    "//fuchsia/sdk/linux/pkg/vulkan_layers/data/vulkan/explicit_layer.d"
+
+vulkan_icds = [
+  {
+    path = rebase_path("$vulkan_data_dir/VkLayer_khronos_validation.json")
+    dest = "vulkan/explicit_layer.d/VkLayer_khronos_validation.json"
+  },
+]

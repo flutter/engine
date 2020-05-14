@@ -7,16 +7,20 @@
 #include <GLES/glext.h>
 
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
-#include "third_party/skia/include/gpu/GrTexture.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
 
-namespace shell {
+namespace flutter {
 
 AndroidExternalTextureGL::AndroidExternalTextureGL(
     int64_t id,
     const fml::jni::JavaObjectWeakGlobalRef& surfaceTexture)
     : Texture(id), surface_texture_(surfaceTexture), transform(SkMatrix::I()) {}
 
-AndroidExternalTextureGL::~AndroidExternalTextureGL() = default;
+AndroidExternalTextureGL::~AndroidExternalTextureGL() {
+  if (state_ == AttachmentState::attached) {
+    glDeleteTextures(1, &texture_name_);
+  }
+}
 
 void AndroidExternalTextureGL::OnGrContextCreated() {
   state_ = AttachmentState::uninitialized;
@@ -28,7 +32,8 @@ void AndroidExternalTextureGL::MarkNewFrameAvailable() {
 
 void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
                                      const SkRect& bounds,
-                                     bool freeze) {
+                                     bool freeze,
+                                     GrContext* context) {
   if (state_ == AttachmentState::detached) {
     return;
   }
@@ -63,6 +68,18 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
   }
 }
 
+// The bounds we set for the canvas are post composition.
+// To fill the canvas we need to ensure that the transformation matrix
+// on the `SurfaceTexture` will be scaled to fill. We rescale and preseve
+// the scaled aspect ratio.
+SkSize ScaleToFill(float scaleX, float scaleY) {
+  const double epsilon = std::numeric_limits<double>::epsilon();
+  // scaleY is negative.
+  const double minScale = fmin(scaleX, fabs(scaleY));
+  const double rescale = 1.0f / (minScale + epsilon);
+  return SkSize::Make(scaleX * rescale, scaleY * rescale);
+}
+
 void AndroidExternalTextureGL::UpdateTransform() {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> surfaceTexture =
@@ -72,10 +89,12 @@ void AndroidExternalTextureGL::UpdateTransform() {
   SurfaceTextureGetTransformMatrix(env, surfaceTexture.obj(),
                                    transformMatrix.obj());
   float* m = env->GetFloatArrayElements(transformMatrix.obj(), nullptr);
+  float scaleX = m[0], scaleY = m[5];
+  const SkSize scaled = ScaleToFill(scaleX, scaleY);
   SkScalar matrix3[] = {
-      m[0], m[1], m[2],   //
-      m[4], m[5], m[6],   //
-      m[8], m[9], m[10],  //
+      scaled.fWidth, m[1],           m[2],   //
+      m[4],          scaled.fHeight, m[6],   //
+      m[8],          m[9],           m[10],  //
   };
   env->ReleaseFloatArrayElements(transformMatrix.obj(), m, JNI_ABORT);
   transform.set9(matrix3);
@@ -116,4 +135,6 @@ void AndroidExternalTextureGL::Detach() {
   }
 }
 
-}  // namespace shell
+void AndroidExternalTextureGL::OnTextureUnregistered() {}
+
+}  // namespace flutter

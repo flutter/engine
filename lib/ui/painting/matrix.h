@@ -6,13 +6,13 @@
 #define FLUTTER_LIB_UI_PAINTING_MATRIX_H_
 
 #include "third_party/skia/include/core/SkMatrix.h"
-#include "third_party/tonic/typed_data/float64_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
-namespace blink {
+namespace flutter {
 
 SkMatrix ToSkMatrix(const tonic::Float64List& matrix4);
 tonic::Float64List ToMatrix4(const SkMatrix& sk_matrix);
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_MATRIX_H_

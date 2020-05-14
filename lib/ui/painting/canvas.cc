@@ -22,9 +22,10 @@
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
 static void Canvas_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&Canvas::Create, args);
 }
 
@@ -419,8 +420,8 @@ void Canvas::drawShadow(const CanvasPath* path,
         ToDart("Canvas.drawShader called with non-genuine Path."));
   SkScalar dpr =
       UIDartState::Current()->window()->viewport_metrics().device_pixel_ratio;
-  flow::PhysicalShapeLayer::DrawShadow(canvas_, path->path(), color, elevation,
-                                       transparentOccluder, dpr);
+  flutter::PhysicalShapeLayer::DrawShadow(canvas_, path->path(), color,
+                                          elevation, transparentOccluder, dpr);
 }
 
 void Canvas::Clear() {
@@ -431,4 +432,4 @@ bool Canvas::IsRecording() const {
   return !!canvas_;
 }
 
-}  // namespace blink
+}  // namespace flutter

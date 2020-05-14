@@ -3,22 +3,24 @@
 // found in the LICENSE file.
 
 // HACK: pretend to be dart.ui in order to access its internals
+// @dart = 2.6
 library dart.ui;
 
 import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
+// this needs to be imported because painting.dart expects it this way
+import 'dart:collection' as collection;
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:math' as math;
-import 'dart:nativewrappers';
+import 'dart:nativewrappers'; // ignore: unused_import
+import 'dart:typed_data';
 
-// this needs to be imported because painting.dart expects it this way
-import 'dart:collection' as collection;
 
 import 'package:test/test.dart';
 
 // HACK: these parts are to get access to private functions tested here.
+part '../../lib/ui/annotations.dart';
+part '../../lib/ui/channel_buffers.dart';
 part '../../lib/ui/compositing.dart';
 part '../../lib/ui/geometry.dart';
 part '../../lib/ui/hash_codes.dart';
@@ -37,17 +39,33 @@ void main() {
     VoidCallback originalOnLocaleChanged;
     FrameCallback originalOnBeginFrame;
     VoidCallback originalOnDrawFrame;
+    TimingsCallback originalOnReportTimings;
     PointerDataPacketCallback originalOnPointerDataPacket;
     VoidCallback originalOnSemanticsEnabledChanged;
     SemanticsActionCallback originalOnSemanticsAction;
     PlatformMessageCallback originalOnPlatformMessage;
     VoidCallback originalOnTextScaleFactorChanged;
 
+    double oldDPR;
+    Size oldSize;
+    double oldDepth;
+    WindowPadding oldPadding;
+    WindowPadding oldInsets;
+    WindowPadding oldSystemGestureInsets;
+
     setUp(() {
+      oldDPR = window.devicePixelRatio;
+      oldSize = window.physicalSize;
+      oldDepth = window.physicalDepth;
+      oldPadding = window.viewPadding;
+      oldInsets = window.viewInsets;
+      oldSystemGestureInsets = window.systemGestureInsets;
+
       originalOnMetricsChanged = window.onMetricsChanged;
       originalOnLocaleChanged = window.onLocaleChanged;
       originalOnBeginFrame = window.onBeginFrame;
       originalOnDrawFrame = window.onDrawFrame;
+      originalOnReportTimings = window.onReportTimings;
       originalOnPointerDataPacket = window.onPointerDataPacket;
       originalOnSemanticsEnabledChanged = window.onSemanticsEnabledChanged;
       originalOnSemanticsAction = window.onSemanticsAction;
@@ -56,10 +74,29 @@ void main() {
     });
 
     tearDown(() {
+      _updateWindowMetrics(
+        oldDPR,                         // DPR
+        oldSize.width,                  // width
+        oldSize.height,                 // height
+        oldDepth,                       // depth
+        oldPadding.top,                 // padding top
+        oldPadding.right,               // padding right
+        oldPadding.bottom,              // padding bottom
+        oldPadding.left,                // padding left
+        oldInsets.top,                  // inset top
+        oldInsets.right,                // inset right
+        oldInsets.bottom,               // inset bottom
+        oldInsets.left,                 // inset left
+        oldSystemGestureInsets.top,     // system gesture inset top
+        oldSystemGestureInsets.right,   // system gesture inset right
+        oldSystemGestureInsets.bottom,  // system gesture inset bottom
+        oldSystemGestureInsets.left,    // system gesture inset left
+      );
       window.onMetricsChanged = originalOnMetricsChanged;
       window.onLocaleChanged = originalOnLocaleChanged;
       window.onBeginFrame = originalOnBeginFrame;
       window.onDrawFrame = originalOnDrawFrame;
+      window.onReportTimings = originalOnReportTimings;
       window.onPointerDataPacket = originalOnPointerDataPacket;
       window.onSemanticsEnabledChanged = originalOnSemanticsEnabledChanged;
       window.onSemanticsAction = originalOnSemanticsAction;
@@ -87,7 +124,24 @@ void main() {
       });
 
       window.onMetricsChanged();
-      _updateWindowMetrics(0.1234, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      _updateWindowMetrics(
+        0.1234, // DPR
+        0.0,    // width
+        0.0,    // height
+        0.0,    // depth
+        0.0,    // padding top
+        0.0,    // padding right
+        0.0,    // padding bottom
+        0.0,    // padding left
+        0.0,    // inset top
+        0.0,    // inset right
+        0.0,    // inset bottom
+        0.0,    // inset left
+        0.0,    // system gesture inset top
+        0.0,    // system gesture inset right
+        0.0,    // system gesture inset bottom
+        0.0,    // system gesture inset left
+      );
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
       expect(devicePixelRatio, equals(0.1234));
@@ -147,6 +201,24 @@ void main() {
       expect(runZone, same(innerZone));
     });
 
+    test('onReportTimings preserves callback zone', () {
+      Zone innerZone;
+      Zone runZone;
+
+      window._setNeedsReportTimings = (bool _) {};
+
+      runZoned(() {
+        innerZone = Zone.current;
+        window.onReportTimings = (List<FrameTiming> timings) {
+          runZone = Zone.current;
+        };
+      });
+
+      _reportTimings(<int>[]);
+      expect(runZone, isNotNull);
+      expect(runZone, same(innerZone));
+    });
+
     test('onPointerDataPacket preserves callback zone', () {
       Zone innerZone;
       Zone runZone;
@@ -160,7 +232,7 @@ void main() {
         };
       });
 
-      final ByteData testData = new ByteData.view(new Uint8List(0).buffer);
+      final ByteData testData = ByteData.view(Uint8List(0).buffer);
       _dispatchPointerDataPacket(testData);
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
@@ -246,6 +318,78 @@ void main() {
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
       expect(textScaleFactor, equals(0.5));
+    });
+
+    test('onThemeBrightnessMode preserves callback zone', () {
+      Zone innerZone;
+      Zone runZone;
+      Brightness platformBrightness;
+
+      runZoned(() {
+        innerZone = Zone.current;
+        window.onPlatformBrightnessChanged = () {
+          runZone = Zone.current;
+          platformBrightness = window.platformBrightness;
+        };
+      });
+
+      window.onPlatformBrightnessChanged();
+      _updatePlatformBrightness('dark');
+      expect(runZone, isNotNull);
+      expect(runZone, same(innerZone));
+      expect(platformBrightness, equals(Brightness.dark));
+    });
+
+    test('Window padding/insets/viewPadding/systemGestureInsets', () {
+      _updateWindowMetrics(
+        1.0,   // DPR
+        800.0, // width
+        600.0, // height
+        100.0, // depth
+        50.0,  // padding top
+        0.0,   // padding right
+        40.0,  // padding bottom
+        0.0,   // padding left
+        0.0,   // inset top
+        0.0,   // inset right
+        0.0,   // inset bottom
+        0.0,   // inset left
+        0.0,   // system gesture inset top
+        0.0,   // system gesture inset right
+        0.0,   // system gesture inset bottom
+        0.0,   // system gesture inset left
+      );
+
+      expect(window.viewInsets.bottom, 0.0);
+      expect(window.viewPadding.bottom, 40.0);
+      expect(window.padding.bottom, 40.0);
+      expect(window.physicalDepth, 100.0);
+      expect(window.systemGestureInsets.bottom, 0.0);
+
+      _updateWindowMetrics(
+        1.0,   // DPR
+        800.0, // width
+        600.0, // height
+        100.0, // depth
+        50.0,  // padding top
+        0.0,   // padding right
+        40.0,  // padding bottom
+        0.0,   // padding left
+        0.0,   // inset top
+        0.0,   // inset right
+        400.0, // inset bottom
+        0.0,   // inset left
+        0.0,   // system gesture insets top
+        0.0,   // system gesture insets right
+        44.0,  // system gesture insets bottom
+        0.0,   // system gesture insets left
+      );
+
+      expect(window.viewInsets.bottom, 400.0);
+      expect(window.viewPadding.bottom, 40.0);
+      expect(window.padding.bottom, 0.0);
+      expect(window.physicalDepth, 100.0);
+      expect(window.systemGestureInsets.bottom, 44.0);
     });
   });
 }

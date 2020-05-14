@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-#include "third_party/benchmark/include/benchmark/benchmark_api.h"
-
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/logging.h"
 #include "flutter/third_party/txt/tests/txt_test_utils.h"
+#include "third_party/benchmark/include/benchmark/benchmark_api.h"
 #include "txt/paint_record.h"
 #include "txt/text_style.h"
 
@@ -26,20 +25,19 @@ namespace txt {
 
 static void BM_PaintRecordInit(benchmark::State& state) {
   TextStyle style;
-  style.font_family = "Roboto";
+  style.font_families = std::vector<std::string>(1, "Roboto");
 
-  SkPaint paint;
-  paint.setAntiAlias(true);
-  paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
-  paint.setTextSize(14);
-  paint.setFakeBoldText(false);
+  SkFont font;
+  font.setEdging(SkFont::Edging::kAntiAlias);
+  font.setSize(14);
+  font.setEmbolden(false);
 
   SkTextBlobBuilder builder;
-  builder.allocRunPos(paint, 100);
+  builder.allocRunPos(font, 100);
   auto text_blob = builder.make();
 
   while (state.KeepRunning()) {
-    PaintRecord PaintRecord(style, text_blob, SkFontMetrics(), 0, 0);
+    PaintRecord PaintRecord(style, text_blob, SkFontMetrics(), 0, 0, 0, false);
   }
 }
 BENCHMARK(BM_PaintRecordInit);

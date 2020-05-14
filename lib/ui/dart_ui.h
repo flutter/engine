@@ -7,17 +7,17 @@
 
 #include "flutter/fml/macros.h"
 
-namespace blink {
+namespace flutter {
 
 class DartUI {
  public:
   static void InitForGlobal();
-  static void InitForIsolate(bool is_root_isolate);
+  static void InitForIsolate();
 
  private:
   FML_DISALLOW_IMPLICIT_CONSTRUCTORS(DartUI);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_DART_UI_H_

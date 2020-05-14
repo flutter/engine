@@ -10,13 +10,13 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/task_runner.h"
 
-namespace blink {
+namespace flutter {
 
 class TaskRunners {
  public:
   TaskRunners(std::string label,
               fml::RefPtr<fml::TaskRunner> platform,
-              fml::RefPtr<fml::TaskRunner> gpu,
+              fml::RefPtr<fml::TaskRunner> raster,
               fml::RefPtr<fml::TaskRunner> ui,
               fml::RefPtr<fml::TaskRunner> io);
 
@@ -32,18 +32,18 @@ class TaskRunners {
 
   fml::RefPtr<fml::TaskRunner> GetIOTaskRunner() const;
 
-  fml::RefPtr<fml::TaskRunner> GetGPUTaskRunner() const;
+  fml::RefPtr<fml::TaskRunner> GetRasterTaskRunner() const;
 
   bool IsValid() const;
 
  private:
   const std::string label_;
   fml::RefPtr<fml::TaskRunner> platform_;
-  fml::RefPtr<fml::TaskRunner> gpu_;
+  fml::RefPtr<fml::TaskRunner> raster_;
   fml::RefPtr<fml::TaskRunner> ui_;
   fml::RefPtr<fml::TaskRunner> io_;
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_COMMON_TASK_RUNNERS_H_

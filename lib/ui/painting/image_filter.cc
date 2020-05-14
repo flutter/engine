@@ -13,9 +13,10 @@
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 
-namespace blink {
+namespace flutter {
 
 static void ImageFilter_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&ImageFilter::Create, args);
 }
 
@@ -63,4 +64,4 @@ void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
       nullptr);
 }
 
-}  // namespace blink
+}  // namespace flutter

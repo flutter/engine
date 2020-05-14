@@ -7,14 +7,16 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "third_party/skia/include/core/SkStream.h"
 
-namespace blink {
+namespace flutter {
 
-std::unique_ptr<SkStreamAsset> GetTestFontData();
+std::vector<std::unique_ptr<SkStreamAsset>> GetTestFontData();
 std::string GetTestFontFamilyName();
+std::vector<std::string> GetTestFontFamilyNames();
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_RUNTIME_TEST_FONT_DATA_H_
