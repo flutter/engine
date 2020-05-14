@@ -1216,6 +1216,8 @@ FILE: ../../../flutter/shell/platform/linux/fl_renderer_x11.h
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec_test.cc
+FILE: ../../../flutter/shell/platform/linux/fl_standard_method_codec.cc
+FILE: ../../../flutter/shell/platform/linux/fl_standard_method_codec_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_string_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_string_codec_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_value.cc
@@ -1233,6 +1235,7 @@ FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_chann
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_method_response.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_standard_message_codec.h
+FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_string_codec.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_value.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_view.h
