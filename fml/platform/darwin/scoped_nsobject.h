@@ -37,26 +37,44 @@ namespace fml {
 // We check for bad uses of scoped_nsobject and NSAutoreleasePool at compile
 // time with a template specialization (see below).
 
-id ObjcRetain(id object);
+class scoped_nsprotocol_arc_memory_management {
+ public:
+  static id Retain(__unsafe_unretained id object) __attribute((ns_returns_not_retained));
+  static id Autorelease(__unsafe_unretained id object) __attribute((ns_returns_not_retained));
+  static void Release(__unsafe_unretained id object);
+};
 
-id ObjcAutorelease(id object);
+template <typename NST>
+class scoped_nsprotocol_mrc_memory_management {
+ public:
+  static NST Retain(NST object) { return [object retain]; }
+  static NST Autorelease(NST object) { return [object autorelease]; }
+  static void Release(NST object) { [object release]; }
+};
 
-void ObjcRelease(id object);
+#if __has_feature(objc_arc)
+template <typename NST>
+using scoped_nsprotocol_memory_management = scoped_nsprotocol_arc_memory_management;
+#else
+template <typename NST>
+using scoped_nsprotocol_memory_management = scoped_nsprotocol_mrc_memory_management<NST>;
+#endif
 
 template <typename NST>
 class scoped_nsprotocol {
+  using Memory = scoped_nsprotocol_memory_management<NST>;
  public:
   explicit scoped_nsprotocol(NST object = nil) : object_(object) {}
 
-  scoped_nsprotocol(const scoped_nsprotocol<NST>& that) : object_(ObjcRetain(that.object_)) {}
+  scoped_nsprotocol(const scoped_nsprotocol<NST>& that) : object_(Memory::Retain(that.object_)) {}
 
   template <typename NSU>
-  scoped_nsprotocol(const scoped_nsprotocol<NSU>& that) : object_(ObjcRetain(that.get())) {}
+  scoped_nsprotocol(const scoped_nsprotocol<NSU>& that) : object_(Memory::Retain(that.get())) {}
 
-  ~scoped_nsprotocol() { ObjcRelease(object_); }
+  ~scoped_nsprotocol() { Memory::Release(object_); }
 
   scoped_nsprotocol& operator=(const scoped_nsprotocol<NST>& that) {
-    reset(ObjcRetain(that.get()));
+    reset(Memory::Retain(that.get()));
     return *this;
   }
 
@@ -65,7 +83,7 @@ class scoped_nsprotocol {
     // either already have an ownership claim over whatever it passes to this
     // method, or call it with the |RETAIN| policy which will have ensured that
     // the object is retained once more when reaching this point.
-    ObjcRelease(object_);
+    Memory::Release(object_);
     object_ = object;
   }
 
@@ -92,7 +110,7 @@ class scoped_nsprotocol {
   }
 
   // Shift reference to the autorelease pool to be released later.
-  NST autorelease() { return ObjcAutorelease(release()); }
+  NST autorelease() { return Memory::Autorelease(release()); }
 
  private:
   NST object_;
