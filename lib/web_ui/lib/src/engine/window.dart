@@ -86,8 +86,8 @@ class EngineWindow extends ui.Window {
       windowInnerHeight = html.window.innerHeight * devicePixelRatio;
     }
     final double bottomPadding = _physicalSize.height - windowInnerHeight;
-    _viewInsets = ui.WindowPadding.forKeyboard(
-        bottom: bottomPadding, left: 0, right: 0, top: 0);
+    _viewInsets =
+        WindowPadding(bottom: bottomPadding, left: 0, right: 0, top: 0);
   }
 
   /// Uses the previous physical size and current innerHeight/innerWidth
@@ -128,8 +128,8 @@ class EngineWindow extends ui.Window {
   }
 
   @override
-  ui.WindowPadding get viewInsets => _viewInsets;
-  ui.WindowPadding _viewInsets =  ui.WindowPadding.zero;
+  WindowPadding get viewInsets => _viewInsets;
+  WindowPadding _viewInsets = ui.WindowPadding.zero;
 
   /// Lazily populated and cleared at the end of the frame.
   ui.Size _physicalSize;
@@ -673,3 +673,18 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1
 /// API surface, providing Web-specific functionality that the standard
 /// `dart:ui` version does not.
 final EngineWindow window = EngineWindow();
+
+/// The Web implementation of [ui.WindowPadding].
+class WindowPadding implements ui.WindowPadding {
+  const WindowPadding({
+    this.left,
+    this.top,
+    this.right,
+    this.bottom,
+  });
+
+  final double left;
+  final double top;
+  final double right;
+  final double bottom;
+}
