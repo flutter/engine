@@ -6,15 +6,15 @@
 
 namespace fml {
 
-id ObjcRetain(id object) {
+id scoped_nsprotocol_arc_memory_management::Retain(id object) {
   return [object retain];
 }
 
-id ObjcAutorelease(id object) {
+id scoped_nsprotocol_arc_memory_management::Autorelease(id object) {
   return [object autorelease];
 }
 
-void ObjcRelease(id object) {
+void scoped_nsprotocol_arc_memory_management::Release(id object) {
   [object release];
 }
 
