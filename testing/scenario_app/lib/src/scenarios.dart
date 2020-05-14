@@ -44,17 +44,19 @@ Map<String, dynamic> _currentScenario = <String, dynamic>{
 /// Loads an scenario.
 /// The map must contain a `name` entry, which equals to the name of the scenario.
 void loadScenario(Map<String, dynamic> scenario) {
-  assert(_scenarios[scenario['name']] != null);
+  final String scenarioName = scenario['name'] as String;
+  assert(_scenarios[scenarioName] != null);
   _currentScenario = scenario;
   window.scheduleFrame();
+  print('Loading scenario $scenarioName');
 }
 
 /// Gets the loaded [Scenario].
-Scenario getCurrentScenario() {
+Scenario get currentScenario {
   return _currentScenario != null ? _scenarios[_currentScenario['name']] : null;
 }
 
 /// Gets the parameters passed to the app over the channel.
-Map<String, dynamic> getScenarioParams() {
+Map<String, dynamic> get scenarioParams {
   return Map<String, dynamic>.from(_currentScenario);
 }

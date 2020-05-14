@@ -641,7 +641,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     if (Platform.isIOS) {
       sceneBuilder.addPlatformView(viewId, offset: overlayOffset, width: width, height: height);
     } else if (Platform.isAndroid) {
-      if (getScenarioParams()['use_android_view'] as bool) {
+      if (scenarioParams['use_android_view'] as bool) {
         // Hybrid composition.
         sceneBuilder.addPlatformView(viewId, offset: overlayOffset, width: width, height: height);
       } else if (_textureId != null) {

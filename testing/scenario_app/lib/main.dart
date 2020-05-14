@@ -12,7 +12,6 @@ import 'dart:ui';
 
 import 'src/scenarios.dart';
 
-// The scenarios are defined in `src/scenarios.dart`.
 void main() {
   assert(window.locale != null);
   window
@@ -34,11 +33,9 @@ void _handleDriverMessage(Map<String, dynamic> call) {
     case 'set_scenario':
       assert(call['args'] != null);
       loadScenario(call['args'] as Map<String, dynamic>);
-      final String scenarioName = scenarioData['name'] as String;
-      print('Loading scenario $scenarioName');
     break;
     default:
-      print('Unimplemented method: $methodName.');
+      throw 'Unimplemented method: $methodName.';
   }
 }
 
@@ -48,15 +45,14 @@ Future<void> _handlePlatformMessage(
 
   switch (name) {
     case 'driver':
-      final Map<String, dynamic> call = json.decode(utf8.decode(data.buffer.asUint8List()));
-      _handleDriverMessage(call);
+      _handleDriverMessage(json.decode(utf8.decode(data.buffer.asUint8List())) as Map<String, dynamic>);
     break;
     case 'write_timeline':
       final String timelineData = await _getTimelineData();
       callback(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
     break;
     default:
-      print('Unimplemented channel: $name.');
+      throw 'Unimplemented channel: $name.';
   }
 }
 
@@ -93,17 +89,17 @@ Future<Map<String, dynamic>> _getJson(Uri uri) async {
 }
 
 void _onBeginFrame(Duration duration) {
-  getCurrentScenario()?.onBeginFrame(duration);
+  currentScenario?.onBeginFrame(duration);
 }
 
 void _onDrawFrame() {
-  getCurrentScenario()?.onDrawFrame();
+  currentScenario?.onDrawFrame();
 }
 
 void _onMetricsChanged() {
-  getCurrentScenario()?.onMetricsChanged();
+  currentScenario?.onMetricsChanged();
 }
 
 void _onPointerDataPacket(PointerDataPacket packet) {
-  getCurrentScenario()?.onPointerDataPacket(packet);
+  currentScenario?.onPointerDataPacket(packet);
 }
