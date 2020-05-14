@@ -514,14 +514,14 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     Log.e("flutter", "Hidden statuys: " + statusBarHidden + " " + navigationBarHidden);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || true) {
       // This API does not seem to be working yet in the preview 4 of API 30.
-      // int mask = android.view.WindowInsets.Type.statusBars() &
-      //            android.view.WindowInsets.Type.navigationBars() &
-      //            android.view.WindowInsets.Type.captionBar() &
-      //            android.view.WindowInsets.Type.ime() &
-      //            // android.view.WindowInsets.Type.windowDecor() &
-      //            android.view.WindowInsets.Type.systemGestures() &
-      //            android.view.WindowInsets.Type.mandatorySystemGestures() &
-      //            android.view.WindowInsets.Type.tappableElement() &
+      // int mask = android.view.WindowInsets.Type.statusBars() |
+      //            android.view.WindowInsets.Type.navigationBars() |
+      //            android.view.WindowInsets.Type.captionBar() |
+      //            android.view.WindowInsets.Type.ime() |
+      //            // android.view.WindowInsets.Type.windowDecor() |
+      //            android.view.WindowInsets.Type.systemGestures() |
+      //            android.view.WindowInsets.Type.mandatorySystemGestures() |
+      //            android.view.WindowInsets.Type.tappableElement() |
       //            android.view.WindowInsets.Type.displayCutout();
       int mask = 0xFFFF;
       if (navigationBarHidden) {
