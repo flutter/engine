@@ -359,13 +359,23 @@ class EngineParagraph implements ui.Paragraph {
   }) {
     assert(boxHeightStyle != null);
     assert(boxWidthStyle != null);
-    if (_plainText == null || start == end) {
+    // Zero-length ranges and invalid ranges return an empty list.
+    if (start == end || start < 0 || end < 0) {
       return <ui.TextBox>[];
+    }
+
+    // For rich text, we can't measure the boxes. So for now, we'll just return
+    // a placeholder box to stop exceptions from being thrown in the framework.
+    // https://github.com/flutter/flutter/issues/55587
+    if (_plainText == null) {
+      return <ui.TextBox>[
+        ui.TextBox.fromLTRBD(0, 0, 0, _lineHeight, _textDirection)
+      ];
     }
 
     final int length = _plainText.length;
     // Ranges that are out of bounds should return an empty list.
-    if (start < 0 || end < 0 || start > length || end > length) {
+    if (start > length || end > length) {
       return <ui.TextBox>[];
     }
 
@@ -745,15 +755,15 @@ class EngineTextStyle implements ui.TextStyle {
         _decoration = decoration,
         _decorationColor = decorationColor,
         _decorationStyle = decorationStyle,
+        _decorationThickness = decorationThickness,
         _fontWeight = fontWeight,
         _fontStyle = fontStyle,
         _textBaseline = textBaseline,
-        // TODO(b/128311960): when font fallback is supported, we should check
-        //                    for it here.
         _isFontFamilyProvided = fontFamily != null,
         _fontFamily = fontFamily ?? '',
-        // TODO(b/128311960): add support for font family fallback.
         _fontFamilyFallback = fontFamilyFallback,
+        // TODO: https://github.com/flutter/flutter/issues/56707
+        _fontFeatures = fontFeatures,
         _fontSize = fontSize,
         _letterSpacing = letterSpacing,
         _wordSpacing = wordSpacing,
@@ -767,12 +777,14 @@ class EngineTextStyle implements ui.TextStyle {
   final ui.TextDecoration _decoration;
   final ui.Color _decorationColor;
   final ui.TextDecorationStyle _decorationStyle;
+  final double _decorationThickness;
   final ui.FontWeight _fontWeight;
   final ui.FontStyle _fontStyle;
   final ui.TextBaseline _textBaseline;
   final bool _isFontFamilyProvided;
   final String _fontFamily;
   final List<String> _fontFamilyFallback;
+  final List<ui.FontFeature> _fontFeatures;
   final double _fontSize;
   final double _letterSpacing;
   final double _wordSpacing;
@@ -831,6 +843,7 @@ class EngineTextStyle implements ui.TextStyle {
         _decoration,
         _decorationColor,
         _decorationStyle,
+        _decorationThickness,
         _fontWeight,
         _fontStyle,
         _textBaseline,
@@ -854,6 +867,7 @@ class EngineTextStyle implements ui.TextStyle {
           'decoration: ${_decoration ?? "unspecified"}, '
           'decorationColor: ${_decorationColor ?? "unspecified"}, '
           'decorationStyle: ${_decorationStyle ?? "unspecified"}, '
+          'decorationThickness: ${_decorationThickness ?? "unspecified"}, '
           'fontWeight: ${_fontWeight ?? "unspecified"}, '
           'fontStyle: ${_fontStyle ?? "unspecified"}, '
           'textBaseline: ${_textBaseline ?? "unspecified"}, '
@@ -866,7 +880,8 @@ class EngineTextStyle implements ui.TextStyle {
           'locale: ${_locale ?? "unspecified"}, '
           'background: ${_background ?? "unspecified"}, '
           'foreground: ${_foreground ?? "unspecified"}, '
-          'shadows: ${_shadows ?? "unspecified"}'
+          'shadows: ${_shadows ?? "unspecified"}, '
+          'fontFeatures: ${_fontFeatures ?? "unspecified"}'
           ')';
     } else {
       return super.toString();

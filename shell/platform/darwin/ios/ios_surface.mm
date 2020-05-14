@@ -141,9 +141,15 @@ bool IOSSurface::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
 }
 
 // |ExternalViewEmbedder|
+void IOSSurface::EndFrame(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+  TRACE_EVENT0("flutter", "IOSSurface::EndFrame");
+  FML_CHECK(platform_views_controller_ != nullptr);
+  return platform_views_controller_->EndFrame(raster_thread_merger);
+}
+
+// |ExternalViewEmbedder|
 void IOSSurface::FinishFrame() {
   TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
   [CATransaction commit];
 }
-
 }  // namespace flutter

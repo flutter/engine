@@ -42,10 +42,10 @@ class Win32WindowTest : public Win32Window {
   void OnPointerLeave() override;
 
   // |Win32Window|
-  void OnChar(char32_t code_point) override;
+  void OnText(const std::u16string& text) override;
 
   // |Win32Window|
-  void OnKey(int key, int scancode, int action, int mods) override;
+  void OnKey(int key, int scancode, int action, char32_t character) override;
 
   // |Win32Window|
   void OnScroll(double delta_x, double delta_y) override;

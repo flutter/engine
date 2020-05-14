@@ -248,27 +248,30 @@ void FlutterPlatformViewsController::SetFrameSize(SkISize frame_size) {
 }
 
 void FlutterPlatformViewsController::CancelFrame() {
-  composition_order_.clear();
+  composition_order_ = active_composition_order_;
 }
 
-bool FlutterPlatformViewsController::HasPendingViewOperations() {
-  if (!views_to_recomposite_.empty()) {
-    return true;
-  }
-  return active_composition_order_ != composition_order_;
+// TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
+// Make this method check if there are pending view operations instead.
+// Also rename it to `HasPendingViewOperations`.
+bool FlutterPlatformViewsController::HasPlatformViewThisOrNextFrame() {
+  return composition_order_.size() > 0 || active_composition_order_.size() > 0;
 }
 
 const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
 
 PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  const bool uiviews_mutated = HasPendingViewOperations();
-  if (uiviews_mutated) {
+  // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
+  // Rename `has_platform_view` to `view_mutated` when the above issue is resolved.
+  const bool has_platform_view = HasPlatformViewThisOrNextFrame();
+  if (has_platform_view) {
     if (raster_thread_merger->IsMerged()) {
       raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
     } else {
+      // Wait until |EndFrame| to merge the threads.
+      merge_threads_ = true;
       CancelFrame();
-      raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
       return PostPrerollResult::kResubmitFrame;
     }
   }
@@ -468,6 +471,21 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
 bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
                                                  std::shared_ptr<IOSContext> ios_context,
                                                  SkCanvas* background_canvas) {
+  if (merge_threads_) {
+    // Threads are about to be merged, we drop everything from this frame
+    // and possibly resubmit the same layer tree in the next frame.
+    // Before merging thread, we know the code is not running on the main thread. Assert that
+    FML_DCHECK(![[NSThread currentThread] isMainThread]);
+    picture_recorders_.clear();
+    composition_order_.clear();
+    return true;
+  }
+
+  // Any UIKit related code has to run on main thread.
+  // When on a non-main thread, we only allow the rest of the method to run if there is no
+  // Pending UIView operations.
+  FML_DCHECK([[NSThread currentThread] isMainThread] || !HasPlatformViewThisOrNextFrame());
+
   DisposeViews();
 
   // Resolve all pending GPU operations before allocating a new surface.
@@ -557,6 +575,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
 void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
   UIView* flutter_view = flutter_view_.get();
   auto zIndex = 0;
+  // Clear the `active_composition_order_`, which will be populated down below.
+  active_composition_order_.clear();
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t platform_view_id = composition_order_[i];
     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
@@ -575,6 +595,14 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
       }
     }
     active_composition_order_.push_back(platform_view_id);
+  }
+}
+
+void FlutterPlatformViewsController::EndFrame(
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+  if (merge_threads_) {
+    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
+    merge_threads_ = false;
   }
 }
 
@@ -641,6 +669,8 @@ void FlutterPlatformViewsController::DisposeViews() {
   if (views_to_dispose_.empty()) {
     return;
   }
+
+  FML_DCHECK([[NSThread currentThread] isMainThread]);
 
   for (int64_t viewId : views_to_dispose_) {
     UIView* root_view = root_views_[viewId].get();

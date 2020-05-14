@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:typed_data';
@@ -25,8 +26,10 @@ Future<void> main() async {
           ui.loadFontFromList(Uint8List(0), fontFamily: 'test-font'),
           throwsA(TypeMatcher<Exception>()));
     },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/56702
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge);
+        skip: (browserEngine == BrowserEngine.edge ||
+            browserEngine == BrowserEngine.webkit));
 
     test('loads Blehm font from buffer', () async {
       expect(_containsFontFamily('Blehm'), false);
@@ -39,8 +42,10 @@ Future<void> main() async {
 
       expect(_containsFontFamily('Blehm'), true);
     },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/56702
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge);
+        skip: (browserEngine == BrowserEngine.edge ||
+            browserEngine == BrowserEngine.webkit));
 
     test('loading font should clear measurement caches', () async {
       final ui.ParagraphStyle style = ui.ParagraphStyle();
@@ -65,8 +70,10 @@ Future<void> main() async {
       expect(_containsFontFamily('Blehm'), true);
       expect(TextMeasurementService.rulerManager.rulers.length, 0);
     },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/56702
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge);
+        skip: (browserEngine == BrowserEngine.edge ||
+            browserEngine == BrowserEngine.webkit));
 
     test('loading font should send font change message', () async {
       final ui.PlatformMessageCallback oldHandler = ui.window.onPlatformMessage;
@@ -85,12 +92,17 @@ Future<void> main() async {
           responseType: 'arraybuffer');
       await ui.loadFontFromList(Uint8List.view(response.response),
           fontFamily: 'Blehm');
+      final Completer<void> completer = Completer();
+      html.window.requestAnimationFrame( (_) { completer.complete(true); } );
+      await(completer.future);
       window.onPlatformMessage = oldHandler;
       expect(actualName, 'flutter/system');
       expect(message, '{"type":"fontsChange"}');
     },
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/56702
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge);
+        skip: (browserEngine == BrowserEngine.edge ||
+            browserEngine == BrowserEngine.webkit));
   });
 }
 

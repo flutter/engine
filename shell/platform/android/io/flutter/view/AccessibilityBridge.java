@@ -26,6 +26,7 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.BuildConfig;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
@@ -333,10 +334,32 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       // TODO(mattcarrol): Add the annotation once the plumbing is done.
       // https://github.com/flutter/flutter/issues/29618
       PlatformViewsAccessibilityDelegate platformViewsAccessibilityDelegate) {
+    this(
+        rootAccessibilityView,
+        accessibilityChannel,
+        accessibilityManager,
+        contentResolver,
+        new AccessibilityViewEmbedder(rootAccessibilityView, MIN_ENGINE_GENERATED_NODE_ID),
+        platformViewsAccessibilityDelegate);
+  }
+
+  @VisibleForTesting
+  public AccessibilityBridge(
+      @NonNull View rootAccessibilityView,
+      @NonNull AccessibilityChannel accessibilityChannel,
+      @NonNull AccessibilityManager accessibilityManager,
+      @NonNull ContentResolver contentResolver,
+      @NonNull AccessibilityViewEmbedder accessibilityViewEmbedder,
+      // This should be @NonNull once the plumbing for
+      // io.flutter.embedding.engine.android.FlutterView is done.
+      // TODO(mattcarrol): Add the annotation once the plumbing is done.
+      // https://github.com/flutter/flutter/issues/29618
+      PlatformViewsAccessibilityDelegate platformViewsAccessibilityDelegate) {
     this.rootAccessibilityView = rootAccessibilityView;
     this.accessibilityChannel = accessibilityChannel;
     this.accessibilityManager = accessibilityManager;
     this.contentResolver = contentResolver;
+    this.accessibilityViewEmbedder = accessibilityViewEmbedder;
     this.platformViewsAccessibilityDelegate = platformViewsAccessibilityDelegate;
 
     // Tell Flutter whether accessibility is initially active or not. Then register a listener
@@ -388,8 +411,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (platformViewsAccessibilityDelegate != null) {
       platformViewsAccessibilityDelegate.attachAccessibilityBridge(this);
     }
-    accessibilityViewEmbedder =
-        new AccessibilityViewEmbedder(rootAccessibilityView, MIN_ENGINE_GENERATED_NODE_ID);
   }
 
   /**
@@ -739,6 +760,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
     }
 
+    if (semanticsNode.hasFlag(Flag.IS_TEXT_FIELD)) {
+      result.setText(semanticsNode.getValueLabelHint());
+    } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
+      result.setContentDescription(semanticsNode.getValueLabelHint());
+    }
+
     boolean hasCheckedState = semanticsNode.hasFlag(Flag.HAS_CHECKED_STATE);
     boolean hasToggledState = semanticsNode.hasFlag(Flag.HAS_TOGGLED_STATE);
     if (BuildConfig.DEBUG && (hasCheckedState && hasToggledState)) {
@@ -747,7 +774,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     result.setCheckable(hasCheckedState || hasToggledState);
     if (hasCheckedState) {
       result.setChecked(semanticsNode.hasFlag(Flag.IS_CHECKED));
-      result.setContentDescription(semanticsNode.getValueLabelHint());
       if (semanticsNode.hasFlag(Flag.IS_IN_MUTUALLY_EXCLUSIVE_GROUP)) {
         result.setClassName("android.widget.RadioButton");
       } else {
@@ -756,13 +782,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     } else if (hasToggledState) {
       result.setChecked(semanticsNode.hasFlag(Flag.IS_TOGGLED));
       result.setClassName("android.widget.Switch");
-      result.setContentDescription(semanticsNode.getValueLabelHint());
-    } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
-      // Setting the text directly instead of the content description
-      // will replace the "checked" or "not-checked" label.
-      result.setText(semanticsNode.getValueLabelHint());
     }
-
     result.setSelected(semanticsNode.hasFlag(Flag.IS_SELECTED));
 
     // Heading support
@@ -1162,7 +1182,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     SemanticsNode semanticsNodeUnderCursor =
         getRootSemanticsNode().hitTest(new float[] {event.getX(), event.getY(), 0, 1});
-    if (semanticsNodeUnderCursor.platformViewId != -1) {
+    // semanticsNodeUnderCursor can be null when hovering over non-flutter UI such as
+    // the Android navigation bar due to hitTest() bounds checking.
+    if (semanticsNodeUnderCursor != null && semanticsNodeUnderCursor.platformViewId != -1) {
       return accessibilityViewEmbedder.onAccessibilityHoverEvent(
           semanticsNodeUnderCursor.id, event);
     }
@@ -1581,15 +1603,31 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     //                    for null'ing accessibilityFocusedSemanticsNode, inputFocusedSemanticsNode,
     //                    and hoveredObject.  Is this a hook method or a command?
     semanticsNodeToBeRemoved.parent = null;
+
+    if (semanticsNodeToBeRemoved.platformViewId != -1
+        && embeddedAccessibilityFocusedNodeId != null
+        && accessibilityViewEmbedder.platformViewOfNode(embeddedAccessibilityFocusedNodeId)
+            == platformViewsAccessibilityDelegate.getPlatformViewById(
+                semanticsNodeToBeRemoved.platformViewId)) {
+      // If the currently focused a11y node is within a platform view that is
+      // getting removed: clear it's a11y focus.
+      sendAccessibilityEvent(
+          embeddedAccessibilityFocusedNodeId,
+          AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
+      embeddedAccessibilityFocusedNodeId = null;
+    }
+
     if (accessibilityFocusedSemanticsNode == semanticsNodeToBeRemoved) {
       sendAccessibilityEvent(
           accessibilityFocusedSemanticsNode.id,
           AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
       accessibilityFocusedSemanticsNode = null;
     }
+
     if (inputFocusedSemanticsNode == semanticsNodeToBeRemoved) {
       inputFocusedSemanticsNode = null;
     }
+
     if (hoveredObject == semanticsNodeToBeRemoved) {
       hoveredObject = null;
     }
@@ -1660,7 +1698,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
   // Must match SemanticsFlag in semantics.dart
   // https://github.com/flutter/engine/blob/master/lib/ui/semantics.dart
-  private enum Flag {
+  /* Package */ enum Flag {
     HAS_CHECKED_STATE(1 << 0),
     IS_CHECKED(1 << 1),
     IS_SELECTED(1 << 2),

@@ -94,7 +94,7 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void transform(Float64List matrix4) {
+  void transform(Float32List matrix4) {
     _called('transform', arguments: matrix4);
   }
 
@@ -137,7 +137,10 @@ class MockEngineCanvas implements EngineCanvas {
 
   @override
   void drawRect(Rect rect, SurfacePaintData paint) {
-    _called('drawRect', arguments: paint);
+    _called('drawRect', arguments: <String, dynamic>{
+      'rect': rect,
+      'paint': paint,
+    });
   }
 
   @override

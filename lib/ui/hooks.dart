@@ -7,16 +7,6 @@
 // @dart = 2.6
 part of dart.ui;
 
-// ignore: unused_element
-String _decodeUTF8(ByteData message) {
-  return message != null ? utf8.decoder.convert(message.buffer.asUint8List()) : null;
-}
-
-// ignore: unused_element
-dynamic _decodeJSON(String message) {
-  return message != null ? json.decode(message) : null;
-}
-
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateWindowMetrics(
@@ -94,6 +84,22 @@ void _updateLocales(List<String> locales) {
     );
   }
   _invoke(window.onLocaleChanged, window._onLocaleChangedZone);
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
+void _updatePlatformResolvedLocale(List<String> localeData) {
+  if (localeData.length != 4) {
+    return;
+  }
+  final String countryCode = localeData[1];
+  final String scriptCode = localeData[2];
+
+  window._platformResolvedLocale = Locale.fromSubtags(
+    languageCode: localeData[0],
+    countryCode: countryCode.isEmpty ? null : countryCode,
+    scriptCode: scriptCode.isEmpty ? null : scriptCode,
+  );
 }
 
 @pragma('vm:entry-point')
