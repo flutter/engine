@@ -1566,9 +1566,7 @@ enum PixelFormat {
 }
 
 class _ImageInfo {
-  _ImageInfo(this.width, this.height, this.format, this.rowBytes) {
-    rowBytes ??= width * 4;
-  }
+  _ImageInfo(this.width, this.height, this.format, int/*?*/ rowBytes) : this.rowBytes = rowBytes ?? width * 4;
 
   @pragma('vm:entry-point', 'get')
   int/*!*/ width;
@@ -1650,7 +1648,7 @@ class FrameInfo extends NativeFieldWrapperClass2 {
   FrameInfo._();
 
   /// The duration this frame should be shown.
-  Duration get duration => Duration(milliseconds: _durationMillis);
+  Duration/*!*/ get duration => Duration(milliseconds: _durationMillis);
   int/*!*/ get _durationMillis native 'FrameInfo_durationMillis';
 
   /// The [Image] object for this frame.
@@ -2799,8 +2797,8 @@ class ImageFilter {
   ///
   /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
-  ImageFilter.matrix(Float64List matrix4,
-                     { FilterQuality filterQuality = FilterQuality.low })
+  ImageFilter.matrix(Float64List/*!*/ matrix4,
+                     { FilterQuality/*!*/ filterQuality = FilterQuality.low })
       : _data = Float64List.fromList(matrix4),
         _filterQuality = filterQuality,
         _type = _kTypeMatrix {
@@ -4236,7 +4234,7 @@ class Shadow {
   ///
   // See SkBlurMask::ConvertRadiusToSigma().
   // <https://github.com/google/skia/blob/bb5b77db51d2e149ee66db284903572a5aac09be/src/effects/SkBlurMask.cpp#L23>
-  static double/*!*/ convertRadiusToSigma(double radius) {
+  static double/*!*/ convertRadiusToSigma(double/*!*/ radius) {
     return radius * 0.57735 + 0.5;
   }
 
