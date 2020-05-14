@@ -42,6 +42,7 @@ class scoped_nsprotocol_arc_memory_management {
   static id Retain(__unsafe_unretained id object) __attribute((ns_returns_not_retained));
   static id Autorelease(__unsafe_unretained id object) __attribute((ns_returns_not_retained));
   static void Release(__unsafe_unretained id object);
+  static id InvalidValue() __attribute((ns_returns_not_retained)) { return nil; }
 };
 
 template <typename NST>
@@ -50,6 +51,7 @@ class scoped_nsprotocol_mrc_memory_management {
   static NST Retain(NST object) { return [object retain]; }
   static NST Autorelease(NST object) { return [object autorelease]; }
   static void Release(NST object) { [object release]; }
+  static NST InvalidValue() { return nil; }
 };
 
 #if __has_feature(objc_arc)
@@ -65,7 +67,7 @@ class scoped_nsprotocol {
   using Memory = scoped_nsprotocol_memory_management<NST>;
 
  public:
-  explicit scoped_nsprotocol(NST object = nil) : object_(object) {}
+  explicit scoped_nsprotocol(NST object = Memory::InvalidValue()) : object_(object) {}
 
   scoped_nsprotocol(const scoped_nsprotocol<NST>& that) : object_(Memory::Retain(that.object_)) {}
 
@@ -79,7 +81,7 @@ class scoped_nsprotocol {
     return *this;
   }
 
-  void reset(NST object = nil) {
+  void reset(NST object = Memory::InvalidValue()) {
     // We intentionally do not check that object != object_ as the caller must
     // either already have an ownership claim over whatever it passes to this
     // method, or call it with the |RETAIN| policy which will have ensured that
@@ -106,12 +108,14 @@ class scoped_nsprotocol {
   // [object_ release], use scoped_nsprotocol<>::reset().
   [[nodiscard]] NST release() {
     NST temp = object_;
-    object_ = nil;
+    object_ = Memory::InvalidValue();
     return temp;
   }
 
   // Shift reference to the autorelease pool to be released later.
-  NST autorelease() { return Memory::Autorelease(release()); }
+  NST autorelease() __attribute((ns_returns_not_retained)) {
+    return Memory::Autorelease(release());
+  }
 
  private:
   NST object_;
@@ -135,8 +139,11 @@ bool operator!=(C p1, const scoped_nsprotocol<C>& p2) {
 
 template <typename NST>
 class scoped_nsobject : public scoped_nsprotocol<NST*> {
+  using Memory = scoped_nsprotocol_memory_management<NST*>;
+
  public:
-  explicit scoped_nsobject(NST* object = nil) : scoped_nsprotocol<NST*>(object) {}
+  explicit scoped_nsobject(NST* object = Memory::InvalidValue())
+      : scoped_nsprotocol<NST*>(object) {}
 
   scoped_nsobject(const scoped_nsobject<NST>& that) : scoped_nsprotocol<NST*>(that) {}
 
@@ -152,8 +159,10 @@ class scoped_nsobject : public scoped_nsprotocol<NST*> {
 // Specialization to make scoped_nsobject<id> work.
 template <>
 class scoped_nsobject<id> : public scoped_nsprotocol<id> {
+  using Memory = scoped_nsprotocol_memory_management<id>;
+
  public:
-  explicit scoped_nsobject(id object = nil) : scoped_nsprotocol<id>(object) {}
+  explicit scoped_nsobject(id object = Memory::InvalidValue()) : scoped_nsprotocol<id>(object) {}
 
   scoped_nsobject(const scoped_nsobject<id>& that) : scoped_nsprotocol<id>(that) {}
 
