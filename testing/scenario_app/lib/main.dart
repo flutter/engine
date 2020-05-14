@@ -29,14 +29,16 @@ void main() {
 }
 
 void _handleDriverMessage(Map<String, dynamic> call) {
-  switch (call['method']) {
+  final String methodName = call['method'] as String;
+  switch (methodName) {
     case 'set_scenario':
-      final Map<String, dynamic> scenarioData = call['args'];
-      loadScenario(scenarioData);
-      print('Loading scenario ${scenarioData['name']}');
+      assert(call['args'] != null);
+      loadScenario(call['args'] as Map<String, dynamic>);
+      final String scenarioName = scenarioData['name'] as String;
+      print('Loading scenario $scenarioName');
     break;
     default:
-      print('Unimplemented method: ${call['method']}.');
+      print('Unimplemented method: $methodName.');
   }
 }
 
