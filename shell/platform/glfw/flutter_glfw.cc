@@ -126,7 +126,7 @@ struct FlutterDesktopEngineState {
   FlutterDesktopWindowControllerState* window_controller = nullptr;
 
   // AOT data for this engine instance, if applicable.
-  std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter> aot_data_ = nullptr;
+  std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter> aot_data = nullptr;
 };
 
 // State associated with the plugin registrar.
@@ -641,7 +641,7 @@ static bool RunFlutterEngine(
       return false;
     }
     args.aot_data = data_out;
-    engine_state->aot_data_.reset(data_out);
+    engine_state->aot_data.reset(data_out);
   }
 
   FLUTTER_API_SYMBOL(FlutterEngine) engine = nullptr;
