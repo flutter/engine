@@ -514,7 +514,6 @@ flt-glass-pane * {
 
   /// Sets preferred screen orientation.
   ///
-  ///
   /// Specifies the set of orientations the application interface can be
   /// displayed in.
   ///
@@ -540,7 +539,8 @@ flt-glass-pane * {
               screenOrientation.lock(lockType).then((dynamic _) {
                 completer.complete(true);
               }).catchError((dynamic error) {
-                // On Chrome desktop NotSupported on this device error is fired.
+                // On Chrome desktop an error with 'not supported on this device
+                // error' is fired.
                 completer.complete(false);
               });
             } catch (_) {
