@@ -93,7 +93,7 @@ abstract class OffsetBase {
   int/*!*/ get hashCode => hashValues(_dx, _dy);
 
   @override
-  String/*!*/ toString() => 'OffsetBase(${_dx?.toStringAsFixed(1)}, ${_dy?.toStringAsFixed(1)})';
+  String/*!*/ toString() => 'OffsetBase(${_dx.toStringAsFixed(1)}, ${_dy.toStringAsFixed(1)})';
 }
 
 /// An immutable 2D floating-point offset.
@@ -337,7 +337,7 @@ class Offset extends OffsetBase {
   int/*!*/ get hashCode => hashValues(dx, dy);
 
   @override
-  String/*!*/ toString() => 'Offset(${dx?.toStringAsFixed(1)}, ${dy?.toStringAsFixed(1)})';
+  String/*!*/ toString() => 'Offset(${dx.toStringAsFixed(1)}, ${dy.toStringAsFixed(1)})';
 }
 
 /// Holds a 2D floating-point size.
@@ -603,7 +603,7 @@ class Size extends OffsetBase {
   int/*!*/ get hashCode => hashValues(_dx, _dy);
 
   @override
-  String/*!*/ toString() => 'Size(${width?.toStringAsFixed(1)}, ${height?.toStringAsFixed(1)})';
+  String/*!*/ toString() => 'Size(${width.toStringAsFixed(1)}, ${height.toStringAsFixed(1)})';
 }
 
 /// An immutable, 2D, axis-aligned, floating-point rectangle whose coordinates
