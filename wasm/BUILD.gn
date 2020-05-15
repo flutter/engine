@@ -7,23 +7,15 @@ import("//third_party/skia/gn/core.gni")
 
 _canvaskit_path = rebase_path("//third_party/skia/modules/canvaskit")
 
-config("rtti") {
-  cflags = [
-    "-frtti",
-  ]
-}
-
 wasm_lib("canvaskit") {
   export_name = "CanvasKitInit"
 
   sources = skia_core_sources + [
-    "$_canvaskit_path/paragraph_bindings.cpp",
+    # "$_canvaskit_path/paragraph_bindings.cpp",
     "$_canvaskit_path/canvaskit_bindings.cpp",
   ]
 
-  public_configs = [
-    ":rtti",
-  ]
+  configs = [ "//build/config/compiler:rtti" ]
 
   pre_js = [
     "$_canvaskit_path/debug.js",
@@ -58,7 +50,7 @@ wasm_lib("canvaskit") {
     "SK_DISABLE_LEGACY_SHADERCONTEXT",
     "SK_INCLUDE_PATHOPS",
     "SK_INCLUDE_RUNTIME_EFFECT",
-    # "SK_INCLUDE_PARAGRAPH=1",
+    "SK_INCLUDE_PARAGRAPH=1",
   ]
 
   cflags = [
