@@ -102,12 +102,6 @@ bool IOSContextMetal::MakeCurrent() {
 }
 
 // |IOSContext|
-bool IOSContextMetal::ResourceMakeCurrent() {
-  // This only makes sense for context that need to be bound to a specific thread.
-  return true;
-}
-
-// |IOSContext|
 bool IOSContextMetal::ClearCurrent() {
   // This only makes sense for context that need to be bound to a specific thread.
   return true;

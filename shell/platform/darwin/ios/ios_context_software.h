@@ -24,9 +24,6 @@ class IOSContextSoftware final : public IOSContext {
   bool MakeCurrent() override;
 
   // |IOSContext|
-  bool ResourceMakeCurrent() override;
-
-  // |IOSContext|
   bool ClearCurrent() override;
 
   // |IOSContext|

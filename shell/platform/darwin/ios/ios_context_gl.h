@@ -38,9 +38,6 @@ class IOSContextGL final : public IOSContext {
   bool ClearCurrent() override;
 
   // |IOSContext|
-  bool ResourceMakeCurrent() override;
-
-  // |IOSContext|
   std::unique_ptr<Texture> CreateExternalTexture(
       int64_t texture_id,
       fml::scoped_nsobject<NSObject<FlutterTexture>> texture) override;

@@ -22,11 +22,6 @@ bool IOSContextSoftware::MakeCurrent() {
 }
 
 // |IOSContext|
-bool IOSContextSoftware::ResourceMakeCurrent() {
-  return false;
-}
-
-// |IOSContext|
 bool IOSContextSoftware::ClearCurrent() {
   return false;
 }
