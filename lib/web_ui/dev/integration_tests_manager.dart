@@ -75,7 +75,7 @@ class IntegrationTestsManager {
   Future<void> _cloneFlutterRepo() async {
     // Delete directory if exists.
     if (environment.engineDartToolDir.existsSync()) {
-      environment.engineDartToolDir.deleteSync();
+      environment.engineDartToolDir.deleteSync(recursive: true);
     }
     environment.engineDartToolDir.createSync();
 
