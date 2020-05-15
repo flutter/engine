@@ -17,6 +17,7 @@ namespace flutter {
 
 #if FLUTTER_SHELL_ENABLE_METAL
 bool ShouldUseMetalRenderer() {
+  return false;
   // Flutter supports Metal on all devices with Apple A7 SoC or above that have been updated to or
   // past iOS 10.0. The processor was selected as it is the first version at which Metal was
   // supported. The iOS version floor was selected due to the availability of features used by Skia.

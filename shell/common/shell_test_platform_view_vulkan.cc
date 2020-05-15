@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/common/shell_test_platform_view_vulkan.h"
+#include "flutter/shell/common/gl_context_switch.h"
 #include "flutter/vulkan/vulkan_utilities.h"
 
 namespace flutter {
@@ -167,8 +168,9 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
     return true;
   };
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), true,
-                                        std::move(callback));
+  return std::make_unique<SurfaceFrame>(
+      std::move(surface), true, std::move(callback),
+      std::make_unique<GLContextDefaultResult>(true));
 }
 
 GrContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {

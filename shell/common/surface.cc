@@ -19,6 +19,18 @@ SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
   FML_DCHECK(submit_callback_);
 }
 
+SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
+                           bool supports_readback,
+                           const SubmitCallback& submit_callback,
+                           std::unique_ptr<GLContextResult> context_result)
+    : submitted_(false),
+      surface_(surface),
+      supports_readback_(supports_readback),
+      submit_callback_(submit_callback),
+      context_result_(std::move(context_result)) {
+  FML_DCHECK(submit_callback_);
+}
+
 SurfaceFrame::~SurfaceFrame() {
   if (submit_callback_ && !submitted_) {
     // Dropping without a Submit.
@@ -64,8 +76,8 @@ flutter::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
   return nullptr;
 }
 
-bool Surface::MakeRenderContextCurrent() {
-  return true;
+std::unique_ptr<GLContextResult> Surface::MakeRenderContextCurrent() {
+  return std::make_unique<GLContextDefaultResult>(true);
 }
 
 }  // namespace flutter

@@ -39,7 +39,8 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
     : delegate_(delegate),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
-  if (!delegate_->GLContextMakeCurrent()) {
+  auto context_switch = delegate_->GLContextMakeCurrent();
+  if (!context_switch->GetResult()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
     return;
@@ -98,7 +99,10 @@ GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrContext> gr_context,
       context_(gr_context),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
-  if (!delegate_->GLContextMakeCurrent()) {
+  // TODO(ASK_) make manager availabe in delegate, make |GLContextMakeCurrent|
+  // private.
+  auto context_switch = delegate_->GLContextMakeCurrent();
+  if (!context_switch->GetResult()) {
     FML_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
     return;
@@ -114,8 +118,9 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   if (!valid_) {
     return;
   }
-
-  if (!delegate_->GLContextMakeCurrent()) {
+  // TODO(ASK_)
+  auto context_switch = delegate_->GLContextMakeCurrent();
+  if (!context_switch->GetResult()) {
     FML_LOG(ERROR) << "Could not make the context current to destroy the "
                       "GrContext resources.";
     return;
@@ -229,8 +234,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
   }
-
-  if (!delegate_->GLContextMakeCurrent()) {
+  // TODO(ASK_)
+  auto context_switch = delegate_->GLContextMakeCurrent();
+  if (!context_switch->GetResult()) {
     FML_LOG(ERROR)
         << "Could not make the context current to acquire the frame.";
     return nullptr;
@@ -255,15 +261,16 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   }
 
   surface->getCanvas()->setMatrix(root_surface_transformation);
-
+  // TODO(cyanglaz_gl capture switch)
   SurfaceFrame::SubmitCallback submit_callback =
-      [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
-                                          SkCanvas* canvas) {
+      [weak = weak_factory_.GetWeakPtr()](
+          const SurfaceFrame& surface_frame, SkCanvas* canvas) {
         return weak ? weak->PresentSurface(canvas) : false;
       };
 
   return std::make_unique<SurfaceFrame>(
-      surface, delegate_->SurfaceSupportsReadback(), submit_callback);
+      surface, delegate_->SurfaceSupportsReadback(), submit_callback,
+      std::move(context_switch));
 }
 
 bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
@@ -329,7 +336,7 @@ flutter::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
 }
 
 // |Surface|
-bool GPUSurfaceGL::MakeRenderContextCurrent() {
+std::unique_ptr<GLContextResult> GPUSurfaceGL::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
 }
 

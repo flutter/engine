@@ -172,6 +172,8 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
     SkISize size,
     std::function<void(SkCanvas*)> draw_callback) {
   TRACE_EVENT0("flutter", __FUNCTION__);
+  // TODO(ASK_)
+  auto context_switch = surface_->MakeRenderContextCurrent();
 
   sk_sp<SkSurface> surface;
   SkImageInfo image_info = SkImageInfo::MakeN32Premul(
@@ -181,7 +183,7 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
     // happen in case of software rendering.
     surface = SkSurface::MakeRaster(image_info);
   } else {
-    if (!surface_->MakeRenderContextCurrent()) {
+    if (!context_switch->GetResult()) {
       return nullptr;
     }
 

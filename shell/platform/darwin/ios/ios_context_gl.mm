@@ -6,6 +6,7 @@
 
 #import <OpenGLES/EAGL.h>
 
+#include "flutter/fml/thread_local.h"
 #include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
@@ -13,22 +14,26 @@
 namespace flutter {
 
 IOSContextGL::IOSContextGL() {
-  resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3]);
-  if (resource_context_ != nullptr) {
-    context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
-                                         sharegroup:resource_context_.get().sharegroup]);
-  } else {
-    resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]);
-    context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
-                                         sharegroup:resource_context_.get().sharegroup]);
+  EAGLContext* resource_eagl_context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
+  if (resource_eagl_context == nil) {
+    resource_eagl_context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
   }
+  resource_eagl_context.sharegroup.debugLabel = @"flutter";
+  resource_context_.reset(resource_eagl_context);
+  EAGLContext* eagl_context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
+                                                    sharegroup:resource_eagl_context.sharegroup];
+  if (eagl_context == nil) {
+    eagl_context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
+                                         sharegroup:resource_eagl_context.sharegroup];
+  }
+  context_.reset(eagl_context);
 }
 
 IOSContextGL::~IOSContextGL() = default;
 
 std::unique_ptr<IOSRenderTargetGL> IOSContextGL::CreateRenderTarget(
     fml::scoped_nsobject<CAEAGLLayer> layer) {
-  return std::make_unique<IOSRenderTargetGL>(std::move(layer), context_, resource_context_);
+  return std::make_unique<IOSRenderTargetGL>(std::move(layer), context_);
 }
 
 // |IOSContext|
@@ -44,8 +49,8 @@ sk_sp<GrContext> IOSContextGL::CreateResourceContext() {
 }
 
 // |IOSContext|
-bool IOSContextGL::MakeCurrent() {
-  return [EAGLContext setCurrentContext:context_.get()];
+std::unique_ptr<GLContextResult> IOSContextGL::MakeCurrent() {
+  return std::make_unique<GLContextSwitch>(std::make_unique<IOSSwitchableGLContext>(*context_));
 }
 
 // |IOSContext|

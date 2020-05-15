@@ -10,12 +10,14 @@
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
+#include "flutter/shell/common/gl_context_switch.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
 namespace flutter {
 
 /// Represents a Frame that has been fully configured for the underlying client
 /// rendering API. A frame may only be submitted once.
+// TODO(add switch in constructor)
 class SurfaceFrame {
  public:
   using SubmitCallback =
@@ -24,6 +26,11 @@ class SurfaceFrame {
   SurfaceFrame(sk_sp<SkSurface> surface,
                bool supports_readback,
                const SubmitCallback& submit_callback);
+
+  SurfaceFrame(sk_sp<SkSurface> surface,
+               bool supports_readback,
+               const SubmitCallback& submit_callback,
+               std::unique_ptr<GLContextResult> context_result);
 
   ~SurfaceFrame();
 
@@ -40,6 +47,7 @@ class SurfaceFrame {
   sk_sp<SkSurface> surface_;
   bool supports_readback_;
   SubmitCallback submit_callback_;
+  std::unique_ptr<GLContextResult> context_result_;
 
   bool PerformSubmit();
 
@@ -63,7 +71,7 @@ class Surface {
 
   virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
 
-  virtual bool MakeRenderContextCurrent();
+  virtual std::unique_ptr<GLContextResult> MakeRenderContextCurrent();
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);
