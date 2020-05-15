@@ -91,6 +91,13 @@ struct FlutterDesktopWindow {
   bool skip_next_window_refresh = false;
 };
 
+// Custom deleter for FlutterEngineAOTData.
+struct AOTDataDeleter {
+  void operator()(FlutterEngineAOTData aot_data) {
+    FlutterEngineCollectAOTData(aot_data);
+  }
+};
+
 // Struct for storing state of a Flutter engine instance.
 struct FlutterDesktopEngineState {
   // The handle to the Flutter engine instance.
@@ -117,6 +124,9 @@ struct FlutterDesktopEngineState {
   // The controller associated with this engine instance, if any.
   // This will always be null for a headless engine.
   FlutterDesktopWindowControllerState* window_controller = nullptr;
+
+  // AOT data for this engine instance, if applicable.
+  std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter> aot_data_ = nullptr;
 };
 
 // State associated with the plugin registrar.
@@ -631,6 +641,7 @@ static bool RunFlutterEngine(
       return false;
     }
     args.aot_data = data_out;
+    engine_state->aot_data_.reset(data_out);
   }
 
   FLUTTER_API_SYMBOL(FlutterEngine) engine = nullptr;
