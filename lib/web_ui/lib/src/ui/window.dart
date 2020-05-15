@@ -89,6 +89,8 @@ enum AppLifecycleState {
 /// [Window.padding]. View insets and padding are preferably read via
 /// [MediaQuery.of].
 ///
+/// For the engine implementation of this class see the [engine.WindowPadding].
+///
 /// For a generic class that represents distances around a rectangle, see the
 /// [EdgeInsets] class.
 ///
@@ -99,8 +101,12 @@ enum AppLifecycleState {
 ///  * [MediaQuery.of], for the preferred mechanism for accessing these values.
 ///  * [Scaffold], which automatically applies the padding in material design
 ///    applications.
-class WindowPadding {
-  const WindowPadding._({this.left, this.top, this.right, this.bottom});
+abstract class WindowPadding {
+  const factory WindowPadding._(
+      {double left,
+      double top,
+      double right,
+      double bottom}) = engine.WindowPadding;
 
   /// The distance from the left edge to the first unpadded pixel, in physical
   /// pixels.
@@ -1062,11 +1068,12 @@ enum Brightness {
 // Unimplemented classes.
 // TODO(flutter_web): see https://github.com/flutter/flutter/issues/33614.
 class CallbackHandle {
-  CallbackHandle.fromRawHandle(this._handle);
+  CallbackHandle.fromRawHandle(this._handle)
+    : assert(_handle != null, "'_handle' must not be null.");
 
-  final int _handle;
+  final int/*!*/ _handle;
 
-  int toRawHandle() => _handle;
+  int/*!*/ toRawHandle() => _handle;
 
   @override
   bool operator ==(Object other) => identical(this, other);
@@ -1077,11 +1084,15 @@ class CallbackHandle {
 
 // TODO(flutter_web): see https://github.com/flutter/flutter/issues/33615.
 class PluginUtilities {
-  static CallbackHandle getCallbackHandle(Function callback) {
+  // This class is only a namespace, and should not be instantiated or
+  // extended directly.
+  factory PluginUtilities._() => throw UnsupportedError('Namespace');
+
+  static CallbackHandle/*?*/ getCallbackHandle(Function callback) {
     throw UnimplementedError();
   }
 
-  static Function getCallbackFromHandle(CallbackHandle handle) {
+  static Function/*?*/ getCallbackFromHandle(CallbackHandle handle) {
     throw UnimplementedError();
   }
 }
@@ -1093,18 +1104,22 @@ class ImageShader implements Shader {
 
 // TODO(flutter_web): probably dont implement this one.
 class IsolateNameServer {
+  // This class is only a namespace, and should not be instantiated or
+  // extended directly.
+  factory IsolateNameServer._() => throw UnsupportedError('Namespace');
+
   static dynamic lookupPortByName(String name) {
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
 
-  static bool registerPortWithName(dynamic port, String name) {
+  static bool/*!*/ registerPortWithName(dynamic port, String name) {
     assert(port != null, "'port' cannot be null.");
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
 
-  static bool removePortNameMapping(String name) {
+  static bool/*!*/ removePortNameMapping(String name) {
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
