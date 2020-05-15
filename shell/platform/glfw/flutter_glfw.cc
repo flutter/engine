@@ -618,6 +618,21 @@ static bool RunFlutterEngine(
   args.command_line_argv = &argv[0];
   args.platform_message_callback = EngineOnFlutterPlatformMessage;
   args.custom_task_runners = &task_runners;
+
+  if (FlutterEngineRunsAOTCompiledDartCode()) {
+    FlutterEngineAOTDataSource data_in;
+    FlutterEngineAOTData data_out;
+    std::string elf_path = assets_path_string + "/libapp.so";
+    data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
+    data_in.elf_path = elf_path.c_str();
+    auto result = FlutterEngineCreateAOTData(&data_in, &data_out);
+    if (result != kSuccess) {
+      std::cerr << "Failed to load AOT data from: " << elf_path << std::endl;
+      return false;
+    }
+    args.aot_data = data_out;
+  }
+
   FLUTTER_API_SYMBOL(FlutterEngine) engine = nullptr;
   auto result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config, &args,
                                  engine_state, &engine);
