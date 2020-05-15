@@ -577,9 +577,10 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   }
 }
 
-// TODO(yjbanov): in HTML the blur looks too aggressive. The current
-//                implementation was copied from the existing backdrop-filter
-//                but probably needs a revision.
+// TODO(krista-koivisto): migrate backdrop-filter over to SVG filters to achieve
+//                        closer to a one-to-one blur filter result with
+//                        Flutter. Current implementation is too aggressive and
+//                        does not allow for directional blur.
 String _imageFilterToCss(EngineImageFilter filter) {
   return 'blur(${math.max(filter.sigmaX, filter.sigmaY) * 2}px)';
 }

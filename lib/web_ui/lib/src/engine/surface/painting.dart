@@ -164,14 +164,15 @@ class SurfacePaint implements ui.Paint {
   }
 
   @override
-  ui.ImageFilter get imageFilter {
-    // TODO(flutter/flutter#35156): Implement ImageFilter.
-    return null;
-  }
+  ui.ImageFilter get imageFilter => _paintData.imageFilter;
 
   @override
   set imageFilter(ui.ImageFilter value) {
-    // TODO(flutter/flutter#35156): Implement ImageFilter.
+    if (_frozen) {
+      _paintData = _paintData.clone();
+      _frozen = false;
+    }
+    _paintData.imageFilter = value;
   }
 
   // True if Paint instance has used in RecordingCanvas.
@@ -230,6 +231,7 @@ class SurfacePaintData {
   ui.MaskFilter maskFilter;
   ui.FilterQuality filterQuality;
   ui.ColorFilter colorFilter;
+  ui.ImageFilter imageFilter;
 
   // Internal for recording canvas use.
   SurfacePaintData clone() {
@@ -237,6 +239,7 @@ class SurfacePaintData {
       ..blendMode = blendMode
       ..filterQuality = filterQuality
       ..maskFilter = maskFilter
+      ..imageFilter = imageFilter
       ..shader = shader
       ..isAntiAlias = isAntiAlias
       ..color = color

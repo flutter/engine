@@ -147,6 +147,19 @@ void main() async {
     await _checkScreenshot(rc, 'draw_image_rect_with_transform_source');
   });
 
+  test('Paints image with blur', () async {
+    final RecordingCanvas rc =
+        RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
+    rc.save();
+    Image testImage = createTestImage(width: 120, height: 80,
+        offset: Offset(12, 12));
+    final paint = Paint()
+        ..imageFilter = ImageFilter.blur(sigmaX: 2.0, sigmaY: 6.0);
+    rc.drawImage(testImage, Offset(0, 0), paint);
+    rc.restore();
+    await _checkScreenshot(rc, 'draw_image_with_blur');
+  });
+
   // Regression test for https://github.com/flutter/flutter/issues/44845
   // Circle should draw on top of image not below.
   test('Paints on top of image', () async {
@@ -348,18 +361,19 @@ void main() async {
   });
 }
 
-HtmlImage createTestImage({int width = 100, int height = 50}) {
+HtmlImage createTestImage({int width = 100, int height = 50,
+    Offset offset = const Offset(0, 0)}) {
   html.CanvasElement canvas =
       new html.CanvasElement(width: width, height: height);
   html.CanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
-  ctx.fillRect(0, 0, 33, 50);
+  ctx.fillRect(offset.dx, offset.dy, 33, 50);
   ctx.fill();
   ctx.fillStyle = '#40E080';
-  ctx.fillRect(33, 0, 33, 50);
+  ctx.fillRect(offset.dx + 33, offset.dy, 33, 50);
   ctx.fill();
   ctx.fillStyle = '#2040E0';
-  ctx.fillRect(66, 0, 33, 50);
+  ctx.fillRect(offset.dy + 66, offset.dy, 33, 50);
   ctx.fill();
   html.ImageElement imageElement = html.ImageElement();
   imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]);

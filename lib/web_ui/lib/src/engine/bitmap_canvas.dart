@@ -369,6 +369,7 @@ class BitmapCanvas extends EngineCanvas {
     final ui.BlendMode blendMode = paint.blendMode;
     final EngineColorFilter colorFilter = paint.colorFilter as EngineColorFilter;
     final ui.BlendMode colorFilterBlendMode = colorFilter?._blendMode;
+    String svgFilters = '';
     html.HtmlElement imgElement;
     if (colorFilterBlendMode == null) {
       // No Blending, create an image by cloning original loaded image.
@@ -388,12 +389,14 @@ class BitmapCanvas extends EngineCanvas {
         case ui.BlendMode.color:
         case ui.BlendMode.luminosity:
         case ui.BlendMode.xor:
+          svgFilters += _createColorBlendSvgFilter(colorFilter._color,
+              colorFilterBlendMode);
           imgElement = _createImageElementWithSvgFilter(image,
-              colorFilter._color, colorFilterBlendMode, paint);
+              colorFilter._color, colorFilterBlendMode);
           break;
         default:
           imgElement = _createBackgroundImageWithBlend(image,
-              colorFilter._color, colorFilterBlendMode, paint);
+              colorFilter._color, colorFilterBlendMode);
           break;
       }
     }
@@ -420,6 +423,14 @@ class BitmapCanvas extends EngineCanvas {
         ..removeProperty('height');
       rootElement.append(imgElement);
       _children.add(imgElement);
+    }
+    svgFilters += _blurImageFilterToSvg(paint.imageFilter);
+    htmlImage.imgElement.style.filter = 'none';
+    if (svgFilters.length > 0) {
+      final filterElement = _buildSvgFilterElement(svgFilters);
+      rootElement.append(filterElement);
+      _children.add(filterElement);
+      imgElement.style.filter = 'url(#_fcf${_filterIdCounter})';
     }
     return imgElement;
   }
@@ -514,8 +525,7 @@ class BitmapCanvas extends EngineCanvas {
   // For src,srcOver it only sets background-color attribute.
   // For dst,dstIn , it only sets source not background color.
   html.HtmlElement _createBackgroundImageWithBlend(HtmlImage image,
-      ui.Color filterColor, ui.BlendMode colorFilterBlendMode,
-      SurfacePaintData paint) {
+      ui.Color filterColor, ui.BlendMode colorFilterBlendMode) {
     // When blending with color we can't use an image element.
     // Instead use a div element with background image, color and
     // background blend mode.
@@ -549,10 +559,9 @@ class BitmapCanvas extends EngineCanvas {
     return imgElement;
   }
 
-  // Creates an image element and an svg filter to apply on the element.
-  html.HtmlElement _createImageElementWithSvgFilter(HtmlImage image,
-      ui.Color filterColor, ui.BlendMode colorFilterBlendMode,
-      SurfacePaintData paint) {
+  /// Creates an SVG filter based on blend mode.
+  String _createColorBlendSvgFilter(ui.Color filterColor,
+      ui.BlendMode colorFilterBlendMode) {
     // For srcIn blendMode, we use an svg filter to apply to image element.
     String svgFilter;
     switch (colorFilterBlendMode) {
@@ -603,12 +612,13 @@ class BitmapCanvas extends EngineCanvas {
       default:
         break;
     }
-    final html.Element filterElement =
-    html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
-    rootElement.append(filterElement);
-    _children.add(filterElement);
+    return svgFilter;
+  }
+
+  // Creates an image element and an svg filter to apply on the element.
+  html.HtmlElement _createImageElementWithSvgFilter(HtmlImage image,
+      ui.Color filterColor, ui.BlendMode colorFilterBlendMode) {
     final html.HtmlElement imgElement = image.cloneImageElement();
-    imgElement.style.filter = 'url(#_fcf${_filterIdCounter})';
     if (colorFilterBlendMode == ui.BlendMode.saturation) {
       imgElement.style.backgroundColor = colorToCssString(filterColor);
     }
@@ -977,6 +987,7 @@ String _maskFilterToCss(ui.MaskFilter maskFilter) {
 }
 
 int _filterIdCounter = 0;
+int _filterResultIdCounter = 0;
 
 // The color matrix for feColorMatrix element changes colors based on
 // the following:
@@ -992,93 +1003,119 @@ int _filterIdCounter = 0;
 // B' = b1*R + b2*G + b3*B + b4*A + b5
 // A' = a1*R + a2*G + a3*B + a4*A + a5
 String _srcInColorFilterToSvg(ui.Color color) {
-  _filterIdCounter += 1;
-  return '<svg width="0" height="0">'
-      '<filter id="_fcf$_filterIdCounter" '
-      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
-      '<feColorMatrix values="0 0 0 0 1 ' // Ignore input, set it to absolute.
+  _filterResultIdCounter += 1;
+  final result = "_fcf_result$_filterResultIdCounter";
+  return '<feColorMatrix values="0 0 0 0 1 ' // Ignore input, set it to absolute.
           '0 0 0 0 1 '
           '0 0 0 0 1 '
           '0 0 0 1 0" result="destalpha"/>' // Just take alpha channel of destination
       '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
       '</feFlood>'
       '<feComposite in="flood" in2="destalpha" '
-      'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
-      '</feComposite>'
-      '</filter></svg>';
+      'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="$result">'
+      '</feComposite>';
 }
 
 String _srcOutColorFilterToSvg(ui.Color color) {
-  _filterIdCounter += 1;
-  return '<svg width="0" height="0">'
-      '<filter id="_fcf$_filterIdCounter" '
-      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
-      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+  final source = _filterResultIdCounter > 0
+      ? "_fcf_result$_filterResultIdCounter"
+      : "SourceGraphic";
+  _filterResultIdCounter += 1;
+  final result = "_fcf_result$_filterResultIdCounter";
+  return '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
       '</feFlood>'
-      '<feComposite in="flood" in2="SourceGraphic" operator="out" result="comp">'
-      '</feComposite>'
-      '</filter></svg>';
+      '<feComposite in="flood" in2="$source" operator="out" result="$result">'
+      '</feComposite>';
 }
 
 String _xorColorFilterToSvg(ui.Color color) {
-  _filterIdCounter += 1;
-  return '<svg width="0" height="0">'
-      '<filter id="_fcf$_filterIdCounter" '
-      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
-      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+  final source = _filterResultIdCounter > 0
+      ? "_fcf_result$_filterResultIdCounter"
+      : "SourceGraphic";
+  _filterResultIdCounter += 1;
+  final result = "_fcf_result$_filterResultIdCounter";
+  return '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
       '</feFlood>'
-      '<feComposite in="flood" in2="SourceGraphic" operator="xor" result="comp">'
-      '</feComposite>'
-      '</filter></svg>';
+      '<feComposite in="flood" in2="$source" operator="xor" result="$result">'
+      '</feComposite>';
 }
 
 // The source image and color are composited using :
 // result = k1 *in*in2 + k2*in + k3*in2 + k4.
 String _compositeColorFilterToSvg(ui.Color color, double k1, double k2, double k3 , double k4) {
-  _filterIdCounter += 1;
-  return '<svg width="0" height="0">'
-      '<filter id="_fcf$_filterIdCounter" '
-      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
-      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+  final source = _filterResultIdCounter > 0
+      ? "_fcf_result$_filterResultIdCounter"
+      : "SourceGraphic";
+  _filterResultIdCounter += 1;
+  final result = "_fcf_result$_filterResultIdCounter";
+  return '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
       '</feFlood>'
-      '<feComposite in="flood" in2="SourceGraphic" '
-      'operator="arithmetic" k1="$k1" k2="$k2" k3="$k3" k4="$k4" result="comp">'
-      '</feComposite>'
-      '</filter></svg>';
+      '<feComposite in="flood" in2="$source" '
+      'operator="arithmetic" k1="$k1" k2="$k2" k3="$k3" k4="$k4" result="$result">'
+      '</feComposite>';
 }
 
 // Porter duff source * destination , keep source alpha.
 // First apply color filter to source to change it to [color], then
 // composite using multiplication.
 String _modulateColorFilterToSvg(ui.Color color) {
-  _filterIdCounter += 1;
   final double r = color.red / 255.0;
   final double b = color.blue / 255.0;
   final double g = color.green / 255.0;
-  return '<svg width="0" height="0">'
-      '<filter id="_fcf$_filterIdCounter" '
-      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
-      '<feColorMatrix values="0 0 0 0 $r ' // Ignore input, set it to absolute.
+  final source = _filterResultIdCounter > 0
+      ? "_fcf_result$_filterResultIdCounter"
+      : "SourceGraphic";
+  _filterResultIdCounter += 1;
+  final result = "_fcf_result$_filterResultIdCounter";
+  return '<feColorMatrix values="0 0 0 0 $r ' // Ignore input, set it to absolute.
       '0 0 0 0 $g '
       '0 0 0 0 $b '
       '0 0 0 1 0" result="recolor"/>'
-      '<feComposite in="recolor" in2="SourceGraphic" '
-      'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
-      '</feComposite>'
-      '</filter></svg>';
+      '<feComposite in="recolor" in2="$source" '
+      'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="$result">'
+      '</feComposite>';
 }
 
 // Uses feBlend element to blend source image with a color.
 String _blendColorFilterToSvg(ui.Color color, String feBlend,
     {bool swapLayers = false}) {
-  _filterIdCounter += 1;
-  return '<svg width="0" height="0">'
-      '<filter id="_fcf$_filterIdCounter" filterUnits="objectBoundingBox" '
-      'x="0%" y="0%" width="100%" height="100%">'
-      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+  final source = _filterResultIdCounter > 0
+      ? "_fcf_result$_filterResultIdCounter"
+      : "SourceGraphic";
+  _filterResultIdCounter += 1;
+  final result = "_fcf_result$_filterResultIdCounter";
+  return '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
       '</feFlood>' +
       (swapLayers
-      ? '<feBlend in="SourceGraphic" in2="flood" mode="$feBlend"/>'
-      : '<feBlend in="flood" in2="SourceGraphic" mode="$feBlend"/>') +
+      ? '<feBlend in="$source" in2="flood" mode="$feBlend" result="$result"/>'
+      : '<feBlend in="flood" in2="$source" mode="$feBlend" result="$result"/>');
+}
+
+String _blurImageFilterToSvg(EngineImageFilter filter) {
+  if (filter == null) {
+    return "";
+  }
+  final source = _filterResultIdCounter > 0
+      ? "_fcf_result$_filterResultIdCounter"
+      : "SourceGraphic";
+  _filterResultIdCounter += 1;
+  final result = "_fcf_result$_filterResultIdCounter";
+  return '<feGaussianBlur in="$source"'
+      'stdDeviation="${filter.sigmaX},${filter.sigmaY}" result="$result">'
+      '</feGaussianBlur>';
+}
+
+/// Returns an SVG filter element with `filters` as children.
+/// 
+/// `filters` must not be null and must contain valid SVG HTML elements.
+html.Element _buildSvgFilterElement(String filters) {
+  assert(filters != null);
+  _filterIdCounter += 1;
+  _filterResultIdCounter = 0;
+  final svgFilter = '<svg width="0" height="0">'
+      '<filter id="_fcf$_filterIdCounter" filterUnits="objectBoundingBox" '
+      'x="0%" y="0%" width="100%" height="100%">'
+      + filters +
       '</filter></svg>';
+  return html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
 }
