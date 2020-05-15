@@ -235,9 +235,13 @@ class IntegrationTestsManager {
     );
 
     if (exitCode != 0) {
-      final String statementToRun = 'flutter drive '
+      String statementToRun = 'flutter drive '
           '--target=test_driver/${testName} -d web-server --profile '
           '--browser-name=$_browser --local-engine=host_debug_unopt';
+      if (isLuci) {
+        statementToRun = '$statementToRun --chrome-binary='
+            '${preinstalledChromeExecutable()}';
+      }
       io.stderr
           .writeln('ERROR: Failed to run test. Exited with exit code $exitCode'
               '. Statement to run $testName locally use the following '
