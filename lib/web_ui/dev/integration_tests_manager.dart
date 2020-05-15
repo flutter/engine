@@ -21,7 +21,8 @@ class IntegrationTestsManager {
   /// It usually changes with each the browser version changes.
   /// A better solution would be installing the browser and the driver at the
   /// same time.
-  // TODO(nurhan): https://github.com/flutter/flutter/issues/53179.
+  // TODO(nurhan): https://github.com/flutter/flutter/issues/53179. Partly
+  // solved. Remaining local integration tests using the locked Chrome version.
   final io.Directory _browserDriverDir;
 
   /// This is the parent directory for all drivers.
