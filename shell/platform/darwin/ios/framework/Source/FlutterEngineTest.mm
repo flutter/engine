@@ -51,7 +51,8 @@ FLUTTER_ASSERT_ARC
   id project = OCMClassMock([FlutterDartProject class]);
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   XCTAssertNotNil(engine);
-  XCTAssertNoThrow([engine.binaryMessenger setMessageHandlerOnChannel:@"foo" binaryMessageHandler:nil]);
+  XCTAssertNoThrow([engine.binaryMessenger setMessageHandlerOnChannel:@"foo"
+                                                 binaryMessageHandler:nil]);
 }
 
 - (void)testNotifyPluginOfDealloc {
