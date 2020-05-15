@@ -1106,7 +1106,7 @@ String _blurImageFilterToSvg(EngineImageFilter filter) {
 }
 
 /// Returns an SVG filter element with `filters` as children.
-/// 
+///
 /// `filters` must not be null and must contain valid SVG HTML elements.
 html.Element _buildSvgFilterElement(String filters) {
   assert(filters != null);
