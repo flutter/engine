@@ -2256,7 +2256,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
 /// * `list`: A list of bytes containing the font file.
 /// * `fontFamily`: The family name used to identify the font in text styles.
 ///  If this is not provided, then the family name will be extracted from the font file.
-Future<void> loadFontFromList(Uint8List/*!*/ list, {String/*?*/ fontFamily}) {
+Future<void>/*!*/ loadFontFromList(Uint8List/*!*/ list, {String/*?*/ fontFamily}) {
   return _futurize(
     (_Callback<void> callback) => _loadFontFromList(list, callback, fontFamily)
   ).then((_) => _sendFontChangeMessage());
