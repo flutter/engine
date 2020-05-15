@@ -260,7 +260,7 @@ Future<String> queryChromeDriverVersion() async {
 /// We are using CIPD packages in LUCI. The pinned chrome version from the
 /// `browser_lock.yaml` file will already be installed in the LUCI bot.
 /// Verify if Chrome is installed and use it for the integration tests.
-String chromeExecutableForLUCI() {
+String preinstalledChromeExecutable() {
   // Note that build number and major version is different for Chrome.
   // For example for a build number `753189`, major version is 83.
   final String buildNumber = ChromeArgParser.instance.pinnedChromeBuildNumber;
@@ -277,9 +277,9 @@ String chromeExecutableForLUCI() {
 
 Future<int> _querySystemChromeMajorVersion() async {
   String chromeExecutable = '';
-  // LUCI used the Chrome from CIPD packages.
+  // LUCI uses the Chrome from CIPD packages.
   if (isLuci) {
-    chromeExecutable = chromeExecutableForLUCI();
+    chromeExecutable = preinstalledChromeExecutable();
   } else if (io.Platform.isLinux) {
     chromeExecutable = 'google-chrome';
   } else if (io.Platform.isMacOS) {

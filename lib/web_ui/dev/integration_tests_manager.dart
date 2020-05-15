@@ -46,11 +46,13 @@ class IntegrationTestsManager {
       print('WARNING: integration tests are only supported on chrome for now');
       return false;
     } else {
-      if (isLuci) {
-        await runDriverOnLUCI();
+      if (!isLuci) {
+        // LUCI installs driver from CIPD, so we skip installing it on LUCI.
+        await _prepareDriver();
       } else {
-        await prepareDriver();
+        await _verifyDriverForLUCI();
       }
+      await _startDriver(_browserDriverDir.path);
       // TODO(nurhan): https://github.com/flutter/flutter/issues/52987
       return await _runTests();
     }
@@ -96,27 +98,23 @@ class IntegrationTestsManager {
         useSystemFlutter: _useSystemFlutter);
   }
 
-  /// Start the Chrome Driver on LUCI.
-  ///
-  /// Driver should already exist on LUCI as a CIPD package. No need to install.
+  /// Driver should already exist on LUCI as a CIPD package.
   ///
   /// Throw an error if directory does not exists.
-  void runDriverOnLUCI() {
+  void _verifyDriverForLUCI() {
     if (!_browserDriverDir.existsSync()) {
       throw StateError('Failed to locate Chrome driver on LUCI on path:'
           '${_browserDriverDir.path}');
     }
-    print('INFO: Starting the driver on path: ${_browserDriverDir.path}');
-    _runDriver(_browserDriverDir.path);
   }
 
-  void _runDriver(String workingDirectory) async {
-    startProcess('./chromedriver/chromedriver', ['--port=4444'],
+  void _startDriver(String workingDirectory) async {
+    await startProcess('./chromedriver/chromedriver', ['--port=4444'],
         workingDirectory: workingDirectory);
     print('INFO: Driver started');
   }
 
-  void prepareDriver() async {
+  void _prepareDriver() async {
     if (_browserDriverDir.existsSync()) {
       _browserDriverDir.deleteSync(recursive: true);
     }
@@ -132,7 +130,6 @@ class IntegrationTestsManager {
     ChromeDriverInstaller chromeDriverInstaller =
         ChromeDriverInstaller.withVersion(chromeDriverVersion);
     await chromeDriverInstaller.install(alwaysInstall: true);
-    await _runDriver(io.Directory.current.path);
     io.Directory.current = temp;
   }
 
@@ -230,7 +227,7 @@ class IntegrationTestsManager {
         'web-server',
         '--profile',
         '--browser-name=$_browser',
-        if (isLuci) '--chrome-binary=${chromeExecutableForLUCI()}',
+        if (isLuci) '--chrome-binary=${preinstalledChromeExecutable()}',
         if (isLuci) '--headless',
         '--local-engine=host_debug_unopt',
       ],
