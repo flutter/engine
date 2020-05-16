@@ -89,14 +89,6 @@ class IOSContext {
   virtual bool MakeCurrent() = 0;
 
   //----------------------------------------------------------------------------
-  /// @brief      Clears the context binding of the current thread if one is
-  ///             present. Does noting otherwise.
-  ///
-  /// @return     `true` is the current context bound to the thread is cleared.
-  ///
-  virtual bool ClearCurrent() = 0;
-
-  //----------------------------------------------------------------------------
   /// @brief      Creates an external texture proxy of the appropriate client
   ///             rendering API.
   ///

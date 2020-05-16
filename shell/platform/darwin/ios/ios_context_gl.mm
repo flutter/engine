@@ -49,11 +49,6 @@ bool IOSContextGL::MakeCurrent() {
 }
 
 // |IOSContext|
-bool IOSContextGL::ClearCurrent() {
-  return [EAGLContext setCurrentContext:nil];
-}
-
-// |IOSContext|
 std::unique_ptr<Texture> IOSContextGL::CreateExternalTexture(
     int64_t texture_id,
     fml::scoped_nsobject<NSObject<FlutterTexture>> texture) {
