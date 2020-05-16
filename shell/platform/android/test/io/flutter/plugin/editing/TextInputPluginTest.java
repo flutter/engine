@@ -479,8 +479,23 @@ public class TextInputPluginTest {
 
     verify(children[0]).setAutofillId(any(), eq("1".hashCode()));
     verify(children[0]).setAutofillHints(aryEq(new String[] {"HINT1"}));
+    verify(children[0])
+        .setDimens(
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            intThat(Matchers.greaterThan(0)),
+            intThat(Matchers.greaterThan(0)));
+
     verify(children[1]).setAutofillId(any(), eq("2".hashCode()));
     verify(children[1]).setAutofillHints(aryEq(new String[] {"HINT2", "EXTRA"}));
+    verify(children[1])
+        .setDimens(
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            intThat(Matchers.greaterThan(0)),
+            intThat(Matchers.greaterThan(0)));
   }
 
   @Test
@@ -523,6 +538,14 @@ public class TextInputPluginTest {
 
     verify(children[0]).setAutofillId(any(), eq("1".hashCode()));
     verify(children[0]).setAutofillHints(aryEq(new String[] {"HINT1"}));
+    // Verifies that the child has a non-zero size.
+    verify(children[0])
+        .setDimens(
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            intThat(Matchers.greaterThan(0)),
+            intThat(Matchers.greaterThan(0)));
   }
 
   @Implements(InputMethodManager.class)
