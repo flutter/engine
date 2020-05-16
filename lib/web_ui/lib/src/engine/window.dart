@@ -225,7 +225,7 @@ class EngineWindow extends ui.Window {
     _onLocaleChangedZone = Zone.current;
   }
 
-  /// The locale used when we fails to get the list from the browser.
+  /// The locale used when we fail to get the list from the browser.
   static const _defaultLocale = const ui.Locale('en', 'US');
 
   /// We use the first locale in the [locales] list instead of the browser's
@@ -258,7 +258,10 @@ class EngineWindow extends ui.Window {
 
   static List<ui.Locale> parseBrowserLanguages() {
     // TODO(yjbanov): find a solution for IE
-    if (!js_util.hasProperty(html.window.navigator, 'languages')) {
+    final bool languagesFeatureMissing = !js_util.hasProperty(html.window.navigator, 'languages');
+    if (languagesFeatureMissing || html.window.navigator.languages.isEmpty) {
+      // To make it easier for the app code, let's not leave the locales list
+      // empty. This way there's fewer corner cases for apps to handle.
       return const [_defaultLocale];
     }
 
@@ -272,12 +275,7 @@ class EngineWindow extends ui.Window {
       }
     }
 
-    // To make it easier for the app code, let's not leave the locales list
-    // empty. This way there's fewer corner cases for apps to handle.
-    if (locales.isEmpty) {
-      locales.add(_defaultLocale);
-    }
-
+    assert(locales.isNotEmpty);
     return locales;
   }
 
