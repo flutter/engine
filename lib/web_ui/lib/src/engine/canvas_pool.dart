@@ -822,7 +822,7 @@ class ContextStateHandle {
         // by a large enough value that it moved outside the canvas bounds, then
         // offset the shadow in the opposite direction such that it lands exactly
         // where the shape is.
-        const double kOutsideTheBoundsOffset = 10000;
+        const double kOutsideTheBoundsOffset = 50000;
 
         context.translate(-kOutsideTheBoundsOffset, 0);
 
@@ -847,7 +847,11 @@ class ContextStateHandle {
     }
   }
 
-  /// Removes paint properties on the current canvas.
+  /// Removes paint properties on the current canvas used by the last draw
+  /// command.
+  ///
+  /// Not all properties are cleared. Properties that are set by all paint
+  /// commands prior to painting do not need to be cleared.
   ///
   /// Must be called after calling [setUpPaint].
   void tearDownPaint() {

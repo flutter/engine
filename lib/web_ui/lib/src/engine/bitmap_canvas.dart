@@ -761,23 +761,27 @@ class BitmapCanvas extends EngineCanvas {
         _canvasPool.currentTransform, vertices, blendMode, paint);
   }
 
+  /// Stores paint data used by [drawPoints]. We cannot use the original paint
+  /// data object because painting style is determined by [ui.PointMode] and
+  /// not by [SurfacePointData.style].
+  static SurfacePaintData _drawPointsPaint = SurfacePaintData()
+    ..strokeCap = ui.StrokeCap.round
+    ..strokeJoin = ui.StrokeJoin.round
+    ..blendMode = ui.BlendMode.srcOver;
+
   @override
-  void drawPoints(ui.PointMode pointMode, Float32List points,
-      double strokeWidth, ui.Color color) {
-    ContextStateHandle contextHandle = _canvasPool.contextHandle;
-    contextHandle
-      ..lineWidth = strokeWidth
-      ..blendMode = ui.BlendMode.srcOver
-      ..strokeCap = ui.StrokeCap.round
-      ..strokeJoin = ui.StrokeJoin.round;
-    final String cssColor = colorToCssString(color);
+  void drawPoints(ui.PointMode pointMode, Float32List points, SurfacePaintData paint) {
     if (pointMode == ui.PointMode.points) {
-      contextHandle.fillStyle = cssColor;
+      _drawPointsPaint.style = ui.PaintingStyle.stroke;
     } else {
-      contextHandle.strokeStyle = cssColor;
+      _drawPointsPaint.style = ui.PaintingStyle.fill;
     }
-    _setUpPaint(null);
-    _canvasPool.drawPoints(pointMode, points, strokeWidth / 2.0);
+    _drawPointsPaint.color = paint.color;
+    _drawPointsPaint.strokeWidth = paint.strokeWidth;
+    _drawPointsPaint.maskFilter = paint.maskFilter;
+
+    _setUpPaint(_drawPointsPaint);
+    _canvasPool.drawPoints(pointMode, points, paint.strokeWidth / 2.0);
     _tearDownPaint();
   }
 

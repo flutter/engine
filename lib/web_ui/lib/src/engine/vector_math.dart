@@ -1062,7 +1062,7 @@ class Matrix4 {
 
   @override
   String toString() {
-    // if (assertionsEnabled) {
+    if (assertionsEnabled) {
       String fmt(int index) {
         return storage[index].toStringAsFixed(2);
       }
@@ -1071,9 +1071,9 @@ class Matrix4 {
              '[${fmt(1)}, ${fmt(5)}, ${fmt(9)}, ${fmt(13)}]\n'
              '[${fmt(2)}, ${fmt(6)}, ${fmt(10)}, ${fmt(14)}]\n'
              '[${fmt(3)}, ${fmt(7)}, ${fmt(11)}, ${fmt(15)}]';
-    // } else {
-      // return super.toString();
-    // }
+    } else {
+      return super.toString();
+    }
   }
 }
 
