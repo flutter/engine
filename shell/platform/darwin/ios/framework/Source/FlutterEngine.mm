@@ -24,11 +24,14 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #include "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
+#include "flutter/shell/profiling/sampling_profiler.h"
 
 NSString* const FlutterDefaultDartEntrypoint = nil;
+static constexpr int kNumProfilerSamplesPerSec = 5;
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
 @property(nonatomic, assign) FlutterEngine* flutterEngine;
@@ -56,6 +59,8 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
 
   std::unique_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
+  std::unique_ptr<flutter::ProfilerMetricsIOS> _profiler_metrics;
+  std::unique_ptr<flutter::SamplingProfiler> _profiler;
 
   // Channels
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
@@ -262,6 +267,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   [self resetChannels];
   self.isolateId = nil;
   _shell.reset();
+  _profiler.reset();
   _threadHost.Reset();
   _platformViewsController.reset();
 }
@@ -317,6 +323,14 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
+}
+
+- (void)startProfiler:(NSString*)threadLabel {
+  _profiler_metrics = std::make_unique<flutter::ProfilerMetricsIOS>();
+  _profiler = std::make_unique<flutter::SamplingProfiler>(
+      threadLabel.UTF8String, _threadHost.profiler_thread->GetTaskRunner(),
+      [self]() { return self->_profiler_metrics->GenerateSample(); }, kNumProfilerSamplesPerSec);
+  _profiler->Start();
 }
 
 // If you add a channel, be sure to also update `resetChannels`.
@@ -394,7 +408,6 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [_textInputPlugin.get() handleMethodCall:call result:result];
     }];
-    self.iosPlatformView->SetTextInputPlugin(_textInputPlugin);
   }
 }
 
@@ -438,9 +451,18 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
+  uint32_t threadHostType = flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::GPU |
+                            flutter::ThreadHost::Type::IO;
+  bool profilerEnabled = false;
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG) || \
+    (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE)
+  profilerEnabled = true;
+#endif
+  if (profilerEnabled) {
+    threadHostType = threadHostType | flutter::ThreadHost::Type::Profiler;
+  }
   _threadHost = {threadLabel.UTF8String,  // label
-                 flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::GPU |
-                     flutter::ThreadHost::Type::IO};
+                 threadHostType};
 
   // Lambda captures by pointers to ObjC objects are fine here because the
   // create call is
@@ -506,6 +528,9 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
     [self maybeSetupPlatformViewChannels];
     _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
+    if (profilerEnabled) {
+      [self startProfiler:threadLabel];
+    }
   }
 
   return _shell != nullptr;
@@ -652,9 +677,12 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
   NSParameterAssert(channel);
-  NSAssert(_shell && _shell->IsSetup(),
-           @"Setting a message handler before the FlutterEngine has been run.");
-  self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String, handler);
+  if (_shell && _shell->IsSetup()) {
+    self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String, handler);
+  } else {
+    NSAssert(!handler, @"Setting a message handler before the FlutterEngine has been run.");
+    // Setting a handler to nil for a not setup channel is a noop.
+  }
 }
 
 #pragma mark - FlutterTextureRegistry

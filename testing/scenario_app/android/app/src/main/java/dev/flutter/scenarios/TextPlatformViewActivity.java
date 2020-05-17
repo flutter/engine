@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package dev.flutter.scenarios;
 
 import android.Manifest;
@@ -8,21 +12,25 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.Choreographer;
 import androidx.annotation.NonNull;
 import io.flutter.Log;
-import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.BinaryCodec;
+import io.flutter.plugin.common.JSONMethodCodec;
+import io.flutter.plugin.common.MethodChannel;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TextPlatformViewActivity extends FlutterActivity {
+public class TextPlatformViewActivity extends TestableFlutterActivity {
   static final String TAG = "Scenarios";
 
   @Override
@@ -58,7 +66,6 @@ public class TextPlatformViewActivity extends FlutterActivity {
     args.add(FlutterShellArgs.ARG_TRACE_STARTUP);
     args.add(FlutterShellArgs.ARG_ENABLE_DART_PROFILING);
     args.add(FlutterShellArgs.ARG_VERBOSE_LOGGING);
-
     return args;
   }
 
@@ -68,6 +75,36 @@ public class TextPlatformViewActivity extends FlutterActivity {
         .getPlatformViewsController()
         .getRegistry()
         .registerViewFactory("scenarios/textPlatformView", new TextPlatformViewFactory());
+  }
+
+  @Override
+  public void onFlutterUiDisplayed() {
+    final Intent launchIntent = getIntent();
+    if (!launchIntent.hasExtra("scenario")) {
+      return;
+    }
+    MethodChannel channel =
+        new MethodChannel(getFlutterEngine().getDartExecutor(), "driver", JSONMethodCodec.INSTANCE);
+    Map<String, Object> test = new HashMap<>(2);
+    test.put("name", launchIntent.getStringExtra("scenario"));
+    test.put("use_android_view", launchIntent.getBooleanExtra("use_android_view", false));
+    channel.invokeMethod("set_scenario", test);
+
+    notifyFlutterRenderedAfterVsync();
+  }
+
+  private void notifyFlutterRenderedAfterVsync() {
+    // Wait 1s after the next frame, so the Android texture are rendered.
+    Choreographer.getInstance()
+        .postFrameCallbackDelayed(
+            new Choreographer.FrameCallback() {
+              @Override
+              public void doFrame(long frameTimeNanos) {
+                reportFullyDrawn();
+                notifyFlutterRendered();
+              }
+            },
+            1000L);
   }
 
   private void writeTimelineData(Uri logFile) {

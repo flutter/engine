@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/runtime/start_up.h"
+import 'package:e2e/e2e_driver.dart' as e2e;
 
-namespace flutter {
-
-int64_t engine_main_enter_ts = 0;
-
-}  // namespace flutter
+Future<void> main() async => e2e.main();

@@ -89,6 +89,8 @@ enum AppLifecycleState {
 /// [Window.padding]. View insets and padding are preferably read via
 /// [MediaQuery.of].
 ///
+/// For the engine implementation of this class see the [engine.WindowPadding].
+///
 /// For a generic class that represents distances around a rectangle, see the
 /// [EdgeInsets] class.
 ///
@@ -99,8 +101,12 @@ enum AppLifecycleState {
 ///  * [MediaQuery.of], for the preferred mechanism for accessing these values.
 ///  * [Scaffold], which automatically applies the padding in material design
 ///    applications.
-class WindowPadding {
-  const WindowPadding._({this.left, this.top, this.right, this.bottom});
+abstract class WindowPadding {
+  const factory WindowPadding._(
+      {double left,
+      double top,
+      double right,
+      double bottom}) = engine.WindowPadding;
 
   /// The distance from the left edge to the first unpadded pixel, in physical
   /// pixels.
@@ -662,8 +668,6 @@ abstract class Window {
   VoidCallback get onMetricsChanged;
   set onMetricsChanged(VoidCallback callback);
 
-  static const _enUS = const Locale('en', 'US');
-
   /// The system-reported default locale of the device.
   ///
   /// This establishes the language and formatting conventions that application
@@ -674,12 +678,7 @@ abstract class Window {
   ///
   /// This is equivalent to `locales.first` and will provide an empty non-null locale
   /// if the [locales] list has not been set or is empty.
-  Locale get locale {
-    if (_locales != null && _locales.isNotEmpty) {
-      return _locales.first;
-    }
-    return null;
-  }
+  Locale get locale;
 
   /// The full system-reported supported locales of the device.
   ///
@@ -695,23 +694,19 @@ abstract class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<Locale> get locales => _locales;
-  // TODO(flutter_web): Get the real locale from the browser.
-  List<Locale> _locales = const [_enUS];
+  List<Locale> get locales;
 
   /// The locale that the platform's native locale resolution system resolves to.
   ///
   /// This value may differ between platforms and is meant to allow flutter locale
-  /// resoltion algorithms to into resolving consistently with other apps on the
+  /// resolution algorithms to into resolving consistently with other apps on the
   /// device.
   ///
   /// This value may be used in a custom [localeListResolutionCallback] or used directly
   /// in order to arrive at the most appropriate locale for the app.
   ///
   /// See [locales], which is the list of locales the user/device prefers.
-  Locale get platformResolvedLocale => _platformResolvedLocale;
-  // TODO(flutter_web): Compute the browser locale resolution and set it here.
-  Locale _platformResolvedLocale;
+  Locale get platformResolvedLocale;
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -840,7 +835,7 @@ abstract class Window {
   ///  * [Navigator], a widget that handles routing.
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
-  String get defaultRouteName;
+  String/*!*/ get defaultRouteName;
 
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.
@@ -901,7 +896,7 @@ abstract class Window {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) {
+  void updateSemantics(SemanticsUpdate/*!*/ update) {
     engine.EngineSemanticsOwner.instance.updateSemantics(update);
   }
 
@@ -915,9 +910,9 @@ abstract class Window {
   /// The framework invokes [callback] in the same zone in which this method
   /// was called.
   void sendPlatformMessage(
-    String name,
-    ByteData data,
-    PlatformMessageResponseCallback callback,
+    String/*!*/ name,
+    ByteData/*?*/ data,
+    PlatformMessageResponseCallback/*?*/ callback,
   );
 
   /// Additional accessibility features that may be enabled by the platform.
@@ -948,15 +943,15 @@ abstract class Window {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  void render(Scene scene);
+  void render(Scene/*!*/ scene);
 
   String get initialLifecycleState => _initialLifecycleState;
 
   String _initialLifecycleState;
 
-  void setIsolateDebugName(String name) {}
+  void setIsolateDebugName(String/*!*/ name) {}
 
-  ByteData getPersistentIsolateData() => null;
+  ByteData/*?*/ getPersistentIsolateData() => null;
 }
 
 VoidCallback webOnlyScheduleFrameCallback;
@@ -1062,11 +1057,12 @@ enum Brightness {
 // Unimplemented classes.
 // TODO(flutter_web): see https://github.com/flutter/flutter/issues/33614.
 class CallbackHandle {
-  CallbackHandle.fromRawHandle(this._handle);
+  CallbackHandle.fromRawHandle(this._handle)
+    : assert(_handle != null, "'_handle' must not be null.");
 
-  final int _handle;
+  final int/*!*/ _handle;
 
-  int toRawHandle() => _handle;
+  int/*!*/ toRawHandle() => _handle;
 
   @override
   bool operator ==(Object other) => identical(this, other);
@@ -1077,11 +1073,15 @@ class CallbackHandle {
 
 // TODO(flutter_web): see https://github.com/flutter/flutter/issues/33615.
 class PluginUtilities {
-  static CallbackHandle getCallbackHandle(Function callback) {
+  // This class is only a namespace, and should not be instantiated or
+  // extended directly.
+  factory PluginUtilities._() => throw UnsupportedError('Namespace');
+
+  static CallbackHandle/*?*/ getCallbackHandle(Function callback) {
     throw UnimplementedError();
   }
 
-  static Function getCallbackFromHandle(CallbackHandle handle) {
+  static Function/*?*/ getCallbackFromHandle(CallbackHandle handle) {
     throw UnimplementedError();
   }
 }
@@ -1093,18 +1093,22 @@ class ImageShader implements Shader {
 
 // TODO(flutter_web): probably dont implement this one.
 class IsolateNameServer {
+  // This class is only a namespace, and should not be instantiated or
+  // extended directly.
+  factory IsolateNameServer._() => throw UnsupportedError('Namespace');
+
   static dynamic lookupPortByName(String name) {
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
 
-  static bool registerPortWithName(dynamic port, String name) {
+  static bool/*!*/ registerPortWithName(dynamic port, String name) {
     assert(port != null, "'port' cannot be null.");
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
 
-  static bool removePortNameMapping(String name) {
+  static bool/*!*/ removePortNameMapping(String name) {
     assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }

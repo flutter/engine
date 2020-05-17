@@ -20,7 +20,6 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/runtime/start_up.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
@@ -175,12 +174,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   return shell;
 }
 
-static void RecordStartupTimestamp() {
-  if (engine_main_enter_ts == 0) {
-    engine_main_enter_ts = Dart_TimelineGetMicros();
-  }
-}
-
 static void Tokenize(const std::string& input,
                      std::vector<std::string>* results,
                      char delimiter) {
@@ -197,7 +190,7 @@ static void Tokenize(const std::string& input,
 // TODO(chinmaygarde): The unfortunate side effect of this call is that settings
 // that cause shell initialization failures will still lead to some of their
 // settings being applied.
-static void PerformInitializationTasks(const Settings& settings) {
+static void PerformInitializationTasks(Settings& settings) {
   {
     fml::LogSettings log_settings;
     log_settings.min_log_level =
@@ -207,7 +200,10 @@ static void PerformInitializationTasks(const Settings& settings) {
 
   static std::once_flag gShellSettingsInitialization = {};
   std::call_once(gShellSettingsInitialization, [&settings] {
-    RecordStartupTimestamp();
+    if (settings.engine_start_timestamp.count() == 0) {
+      settings.engine_start_timestamp =
+          std::chrono::microseconds(Dart_TimelineGetMicros());
+    }
 
     tonic::SetLogHandler(
         [](const char* message) { FML_LOG(ERROR) << message; });
@@ -956,8 +952,19 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
+void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+                           fml::TimePoint frame_target_time) {
   FML_DCHECK(is_setup_);
+
+  // record the target time for use by rasterizer.
+  {
+    std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+    if (!latest_frame_target_time_) {
+      latest_frame_target_time_ = frame_target_time;
+    } else if (latest_frame_target_time_ < frame_target_time) {
+      latest_frame_target_time_ = frame_target_time;
+    }
+  }
 
   task_runners_.GetRasterTaskRunner()->PostTask(
       [&waiting_for_first_frame = waiting_for_first_frame_,
