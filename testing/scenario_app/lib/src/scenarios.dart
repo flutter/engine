@@ -6,7 +6,7 @@
 import 'dart:ui';
 
 import 'animated_color_square.dart';
-import 'src/locale_initialization.dart';
+import 'locale_initialization.dart';
 import 'platform_view.dart';
 import 'poppable_screen.dart';
 import 'scenario.dart';
