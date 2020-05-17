@@ -6,9 +6,9 @@
 
 import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
-import 'package:web_driver_installer/chrome_driver_installer.dart';
 
 import 'chrome_installer.dart';
+import 'driver_manager.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 import 'common.dart';
@@ -17,46 +17,22 @@ import 'utils.dart';
 class IntegrationTestsManager {
   final String _browser;
 
-  /// Installation directory for browser's driver.
-  ///
-  /// Always re-install since driver can change frequently.
-  /// It usually changes with each the browser version changes.
-  /// A better solution would be installing the browser and the driver at the
-  /// same time.
-  // TODO(nurhan): https://github.com/flutter/flutter/issues/53179. Partly
-  // solved. Remaining local integration tests using the locked Chrome version.
-  final io.Directory _browserDriverDir;
-
-  /// This is the parent directory for all drivers.
-  ///
-  /// This directory is saved to [temporaryDirectories] and deleted before
-  /// tests shutdown.
-  final io.Directory _drivers;
-
   final bool _useSystemFlutter;
 
+  final DriverManager _driverManager;
+
   IntegrationTestsManager(this._browser, this._useSystemFlutter)
-      : this._browserDriverDir = io.Directory(pathlib.join(
-            environment.webUiDartToolDir.path,
-            'drivers',
-            _browser,
-            '${_browser}driver-${io.Platform.operatingSystem.toString()}')),
-        this._drivers = io.Directory(
-            pathlib.join(environment.webUiDartToolDir.path, 'drivers'));
+      : _driverManager = _browser == 'chrome'
+            ? ChromeDriverManager(_browser)
+            : throw StateError('unsupported configuration');
 
   Future<bool> runTests() async {
-    if (_browser != 'chrome') {
-      print('WARNING: integration tests are only supported on chrome for now');
+    if (_browser != 'chrome' && _browser != 'safari' && io.Platform.isMacOS) {
+      print('WARNING: integration tests are only supported on Chrome or '
+          ' on Safari(running on MacOS) for now');
       return false;
     } else {
-      if (!isLuci) {
-        // LUCI installs driver from CIPD, so we skip installing it on LUCI.
-        await _prepareDriver();
-      } else {
-        _verifyDriverForLUCI();
-      }
-      await _startDriver(_browserDriverDir.path);
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/52987
+      await _driverManager.prepareDriver();
       return await _runTests();
     }
   }
@@ -99,44 +75,6 @@ class IntegrationTestsManager {
   Future<void> _enableWeb(String workingDirectory) async {
     await runFlutter(workingDirectory, <String>['config', '--enable-web'],
         useSystemFlutter: _useSystemFlutter);
-  }
-
-  /// Driver should already exist on LUCI as a CIPD package.
-  ///
-  /// Throw an error if directory does not exists.
-  void _verifyDriverForLUCI() {
-    if (!_browserDriverDir.existsSync()) {
-      throw StateError('Failed to locate Chrome driver on LUCI on path:'
-          '${_browserDriverDir.path}');
-    }
-  }
-
-  Future<void> _startDriver(String workingDirectory) async {
-    await startProcess('./chromedriver/chromedriver', ['--port=4444'],
-        workingDirectory: workingDirectory);
-    print('INFO: Driver started');
-  }
-
-  Future<void> _prepareDriver() async {
-    if (_browserDriverDir.existsSync()) {
-      _browserDriverDir.deleteSync(recursive: true);
-    }
-
-    _browserDriverDir.createSync(recursive: true);
-    temporaryDirectories.add(_drivers);
-
-    io.Directory temp = io.Directory.current;
-    io.Directory.current = _browserDriverDir;
-
-    // TODO(nurhan): https://github.com/flutter/flutter/issues/53179
-    final String chromeDriverVersion = await queryChromeDriverVersion();
-    ChromeDriverInstaller chromeDriverInstaller =
-        ChromeDriverInstaller.withVersion(chromeDriverVersion);
-    // TODO(yjbanov): remove this dynamic hack when chromeDriverInstaller.install returns Future<void>
-    //                https://github.com/flutter/flutter/issues/59376
-    final dynamic installationFuture = chromeDriverInstaller.install(alwaysInstall: true) as dynamic;
-    await installationFuture;
-    io.Directory.current = temp;
   }
 
   /// Runs all the web tests under e2e_tests/web.
@@ -386,5 +324,10 @@ const Map<String, List<String>> blockedTestsListsMap = <String, List<String>>{
   'chrome-macos': [
     'target_platform_ios_e2e.dart',
     'target_platform_android_e2e.dart',
+  ],
+  'safari-macos': [
+    'target_platform_ios_e2e.dart',
+    'target_platform_android_e2e.dart',
+    'image_loading_e2e.dart',
   ],
 };
