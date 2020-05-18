@@ -7,9 +7,9 @@ import 'dart:ui';
 
 import 'scenario.dart';
 
-/// A scenario that sends back messages when touches are received.
+/// Sends the recieved locale data back as semantics information.
 class LocaleInitialization extends Scenario {
-  /// Constructor for `SendTextFocusScemantics`.
+  /// Constructor
   LocaleInitialization(Window window)
       : assert(window != null),
         super(window);
@@ -35,8 +35,9 @@ class LocaleInitialization extends Scenario {
     window.render(scene);
     scene.dispose();
 
-    // On the first frame, also pretend that it drew a text field. Send the
-    // corresponding semantics tree comprised of 1 node for the text field.
+    // On the first frame, pretend that it drew a text field. Send the
+    // corresponding semantics tree comprised of 1 node with the locale data
+    // as the label.
     window.updateSemantics((SemanticsUpdateBuilder()
       ..updateNode(
         id: 0,
@@ -54,7 +55,6 @@ class LocaleInitialization extends Scenario {
         currentValueLength: 0,
         scrollChildren: 0,
         scrollIndex: 0,
-        // transform: Matrix4.identity().storage,
         elevation: 0.0,
         thickness: 0.0,
         childrenInTraversalOrder: Int32List(0),
