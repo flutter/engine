@@ -6,12 +6,16 @@ import 'dart:io' as io;
 
 import 'package:path/path.dart' as pathlib;
 import 'package:web_driver_installer/chrome_driver_installer.dart';
+import 'package:web_driver_installer/safari_driver_runner.dart';
 
 import 'chrome_installer.dart';
 import 'common.dart';
 import 'environment.dart';
 import 'utils.dart';
 
+/// [DriverManager] implementation for Chrome.
+///
+/// This manager can be used for both MacOS and Linux.
 class ChromeDriverManager extends DriverManager {
   ChromeDriverManager(String browser) : super(browser);
 
@@ -51,16 +55,35 @@ class ChromeDriverManager extends DriverManager {
   }
 }
 
-// class SafariDriverManager extends DriverManager {
-//   SafariDriverManager(String browser) : super(browser);
+/// [DriverManager] implementation for Safari.
+///
+/// This manager is will only be created/used for MacOS.
+class SafariDriverManager extends DriverManager {
+  SafariDriverManager(String browser) : super(browser);
 
-//   Future<void> _installDriver() {}
+  Future<void> _installDriver() {
+    // No-op.
+    // macOS comes with Safari Driver installed.
+    return new Future<void>.value();
+  }
 
-//   Future<void> _verifyDriverForLUCI() {}
+  void _verifyDriverForLUCI() {
+    // No-op.
+    // macOS comes with Safari Driver installed.
+  }
 
-//   Future<void> _startDriver(String driverPath) {}
-// }
+  Future<void> _startDriver(String driverPath) async {
+    final SafariDriverRunner safariDriverRunner = SafariDriverRunner();
 
+    final io.Process process =
+        await safariDriverRunner.runDriver(version: 'system');
+
+    processesToCleanUp.add(process);
+  }
+}
+
+/// Interface for preparing the browser driver before running the integration
+/// tests.
 abstract class DriverManager {
   /// Installation directory for browser's driver.
   ///
@@ -78,14 +101,12 @@ abstract class DriverManager {
   /// tests shutdown.
   final io.Directory _drivers;
 
-  final String _browser;
-
-  DriverManager(this._browser)
+  DriverManager(String browser)
       : this._browserDriverDir = io.Directory(pathlib.join(
             environment.webUiDartToolDir.path,
             'drivers',
-            _browser,
-            '${_browser}driver-${io.Platform.operatingSystem.toString()}')),
+            browser,
+            '${browser}driver-${io.Platform.operatingSystem.toString()}')),
         this._drivers = io.Directory(
             pathlib.join(environment.webUiDartToolDir.path, 'drivers'));
 

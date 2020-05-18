@@ -14,6 +14,9 @@ import 'exceptions.dart';
 import 'common.dart';
 import 'utils.dart';
 
+const String unsupportedConfigurationWarning = 'WARNING: integration '
+    'tests are only supported on Chrome or on Safari(running on MacOS)';
+
 class IntegrationTestsManager {
   final String _browser;
 
@@ -24,12 +27,13 @@ class IntegrationTestsManager {
   IntegrationTestsManager(this._browser, this._useSystemFlutter)
       : _driverManager = _browser == 'chrome'
             ? ChromeDriverManager(_browser)
-            : throw StateError('unsupported configuration');
+            : (_browser == 'safari' && io.Platform.isMacOS)
+                ? SafariDriverManager(_browser)
+                : throw StateError(unsupportedConfigurationWarning);
 
   Future<bool> runTests() async {
     if (_browser != 'chrome' && _browser != 'safari' && io.Platform.isMacOS) {
-      print('WARNING: integration tests are only supported on Chrome or '
-          ' on Safari(running on MacOS) for now');
+      print(unsupportedConfigurationWarning);
       return false;
     } else {
       await _driverManager.prepareDriver();
@@ -162,34 +166,19 @@ class IntegrationTestsManager {
       io.Directory directory, String testName) async {
     final String executable =
         _useSystemFlutter ? 'flutter' : environment.flutterCommand.path;
+    final IntegrationArguments arguments =
+        IntegrationArguments.fromBrowser(_browser);
     final int exitCode = await runProcess(
       executable,
-      <String>[
-        'drive',
-        '--target=test_driver/${testName}',
-        '-d',
-        'web-server',
-        '--profile',
-        '--browser-name=$_browser',
-        if (isLuci) '--chrome-binary=${preinstalledChromeExecutable()}',
-        if (isLuci) '--headless',
-        '--local-engine=host_debug_unopt',
-      ],
+      arguments.getTestArguments(testName, 'profile'),
       workingDirectory: directory.path,
     );
 
     if (exitCode != 0) {
-      String statementToRun = 'flutter drive '
-          '--target=test_driver/${testName} -d web-server --profile '
-          '--browser-name=$_browser --local-engine=host_debug_unopt';
-      if (isLuci) {
-        statementToRun = '$statementToRun --chrome-binary='
-            '${preinstalledChromeExecutable()}';
-      }
-      io.stderr
-          .writeln('ERROR: Failed to run test. Exited with exit code $exitCode'
-              '. Statement to run $testName locally use the following '
-              'command:\n\n$statementToRun');
+      io.stderr.writeln(
+          'ERROR: Failed to run test. Exited with exit code $exitCode'
+          '. Statement to run $testName locally use the following '
+          'command:\n\n${arguments.getStatementToRun(testName, 'profile')}');
       return false;
     } else {
       return true;
@@ -299,7 +288,78 @@ class IntegrationTestsManager {
   }
 }
 
-/// Prepares a key for the [blockedTests] map.
+/// Interface for collecting arguments to give `flutter drive` to run the
+/// integration tests.
+abstract class IntegrationArguments {
+  IntegrationArguments();
+
+  factory IntegrationArguments.fromBrowser(String browser) {
+    if (browser == 'chrome') {
+      return ChromeIntegrationArguments();
+    } else if (browser == 'safari' && io.Platform.isMacOS) {
+      return SafariIntegrationArguments();
+    } else {
+      throw StateError(unsupportedConfigurationWarning);
+    }
+  }
+
+  List<String> getTestArguments(String testName, String mode);
+
+  String getStatementToRun(String testName, String mode);
+}
+
+/// Arguments to give `flutter drive` to run the integration tests on Chrome.
+class ChromeIntegrationArguments extends IntegrationArguments {
+  List<String> getTestArguments(String testName, String mode) {
+    return <String>[
+      'drive',
+      '--target=test_driver/${testName}',
+      '-d',
+      'web-server',
+      '--$mode',
+      '--browser-name=chrome',
+      if (isLuci) '--chrome-binary=${preinstalledChromeExecutable()}',
+      if (isLuci) '--headless',
+      '--local-engine=host_debug_unopt',
+    ];
+  }
+
+  String getStatementToRun(String testName, String mode) {
+    String statementToRun = 'flutter drive '
+        '--target=test_driver/${testName} -d web-server --profile '
+        '--browser-name=chrome --local-engine=host_debug_unopt';
+    if (isLuci) {
+      statementToRun = '$statementToRun --chrome-binary='
+          '${preinstalledChromeExecutable()}';
+    }
+    return statementToRun;
+  }
+}
+
+/// Arguments to give `flutter drive` to run the integration tests on Safari.
+class SafariIntegrationArguments extends IntegrationArguments {
+  SafariIntegrationArguments();
+
+  List<String> getTestArguments(String testName, String mode) {
+    return <String>[
+      'drive',
+      '--target=test_driver/${testName}',
+      '-d',
+      'web-server',
+      '--$mode',
+      '--browser-name=safari',
+      '--local-engine=host_debug_unopt',
+    ];
+  }
+
+  String getStatementToRun(String testName, String mode) {
+    return 'flutter drive '
+        '--target=test_driver/${testName} -d web-server --$mode '
+        '--browser-name=safari --local-engine=host_debug_unopt';
+  }
+}
+
+/// Prepares a key for the [blackList] map.
 ///
 /// Uses the browser name and the operating system name.
 String getBlockedTestsListMapKey(String browser) =>
