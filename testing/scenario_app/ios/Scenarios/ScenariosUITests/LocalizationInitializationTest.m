@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <Flutter/Flutter.h>
-#import <XCTest/XCTest.h>
-#import "AppDelegate.h"
+#import "LocalizationInitialization.h"
+
+FLUTTER_ASSERT_ARC
 
 @interface XCUIElement (ftr_waitForNonExistence)
 /// Keeps waiting until the element doesn't exist.  Returns NO if the timeout is
@@ -34,10 +34,6 @@
 
 @end
 
-@interface LocalizationInitializationTest : XCTestCase
-@property(nonatomic, strong) XCUIApplication* application;
-@end
-
 @implementation LocalizationInitializationTest
 
 - (void)setUp {
@@ -57,6 +53,7 @@
   XCUIElement* textInputSemanticsObject =
       [[[self.application textFields] matchingIdentifier:@"[en_US]"] element];
   XCTAssertTrue([textInputSemanticsObject waitForExistenceWithTimeout:timeout]);
+  XCTAssertTrue(false);
 }
 
 @end
