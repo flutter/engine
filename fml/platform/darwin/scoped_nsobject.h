@@ -46,21 +46,7 @@ class scoped_nsprotocol_arc_memory_management {
 };
 
 template <typename NST>
-class scoped_nsprotocol_mrc_memory_management {
- public:
-  static NST Retain(NST object) { return [object retain]; }
-  static NST Autorelease(NST object) { return [object autorelease]; }
-  static void Release(NST object) { [object release]; }
-  static NST InvalidValue() { return nil; }
-};
-
-#if __has_feature(objc_arc)
-template <typename NST>
 using scoped_nsprotocol_memory_management = scoped_nsprotocol_arc_memory_management;
-#else
-template <typename NST>
-using scoped_nsprotocol_memory_management = scoped_nsprotocol_mrc_memory_management<NST>;
-#endif
 
 template <typename NST>
 class scoped_nsprotocol {
