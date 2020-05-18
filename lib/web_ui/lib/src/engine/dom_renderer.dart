@@ -27,8 +27,15 @@ class DomRenderer {
   static const int vibrateHeavyImpact = 30;
   static const int vibrateSelectionClick = 10;
 
+  /// Fires when browser language preferences change.
+  static const html.EventStreamProvider<html.Event> languageChangeEvent =
+      const html.EventStreamProvider<html.Event>('languagechange');
+
   /// Listens to window resize events.
   StreamSubscription<html.Event> _resizeSubscription;
+
+  /// Listens to window locale events.
+  StreamSubscription<html.Event> _localeSubscription;
 
   /// Contains Flutter-specific CSS rules, such as default margins and
   /// paddings.
@@ -85,6 +92,7 @@ class DomRenderer {
 
     registerHotRestartListener(() {
       _resizeSubscription?.cancel();
+      _localeSubscription?.cancel();
       _staleHotRestartState.addAll(<html.Element>[
         _glassPaneElement,
         _styleElement,
@@ -462,6 +470,9 @@ flt-glass-pane * {
     } else {
       _resizeSubscription = html.window.onResize.listen(_metricsDidChange);
     }
+    _localeSubscription = languageChangeEvent.forTarget(html.window)
+      .listen(_languageDidChange);
+    window._updateLocales();
   }
 
   /// Called immediately after browser window metrics change.
@@ -482,6 +493,14 @@ flt-glass-pane * {
       // When physical size changes this value has to be recalculated.
       window.computeOnScreenKeyboardInsets();
       window.invokeOnMetricsChanged();
+    }
+  }
+
+  /// Called immediately after browser window language change.
+  void _languageDidChange(html.Event event) {
+    window._updateLocales();
+    if (ui.window.onLocaleChanged != null) {
+      ui.window.onLocaleChanged();
     }
   }
 
@@ -513,6 +532,74 @@ flt-glass-pane * {
       context.scale(radiusX, radiusY);
       context.arc(0, 0, 1, startAngle, endAngle, antiClockwise);
       context.restore();
+    }
+  }
+
+  static const String orientationLockTypeAny = 'any';
+  static const String orientationLockTypeNatural = 'natural';
+  static const String orientationLockTypeLandscape = 'landscape';
+  static const String orientationLockTypePortrait = 'portrait';
+  static const String orientationLockTypePortraitPrimary = 'portrait-primary';
+  static const String orientationLockTypePortraitSecondary = 'portrait-secondary';
+  static const String orientationLockTypeLandscapePrimary = 'landscape-primary';
+  static const String orientationLockTypeLandscapeSecondary = 'landscape-secondary';
+
+  /// Sets preferred screen orientation.
+  ///
+  /// Specifies the set of orientations the application interface can be
+  /// displayed in.
+  ///
+  /// The [orientations] argument is a list of DeviceOrientation values.
+  /// The empty list uses Screen unlock api and causes the application to
+  /// defer to the operating system default.
+  ///
+  /// See w3c screen api: https://www.w3.org/TR/screen-orientation/
+  Future<bool> setPreferredOrientation(List<dynamic> orientations) {
+    final html.Screen screen = html.window.screen;
+    if (screen != null) {
+      final html.ScreenOrientation screenOrientation =
+          screen.orientation;
+      if (screenOrientation != null) {
+        if (orientations.isEmpty) {
+          screenOrientation.unlock();
+          return Future.value(true);
+        } else {
+          String lockType = _deviceOrientationToLockType(orientations.first);
+          if (lockType != null) {
+            final Completer<bool> completer = Completer<bool>();
+            try {
+              screenOrientation.lock(lockType).then((dynamic _) {
+                completer.complete(true);
+              }).catchError((dynamic error) {
+                // On Chrome desktop an error with 'not supported on this device
+                // error' is fired.
+                completer.complete(false);
+              });
+            } catch (_) {
+              return Future.value(false);
+            }
+            return completer.future;
+          }
+        }
+      }
+    }
+    // API is not supported on this browser return false.
+    return Future.value(false);
+  }
+
+  // Converts device orientation to w3c OrientationLockType enum.
+  static String _deviceOrientationToLockType(String deviceOrientation) {
+    switch(deviceOrientation) {
+      case 'DeviceOrientation.portraitUp':
+        return orientationLockTypePortraitPrimary;
+      case 'DeviceOrientation.landscapeLeft':
+        return orientationLockTypePortraitSecondary;
+      case 'DeviceOrientation.portraitDown':
+        return orientationLockTypeLandscapePrimary;
+      case 'DeviceOrientation.landscapeRight':
+        return orientationLockTypeLandscapeSecondary;
+      default:
+        return null;
     }
   }
 

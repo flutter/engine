@@ -668,8 +668,6 @@ abstract class Window {
   VoidCallback get onMetricsChanged;
   set onMetricsChanged(VoidCallback callback);
 
-  static const _enUS = const Locale('en', 'US');
-
   /// The system-reported default locale of the device.
   ///
   /// This establishes the language and formatting conventions that application
@@ -680,12 +678,7 @@ abstract class Window {
   ///
   /// This is equivalent to `locales.first` and will provide an empty non-null locale
   /// if the [locales] list has not been set or is empty.
-  Locale get locale {
-    if (_locales != null && _locales.isNotEmpty) {
-      return _locales.first;
-    }
-    return null;
-  }
+  Locale get locale;
 
   /// The full system-reported supported locales of the device.
   ///
@@ -701,23 +694,19 @@ abstract class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<Locale> get locales => _locales;
-  // TODO(flutter_web): Get the real locale from the browser.
-  List<Locale> _locales = const [_enUS];
+  List<Locale> get locales;
 
   /// The locale that the platform's native locale resolution system resolves to.
   ///
   /// This value may differ between platforms and is meant to allow flutter locale
-  /// resoltion algorithms to into resolving consistently with other apps on the
+  /// resolution algorithms to into resolving consistently with other apps on the
   /// device.
   ///
   /// This value may be used in a custom [localeListResolutionCallback] or used directly
   /// in order to arrive at the most appropriate locale for the app.
   ///
   /// See [locales], which is the list of locales the user/device prefers.
-  Locale get platformResolvedLocale => _platformResolvedLocale;
-  // TODO(flutter_web): Compute the browser locale resolution and set it here.
-  Locale _platformResolvedLocale;
+  Locale get platformResolvedLocale;
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -846,7 +835,7 @@ abstract class Window {
   ///  * [Navigator], a widget that handles routing.
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
-  String get defaultRouteName;
+  String/*!*/ get defaultRouteName;
 
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.
@@ -907,7 +896,7 @@ abstract class Window {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) {
+  void updateSemantics(SemanticsUpdate/*!*/ update) {
     engine.EngineSemanticsOwner.instance.updateSemantics(update);
   }
 
@@ -921,9 +910,9 @@ abstract class Window {
   /// The framework invokes [callback] in the same zone in which this method
   /// was called.
   void sendPlatformMessage(
-    String name,
-    ByteData data,
-    PlatformMessageResponseCallback callback,
+    String/*!*/ name,
+    ByteData/*?*/ data,
+    PlatformMessageResponseCallback/*?*/ callback,
   );
 
   /// Additional accessibility features that may be enabled by the platform.
@@ -954,15 +943,15 @@ abstract class Window {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  void render(Scene scene);
+  void render(Scene/*!*/ scene);
 
   String get initialLifecycleState => _initialLifecycleState;
 
   String _initialLifecycleState;
 
-  void setIsolateDebugName(String name) {}
+  void setIsolateDebugName(String/*!*/ name) {}
 
-  ByteData getPersistentIsolateData() => null;
+  ByteData/*?*/ getPersistentIsolateData() => null;
 }
 
 VoidCallback webOnlyScheduleFrameCallback;
