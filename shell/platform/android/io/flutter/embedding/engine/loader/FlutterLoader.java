@@ -144,6 +144,17 @@ public class FlutterLoader {
 
             System.loadLibrary("flutter");
 
+            // Pre-warm the default font manager as soon as possible on a background thread.
+            // It helps to reduce time cost of engine setup that blocks the platform thread.
+            new Thread(
+                    new Runnable() {
+                      @Override
+                      public void run() {
+                        FlutterJNI.nativeCreateDefaultFontManager();
+                      }
+                    })
+                .start();
+
             if (resourceExtractor != null) {
               resourceExtractor.waitForCompletion();
             }

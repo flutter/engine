@@ -21,6 +21,7 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
 
 namespace flutter {
 
@@ -155,6 +156,10 @@ void FlutterMain::SetupObservatoryUriCallback(JNIEnv* env) {
       });
 }
 
+static void CreateDefaultFontManager(JNIEnv* env, jclass jcaller) {
+  sk_sp<SkFontMgr> font_mgr(SkFontMgr::RefDefault());
+}
+
 bool FlutterMain::Register(JNIEnv* env) {
   static const JNINativeMethod methods[] = {
       {
@@ -162,6 +167,11 @@ bool FlutterMain::Register(JNIEnv* env) {
           .signature = "(Landroid/content/Context;[Ljava/lang/String;Ljava/"
                        "lang/String;Ljava/lang/String;Ljava/lang/String;J)V",
           .fnPtr = reinterpret_cast<void*>(&Init),
+      },
+      {
+          .name = "nativeCreateDefaultFontManager",
+          .signature = "()V",
+          .fnPtr = reinterpret_cast<void*>(&CreateDefaultFontManager),
       },
   };
 
