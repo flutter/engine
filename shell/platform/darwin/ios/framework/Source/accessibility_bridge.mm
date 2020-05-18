@@ -133,10 +133,6 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
   if (root)
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
-
-  for (NSNumber* doomed_uid in doomed_uids) {
-    ((SemanticsObject*)objects_.get()[doomed_uid]).platformViewSemanticsContainer = nil;
-  }
   [objects_ removeObjectsForKeys:doomed_uids];
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
@@ -247,9 +243,6 @@ fml::WeakPtr<AccessibilityBridge> AccessibilityBridge::GetWeakPtr() {
 }
 
 void AccessibilityBridge::clearState() {
-  for (SemanticsObject* object in objects_.get().allValues) {
-    object.platformViewSemanticsContainer = nil;
-  }
   [objects_ removeAllObjects];
   previous_route_id_ = 0;
   previous_routes_.clear();

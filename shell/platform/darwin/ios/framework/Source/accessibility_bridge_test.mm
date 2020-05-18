@@ -19,6 +19,14 @@ static MockPlatformView* gMockPlatformView = nil;
 @end
 @implementation MockPlatformView
 
+- (instancetype)init {
+  self = [super init];
+  if (self) {
+    gMockPlatformView = self;
+  }
+  return self;
+}
+
 - (void)dealloc {
   gMockPlatformView = nil;
   [super dealloc];
@@ -34,9 +42,7 @@ static MockPlatformView* gMockPlatformView = nil;
 
 - (instancetype)init {
   if (self = [super init]) {
-    MockPlatformView* view = [[MockPlatformView new] autorelease];
-    gMockPlatformView = view;
-    self.view = view;
+    _view = [[MockPlatformView alloc] init];
   }
   return self;
 }
@@ -56,8 +62,7 @@ static MockPlatformView* gMockPlatformView = nil;
 - (NSObject<FlutterPlatformView>*)createWithFrame:(CGRect)frame
                                    viewIdentifier:(int64_t)viewId
                                         arguments:(id _Nullable)args {
-  MockFlutterPlatformView* platformView = [[MockFlutterPlatformView new] autorelease];
-  return platformView;
+  return [[[MockFlutterPlatformView alloc] init] autorelease];
 }
 
 @end
@@ -214,8 +219,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                            arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
         result);
 
-    XCTAssertNotNil(gMockPlatformView);
-
     auto bridge = std::make_unique<flutter::AccessibilityBridge>(
         /*view=*/mockFlutterView,
         /*platform_view=*/platform_view.get(),
@@ -229,6 +232,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     nodes[kRootNodeId] = semantics_node;
     flutter::CustomAccessibilityActionUpdates actions;
     bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+    XCTAssertNotNil(gMockPlatformView);
     flutterPlatformViewsController->Reset();
   }
   XCTAssertNil(gMockPlatformView);
