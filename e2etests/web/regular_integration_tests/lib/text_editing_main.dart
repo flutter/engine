@@ -29,6 +29,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String infoText = 'no-enter';
 
+  // Controller with no inital value;
+  final TextEditingController _emptyController = TextEditingController();
+
   final TextEditingController _controller =
       TextEditingController(text: 'Text1');
 
@@ -46,7 +49,18 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
-              'Text Editing Test',
+              'Text Editing Test 1',
+            ),
+            TextFormField(
+              key: const Key('empty-input'),
+              enabled: true,
+              controller: _emptyController,
+              decoration: const InputDecoration(
+                labelText: 'Empty Input Field:',
+              ),
+            ),
+            const Text(
+              'Text Editing Test 2',
             ),
             TextFormField(
               key: const Key('input'),
@@ -57,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             const Text(
-              'Text Editing Test 2',
+              'Text Editing Test 3',
             ),
             TextFormField(
               key: const Key('input2'),

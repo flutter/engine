@@ -42,7 +42,35 @@ void main() {
     expect(input.value, 'New Value');
   });
 
-  testWidgets('Pressing enter on the text field works',
+  testWidgets('Input field with no initial value works',
+      (WidgetTester tester) async {
+    app.main();
+    await tester.pumpAndSettle();
+
+    // TODO(nurhan): https://github.com/flutter/flutter/issues/51885
+    SystemChannels.textInput.setMockMethodCallHandler(null);
+
+    // Focus on a TextFormField.
+    final Finder finder = find.byKey(const Key('empty-input'));
+    expect(finder, findsOneWidget);
+    await tester.tap(find.byKey(const Key('empty-input')));
+
+    // A native input element will be appended to the DOM.
+    final List<Node> nodeList = document.getElementsByTagName('input');
+    expect(nodeList.length, equals(1));
+    final InputElement input =
+        document.getElementsByTagName('input')[0] as InputElement;
+    // The element's value will be empty.
+    expect(input.value, '');
+
+    // Change the value of the TextFormField.
+    final TextFormField textFormField = tester.widget(finder);
+    textFormField.controller.text = 'New Value';
+    // DOM element's value also changes.
+    expect(input.value, 'New Value');
+  });
+
+  testWidgets('Pressing enter on the text field triggers submit',
       (WidgetTester tester) async {
     app.main();
     await tester.pumpAndSettle();
