@@ -433,8 +433,6 @@ class BitmapCanvas extends EngineCanvas {
         !requiresClipping &&
         paint.colorFilter == null) {
       _drawImage(image, dst.topLeft, paint);
-      _childOverdraw = true;
-      _canvasPool.closeCurrentCanvas();
     } else {
       if (requiresClipping) {
         save();
@@ -469,8 +467,8 @@ class BitmapCanvas extends EngineCanvas {
       if (requiresClipping) {
         restore();
       }
-      _closeCurrentCanvas();
     }
+    _closeCurrentCanvas();
   }
 
   void _applyTargetSize(html.HtmlElement imageElement, double targetWidth,
