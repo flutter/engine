@@ -32,11 +32,11 @@ void SamplingProfiler::Start() const {
 void SamplingProfiler::SampleRepeatedly(fml::TimeDelta task_delay) const {
   profiler_task_runner_->PostDelayedTask(
       [profiler = this, task_delay = task_delay, sampler = sampler_]() {
+        // TODO(kaushikiska): consider buffering these every n seconds to
+        // avoid spamming the trace buffer.
         const ProfileSample usage = sampler();
         if (usage.cpu_usage) {
           const auto& cpu_usage = usage.cpu_usage;
-          // TODO(kaushikiska): consider buffering these every n seconds to
-          // avoid spamming the trace buffer.
           std::string total_cpu_usage =
               std::to_string(cpu_usage->total_cpu_usage);
           std::string num_threads = std::to_string(cpu_usage->num_threads);
@@ -45,8 +45,6 @@ void SamplingProfiler::SampleRepeatedly(fml::TimeDelta task_delay) const {
                                "num_threads", num_threads.c_str());
         }
         if (usage.memory_usage) {
-          // TODO(kaushikiska): consider buffering these every n seconds to
-          // avoid spamming the trace buffer.
           std::string dirty_memory_usage =
               std::to_string(usage.memory_usage->dirty_memory_usage);
           std::string owned_share_memory_usage =

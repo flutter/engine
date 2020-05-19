@@ -90,6 +90,11 @@ std::optional<MemoryUsageInfo> ProfilerMetricsIOS::MemoryUsage() {
     return std::nullopt;
   }
 
+  // `phys_footprint` is Apple's recommended way to measure app's memory usage. It provides the
+  // best approximate to xcode memory gauge. According to its source code explanation, the physical
+  // footprint mainly consists of app's internal memory data and IOKit mappings. `resident_size`
+  // is the total physical memory used by the app, so we simply do `resident_size - phys_footprint`
+  // to obtain the shared memory usage.
   const double dirty_memory_usage =
       static_cast<float>(task_memory_info.phys_footprint) / 1024.0 / 1024.0;
   const double owned_share_memory_usage =
