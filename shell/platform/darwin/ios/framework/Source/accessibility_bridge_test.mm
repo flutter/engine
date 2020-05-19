@@ -13,14 +13,14 @@
 
 FLUTTER_ASSERT_NOT_ARC
 @class MockPlatformView;
-MockPlatformView* mockPlatformView = nil;
+static MockPlatformView* gMockPlatformView = nil;
 
 @interface MockPlatformView : UIView
 @end
 @implementation MockPlatformView
 
 - (void)dealloc {
-  mockPlatformView = nil;
+  gMockPlatformView = nil;
   [super dealloc];
 }
 
@@ -35,14 +35,15 @@ MockPlatformView* mockPlatformView = nil;
 - (instancetype)init {
   if (self = [super init]) {
     MockPlatformView* view = [[MockPlatformView new] autorelease];
-    mockPlatformView = view;
+    gMockPlatformView = view;
     self.view = view;
   }
   return self;
 }
 
 - (void)dealloc {
-  self.view = nil;
+  [_view release];
+  _view = nil;
   [super dealloc];
 }
 
@@ -197,8 +198,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     id mockFlutterView = OCMClassMock([FlutterView class]);
     std::string label = "some label";
 
-    flutter::FlutterPlatformViewsController* flutterPlatformViewsController =
-        (flutter::FlutterPlatformViewsController*)(new flutter::FlutterPlatformViewsController());
+    auto flutterPlatformViewsController =
+        std::make_unique<flutter::FlutterPlatformViewsController>();
     flutterPlatformViewsController->SetFlutterView(mockFlutterView);
 
     MockFlutterPlatformFactory* factory = [[MockFlutterPlatformFactory new] autorelease];
@@ -213,10 +214,12 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                            arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
         result);
 
-    __block auto bridge = std::make_unique<flutter::AccessibilityBridge>(
+    XCTAssertNotNil(gMockPlatformView);
+
+    auto bridge = std::make_unique<flutter::AccessibilityBridge>(
         /*view=*/mockFlutterView,
         /*platform_view=*/platform_view.get(),
-        /*platform_views_controller=*/flutterPlatformViewsController);
+        /*platform_views_controller=*/flutterPlatformViewsController.get());
 
     flutter::SemanticsNodeUpdates nodes;
     flutter::SemanticsNode semantics_node;
@@ -227,9 +230,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     flutter::CustomAccessibilityActionUpdates actions;
     bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
     flutterPlatformViewsController->Reset();
-    delete flutterPlatformViewsController;
   }
-  XCTAssertNil(mockPlatformView);
+  XCTAssertNil(gMockPlatformView);
 }
 
 @end
