@@ -409,7 +409,7 @@ class EngineWindow extends ui.Window {
         final Map<dynamic, dynamic> arguments = decoded.arguments;
         switch (decoded.method) {
           case 'activateSystemCursor':
-            MouseCursor.instance.activateSystemCursor(arguments['shapeCode']);
+            MouseCursor.instance.activateSystemCursor(arguments['kind']);
         }
         return;
 
