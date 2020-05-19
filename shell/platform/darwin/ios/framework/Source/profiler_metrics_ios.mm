@@ -82,8 +82,8 @@ std::optional<MemoryUsageInfo> ProfilerMetricsIOS::MemoryUsage() {
   mach_msg_type_number_t task_memory_info_count = TASK_VM_INFO_COUNT;
 
   kernel_return_code =
-      task_info(mach_task_self(), TASK_VM_INFO,
-                reinterpret_cast<task_info_t>(&task_memory_info), &task_memory_info_count);
+      task_info(mach_task_self(), TASK_VM_INFO, reinterpret_cast<task_info_t>(&task_memory_info),
+                &task_memory_info_count);
   if (kernel_return_code != KERN_SUCCESS) {
     FML_LOG(ERROR) << " Error retrieving task memory information: "
                    << mach_error_string(kernel_return_code);
@@ -99,9 +99,9 @@ std::optional<MemoryUsageInfo> ProfilerMetricsIOS::MemoryUsage() {
       static_cast<float>(task_memory_info.phys_footprint) / 1024.0 / 1024.0;
   const double owned_share_memory_usage =
       static_cast<float>(task_memory_info.resident_size) / 1024.0 / 1024.0 - dirty_memory_usage;
-  flutter::MemoryUsageInfo memory_usage_info =
-      {.dirty_memory_usage = dirty_memory_usage,
-       .owned_share_memory_usage = owned_share_memory_usage};
+  flutter::MemoryUsageInfo memory_usage_info = {
+      .dirty_memory_usage = dirty_memory_usage,
+      .owned_share_memory_usage = owned_share_memory_usage};
   return memory_usage_info;
 }
 
