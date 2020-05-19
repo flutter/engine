@@ -5,11 +5,11 @@
 package io.flutter.plugin.common;
 
 import io.flutter.plugin.common.StandardMessageCodec.ExposedByteArrayOutputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * A {@link MethodCodec} using the Flutter standard binary encoding.
