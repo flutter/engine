@@ -10,7 +10,7 @@ part of engine;
 /// [BitmapCanvas] signals allocation of first canvas using allocateCanvas.
 /// When a painting command such as drawImage or drawParagraph requires
 /// multiple canvases for correct compositing, it calls [closeCurrentCanvas]
-/// and adds the canvas(s) to a [_pool] of active canvas(s).
+/// and adds the canvas(s) to [_activeCanvasList].
 ///
 /// To make sure transformations and clips are preserved correctly when a new
 /// canvas is allocated, [_CanvasPool] replays the current stack on the newly
@@ -25,7 +25,7 @@ class _CanvasPool extends _SaveStackTracking {
   ContextStateHandle _contextHandle;
   final int _widthInBitmapPixels, _heightInBitmapPixels;
   // List of canvases that have been allocated and used in this paint cycle.
-  List<html.CanvasElement> _pool;
+  List<html.CanvasElement> _activeCanvasList;
   // List of canvases available to reuse from prior paint cycle.
   List<html.CanvasElement> _reusablePool;
   // Current canvas element or null if marked for lazy allocation.
@@ -33,6 +33,8 @@ class _CanvasPool extends _SaveStackTracking {
 
   html.HtmlElement _rootElement;
   int _saveContextCount = 0;
+  // Number of elements that have been added to flt-canvas.
+  int _activeElementCount = 0;
 
   _CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels);
 
@@ -66,12 +68,13 @@ class _CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       _restoreContextSave();
       _contextHandle.reset();
-      _pool ??= [];
-      _pool.add(_canvas);
+      _activeCanvasList ??= [];
+      _activeCanvasList.add(_canvas);
       _canvas = null;
       _context = null;
       _contextHandle = null;
     }
+    _activeElementCount++;
   }
 
   void allocateCanvas(html.HtmlElement rootElement) {
@@ -83,8 +86,8 @@ class _CanvasPool extends _SaveStackTracking {
     bool reused = false;
     if (_reusablePool != null && _reusablePool.isNotEmpty) {
       _canvas = _reusablePool.removeAt(0);
-      reused = true;
       requiresClearRect = true;
+      reused = true;
     } else {
       // Compute the final CSS canvas size given the actual pixel count we
       // allocated. This is done for the following reasons:
@@ -120,17 +123,8 @@ class _CanvasPool extends _SaveStackTracking {
     if (_rootElement.lastChild != _canvas) {
       _rootElement.append(_canvas);
     }
-    // When the picture has a 90-degree transform and clip in its
-    // ancestor layers, it triggers a bug in Blink and Webkit browsers
-    // that results in canvas obscuring text that should be painted on
-    // top. Setting z-index to any negative value works around the bug.
-    // This workaround only works with the first canvas. If more than
-    // one element have negative z-index, the bug is triggered again.
-    //
-    // Possible Blink bugs that are causing this:
-    // * https://bugs.chromium.org/p/chromium/issues/detail?id=370604
-    // * https://bugs.chromium.org/p/chromium/issues/detail?id=586601
-    if (_rootElement.firstChild == _canvas) {
+
+    if (_activeElementCount == 0) {
       _canvas.style.zIndex = '-1';
     } else if (reused) {
       // If a canvas is the first element we set z-index = -1 to workaround
@@ -138,9 +132,10 @@ class _CanvasPool extends _SaveStackTracking {
       // reset z-index.
       _canvas.style.removeProperty('z-index');
     }
+    ++_activeElementCount;
 
     _context = _canvas.context2D;
-    _contextHandle = ContextStateHandle(_context);
+    _contextHandle = ContextStateHandle(this, _context);
     _initializeViewport(requiresClearRect);
     _replayClipStack();
   }
@@ -250,16 +245,17 @@ class _CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       _restoreContextSave();
       _contextHandle.reset();
-      _pool ??= [];
-      _pool.add(_canvas);
+      _activeCanvasList ??= [];
+      _activeCanvasList.add(_canvas);
       _context = null;
       _contextHandle = null;
     }
-    _reusablePool = _pool;
-    _pool = null;
+    _reusablePool = _activeCanvasList;
+    _activeCanvasList = null;
     _canvas = null;
     _context = null;
     _contextHandle = null;
+    _activeElementCount = 0;
   }
 
   void endOfPaint() {
@@ -505,8 +501,14 @@ class _CanvasPool extends _SaveStackTracking {
   /// 'Runs' the given [path] by applying all of its commands to the canvas.
   void _runPath(html.CanvasRenderingContext2D ctx, SurfacePath path) {
     ctx.beginPath();
-    for (Subpath subpath in path.subpaths) {
-      for (PathCommand command in subpath.commands) {
+    final List<Subpath> subpaths = path.subpaths;
+    final int subpathCount = subpaths.length;
+    for (int subPathIndex = 0; subPathIndex < subpathCount; subPathIndex++) {
+      final Subpath subpath = subpaths[subPathIndex];
+      final List<PathCommand> commands = subpath.commands;
+      final int commandCount = commands.length;
+      for (int c = 0; c < commandCount; c++) {
+        final PathCommand command = commands[c];
         switch (command.type) {
           case PathCommandTypes.bezierCurveTo:
             final BezierCurveTo curve = command;
@@ -591,7 +593,7 @@ class _CanvasPool extends _SaveStackTracking {
 
   void drawPath(ui.Path path, ui.PaintingStyle style) {
     _runPath(context, path);
-    contextHandle.paint(style);
+    contextHandle.paintPath(style, path.fillType);
   }
 
   void drawShadow(ui.Path path, ui.Color color, double elevation,
@@ -622,7 +624,7 @@ class _CanvasPool extends _SaveStackTracking {
         // alpha for the paint the path is painted in addition to the shadow,
         // which is undesirable.
         context.translate(shadow.offset.dx, shadow.offset.dy);
-        context.filter = _maskFilterToCss(
+        context.filter = _maskFilterToCanvasFilter(
             ui.MaskFilter.blur(ui.BlurStyle.normal, shadow.blurWidth));
         context.strokeStyle = '';
         context.fillStyle = solidColor;
@@ -666,19 +668,19 @@ class _CanvasPool extends _SaveStackTracking {
     if (browserEngine == BrowserEngine.webkit && _canvas != null) {
       _canvas.width = _canvas.height = 0;
     }
-    _clearPool();
+    _clearActiveCanvasList();
   }
 
-  void _clearPool() {
-    if (_pool != null) {
-      for (html.CanvasElement c in _pool) {
+  void _clearActiveCanvasList() {
+    if (_activeCanvasList != null) {
+      for (html.CanvasElement c in _activeCanvasList) {
         if (browserEngine == BrowserEngine.webkit) {
           c.width = c.height = 0;
         }
         c.remove();
       }
     }
-    _pool = null;
+    _activeCanvasList = null;
   }
 }
 
@@ -688,8 +690,10 @@ class _CanvasPool extends _SaveStackTracking {
 // to initialize current values.
 //
 class ContextStateHandle {
-  html.CanvasRenderingContext2D context;
-  ContextStateHandle(this.context);
+  final html.CanvasRenderingContext2D context;
+  final _CanvasPool _canvasPool;
+
+  ContextStateHandle(this._canvasPool, this.context);
   ui.BlendMode _currentBlendMode = ui.BlendMode.srcOver;
   ui.StrokeCap _currentStrokeCap = ui.StrokeCap.butt;
   ui.StrokeJoin _currentStrokeJoin = ui.StrokeJoin.miter;
@@ -698,7 +702,6 @@ class ContextStateHandle {
   Object _currentFillStyle;
   Object _currentStrokeStyle;
   double _currentLineWidth = 1.0;
-  String _currentFilter = 'none';
 
   set blendMode(ui.BlendMode blendMode) {
     if (blendMode != _currentBlendMode) {
@@ -745,10 +748,124 @@ class ContextStateHandle {
     }
   }
 
-  set filter(String filter) {
-    if (_currentFilter != filter) {
-      _currentFilter = filter;
-      context.filter = filter;
+  ui.MaskFilter _currentFilter;
+  SurfacePaintData _lastUsedPaint;
+
+  /// The painting state.
+  ///
+  /// Used to validate that the [setUpPaint] and [tearDownPaint] are called in
+  /// a correct sequence.
+  bool _debugIsPaintSetUp = false;
+
+  /// Whether to use WebKit's method of rendering [MaskFilter].
+  ///
+  /// This is used in screenshot tests to test Safari codepaths.
+  static bool debugEmulateWebKitMaskFilter = false;
+
+  bool get _renderMaskFilterForWebkit => browserEngine == BrowserEngine.webkit || debugEmulateWebKitMaskFilter;
+
+  /// Sets paint properties on the current canvas.
+  ///
+  /// [tearDownPaint] must be called after calling this method.
+  void setUpPaint(SurfacePaintData paint) {
+    if (assertionsEnabled) {
+      assert(!_debugIsPaintSetUp);
+      _debugIsPaintSetUp = true;
+    }
+
+    _lastUsedPaint = paint;
+    lineWidth = paint.strokeWidth ?? 1.0;
+    blendMode = paint.blendMode;
+    strokeCap = paint.strokeCap;
+    strokeJoin = paint.strokeJoin;
+
+    if (paint.shader != null) {
+      final EngineGradient engineShader = paint.shader;
+      final Object paintStyle =
+          engineShader.createPaintStyle(_canvasPool.context);
+      fillStyle = paintStyle;
+      strokeStyle = paintStyle;
+    } else if (paint.color != null) {
+      final String colorString = colorToCssString(paint.color);
+      fillStyle = colorString;
+      strokeStyle = colorString;
+    } else {
+      fillStyle = '';
+      strokeStyle = '';
+    }
+
+    final ui.MaskFilter maskFilter = paint?.maskFilter;
+    if (!_renderMaskFilterForWebkit) {
+      if (_currentFilter != maskFilter) {
+        _currentFilter = maskFilter;
+        context.filter = _maskFilterToCanvasFilter(maskFilter);
+      }
+    } else {
+      // WebKit does not support the `filter` property. Instead we apply a
+      // shadow to the shape of the same color as the paint and the same blur
+      // as the mask filter.
+      //
+      // Note that on WebKit the cached value of _currentFilter is not useful.
+      // Instead we destructure it into the shadow properties and cache those.
+      if (maskFilter != null) {
+        context.save();
+        context.shadowBlur = convertSigmaToRadius(maskFilter.webOnlySigma);
+        if (paint?.color != null) {
+          // Shadow color must be fully opaque.
+          context.shadowColor = colorToCssString(paint.color.withAlpha(255));
+        } else {
+          context.shadowColor = colorToCssString(const ui.Color(0xFF000000));
+        }
+
+        // On the web a shadow must always be painted together with the shape
+        // that casts it. In order to paint just the shadow, we offset the shape
+        // by a large enough value that it moved outside the canvas bounds, then
+        // offset the shadow in the opposite direction such that it lands exactly
+        // where the shape is.
+        const double kOutsideTheBoundsOffset = 50000;
+
+        context.translate(-kOutsideTheBoundsOffset, 0);
+
+        // Shadow offset is not affected by the current canvas context transform.
+        // We have to apply the transform ourselves. To do that we transform the
+        // tip of the vector from the shape to the shadow, then we transform the
+        // origin (0, 0). The desired shadow offset is the difference between the
+        // two. In vector notation, this is:
+        //
+        // transformedShadowDelta = M*shadowDelta - M*origin.
+        final Float32List tempVector = Float32List(2);
+        tempVector[0] = kOutsideTheBoundsOffset * window.devicePixelRatio;
+        _canvasPool.currentTransform.transform2(tempVector);
+        double shadowOffsetX = tempVector[0];
+        double shadowOffsetY = tempVector[1];
+
+        tempVector[0] = tempVector[1] = 0;
+        _canvasPool.currentTransform.transform2(tempVector);
+        context.shadowOffsetX = shadowOffsetX - tempVector[0];
+        context.shadowOffsetY = shadowOffsetY - tempVector[1];
+      }
+    }
+  }
+
+  /// Removes paint properties on the current canvas used by the last draw
+  /// command.
+  ///
+  /// Not all properties are cleared. Properties that are set by all paint
+  /// commands prior to painting do not need to be cleared.
+  ///
+  /// Must be called after calling [setUpPaint].
+  void tearDownPaint() {
+    if (assertionsEnabled) {
+      assert(_debugIsPaintSetUp);
+      _debugIsPaintSetUp = false;
+    }
+
+    final ui.MaskFilter maskFilter = _lastUsedPaint?.maskFilter;
+    if (maskFilter != null && _renderMaskFilterForWebkit) {
+      // On Safari (WebKit) we use a translated shadow to emulate
+      // MaskFilter.blur. We use restore to undo the translation and
+      // shadow attributes.
+      context.restore();
     }
   }
 
@@ -760,6 +877,18 @@ class ContextStateHandle {
     }
   }
 
+  void paintPath(ui.PaintingStyle style, ui.PathFillType pathFillType) {
+    if (style == ui.PaintingStyle.stroke) {
+      context.stroke();
+    } else {
+      if (pathFillType == ui.PathFillType.nonZero) {
+        context.fill();
+      } else {
+        context.fill('evenodd');
+      }
+    }
+  }
+
   void reset() {
     context.fillStyle = '';
     // Read back fillStyle/strokeStyle values from context so that input such
@@ -768,8 +897,10 @@ class ContextStateHandle {
     _currentFillStyle = context.fillStyle;
     context.strokeStyle = '';
     _currentStrokeStyle = context.strokeStyle;
-    context.filter = 'none';
-    _currentFilter = 'none';
+    context.shadowBlur = 0;
+    context.shadowColor = 'none';
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 0;
     context.globalCompositeOperation = 'source-over';
     _currentBlendMode = ui.BlendMode.srcOver;
     context.lineWidth = 1.0;
