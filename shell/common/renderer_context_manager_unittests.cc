@@ -15,11 +15,10 @@ namespace flutter {
 namespace testing {
 
 TEST_F(RendererContextTest, StartWithNoContextFlutterMakeCurrent) {
-  auto flutter_context = std::make_unique<TestRendererContext>(0);
-  auto flutter_resource_context = std::make_unique<TestRendererContext>(1);
+  auto flutter_context = std::make_shared<TestRendererContext>(0);
+  auto flutter_resource_context = std::make_shared<TestRendererContext>(1);
 
-  RendererContextManager manager(std::move(flutter_context),
-                                 std::move(flutter_resource_context));
+  RendererContextManager manager(flutter_context, flutter_resource_context);
   // started with current_context as -1
   TestRendererContext::SetCurrentContext(-1);
   ASSERT_EQ(TestRendererContext::GetCurrentContext(), -1);
@@ -33,11 +32,10 @@ TEST_F(RendererContextTest, StartWithNoContextFlutterMakeCurrent) {
 }
 
 TEST_F(RendererContextTest, StartWithNoContextFlutterResourceMakeCurrent) {
-  auto flutter_context = std::make_unique<TestRendererContext>(0);
-  auto flutter_resource_context = std::make_unique<TestRendererContext>(1);
+  auto flutter_context = std::make_shared<TestRendererContext>(0);
+  auto flutter_resource_context = std::make_shared<TestRendererContext>(1);
 
-  RendererContextManager manager(std::move(flutter_context),
-                                 std::move(flutter_resource_context));
+  RendererContextManager manager(flutter_context, flutter_resource_context);
   // started with current_context as -1
   TestRendererContext::SetCurrentContext(-1);
   ASSERT_EQ(TestRendererContext::GetCurrentContext(), -1);
@@ -51,14 +49,13 @@ TEST_F(RendererContextTest, StartWithNoContextFlutterResourceMakeCurrent) {
 }
 
 TEST_F(RendererContextTest, StartWithSomeContextFlutterMakeCurrent) {
-  auto flutter_context = std::make_unique<TestRendererContext>(0);
-  auto flutter_resource_context = std::make_unique<TestRendererContext>(1);
-  auto some_context = std::make_unique<TestRendererContext>(2);
+  auto flutter_context = std::make_shared<TestRendererContext>(0);
+  auto flutter_resource_context = std::make_shared<TestRendererContext>(1);
+  auto some_context = std::make_shared<TestRendererContext>(2);
 
-  RendererContextManager manager(std::move(flutter_context),
-                                 std::move(flutter_resource_context));
+  RendererContextManager manager(flutter_context, flutter_resource_context);
   // started with some_context
-  auto context_switch = manager.MakeCurrent(std::move(some_context));
+  auto context_switch = manager.MakeCurrent(some_context);
   ASSERT_EQ(TestRendererContext::GetCurrentContext(), 2);
   {
     // made flutter context to be the current
@@ -70,14 +67,13 @@ TEST_F(RendererContextTest, StartWithSomeContextFlutterMakeCurrent) {
 }
 
 TEST_F(RendererContextTest, StartWithSomeContextFlutterResourceMakeCurrent) {
-  auto flutter_context = std::make_unique<TestRendererContext>(0);
-  auto flutter_resource_context = std::make_unique<TestRendererContext>(1);
-  auto some_context = std::make_unique<TestRendererContext>(2);
+  auto flutter_context = std::make_shared<TestRendererContext>(0);
+  auto flutter_resource_context = std::make_shared<TestRendererContext>(1);
+  auto some_context = std::make_shared<TestRendererContext>(2);
 
-  RendererContextManager manager(std::move(flutter_context),
-                                 std::move(flutter_resource_context));
+  RendererContextManager manager(flutter_context, flutter_resource_context);
   // started with some_context
-  auto context_switch = manager.MakeCurrent(std::move(some_context));
+  auto context_switch = manager.MakeCurrent(some_context);
   ASSERT_EQ(TestRendererContext::GetCurrentContext(), 2);
   {
     // made resource context to be the current
@@ -89,15 +85,14 @@ TEST_F(RendererContextTest, StartWithSomeContextFlutterResourceMakeCurrent) {
 }
 
 TEST_F(RendererContextTest, Nested) {
-  auto flutter_context = std::make_unique<TestRendererContext>(0);
-  auto flutter_resource_context = std::make_unique<TestRendererContext>(1);
-  auto some_context = std::make_unique<TestRendererContext>(2);
+  auto flutter_context = std::make_shared<TestRendererContext>(0);
+  auto flutter_resource_context = std::make_shared<TestRendererContext>(1);
+  auto some_context = std::make_shared<TestRendererContext>(2);
 
-  RendererContextManager manager(std::move(flutter_context),
-                                 std::move(flutter_resource_context));
+  RendererContextManager manager(flutter_context, flutter_resource_context);
 
   // started with some_context
-  auto context_switch = manager.MakeCurrent(std::move(some_context));
+  auto context_switch = manager.MakeCurrent(some_context);
   ASSERT_EQ(TestRendererContext::GetCurrentContext(), 2);
   {
     // made flutter context to be the current

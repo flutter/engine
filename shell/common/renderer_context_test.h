@@ -27,7 +27,7 @@ class TestRendererContext : public RendererContext {
 
   bool SetCurrent() override;
 
-  void RemoveCurrent() override;
+  bool RemoveCurrent() override;
 
   int GetContext();
 

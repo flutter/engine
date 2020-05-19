@@ -4,71 +4,88 @@
 
 #include "renderer_context_manager.h"
 
+#include "flutter/fml/thread_local.h"
+
 namespace flutter {
+
+FML_THREAD_LOCAL
+fml::ThreadLocalUniquePtr<std::vector<std::shared_ptr<RendererContext>>>
+    context_stack;
 
 RendererContext::RendererContext() = default;
 
 RendererContext::~RendererContext() = default;
 
 RendererContextManager::RendererContextManager(
-    std::unique_ptr<RendererContext> context,
-    std::unique_ptr<RendererContext> resource_context)
-    : context_(std::move(context)),
-      resource_context_(std::move(resource_context)){};
+    std::shared_ptr<RendererContext> context,
+    std::shared_ptr<RendererContext> resource_context)
+    : context_(context), resource_context_(resource_context){};
 
 RendererContextManager::~RendererContextManager() = default;
 
-RendererContextManager::RendererContextSwitch
-RendererContextManager::MakeCurrent(std::unique_ptr<RendererContext> context) {
-  return RendererContextManager::RendererContextSwitch(*this,
-                                                       std::move(context));
+std::unique_ptr<RendererContextSwitch> RendererContextManager::MakeCurrent(
+    std::shared_ptr<RendererContext> context) {
+  return std::make_unique<RendererContextSwitch>(*this, context);
 };
 
-RendererContextManager::RendererContextSwitch
+std::unique_ptr<RendererContextSwitch>
 RendererContextManager::FlutterMakeCurrent() {
-  return MakeCurrent(std::move(context_));
+  return MakeCurrent(context_);
 };
 
-RendererContextManager::RendererContextSwitch
+std::unique_ptr<RendererContextSwitch>
 RendererContextManager::FlutterResourceMakeCurrent() {
-  return MakeCurrent(std::move(resource_context_));
+  return MakeCurrent(resource_context_);
 };
 
 bool RendererContextManager::PushContext(
-    std::unique_ptr<RendererContext> context) {
-  if (current_ == nullptr) {
-    current_ = std::move(context);
-    return current_->SetCurrent();
-  }
-  stored_.push_back(std::move(current_));
+    std::shared_ptr<RendererContext> context) {
+  // Make sure the stack is initialized on the current thread.
+  EnsureStackInitialized();
   bool result = context->SetCurrent();
-  current_ = std::move(context);
+  context_stack.get()->push_back(context);
   return result;
 };
 
-void RendererContextManager::PopContext() {
-  if (stored_.empty()) {
-    current_->RemoveCurrent();
-    return;
+bool RendererContextManager::PopContext() {
+  FML_CHECK(context_stack.get() != nullptr);
+  FML_CHECK(!context_stack.get()->empty());
+  bool result = context_stack.get()->back()->RemoveCurrent();
+  if (context_stack.get()->size() == 1) {
+    // only one context left, we remove the context
+    context_stack.get()->pop_back();
+    return result;
   }
-  current_ = std::move(stored_.back());
-  current_->SetCurrent();
-  stored_.pop_back();
+  context_stack.get()->pop_back();
+  return context_stack.get()->back()->SetCurrent();
 };
 
-RendererContextManager::RendererContextSwitch::RendererContextSwitch(
+void RendererContextManager::EnsureStackInitialized() {
+  if (context_stack.get() == nullptr) {
+    context_stack.reset(new std::vector<std::shared_ptr<RendererContext>>());
+  }
+}
+
+RendererContextResult::RendererContextResult(bool static_result)
+    : result_(static_result){};
+
+bool RendererContextResult::GetResult() {
+  return result_;
+};
+
+RendererContextResult::RendererContextResult() = default;
+RendererContextResult::~RendererContextResult() = default;
+
+RendererContextSwitch::RendererContextSwitch(
     RendererContextManager& manager,
-    std::unique_ptr<RendererContext> context)
+    std::shared_ptr<RendererContext> context)
     : manager_(manager) {
-  bool result = manager_.PushContext(std::move(context));
+  bool result = manager_.PushContext(context);
   result_ = result;
 };
 
-RendererContextManager::RendererContextSwitch::~RendererContextSwitch() {
+RendererContextSwitch::~RendererContextSwitch() {
   manager_.PopContext();
 };
 
-bool RendererContextManager::RendererContextSwitch::GetResult() {
-  return result_;
-};
 }  // namespace flutter

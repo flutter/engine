@@ -20,8 +20,9 @@ bool TestRendererContext::SetCurrent() {
   return true;
 };
 
-void TestRendererContext::RemoveCurrent() {
+bool TestRendererContext::RemoveCurrent() {
   SetCurrentContext(-1);
+  return true;
 };
 
 int TestRendererContext::GetContext() {
