@@ -59,7 +59,7 @@ static NSCursor* GetCursorForKind(NSString* kind) {
  * This method unhides the cursor before displaying the cursor, and updates
  * internal states.
  */
-- (void)displayCursorObject: (nonnull NSCursor *)cursorObject;
+- (void)displayCursorObject:(nonnull NSCursor*)cursorObject;
 
 /**
  * Hides the cursor.
@@ -72,7 +72,7 @@ static NSCursor* GetCursorForKind(NSString* kind) {
 /**
  * Handle all method calls.
  */
-- (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result;
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
 @end
 
@@ -100,10 +100,9 @@ NSMutableDictionary* cachedSystemCursors;
   NSString* kindArg = arguments[kKindKey];
   NSNumber* deviceArg = arguments[kDeviceKey];
   if (!kindArg || !deviceArg) {
-    return [FlutterError
-        errorWithCode:@"error"
-              message:@"Missing argument"
-              details:@"Missing argument while trying to activate system cursor"];
+    return [FlutterError errorWithCode:@"error"
+                               message:@"Missing argument"
+                               details:@"Missing argument while trying to activate system cursor"];
   }
   if ([kindArg isEqualToString:kKindValueNone]) {
     [self hide];
@@ -114,7 +113,7 @@ NSMutableDictionary* cachedSystemCursors;
   return nil;
 }
 
-- (void)displayCursorObject: (nonnull NSCursor *)cursorObject {
+- (void)displayCursorObject:(nonnull NSCursor*)cursorObject {
   [cursorObject set];
   if (_hidden) {
     [NSCursor unhide];
@@ -141,13 +140,13 @@ NSMutableDictionary* cachedSystemCursors;
 #pragma mark - FlutterPlugin implementation
 
 + (void)registerWithRegistrar:(id<FlutterPluginRegistrar>)registrar {
-  FlutterMethodChannel *channel = [FlutterMethodChannel methodChannelWithName:kMouseCursorChannel
+  FlutterMethodChannel* channel = [FlutterMethodChannel methodChannelWithName:kMouseCursorChannel
                                                               binaryMessenger:registrar.messenger];
-  FlutterMouseCursorPlugin *instance = [[FlutterMouseCursorPlugin alloc] init];
+  FlutterMouseCursorPlugin* instance = [[FlutterMouseCursorPlugin alloc] init];
   [registrar addMethodCallDelegate:instance channel:channel];
 }
 
-- (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result {
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   NSString* method = call.method;
   if ([method isEqualToString:kActivateSystemCursorMethod]) {
     result([self activateSystemCursor:call.arguments]);
