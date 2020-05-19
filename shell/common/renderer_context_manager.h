@@ -44,13 +44,14 @@ class RendererContextSwitch;
 //------------------------------------------------------------------------------
 /// Manages the renderer context.
 ///
-/// Initially, the |RendererContextManager| doesn't know any context that is
-/// set by other programs (e.g. a plugin). To make sure not to pollute the
-/// other context, use `MakeCurrent` to set other context, so
-/// |RendererContextManager| has a reference of the other context. Ideally,
-/// this process has to be done everytime before a context used by Flutter
-/// is set, if the current context at the moment is not null or used by
-/// Flutter.
+/// Use this manager to manage flutter's gl context. All the contexts managed by
+/// this are not shared between threads.
+///
+/// We want to return the exact context state before we set our context, after
+/// we are done with our contexts. One way to do it is to cache any current
+/// context (if any) in the `SetCurrent` of your `ContextRenderer`
+/// implementation. Then in the `RemoveCurrent`, reset the cached context to
+/// current using the platform specific gl method.
 class RendererContextManager {
  public:
   RendererContextManager(std::shared_ptr<RendererContext> context,
@@ -60,9 +61,9 @@ class RendererContextManager {
 
   //----------------------------------------------------------------------------
   /// @brief      Make the `context` to be the current context. It can be used
-  /// to set a context set by other programs to be the current context in
-  /// |RendererContextManager|. Which make sure Flutter doesn't pollute other
-  /// contexts.
+  /// to set a context other than the flutter context or the flutter resource
+  /// context. We can manage a context this way only if we know the life cycle
+  /// of it.
   ///
   /// @return     A `RendererContextSwitch` which ensures the `context` is the
   /// current context.
@@ -98,6 +99,9 @@ class RendererContextManager {
   FML_DISALLOW_COPY_AND_ASSIGN(RendererContextManager);
 };
 
+/// The result of a set context operation.
+///
+/// Used by platforms that don't need the |RendererContextManager|.
 class RendererContextResult {
  public:
   //----------------------------------------------------------------------------
