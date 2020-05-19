@@ -194,6 +194,10 @@ public class TextInputPlugin {
       textType |= InputType.TYPE_TEXT_VARIATION_URI;
     } else if (type.type == TextInputChannel.TextInputType.VISIBLE_PASSWORD) {
       textType |= InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
+    } else if (type.type == TextInputChannel.TextInputType.NAME) {
+      textType |= InputType.TYPE_TEXT_VARIATION_PERSON_NAME;
+    } else if (type.type == TextInputChannel.TextInputType.POSTAL_ADDRESS) {
+      textType |= InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS;
     }
 
     if (obscureText) {
@@ -502,6 +506,21 @@ public class TextInputPlugin {
       child.setAutofillHints(autofill.hints);
       child.setAutofillType(View.AUTOFILL_TYPE_TEXT);
       child.setVisibility(View.VISIBLE);
+
+      // Some autofill services expect child structures to be visible.
+      // Reports the real size of the child if it's the current client.
+      if (triggerIdentifier.hashCode() == autofillId && lastClientRect != null) {
+        child.setDimens(
+            lastClientRect.left,
+            lastClientRect.top,
+            0,
+            0,
+            lastClientRect.width(),
+            lastClientRect.height());
+      } else {
+        // Reports a fake dimension that's still visible.
+        child.setDimens(0, 0, 0, 0, 1, 1);
+      }
     }
   }
 

@@ -13,10 +13,16 @@ static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
 
 static UIKeyboardType ToUIKeyboardType(NSDictionary* type) {
   NSString* inputType = type[@"name"];
-  if ([inputType isEqualToString:@"TextInputType.text"])
+  if ([inputType isEqualToString:@"TextInputType.address"])
     return UIKeyboardTypeDefault;
+  if ([inputType isEqualToString:@"TextInputType.datetime"])
+    return UIKeyboardTypeNumbersAndPunctuation;
+  if ([inputType isEqualToString:@"TextInputType.emailAddress"])
+    return UIKeyboardTypeEmailAddress;
   if ([inputType isEqualToString:@"TextInputType.multiline"])
     return UIKeyboardTypeDefault;
+  if ([inputType isEqualToString:@"TextInputType.name"])
+    return UIKeyboardTypeNamePhonePad;
   if ([inputType isEqualToString:@"TextInputType.number"]) {
     if ([type[@"signed"] boolValue])
       return UIKeyboardTypeNumbersAndPunctuation;
@@ -26,8 +32,8 @@ static UIKeyboardType ToUIKeyboardType(NSDictionary* type) {
   }
   if ([inputType isEqualToString:@"TextInputType.phone"])
     return UIKeyboardTypePhonePad;
-  if ([inputType isEqualToString:@"TextInputType.emailAddress"])
-    return UIKeyboardTypeEmailAddress;
+  if ([inputType isEqualToString:@"TextInputType.text"])
+    return UIKeyboardTypeDefault;
   if ([inputType isEqualToString:@"TextInputType.url"])
     return UIKeyboardTypeURL;
   return UIKeyboardTypeDefault;
@@ -194,6 +200,10 @@ static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
     if ([hint isEqualToString:@"oneTimeCode"]) {
       return UITextContentTypeOneTimeCode;
     }
+
+    if ([hint isEqualToString:@"newPassword"]) {
+      return UITextContentTypeNewPassword;
+    }
   }
 
   return hints[0];
@@ -254,6 +264,9 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   return [[FlutterTextRange allocWithZone:zone] initWithNSRange:self.range];
 }
 
+- (BOOL)isEqualTo:(FlutterTextRange*)other {
+  return NSEqualRanges(self.range, other.range);
+}
 @end
 
 @interface FlutterTextInputView ()
@@ -319,14 +332,19 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
     [self.inputDelegate textWillChange:self];
     [self.text setString:newText];
   }
-
+  BOOL needsEditingStateUpdate = textChanged;
   NSInteger composingBase = [state[@"composingBase"] intValue];
   NSInteger composingExtent = [state[@"composingExtent"] intValue];
   NSRange composingRange = [self clampSelection:NSMakeRange(MIN(composingBase, composingExtent),
                                                             ABS(composingBase - composingExtent))
                                         forText:self.text];
-  self.markedTextRange =
+  FlutterTextRange* newMarkedRange =
       composingRange.length > 0 ? [FlutterTextRange rangeWithNSRange:composingRange] : nil;
+  needsEditingStateUpdate =
+      needsEditingStateUpdate || newMarkedRange == nil
+          ? self.markedTextRange == nil
+          : [newMarkedRange isEqualTo:(FlutterTextRange*)self.markedTextRange];
+  self.markedTextRange = newMarkedRange;
 
   NSInteger selectionBase = [state[@"selectionBase"] intValue];
   NSInteger selectionExtent = [state[@"selectionExtent"] intValue];
@@ -336,6 +354,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   NSRange oldSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
   if (selectedRange.location != oldSelectedRange.location ||
       selectedRange.length != oldSelectedRange.length) {
+    needsEditingStateUpdate = YES;
     [self.inputDelegate selectionWillChange:self];
     [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
             updateEditingState:NO];
@@ -347,7 +366,8 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 
   if (textChanged) {
     [self.inputDelegate textDidChange:self];
-
+  }
+  if (needsEditingStateUpdate) {
     // For consistency with Android behavior, send an update to the framework.
     [self updateEditingState];
   }

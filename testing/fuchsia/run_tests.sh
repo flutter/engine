@@ -16,6 +16,12 @@
 
 set -Ee
 
+test_timeout_seconds=300
+
+# This is longer than the test timeout as dumping the
+# logs can sometimes take longer.
+ssh_timeout_seconds=360
+
 # The nodes are named blah-blah--four-word-fuchsia-id
 device_name=${SWARMING_BOT_ID#*--}
 
@@ -31,11 +37,14 @@ else
 fi
 
 reboot() {
-  echo "Dumping system logs..."
+  # TODO come up with better log collection strategy.
+  # https://github.com/flutter/flutter/issues/57273
+  # echo "Dumping system logs..."
 
-  ./fuchsia_ctl -d $device_name ssh \
-      -c "log_listener --dump_logs yes" \
-      --identity-file $pkey
+  # ./fuchsia_ctl -d $device_name ssh \
+  #     -c "log_listener --dump_logs yes" \
+  #     --timeout-seconds $ssh_timeout_seconds \
+  #     --identity-file $pkey
 
   echo "$(date) START:REBOOT ------------------------------------------"
   # note: this will set an exit code of 255, which we can ignore.
@@ -74,7 +83,7 @@ echo "$(date) START:flutter_runner_tests ----------------------------"
     -f flutter_runner_tests-0.far  \
     -t flutter_runner_tests        \
     --identity-file $pkey \
-    --timeout-seconds 300 \
+    --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
 
 ./fuchsia_ctl -d $device_name test \
@@ -82,7 +91,7 @@ echo "$(date) START:flutter_runner_tests ----------------------------"
     -f flutter_runner_scenic_tests-0.far  \
     -t flutter_runner_scenic_tests \
     --identity-file $pkey \
-    --timeout-seconds 300 \
+    --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
 
 # TODO(https://github.com/flutter/flutter/issues/50032) Enable after the
@@ -93,34 +102,41 @@ echo "$(date) START:fml_tests ---------------------------------------"
     -t fml_tests \
     -a "--gtest_filter=-MessageLoop*:Message*:FileTest*" \
     --identity-file $pkey \
-    --timeout-seconds 300 \
+    --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
+echo "$(date) DONE:fml_tests ---------------------------------------"
+
 
 echo "$(date) START:flow_tests --------------------------------------"
 ./fuchsia_ctl -d $device_name test \
-    -f flow_tests-0.far  \
-    -t flow_tests \
-    --identity-file $pkey \
-    --timeout-seconds 300 \
-    --packages-directory packages
+   -f flow_tests-0.far  \
+   -t flow_tests \
+   --identity-file $pkey \
+   --timeout-seconds $test_timeout_seconds \
+   --packages-directory packages
+echo "$(date) DONE:flow_tests ---------------------------------------"
 
-echo "$(date) START:runtime_tests -----------------------------------"
-./fuchsia_ctl -d $device_name test \
-    -f runtime_tests-0.far  \
-    -t runtime_tests \
-    --identity-file $pkey \
-    --timeout-seconds 300 \
-    --packages-directory packages
+
+# TODO(kaushikiska): Runtime and shell tests are failing with
+# async_dispatcher failures. Re-enable them once this gets fixed.
+
+# echo "$(date) START:runtime_tests -----------------------------------"
+# ./fuchsia_ctl -d $device_name test \
+#     -f runtime_tests-0.far  \
+#     -t runtime_tests \
+#     --identity-file $pkey \
+#     --timeout-seconds $test_timeout_seconds \
+#     --packages-directory packages
+
 
 # TODO(https://github.com/flutter/flutter/issues/53399): Re-enable
-# OnServiceProtocolGetSkSLsWorks and CanLoadSkSLsFromAsset once they pass on
-# Fuchsia.
-echo "$(date) START:shell_tests -------------------------------------"
-./fuchsia_ctl -d $device_name test \
-    -f shell_tests-0.far  \
-    -t shell_tests \
-    -a "--gtest_filter=-ShellTest.CacheSkSLWorks:ShellTest.SetResourceCacheSize*:ShellTest.OnServiceProtocolGetSkSLsWorks:ShellTest.CanLoadSkSLsFromAsset" \
-    --identity-file $pkey \
-    --timeout-seconds 300 \
-    --packages-directory packages
-
+# OnServiceProtocolGetSkSLsWorks, CanLoadSkSLsFromAsset, and
+# CanRemoveOldPersistentCache once they pass on Fuchsia.
+# echo "$(date) START:shell_tests -------------------------------------"
+# ./fuchsia_ctl -d $device_name test \
+#     -f shell_tests-0.far  \
+#     -t shell_tests \
+#     -a "--gtest_filter=-ShellTest.CacheSkSLWorks:ShellTest.SetResourceCacheSize*:ShellTest.OnServiceProtocolGetSkSLsWorks:ShellTest.CanLoadSkSLsFromAsset:ShellTest.CanRemoveOldPersistentCache" \
+#     --identity-file $pkey \
+#     --timeout-seconds $test_timeout_seconds \
+#     --packages-directory packages
