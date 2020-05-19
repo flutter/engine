@@ -44,6 +44,17 @@ void SamplingProfiler::SampleRepeatedly(fml::TimeDelta task_delay) const {
                                "total_cpu_usage", total_cpu_usage.c_str(),
                                "num_threads", num_threads.c_str());
         }
+        if (usage.memory_usage) {
+          // TODO(kaushikiska): consider buffering these every n seconds to
+          // avoid spamming the trace buffer.
+          std::string dirty_memory_usage =
+              std::to_string(usage.memory_usage->dirty_memory_usage);
+          std::string owned_share_memory_usage =
+              std::to_string(usage.memory_usage->owned_share_memory_usage);
+          TRACE_EVENT_INSTANT2("flutter::profiling", "MemoryUsage",
+                               "dirty_memory_usage", dirty_memory_usage.c_str(),
+                               "owned_share_memory_usage", owned_share_memory_usage.c_str());
+        }
         profiler->SampleRepeatedly(task_delay);
       },
       task_delay);
