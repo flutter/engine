@@ -11,7 +11,6 @@ static NSString* const kMouseCursorChannel = @"flutter/mousecursor";
 
 static NSString* const kActivateSystemCursorMethod = @"activateSystemCursor";
 static NSString* const kKindKey = @"kind";
-static NSString* const kDeviceKey = @"device";
 
 static NSString* const kKindValueNone = @"none";
 
@@ -98,8 +97,7 @@ NSMutableDictionary* cachedSystemCursors;
 
 - (FlutterError*)activateSystemCursor:(nonnull NSDictionary*)arguments {
   NSString* kindArg = arguments[kKindKey];
-  NSNumber* deviceArg = arguments[kDeviceKey];
-  if (!kindArg || !deviceArg) {
+  if (!kindArg) {
     return [FlutterError errorWithCode:@"error"
                                message:@"Missing argument"
                                details:@"Missing argument while trying to activate system cursor"];
