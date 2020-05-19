@@ -5,6 +5,8 @@
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:vector_math/vector_math_64.dart';
+
 import 'scenario.dart';
 
 /// Sends the recieved locale data back as semantics information.
@@ -55,6 +57,7 @@ class LocaleInitialization extends Scenario {
         currentValueLength: 0,
         scrollChildren: 0,
         scrollIndex: 0,
+        transform: Matrix4.identity().storage,
         elevation: 0.0,
         thickness: 0.0,
         childrenInTraversalOrder: Int32List(0),
