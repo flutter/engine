@@ -28,10 +28,9 @@ namespace testing {
 // By default the preroll and paint contexts will not use a raster cache.
 // If a test needs to verify the proper operation of a layer in the presence
 // of a raster cache then a number of options can be enabled by using the
-// following methods:
-// @see |use_null_raster_cache()|
-// @see |use_mock_raster_cache()|
-// @see |use_skia_raster_cache()|
+// methods |LayerTestBase::use_null_raster_cache()|,
+// |LayerTestBase::use_mock_raster_cache()| or
+// |LayerTestBase::use_skia_raster_cache()|
 //
 // |BaseT| should be the base test type, such as |::testing::Test| below.
 template <typename BaseT>
@@ -41,9 +40,9 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
  public:
   LayerTestBase()
       : preroll_context_({
-            raster_cache(), /* raster_cache */
-            nullptr,        /* gr_context */
-            nullptr,        /* external_view_embedder */
+            nullptr, /* raster_cache */
+            nullptr, /* gr_context */
+            nullptr, /* external_view_embedder */
             mutators_stack_, TestT::mock_canvas().imageInfo().colorSpace(),
             kGiantRect, /* cull_rect */
             false,      /* layer reads from surface */
@@ -60,30 +59,61 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             nullptr,                                /* gr_context */
             nullptr,                                /* external_view_embedder */
             raster_time_, ui_time_, texture_registry_,
-            raster_cache(), /* raster_cache */
-            false,          /* checkerboard_offscreen_layers */
-            100.0f,         /* frame_physical_depth */
-            1.0f,           /* frame_device_pixel_ratio */
-        }) {}
-
-  // Use no raster cache in subsequent |Preroll| and |Paint| method calls.
-  // This is the default mode of operation.
-  void use_null_raster_cache() { set_raster_cache(nullptr); }
-
-  // Use a mock raster cache in subsequent |Preroll| and |Paint| method calls.
-  // The mock raster cache behaves like a normal raster cache with respect to
-  // when layers and pictures are cached, but it does not incur the overhead
-  // of rendering the layers or caching the resulting pixels.
-  void use_mock_raster_cache() {
-    set_raster_cache(
-        std::make_unique<RasterCache>(&MockRasterCacheImageDelegate::instance));
+            nullptr, /* raster_cache */
+            false,   /* checkerboard_offscreen_layers */
+            100.0f,  /* frame_physical_depth */
+            1.0f,    /* frame_device_pixel_ratio */
+        }) {
+    use_null_raster_cache();
   }
 
-  // Use a normal raster cache in subusequent |Preroll| and |Paint| method
-  // calls that uses Skia to render cached layers and pictures in the same
-  // way as happens when actually handling a frame on a device.
+  /**
+   * @brief Use no raster cache in the preroll_context() and
+   * paint_context() structures.
+   *
+   * This method must be called before using the preroll_context() and
+   * paint_context() structures in calls to the Layer::Preroll() and
+   * Layer::Paint() methods. This is the default mode of operation.
+   *
+   * @see use_mock_raster_cache()
+   * @see use_skia_raster_cache()
+   */
+  void use_null_raster_cache() { set_raster_cache_(nullptr); }
+
+  /**
+   * @brief Use a mock raster cache in the preroll_context() and
+   * paint_context() structures.
+   *
+   * This method must be called before using the preroll_context() and
+   * paint_context() structures in calls to the Layer::Preroll() and
+   * Layer::Paint() methods. The mock raster cache behaves like a normal
+   * raster cache with respect to decisions about when layers and pictures
+   * should be cached, but it does not incur the overhead of rendering the
+   * layers or caching the resulting pixels.
+   *
+   * @see use_null_raster_cache()
+   * @see use_skia_raster_cache()
+   */
+  void use_mock_raster_cache() {
+    set_raster_cache_(std::make_unique<MockRasterCache>());
+  }
+
+  /**
+   * @brief Use a normal raster cache in the preroll_context() and
+   * paint_context() structures.
+   *
+   * This method must be called before using the preroll_context() and
+   * paint_context() structures in calls to the Layer::Preroll() and
+   * Layer::Paint() methods. The Skia raster cache will behave identically
+   * to the raster cache typically used when handling a frame on a device
+   * including rendering the contents of pictures and layers to an
+   * SkImage, but using a software rather than a hardware renderer.
+   *
+   * @see use_null_raster_cache()
+   * @see use_mock_raster_cache()
+   */
   void use_skia_raster_cache() {
-    set_raster_cache(std::make_unique<RasterCache>());
+    set_raster_cache_(std::make_unique<RasterCache>());
   }
 
   TextureRegistry& texture_regitry() { return texture_registry_; }
@@ -92,7 +122,7 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
   Layer::PaintContext& paint_context() { return paint_context_; }
 
  private:
-  void set_raster_cache(std::unique_ptr<RasterCache> raster_cache) {
+  void set_raster_cache_(std::unique_ptr<RasterCache> raster_cache) {
     raster_cache_ = std::move(raster_cache);
     preroll_context_.raster_cache = raster_cache_.get();
     paint_context_.raster_cache = raster_cache_.get();

@@ -12,10 +12,13 @@
 namespace flutter {
 namespace testing {
 
-// A |RasterCacheResult| implementation that represents a cached |Layer| or
-// |SkPicture| without the overhead of storage. This implementation is used
-// by |MockRasterCacheImageDelegate| only for testing proper usage of the
-// |RasterCache| in layer unit tests.
+/**
+ * @brief A RasterCacheResult implementation that represents a cached Layer or
+ * SkPicture without the overhead of storage.
+ *
+ * This implementation is used by MockRasterCache only for testing proper usage
+ * of the RasterCache in layer unit tests.
+ */
 class MockRasterCacheResult : public RasterCacheResult {
  public:
   MockRasterCacheResult(SkIRect device_rect);
@@ -24,15 +27,22 @@ class MockRasterCacheResult : public RasterCacheResult {
 
   SkISize image_dimensions() const override { return device_rect_.size(); };
 
+  int64_t image_bytes() const override {
+    return image_dimensions().area() *
+           SkColorTypeBytesPerPixel(kBGRA_8888_SkColorType);
+  }
+
  private:
   SkIRect device_rect_;
 };
 
-// A |RasterCacheImageDelegate| implementation that simulates the act of
-// rendering a |Layer| or |SkPicture| without the overhead of rasterization
-// or storage. This implementation is used only for testing proper usage of
-// the |RasterCache| in layer unit tests.
-class MockRasterCacheImageDelegate : public RasterCacheImageDelegate {
+/**
+ * @brief A RasterCache implementation that simulates the act of rendering a
+ * Layer or SkPicture without the overhead of rasterization or pixel storage.
+ * This implementation is used only for testing proper usage of the RasterCache
+ * in layer unit tests.
+ */
+class MockRasterCache : public RasterCache {
  public:
   std::unique_ptr<RasterCacheResult> RasterizePicture(
       SkPicture* picture,
@@ -46,8 +56,6 @@ class MockRasterCacheImageDelegate : public RasterCacheImageDelegate {
       Layer* layer,
       const SkMatrix& ctm,
       bool checkerboard) const override;
-
-  static MockRasterCacheImageDelegate instance;
 };
 
 }  // namespace testing

@@ -17,33 +17,22 @@
 
 namespace flutter {
 
-// |RasterCacheResult| contains the result of rendering a layer or a picture
-// at a given transform by an instance of |RasterCacheImageDelegate| and
-// provides the capability to render the result to a given |SkCanvas|.
 class RasterCacheResult {
  public:
+  RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);
+
   virtual ~RasterCacheResult() = default;
 
-  // Draw the rendered result to the |SkCanvas| using the properties of the
-  // |SkPaint|.
-  virtual void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const = 0;
+  virtual void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const;
 
-  // Return the size of the cached result to help manage the cache memory
-  // consumption.
-  virtual SkISize image_dimensions() const = 0;
-};
-
-// |SkRasterCacheResult| is the typical implementation of |SkRasterCacheResult|
-// created from an |SkRasterCacheImageDelegate| and storing the result as
-// pixels in an |SkImage|.
-class SkRasterCacheResult : public RasterCacheResult {
- public:
-  SkRasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);
-
-  void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const override;
-
-  SkISize image_dimensions() const override {
+  virtual SkISize image_dimensions() const {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);
+  };
+
+  virtual int64_t image_bytes() const {
+    return image_ ? image_->dimensions().area() *
+                        image_->imageInfo().bytesPerPixel()
+                  : 0;
   };
 
  private:
@@ -53,44 +42,6 @@ class SkRasterCacheResult : public RasterCacheResult {
 
 struct PrerollContext;
 
-// The |RasterCacheImageDelegate| creates and retruns a cached result of
-// rendering the supplied |Layer| or |SkPicture|.
-class RasterCacheImageDelegate {
- public:
-  virtual std::unique_ptr<RasterCacheResult> RasterizePicture(
-      SkPicture* picture,
-      GrContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const = 0;
-
-  virtual std::unique_ptr<RasterCacheResult> RasterizeLayer(
-      PrerollContext* context,
-      Layer* layer,
-      const SkMatrix& ctm,
-      bool checkerboard) const = 0;
-};
-
-// The |SkRasterCacheImageDelegate| creates and returns rendered results
-// for |Layer| and |SkPicture| objects stored as |SkImage| objects.
-class SkRasterCacheImageDelegate : public RasterCacheImageDelegate {
- public:
-  std::unique_ptr<RasterCacheResult> RasterizePicture(
-      SkPicture* picture,
-      GrContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const override;
-
-  std::unique_ptr<RasterCacheResult> RasterizeLayer(
-      PrerollContext* context,
-      Layer* layer,
-      const SkMatrix& ctm,
-      bool checkerboard) const override;
-
-  static SkRasterCacheImageDelegate instance;
-};
-
 class RasterCache {
  public:
   // The default max number of picture raster caches to be generated per frame.
@@ -99,31 +50,53 @@ class RasterCache {
   // multiple frames.
   static constexpr int kDefaultPictureCacheLimitPerFrame = 3;
 
-  // Create a default |RasterCache| object that caches |Layer| and |SkPicture|
-  // objects using a |SkRasterCacheImageDelegate|.
-  //
-  // @param access_threshold
-  //     the number of attempts to cache a given |SkPicture| before inserting
-  //     it into the cache. The defalt value of 3 will only cache a picture
-  //     on the 3rd time it appears in consecutive frames.
-  // @param picture_cache_limit_per_frame
-  //     the maximum number of |SkPicture| objects to render into the cache
-  //     per frame. The default value of 3 will rasterize at most 3 pictures
-  //     in a given frame and leave the rest for caching in subsequent frames.
-  //
-  // @see |kDefaultPictureCacheLimitPerFrame|
   explicit RasterCache(
       size_t access_threshold = 3,
       size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame);
 
-  // Create a |RasterCache| object that uses a specified implementation of
-  // |RasterCacheImageDelegate|.
-  //
-  // @see |RasterCache(size_t, size_t)|
-  explicit RasterCache(
-      RasterCacheImageDelegate* delegate,
-      size_t access_threshold = 3,
-      size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame);
+  virtual ~RasterCache() = default;
+
+  /**
+   * @brief Rasterize a picture object and produce a RasterCacheResult
+   * to be stored in the cache.
+   *
+   * @param picture the SkPicture object to be cached.
+   * @param context the GrContext used for rendering.
+   * @param ctm the transformation matrix used for rendering.
+   * @param dst_color_space the destination color space that the cached
+   *        rendering will be drawn into
+   * @param checkerboard a flag indicating whether or not a checkerboard
+   *        pattern should be rendered into the cached image for debug
+   *        analysis
+   * @return a RasterCacheResult that can draw the rendered picture into
+   *         the destination using a simple image blit
+   */
+  virtual std::unique_ptr<RasterCacheResult> RasterizePicture(
+      SkPicture* picture,
+      GrContext* context,
+      const SkMatrix& ctm,
+      SkColorSpace* dst_color_space,
+      bool checkerboard) const;
+
+  /**
+   * @brief Rasterize an engine Layer and produce a RasterCacheResult
+   * to be stored in the cache.
+   *
+   * @param context the PrerollContext containing important information
+   *        needed for rendering a layer.
+   * @param layer the Layer object to be cached.
+   * @param ctm the transformation matrix used for rendering.
+   * @param checkerboard a flag indicating whether or not a checkerboard
+   *        pattern should be rendered into the cached image for debug
+   *        analysis
+   * @return a RasterCacheResult that can draw the rendered layer into
+   *         the destination using a simple image blit
+   */
+  virtual std::unique_ptr<RasterCacheResult> RasterizeLayer(
+      PrerollContext* context,
+      Layer* layer,
+      const SkMatrix& ctm,
+      bool checkerboard) const;
 
   static SkIRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
     SkRect device_rect;
@@ -222,7 +195,6 @@ class RasterCache {
     }
   }
 
-  const RasterCacheImageDelegate* delegate_;
   const size_t access_threshold_;
   const size_t picture_cache_limit_per_frame_;
   size_t picture_cached_this_frame_ = 0;
