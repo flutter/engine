@@ -26,6 +26,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   ui.Rect _bounds;
+  CrossFrameCache<html.HtmlElement> _elementCache;
 
   /// The amount of padding to add around the edges of this canvas to
   /// ensure that anti-aliased arcs are not clipped.
@@ -93,11 +94,6 @@ class BitmapCanvas extends EngineCanvas {
     _childOverdraw = value;
   }
 
-  // Maps src url to image element to reuse image instances across frames.
-  // Optimization for some browsers that keep refreshing images causing
-  // flicker.
-  Map<String, List<html.ImageElement>> _reusableImages;
-
   /// Allocates a canvas with enough memory to paint a picture within the given
   /// [bounds].
   ///
@@ -119,6 +115,11 @@ class BitmapCanvas extends EngineCanvas {
     _updateRootElementTransform();
     _canvasPool.allocateCanvas(rootElement);
     _setupInitialTransform();
+  }
+
+  /// Setup cache for reusing DOM elements across frames.
+  set elementCache(CrossFrameCache<html.HtmlElement> cache) {
+    _elementCache = cache;
   }
 
   void _updateRootElementTransform() {
@@ -177,14 +178,7 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPool.clear();
     final int len = _children.length;
     for (int i = 0; i < len; i++) {
-      html.Element child = _children[i];
-      if (child is html.ImageElement) {
-        _reusableImages ??= {};
-        final String src = child.src;
-        _reusableImages[src] ??= []..add(child);
-      } else {
-        _children[i].remove();
-      }
+      _children[i].remove();
     }
     _children.clear();
     _cachedLastStyle = null;
@@ -367,15 +361,23 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   html.ImageElement _reuseOrCreateImage(HtmlImage htmlImage) {
-    if (_reusableImages != null) {
-      List<html.ImageElement> cachedImages =
-          _reusableImages[htmlImage.imgElement.src];
-      if (cachedImages != null && cachedImages.isNotEmpty) {
-        return cachedImages.removeAt(0);
+    final String cacheKey = htmlImage.imgElement.src;
+    if (_elementCache != null) {
+      html.ImageElement imageElement = _elementCache.reuse(cacheKey);
+      if (imageElement != null) {
+        return imageElement;
       }
     }
     // Can't reuse, create new instance.
-    return htmlImage.cloneImageElement();
+    html.ImageElement newImageElement = htmlImage.cloneImageElement();
+    if (_elementCache != null) {
+      _elementCache.cache(cacheKey, newImageElement, _onEvictElement);
+    }
+    return newImageElement;
+  }
+
+  static void _onEvictElement(html.HtmlElement element) {
+    element.remove();
   }
 
   html.HtmlElement _drawImage(
@@ -811,14 +813,7 @@ class BitmapCanvas extends EngineCanvas {
   void endOfPaint() {
     assert(_saveCount == 0);
     _canvasPool.endOfPaint();
-    if (_reusableImages != null) {
-      for (List<html.ImageElement> images in _reusableImages.values) {
-        for (int i = 0, len = images.length; i < len; i++) {
-          images[i].remove();
-        }
-      }
-    }
-    _reusableImages = null;
+    _elementCache?.commitFrame();
   }
 }
 
