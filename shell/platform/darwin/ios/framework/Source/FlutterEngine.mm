@@ -778,7 +778,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     [self.localizationChannel invokeMethod:@"setPlatformResolvedLocale" arguments:localeData];
   }
 
-  // Get and pass the user's perferred locale list to dart:ui
+  // Get and pass the user's preferred locale list to dart:ui
   localeData = [[NSMutableArray new] autorelease];
   NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
   for (NSString* localeID in preferredLocales) {

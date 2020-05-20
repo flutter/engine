@@ -77,7 +77,10 @@ class LocaleInitialization extends Scenario {
   void onPointerDataPacket(PointerDataPacket packet) {
     String label;
     switch(_tapCount) {
-      case 1: label = window.platformResolvedLocale.toString(); break;
+      case 1: {
+        label = window.platformResolvedLocale.toString();
+        break;
+      }
       // Expand for other test cases.
     }
 
