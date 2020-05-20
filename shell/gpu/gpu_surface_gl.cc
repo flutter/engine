@@ -230,12 +230,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
     return nullptr;
   }
 
-  if (!delegate_->GLContextMakeCurrent()) {
-    FML_LOG(ERROR)
-        << "Could not make the context current to acquire the frame.";
-    return nullptr;
-  }
-
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
   // external view embedder may want to render to the root surface.
   if (!render_to_surface_) {
@@ -268,6 +262,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
 
 bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
+    return false;
+  }
+
+  if (!delegate_->GLContextMakeCurrent()) {
+    FML_LOG(ERROR)
+        << "Could not make the context current to present the surface.";
     return false;
   }
 
