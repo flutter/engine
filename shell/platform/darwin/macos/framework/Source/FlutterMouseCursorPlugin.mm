@@ -55,21 +55,18 @@ static NSCursor* GetCursorForKind(NSString* kind) {
 /**
  * Displays the specified cursor.
  *
- * This method unhides the cursor before displaying the cursor, and updates
+ * Unhides the cursor before displaying the cursor, and updates
  * internal states.
  */
 - (void)displayCursorObject:(nonnull NSCursor*)cursorObject;
 
 /**
  * Hides the cursor.
- *
- * This method hides the cursor if the cursor is currently unhidden, and
- * updates internal states.
  */
 - (void)hide;
 
 /**
- * Handle all method calls.
+ * Handles all method calls from Flutter.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
