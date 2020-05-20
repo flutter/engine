@@ -77,16 +77,17 @@ class LocaleInitialization extends Scenario {
   void onPointerDataPacket(PointerDataPacket packet) {
     String label;
     switch(_tapCount) {
-      case 0: label = window.platformResolvedLocale.toString(); break;
+      case 1: label = window.platformResolvedLocale.toString(); break;
       // Expand for other test cases.
     }
 
     window.updateSemantics((SemanticsUpdateBuilder()
       ..updateNode(
         id: 0,
-        // SemanticsFlag.isTextField and SemanticsFlag.isFocused.
-        flags: 48,
-        actions: 18433,
+        // SemanticsFlag.isTextField.
+        flags: 16,
+        // SemanticsAction.tap.
+        actions: 1,
         rect: const Rect.fromLTRB(0.0, 0.0, 414.0, 48.0),
         label: label,
         textDirection: TextDirection.ltr,
