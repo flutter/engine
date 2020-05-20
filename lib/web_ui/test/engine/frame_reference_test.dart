@@ -62,7 +62,7 @@ void main() {
       cache.cache(testItem2.label, testItem2, (TestItem item) {_evictedItems.add(item);});
       cache.commitFrame();
       expect(_evictedItems.length, 0);
-      TestItem requestedItem = cache.reuse('item2');
+      cache.reuse('item2');
       cache.commitFrame();
       expect(_evictedItems.contains(testItem1), true);
       expect(_evictedItems.contains(testItem2), false);
