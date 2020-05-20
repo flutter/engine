@@ -22,7 +22,6 @@ import org.robolectric.shadows.ShadowInputMethodManager;
 @Config(
     manifest = Config.NONE,
     shadows = {ShadowInputMethodManager.class, ShadowDisplayManager.class, ShadowDisplay.class})
-
 @RunWith(RobolectricTestRunner.class)
 @TargetApi(28)
 public class SingleViewPresentationTest {
