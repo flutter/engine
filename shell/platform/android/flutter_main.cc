@@ -156,8 +156,9 @@ void FlutterMain::SetupObservatoryUriCallback(JNIEnv* env) {
       });
 }
 
-static void CreateDefaultFontManager(JNIEnv* env, jclass jcaller) {
-  sk_sp<SkFontMgr> font_mgr(SkFontMgr::RefDefault());
+static void PrefetchDefaultFontManager(JNIEnv* env, jclass jcaller) {
+  // Initialize a singleton owned by Skia.
+  SkFontMgr::RefDefault();
 }
 
 bool FlutterMain::Register(JNIEnv* env) {
@@ -169,9 +170,9 @@ bool FlutterMain::Register(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&Init),
       },
       {
-          .name = "nativeCreateDefaultFontManager",
+          .name = "nativePrefetchDefaultFontManager",
           .signature = "()V",
-          .fnPtr = reinterpret_cast<void*>(&CreateDefaultFontManager),
+          .fnPtr = reinterpret_cast<void*>(&PrefetchDefaultFontManager),
       },
   };
 

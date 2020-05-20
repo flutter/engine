@@ -107,11 +107,11 @@ public class FlutterJNI {
       long initTimeMillis);
 
   /**
-   * Create the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
+   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
    * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
    * noticeable time, but later calls will return a reference to the preexisting font manager.
    */
-  public static native void nativeCreateDefaultFontManager();
+  public static native void nativePrefetchDefaultFontManager();
 
   // TODO(mattcarroll): add javadocs
   @UiThread

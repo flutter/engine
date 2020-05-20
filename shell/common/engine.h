@@ -366,8 +366,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   //----------------------------------------------------------------------------
   /// @brief      Setup default font manager according to specific platform.
   ///
-  /// @attention  This operation calls `SkFontMgr::RefDefault` which is
-  ///             time-consuming except running at linux and windows.
   void SetupDefaultFontManager();
 
   //----------------------------------------------------------------------------
