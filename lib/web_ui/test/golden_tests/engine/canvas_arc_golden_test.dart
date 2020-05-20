@@ -59,7 +59,7 @@ void main() async {
       ..style = PaintingStyle.fill);
 
     html.document.body.append(canvas.rootElement);
-    await matchGoldenFile('canvas_addarc.png', region: region, write: true);
+    await matchGoldenFile('canvas_addarc.png', region: region);
   });
 }
 
