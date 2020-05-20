@@ -16,6 +16,8 @@ class LocaleInitialization extends Scenario {
       : assert(window != null),
         super(window);
 
+  int tapCount = 0;
+
   @override
   void onBeginFrame(Duration duration) {
     // Doesn't matter what we draw. Just paint white.
@@ -65,5 +67,42 @@ class LocaleInitialization extends Scenario {
         additionalActions: Int32List(0),
       )).build()
     );
+  }
+
+  // We don't really care about the touch itself. It's just a way for the
+  // XCUITest to communicate timing to the mock framework.
+  @override
+  void onPointerDataPacket(PointerDataPacket packet) {
+    String label;
+    switch(tapCount) {
+      case 0: label = window.platformResolvedLocale.toString(); break;
+      // Expand for other test cases.
+    }
+
+    window.updateSemantics((SemanticsUpdateBuilder()
+      ..updateNode(
+        id: 0,
+        // SemanticsFlag.isTextField and SemanticsFlag.isFocused.
+        flags: 48,
+        actions: 18433,
+        rect: const Rect.fromLTRB(0.0, 0.0, 414.0, 48.0),
+        label: label,
+        textDirection: TextDirection.ltr,
+        textSelectionBase: 0,
+        textSelectionExtent: 0,
+        platformViewId: -1,
+        maxValueLength: -1,
+        currentValueLength: 0,
+        scrollChildren: 0,
+        scrollIndex: 0,
+        transform: Matrix4.identity().storage,
+        elevation: 0.0,
+        thickness: 0.0,
+        childrenInTraversalOrder: Int32List(0),
+        childrenInHitTestOrder: Int32List(0),
+        additionalActions: Int32List(0),
+      )).build()
+    );
+    tapCount++;
   }
 }
