@@ -96,9 +96,9 @@ std::optional<MemoryUsageInfo> ProfilerMetricsIOS::MemoryUsage() {
   // is the total physical memory used by the app, so we simply do `resident_size - phys_footprint`
   // to obtain the shared memory usage.
   const double dirty_memory_usage =
-      static_cast<float>(task_memory_info.phys_footprint) / 1024.0 / 1024.0;
+      static_cast<double>(task_memory_info.phys_footprint) / 1024.0 / 1024.0;
   const double owned_shared_memory_usage =
-      static_cast<float>(task_memory_info.resident_size) / 1024.0 / 1024.0 - dirty_memory_usage;
+      static_cast<double>(task_memory_info.resident_size) / 1024.0 / 1024.0 - dirty_memory_usage;
   flutter::MemoryUsageInfo memory_usage_info = {
       .dirty_memory_usage = dirty_memory_usage,
       .owned_shared_memory_usage = owned_shared_memory_usage};
