@@ -16,8 +16,9 @@ class LocaleInitialization extends Scenario {
       : assert(window != null),
         super(window);
 
-  int tapCount = 0;
+  int _tapCount = 0;
 
+  /// Start off by sending the supported locales list via semantics.
   @override
   void onBeginFrame(Duration duration) {
     // Doesn't matter what we draw. Just paint white.
@@ -75,7 +76,7 @@ class LocaleInitialization extends Scenario {
   @override
   void onPointerDataPacket(PointerDataPacket packet) {
     String label;
-    switch(tapCount) {
+    switch(_tapCount) {
       case 0: label = window.platformResolvedLocale.toString(); break;
       // Expand for other test cases.
     }
@@ -104,6 +105,6 @@ class LocaleInitialization extends Scenario {
         additionalActions: Int32List(0),
       )).build()
     );
-    tapCount++;
+    _tapCount++;
   }
 }
