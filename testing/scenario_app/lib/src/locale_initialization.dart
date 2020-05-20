@@ -69,8 +69,9 @@ class LocaleInitialization extends Scenario {
     );
   }
 
-  // We don't really care about the touch itself. It's just a way for the
-  // XCUITest to communicate timing to the mock framework.
+  /// Handle taps.
+  ///
+  /// Send changing information via semantics on each successive tap.
   @override
   void onPointerDataPacket(PointerDataPacket packet) {
     String label;
