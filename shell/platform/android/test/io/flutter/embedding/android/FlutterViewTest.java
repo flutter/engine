@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -41,6 +42,7 @@ import org.robolectric.shadows.ShadowDisplay;
 
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
+@TargetApi(28)
 public class FlutterViewTest {
   @Mock FlutterJNI mockFlutterJni;
   @Mock FlutterLoader mockFlutterLoader;
