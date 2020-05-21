@@ -20,33 +20,33 @@ public class StandardMethodCodecTest {
 
   @Test
   public void encodeMethodTest() {
-    Map<String, String> args = new HashMap<>();
+    final Map<String, String> args = new HashMap<>();
     args.put("testArg", "testValue");
     MethodCall call = new MethodCall("testMethod", args);
-    ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeMethodCall(call);
+    final ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeMethodCall(call);
     assertNotNull(buffer);
     buffer.flip();
-    MethodCall result = StandardMethodCodec.INSTANCE.decodeMethodCall(buffer);
+    final MethodCall result = StandardMethodCodec.INSTANCE.decodeMethodCall(buffer);
     assertEquals(call.method, result.method);
     assertEquals(call.arguments, result.arguments);
   }
 
   @Test
   public void encodeSuccessEnvelopeTest() {
-    Map<String, Integer> success = new HashMap<>();
+    final Map<String, Integer> success = new HashMap<>();
     success.put("result", 1);
-    ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeSuccessEnvelope(success);
+    final ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeSuccessEnvelope(success);
     assertNotNull(buffer);
     buffer.flip();
-    Object result = StandardMethodCodec.INSTANCE.decodeEnvelope(buffer);
+    final Object result = StandardMethodCodec.INSTANCE.decodeEnvelope(buffer);
     assertEquals(success, result);
   }
 
   @Test
   public void encodeSuccessEnvelopeUnsupportedObjectTest() {
-    StandardMethodCodecTest joke = new StandardMethodCodecTest();
+    final StandardMethodCodecTest joke = new StandardMethodCodecTest();
     try {
-      ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeSuccessEnvelope(joke);
+      final ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeSuccessEnvelope(joke);
       fail("Should have failed to convert unsupported type.");
     } catch (IllegalArgumentException e) {
       // pass.
@@ -55,7 +55,8 @@ public class StandardMethodCodecTest {
 
   @Test
   public void encodeErrorEnvelopeWithNullDetailsTest() {
-    ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeErrorEnvelope("code", "error", null);
+    final ByteBuffer buffer =
+        StandardMethodCodec.INSTANCE.encodeErrorEnvelope("code", "error", null);
     assertNotNull(buffer);
     buffer.flip();
     try {
@@ -70,8 +71,9 @@ public class StandardMethodCodecTest {
 
   @Test
   public void encodeErrorEnvelopeWithThrowableTest() {
-    Exception e = new IllegalArgumentException("foo");
-    ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeErrorEnvelope("code", e.getMessage(), e);
+    final Exception e = new IllegalArgumentException("foo");
+    final ByteBuffer buffer =
+        StandardMethodCodec.INSTANCE.encodeErrorEnvelope("code", e.getMessage(), e);
     assertNotNull(buffer);
     buffer.flip();
     try {
