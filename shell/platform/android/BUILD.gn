@@ -152,9 +152,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/dart/DartMessenger.java",
   "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
   "io/flutter/embedding/engine/loader/FlutterLoader.java",
-  "io/flutter/embedding/engine/loader/ResourceCleaner.java",
   "io/flutter/embedding/engine/loader/ResourceExtractor.java",
-  "io/flutter/embedding/engine/loader/ResourcePaths.java",
   "io/flutter/embedding/engine/plugins/FlutterPlugin.java",
   "io/flutter/embedding/engine/plugins/PluginRegistry.java",
   "io/flutter/embedding/engine/plugins/activity/ActivityAware.java",
@@ -204,6 +202,7 @@ android_java_sources = [
   "io/flutter/plugin/common/StandardMessageCodec.java",
   "io/flutter/plugin/common/StandardMethodCodec.java",
   "io/flutter/plugin/common/StringCodec.java",
+  "io/flutter/plugin/editing/FlutterTextUtils.java",
   "io/flutter/plugin/editing/InputConnectionAdaptor.java",
   "io/flutter/plugin/editing/TextInputPlugin.java",
   "io/flutter/plugin/mouse/MouseCursorPlugin.java",
@@ -442,6 +441,7 @@ action("robolectric_tests") {
     "test/io/flutter/embedding/engine/renderer/FlutterRendererTest.java",
     "test/io/flutter/external/FlutterLaunchTests.java",
     "test/io/flutter/plugin/common/StandardMessageCodecTest.java",
+    "test/io/flutter/plugin/common/StandardMethodCodecTest.java",
     "test/io/flutter/plugin/editing/InputConnectionAdaptorTest.java",
     "test/io/flutter/plugin/editing/TextInputPluginTest.java",
     "test/io/flutter/plugin/platform/PlatformPluginTest.java",
@@ -458,23 +458,29 @@ action("robolectric_tests") {
     jar_path + ".md5.stamp",
   ]
 
+  additional_jar_files = [ "robolectric.properties" ]
+
   _jar_dependencies = [
                         android_sdk_jar,
                         embedding_jar_path,
                       ] + embedding_dependencies_jars
 
-  inputs = _jar_dependencies
+  inputs = _jar_dependencies + additional_jar_files
 
+  _rebased_current_path = rebase_path(".")
   _rebased_jar_path = rebase_path(jar_path, root_build_dir)
   _rebased_depfile = rebase_path(depfile, root_build_dir)
   _rebased_classpath = rebase_path(_jar_dependencies, root_build_dir)
   _rebased_srcjars = rebase_path(_jar_dependencies, root_build_dir)
+  _rebased_additional_files = rebase_path(additional_jar_files, root_build_dir)
 
   args = [
     "--depfile=$_rebased_depfile",
     "--jar-path=$_rebased_jar_path",
     "--classpath=$_rebased_classpath",
+    "--jar-source-base-dir=$_rebased_current_path",
     "--java-srcjars=$_rebased_srcjars",
+    "--additional-jar-files=$_rebased_additional_files",
   ]
 
   args += rebase_path(sources, root_build_dir)

@@ -62,6 +62,27 @@ class RasterCache {
     return bounds;
   }
 
+  /**
+   * @brief Snap the translation components of the matrix to integers.
+   *
+   * The snapping will only happen if the matrix only has scale and translation
+   * transformations.
+   *
+   * @param ctm the current transformation matrix.
+   * @return SkMatrix the snapped transformation matrix.
+   */
+  static SkMatrix GetIntegralTransCTM(const SkMatrix& ctm) {
+    // Avoid integral snapping if the matrix has complex transformation to avoid
+    // the artifact observed in https://github.com/flutter/flutter/issues/41654.
+    if (!ctm.isScaleTranslate()) {
+      return ctm;
+    }
+    SkMatrix result = ctm;
+    result[SkMatrix::kMTransX] = SkScalarRoundToScalar(ctm.getTranslateX());
+    result[SkMatrix::kMTransY] = SkScalarRoundToScalar(ctm.getTranslateY());
+    return result;
+  }
+
   // Return true if the cache is generated.
   //
   // We may return false and not generate the cache if

@@ -131,8 +131,8 @@ class TestCommand extends Command<bool> with ArgUtils {
         // TODO(nurhan): https://github.com/flutter/flutter/issues/53322
         // TODO(nurhan): Expand browser matrix for felt integration tests.
         if (runAllTests && isChrome) {
-          bool integrationTestResult = await runIntegrationTests();
           bool unitTestResult = await runUnitTests();
+          bool integrationTestResult = await runIntegrationTests();
           if (integrationTestResult != unitTestResult) {
             print('Tests run. Integration tests passed: $integrationTestResult '
                 'unit tests passed: $unitTestResult');
@@ -146,11 +146,6 @@ class TestCommand extends Command<bool> with ArgUtils {
   }
 
   Future<bool> runIntegrationTests() async {
-    // TODO(nurhan): https://github.com/flutter/flutter/issues/52983
-    if (io.Platform.environment['LUCI_CONTEXT'] != null) {
-      return true;
-    }
-
     return IntegrationTestsManager(browser, useSystemFlutter).runTests();
   }
 
@@ -392,11 +387,25 @@ class TestCommand extends Command<bool> with ArgUtils {
           '--build-filter=${path.relativeToWebUi}.browser_test.dart.js',
         ],
     ];
+    final Stopwatch stopwatch = Stopwatch()..start();
+
     final int exitCode = await runProcess(
       environment.pubExecutable,
       arguments,
       workingDirectory: environment.webUiRootDir.path,
+      environment: <String, String>{
+        // This determines the number of concurrent dart2js processes.
+        //
+        // By default build_runner uses 4 workers.
+        //
+        // In a testing on a 32-core 132GB workstation increasing this number to
+        // 32 sped up the build from ~4min to ~1.5min.
+        if (io.Platform.environment.containsKey('BUILD_MAX_WORKERS_PER_TASK'))
+          'BUILD_MAX_WORKERS_PER_TASK': io.Platform.environment['BUILD_MAX_WORKERS_PER_TASK'],
+      },
     );
+    stopwatch.stop();
+    print('The build took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
 
     if (exitCode != 0) {
       throw ToolException(

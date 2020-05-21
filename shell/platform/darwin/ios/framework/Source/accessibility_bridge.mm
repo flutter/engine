@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
 
-#include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+#import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 #pragma GCC diagnostic error "-Wundeclared-selector"
 
@@ -38,7 +39,7 @@ AccessibilityBridge::~AccessibilityBridge() {
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
-  return [platform_view_->GetTextInputPlugin() textInputView];
+  return [[platform_view_->GetOwnerViewController().get().engine textInputPlugin] textInputView];
 }
 
 void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
@@ -76,9 +77,9 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
         NSString* label = @(action.label.data());
         SEL selector = @selector(onCustomAccessibilityAction:);
         FlutterCustomAccessibilityAction* customAction =
-            [[FlutterCustomAccessibilityAction alloc] initWithName:label
-                                                            target:object
-                                                          selector:selector];
+            [[[FlutterCustomAccessibilityAction alloc] initWithName:label
+                                                             target:object
+                                                           selector:selector] autorelease];
         customAction.uid = action_id;
         [accessibilityCustomActions addObject:customAction];
       }
@@ -88,11 +89,11 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     if (object.node.IsPlatformViewNode()) {
       FlutterPlatformViewsController* controller = GetPlatformViewsController();
       if (controller) {
-        object.platformViewSemanticsContainer =
-            [[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object];
+        object.platformViewSemanticsContainer = [[[FlutterPlatformViewSemanticsContainer alloc]
+            initWithSemanticsObject:object] autorelease];
       }
     } else if (object.platformViewSemanticsContainer) {
-      [object.platformViewSemanticsContainer release];
+      object.platformViewSemanticsContainer = nil;
     }
   }
 
@@ -178,11 +179,10 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
     return [[[TextInputSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
              node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
-    SemanticsObject* delegateObject = [[FlutterSemanticsObject alloc] initWithBridge:weak_ptr
-                                                                                 uid:node.id];
+    SemanticsObject* delegateObject =
+        [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
     return (SemanticsObject*)[[[FlutterSwitchSemanticsObject alloc]
         initWithSemanticsObject:delegateObject] autorelease];
-    [delegateObject release];
   } else {
     return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   }

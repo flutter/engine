@@ -489,8 +489,8 @@ class Shell final : public PlatformView::Delegate,
   void OnAnimatorNotifyIdle(int64_t deadline) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDraw(
-      fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) override;
+  void OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+                      fml::TimePoint frame_target_time) override;
 
   // |Animator::Delegate|
   void OnAnimatorDrawLastLayerTree() override;
@@ -580,7 +580,7 @@ class Shell final : public PlatformView::Delegate,
 
   // For accessing the Shell via the raster thread, necessary for various
   // rasterizer callbacks.
-  std::unique_ptr<fml::WeakPtrFactory<Shell>> weak_factory_gpu_;
+  std::unique_ptr<fml::TaskRunnerAffineWeakPtrFactory<Shell>> weak_factory_gpu_;
 
   friend class testing::ShellTest;
 

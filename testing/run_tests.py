@@ -38,13 +38,9 @@ def RunCmd(cmd, **kwargs):
   print 'Running command "%s"' % command_string
 
   start_time = time.time()
-  process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs)
-  (output, _) = process.communicate()
+  process = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr, **kwargs)
+  process.communicate()
   end_time = time.time()
-
-  # Print the result no matter what.
-  for line in output.splitlines():
-    print line
 
   if process.returncode != 0:
     PrintDivider('!')
@@ -152,6 +148,9 @@ def RunCCTests(build_dir, filter):
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():
     RunEngineExecutable(build_dir, 'txt_unittests', filter, shuffle_flags)
+
+  if IsLinux():
+    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, shuffle_flags)
 
 
 def RunEngineBenchmarks(build_dir, filter):

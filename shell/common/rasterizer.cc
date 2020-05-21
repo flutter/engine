@@ -54,10 +54,11 @@ Rasterizer::Rasterizer(
 Rasterizer::~Rasterizer() = default;
 
 fml::TaskRunnerAffineWeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
-  return weak_factory_.GetTaskRunnerAffineWeakPtr();
+  return weak_factory_.GetWeakPtr();
 }
 
-fml::WeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate() const {
+fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate()
+    const {
   return weak_factory_.GetWeakPtr();
 }
 
@@ -155,7 +156,7 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
       task_runners_.GetRasterTaskRunner()->PostTask(
-          [weak_this = weak_factory_.GetTaskRunnerAffineWeakPtr(), pipeline]() {
+          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
             if (weak_this) {
               weak_this->Draw(pipeline);
             }
@@ -256,7 +257,9 @@ RasterStatus Rasterizer::DoDraw(
   }
 
   FrameTiming timing;
+#if !defined(OS_FUCHSIA)
   const fml::TimePoint frame_target_time = layer_tree->target_time();
+#endif
   timing.Set(FrameTiming::kBuildStart, layer_tree->build_start());
   timing.Set(FrameTiming::kBuildFinish, layer_tree->build_finish());
   timing.Set(FrameTiming::kRasterStart, fml::TimePoint::Now());
@@ -286,6 +289,9 @@ RasterStatus Rasterizer::DoDraw(
   timing.Set(FrameTiming::kRasterFinish, raster_finish_time);
   delegate_.OnFrameRasterized(timing);
 
+// SceneDisplayLag events are disabled on Fuchsia.
+// see: https://github.com/flutter/flutter/issues/56598
+#if !defined(OS_FUCHSIA)
   if (raster_finish_time > frame_target_time) {
     fml::TimePoint latest_frame_target_time =
         delegate_.GetLatestFrameTargetTime();
@@ -311,6 +317,7 @@ RasterStatus Rasterizer::DoDraw(
         vsync_transitions_missed      // arg_val_3
     );
   }
+#endif
 
   // Pipeline pressure is applied from a couple of places:
   // rasterizer: When there are more items as of the time of Consume.

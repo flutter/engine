@@ -1,4 +1,4 @@
-Signature: 63fcf35733917f57919b0ab8dd9543ef
+Signature: 3115a6577d68df2062c434009ca809df
 
 UNUSED LICENSES:
 
@@ -7446,6 +7446,7 @@ FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions_dart2js.dar
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/html_common.dart
 FILE: ../../../third_party/dart/sdk/lib/libraries.json
 FILE: ../../../third_party/dart/sdk/lib/vmservice_libraries.json
+FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/allowed_experiments.json
 FILE: ../../../third_party/dart/sdk_nnbd/lib/html/html_common/conversions_dart2js.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/html/html_common/html_common.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/libraries.json
@@ -7719,6 +7720,9 @@ FILE: ../../../third_party/dart/runtime/bin/dartdev_utils.h
 FILE: ../../../third_party/dart/runtime/bin/exe_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/exe_utils.h
 FILE: ../../../third_party/dart/runtime/observatory/bin/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/platform/leak_sanitizer.h
+FILE: ../../../third_party/dart/runtime/platform/unaligned.h
+FILE: ../../../third_party/dart/runtime/platform/undefined_behavior_sanitizer.h
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/bin/main.dart
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/cquery_driver.dart
 FILE: ../../../third_party/dart/runtime/tools/wiki/xref_extractor/lib/xref_extractor.dart
