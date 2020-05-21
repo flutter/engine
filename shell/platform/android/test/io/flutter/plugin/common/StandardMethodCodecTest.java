@@ -71,8 +71,7 @@ public class StandardMethodCodecTest {
   @Test
   public void encodeErrorEnvelopeWithThrowableTest() {
     Exception e = new IllegalArgumentException("foo");
-    ByteBuffer buffer =
-        StandardMethodCodec.INSTANCE.encodeErrorEnvelope("code", e.getMessage(), e);
+    ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeErrorEnvelope("code", e.getMessage(), e);
     assertNotNull(buffer);
     buffer.flip();
     try {
@@ -83,7 +82,9 @@ public class StandardMethodCodecTest {
       assertEquals("foo", result.getMessage());
       // Must contain part of a stack.
       String stack = (String) result.details;
-      assertTrue(stack.contains("at io.flutter.plugin.common.StandardMethodCodecTest.encodeErrorEnvelopeWithThrowableTest(StandardMethodCodecTest.java:"));
+      assertTrue(
+          stack.contains(
+              "at io.flutter.plugin.common.StandardMethodCodecTest.encodeErrorEnvelopeWithThrowableTest(StandardMethodCodecTest.java:"));
     }
   }
 }
