@@ -76,6 +76,15 @@ class OpacityLayer : public ContainerLayer {
    * and this method will return that single child if possible to improve
    * the performance of caching the children.
    *
+   * Note that if GetCacheableChild() does not find a single stable child of
+   * the child container it will return the child container as a fallback.
+   * Even though that child is new in each frame of an animation and thus we
+   * cannot reuse the cached layer raster between animation frames, the single
+   * container child will allow us to paint the child onto an offscreen buffer
+   * during Preroll() which reduces one render target switch compared to
+   * painting the child on the fly via an AutoSaveLayer in Paint() and thus
+   * still improves our performance.
+   *
    * @see GetChildContainer()
    * @return the best candidate Layer for caching the children
    */
