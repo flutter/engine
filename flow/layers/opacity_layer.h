@@ -42,13 +42,16 @@ class OpacityLayer : public ContainerLayer {
    * @brief Returns the ContainerLayer used to hold all of the children
    * of the OpacityLayer.
    *
-   * Typically these layers should only have a single child according to
-   * the contract of the associated Flutter widget, but the engine API
-   * cannot enforce that contract and must be prepared to support the
-   * possibility of adding more than one child. In either case, the
-   * child container will hold all children. Note that since the child
-   * container is created fresh with each new OpacityLayer, it may not
-   * be the best choice to cache to speed up rendering during an animation.
+   * Often opacity layers will only have a single child since the associated
+   * Flutter widget is specified with only a single child widget pointer.
+   * But depending on the structure of the child tree that single widget at
+   * the framework level can turn into multiple children at the engine
+   * API level since there is no guarantee of a 1:1 correspondence of widgets
+   * to engine layers. This synthetic child container layer is established to
+   * hold all of the children in a single layer so that we can cache their
+   * output, but this synthetic layer will typically not be the best choice
+   * for the layer cache since the synthetic container is created fresh with
+   * each new OpacityLayer, and so may not be stable from frame to frame.
    *
    * @see GetCacheableChild()
    * @return the ContainerLayer child used to hold the children
@@ -61,13 +64,17 @@ class OpacityLayer : public ContainerLayer {
    *
    * The returned Layer must represent all children and try to remain stable
    * if the OpacityLayer is reconstructed in subsequent frames of the scene.
-   * The OpacityLayer needs to be recreated on frames where its opacity
-   * values change, but it often contains the same child on each such frame.
-   * Since the child container is created fresh each time the OpacityLayer
-   * is constructed, the return value from GetChildContainer will be different
-   * on each such frame even if the same child is used. This method will
-   * determine if there is a (single) stable child and return that Layer
-   * so that caching will be more successful.
+   *
+   * Note that since the synthetic child container returned from the
+   * GetChildContainer() method is created fresh with each new OpacityLayer,
+   * its return value will not be a good candidate for caching. But if the
+   * standard recommendations for animations are followed and the child widget
+   * is wrapped with a RepaintBoundary widget at the framework level, then
+   * the synthetic child container should contain the same single child layer
+   * on each frame. Under those conditions, that single child of the child
+   * container will be the best candidate for caching in the RasterCache
+   * and this method will return that single child if possible to improve
+   * the performance of caching the children.
    *
    * @see GetChildContainer()
    * @return the best candidate Layer for caching the children
