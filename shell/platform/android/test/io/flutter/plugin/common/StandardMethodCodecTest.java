@@ -25,6 +25,7 @@ public class StandardMethodCodecTest {
     MethodCall call = new MethodCall("testMethod", args);
     ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeMethodCall(call);
     assertNotNull(buffer);
+    buffer.flip();
     MethodCall result = StandardMethodCodec.INSTANCE.decodeMethodCall(buffer);
     assertEquals(call.method, result.method);
     assertEquals(call.arguments, result.arguments);
@@ -36,6 +37,7 @@ public class StandardMethodCodecTest {
     success.put("result", 1);
     ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeSuccessEnvelope(success);
     assertNotNull(buffer);
+    buffer.flip();
     Object result = StandardMethodCodec.INSTANCE.decodeEnvelope(buffer);
     assertEquals(success, result);
   }
@@ -55,28 +57,33 @@ public class StandardMethodCodecTest {
   public void encodeErrorEnvelopeWithNullDetailsTest() {
     ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeErrorEnvelope("code", "error", null);
     assertNotNull(buffer);
-    FlutterException result =
-        (FlutterException) StandardMethodCodec.INSTANCE.decodeEnvelope(buffer);
-    assertEquals("code", result.code);
-    assertEquals("error", result.getMessage());
-    assertNull(result.details);
+    buffer.flip();
+    try {
+      StandardMethodCodec.INSTANCE.decodeEnvelope(buffer);
+      fail("Should have thrown a FlutterException since this is an error envelope.");
+    } catch (FlutterException result) {
+      assertEquals("code", result.code);
+      assertEquals("error", result.getMessage());
+      assertNull(result.details);
+    }
   }
 
   @Test
   public void encodeErrorEnvelopeWithThrowableTest() {
+    Exception e = new IllegalArgumentException("foo");
+    ByteBuffer buffer =
+        StandardMethodCodec.INSTANCE.encodeErrorEnvelope("code", e.getMessage(), e);
+    assertNotNull(buffer);
+    buffer.flip();
     try {
-      throw new IllegalArgumentException("foo");
-    } catch (IllegalArgumentException e) {
-      ByteBuffer buffer =
-          StandardMethodCodec.INSTANCE.encodeErrorEnvelope("code", e.getMessage(), e);
-      assertNotNull(buffer);
-      FlutterException result =
-          (FlutterException) StandardMethodCodec.INSTANCE.decodeEnvelope(buffer);
+      StandardMethodCodec.INSTANCE.decodeEnvelope(buffer);
+      fail("Should have thrown a FlutterException since this is an error envelope.");
+    } catch (FlutterException result) {
       assertEquals("code", result.code);
-      assertEquals("error", result.getMessage());
+      assertEquals("foo", result.getMessage());
       // Must contain part of a stack.
       String stack = (String) result.details;
-      assertTrue(stack.contains("StandardMethodCodecTest.java:15"));
+      assertTrue(stack.contains("at io.flutter.plugin.common.StandardMethodCodecTest.encodeErrorEnvelopeWithThrowableTest(StandardMethodCodecTest.java:"));
     }
   }
 }
