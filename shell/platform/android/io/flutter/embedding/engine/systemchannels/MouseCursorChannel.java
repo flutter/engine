@@ -59,9 +59,9 @@ public class MouseCursorChannel {
           case "activateSystemCursor":
             @SuppressWarnings("unchecked")
             final HashMap<String, Object> data = (HashMap<String, Object>) call.arguments;
-            final Integer shapeCode = (Integer) data.get("shapeCode");
+            final String kind = (String) data.get("kind");
             try {
-              mouseCursorMethodHandler.activateSystemCursor(shapeCode);
+              mouseCursorMethodHandler.activateSystemCursor(kind);
             } catch (Exception e) {
               result.error("error", "Error when setting cursors: " + e.getMessage(), null);
               break;
@@ -79,7 +79,7 @@ public class MouseCursorChannel {
   public interface MouseCursorMethodHandler {
     // Called when the pointer should start displaying a system mouse cursor
     // specified by {@code shapeCode}.
-    public void activateSystemCursor(@NonNull Integer shapeCode);
+    public void activateSystemCursor(@NonNull String kind);
   }
 
 

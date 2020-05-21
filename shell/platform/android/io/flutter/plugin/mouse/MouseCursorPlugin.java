@@ -10,15 +10,11 @@ import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import java.util.HashMap;
 
-/** Android implementation of the text input plugin. */
+/** A mandatory plugin that handles mouse cursor requests. */
 public class MouseCursorPlugin {
   @NonNull private final MouseCursorViewDelegate mView;
   @NonNull private final MouseCursorChannel mouseCursorChannel;
   @NonNull private final Context context;
-  // A map from each cursor to its cursor object. System icons are cached here
-  // as it's first requested.
-  @NonNull
-  private HashMap<Integer, PointerIcon> cursorObjects = new HashMap<Integer, PointerIcon>();
 
   public MouseCursorPlugin(
       @NonNull MouseCursorViewDelegate view,
@@ -31,50 +27,39 @@ public class MouseCursorPlugin {
     mouseCursorChannel.setMethodHandler(
       new MouseCursorChannel.MouseCursorMethodHandler() {
         @Override
-        public void activateSystemCursor(@NonNull Integer shapeCode) {
-          mView.setPointerIcon(resolveSystemCursor(shapeCode));
+        public void activateSystemCursor(@NonNull String kind) {
+          mView.setPointerIcon(resolveSystemCursor(kind));
         }
       });
   }
 
-  // Return a cursor object for a cursor. This method guarantees to return a non-null object.
-  //
-  // This method first tries to find a cached value in cursorObjects.
-  //
-  // If there is no matching cache, the method tries to create it as a system cursor, which falls
-  // back to MouseCursors.basic for all unrecognized values. The value is cached in cursorObjects
-  // before being returned.
-  private PointerIcon resolveSystemCursor(@NonNull Integer shapeCode) {
-    final PointerIcon cached = cursorObjects.get(shapeCode);
-    if (cached != null)
-      return cached;
-    final PointerIcon result = PointerIcon.getSystemIcon(context, shapeCode);
-    cursorObjects.put(shapeCode, result);
-    return result;
-  }
-
-  static Integer _mapShapeCodeToPlatformConstant(int shapeCode) {
-    // Shape codes are hard-coded identifiers for system cursors.
-    //
-    // The shape code values must be kept in sync with flutter's
-    // rendering/mouse_cursor.dart
-    switch (shapeCode) {
-      case /* none */ 0x334c4a:
-        return PointerIcon.TYPE_NULL;
-      case /* basic */ 0xf17aaa:
-        break;
-      case /* click */ 0xa8affc:
-        return PointerIcon.TYPE_HAND;
-      case /* text */ 0x1cb251:
-        return PointerIcon.TYPE_TEXT;
-      case /* forbidden */ 0x350f9d:
-        break;
-      case /* grab */ 0x28b91f:
-        return PointerIcon.TYPE_GRAB;
-      case /* grabbing */ 0x6631ce:
-        return PointerIcon.TYPE_GRABBING;
+  /**
+   * Return a pointer icon object for a system cursor.
+   *
+   * This method guarantees to return a non-null object.
+   */
+  private PointerIcon resolveSystemCursor(@NonNull String kind) {
+    if (MouseCursorPlugin.systemCursorConstants == null) {
+      MouseCursorPlugin.systemCursorConstants = new HashMap<String, Integer>() {{
+        put("none", new Integer(PointerIcon.TYPE_NULL));
+        //  "basic": default
+        put("click", new Integer(PointerIcon.TYPE_HAND));
+        put("text", new Integer(PointerIcon.TYPE_TEXT));
+        //  "forbidden": default
+        put("grab", new Integer(PointerIcon.TYPE_GRAB));
+        put("grabbing", new Integer(PointerIcon.TYPE_GRABBING));
+      }};
     }
-    return PointerIcon.TYPE_ARROW;
+
+    final Integer cursorConstantObj = MouseCursorPlugin.systemCursorConstants.get(kind);
+    int cursorConstant;
+    if (cursorConstantObj != null) {
+      cursorConstant = cursorConstantObj.intValue();
+    } else {
+      cursorConstant = PointerIcon.TYPE_ARROW;
+    }
+    PointerIcon result = PointerIcon.getSystemIcon(context, cursorConstant);
+    return result;
   }
 
   /**
@@ -86,6 +71,21 @@ public class MouseCursorPlugin {
     mouseCursorChannel.setMethodHandler(null);
   }
 
+  /**
+   * A map from Flutter's system cursor {@code kind} to Android's pointer icon
+   * constants.
+   *
+   * <p>It is null until the first time a system cursor is requested, at which time
+   * it is filled with the entire mapping.
+   */
+  @NonNull
+  private static HashMap<String, Integer> systemCursorConstants;
+
+  /**
+   * Delegate interface for requesting the system to display a pointer icon object.
+   *
+   * <p>Typically implemented by an {@link android.view.View}, such as a {@code FlutterView}.
+   */
   public interface MouseCursorViewDelegate {
     public void setPointerIcon(@NonNull PointerIcon icon);
   }
