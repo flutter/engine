@@ -15,6 +15,7 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/raster_thread_merger.h"
+#include "flutter/fml/synchronization/sync_switch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
@@ -103,7 +104,8 @@ class Rasterizer final : public SnapshotDelegate {
   ///                                 the GPU state used by the rasterizer.
   ///
   Rasterizer(TaskRunners task_runners,
-             std::unique_ptr<flutter::CompositorContext> compositor_context);
+             std::unique_ptr<flutter::CompositorContext> compositor_context,
+             std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
@@ -117,7 +119,9 @@ class Rasterizer final : public SnapshotDelegate {
   /// @param[in]  delegate            The rasterizer delegate.
   /// @param[in]  task_runners        The task runners used by the shell.
   ///
-  Rasterizer(Delegate& delegate, TaskRunners task_runners);
+  Rasterizer(Delegate& delegate,
+             TaskRunners task_runners,
+             std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
@@ -135,7 +139,8 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   Rasterizer(Delegate& delegate,
              TaskRunners task_runners,
-             std::unique_ptr<flutter::CompositorContext> compositor_context);
+             std::unique_ptr<flutter::CompositorContext> compositor_context,
+             std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the GPU task
@@ -432,6 +437,7 @@ class Rasterizer final : public SnapshotDelegate {
   std::optional<size_t> max_cache_bytes_;
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
+  std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
