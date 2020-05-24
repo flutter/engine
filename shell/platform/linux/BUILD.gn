@@ -70,8 +70,10 @@ config("relative_flutter_linux_headers") {
   include_dirs = [ "public" ]
 }
 
-source_set("flutter_linux") {
+source_set("flutter_linux_sources") {
   public = _public_headers
+
+  configs += [ "//flutter/shell/platform/linux/config:gtk" ]
 
   sources = [
     "fl_basic_message_channel.cc",
@@ -98,18 +100,28 @@ source_set("flutter_linux") {
     "fl_view.cc",
   ]
 
+  # Set flag to stop headers being directly included (library users should not do this)
+  defines = [ "FLUTTER_LINUX_COMPILATION" ]
+
+  deps = [
+    "//flutter/shell/platform/embedder:embedder_headers",
+    "//third_party/rapidjson",
+  ]
+}
+
+source_set("flutter_linux") {
   configs += [
     "//flutter/shell/platform/linux/config:gtk",
     "//flutter/shell/platform/linux/config:egl",
     "//third_party/khronos:khronos_headers",
   ]
 
-  # Set flag to stop headers being directly included (library users should not do this)
-  defines = [ "FLUTTER_LINUX_COMPILATION" ]
+  public_deps = [
+    ":flutter_linux_sources",
+  ]
 
   deps = [
     "//flutter/shell/platform/embedder:embedder_with_symbol_prefix",
-    "//third_party/rapidjson",
   ]
 }
 
@@ -133,6 +145,9 @@ executable("flutter_linux_unittests") {
     "fl_string_codec_test.cc",
     "fl_value_test.cc",
     "testing/fl_test.cc",
+    "testing/mock_egl.cc",
+    "testing/mock_engine.cc",
+    "testing/mock_renderer.cc",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -143,8 +158,10 @@ executable("flutter_linux_unittests") {
   defines = [ "FLUTTER_LINUX_COMPILATION" ]
 
   deps = [
-    ":flutter_linux",
     ":flutter_linux_fixtures",
+    ":flutter_linux_sources",
+    "//flutter/runtime:libdart",
+    "//flutter/shell/platform/embedder:embedder_headers",
     "//flutter/testing",
   ]
 }
