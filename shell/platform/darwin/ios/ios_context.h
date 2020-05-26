@@ -86,7 +86,8 @@ class IOSContext {
   ///             Making a binding on a thread, clears the old binding.
   ///
   /// @return     A GLContextResult that represents the result of the method.
-  ///             The GetResult() returns a bool that indicates If the on-screen context could be bound to the current
+  ///             The GetResult() returns a bool that indicates If the on-screen context could be
+  ///             bound to the current
   /// thread.
   ///
   virtual std::unique_ptr<GLContextResult> MakeCurrent() = 0;
