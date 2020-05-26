@@ -257,7 +257,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   }
 
   surface->getCanvas()->setMatrix(root_surface_transformation);
-  // TODO(cyanglaz_gl capture switch)
   SurfaceFrame::SubmitCallback submit_callback =
       [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
                                           SkCanvas* canvas) {
