@@ -35,7 +35,7 @@ void main() async {
       sceneElement.append(engineCanvas.rootElement);
       html.document.body.append(sceneElement);
       await matchGoldenFile('$fileName.png',
-          region: region, maxDiffRatePercent: maxDiffRatePercent, write: true);
+          region: region, maxDiffRatePercent: maxDiffRatePercent);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
