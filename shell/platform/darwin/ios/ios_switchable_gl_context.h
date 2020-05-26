@@ -21,9 +21,9 @@ class IOSSwitchableGLContext final : public SwitchableGLContext {
  public:
   IOSSwitchableGLContext(EAGLContext& context);
 
-  virtual bool SetCurrent() override;
+  bool SetCurrent() override;
 
-  virtual bool RemoveCurrent() override;
+  bool RemoveCurrent() override;
 
  private:
   EAGLContext& context_;
