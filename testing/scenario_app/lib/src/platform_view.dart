@@ -10,6 +10,7 @@ import 'dart:ui';
 import 'package:vector_math/vector_math_64.dart';
 
 import 'scenario.dart';
+import 'scenarios.dart';
 
 List<int> _to32(int value) {
   final Uint8List temp = Uint8List(4);
@@ -446,9 +447,6 @@ class PlatformViewClipPathScenario extends PlatformViewScenario {
 
     builder.pushOffset(0, 0);
 
-    // Create a path of rectangle with width of 200 and height of 300, starting from (100, 100).
-    //
-    // Refer to "../../ios/Scenarios/Scenarios/ScenariosUITests/golden_platform_view_clippath_iPhone SE_simulator.png" for the exact path after clipping.
     final Path path = Path()
       ..moveTo(100, 100)
       ..quadraticBezierTo(50, 250, 100, 400)
@@ -632,11 +630,23 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     );
   }
 
-  void _addPlatformViewtoScene(SceneBuilder sceneBuilder, int viewId, double width, double height) {
+  void _addPlatformViewtoScene(
+    SceneBuilder sceneBuilder,
+    int viewId,
+    double width,
+    double height, {
+    Offset overlayOffset,
+  }) {
+    overlayOffset ??= const Offset(50, 50);
     if (Platform.isIOS) {
-      sceneBuilder.addPlatformView(viewId, width: width, height: height);
-    } else if (Platform.isAndroid && _textureId != null) {
-      sceneBuilder.addTexture(_textureId, offset: const Offset(150, 300), width: width, height: height);
+      sceneBuilder.addPlatformView(viewId, offset: overlayOffset, width: width, height: height);
+    } else if (Platform.isAndroid) {
+      if (scenarioParams['use_android_view'] as bool) {
+        // Hybrid composition.
+        sceneBuilder.addPlatformView(viewId, offset: overlayOffset, width: width, height: height);
+      } else if (_textureId != null) {
+        sceneBuilder.addTexture(_textureId, offset: overlayOffset, width: width, height: height);
+      }
     } else {
       throw UnsupportedError('Platform ${Platform.operatingSystem} is not supported');
     }
@@ -649,7 +659,13 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
     Offset overlayOffset,
   }) {
     overlayOffset ??= const Offset(50, 50);
-    _addPlatformViewtoScene(sceneBuilder, viewId, 500, 500);
+    _addPlatformViewtoScene(
+      sceneBuilder,
+      viewId,
+      500,
+      500,
+      overlayOffset: overlayOffset,
+    );
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.drawCircle(
