@@ -65,7 +65,7 @@ List<String> getListOfChangedFiles(String repoPath) {
 void main(List<String> arguments) async {
   final String buildCommandsPath = arguments[0];
   final String repoPath = arguments[1];
-  final String checks = arguments.length >= 3 ? arguments[2] : 'google-*';
+  final String checks = arguments.length >= 3 ? '--checks=${arguments[2]}' : '--config';
   final List<String> changedFiles = getListOfChangedFiles(repoPath);
 
   final List<dynamic> buildCommandMaps =
@@ -81,7 +81,7 @@ void main(List<String> arguments) async {
   for (Command command in changedFileBuildCommands) {
     final String tidyArgs = calcTidyArgs(command);
     print('# linting ${command.file}');
-    final List<String> args = [command.file, '--checks=$checks', '--'];
+    final List<String> args = [command.file, '', '--'];
     args.addAll(tidyArgs.split(' '));
     final Process process = await Process.start(tidyPath, args,
         workingDirectory: command.directory, runInShell: false);
