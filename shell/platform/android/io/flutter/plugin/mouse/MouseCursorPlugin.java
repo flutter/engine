@@ -41,8 +41,6 @@ public class MouseCursorPlugin {
   private PointerIcon resolveSystemCursor(@NonNull String kind) {
     if (MouseCursorPlugin.systemCursorConstants == null) {
       MouseCursorPlugin.systemCursorConstants = new HashMap<String, Integer>() {
-        private static final long serialVersionUID = 1L;
-
         {
           put("none", new Integer(PointerIcon.TYPE_NULL));
           //  "basic": default
