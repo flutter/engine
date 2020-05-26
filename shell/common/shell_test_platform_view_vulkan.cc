@@ -168,8 +168,8 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
     return true;
   };
 
-  return std::make_unique<SurfaceFrame>(
-      std::move(surface), true, std::move(callback));
+  return std::make_unique<SurfaceFrame>(std::move(surface), true,
+                                        std::move(callback));
 }
 
 GrContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {
