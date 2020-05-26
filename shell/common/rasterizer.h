@@ -102,6 +102,9 @@ class Rasterizer final : public SnapshotDelegate {
   /// @param[in]  task_runners        The task runners used by the shell.
   /// @param[in]  compositor_context  The compositor context used to hold all
   ///                                 the GPU state used by the rasterizer.
+  /// @param[in]  is_gpu_disabled_sync_switch
+  ///    A `SyncSwitch` for handling disabling of the GPU (typically happens
+  ///    when an app is backgrounded)
   ///
   Rasterizer(TaskRunners task_runners,
              std::unique_ptr<flutter::CompositorContext> compositor_context,
@@ -118,6 +121,9 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   /// @param[in]  delegate            The rasterizer delegate.
   /// @param[in]  task_runners        The task runners used by the shell.
+  /// @param[in]  is_gpu_disabled_sync_switch
+  ///    A `SyncSwitch` for handling disabling of the GPU (typically happens
+  ///    when an app is backgrounded)
   ///
   Rasterizer(Delegate& delegate,
              TaskRunners task_runners,
@@ -136,6 +142,9 @@ class Rasterizer final : public SnapshotDelegate {
   /// @param[in]  task_runners        The task runners used by the shell.
   /// @param[in]  compositor_context  The compositor context used to hold all
   ///                                 the GPU state used by the rasterizer.
+  /// @param[in]  is_gpu_disabled_sync_switch
+  ///    A `SyncSwitch` for handling disabling of the GPU (typically happens
+  ///    when an app is backgrounded)
   ///
   Rasterizer(Delegate& delegate,
              TaskRunners task_runners,
