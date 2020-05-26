@@ -181,7 +181,7 @@ class BitmapCanvas extends EngineCanvas {
       html.Element child = _children[i];
       // Don't remove children that have been reused by CrossFrameCache.
       if (child.parent == rootElement) {
-        _children[i].remove();
+        child.remove();
       }
     }
     _children.clear();
