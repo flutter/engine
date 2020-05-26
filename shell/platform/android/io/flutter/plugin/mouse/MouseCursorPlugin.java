@@ -40,24 +40,22 @@ public class MouseCursorPlugin {
    */
   private PointerIcon resolveSystemCursor(@NonNull String kind) {
     if (MouseCursorPlugin.systemCursorConstants == null) {
-      MouseCursorPlugin.systemCursorConstants = new HashMap<String, Integer>() {{
-        put("none", new Integer(PointerIcon.TYPE_NULL));
-        //  "basic": default
-        put("click", new Integer(PointerIcon.TYPE_HAND));
-        put("text", new Integer(PointerIcon.TYPE_TEXT));
-        //  "forbidden": default
-        put("grab", new Integer(PointerIcon.TYPE_GRAB));
-        put("grabbing", new Integer(PointerIcon.TYPE_GRABBING));
-      }};
+      MouseCursorPlugin.systemCursorConstants = new HashMap<String, Integer>() {
+        private static final long serialVersionUID = 1L;
+
+        {
+          put("none", new Integer(PointerIcon.TYPE_NULL));
+          //  "basic": default
+          put("click", new Integer(PointerIcon.TYPE_HAND));
+          put("text", new Integer(PointerIcon.TYPE_TEXT));
+          //  "forbidden": default
+          put("grab", new Integer(PointerIcon.TYPE_GRAB));
+          put("grabbing", new Integer(PointerIcon.TYPE_GRABBING));
+        }
+      };
     }
 
-    final Integer cursorConstantObj = MouseCursorPlugin.systemCursorConstants.get(kind);
-    int cursorConstant;
-    if (cursorConstantObj != null) {
-      cursorConstant = cursorConstantObj.intValue();
-    } else {
-      cursorConstant = PointerIcon.TYPE_ARROW;
-    }
+    final int cursorConstant = MouseCursorPlugin.systemCursorConstants.getOrDefault(kind, PointerIcon.TYPE_ARROW);
     PointerIcon result = PointerIcon.getSystemIcon(context, cursorConstant);
     return result;
   }

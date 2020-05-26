@@ -22,7 +22,6 @@ import io.flutter.plugin.common.StandardMethodCodec;
  */
 public class MouseCursorChannel {
   private static final String TAG = "MouseCursorChannel";
-  public static final String CHANNEL_NAME = "flutter/mousecursor";
 
   @NonNull
   public final MethodChannel channel;
@@ -30,7 +29,7 @@ public class MouseCursorChannel {
   private MouseCursorMethodHandler mouseCursorMethodHandler;
 
   public MouseCursorChannel(@NonNull DartExecutor dartExecutor) {
-    channel = new MethodChannel(dartExecutor, CHANNEL_NAME, StandardMethodCodec.INSTANCE);
+    channel = new MethodChannel(dartExecutor, "flutter/mousecursor", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodCallHandler);
   }
 
