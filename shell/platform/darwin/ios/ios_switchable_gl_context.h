@@ -11,11 +11,11 @@
 
 @class EAGLContext;
 
+namespace flutter {
+
 struct DebugThreadChecker {
   FML_DECLARE_THREAD_CHECKER(checker);
 };
-
-namespace flutter {
 
 class IOSSwitchableGLContext final : public SwitchableGLContext {
  public:
