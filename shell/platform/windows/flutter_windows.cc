@@ -45,10 +45,10 @@ UniqueAotDataPtr LoadAotData(std::filesystem::path aot_data_path) {
     return nullptr;
   }
   std::string path_string = aot_data_path.u8string();
-  FlutterEngineAOTDataSource source;
+  FlutterEngineAOTDataSource source = {};
   source.type = kFlutterEngineAOTDataSourceTypeElfPath;
   source.elf_path = path_string.c_str();
-  FlutterEngineAOTData data;
+  FlutterEngineAOTData data = nullptr;
   auto result = FlutterEngineCreateAOTData(&source, &data);
   if (result != kSuccess) {
     std::cerr << "Failed to load AOT data from: " << path_string << std::endl;
@@ -162,7 +162,7 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   std::string icu_path_string = icu_path.u8string();
 
   if (FlutterEngineRunsAOTCompiledDartCode()) {
-    state->aot_data = std::move(LoadAotData(aot_library_path));
+    state->aot_data = LoadAotData(aot_library_path);
     if (!state->aot_data) {
       std::cerr << "Unable to start engine without AOT data." << std::endl;
       return nullptr;
