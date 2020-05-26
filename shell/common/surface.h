@@ -17,7 +17,6 @@ namespace flutter {
 
 /// Represents a Frame that has been fully configured for the underlying client
 /// rendering API. A frame may only be submitted once.
-// TODO(add switch in constructor)
 class SurfaceFrame {
  public:
   using SubmitCallback =
