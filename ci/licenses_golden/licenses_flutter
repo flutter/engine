@@ -938,6 +938,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_metal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_metal.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_switchable_gl_context.h
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_switchable_gl_context.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h

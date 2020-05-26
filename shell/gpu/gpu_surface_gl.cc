@@ -99,8 +99,6 @@ GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrContext> gr_context,
       context_(gr_context),
       render_to_surface_(render_to_surface),
       weak_factory_(this) {
-  // TODO(ASK_) make manager availabe in delegate, make |GLContextMakeCurrent|
-  // private.
   auto context_switch = delegate_->GLContextMakeCurrent();
   if (!context_switch->GetResult()) {
     FML_LOG(ERROR)
@@ -118,7 +116,6 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   if (!valid_) {
     return;
   }
-  // TODO(ASK_)
   auto context_switch = delegate_->GLContextMakeCurrent();
   if (!context_switch->GetResult()) {
     FML_LOG(ERROR) << "Could not make the context current to destroy the "
@@ -234,7 +231,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
   }
-  // TODO(ASK_)
   auto context_switch = delegate_->GLContextMakeCurrent();
   if (!context_switch->GetResult()) {
     FML_LOG(ERROR)

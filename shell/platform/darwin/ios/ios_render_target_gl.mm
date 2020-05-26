@@ -87,7 +87,6 @@ bool IOSRenderTargetGL::PresentRenderBuffer() const {
   glDiscardFramebufferEXT(GL_FRAMEBUFFER, sizeof(discards) / sizeof(GLenum), discards);
 
   glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
-  // TODO(ASK_)
   auto current_context = [EAGLContext currentContext];
   FML_DCHECK(current_context != nullptr);
   return [current_context presentRenderbuffer:GL_RENDERBUFFER];
