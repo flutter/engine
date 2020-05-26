@@ -31,7 +31,6 @@ part 'engine/compositor/canvas.dart';
 part 'engine/compositor/canvas_kit_canvas.dart';
 part 'engine/compositor/color_filter.dart';
 part 'engine/compositor/embedded_views.dart';
-part 'engine/compositor/engine_delegate.dart';
 part 'engine/compositor/fonts.dart';
 part 'engine/compositor/image.dart';
 part 'engine/compositor/image_filter.dart';
@@ -48,7 +47,6 @@ part 'engine/compositor/picture_recorder.dart';
 part 'engine/compositor/platform_message.dart';
 part 'engine/compositor/raster_cache.dart';
 part 'engine/compositor/rasterizer.dart';
-part 'engine/compositor/runtime_delegate.dart';
 part 'engine/compositor/surface.dart';
 part 'engine/compositor/text.dart';
 part 'engine/compositor/util.dart';
@@ -58,10 +56,12 @@ part 'engine/conic.dart';
 part 'engine/dom_canvas.dart';
 part 'engine/dom_renderer.dart';
 part 'engine/engine_canvas.dart';
+part 'engine/frame_reference.dart';
 part 'engine/history.dart';
 part 'engine/houdini_canvas.dart';
 part 'engine/html_image_codec.dart';
 part 'engine/keyboard.dart';
+part 'engine/mouse_cursor.dart';
 part 'engine/onscreen_logging.dart';
 part 'engine/path_to_svg.dart';
 part 'engine/picture.dart';
@@ -217,6 +217,7 @@ void webOnlyInitializeEngine() {
   };
 
   Keyboard.initialize();
+  MouseCursor.initialize();
 }
 
 class _NullTreeSanitizer implements html.NodeTreeSanitizer {

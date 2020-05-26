@@ -89,11 +89,11 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     if (object.node.IsPlatformViewNode()) {
       FlutterPlatformViewsController* controller = GetPlatformViewsController();
       if (controller) {
-        object.platformViewSemanticsContainer =
-            [[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object];
+        object.platformViewSemanticsContainer = [[[FlutterPlatformViewSemanticsContainer alloc]
+            initWithSemanticsObject:object] autorelease];
       }
     } else if (object.platformViewSemanticsContainer) {
-      [object.platformViewSemanticsContainer release];
+      object.platformViewSemanticsContainer = nil;
     }
   }
 
@@ -179,11 +179,10 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
     return [[[TextInputSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
              node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
-    SemanticsObject* delegateObject = [[FlutterSemanticsObject alloc] initWithBridge:weak_ptr
-                                                                                 uid:node.id];
+    SemanticsObject* delegateObject =
+        [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
     return (SemanticsObject*)[[[FlutterSwitchSemanticsObject alloc]
         initWithSemanticsObject:delegateObject] autorelease];
-    [delegateObject release];
   } else {
     return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   }
