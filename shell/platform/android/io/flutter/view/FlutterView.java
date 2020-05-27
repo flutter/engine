@@ -224,8 +224,10 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         mNativeView.getPluginRegistry().getPlatformViewsController();
     mTextInputPlugin =
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
-    mMouseCursorPlugin =
-        new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor), context);
+    if (Build.VERSION.SDK_INT >= 24) {
+      mMouseCursorPlugin =
+          new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor), context);
+    }
     androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
     androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
     mNativeView
