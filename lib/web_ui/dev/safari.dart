@@ -23,37 +23,50 @@ class Safari extends Browser {
 
   static String version;
 
+  static bool mobileBrowser;
+
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Safari(Uri url, {bool debug = false}) {
     version = SafariArgParser.instance.version;
-
+    mobileBrowser = SafariArgParser.instance.mobileBrowser;
     assert(version != null);
     return Safari._(() async {
-      // TODO(nurhan): Configure info log for LUCI.
-      final BrowserInstallation installation = await getOrInstallSafari(
-        version,
-        infoLog: DevNull(),
-      );
+      if (mobileBrowser) { // iOS-Safari
+        var process = await Process.start('xcrun', [
+          'simctl', // Open a fresh application with no persistant state.
+          'openurl', // Open to wait until the applications it opens.
+          'booted', // Open a new instance of the application.
+          '${url.toString()}'
+        ]);
 
-      // In the latest versions of MacOs opening Safari browser with a file brings
-      // a popup which halts the test.
-      // The following list of arguments needs to be provided to the `open` command
-      // to open Safari for a given URL. In summary they provide a new instance
-      // to open, that instance to wait for opening the url until Safari launches,
-      // provide Safari bundles identifier.
-      // The details copied from `man open` on MacOS.
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50809
-      var process = await Process.start(installation.executable, [
-        '-F', // Open a fresh application with no persistant state.
-        '-W', // Open to wait until the applications it opens.
-        '-n', // Open a new instance of the application.
-        '-b', // Specifies the bundle identifier for the application to use.
-        'com.apple.Safari', // Bundle identifier for Safari.
-        '${url.toString()}'
-      ]);
+        return process;
+      } else { // Desktop-Safari
+        // TODO(nurhan): Configure info log for LUCI.
+        final BrowserInstallation installation = await getOrInstallSafari(
+          version,
+          infoLog: DevNull(),
+        );
 
-      return process;
+        // In the latest versions of MacOs opening Safari browser with a file brings
+        // a popup which halts the test.
+        // The following list of arguments needs to be provided to the `open` command
+        // to open Safari for a given URL. In summary they provide a new instance
+        // to open, that instance to wait for opening the url until Safari launches,
+        // provide Safari bundles identifier.
+        // The details copied from `man open` on MacOS.
+        // TODO(nurhan): https://github.com/flutter/flutter/issues/50809
+        var process = await Process.start(installation.executable, [
+          '-F', // Open a fresh application with no persistant state.
+          '-W', // Open to wait until the applications it opens.
+          '-n', // Open a new instance of the application.
+          '-b', // Specifies the bundle identifier for the application to use.
+          'com.apple.Safari', // Bundle identifier for Safari.
+          '${url.toString()}'
+        ]);
+
+        return process;
+      }
     });
   }
 

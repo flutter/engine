@@ -37,10 +37,16 @@ class SafariArgParser extends BrowserArgParser {
   void parseOptions(ArgResults argResults) {
     _version = argResults['safari-version'] as String;
     assert(_version == 'system');
+    final String browser = argResults['browser'] as String;
+    _mobileBrowser = browser == 'ios-safari' ? true : false;
   }
 
   @override
   String get version => _version;
+
+  bool _mobileBrowser;
+
+  bool get mobileBrowser => _mobileBrowser;
 }
 
 /// Returns the installation of Safari.
