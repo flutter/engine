@@ -26,6 +26,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   ui.Rect _bounds;
+  CrossFrameCache<html.HtmlElement> _elementCache;
 
   /// The amount of padding to add around the edges of this canvas to
   /// ensure that anti-aliased arcs are not clipped.
@@ -116,6 +117,11 @@ class BitmapCanvas extends EngineCanvas {
     _setupInitialTransform();
   }
 
+  /// Setup cache for reusing DOM elements across frames.
+  void setElementCache(CrossFrameCache<html.HtmlElement> cache) {
+    _elementCache = cache;
+  }
+
   void _updateRootElementTransform() {
     // Flutter emits paint operations positioned relative to the parent layer's
     // coordinate system. However, canvas' coordinate system's origin is always
@@ -172,7 +178,11 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPool.clear();
     final int len = _children.length;
     for (int i = 0; i < len; i++) {
-      _children[i].remove();
+      html.Element child = _children[i];
+      // Don't remove children that have been reused by CrossFrameCache.
+      if (child.parent == rootElement) {
+        child.remove();
+      }
     }
     _children.clear();
     _cachedLastStyle = null;
@@ -198,29 +208,12 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   /// Sets the global paint styles to correspond to [paint].
-  void _applyPaint(SurfacePaintData paint) {
-    ContextStateHandle contextHandle = _canvasPool.contextHandle;
-    contextHandle
-      ..lineWidth = paint.strokeWidth ?? 1.0
-      ..blendMode = paint.blendMode
-      ..strokeCap = paint.strokeCap
-      ..strokeJoin = paint.strokeJoin
-      ..filter = _maskFilterToCss(paint.maskFilter);
+  void _setUpPaint(SurfacePaintData paint) {
+    _canvasPool.contextHandle.setUpPaint(paint);
+  }
 
-    if (paint.shader != null) {
-      final EngineGradient engineShader = paint.shader;
-      final Object paintStyle =
-          engineShader.createPaintStyle(_canvasPool.context);
-      contextHandle.fillStyle = paintStyle;
-      contextHandle.strokeStyle = paintStyle;
-    } else if (paint.color != null) {
-      final String colorString = colorToCssString(paint.color);
-      contextHandle.fillStyle = colorString;
-      contextHandle.strokeStyle = colorString;
-    } else {
-      contextHandle.fillStyle = '';
-      contextHandle.strokeStyle = '';
-    }
+  void _tearDownPaint() {
+    _canvasPool.contextHandle.tearDownPaint();
   }
 
   @override
@@ -299,50 +292,58 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.strokeLine(p1, p2);
+    _tearDownPaint();
   }
 
   @override
   void drawPaint(SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.fill();
+    _tearDownPaint();
   }
 
   @override
   void drawRect(ui.Rect rect, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawRect(rect, paint.style);
+    _tearDownPaint();
   }
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawRRect(rrect, paint.style);
+    _tearDownPaint();
   }
 
   @override
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawDRRect(outer, inner, paint.style);
+    _tearDownPaint();
   }
 
   @override
   void drawOval(ui.Rect rect, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawOval(rect, paint.style);
+    _tearDownPaint();
   }
 
   @override
   void drawCircle(ui.Offset c, double radius, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawCircle(c, radius, paint.style);
+    _tearDownPaint();
   }
 
   @override
   void drawPath(ui.Path path, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawPath(path, paint.style);
+    _tearDownPaint();
   }
 
   @override
@@ -363,6 +364,26 @@ class BitmapCanvas extends EngineCanvas {
     _cachedLastStyle = null;
   }
 
+  html.ImageElement _reuseOrCreateImage(HtmlImage htmlImage) {
+    final String cacheKey = htmlImage.imgElement.src;
+    if (_elementCache != null) {
+      html.ImageElement imageElement = _elementCache.reuse(cacheKey);
+      if (imageElement != null) {
+        return imageElement;
+      }
+    }
+    // Can't reuse, create new instance.
+    html.ImageElement newImageElement = htmlImage.cloneImageElement();
+    if (_elementCache != null) {
+      _elementCache.cache(cacheKey, newImageElement, _onEvictElement);
+    }
+    return newImageElement;
+  }
+
+  static void _onEvictElement(html.HtmlElement element) {
+    element.remove();
+  }
+
   html.HtmlElement _drawImage(
       ui.Image image, ui.Offset p, SurfacePaintData paint) {
     final HtmlImage htmlImage = image;
@@ -372,7 +393,7 @@ class BitmapCanvas extends EngineCanvas {
     html.HtmlElement imgElement;
     if (colorFilterBlendMode == null) {
       // No Blending, create an image by cloning original loaded image.
-      imgElement = htmlImage.cloneImageElement();
+      imgElement = _reuseOrCreateImage(htmlImage);
     } else {
       switch (colorFilterBlendMode) {
         case ui.BlendMode.colorBurn:
@@ -442,8 +463,6 @@ class BitmapCanvas extends EngineCanvas {
         !requiresClipping &&
         paint.colorFilter == null) {
       _drawImage(image, dst.topLeft, paint);
-      _childOverdraw = true;
-      _canvasPool.closeCurrentCanvas();
     } else {
       if (requiresClipping) {
         save();
@@ -607,7 +626,7 @@ class BitmapCanvas extends EngineCanvas {
     html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
     rootElement.append(filterElement);
     _children.add(filterElement);
-    final html.HtmlElement imgElement = image.cloneImageElement();
+    final html.HtmlElement imgElement = _reuseOrCreateImage(image);
     imgElement.style.filter = 'url(#_fcf${_filterIdCounter})';
     if (colorFilterBlendMode == ui.BlendMode.saturation) {
       imgElement.style.backgroundColor = colorToCssString(filterColor);
@@ -683,14 +702,15 @@ class BitmapCanvas extends EngineCanvas {
         ctx.font = style.cssFontString;
         _cachedLastStyle = style;
       }
-      _applyPaint(paragraph._paint.paintData);
-
+      _setUpPaint(paragraph._paint.paintData);
       double y = offset.dy + paragraph.alphabeticBaseline;
       final int len = lines.length;
       for (int i = 0; i < len; i++) {
         _drawTextLine(style, lines[i], offset.dx, y);
         y += paragraph._lineHeight;
       }
+      _tearDownPaint();
+
       return;
     }
 
@@ -769,29 +789,35 @@ class BitmapCanvas extends EngineCanvas {
         _canvasPool.currentTransform, vertices, blendMode, paint);
   }
 
+  /// Stores paint data used by [drawPoints]. We cannot use the original paint
+  /// data object because painting style is determined by [ui.PointMode] and
+  /// not by [SurfacePointData.style].
+  static SurfacePaintData _drawPointsPaint = SurfacePaintData()
+    ..strokeCap = ui.StrokeCap.round
+    ..strokeJoin = ui.StrokeJoin.round
+    ..blendMode = ui.BlendMode.srcOver;
+
   @override
-  void drawPoints(ui.PointMode pointMode, Float32List points,
-      double strokeWidth, ui.Color color) {
-    ContextStateHandle contextHandle = _canvasPool.contextHandle;
-    contextHandle
-      ..lineWidth = strokeWidth
-      ..blendMode = ui.BlendMode.srcOver
-      ..strokeCap = ui.StrokeCap.round
-      ..strokeJoin = ui.StrokeJoin.round
-      ..filter = '';
-    final String cssColor = colorToCssString(color);
+  void drawPoints(ui.PointMode pointMode, Float32List points, SurfacePaintData paint) {
     if (pointMode == ui.PointMode.points) {
-      contextHandle.fillStyle = cssColor;
+      _drawPointsPaint.style = ui.PaintingStyle.stroke;
     } else {
-      contextHandle.strokeStyle = cssColor;
+      _drawPointsPaint.style = ui.PaintingStyle.fill;
     }
-    _canvasPool.drawPoints(pointMode, points, strokeWidth / 2.0);
+    _drawPointsPaint.color = paint.color;
+    _drawPointsPaint.strokeWidth = paint.strokeWidth;
+    _drawPointsPaint.maskFilter = paint.maskFilter;
+
+    _setUpPaint(_drawPointsPaint);
+    _canvasPool.drawPoints(pointMode, points, paint.strokeWidth / 2.0);
+    _tearDownPaint();
   }
 
   @override
   void endOfPaint() {
     assert(_saveCount == 0);
     _canvasPool.endOfPaint();
+    _elementCache?.commitFrame();
   }
 }
 
@@ -969,11 +995,21 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
   return <html.Element>[root]..addAll(clipDefs);
 }
 
-String _maskFilterToCss(ui.MaskFilter maskFilter) {
-  if (maskFilter == null) {
+/// Converts a [maskFilter] to the value to be used on a `<canvas>`.
+///
+/// Only supported in non-WebKit browsers.
+String _maskFilterToCanvasFilter(ui.MaskFilter maskFilter) {
+  assert(
+    browserEngine != BrowserEngine.webkit,
+    'WebKit (Safari) does not support `filter` canvas property.',
+  );
+  if (maskFilter != null) {
+    // Multiply by device-pixel ratio because the canvas' pixel width and height
+    // are larger than its CSS width and height by device-pixel ratio.
+    return 'blur(${maskFilter.webOnlySigma * window.devicePixelRatio}px)';
+  } else {
     return 'none';
   }
-  return 'blur(${maskFilter.webOnlySigma}px)';
 }
 
 int _filterIdCounter = 0;

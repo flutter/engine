@@ -338,7 +338,7 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetRasterTaskRunner(), fml::MakeCopyable([this]() mutable {
         this->weak_factory_gpu_ =
-            std::make_unique<fml::WeakPtrFactory<Shell>>(this);
+            std::make_unique<fml::TaskRunnerAffineWeakPtrFactory<Shell>>(this);
       }));
 
   // Install service protocol handlers.
@@ -952,7 +952,7 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
+void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
                            fml::TimePoint frame_target_time) {
   FML_DCHECK(is_setup_);
 
@@ -970,9 +970,10 @@ void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
-       layer_tree_holder = std::move(layer_tree_holder)]() {
+       pipeline = std::move(pipeline)]() {
         if (rasterizer) {
-          rasterizer->Draw(std::move(layer_tree_holder));
+          rasterizer->Draw(pipeline);
+
           if (waiting_for_first_frame.load()) {
             waiting_for_first_frame.store(false);
             waiting_for_first_frame_condition.notify_all();
@@ -1155,7 +1156,7 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     // never be reported until the next animation starts.
     frame_timings_report_scheduled_ = true;
     task_runners_.GetRasterTaskRunner()->PostDelayedTask(
-        [self = weak_factory_gpu_->GetTaskRunnerAffineWeakPtr()]() {
+        [self = weak_factory_gpu_->GetWeakPtr()]() {
           if (!self.get()) {
             return;
           }

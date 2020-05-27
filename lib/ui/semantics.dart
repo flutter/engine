@@ -12,7 +12,7 @@ part of dart.ui;
 // `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
 // updated.
 class SemanticsAction {
-  const SemanticsAction._(this.index);
+  const SemanticsAction._(this.index) : assert(index != null);
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -42,7 +42,7 @@ class SemanticsAction {
   /// The numerical value for this action.
   ///
   /// Each action has one bit set in this bit field.
-  final int index;
+  final int/*!*/ index;
 
   /// The equivalent of a user briefly tapping the screen with the finger
   /// without moving it.
@@ -263,7 +263,8 @@ class SemanticsAction {
       case _kMoveCursorBackwardByWordIndex:
         return 'SemanticsAction.moveCursorBackwardByWord';
     }
-    return null;
+    assert(false, 'Unhandled index: $index');
+    return '';
   }
 }
 
@@ -299,12 +300,12 @@ class SemanticsFlag {
   // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
   // value in testing/dart/semantics_test.dart, or tests will fail.
 
-  const SemanticsFlag._(this.index);
+  const SemanticsFlag._(this.index) : assert(index != null);
 
   /// The numerical value for this flag.
   ///
   /// Each flag has one bit set in this bit field.
-  final int index;
+  final int/*!*/ index;
 
   /// The semantics node has the quality of either being "checked" or "unchecked".
   ///
@@ -596,7 +597,8 @@ class SemanticsFlag {
       case _kIsLinkIndex:
         return 'SemanticsFlag.isLink';
     }
-    return null;
+    assert(false, 'Unhandled index: $index');
+    return '';
   }
 }
 
@@ -793,24 +795,28 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// For overridden standard actions, `overrideId` corresponds with a
   /// [SemanticsAction.index] value. For custom actions this argument should not be
   /// provided.
-  void updateCustomAction({int id, String label, String hint, int overrideId = -1}) {
+  void updateCustomAction({/*required*/ int/*!*/ id, String/*?*/ label, String/*?*/ hint, int/*!*/ overrideId = -1}) {
     assert(id != null);
     assert(overrideId != null);
     _updateCustomAction(id, label, hint, overrideId);
   }
-  void _updateCustomAction(int id, String label, String hint, int overrideId) native 'SemanticsUpdateBuilder_updateCustomAction';
+  void _updateCustomAction(
+      int/*!*/ id,
+      String/*?*/ label,
+      String/*?*/ hint,
+      int/*!*/ overrideId) native 'SemanticsUpdateBuilder_updateCustomAction';
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
   /// The returned object can be passed to [Window.updateSemantics] to actually
   /// update the semantics retained by the system.
-  SemanticsUpdate build() {
+  SemanticsUpdate/*!*/ build() {
     final SemanticsUpdate semanticsUpdate = SemanticsUpdate._();
     _build(semanticsUpdate);
     return semanticsUpdate;
   }
-  void _build(SemanticsUpdate outSemanticsUpdate) native 'SemanticsUpdateBuilder_build';
+  void _build(SemanticsUpdate/*!*/ outSemanticsUpdate) native 'SemanticsUpdateBuilder_build';
 }
 
 /// An opaque object representing a batch of semantics updates.
