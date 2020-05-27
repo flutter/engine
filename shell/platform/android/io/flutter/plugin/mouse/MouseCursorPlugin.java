@@ -4,9 +4,11 @@
 
 package io.flutter.plugin.mouse;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.view.PointerIcon;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import java.util.HashMap;
 
