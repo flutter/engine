@@ -283,7 +283,7 @@ void Canvas::drawPath(const CanvasPath* path,
   canvas_->drawPath(path->path(), *paint.paint());
 }
 
-void Canvas::drawImage(const CanvasImage* image,
+void Canvas::drawImage(CanvasImage* image,
                        double x,
                        double y,
                        const Paint& paint,
@@ -293,10 +293,11 @@ void Canvas::drawImage(const CanvasImage* image,
   if (!image)
     Dart_ThrowException(
         ToDart("Canvas.drawImage called with non-genuine Image."));
+  image_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImage(image->image(), x, y, paint.paint());
 }
 
-void Canvas::drawImageRect(const CanvasImage* image,
+void Canvas::drawImageRect(CanvasImage* image,
                            double src_left,
                            double src_top,
                            double src_right,
@@ -314,11 +315,12 @@ void Canvas::drawImageRect(const CanvasImage* image,
         ToDart("Canvas.drawImageRect called with non-genuine Image."));
   SkRect src = SkRect::MakeLTRB(src_left, src_top, src_right, src_bottom);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
+  image_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImageRect(image->image(), src, dst, paint.paint(),
                          SkCanvas::kFast_SrcRectConstraint);
 }
 
-void Canvas::drawImageNine(const CanvasImage* image,
+void Canvas::drawImageNine(CanvasImage* image,
                            double center_left,
                            double center_top,
                            double center_right,
@@ -339,6 +341,7 @@ void Canvas::drawImageNine(const CanvasImage* image,
   SkIRect icenter;
   center.round(&icenter);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
+  image_allocation_size_ += image->GetAllocationSize();
   canvas_->drawImageNine(image->image(), icenter, dst, paint.paint());
 }
 
@@ -348,6 +351,7 @@ void Canvas::drawPicture(Picture* picture) {
   if (!picture)
     Dart_ThrowException(
         ToDart("Canvas.drawPicture called with non-genuine Picture."));
+  image_allocation_size_ += picture->GetAllocationSize();
   canvas_->drawPicture(picture->picture().get());
 }
 
