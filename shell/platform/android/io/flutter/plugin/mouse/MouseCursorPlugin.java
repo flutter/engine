@@ -45,6 +45,8 @@ public class MouseCursorPlugin {
    */
   private PointerIcon resolveSystemCursor(@NonNull String kind) {
     if (MouseCursorPlugin.systemCursorConstants == null) {
+      // Initialize the map when first used, because the map can grow big in the future (~70)
+      // and most mobile devices will not use them.
       MouseCursorPlugin.systemCursorConstants =
           new HashMap<String, Integer>() {
             private static final long serialVersionUID = 1L;
@@ -59,12 +61,11 @@ public class MouseCursorPlugin {
               put("grabbing", Integer.valueOf(PointerIcon.TYPE_GRABBING));
             }
           };
-      };
     }
 
     final int cursorConstant =
         MouseCursorPlugin.systemCursorConstants.getOrDefault(kind, PointerIcon.TYPE_ARROW);
-    PointerIcon result = PointerIcon.getSystemIcon(context, cursorConstant);
+    final PointerIcon result = PointerIcon.getSystemIcon(context, cursorConstant);
     return result;
   }
 
