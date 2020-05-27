@@ -78,6 +78,7 @@ void main(List<String> arguments) async {
       buildCommands.where((x) => containsAny(x.file, changedFiles)).toList();
 
   int exitCode = 0;
+  //TODO(aaclarke): Coalesce this into one call using the `-p` arguement.
   for (Command command in changedFileBuildCommands) {
     final String tidyArgs = calcTidyArgs(command);
     print('# linting ${command.file}');
