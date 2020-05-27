@@ -2,9 +2,20 @@
 ///
 /// usage:
 /// dart lint.dart <path to compile_commands.json> <path to git repository> [clang-tidy checks]
+///
+/// User environment variable FLUTTER_LINT_ALL to run on all files.
 
-import 'dart:io' show File, Process, ProcessResult, exit;
+import 'dart:io'
+    show
+        File,
+        Process,
+        ProcessResult,
+        exit,
+        Directory,
+        FileSystemEntity,
+        Platform;
 import 'dart:convert' show jsonDecode, utf8;
+import 'dart:async' show Completer;
 
 class Command {
   String directory;
@@ -62,11 +73,26 @@ List<String> getListOfChangedFiles(String repoPath) {
   return result.toList();
 }
 
+Future<List<String>> dirContents(String repoPath) {
+  Directory dir = Directory(repoPath);
+  var files = <String>[];
+  var completer = new Completer<List<String>>();
+  var lister = dir.list(recursive: true);
+  lister.listen((FileSystemEntity file) => files.add(file.path),
+      // should also register onError
+      onDone: () => completer.complete(files));
+  return completer.future;
+}
+
 void main(List<String> arguments) async {
   final String buildCommandsPath = arguments[0];
   final String repoPath = arguments[1];
-  final String checks = arguments.length >= 3 ? '--checks=${arguments[2]}' : '--config';
-  final List<String> changedFiles = getListOfChangedFiles(repoPath);
+  final String checks =
+      arguments.length >= 3 ? '--checks=${arguments[2]}' : '--config=';
+  final List<String> changedFiles =
+      Platform.environment['FLUTTER_LINT_ALL'] != null
+          ? await dirContents(repoPath)
+          : getListOfChangedFiles(repoPath);
 
   final List<dynamic> buildCommandMaps =
       jsonDecode(await new File(buildCommandsPath).readAsString());
@@ -81,9 +107,9 @@ void main(List<String> arguments) async {
   //TODO(aaclarke): Coalesce this into one call using the `-p` arguement.
   for (Command command in changedFileBuildCommands) {
     final String tidyArgs = calcTidyArgs(command);
-    print('# linting ${command.file}');
-    final List<String> args = [command.file, '', '--'];
+    final List<String> args = [command.file, checks, '--'];
     args.addAll(tidyArgs.split(' '));
+    print('# linting ${command.file}');
     final Process process = await Process.start(tidyPath, args,
         workingDirectory: command.directory, runInShell: false);
     process.stdout.transform(utf8.decoder).listen((data) {
