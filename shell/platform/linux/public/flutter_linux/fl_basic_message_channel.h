@@ -129,8 +129,7 @@ FlBasicMessageChannel* fl_basic_message_channel_new(
 /**
  * fl_basic_message_channel_set_message_handler:
  * @channel: an #FlBasicMessageChannel.
- * @handler: (allow-none): function to call when a message is received on this
- * channel or %NULL to disable the handler.
+ * @handler: function to call when a message is received on this channel.
  * @user_data: (closure): user data to pass to @handler.
  * @destroy_notify: (allow-none): a function which gets called to free
  * @user_data, or %NULL.

@@ -77,11 +77,10 @@ typedef void (*FlBinaryMessengerMessageHandler)(
     gpointer user_data);
 
 /**
- * fl_binary_messenger_set_platform_message_handler:
+ * fl_binary_messenger_set_message_handler_on_channel:
  * @binary_messenger: an #FlBinaryMessenger.
  * @channel: channel to listen on.
- * @handler: (allow-none): function to call when a message is received on this
- * channel or %NULL to disable a handler
+ * @handler: function to call when a message is received on this channel.
  * @user_data: (closure): user data to pass to @handler.
  * @destroy_notify: (allow-none): a function which gets called to free
  * @user_data, or %NULL.
@@ -99,6 +98,23 @@ void fl_binary_messenger_set_message_handler_on_channel(
     FlBinaryMessengerMessageHandler handler,
     gpointer user_data,
     GDestroyNotify destroy_notify);
+
+/**
+ * fl_binary_messenger_unset_message_handler_on_channel:
+ * @binary_messenger: an #FlBinaryMessenger.
+ * @channel: channel handler is registered on.
+ * @handler: (allow-none): .
+ * @user_data: (closure): user data provided in.
+ *
+ * Clears the handler set in
+ * fl_binary_messenger_set_message_handler_on_channel() if the provided details
+ * match the current handler. If they do not, this function has no effect.
+ */
+void fl_binary_messenger_unset_message_handler_on_channel(
+    FlBinaryMessenger* messenger,
+    const gchar* channel,
+    FlBinaryMessengerMessageHandler handler,
+    gpointer user_data);
 
 /**
  * fl_binary_messenger_send_response:

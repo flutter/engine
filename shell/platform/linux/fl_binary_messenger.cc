@@ -172,23 +172,40 @@ G_MODULE_EXPORT void fl_binary_messenger_set_message_handler_on_channel(
     GDestroyNotify destroy_notify) {
   g_return_if_fail(FL_IS_BINARY_MESSENGER(self));
   g_return_if_fail(channel != nullptr);
+  g_return_if_fail(handler != nullptr);
 
   // Don't set handlers if engine already gone
   if (self->engine == nullptr) {
     g_warning(
-        "Attempted to set message handler on closed FlBinaryMessenger without "
+        "Attempted to set message handler on FlBinaryMessenger without "
         "engine");
     if (destroy_notify != nullptr)
       destroy_notify(user_data);
     return;
   }
 
-  if (handler != nullptr)
-    g_hash_table_replace(
-        self->platform_message_handlers, g_strdup(channel),
-        platform_message_handler_new(handler, user_data, destroy_notify));
-  else
-    g_hash_table_remove(self->platform_message_handlers, channel);
+  g_hash_table_replace(
+      self->platform_message_handlers, g_strdup(channel),
+      platform_message_handler_new(handler, user_data, destroy_notify));
+}
+
+G_MODULE_EXPORT void fl_binary_messenger_unset_message_handler_on_channel(
+    FlBinaryMessenger* self,
+    const gchar* channel,
+    FlBinaryMessengerMessageHandler handler,
+    gpointer user_data) {
+  g_return_if_fail(FL_IS_BINARY_MESSENGER(self));
+  g_return_if_fail(channel != nullptr);
+  g_return_if_fail(handler != nullptr);
+
+  // Do nothing if the current handler doesn't match.
+  PlatformMessageHandler* h = static_cast<PlatformMessageHandler*>(
+      g_hash_table_lookup(self->platform_message_handlers, channel));
+  if (h == nullptr || h->message_handler != handler ||
+      h->message_handler_data != user_data)
+    return;
+
+  g_hash_table_remove(self->platform_message_handlers, channel);
 }
 
 G_MODULE_EXPORT gboolean fl_binary_messenger_send_response(

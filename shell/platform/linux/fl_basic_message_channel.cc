@@ -128,8 +128,8 @@ static void fl_basic_message_channel_dispose(GObject* object) {
   FlBasicMessageChannel* self = FL_BASIC_MESSAGE_CHANNEL(object);
 
   if (self->messenger != nullptr)
-    fl_binary_messenger_set_message_handler_on_channel(
-        self->messenger, self->name, nullptr, nullptr, nullptr);
+    fl_binary_messenger_unset_message_handler_on_channel(
+        self->messenger, self->name, message_cb, self);
 
   g_clear_object(&self->messenger);
   g_clear_pointer(&self->name, g_free);
@@ -179,6 +179,7 @@ G_MODULE_EXPORT void fl_basic_message_channel_set_message_handler(
     gpointer user_data,
     GDestroyNotify destroy_notify) {
   g_return_if_fail(FL_IS_BASIC_MESSAGE_CHANNEL(self));
+  g_return_if_fail(handler != nullptr);
 
   // Don't set handler if channel closed
   if (self->channel_closed) {
