@@ -10,43 +10,93 @@
 
 FLUTTER_ASSERT_ARC
 
-@interface FlutterTextInputPluginTest : XCTestCase
-@end
-
 @interface FlutterTextInputView ()
+@property(nonatomic, copy) NSString* autofillId;
 - (void)setTextInputState:(NSDictionary*)state;
 @end
 
-@implementation FlutterTextInputPluginTest
-- (void)testSecureInput {
-  // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-  FlutterTextInputPlugin* textInputPlugin = [[FlutterTextInputPlugin alloc] init];
+@interface FlutterTextInputPlugin ()
+@property(nonatomic, retain) FlutterTextInputView* singleInputView;
+@property(nonatomic, readonly)
+    NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
+@end
+
+@interface FlutterTextInputPluginTest : XCTestCase
+@end
+
+@implementation FlutterTextInputPluginTest {
+  NSDictionary* _template;
+  id engine;
+  FlutterTextInputPlugin* textInputPlugin;
+}
+- (void)setUp {
+  [super setUp];
+
+  engine = OCMClassMock([FlutterEngine class]);
+  textInputPlugin = [[FlutterTextInputPlugin alloc] init];
   textInputPlugin.textInputDelegate = engine;
+}
 
-  NSDictionary* config = @{
-    @"inputType" : @{@"name" : @"TextInuptType.text"},
-    @"keyboardAppearance" : @"Brightness.light",
-    @"obscureText" : @YES,
-    @"inputAction" : @"TextInputAction.unspecified",
-    @"smartDashesType" : @"0",
-    @"smartQuotesType" : @"0",
-    @"autocorrect" : @YES
-  };
+- (void)tearDown {
+  [engine stopMocking];
+  [[[[textInputPlugin textInputView] superview] subviews]
+      makeObjectsPerformSelector:@selector(removeFromSuperview)];
 
+  [super tearDown];
+}
+
+- (void)setClientId:(int)clientId configuration:(NSDictionary*)config {
   FlutterMethodCall* setClientCall =
       [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
-                                        arguments:@[ @123, config ]];
-
+                                        arguments:@[ [NSNumber numberWithInt:clientId], config ]];
   [textInputPlugin handleMethodCall:setClientCall
                              result:^(id _Nullable result){
                              }];
+}
+
+- (void)commitAutofillContext {
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.AutofillContext.commit"
+                                        arguments:nil];
+  [textInputPlugin handleMethodCall:methodCall
+                             result:^(id _Nullable result){
+                             }];
+}
+
+- (NSMutableDictionary*)mutableTemplateCopy {
+  if (!_template) {
+    _template = @{
+      @"inputType" : @{@"name" : @"TextInuptType.text"},
+      @"keyboardAppearance" : @"Brightness.light",
+      @"obscureText" : @NO,
+      @"inputAction" : @"TextInputAction.unspecified",
+      @"smartDashesType" : @"0",
+      @"smartQuotesType" : @"0",
+      @"autocorrect" : @YES
+    };
+  }
+
+  return [_template mutableCopy];
+}
+
+- (NSArray<FlutterTextInputView*>*)installedInputViews {
+  UIWindow* keyWindow =
+      [[[UIApplication sharedApplication] windows]
+          filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"isKeyWindow == YES"]]
+          .firstObject;
+
+  return [keyWindow.subviews
+      filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self isKindOfClass: %@",
+                                                                   [FlutterTextInputView class]]];
+}
+
+- (void)testSecureInput {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@"YES" forKey:@"obscureText"];
+  [self setClientId:123 configuration:config];
 
   // Find all the FlutterTextInputViews we created.
-  NSArray<FlutterTextInputView*>* inputFields = [[[[textInputPlugin textInputView] superview]
-      subviews]
-      filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"class == %@",
-                                                                   [FlutterTextInputView class]]];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
 
   // There are no autofill and the mock framework requested a secure entry. The first and only
   // inserted FlutterTextInputView should be a secure text entry one.
@@ -62,16 +112,12 @@ FLUTTER_ASSERT_ARC
   // plugin's active text input view.
   XCTAssertEqual(inputView, textInputPlugin.textInputView);
 
-  // Clean up.
-  [engine stopMocking];
-  [[[[textInputPlugin textInputView] superview] subviews]
-      makeObjectsPerformSelector:@selector(removeFromSuperview)];
+  // Despite not given an id in configuration, inputView has
+  // an autofill id.
+  XCTAssert(inputView.autofillId.length > 0);
 }
 
 - (void)testTextChangesTriggerUpdateEditingClient {
-  // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
@@ -86,15 +132,9 @@ FLUTTER_ASSERT_ARC
   // Don't send anything if there's nothing new.
   [inputView setTextInputState:@{@"text" : @"AFTER"}];
   OCMReject([engine updateEditingClient:0 withState:[OCMArg any]]);
-
-  // Clean up.
-  [engine stopMocking];
 }
 
 - (void)testSelectionChangeTriggersUpdateEditingClient {
-  // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
@@ -118,15 +158,9 @@ FLUTTER_ASSERT_ARC
   [inputView
       setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @2}];
   OCMReject([engine updateEditingClient:0 withState:[OCMArg any]]);
-
-  // Clean up.
-  [engine stopMocking];
 }
 
 - (void)testComposingChangeTriggersUpdateEditingClient {
-  // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
@@ -151,28 +185,10 @@ FLUTTER_ASSERT_ARC
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
   OCMReject([engine updateEditingClient:0 withState:[OCMArg any]]);
-
-  // Clean up.
-  [engine stopMocking];
 }
 
-- (void)testAutofillInputViews {
-  // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-  FlutterTextInputPlugin* textInputPlugin = [[FlutterTextInputPlugin alloc] init];
-  textInputPlugin.textInputDelegate = engine;
-
-  NSDictionary* template = @{
-    @"inputType" : @{@"name" : @"TextInuptType.text"},
-    @"keyboardAppearance" : @"Brightness.light",
-    @"obscureText" : @NO,
-    @"inputAction" : @"TextInputAction.unspecified",
-    @"smartDashesType" : @"0",
-    @"smartQuotesType" : @"0",
-    @"autocorrect" : @YES
-  };
-
-  NSMutableDictionary* field1 = [template mutableCopy];
+- (void)testAutofillContext {
+  NSMutableDictionary* field1 = self.mutableTemplateCopy;
   [field1 setValue:@{
     @"uniqueIdentifier" : @"field1",
     @"hints" : @[ @"hint1" ],
@@ -180,7 +196,7 @@ FLUTTER_ASSERT_ARC
   }
             forKey:@"autofill"];
 
-  NSMutableDictionary* field2 = [template mutableCopy];
+  NSMutableDictionary* field2 = self.mutableTemplateCopy;
   [field2 setValue:@{
     @"uniqueIdentifier" : @"field2",
     @"hints" : @[ @"hint2" ],
@@ -191,19 +207,135 @@ FLUTTER_ASSERT_ARC
   NSMutableDictionary* config = [field1 mutableCopy];
   [config setValue:@[ field1, field2 ] forKey:@"fields"];
 
-  FlutterMethodCall* setClientCall =
-      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
-                                        arguments:@[ @123, config ]];
+  [self setClientId:123 configuration:config];
 
-  [textInputPlugin handleMethodCall:setClientCall
-                             result:^(id _Nullable result){
-                             }];
+  XCTAssertEqual(textInputPlugin.autofillContext.count, 2);
+  XCTAssertEqual(self.installedInputViews.count, 2);
+  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
+
+  // The configuration changes.
+  NSMutableDictionary* field3 = self.mutableTemplateCopy;
+  [field3 setValue:@{
+    @"uniqueIdentifier" : @"field3",
+    @"hints" : @[ @"hint3" ],
+    @"editingValue" : @{@"text" : @""}
+  }
+            forKey:@"autofill"];
+
+  NSMutableDictionary* oldContext = textInputPlugin.autofillContext;
+  // Replace field2 with field3.
+  [config setValue:@[ field1, field3 ] forKey:@"fields"];
+
+  [self setClientId:123 configuration:config];
+
+  XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
+  XCTAssertEqual(self.installedInputViews.count, 3);
+  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
+
+  // Old autofill input fields are still installed and reused.
+  for (NSString* key in oldContext.allKeys) {
+    XCTAssertEqual(oldContext[key], textInputPlugin.autofillContext[key]);
+  }
+
+  // Switch to a password field that has no contentType, nor in an AutofillGroup.
+  config = self.mutableTemplateCopy;
+  [config setValue:@"YES" forKey:@"obscureText"];
+
+  oldContext = textInputPlugin.autofillContext;
+  [self setClientId:124 configuration:config];
+
+  XCTAssertEqual(textInputPlugin.autofillContext.count, 4);
+  XCTAssertEqual(self.installedInputViews.count, 4);
+
+  // Old autofill input fields are still installed and reused.
+  for (NSString* key in oldContext.allKeys) {
+    XCTAssertEqual(oldContext[key], textInputPlugin.autofillContext[key]);
+  }
+  // The active view changes.
+  XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
+
+  // Switch to a similar password field, the previous field should be reused.
+  oldContext = textInputPlugin.autofillContext;
+  [self setClientId:200 configuration:config];
+
+  XCTAssertEqual(textInputPlugin.autofillContext.count, 4);
+  XCTAssertEqual(self.installedInputViews.count, 4);
+
+  // Old autofill input fields are still installed and reused.
+  for (NSString* key in oldContext.allKeys) {
+    XCTAssertEqual(oldContext[key], textInputPlugin.autofillContext[key]);
+  }
+  XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
+}
+
+- (void)testCommitAutofillContext {
+  NSMutableDictionary* field1 = self.mutableTemplateCopy;
+  [field1 setValue:@{
+    @"uniqueIdentifier" : @"field1",
+    @"hints" : @[ @"hint1" ],
+    @"editingValue" : @{@"text" : @""}
+  }
+            forKey:@"autofill"];
+
+  NSMutableDictionary* field2 = self.mutableTemplateCopy;
+  [field2 setValue:@{
+    @"uniqueIdentifier" : @"field2",
+    @"hints" : @[ @"hint2" ],
+    @"editingValue" : @{@"text" : @""}
+  }
+            forKey:@"autofill"];
+
+  NSMutableDictionary* config = [field1 mutableCopy];
+  [config setValue:@[ field1, field2 ] forKey:@"fields"];
+
+  [self setClientId:123 configuration:config];
+
+  [self commitAutofillContext];
+
+  XCTAssertNotEqual(textInputPlugin.textInputView, nil);
+  // The active view should still be installed so it doesn't get
+  // deallocated.
+  XCTAssertEqual(self.installedInputViews.count, 1);
+  XCTAssertEqual(textInputPlugin.autofillContext.count, 0);
+
+  [self setClientId:124 configuration:config];
+  // Now switch to a regular field (no autofill).
+  [self setClientId:125 configuration:self.mutableTemplateCopy];
+
+  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.singleInputView);
+  XCTAssertEqual(self.installedInputViews.count, 3);
+  XCTAssertEqual(textInputPlugin.autofillContext.count, 2);
+
+  [self commitAutofillContext];
+  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.singleInputView);
+  XCTAssertEqual(self.installedInputViews.count, 1);
+  XCTAssertEqual(textInputPlugin.autofillContext.count, 0);
+}
+
+- (void)testAutofillInputViews {
+  NSMutableDictionary* field1 = self.mutableTemplateCopy;
+  [field1 setValue:@{
+    @"uniqueIdentifier" : @"field1",
+    @"hints" : @[ @"hint1" ],
+    @"editingValue" : @{@"text" : @""}
+  }
+            forKey:@"autofill"];
+
+  NSMutableDictionary* field2 = self.mutableTemplateCopy;
+  [field2 setValue:@{
+    @"uniqueIdentifier" : @"field2",
+    @"hints" : @[ @"hint2" ],
+    @"editingValue" : @{@"text" : @""}
+  }
+            forKey:@"autofill"];
+
+  NSMutableDictionary* config = [field1 mutableCopy];
+  [config setValue:@[ field1, field2 ] forKey:@"fields"];
+
+  [self setClientId:123 configuration:config];
 
   // Find all the FlutterTextInputViews we created.
-  NSArray<FlutterTextInputView*>* inputFields = [[[[textInputPlugin textInputView] superview]
-      subviews]
-      filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"class == %@",
-                                                                   [FlutterTextInputView class]]];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
 
   XCTAssertEqual(inputFields.count, 2);
 
@@ -214,25 +346,30 @@ FLUTTER_ASSERT_ARC
 
   // Verify behavior.
   OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil] withTag:@"field2"]);
+}
 
-  // Clean up.
-  [engine stopMocking];
-  [[[[textInputPlugin textInputView] superview] subviews]
-      makeObjectsPerformSelector:@selector(removeFromSuperview)];
+-(void)testPasswordAutofillHack {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@"YES" forKey:@"obscureText"];
+  [self setClientId:123 configuration:config];
+  
+  // Find all the FlutterTextInputViews we created.
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  
+  FlutterTextInputView* inputView = inputFields[0];
+  
+  XCTAssert([inputView isKindOfClass:[UITextField class]]);
+  // FlutterSecureTextInputView does not respond to font,
+  // but it should return the default UITextField.font.
+  XCTAssertNotEqual([inputView performSelector:@selector(font)], nil);
 }
 
 - (void)testAutocorrectionPromptRectAppears {
-  // Setup test.
-  id engine = OCMClassMock([FlutterEngine class]);
-
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
   inputView.textInputDelegate = engine;
   [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
 
   // Verify behavior.
   OCMVerify([engine showAutocorrectionPromptRectForStart:0 end:1 withClient:0]);
-
-  // Clean up mocks
-  [engine stopMocking];
 }
 @end
