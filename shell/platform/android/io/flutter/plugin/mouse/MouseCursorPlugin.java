@@ -11,8 +11,8 @@ import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import java.util.HashMap;
 
 /** A mandatory plugin that handles mouse cursor requests. */
-@TargetApi(24)
-@RequiresApi(24)
+@TargetApi(Build.VERSION_CODES.N)
+@RequiresApi(Build.VERSION_CODES.N)
 public class MouseCursorPlugin {
   @NonNull private final MouseCursorViewDelegate mView;
   @NonNull private final MouseCursorChannel mouseCursorChannel;
@@ -45,13 +45,13 @@ public class MouseCursorPlugin {
       MouseCursorPlugin.systemCursorConstants = new HashMap<String, Integer>() {
         private static final long serialVersionUID = 1L;
         {
-          put("none", new Integer(PointerIcon.TYPE_NULL));
+          put("none", Integer.valueOf(PointerIcon.TYPE_NULL));
           //  "basic": default
-          put("click", new Integer(PointerIcon.TYPE_HAND));
-          put("text", new Integer(PointerIcon.TYPE_TEXT));
+          put("click", Integer.valueOf(PointerIcon.TYPE_HAND));
+          put("text", Integer.valueOf(PointerIcon.TYPE_TEXT));
           //  "forbidden": default
-          put("grab", new Integer(PointerIcon.TYPE_GRAB));
-          put("grabbing", new Integer(PointerIcon.TYPE_GRABBING));
+          put("grab", Integer.valueOf(PointerIcon.TYPE_GRAB));
+          put("grabbing", Integer.valueOf(PointerIcon.TYPE_GRABBING));
         }
       };
     }
