@@ -14,7 +14,9 @@ class SkCanvas {
   int get saveCount => skCanvas.callMethod('getSaveCount');
 
   void clear(ui.Color color) {
-    skCanvas.callMethod('clear', <int>[color.value]);
+    // Call the private `_clear` method instead of `clear` because
+    // `clear` will free the color array.
+    skCanvas.callMethod('_clear', <int>[makeSkColor(color).offsetInBytes]);
   }
 
   void clipPath(ui.Path path, bool doAntiAlias) {
@@ -73,7 +75,7 @@ class SkCanvas {
     ui.Image atlas,
     Float32List rstTransforms,
     Float32List rects,
-    Int32List colors,
+    js.JsArray<Float32List> colors,
     ui.BlendMode blendMode,
   ) {
     final SkImage skAtlas = atlas;
@@ -97,8 +99,10 @@ class SkCanvas {
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    skCanvas.callMethod('drawColor', <dynamic>[
-      color.value,
+    // Call the private '_drawColor' method rather than 'drawColor' because
+    // 'drawColor' will free the color array.
+    skCanvas.callMethod('_drawColor', <dynamic>[
+      makeSkColor(color).offsetInBytes,
       makeSkBlendMode(blendMode),
     ]);
   }
@@ -185,7 +189,8 @@ class SkCanvas {
     skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture.skPicture]);
   }
 
-  void drawPoints(SkPaint paint, ui.PointMode pointMode, Float32List points) {
+  void drawPoints(
+      SkPaint paint, ui.PointMode pointMode, js.JsArray<js.JsArray<double>> points) {
     skCanvas.callMethod('drawPoints', <dynamic>[
       makeSkPointMode(pointMode),
       points,
@@ -273,7 +278,8 @@ class SkCanvas {
   }
 
   void transform(Float32List matrix4) {
-    skCanvas.callMethod('concat', <js.JsArray<double>>[makeSkMatrixFromFloat32(matrix4)]);
+    skCanvas.callMethod(
+        'concat', <js.JsArray<double>>[makeSkMatrixFromFloat32(matrix4)]);
   }
 
   void translate(double dx, double dy) {

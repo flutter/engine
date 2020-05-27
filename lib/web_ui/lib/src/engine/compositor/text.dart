@@ -166,11 +166,13 @@ class SkTextStyle implements ui.TextStyle {
     final Map<String, dynamic> style = <String, dynamic>{};
 
     if (background != null) {
-      style['backgroundColor'] = background.skiaObject;
+      style['backgroundColor'] =
+          makeSkColor(background.color, useFreshArray: true);
     }
 
     if (color != null) {
-      style['color'] = color.value;
+      // TODO(hterkelsen): This doesn't seem to be properly setting color?
+      style['color'] = makeSkColor(color, useFreshArray: true);
     }
 
     if (decoration != null) {
@@ -216,7 +218,8 @@ class SkTextStyle implements ui.TextStyle {
     }
 
     if (foreground != null) {
-      style['foreground'] = foreground.skiaObject;
+      style['foregroundColor'] =
+          makeSkColor(foreground.color, useFreshArray: true);
     }
 
     // TODO(hterkelsen): Add support for

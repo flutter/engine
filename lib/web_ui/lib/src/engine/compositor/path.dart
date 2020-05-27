@@ -94,7 +94,7 @@ class SkPath implements ui.Path {
   @override
   void addPolygon(List<ui.Offset> points, bool close) {
     assert(points != null);
-    final Float32List encodedPoints = encodePointList(points);
+    final List<List<double>> encodedPoints = encodePointList(points);
     _skPath.callMethod('addPoly', <dynamic>[encodedPoints, close]);
   }
 
