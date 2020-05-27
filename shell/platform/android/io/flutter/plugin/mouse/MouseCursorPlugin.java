@@ -45,21 +45,25 @@ public class MouseCursorPlugin {
    */
   private PointerIcon resolveSystemCursor(@NonNull String kind) {
     if (MouseCursorPlugin.systemCursorConstants == null) {
-      MouseCursorPlugin.systemCursorConstants = new HashMap<String, Integer>() {
-        private static final long serialVersionUID = 1L;
-        {
-          put("none", Integer.valueOf(PointerIcon.TYPE_NULL));
-          //  "basic": default
-          put("click", Integer.valueOf(PointerIcon.TYPE_HAND));
-          put("text", Integer.valueOf(PointerIcon.TYPE_TEXT));
-          //  "forbidden": default
-          put("grab", Integer.valueOf(PointerIcon.TYPE_GRAB));
-          put("grabbing", Integer.valueOf(PointerIcon.TYPE_GRABBING));
-        }
+      MouseCursorPlugin.systemCursorConstants =
+          new HashMap<String, Integer>() {
+            private static final long serialVersionUID = 1L;
+
+            {
+              put("none", Integer.valueOf(PointerIcon.TYPE_NULL));
+              //  "basic": default
+              put("click", Integer.valueOf(PointerIcon.TYPE_HAND));
+              put("text", Integer.valueOf(PointerIcon.TYPE_TEXT));
+              //  "forbidden": default
+              put("grab", Integer.valueOf(PointerIcon.TYPE_GRAB));
+              put("grabbing", Integer.valueOf(PointerIcon.TYPE_GRABBING));
+            }
+          };
       };
     }
 
-    final int cursorConstant = MouseCursorPlugin.systemCursorConstants.getOrDefault(kind, PointerIcon.TYPE_ARROW);
+    final int cursorConstant =
+        MouseCursorPlugin.systemCursorConstants.getOrDefault(kind, PointerIcon.TYPE_ARROW);
     PointerIcon result = PointerIcon.getSystemIcon(context, cursorConstant);
     return result;
   }
@@ -74,14 +78,12 @@ public class MouseCursorPlugin {
   }
 
   /**
-   * A map from Flutter's system cursor {@code kind} to Android's pointer icon
-   * constants.
+   * A map from Flutter's system cursor {@code kind} to Android's pointer icon constants.
    *
-   * <p>It is null until the first time a system cursor is requested, at which time
-   * it is filled with the entire mapping.
+   * <p>It is null until the first time a system cursor is requested, at which time it is filled
+   * with the entire mapping.
    */
-  @NonNull
-  private static HashMap<String, Integer> systemCursorConstants;
+  @NonNull private static HashMap<String, Integer> systemCursorConstants;
 
   /**
    * Delegate interface for requesting the system to display a pointer icon object.

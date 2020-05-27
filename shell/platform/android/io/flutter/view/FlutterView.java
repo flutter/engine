@@ -74,7 +74,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>Deprecation: {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
  * this class. See https://flutter.dev/go/android-project-migration for more migration details.
  */
-public class FlutterView extends SurfaceView implements BinaryMessenger, TextureRegistry, MouseCursorPlugin.MouseCursorViewDelegate {
+public class FlutterView extends SurfaceView
+    implements BinaryMessenger, TextureRegistry, MouseCursorPlugin.MouseCursorViewDelegate {
   /**
    * Interface for those objects that maintain and expose a reference to a {@code FlutterView} (such
    * as a full-screen Flutter activity).
@@ -227,6 +228,8 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       mMouseCursorPlugin =
           new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor), context);
+    } else {
+      mMouseCursorPlugin = null;
     }
     androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
     androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
