@@ -54,6 +54,7 @@ public class MouseCursorChannel {
       final String method = call.method;
       Log.v(TAG, "Received '" + method + "' message.");
       try {
+        // More methods are expected to be added here, hence the switch.
         switch (method) {
           case "activateSystemCursor":
             @SuppressWarnings("unchecked")

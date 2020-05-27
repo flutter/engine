@@ -11,6 +11,8 @@ import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import java.util.HashMap;
 
 /** A mandatory plugin that handles mouse cursor requests. */
+@TargetApi(24)
+@RequiresApi(24)
 public class MouseCursorPlugin {
   @NonNull private final MouseCursorViewDelegate mView;
   @NonNull private final MouseCursorChannel mouseCursorChannel;
