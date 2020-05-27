@@ -19,7 +19,7 @@ struct DebugThreadChecker {
 
 class IOSSwitchableGLContext final : public SwitchableGLContext {
  public:
-  IOSSwitchableGLContext(EAGLContext& context);
+  IOSSwitchableGLContext(const EAGLContext& context);
 
   bool SetCurrent() override;
 

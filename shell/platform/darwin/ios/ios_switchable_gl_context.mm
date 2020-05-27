@@ -7,7 +7,7 @@
 
 namespace flutter {
 
-IOSSwitchableGLContext::IOSSwitchableGLContext(EAGLContext& context) : context_(context){};
+IOSSwitchableGLContext::IOSSwitchableGLContext(const EAGLContext& context) : context_(context){};
 
 bool IOSSwitchableGLContext::SetCurrent() {
   FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
