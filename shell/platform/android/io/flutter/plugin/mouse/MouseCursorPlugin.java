@@ -6,6 +6,7 @@ package io.flutter.plugin.mouse;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.os.Build;
 import android.view.PointerIcon;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
