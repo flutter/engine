@@ -64,8 +64,13 @@ List<String> getListOfChangedFiles(String repoPath) {
   final ProcessResult diffCachedResult = Process.runSync(
       'git', ['diff', '--cached', '--name-only'],
       workingDirectory: repoPath);
+
+  final ProcessResult mergeBaseResult = Process.runSync(
+      'git', ['merge-base', 'master', 'HEAD'],
+      workingDirectory: repoPath);
+  final String mergeBase = mergeBaseResult.stdout.trim();
   final ProcessResult masterResult = Process.runSync(
-      'git', ['diff', '--name-only', 'master'],
+      'git', ['diff', '--name-only', mergeBase],
       workingDirectory: repoPath);
   result.addAll(diffResult.stdout.split('\n').where(isNonEmptyString));
   result.addAll(diffCachedResult.stdout.split('\n').where(isNonEmptyString));
