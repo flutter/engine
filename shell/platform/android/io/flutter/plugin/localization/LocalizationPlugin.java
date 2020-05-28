@@ -9,7 +9,6 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.LocaleList;
-import android.provider.Settings;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -56,7 +55,7 @@ public class LocalizationPlugin {
     return platformResolvedLocale;
   }
 
-    /**
+  /**
    * Send the current {@link Locale} configuration to Flutter.
    *
    * <p>FlutterEngine must be non-null when this method is invoked.
@@ -90,7 +89,9 @@ public class LocalizationPlugin {
     }
 
     localizationChannel.sendLocales(locales);
-    localizationChannel.sendPlatformResolvedLocales(platformResolvedLocale);
+    // Do not initialize platform resolved locale. We will do
+    // this later via the method channel call "resolveLocale".
+    // localizationChannel.sendPlatformResolvedLocales(platformResolvedLocale);
   }
 
   /**
