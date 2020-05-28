@@ -84,8 +84,9 @@ public class TextInputPlugin {
 
           @Override
           public void finishAutofillContext(boolean shouldSave) {
-            if (afm == null)
+            if (afm == null) {
               return;
+            }
             if (shouldSave) {
               afm.commit();
             } else {

@@ -258,6 +258,7 @@ FLUTTER_ASSERT_ARC
   oldContext = textInputPlugin.autofillContext;
   [self setClientId:200 configuration:config];
 
+  // Reuse the input view instance from the last time.
   XCTAssertEqual(textInputPlugin.autofillContext.count, 4);
   XCTAssertEqual(self.installedInputViews.count, 4);
 
@@ -348,16 +349,16 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine updateEditingClient:0 withState:[OCMArg isNotNil] withTag:@"field2"]);
 }
 
--(void)testPasswordAutofillHack {
+- (void)testPasswordAutofillHack {
   NSDictionary* config = self.mutableTemplateCopy;
   [config setValue:@"YES" forKey:@"obscureText"];
   [self setClientId:123 configuration:config];
-  
+
   // Find all the FlutterTextInputViews we created.
   NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
-  
+
   FlutterTextInputView* inputView = inputFields[0];
-  
+
   XCTAssert([inputView isKindOfClass:[UITextField class]]);
   // FlutterSecureTextInputView does not respond to font,
   // but it should return the default UITextField.font.

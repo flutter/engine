@@ -293,14 +293,14 @@ public class TextInputChannel {
     void requestAutofill();
 
     /**
-     * Requests that the {@link AutofillManager} cancel or commit the current
-     * autofill context, depending on the value of {@code shouldSave}.
+     * Requests that the {@link AutofillManager} cancel or commit the current autofill context.
      *
-     * The method calls {@link android.view.autofill.AutofillManager#commit()} when {@code shouldSave}
-     * is true, and calls {@link android.view.autofill.AutofillManager#cancel()} otherwise.
+     * <p>The method calls {@link android.view.autofill.AutofillManager#commit()} when {@code
+     * shouldSave} is true, and calls {@link android.view.autofill.AutofillManager#cancel()}
+     * otherwise.
      *
-     * @param shouldSave whether the active autofill service should save the
-     *                   current user input for future use.
+     * @param shouldSave whether the active autofill service should save the current user input for
+     *     future use.
      */
     void finishAutofillContext(boolean shouldSave);
 

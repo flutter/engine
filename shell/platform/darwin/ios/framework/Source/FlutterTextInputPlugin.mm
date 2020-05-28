@@ -220,8 +220,18 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   return [dictionary[@"obscureText"] boolValue] ? @"password" : nil;
 }
 
-// We refer to password/username autofill, one-time-code autofill,
-// and predictive text for contact information etc. as autofill.
+// There're 2 types of autofills on native iOS:
+// - Regular autofill, includes contact information autofill and
+//   one-time-code autofill, takes place in the form of predictive
+//   text in the quick type bar. This type of autofill does not save
+//   user input.
+// - Password autofill, includes automatic strong password and regular
+//   password autofill. The former happens automatically when a
+//   "new password" field is detected, and only that password field
+//   will be filled. The latter appears in the quick type bar when
+//   an eligible input field becomes the first responder, and may
+//   fill both the username and the password fields. iOS will attempt
+//   to save user input for both kinds of password fields.
 typedef NS_ENUM(NSInteger, FlutterAutofillType) {
   FlutterAutofillTypeNone,
   FlutterAutofillTypeRegular,
@@ -238,7 +248,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     // for multiple input fields when there's a password input field among them.
     // When the configuration contains more than 1 field, we consider this
     // autofill group password related.
-    if (isSecureTextEntry || (fields && [fields count] > 1))
+    if (isSecureTextEntry || (fields && fields.count > 1))
       return FlutterAutofillTypePassword;
 
     if (uniqueIdFromDictionary(configuration) == nil) {
@@ -324,9 +334,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // selectors it can't respond to to a shared UITextField instance.
 //
 // Relevant API docs claim that password autofill supports any custom view
-// that adopts the UITextInput protocol, auto strong password seems to
-// currently only support UITextFields and saving username/password
-// for autofill only supports UITextFields and UITextViews, as of iOS 13.5.
+// that adopts the UITextInput protocol, automatic strong password seems to
+// currently only support UITextFields, and password saving only supports
+// UITextFields and UITextViews, as of iOS 13.5.
 @interface FlutterSecureTextInputView : FlutterTextInputView
 @property(class, nonatomic, assign, readonly) UITextField* textField;
 @end
@@ -435,11 +445,13 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                 ? UITextAutocorrectionTypeNo
                                 : UITextAutocorrectionTypeDefault;
   if (@available(iOS 10.0, *)) {
+    _autofillId = uniqueIdFromDictionary(configuration);
     if (autofill == nil) {
       self.textContentType = @"";
     } else {
       self.textContentType = ToUITextContentType(autofill[@"hints"]);
       [self setTextInputState:autofill[@"editingValue"]];
+      NSAssert(_autofillId, @"The autofill configuration must contain an autofill id");
       // The input field needs to be visible for the system autofill
       // to find it.
       self.frame = CGRectMake(0, 0, 1, 1);
@@ -524,7 +536,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (BOOL)canBecomeFirstResponder {
   // Only the currently focused input field can
   // become the first responder. This prevents iOS
-  // from changing focus by itself.
+  // from changing focus by itself (the framework
+  // focus will be out of sync if that happens).
   return _textInputClient != 0;
 }
 
@@ -1132,11 +1145,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   }
 
   inputView.textInputDelegate = _textInputDelegate;
-  inputView.autofillId = autofillId;
   [inputView configureWithDictionary:field];
   return inputView;
 }
 
+// Remove every installed input field, unless it's in the current autofill
+// context.
 - (void)removeNonPasswordAutofillFields:(BOOL)removeNonAutofillField {
   UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
 

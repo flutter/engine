@@ -35,7 +35,6 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
-import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -71,9 +70,11 @@ public class TextInputPluginTest {
     }
   }
 
-  private static void sendToBinaryMessageHandler(BinaryMessenger.BinaryMessageHandler binaryMessageHandler, String method, Object args) {
+  private static void sendToBinaryMessageHandler(
+      BinaryMessenger.BinaryMessageHandler binaryMessageHandler, String method, Object args) {
     MethodCall methodCall = new MethodCall(method, args);
-    ByteBuffer encodedMethodCall = JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall).position(0);
+    ByteBuffer encodedMethodCall =
+        JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall).position(0);
     binaryMessageHandler.onMessage(encodedMethodCall, mock(BinaryMessenger.BinaryReply.class));
   }
 
@@ -539,20 +540,21 @@ public class TextInputPluginTest {
   }
 
   @Test
-  public void respondsToInputChannelMessages () {
-    ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor = ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
+  public void respondsToInputChannelMessages() {
+    ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
+        ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
     DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
-    TextInputChannel.TextInputMethodHandler mockHandler = mock(TextInputChannel.TextInputMethodHandler.class);
+    TextInputChannel.TextInputMethodHandler mockHandler =
+        mock(TextInputChannel.TextInputMethodHandler.class);
     TextInputChannel textInputChannel = new TextInputChannel(mockBinaryMessenger);
 
     textInputChannel.setTextInputMethodHandler(mockHandler);
 
     verify(mockBinaryMessenger, times(1))
-            .setMessageHandler(
-                    any(String.class),
-                    binaryMessageHandlerCaptor.capture());
+        .setMessageHandler(any(String.class), binaryMessageHandlerCaptor.capture());
 
-    BinaryMessenger.BinaryMessageHandler binaryMessageHandler = binaryMessageHandlerCaptor.getValue();
+    BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
+        binaryMessageHandlerCaptor.getValue();
 
     sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.requestAutofill", null);
     verify(mockHandler, times(1)).requestAutofill();
