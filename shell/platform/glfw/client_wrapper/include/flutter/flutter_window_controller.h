@@ -57,17 +57,20 @@ class FlutterWindowController : public PluginRegistry {
   // Creates and displays a window for displaying Flutter content.
   //
   // The |assets_path| is the path to the flutter_assets folder for the Flutter
-  // application to be run. |icu_data_path| is the path to the icudtl.dat file
-  // for the version of Flutter you are using.
+  // application to be run.
   //
   // The |arguments| are passed to the Flutter engine. See:
   // https://github.com/flutter/engine/blob/master/shell/common/switches.h for
   // for details. Not all arguments will apply to desktop.
   //
+  // The |lib_path| is the path to the libapp.so file for the Flutter
+  // application to be run. This parameter is required for AOT mode support.
+  //
   // Only one Flutter window can exist at a time; see constructor comment.
   bool CreateWindow(const WindowProperties& window_properties,
                     const std::string& assets_path,
-                    const std::vector<std::string>& arguments);
+                    const std::vector<std::string>& arguments,
+                    const std::string& lib_path = "");
 
   // Destroys the current window, if any.
   //

@@ -584,7 +584,10 @@ static bool RunFlutterEngine(
       std::filesystem::u8path(engine_properties.assets_path);
   std::filesystem::path icu_path =
       std::filesystem::u8path(engine_properties.icu_data_path);
-  if (assets_path.is_relative() || icu_path.is_relative()) {
+  std::filesystem::path lib_path =
+      std::filesystem::u8path(engine_properties.lib_path);
+  if (assets_path.is_relative() || icu_path.is_relative() ||
+      lib_path.is_relative()) {
     // Treat relative paths as relative to the directory of this executable.
     std::filesystem::path executable_location =
         flutter::GetExecutableDirectory();
@@ -595,9 +598,11 @@ static bool RunFlutterEngine(
     }
     assets_path = std::filesystem::path(executable_location) / assets_path;
     icu_path = std::filesystem::path(executable_location) / icu_path;
+    lib_path = std::filesystem::path(executable_location) / lib_path;
   }
   std::string assets_path_string = assets_path.u8string();
   std::string icu_path_string = icu_path.u8string();
+  std::string lib_path_string = lib_path.u8string();
 
   // Configure a task runner using the event loop.
   engine_state->event_loop = std::move(event_loop);
@@ -632,12 +637,12 @@ static bool RunFlutterEngine(
   if (FlutterEngineRunsAOTCompiledDartCode()) {
     FlutterEngineAOTDataSource data_in;
     FlutterEngineAOTData data_out;
-    std::string elf_path = assets_path_string + "/libapp.so";
     data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
-    data_in.elf_path = elf_path.c_str();
+    data_in.elf_path = lib_path_string.c_str();
     auto result = FlutterEngineCreateAOTData(&data_in, &data_out);
     if (result != kSuccess) {
-      std::cerr << "Failed to load AOT data from: " << elf_path << std::endl;
+      std::cerr << "Failed to load AOT data from: " << lib_path_string
+                << std::endl;
       return false;
     }
     args.aot_data = data_out;
