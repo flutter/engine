@@ -46,6 +46,9 @@ class FlutterWindowController : public PluginRegistry {
   // There must be only one instance of this class in an application at any
   // given time, as Flutter does not support multiple engines in one process,
   // or multiple views in one engine.
+  //
+  // |icu_data_path| is the path to the icudtl.dat file for the version of
+  // Flutter you are using.
   explicit FlutterWindowController(const std::string& icu_data_path);
 
   virtual ~FlutterWindowController();
@@ -63,14 +66,15 @@ class FlutterWindowController : public PluginRegistry {
   // https://github.com/flutter/engine/blob/master/shell/common/switches.h for
   // for details. Not all arguments will apply to desktop.
   //
-  // The |lib_path| is the path to the libapp.so file for the Flutter
-  // application to be run. This parameter is required for AOT mode support.
+  // The |aot_library_path| is the path to the libapp.so file for the Flutter
+  // application to be run. While this parameter is only required in AOT mode,
+  // it is perfectly safe to provide the path in non-AOT mode too.
   //
   // Only one Flutter window can exist at a time; see constructor comment.
   bool CreateWindow(const WindowProperties& window_properties,
                     const std::string& assets_path,
                     const std::vector<std::string>& arguments,
-                    const std::string& lib_path = "");
+                    const std::string& aot_library_path = "");
 
   // Destroys the current window, if any.
   //

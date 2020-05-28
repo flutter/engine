@@ -613,10 +613,10 @@ static bool RunFlutterEngine(
       std::filesystem::u8path(engine_properties.assets_path);
   std::filesystem::path icu_path =
       std::filesystem::u8path(engine_properties.icu_data_path);
-  std::filesystem::path lib_path =
-      std::filesystem::u8path(engine_properties.lib_path);
+  std::filesystem::path aot_library_path =
+      std::filesystem::u8path(engine_properties.aot_library_path);
   if (assets_path.is_relative() || icu_path.is_relative() ||
-      lib_path.is_relative()) {
+      (!aot_library_path.empty() && aot_library_path.is_relative())) {
     // Treat relative paths as relative to the directory of this executable.
     std::filesystem::path executable_location =
         flutter::GetExecutableDirectory();
@@ -627,11 +627,14 @@ static bool RunFlutterEngine(
     }
     assets_path = std::filesystem::path(executable_location) / assets_path;
     icu_path = std::filesystem::path(executable_location) / icu_path;
-    lib_path = std::filesystem::path(executable_location) / lib_path;
+    if (!aot_library_path.empty()) {
+      aot_library_path =
+          std::filesystem::path(executable_location) / aot_library_path;
+    }
   }
   std::string assets_path_string = assets_path.u8string();
   std::string icu_path_string = icu_path.u8string();
-  std::string lib_path_string = lib_path.u8string();
+  std::string lib_path_string = aot_library_path.u8string();
 
   // Configure a task runner using the event loop.
   engine_state->event_loop = std::move(event_loop);
