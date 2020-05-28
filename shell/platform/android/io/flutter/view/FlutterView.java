@@ -59,6 +59,7 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -124,6 +125,7 @@ public class FlutterView extends SurfaceView
   private final SystemChannel systemChannel;
   private final InputMethodManager mImm;
   private final TextInputPlugin mTextInputPlugin;
+  private final LocalizationPlugin mLocalizationPlugin;
   private final MouseCursorPlugin mMouseCursorPlugin;
   private final AndroidKeyProcessor androidKeyProcessor;
   private final AndroidTouchProcessor androidTouchProcessor;
@@ -231,6 +233,7 @@ public class FlutterView extends SurfaceView
     } else {
       mMouseCursorPlugin = null;
     }
+    mLocalizationPlugin = new LocalizationPlugin(context, localizationChannel);
     androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
     androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
     mNativeView
@@ -239,7 +242,7 @@ public class FlutterView extends SurfaceView
         .attachTextInputPlugin(mTextInputPlugin);
 
     // Send initial platform information to Dart
-    sendLocalesToDart(getResources().getConfiguration());
+    mLocalizationPlugin.sendLocalesToDart(getResources().getConfiguration());
     sendUserPlatformSettingsToDart();
   }
 
@@ -403,41 +406,41 @@ public class FlutterView extends SurfaceView
         .send();
   }
 
-  @SuppressWarnings("deprecation")
-  private void sendLocalesToDart(Configuration config) {
-    List<Locale> locales = new ArrayList<>();
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        locales.add(locale);
-      }
-    } else {
-      locales.add(config.locale);
-    }
+  // @SuppressWarnings("deprecation")
+  // private void sendLocalesToDart(Configuration config) {
+  //   List<Locale> locales = new ArrayList<>();
+  //   if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+  //     LocaleList localeList = config.getLocales();
+  //     int localeCount = localeList.size();
+  //     for (int index = 0; index < localeCount; ++index) {
+  //       Locale locale = localeList.get(index);
+  //       locales.add(locale);
+  //     }
+  //   } else {
+  //     locales.add(config.locale);
+  //   }
 
-    Locale platformResolvedLocale = null;
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-      List<Locale.LanguageRange> languageRanges = new ArrayList<>();
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
-      }
-      // TODO(garyq) implement a real locale resolution.
-      platformResolvedLocale =
-          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
-    }
+  //   Locale platformResolvedLocale = null;
+  //   if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+  //     List<Locale.LanguageRange> languageRanges = new ArrayList<>();
+  //     LocaleList localeList = config.getLocales();
+  //     int localeCount = localeList.size();
+  //     for (int index = 0; index < localeCount; ++index) {
+  //       Locale locale = localeList.get(index);
+  //       languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
+  //     }
+  //     // TODO(garyq) implement a real locale resolution.
+  //     platformResolvedLocale =
+  //         Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
+  //   }
 
-    localizationChannel.sendLocales(locales, platformResolvedLocale);
-  }
+  //   localizationChannel.sendLocales(locales, platformResolvedLocale);
+  // }
 
   @Override
   protected void onConfigurationChanged(Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
-    sendLocalesToDart(newConfig);
+    mLocalizationPlugin.sendLocalesToDart(newConfig);
     sendUserPlatformSettingsToDart();
   }
 

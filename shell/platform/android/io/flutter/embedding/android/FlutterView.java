@@ -39,7 +39,9 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
+import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
@@ -101,6 +103,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   // existing, stateless system channels, e.g., KeyEventChannel, TextInputChannel, etc.
   @Nullable private MouseCursorPlugin mouseCursorPlugin;
   @Nullable private TextInputPlugin textInputPlugin;
+  @Nullable private LocalizationPlugin localizationPlugin;
   @Nullable private AndroidKeyProcessor androidKeyProcessor;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
   @Nullable private AccessibilityBridge accessibilityBridge;
@@ -354,7 +357,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // again (e.g. in onStart).
     if (flutterEngine != null) {
       Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
-      sendLocalesToFlutter(newConfig);
+      localizationPlugin.sendLocalesToDart(newConfig);
       sendUserSettingsToFlutter();
     }
   }
@@ -815,6 +818,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             this,
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
+    localizationPlugin =
+        new LocalizationPlugin(
+            getContext(),
+            this.flutterEngine.getLocalizationChannel());
     androidKeyProcessor =
         new AndroidKeyProcessor(this.flutterEngine.getKeyEventChannel(), textInputPlugin);
     androidTouchProcessor = new AndroidTouchProcessor(this.flutterEngine.getRenderer());
@@ -841,7 +848,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();
-    sendLocalesToFlutter(getResources().getConfiguration());
+    localizationPlugin.sendLocalesToDart(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
 
     flutterEngine.getPlatformViewsController().attachToView(this);
@@ -944,41 +951,41 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     flutterEngineAttachmentListeners.remove(listener);
   }
 
-  /**
-   * Send the current {@link Locale} configuration to Flutter.
-   *
-   * <p>FlutterEngine must be non-null when this method is invoked.
-   */
-  @SuppressWarnings("deprecation")
-  private void sendLocalesToFlutter(@NonNull Configuration config) {
-    List<Locale> locales = new ArrayList<>();
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        locales.add(locale);
-      }
-    } else {
-      locales.add(config.locale);
-    }
+  // /**
+  //  * Send the current {@link Locale} configuration to Flutter.
+  //  *
+  //  * <p>FlutterEngine must be non-null when this method is invoked.
+  //  */
+  // @SuppressWarnings("deprecation")
+  // private void sendLocalesToFlutter(@NonNull Configuration config) {
+  //   List<Locale> locales = new ArrayList<>();
+  //   if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+  //     LocaleList localeList = config.getLocales();
+  //     int localeCount = localeList.size();
+  //     for (int index = 0; index < localeCount; ++index) {
+  //       Locale locale = localeList.get(index);
+  //       locales.add(locale);
+  //     }
+  //   } else {
+  //     locales.add(config.locale);
+  //   }
 
-    Locale platformResolvedLocale = null;
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-      List<Locale.LanguageRange> languageRanges = new ArrayList<>();
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
-      }
-      // TODO(garyq) implement a real locale resolution.
-      platformResolvedLocale =
-          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
-    }
+  //   Locale platformResolvedLocale = null;
+  //   if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+  //     List<Locale.LanguageRange> languageRanges = new ArrayList<>();
+  //     LocaleList localeList = config.getLocales();
+  //     int localeCount = localeList.size();
+  //     for (int index = 0; index < localeCount; ++index) {
+  //       Locale locale = localeList.get(index);
+  //       languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
+  //     }
+  //     // TODO(garyq) implement a real locale resolution.
+  //     platformResolvedLocale =
+  //         Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
+  //   }
 
-    flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
-  }
+  //   flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
+  // }
 
   /**
    * Send various user preferences of this Android device to Flutter.
