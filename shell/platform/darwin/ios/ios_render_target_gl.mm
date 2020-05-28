@@ -21,7 +21,7 @@ IOSRenderTargetGL::IOSRenderTargetGL(fml::scoped_nsobject<CAEAGLLayer> layer,
   if (@available(iOS 9.0, *)) {
     [layer_ setPresentsWithTransaction:YES];
   }
-  auto context_switch = GLContextSwitch(std::make_unique<IOSSwitchableGLContext>(*context_));
+  auto context_switch = GLContextSwitch(std::make_unique<IOSSwitchableGLContext>(context_.get()));
   bool context_current = context_switch.GetResult();
 
   FML_DCHECK(context_current);
@@ -57,7 +57,7 @@ IOSRenderTargetGL::IOSRenderTargetGL(fml::scoped_nsobject<CAEAGLLayer> layer,
 }
 
 IOSRenderTargetGL::~IOSRenderTargetGL() {
-  auto context_switch = GLContextSwitch(std::make_unique<IOSSwitchableGLContext>(*context_));
+  auto context_switch = GLContextSwitch(std::make_unique<IOSSwitchableGLContext>(context_.get()));
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
   // Deletes on GL_NONEs are ignored
@@ -108,7 +108,7 @@ bool IOSRenderTargetGL::UpdateStorageSizeIfNecessary() {
 
   FML_DCHECK(glGetError() == GL_NO_ERROR);
 
-  auto context_switch = GLContextSwitch(std::make_unique<IOSSwitchableGLContext>(*context_));
+  auto context_switch = GLContextSwitch(std::make_unique<IOSSwitchableGLContext>(context_.get()));
   if (!context_switch.GetResult()) {
     return false;
   }

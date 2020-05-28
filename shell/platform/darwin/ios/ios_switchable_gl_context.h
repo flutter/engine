@@ -15,17 +15,17 @@ namespace flutter {
 
 class IOSSwitchableGLContext final : public SwitchableGLContext {
  public:
-  IOSSwitchableGLContext(const EAGLContext& context);
+  IOSSwitchableGLContext(EAGLContext* context);
 
   bool SetCurrent() override;
 
   bool RemoveCurrent() override;
 
  private:
-  EAGLContext& context_;
-  // This pointer is managed by IOSRendererTarget/IOSContextGL or a 3rd party
+  // These pointers are managed by IOSRendererTarget/IOSContextGL or a 3rd party
   // plugin that uses gl context. |IOSSwitchableGLContext| should never out live
   // those objects. Never release this pointer within this object.
+  EAGLContext* context_;
   EAGLContext* previous_context_;
 
   FML_DECLARE_THREAD_CHECKER(checker);

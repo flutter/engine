@@ -45,7 +45,7 @@ sk_sp<GrContext> IOSContextGL::CreateResourceContext() {
 
 // |IOSContext|
 std::unique_ptr<GLContextResult> IOSContextGL::MakeCurrent() {
-  return std::make_unique<GLContextSwitch>(std::make_unique<IOSSwitchableGLContext>(*context_));
+  return std::make_unique<GLContextSwitch>(std::make_unique<IOSSwitchableGLContext>(context_.get()));
 }
 
 // |IOSContext|
