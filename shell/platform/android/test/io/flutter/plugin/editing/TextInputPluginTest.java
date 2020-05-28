@@ -73,8 +73,7 @@ public class TextInputPluginTest {
   private static void sendToBinaryMessageHandler(
       BinaryMessenger.BinaryMessageHandler binaryMessageHandler, String method, Object args) {
     MethodCall methodCall = new MethodCall(method, args);
-    ByteBuffer encodedMethodCall =
-        JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall).position(0);
+    ByteBuffer encodedMethodCall = JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall).flip();
     binaryMessageHandler.onMessage(encodedMethodCall, mock(BinaryMessenger.BinaryReply.class));
   }
 
