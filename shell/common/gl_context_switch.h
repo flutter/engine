@@ -40,13 +40,23 @@ class SwitchableGLContext {
   FML_DISALLOW_COPY_AND_ASSIGN(SwitchableGLContext);
 };
 
+//------------------------------------------------------------------------------
+/// Represents the result of setting a gl context.
+/// This class exists because context results are used in places applies to all
+/// the platforms. On certain platforms(for example lower end iOS devices that
+/// uses gl), a |GLContextSwitch| is required to protect flutter's gl contect
+/// from being polluted by other programs(embedded platform views). A
+/// |GLContextSwitch| is a subclass of |GLContextResult|, which can be returned
+/// on platforms that requires context switching. A |GLContextDefaultResult| is
+/// also a subclass of |GLContextResult|, which can be returned on platforms
+/// that doesn't require context switching.
 class GLContextResult {
  public:
   GLContextResult();
   virtual ~GLContextResult();
 
   //----------------------------------------------------------------------------
-  // Returns true if the context switching was successful.
+  // Returns true if the gl context is set successfully.
   bool GetResult();
 
  protected:
@@ -56,12 +66,17 @@ class GLContextResult {
   FML_DISALLOW_COPY_AND_ASSIGN(GLContextResult);
 };
 
+//------------------------------------------------------------------------------
+/// The default implementation of |GLContextResult|.
+///
+/// Use this class on platforms that doesn't require gl context switching.
+/// * See also |GLContextSwitch| if the platform requires gl context switching.
 class GLContextDefaultResult : public GLContextResult {
  public:
   //----------------------------------------------------------------------------
-  /// Constructs a |GLContextResult| with a static result.
+  /// Constructs a |GLContextDefaultResult| with a static result.
   ///
-  /// Used in embeders that doesn't require renderer context switching. (For
+  /// Used this on platforms that doesn't require gl context switching. (For
   /// example, metal on iOS)
   ///
   /// @param  static_result a static value that will be returned from
@@ -72,20 +87,21 @@ class GLContextDefaultResult : public GLContextResult {
 
   FML_DISALLOW_COPY_AND_ASSIGN(GLContextDefaultResult);
 };
+
 //------------------------------------------------------------------------------
-/// Switches the renderer context to the a context that is passed in the
+/// Switches the gl context to the a context that is passed in the
 /// constructor.
 ///
-/// In destruction, it should reset the current context back to what was
+/// In destruction, it should restore the current context to what was
 /// before the construction of this switch.
-///
 class GLContextSwitch final : public GLContextResult {
  public:
   //----------------------------------------------------------------------------
   /// Constructs a |GLContextSwitch|.
   ///
   /// @param  context The context that is going to be set as the current
-  /// context.
+  /// context. The |GLContextSwitch| should not outlive the owner of the gl
+  /// context wrapped inside the `context`.
   GLContextSwitch(std::unique_ptr<SwitchableGLContext> context);
 
   ~GLContextSwitch() override;
