@@ -83,6 +83,17 @@ public class TextInputPlugin {
           }
 
           @Override
+          public void finishAutofillContext(boolean shouldSave) {
+            if (afm == null)
+              return;
+            if (shouldSave) {
+              afm.commit();
+            } else {
+              afm.cancel();
+            }
+          }
+
+          @Override
           public void setClient(
               int textInputClientId, TextInputChannel.Configuration configuration) {
             setTextInputClient(textInputClientId, configuration);
