@@ -706,7 +706,7 @@ static void SetUpCommonEngineState(FlutterDesktopEngineState* state,
 
   // System channel handler.
   state->platform_handler = std::make_unique<flutter::PlatformHandler>(
-      state->internal_plugin_registrar->messenger(), nullptr);
+      state->internal_plugin_registrar->messenger(), window);
 }
 
 bool FlutterDesktopInit() {
