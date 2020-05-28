@@ -13,10 +13,6 @@
 
 namespace flutter {
 
-struct DebugThreadChecker {
-  FML_DECLARE_THREAD_CHECKER(checker);
-};
-
 class IOSSwitchableGLContext final : public SwitchableGLContext {
  public:
   IOSSwitchableGLContext(const EAGLContext& context);
@@ -32,7 +28,7 @@ class IOSSwitchableGLContext final : public SwitchableGLContext {
   // those objects. Never release this pointer within this object.
   EAGLContext* previous_context_;
 
-  DebugThreadChecker checker_;
+  FML_DECLARE_THREAD_CHECKER(checker);
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSwitchableGLContext);
 };

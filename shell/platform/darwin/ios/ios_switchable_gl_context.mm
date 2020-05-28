@@ -10,14 +10,14 @@ namespace flutter {
 IOSSwitchableGLContext::IOSSwitchableGLContext(const EAGLContext& context) : context_(context){};
 
 bool IOSSwitchableGLContext::SetCurrent() {
-  FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+  FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker);
   EAGLContext* current_context = EAGLContext.currentContext;
   previous_context_ = current_context;
   return [EAGLContext setCurrentContext:&context_];
 };
 
 bool IOSSwitchableGLContext::RemoveCurrent() {
-  FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
+  FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker);
   return [EAGLContext setCurrentContext:previous_context_];
 };
 }
