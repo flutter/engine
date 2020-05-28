@@ -223,8 +223,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   // Default the observatory port based on --ipv6 if not set.
   if (settings.observatory_host.empty()) {
     settings.observatory_host =
-        command_line.HasOption(FlagForSwitch(Switch::IPv6)) ? "::1"
-                                                            : "127.0.0.1";
+        command_line.HasOption(FlagForSwitch(Switch::IPv6)) ? "::/0"
+                                                            : "0.0.0.0";
   }
 
   // Set Observatory Port

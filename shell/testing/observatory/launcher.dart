@@ -19,7 +19,13 @@ class ShellProcess {
       const String observatoryUriPrefix = 'Observatory listening on ';
       if (line.startsWith(observatoryUriPrefix)) {
         print(line);
-        final Uri uri = Uri.parse(line.substring(observatoryUriPrefix.length));
+        Uri uri = Uri.parse(line.substring(observatoryUriPrefix.length));
+        // Transform URI properly
+        if (uri.host == "0.0.0.0") {
+          uri = uri.replace(host: "127.0.0.1");
+        } else if (uri.host == "::/0") {
+          uri = uri.replace(host: "::1");
+        }
         _observatoryUriCompleter.complete(uri);
       }
     });

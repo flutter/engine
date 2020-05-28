@@ -69,7 +69,7 @@ DEF_SWITCH(DartFlags,
 DEF_SWITCH(DeviceObservatoryHost,
            "observatory-host",
            "The hostname/IP address on which the Dart Observatory should "
-           "be served. If not set, defaults to 127.0.0.1 or ::1 depending on "
+           "be served. If not set, defaults to 0.0.0.0 or ::/0 depending on "
            "whether --ipv6 is specified.")
 DEF_SWITCH(DeviceObservatoryPort,
            "observatory-port",
