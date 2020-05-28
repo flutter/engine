@@ -98,6 +98,8 @@ struct AOTDataDeleter {
   }
 };
 
+using UniqueAotDataPtr = std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter>;
+
 // Struct for storing state of a Flutter engine instance.
 struct FlutterDesktopEngineState {
   // The handle to the Flutter engine instance.
@@ -126,7 +128,7 @@ struct FlutterDesktopEngineState {
   FlutterDesktopWindowControllerState* window_controller = nullptr;
 
   // AOT data for this engine instance, if applicable.
-  std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter> aot_data = nullptr;
+  UniqueAotDataPtr aot_data = nullptr;
 };
 
 // State associated with the plugin registrar.
@@ -560,6 +562,33 @@ static void GLFWErrorCallback(int error_code, const char* description) {
   std::cerr << "GLFW error " << error_code << ": " << description << std::endl;
 }
 
+// Attempts to load AOT data from the given path, which must be absolute and
+// non-empty. Logs and returns nullptr on failure.
+UniqueAotDataPtr LoadAotData(std::filesystem::path aot_data_path) {
+  if (aot_data_path.empty()) {
+    std::cerr
+        << "Attempted to load AOT data, but no aot_data_path was provided."
+        << std::endl;
+    return nullptr;
+  }
+  if (!std::filesystem::exists(aot_data_path)) {
+    std::cerr << "Can't load AOT data from " << aot_data_path.u8string()
+              << "; no such file." << std::endl;
+    return nullptr;
+  }
+  std::string path_string = aot_data_path.u8string();
+  FlutterEngineAOTDataSource source = {};
+  source.type = kFlutterEngineAOTDataSourceTypeElfPath;
+  source.elf_path = path_string.c_str();
+  FlutterEngineAOTData data = nullptr;
+  auto result = FlutterEngineCreateAOTData(&source, &data);
+  if (result != kSuccess) {
+    std::cerr << "Failed to load AOT data from: " << path_string << std::endl;
+    return nullptr;
+  }
+  return UniqueAotDataPtr(data);
+}
+
 // Starts an instance of the Flutter Engine.
 //
 // Configures the engine according to |engine_propreties| and using |event_loop|
@@ -635,18 +664,12 @@ static bool RunFlutterEngine(
   args.custom_task_runners = &task_runners;
 
   if (FlutterEngineRunsAOTCompiledDartCode()) {
-    FlutterEngineAOTDataSource data_in;
-    FlutterEngineAOTData data_out;
-    data_in.type = kFlutterEngineAOTDataSourceTypeElfPath;
-    data_in.elf_path = lib_path_string.c_str();
-    auto result = FlutterEngineCreateAOTData(&data_in, &data_out);
-    if (result != kSuccess) {
-      std::cerr << "Failed to load AOT data from: " << lib_path_string
-                << std::endl;
+    engine_state->aot_data = LoadAotData(lib_path_string);
+    if (!engine_state->aot_data) {
+      std::cerr << "Unable to start engine without AOT data." << std::endl;
       return false;
     }
-    args.aot_data = data_out;
-    engine_state->aot_data.reset(data_out);
+    args.aot_data = engine_state->aot_data.get();
   }
 
   FLUTTER_API_SYMBOL(FlutterEngine) engine = nullptr;
