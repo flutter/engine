@@ -84,7 +84,7 @@ public class TextInputPlugin {
 
           @Override
           public void finishAutofillContext(boolean shouldSave) {
-            if (afm == null) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null) {
               return;
             }
             if (shouldSave) {
