@@ -150,17 +150,6 @@ class TestCommand extends Command<bool> with ArgUtils {
   }
 
   Future<bool> runUnitTests() async {
-    _copyTestFontsIntoWebUi();
-    await _buildHostPage();
-    if (io.Platform.isWindows) {
-      // On Dart 2.7 or greater, it gives an error for not
-      // recognized "pub" version and asks for "pub" get.
-      // See: https://github.com/dart-lang/sdk/issues/39738
-      await _runPubGet();
-    }
-
-    await _buildTests(targets: targetFiles);
-
     // Many tabs will be left open after Safari runs, quit Safari during
     // cleanup.
     if (browser == 'safari') {
@@ -180,12 +169,42 @@ class TestCommand extends Command<bool> with ArgUtils {
       });
     }
 
-    if (runAllTests) {
-      await _runAllTests();
-    } else {
-      await _runTargetTests(targetFiles);
+    _copyTestFontsIntoWebUi();
+    await _buildHostPage();
+    if (io.Platform.isWindows) {
+      // On Dart 2.7 or greater, it gives an error for not
+      // recognized "pub" version and asks for "pub" get.
+      // See: https://github.com/dart-lang/sdk/issues/39738
+      await _runPubGet();
     }
-    return true;
+
+    print('Run all tests one by one.');
+
+    /// List all the non golden tests and run them.
+    final io.Directory testDirectory =
+        io.Directory(path.join(environment.webUiRootDir.path, 'test'));
+    final List<io.File> testTargets = testDirectory
+        .listSync(recursive: true, followLinks: false)
+        .whereType<io.File>()
+        .toList();
+    List<FilePath> filePaths = testTargets
+        .map((t) => FilePath.fromCwd('test/${path.basename(t.path)}'))
+        .toList();
+
+    for (FilePath filePathForTest in filePaths) {
+      print('Running the test: ${filePathForTest.toString()}');
+      if (!filePathForTest.toString().contains('golden') &&
+          filePathForTest.toString().contains('test.dart')) {
+        await _buildTests(targets: [filePathForTest]);
+        await _runTargetTests([filePathForTest]);
+        print('One test run close safari');
+        await runProcess(
+          'sudo',
+          ['pkill', '-lf', 'Safari'],
+          workingDirectory: environment.webUiRootDir.path,
+        );
+      }
+    }
   }
 
   /// Whether to start the browser in debug mode.
