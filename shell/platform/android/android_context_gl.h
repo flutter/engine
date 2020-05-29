@@ -16,8 +16,7 @@
 
 namespace flutter {
 
-class AndroidContextGL : public fml::RefCountedThreadSafe<AndroidContextGL>,
-                         public AndroidContext {
+class AndroidContextGL : public AndroidContext {
  public:
   AndroidContextGL(AndroidRenderingAPI rendering_api,
                    fml::RefPtr<AndroidEnvironmentGL> environment);
@@ -53,8 +52,6 @@ class AndroidContextGL : public fml::RefCountedThreadSafe<AndroidContextGL>,
   EGLContext resource_context_;
   bool valid_;
 
-  FML_FRIEND_MAKE_REF_COUNTED(AndroidContextGL);
-  FML_FRIEND_REF_COUNTED_THREAD_SAFE(AndroidContextGL);
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidContextGL);
 };
 

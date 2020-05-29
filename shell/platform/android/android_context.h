@@ -21,7 +21,7 @@ enum class AndroidRenderingAPI {
 //------------------------------------------------------------------------------
 /// @brief      Holds state that is shared across android surfaces.
 ///
-class AndroidContext : public fml::RefCountedThreadSafe<AndroidContext> {
+class AndroidContext {
  public:
   AndroidContext(AndroidRenderingAPI rendering_api);
 

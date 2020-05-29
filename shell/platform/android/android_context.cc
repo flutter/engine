@@ -39,7 +39,7 @@ std::shared_ptr<AndroidContext> AndroidContext::Create(
   }
   FML_CHECK(context);
   FML_CHECK(context->IsValid()) << "Could not create an Android context.";
-  return nullptr;
+  return context;
 }
 
 }  // namespace flutter
