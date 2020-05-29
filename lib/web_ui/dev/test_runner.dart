@@ -57,17 +57,17 @@ class TestCommand extends Command<bool> with ArgUtils {
             'tests.',
       )
       ..addFlag('use-system-flutter',
-        defaultsTo: false,
-        help: 'integration tests are using flutter repository for various tasks'
-        ', such as flutter drive, flutter pub get. If this flag is set, felt '
-        'will use flutter command without cloning the repository. This flag '
-        'can save internet bandwidth. However use with caution. Note that '
-        'since flutter repo is always synced to youngest commit older than '
-        'the engine commit for the tests running in CI, the tests results '
-        'won\'t be consistent with CIs when this flag is set. flutter '
-        'command should be set in the PATH for this flag to be useful.'
-        'This flag can also be used to test local Flutter changes.'
-      )
+          defaultsTo: false,
+          help:
+              'integration tests are using flutter repository for various tasks'
+              ', such as flutter drive, flutter pub get. If this flag is set, felt '
+              'will use flutter command without cloning the repository. This flag '
+              'can save internet bandwidth. However use with caution. Note that '
+              'since flutter repo is always synced to youngest commit older than '
+              'the engine commit for the tests running in CI, the tests results '
+              'won\'t be consistent with CIs when this flag is set. flutter '
+              'command should be set in the PATH for this flag to be useful.'
+              'This flag can also be used to test local Flutter changes.')
       ..addFlag(
         'update-screenshot-goldens',
         defaultsTo: false,
@@ -194,11 +194,12 @@ class TestCommand extends Command<bool> with ArgUtils {
     List<FilePath> allTargets;
     if (runAllTests) {
       allTargets = environment.webUiTestDir
-        .listSync(recursive: true)
-        .whereType<io.File>()
-        .where((io.File f) => f.path.endsWith('_test.dart'))
-        .map<FilePath>((io.File f) => FilePath.fromWebUi(path.relative(f.path, from: environment.webUiRootDir.path)))
-        .toList();
+          .listSync(recursive: true)
+          .whereType<io.File>()
+          .where((io.File f) => f.path.endsWith('_test.dart'))
+          .map<FilePath>((io.File f) => FilePath.fromWebUi(
+              path.relative(f.path, from: environment.webUiRootDir.path)))
+          .toList();
     } else {
       allTargets = targetFiles;
     }
@@ -207,7 +208,8 @@ class TestCommand extends Command<bool> with ArgUtils {
     // different dart2js options (and different build.*.yaml files).
     final List<FilePath> htmlTargets = <FilePath>[];
     final List<FilePath> canvasKitTargets = <FilePath>[];
-    final String canvasKitTestDirectory = path.join(environment.webUiTestDir.path, 'canvaskit');
+    final String canvasKitTestDirectory =
+        path.join(environment.webUiTestDir.path, 'canvaskit');
     for (FilePath target in allTargets) {
       if (path.isWithin(canvasKitTestDirectory, target.absolute)) {
         canvasKitTargets.add(target);
@@ -427,8 +429,10 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// overwrites the output directories, we redirect the CanvasKit output to a
   /// separate directory, then copy the files back to `build/test`.
   Future<void> _buildTests({List<FilePath> targets, bool forCanvasKit}) async {
-    print('Building ${targets.length} targets for ${forCanvasKit ? 'CanvasKit' : 'HTML'}');
-    final String canvasKitOutputRelativePath = path.join('.dart_tool', 'canvaskit_tests');
+    print(
+        'Building ${targets.length} targets for ${forCanvasKit ? 'CanvasKit' : 'HTML'}');
+    final String canvasKitOutputRelativePath =
+        path.join('.dart_tool', 'canvaskit_tests');
     List<String> arguments = <String>[
       'run',
       'build_runner',
@@ -457,7 +461,8 @@ class TestCommand extends Command<bool> with ArgUtils {
         // In a testing on a 32-core 132GB workstation increasing this number to
         // 32 sped up the build from ~4min to ~1.5min.
         if (io.Platform.environment.containsKey('BUILD_MAX_WORKERS_PER_TASK'))
-          'BUILD_MAX_WORKERS_PER_TASK': io.Platform.environment['BUILD_MAX_WORKERS_PER_TASK'],
+          'BUILD_MAX_WORKERS_PER_TASK':
+              io.Platform.environment['BUILD_MAX_WORKERS_PER_TASK'],
       },
     );
 
@@ -467,12 +472,16 @@ class TestCommand extends Command<bool> with ArgUtils {
     }
 
     if (forCanvasKit) {
-      final io.Directory canvasKitTemporaryOutputDirectory = io.Directory(path.join(environment.webUiRootDir.path, canvasKitOutputRelativePath, 'test', 'canvaskit'));
-      final io.Directory canvasKitOutputDirectory = io.Directory(path.join(environment.webUiBuildDir.path, 'test', 'canvaskit'));
+      final io.Directory canvasKitTemporaryOutputDirectory = io.Directory(
+          path.join(environment.webUiRootDir.path, canvasKitOutputRelativePath,
+              'test', 'canvaskit'));
+      final io.Directory canvasKitOutputDirectory = io.Directory(
+          path.join(environment.webUiBuildDir.path, 'test', 'canvaskit'));
       if (await canvasKitOutputDirectory.exists()) {
         await canvasKitOutputDirectory.delete(recursive: true);
       }
-      await canvasKitTemporaryOutputDirectory.rename(canvasKitOutputDirectory.path);
+      await canvasKitTemporaryOutputDirectory
+          .rename(canvasKitOutputDirectory.path);
     }
   }
 
