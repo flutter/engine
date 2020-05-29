@@ -258,6 +258,7 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   RunCmd(ninja_command, cwd=buildroot_dir)
 
 def EnsureJavaTestsAreBuilt(android_out_dir):
+  """Builds the engine variant and the test jar containing the JUnit tests"""
   ninja_command = [
     'autoninja',
     '-C',
@@ -285,6 +286,7 @@ def EnsureJavaTestsAreBuilt(android_out_dir):
   RunCmd(ninja_command, cwd=buildroot_dir)
 
 def EnsureIosTestsAreBuilt(ios_out_dir):
+  """Builds the engine variant and the test dylib containing the XCTests"""
   ninja_command = [
     'autoninja',
     '-C',
@@ -313,6 +315,7 @@ def EnsureIosTestsAreBuilt(ios_out_dir):
   RunCmd(ninja_command, cwd=buildroot_dir)
 
 def AssertExpectedJavaVersion():
+  """Checks that the user has Java 8 which is the supported Java version for Android"""
   EXPECTED_VERSION = '1.8'
   # `java -version` is output to stderr. https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4380614
   version_output = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT)
@@ -321,12 +324,14 @@ def AssertExpectedJavaVersion():
   assert match, message
 
 def AssertExpectedXcodeVersion():
+  """Checks that the user has a recent version of Xcode installed"""
   EXPECTED_MAJOR_VERSION = '11'
   version_output = subprocess.check_output(['xcodebuild', '-version'])
   message = "Xcode must be installed to run the iOS embedding unit tests"
   assert "Xcode %s." % EXPECTED_MAJOR_VERSION in version_output, message
 
 def RunJavaTests(filter, android_variant='android_debug_unopt'):
+  """Runs the Java JUnit unit tests for the Android embedding"""
   AssertExpectedJavaVersion()
   android_out_dir = os.path.join(out_dir, android_variant)
   EnsureJavaTestsAreBuilt(android_out_dir)
@@ -353,6 +358,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   RunCmd(command)
 
 def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
+  """Runs Objective-C XCTest unit tests for the iOS embedding"""
   AssertExpectedXcodeVersion()
   ios_out_dir = os.path.join(out_dir, ios_variant)
   EnsureIosTestsAreBuilt(ios_out_dir)
