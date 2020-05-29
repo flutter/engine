@@ -86,7 +86,7 @@ fml::RefPtr<Canvas> Canvas::Create(PictureRecorder* recorder,
   return canvas;
 }
 
-Canvas::Canvas(SkCanvas* canvas) : canvas_(canvas) {}
+Canvas::Canvas(SkCanvas* canvas) : canvas_(canvas), image_allocation_size_(0) {}
 
 Canvas::~Canvas() {}
 
