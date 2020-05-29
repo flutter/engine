@@ -19,7 +19,7 @@ enum class AndroidRenderingAPI {
 };
 
 //------------------------------------------------------------------------------
-/// @brief      Holds state that is shared across android surfaces.
+/// @brief      Holds state that is shared across Android surfaces.
 ///
 class AndroidContext {
  public:
