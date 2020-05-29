@@ -6,6 +6,7 @@ package io.flutter.embedding.engine.systemchannels;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import org.json.JSONArray;
 
@@ -75,6 +76,11 @@ public class MouseCursorChannel {
       }
     }
   };
+
+  @VisibleForTesting
+  public void synthesizeMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    parsingMethodCallHandler.onMethodCall(call, result);
+  }
 
   public interface MouseCursorMethodHandler {
     // Called when the pointer should start displaying a system mouse cursor
