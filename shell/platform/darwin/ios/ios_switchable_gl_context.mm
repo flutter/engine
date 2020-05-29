@@ -11,7 +11,7 @@ IOSSwitchableGLContext::IOSSwitchableGLContext(EAGLContext* context) : context_(
 
 bool IOSSwitchableGLContext::SetCurrent() {
   FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker);
-  FML_DCHECK(context != nullptr);
+  FML_DCHECK(context_ != nullptr);
   EAGLContext* current_context = EAGLContext.currentContext;
   previous_context_ = current_context;
   return [EAGLContext setCurrentContext:context_];
