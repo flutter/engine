@@ -29,19 +29,24 @@ class Safari extends Browser {
   /// [Uri] or a [String].
   factory Safari(Uri url, {bool debug = false}) {
     version = SafariArgParser.instance.version;
-    mobileBrowser = SafariArgParser.instance.mobileBrowser;
+    mobileBrowser = SafariArgParser.instance.isMobileBrowser;
     assert(version != null);
     return Safari._(() async {
-      if (mobileBrowser) { // iOS-Safari
+      if (mobileBrowser) {
+        // iOS-Safari
+        // Uses `xcrun simctl`. It is a command line utility to control the
+        // Simulator. For more details on interacting with the simulator:
+        // https://developer.apple.com/library/archive/documentation/IDEs/Conceptual/iOS_Simulator_Guide/InteractingwiththeiOSSimulator/InteractingwiththeiOSSimulator.html
         var process = await Process.start('xcrun', [
-          'simctl', // Open a fresh application with no persistant state.
-          'openurl', // Open to wait until the applications it opens.
-          'booted', // Open a new instance of the application.
+          'simctl',
+          'openurl', // Opens the url on Safari installed on the simulator.
+          'booted', // The simulator is already booted.
           '${url.toString()}'
         ]);
 
         return process;
-      } else { // Desktop-Safari
+      } else {
+        // Desktop-Safari
         // TODO(nurhan): Configure info log for LUCI.
         final BrowserInstallation installation = await getOrInstallSafari(
           version,
