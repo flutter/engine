@@ -805,6 +805,24 @@ class Window {
   Locale get platformResolvedLocale => _platformResolvedLocale;
   Locale _platformResolvedLocale;
 
+  Locale computePlatformResolvedLocale(List<Locale> supportedLocales) {
+    if (supportedLocales == null) {
+      return null;
+    }
+    List<String> supportedLocalesData = <String>[];
+    for (Locale locale in supportedLocales) {
+      supportedLocalesData.add(locale.languageCode);
+      supportedLocalesData.add(locale.countryCode);
+    }
+
+    List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
+    if (result != null && result.length == 2) {
+      return Locale.fromSubtags(languageCode: result[0], countryCode: result[1]);
+    }
+    return null;
+  }
+  List<String> _computePlatformResolvedLocale(List<String> supportedLocalesData) native 'Window_computePlatformResolvedLocale';
+
   /// A callback that is invoked whenever [locale] changes value.
   ///
   /// The framework invokes this callback in the same zone in which the

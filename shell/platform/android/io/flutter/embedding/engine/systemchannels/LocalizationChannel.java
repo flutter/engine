@@ -53,7 +53,10 @@ public class LocalizationChannel {
                   supportedLocales.add(new Locale(language, country));
                 }
                 Locale resolvedLocale = localizationMethodHandler.resolveLocale(supportedLocales);
-                result.success(resolvedLocale.toString());
+                List<String> resolvedLocaleComponents = new ArrayList<String>();
+                resolvedLocaleComponents.add(resolvedLocale.getLanguage());
+                resolvedLocaleComponents.add(resolvedLocale.getCountry());
+                result.success(resolvedLocaleComponents);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
               }

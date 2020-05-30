@@ -425,6 +425,14 @@ void Window::CompletePlatformMessageResponse(int response_id,
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
+// Dart_Handle _ComputePlatformResolvedLocale(
+//     const std::vector<std::string>& supportedLocaleData) {
+//   Dart_Handle result = Dart_NewListOf(Dart_CoreType_String, 2);
+//   Dart_ListSetAt(result, 0, tonic::ToDart("zero"));
+//   Dart_ListSetAt(result, 1, tonic::ToDart("one"));
+//   return result;
+// }
+
 void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
       {"Window_defaultRouteName", DefaultRouteName, 1, true},
@@ -437,6 +445,9 @@ void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
       {"Window_reportUnhandledException", ReportUnhandledException, 2, true},
       {"Window_setNeedsReportTimings", SetNeedsReportTimings, 2, true},
       {"Window_getPersistentIsolateData", GetPersistentIsolateData, 1, true},
+      // {"Window_computePlatformResolvedLocale",
+      // _ComputePlatformResolvedLocale,
+      //  1, true},
   });
 }
 

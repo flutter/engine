@@ -137,4 +137,9 @@ void PlatformView::SetNextFrameCallback(const fml::closure& closure) {
   delegate_.OnPlatformViewSetNextFrameCallback(closure);
 }
 
+std::vector<std::string> PlatformView::ComputePlatformResolvedLocales(
+    std::vector<std::string> supportedLocaleData) {
+  return std::vector<std::string>();
+}
+
 }  // namespace flutter

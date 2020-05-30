@@ -22,6 +22,7 @@ import java.util.Locale;
 public class LocalizationPlugin {
   @NonNull private final LocalizationChannel localizationChannel;
   @NonNull private final Context context;
+  private static LocalizationPlugin instance;
 
   public LocalizationPlugin(
       @NonNull Context context,
@@ -36,13 +37,14 @@ public class LocalizationPlugin {
             return resolveNativeLocale(supportedLocales);
           }
         });
+    instance = this;
   }
 
-  private Locale resolveNativeLocale(List<Locale> supportedLocales) {
+  public static Locale resolveNativeLocale(List<Locale> supportedLocales) {
     Locale platformResolvedLocale = null;
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
       List<Locale.LanguageRange> languageRanges = new ArrayList<>();
-      LocaleList localeList = context.getResources().getConfiguration().getLocales();
+      LocaleList localeList = instance.context.getResources().getConfiguration().getLocales();
       int localeCount = localeList.size();
       for (int index = 0; index < localeCount; ++index) {
         Locale locale = localeList.get(index);

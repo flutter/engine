@@ -543,6 +543,9 @@ class PlatformView {
   ///
   void MarkTextureFrameAvailable(int64_t texture_id);
 
+  virtual std::vector<std::string> ComputePlatformResolvedLocales(
+      std::vector<std::string> supportedLocaleData);
+
  protected:
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;

@@ -22,9 +22,13 @@ import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.plugin.common.StandardMessageCodec;
+import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -781,6 +785,32 @@ public class FlutterJNI {
     }
   }
   // ----- End Engine Lifecycle Support ----
+
+  // ----- Start Localizaation Support ----
+
+    /**
+   * Invoked by native to obtain the results of Android's locale reoslution algorithm.
+   */
+  @SuppressWarnings("unused")
+  @UiThread
+  private String[] computePlatformResolvedLocale(@NonNull String[] strings) {
+    ensureRunningOnMainThread();
+
+    List<Locale> supportedLocales = new ArrayList<Locale>();
+    for (int i = 0; i < strings.length / 2; i++) {
+      supportedLocales.add(new Locale(strings[i * 2 + 0], strings[i * 2 + 1]));
+    }
+    Locale result = LocalizationPlugin.resolveNativeLocale(supportedLocales);
+    String[] output = new String[2];
+    output[0] = result.getLanguage();
+    output[1] = result.getCountry();
+    return output;
+    // if (accessibilityDelegate != null) {
+    //   accessibilityDelegate.updateSemantics(buffer, strings);
+    // }
+  }
+
+  // ----- End Localizaation Support ----
 
   // TODO(mattcarroll): determine if this is nonull or nullable
   @UiThread
