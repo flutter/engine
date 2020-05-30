@@ -1,38 +1,26 @@
 package io.flutter.plugin.mouse;
 
-import android.annotation.TargetApi;
-import android.view.PointerIcon;
-
-import org.json.JSONException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
-import org.robolectric.annotation.Config;
-
-import java.util.HashMap;
-
-import io.flutter.embedding.android.FlutterView;
-import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
-import io.flutter.plugin.common.MethodCall;
-import io.flutter.plugin.common.MethodChannel;
-
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-//import static org.junit.Assert.assertEquals;
-//import static org.junit.Assert.assertTrue;
-//import static org.mockito.AdditionalMatchers.aryEq;
-//import static org.mockito.AdditionalMatchers.geq;
-//import static org.mockito.Matchers.anyInt;
-//import static org.mockito.Mockito.eq;
-//import static org.mockito.Mockito.isNull;
-//import static org.mockito.Mockito.notNull;
-//import static org.mockito.Mockito.when;
+import android.annotation.TargetApi;
+import android.view.PointerIcon;
+import io.flutter.embedding.android.FlutterView;
+import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+import java.util.HashMap;
+import org.json.JSONException;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE, shadows = {})
 @RunWith(RobolectricTestRunner.class)
@@ -42,43 +30,43 @@ public class MouseCursorPluginTest {
   public void mouseCursorPlugin_SetsSystemCursorOnRequest() throws JSONException {
     // Initialize a general MouseCursorPlugin.
     FlutterView testView = spy(new FlutterView(RuntimeEnvironment.application));
-//    DartExecutor dartExecutor = mock(DartExecutor.class);
     MouseCursorChannel mouseCursorChannel = new MouseCursorChannel(mock(DartExecutor.class));
 
     MouseCursorPlugin mouseCursorPlugin =
-        new MouseCursorPlugin(testView, mouseCursorChannel, testView.getContext());
+        new MouseCursorPlugin(testView, mouseCursorChannel);
 
+    final StoredResult methodResult = new StoredResult();
     mouseCursorChannel.synthesizeMethodCall(
-        new MethodCall("flutter/mousecursor", new HashMap<>(){
+        new MethodCall("activateSystemCursor", new HashMap<>(){
+          private static final long serialVersionUID = 1L;
+
           {
+            put("device", 1);
             put("kind", "text");
           }
         }),
-        new MethodChannel.Result() {
-          @Override
-          public void success(Object result) {
-          }
-
-          @Override
-          public void error(String errorCode, String errorMessage, Object errorDetails) {
-          }
-
-          @Override
-          public void notImplemented() {
-          }
-        });
-    verify(testView, times(2))
+        methodResult);
+    verify(testView, times(1))
+        .getSystemPointerIcon(PointerIcon.TYPE_TEXT);
+    verify(testView, times(1))
         .setPointerIcon(any(PointerIcon.class));
+    assertEquals(methodResult.result, Boolean.TRUE);
+  }
+}
 
-//    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
-//    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+class StoredResult implements MethodChannel.Result {
+  Object result;
 
-//    verify(dartExecutor, times(1))
-//        .send(
-//            channelCaptor.capture(),
-//            bufferCaptor.capture(),
-//            any(BinaryMessenger.BinaryReply.class));
-//    assertEquals("flutter/textinput", channelCaptor.getValue());
-//    verifyMethodCall(bufferCaptor.getValue(), "MouseCursorClient.requestExistingInputState", null);
+  @Override
+  public void success(Object result) {
+    this.result = result;
+  }
+
+  @Override
+  public void error(String errorCode, String errorMessage, Object errorDetails) {
+  }
+
+  @Override
+  public void notImplemented() {
   }
 }

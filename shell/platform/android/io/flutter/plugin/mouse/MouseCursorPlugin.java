@@ -19,14 +19,11 @@ import java.util.HashMap;
 public class MouseCursorPlugin {
   @NonNull private final MouseCursorViewDelegate mView;
   @NonNull private final MouseCursorChannel mouseCursorChannel;
-  @NonNull private final Context context;
 
   public MouseCursorPlugin(
       @NonNull MouseCursorViewDelegate view,
-      @NonNull MouseCursorChannel mouseCursorChannel,
-      @NonNull Context context) {
+      @NonNull MouseCursorChannel mouseCursorChannel) {
     mView = view;
-    this.context = context;
 
     this.mouseCursorChannel = mouseCursorChannel;
     mouseCursorChannel.setMethodHandler(
@@ -65,8 +62,7 @@ public class MouseCursorPlugin {
 
     final int cursorConstant =
         MouseCursorPlugin.systemCursorConstants.getOrDefault(kind, PointerIcon.TYPE_ARROW);
-    final PointerIcon result = PointerIcon.getSystemIcon(context, cursorConstant);
-    return result;
+    return mView.getSystemPointerIcon(cursorConstant);
   }
 
   /**
@@ -92,6 +88,22 @@ public class MouseCursorPlugin {
    * <p>Typically implemented by an {@link android.view.View}, such as a {@code FlutterView}.
    */
   public interface MouseCursorViewDelegate {
+    /**
+     * Gets a system pointer icon object for the given {@code type}.
+     *
+     * <p>If typeis not recognized, returns the default pointer icon.
+     *
+     * <p>This is typically implemented by calling {@link android.view.PointerIcon.getSystemIcon}
+     * with the context associated with this view.
+     */
+    public PointerIcon getSystemPointerIcon(int type);
+
+    /**
+     * Request the pointer to display the specified icon object.
+     *
+     * <p>If the delegate is implemented by a {@link android.view.View}, then this method is
+     * automatically implemented by View.
+     */
     public void setPointerIcon(@NonNull PointerIcon icon);
   }
 }

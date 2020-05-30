@@ -24,6 +24,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.PointerIcon;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -227,7 +228,7 @@ public class FlutterView extends SurfaceView
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       mMouseCursorPlugin =
-          new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor), context);
+          new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
     } else {
       mMouseCursorPlugin = null;
     }
@@ -801,6 +802,14 @@ public class FlutterView extends SurfaceView
       // tree.
       return null;
     }
+  }
+
+  @Override
+  @TargetApi(Build.VERSION_CODES.N)
+  @RequiresApi(Build.VERSION_CODES.N)
+  @NonNull
+  public PointerIcon getSystemPointerIcon(int type) {
+    return PointerIcon.getSystemIcon(getContext(), type);
   }
 
   @Override

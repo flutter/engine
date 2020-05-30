@@ -17,6 +17,7 @@ import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.PointerIcon;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewStructure;
@@ -758,6 +759,16 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
   // -------- End: Accessibility ---------
 
+  // -------- Start: Mouse -------
+  @Override
+  @TargetApi(Build.VERSION_CODES.N)
+  @RequiresApi(Build.VERSION_CODES.N)
+  @NonNull
+  public PointerIcon getSystemPointerIcon(int type) {
+    return PointerIcon.getSystemIcon(getContext(), type);
+  }
+  // -------- End: Mouse ---------
+
   /**
    * Connects this {@code FlutterView} to the given {@link FlutterEngine}.
    *
@@ -800,8 +811,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       mouseCursorPlugin =
           new MouseCursorPlugin(
               this,
-              this.flutterEngine.getMouseCursorChannel(),
-              getContext());
+              this.flutterEngine.getMouseCursorChannel());
     }
     textInputPlugin =
         new TextInputPlugin(
