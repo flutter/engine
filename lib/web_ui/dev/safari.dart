@@ -53,18 +53,19 @@ class Safari extends Browser {
           infoLog: DevNull(),
         );
 
-        // In the latest versions of MacOs opening Safari browser with a file brings
+        // In the macOS Catalina opening Safari browser with a file brings
         // a popup which halts the test.
-        // The following list of arguments needs to be provided to the `open` command
-        // to open Safari for a given URL. In summary they provide a new instance
-        // to open, that instance to wait for opening the url until Safari launches,
-        // provide Safari bundles identifier.
-        // The details copied from `man open` on MacOS.
+        // The following list of arguments needs to be provided to the `open`
+        // command to open Safari for a given URL. In summary, `open` tool opens
+        // a new Safari browser (even if one is already open), opens it with no
+        // persistent state and wait until it opens.
+        // The details copied from `man open` on macOS.
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50809
         var process = await Process.start(installation.executable, [
-          '-F', // Open a fresh application with no persistant state.
-          '-W', // Open to wait until the applications it opens.
-          '-n', // Open a new instance of the application.
+          // These are flags for `open` command line tool.
+          '-F', // Open a fresh Safari with no persistant state.
+          '-W', // Wait until the Safari opens.
+          '-n', // Open a new instance of the Safari even another one is open.
           '-b', // Specifies the bundle identifier for the application to use.
           'com.apple.Safari', // Bundle identifier for Safari.
           '${url.toString()}'
