@@ -22,6 +22,9 @@ import java.util.Locale;
 public class LocalizationPlugin {
   @NonNull private final LocalizationChannel localizationChannel;
   @NonNull private final Context context;
+
+  // This should always be initialized before being used by resolveNativeLocale
+  // since the embedder starts the engine which in turn calls resolveNativeLocale.
   private static LocalizationPlugin instance;
 
   public LocalizationPlugin(

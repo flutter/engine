@@ -93,10 +93,8 @@ class Window final {
   void CompletePlatformMessageResponse(int response_id,
                                        std::vector<uint8_t> data);
   void CompletePlatformMessageEmptyResponse(int response_id);
-
-  // Native dart binding
-  // Dart_Handle ComputePlatformResolvedLocale(
-  //     const std::vector<std::string>& supportedLocaleData);
+  Dart_Handle ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supportedLocaleData);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

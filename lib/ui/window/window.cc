@@ -425,13 +425,19 @@ void Window::CompletePlatformMessageResponse(int response_id,
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
-// Dart_Handle _ComputePlatformResolvedLocale(
-//     const std::vector<std::string>& supportedLocaleData) {
-//   Dart_Handle result = Dart_NewListOf(Dart_CoreType_String, 2);
-//   Dart_ListSetAt(result, 0, tonic::ToDart("zero"));
-//   Dart_ListSetAt(result, 1, tonic::ToDart("one"));
-//   return result;
-// }
+Dart_Handle ComputePlatformResolvedLocale(
+    const std::vector<std::string>& supportedLocaleData) {
+  // Compute the locale vai platform view
+  Dart_Handle output =
+      Dart_NewListOf(Dart_CoreType_String, supportedLocaleData.size());
+  Dart_ListSetAt(output, 0, tonic::ToDart("zero"));
+  Dart_ListSetAt(output, 1, tonic::ToDart("one"));
+  return output;
+}
+
+void _ComputePlatformResolvedLocale(Dart_NativeArguments args) {
+  tonic::DartCallStatic(&ComputePlatformResolvedLocale, args);
+}
 
 void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
@@ -445,9 +451,8 @@ void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
       {"Window_reportUnhandledException", ReportUnhandledException, 2, true},
       {"Window_setNeedsReportTimings", SetNeedsReportTimings, 2, true},
       {"Window_getPersistentIsolateData", GetPersistentIsolateData, 1, true},
-      // {"Window_computePlatformResolvedLocale",
-      // _ComputePlatformResolvedLocale,
-      //  1, true},
+      {"Window_computePlatformResolvedLocale", _ComputePlatformResolvedLocale,
+       1, true},
   });
 }
 
