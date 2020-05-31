@@ -39,5 +39,11 @@ void main() {
 
     path.addOval(ui.Rect.fromLTRB(10, 10, 100, 100));
     expect(path.computeMetrics().length, 2);
+
+    // Path metrics can be iterated over multiple times.
+    final ui.PathMetrics metrics = path.computeMetrics();
+    expect(metrics.toList().length, 2);
+    expect(metrics.toList().length, 2);
+    expect(metrics.toList().length, 2);
   });
 }
