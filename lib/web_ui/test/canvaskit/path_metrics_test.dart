@@ -45,5 +45,23 @@ void main() {
     expect(metrics.toList().length, 2);
     expect(metrics.toList().length, 2);
     expect(metrics.toList().length, 2);
+
+    // Can simultaneously iterate over multiple metrics from the same path.
+    final ui.PathMetrics metrics1 = path.computeMetrics();
+    final ui.PathMetrics metrics2 = path.computeMetrics();
+    final Iterator<ui.PathMetric> iter1 = metrics1.iterator;
+    final Iterator<ui.PathMetric> iter2 = metrics2.iterator;
+    expect(iter1.moveNext(), true);
+    expect(iter2.moveNext(), true);
+    expect(iter1.current, isNotNull);
+    expect(iter2.current, isNotNull);
+    expect(iter1.moveNext(), true);
+    expect(iter2.moveNext(), true);
+    expect(iter1.current, isNotNull);
+    expect(iter2.current, isNotNull);
+    expect(iter1.moveNext(), false);
+    expect(iter2.moveNext(), false);
+    expect(iter1.current, isNull);
+    expect(iter2.current, isNull);
   });
 }
