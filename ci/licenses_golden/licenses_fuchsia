@@ -1,4 +1,4 @@
-Signature: e1058afabd12be2d45b74b218a8bb328
+Signature: 91fce533214738487b174ff17c5cc554
 
 UNUSED LICENSES:
 
@@ -3240,6 +3240,7 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/noop_view_p
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/view_provider.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/module_interceptor.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/module_with_view_provider_impl.dart
+FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/component_search.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/device.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/diagnostics.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/launch.dart
