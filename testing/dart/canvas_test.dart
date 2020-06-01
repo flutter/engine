@@ -233,20 +233,16 @@ void main() {
     // e.g. of the Paint() or same `Rect` usage, etc.
     // The raw utilization of a 100x100 picture here should be 53333:
     // 100 * 100 * 4 * (4/3) = 53333.333333....
-    const int expectedSize = 64     // base Picture size
-                           + 53925  // drawImage overhead
-                           + 53769  // drawImageRect overhead
-                           + 53477  // drawImageNine overhead
-                           + 53341; // drawAtlas overhead
-    expect(picture.approximateBytesUsed, expectedSize);
+    // To avoid platform specific idiosyncrasies and brittleness against changes
+    // to Skia, we just assert this is _at least_ 4x the image size.
+    const int minimumExpected = 53333 * 4;
+    expect(picture.approximateBytesUsed, greaterThan(minimumExpected));
 
     final PictureRecorder recorder2 = PictureRecorder();
     final Canvas canvas2 = Canvas(recorder2);
     canvas2.drawPicture(picture);
     final Picture picture2 = recorder2.endRecording();
 
-    const int expectedSize2 = 1764 // base Picture size (2)
-                            + expectedSize;
-    expect(picture2.approximateBytesUsed, expectedSize2);
+    expect(picture2.approximateBytesUsed, greaterThan(minimumExpected));
   });
 }
