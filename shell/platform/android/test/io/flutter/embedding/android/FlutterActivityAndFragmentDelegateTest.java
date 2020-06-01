@@ -27,6 +27,7 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
