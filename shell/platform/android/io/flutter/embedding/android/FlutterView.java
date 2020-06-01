@@ -808,10 +808,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // Initialize various components that know how to process Android View I/O
     // in a way that Flutter understands.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      mouseCursorPlugin =
-          new MouseCursorPlugin(
-              this,
-              this.flutterEngine.getMouseCursorChannel());
+      mouseCursorPlugin = new MouseCursorPlugin(this, this.flutterEngine.getMouseCursorChannel());
     }
     textInputPlugin =
         new TextInputPlugin(

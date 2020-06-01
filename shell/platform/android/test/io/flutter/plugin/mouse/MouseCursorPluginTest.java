@@ -22,7 +22,9 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
-@Config(manifest = Config.NONE, shadows = {})
+@Config(
+    manifest = Config.NONE,
+    shadows = {})
 @RunWith(RobolectricTestRunner.class)
 @TargetApi(24)
 public class MouseCursorPluginTest {
@@ -32,24 +34,23 @@ public class MouseCursorPluginTest {
     FlutterView testView = spy(new FlutterView(RuntimeEnvironment.application));
     MouseCursorChannel mouseCursorChannel = new MouseCursorChannel(mock(DartExecutor.class));
 
-    MouseCursorPlugin mouseCursorPlugin =
-        new MouseCursorPlugin(testView, mouseCursorChannel);
+    MouseCursorPlugin mouseCursorPlugin = new MouseCursorPlugin(testView, mouseCursorChannel);
 
     final StoredResult methodResult = new StoredResult();
     mouseCursorChannel.synthesizeMethodCall(
-        new MethodCall("activateSystemCursor", new HashMap<>(){
-          private static final long serialVersionUID = 1L;
+        new MethodCall(
+            "activateSystemCursor",
+            new HashMap<String, Object>() {
+              private static final long serialVersionUID = 1L;
 
-          {
-            put("device", 1);
-            put("kind", "text");
-          }
-        }),
+              {
+                put("device", 1);
+                put("kind", "text");
+              }
+            }),
         methodResult);
-    verify(testView, times(1))
-        .getSystemPointerIcon(PointerIcon.TYPE_TEXT);
-    verify(testView, times(1))
-        .setPointerIcon(any(PointerIcon.class));
+    verify(testView, times(1)).getSystemPointerIcon(PointerIcon.TYPE_TEXT);
+    verify(testView, times(1)).setPointerIcon(any(PointerIcon.class));
     assertEquals(methodResult.result, Boolean.TRUE);
   }
 }
@@ -63,10 +64,8 @@ class StoredResult implements MethodChannel.Result {
   }
 
   @Override
-  public void error(String errorCode, String errorMessage, Object errorDetails) {
-  }
+  public void error(String errorCode, String errorMessage, Object errorDetails) {}
 
   @Override
-  public void notImplemented() {
-  }
+  public void notImplemented() {}
 }

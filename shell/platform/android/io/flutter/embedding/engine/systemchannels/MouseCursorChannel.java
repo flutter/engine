@@ -7,25 +7,19 @@ package io.flutter.embedding.engine.systemchannels;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-
-import java.util.HashMap;
-
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
+import java.util.HashMap;
 
-/**
- * System channel that receives requests for mouse cursor behavior, e.g., set as system cursors.
- */
+/** System channel that receives requests for mouse cursor behavior, e.g., set as system cursors. */
 public class MouseCursorChannel {
   private static final String TAG = "MouseCursorChannel";
 
-  @NonNull
-  public final MethodChannel channel;
-  @Nullable
-  private MouseCursorMethodHandler mouseCursorMethodHandler;
+  @NonNull public final MethodChannel channel;
+  @Nullable private MouseCursorMethodHandler mouseCursorMethodHandler;
 
   public MouseCursorChannel(@NonNull DartExecutor dartExecutor) {
     channel = new MethodChannel(dartExecutor, "flutter/mousecursor", StandardMethodCodec.INSTANCE);
@@ -33,47 +27,48 @@ public class MouseCursorChannel {
   }
 
   /**
-   * Sets the {@link MouseCursorMethodHandler} which receives all events and requests
-   * that are parsed from the underlying platform channel.
+   * Sets the {@link MouseCursorMethodHandler} which receives all events and requests that are
+   * parsed from the underlying platform channel.
    */
   public void setMethodHandler(@Nullable MouseCursorMethodHandler mouseCursorMethodHandler) {
     this.mouseCursorMethodHandler = mouseCursorMethodHandler;
   }
 
   @NonNull
-  private final MethodChannel.MethodCallHandler parsingMethodCallHandler = new MethodChannel.MethodCallHandler() {
-    @Override
-    public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-      if (mouseCursorMethodHandler == null) {
-        // If no explicit mouseCursorMethodHandler has been registered then we don't
-        // need to forward this call to an API. Return.
-        return;
-      }
+  private final MethodChannel.MethodCallHandler parsingMethodCallHandler =
+      new MethodChannel.MethodCallHandler() {
+        @Override
+        public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+          if (mouseCursorMethodHandler == null) {
+            // If no explicit mouseCursorMethodHandler has been registered then we don't
+            // need to forward this call to an API. Return.
+            return;
+          }
 
-      final String method = call.method;
-      Log.v(TAG, "Received '" + method + "' message.");
-      try {
-        // More methods are expected to be added here, hence the switch.
-        switch (method) {
-          case "activateSystemCursor":
-            @SuppressWarnings("unchecked")
-            final HashMap<String, Object> data = (HashMap<String, Object>) call.arguments;
-            final String kind = (String) data.get("kind");
-            try {
-              mouseCursorMethodHandler.activateSystemCursor(kind);
-            } catch (Exception e) {
-              result.error("error", "Error when setting cursors: " + e.getMessage(), null);
-              break;
+          final String method = call.method;
+          Log.v(TAG, "Received '" + method + "' message.");
+          try {
+            // More methods are expected to be added here, hence the switch.
+            switch (method) {
+              case "activateSystemCursor":
+                @SuppressWarnings("unchecked")
+                final HashMap<String, Object> data = (HashMap<String, Object>) call.arguments;
+                final String kind = (String) data.get("kind");
+                try {
+                  mouseCursorMethodHandler.activateSystemCursor(kind);
+                } catch (Exception e) {
+                  result.error("error", "Error when setting cursors: " + e.getMessage(), null);
+                  break;
+                }
+                result.success(true);
+                break;
+              default:
             }
-            result.success(true);
-            break;
-          default:
+          } catch (Exception e) {
+            result.error("error", "Unhandled error: " + e.getMessage(), null);
+          }
         }
-      } catch (Exception e) {
-        result.error("error", "Unhandled error: " + e.getMessage(), null);
-      }
-    }
-  };
+      };
 
   @VisibleForTesting
   public void synthesizeMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
@@ -85,6 +80,4 @@ public class MouseCursorChannel {
     // specified by {@code shapeCode}.
     public void activateSystemCursor(@NonNull String kind);
   }
-
-
 }

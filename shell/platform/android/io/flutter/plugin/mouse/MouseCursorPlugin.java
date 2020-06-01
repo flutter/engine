@@ -5,7 +5,6 @@
 package io.flutter.plugin.mouse;
 
 import android.annotation.TargetApi;
-import android.content.Context;
 import android.os.Build;
 import android.view.PointerIcon;
 import androidx.annotation.NonNull;
@@ -21,24 +20,23 @@ public class MouseCursorPlugin {
   @NonNull private final MouseCursorChannel mouseCursorChannel;
 
   public MouseCursorPlugin(
-      @NonNull MouseCursorViewDelegate view,
-      @NonNull MouseCursorChannel mouseCursorChannel) {
+      @NonNull MouseCursorViewDelegate view, @NonNull MouseCursorChannel mouseCursorChannel) {
     mView = view;
 
     this.mouseCursorChannel = mouseCursorChannel;
     mouseCursorChannel.setMethodHandler(
-      new MouseCursorChannel.MouseCursorMethodHandler() {
-        @Override
-        public void activateSystemCursor(@NonNull String kind) {
-          mView.setPointerIcon(resolveSystemCursor(kind));
-        }
-      });
+        new MouseCursorChannel.MouseCursorMethodHandler() {
+          @Override
+          public void activateSystemCursor(@NonNull String kind) {
+            mView.setPointerIcon(resolveSystemCursor(kind));
+          }
+        });
   }
 
   /**
    * Return a pointer icon object for a system cursor.
    *
-   * This method guarantees to return a non-null object.
+   * <p>This method guarantees to return a non-null object.
    */
   private PointerIcon resolveSystemCursor(@NonNull String kind) {
     if (MouseCursorPlugin.systemCursorConstants == null) {

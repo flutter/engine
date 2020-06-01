@@ -227,8 +227,7 @@ public class FlutterView extends SurfaceView
     mTextInputPlugin =
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      mMouseCursorPlugin =
-          new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
+      mMouseCursorPlugin = new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
     } else {
       mMouseCursorPlugin = null;
     }
