@@ -5,7 +5,6 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_IMAGE_H_
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_H_
 
-
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/ui_dart_state.h"
