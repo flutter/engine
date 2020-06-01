@@ -228,12 +228,25 @@ void main() {
     canvas.drawImageNine(image, rect, rect, Paint());
     canvas.drawAtlas(image, <RSTransform>[], <Rect>[], <Color>[], BlendMode.src, rect, Paint());
     final Picture picture = recorder.endRecording();
-    expect(picture.approximateBytesUsed, 214576);
+
+    // Some of the numbers here appear to utilize sharing/reuse of common items,
+    // e.g. of the Paint() or same `Rect` usage, etc.
+    // The raw utilization of a 100x100 picture here should be 53333:
+    // 100 * 100 * 4 * (4/3) = 53333.333333....
+    const int expectedSize = 64     // base Picture size
+                           + 53925  // drawImage overhead
+                           + 53769  // drawImageRect overhead
+                           + 53477  // drawImageNine overhead
+                           + 53341; // drawAtlas overhead
+    expect(picture.approximateBytesUsed, expectedSize);
 
     final PictureRecorder recorder2 = PictureRecorder();
     final Canvas canvas2 = Canvas(recorder2);
     canvas2.drawPicture(picture);
     final Picture picture2 = recorder2.endRecording();
-    expect(picture2.approximateBytesUsed, 216340);
+
+    const int expectedSize2 = 1764 // base Picture size (2)
+                            + expectedSize;
+    expect(picture2.approximateBytesUsed, expectedSize2);
   });
 }
