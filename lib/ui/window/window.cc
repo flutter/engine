@@ -427,7 +427,9 @@ void Window::CompletePlatformMessageResponse(int response_id,
 
 Dart_Handle ComputePlatformResolvedLocale(
     const std::vector<std::string>& supportedLocaleData) {
-  // Compute the locale vai platform view
+  UIDartState::Current()->window()->client()->ComputePlatformResolvedLocale(
+      supportedLocaleData);
+
   Dart_Handle output =
       Dart_NewListOf(Dart_CoreType_String, supportedLocaleData.size());
   Dart_ListSetAt(output, 0, tonic::ToDart("zero"));
@@ -435,9 +437,24 @@ Dart_Handle ComputePlatformResolvedLocale(
   return output;
 }
 
-void _ComputePlatformResolvedLocale(Dart_NativeArguments args) {
+static void _ComputePlatformResolvedLocale(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  // Dart_Handle exception = nullptr;
+  // const std::vector<std::string> supportedLocaleData =
+  //     tonic::DartConverter<std::vector<std::string>>::FromArguments(args, 1,
+  //                                                                   exception);
+  // if (exception) {
+  //   Dart_ThrowException(exception);
+  //   return nullptr;
+  // }
+  // return ComputePlatformResolvedLocale(supportedLocaleData);
   tonic::DartCallStatic(&ComputePlatformResolvedLocale, args);
 }
+
+// static void CLASS##_##METHOD(Dart_NativeArguments args) {
+//   UIDartState::ThrowIfUIOperationsProhibited();
+//   tonic::DartCall(&CLASS::METHOD, args);
+// }
 
 void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({

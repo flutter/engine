@@ -340,6 +340,12 @@ RuntimeController::GetPersistentIsolateData() {
   return persistent_isolate_data_;
 }
 
+// |WindowClient|
+std::vector<std::string> RuntimeController::ComputePlatformResolvedLocale(
+    const std::vector<std::string>& supportedLocaleData) {
+  return std::vector<std::string>();
+}
+
 Dart_Port RuntimeController::GetMainPort() {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   return root_isolate ? root_isolate->main_port() : ILLEGAL_PORT;
