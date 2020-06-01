@@ -45,7 +45,7 @@ class Picture : public RefCountedDartWrappable<Picture> {
                                       uint32_t height,
                                       Dart_Handle raw_image_callback);
 
-  size_t ImageAllocationSize() { return image_allocation_size_; }
+  size_t image_allocation_size() const { return image_allocation_size_; }
 
  private:
   Picture(flutter::SkiaGPUObject<SkPicture> picture,

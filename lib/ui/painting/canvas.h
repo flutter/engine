@@ -106,12 +106,12 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
   void drawPath(const CanvasPath* path,
                 const Paint& paint,
                 const PaintData& paint_data);
-  void drawImage(CanvasImage* image,
+  void drawImage(const CanvasImage* image,
                  double x,
                  double y,
                  const Paint& paint,
                  const PaintData& paint_data);
-  void drawImageRect(CanvasImage* image,
+  void drawImageRect(const CanvasImage* image,
                      double src_left,
                      double src_top,
                      double src_right,
@@ -122,7 +122,7 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                      double dst_bottom,
                      const Paint& paint,
                      const PaintData& paint_data);
-  void drawImageNine(CanvasImage* image,
+  void drawImageNine(const CanvasImage* image,
                      double center_left,
                      double center_top,
                      double center_right,
@@ -170,7 +170,7 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
-  size_t ImageAllocationSize() { return image_allocation_size_; }
+  size_t image_allocation_size() const { return image_allocation_size_; }
 
  private:
   explicit Canvas(SkCanvas* canvas);
@@ -179,7 +179,7 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
   // which does not transfer ownership.  For this reason, we hold a raw
   // pointer and manually set to null in Clear.
   SkCanvas* canvas_;
-  size_t image_allocation_size_;
+  size_t image_allocation_size_ = 0;
 };
 
 }  // namespace flutter

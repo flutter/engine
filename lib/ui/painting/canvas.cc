@@ -86,7 +86,7 @@ fml::RefPtr<Canvas> Canvas::Create(PictureRecorder* recorder,
   return canvas;
 }
 
-Canvas::Canvas(SkCanvas* canvas) : canvas_(canvas), image_allocation_size_(0) {}
+Canvas::Canvas(SkCanvas* canvas) : canvas_(canvas) {}
 
 Canvas::~Canvas() {}
 
@@ -283,7 +283,7 @@ void Canvas::drawPath(const CanvasPath* path,
   canvas_->drawPath(path->path(), *paint.paint());
 }
 
-void Canvas::drawImage(CanvasImage* image,
+void Canvas::drawImage(const CanvasImage* image,
                        double x,
                        double y,
                        const Paint& paint,
@@ -297,7 +297,7 @@ void Canvas::drawImage(CanvasImage* image,
   canvas_->drawImage(image->image(), x, y, paint.paint());
 }
 
-void Canvas::drawImageRect(CanvasImage* image,
+void Canvas::drawImageRect(const CanvasImage* image,
                            double src_left,
                            double src_top,
                            double src_right,
@@ -320,7 +320,7 @@ void Canvas::drawImageRect(CanvasImage* image,
                          SkCanvas::kFast_SrcRectConstraint);
 }
 
-void Canvas::drawImageNine(CanvasImage* image,
+void Canvas::drawImageNine(const CanvasImage* image,
                            double center_left,
                            double center_top,
                            double center_right,
@@ -406,6 +406,7 @@ void Canvas::drawAtlas(const Paint& paint,
   static_assert(sizeof(SkRect) == sizeof(float) * 4,
                 "SkRect doesn't use floats.");
 
+  image_allocation_size_ += atlas->GetAllocationSize();
   canvas_->drawAtlas(
       skImage.get(), reinterpret_cast<const SkRSXform*>(transforms.data()),
       reinterpret_cast<const SkRect*>(rects.data()),

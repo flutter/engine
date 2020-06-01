@@ -218,7 +218,7 @@ void main() {
     expect(areEqual, true);
   }, skip: !Platform.isLinux); // https://github.com/flutter/flutter/issues/53784
 
-  test('Image size reflected in picture size for image* and drawPicture methods', () async {
+  test('Image size reflected in picture size for image*, drawAtlas, and drawPicture methods', () async {
     final Image image = await createImage(100, 100);
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
@@ -226,13 +226,14 @@ void main() {
     canvas.drawImage(image, Offset.zero, Paint());
     canvas.drawImageRect(image, rect, rect, Paint());
     canvas.drawImageNine(image, rect, rect, Paint());
+    canvas.drawAtlas(image, <RSTransform>[], <Rect>[], <Color>[], BlendMode.src, rect, Paint());
     final Picture picture = recorder.endRecording();
-    expect(picture.approximateBytesUsed, 161235);
+    expect(picture.approximateBytesUsed, 214576);
 
     final PictureRecorder recorder2 = PictureRecorder();
     final Canvas canvas2 = Canvas(recorder2);
     canvas2.drawPicture(picture);
     final Picture picture2 = recorder2.endRecording();
-    expect(picture2.approximateBytesUsed, 162999);
+    expect(picture2.approximateBytesUsed, 216340);
   });
 }
