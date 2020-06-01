@@ -684,9 +684,6 @@ class BrowserManager {
   static Future<BrowserManager> start(
       Runtime runtime, Uri url, Future<WebSocketChannel> future,
       {bool debug = false}) {
-    final Stopwatch stopwatch = new Stopwatch();
-    final int timeoutMiliseconds = 30000;
-    stopwatch.start();
     var browser = _newBrowser(url, runtime, debug: debug);
 
     var completer = Completer<BrowserManager>();
@@ -694,11 +691,10 @@ class BrowserManager {
     browser.onExit.then((_) {
       // For the cases where we use a delegator such as `adb` (for Android) or
       // `xcrun` (for IOS), these delegator processes can shut down before the
-      // websocket is available.
-      // As a precaution, do not throw error before the timeout expires.
-      if (stopwatch.elapsedMilliseconds < timeoutMiliseconds) {
-        print('WARNING: ${runtime.name} exited timeout.');
-      }
+      // websocket is available. Therefore do not throw an error if proccess
+      // exits.
+      // Note that `browser` will throw and error if the exit code was not 0,
+      // which will be processed by the next callback.
     }).catchError((dynamic error, StackTrace stackTrace) {
       if (completer.isCompleted) {
         return;
@@ -719,11 +715,7 @@ class BrowserManager {
       completer.completeError(error, stackTrace);
     });
 
-    return completer.future.timeout(Duration(milliseconds: timeoutMiliseconds),
-        onTimeout: () {
-      browser.close();
-      throw Exception('Timed out waiting for ${runtime.name} to connect.');
-    });
+    return completer.future;
   }
 
   /// Starts the browser identified by [browser] using [settings] and has it load [url].
