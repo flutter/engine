@@ -23,16 +23,16 @@ class Safari extends Browser {
 
   static String version;
 
-  static bool mobileBrowser;
+  static bool isMobileBrowser;
 
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Safari(Uri url, {bool debug = false}) {
     version = SafariArgParser.instance.version;
-    mobileBrowser = SafariArgParser.instance.isMobileBrowser;
+    isMobileBrowser = SafariArgParser.instance.isMobileBrowser;
     assert(version != null);
     return Safari._(() async {
-      if (mobileBrowser) {
+      if (isMobileBrowser) {
         // iOS-Safari
         // Uses `xcrun simctl`. It is a command line utility to control the
         // Simulator. For more details on interacting with the simulator:
