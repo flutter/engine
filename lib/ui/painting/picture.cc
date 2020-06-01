@@ -58,7 +58,7 @@ void Picture::dispose() {
   picture_.reset();
 }
 
-size_t Picture::GetAllocationSize() {
+size_t Picture::GetAllocationSize() const {
   if (auto picture = picture_.get()) {
     return picture->approximateBytesUsed() + sizeof(Picture) +
            image_allocation_size_;
