@@ -615,6 +615,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(engine.getNavigationChannel()).thenReturn(mock(NavigationChannel.class));
     when(engine.getSystemChannel()).thenReturn(mock(SystemChannel.class));
     when(engine.getTextInputChannel()).thenReturn(mock(TextInputChannel.class));
+    when(engine.getMouseCursorChannel()).thenReturn(mock(MouseCursorChannel.class));
     when(engine.getActivityControlSurface()).thenReturn(mock(ActivityControlSurface.class));
 
     return engine;
