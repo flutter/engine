@@ -424,8 +424,6 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
       FML_DCHECK(!frame->IsSubmitted());
       external_view_embedder->SubmitFrame(surface_->GetContext(),
                                           std::move(frame));
-      // The frame must be submitted at this point.
-      FML_DCHECK(frame->IsSubmitted());
     } else {
       frame->Submit();
     }

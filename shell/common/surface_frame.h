@@ -37,7 +37,7 @@ class SurfaceFrame {
   bool supports_readback() { return supports_readback_; }
 
  private:
-  bool submitted_;
+  bool submitted_ = false;
   sk_sp<SkSurface> surface_;
   bool supports_readback_;
   SubmitCallback submit_callback_;
