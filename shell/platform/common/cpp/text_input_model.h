@@ -8,15 +8,14 @@
 #include <memory>
 #include <string>
 
-#include "rapidjson/document.h"
-
 namespace flutter {
 // Handles underlying text input state, using a simple ASCII model.
 //
 // Ignores special states like "insert mode" for now.
 class TextInputModel {
  public:
-  TextInputModel(int client_id, const rapidjson::Value& config);
+  TextInputModel(const std::string& input_type,
+                 const std::string& input_action);
   virtual ~TextInputModel();
 
   // Attempts to set the text state.
@@ -34,11 +33,17 @@ class TextInputModel {
   // code point.
   void AddCodePoint(char32_t c);
 
-  // Adds a UTF-16 text.
+  // Adds UTF-16 text.
   //
   // Either appends after the cursor (when selection base and extent are the
   // same), or deletes the selected text, replacing it with the given text.
   void AddText(const std::u16string& text);
+
+  // Adds UTF-8 text.
+  //
+  // Either appends after the cursor (when selection base and extent are the
+  // same), or deletes the selected text, replacing it with the given text.
+  void AddText(const std::string& text);
 
   // Deletes either the selection, or one character ahead of the cursor.
   //
@@ -47,6 +52,17 @@ class TextInputModel {
   //
   // Returns true if any deletion actually occurred.
   bool Delete();
+
+  // Deletes text near the cursor.
+  //
+  // A section is made starting at @offset code points past the cursor (negative
+  // values go before the cursor). @count code points are removed. The selection
+  // may go outside the bounds of the text and will result in only the part
+  // selection that covers the available text being deleted. The existing
+  // selection is ignored and removed after this operation.
+  //
+  // Returns true if any deletion actually occurred.
+  bool DeleteSurrounding(int offset_from_cursor, int count);
 
   // Deletes either the selection, or one character behind the cursor.
   //
@@ -71,18 +87,29 @@ class TextInputModel {
   // Attempts to move the cursor to the beginning.
   //
   // Returns true if the cursor could be moved.
-  void MoveCursorToBeginning();
+  bool MoveCursorToBeginning();
 
   // Attempts to move the cursor to the back.
   //
   // Returns true if the cursor could be moved.
-  void MoveCursorToEnd();
+  bool MoveCursorToEnd();
 
-  // Returns the state in the form of a platform message.
-  std::unique_ptr<rapidjson::Document> GetState() const;
+  // Gets the current text as UTF-8.
+  std::string GetText() const;
 
-  // Id of the text input client.
-  int client_id() const { return client_id_; }
+  // Gets the cursor position as a byte offset in UTF-8 string returned from
+  // GetText().
+  int GetCursorOffset() const;
+
+  // The position of the cursor
+  int selection_base() const {
+    return static_cast<int>(selection_base_ - text_.begin());
+  }
+
+  // The end of the selection
+  int selection_extent() const {
+    return static_cast<int>(selection_extent_ - text_.begin());
+  }
 
   // Keyboard type of the client. See available options:
   // https://docs.flutter.io/flutter/services/TextInputType-class.html
@@ -96,7 +123,6 @@ class TextInputModel {
   void DeleteSelected();
 
   std::u16string text_;
-  int client_id_;
   std::string input_type_;
   std::string input_action_;
   std::u16string::iterator selection_base_;

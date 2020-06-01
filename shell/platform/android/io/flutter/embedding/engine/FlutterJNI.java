@@ -103,10 +103,15 @@ public class FlutterJNI {
       @NonNull String[] args,
       @Nullable String bundlePath,
       @NonNull String appStoragePath,
-      @NonNull String engineCachesPath);
+      @NonNull String engineCachesPath,
+      long initTimeMillis);
 
-  // TODO(mattcarroll): add javadocs
-  public static native void nativeRecordStartTimestamp(long initTimeMillis);
+  /**
+   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
+   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
+   * noticeable time, but later calls will return a reference to the preexisting font manager.
+   */
+  public static native void nativePrefetchDefaultFontManager();
 
   // TODO(mattcarroll): add javadocs
   @UiThread
@@ -145,6 +150,20 @@ public class FlutterJNI {
   // TODO(mattcarroll): add javadocs
   @NonNull
   public static native FlutterCallbackInformation nativeLookupCallbackInformation(long handle);
+
+  // ----- Start FlutterTextUtils Methods ----
+
+  public native boolean nativeFlutterTextUtilsIsEmoji(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsEmojiModifier(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsEmojiModifierBase(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsVariationSelector(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsRegionalIndicator(int codePoint);
+
+  // ----- End Engine FlutterTextUtils Methods ----
 
   @Nullable private Long nativePlatformViewId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;

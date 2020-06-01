@@ -5,7 +5,6 @@
 assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
-import("//flutter/build/darwin/ios_app.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
@@ -79,6 +78,8 @@ source_set("flutter_framework_source") {
     "framework/Source/platform_message_response_darwin.mm",
     "framework/Source/platform_message_router.h",
     "framework/Source/platform_message_router.mm",
+    "framework/Source/profiler_metrics_ios.h",
+    "framework/Source/profiler_metrics_ios.mm",
     "framework/Source/vsync_waiter_ios.h",
     "framework/Source/vsync_waiter_ios.mm",
     "ios_context.h",
@@ -131,6 +132,7 @@ source_set("flutter_framework_source") {
     "//flutter/shell/common",
     "//flutter/shell/platform/darwin/common",
     "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/profiling:profiling",
     "//third_party/skia",
   ]
 
@@ -148,6 +150,28 @@ source_set("flutter_framework_source") {
 
 ios_test_flutter_path = rebase_path("$root_out_dir/libios_test_flutter.dylib")
 platform_frameworks_path = "$ios_sdk_path/../../Library/Frameworks/"
+
+# For tests that rely on manual reference counting.
+source_set("ios_test_flutter_mrc") {
+  visibility = [ ":*" ]
+  cflags = [
+    "-fvisibility=default",
+    "-F$platform_frameworks_path",
+    "-mios-simulator-version-min=$ios_testing_deployment_target",
+  ]
+  sources = [
+    "framework/Source/accessibility_bridge_test.mm",
+  ]
+  deps = [
+    ":flutter_framework_source",
+    "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/third_party/tonic",
+    "//flutter/third_party/txt",
+    "//third_party/ocmock:ocmock",
+    "//third_party/rapidjson",
+    "//third_party/skia",
+  ]
+}
 
 # NOTE: This currently only supports simulator targets because of the install_name.
 # TODO(54504): Switch the install_name and make the test runner copy the dynamic
@@ -179,8 +203,12 @@ shared_library("ios_test_flutter") {
   ]
   deps = [
     ":flutter_framework_source",
+    ":ios_test_flutter_mrc",
     "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/third_party/tonic",
+    "//flutter/third_party/txt",
     "//third_party/ocmock:ocmock",
+    "//third_party/rapidjson",
     "//third_party/skia",
   ]
   public_configs = [ "//flutter:config" ]
@@ -299,29 +327,6 @@ shared_library("copy_and_verify_framework_headers") {
   ]
   deps = [
     ":copy_framework_headers",
-  ]
-}
-
-test_fixtures("flutter_tests_fixtures") {
-  fixtures = []
-}
-
-# Note: This currently isn't used, it might be removed.
-ios_app("FlutterTests") {
-  testonly = true
-
-  info_plist = "FlutterTestsInfo.plist"
-
-  sources = [
-    "flutter_unittests.mm",
-  ]
-
-  libs = [ "Foundation.framework" ]
-
-  deps = [
-    ":flutter_tests_fixtures",
-    "//flutter/runtime:libdart",
-    "//flutter/testing",
   ]
 }
 

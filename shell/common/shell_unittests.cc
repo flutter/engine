@@ -143,7 +143,8 @@ TEST_F(ShellTest,
             ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
       },
       [](Shell& shell) {
-        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
+        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners(),
+                                            shell.GetIsGpuDisabledSyncSwitch());
       });
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
@@ -1218,20 +1219,7 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
                                 << expected_json1 << " or " << expected_json2;
 
   // Cleanup files
-  fml::FileVisitor recursive_cleanup = [&recursive_cleanup](
-                                           const fml::UniqueFD& directory,
-                                           const std::string& filename) {
-    if (fml::IsDirectory(directory, filename.c_str())) {
-      fml::UniqueFD sub_dir =
-          OpenDirectoryReadOnly(directory, filename.c_str());
-      VisitFiles(sub_dir, recursive_cleanup);
-      fml::UnlinkDirectory(directory, filename.c_str());
-    } else {
-      fml::UnlinkFile(directory, filename.c_str());
-    }
-    return true;
-  };
-  VisitFiles(temp_dir.fd(), recursive_cleanup);
+  fml::RemoveFilesInDirectory(temp_dir.fd());
 }
 
 }  // namespace testing

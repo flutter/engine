@@ -27,7 +27,8 @@ FlutterWindowController::~FlutterWindowController() {
 bool FlutterWindowController::CreateWindow(
     const WindowProperties& window_properties,
     const std::string& assets_path,
-    const std::vector<std::string>& arguments) {
+    const std::vector<std::string>& arguments,
+    const std::string& aot_library_path) {
   if (!init_succeeded_) {
     std::cerr << "Could not create window; FlutterDesktopInit failed."
               << std::endl;
@@ -47,6 +48,7 @@ bool FlutterWindowController::CreateWindow(
 
   FlutterDesktopEngineProperties c_engine_properties = {};
   c_engine_properties.assets_path = assets_path.c_str();
+  c_engine_properties.aot_library_path = aot_library_path.c_str();
   c_engine_properties.icu_data_path = icu_data_path_.c_str();
   std::vector<const char*> engine_switches;
   std::transform(
@@ -84,7 +86,8 @@ FlutterDesktopPluginRegistrarRef FlutterWindowController::GetRegistrarForPlugin(
               << std::endl;
     return nullptr;
   }
-  return FlutterDesktopGetPluginRegistrar(controller_, plugin_name.c_str());
+  return FlutterDesktopGetPluginRegistrar(FlutterDesktopGetEngine(controller_),
+                                          plugin_name.c_str());
 }
 
 bool FlutterWindowController::RunEventLoopWithTimeout(

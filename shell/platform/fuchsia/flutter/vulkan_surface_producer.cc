@@ -152,7 +152,7 @@ void VulkanSurfaceProducer::OnSurfacesPresented(
   // Do a single flush for all canvases derived from the context.
   {
     TRACE_EVENT0("flutter", "GrContext::flushAndSignalSemaphores");
-    context_->flush();
+    context_->flushAndSubmit();
   }
 
   if (!TransitionSurfacesToExternal(surfaces))
@@ -214,7 +214,7 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
         .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
         .dstAccessMask = 0,
         .oldLayout = imageInfo.fImageLayout,
-        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .newLayout = imageInfo.fImageLayout,
         .srcQueueFamilyIndex = 0,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL_KHR,
         .image = vk_surface->GetVkImage(),

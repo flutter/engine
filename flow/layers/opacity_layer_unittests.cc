@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/opacity_layer.h"
 
+#include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/testing/layer_test.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
@@ -51,6 +52,71 @@ TEST_F(OpacityLayerTest, PaintBeforePreollDies) {
                             "needs_painting\\(\\)");
 }
 #endif
+
+TEST_F(OpacityLayerTest, ChildIsCached) {
+  const SkAlpha alpha_half = 255 / 2;
+  auto initial_transform = SkMatrix::MakeTrans(50.0, 25.5);
+  auto other_transform = SkMatrix::MakeScale(1.0, 2.0);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer =
+      std::make_shared<OpacityLayer>(alpha_half, SkPoint::Make(0.0f, 0.0f));
+  layer->Add(mock_layer);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+
+  layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_TRUE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+}
+
+TEST_F(OpacityLayerTest, ChildrenNotCached) {
+  const SkAlpha alpha_half = 255 / 2;
+  auto initial_transform = SkMatrix::MakeTrans(50.0, 25.5);
+  auto other_transform = SkMatrix::MakeScale(1.0, 2.0);
+  const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  const SkPath child_path2 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
+  auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
+  auto layer =
+      std::make_shared<OpacityLayer>(alpha_half, SkPoint::Make(0.0f, 0.0f));
+  layer->Add(mock_layer1);
+  layer->Add(mock_layer2);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
+
+  layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer1.get(), cache_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer2.get(), cache_canvas));
+}
 
 TEST_F(OpacityLayerTest, FullyOpaque) {
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
@@ -325,6 +391,19 @@ TEST_F(OpacityLayerTest, Readback) {
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
+}
+
+TEST_F(OpacityLayerTest, CullRectIsTransformed) {
+  auto clipRectLayer = std::make_shared<ClipRectLayer>(
+      SkRect::MakeLTRB(0, 0, 10, 10), flutter::hardEdge);
+  auto opacityLayer =
+      std::make_shared<OpacityLayer>(128, SkPoint::Make(20, 20));
+  auto mockLayer = std::make_shared<MockLayer>(SkPath());
+  clipRectLayer->Add(opacityLayer);
+  opacityLayer->Add(mockLayer);
+  clipRectLayer->Preroll(preroll_context(), SkMatrix::I());
+  EXPECT_EQ(mockLayer->parent_cull_rect().fLeft, -20);
+  EXPECT_EQ(mockLayer->parent_cull_rect().fTop, -20);
 }
 
 }  // namespace testing
