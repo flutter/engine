@@ -6,8 +6,11 @@
 
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
+#include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer_x11.h"
+#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
 
 #include <gdk/gdkx.h>
 
@@ -30,11 +33,20 @@ struct _FlView {
 
   // Flutter system channel handlers.
   FlKeyEventPlugin* key_event_plugin;
+  FlTextInputPlugin* text_input_plugin;
 };
 
 enum { PROP_FLUTTER_PROJECT = 1, PROP_LAST };
 
-G_DEFINE_TYPE(FlView, fl_view, GTK_TYPE_WIDGET)
+static void fl_view_plugin_registry_iface_init(
+    FlPluginRegistryInterface* iface);
+
+G_DEFINE_TYPE_WITH_CODE(
+    FlView,
+    fl_view,
+    GTK_TYPE_WIDGET,
+    G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
+                          fl_view_plugin_registry_iface_init))
 
 // Converts a GDK button event into a Flutter event and sends it to the engine.
 static gboolean fl_view_send_pointer_button_event(FlView* self,
@@ -80,6 +92,21 @@ static gboolean fl_view_send_pointer_button_event(FlView* self,
   return TRUE;
 }
 
+// Implements FlPluginRegistry::get_registrar_for_plugin
+static FlPluginRegistrar* fl_view_get_registrar_for_plugin(
+    FlPluginRegistry* registry,
+    const gchar* name) {
+  FlView* self = FL_VIEW(registry);
+
+  return fl_plugin_registrar_new(self,
+                                 fl_engine_get_binary_messenger(self->engine));
+}
+
+static void fl_view_plugin_registry_iface_init(
+    FlPluginRegistryInterface* iface) {
+  iface->get_registrar_for_plugin = fl_view_get_registrar_for_plugin;
+}
+
 static void fl_view_constructed(GObject* object) {
   FlView* self = FL_VIEW(object);
 
@@ -89,6 +116,7 @@ static void fl_view_constructed(GObject* object) {
   // Create system channel handlers
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   self->key_event_plugin = fl_key_event_plugin_new(messenger);
+  self->text_input_plugin = fl_text_input_plugin_new(messenger);
 }
 
 static void fl_view_set_property(GObject* object,
@@ -131,6 +159,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->renderer);
   g_clear_object(&self->engine);
   g_clear_object(&self->key_event_plugin);
+  g_clear_object(&self->text_input_plugin);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
 }
@@ -231,6 +260,9 @@ static gboolean fl_view_motion_notify_event(GtkWidget* widget,
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
+  if (fl_text_input_plugin_filter_keypress(self->text_input_plugin, event))
+    return TRUE;
+
   fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 
   return TRUE;
@@ -240,6 +272,9 @@ static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
 static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
+
+  if (fl_text_input_plugin_filter_keypress(self->text_input_plugin, event))
+    return TRUE;
 
   fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
 
