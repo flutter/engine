@@ -22,6 +22,8 @@ class Window final {
 
   ~Window();
 
+  int window_id() const { return window_id_; }
+
   int screen() const { return screen_id_; }
 
   const ViewportMetrics& viewport_metrics() { return viewport_metrics_; }

@@ -171,6 +171,7 @@ if (current_toolchain == host_toolchain) {
       "painting/image_decoder_test.h",
       "painting/image_decoder_unittests.cc",
       "painting/vertices_unittests.cc",
+      "window/platform_configuration_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]
 
