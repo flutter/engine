@@ -801,6 +801,13 @@ public class FlutterJNI {
     }
   }
 
+  @UiThread
+  void onDisplayPlatformView(int id, int x, int y, int width, int height) {
+    ensureRunningOnMainThread();
+
+    //TODO(gonzchristian): add function call
+  }
+
   /**
    * Delegate responsible for creating and updating Android-side caches of Flutter's semantics tree
    * and custom accessibility actions.
