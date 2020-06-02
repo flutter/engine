@@ -1098,6 +1098,18 @@ void Shell::SetNeedsReportTimings(bool value) {
   needs_report_timings_ = value;
 }
 
+// |Engine::Delegate|
+std::vector<std::string>& Shell::ComputePlatformResolvedLocale(
+    const std::vector<std::string>& supportedLocaleData) {
+  return ComputePlatformViewResolvedLocale(supportedLocaleData);
+}
+
+// |PlatformView::Delegate|
+std::vector<std::string>& Shell::ComputePlatformViewResolvedLocale(
+    const std::vector<std::string>& supportedLocaleData) {
+  return platform_view_->ComputePlatformResolvedLocales(supportedLocaleData);
+}
+
 void Shell::ReportTimings() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());

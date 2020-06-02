@@ -227,6 +227,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///                              collected and send back to Dart.
     ///
     virtual void SetNeedsReportTimings(bool needs_reporting) = 0;
+
+    virtual std::vector<std::string>& ComputePlatformResolvedLocale(
+        const std::vector<std::string>& supportedLocaleData) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -771,6 +774,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |RuntimeDelegate|
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
+
+  // |RuntimeDelegate|
+  std::vector<std::string>& ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supportedLocaleData) override;
 
   void SetNeedsReportTimings(bool value) override;
 

@@ -209,6 +209,9 @@ class PlatformView {
     ///
     virtual void OnPlatformViewMarkTextureFrameAvailable(
         int64_t texture_id) = 0;
+
+    virtual std::vector<std::string>& ComputePlatformViewResolvedLocale(
+        const std::vector<std::string>& supportedLocaleData) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -543,8 +546,8 @@ class PlatformView {
   ///
   void MarkTextureFrameAvailable(int64_t texture_id);
 
-  virtual std::vector<std::string> ComputePlatformResolvedLocales(
-      std::vector<std::string> supportedLocaleData);
+  virtual std::vector<std::string>& ComputePlatformResolvedLocales(
+      const std::vector<std::string>& supportedLocaleData);
 
  protected:
   PlatformView::Delegate& delegate_;

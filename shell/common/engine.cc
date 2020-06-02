@@ -492,6 +492,11 @@ void Engine::UpdateIsolateDescription(const std::string isolate_name,
   delegate_.UpdateIsolateDescription(isolate_name, isolate_port);
 }
 
+std::vector<std::string>& Engine::ComputePlatformResolvedLocale(
+    const std::vector<std::string>& supportedLocaleData) {
+  return delegate_.ComputePlatformResolvedLocale(supportedLocaleData);
+}
+
 void Engine::SetNeedsReportTimings(bool needs_reporting) {
   delegate_.SetNeedsReportTimings(needs_reporting);
 }

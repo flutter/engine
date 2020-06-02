@@ -59,7 +59,7 @@ class WindowClient {
                                         int64_t isolate_port) = 0;
   virtual void SetNeedsReportTimings(bool value) = 0;
   virtual std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() = 0;
-  virtual std::vector<std::string> ComputePlatformResolvedLocale(
+  virtual std::vector<std::string>& ComputePlatformResolvedLocale(
       const std::vector<std::string>& supportedLocaleData) = 0;
 
  protected:

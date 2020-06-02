@@ -80,6 +80,7 @@ class PlatformViewAndroid final : public PlatformView {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<flutter::PlatformMessageResponse>>
       pending_responses_;
+  std::vector<std::string>* platform_resolved_locale_;
 
   // |PlatformView|
   void UpdateSemantics(
@@ -106,8 +107,8 @@ class PlatformViewAndroid final : public PlatformView {
   void ReleaseResourceContext() const override;
 
   // |PlatformView|
-  std::vector<std::string> ComputePlatformResolvedLocales(
-      std::vector<std::string> supportedLocaleData) override;
+  std::vector<std::string>& ComputePlatformResolvedLocales(
+      const std::vector<std::string>& supportedLocaleData) override;
 
   void InstallFirstFrameCallback();
 
