@@ -110,7 +110,7 @@ source_set("flutter_linux") {
 
   deps = [
     "//flutter/shell/platform/common/cpp:common_cpp_input",
-    "//flutter/shell/platform/embedder:embedder_with_symbol_prefix",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//third_party/rapidjson",
   ]
 }
