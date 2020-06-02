@@ -202,6 +202,25 @@ void PlatformViewAndroid::OnPreEngineRestart() const {
   FlutterViewOnPreEngineRestart(fml::jni::AttachCurrentThread(), view.obj());
 }
 
+// |PlatformView|
+static jobject GetOnDisplayPlatformView(JNIEnv* env, jobject jcaller, jint x, jint y, jint width, jint height) {
+  g_flutter_jni_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
+  if (g_flutter_jni_class->is_null()) {
+    FML_LOG(ERROR) << "Failed to find FlutterJNI Class.";
+    return nullptr;
+  }
+
+  jmethodID display_platform_view = env->GetStaticMethodID(
+      g_flutter_jni_class, "onDisplayPlatformView",
+      "()V");
+  if (create_bitmap == nullptr) {
+    return nullptr;
+  }
+
+  return env->CallStaticObjectMethod(display_platform_view);
+}
+
 void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
                                                   jint id,
                                                   jint action,
