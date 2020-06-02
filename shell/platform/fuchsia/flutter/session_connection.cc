@@ -147,18 +147,14 @@ fml::TimePoint SessionConnection::CalculateNextLatchPoint(
       std::max(std::max(now, present_requested_time + flutter_frame_build_time),
                last_latch_point_targeted);
 
-  auto it = future_presentation_infos.begin();
-  while (it != future_presentation_infos.end()) {
-    fml::TimePoint latch_point = it->first;
+  for (auto& info : future_presentation_infos) {
+    fml::TimePoint latch_point = info.first;
 
     if (latch_point >= minimum_latch_point_to_target) {
       return latch_point;
     }
 
-    it++;
   }
-
-  FML_DCHECK(it == future_presentation_infos.end());
 
   // We could not find a suitable latch point in the list given to us from
   // Scenic, so aim for the smallest safe value.
