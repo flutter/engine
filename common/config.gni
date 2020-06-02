@@ -80,8 +80,8 @@ if (is_ios || is_mac) {
 # This template allows creating a `source_set` in both product and non-product
 # configurations.
 #
-# `sources`, `public_configs`, `configs`, `public_deps`, `deps` work as they do
-# in a normal `source_set`.
+# `sources`, `defines`, `public_configs`, `configs`, `public_deps`, `deps` work
+# as they do in a normal `source_set`.
 #
 # `product_deps` is the list of dependencies which should be mutated by
 # appending '_product' when creating the 2 `source_set`'s.  The template adds
@@ -93,6 +93,10 @@ template("source_set_maybe_product") {
   srcs = []
   if (defined(invoker.sources)) {
     srcs += invoker.sources
+  }
+  defs = []
+  if (defined(invoker.defines)) {
+    defs += invoker.defines
   }
   pub_cfgs = []
   if (defined(invoker.public_configs)) {
@@ -120,6 +124,8 @@ template("source_set_maybe_product") {
   source_set(target_name) {
     sources = srcs
 
+    defines = defs
+
     public_configs = pub_cfgs
     configs += priv_cfgs
 
@@ -129,6 +135,8 @@ template("source_set_maybe_product") {
 
   source_set(target_name + product_suffix) {
     sources = srcs
+
+    defines = defs
 
     public_configs = pub_cfgs
     configs += priv_cfgs

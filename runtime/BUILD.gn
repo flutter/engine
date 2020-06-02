@@ -28,7 +28,8 @@ source_set("test_font") {
   }
 }
 
-# Picks the libdart implementation based on the Flutter runtime mode.
+# Picks the libdart implementation based on the Flutter runtime mode, in
+# non-product configurations.
 group("libdart") {
   public_deps = []
 
@@ -42,7 +43,23 @@ group("libdart") {
   }
 }
 
-source_set("runtime") {
+# Picks the libdart implementation based on the Flutter runtime mode, in
+# product configurations.
+group("libdart_product") {
+  public_deps = []
+
+  if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
+    public_deps +=
+        [ "//third_party/dart/runtime:libdart_precompiled_runtime_product" ]
+  } else {
+    public_deps += [
+      "//flutter/lib/snapshot",
+      "//third_party/dart/runtime:libdart_jit_product",
+    ]
+  }
+}
+
+source_set_maybe_product("runtime") {
   sources = [
     "dart_isolate.cc",
     "dart_isolate.h",
@@ -80,12 +97,9 @@ source_set("runtime") {
     "//flutter/common",
     "//flutter/flow",
     "//flutter/fml",
-    "//flutter/lib/io",
-    "//flutter/lib/ui",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
     "//third_party/dart/runtime:dart_api",
-    "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
   ]
 
@@ -94,6 +108,12 @@ source_set("runtime") {
   ]
 
   public_configs = [ "//flutter:config" ]
+
+  product_deps = [
+    "//flutter/lib/ui:ui",
+    "//flutter/lib/io:io",
+    "//third_party/dart/runtime/bin:dart_io_api",
+  ]
 
   if (flutter_runtime_mode != "release" && !is_fuchsia) {
     # Only link in Observatory in non-release modes on non-Fuchsia. Fuchsia

@@ -2,20 +2,23 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-source_set("io") {
+import("//flutter/common/config.gni")
+
+source_set_maybe_product("io") {
   sources = [
     "dart_io.cc",
     "dart_io.h",
   ]
 
+  configs = [ "//third_party/dart/runtime:dart_config" ]
+
+  public_configs = [ "//flutter:config" ]
+
   deps = [
     "//flutter/fml",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime:dart_api",
-    "//third_party/dart/runtime/bin:dart_io_api",
   ]
 
-  configs += [ "//third_party/dart/runtime:dart_config" ]
-
-  public_configs = [ "//flutter:config" ]
+  product_deps = [ "//third_party/dart/runtime/bin:dart_io_api" ]
 }
