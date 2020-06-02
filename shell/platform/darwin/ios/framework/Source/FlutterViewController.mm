@@ -485,11 +485,11 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 #pragma mark - Surface creation and teardown updates
 
 - (void)surfaceUpdated:(BOOL)appeared {
-    UIApplicationState appState = [UIApplication sharedApplication].applicationState;
-    // Update surface only when application is active.
-    if (appState == UIApplicationStateActive) {
-        [self _innerSurfaceUpdated:appeared];
-    }
+  UIApplicationState appState = [UIApplication sharedApplication].applicationState;
+  // Update surface only when application is active.
+  if (appState == UIApplicationStateActive) {
+    [self _innerSurfaceUpdated:appeared];
+  }
 }
 
 - (void)_innerSurfaceUpdated:(BOOL)appeared {
@@ -641,12 +641,13 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   // Accessing self.view will create the view. Check whether the view is organically loaded
   // first before checking whether the view is attached to window.
   if (self.isViewLoaded && self.view.window) {
-      UIApplicationState appState = [UIApplication sharedApplication].applicationState;
-      if (([state isEqualToString:@"AppLifecycleState.resumed"] || [state isEqualToString:@"AppLifecycleState.inactive"])
-          && (appState != UIApplicationStateActive)) {
-          // Schedule frame only when application is active.
-          return;
-      }
+    UIApplicationState appState = [UIApplication sharedApplication].applicationState;
+    if (([state isEqualToString:@"AppLifecycleState.resumed"] ||
+         [state isEqualToString:@"AppLifecycleState.inactive"]) &&
+        (appState != UIApplicationStateActive)) {
+      // Schedule frame only when application is active.
+      return;
+    }
     [[_engine.get() lifecycleChannel] sendMessage:state];
   }
 }
