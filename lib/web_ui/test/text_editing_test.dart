@@ -673,7 +673,7 @@ void main() {
       expect(spy.messages, isEmpty);
     });
 
-    test('close connection on blur', () async {
+    test('do not close connection on blur', () async {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -698,18 +698,7 @@ void main() {
       // DOM element is blurred.
       textEditing.editingElement.domElement.blur();
 
-      expect(spy.messages, hasLength(1));
-      expect(spy.messages[0].channel, 'flutter/textinput');
-      expect(spy.messages[0].methodName, 'TextInputClient.onConnectionClosed');
-      expect(
-        spy.messages[0].methodArguments,
-        <dynamic>[
-          123, // Client ID
-        ],
-      );
-      spy.messages.clear();
-      // Input element is removed from DOM.
-      expect(document.getElementsByTagName('input'), hasLength(0));
+      expect(spy.messages, hasLength(0));
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
