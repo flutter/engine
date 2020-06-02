@@ -389,7 +389,7 @@ void main() {
       );
     });
 
-    test('Does not re-acquire focus', () {
+    test('Re-acquire focus', () {
       editingElement =
           SemanticsTextEditingStrategy(HybridTextEditing(), testInputElement);
 
@@ -403,9 +403,9 @@ void main() {
       );
       expect(document.activeElement, testInputElement);
 
-      // The input should lose focus now.
+      // The input should refocus after blur.
       editingElement.domElement.blur();
-      expect(document.activeElement, document.body);
+      expect(document.activeElement, editingElement.domElement);
 
       editingElement.disable();
     },
@@ -447,8 +447,8 @@ void main() {
       // It doesn't remove the DOM element.
       expect(editingElement.domElement, testInputElement);
       expect(document.body.contains(editingElement.domElement), isTrue);
-      // But the DOM element loses focus.
-      expect(document.activeElement, document.body);
+      // The DOM does not lose focus.
+      expect(document.activeElement, editingElement.domElement);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
@@ -465,12 +465,7 @@ void main() {
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
-      expect(document.activeElement, testInputElement);
-
-      editingElement.domElement.blur();
-      expect(document.activeElement, document.body);
-
-      // The input should regain focus now.
+      // The input will have focus after editing state is set.
       editingElement.setEditingState(EditingState(text: 'foo'));
       expect(document.activeElement, testInputElement);
 
@@ -510,18 +505,13 @@ void main() {
 
       // Doesn't re-acquire focus.
       textarea.blur();
-      expect(document.activeElement, document.body);
-
-      // Re-focuses when setting editing state
-      editingElement.setEditingState(EditingState(text: 'foo'));
+      // The textArea does not lose focus.
       expect(document.activeElement, textarea);
 
       editingElement.disable();
       // It doesn't remove the textarea from the DOM.
       expect(editingElement.domElement, textarea);
       expect(document.body.contains(editingElement.domElement), isTrue);
-      // But the textarea loses focus.
-      expect(document.activeElement, document.body);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
@@ -699,6 +689,9 @@ void main() {
       textEditing.editingElement.domElement.blur();
 
       expect(spy.messages, hasLength(0));
+
+      // DOM element still has focus.
+      expect(document.activeElement, textEditing.editingElement.domElement);
     },
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
         // TODO(nurhan): https://github.com/flutter/flutter/issues/50769

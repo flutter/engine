@@ -603,6 +603,12 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     _subscriptions.add(html.document.onSelectionChange.listen(_handleChange));
 
+    // Refocus on the domElement after blur, so that user can keep editing the
+    // text field.
+    _subscriptions.add(domElement.onBlur.listen((_) {
+      domElement.focus();
+    }));
+
     preventDefaultForMouseEvents();
   }
 
@@ -972,6 +978,12 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // listening to onSelect. On the other browsers onSelectionChange is
     // enough for covering "Select All" functionality.
     _subscriptions.add(domElement.onSelect.listen(_handleChange));
+
+    // Refocus on the domElement after blur, so that user can keep editing the
+    // text field.
+    _subscriptions.add(domElement.onBlur.listen((_) {
+      domElement.focus();
+    }));
 
     preventDefaultForMouseEvents();
   }
