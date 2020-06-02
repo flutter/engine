@@ -184,7 +184,27 @@ bool debugAssertSurfaceState(
 /// compute the fewest amount of mutations necessary to update the browser DOM.
 abstract class PersistedSurface implements ui.EngineLayer {
   /// Creates a persisted surface.
-  PersistedSurface();
+  PersistedSurface(PersistedSurface oldLayer)
+    : _oldLayer = FrameReference<PersistedSurface>(
+            oldLayer != null && oldLayer.isActive ? oldLayer : null);
+
+  /// The surface that is being updated using this surface.
+  ///
+  /// If not null this surface will reuse the old surface's HTML [element].
+  ///
+  /// This value is set to null at the end of the frame.
+  PersistedSurface get oldLayer => _oldLayer.value;
+  final FrameReference<PersistedSurface> _oldLayer;
+
+  /// The index of this surface in its parent's [PersistedContainerSurface._children]
+  /// list.
+  ///
+  /// This index is used to detect whether any child nodes moved within a
+  /// container layer. The index is cached by the child to avoid a linear
+  /// look-up in the parent's child list.
+  ///
+  /// This index is updated by [PersistedContainerSurface.update].
+  int _index = -1;
 
   /// Controls the algorithm that reuses the DOM resources owned by this
   /// surface.
@@ -584,7 +604,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
 
 /// A surface that doesn't have child surfaces.
 abstract class PersistedLeafSurface extends PersistedSurface {
-  PersistedLeafSurface();
+  PersistedLeafSurface() : super(null);
 
   @override
   void visitChildren(PersistedSurfaceVisitor visitor) {
@@ -598,19 +618,9 @@ abstract class PersistedContainerSurface extends PersistedSurface {
   ///
   /// `oldLayer` points to the surface rendered in the previous frame that's
   /// being updated by this layer.
-  PersistedContainerSurface(PersistedSurface oldLayer)
-      : _oldLayer = FrameReference<PersistedSurface>(
-            oldLayer != null && oldLayer.isActive ? oldLayer : null) {
+  PersistedContainerSurface(PersistedSurface oldLayer) : super(oldLayer) {
     assert(oldLayer == null || runtimeType == oldLayer.runtimeType);
   }
-
-  /// The surface that is being updated using this surface.
-  ///
-  /// If not null this surface will reuse the old surface's HTML [element].
-  ///
-  /// This value is set to null at the end of the frame.
-  PersistedSurface get oldLayer => _oldLayer.value;
-  final FrameReference<PersistedSurface> _oldLayer;
 
   final List<PersistedSurface> _children = <PersistedSurface>[];
 
@@ -671,7 +681,9 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         child.build();
       }
       containerElement.append(child.rootElement);
+      child._index = i;
     }
+    _debugValidateContainerNewState();
   }
 
   @override
@@ -729,8 +741,16 @@ abstract class PersistedContainerSurface extends PersistedSurface {
           assert(oldChild.childContainer == null);
         }
       }
+      _debugValidateContainerNewState();
+      return true;
+    }());
+  }
+
+  void _debugValidateContainerNewState() {
+    assert(() {
       for (int i = 0; i < _children.length; i++) {
         final PersistedSurface newChild = _children[i];
+        assert(newChild._index == i);
         assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active,
             PersistedSurfaceState.pendingRetention));
         assert(newChild.rootElement != null);
@@ -770,6 +790,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         newChild.build();
         assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
       }
+      newChild._index = i;
       assert(newChild.rootElement != null);
       containerElement.append(newChild.rootElement);
     }
@@ -794,6 +815,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
   void _updateManyToOne(PersistedContainerSurface oldSurface) {
     assert(_children.length == 1);
     final PersistedSurface newChild = _children[0];
+    newChild._index = 0;
 
     // Retained child is moved to the correct location in the tree; all others
     // are released.
@@ -890,8 +912,10 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         _matchChildren(oldSurface);
 
     // This pair of lists maps from _children indices to oldSurface._children indices.
-    final List<int> indexMapNew = <int>[];
-    final List<int> indexMapOld = <int>[];
+    // These lists are initialized lazily, only when we discover that we will need to
+    // move nodes around. Otherwise, these lists remain null.
+    List<int> indexMapNew;
+    List<int> indexMapOld;
 
     // Whether children need to move around the DOM. It is common for children
     // to be updated/retained but never move. Knowing this allows us to bypass
@@ -946,20 +970,36 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       }
 
       int indexInOld = -1;
-      if (matchedOldChild != null) {
-        if (!isReparenting) {
-          // TODO(yjbanov): this causes a O(N^2) search. Can we avoid it?
-          indexInOld = matchedOldChild.parent._children.indexOf(matchedOldChild);
-          if (indexInOld != -1) {
-            indexMapNew.add(topInNew);
-            indexMapOld.add(indexInOld);
-          }
-        }
-      }
-      if (indexInOld != topInNew) {
-        requiresDomInserts = true;
+      if (matchedOldChild != null && !isReparenting) {
+        assert(
+          matchedOldChild._index != -1,
+          'Invalid index ${matchedOldChild._index} of child layer ${matchedOldChild.runtimeType}',
+        );
+        indexInOld = matchedOldChild._index;
       }
 
+      // indexInOld != topInNew indicates that at least one child has moved and
+      // therefore we'll need to find the minimum moves necessary to update the
+      // child list.
+      if (!requiresDomInserts && indexInOld != topInNew) {
+        requiresDomInserts = true;
+        indexMapNew = <int>[];
+        indexMapOld = <int>[];
+
+        // Because up until this moment we haven't been populating the
+        // indexMapNew and indexMapOld, we backfill them with indices up until
+        // the current index.
+        for (int backfill = 0; backfill < topInNew; backfill++) {
+          indexMapNew.add(backfill);
+          indexMapOld.add(backfill);
+        }
+      }
+      if (requiresDomInserts && indexInOld != -1) {
+        indexMapNew.add(topInNew);
+        indexMapOld.add(indexInOld);
+      }
+
+      newChild._index = topInNew;
       assert(newChild.rootElement != null);
       assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active,
           PersistedSurfaceState.pendingRetention));
@@ -968,7 +1008,13 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     // Avoid calling `_insertChildDomNodes` unnecessarily. Only call it if we
     // actually need to move DOM nodes around.
     if (requiresDomInserts) {
+      assert(indexMapNew.length == indexMapOld.length);
       _insertChildDomNodes(indexMapNew, indexMapOld);
+    } else {
+      // The fast path, where nothing needs to move, should not intialize the
+      // mapping lists at all.
+      assert(indexMapNew == null);
+      assert(indexMapOld == null);
     }
 
     // Remove elements that were not reused this frame.
@@ -1014,7 +1060,9 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     final List<PersistedSurface> newChildren = <PersistedSurface>[];
     for (int i = 0; i < newUnfilteredChildCount; i++) {
       final PersistedSurface child = _children[i];
-      if (child.isCreated && !(child is PersistedContainerSurface && child.oldLayer != null)) {
+      // If child has an old layer, it means it's scheduled for an explicit
+      // update, and therefore there's no need to try to match it.
+      if (child.isCreated && child.oldLayer == null) {
         newChildren.add(child);
       }
     }
