@@ -104,8 +104,9 @@ config("embedder_internal_library_config") {
   defines = [
     # Use prefixed symbols to avoid collisions with higher level API.
     "FLUTTER_API_SYMBOL_PREFIX=Embedder",
+
     # Don't export the embedder.h API surface.
-    "EMBEDDER_AS_INTERNAL_LIBRARY",
+    "FLUTTER_NO_EXPORT",
   ]
 }
 
