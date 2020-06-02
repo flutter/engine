@@ -24,17 +24,17 @@ writing and running engine tests.*
 
 Before you create this PR confirm that it meets all requirements listed below by checking the relevant checkboxes (`[x]`). This will ensure a smooth and quick review process.
 
-- [ ] I read the [Contributor Guide] and followed the process outlined there for submitting PRs.
+- [ ] I read the [contributor guide] and followed the process outlined there for submitting PRs.
 - [ ] I signed the [CLA].
 - [ ] I read and followed the [C++, Objective-C, Java style guides] for the engine.
-- [ ] I read the [Tree Hygiene] wiki page, which explains my responsibilities.
+- [ ] I read the [tree hygiene] wiki page, which explains my responsibilities.
 - [ ] I updated/added relevant documentation.
 - [ ] All existing and new tests are passing.
 - [ ] I am willing to follow-up on review comments in a timely manner.
 
 ## Breaking Change
 
-Did any tests fail when you ran them? Please read [Handling breaking changes].
+Did any tests fail when you ran them? Please read [handling breaking changes].
 
 - [ ] No, no existing tests failed, so this is *not* a breaking change.
 - [ ] Yes, this is a breaking change. *If not, delete the remainder of this section.*
@@ -44,9 +44,9 @@ Did any tests fail when you ran them? Please read [Handling breaking changes].
 
 <!-- Links -->
 [issue database]: https://github.com/flutter/flutter/issues
-[Contributor Guide]: https://github.com/flutter/flutter/wiki/Tree-hygiene#overview
+[contributor guide]: https://github.com/flutter/flutter/wiki/Tree-hygiene#overview
 [testing the engine]: https://github.com/flutter/flutter/wiki/Testing-the-engine
 [C++, Objective-C, Java style guides]: https://github.com/flutter/engine/blob/master/CONTRIBUTING.md#style
 [CLA]: https://cla.developers.google.com/
-[Tree Hygiene]: https://github.com/flutter/flutter/wiki/Tree-hygiene
-[Handling breaking changes]: https://github.com/flutter/flutter/wiki/Tree-hygiene#handling-breaking-changes
+[tree hygiene]: https://github.com/flutter/flutter/wiki/Tree-hygiene
+[handling breaking changes]: https://github.com/flutter/flutter/wiki/Tree-hygiene#handling-breaking-changes
