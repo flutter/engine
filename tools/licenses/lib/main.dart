@@ -1311,6 +1311,8 @@ class _RepositoryAngleDirectory extends _RepositoryDirectory {
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'src')
       return _RepositoryAngleSrcDirectory(this, entry);
+    if (entry.name == 'tools')
+      return _RepositoryAngleToolsDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
@@ -1332,6 +1334,38 @@ class _RepositoryAngleSrcThirdPartyDirectory extends _RepositoryDirectory {
   @override
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'volk' // We don't use Vulkan in our ANGLE build.
+        && super.shouldRecurse(entry);
+  }
+}
+
+class _RepositoryAngleToolsDirectory extends _RepositoryDirectory {
+  _RepositoryAngleToolsDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'flex-bison')
+      return _RepositoryAngleToolsFlexBisonDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryAngleToolsFlexBisonDirectory extends _RepositoryDirectory {
+  _RepositoryAngleToolsFlexBisonDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'third_party')
+      return _RepositoryAngleToolsFlexBisonThirdPartyDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryAngleToolsFlexBisonThirdPartyDirectory extends _RepositoryDirectory {
+  _RepositoryAngleToolsFlexBisonThirdPartyDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'skeletons' // These files are templates for generating sources.
         && super.shouldRecurse(entry);
   }
 }
