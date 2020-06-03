@@ -43,5 +43,11 @@ public class FlutterJNITest {
 
     // --- Verify Results ---
     assertEquals(1, callbackInvocationCount.get());
+
+    // --- Execute Test ---
+    flutterJNI.onDisplayPlatformView(0, 0, 0, 0, 0);
+
+    // --- Verify Results ---
+    assertEquals(2, callbackInvocationCount.get());
   }
 }
