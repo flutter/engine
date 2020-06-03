@@ -410,6 +410,12 @@ public class FlutterJNI {
       long nativePlatformViewId, @NonNull ByteBuffer buffer, int position);
   // ------ End Touch Interaction Support ---
 
+  @UiThread
+  public void setPlatformViewsController(@NonNull PlatformViewsController platformViewsController) {
+    ensureRunningOnMainThread();
+    this.platformViewsController = platformViewsController;
+  }
+  
   // ------ Start Accessibility Support -----
   /**
    * Sets the {@link AccessibilityDelegate} for the attached Flutter context.
@@ -787,7 +793,7 @@ public class FlutterJNI {
     }
     platformViewsController.onDisplayPlatformView(viewId, x, y, width, height);
   }
-  
+
   // TODO(mattcarroll): determine if this is nonull or nullable
   @UiThread
   public Bitmap getBitmap() {
