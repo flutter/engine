@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:pedantic/pedantic.dart';
 
+import 'package:path/path.dart' as path;
 import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
 
 import 'browser.dart';
@@ -43,13 +44,23 @@ class Firefox extends Browser {
         infoLog: isCirrus ? stdout : DevNull(),
       );
 
+      // Using a profile on opening will prevent popups related to profiles.
+      final _profile = '''
+user_pref("browser.shell.checkDefaultBrowser", false);
+user_pref("dom.disable_open_during_load", false);
+user_pref("dom.max_script_run_time", 0);
+''';
+
       // A good source of various Firefox Command Line options:
       // https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options#Browser
       //
       var dir = createTempDir();
+      File(path.join(dir, 'prefs.js')).writeAsStringSync(_profile);
       bool isMac = Platform.isMacOS;
       var args = [
         url.toString(),
+        '--profile',
+        '$dir',
         '--headless',
         '-width $kMaxScreenshotWidth',
         '-height $kMaxScreenshotHeight',
@@ -58,9 +69,8 @@ class Firefox extends Browser {
         '--start-debugger-server $kDevtoolsPort',
       ];
 
-      final Process process =
-          await Process.start(installation.executable, args,
-            workingDirectory: dir);
+      final Process process = await Process.start(installation.executable, args,
+          workingDirectory: dir);
 
       remoteDebuggerCompleter.complete(
           getRemoteDebuggerUrl(Uri.parse('http://localhost:$kDevtoolsPort')));
