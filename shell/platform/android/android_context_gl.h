@@ -39,7 +39,8 @@ class AndroidContextGL : public AndroidContext {
   ///
   /// @return     The window surface.
   ///
-  EGLSurface CreateOnscreenSurface(fml::RefPtr<AndroidNativeWindow> window);
+  EGLSurface CreateOnscreenSurface(
+      fml::RefPtr<AndroidNativeWindow> window) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Allocates an 1x1 pbuffer surface that is used for making the
@@ -50,7 +51,7 @@ class AndroidContextGL : public AndroidContext {
   ///
   /// @return     The pbuffer surface.
   ///
-  EGLSurface CreateOffscreenSurface();
+  EGLSurface CreateOffscreenSurface() const;
 
   //----------------------------------------------------------------------------
   /// @return     The Android environment that contains a reference to the

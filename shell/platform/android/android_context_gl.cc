@@ -162,7 +162,7 @@ AndroidContextGL::~AndroidContextGL() {
 }
 
 EGLSurface AndroidContextGL::CreateOnscreenSurface(
-    fml::RefPtr<AndroidNativeWindow> window) {
+    fml::RefPtr<AndroidNativeWindow> window) const {
   EGLDisplay display = environment_->Display();
 
   const EGLint attribs[] = {EGL_NONE};
@@ -172,7 +172,7 @@ EGLSurface AndroidContextGL::CreateOnscreenSurface(
       attribs);
 }
 
-EGLSurface AndroidContextGL::CreateOffscreenSurface() {
+EGLSurface AndroidContextGL::CreateOffscreenSurface() const {
   // We only ever create pbuffer surfaces for background resource loading
   // contexts. We never bind the pbuffer to anything.
   EGLDisplay display = environment_->Display();
