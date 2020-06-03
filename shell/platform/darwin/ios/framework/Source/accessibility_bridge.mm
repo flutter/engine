@@ -16,7 +16,11 @@ FLUTTER_ASSERT_NOT_ARC
 namespace flutter {
 namespace {
 
-FlutterViewController* GetFlutterViewControllerForView(UIView* view) {
+FlutterViewController* _Nullable GetFlutterViewControllerForView(UIView* view) {
+  // There is no way to get a view's view controller in UIKit directly, this is
+  // somewhat of a hacky solution to get that.  This could be eliminated if the
+  // bridge actually kept a reference to a FlutterViewController instead of a
+  // UIView.
   id nextResponder = [view nextResponder];
   if ([nextResponder isKindOfClass:[FlutterViewController class]]) {
     return nextResponder;
