@@ -429,6 +429,9 @@ void PlatformViewAndroid::ReleaseResourceContext() const {
 // |PlatformView|
 std::vector<std::string>& PlatformViewAndroid::ComputePlatformResolvedLocales(
     const std::vector<std::string>& supportedLocaleData) {
+  for (size_t i = 0; i < supportedLocaleData.size(); i++) {
+    FML_DLOG(ERROR) << "LOCALE COMPONENT: " << supportedLocaleData[i];
+  }
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = java_object_.get(env);
   if (view.is_null()) {

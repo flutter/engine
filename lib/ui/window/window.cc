@@ -426,20 +426,33 @@ void Window::CompletePlatformMessageResponse(int response_id,
 }
 
 Dart_Handle ComputePlatformResolvedLocale(
-    const std::vector<std::string>& supportedLocaleData) {
-  UIDartState::Current()->window()->client()->ComputePlatformResolvedLocale(
-      supportedLocaleData);
+    // std::vector<std::string>& supportedLocalesData) {
+    Dart_Handle supportedLocalesHandle) {
+  intptr_t length;
+  Dart_ListLength(supportedLocalesHandle, &length);
+  size_t u_length = static_cast<size_t>(length);
+  std::vector<std::string> supportedLocales;
+  for (size_t i = 0; i < u_length; i++) {
+    const char* cname;
+    Dart_StringToCString(Dart_ListGetAt(supportedLocalesHandle, i), &cname);
+    supportedLocales.emplace_back(cname);
+  }
+  std::vector<std::string> results =
+      UIDartState::Current()->window()->client()->ComputePlatformResolvedLocale(
+          supportedLocales);
 
-  Dart_Handle output =
-      Dart_NewListOf(Dart_CoreType_String, supportedLocaleData.size());
-  Dart_ListSetAt(output, 0, tonic::ToDart("zero"));
-  Dart_ListSetAt(output, 1, tonic::ToDart("one"));
+  Dart_Handle output = Dart_NewListOf(Dart_CoreType_String, results.size());
+  for (size_t i = 0; i < results.size(); i++) {
+    Dart_ListSetAt(output, i, tonic::ToDart(results[i]));
+  }
   return output;
 }
 
 static void _ComputePlatformResolvedLocale(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  tonic::DartCallStatic(&ComputePlatformResolvedLocale, args);
+  Dart_Handle result =
+      ComputePlatformResolvedLocale(Dart_GetNativeArgument(args, 1));
+  Dart_SetReturnValue(args, result);
 }
 
 void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
@@ -455,7 +468,7 @@ void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
       {"Window_setNeedsReportTimings", SetNeedsReportTimings, 2, true},
       {"Window_getPersistentIsolateData", GetPersistentIsolateData, 1, true},
       {"Window_computePlatformResolvedLocale", _ComputePlatformResolvedLocale,
-       1, true},
+       2, true},
   });
 }
 

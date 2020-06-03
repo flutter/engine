@@ -149,8 +149,14 @@ std::vector<std::string> FlutterViewComputePlatformResolvedLocale(
     JNIEnv* env,
     jobject obj,
     jobjectArray strings) {
+  std::vector<std::string> vec = fml::jni::StringArrayToVector(env, strings);
   jobjectArray result = static_cast<jobjectArray>(env->CallObjectMethod(
       obj, g_compute_platform_resolved_locale_method, strings));
+  FML_DLOG(ERROR) << "RESULT:::::::::::::::: " << result << " " << strings
+                  << " " << env << " " << vec.size();
+  // for (size_t i = 0; i < vec.size(); i++) {
+  //   FML_DLOG(ERROR) << "LOCALE COMPONENT: " << vec[i];
+  // }
   FML_CHECK(CheckException(env));
   return fml::jni::StringArrayToVector(env, result);
 }
