@@ -161,6 +161,4 @@ public class FlutterNativeView implements BinaryMessenger {
       mPluginRegistry.onPreEngineRestart();
     }
   }
-
-  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {}
 }

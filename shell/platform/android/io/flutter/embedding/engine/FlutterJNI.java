@@ -775,6 +775,7 @@ public class FlutterJNI {
       listener.onPreEngineRestart();
     }
   }
+  // ----- End Engine Lifecycle Support ----
 
   @SuppressWarnings("unused")
   @UiThread
@@ -786,8 +787,7 @@ public class FlutterJNI {
     }
     platformViewsController.onDisplayPlatformView(viewId, x, y, width, height);
   }
-
-  // ----- End Engine Lifecycle Support ----
+  
   // TODO(mattcarroll): determine if this is nonull or nullable
   @UiThread
   public Bitmap getBitmap() {
