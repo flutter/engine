@@ -36,12 +36,12 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj);
 
 void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj);
 
-void FlutterViewOnDisplayPlatformView(JNIEnv* env, 
-                                      jobject obj, 
-                                      jint view_id, 
-                                      jint x, 
-                                      jint y, 
-                                      jint width, 
+void FlutterViewOnDisplayPlatformView(JNIEnv* env,
+                                      jobject obj,
+                                      jint view_id,
+                                      jint x,
+                                      jint y,
+                                      jint width,
                                       jint height);
 
 void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId);

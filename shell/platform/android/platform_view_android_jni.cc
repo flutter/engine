@@ -119,8 +119,15 @@ void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj) {
 }
 
 static jmethodID g_on_position_platform_view_method = nullptr;
-void FlutterViewOnDisplayPlatformView(JNIEnv* env, jobject obj, jint view_id, jint x, jint y, jint width, jint height) {
-  env->CallVoidMethod(obj, g_on_position_platform_view_method, view_id, x, y, width, height);
+void FlutterViewOnDisplayPlatformView(JNIEnv* env,
+                                      jobject obj,
+                                      jint view_id,
+                                      jint x,
+                                      jint y,
+                                      jint width,
+                                      jint height) {
+  env->CallVoidMethod(obj, g_on_position_platform_view_method, view_id, x, y,
+                      width, height);
   FML_CHECK(CheckException(env));
 }
 
@@ -756,8 +763,8 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_on_display_platform_view_method =
-      env->GetMethodID(g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIII)V");
+  g_on_display_platform_view_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIII)V");
 
   if (g_on_display_platform_view_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onDisplayPlatformView method";

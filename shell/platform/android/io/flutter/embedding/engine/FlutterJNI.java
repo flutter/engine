@@ -163,7 +163,7 @@ public class FlutterJNI {
   @Nullable private AccessibilityDelegate accessibilityDelegate;
   @Nullable private PlatformMessageHandler platformMessageHandler;
   @Nullable private PlatformViewsController platformViewsController;
-  
+
   @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
 
@@ -782,7 +782,7 @@ public class FlutterJNI {
     ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
-        "platformViewsController must be set before attempting to position a platform view");
+          "platformViewsController must be set before attempting to position a platform view");
     }
     platformViewsController.onDisplayPlatformView(viewId, x, y, width, height);
   }
