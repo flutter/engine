@@ -361,6 +361,28 @@ static jobject GetBitmap(JNIEnv* env, jobject jcaller, jlong shell_holder) {
                                      bitmap_config);
 }
 
+static jobject GetOnDisplayPlatformView(JNIEnv* env,
+                                        jobject jcaller,
+                                        jint x,
+                                        jint y,
+                                        jint width,
+                                        jint height) {
+  g_flutter_jni_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
+  if (g_flutter_jni_class->is_null()) {
+    FML_LOG(ERROR) << "Failed to find FlutterJNI Class.";
+    return nullptr;
+  }
+
+  jmethodID display_platform_view = env->GetStaticMethodID(
+      g_flutter_jni_class, "onDisplayPlatformView", "()V");
+  if (create_bitmap == nullptr) {
+    return nullptr;
+  }
+
+  return env->CallStaticObjectMethod(display_platform_view);
+}
+
 static void DispatchPlatformMessage(JNIEnv* env,
                                     jobject jcaller,
                                     jlong shell_holder,
@@ -561,6 +583,11 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeGetBitmap",
           .signature = "(J)Landroid/graphics/Bitmap;",
           .fnPtr = reinterpret_cast<void*>(&GetBitmap),
+      },
+      {
+          .name = "nativeOnDisplayPlatformView",
+          .signature = "(IIIII)V",
+          .fnPtr = reinterpret_cast<void*>(&GetOnDisplayPlatformView),
       },
       {
           .name = "nativeSurfaceCreated",
