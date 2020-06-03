@@ -571,7 +571,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrContext* gr_context,
   // Reset the composition order, so next frame starts empty.
   composition_order_.clear();
 
-  did_submit &= background_canvas->Submit();
+  did_submit &= frame->Submit();
 
   return did_submit;
 }
