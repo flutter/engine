@@ -24,12 +24,12 @@ class Vertices : public RefCountedDartWrappable<Vertices> {
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
-  bool init(Dart_Handle vertices_handle,
-            SkVertices::VertexMode vertex_mode,
-            const tonic::Float32List& positions,
-            const tonic::Float32List& texture_coordinates,
-            const tonic::Int32List& colors,
-            const tonic::Uint16List& indices);
+  static bool init(Dart_Handle vertices_handle,
+                   SkVertices::VertexMode vertex_mode,
+                   const tonic::Float32List& positions,
+                   const tonic::Float32List& texture_coordinates,
+                   const tonic::Int32List& colors,
+                   const tonic::Uint16List& indices);
 
   const sk_sp<SkVertices>& vertices() const { return vertices_; }
 
