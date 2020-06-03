@@ -142,10 +142,10 @@ source_set("common") {
 
 source_set("common_standalone") {
   sources = [
+    "gl_context_switch.cc",
+    "gl_context_switch.h",
     "surface_frame.cc",
     "surface_frame.h",
-    "gl_context_switch.cc",
-    "gl_context_switch.h"
   ]
 
   deps = [
