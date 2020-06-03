@@ -135,7 +135,8 @@ SkCanvas* IOSSurface::CompositeEmbeddedView(int view_id) {
 bool IOSSurface::SubmitFrame(GrContext* context, std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "IOSSurface::SubmitFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  bool submitted = platform_views_controller_->SubmitFrame(std::move(context), ios_context_, frame);
+  bool submitted =
+      platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame));
 
   if (submitted) {
     TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
