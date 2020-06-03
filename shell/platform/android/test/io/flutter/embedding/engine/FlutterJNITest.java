@@ -48,6 +48,7 @@ public class FlutterJNITest {
     flutterJNI.onDisplayPlatformView(0, 0, 0, 0, 0);
 
     // --- Verify Results ---
+    // The expected callback count when onDisplayPlatformView is called. 
     assertEquals(2, callbackInvocationCount.get());
   }
 }

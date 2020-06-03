@@ -783,9 +783,9 @@ public class FlutterJNI {
   }
   // ----- End Engine Lifecycle Support ----
 
-  @SuppressWarnings("unused")
+  //@SuppressWarnings("unused")
   @UiThread
-  private void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
     ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
