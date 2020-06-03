@@ -533,4 +533,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     vdControllers.clear();
   }
+
+  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {}
 }
