@@ -805,7 +805,7 @@ public class FlutterJNI {
   void onDisplayPlatformView(int id, int x, int y, int width, int height) {
     ensureRunningOnMainThread();
 
-    //TODO(gonzchristian): add function call
+    nativeOnDisplayPlatformView(id, x, y, width, height);
   }
 
   /**
