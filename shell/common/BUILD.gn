@@ -205,12 +205,12 @@ if (enable_unittests) {
     public_deps = [
       "//flutter/flow",
       "//flutter/fml/dart",
+      "//flutter/lib/ui",
       "//flutter/runtime",
       "//flutter/shell",
       "//flutter/shell/common",
       "//flutter/testing",
       "//flutter/testing:dart",
-      "//flutter/lib/ui",
     ]
     defines = []
 
@@ -223,8 +223,8 @@ if (enable_unittests) {
         ]
 
         public_deps += [
-          "//flutter/testing:opengl",
           "//flutter/shell/gpu:gpu_surface_gl",
+          "//flutter/testing:opengl",
         ]
 
         defines += [ "SHELL_ENABLE_GL" ]
@@ -237,8 +237,8 @@ if (enable_unittests) {
         ]
 
         public_deps += [
-          "//flutter/testing:vulkan",
           "//flutter/shell/gpu:gpu_surface_vulkan",
+          "//flutter/testing:vulkan",
           "//flutter/vulkan",
         ]
 

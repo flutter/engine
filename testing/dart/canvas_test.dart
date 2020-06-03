@@ -247,7 +247,6 @@ void main() {
   });
 
   test('Vertex buffer size reflected in picture size for drawVertices', () async {
-    final Image image = await createImage(100, 100);
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
 
