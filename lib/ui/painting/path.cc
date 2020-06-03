@@ -297,4 +297,8 @@ void CanvasPath::clone(Dart_Handle path_handle) {
   path->path_ = path_;
 }
 
+size_t CanvasPath::GetAllocationSize() const {
+  return sizeof(CanvasPath) + path_.approximateBytesUsed();
+}
+
 }  // namespace flutter
