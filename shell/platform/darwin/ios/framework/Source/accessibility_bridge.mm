@@ -33,7 +33,7 @@ FlutterViewController* _Nullable GetFlutterViewControllerForView(UIView* view) {
 
 class DefaultIosDelegate : public AccessibilityBridge::IosDelegate {
  public:
-  bool IsFluterViewControllerPresentingModalViewController(UIView* view) override {
+  bool IsFlutterViewControllerPresentingModalViewController(UIView* view) override {
     FlutterViewController* viewController = GetFlutterViewControllerForView(view);
     if (viewController) {
       return viewController.isPresentingViewController;
@@ -175,7 +175,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
   if (routeChanged) {
-    if (!ios_delegate_->IsFluterViewControllerPresentingModalViewController(view_)) {
+    if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_)) {
       NSString* routeName = [lastAdded routeName];
       ios_delegate_->PostAccessibilityNotification(UIAccessibilityScreenChangedNotification,
                                                    routeName);

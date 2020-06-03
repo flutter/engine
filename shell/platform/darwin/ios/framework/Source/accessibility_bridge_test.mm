@@ -89,8 +89,8 @@ class MockDelegate : public PlatformView::Delegate {
 
 class MockIosDelegate : public AccessibilityBridge::IosDelegate {
  public:
-  bool IsFluterViewControllerPresentingModalViewController(UIView* view) override {
-    return result_IsFluterViewControllerPresentingModalViewController_;
+  bool IsFlutterViewControllerPresentingModalViewController(UIView* view) override {
+    return result_IsFlutterViewControllerPresentingModalViewController_;
   };
 
   void PostAccessibilityNotification(UIAccessibilityNotifications notification,
@@ -100,7 +100,7 @@ class MockIosDelegate : public AccessibilityBridge::IosDelegate {
     }
   }
   std::function<void(UIAccessibilityNotifications, id)> on_PostAccessibilityNotification_;
-  bool result_IsFluterViewControllerPresentingModalViewController_ = false;
+  bool result_IsFlutterViewControllerPresentingModalViewController_ = false;
 };
 }  // namespace
 }  // namespace flutter
@@ -334,7 +334,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
           @"argument" : argument ? argument : [NSNull null],
         }];
       };
-  ios_delegate->result_IsFluterViewControllerPresentingModalViewController_ = true;
+  ios_delegate->result_IsFlutterViewControllerPresentingModalViewController_ = true;
   __block auto bridge =
       std::make_unique<flutter::AccessibilityBridge>(/*view=*/mockFlutterView,
                                                      /*platform_view=*/platform_view.get(),

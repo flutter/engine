@@ -42,7 +42,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
     virtual ~IosDelegate() = default;
     /// Returns true when the FlutterViewController associated with the `view`
     /// is presenting a modal view controller.
-    virtual bool IsFluterViewControllerPresentingModalViewController(UIView* view) = 0;
+    virtual bool IsFlutterViewControllerPresentingModalViewController(UIView* view) = 0;
     virtual void PostAccessibilityNotification(UIAccessibilityNotifications notification,
                                                id argument) = 0;
   };
