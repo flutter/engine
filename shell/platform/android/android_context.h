@@ -30,12 +30,10 @@ class AndroidContext {
   static std::shared_ptr<AndroidContext> Create(
       AndroidRenderingAPI rendering_api);
 
-  AndroidRenderingAPI RenderingApi();
-
-  bool IsValid();
+  AndroidRenderingAPI RenderingApi() const;
 
  private:
-  AndroidRenderingAPI rendering_api_;
+  const AndroidRenderingAPI rendering_api_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidContext);
 };

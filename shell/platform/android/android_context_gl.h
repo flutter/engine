@@ -16,6 +16,13 @@
 
 namespace flutter {
 
+//------------------------------------------------------------------------------
+/// The Android context is used by `AndroidSurfaceGL` to create and manage
+/// EGL surfaces.
+///
+/// This context binds `EGLContext` to the current rendering thread and to the
+/// draw and read `EGLSurface`s.
+///
 class AndroidContextGL : public AndroidContext {
  public:
   AndroidContextGL(AndroidRenderingAPI rendering_api,
@@ -23,34 +30,88 @@ class AndroidContextGL : public AndroidContext {
 
   ~AndroidContextGL();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Allocates an new EGL window surface that is used for on-screen
+  ///             pixels.
+  ///
+  /// @attention  Consumers must tear down the surface by calling
+  ///             `AndroidContextGL::TeardownSurface`.
+  ///
+  /// @return     The window surface.
+  ///
   EGLSurface CreateOnscreenSurface(fml::RefPtr<AndroidNativeWindow> window);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Allocates an 1x1 pbuffer surface that is used for making the
+  ///             offscreen current for texture uploads.
+  ///
+  /// @attention  Consumers must tear down the surface by calling
+  ///             `AndroidContextGL::TeardownSurface`.
+  ///
+  /// @return     The pbuffer surface.
+  ///
   EGLSurface CreateOffscreenSurface();
 
-  void SetEnvironment(fml::RefPtr<AndroidEnvironmentGL>);
-
+  //----------------------------------------------------------------------------
+  /// @return     The Android environment that contains a reference to the
+  /// display.
+  ///
   fml::RefPtr<AndroidEnvironmentGL> Environment() const;
 
+  //----------------------------------------------------------------------------
+  /// @return     Whether the current context is valid. That is, if the EGL
+  /// contexts
+  ///             were successfully created.
+  ///
   bool IsValid() const;
 
+  //----------------------------------------------------------------------------
+  /// @return     Whether the current context was successfully clear.
+  ///
   bool ClearCurrent();
 
-  bool MakeCurrent(EGLSurface surface);
+  //----------------------------------------------------------------------------
+  /// @brief      Binds the EGLContext context to the current rendering thread
+  ///             and to the draw and read surface.
+  ///
+  /// @return     Whether the surface was made current.
+  ///
+  bool MakeCurrent(EGLSurface& surface);
 
-  bool ResourceMakeCurrent(EGLSurface surface);
+  //----------------------------------------------------------------------------
+  /// @brief      Binds the resource EGLContext context to the current rendering
+  ///             thread and to the draw and read surface.
+  ///
+  /// @return     Whether the surface was made current.
+  ///
+  bool ResourceMakeCurrent(EGLSurface& surface);
 
-  bool SwapBuffers(EGLSurface surface);
+  //----------------------------------------------------------------------------
+  /// @brief      This only applies to on-screen surfaces such as those created
+  ///             by `AndroidContextGL::CreateOnscreenSurface`.
+  ///
+  /// @return     Whether the EGL surface color buffer was swapped.
+  ///
+  bool SwapBuffers(EGLSurface& surface);
 
-  SkISize GetSize(EGLSurface surface);
+  //----------------------------------------------------------------------------
+  /// @return     The size of an `EGLSurface`.
+  ///
+  SkISize GetSize(EGLSurface& surface);
 
-  bool TeardownSurface(EGLSurface surface);
+  //----------------------------------------------------------------------------
+  /// @brief      Destroys an `EGLSurface`.
+  ///
+  /// @return     Whether the surface was destroyed.
+  ///
+  bool TeardownSurface(EGLSurface& surface);
 
  private:
   fml::RefPtr<AndroidEnvironmentGL> environment_;
   EGLConfig config_;
   EGLContext context_;
   EGLContext resource_context_;
-  bool valid_;
+  bool valid_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidContextGL);
 };

@@ -9,37 +9,29 @@
 
 namespace flutter {
 
+std::shared_ptr<AndroidContext> CreateContextGL() {
+  auto context_gl = std::make_shared<AndroidContextGL>(
+      AndroidRenderingAPI::kOpenGLES,
+      fml::MakeRefCounted<AndroidEnvironmentGL>());
+  FML_CHECK(context_gl->IsValid()) << "Could not create an Android context GL.";
+  return context_gl;
+}
+
 AndroidContext::AndroidContext(AndroidRenderingAPI rendering_api)
     : rendering_api_(rendering_api) {}
 
 AndroidContext::~AndroidContext() = default;
 
-AndroidRenderingAPI AndroidContext::RenderingApi() {
+AndroidRenderingAPI AndroidContext::RenderingApi() const {
   return rendering_api_;
-}
-
-bool AndroidContext::IsValid() {
-  return true;
 }
 
 std::shared_ptr<AndroidContext> AndroidContext::Create(
     AndroidRenderingAPI rendering_api) {
-  std::shared_ptr<AndroidContext> context;
-  switch (rendering_api) {
-    case AndroidRenderingAPI::kSoftware:
-      context = std::make_shared<AndroidContext>(rendering_api);
-      break;
-    case AndroidRenderingAPI::kOpenGLES:
-      context = std::make_shared<AndroidContextGL>(
-          rendering_api, fml::MakeRefCounted<AndroidEnvironmentGL>());
-      break;
-    case AndroidRenderingAPI::kVulkan:
-      context = std::make_shared<AndroidContext>(rendering_api);
-      break;
+  if (rendering_api == AndroidRenderingAPI::kOpenGLES) {
+    return CreateContextGL();
   }
-  FML_CHECK(context);
-  FML_CHECK(context->IsValid()) << "Could not create an Android context.";
-  return context;
+  return std::make_shared<AndroidContext>(rendering_api);
 }
 
 }  // namespace flutter
