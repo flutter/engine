@@ -729,6 +729,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/system
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyEventChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LifecycleChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LocalizationChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/MouseCursorChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/NavigationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformViewsChannel.java
@@ -756,6 +757,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StringCod
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/FlutterTextUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputConnectionAdaptor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/mouse/MouseCursorPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/AccessibilityEventsDelegate.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformView.java
@@ -853,8 +855,6 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStan
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_codecs_unittest.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_standard_codec_unittest.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/FlutterTestsInfo.plist
-FILE: ../../../flutter/shell/platform/darwin/ios/flutter_unittests.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Flutter.podspec
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h
@@ -1193,10 +1193,12 @@ FILE: ../../../flutter/shell/platform/glfw/public/flutter_glfw.h
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_basic_message_channel.cc
+FILE: ../../../flutter/shell/platform/linux/fl_basic_message_channel_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_codec_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_dart_project.cc
 FILE: ../../../flutter/shell/platform/linux/fl_dart_project_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_engine.cc
@@ -1213,6 +1215,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_method_call.cc
 FILE: ../../../flutter/shell/platform/linux/fl_method_call_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_method_channel.cc
 FILE: ../../../flutter/shell/platform/linux/fl_method_channel_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_method_channel_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_method_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_method_codec_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_method_codec_test.cc
