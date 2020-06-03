@@ -210,6 +210,7 @@ public class FlutterEngine {
     flutterLoader.ensureInitializationComplete(context, dartVmArgs);
 
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
+    flutterJNI.setPlatformViewsController(platformViewsController);
     attachToJni();
 
     this.dartExecutor = new DartExecutor(flutterJNI, context.getAssets());
@@ -443,7 +444,5 @@ public class FlutterEngine {
   public interface EngineLifecycleListener {
     /** Lifecycle callback invoked before a hot restart of the Flutter engine. */
     void onPreEngineRestart();
-
-    void onDisplayPlatformView(int viewId, int x, int y, int width, int height);
   }
 }
