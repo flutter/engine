@@ -102,5 +102,4 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   XCTAssertTrue([object nodeShouldTriggerAnnouncement:&node]);
 }
 
-
 @end
