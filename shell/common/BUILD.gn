@@ -85,8 +85,6 @@ source_set("common") {
     "canvas_spy.h",
     "engine.cc",
     "engine.h",
-    "gl_context_switch.cc",
-    "gl_context_switch.h",
     "isolate_configuration.cc",
     "isolate_configuration.h",
     "persistent_cache.cc",
@@ -146,6 +144,8 @@ source_set("surface_frame") {
   sources = [
     "surface_frame.cc",
     "surface_frame.h",
+    "gl_context_switch.cc",
+    "gl_context_switch.h"
   ]
 
   deps = [
@@ -221,6 +221,7 @@ if (enable_unittests) {
     ]
 
     deps = [
+      ":surface_frame",
       ":shell_unittests_fixtures",
       ":shell_unittests_gpu_configuration",
       "//flutter/assets",
