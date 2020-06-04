@@ -1087,19 +1087,19 @@ class TextRange {
   bool/*!*/ get isNormalized => end >= start;
 
   /// The text before this range.
-  String/*!*/ textBefore(String text) {
+  String/*!*/ textBefore(String/*!*/ text) {
     assert(isNormalized);
     return text.substring(0, start);
   }
 
   /// The text after this range.
-  String/*!*/ textAfter(String text) {
+  String/*!*/ textAfter(String/*!*/ text) {
     assert(isNormalized);
     return text.substring(end);
   }
 
   /// The text inside this range.
-  String/*!*/ textInside(String text) {
+  String/*!*/ textInside(String/*!*/ text) {
     assert(isNormalized);
     return text.substring(start, end);
   }
@@ -1424,15 +1424,15 @@ abstract class Paragraph {
   /// The [boxHeightStyle] and [boxWidthStyle] parameters must not be null.
   ///
   /// See [BoxHeightStyle] and [BoxWidthStyle] for full descriptions of each option.
-  List<TextBox/*!*/>/*!*/ getBoxesForRange(int start, int end,
-      {BoxHeightStyle boxHeightStyle = BoxHeightStyle.tight,
-      BoxWidthStyle boxWidthStyle = BoxWidthStyle.tight});
+  List<TextBox/*!*/>/*!*/ getBoxesForRange(int/*!*/ start, int/*!*/ end,
+      {BoxHeightStyle/*!*/ boxHeightStyle = BoxHeightStyle.tight,
+      BoxWidthStyle/*!*/ boxWidthStyle = BoxWidthStyle.tight});
 
   /// Returns the text position closest to the given offset.
   ///
   /// It does so by performing a binary search to find where the tap occurred
   /// within the text.
-  TextPosition/*!*/ getPositionForOffset(Offset offset);
+  TextPosition/*!*/ getPositionForOffset(Offset/*!*/ offset);
 
   /// Returns the [TextRange] of the word at the given [TextPosition].
   ///
@@ -1440,7 +1440,7 @@ abstract class Paragraph {
   /// have word breaks on both sides. In such cases, this method will return
   /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
   /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
-  TextRange/*!*/ getWordBoundary(TextPosition position);
+  TextRange/*!*/ getWordBoundary(TextPosition/*!*/ position);
 
   /// Returns the [TextRange] of the line at the given [TextPosition].
   ///
@@ -1450,7 +1450,7 @@ abstract class Paragraph {
   ///
   /// This can potentially be expensive, since it needs to compute the line
   /// metrics, so use it sparingly.
-  TextRange/*!*/ getLineBoundary(TextPosition position);
+  TextRange/*!*/ getLineBoundary(TextPosition/*!*/ position);
 
   /// Returns a list of text boxes that enclose all placeholders in the paragraph.
   ///

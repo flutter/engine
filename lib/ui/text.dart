@@ -1972,7 +1972,7 @@ class Paragraph extends NativeFieldWrapperClass2 {
   Float32List _getBoxesForPlaceholders() native 'Paragraph_getRectsForPlaceholders';
 
   /// Returns the text position closest to the given offset.
-  TextPosition/*!*/ getPositionForOffset(Offset offset) {
+  TextPosition/*!*/ getPositionForOffset(Offset/*!*/ offset) {
     final List<int> encoded = _getPositionForOffset(offset.dx, offset.dy);
     return TextPosition(offset: encoded[0], affinity: TextAffinity.values[encoded[1]]);
   }
@@ -1984,7 +1984,7 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// have word breaks on both sides. In such cases, this method will return
   /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
   /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
-  TextRange/*!*/ getWordBoundary(TextPosition position) {
+  TextRange/*!*/ getWordBoundary(TextPosition/*!*/ position) {
     final List<int> boundary = _getWordBoundary(position.offset);
     return TextRange(start: boundary[0], end: boundary[1]);
   }
@@ -1998,11 +1998,11 @@ class Paragraph extends NativeFieldWrapperClass2 {
   ///
   /// This can potentially be expensive, since it needs to compute the line
   /// metrics, so use it sparingly.
-  TextRange/*!*/ getLineBoundary(TextPosition position) {
+  TextRange/*!*/ getLineBoundary(TextPosition/*!*/ position) {
     final List<int> boundary = _getLineBoundary(position.offset);
     return TextRange(start: boundary[0], end: boundary[1]);
   }
-  List<int> _getLineBoundary(int offset) native 'Paragraph_getLineBoundary';
+  List<int/*!*/>/*!*/ _getLineBoundary(int/*!*/ offset) native 'Paragraph_getLineBoundary';
 
   // Redirecting the paint function in this way solves some dependency problems
   // in the C++ code. If we straighten out the C++ dependencies, we can remove
