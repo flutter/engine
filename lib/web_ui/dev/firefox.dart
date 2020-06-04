@@ -12,8 +12,9 @@ import 'package:path/path.dart' as path;
 import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
 
 import 'browser.dart';
-import 'firefox_installer.dart';
 import 'common.dart';
+import 'environment.dart';
+import 'firefox_installer.dart';
 
 /// A class for running an instance of Firefox.
 ///
@@ -51,16 +52,24 @@ user_pref("dom.disable_open_during_load", false);
 user_pref("dom.max_script_run_time", 0);
 ''';
 
+      final Directory temporaryProfileDirectory = Directory(
+          path.join(environment.webUiDartToolDir.path, 'firefox_profile'));
+
       // A good source of various Firefox Command Line options:
       // https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options#Browser
       //
-      var dir = createTempDir();
-      File(path.join(dir, 'prefs.js')).writeAsStringSync(_profile);
+      if (temporaryProfileDirectory.existsSync()) {
+        temporaryProfileDirectory.deleteSync();
+      }
+      temporaryProfileDirectory.createSync(recursive: true);
+
+      File(path.join(temporaryProfileDirectory.path, 'prefs.js'))
+          .writeAsStringSync(_profile);
       bool isMac = Platform.isMacOS;
       var args = [
         url.toString(),
         '--profile',
-        '$dir',
+        '${temporaryProfileDirectory.path}',
         '--headless',
         '-width $kMaxScreenshotWidth',
         '-height $kMaxScreenshotHeight',
@@ -69,14 +78,15 @@ user_pref("dom.max_script_run_time", 0);
         '--start-debugger-server $kDevtoolsPort',
       ];
 
-      final Process process = await Process.start(installation.executable, args,
-          workingDirectory: dir);
+      final Process process =
+          await Process.start(installation.executable, args);
 
       remoteDebuggerCompleter.complete(
           getRemoteDebuggerUrl(Uri.parse('http://localhost:$kDevtoolsPort')));
 
-      unawaited(process.exitCode
-          .then((_) => Directory(dir).deleteSync(recursive: true)));
+      unawaited(process.exitCode.then((_) {
+        temporaryProfileDirectory.deleteSync(recursive: true);
+      }));
 
       return process;
     }, remoteDebuggerCompleter.future);
