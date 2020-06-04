@@ -330,8 +330,9 @@ void fl_engine_send_platform_message(FlEngine* self,
       g_object_unref(task);
       return;
     }
-  } else if (self->engine == nullptr)
+  } else if (self->engine == nullptr) {
     return;
+  }
 
   FlutterPlatformMessage fl_message = {};
   fl_message.struct_size = sizeof(fl_message);
