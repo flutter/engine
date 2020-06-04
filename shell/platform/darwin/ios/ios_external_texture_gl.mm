@@ -84,7 +84,9 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas,
                                kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
   FML_DCHECK(image) << "Failed to create SkImage from Texture.";
   if (image) {
-    canvas.drawImage(image, bounds.x(), bounds.y());
+    SkPaint paint;
+    paint.setFilterQuality(kLow_SkFilterQuality);
+    canvas.drawImage(image, bounds.x(), bounds.y(), &paint);
   }
 }
 
