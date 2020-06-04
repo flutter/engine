@@ -30,13 +30,13 @@ class DummyWindowClient : public WindowClient {
   virtual void Render(Scene* scene) {}
   virtual void UpdateSemantics(SemanticsUpdate* update) {}
   virtual void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) {}
-  virtual FontCollection& GetFontCollection() {
-    return font_collection_;
-  }
+  virtual FontCollection& GetFontCollection() { return font_collection_; }
   virtual void UpdateIsolateDescription(const std::string isolate_name,
                                         int64_t isolate_port) {}
   virtual void SetNeedsReportTimings(bool value) {}
-  virtual std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() { return isolate_data_; }
+  virtual std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() {
+    return isolate_data_;
+  }
 
  private:
   FontCollection font_collection_;
@@ -44,15 +44,15 @@ class DummyWindowClient : public WindowClient {
 };
 
 TEST(PlatformConfigurationTest, PlatformConfigurationInitialization) {
-    DummyWindowClient client;
-    PlatformConfiguration configuration(&client);
+  DummyWindowClient client;
+  PlatformConfiguration configuration(&client);
 
-    ASSERT_NE(configuration.get_window(0), nullptr);
-    ASSERT_NE(configuration.get_screen(0), nullptr);
-    ASSERT_EQ(configuration.get_window(0)->window_id(), 0);
-    ASSERT_EQ(configuration.get_window(0)->screen(), 0);
-    ASSERT_EQ(configuration.get_screen(0)->screen_id(), 0);
+  ASSERT_NE(configuration.get_window(0), nullptr);
+  ASSERT_NE(configuration.get_screen(0), nullptr);
+  ASSERT_EQ(configuration.get_window(0)->window_id(), 0);
+  ASSERT_EQ(configuration.get_window(0)->screen(), 0);
+  ASSERT_EQ(configuration.get_screen(0)->screen_id(), 0);
 }
 
-} // namespace testing
-} // namespace flutter
+}  // namespace testing
+}  // namespace flutter

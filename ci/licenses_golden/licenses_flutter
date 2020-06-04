@@ -396,6 +396,7 @@ FILE: ../../../flutter/lib/ui/ui_dart_state.h
 FILE: ../../../flutter/lib/ui/window.dart
 FILE: ../../../flutter/lib/ui/window/platform_configuration.cc
 FILE: ../../../flutter/lib/ui/window/platform_configuration.h
+FILE: ../../../flutter/lib/ui/window/platform_configuration_unittests.cc
 FILE: ../../../flutter/lib/ui/window/platform_message.cc
 FILE: ../../../flutter/lib/ui/window/platform_message.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response.cc

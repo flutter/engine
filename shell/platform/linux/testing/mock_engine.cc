@@ -201,6 +201,13 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
   return kSuccess;
 }
 
+FlutterEngineResult FlutterEngineSendScreenMetricsEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterScreenMetricsEvent* event) {
+  EXPECT_TRUE(engine->running);
+  return kSuccess;
+}
+
 FlutterEngineResult FlutterEngineSendPointerEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPointerEvent* events,

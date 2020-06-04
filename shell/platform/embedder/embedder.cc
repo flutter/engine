@@ -1114,18 +1114,20 @@ FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
 
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterWindowMetricsEvent* flutter_metrics) {
-  if (engine == nullptr || flutter_metrics == nullptr) {
+    const FlutterWindowMetricsEvent* window_metrics_event) {
+  if (engine == nullptr || window_metrics_event == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
 
-  flutter::ViewportMetrics metrics;
+  flutter::ViewportMetrics viewport_metrics;
 
-  metrics.physical_width = SAFE_ACCESS(flutter_metrics, width, 0.0);
-  metrics.physical_height = SAFE_ACCESS(flutter_metrics, height, 0.0);
+  viewport_metrics.physical_width =
+      SAFE_ACCESS(window_metrics_event, width, 0.0);
+  viewport_metrics.physical_height =
+      SAFE_ACCESS(window_metrics_event, height, 0.0);
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
-             std::move(metrics))
+             std::move(viewport_metrics))
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInvalidArguments,
                                   "Viewport metrics were invalid.");
@@ -1138,20 +1140,21 @@ FlutterEngineResult FlutterEngineSendScreenMetricsEvent(
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
 
-  flutter::ScreenMetrics metrics;
+  flutter::ScreenMetrics screen_metrics;
 
-  metrics.physical_width = SAFE_ACCESS(flutter_metrics, width, 0.0);
-  metrics.physical_height = SAFE_ACCESS(flutter_metrics, height, 0.0);
-  metrics.device_pixel_ratio = SAFE_ACCESS(flutter_metrics, pixel_ratio, 1.0);
+  screen_metrics.physical_width = SAFE_ACCESS(flutter_metrics, width, 0.0);
+  screen_metrics.physical_height = SAFE_ACCESS(flutter_metrics, height, 0.0);
+  screen_metrics.device_pixel_ratio =
+      SAFE_ACCESS(flutter_metrics, pixel_ratio, 1.0);
 
-  if (metrics.device_pixel_ratio <= 0.0) {
+  if (screen_metrics.device_pixel_ratio <= 0.0) {
     return LOG_EMBEDDER_ERROR(
         kInvalidArguments,
         "Device pixel ratio was invalid. It must be greater than zero.");
   }
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetScreenMetrics(
-             std::move(metrics))
+             std::move(screen_metrics))
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInvalidArguments,
                                   "Screen metrics were invalid.");
