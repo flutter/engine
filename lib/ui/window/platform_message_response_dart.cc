@@ -21,13 +21,9 @@ const int kMessageCopyThreshold = 1000;
 
 class DataWrapper {
  public:
-  DataWrapper(void* data) {
-    data_ = data;
-  }
+  DataWrapper(void* data) { data_ = data; }
 
-  ~DataWrapper() {
-    free(data_);
-  }
+  ~DataWrapper() { free(data_); }
 
  private:
   void* data_;
@@ -51,9 +47,9 @@ Dart_Handle WrapByteData(std::unique_ptr<fml::Mapping> mapping) {
     memset(data, 0, size);
     memcpy(data, mapping->GetMapping(), size);
     DataWrapper* wrapper = new DataWrapper(data);
-    return Dart_NewExternalTypedDataWithFinalizer(
-        Dart_TypedData_kByteData, data, size, wrapper, size,
-        MessageDataFinalizer);
+    return Dart_NewExternalTypedDataWithFinalizer(Dart_TypedData_kByteData,
+                                                  data, size, wrapper, size,
+                                                  MessageDataFinalizer);
   }
 }
 
