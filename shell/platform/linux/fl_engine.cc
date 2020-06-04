@@ -226,10 +226,15 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
 
+  g_autofree gchar* assets_path =
+      fl_dart_project_get_assets_path(self->project);
+  g_autofree gchar* icu_data_path =
+      fl_dart_project_get_icu_data_path(self->project);
+
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
-  args.assets_path = fl_dart_project_get_assets_path(self->project);
-  args.icu_data_path = fl_dart_project_get_icu_data_path(self->project);
+  args.assets_path = assets_path;
+  args.icu_data_path = icu_data_path;
   args.platform_message_callback = fl_engine_platform_message_cb;
   args.custom_task_runners = &custom_task_runners;
 
