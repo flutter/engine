@@ -257,7 +257,7 @@ class Color {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static Color/*!*/ lerp(Color/*?*/ a, Color/*?*/ b, double/*!*/ t) {
+  static Color/*?*/ lerp(Color/*?*/ a, Color/*?*/ b, double/*!*/ t) {
     assert(t != null);
     if (a == null && b == null)
       return null;
@@ -4124,7 +4124,7 @@ class Picture extends NativeFieldWrapperClass2 {
   ///
   /// Although the image is returned synchronously, the picture is actually
   /// rasterized the first time the image is drawn and then cached.
-  Future<Image> toImage(int/*!*/ width, int/*!*/ height) {
+  Future<Image/*!*/>/*!*/ toImage(int/*!*/ width, int/*!*/ height) {
     if (width <= 0 || height <= 0)
       throw Exception('Invalid image dimensions.');
     return _futurize(
@@ -4288,7 +4288,7 @@ class Shadow {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   /// {@endtemplate}
-  static Shadow/*!*/ lerp(Shadow/*?*/ a, Shadow/*?*/ b, double/*!*/ t) {
+  static Shadow/*?*/ lerp(Shadow/*?*/ a, Shadow/*?*/ b, double/*!*/ t) {
     assert(t != null);
     if (a == null && b == null)
       return null;
