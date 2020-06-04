@@ -153,7 +153,6 @@ fml::TimePoint SessionConnection::CalculateNextLatchPoint(
     if (latch_point >= minimum_latch_point_to_target) {
       return latch_point;
     }
-
   }
 
   // We could not find a suitable latch point in the list given to us from
