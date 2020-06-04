@@ -354,6 +354,7 @@ FILE: ../../../flutter/lib/ui/painting/single_frame_codec.cc
 FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
+FILE: ../../../flutter/lib/ui/painting/vertices_unittests.cc
 FILE: ../../../flutter/lib/ui/plugins.dart
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.cc
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.h
@@ -616,6 +617,8 @@ FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
 FILE: ../../../flutter/shell/common/surface.cc
 FILE: ../../../flutter/shell/common/surface.h
+FILE: ../../../flutter/shell/common/surface_frame.cc
+FILE: ../../../flutter/shell/common/surface_frame.h
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
 FILE: ../../../flutter/shell/common/thread_host.cc
