@@ -1566,7 +1566,7 @@ enum PixelFormat {
 }
 
 class _ImageInfo {
-  _ImageInfo(this.width, this.height, this.format, int/*?*/ rowBytes) : this.rowBytes = rowBytes ?? width * 4;
+  _ImageInfo(this.width, this.height, this.format, int/*?*/ rowBytes) : rowBytes = rowBytes ?? width * 4;
 
   @pragma('vm:entry-point', 'get')
   int/*!*/ width;
