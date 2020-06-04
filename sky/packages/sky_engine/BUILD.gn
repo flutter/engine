@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk_nnbd.gni")
+import("//build/fuchsia/sdk.gni")
 import("//flutter/build/dart/rules.gni")
 import("//flutter/lib/ui/dart_ui.gni")
 import("//third_party/dart/sdk_nnbd/lib/_http/http_sources.gni")
