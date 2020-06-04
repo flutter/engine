@@ -46,7 +46,7 @@ public class FlutterJNITest {
     assertEquals(1, callbackInvocationCount.get());
   }
 
-  @Test 
+  @Test
   public void onDisplayPlatformView__callsPlatformViewsController() {
     PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
 
@@ -55,10 +55,11 @@ public class FlutterJNITest {
 
     // --- Execute Test ---
     flutterJNI.onDisplayPlatformView(
-      /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+        /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
 
     // --- Verify Results ---
-    verify(platformViewsController, times(1)).onDisplayPlatformView(
-      /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+    verify(platformViewsController, times(1))
+        .onDisplayPlatformView(
+            /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
   }
 }

@@ -118,7 +118,7 @@ void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj) {
   FML_CHECK(CheckException(env));
 }
 
-static jmethodID g_on_position_platform_view_method = nullptr;
+static jmethodID g_on_display_platform_view_method = nullptr;
 void FlutterViewOnDisplayPlatformView(JNIEnv* env,
                                       jobject obj,
                                       jint view_id,
@@ -126,7 +126,7 @@ void FlutterViewOnDisplayPlatformView(JNIEnv* env,
                                       jint y,
                                       jint width,
                                       jint height) {
-  env->CallVoidMethod(obj, g_on_position_platform_view_method, view_id, x, y,
+  env->CallVoidMethod(obj, g_on_display_platform_view_method, view_id, x, y,
                       width, height);
   FML_CHECK(CheckException(env));
 }

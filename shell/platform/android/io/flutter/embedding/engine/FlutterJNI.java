@@ -415,7 +415,7 @@ public class FlutterJNI {
     ensureRunningOnMainThread();
     this.platformViewsController = platformViewsController;
   }
-  
+
   // ------ Start Accessibility Support -----
   /**
    * Sets the {@link AccessibilityDelegate} for the attached Flutter context.
@@ -783,7 +783,7 @@ public class FlutterJNI {
   }
   // ----- End Engine Lifecycle Support ----
 
-  //@SuppressWarnings("unused")
+  // @SuppressWarnings("unused")
   @UiThread
   public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
     ensureRunningOnMainThread();
