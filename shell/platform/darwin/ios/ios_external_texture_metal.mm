@@ -45,10 +45,12 @@ void IOSExternalTextureMetal::Paint(SkCanvas& canvas,
   }
 
   if (external_image_) {
+    SkPaint paint;
+    paint.setFilterQuality(kLow_SkFilterQuality);
     canvas.drawImageRect(external_image_,                                      // image
                          external_image_->bounds(),                            // source rect
                          bounds,                                               // destination rect
-                         nullptr,                                              // paint
+                         &paint,                                               // paint
                          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint  // constraint
     );
   }

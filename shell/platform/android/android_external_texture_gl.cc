@@ -64,7 +64,9 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
       transformAroundCenter.postTranslate(0.5, 0.5);
       canvas.concat(transformAroundCenter);
     }
-    canvas.drawImage(image, 0, 0);
+    SkPaint paint;
+    paint.setFilterQuality(kLow_SkFilterQuality);
+    canvas.drawImage(image, 0, 0, &paint);
   }
 }
 
