@@ -80,7 +80,7 @@ class PlatformViewAndroid final : public PlatformView {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<flutter::PlatformMessageResponse>>
       pending_responses_;
-  std::vector<std::string>* platform_resolved_locale_;
+  std::vector<std::string> platform_resolved_locale_;
 
   // |PlatformView|
   void UpdateSemantics(

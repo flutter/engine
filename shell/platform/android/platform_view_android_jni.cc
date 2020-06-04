@@ -145,20 +145,18 @@ void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj) {
 }
 
 static jmethodID g_compute_platform_resolved_locale_method = nullptr;
-std::vector<std::string> FlutterViewComputePlatformResolvedLocale(
-    JNIEnv* env,
-    jobject obj,
-    jobjectArray strings) {
+std::string FlutterViewComputePlatformResolvedLocale(JNIEnv* env,
+                                                     jobject obj,
+                                                     jobjectArray strings) {
   std::vector<std::string> vec = fml::jni::StringArrayToVector(env, strings);
-  jobjectArray result = static_cast<jobjectArray>(env->CallObjectMethod(
-      obj, g_compute_platform_resolved_locale_method, strings));
-  FML_DLOG(ERROR) << "RESULT:::::::::::::::: " << result << " " << strings
-                  << " " << env << " " << vec.size();
-  // for (size_t i = 0; i < vec.size(); i++) {
-  //   FML_DLOG(ERROR) << "LOCALE COMPONENT: " << vec[i];
-  // }
+  jstring result = (jstring)env->CallObjectMethod(
+      obj, g_compute_platform_resolved_locale_method, strings);
+
   FML_CHECK(CheckException(env));
-  return fml::jni::StringArrayToVector(env, result);
+
+  std::string out = fml::jni::JavaStringToString(env, result);
+  return out;
+  // return out;
 }
 
 // Called By Java
@@ -808,8 +806,11 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   g_compute_platform_resolved_locale_method = env->GetMethodID(
       g_flutter_jni_class->obj(), "computePlatformResolvedLocale",
-      "([Ljava/lang/String;)[Ljava/lang/String;");
+      "([Ljava/lang/String;)Ljava/lang/String;");
 
+  FML_LOG(ERROR) << "DISCOVERED computePlatformResolvedLocale ID: "
+                 << g_compute_platform_resolved_locale_method << " "
+                 << g_detach_from_gl_context_method;
   if (g_compute_platform_resolved_locale_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate computePlatformResolvedLocale method";
     return false;

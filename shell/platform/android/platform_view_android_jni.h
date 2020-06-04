@@ -46,10 +46,9 @@ void SurfaceTextureGetTransformMatrix(JNIEnv* env,
 
 void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj);
 
-std::vector<std::string> FlutterViewComputePlatformResolvedLocale(
-    JNIEnv* env,
-    jobject obj,
-    jobjectArray strings);
+std::string FlutterViewComputePlatformResolvedLocale(JNIEnv* env,
+                                                     jobject obj,
+                                                     jobjectArray strings);
 
 }  // namespace flutter
 

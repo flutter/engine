@@ -792,22 +792,20 @@ public class FlutterJNI {
    * Invoked by native to obtain the results of Android's locale reoslution algorithm.
    */
   @SuppressWarnings("unused")
-  @UiThread
-  private String[] computePlatformResolvedLocale(@NonNull String[] strings) {
-    ensureRunningOnMainThread();
-
+  private String computePlatformResolvedLocale(@NonNull String[] strings) {
     List<Locale> supportedLocales = new ArrayList<Locale>();
-    for (int i = 0; i < strings.length / 2; i++) {
-      supportedLocales.add(new Locale(strings[i * 2 + 0], strings[i * 2 + 1]));
+    final int localeDataLength = 2;
+    for (int i = 0; i < strings.length / localeDataLength; i++) {
+      String languageCode = strings[i * localeDataLength + 0];
+      String countryCode = strings[i * localeDataLength + 1];
+      if (countryCode.isEmpty()) {
+        supportedLocales.add(new Locale(languageCode));
+      } else {
+        supportedLocales.add(new Locale(languageCode, countryCode));
+      }
     }
     Locale result = LocalizationPlugin.resolveNativeLocale(supportedLocales);
-    String[] output = new String[2];
-    output[0] = result.getLanguage();
-    output[1] = result.getCountry();
-    return output;
-    // if (accessibilityDelegate != null) {
-    //   accessibilityDelegate.updateSemantics(buffer, strings);
-    // }
+    return result.getLanguage() + result.getCountry();
   }
 
   // ----- End Localizaation Support ----

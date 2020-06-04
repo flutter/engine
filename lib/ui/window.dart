@@ -816,8 +816,9 @@ class Window {
     }
 
     List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
-    if (result != null && result.length == 2) {
-      return Locale.fromSubtags(languageCode: result[0], countryCode: result[1]);
+
+    if (result != null) {
+      return result.length == 1 ? Locale.fromSubtags(languageCode: result[0]) : Locale.fromSubtags(languageCode: result[0], countryCode: result[1]);
     }
     return null;
   }

@@ -425,9 +425,7 @@ void Window::CompletePlatformMessageResponse(int response_id,
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
-Dart_Handle ComputePlatformResolvedLocale(
-    // std::vector<std::string>& supportedLocalesData) {
-    Dart_Handle supportedLocalesHandle) {
+Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
   intptr_t length;
   Dart_ListLength(supportedLocalesHandle, &length);
   size_t u_length = static_cast<size_t>(length);
@@ -441,10 +439,13 @@ Dart_Handle ComputePlatformResolvedLocale(
       UIDartState::Current()->window()->client()->ComputePlatformResolvedLocale(
           supportedLocales);
 
+  // Convert to dart List of strings.
   Dart_Handle output = Dart_NewListOf(Dart_CoreType_String, results.size());
   for (size_t i = 0; i < results.size(); i++) {
     Dart_ListSetAt(output, i, tonic::ToDart(results[i]));
   }
+
+  Dart_ListLength(output, &length);
   return output;
 }
 
