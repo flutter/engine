@@ -170,7 +170,7 @@ class Color {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static Color/*!*/ lerp(Color/*?*/ a, Color/*?*/ b, double/*!*/ t) {
+  static Color/*?*/ lerp(Color/*?*/ a, Color/*?*/ b, double/*!*/ t) {
     assert(t != null);
     if (a == null && b == null) {
       return null;
@@ -1758,7 +1758,7 @@ class Shadow {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   /// {@endtemplate}
-  static Shadow/*!*/ lerp(Shadow/*?*/ a, Shadow/*?*/ b, double/*!*/ t) {
+  static Shadow/*?*/ lerp(Shadow/*?*/ a, Shadow/*?*/ b, double/*!*/ t) {
     assert(t != null);
     if (a == null && b == null) {
       return null;
