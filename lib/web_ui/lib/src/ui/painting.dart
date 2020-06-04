@@ -1604,7 +1604,7 @@ String/*?*/ _instantiateImageCodec(
   return null;
 }
 
-Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri/*!*/ uri,
+Future<Codec/*?*/> webOnlyInstantiateImageCodecFromUrl(Uri/*!*/ uri,
     {engine.WebOnlyImageCodecChunkCallback/*?*/ chunkCallback}) {
   return engine.futurize((engine.Callback<Codec> callback) =>
       _instantiateImageCodecFromUrl(uri, chunkCallback, callback));
