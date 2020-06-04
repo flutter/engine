@@ -19,28 +19,42 @@ namespace {
 // Avoid copying the contents of messages beyond a certain size.
 const int kMessageCopyThreshold = 1000;
 
+class DataWrapper {
+ public:
+  DataWrapper(void* data) {
+    data_ = data;
+  }
+
+  ~DataWrapper() {
+    free(data_);
+  }
+
+ private:
+  void* data_;
+};
+
 void MessageDataFinalizer(void* isolate_callback_data,
                           Dart_WeakPersistentHandle handle,
                           void* peer) {
-  std::vector<uint8_t>* data = reinterpret_cast<std::vector<uint8_t>*>(peer);
+  DataWrapper* data = reinterpret_cast<DataWrapper*>(peer);
   delete data;
 }
 
-Dart_Handle WrapByteData(std::vector<uint8_t> data) {
-  if (data.size() < kMessageCopyThreshold) {
+Dart_Handle WrapByteData(std::unique_ptr<fml::Mapping> mapping) {
+  size_t size = mapping->GetSize();
+  if (size < kMessageCopyThreshold) {
+    std::vector<uint8_t> data(size);
+    memcpy(data.data(), mapping->GetMapping(), size);
     return ToByteData(data);
   } else {
-    std::vector<uint8_t>* heap_data = new std::vector<uint8_t>(std::move(data));
+    void* data = malloc(size);
+    memset(data, 0, size);
+    memcpy(data, mapping->GetMapping(), size);
+    DataWrapper* wrapper = new DataWrapper(data);
     return Dart_NewExternalTypedDataWithFinalizer(
-        Dart_TypedData_kByteData, heap_data->data(), heap_data->size(),
-        heap_data, heap_data->size(), MessageDataFinalizer);
+        Dart_TypedData_kByteData, data, size, wrapper, size,
+        MessageDataFinalizer);
   }
-}
-
-Dart_Handle WrapByteData(std::unique_ptr<fml::Mapping> mapping) {
-  std::vector<uint8_t> data(mapping->GetSize());
-  memcpy(data.data(), mapping->GetMapping(), mapping->GetSize());
-  return WrapByteData(std::move(data));
 }
 
 }  // anonymous namespace
