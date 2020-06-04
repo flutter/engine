@@ -3,6 +3,7 @@ package io.flutter.embedding.engine;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.mock;
 
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
