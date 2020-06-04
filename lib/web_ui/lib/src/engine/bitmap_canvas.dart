@@ -26,6 +26,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   ui.Rect _bounds;
+  CrossFrameCache<html.HtmlElement> _elementCache;
 
   /// The amount of padding to add around the edges of this canvas to
   /// ensure that anti-aliased arcs are not clipped.
@@ -116,6 +117,11 @@ class BitmapCanvas extends EngineCanvas {
     _setupInitialTransform();
   }
 
+  /// Setup cache for reusing DOM elements across frames.
+  void setElementCache(CrossFrameCache<html.HtmlElement> cache) {
+    _elementCache = cache;
+  }
+
   void _updateRootElementTransform() {
     // Flutter emits paint operations positioned relative to the parent layer's
     // coordinate system. However, canvas' coordinate system's origin is always
@@ -172,7 +178,11 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPool.clear();
     final int len = _children.length;
     for (int i = 0; i < len; i++) {
-      _children[i].remove();
+      html.Element child = _children[i];
+      // Don't remove children that have been reused by CrossFrameCache.
+      if (child.parent == rootElement) {
+        child.remove();
+      }
     }
     _children.clear();
     _cachedLastStyle = null;
@@ -198,29 +208,12 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   /// Sets the global paint styles to correspond to [paint].
-  void _applyPaint(SurfacePaintData paint) {
-    ContextStateHandle contextHandle = _canvasPool.contextHandle;
-    contextHandle
-      ..lineWidth = paint.strokeWidth ?? 1.0
-      ..blendMode = paint.blendMode
-      ..strokeCap = paint.strokeCap
-      ..strokeJoin = paint.strokeJoin
-      ..filter = _maskFilterToCss(paint.maskFilter);
+  void _setUpPaint(SurfacePaintData paint) {
+    _canvasPool.contextHandle.setUpPaint(paint);
+  }
 
-    if (paint.shader != null) {
-      final EngineGradient engineShader = paint.shader;
-      final Object paintStyle =
-          engineShader.createPaintStyle(_canvasPool.context);
-      contextHandle.fillStyle = paintStyle;
-      contextHandle.strokeStyle = paintStyle;
-    } else if (paint.color != null) {
-      final String colorString = colorToCssString(paint.color);
-      contextHandle.fillStyle = colorString;
-      contextHandle.strokeStyle = colorString;
-    } else {
-      contextHandle.fillStyle = '';
-      contextHandle.strokeStyle = '';
-    }
+  void _tearDownPaint() {
+    _canvasPool.contextHandle.tearDownPaint();
   }
 
   @override
@@ -273,7 +266,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   @override
-  void transform(Float64List matrix4) {
+  void transform(Float32List matrix4) {
     _canvasPool.transform(matrix4);
   }
 
@@ -299,50 +292,58 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.strokeLine(p1, p2);
+    _tearDownPaint();
   }
 
   @override
   void drawPaint(SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.fill();
+    _tearDownPaint();
   }
 
   @override
   void drawRect(ui.Rect rect, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawRect(rect, paint.style);
+    _tearDownPaint();
   }
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawRRect(rrect, paint.style);
+    _tearDownPaint();
   }
 
   @override
   void drawDRRect(ui.RRect outer, ui.RRect inner, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawDRRect(outer, inner, paint.style);
+    _tearDownPaint();
   }
 
   @override
   void drawOval(ui.Rect rect, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawOval(rect, paint.style);
+    _tearDownPaint();
   }
 
   @override
   void drawCircle(ui.Offset c, double radius, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawCircle(c, radius, paint.style);
+    _tearDownPaint();
   }
 
   @override
   void drawPath(ui.Path path, SurfacePaintData paint) {
-    _applyPaint(paint);
+    _setUpPaint(paint);
     _canvasPool.drawPath(path, paint.style);
+    _tearDownPaint();
   }
 
   @override
@@ -353,17 +354,76 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
-    _drawImage(image, p, paint);
+    final html.HtmlElement imageElement = _drawImage(image, p, paint);
+    if (paint.colorFilter != null) {
+      _applyTargetSize(imageElement, image.width.toDouble(),
+          image.height.toDouble());
+    }
     _childOverdraw = true;
-    _canvasPool.allocateExtraCanvas();
+    _canvasPool.closeCurrentCanvas();
+    _cachedLastStyle = null;
   }
 
-  html.ImageElement _drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
+  html.ImageElement _reuseOrCreateImage(HtmlImage htmlImage) {
+    final String cacheKey = htmlImage.imgElement.src;
+    if (_elementCache != null) {
+      html.ImageElement imageElement = _elementCache.reuse(cacheKey);
+      if (imageElement != null) {
+        return imageElement;
+      }
+    }
+    // Can't reuse, create new instance.
+    html.ImageElement newImageElement = htmlImage.cloneImageElement();
+    if (_elementCache != null) {
+      _elementCache.cache(cacheKey, newImageElement, _onEvictElement);
+    }
+    return newImageElement;
+  }
+
+  static void _onEvictElement(html.HtmlElement element) {
+    element.remove();
+  }
+
+  html.HtmlElement _drawImage(
+      ui.Image image, ui.Offset p, SurfacePaintData paint) {
     final HtmlImage htmlImage = image;
-    final html.Element imgElement = htmlImage.cloneImageElement();
     final ui.BlendMode blendMode = paint.blendMode;
+    final EngineColorFilter colorFilter = paint.colorFilter as EngineColorFilter;
+    final ui.BlendMode colorFilterBlendMode = colorFilter?._blendMode;
+    html.HtmlElement imgElement;
+    if (colorFilterBlendMode == null) {
+      // No Blending, create an image by cloning original loaded image.
+      imgElement = _reuseOrCreateImage(htmlImage);
+    } else {
+      switch (colorFilterBlendMode) {
+        case ui.BlendMode.colorBurn:
+        case ui.BlendMode.colorDodge:
+        case ui.BlendMode.hue:
+        case ui.BlendMode.modulate:
+        case ui.BlendMode.overlay:
+        case ui.BlendMode.plus:
+        case ui.BlendMode.srcIn:
+        case ui.BlendMode.srcATop:
+        case ui.BlendMode.srcOut:
+        case ui.BlendMode.saturation:
+        case ui.BlendMode.color:
+        case ui.BlendMode.luminosity:
+        case ui.BlendMode.xor:
+          imgElement = _createImageElementWithSvgFilter(image,
+              colorFilter._color, colorFilterBlendMode, paint);
+          break;
+        default:
+          imgElement = _createBackgroundImageWithBlend(image,
+              colorFilter._color, colorFilterBlendMode, paint);
+          break;
+      }
+    }
     imgElement.style.mixBlendMode = _stringForBlendMode(blendMode);
     if (_canvasPool.isClipped) {
+      // Reset width/height since they may have been previously set.
+      imgElement.style
+        ..removeProperty('width')
+        ..removeProperty('height');
       final List<html.Element> clipElements = _clipContent(
           _canvasPool._clipStack, imgElement, p, _canvasPool.currentTransform);
       for (html.Element clipElement in clipElements) {
@@ -375,7 +435,10 @@ class BitmapCanvas extends EngineCanvas {
           transformWithOffset(_canvasPool.currentTransform, p).storage);
       imgElement.style
         ..transformOrigin = '0 0 0'
-        ..transform = cssTransform;
+        ..transform = cssTransform
+        // Reset width/height since they may have been previously set.
+        ..removeProperty('width')
+        ..removeProperty('height');
       rootElement.append(imgElement);
       _children.add(imgElement);
     }
@@ -389,10 +452,17 @@ class BitmapCanvas extends EngineCanvas {
         src.top != 0 ||
         src.width != image.width ||
         src.height != image.height;
+    // If source and destination sizes are identical, we can skip the longer
+    // code path that sets the size of the element and clips.
+    //
+    // If there is a color filter set however, we maybe using background-image
+    // to render therefore we have to explicitely set width/height of the
+    // element for blending to work with background-color.
     if (dst.width == image.width &&
         dst.height == image.height &&
-        !requiresClipping) {
-      drawImage(image, dst.topLeft, paint);
+        !requiresClipping &&
+        paint.colorFilter == null) {
+      _drawImage(image, dst.topLeft, paint);
     } else {
       if (requiresClipping) {
         save();
@@ -411,7 +481,8 @@ class BitmapCanvas extends EngineCanvas {
         }
       }
 
-      final html.ImageElement imgElement = _drawImage(image, ui.Offset(targetLeft, targetTop), paint);
+      final html.Element imgElement =
+          _drawImage(image, ui.Offset(targetLeft, targetTop), paint);
       // To scale set width / height on destination image.
       // For clipping we need to scale according to
       // clipped-width/full image width and shift it according to left/top of
@@ -422,15 +493,159 @@ class BitmapCanvas extends EngineCanvas {
         targetWidth *= image.width / src.width;
         targetHeight *= image.height / src.height;
       }
-      final html.CssStyleDeclaration imageStyle = imgElement.style;
-      imageStyle
-        ..width = '${targetWidth.toStringAsFixed(2)}px'
-        ..height = '${targetHeight.toStringAsFixed(2)}px';
+      _applyTargetSize(imgElement, targetWidth, targetHeight);
       if (requiresClipping) {
         restore();
       }
-      _canvasPool.allocateExtraCanvas();
     }
+    _closeCurrentCanvas();
+  }
+
+  void _applyTargetSize(html.HtmlElement imageElement, double targetWidth,
+      double targetHeight) {
+    final html.CssStyleDeclaration imageStyle = imageElement.style;
+    final String widthPx = '${targetWidth.toStringAsFixed(2)}px';
+    final String heightPx = '${targetHeight.toStringAsFixed(2)}px';
+    imageStyle
+      // left,top are set to 0 (although position is absolute) because
+      // Chrome will glitch if you leave them out, reproducable with
+      // canvas_image_blend_test on row 6,  MacOS / Chrome 81.04.
+      ..left = "0px"
+      ..top = "0px"
+      ..width = widthPx
+      ..height = heightPx;
+    if (imageElement is! html.ImageElement) {
+      imageElement.style.backgroundSize = '$widthPx $heightPx';
+    }
+  }
+
+  // Creates a Div element to render an image using background-image css
+  // attribute to be able to use background blend mode(s) when possible.
+  //
+  // Example: <div style="
+  //               position:absolute;
+  //               background-image:url(....);
+  //               background-blend-mode:"darken"
+  //               background-color: #RRGGBB">
+  //
+  // Special cases:
+  // For clear,dstOut it generates a blank element.
+  // For src,srcOver it only sets background-color attribute.
+  // For dst,dstIn , it only sets source not background color.
+  html.HtmlElement _createBackgroundImageWithBlend(HtmlImage image,
+      ui.Color filterColor, ui.BlendMode colorFilterBlendMode,
+      SurfacePaintData paint) {
+    // When blending with color we can't use an image element.
+    // Instead use a div element with background image, color and
+    // background blend mode.
+    final html.HtmlElement imgElement = html.DivElement();
+    final html.CssStyleDeclaration style = imgElement.style;
+    switch (colorFilterBlendMode) {
+      case ui.BlendMode.clear:
+      case ui.BlendMode.dstOut:
+        style.position = 'absolute';
+        break;
+      case ui.BlendMode.src:
+      case ui.BlendMode.srcOver:
+        style
+            ..position = 'absolute'
+            ..backgroundColor = colorToCssString(filterColor);
+        break;
+      case ui.BlendMode.dst:
+      case ui.BlendMode.dstIn:
+        style
+          ..position = 'absolute'
+          ..backgroundImage = "url('${image.imgElement.src}')";
+        break;
+      default:
+        style
+          ..position = 'absolute'
+          ..backgroundImage = "url('${image.imgElement.src}')"
+          ..backgroundBlendMode = _stringForBlendMode(colorFilterBlendMode)
+          ..backgroundColor = colorToCssString(filterColor);
+        break;
+    }
+    return imgElement;
+  }
+
+  // Creates an image element and an svg filter to apply on the element.
+  html.HtmlElement _createImageElementWithSvgFilter(HtmlImage image,
+      ui.Color filterColor, ui.BlendMode colorFilterBlendMode,
+      SurfacePaintData paint) {
+    // For srcIn blendMode, we use an svg filter to apply to image element.
+    String svgFilter;
+    switch (colorFilterBlendMode) {
+      case ui.BlendMode.srcIn:
+      case ui.BlendMode.srcATop:
+        svgFilter = _srcInColorFilterToSvg(filterColor);
+        break;
+      case ui.BlendMode.srcOut:
+        svgFilter = _srcOutColorFilterToSvg(filterColor);
+        break;
+      case ui.BlendMode.xor:
+        svgFilter = _xorColorFilterToSvg(filterColor);
+        break;
+      case ui.BlendMode.plus:
+        // Porter duff source + destination.
+        svgFilter = _compositeColorFilterToSvg(filterColor, 0, 1, 1, 0);
+        break;
+      case ui.BlendMode.modulate:
+        // Porter duff source * destination but preserves alpha.
+        svgFilter = _modulateColorFilterToSvg(filterColor);
+        break;
+      case ui.BlendMode.overlay:
+        // Since overlay is the same as hard-light by swapping layers,
+        // pass hard-light blend function.
+        svgFilter = _blendColorFilterToSvg(filterColor, 'hard-light',
+            swapLayers: true);
+        break;
+      // Several of the filters below (although supported) do not render the
+      // same (close but not exact) as native flutter when used as blend mode
+      // for a background-image with a background color. They only look
+      // identical when feBlend is used within an svg filter definition.
+      //
+      // Saturation filter uses destination when source is transparent.
+      // cMax = math.max(r, math.max(b, g));
+      // cMin = math.min(r, math.min(b, g));
+      // delta = cMax - cMin;
+      // lightness = (cMax + cMin) / 2.0;
+      // saturation = delta / (1.0 - (2 * lightness - 1.0).abs());
+      case ui.BlendMode.saturation:
+      case ui.BlendMode.colorDodge:
+      case ui.BlendMode.colorBurn:
+      case ui.BlendMode.hue:
+      case ui.BlendMode.color:
+      case ui.BlendMode.luminosity:
+        svgFilter = _blendColorFilterToSvg(filterColor,
+            _stringForBlendMode(colorFilterBlendMode));
+        break;
+      default:
+        break;
+    }
+    final html.Element filterElement =
+    html.Element.html(svgFilter, treeSanitizer: _NullTreeSanitizer());
+    rootElement.append(filterElement);
+    _children.add(filterElement);
+    final html.HtmlElement imgElement = _reuseOrCreateImage(image);
+    imgElement.style.filter = 'url(#_fcf${_filterIdCounter})';
+    if (colorFilterBlendMode == ui.BlendMode.saturation) {
+      imgElement.style.backgroundColor = colorToCssString(filterColor);
+    }
+    return imgElement;
+  }
+
+  // Should be called when we add new html elements into rootElement so that
+  // paint order is preserved.
+  //
+  // For example if we draw a path and then a paragraph and image:
+  //   - rootElement
+  //   |--- <canvas>
+  //   |--- <p>
+  //   |--- <img>
+  // Any drawing operations after these tags should allocate a new canvas,
+  // instead of drawing into earlier canvas.
+  void _closeCurrentCanvas() {
+    _canvasPool.closeCurrentCanvas();
     _childOverdraw = true;
   }
 
@@ -468,10 +683,11 @@ class BitmapCanvas extends EngineCanvas {
   @override
   void drawParagraph(EngineParagraph paragraph, ui.Offset offset) {
     assert(paragraph._isLaidOut);
-    html.CanvasRenderingContext2D ctx = _canvasPool.context;
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
 
     if (paragraph._drawOnCanvas && _childOverdraw == false) {
+      // !Do not move this assignment above this if clause since, accessing
+      // context will generate extra <canvas> tags.
       final List<EngineLineMetrics> lines = paragraph._measurementResult.lines;
 
       final SurfacePaintData backgroundPaint = paragraph._background?.paintData;
@@ -482,23 +698,24 @@ class BitmapCanvas extends EngineCanvas {
       }
 
       if (style != _cachedLastStyle) {
+        html.CanvasRenderingContext2D ctx = _canvasPool.context;
         ctx.font = style.cssFontString;
         _cachedLastStyle = style;
       }
-      _applyPaint(paragraph._paint.paintData);
-
+      _setUpPaint(paragraph._paint.paintData);
       double y = offset.dy + paragraph.alphabeticBaseline;
       final int len = lines.length;
       for (int i = 0; i < len; i++) {
         _drawTextLine(style, lines[i], offset.dx, y);
         y += paragraph._lineHeight;
       }
+      _tearDownPaint();
+
       return;
     }
 
     final html.Element paragraphElement =
         _drawParagraphElement(paragraph, offset);
-
     if (_canvasPool.isClipped) {
       final List<html.Element> clipElements = _clipContent(
           _canvasPool._clipStack,
@@ -517,12 +734,17 @@ class BitmapCanvas extends EngineCanvas {
       rootElement.append(paragraphElement);
     }
     _children.add(paragraphElement);
+    // If there is a prior sibling such as img prevent left/top shift.
+    paragraphElement.style
+      ..left = "0px"
+      ..top = "0px";
+    _closeCurrentCanvas();
   }
 
   /// Paints the [picture] into this canvas.
   void drawPicture(ui.Picture picture) {
     final EnginePicture enginePicture = picture;
-    enginePicture.recordingCanvas.apply(this);
+    enginePicture.recordingCanvas.apply(this, bounds);
   }
 
   /// Draws vertices on a gl context.
@@ -567,29 +789,35 @@ class BitmapCanvas extends EngineCanvas {
         _canvasPool.currentTransform, vertices, blendMode, paint);
   }
 
+  /// Stores paint data used by [drawPoints]. We cannot use the original paint
+  /// data object because painting style is determined by [ui.PointMode] and
+  /// not by [SurfacePointData.style].
+  static SurfacePaintData _drawPointsPaint = SurfacePaintData()
+    ..strokeCap = ui.StrokeCap.round
+    ..strokeJoin = ui.StrokeJoin.round
+    ..blendMode = ui.BlendMode.srcOver;
+
   @override
-  void drawPoints(ui.PointMode pointMode, Float32List points,
-      double strokeWidth, ui.Color color) {
-    ContextStateHandle contextHandle = _canvasPool.contextHandle;
-    contextHandle
-      ..lineWidth = strokeWidth
-      ..blendMode = ui.BlendMode.srcOver
-      ..strokeCap = ui.StrokeCap.round
-      ..strokeJoin = ui.StrokeJoin.round
-      ..filter = '';
-    final String cssColor = colorToCssString(color);
+  void drawPoints(ui.PointMode pointMode, Float32List points, SurfacePaintData paint) {
     if (pointMode == ui.PointMode.points) {
-      contextHandle.fillStyle = cssColor;
+      _drawPointsPaint.style = ui.PaintingStyle.stroke;
     } else {
-      contextHandle.strokeStyle = cssColor;
+      _drawPointsPaint.style = ui.PaintingStyle.fill;
     }
-    _canvasPool.drawPoints(pointMode, points, strokeWidth / 2.0);
+    _drawPointsPaint.color = paint.color;
+    _drawPointsPaint.strokeWidth = paint.strokeWidth;
+    _drawPointsPaint.maskFilter = paint.maskFilter;
+
+    _setUpPaint(_drawPointsPaint);
+    _canvasPool.drawPoints(pointMode, points, paint.strokeWidth / 2.0);
+    _tearDownPaint();
   }
 
   @override
   void endOfPaint() {
     assert(_saveCount == 0);
     _canvasPool.endOfPaint();
+    _elementCache?.commitFrame();
   }
 }
 
@@ -767,7 +995,126 @@ List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
   return <html.Element>[root]..addAll(clipDefs);
 }
 
-String _maskFilterToCss(ui.MaskFilter maskFilter) {
-  if (maskFilter == null) return 'none';
-  return 'blur(${maskFilter.webOnlySigma}px)';
+/// Converts a [maskFilter] to the value to be used on a `<canvas>`.
+///
+/// Only supported in non-WebKit browsers.
+String _maskFilterToCanvasFilter(ui.MaskFilter maskFilter) {
+  assert(
+    browserEngine != BrowserEngine.webkit,
+    'WebKit (Safari) does not support `filter` canvas property.',
+  );
+  if (maskFilter != null) {
+    // Multiply by device-pixel ratio because the canvas' pixel width and height
+    // are larger than its CSS width and height by device-pixel ratio.
+    return 'blur(${maskFilter.webOnlySigma * window.devicePixelRatio}px)';
+  } else {
+    return 'none';
+  }
+}
+
+int _filterIdCounter = 0;
+
+// The color matrix for feColorMatrix element changes colors based on
+// the following:
+//
+// | R' |     | r1 r2 r3 r4 r5 |   | R |
+// | G' |     | g1 g2 g3 g4 g5 |   | G |
+// | B' |  =  | b1 b2 b3 b4 b5 | * | B |
+// | A' |     | a1 a2 a3 a4 a5 |   | A |
+// | 1  |     | 0  0  0  0  1  |   | 1 |
+//
+// R' = r1*R + r2*G + r3*B + r4*A + r5
+// G' = g1*R + g2*G + g3*B + g4*A + g5
+// B' = b1*R + b2*G + b3*B + b4*A + b5
+// A' = a1*R + a2*G + a3*B + a4*A + a5
+String _srcInColorFilterToSvg(ui.Color color) {
+  _filterIdCounter += 1;
+  return '<svg width="0" height="0">'
+      '<filter id="_fcf$_filterIdCounter" '
+      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      '<feColorMatrix values="0 0 0 0 1 ' // Ignore input, set it to absolute.
+          '0 0 0 0 1 '
+          '0 0 0 0 1 '
+          '0 0 0 1 0" result="destalpha"/>' // Just take alpha channel of destination
+      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+      '</feFlood>'
+      '<feComposite in="flood" in2="destalpha" '
+      'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
+      '</feComposite>'
+      '</filter></svg>';
+}
+
+String _srcOutColorFilterToSvg(ui.Color color) {
+  _filterIdCounter += 1;
+  return '<svg width="0" height="0">'
+      '<filter id="_fcf$_filterIdCounter" '
+      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+      '</feFlood>'
+      '<feComposite in="flood" in2="SourceGraphic" operator="out" result="comp">'
+      '</feComposite>'
+      '</filter></svg>';
+}
+
+String _xorColorFilterToSvg(ui.Color color) {
+  _filterIdCounter += 1;
+  return '<svg width="0" height="0">'
+      '<filter id="_fcf$_filterIdCounter" '
+      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+      '</feFlood>'
+      '<feComposite in="flood" in2="SourceGraphic" operator="xor" result="comp">'
+      '</feComposite>'
+      '</filter></svg>';
+}
+
+// The source image and color are composited using :
+// result = k1 *in*in2 + k2*in + k3*in2 + k4.
+String _compositeColorFilterToSvg(ui.Color color, double k1, double k2, double k3 , double k4) {
+  _filterIdCounter += 1;
+  return '<svg width="0" height="0">'
+      '<filter id="_fcf$_filterIdCounter" '
+      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+      '</feFlood>'
+      '<feComposite in="flood" in2="SourceGraphic" '
+      'operator="arithmetic" k1="$k1" k2="$k2" k3="$k3" k4="$k4" result="comp">'
+      '</feComposite>'
+      '</filter></svg>';
+}
+
+// Porter duff source * destination , keep source alpha.
+// First apply color filter to source to change it to [color], then
+// composite using multiplication.
+String _modulateColorFilterToSvg(ui.Color color) {
+  _filterIdCounter += 1;
+  final double r = color.red / 255.0;
+  final double b = color.blue / 255.0;
+  final double g = color.green / 255.0;
+  return '<svg width="0" height="0">'
+      '<filter id="_fcf$_filterIdCounter" '
+      'filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">'
+      '<feColorMatrix values="0 0 0 0 $r ' // Ignore input, set it to absolute.
+      '0 0 0 0 $g '
+      '0 0 0 0 $b '
+      '0 0 0 1 0" result="recolor"/>'
+      '<feComposite in="recolor" in2="SourceGraphic" '
+      'operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="comp">'
+      '</feComposite>'
+      '</filter></svg>';
+}
+
+// Uses feBlend element to blend source image with a color.
+String _blendColorFilterToSvg(ui.Color color, String feBlend,
+    {bool swapLayers = false}) {
+  _filterIdCounter += 1;
+  return '<svg width="0" height="0">'
+      '<filter id="_fcf$_filterIdCounter" filterUnits="objectBoundingBox" '
+      'x="0%" y="0%" width="100%" height="100%">'
+      '<feFlood flood-color="${colorToCssString(color)}" flood-opacity="1" result="flood">'
+      '</feFlood>' +
+      (swapLayers
+      ? '<feBlend in="SourceGraphic" in2="flood" mode="$feBlend"/>'
+      : '<feBlend in="flood" in2="SourceGraphic" mode="$feBlend"/>') +
+      '</filter></svg>';
 }

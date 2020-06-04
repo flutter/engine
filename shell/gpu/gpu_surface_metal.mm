@@ -39,31 +39,29 @@ bool GPUSurfaceMetal::IsValid() {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame_size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Metal surface was invalid.";
     return nullptr;
   }
 
-  if (size.isEmpty()) {
+  if (frame_size.isEmpty()) {
     FML_LOG(ERROR) << "Metal surface was asked for an empty frame.";
     return nullptr;
   }
 
-  const auto bounds = layer_.get().bounds.size;
-  const auto scale = layer_.get().contentsScale;
-  if (bounds.width <= 0.0 || bounds.height <= 0.0 || scale <= 0.0) {
-    FML_LOG(ERROR) << "Metal layer bounds were invalid.";
-    return nullptr;
-  }
+  const auto drawable_size = CGSizeMake(frame_size.width(), frame_size.height());
 
-  const auto scaled_bounds = CGSizeMake(bounds.width * scale, bounds.height * scale);
+  if (!CGSizeEqualToSize(drawable_size, layer_.get().drawableSize)) {
+    layer_.get().drawableSize = drawable_size;
+  }
 
   ReleaseUnusedDrawableIfNecessary();
 
-  if (!CGSizeEqualToSize(scaled_bounds, layer_.get().drawableSize)) {
-    layer_.get().drawableSize = scaled_bounds;
-  }
+  // When there are platform views in the scene, the drawable needs to be presented in the same
+  // transaction as the one created for platform views. When the drawable are being presented from
+  // the raster thread, there is no such transaction.
+  layer_.get().presentsWithTransaction = [[NSThread currentThread] isMainThread];
 
   auto surface = SkSurface::MakeFromCAMetalLayer(context_.get(),            // context
                                                  layer_.get(),              // layer
@@ -82,14 +80,17 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
 
   auto submit_callback = [this](const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
     TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
+    if (canvas == nullptr) {
+      FML_DLOG(ERROR) << "Canvas not available.";
+      return false;
+    }
+
     canvas->flush();
 
     if (next_drawable_ == nullptr) {
       FML_DLOG(ERROR) << "Could not acquire next Metal drawable from the SkSurface.";
       return false;
     }
-
-    const auto has_external_view_embedder = delegate_->GetExternalViewEmbedder() != nullptr;
 
     auto command_buffer =
         fml::scoped_nsprotocol<id<MTLCommandBuffer>>([[command_queue_.get() commandBuffer] retain]);
@@ -98,21 +99,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& size)
         reinterpret_cast<id<CAMetalDrawable>>(next_drawable_));
     next_drawable_ = nullptr;
 
-    // External views need to present with transaction. When presenting with
-    // transaction, we have to block, otherwise we risk presenting the drawable
-    // after the CATransaction has completed.
-    // See:
-    // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction
-    // TODO(dnfield): only do this if transactions are actually being used.
-    // https://github.com/flutter/flutter/issues/24133
-    if (!has_external_view_embedder) {
-      [command_buffer.get() presentDrawable:drawable.get()];
-      [command_buffer.get() commit];
-    } else {
-      [command_buffer.get() commit];
-      [command_buffer.get() waitUntilScheduled];
-      [drawable.get() present];
-    }
+    [command_buffer.get() commit];
+    [command_buffer.get() waitUntilScheduled];
+    [drawable.get() present];
+
     return true;
   };
 

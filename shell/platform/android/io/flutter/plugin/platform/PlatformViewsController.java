@@ -10,13 +10,13 @@ import static android.view.MotionEvent.PointerProperties;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.annotation.UiThread;
-import android.support.annotation.VisibleForTesting;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import androidx.annotation.NonNull;
+import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
@@ -216,7 +216,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             throw new IllegalStateException(
                 "Sending touch to an unknown view with id: " + touch.viewId);
           }
-          View view = vdControllers.get(touch.viewId).getView();
 
           MotionEvent event =
               MotionEvent.obtain(
@@ -235,7 +234,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                   touch.source,
                   touch.flags);
 
-          view.dispatchTouchEvent(event);
+          vdControllers.get(touch.viewId).dispatchTouchEvent(event);
         }
 
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -404,7 +403,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return registry;
   }
 
-  public void onFlutterViewDestroyed() {
+  /**
+   * Invoked when the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@link
+   * PlatformViewsController} attaches to JNI.
+   */
+  public void onAttachedToJNI() {
+    // Currently no action needs to be taken after JNI attachment.
+  }
+
+  /**
+   * Invoked when the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@link
+   * PlatformViewsController} detaches from JNI.
+   */
+  public void onDetachedFromJNI() {
+    // Dispose all virtual displays so that any future updates to textures will not be
+    // propagated to the native peer.
     flushAllViews();
   }
 

@@ -5,15 +5,19 @@
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 
 #include <assert.h>
+#include <io.h>
 
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
+#include "flutter/shell/platform/common/cpp/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/dpi_utils.h"
 #include "flutter/shell/platform/windows/key_event_handler.h"
@@ -26,6 +30,33 @@
 
 static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 
+// Attempts to load AOT data from the given path, which must be absolute and
+// non-empty. Logs and returns nullptr on failure.
+UniqueAotDataPtr LoadAotData(std::filesystem::path aot_data_path) {
+  if (aot_data_path.empty()) {
+    std::cerr
+        << "Attempted to load AOT data, but no aot_library_path was provided."
+        << std::endl;
+    return nullptr;
+  }
+  if (!std::filesystem::exists(aot_data_path)) {
+    std::cerr << "Can't load AOT data from " << aot_data_path.u8string()
+              << "; no such file." << std::endl;
+    return nullptr;
+  }
+  std::string path_string = aot_data_path.u8string();
+  FlutterEngineAOTDataSource source = {};
+  source.type = kFlutterEngineAOTDataSourceTypeElfPath;
+  source.elf_path = path_string.c_str();
+  FlutterEngineAOTData data = nullptr;
+  auto result = FlutterEngineCreateAOTData(&source, &data);
+  if (result != kSuccess) {
+    std::cerr << "Failed to load AOT data from: " << path_string << std::endl;
+    return nullptr;
+  }
+  return UniqueAotDataPtr(data);
+}
+
 // Spins up an instance of the Flutter Engine.
 //
 // This function launches the Flutter Engine in a background thread, supplying
@@ -36,18 +67,16 @@ static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 // engine.
 static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
     flutter::Win32FlutterWindow* window,
-    const char* assets_path,
-    const char* icu_data_path,
-    const char** arguments,
-    size_t arguments_count) {
+    const FlutterDesktopEngineProperties& engine_properties) {
   auto state = std::make_unique<FlutterDesktopEngineState>();
 
   // FlutterProjectArgs is expecting a full argv, so when processing it for
   // flags the first item is treated as the executable and ignored. Add a dummy
   // value so that all provided arguments are used.
   std::vector<const char*> argv = {"placeholder"};
-  if (arguments_count > 0) {
-    argv.insert(argv.end(), &arguments[0], &arguments[arguments_count]);
+  if (engine_properties.switches_count > 0) {
+    argv.insert(argv.end(), &engine_properties.switches[0],
+                &engine_properties.switches[engine_properties.switches_count]);
   }
 
   window->CreateRenderSurface();
@@ -105,10 +134,45 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
 
+  std::filesystem::path assets_path(engine_properties.assets_path);
+  std::filesystem::path icu_path(engine_properties.icu_data_path);
+  std::filesystem::path aot_library_path =
+      engine_properties.aot_library_path == nullptr
+          ? std::filesystem::path()
+          : std::filesystem::path(engine_properties.aot_library_path);
+  if (assets_path.is_relative() || icu_path.is_relative() ||
+      (!aot_library_path.empty() && aot_library_path.is_relative())) {
+    // Treat relative paths as relative to the directory of this executable.
+    std::filesystem::path executable_location =
+        flutter::GetExecutableDirectory();
+    if (executable_location.empty()) {
+      std::cerr
+          << "Unable to find executable location to resolve resource paths."
+          << std::endl;
+      return nullptr;
+    }
+    assets_path = std::filesystem::path(executable_location) / assets_path;
+    icu_path = std::filesystem::path(executable_location) / icu_path;
+    if (!aot_library_path.empty()) {
+      aot_library_path =
+          std::filesystem::path(executable_location) / aot_library_path;
+    }
+  }
+  std::string assets_path_string = assets_path.u8string();
+  std::string icu_path_string = icu_path.u8string();
+
+  if (FlutterEngineRunsAOTCompiledDartCode()) {
+    state->aot_data = LoadAotData(aot_library_path);
+    if (!state->aot_data) {
+      std::cerr << "Unable to start engine without AOT data." << std::endl;
+      return nullptr;
+    }
+  }
+
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
-  args.assets_path = assets_path;
-  args.icu_data_path = icu_data_path;
+  args.assets_path = assets_path_string.c_str();
+  args.icu_data_path = icu_path_string.c_str();
   args.command_line_argc = static_cast<int>(argv.size());
   args.command_line_argv = &argv[0];
   args.platform_message_callback =
@@ -118,6 +182,9 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
     return window->HandlePlatformMessage(engine_message);
   };
   args.custom_task_runners = &custom_task_runners;
+  if (state->aot_data) {
+    args.aot_data = state->aot_data.get();
+  }
 
   FLUTTER_API_SYMBOL(FlutterEngine) engine = nullptr;
   auto result =
@@ -132,18 +199,13 @@ static std::unique_ptr<FlutterDesktopEngineState> RunFlutterEngine(
 }
 
 FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
-    int initial_width,
-    int initial_height,
-    const char* assets_path,
-    const char* icu_data_path,
-    const char** arguments,
-    size_t argument_count) {
+    int width,
+    int height,
+    const FlutterDesktopEngineProperties& engine_properties) {
   FlutterDesktopViewControllerRef state =
-      flutter::Win32FlutterWindow::CreateWin32FlutterWindow(initial_width,
-                                                            initial_height);
+      flutter::Win32FlutterWindow::CreateWin32FlutterWindow(width, height);
 
-  auto engine_state = RunFlutterEngine(
-      state->view.get(), assets_path, icu_data_path, arguments, argument_count);
+  auto engine_state = RunFlutterEngine(state->view.get(), engine_properties);
 
   if (!engine_state) {
     return nullptr;
@@ -151,6 +213,26 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
   state->view->SetState(engine_state->engine);
   state->engine_state = std::move(engine_state);
   return state;
+}
+
+FlutterDesktopViewControllerRef FlutterDesktopCreateViewControllerLegacy(
+    int initial_width,
+    int initial_height,
+    const char* assets_path,
+    const char* icu_data_path,
+    const char** arguments,
+    size_t argument_count) {
+  std::filesystem::path assets_path_fs = std::filesystem::u8path(assets_path);
+  std::filesystem::path icu_data_path_fs =
+      std::filesystem::u8path(icu_data_path);
+  FlutterDesktopEngineProperties engine_properties = {};
+  engine_properties.assets_path = assets_path_fs.c_str();
+  engine_properties.icu_data_path = icu_data_path_fs.c_str();
+  engine_properties.switches = arguments;
+  engine_properties.switches_count = argument_count;
+
+  return FlutterDesktopCreateViewController(initial_width, initial_height,
+                                            engine_properties);
 }
 
 uint64_t FlutterDesktopProcessMessages(
@@ -191,12 +273,20 @@ UINT FlutterDesktopGetDpiForMonitor(HMONITOR monitor) {
   return flutter::GetDpiForMonitor(monitor);
 }
 
-FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
-                                                const char* icu_data_path,
-                                                const char** arguments,
-                                                size_t argument_count) {
-  auto engine = RunFlutterEngine(nullptr, assets_path, icu_data_path, arguments,
-                                 argument_count);
+void FlutterDesktopResyncOutputStreams() {
+  FILE* unused;
+  if (freopen_s(&unused, "CONOUT$", "w", stdout)) {
+    _dup2(_fileno(stdout), 1);
+  }
+  if (freopen_s(&unused, "CONOUT$", "w", stderr)) {
+    _dup2(_fileno(stdout), 2);
+  }
+  std::ios::sync_with_stdio();
+}
+
+FlutterDesktopEngineRef FlutterDesktopRunEngine(
+    const FlutterDesktopEngineProperties& engine_properties) {
+  auto engine = RunFlutterEngine(nullptr, engine_properties);
   return engine.release();
 }
 
@@ -216,6 +306,12 @@ void FlutterDesktopRegistrarEnableInputBlocking(
 FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
     FlutterDesktopPluginRegistrarRef registrar) {
   return registrar->messenger.get();
+}
+
+void FlutterDesktopRegistrarSetDestructionHandler(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopOnRegistrarDestroyed callback) {
+  registrar->destruction_handler = callback;
 }
 
 FlutterDesktopViewRef FlutterDesktopRegistrarGetView(

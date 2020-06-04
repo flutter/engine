@@ -25,7 +25,7 @@ FLUTTER_EXPORT
 /**
  * Called when the texture is unregistered.
  *
- * Called on the GPU thread.
+ * Called on the raster thread.
  */
 @optional
 - (void)onTextureUnregistered:(NSObject<FlutterTexture>*)texture;
@@ -38,17 +38,19 @@ FLUTTER_EXPORT
 @protocol FlutterTextureRegistry <NSObject>
 /**
  * Registers a `FlutterTexture` for usage in Flutter and returns an id that can be used to reference
- * that texture when calling into Flutter with channels.
+ * that texture when calling into Flutter with channels. Textures must be registered on the
+ * platform thread.
  */
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture;
 /**
  * Notifies Flutter that the content of the previously registered texture has been updated.
  *
- * This will trigger a call to `-[FlutterTexture copyPixelBuffer]` on the GPU thread.
+ * This will trigger a call to `-[FlutterTexture copyPixelBuffer]` on the raster thread.
  */
 - (void)textureFrameAvailable:(int64_t)textureId;
 /**
- * Unregisters a `FlutterTexture` that has previously regeistered with `registerTexture:`.
+ * Unregisters a `FlutterTexture` that has previously regeistered with `registerTexture:`. Textures
+ * must be unregistered on the the platform thread.
  *
  * @param textureId The result that was previously returned from `registerTexture:`.
  */

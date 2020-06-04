@@ -9,9 +9,6 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcel;
-import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
@@ -20,6 +17,9 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.accessibility.AccessibilityRecord;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -44,7 +44,7 @@ import java.util.Map;
  * corresponding platform view and `originId`.
  */
 @Keep
-final class AccessibilityViewEmbedder {
+class AccessibilityViewEmbedder {
   private static final String TAG = "AccessibilityBridge";
 
   private final ReflectionAccessors reflectionAccessors;
@@ -385,6 +385,18 @@ final class AccessibilityViewEmbedder {
             event.getSource(),
             event.getFlags());
     return origin.view.dispatchGenericMotionEvent(translatedEvent);
+  }
+
+  /**
+   * Returns the View that contains the accessibility node identified by the provided flutterId or
+   * null if it doesn't belong to a view.
+   */
+  public View platformViewOfNode(int flutterId) {
+    ViewAndId viewAndId = flutterIdToOrigin.get(flutterId);
+    if (viewAndId == null) {
+      return null;
+    }
+    return viewAndId.view;
   }
 
   private static class ViewAndId {

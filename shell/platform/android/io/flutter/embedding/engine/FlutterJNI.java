@@ -9,13 +9,13 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.os.Looper;
-import android.support.annotation.Keep;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.UiThread;
-import android.support.annotation.VisibleForTesting;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
@@ -103,10 +103,15 @@ public class FlutterJNI {
       @NonNull String[] args,
       @Nullable String bundlePath,
       @NonNull String appStoragePath,
-      @NonNull String engineCachesPath);
+      @NonNull String engineCachesPath,
+      long initTimeMillis);
 
-  // TODO(mattcarroll): add javadocs
-  public static native void nativeRecordStartTimestamp(long initTimeMillis);
+  /**
+   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
+   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
+   * noticeable time, but later calls will return a reference to the preexisting font manager.
+   */
+  public static native void nativePrefetchDefaultFontManager();
 
   // TODO(mattcarroll): add javadocs
   @UiThread
@@ -145,6 +150,20 @@ public class FlutterJNI {
   // TODO(mattcarroll): add javadocs
   @NonNull
   public static native FlutterCallbackInformation nativeLookupCallbackInformation(long handle);
+
+  // ----- Start FlutterTextUtils Methods ----
+
+  public native boolean nativeFlutterTextUtilsIsEmoji(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsEmojiModifier(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsEmojiModifierBase(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsVariationSelector(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsRegionalIndicator(int codePoint);
+
+  // ----- End Engine FlutterTextUtils Methods ----
 
   @Nullable private Long nativePlatformViewId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;

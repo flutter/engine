@@ -13,10 +13,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
-import android.arch.lifecycle.Lifecycle;
 import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
+import androidx.lifecycle.Lifecycle;
 import io.flutter.embedding.android.FlutterActivityAndFragmentDelegate.Host;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
@@ -27,9 +27,11 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
+import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import org.junit.Before;
 import org.junit.Test;
@@ -220,7 +222,18 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itGivesHostAnOpportunityToConfigureFlutterTextureView() {
     // ---- Test setup ----
     Host customMockHost = mock(Host.class);
+    when(customMockHost.getContext()).thenReturn(RuntimeEnvironment.application);
+    when(customMockHost.getActivity()).thenReturn(Robolectric.setupActivity(Activity.class));
+    when(customMockHost.getLifecycle()).thenReturn(mock(Lifecycle.class));
+    when(customMockHost.getFlutterShellArgs()).thenReturn(new FlutterShellArgs(new String[] {}));
+    when(customMockHost.getDartEntrypointFunctionName()).thenReturn("main");
+    when(customMockHost.getAppBundlePath()).thenReturn("/fake/path");
+    when(customMockHost.getInitialRoute()).thenReturn("/");
     when(customMockHost.getRenderMode()).thenReturn(RenderMode.texture);
+    when(customMockHost.getTransparencyMode()).thenReturn(TransparencyMode.transparent);
+    when(customMockHost.provideFlutterEngine(any(Context.class))).thenReturn(mockFlutterEngine);
+    when(customMockHost.shouldAttachEngineToActivity()).thenReturn(true);
+    when(customMockHost.shouldDestroyEngineWithHost()).thenReturn(true);
 
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate =
@@ -602,6 +615,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(engine.getLifecycleChannel()).thenReturn(mock(LifecycleChannel.class));
     when(engine.getNavigationChannel()).thenReturn(mock(NavigationChannel.class));
     when(engine.getSystemChannel()).thenReturn(mock(SystemChannel.class));
+    when(engine.getTextInputChannel()).thenReturn(mock(TextInputChannel.class));
+    when(engine.getMouseCursorChannel()).thenReturn(mock(MouseCursorChannel.class));
     when(engine.getActivityControlSurface()).thenReturn(mock(ActivityControlSurface.class));
 
     return engine;

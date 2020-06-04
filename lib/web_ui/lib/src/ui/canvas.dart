@@ -460,10 +460,10 @@ class Canvas {
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
-    _transform(matrix4);
+    _transform(engine.toMatrix32(matrix4));
   }
 
-  void _transform(Float64List matrix4) {
+  void _transform(Float32List matrix4) {
     _canvas.transform(matrix4);
   }
 
@@ -747,9 +747,10 @@ class Canvas {
     assert(engine.rectIsValid(dst));
     assert(paint != null);
 
-    // Assert you can fit the scaled image into dst.
-    assert(image.width - center.width >= dst.width);
-    assert(image.height - center.height >= dst.height);
+    // Assert you can fit the scaled part of the image (exluding the
+    // center source).
+    assert(image.width - center.width < dst.width);
+    assert(image.height - center.height < dst.height);
 
     // The four unscaled corner rectangles in the from the src.
     final Rect srcTopLeft = Rect.fromLTWH(
@@ -963,7 +964,9 @@ class Canvas {
   }
 
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
-    if (vertices == null) return;
+    if (vertices == null) {
+      return;
+    }
     //assert(vertices != null); // vertices is checked on the engine side
     assert(paint != null);
     assert(blendMode != null);

@@ -66,6 +66,11 @@ struct PrerollContext {
   float total_elevation = 0.0f;
   bool has_platform_view = false;
   bool is_opaque = true;
+#if defined(OS_FUCHSIA)
+  // True if, during the traversal so far, we have seen a child_scene_layer.
+  // Informs whether a layer needs to be system composited.
+  bool child_scene_layer_exists_below = false;
+#endif  // defined(OS_FUCHSIA)
 };
 
 // Represents a single composited layer. Created on the UI thread but then
@@ -84,7 +89,7 @@ class Layer {
   // destruction.
   class AutoPrerollSaveLayerState {
    public:
-    FML_WARN_UNUSED_RESULT static AutoPrerollSaveLayerState Create(
+    [[nodiscard]] static AutoPrerollSaveLayerState Create(
         PrerollContext* preroll_context,
         bool save_layer_is_active = true,
         bool layer_itself_performs_readback = false);
@@ -133,12 +138,11 @@ class Layer {
   // draws a checkerboard over the layer if that is enabled in the PaintContext.
   class AutoSaveLayer {
    public:
-    FML_WARN_UNUSED_RESULT static AutoSaveLayer Create(
-        const PaintContext& paint_context,
-        const SkRect& bounds,
-        const SkPaint* paint);
+    [[nodiscard]] static AutoSaveLayer Create(const PaintContext& paint_context,
+                                              const SkRect& bounds,
+                                              const SkPaint* paint);
 
-    FML_WARN_UNUSED_RESULT static AutoSaveLayer Create(
+    [[nodiscard]] static AutoSaveLayer Create(
         const PaintContext& paint_context,
         const SkCanvas::SaveLayerRec& layer_rec);
 
@@ -161,6 +165,7 @@ class Layer {
 #if defined(OS_FUCHSIA)
   // Updates the system composited scene.
   virtual void UpdateScene(SceneUpdateContext& context);
+  virtual void CheckForChildLayerBelow(PrerollContext* context);
 #endif
 
   bool needs_system_composite() const { return needs_system_composite_; }
@@ -179,6 +184,11 @@ class Layer {
   bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
   uint64_t unique_id() const { return unique_id_; }
+
+ protected:
+#if defined(OS_FUCHSIA)
+  bool child_layer_exists_below_ = false;
+#endif
 
  private:
   SkRect paint_bounds_;

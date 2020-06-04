@@ -35,10 +35,6 @@ class PhysicalShapeLayer : public ContainerLayer {
     return clip_behavior_ == Clip::antiAliasWithSaveLayer;
   }
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
-
   float total_elevation() const { return total_elevation_; }
 
  private:

@@ -16,7 +16,7 @@
 #include "third_party/skia/include/core/SkClipOp.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
-#include "third_party/skia/include/core/SkMatrix44.h"
+#include "third_party/skia/include/core/SkM44.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
@@ -57,7 +57,7 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
   };
 
   struct ConcatMatrix44Data {
-    SkMatrix44 matrix;
+    SkM44 matrix;
   };
 
   struct SetMatrixData {
@@ -145,7 +145,7 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
   void willRestore() override;
   void didRestore() override {}
   void didConcat(const SkMatrix& matrix) override;
-  void didConcat44(const SkScalar matrix[]) override;
+  void didConcat44(const SkM44&) override;
   void didScale(SkScalar x, SkScalar y) override;
   void didTranslate(SkScalar x, SkScalar y) override;
   void didSetMatrix(const SkMatrix& matrix) override;
@@ -195,11 +195,6 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
                  bool,
                  const SkPaint&) override;
   void onDrawRRect(const SkRRect&, const SkPaint&) override;
-  void onDrawBitmapRect(const SkBitmap&,
-                        const SkRect*,
-                        const SkRect&,
-                        const SkPaint*,
-                        SrcRectConstraint) override;
   void onDrawImage(const SkImage* image,
                    SkScalar x,
                    SkScalar y,
@@ -213,25 +208,11 @@ class MockCanvas : public SkCanvasVirtualEnforcer<SkCanvas> {
                        const SkIRect&,
                        const SkRect&,
                        const SkPaint*) override;
-  void onDrawBitmap(const SkBitmap& bitmap,
-                    SkScalar x,
-                    SkScalar y,
-                    const SkPaint* paint) override;
-  void onDrawBitmapNine(const SkBitmap&,
-                        const SkIRect&,
-                        const SkRect&,
-                        const SkPaint*) override;
   void onDrawImageLattice(const SkImage*,
                           const Lattice&,
                           const SkRect&,
                           const SkPaint*) override;
-  void onDrawBitmapLattice(const SkBitmap&,
-                           const Lattice&,
-                           const SkRect&,
-                           const SkPaint*) override;
   void onDrawVerticesObject(const SkVertices*,
-                            const SkVertices::Bone[],
-                            int,
                             SkBlendMode,
                             const SkPaint&) override;
   void onDrawAtlas(const SkImage*,

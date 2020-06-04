@@ -71,7 +71,7 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void didConcat(const SkMatrix&) override;
-  void didConcat44(const SkScalar[]) override;
+  void didConcat44(const SkM44&) override;
   void didScale(SkScalar, SkScalar) override;
   void didTranslate(SkScalar, SkScalar) override;
 
@@ -128,19 +128,6 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
   void onDrawPath(const SkPath&, const SkPaint&) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawBitmap(const SkBitmap&,
-                    SkScalar left,
-                    SkScalar top,
-                    const SkPaint*) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawBitmapRect(const SkBitmap&,
-                        const SkRect* src,
-                        const SkRect& dst,
-                        const SkPaint*,
-                        SrcRectConstraint) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawImage(const SkImage*,
                    SkScalar left,
                    SkScalar top,
@@ -152,12 +139,6 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
                        const SkRect& dst,
                        const SkPaint*,
                        SrcRectConstraint) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawBitmapLattice(const SkBitmap&,
-                           const Lattice&,
-                           const SkRect&,
-                           const SkPaint*) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawImageLattice(const SkImage*,
@@ -172,15 +153,7 @@ class DidDrawCanvas final : public SkCanvasVirtualEnforcer<SkNoDrawCanvas> {
                        const SkPaint*) override;
 
   // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
-  void onDrawBitmapNine(const SkBitmap&,
-                        const SkIRect& center,
-                        const SkRect& dst,
-                        const SkPaint*) override;
-
-  // |SkCanvasVirtualEnforcer<SkNoDrawCanvas>|
   void onDrawVerticesObject(const SkVertices*,
-                            const SkVertices::Bone bones[],
-                            int boneCount,
                             SkBlendMode,
                             const SkPaint&) override;
 

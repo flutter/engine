@@ -129,7 +129,9 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 }
 
 // |ExternalViewEmbedder|
-bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
+bool EmbedderExternalViewEmbedder::SubmitFrame(
+    GrContext* context,
+    std::unique_ptr<SurfaceFrame> frame) {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
 
@@ -210,7 +212,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
   //
   // @warning: Embedder may trample on our OpenGL context here.
   if (context) {
-    context->flush();
+    context->flushAndSubmit();
   }
 
   // Submit the scribbled layer to the embedder for presentation.
@@ -262,7 +264,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(GrContext* context) {
                                            std::move(render_target.second));
   }
 
-  return true;
+  return frame->Submit();
 }
 
 }  // namespace flutter

@@ -4,7 +4,7 @@
 
 // @dart = 2.6
 import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart';
+import 'package:ui/ui.dart' hide window;
 
 import 'package:test/test.dart';
 
@@ -12,18 +12,20 @@ void testEachMeasurement(String description, VoidCallback body, {bool skip}) {
   test('$description (dom measurement)', () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
+      WebExperiments.instance.useCanvasText = false;
       return body();
     } finally {
+      WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
   }, skip: skip);
   test('$description (canvas measurement)', () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
-      TextMeasurementService.enableExperimentalCanvasImplementation = true;
+      WebExperiments.instance.useCanvasText = true;
       return body();
     } finally {
-      TextMeasurementService.enableExperimentalCanvasImplementation = false;
+      WebExperiments.instance.useCanvasText = null;
       TextMeasurementService.clearCache();
     }
   }, skip: skip);
@@ -184,7 +186,7 @@ void main() async {
   test('getPositionForOffset multi-line', () {
     // [Paragraph.getPositionForOffset] for multi-line text doesn't work well
     // with dom-based measurement.
-    TextMeasurementService.enableExperimentalCanvasImplementation = true;
+    WebExperiments.instance.useCanvasText = true;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -280,11 +282,11 @@ void main() async {
     );
 
     TextMeasurementService.clearCache();
-    TextMeasurementService.enableExperimentalCanvasImplementation = false;
+    WebExperiments.instance.useCanvasText = null;
   });
 
   test('getPositionForOffset multi-line centered', () {
-    TextMeasurementService.enableExperimentalCanvasImplementation = true;
+    WebExperiments.instance.useCanvasText = true;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -387,7 +389,7 @@ void main() async {
     );
 
     TextMeasurementService.clearCache();
-    TextMeasurementService.enableExperimentalCanvasImplementation = false;
+    WebExperiments.instance.useCanvasText = null;
   });
 
   testEachMeasurement('getBoxesForRange returns a box', () {
@@ -410,6 +412,25 @@ void main() async {
         10,
         TextDirection.rtl,
       ),
+    );
+  });
+
+  testEachMeasurement('getBoxesForRange returns a box for rich text', () {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: 10,
+      textDirection: TextDirection.ltr,
+    ));
+    builder.addText('abcd');
+    builder.pushStyle(TextStyle(fontWeight: FontWeight.bold));
+    builder.addText('xyz');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 1000));
+    expect(
+      paragraph.getBoxesForRange(1, 2).single,
+      const TextBox.fromLTRBD(0, 0, 0, 10, TextDirection.ltr),
     );
   });
 
@@ -782,7 +803,7 @@ void main() async {
 
   test('longestLine', () {
     // [Paragraph.longestLine] is only supported by canvas-based measurement.
-    TextMeasurementService.enableExperimentalCanvasImplementation = true;
+    WebExperiments.instance.useCanvasText = true;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -797,7 +818,7 @@ void main() async {
     expect(paragraph.longestLine, 50.0);
 
     TextMeasurementService.clearCache();
-    TextMeasurementService.enableExperimentalCanvasImplementation = false;
+    WebExperiments.instance.useCanvasText = null;
   });
 
   testEachMeasurement('getLineBoundary (single-line)', () {
@@ -824,7 +845,7 @@ void main() async {
   test('getLineBoundary (multi-line)', () {
     // [Paragraph.getLineBoundary] for multi-line paragraphs is only supported
     // by canvas-based measurement.
-    TextMeasurementService.enableExperimentalCanvasImplementation = true;
+    WebExperiments.instance.useCanvasText = true;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -867,7 +888,7 @@ void main() async {
     }
 
     TextMeasurementService.clearCache();
-    TextMeasurementService.enableExperimentalCanvasImplementation = false;
+    WebExperiments.instance.useCanvasText = null;
   });
 
   testEachMeasurement('width should be a whole integer', () {

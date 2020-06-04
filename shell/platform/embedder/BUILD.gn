@@ -24,7 +24,6 @@ template("embedder_source_set") {
   source_set(target_name) {
     sources = [
       "embedder.cc",
-      "embedder.h",
       "embedder_engine.cc",
       "embedder_engine.h",
       "embedder_external_texture_gl.cc",
@@ -71,7 +70,12 @@ template("embedder_source_set") {
       "//flutter/shell/common",
       "//flutter/third_party/tonic",
       "//third_party/dart/runtime/bin:dart_io_api",
+      "//third_party/dart/runtime/bin:elf_loader",
       "//third_party/skia",
+    ]
+
+    public_deps = [
+      ":embedder_headers",
     ]
 
     public_configs += [ "//flutter:config" ]
@@ -82,12 +86,28 @@ embedder_source_set("embedder") {
   public_configs = []
 }
 
-embedder_source_set("embedder_with_symbol_prefix") {
-  public_configs = [ ":embedder_prefix_config" ]
+embedder_source_set("embedder_as_internal_library") {
+  public_configs = [ ":embedder_internal_library_config" ]
 }
 
-config("embedder_prefix_config") {
-  defines = [ "FLUTTER_API_SYMBOL_PREFIX=Embedder" ]
+source_set("embedder_headers") {
+  public = [
+    "embedder.h",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
+# For using the embedder API as internal implementation detail of an
+# embedding.
+config("embedder_internal_library_config") {
+  defines = [
+    # Use prefixed symbols to avoid collisions with higher level API.
+    "FLUTTER_API_SYMBOL_PREFIX=Embedder",
+
+    # Don't export the embedder.h API surface.
+    "FLUTTER_NO_EXPORT",
+  ]
 }
 
 test_fixtures("fixtures") {

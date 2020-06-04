@@ -25,17 +25,6 @@ shell_gpu_configuration("fuchsia_gpu_configuration") {
 # 1. Kernel snapshot framework mode.
 # 2. Profiler symbols.
 
-# Dependencies for flutter tooling
-#
-# While not required to run a flutter mod, these allow interacting
-# with flutter via the fx tool and need to be built.
-#
-# This is only for builds in topaz tree.
-flutter_tool_deps = []
-if (!using_fuchsia_sdk) {
-  flutter_tool_deps += [ "//third_party/dart-pkg/git/flutter/packages/flutter_tools:fuchsia_attach($host_toolchain)" ]
-}
-
 flutter_runner("jit") {
   output_name = "flutter_jit_runner"
   product = false
@@ -45,14 +34,10 @@ flutter_runner("jit") {
     extra_defines += [ "FLUTTER_PROFILE" ]
   }
 
-  if (enable_vulkan_validation_layers) {
-    extra_defines += [ "VULKAN_VALIDATION_LAYERS_ENABLED" ]
-  }
-
   extra_deps = [
-                 "//third_party/dart/runtime:libdart_jit",
-                 "//third_party/dart/runtime/platform:libdart_platform_jit",
-               ] + flutter_tool_deps
+    "//third_party/dart/runtime:libdart_jit",
+    "//third_party/dart/runtime/platform:libdart_platform_jit",
+  ]
 }
 
 flutter_runner("jit_product") {
@@ -60,10 +45,6 @@ flutter_runner("jit_product") {
   product = true
 
   extra_defines = [ "DART_PRODUCT" ]
-
-  if (enable_vulkan_validation_layers) {
-    extra_defines += [ "VULKAN_VALIDATION_LAYERS_ENABLED" ]
-  }
 
   extra_deps = [
     "//third_party/dart/runtime:libdart_jit_product",
@@ -80,10 +61,6 @@ flutter_runner("aot") {
     extra_defines += [ "FLUTTER_PROFILE" ]
   }
 
-  if (enable_vulkan_validation_layers) {
-    extra_defines += [ "VULKAN_VALIDATION_LAYERS_ENABLED" ]
-  }
-
   extra_deps = [
     "//third_party/dart/runtime:libdart_precompiled_runtime",
     "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
@@ -95,10 +72,6 @@ flutter_runner("aot_product") {
   product = true
 
   extra_defines = [ "DART_PRODUCT" ]
-
-  if (enable_vulkan_validation_layers) {
-    extra_defines += [ "VULKAN_VALIDATION_LAYERS_ENABLED" ]
-  }
 
   extra_deps = [
     "//third_party/dart/runtime:libdart_precompiled_runtime_product",
@@ -299,6 +272,8 @@ executable("flutter_runner_unittests") {
     "accessibility_bridge.h",
     "accessibility_bridge_unittest.cc",
     "flutter_runner_fakes.h",
+    "flutter_runner_product_configuration.cc",
+    "flutter_runner_product_configuration.h",
     "fuchsia_intl.cc",
     "fuchsia_intl.h",
     "fuchsia_intl_unittest.cc",
@@ -317,6 +292,7 @@ executable("flutter_runner_unittests") {
     "task_observers.h",
     "task_runner_adapter.cc",
     "task_runner_adapter.h",
+    "tests/flutter_runner_product_configuration_unittests.cc",
     "tests/vsync_recorder_unittests.cc",
     "thread.cc",
     "thread.h",

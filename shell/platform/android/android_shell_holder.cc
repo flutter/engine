@@ -45,13 +45,13 @@ AndroidShellHolder::AndroidShellHolder(
                                       ThreadHost::Type::IO};
   }
 
-  // Detach from JNI when the UI and GPU threads exit.
+  // Detach from JNI when the UI and raster threads exit.
   auto jni_exit_task([key = thread_destruct_key_]() {
     FML_CHECK(pthread_setspecific(key, reinterpret_cast<void*>(1)) == 0);
   });
   thread_host_.ui_thread->GetTaskRunner()->PostTask(jni_exit_task);
   if (!is_background_view) {
-    thread_host_.gpu_thread->GetTaskRunner()->PostTask(jni_exit_task);
+    thread_host_.raster_thread->GetTaskRunner()->PostTask(jni_exit_task);
   }
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
@@ -79,7 +79,8 @@ AndroidShellHolder::AndroidShellHolder(
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
-    return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
+    return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners(),
+                                        shell.GetIsGpuDisabledSyncSwitch());
   };
 
   // The current thread will be used as the platform thread. Ensure that the
@@ -96,13 +97,13 @@ AndroidShellHolder::AndroidShellHolder(
     ui_runner = single_task_runner;
     io_runner = single_task_runner;
   } else {
-    gpu_runner = thread_host_.gpu_thread->GetTaskRunner();
+    gpu_runner = thread_host_.raster_thread->GetTaskRunner();
     ui_runner = thread_host_.ui_thread->GetTaskRunner();
     io_runner = thread_host_.io_thread->GetTaskRunner();
   }
   flutter::TaskRunners task_runners(thread_label,     // label
                                     platform_runner,  // platform
-                                    gpu_runner,       // gpu
+                                    gpu_runner,       // raster
                                     ui_runner,        // ui
                                     io_runner         // io
   );
@@ -121,10 +122,10 @@ AndroidShellHolder::AndroidShellHolder(
   is_valid_ = shell_ != nullptr;
 
   if (is_valid_) {
-    task_runners.GetGPUTaskRunner()->PostTask([]() {
+    task_runners.GetRasterTaskRunner()->PostTask([]() {
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
-      // set the GPU thread to slightly lower priority than it.
+      // set the raster thread to slightly lower priority than it.
       if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
         // Defensive fallback. Depending on the OEM, it may not be possible
         // to set priority to -5.

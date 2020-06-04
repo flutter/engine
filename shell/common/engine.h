@@ -210,7 +210,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///             is not possible for the application to determine the total
     ///             time it took to render a specific frame. While the
     ///             layer-tree is constructed on the UI thread, it needs to be
-    ///             rendering on the GPU thread. Dart code cannot execute on
+    ///             rendering on the raster thread. Dart code cannot execute on
     ///             this thread. So any instrumentation about the frame times
     ///             gathered on this thread needs to be aggregated and sent back
     ///             to the UI thread for processing in Dart.
@@ -342,8 +342,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   /// @return     The result of the call to run the root isolate.
   ///
-  FML_WARN_UNUSED_RESULT
-  RunStatus Run(RunConfiguration configuration);
+  [[nodiscard]] RunStatus Run(RunConfiguration configuration);
 
   //----------------------------------------------------------------------------
   /// @brief      Tears down an existing root isolate, reuses the components of
@@ -362,8 +361,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @return     Whether the restart was successful. If not, the engine and its
   ///             shell must be discarded.
   ///
-  FML_WARN_UNUSED_RESULT
-  bool Restart(RunConfiguration configuration);
+  [[nodiscard]] bool Restart(RunConfiguration configuration);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Setup default font manager according to specific platform.
+  ///
+  void SetupDefaultFontManager();
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the asset manager referenced by the root isolate of a
@@ -414,7 +417,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///               by layer tree in the engine is 2. If both the UI and GPU
   ///               task runner tasks finish within one frame interval, the
   ///               pipeline depth is one. If the UI thread happens to be
-  ///               working on a frame when the GPU thread is still not done
+  ///               working on a frame when the raster thread is still not done
   ///               with the previous frame, the pipeline depth is 2. When the
   ///               pipeline depth changes from 1 to 2, animations and UI
   ///               interactions that cause the generation of the new layer tree

@@ -18,15 +18,6 @@ const int kMaxScreenshotWidth = 1024;
 const int kMaxScreenshotHeight = 1024;
 const double kMaxDiffRateFailure = 0.28 / 100; // 0.28%
 
-class BrowserInstallerException implements Exception {
-  BrowserInstallerException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
 abstract class PlatformBinding {
   static PlatformBinding get instance {
     if (_instance == null) {
@@ -62,8 +53,8 @@ const String _kBaseDownloadUrl =
 class _WindowsBinding implements PlatformBinding {
   @override
   int getChromeBuild(YamlMap browserLock) {
-    final YamlMap chromeMap = browserLock['chrome'];
-    return chromeMap['Win'];
+    final YamlMap chromeMap = browserLock['chrome'] as YamlMap;
+    return chromeMap['Win'] as int;
   }
 
   @override
@@ -77,11 +68,10 @@ class _WindowsBinding implements PlatformBinding {
   @override
   String getFirefoxDownloadUrl(String version) =>
       'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/win64/en-US/'
-          '${getFirefoxDownloadFilename(version)}';
+      '${getFirefoxDownloadFilename(version)}';
 
   @override
-  String getFirefoxDownloadFilename(String version) =>
-      'firefox-${version}.exe';
+  String getFirefoxDownloadFilename(String version) => 'firefox-${version}.exe';
 
   @override
   String getFirefoxExecutablePath(io.Directory versionDir) =>
@@ -102,8 +92,8 @@ class _WindowsBinding implements PlatformBinding {
 class _LinuxBinding implements PlatformBinding {
   @override
   int getChromeBuild(YamlMap browserLock) {
-    final YamlMap chromeMap = browserLock['chrome'];
-    return chromeMap['Linux'];
+    final YamlMap chromeMap = browserLock['chrome'] as YamlMap;
+    return chromeMap['Linux'] as int;
   }
 
   @override
@@ -117,7 +107,7 @@ class _LinuxBinding implements PlatformBinding {
   @override
   String getFirefoxDownloadUrl(String version) =>
       'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/linux-x86_64/en-US/'
-          '${getFirefoxDownloadFilename(version)}';
+      '${getFirefoxDownloadFilename(version)}';
 
   @override
   String getFirefoxDownloadFilename(String version) =>
@@ -143,8 +133,8 @@ class _LinuxBinding implements PlatformBinding {
 class _MacBinding implements PlatformBinding {
   @override
   int getChromeBuild(YamlMap browserLock) {
-    final YamlMap chromeMap = browserLock['chrome'];
-    return chromeMap['Mac'];
+    final YamlMap chromeMap = browserLock['chrome'] as YamlMap;
+    return chromeMap['Mac'] as int;
   }
 
   @override
@@ -161,16 +151,15 @@ class _MacBinding implements PlatformBinding {
 
   @override
   String getFirefoxDownloadUrl(String version) =>
-    'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/mac/en-US/'
-        '${getFirefoxDownloadFilename(version)}';
+      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/mac/en-US/'
+      '${getFirefoxDownloadFilename(version)}';
 
   @override
-  String getFirefoxDownloadFilename(String version) =>
-      'Firefox ${version}.dmg';
+  String getFirefoxDownloadFilename(String version) => 'Firefox ${version}.dmg';
 
   @override
   String getFirefoxExecutablePath(io.Directory versionDir) =>
-    path.join(versionDir.path, 'Firefox.app','Contents','MacOS', 'firefox');
+      path.join(versionDir.path, 'Firefox.app', 'Contents', 'MacOS', 'firefox');
 
   @override
   String getFirefoxLatestVersionUrl() =>
@@ -185,10 +174,10 @@ class _MacBinding implements PlatformBinding {
 }
 
 class BrowserInstallation {
-  const BrowserInstallation(
-      {@required this.version,
-      @required this.executable,
-      fetchLatestChromeVersion});
+  const BrowserInstallation({
+    @required this.version,
+    @required this.executable,
+  });
 
   /// Browser version.
   final String version;
@@ -223,7 +212,7 @@ class BrowserLock {
   BrowserLock._() {
     final io.File lockFile = io.File(
         path.join(environment.webUiRootDir.path, 'dev', 'browser_lock.yaml'));
-    this._configuration = loadYaml(lockFile.readAsStringSync());
+    this._configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
   }
 }
 
@@ -242,4 +231,12 @@ class DevNull implements StringSink {
   void writeln([Object obj = ""]) {}
 }
 
+/// Whether the felt command is running on Cirrus CI.
 bool get isCirrus => io.Platform.environment['CIRRUS_CI'] == 'true';
+
+/// Whether the felt command is running on LUCI.
+bool get isLuci => io.Platform.environment['LUCI_CONTEXT'] != null;
+
+/// Whether the felt command is running on one of the Continuous Integration
+/// environements.
+bool get isCi => isCirrus || isLuci;

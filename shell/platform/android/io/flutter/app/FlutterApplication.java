@@ -6,12 +6,15 @@ package io.flutter.app;
 
 import android.app.Activity;
 import android.app.Application;
-import android.support.annotation.CallSuper;
+import androidx.annotation.CallSuper;
 import io.flutter.view.FlutterMain;
 
 /**
  * Flutter implementation of {@link android.app.Application}, managing application-level global
  * initializations.
+ *
+ * <p>Using this {@link android.app.Application} is not required when using APIs in the package
+ * {@code io.flutter.embedding.android} since they self-initialize on first use.
  */
 public class FlutterApplication extends Application {
   @Override

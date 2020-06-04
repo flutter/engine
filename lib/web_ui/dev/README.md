@@ -1,7 +1,9 @@
 ## What's `felt`?
+
 `felt` stands for "Flutter Engine Local Tester". It's a cli tool that aims to make development in the Flutter web engine more productive and pleasant.
 
 ## What can `felt` do?
+
 `felt` supports multiple commands as follows:
 
 1. **`felt check-licenses`**: Checks that all Dart and JS source code files contain the correct license headers.
@@ -11,30 +13,62 @@
 You could also run `felt help` or `felt help <command>` to get more information about the available commands and arguments.
 
 ## How can I use `felt`?
+
 Once you have your local copy of the engine [setup](https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment), it's recommended that you add `/path/to/engine/src/flutter/lib/web_ui/dev` to your `PATH`.
 Then you would be able to use the `felt` tool from anywhere:
+
 ```
 felt check-licenses
 ```
+
 or:
+
 ```
 felt build --watch
 ```
 
 If you don't want to add `felt` to your path, you can still invoke it using a relative path like `./web_ui/dev/felt <command>`
 
-## Speeding up your builds
-You can speed up your builds by using more CPU cores. Pass `-j` to specify the desired level of parallelism, like so:
+## Speeding up your builds and tests
+
+You can speed up `ninja` and `dart2js` by adding parallelism and taking advantage of more cores.
+
+To speed up ninja pass `-j` to specify the desired level of parallelism, like so:
+
 ```
 felt build [-w] -j 100
 ```
+
 If you are a Google employee, you can use an internal instance of Goma to parallelize your builds. Because Goma compiles code on remote servers, this option is effective even on low-powered laptops.
 
+By default, when compiling Dart code to JavaScript, we use 4 `dart2js` workers.
+If you need to increase or reduce the number of workers, set the `BUILD_MAX_WORKERS_PER_TASK`
+environment variable to the desired number.
+
 ## Running web engine tests
-To run all tests on Chrome:
+
+To run all tests on Chrome. This will run both integration tests and the unit tests:
 
 ```
 felt test
+```
+
+To run unit tests only:
+
+```
+felt test --unit-tests-only
+```
+
+To run integration tests only. For now these tests are only available on Chrome Desktop browsers. These tests will fetch the flutter repository for using `flutter drive` and `flutter pub get` commands. The repository will be synced to the youngest commit older than the engine commit.
+
+```
+felt test --integration-tests-only
+```
+
+To skip cloning the flutter repository use the following flag. This flag can save internet bandwidth. However use with caution. Note the tests results will not be consistent with CIs when this flag is set. flutter command should be set in the PATH for this flag to be useful. This flag can also be used to test local Flutter changes.
+
+```
+felt test --integration-tests-only --use-system-flutter
 ```
 
 To run tests on Firefox (this will work only on a Linux device):
@@ -55,7 +89,7 @@ To run tests on Safari use the following command. It works on MacOS devices and 
 felt test --browser=safari
 ```
 
-To run tests on Windows Edge use the following command. It works on Windows devices and it uses the Edge installed on the OS. 
+To run tests on Windows Edge use the following command. It works on Windows devices and it uses the Edge installed on the OS.
 
 ```
 felt_windows.bat test --browser=edge
@@ -68,6 +102,7 @@ felt test test/golden_tests/engine/canvas_golden_test.dart
 ```
 
 To debug a test on Chrome:
+
 ```
 felt test --debug test/golden_tests/engine/canvas_golden_test.dart
 ```
@@ -92,7 +127,9 @@ To make sure you are running the `felt` tool with your changes included, you wou
 ```
 FELT_USE_SNAPSHOT=false felt <command>
 ```
+
 or
+
 ```
 FELT_USE_SNAPSHOT=0 felt <command>
 ```

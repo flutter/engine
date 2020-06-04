@@ -88,6 +88,8 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
       << "Please either set --golden-dir, or make sure that the unit test is "
       << "run from the right directory (e.g., flutter/engine/src).";
 
+  // TODO(https://github.com/flutter/flutter/issues/53784): enable this on all
+  // platforms.
 #if !defined(OS_LINUX)
   GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
 #endif  // OS_LINUX
@@ -163,7 +165,7 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
 
   layer->Paint(paint_context());
   auto overlay_text = PerformanceOverlayLayer::MakeStatisticsText(
-      paint_context().raster_time, "GPU", "");
+      paint_context().raster_time, "Raster", "");
   auto overlay_text_data = overlay_text->serialize(SkSerialProcs{});
   SkPaint text_paint;
   text_paint.setColor(SK_ColorGRAY);

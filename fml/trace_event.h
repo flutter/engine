@@ -28,6 +28,10 @@
 #define TRACE_EVENT_ASYNC_BEGIN1(a, b, c, d, e) TRACE_ASYNC_BEGIN(a, b, c, d, e)
 #define TRACE_EVENT_ASYNC_END1(a, b, c, d, e) TRACE_ASYNC_END(a, b, c, d, e)
 #define TRACE_EVENT_INSTANT0(a, b) TRACE_INSTANT(a, b, TRACE_SCOPE_THREAD)
+#define TRACE_EVENT_INSTANT1(a, b, k1, v1) \
+  TRACE_INSTANT(a, b, TRACE_SCOPE_THREAD, k1, v1)
+#define TRACE_EVENT_INSTANT2(a, b, k1, v1, k2, v2) \
+  TRACE_INSTANT(a, b, TRACE_SCOPE_THREAD, k1, v1, k2, v2)
 
 #endif  //  defined(OS_FUCHSIA)
 
@@ -94,6 +98,14 @@
 #define TRACE_EVENT_INSTANT0(category_group, name) \
   ::fml::tracing::TraceEventInstant0(category_group, name);
 
+#define TRACE_EVENT_INSTANT1(category_group, name, arg1_name, arg1_val) \
+  ::fml::tracing::TraceEventInstant1(category_group, name, arg1_name, arg1_val);
+
+#define TRACE_EVENT_INSTANT2(category_group, name, arg1_name, arg1_val, \
+                             arg2_name, arg2_val)                       \
+  ::fml::tracing::TraceEventInstant2(category_group, name, arg1_name,   \
+                                     arg1_val, arg2_name, arg2_val);
+
 #define TRACE_FLOW_BEGIN(category, name, id) \
   ::fml::tracing::TraceEventFlowBegin0(category, name, id);
 
@@ -111,6 +123,16 @@ namespace tracing {
 
 using TraceArg = const char*;
 using TraceIDArg = int64_t;
+
+void TraceSetWhitelist(const std::vector<std::string>& whitelist);
+
+void TraceTimelineEvent(TraceArg category_group,
+                        TraceArg name,
+                        int64_t timestamp_micros,
+                        TraceIDArg id,
+                        Dart_Timeline_Event_Type type,
+                        const std::vector<const char*>& names,
+                        const std::vector<std::string>& values);
 
 void TraceTimelineEvent(TraceArg category_group,
                         TraceArg name,
@@ -207,10 +229,40 @@ void TraceEvent2(TraceArg category_group,
 
 void TraceEventEnd(TraceArg name);
 
+template <typename... Args>
 void TraceEventAsyncComplete(TraceArg category_group,
                              TraceArg name,
                              TimePoint begin,
-                             TimePoint end);
+                             TimePoint end,
+                             Args... args) {
+  auto identifier = TraceNonce();
+  const auto split = SplitArguments(args...);
+
+  if (begin > end) {
+    std::swap(begin, end);
+  }
+
+  const int64_t begin_micros = begin.ToEpochDelta().ToMicroseconds();
+  const int64_t end_micros = end.ToEpochDelta().ToMicroseconds();
+
+  TraceTimelineEvent(category_group,                   // group
+                     name,                             // name
+                     begin_micros,                     // timestamp_micros
+                     identifier,                       // identifier
+                     Dart_Timeline_Event_Async_Begin,  // type
+                     split.first,                      // names
+                     split.second                      // values
+  );
+
+  TraceTimelineEvent(category_group,                 // group
+                     name,                           // name
+                     end_micros,                     // timestamp_micros
+                     identifier,                     // identifier
+                     Dart_Timeline_Event_Async_End,  // type
+                     split.first,                    // names
+                     split.second                    // values
+  );
+}
 
 void TraceEventAsyncBegin0(TraceArg category_group,
                            TraceArg name,
@@ -231,6 +283,18 @@ void TraceEventAsyncEnd1(TraceArg category_group,
                          TraceArg arg1_val);
 
 void TraceEventInstant0(TraceArg category_group, TraceArg name);
+
+void TraceEventInstant1(TraceArg category_group,
+                        TraceArg name,
+                        TraceArg arg1_name,
+                        TraceArg arg1_val);
+
+void TraceEventInstant2(TraceArg category_group,
+                        TraceArg name,
+                        TraceArg arg1_name,
+                        TraceArg arg1_val,
+                        TraceArg arg2_name,
+                        TraceArg arg2_val);
 
 void TraceEventFlowBegin0(TraceArg category_group,
                           TraceArg name,

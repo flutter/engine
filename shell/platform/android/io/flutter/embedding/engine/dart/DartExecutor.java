@@ -5,9 +5,9 @@
 package io.flutter.embedding.engine.dart;
 
 import android.content.res.AssetManager;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.UiThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -26,8 +26,7 @@ import java.nio.ByteBuffer;
  *
  * <p>To specify a Dart callback to execute, use a {@link DartCallback}. A given Dart callback must
  * be registered with the Dart VM to be invoked by a {@link DartExecutor}. To execute the callback,
- * pass the {@link DartCallback} to {@link #executeDartCallback(DartCallback)}. TODO(mattcarroll):
- * add a reference to docs about background/plugin execution
+ * pass the {@link DartCallback} to {@link #executeDartCallback(DartCallback)}.
  *
  * <p>Once started, a {@link DartExecutor} cannot be stopped. The associated Dart code will execute
  * until it completes, or until the {@link io.flutter.embedding.engine.FlutterEngine} that owns this

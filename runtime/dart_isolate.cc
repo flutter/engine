@@ -136,8 +136,9 @@ DartIsolate::DartIsolate(const Settings& settings,
                   advisory_script_entrypoint,
                   settings.log_tag,
                   settings.unhandled_exception_callback,
-                  DartVMRef::GetIsolateNameServer()),
-      is_root_isolate_(is_root_isolate) {
+                  DartVMRef::GetIsolateNameServer(),
+                  is_root_isolate),
+      disable_http_(settings.disable_http) {
   phase_ = Phase::Uninitialized;
 }
 
@@ -222,9 +223,9 @@ bool DartIsolate::UpdateThreadPoolNames() const {
   // shells sharing the same (or subset of) threads.
   const auto& task_runners = GetTaskRunners();
 
-  if (auto task_runner = task_runners.GetGPUTaskRunner()) {
+  if (auto task_runner = task_runners.GetRasterTaskRunner()) {
     task_runner->PostTask(
-        [label = task_runners.GetLabel() + std::string{".gpu"}]() {
+        [label = task_runners.GetLabel() + std::string{".raster"}]() {
           Dart_SetThreadName(label.c_str());
         });
   }
@@ -261,9 +262,9 @@ bool DartIsolate::LoadLibraries() {
 
   tonic::DartState::Scope scope(this);
 
-  DartIO::InitForIsolate();
+  DartIO::InitForIsolate(disable_http_);
 
-  DartUI::InitForIsolate(IsRootIsolate());
+  DartUI::InitForIsolate();
 
   const bool is_service_isolate = Dart_IsServiceIsolate(isolate());
 
@@ -338,8 +339,7 @@ bool DartIsolate::LoadKernel(std::shared_ptr<const fml::Mapping> mapping,
   return true;
 }
 
-FML_WARN_UNUSED_RESULT
-bool DartIsolate::PrepareForRunningFromKernel(
+[[nodiscard]] bool DartIsolate::PrepareForRunningFromKernel(
     std::shared_ptr<const fml::Mapping> mapping,
     bool last_piece) {
   TRACE_EVENT0("flutter", "DartIsolate::PrepareForRunningFromKernel");
@@ -405,8 +405,7 @@ bool DartIsolate::PrepareForRunningFromKernel(
   return true;
 }
 
-FML_WARN_UNUSED_RESULT
-bool DartIsolate::PrepareForRunningFromKernels(
+[[nodiscard]] bool DartIsolate::PrepareForRunningFromKernels(
     std::vector<std::shared_ptr<const fml::Mapping>> kernels) {
   const auto count = kernels.size();
   if (count == 0) {
@@ -423,8 +422,7 @@ bool DartIsolate::PrepareForRunningFromKernels(
   return true;
 }
 
-FML_WARN_UNUSED_RESULT
-bool DartIsolate::PrepareForRunningFromKernels(
+[[nodiscard]] bool DartIsolate::PrepareForRunningFromKernels(
     std::vector<std::unique_ptr<const fml::Mapping>> kernels) {
   std::vector<std::shared_ptr<const fml::Mapping>> shared_kernels;
   for (auto& kernel : kernels) {
@@ -460,9 +458,9 @@ bool DartIsolate::MarkIsolateRunnable() {
   return true;
 }
 
-FML_WARN_UNUSED_RESULT
-static bool InvokeMainEntrypoint(Dart_Handle user_entrypoint_function,
-                                 Dart_Handle args) {
+[[nodiscard]] static bool InvokeMainEntrypoint(
+    Dart_Handle user_entrypoint_function,
+    Dart_Handle args) {
   if (tonic::LogIfError(user_entrypoint_function)) {
     FML_LOG(ERROR) << "Could not resolve main entrypoint function.";
     return false;
@@ -488,10 +486,9 @@ static bool InvokeMainEntrypoint(Dart_Handle user_entrypoint_function,
 }
 
 /// @note Procedure doesn't copy all closures.
-FML_WARN_UNUSED_RESULT
-bool DartIsolate::Run(const std::string& entrypoint_name,
-                      const std::vector<std::string>& args,
-                      const fml::closure& on_run) {
+[[nodiscard]] bool DartIsolate::Run(const std::string& entrypoint_name,
+                                    const std::vector<std::string>& args,
+                                    const fml::closure& on_run) {
   TRACE_EVENT0("flutter", "DartIsolate::Run");
   if (phase_ != Phase::Ready) {
     return false;
@@ -517,11 +514,11 @@ bool DartIsolate::Run(const std::string& entrypoint_name,
 }
 
 /// @note Procedure doesn't copy all closures.
-FML_WARN_UNUSED_RESULT
-bool DartIsolate::RunFromLibrary(const std::string& library_name,
-                                 const std::string& entrypoint_name,
-                                 const std::vector<std::string>& args,
-                                 const fml::closure& on_run) {
+[[nodiscard]] bool DartIsolate::RunFromLibrary(
+    const std::string& library_name,
+    const std::string& entrypoint_name,
+    const std::vector<std::string>& args,
+    const fml::closure& on_run) {
   TRACE_EVENT0("flutter", "DartIsolate::RunFromLibrary");
   if (phase_ != Phase::Ready) {
     return false;
@@ -691,7 +688,7 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
               parent_group_data.GetIsolateShutdownCallback())));
 
   TaskRunners null_task_runners(advisory_script_uri,
-                                /* platform= */ nullptr, /* gpu= */ nullptr,
+                                /* platform= */ nullptr, /* raster= */ nullptr,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 
@@ -733,7 +730,7 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
           Dart_CurrentIsolateGroupData());
 
   TaskRunners null_task_runners((*isolate_group_data)->GetAdvisoryScriptURI(),
-                                /* platform= */ nullptr, /* gpu= */ nullptr,
+                                /* platform= */ nullptr, /* raster= */ nullptr,
                                 /* ui= */ nullptr,
                                 /* io= */ nullptr);
 

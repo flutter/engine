@@ -22,7 +22,8 @@ void main() async {
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
     final engine.EngineCanvas engineCanvas = engine.BitmapCanvas(screenRect);
 
-    rc.apply(engineCanvas);
+    rc.endRecording();
+    rc.apply(engineCanvas, screenRect);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');
@@ -101,6 +102,6 @@ engine.HtmlImage createTestImage({int width = 200, int height = 150}) {
   ctx.fillRect(2 * width / 3, 0, width / 3, height);
   ctx.fill();
   html.ImageElement imageElement = html.ImageElement();
-  imageElement.src = js_util.callMethod(canvas, 'toDataURL', []);
+  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]);
   return engine.HtmlImage(imageElement, width, height);
 }

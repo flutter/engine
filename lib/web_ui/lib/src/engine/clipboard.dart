@@ -18,6 +18,7 @@ class ClipboardMessageHandler {
   void setDataMethodCall(
       MethodCall methodCall, ui.PlatformMessageResponseCallback callback) {
     const MethodCodec codec = JSONMethodCodec();
+    bool errorEnvelopeEncoded = false;
     _copyToClipboardStrategy
         .setData(methodCall.arguments['text'])
         .then((bool success) {
@@ -26,10 +27,15 @@ class ClipboardMessageHandler {
       } else {
         callback(codec.encodeErrorEnvelope(
             code: 'copy_fail', message: 'Clipboard.setData failed'));
+        errorEnvelopeEncoded = true;
       }
-    }).catchError((_) {
-      callback(codec.encodeErrorEnvelope(
-          code: 'copy_fail', message: 'Clipboard.setData failed'));
+    }).catchError((dynamic _) {
+      // Don't encode a duplicate reply if we already failed and an error
+      // was already encoded.
+      if (!errorEnvelopeEncoded) {
+        callback(codec.encodeErrorEnvelope(
+            code: 'copy_fail', message: 'Clipboard.setData failed'));
+      }
     });
   }
 
@@ -37,9 +43,9 @@ class ClipboardMessageHandler {
   void getDataMethodCall(ui.PlatformMessageResponseCallback callback) {
     const MethodCodec codec = JSONMethodCodec();
     _pasteFromClipboardStrategy.getData().then((String data) {
-      final Map<String, dynamic> map = {'text': data};
+      final Map<String, dynamic> map = <String, dynamic>{'text': data};
       callback(codec.encodeSuccessEnvelope(map));
-    }).catchError((error) {
+    }).catchError((dynamic error) {
       print('Could not get text from clipboard: $error');
       callback(codec.encodeErrorEnvelope(
           code: 'paste_fail', message: 'Clipboard.getData failed'));

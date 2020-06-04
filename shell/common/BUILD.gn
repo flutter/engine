@@ -5,6 +5,7 @@
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/testing/testing.gni")
+import("//flutter/vulkan/config.gni")
 
 if (is_fuchsia) {
   import("//build/fuchsia/sdk.gni")
@@ -12,11 +13,8 @@ if (is_fuchsia) {
 }
 
 config("vulkan_config") {
-  if (using_fuchsia_sdk) {
+  if (is_fuchsia) {
     include_dirs = [ "$fuchsia_sdk_root/vulkan/include" ]
-  } else if (is_fuchsia) {
-    include_dirs =
-        [ "//third_party/vulkan_loader_and_validation_layers/include" ]
   } else {
     include_dirs = [ "//third_party/vulkan/src" ]
   }
@@ -99,6 +97,8 @@ source_set("common") {
     "pointer_data_dispatcher.h",
     "rasterizer.cc",
     "rasterizer.h",
+    "renderer_context_manager.cc",
+    "renderer_context_manager.h",
     "run_configuration.cc",
     "run_configuration.h",
     "shell.cc",
@@ -120,12 +120,14 @@ source_set("common") {
   ]
 
   deps = [
+    ":surface_frame",
     "//flutter/assets",
     "//flutter/common",
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/lib/ui",
     "//flutter/runtime",
+    "//flutter/shell/profiling",
     "//third_party/dart/runtime:dart_api",
     "//third_party/skia",
   ]
@@ -138,6 +140,18 @@ source_set("common") {
   ]
 
   public_configs = [ "//flutter:config" ]
+}
+
+source_set("surface_frame") {
+  sources = [
+    "surface_frame.cc",
+    "surface_frame.h",
+  ]
+
+  deps = [
+    "//flutter/fml",
+    "//third_party/skia",
+  ]
 }
 
 template("shell_host_executable") {
@@ -185,37 +199,33 @@ if (enable_unittests) {
     fixtures = [ "fixtures/shelltest_screenshot.png" ]
   }
 
-  shell_host_executable("shell_unittests") {
+  source_set("shell_test_fixture_sources") {
+    testonly = true
+
     sources = [
-      "animator_unittests.cc",
-      "canvas_spy_unittests.cc",
-      "input_events_unittests.cc",
-      "persistent_cache_unittests.cc",
-      "pipeline_unittests.cc",
+      "renderer_context_test.cc",
+      "renderer_context_test.h",
       "shell_test.cc",
       "shell_test.h",
+      "shell_test_external_view_embedder.cc",
+      "shell_test_external_view_embedder.h",
       "shell_test_platform_view.cc",
       "shell_test_platform_view.h",
-      "shell_unittests.cc",
       "vsync_waiters_test.cc",
       "vsync_waiters_test.h",
     ]
 
-    deps = [
-      ":shell_unittests_fixtures",
-      ":shell_unittests_gpu_configuration",
-      "//flutter/common",
+    public_deps = [
       "//flutter/flow",
       "//flutter/fml/dart",
-      "//flutter/lib/ui:ui",
+      "//flutter/lib/ui",
+      "//flutter/runtime",
       "//flutter/shell",
+      "//flutter/shell/common",
       "//flutter/testing",
       "//flutter/testing:dart",
     ]
-
-    if (!defined(defines)) {
-      defines = []
-    }
+    defines = []
 
     # SwiftShader only supports x86/x64_64
     if (target_cpu == "x86" || target_cpu == "x64") {
@@ -225,7 +235,10 @@ if (enable_unittests) {
           "shell_test_platform_view_gl.h",
         ]
 
-        deps += [ "//flutter/testing:opengl" ]
+        public_deps += [
+          "//flutter/shell/gpu:gpu_surface_gl",
+          "//flutter/testing:opengl",
+        ]
 
         defines += [ "SHELL_ENABLE_GL" ]
       }
@@ -236,13 +249,39 @@ if (enable_unittests) {
           "shell_test_platform_view_vulkan.h",
         ]
 
-        deps += [
+        public_deps += [
+          "//flutter/shell/gpu:gpu_surface_vulkan",
           "//flutter/testing:vulkan",
           "//flutter/vulkan",
         ]
 
         defines += [ "SHELL_ENABLE_VULKAN" ]
       }
+    }
+  }
+
+  shell_host_executable("shell_unittests") {
+    sources = [
+      "animator_unittests.cc",
+      "canvas_spy_unittests.cc",
+      "input_events_unittests.cc",
+      "persistent_cache_unittests.cc",
+      "pipeline_unittests.cc",
+      "renderer_context_manager_unittests.cc",
+      "shell_unittests.cc",
+    ]
+
+    deps = [
+      ":shell_test_fixture_sources",
+      ":shell_unittests_fixtures",
+      ":shell_unittests_gpu_configuration",
+      "//flutter/assets",
+      "//flutter/common",
+      "//flutter/shell",
+    ]
+
+    if (!defined(defines)) {
+      defines = []
     }
   }
 
@@ -268,6 +307,11 @@ if (enable_unittests) {
           dest = "assets/shelltest_screenshot.png"
         },
       ]
+
+      if (test_enable_vulkan) {
+        libraries = vulkan_validation_libs
+        resources += vulkan_icds
+      }
     }
   }
 

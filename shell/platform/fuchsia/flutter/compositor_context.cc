@@ -14,14 +14,15 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
               const SkMatrix& root_surface_transformation,
               bool instrumentation_enabled,
               SessionConnection& session_connection)
-      : flutter::CompositorContext::ScopedFrame(context,
-                                                nullptr,
-                                                nullptr,
-                                                nullptr,
-                                                root_surface_transformation,
-                                                instrumentation_enabled,
-                                                true,
-                                                nullptr),
+      : flutter::CompositorContext::ScopedFrame(
+            context,
+            session_connection.vulkan_surface_producer()->gr_context(),
+            nullptr,
+            nullptr,
+            root_surface_transformation,
+            instrumentation_enabled,
+            true,
+            nullptr),
         session_connection_(session_connection) {}
 
  private:
@@ -37,7 +38,7 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
       // Preroll the Flutter layer tree. This allows Flutter to perform
       // pre-paint optimizations.
       TRACE_EVENT0("flutter", "Preroll");
-      layer_tree.Preroll(*this, true /* ignore raster cache */);
+      layer_tree.Preroll(*this, ignore_raster_cache);
     }
 
     {
@@ -103,7 +104,7 @@ CompositorContext::AcquireFrame(
     const SkMatrix& root_surface_transformation,
     bool instrumentation_enabled,
     bool surface_supports_readback,
-    fml::RefPtr<fml::GpuThreadMerger> gpu_thread_merger) {
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   // TODO: The AcquireFrame interface is too broad and must be refactored to get
   // rid of the context and canvas arguments as those seem to be only used for
   // colorspace correctness purposes on the mobile shells.

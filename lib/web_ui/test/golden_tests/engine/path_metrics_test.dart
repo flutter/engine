@@ -4,7 +4,6 @@
 
 // @dart = 2.6
 import 'dart:html' as html;
-import 'dart:typed_data';
 
 import 'package:ui/ui.dart' hide TextStyle;
 import 'package:ui/src/engine.dart';
@@ -26,7 +25,8 @@ void main() async {
       {Rect region = const Rect.fromLTWH(0, 0, 500, 500),
       bool write = false}) async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect);
-    rc.apply(engineCanvas);
+    rc.endRecording();
+    rc.apply(engineCanvas, screenRect);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
     final html.Element sceneElement = html.Element.tag('flt-scene');
@@ -63,8 +63,6 @@ void main() async {
 
   test('Should calculate tangent on cubic curve', () async {
     final Path path = Path();
-    double p0x = 150;
-    double p0y = 20;
     double p1x = 240;
     double p1y = 120;
     double p2x = 320;
@@ -112,8 +110,6 @@ void main() async {
     final Path path = Path();
     path.moveTo(50, 130);
     path.lineTo(150, 20);
-    double p0x = 150;
-    double p0y = 20;
     double p1x = 240;
     double p1y = 120;
     double p2x = 320;
@@ -122,8 +118,6 @@ void main() async {
 
     rc.drawPath(path, paint);
 
-    final Float32List buffer = Float32List(6);
-    List<double> points = [p0x, p0y, p1x, p1y, p2x, p2y];
     double t0 = 0.2;
     double t1 = 0.7;
 
@@ -168,8 +162,6 @@ void main() async {
     final Path path = Path();
     path.moveTo(50, 130);
     path.lineTo(150, 20);
-    double p0x = 150;
-    double p0y = 20;
     double p1x = 40;
     double p1y = 120;
     double p2x = 300;
@@ -180,8 +172,6 @@ void main() async {
 
     rc.drawPath(path, paint);
 
-    final Float32List buffer = Float32List(6);
-    List<double> points = [p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y];
     double t0 = 0.2;
     double t1 = 0.7;
 

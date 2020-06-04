@@ -11,9 +11,12 @@
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/window/platform_message.h"
+#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/common/shell_test_external_view_embedder.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiters_test.h"
 #include "flutter/testing/elf_loader.h"
@@ -30,12 +33,17 @@ class ShellTest : public ThreadTest {
   Settings CreateSettingsForFixture();
   std::unique_ptr<Shell> CreateShell(Settings settings,
                                      bool simulate_vsync = false);
-  std::unique_ptr<Shell> CreateShell(Settings settings,
-                                     TaskRunners task_runners,
-                                     bool simulate_vsync = false);
+  std::unique_ptr<Shell> CreateShell(
+      Settings settings,
+      TaskRunners task_runners,
+      bool simulate_vsync = false,
+      std::shared_ptr<ShellTestExternalViewEmbedder>
+          shell_test_external_view_embedder = nullptr);
   void DestroyShell(std::unique_ptr<Shell> shell);
   void DestroyShell(std::unique_ptr<Shell> shell, TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
+
+  fml::TimePoint GetLatestFrameTargetTime(Shell* shell) const;
 
   void SendEnginePlatformMessage(Shell* shell,
                                  fml::RefPtr<PlatformMessage> message);
@@ -71,6 +79,22 @@ class ShellTest : public ThreadTest {
 
   static bool GetNeedsReportTimings(Shell* shell);
   static void SetNeedsReportTimings(Shell* shell, bool value);
+
+  enum ServiceProtocolEnum {
+    kGetSkSLs,
+    kSetAssetBundlePath,
+    kRunInView,
+  };
+
+  // Helper method to test private method Shell::OnServiceProtocolGetSkSLs.
+  // (ShellTest is a friend class of Shell.) We'll also make sure that it is
+  // running on the correct task_runner.
+  static void OnServiceProtocol(
+      Shell* shell,
+      ServiceProtocolEnum some_protocol,
+      fml::RefPtr<fml::TaskRunner> task_runner,
+      const ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document& response);
 
   std::shared_ptr<txt::FontCollection> GetFontCollection(Shell* shell);
 

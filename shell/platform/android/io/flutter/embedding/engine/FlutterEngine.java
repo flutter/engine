@@ -5,8 +5,8 @@
 package io.flutter.embedding.engine;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -21,6 +21,7 @@ import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
@@ -44,7 +45,8 @@ import java.util.Set;
  * interaction.
  *
  * <p>Multiple {@code FlutterEngine}s may exist, execute Dart code, and render UIs within a single
- * Android app.
+ * Android app. Flutter at this point makes no guarantees on the performance of running multiple
+ * engines. Use at your own risk. See https://github.com/flutter/flutter/issues/37644 for details.
  *
  * <p>To start running Dart and/or Flutter within this {@code FlutterEngine}, get a reference to
  * this engine's {@link DartExecutor} and then use {@link
@@ -76,6 +78,7 @@ public class FlutterEngine {
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final LifecycleChannel lifecycleChannel;
   @NonNull private final LocalizationChannel localizationChannel;
+  @NonNull private final MouseCursorChannel mouseCursorChannel;
   @NonNull private final NavigationChannel navigationChannel;
   @NonNull private final PlatformChannel platformChannel;
   @NonNull private final SettingsChannel settingsChannel;
@@ -217,6 +220,7 @@ public class FlutterEngine {
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
+    mouseCursorChannel = new MouseCursorChannel(dartExecutor);
     navigationChannel = new NavigationChannel(dartExecutor);
     platformChannel = new PlatformChannel(dartExecutor);
     settingsChannel = new SettingsChannel(dartExecutor);
@@ -224,6 +228,7 @@ public class FlutterEngine {
     textInputChannel = new TextInputChannel(dartExecutor);
 
     this.platformViewsController = platformViewsController;
+    this.platformViewsController.onAttachedToJNI();
 
     this.pluginRegistry =
         new FlutterEnginePluginRegistry(context.getApplicationContext(), this, flutterLoader);
@@ -288,6 +293,7 @@ public class FlutterEngine {
     Log.v(TAG, "Destroying.");
     // The order that these things are destroyed is important.
     pluginRegistry.destroy();
+    platformViewsController.onDetachedFromJNI();
     dartExecutor.onDetachedFromJNI();
     flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
     flutterJNI.detachFromNativeAndReleaseResources();
@@ -386,6 +392,12 @@ public class FlutterEngine {
   @NonNull
   public SystemChannel getSystemChannel() {
     return systemChannel;
+  }
+
+  /** System channel that sends and receives text input requests and state. */
+  @NonNull
+  public MouseCursorChannel getMouseCursorChannel() {
+    return mouseCursorChannel;
   }
 
   /** System channel that sends and receives text input requests and state. */

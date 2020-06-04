@@ -27,8 +27,15 @@ class DomRenderer {
   static const int vibrateHeavyImpact = 30;
   static const int vibrateSelectionClick = 10;
 
+  /// Fires when browser language preferences change.
+  static const html.EventStreamProvider<html.Event> languageChangeEvent =
+      const html.EventStreamProvider<html.Event>('languagechange');
+
   /// Listens to window resize events.
   StreamSubscription<html.Event> _resizeSubscription;
+
+  /// Listens to window locale events.
+  StreamSubscription<html.Event> _localeSubscription;
 
   /// Contains Flutter-specific CSS rules, such as default margins and
   /// paddings.
@@ -71,7 +78,7 @@ class DomRenderer {
   /// This getter calls the `hasFocus` method of the `Document` interface.
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
-  bool get windowHasFocus => js_util.callMethod(html.document, 'hasFocus', []);
+  bool get windowHasFocus => js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
@@ -85,6 +92,7 @@ class DomRenderer {
 
     registerHotRestartListener(() {
       _resizeSubscription?.cancel();
+      _localeSubscription?.cancel();
       _staleHotRestartState.addAll(<html.Element>[
         _glassPaneElement,
         _styleElement,
@@ -419,12 +427,6 @@ flt-glass-pane * {
     // DOM tree.
     setElementAttribute(_sceneHostElement, 'aria-hidden', 'true');
 
-    // We treat browser pixels as device pixels because pointer events,
-    // position, and sizes all use browser pixel as the unit (i.e. "px" in CSS).
-    // Therefore, as far as the framework is concerned the device pixel ratio
-    // is 1.0.
-    window.debugOverrideDevicePixelRatio(1.0);
-
     if (html.window.visualViewport == null && isWebKit) {
       // Safari sometimes gives us bogus innerWidth/innerHeight values when the
       // page loads. When it changes the values to correct ones it does not
@@ -468,13 +470,37 @@ flt-glass-pane * {
     } else {
       _resizeSubscription = html.window.onResize.listen(_metricsDidChange);
     }
+    _localeSubscription = languageChangeEvent.forTarget(html.window)
+      .listen(_languageDidChange);
+    window._updateLocales();
   }
 
   /// Called immediately after browser window metrics change.
+  ///
+  /// When there is a text editing going on in mobile devices, do not change
+  /// the physicalSize, change the [window.viewInsets]. See:
+  /// https://api.flutter.dev/flutter/dart-ui/Window/viewInsets.html
+  /// https://api.flutter.dev/flutter/dart-ui/Window/physicalSize.html
+  ///
+  /// Note: always check for rotations for a mobile device. Update the physical
+  /// size if the change is caused by a rotation.
   void _metricsDidChange(html.Event event) {
-    window._computePhysicalSize();
-    if (ui.window.onMetricsChanged != null) {
-      ui.window.onMetricsChanged();
+    if(isMobile && !window.isRotation() && textEditing.isEditing) {
+      window.computeOnScreenKeyboardInsets();
+      window.invokeOnMetricsChanged();
+    } else {
+      window._computePhysicalSize();
+      // When physical size changes this value has to be recalculated.
+      window.computeOnScreenKeyboardInsets();
+      window.invokeOnMetricsChanged();
+    }
+  }
+
+  /// Called immediately after browser window language change.
+  void _languageDidChange(html.Event event) {
+    window._updateLocales();
+    if (ui.window.onLocaleChanged != null) {
+      ui.window.onLocaleChanged();
     }
   }
 
@@ -506,6 +532,74 @@ flt-glass-pane * {
       context.scale(radiusX, radiusY);
       context.arc(0, 0, 1, startAngle, endAngle, antiClockwise);
       context.restore();
+    }
+  }
+
+  static const String orientationLockTypeAny = 'any';
+  static const String orientationLockTypeNatural = 'natural';
+  static const String orientationLockTypeLandscape = 'landscape';
+  static const String orientationLockTypePortrait = 'portrait';
+  static const String orientationLockTypePortraitPrimary = 'portrait-primary';
+  static const String orientationLockTypePortraitSecondary = 'portrait-secondary';
+  static const String orientationLockTypeLandscapePrimary = 'landscape-primary';
+  static const String orientationLockTypeLandscapeSecondary = 'landscape-secondary';
+
+  /// Sets preferred screen orientation.
+  ///
+  /// Specifies the set of orientations the application interface can be
+  /// displayed in.
+  ///
+  /// The [orientations] argument is a list of DeviceOrientation values.
+  /// The empty list uses Screen unlock api and causes the application to
+  /// defer to the operating system default.
+  ///
+  /// See w3c screen api: https://www.w3.org/TR/screen-orientation/
+  Future<bool> setPreferredOrientation(List<dynamic> orientations) {
+    final html.Screen screen = html.window.screen;
+    if (screen != null) {
+      final html.ScreenOrientation screenOrientation =
+          screen.orientation;
+      if (screenOrientation != null) {
+        if (orientations.isEmpty) {
+          screenOrientation.unlock();
+          return Future.value(true);
+        } else {
+          String lockType = _deviceOrientationToLockType(orientations.first);
+          if (lockType != null) {
+            final Completer<bool> completer = Completer<bool>();
+            try {
+              screenOrientation.lock(lockType).then((dynamic _) {
+                completer.complete(true);
+              }).catchError((dynamic error) {
+                // On Chrome desktop an error with 'not supported on this device
+                // error' is fired.
+                completer.complete(false);
+              });
+            } catch (_) {
+              return Future.value(false);
+            }
+            return completer.future;
+          }
+        }
+      }
+    }
+    // API is not supported on this browser return false.
+    return Future.value(false);
+  }
+
+  // Converts device orientation to w3c OrientationLockType enum.
+  static String _deviceOrientationToLockType(String deviceOrientation) {
+    switch(deviceOrientation) {
+      case 'DeviceOrientation.portraitUp':
+        return orientationLockTypePortraitPrimary;
+      case 'DeviceOrientation.landscapeLeft':
+        return orientationLockTypePortraitSecondary;
+      case 'DeviceOrientation.portraitDown':
+        return orientationLockTypeLandscapePrimary;
+      case 'DeviceOrientation.landscapeRight':
+        return orientationLockTypeLandscapeSecondary;
+      default:
+        return null;
     }
   }
 

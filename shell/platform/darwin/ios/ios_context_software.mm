@@ -22,13 +22,17 @@ bool IOSContextSoftware::MakeCurrent() {
 }
 
 // |IOSContext|
-bool IOSContextSoftware::ResourceMakeCurrent() {
-  return false;
-}
+std::unique_ptr<Texture> IOSContextSoftware::CreateExternalTexture(
+    int64_t texture_id,
+    fml::scoped_nsobject<NSObject<FlutterTexture>> texture) {
+  // Don't use FML for logging as it will contain engine specific details. This is a user facing
+  // message.
+  NSLog(@"Flutter: Attempted to composite external texture sources using the software backend. "
+        @"This backend is only used on simulators. This feature is only available on actual "
+        @"devices where OpenGL or Metal is used for rendering.");
 
-// |IOSContext|
-bool IOSContextSoftware::ClearCurrent() {
-  return false;
+  // Not supported in this backend.
+  return nullptr;
 }
 
 }  // namespace flutter

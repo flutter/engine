@@ -10,27 +10,13 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     _surfaceStack.add(PersistedScene(_lastFrameScene));
   }
 
-  final List<PersistedContainerSurface> _surfaceStack = <PersistedContainerSurface>[];
+  final List<PersistedContainerSurface> _surfaceStack =
+      <PersistedContainerSurface>[];
 
   /// The scene built by this scene builder.
   ///
   /// This getter should only be called after all surfaces are built.
   PersistedScene get _persistedScene {
-    assert(() {
-      if (_surfaceStack.length != 1) {
-        final String surfacePrintout = _surfaceStack
-            .map<Type>((PersistedContainerSurface surface) => surface.runtimeType)
-            .toList()
-            .join(', ');
-        throw Exception('Incorrect sequence of push/pop operations while '
-            'building scene surfaces. After building the scene the persisted '
-            'surface stack must contain a single element which corresponds '
-            'to the scene itself (_PersistedScene). All other surfaces '
-            'should have been popped off the stack. Found the following '
-            'surfaces in the stack:\n$surfacePrintout');
-      }
-      return true;
-    }());
     return _surfaceStack.first;
   }
 
@@ -42,7 +28,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     // the live tree.
     if (surface.oldLayer != null) {
       assert(surface.oldLayer.runtimeType == surface.runtimeType);
-      assert(debugAssertSurfaceState(surface.oldLayer, PersistedSurfaceState.active));
+      assert(debugAssertSurfaceState(
+          surface.oldLayer, PersistedSurfaceState.active));
       surface.oldLayer.state = PersistedSurfaceState.pendingUpdate;
     }
     _adoptSurface(surface);
@@ -97,7 +84,22 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
-    return _pushSurface(PersistedTransform(oldLayer, matrix4));
+
+    // TODO(yjbanov): make this final after NNBD ships definite assignment.
+    /*final*/ Float32List matrix;
+    if (_surfaceStack.length == 1) {
+      // Top level transform contains view configuration to scale
+      // scene to devicepixelratio. Use identity instead since CSS uses
+      // logical device pixels.
+      if (!ui.debugEmulateFlutterTesterEnvironment) {
+        assert(matrix4[0] == window.devicePixelRatio &&
+           matrix4[5] == window.devicePixelRatio);
+      }
+      matrix = Matrix4.identity().storage;
+    } else {
+      matrix = toMatrix32(matrix4);
+    }
+    return _pushSurface(PersistedTransform(oldLayer, matrix));
   }
 
   /// Pushes a rectangular clip operation onto the operation stack.
@@ -276,7 +278,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   void addRetained(ui.EngineLayer retainedLayer) {
     final PersistedContainerSurface retainedSurface = retainedLayer;
     if (assertionsEnabled) {
-      assert(debugAssertSurfaceState(retainedSurface, PersistedSurfaceState.active, PersistedSurfaceState.released));
+      assert(debugAssertSurfaceState(retainedSurface,
+          PersistedSurfaceState.active, PersistedSurfaceState.released));
     }
     retainedSurface.tryRetain();
     _adoptSurface(retainedSurface);
@@ -301,8 +304,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// controls where the statistics are displayed.
   ///
   /// enabledOptions is a bit field with the following bits defined:
-  ///  - 0x01: displayRasterizerStatistics - show GPU thread frame time
-  ///  - 0x02: visualizeRasterizerStatistics - graph GPU thread frame times
+  ///  - 0x01: displayRasterizerStatistics - show raster thread frame time
+  ///  - 0x02: visualizeRasterizerStatistics - graph raster thread frame times
   ///  - 0x04: displayEngineStatistics - show UI thread frame time
   ///  - 0x08: visualizeEngineStatistics - graph UI thread frame times
   /// Set enabledOptions to 0x0F to enable all the currently defined features.
@@ -310,7 +313,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// The "UI thread" is the thread that includes all the execution of
   /// the main Dart isolate (the isolate that can call
   /// [Window.render]). The UI thread frame time is the total time
-  /// spent executing the [Window.onBeginFrame] callback. The "GPU
+  /// spent executing the [Window.onBeginFrame] callback. The "raster
   /// thread" is the thread (running on the CPU) that subsequently
   /// processes the [Scene] provided by the Dart code to turn it into
   /// GPU commands and send it to the GPU.
@@ -319,7 +322,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// for more details.
   @override
   void addPerformanceOverlay(int enabledOptions, ui.Rect bounds) {
-    _addPerformanceOverlay(enabledOptions, bounds.left, bounds.right, bounds.top, bounds.bottom);
+    _addPerformanceOverlay(
+        enabledOptions, bounds.left, bounds.right, bounds.top, bounds.bottom);
   }
 
   /// Whether we've already warned the user about the lack of the performance
@@ -337,7 +341,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   ) {
     if (!_webOnlyDidWarnAboutPerformanceOverlay) {
       _webOnlyDidWarnAboutPerformanceOverlay = true;
-      html.window.console.warn('The performance overlay isn\'t supported on the web');
+      html.window.console
+          .warn('The performance overlay isn\'t supported on the web');
     }
   }
 
@@ -377,7 +382,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     _addTexture(offset.dx, offset.dy, width, height, textureId);
   }
 
-  void _addTexture(double dx, double dy, double width, double height, int textureId) {
+  void _addTexture(
+      double dx, double dy, double width, double height, int textureId) {
     // In test mode, allow this to be a no-op.
     if (!ui.debugEmulateFlutterTesterEnvironment) {
       throw UnimplementedError('Textures are not supported in Flutter Web');
@@ -524,15 +530,23 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// cannot be used further.
   @override
   SurfaceScene build() {
-    _persistedScene.preroll();
-    if (_lastFrameScene == null) {
-      _persistedScene.build();
-    } else {
-      _persistedScene.update(_lastFrameScene);
-    }
-    commitScene(_persistedScene);
-    _lastFrameScene = _persistedScene;
-    return SurfaceScene(_persistedScene.rootElement);
+    timeAction<void>(kProfilePrerollFrame, () {
+      while (_surfaceStack.length > 1) {
+        // Auto-pop layers that were pushed without a corresponding pop.
+        pop();
+      }
+      _persistedScene.preroll();
+    });
+    return timeAction<SurfaceScene>(kProfileApplyFrame, () {
+      if (_lastFrameScene == null) {
+        _persistedScene.build();
+      } else {
+        _persistedScene.update(_lastFrameScene);
+      }
+      commitScene(_persistedScene);
+      _lastFrameScene = _persistedScene;
+      return SurfaceScene(_persistedScene.rootElement);
+    });
   }
 
   /// Set properties on the linked scene.  These properties include its bounds,

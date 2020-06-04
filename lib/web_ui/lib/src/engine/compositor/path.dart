@@ -11,13 +11,17 @@ part of engine;
 class SkPath implements ui.Path {
   js.JsObject _skPath;
 
+  /// Cached constructor function for `SkPath`, so we don't have to look it up
+  /// every time we construct a new path.
+  static final js.JsFunction _skPathConstructor = canvasKit['SkPath'];
+
   SkPath() {
-    _skPath = js.JsObject(canvasKit['SkPath']);
+    _skPath = js.JsObject(_skPathConstructor);
     fillType = ui.PathFillType.nonZero;
   }
 
   SkPath.from(SkPath other) {
-    _skPath = js.JsObject(canvasKit['SkPath'], <js.JsObject>[other._skPath]);
+    _skPath = js.JsObject(_skPathConstructor, <js.JsObject>[other._skPath]);
     fillType = other.fillType;
   }
 
@@ -64,10 +68,10 @@ class SkPath implements ui.Path {
   void addPath(ui.Path path, ui.Offset offset, {Float64List matrix4}) {
     List<double> skMatrix;
     if (matrix4 == null) {
-      skMatrix = makeSkMatrix(
+      skMatrix = makeSkMatrixFromFloat32(
           Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage);
     } else {
-      skMatrix = makeSkMatrix(matrix4);
+      skMatrix = makeSkMatrixFromFloat64(matrix4);
       skMatrix[2] += offset.dx;
       skMatrix[5] += offset.dy;
     }
@@ -175,10 +179,10 @@ class SkPath implements ui.Path {
   void extendWithPath(ui.Path path, ui.Offset offset, {Float64List matrix4}) {
     List<double> skMatrix;
     if (matrix4 == null) {
-      skMatrix = makeSkMatrix(
+      skMatrix = makeSkMatrixFromFloat32(
           Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage);
     } else {
-      skMatrix = makeSkMatrix(matrix4);
+      skMatrix = makeSkMatrixFromFloat64(matrix4);
       skMatrix[2] += offset.dx;
       skMatrix[5] += offset.dy;
     }
@@ -316,11 +320,16 @@ class SkPath implements ui.Path {
   @override
   ui.Path transform(Float64List matrix4) {
     final js.JsObject newPath = _skPath.callMethod('copy');
-    newPath.callMethod('transform', <js.JsArray>[makeSkMatrix(matrix4)]);
+    newPath.callMethod('transform', <js.JsArray>[makeSkMatrixFromFloat64(matrix4)]);
     return SkPath._fromSkPath(newPath);
   }
 
   String toSvgString() {
     return _skPath.callMethod('toSVGString');
+  }
+
+  /// Return `true` if this path contains no segments.
+  bool get isEmpty {
+    return _skPath.callMethod('isEmpty');
   }
 }

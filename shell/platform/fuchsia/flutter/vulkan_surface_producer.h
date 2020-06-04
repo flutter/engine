@@ -49,7 +49,7 @@ class VulkanSurfaceProducer final
   }
 
   // |flutter::SceneUpdateContext::GetRetainedNode|
-  const scenic::EntityNode& GetRetainedNode(
+  scenic::EntityNode* GetRetainedNode(
       const flutter::LayerRasterCacheKey& key) override {
     return surface_pool_->GetRetainedNode(key);
   }
@@ -65,6 +65,8 @@ class VulkanSurfaceProducer final
             "VulkanSurfaceProducer:OnSessionSizeChangeHint %f, %f",
             width_change_factor, height_change_factor);
   }
+
+  GrContext* gr_context() { return context_.get(); }
 
  private:
   // VulkanProvider

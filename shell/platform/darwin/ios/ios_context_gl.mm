@@ -8,6 +8,7 @@
 
 #include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
+#include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
 
 namespace flutter {
 
@@ -32,7 +33,6 @@ std::unique_ptr<IOSRenderTargetGL> IOSContextGL::CreateRenderTarget(
 
 // |IOSContext|
 sk_sp<GrContext> IOSContextGL::CreateResourceContext() {
-  // TODO(chinmaygarde): Now that this is here, can ResourceMakeCurrent be removed?
   if (![EAGLContext setCurrentContext:resource_context_.get()]) {
     FML_DLOG(INFO) << "Could not make resource context current on IO thread. Async texture uploads "
                       "will be disabled. On Simulators, this is expected.";
@@ -49,13 +49,10 @@ bool IOSContextGL::MakeCurrent() {
 }
 
 // |IOSContext|
-bool IOSContextGL::ResourceMakeCurrent() {
-  return [EAGLContext setCurrentContext:resource_context_.get()];
-}
-
-// |IOSContext|
-bool IOSContextGL::ClearCurrent() {
-  return [EAGLContext setCurrentContext:nil];
+std::unique_ptr<Texture> IOSContextGL::CreateExternalTexture(
+    int64_t texture_id,
+    fml::scoped_nsobject<NSObject<FlutterTexture>> texture) {
+  return std::make_unique<IOSExternalTextureGL>(texture_id, std::move(texture));
 }
 
 }  // namespace flutter

@@ -21,6 +21,10 @@ void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ChildSceneLayer::Preroll");
   set_needs_system_composite(true);
 
+  CheckForChildLayerBelow(context);
+
+  context->child_scene_layer_exists_below = true;
+
   // An alpha "hole punch" is required if the frame behind us is not opaque.
   if (!context->is_opaque) {
     set_paint_bounds(
@@ -46,10 +50,14 @@ void ChildSceneLayer::UpdateScene(SceneUpdateContext& context) {
   TRACE_EVENT0("flutter", "ChildSceneLayer::UpdateScene");
   FML_DCHECK(needs_system_composite());
 
+  Layer::UpdateScene(context);
+
   auto* view_holder = ViewHolder::FromId(layer_id_);
   FML_DCHECK(view_holder);
 
-  view_holder->UpdateScene(context, offset_, size_, hit_testable_);
+  view_holder->UpdateScene(context, offset_, size_,
+                           SkScalarRoundToInt(context.alphaf() * 255),
+                           hit_testable_);
 }
 
 }  // namespace flutter

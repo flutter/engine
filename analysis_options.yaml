@@ -10,9 +10,13 @@
 #    private fields, especially on the Window object):
 
 analyzer:
-  # this test pretends to be part of dart:ui and results in lots of false
-  # positives.
-  exclude: [ testing/dart/window_hooks_integration_test.dart ]
+  exclude: [
+    # this test pretends to be part of dart:ui and results in lots of false
+    # positives.
+    testing/dart/window_hooks_integration_test.dart,
+    # Fixture depends on dart:ui and raises false positives.
+    flutter_frontend_server/test/fixtures/lib/main.dart
+  ]
   strong-mode:
     implicit-casts: false
     implicit-dynamic: false
@@ -24,6 +28,8 @@ analyzer:
     native_function_body_in_non_sdk_code: ignore
     # allow having TODOs in the code
     todo: ignore
+    # allow dart:ui to import dart:_internal
+    import_internal_library: ignore
   # `flutter analyze` (without `--watch`) just ignores directories
   # that contain a .dartignore file, and this file does not have any
   # effect on what files are actually analyzed.

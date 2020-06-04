@@ -414,6 +414,75 @@ void main() {
     },
   );
 
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'correctly detects events on the semantics placeholder',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance.debugOverrideDetector(context);
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      final html.Element semanticsPlaceholder =
+          html.Element.tag('flt-semantics-placeholder');
+      glassPane.append(semanticsPlaceholder);
+
+      // Press on the semantics placeholder.
+      semanticsPlaceholder.dispatchEvent(context.primaryDown(
+        clientX: 10.0,
+        clientY: 10.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[1].change, equals(ui.PointerChange.down));
+      expect(packets[0].data[1].physicalX, equals(10.0));
+      expect(packets[0].data[1].physicalY, equals(10.0));
+      packets.clear();
+
+      // Drag on the semantics placeholder.
+      semanticsPlaceholder.dispatchEvent(context.primaryMove(
+        clientX: 12.0,
+        clientY: 10.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(12.0));
+      expect(packets[0].data[0].physicalY, equals(10.0));
+      packets.clear();
+
+      // Keep dragging.
+      semanticsPlaceholder.dispatchEvent(context.primaryMove(
+        clientX: 15.0,
+        clientY: 10.0,
+      ));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(15.0));
+      expect(packets[0].data[0].physicalY, equals(10.0));
+      packets.clear();
+
+      // Release the pointer on the semantics placeholder.
+      html.window.dispatchEvent(context.primaryUp(
+        clientX: 100.0,
+        clientY: 200.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(100.0));
+      expect(packets[0].data[0].physicalY, equals(200.0));
+      expect(packets[0].data[1].change, equals(ui.PointerChange.up));
+      expect(packets[0].data[1].physicalX, equals(100.0));
+      expect(packets[0].data[1].physicalY, equals(200.0));
+      packets.clear();
+
+      semanticsPlaceholder.remove();
+    },
+  );
+
   // BUTTONED ADAPTERS
 
   _testEach<_ButtonedEventMixin>(
@@ -1446,6 +1515,67 @@ void main() {
     },
   );
 
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'correctly detects up event outside of glasspane',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance.debugOverrideDetector(context);
+      // This can happen when the up event occurs while the mouse is outside the
+      // browser window.
+
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      // Press and drag around.
+      glassPane.dispatchEvent(context.primaryDown(
+        clientX: 10.0,
+        clientY: 10.0,
+      ));
+      glassPane.dispatchEvent(context.primaryMove(
+        clientX: 12.0,
+        clientY: 10.0,
+      ));
+      glassPane.dispatchEvent(context.primaryMove(
+        clientX: 15.0,
+        clientY: 10.0,
+      ));
+      glassPane.dispatchEvent(context.primaryMove(
+        clientX: 20.0,
+        clientY: 10.0,
+      ));
+      packets.clear();
+
+      // Move outside the glasspane.
+      html.window.dispatchEvent(context.primaryMove(
+        clientX: 900.0,
+        clientY: 1900.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(900.0));
+      expect(packets[0].data[0].physicalY, equals(1900.0));
+      packets.clear();
+
+      // Release outside the glasspane.
+      html.window.dispatchEvent(context.primaryUp(
+        clientX: 1000.0,
+        clientY: 2000.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(1000.0));
+      expect(packets[0].data[0].physicalY, equals(2000.0));
+      expect(packets[0].data[1].change, equals(ui.PointerChange.up));
+      expect(packets[0].data[1].physicalX, equals(1000.0));
+      expect(packets[0].data[1].physicalY, equals(2000.0));
+      packets.clear();
+    },
+  );
+
   // MULTIPOINTER ADAPTERS
 
   _testEach<_MultiPointerEventMixin>(
@@ -1970,7 +2100,7 @@ class _TouchEventContext extends _BasicEventContext with _MultiPointerEventMixin
     double clientX,
     double clientY,
   }) {
-    return html.Touch({
+    return html.Touch(<String, dynamic>{
       'identifier': identifier,
       'clientX': clientX,
       'clientY': clientY,
@@ -1979,7 +2109,7 @@ class _TouchEventContext extends _BasicEventContext with _MultiPointerEventMixin
   }
 
   html.TouchEvent _createTouchEvent(String eventType, List<_TouchDetails> touches) {
-    return html.TouchEvent(eventType, {
+    return html.TouchEvent(eventType, <String, dynamic>{
       'changedTouches': touches.map(
         (_TouchDetails details) =>
           _createTouch(
@@ -2138,7 +2268,7 @@ class _PointerEventContext extends _BasicEventContext with _ButtonedEventMixin i
   }
 
   html.Event _downWithFullDetails({double clientX, double clientY, int button, int buttons, int pointer, String pointerType}) {
-    return html.PointerEvent('pointerdown', {
+    return html.PointerEvent('pointerdown', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
@@ -2173,7 +2303,7 @@ class _PointerEventContext extends _BasicEventContext with _ButtonedEventMixin i
   }
 
   html.Event _moveWithFullDetails({double clientX, double clientY, int button, int buttons, int pointer, String pointerType}) {
-    return html.PointerEvent('pointermove', {
+    return html.PointerEvent('pointermove', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
@@ -2206,7 +2336,7 @@ class _PointerEventContext extends _BasicEventContext with _ButtonedEventMixin i
   }
 
   html.Event _upWithFullDetails({double clientX, double clientY, int button, int pointer, String pointerType}) {
-    return html.PointerEvent('pointerup', {
+    return html.PointerEvent('pointerup', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
       'buttons': 0,
@@ -2218,7 +2348,7 @@ class _PointerEventContext extends _BasicEventContext with _ButtonedEventMixin i
 
   @override
   List<html.Event> multiTouchCancel(List<_TouchDetails> touches) {
-    return touches.map((_TouchDetails details) => html.PointerEvent('pointercancel', {
+    return touches.map((_TouchDetails details) => html.PointerEvent('pointercancel', <String, dynamic>{
       'pointerId': details.pointer,
       'button': 0,
       'buttons': 0,

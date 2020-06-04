@@ -11,6 +11,7 @@
 #include <lib/async/default.h>
 #include <lib/fdio/directory.h>
 #include <lib/fdio/namespace.h>
+#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/ui/scenic/cpp/view_token_pair.h>
 #include <lib/vfs/cpp/composed_service_dir.h>
 #include <lib/vfs/cpp/remote_dir.h>
@@ -35,6 +36,7 @@
 #include "runtime/dart/utils/tempfs.h"
 #include "runtime/dart/utils/vmo.h"
 
+#include "flutter_runner_product_configuration.h"
 #include "task_observers.h"
 #include "task_runner_adapter.h"
 #include "thread.h"
@@ -314,6 +316,13 @@ Application::Application(
     }
   }
 
+  // Load and use product-specific configuration, if it exists.
+  std::string json_string;
+  if (dart_utils::ReadFileToString(
+          "/config/data/frame_scheduling_performance_values", &json_string)) {
+    product_config_ = FlutterRunnerProductConfiguration(json_string);
+  }
+
 #if defined(DART_PRODUCT)
   settings_.enable_observatory = false;
 #else
@@ -431,7 +440,8 @@ class FileInNamespaceBuffer final : public fml::Mapping {
   FileInNamespaceBuffer(int namespace_fd, const char* path, bool executable)
       : address_(nullptr), size_(0) {
     fuchsia::mem::Buffer buffer;
-    if (!dart_utils::VmoFromFilenameAt(namespace_fd, path, &buffer)) {
+    if (!dart_utils::VmoFromFilenameAt(namespace_fd, path, executable,
+                                       &buffer)) {
       return;
     }
     if (buffer.size == 0) {
@@ -441,17 +451,6 @@ class FileInNamespaceBuffer final : public fml::Mapping {
     uint32_t flags = ZX_VM_PERM_READ;
     if (executable) {
       flags |= ZX_VM_PERM_EXECUTE;
-
-      // VmoFromFilenameAt will return VMOs without ZX_RIGHT_EXECUTE,
-      // so we need replace_as_executable to be able to map them as
-      // ZX_VM_PERM_EXECUTE.
-      // TODO(mdempsky): Update comment once SEC-42 is fixed.
-      zx_status_t status =
-          buffer.vmo.replace_as_executable(zx::handle(), &buffer.vmo);
-      if (status != ZX_OK) {
-        FML_LOG(FATAL) << "Failed to make VMO executable: "
-                       << zx_status_get_string(status);
-      }
     }
     uintptr_t addr;
     zx_status_t status =
@@ -555,7 +554,6 @@ void Application::AttemptVMLaunchWithCurrentSettings(
   FML_CHECK(vm) << "Mut be able to initialize the VM.";
 }
 
-// |fuchsia::sys::ComponentController|
 void Application::Kill() {
   application_controller_.events().OnTerminated(
       last_return_code_.second, fuchsia::sys::TerminationReason::EXITED);
@@ -565,12 +563,10 @@ void Application::Kill() {
   // collected.
 }
 
-// |fuchsia::sys::ComponentController|
 void Application::Detach() {
   application_controller_.set_error_handler(nullptr);
 }
 
-// |flutter::Engine::Delegate|
 void Application::OnEngineTerminate(const Engine* shell_holder) {
   auto found = std::find_if(shell_holders_.begin(), shell_holders_.end(),
                             [shell_holder](const auto& holder) {
@@ -598,11 +594,20 @@ void Application::OnEngineTerminate(const Engine* shell_holder) {
   }
 }
 
-// |fuchsia::ui::app::ViewProvider|
 void Application::CreateView(
+    zx::eventpair token,
+    fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> /*incoming_services*/,
+    fidl::InterfaceHandle<
+        fuchsia::sys::ServiceProvider> /*outgoing_services*/) {
+  auto view_ref_pair = scenic::ViewRefPair::New();
+  CreateViewWithViewRef(std::move(token), std::move(view_ref_pair.control_ref),
+                        std::move(view_ref_pair.view_ref));
+}
+
+void Application::CreateViewWithViewRef(
     zx::eventpair view_token,
-    fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> incoming_services,
-    fidl::InterfaceHandle<fuchsia::sys::ServiceProvider> outgoing_services) {
+    fuchsia::ui::views::ViewRefControl control_ref,
+    fuchsia::ui::views::ViewRef view_ref) {
   if (!svc_) {
     FML_DLOG(ERROR)
         << "Component incoming services was invalid when attempting to "
@@ -618,8 +623,13 @@ void Application::CreateView(
       settings_,                     // settings
       std::move(isolate_snapshot_),  // isolate snapshot
       scenic::ToViewToken(std::move(view_token)),  // view token
-      std::move(fdio_ns_),                         // FDIO namespace
-      std::move(directory_request_)                // outgoing request
+      scenic::ViewRefPair{
+          .control_ref = std::move(control_ref),
+          .view_ref = std::move(view_ref),
+      },
+      std::move(fdio_ns_),            // FDIO namespace
+      std::move(directory_request_),  // outgoing request
+      product_config_                 // product configuration
       ));
 }
 
