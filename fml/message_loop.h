@@ -15,7 +15,6 @@ class MessageLoopImpl;
 
 class MessageLoop {
  public:
-  FML_EMBEDDER_ONLY
   static MessageLoop& GetCurrent();
 
   bool IsValid() const;

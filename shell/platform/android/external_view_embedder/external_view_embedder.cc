@@ -46,6 +46,10 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
   // TODO(egarciad): Implement hybrid composition.
   // https://github.com/flutter/flutter/issues/55270
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
+  if (should_run_rasterizer_on_platform_thread_) {
+    // Don't submit the current frame if the frame will be resubmitted.
+    return false;
+  }
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
     frame->SkiaCanvas()->drawPicture(
@@ -57,6 +61,17 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
 // |ExternalViewEmbedder|
 PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+  bool has_platform_views = composition_order_.size() > 0;
+  if (has_platform_views) {
+    if (raster_thread_merger->IsMerged()) {
+      raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);
+    } else {
+      // Merge the raster and platform threads in `EndFrame`.
+      should_run_rasterizer_on_platform_thread_ = true;
+      CancelFrame();
+      return PostPrerollResult::kResubmitFrame;
+    }
+  }
   return PostPrerollResult::kSuccess;
 }
 
@@ -86,6 +101,11 @@ void AndroidExternalViewEmbedder::CancelFrame() {
 
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::EndFrame(
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+  if (should_run_rasterizer_on_platform_thread_) {
+    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
+    should_run_rasterizer_on_platform_thread_ = false;
+  }
+}
 
 }  // namespace flutter
