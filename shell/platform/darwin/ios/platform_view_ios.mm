@@ -191,6 +191,21 @@ void PlatformViewIOS::OnPreEngineRestart() const {
   [owner_controller_.get() platformViewsController]->Reset();
 }
 
+std::vector<std::string>& PlatformViewIOS::ComputePlatformResolvedLocales(
+    const std::vector<std::string>& supportedLocaleData) {
+  std::vector<NSString*> trimmed_locale_data;
+  for (size_t i = 0; i < supportedLocaleData.size(); i += 2) {
+    trimmed_locale_data.push_back([NSString stringWithUTF8String:supportedLocaleData[i].c_str()]);
+  }
+  NSArray<NSString*>* ios_supported_locales = [NSArray arrayWithObjects:&trimmed_locale_data[0]
+                                                                  count:trimmed_locale_data.size()];
+  // NSString* result = [NSString stringWithUTF8String:param.c_str()];
+  NSArray<NSString*>* result = [NSBundle preferredLocalizationsFromArray:ios_supported_locales];
+
+  platform_resolved_locale_.emplace_back([result firstObject].UTF8String);
+  return platform_resolved_locale_;
+}
+
 PlatformViewIOS::ScopedObserver::ScopedObserver() : observer_(nil) {}
 
 PlatformViewIOS::ScopedObserver::~ScopedObserver() {

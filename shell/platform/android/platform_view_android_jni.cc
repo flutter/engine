@@ -808,9 +808,6 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       g_flutter_jni_class->obj(), "computePlatformResolvedLocale",
       "([Ljava/lang/String;)Ljava/lang/String;");
 
-  FML_LOG(ERROR) << "DISCOVERED computePlatformResolvedLocale ID: "
-                 << g_compute_platform_resolved_locale_method << " "
-                 << g_detach_from_gl_context_method;
   if (g_compute_platform_resolved_locale_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate computePlatformResolvedLocale method";
     return false;

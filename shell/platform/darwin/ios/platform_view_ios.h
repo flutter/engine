@@ -129,6 +129,7 @@ class PlatformViewIOS final : public PlatformView {
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
   fml::closure firstFrameCallback_;
   ScopedObserver dealloc_view_controller_observer_;
+  std::vector<std::string> platform_resolved_locale_;
 
   // |PlatformView|
   void HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) override;
