@@ -210,9 +210,7 @@ abstract class PictureRecorder {
   /// Returns a picture containing the graphical operations that have been
   /// recorded thus far. After calling this function, both the picture recorder
   /// and the canvas objects are invalid and cannot be used further.
-  ///
-  /// Returns null if the PictureRecorder is not associated with a canvas.
-  Picture/*?*/ endRecording();
+  Picture/*!*/ endRecording();
 }
 
 /// An interface for recording graphical operations.

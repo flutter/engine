@@ -4171,9 +4171,7 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   /// Returns a picture containing the graphical operations that have been
   /// recorded thus far. After calling this function, both the picture recorder
   /// and the canvas objects are invalid and cannot be used further.
-  ///
-  /// Returns null if the PictureRecorder is not associated with a canvas.
-  Picture/*?*/ endRecording() {
+  Picture/*!*/ endRecording() {
     final Picture picture = Picture._();
     _endRecording(picture);
     return picture;
