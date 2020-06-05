@@ -805,6 +805,11 @@ class Window {
   Locale get platformResolvedLocale => _platformResolvedLocale;
   Locale _platformResolvedLocale;
 
+  /// Performs the platform-native locale resolution.
+  ///
+  /// Each platform may return different results.
+  ///
+  /// If the platform fails to resolve a locale, then this will return null.
   Locale computePlatformResolvedLocale(List<Locale> supportedLocales) {
     if (supportedLocales == null) {
       return null;
@@ -813,12 +818,16 @@ class Window {
     for (Locale locale in supportedLocales) {
       supportedLocalesData.add(locale.languageCode);
       supportedLocalesData.add(locale.countryCode);
+      supportedLocalesData.add(locale.scriptCode);
     }
 
     List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
 
-    if (result != null) {
-      return result.length == 1 ? Locale.fromSubtags(languageCode: result[0]) : Locale.fromSubtags(languageCode: result[0], countryCode: result[1]);
+    if (result != null && result.isNotEmpty && result[0] != null) {
+      return Locale.fromSubtags(
+        languageCode: result[0],
+        countryCode: result[1],
+        scriptCode: result[2]);
     }
     return null;
   }

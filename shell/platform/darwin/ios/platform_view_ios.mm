@@ -193,6 +193,9 @@ void PlatformViewIOS::OnPreEngineRestart() const {
 
 std::vector<std::string>& PlatformViewIOS::ComputePlatformResolvedLocales(
     const std::vector<std::string>& supportedLocaleData) {
+  for (size_t i = 0; i < supportedLocaleData.size(); i++) {
+    FML_DLOG(ERROR) << "LOCALE: " + supportedLocaleData[i];
+  }
   std::vector<NSString*> trimmed_locale_data;
   for (size_t i = 0; i < supportedLocaleData.size(); i += 2) {
     trimmed_locale_data.push_back([NSString stringWithUTF8String:supportedLocaleData[i].c_str()]);

@@ -431,7 +431,12 @@ Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
   size_t u_length = static_cast<size_t>(length);
   std::vector<std::string> supportedLocales;
   for (size_t i = 0; i < u_length; i++) {
-    const char* cname;
+    const char* cname = nullptr;
+    Dart_Handle element = Dart_ListGetAt(supportedLocalesHandle, i);
+    if (Dart_IsNull(element)) {
+      supportedLocales.emplace_back("");
+      continue;
+    }
     Dart_StringToCString(Dart_ListGetAt(supportedLocalesHandle, i), &cname);
     supportedLocales.emplace_back(cname);
   }

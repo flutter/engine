@@ -441,9 +441,42 @@ std::vector<std::string>& PlatformViewAndroid::ComputePlatformResolvedLocales(
       fml::jni::VectorToStringArray(env, supportedLocaleData).obj());
 
   platform_resolved_locale_.clear();
-  platform_resolved_locale_.emplace_back(result.data(), 2);
-  if (result.size() > 2) {
-    platform_resolved_locale_.emplace_back(result.data() + 2, 2);
+  // Decode the locale string.
+  switch (platform_resolved_locale_.size()) {
+    case 0: {
+      platform_resolved_locale_.emplace_back("");
+      platform_resolved_locale_.emplace_back("");
+      platform_resolved_locale_.emplace_back("");
+      break;
+    }
+    // Only languageCode (2)
+    case 2: {
+      platform_resolved_locale_.emplace_back(result.data(), 2);
+      platform_resolved_locale_.emplace_back("");
+      platform_resolved_locale_.emplace_back("");
+      break;
+    }
+    // Only languageCode (2) and countryCode (2)
+    case 4: {
+      platform_resolved_locale_.emplace_back(result.data(), 2);
+      platform_resolved_locale_.emplace_back(result.data() + 2, 2);
+      platform_resolved_locale_.emplace_back("");
+      break;
+    }
+    // Only languageCode (2) and scriptCode (4)
+    case 6: {
+      platform_resolved_locale_.emplace_back(result.data(), 2);
+      platform_resolved_locale_.emplace_back("");
+      platform_resolved_locale_.emplace_back(result.data() + 2, 4);
+      break;
+    }
+    // languageCode (2), countryCode (2), and scriptCode (4)
+    case 8: {
+      platform_resolved_locale_.emplace_back(result.data(), 2);
+      platform_resolved_locale_.emplace_back(result.data() + 2, 2);
+      platform_resolved_locale_.emplace_back(result.data() + 4, 4);
+      break;
+    }
   }
   return platform_resolved_locale_;
 }

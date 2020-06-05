@@ -794,17 +794,27 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   private String computePlatformResolvedLocale(@NonNull String[] strings) {
     List<Locale> supportedLocales = new ArrayList<Locale>();
-    final int localeDataLength = 2;
+    final int localeDataLength = 3;
     for (int i = 0; i < strings.length / localeDataLength; i++) {
       String languageCode = strings[i * localeDataLength + 0];
       String countryCode = strings[i * localeDataLength + 1];
-      if (countryCode.isEmpty()) {
-        supportedLocales.add(new Locale(languageCode));
-      } else {
-        supportedLocales.add(new Locale(languageCode, countryCode));
+      String scriptCode = strings[i * localeDataLength + 2];
+      Locale.Builder localeBuilder = new Locale.Builder();
+      if (!languageCode.isEmpty()) {
+        localeBuilder.setLanguage(languageCode);
       }
+      if (!countryCode.isEmpty()) {
+        localeBuilder.setRegion(countryCode);
+      }
+      if (!scriptCode.isEmpty()) {
+        localeBuilder.setScript(scriptCode);
+      }
+      supportedLocales.add(localeBuilder.build());
     }
     Locale result = LocalizationPlugin.resolveNativeLocale(supportedLocales);
+    if (result == null) {
+      return "";
+    }
     return result.getLanguage() + result.getCountry();
   }
 
