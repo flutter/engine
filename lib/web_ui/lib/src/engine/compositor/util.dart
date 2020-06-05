@@ -97,8 +97,6 @@ class SkiaObjects {
 }
 
 /// Converts a list of [ui.Color] into the 2d array expected by CanvasKit.
-///
-/// CanvasKit receives
 js.JsArray<Float32List> makeColorList(List<ui.Color> colors) {
   var result = js.JsArray<Float32List>();
   result.length = colors.length;
@@ -150,6 +148,16 @@ void setSharedSkColor3(ui.Color color) {
     sharedSkColor3 = _mallocColorArray();
   }
   _setSharedColor(sharedSkColor3, color);
+}
+
+/// Creates a new color array.
+Float32List makeFreshSkColor(ui.Color color) {
+  final Float32List result = Float32List(4);
+  result[0] = color.red / 255.0;
+  result[1] = color.green / 255.0;
+  result[2] = color.blue / 255.0;
+  result[3] = color.alpha / 255.0;
+  return result;
 }
 
 js.JsObject makeSkRect(ui.Rect rect) {
@@ -402,12 +410,9 @@ void drawSkShadow(
   ui.Color inAmbient = color.withAlpha((color.alpha * ambientAlpha).round());
   ui.Color inSpot = color.withAlpha((color.alpha * spotAlpha).round());
 
-  setSharedSkColor1(inAmbient);
-  setSharedSkColor2(inSpot);
-
-  final js.JsObject inTonalColors = js.JsObject.jsify(<String, js.JsObject>{
-    'ambient': sharedSkColor1,
-    'spot': sharedSkColor2,
+  final js.JsObject inTonalColors = js.JsObject.jsify(<String, Float32List>{
+    'ambient': makeFreshSkColor(inAmbient),
+    'spot': makeFreshSkColor(inSpot),
   });
 
   final js.JsObject tonalColors =
