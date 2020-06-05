@@ -2,6 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// These declarations are an amalgamation of different headers whose
+// symbols exist in IOKit.framework.  The headers have been removed
+// from the iOS SDKs but all the functions are documented here:
+//  * https://developer.apple.com/documentation/iokit/iokitlib_h?language=objc
+//  * https://developer.apple.com/documentation/iokit/iokit_functions?language=objc
+//  * file:///Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/IOKit.framework/Versions/A/Headers/IOKitLib.h
+
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || \
     FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_IOKIT_H_

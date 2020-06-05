@@ -65,7 +65,7 @@ class Scoped {
     return &object_;
   }
   T get() { return object_; }
-  void swap(T new_value) {
+  void reset(T new_value) {
     if (object_) {
       deleter_(object_);
     }
@@ -88,7 +88,7 @@ void DeleteIO(io_object_t value) {
 
 std::optional<GpuUsageInfo> FindGpuUsageInfo(io_iterator_t iterator) {
   for (Scoped<io_registry_entry_t> regEntry(IOIteratorNext(iterator), DeleteIO); regEntry.get();
-       regEntry.swap(IOIteratorNext(iterator))) {
+       regEntry.reset(IOIteratorNext(iterator))) {
     Scoped<CFMutableDictionaryRef> serviceDictionary(DeleteCF);
     if (IORegistryEntryCreateCFProperties(regEntry.get(), serviceDictionary.handle(),
                                           kCFAllocatorDefault, kNilOptions) != kIOReturnSuccess) {
@@ -119,7 +119,7 @@ std::optional<GpuUsageInfo> FindGpuUsageInfo(io_iterator_t iterator) {
   if (IOServiceGetMatchingServices(kIOMasterPortDefault, IOServiceNameMatching("sgx"),
                                    iterator.handle()) == kIOReturnSuccess) {
     for (Scoped<io_registry_entry_t> regEntry(IOIteratorNext(iterator.get()), DeleteIO);
-         regEntry.get(); regEntry.swap(IOIteratorNext(iterator.get()))) {
+         regEntry.get(); regEntry.reset(IOIteratorNext(iterator.get()))) {
       Scoped<io_iterator_t> innerIterator(DeleteIO);
       if (IORegistryEntryGetChildIterator(regEntry.get(), kIOServicePlane,
                                           innerIterator.handle()) == kIOReturnSuccess) {
