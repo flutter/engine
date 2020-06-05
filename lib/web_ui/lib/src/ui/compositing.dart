@@ -128,7 +128,7 @@ abstract class SceneBuilder {
   OffsetEngineLayer pushOffset(
     double/*!*/ dx,
     double/*!*/ dy, {
-    OffsetEngineLayer oldLayer,
+    OffsetEngineLayer/*?*/ oldLayer,
   });
 
   /// Pushes a transform operation onto the operation stack.
@@ -138,7 +138,7 @@ abstract class SceneBuilder {
   /// See [pop] for details about the operation stack.
   TransformEngineLayer pushTransform(
     Float64List/*!*/ matrix4, {
-    TransformEngineLayer oldLayer,
+    TransformEngineLayer/*?*/ oldLayer,
   });
 
   /// Pushes a rectangular clip operation onto the operation stack.
@@ -150,7 +150,7 @@ abstract class SceneBuilder {
   ClipRectEngineLayer pushClipRect(
     Rect/*!*/ rect, {
     Clip/*!*/ clipBehavior = Clip.antiAlias,
-    ClipRectEngineLayer oldLayer,
+    ClipRectEngineLayer/*?*/ oldLayer,
   });
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
@@ -161,7 +161,7 @@ abstract class SceneBuilder {
   ClipRRectEngineLayer pushClipRRect(
     RRect/*!*/ rrect, {
     Clip/*!*/ clipBehavior,
-    ClipRRectEngineLayer oldLayer,
+    ClipRRectEngineLayer/*?*/ oldLayer,
   });
 
   /// Pushes a path clip operation onto the operation stack.
@@ -172,7 +172,7 @@ abstract class SceneBuilder {
   ClipPathEngineLayer pushClipPath(
     Path/*!*/ path, {
     Clip/*!*/ clipBehavior = Clip.antiAlias,
-    ClipPathEngineLayer oldLayer,
+    ClipPathEngineLayer/*?*/ oldLayer,
   });
 
   /// Pushes an opacity operation onto the operation stack.
@@ -186,7 +186,7 @@ abstract class SceneBuilder {
   OpacityEngineLayer pushOpacity(
     int/*!*/ alpha, {
     Offset/*!*/ offset = Offset.zero,
-    OpacityEngineLayer oldLayer,
+    OpacityEngineLayer/*?*/ oldLayer,
   });
 
   /// Pushes a color filter operation onto the operation stack.
@@ -201,7 +201,7 @@ abstract class SceneBuilder {
   /// See [pop] for details about the operation stack.
   ColorFilterEngineLayer pushColorFilter(
     ColorFilter/*!*/ filter, {
-    ColorFilterEngineLayer oldLayer,
+    ColorFilterEngineLayer/*?*/ oldLayer,
   });
 
   /// Pushes an image filter operation onto the operation stack.
@@ -216,7 +216,7 @@ abstract class SceneBuilder {
   /// See [pop] for details about the operation stack.
   ImageFilterEngineLayer pushImageFilter(
     ImageFilter/*!*/ filter, {
-    ImageFilterEngineLayer oldLayer,
+    ImageFilterEngineLayer/*?*/ oldLayer,
   });
 
   /// Pushes a backdrop filter operation onto the operation stack.
@@ -227,7 +227,7 @@ abstract class SceneBuilder {
   /// See [pop] for details about the operation stack.
   BackdropFilterEngineLayer pushBackdropFilter(
     ImageFilter/*!*/ filter, {
-    BackdropFilterEngineLayer oldLayer,
+    BackdropFilterEngineLayer/*?*/ oldLayer,
   });
 
   /// Pushes a shader mask operation onto the operation stack.
@@ -240,7 +240,7 @@ abstract class SceneBuilder {
     Shader/*!*/ shader,
     Rect/*!*/ maskRect,
     BlendMode/*!*/ blendMode, {
-    ShaderMaskEngineLayer oldLayer,
+    ShaderMaskEngineLayer/*?*/ oldLayer,
   });
 
   /// Pushes a physical layer operation for an arbitrary shape onto the
@@ -261,7 +261,7 @@ abstract class SceneBuilder {
     Color/*!*/ color,
     Color/*?*/ shadowColor,
     Clip/*!*/ clipBehavior = Clip.none,
-    PhysicalShapeEngineLayer oldLayer,
+    PhysicalShapeEngineLayer/*?*/ oldLayer,
   });
 
   /// Add a retained engine layer subtree from previous frames.
