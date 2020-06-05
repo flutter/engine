@@ -10,11 +10,10 @@ class SkColorFilter {
   js.JsObject skColorFilter;
 
   SkColorFilter.mode(EngineColorFilter filter) {
-    // Call the private '_MakeBlend' rather than 'MakeBlend' because
-    // 'MakeBlend' will free the color array.
+    setSharedSkColor1(filter._color);
     skColorFilter =
-        canvasKit['SkColorFilter'].callMethod('_MakeBlend', <dynamic>[
-      makeSkColor(filter._color).offsetInBytes,
+        canvasKit['SkColorFilter'].callMethod('MakeBlend', <dynamic>[
+      sharedSkColor1,
       makeSkBlendMode(filter._blendMode),
     ]);
   }

@@ -166,13 +166,13 @@ class SkTextStyle implements ui.TextStyle {
     final Map<String, dynamic> style = <String, dynamic>{};
 
     if (background != null) {
-      style['backgroundColor'] =
-          makeSkColor(background.color, useFreshArray: true);
+      setSharedSkColor2(background.color);
+      style['backgroundColor'] = sharedSkColor2;
     }
 
     if (color != null) {
-      // TODO(hterkelsen): This doesn't seem to be properly setting color?
-      style['color'] = makeSkColor(color, useFreshArray: true);
+      setSharedSkColor1(color);
+      style['color'] = sharedSkColor1;
     }
 
     if (decoration != null) {
@@ -218,8 +218,8 @@ class SkTextStyle implements ui.TextStyle {
     }
 
     if (foreground != null) {
-      style['foregroundColor'] =
-          makeSkColor(foreground.color, useFreshArray: true);
+      setSharedSkColor3(foreground.color);
+      style['foregroundColor'] = sharedSkColor3;
     }
 
     // TODO(hterkelsen): Add support for

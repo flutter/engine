@@ -14,9 +14,8 @@ class SkCanvas {
   int get saveCount => skCanvas.callMethod('getSaveCount');
 
   void clear(ui.Color color) {
-    // Call the private `_clear` method instead of `clear` because
-    // `clear` will free the color array.
-    skCanvas.callMethod('_clear', <int>[makeSkColor(color).offsetInBytes]);
+    setSharedSkColor1(color);
+    skCanvas.callMethod('clear', <js.JsObject>[sharedSkColor1]);
   }
 
   void clipPath(ui.Path path, bool doAntiAlias) {
@@ -99,10 +98,9 @@ class SkCanvas {
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    // Call the private '_drawColor' method rather than 'drawColor' because
-    // 'drawColor' will free the color array.
-    skCanvas.callMethod('_drawColor', <dynamic>[
-      makeSkColor(color).offsetInBytes,
+    setSharedSkColor1(color);
+    skCanvas.callMethod('drawColor', <dynamic>[
+      sharedSkColor1,
       makeSkBlendMode(blendMode),
     ]);
   }
@@ -189,8 +187,8 @@ class SkCanvas {
     skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture.skPicture]);
   }
 
-  void drawPoints(
-      SkPaint paint, ui.PointMode pointMode, js.JsArray<js.JsArray<double>> points) {
+  void drawPoints(SkPaint paint, ui.PointMode pointMode,
+      js.JsArray<js.JsArray<double>> points) {
     skCanvas.callMethod('drawPoints', <dynamic>[
       makeSkPointMode(pointMode),
       points,

@@ -114,23 +114,42 @@ js.JsArray<Float32List> makeColorList(List<ui.Color> colors) {
   return result;
 }
 
-Float32List _mallocColorArray() {
+js.JsObject _mallocColorArray() {
   return canvasKit
       .callMethod('Malloc', <dynamic>[js.context['Float32Array'], 4]);
 }
 
-Float32List _colorArray;
-Float32List makeSkColor(ui.Color color, {bool useFreshArray = false}) {
-  if (_colorArray == null || _colorArray.isEmpty) {
-    // The color array may become freed. If so, recreate it.
-    _colorArray = _mallocColorArray();
+js.JsObject sharedSkColor1;
+js.JsObject sharedSkColor2;
+js.JsObject sharedSkColor3;
+
+void _setSharedColor(js.JsObject sharedColor, ui.Color color) {
+  Float32List array = sharedColor.callMethod('toTypedArray');
+  array[0] = color.red / 255.0;
+  array[1] = color.green / 255.0;
+  array[2] = color.blue / 255.0;
+  array[3] = color.alpha / 255.0;
+}
+
+void setSharedSkColor1(ui.Color color) {
+  if (sharedSkColor1 == null) {
+    sharedSkColor1 = _mallocColorArray();
   }
-  final Float32List result = useFreshArray ? Float32List(4) : _colorArray;
-  result[0] = color.red / 255.0;
-  result[1] = color.green / 255.0;
-  result[2] = color.blue / 255.0;
-  result[3] = color.alpha / 255.0;
-  return result;
+  _setSharedColor(sharedSkColor1, color);
+}
+
+void setSharedSkColor2(ui.Color color) {
+  if (sharedSkColor2 == null) {
+    sharedSkColor2 = _mallocColorArray();
+  }
+  _setSharedColor(sharedSkColor2, color);
+}
+
+void setSharedSkColor3(ui.Color color) {
+  if (sharedSkColor3 == null) {
+    sharedSkColor3 = _mallocColorArray();
+  }
+  _setSharedColor(sharedSkColor3, color);
 }
 
 js.JsObject makeSkRect(ui.Rect rect) {
@@ -383,9 +402,12 @@ void drawSkShadow(
   ui.Color inAmbient = color.withAlpha((color.alpha * ambientAlpha).round());
   ui.Color inSpot = color.withAlpha((color.alpha * spotAlpha).round());
 
-  final js.JsObject inTonalColors = js.JsObject.jsify(<String, Float32List>{
-    'ambient': makeSkColor(inAmbient, useFreshArray: true),
-    'spot': makeSkColor(inSpot, useFreshArray: true),
+  setSharedSkColor1(inAmbient);
+  setSharedSkColor2(inSpot);
+
+  final js.JsObject inTonalColors = js.JsObject.jsify(<String, js.JsObject>{
+    'ambient': sharedSkColor1,
+    'spot': sharedSkColor2,
   });
 
   final js.JsObject tonalColors =
