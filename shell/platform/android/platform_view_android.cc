@@ -442,7 +442,7 @@ std::vector<std::string>& PlatformViewAndroid::ComputePlatformResolvedLocales(
 
   platform_resolved_locale_.clear();
   // Decode the locale string.
-  switch (platform_resolved_locale_.size()) {
+  switch (result.size()) {
     case 0: {
       platform_resolved_locale_.emplace_back("");
       platform_resolved_locale_.emplace_back("");

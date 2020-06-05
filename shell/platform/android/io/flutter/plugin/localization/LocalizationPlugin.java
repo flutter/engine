@@ -51,9 +51,10 @@ public class LocalizationPlugin {
       int localeCount = localeList.size();
       for (int index = 0; index < localeCount; ++index) {
         Locale locale = localeList.get(index);
-        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
+        String localeString = locale.toString();
+        languageRanges.add(new Locale.LanguageRange(localeString.replace("_", "-")));
       }
-      // TODO(garyq) implement a real locale resolution.
+
       platformResolvedLocale =
           Locale.lookup(languageRanges, supportedLocales);
     }

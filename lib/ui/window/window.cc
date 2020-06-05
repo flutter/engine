@@ -444,10 +444,13 @@ Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
       UIDartState::Current()->window()->client()->ComputePlatformResolvedLocale(
           supportedLocales);
 
+  FML_DCHECK(results.size() == 3);
   // Convert to dart List of strings.
   Dart_Handle output = Dart_NewListOf(Dart_CoreType_String, results.size());
   for (size_t i = 0; i < results.size(); i++) {
-    Dart_ListSetAt(output, i, tonic::ToDart(results[i]));
+    Dart_ListSetAt(
+        output, i,
+        results[i].empty() ? Dart_Null() : tonic::ToDart(results[i]));
   }
 
   Dart_ListLength(output, &length);
