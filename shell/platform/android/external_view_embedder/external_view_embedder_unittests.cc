@@ -53,11 +53,12 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
   auto embedder = new AndroidExternalViewEmbedder();
   auto platform_thread = new fml::Thread("platform");
   auto rasterizer_thread = new fml::Thread("rasterizer");
-  auto qid1 = platform_thread->GetTaskRunner()->GetTaskQueueId();
-  auto qid2 = rasterizer_thread->GetTaskRunner()->GetTaskQueueId();
+  auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
+  auto rasterizer_queue_id =
+      rasterizer_thread->GetTaskRunner()->GetTaskQueueId();
 
-  auto raster_thread_merger =
-      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+  auto raster_thread_merger = fml::MakeRefCounted<fml::RasterThreadMerger>(
+      platform_queue_id, rasterizer_queue_id);
   ASSERT_FALSE(raster_thread_merger->IsMerged());
 
   embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0);
@@ -84,11 +85,12 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
   auto embedder = new AndroidExternalViewEmbedder();
   auto platform_thread = new fml::Thread("platform");
   auto rasterizer_thread = new fml::Thread("rasterizer");
-  auto qid1 = platform_thread->GetTaskRunner()->GetTaskQueueId();
-  auto qid2 = rasterizer_thread->GetTaskRunner()->GetTaskQueueId();
+  auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
+  auto rasterizer_queue_id =
+      rasterizer_thread->GetTaskRunner()->GetTaskQueueId();
 
-  auto raster_thread_merger =
-      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+  auto raster_thread_merger = fml::MakeRefCounted<fml::RasterThreadMerger>(
+      platform_queue_id, rasterizer_queue_id);
   ASSERT_FALSE(raster_thread_merger->IsMerged());
 
   PostPrerollResult result = embedder->PostPrerollAction(raster_thread_merger);
