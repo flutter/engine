@@ -2223,7 +2223,7 @@ class Path extends NativeFieldWrapperClass2 {
     }
     throw StateError('Path.combine() failed.  This may be due an invalid path; in particular, check for NaN values.');
   }
-  bool _op(Path path1, Path path2, int operation) native 'Path_op';
+  bool/*!*/ _op(Path/*!*/ path1, Path/*!*/ path2, int/*!*/ operation) native 'Path_op';
 
   /// Creates a [PathMetrics] object for this path, which can describe various
   /// properties about the contours of the path.
