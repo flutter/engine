@@ -519,7 +519,6 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   auto frame = compositor_context.flutter::CompositorContext::AcquireFrame(
       surface_context, canvas, nullptr, root_surface_transformation, false,
       true, nullptr);
-
   canvas->clear(SK_ColorTRANSPARENT);
   frame->Raster(*tree, true);
   canvas->flush();
