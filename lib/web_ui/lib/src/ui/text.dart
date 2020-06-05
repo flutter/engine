@@ -133,10 +133,9 @@ class FontWeight {
   /// an [AnimationController].
   static FontWeight/*?*/ lerp(FontWeight/*?*/ a, FontWeight/*?*/ b, double/*!*/ t) {
     assert(t != null);
-    return values[
-        lerpDouble(a?.index ?? normal.index, b?.index ?? normal.index, t)
-            .round()
-            .clamp(0, 8)];
+    if (a == null && b == null)
+      return null;
+    return values[lerpDouble(a?.index ?? normal.index, b?.index ?? normal.index, t).round().clamp(0, 8) as int];
   }
 
   @override
