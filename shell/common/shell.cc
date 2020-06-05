@@ -1254,7 +1254,9 @@ bool Shell::OnServiceProtocolScreenshot(
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   auto screenshot = rasterizer_->ScreenshotLastLayerTree(
       Rasterizer::ScreenshotType::CompressedImage, true);
+  FML_DLOG(ERROR) << "screenshot ";
   if (screenshot.data) {
+    FML_DLOG(ERROR) << "screenshot has data";
     response.SetObject();
     auto& allocator = response.GetAllocator();
     response.AddMember("type", "Screenshot", allocator);
