@@ -17,7 +17,7 @@
 namespace flutter {
 
 //------------------------------------------------------------------------------
-/// Holds a `EGLSurface` reference.
+/// Holds an `EGLSurface` reference.
 ///
 ///
 /// This can be used in conjuction to unique_ptr to provide better guarantees
