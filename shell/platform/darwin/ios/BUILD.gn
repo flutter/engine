@@ -5,7 +5,6 @@
 assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
-import("//flutter/build/darwin/ios_app.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
@@ -99,6 +98,8 @@ source_set("flutter_framework_source") {
     "ios_surface_gl.mm",
     "ios_surface_software.h",
     "ios_surface_software.mm",
+    "ios_switchable_gl_context.h",
+    "ios_switchable_gl_context.mm",
     "platform_view_ios.h",
     "platform_view_ios.mm",
     "rendering_api_selection.h",
@@ -131,6 +132,7 @@ source_set("flutter_framework_source") {
     "//flutter/runtime",
     "//flutter/runtime:libdart",
     "//flutter/shell/common",
+    "//flutter/shell/common:common_standalone",
     "//flutter/shell/platform/darwin/common",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/profiling:profiling",
@@ -328,29 +330,6 @@ shared_library("copy_and_verify_framework_headers") {
   ]
   deps = [
     ":copy_framework_headers",
-  ]
-}
-
-test_fixtures("flutter_tests_fixtures") {
-  fixtures = []
-}
-
-# Note: This currently isn't used, it might be removed.
-ios_app("FlutterTests") {
-  testonly = true
-
-  info_plist = "FlutterTestsInfo.plist"
-
-  sources = [
-    "flutter_unittests.mm",
-  ]
-
-  libs = [ "Foundation.framework" ]
-
-  deps = [
-    ":flutter_tests_fixtures",
-    "//flutter/runtime:libdart",
-    "//flutter/testing",
   ]
 }
 

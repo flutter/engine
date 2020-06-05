@@ -19,14 +19,15 @@ G_DEFINE_TYPE(FlDartProject, fl_dart_project, G_TYPE_OBJECT)
 static void fl_dart_project_set_path(FlDartProject* self, const gchar* path) {
   g_free(self->path);
 
-  if (g_path_is_absolute(path))
+  if (g_path_is_absolute(path)) {
     self->path = g_strdup(path);
-  else {
+  } else {
     g_autoptr(GError) error = nullptr;
     g_autofree gchar* exe_path = g_file_read_link("/proc/self/exe", &error);
-    if (exe_path == nullptr)
+    if (exe_path == nullptr) {
       g_critical("Failed to determine location of executable: %s",
                  error->message);
+    }
     g_autofree gchar* dir = g_path_get_dirname(exe_path);
     self->path = g_build_filename(dir, path, nullptr);
   }

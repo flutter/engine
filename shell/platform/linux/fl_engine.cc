@@ -12,13 +12,13 @@
 
 static constexpr int kMicrosecondsPerNanosecond = 1000;
 
-// Unique number associated with platform tasks
+// Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
 
 struct _FlEngine {
   GObject parent_instance;
 
-  // Thread the GLib main loop is running on
+  // Thread the GLib main loop is running on.
   GThread* thread;
 
   FlDartProject* project;
@@ -26,7 +26,7 @@ struct _FlEngine {
   FlBinaryMessenger* binary_messenger;
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
 
-  // Function to call when a platform message is received
+  // Function to call when a platform message is received.
   FlEnginePlatformMessageHandler platform_message_handler;
   gpointer platform_message_handler_data;
   GDestroyNotify platform_message_handler_destroy_notify;
@@ -36,14 +36,14 @@ G_DEFINE_QUARK(fl_engine_error_quark, fl_engine_error)
 
 G_DEFINE_TYPE(FlEngine, fl_engine, G_TYPE_OBJECT)
 
-// Subclass of GSource that integrates Flutter tasks into the GLib main loop
+// Subclass of GSource that integrates Flutter tasks into the GLib main loop.
 typedef struct {
   GSource parent;
   FlEngine* self;
   FlutterTask task;
 } FlutterSource;
 
-// Callback to run a Flutter task in the GLib main loop
+// Callback to run a Flutter task in the GLib main loop.
 static gboolean flutter_source_dispatch(GSource* source,
                                         GSourceFunc callback,
                                         gpointer user_data) {
@@ -58,7 +58,7 @@ static gboolean flutter_source_dispatch(GSource* source,
   return G_SOURCE_REMOVE;
 }
 
-// Table of functions for Flutter GLib main loop integration
+// Table of functions for Flutter GLib main loop integration.
 static GSourceFuncs flutter_source_funcs = {
     nullptr,                  // prepare
     nullptr,                  // check
@@ -68,7 +68,7 @@ static GSourceFuncs flutter_source_funcs = {
     nullptr  // Internal usage
 };
 
-// Flutter engine callbacks
+// Flutter engine rendering callbacks.
 
 static void* fl_engine_gl_proc_resolver(void* user_data, const char* name) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
@@ -107,11 +107,13 @@ static bool fl_engine_gl_present(void* user_data) {
   return result;
 }
 
+// Called by the engine to determine if it is on the GTK thread.
 static bool fl_engine_runs_task_on_current_thread(void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
   return self->thread == g_thread_self();
 }
 
+// Called when the engine has a task to perform in the GTK thread.
 static void fl_engine_post_task(FlutterTask task,
                                 uint64_t target_time_nanos,
                                 void* user_data) {
@@ -127,6 +129,7 @@ static void fl_engine_post_task(FlutterTask task,
   g_source_attach(source, nullptr);
 }
 
+// Called when a platform message is received from the engine.
 static void fl_engine_platform_message_cb(const FlutterPlatformMessage* message,
                                           void* user_data) {
   FlEngine* self = FL_ENGINE(user_data);
@@ -140,11 +143,14 @@ static void fl_engine_platform_message_cb(const FlutterPlatformMessage* message,
         self->platform_message_handler_data);
   }
 
-  if (!handled)
+  if (!handled) {
     fl_engine_send_platform_message_response(self, message->response_handle,
                                              nullptr, nullptr);
+  }
 }
 
+// Called when a response to a sent platform message is received from the
+// engine.
 static void fl_engine_platform_message_response_cb(const uint8_t* data,
                                                    size_t data_length,
                                                    void* user_data) {
@@ -162,9 +168,10 @@ static void fl_engine_dispose(GObject* object) {
   g_clear_object(&self->renderer);
   g_clear_object(&self->binary_messenger);
 
-  if (self->platform_message_handler_destroy_notify)
+  if (self->platform_message_handler_destroy_notify) {
     self->platform_message_handler_destroy_notify(
         self->platform_message_handler_data);
+  }
   self->platform_message_handler_data = nullptr;
   self->platform_message_handler_destroy_notify = nullptr;
 
@@ -252,9 +259,10 @@ void fl_engine_set_platform_message_handler(
   g_return_if_fail(FL_IS_ENGINE(self));
   g_return_if_fail(handler != nullptr);
 
-  if (self->platform_message_handler_destroy_notify)
+  if (self->platform_message_handler_destroy_notify) {
     self->platform_message_handler_destroy_notify(
         self->platform_message_handler_data);
+  }
 
   self->platform_message_handler = handler;
   self->platform_message_handler_data = user_data;
@@ -269,16 +277,23 @@ gboolean fl_engine_send_platform_message_response(
   g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
   g_return_val_if_fail(handle != nullptr, FALSE);
 
+  if (self->engine == nullptr) {
+    g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
+                "No engine to send response to");
+    return FALSE;
+  }
+
   gsize data_length = 0;
   const uint8_t* data = nullptr;
-  if (response != nullptr)
+  if (response != nullptr) {
     data =
         static_cast<const uint8_t*>(g_bytes_get_data(response, &data_length));
+  }
   FlutterEngineResult result = FlutterEngineSendPlatformMessageResponse(
       self->engine, handle, data, data_length);
 
   if (result != kSuccess) {
-    g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
+    g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
                 "Failed to send platorm message response");
     return FALSE;
   }
@@ -299,6 +314,12 @@ void fl_engine_send_platform_message(FlEngine* self,
   if (callback != nullptr) {
     task = g_task_new(self, cancellable, callback, user_data);
 
+    if (self->engine == nullptr) {
+      g_task_return_new_error(task, fl_engine_error_quark(),
+                              FL_ENGINE_ERROR_FAILED, "No engine to send to");
+      return;
+    }
+
     FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
         self->engine, fl_engine_platform_message_response_cb, task,
         &response_handle);
@@ -309,6 +330,8 @@ void fl_engine_send_platform_message(FlEngine* self,
       g_object_unref(task);
       return;
     }
+  } else if (self->engine == nullptr) {
+    return;
   }
 
   FlutterPlatformMessage fl_message = {};
@@ -349,6 +372,9 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
                                          double pixel_ratio) {
   g_return_if_fail(FL_IS_ENGINE(self));
 
+  if (self->engine == nullptr)
+    return;
+
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(FlutterWindowMetricsEvent);
   event.width = width;
@@ -364,6 +390,9 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
                                         double y,
                                         int64_t buttons) {
   g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr)
+    return;
 
   FlutterPointerEvent fl_event = {};
   fl_event.struct_size = sizeof(fl_event);

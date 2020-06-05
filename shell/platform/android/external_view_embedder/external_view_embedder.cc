@@ -40,17 +40,18 @@ std::vector<SkCanvas*> AndroidExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-bool AndroidExternalViewEmbedder::SubmitFrame(GrContext* context,
-                                              SkCanvas* background_canvas) {
+bool AndroidExternalViewEmbedder::SubmitFrame(
+    GrContext* context,
+    std::unique_ptr<SurfaceFrame> frame) {
   // TODO(egarciad): Implement hybrid composition.
   // https://github.com/flutter/flutter/issues/55270
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
-    background_canvas->drawPicture(
+    frame->SkiaCanvas()->drawPicture(
         picture_recorders_[view_id]->finishRecordingAsPicture());
   }
-  return true;
+  return frame->Submit();
 }
 
 // |ExternalViewEmbedder|
@@ -65,27 +66,22 @@ SkCanvas* AndroidExternalViewEmbedder::GetRootCanvas() {
   return nullptr;
 }
 
+void AndroidExternalViewEmbedder::Reset() {
+  composition_order_.clear();
+  picture_recorders_.clear();
+}
+
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::BeginFrame(SkISize frame_size,
                                              GrContext* context,
                                              double device_pixel_ratio) {
+  Reset();
   frame_size_ = frame_size;
-}
-
-void AndroidExternalViewEmbedder::ClearFrame() {
-  composition_order_.clear();
-  picture_recorders_.clear();
-  frame_size_ = SkISize::MakeEmpty();
 }
 
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::CancelFrame() {
-  ClearFrame();
-}
-
-// |ExternalViewEmbedder|
-void AndroidExternalViewEmbedder::FinishFrame() {
-  ClearFrame();
+  Reset();
 }
 
 // |ExternalViewEmbedder|
