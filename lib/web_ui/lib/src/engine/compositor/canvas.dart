@@ -98,9 +98,8 @@ class SkCanvas {
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    setSharedSkColor1(color);
-    skCanvas.callMethod('drawColor', <dynamic>[
-      sharedSkColor1,
+    skCanvas.callMethod('drawColorInt', <dynamic>[
+      color.value,
       makeSkBlendMode(blendMode),
     ]);
   }
