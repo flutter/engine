@@ -89,6 +89,28 @@ To run tests on Safari use the following command. It works on MacOS devices and 
 felt test --browser=safari
 ```
 
+One can also use Ios Safari for running unit tests. It works on MacOS devices. There are few prerequisite steps:
+
+1. Please make sure that you installed XCode.
+
+2. The default version used in the tests are in browser_lock.yaml file. Install the ios version to use for simulators: XCode > Preferences > Components
+
+3. run `xcrun simctl list devices`. If the simulator you want is not installed use step 4.
+
+4. Use felt to create a simulator:
+
+```
+felt create --majorVersion=11 --minorVersion=1 --device='iPhone.11.Pro'
+```
+
+To run tests on ios-safari use the one of the following commands:
+
+```
+felt test --browser=ios-safari
+felt test --browser=ios-safari --majorVersion=13 --minorVersion=1 --device='iPhone.11.Pro'
+felt test --browser=ios-safari test/alarm_clock_test.dart
+```
+
 To run tests on Windows Edge use the following command. It works on Windows devices and it uses the Edge installed on the OS.
 
 ```

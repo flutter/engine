@@ -219,7 +219,7 @@ void cleanup() async {
     }
   }
 
-  cleanupCallbacks.forEach((element) {
-    element.call();
+  cleanupCallbacks.forEach((element) async {
+    await element.call();
   });
 }
