@@ -2343,7 +2343,7 @@ class PathMetricIterator implements Iterator<PathMetric> {
   _PathMeasure/*!*/ _pathMeasure;
 
   @override
-  PathMetric get current => _pathMetric;
+  PathMetric/*?*/ get current => _pathMetric;
 
   @override
   bool moveNext() {
