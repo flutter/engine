@@ -188,7 +188,7 @@ copy("copy_allowed_experiments") {
   ]
 
   outputs = [
-    "$root_gen_dir/dart-pkg/sky_engine/lib/_internal/{{source_file_part}}",
+    "$root_gen_dir/dart-pkg/sky_engine/lib/_internal/allowed_experiments.json",
   ]
 }
 
