@@ -483,9 +483,12 @@ class SemanticsFlag {
   /// Platforms may use this information to make polite announcements to the
   /// user to inform them of updates to this node.
   ///
-  /// An example of a live region is a [SnackBar] widget. On Android, A live
-  /// region causes a polite announcement to be generated automatically, even
-  /// if the user does not have focus of the widget.
+  /// An example of a live region is a [SnackBar] widget. On Android and iOS,
+  /// live region causes a polite announcement to be generated automatically,
+  /// even if the widget does not have accessibility focus. This announcement
+  /// may not be spoken if the OS accessibility services are already
+  /// announcing something else, such as reading the label of a focused
+  /// widget or providing a system announcement.
   static const SemanticsFlag isLiveRegion = SemanticsFlag._(_kIsLiveRegionIndex);
 
   /// The semantics node has the quality of either being "on" or "off".
@@ -685,7 +688,6 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// z-direction starting at `elevation`. Basically, in the z-direction the
   /// node starts at `elevation` above the parent and ends at `elevation` +
   /// `thickness` above the parent.
-  // TODO(cbracken): https://github.com/flutter/flutter/issues/57720
   void updateNode({
     /*required*/ int/*!*/ id,
     /*required*/ int/*!*/ flags,
@@ -714,32 +716,11 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     /*required*/ Int32List/*!*/ childrenInHitTestOrder,
     /*required*/ Int32List/*!*/ additionalActions,
   }) {
-    assert(id != null);
-    assert(flags != null);
-    assert(actions != null);
-    assert(maxValueLength != null);
-    assert(currentValueLength != null);
-    assert(textSelectionBase != null);
-    assert(textSelectionExtent != null);
-    assert(platformViewId != null);
-    assert(scrollChildren != null);
-    assert(scrollIndex != null);
-    assert(scrollPosition != null);
-    assert(scrollExtentMax != null);
-    assert(scrollExtentMin != null);
-    assert(elevation != null);
-    assert(thickness != null);
-    assert(rect != null);
-    assert(label != null);
-    assert(hint != null);
-    assert(value != null);
-    assert(increasedValue != null);
-    assert(decreasedValue != null);
-    assert(transform != null);
-    assert(childrenInTraversalOrder != null);
-    assert(childrenInHitTestOrder != null);
-    assert(additionalActions != null);
     assert(_matrix4IsValid(transform));
+    assert(
+      scrollChildren == 0 || scrollChildren == null || (scrollChildren > 0 && childrenInHitTestOrder != null),
+      'If a node has scrollChildren, it must have childrenInHitTestOrder',
+    );
     _updateNode(
       id,
       flags,

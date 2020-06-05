@@ -1,4 +1,4 @@
-Signature: f0d2a46f6529a210fd1738a57476bac8
+Signature: 20434416a12cf8be82f9e11d28e78a91
 
 UNUSED LICENSES:
 
@@ -3595,7 +3595,6 @@ FILE: ../../../third_party/skia/experimental/svg/model/SkSVGUse.cpp
 FILE: ../../../third_party/skia/experimental/svg/model/SkSVGUse.h
 FILE: ../../../third_party/skia/fuzz/FuzzCanvas.cpp
 FILE: ../../../third_party/skia/gm/alpha_image.cpp
-FILE: ../../../third_party/skia/gm/atlastext.cpp
 FILE: ../../../third_party/skia/gm/bitmaptiled.cpp
 FILE: ../../../third_party/skia/gm/blurignorexform.cpp
 FILE: ../../../third_party/skia/gm/blurimagevmask.cpp
@@ -3628,10 +3627,6 @@ FILE: ../../../third_party/skia/gm/testgradient.cpp
 FILE: ../../../third_party/skia/gm/text_scale_skew.cpp
 FILE: ../../../third_party/skia/gm/thinconcavepaths.cpp
 FILE: ../../../third_party/skia/include/android/SkAndroidFrameworkUtils.h
-FILE: ../../../third_party/skia/include/atlastext/SkAtlasTextContext.h
-FILE: ../../../third_party/skia/include/atlastext/SkAtlasTextFont.h
-FILE: ../../../third_party/skia/include/atlastext/SkAtlasTextRenderer.h
-FILE: ../../../third_party/skia/include/atlastext/SkAtlasTextTarget.h
 FILE: ../../../third_party/skia/include/codec/SkEncodedOrigin.h
 FILE: ../../../third_party/skia/include/core/SkDeferredDisplayList.h
 FILE: ../../../third_party/skia/include/core/SkDeferredDisplayListRecorder.h
@@ -3696,10 +3691,6 @@ FILE: ../../../third_party/skia/samplecode/SampleShadowColor.cpp
 FILE: ../../../third_party/skia/samplecode/SampleShadowReference.cpp
 FILE: ../../../third_party/skia/samplecode/SampleShadowUtils.cpp
 FILE: ../../../third_party/skia/src/android/SkAndroidFrameworkUtils.cpp
-FILE: ../../../third_party/skia/src/atlastext/SkAtlasTextContext.cpp
-FILE: ../../../third_party/skia/src/atlastext/SkAtlasTextTarget.cpp
-FILE: ../../../third_party/skia/src/atlastext/SkInternalAtlasTextContext.cpp
-FILE: ../../../third_party/skia/src/atlastext/SkInternalAtlasTextContext.h
 FILE: ../../../third_party/skia/src/c/sk_effects.cpp
 FILE: ../../../third_party/skia/src/codec/SkBmpBaseCodec.cpp
 FILE: ../../../third_party/skia/src/codec/SkBmpBaseCodec.h
@@ -5150,6 +5141,7 @@ FILE: ../../../third_party/skia/gm/labyrinth.cpp
 FILE: ../../../third_party/skia/gm/preservefillrule.cpp
 FILE: ../../../third_party/skia/gm/sample_matrix_constant.cpp
 FILE: ../../../third_party/skia/gm/sample_matrix_variable.cpp
+FILE: ../../../third_party/skia/gm/swizzle.cpp
 FILE: ../../../third_party/skia/gm/tilemodes_alpha.cpp
 FILE: ../../../third_party/skia/include/core/SkPathTypes.h
 FILE: ../../../third_party/skia/modules/skparagraph/bench/ParagraphBench.cpp
@@ -5235,6 +5227,7 @@ FILE: ../../../third_party/skia/gm/verifiers/gmverifier.cpp
 FILE: ../../../third_party/skia/gm/verifiers/gmverifier.h
 FILE: ../../../third_party/skia/include/core/SkM44.h
 FILE: ../../../third_party/skia/include/effects/SkStrokeAndFillPathEffect.h
+FILE: ../../../third_party/skia/include/private/SkOpts_spi.h
 FILE: ../../../third_party/skia/modules/skottie/include/ExternalLayer.h
 FILE: ../../../third_party/skia/modules/skottie/src/Adapter.h
 FILE: ../../../third_party/skia/modules/skottie/src/Camera.cpp
@@ -5266,6 +5259,7 @@ FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Repeater.c
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/RoundCorners.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/ShapeLayer.h
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/TrimPaths.cpp
+FILE: ../../../third_party/skia/modules/skparagraph/gm/simple_gm.cpp
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGDashEffect.h
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGDashEffect.cpp
 FILE: ../../../third_party/skia/modules/skshaper/src/SkShaper_coretext.cpp

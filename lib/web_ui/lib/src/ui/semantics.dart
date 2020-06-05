@@ -694,32 +694,8 @@ class SemanticsUpdateBuilder {
     /*required*/ Int32List/*!*/ childrenInHitTestOrder,
     /*required*/ Int32List/*!*/ additionalActions,
   }) {
-    assert(id != null);
-    assert(flags != null);
-    assert(actions != null);
-    assert(maxValueLength != null);
-    assert(currentValueLength != null);
-    assert(textSelectionBase != null);
-    assert(textSelectionExtent != null);
-    assert(platformViewId != null);
-    assert(scrollChildren != null);
-    assert(scrollIndex != null);
-    assert(scrollPosition != null);
-    assert(scrollExtentMax != null);
-    assert(scrollExtentMin != null);
-    assert(elevation != null);
-    assert(thickness != null);
-    assert(rect != null);
-    assert(label != null);
-    assert(hint != null);
-    assert(value != null);
-    assert(increasedValue != null);
-    assert(decreasedValue != null);
-    assert(transform != null);
-    assert(childrenInTraversalOrder != null);
-    assert(childrenInHitTestOrder != null);
-    assert(additionalActions != null);
-    assert(transform.length == 16, 'transform argument must have 16 entries.');
+    if (transform.length != 16)
+      throw ArgumentError('transform argument must have 16 entries.');
     _nodeUpdates.add(engine.SemanticsNodeUpdate(
       id: id,
       flags: flags,
