@@ -212,6 +212,7 @@ js.JsArray<double> makeSkPoint(ui.Offset point) {
   return skPoint;
 }
 
+// TODO(hterkelsen): https://github.com/flutter/flutter/issues/58824
 /// Creates a point list using a 2D JS array.
 js.JsArray<js.JsArray<double>> encodePointList(List<ui.Offset> points) {
   if (points == null) {
@@ -233,6 +234,7 @@ js.JsArray<js.JsArray<double>> encodePointList(List<ui.Offset> points) {
   return result;
 }
 
+// TODO(hterkelsen): https://github.com/flutter/flutter/issues/58824
 /// Creates a point list using a 2D JS array.
 List<List<double>> encodeRawPointList(Float32List points) {
   if (points == null) {

@@ -186,6 +186,7 @@ class SkCanvas {
     skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture.skPicture]);
   }
 
+  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/58824
   void drawPoints(SkPaint paint, ui.PointMode pointMode,
       js.JsArray<js.JsArray<double>> points) {
     skCanvas.callMethod('drawPoints', <dynamic>[
