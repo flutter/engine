@@ -27,10 +27,10 @@ Future<dynamic>/*!*/ ensureTestPlatformInitializedThenRunTest(
 
 /// Used to track when the platform is initialized. This ensures the test fonts
 /// are available.
-Future<void> _platformInitializedFuture;
+/*late*/ Future<void>/*!*/ _platformInitializedFuture;
 
 /// Initializes domRenderer with specific devicePixelRatio and physicalSize.
-Future<void> webOnlyInitializeTestDomRenderer({double/*!*/ devicePixelRatio = 3.0}) {
+Future<void>/*!*/ webOnlyInitializeTestDomRenderer({double/*!*/ devicePixelRatio = 3.0}) {
   // Force-initialize DomRenderer so it doesn't overwrite test pixel ratio.
   engine.domRenderer;
 

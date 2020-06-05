@@ -125,7 +125,7 @@ abstract class SceneBuilder {
   /// This is equivalent to [pushTransform] with a matrix with only translation.
   ///
   /// See [pop] for details about the operation stack.
-  OffsetEngineLayer pushOffset(
+  OffsetEngineLayer/*?*/ pushOffset(
     double/*!*/ dx,
     double/*!*/ dy, {
     OffsetEngineLayer/*?*/ oldLayer,
@@ -136,7 +136,7 @@ abstract class SceneBuilder {
   /// The objects are transformed by the given matrix before rasterization.
   ///
   /// See [pop] for details about the operation stack.
-  TransformEngineLayer pushTransform(
+  TransformEngineLayer/*?*/ pushTransform(
     Float64List/*!*/ matrix4, {
     TransformEngineLayer/*?*/ oldLayer,
   });
@@ -147,7 +147,7 @@ abstract class SceneBuilder {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  ClipRectEngineLayer pushClipRect(
+  ClipRectEngineLayer/*?*/ pushClipRect(
     Rect/*!*/ rect, {
     Clip/*!*/ clipBehavior = Clip.antiAlias,
     ClipRectEngineLayer/*?*/ oldLayer,
@@ -158,7 +158,7 @@ abstract class SceneBuilder {
   /// Rasterization outside the given rounded rectangle is discarded.
   ///
   /// See [pop] for details about the operation stack.
-  ClipRRectEngineLayer pushClipRRect(
+  ClipRRectEngineLayer/*?*/ pushClipRRect(
     RRect/*!*/ rrect, {
     Clip/*!*/ clipBehavior,
     ClipRRectEngineLayer/*?*/ oldLayer,
@@ -169,7 +169,7 @@ abstract class SceneBuilder {
   /// Rasterization outside the given path is discarded.
   ///
   /// See [pop] for details about the operation stack.
-  ClipPathEngineLayer pushClipPath(
+  ClipPathEngineLayer/*?*/ pushClipPath(
     Path/*!*/ path, {
     Clip/*!*/ clipBehavior = Clip.antiAlias,
     ClipPathEngineLayer/*?*/ oldLayer,
@@ -183,7 +183,7 @@ abstract class SceneBuilder {
   /// opacity).
   ///
   /// See [pop] for details about the operation stack.
-  OpacityEngineLayer pushOpacity(
+  OpacityEngineLayer/*?*/ pushOpacity(
     int/*!*/ alpha, {
     Offset/*!*/ offset = Offset.zero,
     OpacityEngineLayer/*?*/ oldLayer,
@@ -199,7 +199,7 @@ abstract class SceneBuilder {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ColorFilterEngineLayer pushColorFilter(
+  ColorFilterEngineLayer/*?*/ pushColorFilter(
     ColorFilter/*!*/ filter, {
     ColorFilterEngineLayer/*?*/ oldLayer,
   });
@@ -214,7 +214,7 @@ abstract class SceneBuilder {
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   ///
   /// See [pop] for details about the operation stack.
-  ImageFilterEngineLayer pushImageFilter(
+  ImageFilterEngineLayer/*?*/ pushImageFilter(
     ImageFilter/*!*/ filter, {
     ImageFilterEngineLayer/*?*/ oldLayer,
   });
@@ -225,7 +225,7 @@ abstract class SceneBuilder {
   /// rasterizing the given objects.
   ///
   /// See [pop] for details about the operation stack.
-  BackdropFilterEngineLayer pushBackdropFilter(
+  BackdropFilterEngineLayer/*?*/ pushBackdropFilter(
     ImageFilter/*!*/ filter, {
     BackdropFilterEngineLayer/*?*/ oldLayer,
   });
@@ -236,7 +236,7 @@ abstract class SceneBuilder {
   /// rectangle using the given blend mode.
   ///
   /// See [pop] for details about the operation stack.
-  ShaderMaskEngineLayer pushShaderMask(
+  ShaderMaskEngineLayer/*?*/ pushShaderMask(
     Shader/*!*/ shader,
     Rect/*!*/ maskRect,
     BlendMode/*!*/ blendMode, {
@@ -255,7 +255,7 @@ abstract class SceneBuilder {
   /// color of the layer background.
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
-  PhysicalShapeEngineLayer pushPhysicalShape({
+  PhysicalShapeEngineLayer/*?*/ pushPhysicalShape({
     Path/*!*/ path,
     double/*!*/ elevation,
     Color/*!*/ color,
