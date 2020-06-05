@@ -675,7 +675,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     // an output surface.
     fml::TaskRunner::RunNowOrPostTask(ui_task_runner, ui_task);
   };
-
+  animator_should_pause_.store(false);
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetIOTaskRunner(), io_task);
 
   latch.Wait();
@@ -750,10 +750,10 @@ void Shell::OnPlatformViewDestroyed() {
       latch.Signal();
     }
   };
-
   // Step 0: Post a task onto the UI thread to tell the engine that its output
   // surface is about to go away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
+  animator_should_pause_.store(true);
   latch.Wait();
   if (!should_post_raster_task) {
     // See comment on should_post_raster_task, in this case the raster_task
@@ -1000,6 +1000,11 @@ void Shell::OnAnimatorDrawLastLayerTree() {
           rasterizer->DrawLastLayerTree();
         }
       });
+}
+
+// |Animator::Delegate|
+bool Shell::AnimatorShouldPause() {
+  return animator_should_pause_.load();
 }
 
 // |Engine::Delegate|

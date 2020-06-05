@@ -203,6 +203,9 @@ void Animator::DrawLastLayerTree() {
 }
 
 void Animator::RequestFrame(bool regenerate_layer_tree) {
+  if (delegate_.AnimatorShouldPause()) {
+    Stop();
+  }
   if (regenerate_layer_tree) {
     regenerate_layer_tree_ = true;
   }

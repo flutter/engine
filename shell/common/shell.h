@@ -418,6 +418,8 @@ class Shell final : public PlatformView::Delegate,
   // and read from the raster thread.
   std::atomic<float> display_refresh_rate_ = 0.0f;
 
+  std::atomic<bool> animator_should_pause_{false};
+
   // How many frames have been timed since last report.
   size_t UnreportedFramesCount() const;
 
@@ -494,6 +496,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |Animator::Delegate|
   void OnAnimatorDrawLastLayerTree() override;
+
+  // |Animator::Delegate|
+  bool AnimatorShouldPause() override;
 
   // |Engine::Delegate|
   void OnEngineUpdateSemantics(

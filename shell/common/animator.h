@@ -39,6 +39,8 @@ class Animator final {
         fml::TimePoint frame_target_time) = 0;
 
     virtual void OnAnimatorDrawLastLayerTree() = 0;
+
+    virtual bool AnimatorShouldPause() = 0;
   };
 
   Animator(Delegate& delegate,
