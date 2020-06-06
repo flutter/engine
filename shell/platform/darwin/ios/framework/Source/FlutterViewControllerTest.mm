@@ -54,10 +54,25 @@ typedef enum UIAccessibilityContrast : NSInteger {
 #endif
 
 @interface FlutterViewController (Tests)
+- (void)surfaceUpdated:(BOOL)appeared;
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences;
 @end
 
 @implementation FlutterViewControllerTest
+
+- (void)testMultipleFlutterViewControllerShareEngine {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"testEngine"];
+  [engine run];
+  FlutterViewController* vcA = [[FlutterViewController alloc] initWithEngine:engine
+                                                                     nibName:nil
+                                                                      bundle:nil];
+  __unused FlutterViewController* vcB = [[FlutterViewController alloc] initWithEngine:engine
+                                                                              nibName:nil
+                                                                               bundle:nil];
+  id vcMockA = OCMPartialMock(vcA);
+  [vcMockA viewDidDisappear:NO];
+  OCMReject([vcMockA surfaceUpdated:NO]);
+}
 
 - (void)testBinaryMessenger {
   id engine = OCMClassMock([FlutterEngine class]);
