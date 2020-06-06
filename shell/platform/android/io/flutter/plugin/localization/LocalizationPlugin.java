@@ -55,6 +55,7 @@ public class LocalizationPlugin {
         languageRanges.add(new Locale.LanguageRange(localeString.replace("_", "-")));
       }
 
+      // This needs to be modified to achieve Android's full locale resolution
       platformResolvedLocale =
           Locale.lookup(languageRanges, supportedLocales);
     }

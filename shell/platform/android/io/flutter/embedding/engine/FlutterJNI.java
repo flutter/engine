@@ -812,7 +812,6 @@ public class FlutterJNI {
       supportedLocales.add(localeBuilder.build());
     }
     Locale result = LocalizationPlugin.resolveNativeLocale(supportedLocales);
-    Log.e("Flutter", "RESULT: " + result);
     if (result == null) {
       return "";
     }

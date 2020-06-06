@@ -197,15 +197,34 @@ std::vector<std::string>& PlatformViewIOS::ComputePlatformResolvedLocales(
     FML_DLOG(ERROR) << "LOCALE: " + supportedLocaleData[i];
   }
   std::vector<NSString*> trimmed_locale_data;
-  for (size_t i = 0; i < supportedLocaleData.size(); i += 2) {
-    trimmed_locale_data.push_back([NSString stringWithUTF8String:supportedLocaleData[i].c_str()]);
+  size_t localeDataLength = 3;
+  for (size_t i = 0; i < supportedLocaleData.size(); i += localeDataLength) {
+    std::string locale_string = supportedLocaleData[i];
+    // Concat scriptCode
+    if (!supportedLocaleData[i + 2].empty()) {
+      locale_string += "-" + supportedLocaleData[i + 2];
+    }
+    // Concat countryCode
+    if (!supportedLocaleData[i + 1].empty()) {
+      locale_string += "-" + supportedLocaleData[i + 1];
+    }
+    trimmed_locale_data.push_back([NSString stringWithUTF8String:locale_string.c_str()]);
   }
   NSArray<NSString*>* ios_supported_locales = [NSArray arrayWithObjects:&trimmed_locale_data[0]
                                                                   count:trimmed_locale_data.size()];
   // NSString* result = [NSString stringWithUTF8String:param.c_str()];
   NSArray<NSString*>* result = [NSBundle preferredLocalizationsFromArray:ios_supported_locales];
 
-  platform_resolved_locale_.emplace_back([result firstObject].UTF8String);
+  platform_resolved_locale_.clear();
+  if (result != nullptr && [result count] > 0) {
+    platform_resolved_locale_.emplace_back([result firstObject].UTF8String);
+    platform_resolved_locale_.emplace_back("");
+    platform_resolved_locale_.emplace_back("");
+  } else {
+    platform_resolved_locale_.emplace_back("");
+    platform_resolved_locale_.emplace_back("");
+    platform_resolved_locale_.emplace_back("");
+  }
   return platform_resolved_locale_;
 }
 
