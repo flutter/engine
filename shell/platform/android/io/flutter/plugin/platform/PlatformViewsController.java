@@ -533,4 +533,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     vdControllers.clear();
   }
+
+  public void onEndFrame() {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+  }
 }

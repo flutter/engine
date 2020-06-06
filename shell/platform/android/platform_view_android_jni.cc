@@ -118,6 +118,12 @@ void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj) {
   FML_CHECK(CheckException(env));
 }
 
+static jmethodID g_on_end_frame_method = nullptr;
+void FlutterViewEndFrame(JNIEnv* env, jobject obj) {
+  env->CallVoidMethod(obj, g_on_end_frame_method);
+  FML_CHECK(CheckException(env));
+}
+
 static jmethodID g_attach_to_gl_context_method = nullptr;
 void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId) {
   env->CallVoidMethod(obj, g_attach_to_gl_context_method, textureId);
@@ -754,6 +760,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       env, env->FindClass("android/graphics/SurfaceTexture"));
   if (g_surface_texture_class->is_null()) {
     FML_LOG(ERROR) << "Could not locate SurfaceTexture class";
+    return false;
+  }
+
+  g_on_end_frame_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "onEndFrame", "()V");
+
+  if (g_on_end_frame_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate onEndFrame method";
     return false;
   }
 
