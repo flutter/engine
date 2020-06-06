@@ -533,4 +533,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
     vdControllers.clear();
   }
+
+  public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+    if (flutterView == null) {
+      throw new RuntimeException("Cannot create an overlay surface without a flutter view");
+    }
+    ((FlutterView) flutterView).displayOverlaySurface(id, x, y, width, height);
+  }
 }

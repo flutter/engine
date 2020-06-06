@@ -1114,4 +1114,30 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
      */
     void onFlutterEngineDetachedFromFlutterView();
   }
+
+  private Set<Integer> unusedOverlaySurfaces = new HashSet<>();
+  private final Map<Integer, FlutterNativeView> overlaySurfaceViews = new HashMap<>();
+
+  public void displayOverlaySurface(int id, int x, int y, int width, int height) {
+    Log.e(
+        "flutter",
+        "displayOverlaySurface(" + id + ", " + x + ", " + y + ", " + width + ", " + height);
+
+    FlutterNativeView view = overlaySurfaceViews.get((int) id);
+    if (view.getParent() == null) {
+      addView(view);
+    }
+    float density = getContext().getResources().getDisplayMetrics().density;
+    android.widget.FrameLayout.LayoutParams layoutParams =
+        new android.widget.FrameLayout.LayoutParams((int) (width), (int) (height));
+    layoutParams.leftMargin = (int) x;
+    layoutParams.topMargin = (int) y;
+
+    view.setLayoutParams(layoutParams);
+    view.setVisibility(View.VISIBLE);
+    view.bringToFront();
+
+    // Mark the overlay surface as used in the current frame.
+    unusedOverlaySurfaces.remove((int) id);
+  }
 }
