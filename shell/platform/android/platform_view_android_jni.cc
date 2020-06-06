@@ -118,6 +118,12 @@ void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj) {
   FML_CHECK(CheckException(env));
 }
 
+static jmethodID g_on_begin_frame_method = nullptr;
+void FlutterViewBeginFrame(JNIEnv* env, jobject obj) {
+  env->CallVoidMethod(obj, g_on_begin_frame_method);
+  FML_CHECK(CheckException(env));
+}
+
 static jmethodID g_attach_to_gl_context_method = nullptr;
 void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId) {
   env->CallVoidMethod(obj, g_attach_to_gl_context_method, textureId);
@@ -747,6 +753,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
   if (g_flutter_jni_class->is_null()) {
     FML_LOG(ERROR) << "Failed to find FlutterJNI Class.";
+    return false;
+  }
+
+  g_on_begin_frame_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "onBeginFrame", "()V");
+
+  if (g_on_begin_frame_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate onBeginFrame method";
     return false;
   }
 

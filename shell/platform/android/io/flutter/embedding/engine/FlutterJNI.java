@@ -22,6 +22,7 @@ import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.plugin.common.StandardMessageCodec;
+import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
 import java.nio.ByteBuffer;
@@ -168,6 +169,7 @@ public class FlutterJNI {
   @Nullable private Long nativePlatformViewId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;
   @Nullable private PlatformMessageHandler platformMessageHandler;
+  @Nullable private PlatformViewsController platformViewsController;
 
   @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
@@ -414,6 +416,12 @@ public class FlutterJNI {
   private native void nativeDispatchPointerDataPacket(
       long nativePlatformViewId, @NonNull ByteBuffer buffer, int position);
   // ------ End Touch Interaction Support ---
+
+  @UiThread
+  public void setPlatformViewsController(@NonNull PlatformViewsController platformViewsController) {
+    ensureRunningOnMainThread();
+    this.platformViewsController = platformViewsController;
+  }
 
   // ------ Start Accessibility Support -----
   /**
@@ -779,6 +787,17 @@ public class FlutterJNI {
     for (EngineLifecycleListener listener : engineLifecycleListeners) {
       listener.onPreEngineRestart();
     }
+  }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void onBeginFrame() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to begin the frame");
+    }
+    platformViewsController.onBeginFrame();
   }
   // ----- End Engine Lifecycle Support ----
 
