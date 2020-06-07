@@ -15,6 +15,8 @@
 // Windows platform specific includes
 #include <windows.h>
 
+#include "window_binding_handler.h"
+
 namespace flutter {
 
 // An manager for inializing ANGLE correctly and using it to create and
@@ -29,9 +31,9 @@ class AngleSurfaceManager {
   AngleSurfaceManager& operator=(const AngleSurfaceManager&) = delete;
 
   // Creates and returns an EGLSurface wrapper and backing DirectX 11 SwapChain
-  // asociated with window, in the appropriate format for display in a
-  // HWND-backed window.
-  EGLSurface CreateSurface(HWND window);
+  // asociated with window, in the appropriate format for display.
+  // Target represents the visual entity to bind to.
+  EGLSurface CreateSurface(WindowsRenderTarget* render_target);
 
   // queries EGL for the dimensions of surface in physical
   // pixels returning width and height as out params.

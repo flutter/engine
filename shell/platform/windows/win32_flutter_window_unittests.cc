@@ -11,7 +11,7 @@ TEST(Win32FlutterWindowTest, CreateDestroy) {
 
 TEST(Win32FlutterWindowTest, CanFontChange) {
   Win32FlutterWindowTest window(800, 600);
-  HWND hwnd = window.GetWindowHandle();
+  ::HWND hwnd = window.GetWindowHandle();
   LRESULT result = SendMessage(hwnd, WM_FONTCHANGE, NULL, NULL);
   ASSERT_EQ(result, 0);
   ASSERT_TRUE(window.OnFontChangeWasCalled());

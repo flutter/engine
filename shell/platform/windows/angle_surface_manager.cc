@@ -169,8 +169,8 @@ void AngleSurfaceManager::CleanUp() {
   }
 }
 
-EGLSurface AngleSurfaceManager::CreateSurface(HWND window) {
-  if (!window || !initialize_succeeded_) {
+EGLSurface AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target) {
+  if (!render_target || !initialize_succeeded_) {
     return EGL_NO_SURFACE;
   }
 
@@ -179,7 +179,7 @@ EGLSurface AngleSurfaceManager::CreateSurface(HWND window) {
   const EGLint surfaceAttributes[] = {EGL_NONE};
 
   surface = eglCreateWindowSurface(egl_display_, egl_config_,
-                                   static_cast<EGLNativeWindowType>(window),
+      static_cast<EGLNativeWindowType>(render_target->GetWindowHandle()),
                                    surfaceAttributes);
   if (surface == EGL_NO_SURFACE) {
     std::cerr << "Surface creation failed." << std::endl;
