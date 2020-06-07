@@ -101,8 +101,7 @@ public class FlutterFragmentActivity extends FragmentActivity
      *
      * <p>{@code return new NewEngineIntentBuilder(MyFlutterActivity.class); }
      */
-    public NewEngineIntentBuilder(
-        @NonNull Class<? extends FlutterFragmentActivity> activityClass) {
+    public NewEngineIntentBuilder(@NonNull Class<? extends FlutterFragmentActivity> activityClass) {
       this.activityClass = activityClass;
     }
 
