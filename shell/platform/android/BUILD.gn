@@ -50,8 +50,6 @@ shared_library("flutter_shell_native") {
     "platform_message_response_android.h",
     "platform_view_android.cc",
     "platform_view_android.h",
-    "platform_view_android_jni.cc",
-    "platform_view_android_jni.h",
     "platform_view_android_jni_impl.cc",
     "platform_view_android_jni_impl.h",
     "vsync_waiter_android.cc",
@@ -60,6 +58,7 @@ shared_library("flutter_shell_native") {
 
   deps = [
     ":android_gpu_configuration",
+    ":android_jni",
     ":icudtl_object",
     "//flutter/assets",
     "//flutter/common",
@@ -95,6 +94,21 @@ shared_library("flutter_shell_native") {
   ]
 
   ldflags = [ "-Wl,--version-script=" + rebase_path("android_exports.lst") ]
+}
+
+source_set("android_jni") {
+  sources = [
+    "platform_view_android_jni.cc",
+    "platform_view_android_jni.h",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+
+  deps = [
+    "//flutter/fml",
+    "//flutter/lib/ui",
+    "//third_party/skia",
+  ]
 }
 
 action("gen_android_build_config_java") {
