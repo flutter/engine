@@ -31,8 +31,9 @@ void _updateWindowMetrics(
   double systemGestureInsetBottom,
   double systemGestureInsetLeft,
 ) {
+  assert(PlatformDispatcher.instance._screens[screenId] != null);
   final ViewConfiguration previousConfiguration =
-      PlatformDispatcher.instance._viewConfigurations[id] ?? const ViewConfiguration();
+      PlatformDispatcher.instance._viewConfigurations[id] ?? ViewConfiguration(screen: PlatformDispatcher.instance._screens[screenId]);
   PlatformDispatcher.instance._viewConfigurations[id] = previousConfiguration.copyWith(
     screen: PlatformDispatcher.instance._screens[screenId],
     geometry: Rect.fromLTWH(left, top, width, height),
@@ -226,18 +227,6 @@ void _updateUserSettingsData(String jsonData) {
       PlatformDispatcher.instance._onPlatformBrightnessChangedZone,
     );
   }
-}
-
-@pragma('vm:entry-point')
-// ignore: unused_element
-void _resetWindowConfiguration(Object id) {
-  PlatformDispatcher.instance._viewConfigurations[id] = const ViewConfiguration();
-}
-
-@pragma('vm:entry-point')
-// ignore: unused_element
-void _resetScreenConfiguration(Object id) {
-  PlatformDispatcher.instance._screenConfigurations[id] = const ScreenConfiguration();
 }
 
 @pragma('vm:entry-point')

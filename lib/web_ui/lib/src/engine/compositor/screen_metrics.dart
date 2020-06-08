@@ -6,13 +6,13 @@
 part of engine;
 
 class ScreenMetrics {
-  final double devicePixelRatio;
-  final double physicalWidth;
-  final double physicalHeight;
-
   const ScreenMetrics(
     this.devicePixelRatio,
     this.physicalWidth,
     this.physicalHeight,
   );
+
+  final double/*!*/ devicePixelRatio;
+  final double/*!*/ physicalWidth;
+  final double/*!*/ physicalHeight;
 }

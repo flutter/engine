@@ -213,11 +213,11 @@ PlatformConfiguration::~PlatformConfiguration() {}
 void PlatformConfiguration::DidCreateIsolate() {
   library_.Set(tonic::DartState::Current(),
                Dart_LookupLibrary(tonic::ToDart("dart:ui")));
-  for (auto const& window : windows_) {
-    window.second->DidCreateIsolate();
-  }
   for (auto const& screen : screens_) {
     screen.second->DidCreateIsolate();
+  }
+  for (auto const& window : windows_) {
+    window.second->DidCreateIsolate();
   }
 }
 

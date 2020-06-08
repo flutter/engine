@@ -7,18 +7,18 @@ part of dart.ui;
 
 /// A class representing the screen that application windows are displayed on.
 class Screen {
-    Screen._({Object screenId, PlatformDispatcher platformDispatcher})
+    const Screen._({Object/*!*/ screenId, PlatformDispatcher/*!*/ platformDispatcher})
     : _screenId = screenId,
       _platformDispatcher = platformDispatcher;
 
   /// The opaque ID for this screen.
-  final Object _screenId;
+  final Object/*!*/ _screenId;
 
   /// The platform dispatcher that this screen is registered with.
-  final PlatformDispatcher _platformDispatcher;
+  final PlatformDispatcher/*!*/ _platformDispatcher;
 
   /// The configuration of this screen.
-  ScreenConfiguration get configuration {
+  ScreenConfiguration/*!*/ get configuration {
     assert(_platformDispatcher._screens.containsKey(_screenId));
     return _platformDispatcher._screenConfigurations[_screenId];
   }

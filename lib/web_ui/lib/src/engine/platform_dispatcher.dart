@@ -5,6 +5,11 @@
 // @dart = 2.6
 part of engine;
 
+/// Requests that the browser schedule a frame.
+///
+/// This may be overridden in tests, for example, to pump fake frames.
+ui.VoidCallback/*?*/ scheduleFrameCallback;
+
 /// Platform event dispatcher.
 ///
 /// This is the central entry point for platform messages and configuration
@@ -17,21 +22,21 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   /// The [EnginePlatformDispatcher] singleton.
-  static EnginePlatformDispatcher get instance => _instance;
-  static final EnginePlatformDispatcher _instance = EnginePlatformDispatcher._();
+  static EnginePlatformDispatcher/*!*/ get instance => _instance;
+  static final EnginePlatformDispatcher/*!*/ _instance = EnginePlatformDispatcher._();
 
   /// The current platform configuration.
   @override
-  ui.PlatformConfiguration get configuration => _configuration;
-  ui.PlatformConfiguration _configuration = ui.PlatformConfiguration(locales: parseBrowserLanguages());
+  ui.PlatformConfiguration/*!*/ get configuration => _configuration;
+  ui.PlatformConfiguration/*!*/ _configuration = ui.PlatformConfiguration(locales: parseBrowserLanguages());
 
   /// Receives all events related to platform configuration changes.
   @override
-  ui.VoidCallback get onPlatformConfigurationChanged => _onPlatformConfigurationChanged;
-  ui.VoidCallback _onPlatformConfigurationChanged;
-  Zone _onPlatformConfigurationChangedZone;
+  ui.VoidCallback/*?*/ get onPlatformConfigurationChanged => _onPlatformConfigurationChanged;
+  ui.VoidCallback/*?*/ _onPlatformConfigurationChanged;
+  Zone/*!*/ _onPlatformConfigurationChangedZone = Zone.root;
   @override
-  set onPlatformConfigurationChanged(ui.VoidCallback callback) {
+  set onPlatformConfigurationChanged(ui.VoidCallback/*?*/ callback) {
     _onPlatformConfigurationChanged = callback;
     _onPlatformConfigurationChangedZone = Zone.current;
   }
@@ -43,24 +48,24 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   /// The current list of screens.
-  Iterable<ui.Screen> get screens => _screens.values;
-  Map<Object, ui.Screen> _screens = <Object, ui.Screen>{};
+  Iterable<ui.Screen/*!*/>/*!*/ get screens => _screens.values;
+  Map<Object/*!*/, ui.Screen/*!*/>/*!*/ _screens = <Object/*!*/, ui.Screen/*!*/>{};
 
   /// A map of opaque platform screen identifiers to screen configurations.
   ///
   /// This should be considered a protected member, only to be used by
   /// [PlatformDispatcher] subclasses.
-  Map<Object, ui.ScreenConfiguration> _screenConfigurations = <Object, ui.ScreenConfiguration>{};
+  Map<Object/*!*/, ui.ScreenConfiguration/*!*/> _screenConfigurations = <Object/*!*/, ui.ScreenConfiguration/*!*/>{};
 
   /// The current list of windows,
-  Iterable<ui.FlutterView> get views => _windows.values;
-  Map<Object, ui.FlutterWindow> _windows = <Object, ui.FlutterWindow>{};
+  Iterable<ui.FlutterView/*!*/>/*!*/ get views => _windows.values;
+  Map<Object, ui.FlutterWindow/*!*/>/*!*/ _windows = <Object/*!*/, ui.FlutterWindow/*!*/>{};
 
   /// A map of opaque platform window identifiers to window configurations.
   ///
   /// This should be considered a protected member, only to be used by
   /// [PlatformDispatcher] subclasses.
-  Map<Object, ui.ViewConfiguration> _windowConfigurations = <Object, ui.ViewConfiguration>{};
+  Map<Object/*!*/, ui.ViewConfiguration/*!*/>/*!*/ _windowConfigurations = <Object/*!*/, ui.ViewConfiguration/*!*/>{};
 
   /// Opens a new window and returns the window created.
   ///
@@ -70,7 +75,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// This function is currently not implemented, but is part of a planned
   /// feature.
   @override
-  Future<ui.FlutterView> createView(ui.ViewConfigurationRequest configuration) async {
+  Future<ui.FlutterView/*?*/> createView(ui.ViewConfigurationRequest/*!*/ configuration) async {
     throw UnimplementedError();
     // Awaits the platform window creation response, and calls onWindowOpened before returning.
   }
@@ -84,7 +89,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// feature.
   @override
   Future<void> configureView(
-      ui.FlutterView view, ui.ViewConfigurationRequest configuration) async {
+      ui.FlutterView/*!*/ view, ui.ViewConfigurationRequest/*!*/ configuration) async {
     throw UnimplementedError();
   }
 
@@ -95,7 +100,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// This function is currently not implemented, but is part of a planned
   /// feature.
   @override
-  Future<void> disposeView(ui.FlutterView view) async {
+  Future<void> disposeView(ui.FlutterView/*!*/ view) async {
     throw UnimplementedError();
   }
 
@@ -103,18 +108,18 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// Sends the newly opened window.
   @override
-  ui.ViewCreatedCallback get onViewCreated => _onWindowOpened;
-  ui.ViewCreatedCallback _onWindowOpened;
-  Zone _onWindowOpenedZone; // ignore: unused_field
+  ui.ViewCreatedCallback/*?*/ get onViewCreated => _onWindowOpened;
+  ui.ViewCreatedCallback/*?*/ _onWindowOpened;
+  Zone/*!*/ _onWindowOpenedZone = Zone.root; // ignore: unused_field
   @override
-  set onViewCreated(ui.ViewCreatedCallback callback) {
+  set onViewCreated(ui.ViewCreatedCallback/*?*/ callback) {
     _onWindowOpened = callback;
     _onWindowOpenedZone = Zone.current;
   }
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnWindowCreated(Object id) {
+  void invokeOnWindowCreated(Object/*!*/ id) {
     _invoke1<Object>(_onWindowOpened, _onWindowOpenedZone, id);
   }
 
@@ -122,18 +127,18 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// Sends the window to be closed.
   @override
-  ui.ViewDisposedCallback get onViewDisposed => _onWindowClosed;
-  ui.ViewDisposedCallback _onWindowClosed;
-  Zone _onWindowClosedZone; // ignore: unused_field
+  ui.ViewDisposedCallback/*?*/ get onViewDisposed => _onWindowClosed;
+  ui.ViewDisposedCallback/*?*/ _onWindowClosed;
+  Zone/*!*/ _onWindowClosedZone = Zone.root; // ignore: unused_field
   @override
-  set onViewDisposed(ui.ViewDisposedCallback callback) {
+  set onViewDisposed(ui.ViewDisposedCallback/*?*/ callback) {
     _onWindowClosed = callback;
     _onWindowClosedZone = Zone.current;
   }
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnWindowDisposed(Object id) {
+  void invokeOnWindowDisposed(Object/*!*/ id) {
     _invoke1<Object>(_onWindowClosed, _onWindowClosedZone, id);
   }
 
@@ -155,11 +160,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///    register for notifications when this is called.
   ///  * [MediaQuery.of], a simpler mechanism for the same.
   @override
-  ui.VoidCallback get onMetricsChanged => _onMetricsChanged;
-  ui.VoidCallback _onMetricsChanged;
-  Zone _onMetricsChangedZone; // ignore: unused_field
+  ui.VoidCallback/*?*/ get onMetricsChanged => _onMetricsChanged;
+  ui.VoidCallback/*?*/ _onMetricsChanged;
+  Zone/*!*/ _onMetricsChangedZone = Zone.root; // ignore: unused_field
   @override
-  set onMetricsChanged(ui.VoidCallback callback) {
+  set onMetricsChanged(ui.VoidCallback/*?*/ callback) {
     _onMetricsChanged = callback;
     _onMetricsChangedZone = Zone.current;
   }
@@ -171,8 +176,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   /// Returns device pixel ratio returned by browser.
-  static double get browserDevicePixelRatio {
-    double ratio = html.window.devicePixelRatio;
+  static double/*!*/ get browserDevicePixelRatio {
+    double/*?*/ ratio = html.window.devicePixelRatio;
     // Guard against WebOS returning 0.
     return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
   }
@@ -189,18 +194,18 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// callback was invoked.
   /// {@endtemplate}
   @override
-  ui.FrameCallback get onBeginFrame => _onBeginFrame;
-  ui.FrameCallback _onBeginFrame;
-  Zone _onBeginFrameZone;
+  ui.FrameCallback/*?*/ get onBeginFrame => _onBeginFrame;
+  ui.FrameCallback/*?*/ _onBeginFrame;
+  Zone/*!*/ _onBeginFrameZone = Zone.root;
   @override
-  set onBeginFrame(ui.FrameCallback callback) {
+  set onBeginFrame(ui.FrameCallback/*?*/ callback) {
     _onBeginFrame = callback;
     _onBeginFrameZone = Zone.current;
   }
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnBeginFrame(Duration duration) {
+  void invokeOnBeginFrame(Duration/*!*/ duration) {
     _invoke1<Duration>(_onBeginFrame, _onBeginFrameZone, duration);
   }
 
@@ -212,11 +217,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// happens after any deferred work queued by the [onBeginFrame] phase.
   /// {@endtemplate}
   @override
-  ui.VoidCallback get onDrawFrame => _onDrawFrame;
-  ui.VoidCallback _onDrawFrame;
-  Zone _onDrawFrameZone;
+  ui.VoidCallback/*?*/ get onDrawFrame => _onDrawFrame;
+  ui.VoidCallback/*?*/ _onDrawFrame;
+  Zone/*!*/ _onDrawFrameZone = Zone.root;
   @override
-  set onDrawFrame(ui.VoidCallback callback) {
+  set onDrawFrame(ui.VoidCallback/*?*/ callback) {
     _onDrawFrame = callback;
     _onDrawFrameZone = Zone.current;
   }
@@ -237,18 +242,18 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [GestureBinding], the Flutter framework class which manages pointer
   ///    events.
   @override
-  ui.PointerDataPacketCallback get onPointerDataPacket => _onPointerDataPacket;
-  ui.PointerDataPacketCallback _onPointerDataPacket;
-  Zone _onPointerDataPacketZone;
+  ui.PointerDataPacketCallback/*?*/ get onPointerDataPacket => _onPointerDataPacket;
+  ui.PointerDataPacketCallback/*?*/ _onPointerDataPacket;
+  Zone/*!*/ _onPointerDataPacketZone = Zone.root;
   @override
-  set onPointerDataPacket(ui.PointerDataPacketCallback callback) {
+  set onPointerDataPacket(ui.PointerDataPacketCallback/*?*/ callback) {
     _onPointerDataPacket = callback;
     _onPointerDataPacketZone = Zone.current;
   }
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnPointerDataPacket(ui.PointerDataPacket dataPacket) {
+  void invokeOnPointerDataPacket(ui.PointerDataPacket/*!*/ dataPacket) {
     _invoke1<ui.PointerDataPacket>(_onPointerDataPacket, _onPointerDataPacketZone, dataPacket);
   }
 
@@ -274,18 +279,18 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// (measured on iPhone6S). The 0.1ms is about 0.6% of 16ms (frame budget for
   /// 60fps), or 0.01% CPU usage per second.
   @override
-  ui.TimingsCallback get onReportTimings => _onReportTimings;
-  ui.TimingsCallback _onReportTimings;
-  Zone _onReportTimingsZone;
+  ui.TimingsCallback/*?*/ get onReportTimings => _onReportTimings;
+  ui.TimingsCallback/*?*/ _onReportTimings;
+  Zone/*!*/ _onReportTimingsZone = Zone.root;
   @override
-  set onReportTimings(ui.TimingsCallback callback) {
+  set onReportTimings(ui.TimingsCallback/*?*/ callback) {
     _onReportTimings = callback;
     _onReportTimingsZone = Zone.current;
   }
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnReportTimings(List<ui.FrameTiming> timings) {
+  void invokeOnReportTimings(List<ui.FrameTiming/*!*/>/*!*/ timings) {
     _invoke1<List<ui.FrameTiming>>(_onReportTimings, _onReportTimingsZone, timings);
   }
 
@@ -299,18 +304,18 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   @override
-  ui.PlatformMessageCallback get onPlatformMessage => _onPlatformMessage;
-  ui.PlatformMessageCallback _onPlatformMessage;
-  Zone _onPlatformMessageZone;
+  ui.PlatformMessageCallback/*?*/ get onPlatformMessage => _onPlatformMessage;
+  ui.PlatformMessageCallback/*?*/ _onPlatformMessage;
+  Zone/*!*/ _onPlatformMessageZone = Zone.root;
   @override
-  set onPlatformMessage(ui.PlatformMessageCallback callback) {
+  set onPlatformMessage(ui.PlatformMessageCallback/*?*/ callback) {
     _onPlatformMessage = callback;
     _onPlatformMessageZone = Zone.current;
   }
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnPlatformMessage(String name, ByteData data, ui.PlatformMessageResponseCallback callback) {
+  void invokeOnPlatformMessage(String/*!*/ name, ByteData/*?*/ data, ui.PlatformMessageResponseCallback/*?*/ callback) {
     _invoke3<String, ByteData, ui.PlatformMessageResponseCallback>(
       _onPlatformMessage,
       _onPlatformMessageZone,
@@ -322,7 +327,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
-  static ui.PlatformMessageResponseCallback _zonedPlatformMessageResponseCallback(ui.PlatformMessageResponseCallback callback) {
+  static ui.PlatformMessageResponseCallback _zonedPlatformMessageResponseCallback(ui.PlatformMessageResponseCallback/*?*/ callback) {
     if (callback == null)
       return null;
 
@@ -482,7 +487,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     // callback(null);
   }
 
-  int _getHapticFeedbackDuration(String type) {
+  int _getHapticFeedbackDuration(String/*!*/ type) {
     switch (type) {
       case 'HapticFeedbackType.lightImpact':
         return DomRenderer.vibrateLightImpact;
@@ -504,12 +509,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
- void scheduleFrame() {
-    if (ui.webOnlyScheduleFrameCallback == null) {
+  @override
+  void scheduleFrame() {
+    if (scheduleFrameCallback == null) {
       throw new Exception(
-          'webOnlyScheduleFrameCallback must be initialized first.');
+          'scheduleFrameCallback must be initialized first.');
     }
-    ui.webOnlyScheduleFrameCallback();
+    scheduleFrameCallback();
   }
 
   /// Updates the application's rendering on the GPU with the newly provided
@@ -537,7 +543,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   @override
-  void render(ui.Scene/*!*/ scene, [ui.FlutterView view]) {
+  void render(ui.Scene/*!*/ scene, [ui.FlutterView/*!*/ view]) {
     if (experimentalUseSkia) {
       final LayerScene layerScene = scene;
       rasterizer.draw(layerScene.layerTree);
@@ -548,16 +554,16 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   /// Additional accessibility features that may be enabled by the platform.
-  ui.AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
+  ui.AccessibilityFeatures/*!*/ get accessibilityFeatures => configuration.accessibilityFeatures;
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  ui.VoidCallback get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
-  ui.VoidCallback _onAccessibilityFeaturesChanged;
-  Zone _onAccessibilityFeaturesChangedZone;
-  set onAccessibilityFeaturesChanged(ui.VoidCallback callback) {
+  ui.VoidCallback/*?*/ get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
+  ui.VoidCallback/*?*/ _onAccessibilityFeaturesChanged;
+  Zone/*!*/ _onAccessibilityFeaturesChangedZone = Zone.root;
+  set onAccessibilityFeaturesChanged(ui.VoidCallback/*?*/ callback) {
     _onAccessibilityFeaturesChanged = callback;
     _onAccessibilityFeaturesChangedZone = Zone.current;
   }
@@ -575,7 +581,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
-  void updateSemantics(ui.SemanticsUpdate update) {
+  void updateSemantics(ui.SemanticsUpdate/*!*/ update) {
     EngineSemanticsOwner.instance.updateSemantics(update);
   }
 
@@ -587,7 +593,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorLanguage/languages,
   ///   which explains browser quirks in the implementation notes.
-  ui.Locale get locale => locales.first;
+  ui.Locale/*!*/ get locale => locales.first;
 
   /// The full system-reported supported locales of the device.
   ///
@@ -603,7 +609,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<ui.Locale> get locales => configuration.locales;
+  List<ui.Locale/*!*/>/*!*/ get locales => configuration.locales;
 
   /// The locale that the platform's native locale resolution system resolves to.
   ///
@@ -615,7 +621,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// in order to arrive at the most appropriate locale for the app.
   ///
   /// See [locales], which is the list of locales the user/device prefers.
-  ui.Locale get platformResolvedLocale => configuration.platformResolvedLocale;
+  ui.Locale/*!*/ get platformResolvedLocale => configuration.platformResolvedLocale;
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -626,16 +632,16 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  ui.VoidCallback get onLocaleChanged => _onLocaleChanged;
-  ui.VoidCallback _onLocaleChanged;
-  Zone _onLocaleChangedZone; // ignore: unused_field
-  set onLocaleChanged(ui.VoidCallback callback) {
+  ui.VoidCallback/*?*/ get onLocaleChanged => _onLocaleChanged;
+  ui.VoidCallback/*?*/ _onLocaleChanged;
+  Zone/*!*/ _onLocaleChangedZone = Zone.root; // ignore: unused_field
+  set onLocaleChanged(ui.VoidCallback/*?*/ callback) {
     _onLocaleChanged = callback;
     _onLocaleChangedZone = Zone.current;
   }
 
   /// The locale used when we fail to get the list from the browser.
-  static const _defaultLocale = const ui.Locale('en', 'US');
+  static const ui.Locale/*!*/ _defaultLocale = const ui.Locale('en', 'US');
 
   /// Sets locales to an empty list.
   ///
@@ -650,7 +656,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _configuration = _configuration.copyWith(locales: parseBrowserLanguages());
   }
 
-  static List<ui.Locale> parseBrowserLanguages() {
+  static List<ui.Locale/*!*/>/*!*/ parseBrowserLanguages() {
     // TODO(yjbanov): find a solution for IE
     final bool languagesFeatureMissing = !js_util.hasProperty(html.window.navigator, 'languages');
     if (languagesFeatureMissing || html.window.navigator.languages.isEmpty) {
@@ -685,8 +691,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// It is used to initialize [SchedulerBinding.lifecycleState] at startup
   /// with any buffered lifecycle state events.
-  String get initialLifecycleState => _initialLifecycleState;
-  String _initialLifecycleState;
+  String/*?*/ get initialLifecycleState => _initialLifecycleState;
+  String/*?*/ _initialLifecycleState;
 
   /// The system-reported text scale.
   ///
@@ -700,13 +706,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  double get textScaleFactor => configuration.textScaleFactor;
+  double/*!*/ get textScaleFactor => configuration.textScaleFactor;
 
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.
   ///
   /// This option is used by [showTimePicker].
-  bool get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
+  bool/*!*/ get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
 
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
@@ -717,10 +723,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  ui.VoidCallback get onTextScaleFactorChanged => _onTextScaleFactorChanged;
-  ui.VoidCallback _onTextScaleFactorChanged;
-  Zone _onTextScaleFactorChangedZone;
-  set onTextScaleFactorChanged(ui.VoidCallback callback) {
+  ui.VoidCallback/*?*/ get onTextScaleFactorChanged => _onTextScaleFactorChanged;
+  ui.VoidCallback/*?*/ _onTextScaleFactorChanged;
+  Zone/*!*/ _onTextScaleFactorChangedZone = Zone.root;
+  set onTextScaleFactorChanged(ui.VoidCallback/*?*/ callback) {
     _onTextScaleFactorChanged = callback;
     _onTextScaleFactorChangedZone = Zone.current;
   }
@@ -733,11 +739,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
-  ui.Brightness get platformBrightness => configuration.platformBrightness;
+  ui.Brightness/*!*/ get platformBrightness => configuration.platformBrightness;
 
   /// Updates [_platformBrightness] and invokes [onPlatformBrightnessChanged]
   /// callback if [_platformBrightness] changed.
-  void _updatePlatformBrightness(ui.Brightness value) {
+  void _updatePlatformBrightness(ui.Brightness/*!*/ value) {
     if (configuration.platformBrightness != value &&
         onPlatformBrightnessChanged != null) {
       _configuration = configuration.copyWith(platformBrightness: value);
@@ -747,13 +753,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   /// Reference to css media query that indicates the user theme preference on the web.
-  final html.MediaQueryList _brightnessMediaQuery =
+  final html.MediaQueryList/*!*/ _brightnessMediaQuery =
   html.window.matchMedia('(prefers-color-scheme: dark)');
 
   /// A callback that is invoked whenever [_brightnessMediaQuery] changes value.
   ///
   /// Updates the [_platformBrightness] with the new user preference.
-  html.EventListener _brightnessMediaQueryListener;
+  html.EventListener/*?*/ _brightnessMediaQueryListener;
 
   /// Set the callback function for listening changes in [_brightnessMediaQuery] value.
   void _addBrightnessMediaQueryListener() {
@@ -787,10 +793,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  ui.VoidCallback get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
-  ui.VoidCallback _onPlatformBrightnessChanged;
-  Zone _onPlatformBrightnessChangedZone;
-  set onPlatformBrightnessChanged(ui.VoidCallback callback) {
+  ui.VoidCallback/*?*/ get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
+  ui.VoidCallback/*?*/ _onPlatformBrightnessChanged;
+  Zone/*!*/ _onPlatformBrightnessChangedZone = Zone.root;
+  set onPlatformBrightnessChanged(ui.VoidCallback/*?*/ callback) {
     _onPlatformBrightnessChanged = callback;
     _onPlatformBrightnessChangedZone = Zone.current;
   }
@@ -806,16 +812,16 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// The [onSemanticsEnabledChanged] callback is called whenever this value
   /// changes.
-  bool get semanticsEnabled => configuration.semanticsEnabled;
+  bool/*!*/ get semanticsEnabled => configuration.semanticsEnabled;
 
   /// A callback that is invoked when the value of [semanticsEnabled] changes.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  ui.VoidCallback get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
-  ui.VoidCallback _onSemanticsEnabledChanged;
-  Zone _onSemanticsEnabledChangedZone;
-  set onSemanticsEnabledChanged(ui.VoidCallback callback) {
+  ui.VoidCallback/*?*/ get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
+  ui.VoidCallback/*?*/ _onSemanticsEnabledChanged;
+  Zone/*!*/ _onSemanticsEnabledChangedZone = Zone.root;
+  set onSemanticsEnabledChanged(ui.VoidCallback/*?*/ callback) {
     _onSemanticsEnabledChanged = callback;
     _onSemanticsEnabledChangedZone = Zone.current;
   }
@@ -834,17 +840,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  ui.SemanticsActionCallback get onSemanticsAction => _onSemanticsAction;
-  ui.SemanticsActionCallback _onSemanticsAction;
-  Zone _onSemanticsActionZone;
-  set onSemanticsAction(ui.SemanticsActionCallback callback) {
+  ui.SemanticsActionCallback/*?*/ get onSemanticsAction => _onSemanticsAction;
+  ui.SemanticsActionCallback/*?*/ _onSemanticsAction;
+  Zone/*!*/ _onSemanticsActionZone = Zone.root;
+  set onSemanticsAction(ui.SemanticsActionCallback/*?*/ callback) {
     _onSemanticsAction = callback;
     _onSemanticsActionZone = Zone.current;
   }
 
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
-  void invokeOnSemanticsAction(int id, ui.SemanticsAction action, ByteData args) {
+  void invokeOnSemanticsAction(int/*!*/ id, ui.SemanticsAction/*!*/ action, ByteData/*?*/ args) {
     _invoke3<int, ui.SemanticsAction, ByteData>(_onSemanticsAction, _onSemanticsActionZone, id, action, args);
   }
 
@@ -879,17 +885,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
   @override
-  String get initialRouteName => _initialRouteName ??= _browserHistory.currentPath;
+  String/*!*/ get initialRouteName => _initialRouteName ??= _browserHistory.currentPath;
 
   /// Lazily initialized when the `initialRouteName` getter is invoked.
   ///
   /// The reason for the lazy initialization is to give enough time for the app
   /// to set [locationStrategy] in `lib/src/ui/initialization.dart`.
-  String _initialRouteName;
+  String/*?*/ _initialRouteName;
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
-  final BrowserHistory _browserHistory = BrowserHistory();
+  final BrowserHistory/*!*/ _browserHistory = BrowserHistory();
 
   /// Simulates clicking the browser's back button.
   Future<void> webOnlyBack() => _browserHistory.back();
@@ -898,12 +904,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Setting this member will automatically update [_browserHistory].
   ///
   /// By setting this to null, the browser history will be disabled.
-  set locationStrategy(LocationStrategy strategy) {
+  set locationStrategy(LocationStrategy/*!*/ strategy) {
     _browserHistory.locationStrategy = strategy;
   }
 
   @visibleForTesting
-  Rasterizer rasterizer = experimentalUseSkia ? Rasterizer(Surface()) : null;
+  Rasterizer/*?*/ rasterizer = experimentalUseSkia ? Rasterizer(Surface()) : null;
 
   /// In Flutter, platform messages are exchanged between threads so the
   /// messages and responses have to be exchanged asynchronously. We simulate
@@ -920,7 +926,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 }
 
-bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData data) {
+bool _handleWebTestEnd2EndMessage(MethodCodec/*!*/ codec, ByteData/*!*/ data) {
   final MethodCall decoded = codec.decodeMethodCall(data);
   double ratio = double.parse(decoded.arguments);
   switch(decoded.method) {
@@ -933,7 +939,7 @@ bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData data) {
 }
 
 /// Invokes [callback] inside the given [zone].
-void _invoke(void callback(), Zone zone) {
+void _invoke(void callback/*?*/(), Zone/*!*/ zone) {
   if (callback == null)
     return;
 
@@ -947,7 +953,7 @@ void _invoke(void callback(), Zone zone) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg].
-void _invoke1<A>(void callback(A a), Zone zone, A arg) {
+void _invoke1<A/*?*/>(void callback/*?*/(A/*?*/ a), Zone zone/*!*/, A/*?*/ arg) {
   if (callback == null)
     return;
 
@@ -961,7 +967,13 @@ void _invoke1<A>(void callback(A a), Zone zone, A arg) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
-void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1, A2 arg2, A3 arg3) {
+void _invoke3<A1/*?*/, A2/*?*/, A3/*?*/ >(
+    void callback/*?*/(A1/*?*/ a1, A2/*?*/ a2, A3/*?*/ a3),
+    Zone/*!*/ zone,
+    A1/*?*/ arg1,
+    A2/*?*/ arg2,
+    A3/*?*/ arg3,
+  ) {
   if (callback == null)
     return;
 

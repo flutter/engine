@@ -8,5 +8,5 @@ part of ui;
 /// A class representing the screen that application windows are displayed on.
 abstract class Screen {
   /// The configuration of this screen.
-  ScreenConfiguration get configuration;
+  ScreenConfiguration/*!*/ get configuration;
 }

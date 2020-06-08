@@ -6,11 +6,11 @@
 part of engine;
 
 class ViewportMetrics {
-  final double physicalWidth;
-  final double physicalHeight;
-
   const ViewportMetrics(
     this.physicalWidth,
     this.physicalHeight,
   );
+
+  final double/*!*/ physicalWidth;
+  final double/*!*/ physicalHeight;
 }

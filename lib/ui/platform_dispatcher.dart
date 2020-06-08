@@ -7,10 +7,10 @@ part of dart.ui;
 
 // Callback types for events.
 
-typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
+typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration/*!*/ configuration);
 
-typedef ViewCreatedCallback = void Function(FlutterView view);
-typedef ViewDisposedCallback = void Function(FlutterView view);
+typedef ViewCreatedCallback = void Function(FlutterView/*!*/ view);
+typedef ViewDisposedCallback = void Function(FlutterView/*!*/ view);
 
 /// Platform event dispatcher singleton.
 ///
@@ -55,20 +55,20 @@ class PlatformDispatcher {
   /// inappropriate is if access to these APIs is required before invoking
   /// `runApp()`. In that case, it is acceptable (though unfortunate) to use the
   /// [PlatformDispatcher.instance] object statically.
-  static PlatformDispatcher get instance => _instance;
-  static final PlatformDispatcher _instance = PlatformDispatcher._();
+  static PlatformDispatcher/*!*/ get instance => _instance;
+  static final PlatformDispatcher/*!*/ _instance = PlatformDispatcher._();
 
   /// The current platform configuration.
   ///
   /// If values in this configuration change, [onMetricsChanged] will be called.
-  PlatformConfiguration get configuration => _configuration;
-  PlatformConfiguration _configuration = const PlatformConfiguration();
+  PlatformConfiguration/*!*/ get configuration => _configuration;
+  PlatformConfiguration/*!*/ _configuration = const PlatformConfiguration();
 
   /// Called when the platform configuration changes.
-  VoidCallback get onPlatformConfigurationChanged => _onPlatformConfigurationChanged;
-  VoidCallback _onPlatformConfigurationChanged;
-  Zone _onPlatformConfigurationChangedZone;
-  set onPlatformConfigurationChanged(VoidCallback callback) {
+  VoidCallback/*?*/ get onPlatformConfigurationChanged => _onPlatformConfigurationChanged;
+  VoidCallback/*?*/ _onPlatformConfigurationChanged;
+  Zone/*!*/ _onPlatformConfigurationChangedZone = Zone.root;
+  set onPlatformConfigurationChanged(VoidCallback/*?*/ callback) {
     _onPlatformConfigurationChanged = callback;
     _onPlatformConfigurationChangedZone = Zone.current;
   }
@@ -77,30 +77,30 @@ class PlatformDispatcher {
   ///
   /// If the list of screens or their configuration changes, [onMetricsChanged]
   /// will be called.
-  Iterable<Screen> get screens => _screens.values;
-  Map<Object, Screen> _screens = <Object, Screen>{};
+  Iterable<Screen/*!*/>/*!*/ get screens => _screens.values;
+  Map<Object, Screen/*!*/>/*!*/ _screens = <Object/*!*/, Screen/*!*/>{};
 
   // A map of opaque platform screen identifiers to screen configurations.
-  Map<Object, ScreenConfiguration> _screenConfigurations = <Object, ScreenConfiguration>{};
+  Map<Object/*!*/, ScreenConfiguration/*!*/>/*!*/ _screenConfigurations = <Object/*!*/, ScreenConfiguration/*!*/>{};
 
   /// The current list of views, including top level platform windows used by
   /// the application.
   ///
   /// If the list of views changes, [onViewCreated] or [onViewDisposed] will be
   /// called. If their configurations change, [onMetricsChanged] will be called.
-  Iterable<FlutterView> get views => _views.values;
-  Map<Object, FlutterView> _views = <Object, FlutterView>{};
+  Iterable<FlutterView/*!*/>/*!*/ get views => _views.values;
+  Map<Object/*!*/, FlutterView/*!*/>/*!*/ _views = <Object/*!*/, FlutterView/*!*/>{};
 
   // A map of opaque platform view identifiers to view configurations.
-  Map<Object, ViewConfiguration> _viewConfigurations = <Object, ViewConfiguration>{};
+  Map<Object/*!*/, ViewConfiguration/*!*/>/*!*/ _viewConfigurations = <Object/*!*/, ViewConfiguration/*!*/>{};
 
   /// Is called after [createView] is called and returns with a new view.
   ///
   /// Passes the newly created [FlutterView].
-  ViewCreatedCallback get onViewCreated => _onViewCreated;
-  ViewCreatedCallback _onViewCreated;
-  Zone _onViewCreatedZone; // ignore: unused_field
-  set onViewCreated(ViewCreatedCallback callback) {
+  ViewCreatedCallback/*?*/ get onViewCreated => _onViewCreated;
+  ViewCreatedCallback/*?*/ _onViewCreated;
+  Zone/*!*/ _onViewCreatedZone = Zone.root; // ignore: unused_field
+  set onViewCreated(ViewCreatedCallback/*?*/ callback) {
     _onViewCreated = callback;
     _onViewCreatedZone = Zone.current;
   }
@@ -111,10 +111,10 @@ class PlatformDispatcher {
   /// [FlutterView.dispose] on the given [FlutterView].
   ///
   /// If the disposal is to be ignored, just do nothing.
-  ViewDisposedCallback get onViewDisposed => _onViewDisposed;
-  ViewDisposedCallback _onViewDisposed;
-  Zone _onViewDisposedZone; // ignore: unused_field
-  set onViewDisposed(ViewDisposedCallback callback) {
+  ViewDisposedCallback/*?*/ get onViewDisposed => _onViewDisposed;
+  ViewDisposedCallback/*?*/ _onViewDisposed;
+  Zone/*!*/ _onViewDisposedZone = Zone.root; // ignore: unused_field
+  set onViewDisposed(ViewDisposedCallback/*?*/ callback) {
     _onViewDisposed = callback;
     _onViewDisposedZone = Zone.current;
   }
@@ -137,10 +137,10 @@ class PlatformDispatcher {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    register for notifications when this is called.
   ///  * [MediaQuery.of], a simpler mechanism for the same.
-  VoidCallback get onMetricsChanged => _onMetricsChanged;
-  VoidCallback _onMetricsChanged;
-  Zone _onMetricsChangedZone; // ignore: unused_field
-  set onMetricsChanged(VoidCallback callback) {
+  VoidCallback/*?*/ get onMetricsChanged => _onMetricsChanged;
+  VoidCallback/*?*/ _onMetricsChanged;
+  Zone/*!*/ _onMetricsChangedZone = Zone.root; // ignore: unused_field
+  set onMetricsChanged(VoidCallback/*?*/ callback) {
     _onMetricsChanged = callback;
     _onMetricsChangedZone = Zone.current;
   }
@@ -157,10 +157,10 @@ class PlatformDispatcher {
   /// [PlatformDispatcher.scheduleFrame] has been called since the last time
   /// this callback was invoked.
   /// {@endtemplate}
-  FrameCallback get onBeginFrame => _onBeginFrame;
-  FrameCallback _onBeginFrame;
-  Zone _onBeginFrameZone;
-  set onBeginFrame(FrameCallback callback) {
+  FrameCallback/*?*/ get onBeginFrame => _onBeginFrame;
+  FrameCallback/*?*/ _onBeginFrame;
+  Zone/*?*/ _onBeginFrameZone = Zone.root;
+  set onBeginFrame(FrameCallback/*?*/ callback) {
     _onBeginFrame = callback;
     _onBeginFrameZone = Zone.current;
   }
@@ -172,10 +172,10 @@ class PlatformDispatcher {
   /// This can be used to implement a second phase of frame rendering that
   /// happens after any deferred work queued by the [onBeginFrame] phase.
   /// {@endtemplate}
-  VoidCallback get onDrawFrame => _onDrawFrame;
-  VoidCallback _onDrawFrame;
-  Zone _onDrawFrameZone;
-  set onDrawFrame(VoidCallback callback) {
+  VoidCallback/*?*/ get onDrawFrame => _onDrawFrame;
+  VoidCallback/*?*/ _onDrawFrame;
+  Zone/*!*/ _onDrawFrameZone = Zone.root;
+  set onDrawFrame(VoidCallback/*?*/ callback) {
     _onDrawFrame = callback;
     _onDrawFrameZone = Zone.current;
   }
@@ -189,10 +189,10 @@ class PlatformDispatcher {
   ///
   ///  * [GestureBinding], the Flutter framework class which manages pointer
   ///    events.
-  PointerDataPacketCallback get onPointerDataPacket => _onPointerDataPacket;
-  PointerDataPacketCallback _onPointerDataPacket;
-  Zone _onPointerDataPacketZone;
-  set onPointerDataPacket(PointerDataPacketCallback callback) {
+  PointerDataPacketCallback/*?*/ get onPointerDataPacket => _onPointerDataPacket;
+  PointerDataPacketCallback/*?*/ _onPointerDataPacket;
+  Zone/*!*/ _onPointerDataPacketZone = Zone.root;
+  set onPointerDataPacket(PointerDataPacketCallback/*?*/ callback) {
     _onPointerDataPacket = callback;
     _onPointerDataPacketZone = Zone.current;
   }
@@ -218,10 +218,10 @@ class PlatformDispatcher {
   /// Flutter spends less than 0.1ms every 1 second to report the timings
   /// (measured on iPhone6S). The 0.1ms is about 0.6% of 16ms (frame budget for
   /// 60fps), or 0.01% CPU usage per second.
-  TimingsCallback get onReportTimings => _onReportTimings;
-  TimingsCallback _onReportTimings;
-  Zone _onReportTimingsZone;
-  set onReportTimings(TimingsCallback callback) {
+  TimingsCallback/*?*/ get onReportTimings => _onReportTimings;
+  TimingsCallback/*?*/ _onReportTimings;
+  Zone/*!*/ _onReportTimingsZone = Zone.root;
+  set onReportTimings(TimingsCallback/*?*/ callback) {
     if ((callback == null) != (_onReportTimings == null)) {
       _setNeedsReportTimings(callback != null);
     }
@@ -229,8 +229,8 @@ class PlatformDispatcher {
     _onReportTimingsZone = Zone.current;
   }
 
-  _SetNeedsReportTimingsFunc _setNeedsReportTimings;
-  void _nativeSetNeedsReportTimings(bool value)
+  /*late*/ _SetNeedsReportTimingsFunc/*!*/ _setNeedsReportTimings;
+  void _nativeSetNeedsReportTimings(bool/*!*/ value)
       native 'PlatformConfiguration_setNeedsReportTimings';
 
   /// Creates a new view and returns the view created.
@@ -243,7 +243,7 @@ class PlatformDispatcher {
   ///
   /// This function is currently not implemented, but is part of a planned
   /// feature.
-  Future<FlutterView> createView(ViewConfigurationRequest request) async {
+  Future<FlutterView>/*?*/ createView(ViewConfigurationRequest/*!*/ request) async {
     throw UnimplementedError();
     // Awaits the platform view creation response, and calls onViewCreated
     // before returning.
@@ -262,8 +262,8 @@ class PlatformDispatcher {
   /// This function is currently not implemented, but is part of a planned
   /// feature.
   Future<void> configureView(
-    FlutterView view,
-    ViewConfigurationRequest configuration,
+    FlutterView/*!*/ view,
+    ViewConfigurationRequest/*!*/ configuration,
   ) async {
     throw UnimplementedError();
   }
@@ -275,7 +275,7 @@ class PlatformDispatcher {
   ///
   /// This function is currently not implemented, but is part of a planned
   /// feature.
-  Future<void> disposeView(FlutterView view) async {
+  Future<void> disposeView(FlutterView/*!*/ view) async {
     throw UnimplementedError();
   }
 
@@ -296,7 +296,7 @@ class PlatformDispatcher {
     }
   }
 
-  String _sendPlatformMessage(String name, PlatformMessageResponseCallback callback, ByteData data)
+  String _sendPlatformMessage(String/*!*/ name, PlatformMessageResponseCallback/*?*/ callback, ByteData/*?*/ data)
       native 'PlatformConfiguration_sendPlatformMessage';
 
   /// Called whenever this platform dispatcher receives a message from a
@@ -312,10 +312,10 @@ class PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the callback
   /// was set.
-  PlatformMessageCallback get onPlatformMessage => _onPlatformMessage;
-  PlatformMessageCallback _onPlatformMessage;
-  Zone _onPlatformMessageZone;
-  set onPlatformMessage(PlatformMessageCallback callback) {
+  PlatformMessageCallback/*?*/ get onPlatformMessage => _onPlatformMessage;
+  PlatformMessageCallback/*?*/ _onPlatformMessage;
+  Zone/*!*/ _onPlatformMessageZone = Zone.root;
+  set onPlatformMessage(PlatformMessageCallback/*?*/ callback) {
     _onPlatformMessage = callback;
     _onPlatformMessageZone = Zone.current;
   }
@@ -333,7 +333,7 @@ class PlatformDispatcher {
     }
 
     // Store the zone in which the callback is being registered.
-    final Zone registrationZone = Zone.current;
+    final Zone/*!*/ registrationZone = Zone.current;
 
     return (ByteData data) {
       registrationZone.runUnaryGuarded(callback, data);
@@ -399,20 +399,20 @@ class PlatformDispatcher {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  void render(Scene scene, [FlutterView view]) native 'PlatformConfiguration_render';
+  void render(Scene/*!*/ scene, [FlutterView/*!*/ view]) native 'PlatformConfiguration_render';
 
   /// Additional accessibility features that may be enabled by the platform.
-  AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
+  AccessibilityFeatures/*!*/ get accessibilityFeatures => configuration.accessibilityFeatures;
 
   /// A callback that is invoked when the value of [accessibilityFeatures]
   /// changes.
   ///
   /// The framework invokes this callback in the same zone in which the callback
   /// was set.
-  VoidCallback get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
-  VoidCallback _onAccessibilityFeaturesChanged;
-  Zone _onAccessibilityFeaturesChangedZone;
-  set onAccessibilityFeaturesChanged(VoidCallback callback) {
+  VoidCallback/*?*/ get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
+  VoidCallback/*?*/ _onAccessibilityFeaturesChanged;
+  Zone/*!*/ _onAccessibilityFeaturesChangedZone = Zone.root;
+  set onAccessibilityFeaturesChanged(VoidCallback/*?*/ callback) {
     _onAccessibilityFeaturesChanged = callback;
     _onAccessibilityFeaturesChangedZone = Zone.current;
   }
@@ -425,7 +425,7 @@ class PlatformDispatcher {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) native 'PlatformConfiguration_updateSemantics';
+  void updateSemantics(SemanticsUpdate/*!*/ update) native 'PlatformConfiguration_updateSemantics';
 
   /// The system-reported default locale of the device.
   ///
@@ -437,7 +437,7 @@ class PlatformDispatcher {
   ///
   /// This is equivalent to `locales.first` and will provide an empty non-null
   /// locale if the [locales] list has not been set or is empty.
-  Locale get locale {
+  Locale/*?*/ get locale {
     if (configuration?.locales != null && configuration.locales.isNotEmpty) {
       return locales.first;
     }
@@ -459,7 +459,7 @@ class PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<Locale> get locales => configuration.locales;
+  List<Locale/*!*/>/*?*/ get locales => configuration.locales;
 
   /// The locale that the platform's native locale resolution system resolves
   /// to.
@@ -472,7 +472,7 @@ class PlatformDispatcher {
   /// directly in order to arrive at the most appropriate locale for the app.
   ///
   /// See [locales], which is the list of locales the user/device prefers.
-  Locale get platformResolvedLocale => configuration.platformResolvedLocale;
+  Locale/*?*/ get platformResolvedLocale => configuration.platformResolvedLocale;
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -483,10 +483,10 @@ class PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback get onLocaleChanged => _onLocaleChanged;
-  VoidCallback _onLocaleChanged;
-  Zone _onLocaleChangedZone; // ignore: unused_field
-  set onLocaleChanged(VoidCallback callback) {
+  VoidCallback/*?*/ get onLocaleChanged => _onLocaleChanged;
+  VoidCallback/*?*/ _onLocaleChanged;
+  Zone/*!*/ _onLocaleChangedZone = Zone.root; // ignore: unused_field
+  set onLocaleChanged(VoidCallback/*?*/ callback) {
     _onLocaleChanged = callback;
     _onLocaleChangedZone = Zone.current;
   }
@@ -497,17 +497,17 @@ class PlatformDispatcher {
   ///
   /// It is used to initialize [SchedulerBinding.lifecycleState] at startup with
   /// any buffered lifecycle state events.
-  String get initialLifecycleState {
+  String/*!*/ get initialLifecycleState {
     _initialLifecycleStateAccessed = true;
     return _initialLifecycleState;
   }
 
-  String _initialLifecycleState;
+  String/*!*/ _initialLifecycleState;
 
   /// Tracks if the initial state has been accessed. Once accessed, we will stop
   /// updating the [initialLifecycleState], as it is not the preferred way to
   /// access the state.
-  bool _initialLifecycleStateAccessed = false;
+  bool/*!*/ _initialLifecycleStateAccessed = false;
 
   /// The system-reported text scale.
   ///
@@ -521,13 +521,13 @@ class PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  double get textScaleFactor => configuration.textScaleFactor;
+  double/*!*/ get textScaleFactor => configuration.textScaleFactor;
 
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.
   ///
   /// This option is used by [showTimePicker].
-  bool get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
+  bool/*!*/ get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
 
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
@@ -538,10 +538,10 @@ class PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback get onTextScaleFactorChanged => _onTextScaleFactorChanged;
-  VoidCallback _onTextScaleFactorChanged;
-  Zone _onTextScaleFactorChangedZone;
-  set onTextScaleFactorChanged(VoidCallback callback) {
+  VoidCallback/*?*/ get onTextScaleFactorChanged => _onTextScaleFactorChanged;
+  VoidCallback/*?*/ _onTextScaleFactorChanged;
+  Zone/*!*/ _onTextScaleFactorChangedZone = Zone.root;
+  set onTextScaleFactorChanged(VoidCallback/*?*/ callback) {
     _onTextScaleFactorChanged = callback;
     _onTextScaleFactorChangedZone = Zone.current;
   }
@@ -549,7 +549,7 @@ class PlatformDispatcher {
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to
   /// [Brightness.light].
-  Brightness get platformBrightness => configuration.platformBrightness;
+  Brightness/*!*/ get platformBrightness => configuration.platformBrightness;
 
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
@@ -560,10 +560,10 @@ class PlatformDispatcher {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
-  VoidCallback _onPlatformBrightnessChanged;
-  Zone _onPlatformBrightnessChangedZone;
-  set onPlatformBrightnessChanged(VoidCallback callback) {
+  VoidCallback/*?*/ get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
+  VoidCallback/*?*/ _onPlatformBrightnessChanged;
+  Zone/*!*/ _onPlatformBrightnessChangedZone = Zone.root;
+  set onPlatformBrightnessChanged(VoidCallback/*?*/ callback) {
     _onPlatformBrightnessChanged = callback;
     _onPlatformBrightnessChangedZone = Zone.current;
   }
@@ -573,16 +573,16 @@ class PlatformDispatcher {
   ///
   /// The [onSemanticsEnabledChanged] callback is called whenever this value
   /// changes.
-  bool get semanticsEnabled => configuration.semanticsEnabled;
+  bool/*!*/ get semanticsEnabled => configuration.semanticsEnabled;
 
   /// A callback that is invoked when the value of [semanticsEnabled] changes.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  VoidCallback get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
-  VoidCallback _onSemanticsEnabledChanged;
-  Zone _onSemanticsEnabledChangedZone;
-  set onSemanticsEnabledChanged(VoidCallback callback) {
+  VoidCallback/*?*/ get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
+  VoidCallback/*?*/ _onSemanticsEnabledChanged;
+  Zone/*!*/ _onSemanticsEnabledChangedZone = Zone.root;
+  set onSemanticsEnabledChanged(VoidCallback/*?*/ callback) {
     _onSemanticsEnabledChanged = callback;
     _onSemanticsEnabledChangedZone = Zone.current;
   }
@@ -595,10 +595,10 @@ class PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  SemanticsActionCallback get onSemanticsAction => _onSemanticsAction;
-  SemanticsActionCallback _onSemanticsAction;
-  Zone _onSemanticsActionZone;
-  set onSemanticsAction(SemanticsActionCallback callback) {
+  SemanticsActionCallback/*?*/ get onSemanticsAction => _onSemanticsAction;
+  SemanticsActionCallback/*?*/ _onSemanticsAction;
+  Zone/*!*/ _onSemanticsActionZone = Zone.root;
+  set onSemanticsAction(SemanticsActionCallback/*?*/ callback) {
     _onSemanticsAction = callback;
     _onSemanticsActionZone = Zone.current;
   }
@@ -633,8 +633,8 @@ class PlatformDispatcher {
   ///  * [Navigator], a widget that handles routing.
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
-  String get initialRouteName => _initialRouteName();
-  String _initialRouteName() native 'PlatformConfiguration_initialRouteName';
+  String/*!*/ get initialRouteName => _initialRouteName();
+  String/*!*/ _initialRouteName() native 'PlatformConfiguration_initialRouteName';
 }
 
 /// Configuration of the platform.
@@ -651,21 +651,23 @@ class PlatformConfiguration {
     this.locales = const <Locale>[],
     this.platformResolvedLocale,
     this.initialRouteName,
-  })  : assert(alwaysUse24HourFormat != null),
+  })  : assert(accessibilityFeatures != null),
+        assert(alwaysUse24HourFormat != null),
         assert(semanticsEnabled != null),
         assert(platformBrightness != null),
-        assert(textScaleFactor != null);
+        assert(textScaleFactor != null),
+        assert(locales != null);
 
   /// Copy a [PlatformConfiguration] with some fields replaced.
   PlatformConfiguration copyWith({
-    AccessibilityFeatures accessibilityFeatures,
-    bool alwaysUse24HourFormat,
-    bool semanticsEnabled,
-    Brightness platformBrightness,
-    double textScaleFactor,
-    List<Locale> locales,
-    Locale platformResolvedLocale,
-    String initialRouteName,
+    AccessibilityFeatures/*?*/ accessibilityFeatures,
+    bool/*?*/ alwaysUse24HourFormat,
+    bool/*?*/ semanticsEnabled,
+    Brightness/*?*/ platformBrightness,
+    double/*?*/ textScaleFactor,
+    List<Locale/*!*/>/*?*/ locales,
+    Locale/*?*/ platformResolvedLocale,
+    String/*?*/ initialRouteName,
   }) {
     return PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -680,33 +682,33 @@ class PlatformConfiguration {
   }
 
   /// Additional accessibility features that may be enabled by the platform.
-  final AccessibilityFeatures accessibilityFeatures;
+  final AccessibilityFeatures/*!*/ accessibilityFeatures;
 
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.
-  final bool alwaysUse24HourFormat;
+  final bool/*!*/ alwaysUse24HourFormat;
 
   /// Whether the user has requested that [updateSemantics] be called when the
   /// semantic contents of a view changes.
-  final bool semanticsEnabled;
+  final bool/*!*/ semanticsEnabled;
 
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to
   /// [Brightness.light].
-  final Brightness platformBrightness;
+  final Brightness/*!*/ platformBrightness;
 
   /// The system-reported text scale.
-  final double textScaleFactor;
+  final double/*!*/ textScaleFactor;
 
   /// The full system-reported supported locales of the device.
-  final List<Locale> locales;
+  final List<Locale/*!*/>/*!*/ locales;
 
   /// The system-reported default locale of the device.
-  final Locale platformResolvedLocale;
+  final Locale/*?*/ platformResolvedLocale;
 
   /// The route or path that the embedder requested when the application was
   /// launched.
-  final String initialRouteName;
+  final String/*?*/ initialRouteName;
 }
 
 /// Immutable configuration information for a screen.
@@ -724,19 +726,20 @@ class ScreenConfiguration {
         assert(geometry != null),
         assert(devicePixelRatio != null),
         assert(viewInsets != null),
+        assert(viewPadding != null),
         assert(systemGestureInsets != null),
         assert(padding != null);
 
   /// Makes a new copy of this [ViewConfigurationRequest] with some attributes
   /// replaced.
   ScreenConfiguration copyWith({
-    String screenName,
-    Rect geometry,
-    double devicePixelRatio,
-    WindowPadding viewInsets,
-    WindowPadding viewPadding,
-    WindowPadding systemGestureInsets,
-    WindowPadding padding,
+    String/*?*/ screenName,
+    Rect/*?*/ geometry,
+    double/*?*/ devicePixelRatio,
+    WindowPadding/*?*/ viewInsets,
+    WindowPadding/*?*/ viewPadding,
+    WindowPadding/*?*/ systemGestureInsets,
+    WindowPadding/*?*/ padding,
   }) {
     return ScreenConfiguration(
       screenName: screenName ?? this.screenName,
@@ -750,38 +753,38 @@ class ScreenConfiguration {
   }
 
   /// Platform-provided name for screen.
-  final String screenName;
+  final String/*!*/ screenName;
 
   /// Screen rect in Flutter logical pixels
-  final Rect geometry;
+  final Rect/*!*/ geometry;
 
   /// Device pixel ratio in device pixels to logical pixels.
-  final double devicePixelRatio;
+  final double/*!*/ devicePixelRatio;
 
   /// The number of physical pixels on each side of this screen rectangle into
   /// which the application can place a view, but over which the operating
   /// system will likely place system UI, such as the keyboard or system menus,
   /// that fully obscures any content.
-  final WindowPadding viewInsets;
+  final WindowPadding/*!*/ viewInsets;
 
   /// The number of physical pixels on each side of this screen rectangle into
   /// which the application can place a view, but which may be partially
   /// obscured by system UI (such as the system notification area), or physical
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
-  final WindowPadding viewPadding;
+  final WindowPadding/*!*/ viewPadding;
 
   /// The number of physical pixels on each side of this screen rectangle into
   /// which the application can place a view, but where the operating system
   /// will consume input gestures for the sake of system navigation.
-  final WindowPadding systemGestureInsets;
+  final WindowPadding/*!*/ systemGestureInsets;
 
   /// The number of physical pixels on each side of this screen rectangle into
   /// which the application can place a view, but which may be partially
   /// obscured by system UI (such as the system notification area), or physical
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
-  final WindowPadding padding;
+  final WindowPadding/*!*/ padding;
 
   @override
   String toString() {
@@ -811,11 +814,11 @@ class ViewConfigurationRequest {
   /// Makes a new copy of this [ViewConfigurationRequest] with some attributes
   /// replaced.
   ViewConfigurationRequest copyWith({
-    Screen screen,
-    Rect geometry,
-    bool visible,
-    ViewOrder order,
-    FlutterView orderView,
+    Screen/*?*/ screen,
+    Rect/*?*/ geometry,
+    bool/*?*/ visible,
+    ViewOrder/*?*/ order,
+    FlutterView/*?*/ orderView,
   }) {
     return ViewConfigurationRequest(
       screen: screen ?? this.screen,
@@ -830,23 +833,23 @@ class ViewConfigurationRequest {
   ///
   /// If the platform supports spanning multiple screens, this is the screen
   /// that the upper left corner of the view appears on.
-  final Screen screen;
+  final Screen/*?*/ screen;
 
   /// The geometry requested for the view on the [screen], in logical pixels.
   ///
   /// This uses the device pixel ratio of the screen with the upper left corner
   /// of this view on it.
-  final Rect geometry;
+  final Rect/*?*/ geometry;
 
   /// Whether or not the view should be visible.
   ///
   /// If this request is given to [PlatformDispatcher.createView], then setting
   /// this to true means that the view will be made visible as soon as it is
   /// created.
-  final bool visible;
+  final bool/*?*/ visible;
 
   /// The depth ordering of this view relative to other views.
-  final ViewOrder order;
+  final ViewOrder/*?*/ order;
 
   /// The opaque ID of the view to place this view on a layer relative to,
   /// according to [order].
@@ -855,7 +858,7 @@ class ViewConfigurationRequest {
   /// [ViewOrder.belowOther].
   ///
   /// This ID corresponds to the view that this one should be above or below.
-  final FlutterView orderView;
+  final FlutterView/*?*/ orderView;
 
   @override
   String toString() {
@@ -897,7 +900,8 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
-  })  : assert(geometry != null),
+  })  : assert(screen != null),
+        assert(geometry != null),
         assert(depth != null),
         assert(visible != null),
         assert(viewInsets != null),
@@ -907,15 +911,15 @@ class ViewConfiguration {
 
   /// Copy this configuration with some fields replaced.
   ViewConfiguration copyWith({
-    Screen screen,
-    FlutterWindow window,
-    Rect geometry,
-    double depth,
-    bool visible,
-    WindowPadding viewInsets,
-    WindowPadding viewPadding,
-    WindowPadding systemGestureInsets,
-    WindowPadding padding,
+    Screen/*?*/ screen,
+    FlutterWindow/*?*/ window,
+    Rect/*?*/ geometry,
+    double/*?*/ depth,
+    bool/*?*/ visible,
+    WindowPadding/*?*/ viewInsets,
+    WindowPadding/*?*/ viewPadding,
+    WindowPadding/*?*/ systemGestureInsets,
+    WindowPadding/*?*/ padding,
   }) {
     return ViewConfiguration(
       screen: screen ?? this.screen,
@@ -933,19 +937,19 @@ class ViewConfiguration {
   /// The screen that this view should appear on.
   ///
   /// This is the screen that the upper left corner of the view appears on.
-  final Screen screen;
+  final Screen/*!*/ screen;
 
   /// The top level view into which the view is placed and its geometry is
   /// relative to.
   ///
   /// If null, then this configuration represents a top level view itself.
-  final FlutterWindow window;
+  final FlutterWindow/*?*/ window;
 
   /// The geometry requested for the view on the [screen] or within its parent
   /// window, in logical pixels.
   ///
   /// This uses the device pixel ratio of the [screen].
-  final Rect geometry;
+  final Rect/*!*/ geometry;
 
   /// The depth that is the maximum elevation that the view allows.
   ///
@@ -958,10 +962,10 @@ class ViewConfiguration {
   /// The default value is [double.maxFinite], which is used for platforms that
   /// do not specify a maximum elevation. This property is currently only
   /// expected to be set to a non-default value on Fuchsia.
-  final double depth;
+  final double/*!*/ depth;
 
   /// Whether or not the view is currently visible on the screen.
-  final bool visible;
+  final bool/*!*/ visible;
 
   /// The view insets, as it intersects with [Screen.viewInsets] for the screen
   /// it is on.
@@ -974,7 +978,7 @@ class ViewConfiguration {
   /// which the application can draw, but over which the operating system will
   /// likely place system UI, such as the keyboard or system menus, that fully
   /// obscures any content.
-  final WindowPadding viewInsets;
+  final WindowPadding/*!*/ viewInsets;
 
   /// The view insets, as it intersects with [ScreenConfiguration.viewPadding]
   /// for the screen it is on.
@@ -988,7 +992,7 @@ class ViewConfiguration {
   /// obscured by system UI (such as the system notification area), or physical
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
-  final WindowPadding viewPadding;
+  final WindowPadding/*!*/ viewPadding;
 
   /// The view insets, as it intersects with
   /// [ScreenConfiguration.systemGestureInsets] for the screen it is on.
@@ -1000,7 +1004,7 @@ class ViewConfiguration {
   /// The number of physical pixels on each side of this screen rectangle into
   /// which the application can place a view, but where the operating system
   /// will consume input gestures for the sake of system navigation.
-  final WindowPadding systemGestureInsets;
+  final WindowPadding/*!*/ systemGestureInsets;
 
   /// The view insets, as it intersects with [ScreenConfiguration.padding] for
   /// the screen it is on.
@@ -1014,7 +1018,7 @@ class ViewConfiguration {
   /// obscured by system UI (such as the system notification area), or physical
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
-  final WindowPadding padding;
+  final WindowPadding/*!*/ padding;
 
   @override
   String toString() {

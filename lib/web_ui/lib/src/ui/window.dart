@@ -214,17 +214,17 @@ abstract class FlutterView {
 
 abstract class FlutterWindowView extends FlutterView {
   @override
-  ViewConfiguration get viewConfiguration;
+  ViewConfiguration/*!*/ get viewConfiguration;
 }
 
 abstract class FlutterWindow extends FlutterView {
   @override
-  ViewConfiguration get viewConfiguration;
+  ViewConfiguration/*!*/ get viewConfiguration;
 }
 
 abstract class SingletonFlutterWindow extends FlutterWindow {
-  VoidCallback get onMetricsChanged => platformDispatcher.onMetricsChanged;
-  set onMetricsChanged(VoidCallback callback) {
+  VoidCallback/*?*/ get onMetricsChanged => platformDispatcher.onMetricsChanged;
+  set onMetricsChanged(VoidCallback/*?*/ callback) {
     platformDispatcher.onMetricsChanged = callback;
   }
 

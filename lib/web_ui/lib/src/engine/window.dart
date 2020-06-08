@@ -6,12 +6,7 @@
 part of engine;
 
 /// When set to true, all platform messages will be printed to the console.
-const bool _debugPrintPlatformMessages = false;
-
-/// Requests that the browser schedule a frame.
-///
-/// This may be overridden in tests, for example, to pump fake frames.
-ui.VoidCallback scheduleFrameCallback;
+const bool/*!*/ _debugPrintPlatformMessages = false;
 
 /// The Web implementation of [ui.FlutterWindow].
 class EngineFlutterWindow extends ui.FlutterWindow {
@@ -187,23 +182,6 @@ class EngineFlutterWindowView extends ui.FlutterWindowView {
       : _viewId = viewId;
 
   final Object _viewId;
-
-  @override
-  void scheduleFrame() {
-    if (scheduleFrameCallback == null) {
-      throw new Exception(
-          'scheduleFrameCallback must be initialized first.');
-    }
-    scheduleFrameCallback();
-  }
-
-  /// Change the strategy to use for handling browser history location.
-  /// Setting this member will automatically update [_browserHistory].
-  ///
-  /// By setting this to null, the browser history will be disabled.
-  set locationStrategy(LocationStrategy strategy) {
-    _browserHistory.locationStrategy = strategy;
-  }
 
   final ui.PlatformDispatcher platformDispatcher;
 
