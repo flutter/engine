@@ -14,7 +14,7 @@
 #include "flutter/shell/common/surface.h"
 #include "flutter/shell/platform/android/android_context.h"
 #include "flutter/shell/platform/android/android_native_window.h"
-#include "flutter/shell/platform/android/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {

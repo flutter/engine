@@ -5,7 +5,7 @@
 #include "flutter/shell/platform/android/platform_message_response_android.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/shell/platform/android/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 
 namespace flutter {
 
@@ -22,15 +22,15 @@ PlatformMessageResponseAndroid::~PlatformMessageResponseAndroid() = default;
 // |flutter::PlatformMessageResponse|
 void PlatformMessageResponseAndroid::Complete(
     std::unique_ptr<fml::Mapping> data) {
-  // platform_task_runner_->PostTask(
-  //     fml::MakeCopyable([response_id = response_id_,           //
-  //                        jni_facade = std::move(jni_facade_),  //
-  //                        data = std::move(data)                //
-  // ]() {
-  //       // Make the response call into Java.
-  //       jni_facade->FlutterViewHandlePlatformMessageResponse(response_id,
-  //                                                            std::move(data));
-  //     }));
+  platform_task_runner_->PostTask(
+      fml::MakeCopyable([response_id = response_id_,           //
+                         jni_facade = std::move(jni_facade_),  //
+                         data = std::move(data)                //
+  ]() {
+        // Make the response call into Java.
+        jni_facade->FlutterViewHandlePlatformMessageResponse(response_id,
+                                                             std::move(data));
+      }));
 }
 
 // |flutter::PlatformMessageResponse|

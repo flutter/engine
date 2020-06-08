@@ -7,7 +7,7 @@
 
 #include "flutter/flow/embedded_views.h"
 
-#include "flutter/shell/platform/android/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flutter {
