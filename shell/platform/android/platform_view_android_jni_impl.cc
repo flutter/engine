@@ -69,85 +69,26 @@ jobject CreateFlutterCallbackInformation(
 }
 
 static jmethodID g_handle_platform_message_method = nullptr;
-void FlutterViewHandlePlatformMessage(JNIEnv* env,
-                                      jobject obj,
-                                      jstring channel,
-                                      jobject message,
-                                      jint responseId) {
-  env->CallVoidMethod(obj, g_handle_platform_message_method, channel, message,
-                      responseId);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_handle_platform_message_response_method = nullptr;
-void FlutterViewHandlePlatformMessageResponse(JNIEnv* env,
-                                              jobject obj,
-                                              jint responseId,
-                                              jobject response) {
-  env->CallVoidMethod(obj, g_handle_platform_message_response_method,
-                      responseId, response);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_update_semantics_method = nullptr;
-void FlutterViewUpdateSemantics(JNIEnv* env,
-                                jobject obj,
-                                jobject buffer,
-                                jobjectArray strings) {
-  env->CallVoidMethod(obj, g_update_semantics_method, buffer, strings);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_update_custom_accessibility_actions_method = nullptr;
-void FlutterViewUpdateCustomAccessibilityActions(JNIEnv* env,
-                                                 jobject obj,
-                                                 jobject buffer,
-                                                 jobjectArray strings) {
-  env->CallVoidMethod(obj, g_update_custom_accessibility_actions_method, buffer,
-                      strings);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_on_first_frame_method = nullptr;
-void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
-  env->CallVoidMethod(obj, g_on_first_frame_method);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_on_engine_restart_method = nullptr;
-void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj) {
-  env->CallVoidMethod(obj, g_on_engine_restart_method);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_attach_to_gl_context_method = nullptr;
-void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId) {
-  env->CallVoidMethod(obj, g_attach_to_gl_context_method, textureId);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_update_tex_image_method = nullptr;
-void SurfaceTextureUpdateTexImage(JNIEnv* env, jobject obj) {
-  env->CallVoidMethod(obj, g_update_tex_image_method);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_get_transform_matrix_method = nullptr;
-void SurfaceTextureGetTransformMatrix(JNIEnv* env,
-                                      jobject obj,
-                                      jfloatArray result) {
-  env->CallVoidMethod(obj, g_get_transform_matrix_method, result);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_detach_from_gl_context_method = nullptr;
-void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj) {
-  env->CallVoidMethod(obj, g_detach_from_gl_context_method);
-  FML_CHECK(CheckException(env));
-}
 
 // Called By Java
-
 static jlong AttachJNI(JNIEnv* env,
                        jclass clazz,
                        jobject flutterJNI,
