@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/android/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
 
 #include <android/native_window_jni.h>
-
+#include <jni.h>
 #include <utility>
+
 #include "unicode/uchar.h"
 
 #include "flutter/assets/directory_asset_bundle.h"
@@ -23,6 +24,7 @@
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/flutter_main.h"
+#include "flutter/shell/platform/android/platform_view_android.h"
 
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
@@ -791,5 +793,42 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   return RegisterApi(env);
 }
+
+PlatformViewAndroidJniImpl::PlatformViewAndroidJniImpl(
+    fml::jni::JavaObjectWeakGlobalRef java_object)
+    : java_object_(java_object) {}
+
+PlatformViewAndroidJniImpl::~PlatformViewAndroidJniImpl() = default;
+
+void PlatformViewAndroidJniImpl::FlutterViewHandlePlatformMessage(
+    const std::string& channel,
+    fml::RefPtr<flutter::PlatformMessage> message,
+    int responseId) {}
+
+void PlatformViewAndroidJniImpl::FlutterViewHandlePlatformMessageResponse(
+    int responseId,
+    std::unique_ptr<fml::Mapping> data) {}
+
+void PlatformViewAndroidJniImpl::FlutterViewUpdateSemantics(
+    std::vector<uint8_t> buffer,
+    std::vector<std::string> strings) {}
+
+void PlatformViewAndroidJniImpl::FlutterViewUpdateCustomAccessibilityActions(
+    std::vector<uint8_t> actions_buffer,
+    std::vector<std::string> strings) {}
+
+void PlatformViewAndroidJniImpl::FlutterViewOnFirstFrame() {}
+
+void PlatformViewAndroidJniImpl::FlutterViewOnPreEngineRestart() {}
+
+void PlatformViewAndroidJniImpl::SurfaceTextureAttachToGLContext(
+    int textureId) {}
+
+void PlatformViewAndroidJniImpl::SurfaceTextureUpdateTexImage() {}
+
+void PlatformViewAndroidJniImpl::SurfaceTextureGetTransformMatrix(
+    SkMatrix transform) {}
+
+void PlatformViewAndroidJniImpl::SurfaceTextureDetachFromGLContext() {}
 
 }  // namespace flutter

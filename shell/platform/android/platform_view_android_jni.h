@@ -5,46 +5,42 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_
 
-#include <jni.h>
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/android/platform_view_android.h"
 
 namespace flutter {
 
-void FlutterViewHandlePlatformMessage(JNIEnv* env,
-                                      jobject obj,
-                                      jstring channel,
-                                      jobject message,
-                                      jint responseId);
+class PlatformViewAndroidJni {
+ public:
+  virtual void FlutterViewHandlePlatformMessage(
+      const std::string& channel,
+      fml::RefPtr<flutter::PlatformMessage> message,
+      int responseId);
 
-void FlutterViewHandlePlatformMessageResponse(JNIEnv* env,
-                                              jobject obj,
-                                              jint responseId,
-                                              jobject response);
+  virtual void FlutterViewHandlePlatformMessageResponse(
+      int responseId,
+      std::unique_ptr<fml::Mapping> data);
 
-void FlutterViewUpdateSemantics(JNIEnv* env,
-                                jobject obj,
-                                jobject buffer,
-                                jobjectArray strings);
+  virtual void FlutterViewUpdateSemantics(std::vector<uint8_t> buffer,
+                                          std::vector<std::string> strings);
 
-void FlutterViewUpdateCustomAccessibilityActions(JNIEnv* env,
-                                                 jobject obj,
-                                                 jobject buffer,
-                                                 jobjectArray strings);
+  virtual void FlutterViewUpdateCustomAccessibilityActions(
+      std::vector<uint8_t> actions_buffer,
+      std::vector<std::string> strings);
 
-void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj);
+  virtual void FlutterViewOnFirstFrame();
 
-void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj);
+  virtual void FlutterViewOnPreEngineRestart();
 
-void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId);
+  virtual void SurfaceTextureAttachToGLContext(int textureId);
 
-void SurfaceTextureUpdateTexImage(JNIEnv* env, jobject obj);
+  virtual void SurfaceTextureUpdateTexImage();
 
-void SurfaceTextureGetTransformMatrix(JNIEnv* env,
-                                      jobject obj,
-                                      jfloatArray result);
+  virtual void SurfaceTextureGetTransformMatrix(SkMatrix transform);
 
-void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj);
+  virtual void SurfaceTextureDetachFromGLContext();
+
+  FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroidJni);
+}
 
 }  // namespace flutter
 
