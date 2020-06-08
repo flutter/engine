@@ -30,8 +30,10 @@ TEST(MockTextureTest, PaintCalls) {
   const SkRect paint_bounds1 = SkRect::MakeWH(1.0f, 1.0f);
   const SkRect paint_bounds2 = SkRect::MakeWH(2.0f, 2.0f);
   const auto expected_paint_calls =
-      std::vector{MockTexture::PaintCall{canvas, paint_bounds1, false, nullptr, kNone_SkFilterQuality},
-                  MockTexture::PaintCall{canvas, paint_bounds2, true, nullptr, kNone_SkFilterQuality}};
+      std::vector{MockTexture::PaintCall{canvas, paint_bounds1, false, nullptr,
+                                         kNone_SkFilterQuality},
+                  MockTexture::PaintCall{canvas, paint_bounds2, true, nullptr,
+                                         kNone_SkFilterQuality}};
   auto texture = std::make_shared<MockTexture>(0);
 
   texture->Paint(canvas, paint_bounds1, false, nullptr, kNone_SkFilterQuality);

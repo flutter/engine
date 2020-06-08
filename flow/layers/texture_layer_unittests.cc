@@ -18,9 +18,8 @@ using TextureLayerTest = LayerTest;
 TEST_F(TextureLayerTest, InvalidTexture) {
   const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
   const SkSize layer_size = SkSize::Make(8.0f, 8.0f);
-  auto layer =
-      std::make_shared<TextureLayer>(layer_offset, layer_size, 0, false,
-                                     kNone_SkFilterQuality);
+  auto layer = std::make_shared<TextureLayer>(layer_offset, layer_size, 0,
+                                              false, kNone_SkFilterQuality);
 
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(),
@@ -37,9 +36,8 @@ TEST_F(TextureLayerTest, PaintingEmptyLayerDies) {
   const SkSize layer_size = SkSize::Make(0.0f, 0.0f);
   const int64_t texture_id = 0;
   auto mock_texture = std::make_shared<MockTexture>(texture_id);
-  auto layer = std::make_shared<TextureLayer>(layer_offset, layer_size,
-                                              texture_id, false,
-                                              kNone_SkFilterQuality);
+  auto layer = std::make_shared<TextureLayer>(
+      layer_offset, layer_size, texture_id, false, kNone_SkFilterQuality);
 
   // Ensure the texture is located by the Layer.
   preroll_context()->texture_registry.RegisterTexture(mock_texture);

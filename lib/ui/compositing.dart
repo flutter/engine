@@ -707,7 +707,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     double/*!*/ width = 0.0,
     double/*!*/ height = 0.0,
     bool/*!*/ freeze = false,
-    FilterQuality filterQuality = FilterQuality.low,
+    FilterQuality/*!*/ filterQuality = FilterQuality.low,
   }) {
     assert(offset != null, 'Offset argument was null');
     _addTexture(offset.dx, offset.dy, width, height, textureId, freeze, filterQuality.index);

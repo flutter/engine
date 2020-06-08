@@ -27,7 +27,10 @@ class IOSExternalTextureGL final : public Texture {
   fml::CFRef<CVPixelBufferRef> buffer_ref_;
 
   // |Texture|
-  void Paint(SkCanvas& canvas, const SkRect& bounds, bool freeze, GrContext* context,
+  void Paint(SkCanvas& canvas,
+             const SkRect& bounds,
+             bool freeze,
+             GrContext* context,
              SkFilterQuality filter_quality) override;
 
   // |Texture|

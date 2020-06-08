@@ -13,7 +13,10 @@ TextureLayer::TextureLayer(const SkPoint& offset,
                            int64_t texture_id,
                            bool freeze,
                            SkFilterQuality filter_quality)
-    : offset_(offset), size_(size), texture_id_(texture_id), freeze_(freeze),
+    : offset_(offset),
+      size_(size),
+      texture_id_(texture_id),
+      freeze_(freeze),
       filter_quality_(filter_quality) {}
 
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {

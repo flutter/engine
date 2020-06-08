@@ -14,7 +14,8 @@ void MockTexture::Paint(SkCanvas& canvas,
                         bool freeze,
                         GrContext* context,
                         SkFilterQuality filter_quality) {
-  paint_calls_.emplace_back(PaintCall{canvas, bounds, freeze, context, filter_quality});
+  paint_calls_.emplace_back(
+      PaintCall{canvas, bounds, freeze, context, filter_quality});
 }
 
 bool operator==(const MockTexture::PaintCall& a,
