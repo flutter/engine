@@ -63,7 +63,8 @@ bool IOSExternalTextureGL::NeedUpdateTexture(bool freeze) {
 void IOSExternalTextureGL::Paint(SkCanvas& canvas,
                                  const SkRect& bounds,
                                  bool freeze,
-                                 GrContext* context) {
+                                 GrContext* context,
+                                 SkFilterQuality filter_quality) {
   EnsureTextureCacheExists();
   if (NeedUpdateTexture(freeze)) {
     auto pixelBuffer = [external_texture_.get() copyPixelBuffer];
@@ -85,7 +86,7 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas,
   FML_DCHECK(image) << "Failed to create SkImage from Texture.";
   if (image) {
     SkPaint paint;
-    paint.setFilterQuality(kLow_SkFilterQuality);
+    paint.setFilterQuality(filter_quality);
     canvas.drawImage(image, bounds.x(), bounds.y(), &paint);
   }
 }

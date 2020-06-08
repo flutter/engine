@@ -22,7 +22,8 @@ class AndroidExternalTextureGL : public flutter::Texture {
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
-             GrContext* context) override;
+             GrContext* context,
+             SkFilterQuality filter_quality) override;
 
   void OnGrContextCreated() override;
 

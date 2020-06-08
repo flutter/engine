@@ -33,7 +33,8 @@ void AndroidExternalTextureGL::MarkNewFrameAvailable() {
 void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
                                      const SkRect& bounds,
                                      bool freeze,
-                                     GrContext* context) {
+                                     GrContext* context,
+                                     SkFilterQuality filter_quality) {
   if (state_ == AttachmentState::detached) {
     return;
   }
@@ -65,7 +66,7 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
       canvas.concat(transformAroundCenter);
     }
     SkPaint paint;
-    paint.setFilterQuality(kLow_SkFilterQuality);
+    paint.setFilterQuality(filter_quality);
     canvas.drawImage(image, 0, 0, &paint);
   }
 }
