@@ -1,4 +1,4 @@
-Signature: 933fe58a4137502c1e283cf7ac37d462
+Signature: d244b1e8f69333a6d40d4067915faae3
 
 UNUSED LICENSES:
 
@@ -8707,7 +8707,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/cli_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/namespace_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/sync_socket_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/bigint_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/class_id_fasta.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/class_id.dart
 FILE: ../../../third_party/dart/sdk/lib/cli/cli.dart
 FILE: ../../../third_party/dart/sdk/lib/cli/wait_for.dart
 FILE: ../../../third_party/dart/sdk/lib/core/bigint.dart
@@ -8727,7 +8727,7 @@ FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/bin/cli_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/bin/namespace_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/bin/sync_socket_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/bigint_patch.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/class_id_fasta.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/class_id.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/cli/cli.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/cli/wait_for.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/core/bigint.dart
@@ -9841,7 +9841,6 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/preambl
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/preambles/jsshell.js
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/linked_hash_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/embedded_names.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/class_id.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/convert_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/lib_prefix.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/profiler.dart
@@ -9855,7 +9854,6 @@ FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/pr
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/private/preambles/jsshell.js
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/linked_hash_map.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_runtime/lib/shared/embedded_names.dart
-FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/class_id.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/convert_patch.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/lib_prefix.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/vm/lib/profiler.dart
