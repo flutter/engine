@@ -7,12 +7,16 @@
 
 #include "flutter/flow/embedded_views.h"
 
+#include "flutter/shell/platform/android/platform_view_android_jni.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flutter {
 
-class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
+class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
  public:
+  AndroidExternalViewEmbedder(
+      std::unique_ptr<PlatformViewAndroidJni> jni_facade);
+
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
       int view_id,
@@ -48,6 +52,9 @@ class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
  private:
+  // Allows to call methods in Java.
+  std::unique_ptr<PlatformViewAndroidJni> jni_facade_;
+
   // The size of the background canvas.
   SkISize frame_size_;
 

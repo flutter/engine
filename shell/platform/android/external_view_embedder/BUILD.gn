@@ -20,6 +20,7 @@ source_set("external_view_embedder") {
 
   deps = [
     "//flutter/common",
+    "//flutter/shell/platform/android:android_jni",
     "//flutter/flow",
     "//flutter/fml",
     "//third_party/skia",

@@ -36,7 +36,8 @@ PlatformViewAndroid::PlatformViewAndroid(
     android_context = AndroidContext::Create(AndroidRenderingAPI::kOpenGLES);
 #endif  // SHELL_ENABLE_VULKAN
   }
-  android_surface_ = AndroidSurface::Create(android_context);
+  android_surface_ =
+      AndroidSurface::Create(android_context, std::move(jni_facade));
   FML_CHECK(android_surface_)
       << "Could not create an OpenGL, Vulkan or Software surface to setup "
          "rendering.";

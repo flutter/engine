@@ -10,7 +10,7 @@ namespace flutter {
 namespace testing {
 
 TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
-  auto embedder = new AndroidExternalViewEmbedder();
+  auto embedder = new AndroidExternalViewEmbedder(nullptr);
 
   embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0);
 
@@ -26,7 +26,7 @@ TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
 }
 
 TEST(AndroidExternalViewEmbedder, CompositeEmbeddedView) {
-  auto embedder = new AndroidExternalViewEmbedder();
+  auto embedder = new AndroidExternalViewEmbedder(nullptr);
 
   embedder->PrerollCompositeEmbeddedView(
       0, std::make_unique<EmbeddedViewParams>());
@@ -38,7 +38,7 @@ TEST(AndroidExternalViewEmbedder, CompositeEmbeddedView) {
 }
 
 TEST(AndroidExternalViewEmbedder, CancelFrame) {
-  auto embedder = new AndroidExternalViewEmbedder();
+  auto embedder = new AndroidExternalViewEmbedder(nullptr);
 
   embedder->PrerollCompositeEmbeddedView(
       0, std::make_unique<EmbeddedViewParams>());
