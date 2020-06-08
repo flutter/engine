@@ -29,12 +29,12 @@ class PlatformViewAndroid final : public PlatformView {
   // background execution.
   PlatformViewAndroid(PlatformView::Delegate& delegate,
                       flutter::TaskRunners task_runners,
-                      std::unique_ptr<PlatformViewAndroidJni> jni_facade);
+                      std::unique_ptr<PlatformViewAndroidJNI> jni_facade);
 
   // Creates a PlatformViewAndroid with a rendering surface.
   PlatformViewAndroid(PlatformView::Delegate& delegate,
                       flutter::TaskRunners task_runners,
-                      std::unique_ptr<PlatformViewAndroidJni> jni_facade,
+                      std::unique_ptr<PlatformViewAndroidJNI> jni_facade,
                       bool use_software_rendering);
 
   ~PlatformViewAndroid() override;
@@ -75,7 +75,7 @@ class PlatformViewAndroid final : public PlatformView {
       const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
 
  private:
-  std::unique_ptr<PlatformViewAndroidJni> jni_facade_;
+  std::unique_ptr<PlatformViewAndroidJNI> jni_facade_;
 
   std::unique_ptr<AndroidSurface> android_surface_;
   // We use id 0 to mean that no response is expected.

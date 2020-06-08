@@ -13,7 +13,7 @@ namespace flutter {
 
 AndroidSurfaceGL::AndroidSurfaceGL(
     std::shared_ptr<AndroidContext> android_context,
-    std::unique_ptr<PlatformViewAndroidJni> jni_facade)
+    std::unique_ptr<PlatformViewAndroidJNI> jni_facade)
     : native_window_(nullptr),
       onscreen_surface_(nullptr),
       offscreen_surface_(nullptr) {

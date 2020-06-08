@@ -29,7 +29,7 @@ static WindowData GetDefaultWindowData() {
 
 AndroidShellHolder::AndroidShellHolder(
     flutter::Settings settings,
-    std::unique_ptr<PlatformViewAndroidJni> jni_facade,
+    std::unique_ptr<PlatformViewAndroidJNI> jni_facade,
     bool is_background_view)
     : settings_(std::move(settings)), jni_facade_(std::move(jni_facade)) {
   static size_t shell_count = 1;

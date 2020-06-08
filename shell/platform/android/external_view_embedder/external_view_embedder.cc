@@ -9,7 +9,7 @@
 namespace flutter {
 
 AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
-    std::unique_ptr<PlatformViewAndroidJni> jni_facade)
+    std::unique_ptr<PlatformViewAndroidJNI> jni_facade)
     : ExternalViewEmbedder(), jni_facade_(std::move(jni_facade)) {}
 
 // |ExternalViewEmbedder|

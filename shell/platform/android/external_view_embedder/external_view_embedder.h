@@ -15,7 +15,7 @@ namespace flutter {
 class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
  public:
   AndroidExternalViewEmbedder(
-      std::unique_ptr<PlatformViewAndroidJni> jni_facade);
+      std::unique_ptr<PlatformViewAndroidJNI> jni_facade);
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
@@ -53,7 +53,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
  private:
   // Allows to call methods in Java.
-  std::unique_ptr<PlatformViewAndroidJni> jni_facade_;
+  std::unique_ptr<PlatformViewAndroidJNI> jni_facade_;
 
   // The size of the background canvas.
   SkISize frame_size_;

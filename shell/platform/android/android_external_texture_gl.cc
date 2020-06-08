@@ -13,10 +13,10 @@ namespace flutter {
 AndroidExternalTextureGL::AndroidExternalTextureGL(
     int64_t id,
     const fml::jni::JavaObjectWeakGlobalRef& surface_texture,
-    std::unique_ptr<PlatformViewAndroidJni> jni_facade)
+    std::unique_ptr<PlatformViewAndroidJNI> jni_facade)
     : Texture(id), surface_texture_(surface_texture), transform(SkMatrix::I()) {
-  jni_facade_ = std::unique_ptr<PlatformViewAndroidJniImpl>(
-      static_cast<PlatformViewAndroidJniImpl*>(jni_facade.release()));
+  jni_facade_ = std::unique_ptr<PlatformViewAndroidJNIImpl>(
+      static_cast<PlatformViewAndroidJNIImpl*>(jni_facade.release()));
 }
 
 AndroidExternalTextureGL::~AndroidExternalTextureGL() {

@@ -6,6 +6,6 @@
 
 namespace flutter {
 
-PlatformViewAndroidJni::~PlatformViewAndroidJni() = default;
+PlatformViewAndroidJNI::~PlatformViewAndroidJNI() = default;
 
 }  // namespace flutter

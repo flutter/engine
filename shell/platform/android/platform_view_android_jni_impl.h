@@ -10,11 +10,15 @@
 
 namespace flutter {
 
-class PlatformViewAndroidJniImpl final : public PlatformViewAndroidJni {
+//------------------------------------------------------------------------------
+/// @brief      Concrete implementation of `PlatformViewAndroidJNI` that is
+///             compiled with the Android toolchain.
+///
+class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
  public:
-  PlatformViewAndroidJniImpl(fml::jni::JavaObjectWeakGlobalRef java_object);
+  PlatformViewAndroidJNIImpl(fml::jni::JavaObjectWeakGlobalRef java_object);
 
-  ~PlatformViewAndroidJniImpl() override;
+  ~PlatformViewAndroidJNIImpl() override;
 
   void FlutterViewHandlePlatformMessage(
       fml::RefPtr<flutter::PlatformMessage> message,
@@ -53,13 +57,13 @@ class PlatformViewAndroidJniImpl final : public PlatformViewAndroidJni {
                                         int height) override;
 
  private:
-  // Reference to FlutterJNI.
+  // Reference to FlutterJNI object.
   const fml::jni::JavaObjectWeakGlobalRef java_object_;
 
   // Reference to the current Surface texture object.
   fml::jni::JavaObjectWeakGlobalRef surface_texture_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroidJniImpl);
+  FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroidJNIImpl);
 };
 
 }  // namespace flutter

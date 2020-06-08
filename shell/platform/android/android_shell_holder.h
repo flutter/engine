@@ -22,7 +22,7 @@ namespace flutter {
 class AndroidShellHolder {
  public:
   AndroidShellHolder(flutter::Settings settings,
-                     std::unique_ptr<PlatformViewAndroidJni> jni_facade,
+                     std::unique_ptr<PlatformViewAndroidJNI> jni_facade,
                      bool is_background_view);
 
   ~AndroidShellHolder();
@@ -42,7 +42,7 @@ class AndroidShellHolder {
 
  private:
   const flutter::Settings settings_;
-  const std::unique_ptr<PlatformViewAndroidJni> jni_facade_;
+  const std::unique_ptr<PlatformViewAndroidJNI> jni_facade_;
   fml::WeakPtr<PlatformViewAndroid> platform_view_;
   ThreadHost thread_host_;
   std::unique_ptr<Shell> shell_;

@@ -22,7 +22,7 @@ namespace flutter {
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
-    std::unique_ptr<PlatformViewAndroidJni> jni_facade,
+    std::unique_ptr<PlatformViewAndroidJNI> jni_facade,
     bool use_software_rendering)
     : PlatformView(delegate, std::move(task_runners)),
       jni_facade_(std::move(jni_facade)) {
@@ -46,7 +46,7 @@ PlatformViewAndroid::PlatformViewAndroid(
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
-    std::unique_ptr<PlatformViewAndroidJni> jni_facade)
+    std::unique_ptr<PlatformViewAndroidJNI> jni_facade)
     : PlatformView(delegate, std::move(task_runners)),
       jni_facade_(std::move(jni_facade)) {}
 

@@ -13,7 +13,7 @@
 namespace flutter {
 
 AndroidSurfaceVulkan::AndroidSurfaceVulkan(
-    std::unique_ptr<PlatformViewAndroidJni> jni_facade)
+    std::unique_ptr<PlatformViewAndroidJNI> jni_facade)
     : proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {
   external_view_embedder_ =
       std::make_unique<AndroidExternalViewEmbedder>(std::move(jni_facade));

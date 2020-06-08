@@ -22,7 +22,7 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
                                public AndroidSurface {
  public:
   AndroidSurfaceGL(std::shared_ptr<AndroidContext> android_context,
-                   std::unique_ptr<PlatformViewAndroidJni> jni_facade);
+                   std::unique_ptr<PlatformViewAndroidJNI> jni_facade);
 
   ~AndroidSurfaceGL() override;
 

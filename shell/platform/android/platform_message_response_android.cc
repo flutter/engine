@@ -11,7 +11,7 @@ namespace flutter {
 
 PlatformMessageResponseAndroid::PlatformMessageResponseAndroid(
     int response_id,
-    std::unique_ptr<PlatformViewAndroidJni> jni_facade,
+    std::unique_ptr<PlatformViewAndroidJNI> jni_facade,
     fml::RefPtr<fml::TaskRunner> platform_task_runner)
     : response_id_(response_id),
       jni_facade_(std::move(jni_facade)),
@@ -23,11 +23,9 @@ PlatformMessageResponseAndroid::~PlatformMessageResponseAndroid() = default;
 void PlatformMessageResponseAndroid::Complete(
     std::unique_ptr<fml::Mapping> data) {
   platform_task_runner_->PostTask(
-      fml::MakeCopyable([response_id = response_id_,           //
-                         jni_facade = std::move(jni_facade_),  //
-                         data = std::move(data)                //
-  ]() {
-        // Make the response call into Java.
+      fml::MakeCopyable([response_id = response_id_,  //
+                         data = std::move(data),      //
+                         jni_facade = std::move(jni_facade_)]() mutable {
         jni_facade->FlutterViewHandlePlatformMessageResponse(response_id,
                                                              std::move(data));
       }));
@@ -36,9 +34,8 @@ void PlatformMessageResponseAndroid::Complete(
 // |flutter::PlatformMessageResponse|
 void PlatformMessageResponseAndroid::CompleteEmpty() {
   platform_task_runner_->PostTask(
-      fml::MakeCopyable([response_id = response_id_,           //
-                         jni_facade = std::move(jni_facade_),  //
-                         weak_java_object = weak_java_object_  //
+      fml::MakeCopyable([response_id = response_id_,          //
+                         jni_facade = std::move(jni_facade_)  //
   ]() {
         // Make the response call into Java.
         jni_facade->FlutterViewHandlePlatformMessageResponse(response_id,
