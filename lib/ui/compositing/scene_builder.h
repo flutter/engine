@@ -124,6 +124,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   void PushLayer(std::shared_ptr<ContainerLayer> layer);
   void PopLayer();
 
+  size_t external_size_bytes_ = 0;
   std::vector<std::shared_ptr<ContainerLayer>> layer_stack_;
   int rasterizer_tracing_threshold_ = 0;
   bool checkerboard_raster_cache_images_ = false;

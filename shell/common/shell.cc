@@ -961,7 +961,8 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 
 // |Animator::Delegate|
 void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
-                           fml::TimePoint frame_target_time) {
+                           fml::TimePoint frame_target_time,
+                           size_t external_size_bytes) {
   FML_DCHECK(is_setup_);
 
   // record the target time for use by rasterizer.
@@ -977,8 +978,8 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
   task_runners_.GetRasterTaskRunner()->PostTask(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
-       rasterizer = rasterizer_->GetWeakPtr(),
-       pipeline = std::move(pipeline)]() {
+       rasterizer = rasterizer_->GetWeakPtr(), pipeline = std::move(pipeline),
+       external_size_bytes = external_size_bytes]() {
         if (rasterizer) {
           rasterizer->Draw(pipeline);
 
@@ -987,6 +988,7 @@ void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
             waiting_for_first_frame_condition.notify_all();
           }
         }
+        FML_DLOG(ERROR) << "Scene Size: " << external_size_bytes;
       });
 }
 

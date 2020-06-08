@@ -490,7 +490,8 @@ class Shell final : public PlatformView::Delegate,
 
   // |Animator::Delegate|
   void OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
-                      fml::TimePoint frame_target_time) override;
+                      fml::TimePoint frame_target_time,
+                      size_t external_size_bytes) override;
 
   // |Animator::Delegate|
   void OnAnimatorDrawLastLayerTree() override;

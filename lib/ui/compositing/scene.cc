@@ -30,17 +30,21 @@ void Scene::create(Dart_Handle scene_handle,
                    std::shared_ptr<flutter::Layer> rootLayer,
                    uint32_t rasterizerTracingThreshold,
                    bool checkerboardRasterCacheImages,
-                   bool checkerboardOffscreenLayers) {
+                   bool checkerboardOffscreenLayers,
+                   size_t external_size_bytes) {
   auto scene = fml::MakeRefCounted<Scene>(
       std::move(rootLayer), rasterizerTracingThreshold,
-      checkerboardRasterCacheImages, checkerboardOffscreenLayers);
+      checkerboardRasterCacheImages, checkerboardOffscreenLayers,
+      external_size_bytes);
   scene->AssociateWithDartWrapper(scene_handle);
 }
 
 Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
-             bool checkerboardOffscreenLayers) {
+             bool checkerboardOffscreenLayers,
+             size_t external_size_bytes)
+    : external_size_bytes_(external_size_bytes) {
   auto viewport_metrics = UIDartState::Current()->window()->viewport_metrics();
 
   layer_tree_ = std::make_unique<LayerTree>(
@@ -80,6 +84,10 @@ Dart_Handle Scene::toImage(uint32_t width,
 
 std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree() {
   return std::move(layer_tree_);
+}
+
+size_t Scene::GetAllocationSize() const {
+  return sizeof(Scene) + sizeof(layer_tree_) + external_size_bytes_;
 }
 
 }  // namespace flutter

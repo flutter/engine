@@ -23,7 +23,8 @@ class RuntimeDelegate {
 
   virtual void ScheduleFrame(bool regenerate_layer_tree = true) = 0;
 
-  virtual void Render(std::unique_ptr<flutter::LayerTree> layer_tree) = 0;
+  virtual void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+                      size_t external_size_bytes) = 0;
 
   virtual void UpdateSemantics(SemanticsNodeUpdates update,
                                CustomAccessibilityActionUpdates actions) = 0;

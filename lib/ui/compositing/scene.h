@@ -28,7 +28,8 @@ class Scene : public RefCountedDartWrappable<Scene> {
                      std::shared_ptr<flutter::Layer> rootLayer,
                      uint32_t rasterizerTracingThreshold,
                      bool checkerboardRasterCacheImages,
-                     bool checkerboardOffscreenLayers);
+                     bool checkerboardOffscreenLayers,
+                     size_t external_size_bytes);
 
   std::unique_ptr<flutter::LayerTree> takeLayerTree();
 
@@ -40,12 +41,18 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
- private:
-  explicit Scene(std::shared_ptr<flutter::Layer> rootLayer,
-                 uint32_t rasterizerTracingThreshold,
-                 bool checkerboardRasterCacheImages,
-                 bool checkerboardOffscreenLayers);
+  size_t GetAllocationSize() const override;
 
+  size_t external_size_bytes() const { return external_size_bytes_; }
+
+ private:
+  Scene(std::shared_ptr<flutter::Layer> rootLayer,
+        uint32_t rasterizerTracingThreshold,
+        bool checkerboardRasterCacheImages,
+        bool checkerboardOffscreenLayers,
+        size_t external_size_bytes);
+
+  size_t external_size_bytes_;
   std::unique_ptr<flutter::LayerTree> layer_tree_;
 };
 

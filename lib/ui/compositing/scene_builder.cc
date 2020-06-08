@@ -221,6 +221,7 @@ void SceneBuilder::addPicture(double dx,
   auto layer = std::make_unique<flutter::PictureLayer>(
       offset, UIDartState::CreateGPUObject(picture->picture()), !!(hints & 1),
       !!(hints & 2));
+  external_size_bytes_ += picture->GetAllocationSize();
   AddLayer(std::move(layer));
 }
 
@@ -288,7 +289,7 @@ void SceneBuilder::build(Dart_Handle scene_handle) {
 
   Scene::create(scene_handle, layer_stack_[0], rasterizer_tracing_threshold_,
                 checkerboard_raster_cache_images_,
-                checkerboard_offscreen_layers_);
+                checkerboard_offscreen_layers_, external_size_bytes_);
   ClearDartWrapper();  // may delete this object.
 }
 

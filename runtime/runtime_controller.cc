@@ -302,7 +302,7 @@ void RuntimeController::ScheduleFrame() {
 
 // |WindowClient|
 void RuntimeController::Render(Scene* scene) {
-  client_.Render(scene->takeLayerTree());
+  client_.Render(scene->takeLayerTree(), scene->external_size_bytes());
 }
 
 // |WindowClient|

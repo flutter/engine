@@ -171,7 +171,8 @@ void Animator::BeginFrame(fml::TimePoint frame_start_time,
   }
 }
 
-void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
+void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+                      size_t external_size_bytes) {
   if (dimension_change_pending_ &&
       layer_tree->frame_size() != last_layer_tree_size_) {
     dimension_change_pending_ = false;
@@ -190,7 +191,8 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
     FML_DLOG(INFO) << "No pending continuation to commit";
   }
 
-  delegate_.OnAnimatorDraw(layer_tree_pipeline_, last_frame_target_time_);
+  delegate_.OnAnimatorDraw(layer_tree_pipeline_, last_frame_target_time_,
+                           external_size_bytes);
 }
 
 bool Animator::CanReuseLastLayerTree() {

@@ -36,7 +36,8 @@ class Animator final {
 
     virtual void OnAnimatorDraw(
         fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
-        fml::TimePoint frame_target_time) = 0;
+        fml::TimePoint frame_target_time,
+        size_t external_size_bytes) = 0;
 
     virtual void OnAnimatorDrawLastLayerTree() = 0;
   };
@@ -51,7 +52,8 @@ class Animator final {
 
   void RequestFrame(bool regenerate_layer_tree = true);
 
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
+  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+              size_t external_size_bytes);
 
   //--------------------------------------------------------------------------
   /// @brief    Schedule a secondary callback to be executed right after the

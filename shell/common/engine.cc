@@ -461,7 +461,8 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
-void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
+void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+                    size_t external_size_bytes) {
   if (!layer_tree)
     return;
 
@@ -471,7 +472,7 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
       layer_tree->frame_device_pixel_ratio() <= 0.0f)
     return;
 
-  animator_->Render(std::move(layer_tree));
+  animator_->Render(std::move(layer_tree), external_size_bytes);
 }
 
 void Engine::UpdateSemantics(SemanticsNodeUpdates update,
