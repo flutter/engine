@@ -43,6 +43,12 @@ class PlatformViewAndroidJni {
   virtual void SurfaceTextureGetTransformMatrix(SkMatrix& transform) = 0;
 
   virtual void SurfaceTextureDetachFromGLContext() = 0;
+
+  virtual void FlutterViewOnDisplayPlatformView(int view_id,
+                                                int x,
+                                                int y,
+                                                int width,
+                                                int height) = 0;
 };
 
 }  // namespace flutter

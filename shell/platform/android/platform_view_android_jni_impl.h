@@ -46,6 +46,12 @@ class PlatformViewAndroidJniImpl final : public PlatformViewAndroidJni {
 
   void SurfaceTextureDetachFromGLContext() override;
 
+  void FlutterViewOnDisplayPlatformView(int view_id,
+                                        int x,
+                                        int y,
+                                        int width,
+                                        int height) override;
+
  private:
   // Reference to FlutterJNI.
   const fml::jni::JavaObjectWeakGlobalRef java_object_;
