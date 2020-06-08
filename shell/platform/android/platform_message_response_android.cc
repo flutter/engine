@@ -11,10 +11,10 @@ namespace flutter {
 
 PlatformMessageResponseAndroid::PlatformMessageResponseAndroid(
     int response_id,
-    fml::jni::JavaObjectWeakGlobalRef weak_java_object,
+    std::unique_ptr<PlatformViewAndroidJni> jni_facade,
     fml::RefPtr<fml::TaskRunner> platform_task_runner)
     : response_id_(response_id),
-      weak_java_object_(weak_java_object),
+      jni_facade_(std::move(jni_facade)),
       platform_task_runner_(std::move(platform_task_runner)) {}
 
 PlatformMessageResponseAndroid::~PlatformMessageResponseAndroid() = default;
@@ -22,54 +22,27 @@ PlatformMessageResponseAndroid::~PlatformMessageResponseAndroid() = default;
 // |flutter::PlatformMessageResponse|
 void PlatformMessageResponseAndroid::Complete(
     std::unique_ptr<fml::Mapping> data) {
-  platform_task_runner_->PostTask(
-      fml::MakeCopyable([response = response_id_,               //
-                         weak_java_object = weak_java_object_,  //
-                         data = std::move(data)                 //
-  ]() {
-        // We are on the platform thread. Attempt to get the strong reference to
-        // the Java object.
-        auto* env = fml::jni::AttachCurrentThread();
-        auto java_object = weak_java_object.get(env);
-
-        if (java_object.is_null()) {
-          // The Java object was collected before this message response got to
-          // it. Drop the response on the floor.
-          return;
-        }
-
-        // Convert the vector to a Java byte array.
-        fml::jni::ScopedJavaLocalRef<jbyteArray> data_array(
-            env, env->NewByteArray(data->GetSize()));
-        env->SetByteArrayRegion(
-            data_array.obj(), 0, data->GetSize(),
-            reinterpret_cast<const jbyte*>(data->GetMapping()));
-
-        // Make the response call into Java.
-        FlutterViewHandlePlatformMessageResponse(env, java_object.obj(),
-                                                 response, data_array.obj());
-      }));
+  // platform_task_runner_->PostTask(
+  //     fml::MakeCopyable([response_id = response_id_,           //
+  //                        jni_facade = std::move(jni_facade_),  //
+  //                        data = std::move(data)                //
+  // ]() {
+  //       // Make the response call into Java.
+  //       jni_facade->FlutterViewHandlePlatformMessageResponse(response_id,
+  //                                                            std::move(data));
+  //     }));
 }
 
 // |flutter::PlatformMessageResponse|
 void PlatformMessageResponseAndroid::CompleteEmpty() {
   platform_task_runner_->PostTask(
-      fml::MakeCopyable([response = response_id_,              //
+      fml::MakeCopyable([response_id = response_id_,           //
+                         jni_facade = std::move(jni_facade_),  //
                          weak_java_object = weak_java_object_  //
   ]() {
-        // We are on the platform thread. Attempt to get the strong reference to
-        // the Java object.
-        auto* env = fml::jni::AttachCurrentThread();
-        auto java_object = weak_java_object.get(env);
-
-        if (java_object.is_null()) {
-          // The Java object was collected before this message response got to
-          // it. Drop the response on the floor.
-          return;
-        }
         // Make the response call into Java.
-        FlutterViewHandlePlatformMessageResponse(env, java_object.obj(),
-                                                 response, nullptr);
+        jni_facade->FlutterViewHandlePlatformMessageResponse(response_id,
+                                                             nullptr);
       }));
 }
 }  // namespace flutter

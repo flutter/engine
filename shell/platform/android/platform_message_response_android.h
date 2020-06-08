@@ -9,6 +9,7 @@
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/window/platform_message_response.h"
+#include "flutter/shell/platform/android/platform_view_android_jni.h"
 
 namespace flutter {
 
@@ -23,13 +24,14 @@ class PlatformMessageResponseAndroid : public flutter::PlatformMessageResponse {
  private:
   PlatformMessageResponseAndroid(
       int response_id,
-      fml::jni::JavaObjectWeakGlobalRef weak_java_object,
+      std::unique_ptr<PlatformViewAndroidJni> jni_facade,
       fml::RefPtr<fml::TaskRunner> platform_task_runner);
 
   ~PlatformMessageResponseAndroid() override;
 
   int response_id_;
   fml::jni::JavaObjectWeakGlobalRef weak_java_object_;
+  std::unique_ptr<PlatformViewAndroidJni> jni_facade_;
   fml::RefPtr<fml::TaskRunner> platform_task_runner_;
 
   FML_FRIEND_MAKE_REF_COUNTED(PlatformMessageResponseAndroid);

@@ -153,8 +153,11 @@ static jlong AttachJNI(JNIEnv* env,
                        jobject flutterJNI,
                        jboolean is_background_view) {
   fml::jni::JavaObjectWeakGlobalRef java_object(env, flutterJNI);
+  std::unique_ptr<PlatformViewAndroidJni> jni_facade =
+      std::make_unique<PlatformViewAndroidJniImpl>(java_object);
   auto shell_holder = std::make_unique<AndroidShellHolder>(
-      FlutterMain::Get().GetSettings(), java_object, is_background_view);
+      FlutterMain::Get().GetSettings(), std::move(jni_facade),
+      is_background_view);
   if (shell_holder->IsValid()) {
     return reinterpret_cast<jlong>(shell_holder.release());
   } else {
@@ -801,34 +804,225 @@ PlatformViewAndroidJniImpl::PlatformViewAndroidJniImpl(
 PlatformViewAndroidJniImpl::~PlatformViewAndroidJniImpl() = default;
 
 void PlatformViewAndroidJniImpl::FlutterViewHandlePlatformMessage(
-    const std::string& channel,
     fml::RefPtr<flutter::PlatformMessage> message,
-    int responseId) {}
+    int responseId) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return;
+  }
+
+  fml::jni::ScopedJavaLocalRef<jstring> java_channel =
+      fml::jni::StringToJavaString(env, message->channel());
+
+  if (message->hasData()) {
+    fml::jni::ScopedJavaLocalRef<jbyteArray> message_array(
+        env, env->NewByteArray(message->data().size()));
+    env->SetByteArrayRegion(
+        message_array.obj(), 0, message->data().size(),
+        reinterpret_cast<const jbyte*>(message->data().data()));
+    env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
+                        java_channel.obj(), message_array.obj(), responseId);
+  } else {
+    env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
+                        java_channel.obj(), nullptr, responseId);
+  }
+
+  FML_CHECK(CheckException(env));
+}
 
 void PlatformViewAndroidJniImpl::FlutterViewHandlePlatformMessageResponse(
     int responseId,
-    std::unique_ptr<fml::Mapping> data) {}
+    std::unique_ptr<fml::Mapping> data) {
+  // We are on the platform thread. Attempt to get the strong reference to
+  // the Java object.
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    // The Java object was collected before this message response got to
+    // it. Drop the response on the floor.
+    return;
+  }
+  if (data == nullptr) {  // Empty response.
+    env->CallVoidMethod(java_object.obj(),
+                        g_handle_platform_message_response_method, responseId,
+                        nullptr);
+  } else {
+    // Convert the vector to a Java byte array.
+    fml::jni::ScopedJavaLocalRef<jbyteArray> data_array(
+        env, env->NewByteArray(data->GetSize()));
+    env->SetByteArrayRegion(data_array.obj(), 0, data->GetSize(),
+                            reinterpret_cast<const jbyte*>(data->GetMapping()));
+
+    env->CallVoidMethod(java_object.obj(),
+                        g_handle_platform_message_response_method, responseId,
+                        data_array.obj());
+  }
+
+  FML_CHECK(CheckException(env));
+}
 
 void PlatformViewAndroidJniImpl::FlutterViewUpdateSemantics(
     std::vector<uint8_t> buffer,
-    std::vector<std::string> strings) {}
+    std::vector<std::string> strings) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return;
+  }
+
+  fml::jni::ScopedJavaLocalRef<jobject> direct_buffer(
+      env, env->NewDirectByteBuffer(buffer.data(), buffer.size()));
+  fml::jni::ScopedJavaLocalRef<jobjectArray> jstrings =
+      fml::jni::VectorToStringArray(env, strings);
+
+  env->CallVoidMethod(java_object.obj(), g_update_semantics_method,
+                      direct_buffer.obj(), jstrings.obj());
+
+  FML_CHECK(CheckException(env));
+}
 
 void PlatformViewAndroidJniImpl::FlutterViewUpdateCustomAccessibilityActions(
     std::vector<uint8_t> actions_buffer,
-    std::vector<std::string> strings) {}
+    std::vector<std::string> strings) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
 
-void PlatformViewAndroidJniImpl::FlutterViewOnFirstFrame() {}
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return;
+  }
 
-void PlatformViewAndroidJniImpl::FlutterViewOnPreEngineRestart() {}
+  fml::jni::ScopedJavaLocalRef<jobject> direct_actions_buffer(
+      env,
+      env->NewDirectByteBuffer(actions_buffer.data(), actions_buffer.size()));
+
+  fml::jni::ScopedJavaLocalRef<jobjectArray> jstrings =
+      fml::jni::VectorToStringArray(env, strings);
+
+  env->CallVoidMethod(java_object.obj(),
+                      g_update_custom_accessibility_actions_method,
+                      direct_actions_buffer.obj(), jstrings.obj());
+
+  FML_CHECK(CheckException(env));
+}
+
+void PlatformViewAndroidJniImpl::FlutterViewOnFirstFrame() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return;
+  }
+
+  env->CallVoidMethod(java_object.obj(), g_on_first_frame_method);
+
+  FML_CHECK(CheckException(env));
+}
+
+void PlatformViewAndroidJniImpl::FlutterViewOnPreEngineRestart() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return;
+  }
+
+  env->CallVoidMethod(java_object.obj(), g_on_engine_restart_method);
+
+  FML_CHECK(CheckException(env));
+}
+
+void PlatformViewAndroidJniImpl::SetCurrentSurfaceTexture(
+    fml::jni::JavaObjectWeakGlobalRef& surface_texture) {
+  surface_texture_ = surface_texture;
+}
 
 void PlatformViewAndroidJniImpl::SurfaceTextureAttachToGLContext(
-    int textureId) {}
+    int textureId) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
 
-void PlatformViewAndroidJniImpl::SurfaceTextureUpdateTexImage() {}
+  fml::jni::ScopedJavaLocalRef<jobject> surface_texture =
+      surface_texture_.get(env);
+  if (surface_texture.is_null()) {
+    return;
+  }
+
+  env->CallVoidMethod(surface_texture.obj(), g_attach_to_gl_context_method,
+                      textureId);
+
+  FML_CHECK(CheckException(env));
+}
+
+void PlatformViewAndroidJniImpl::SurfaceTextureUpdateTexImage() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  fml::jni::ScopedJavaLocalRef<jobject> surface_texture =
+      surface_texture_.get(env);
+  if (surface_texture.is_null()) {
+    return;
+  }
+
+  env->CallVoidMethod(surface_texture.obj(), g_update_tex_image_method);
+
+  FML_CHECK(CheckException(env));
+}
+
+// The bounds we set for the canvas are post composition.
+// To fill the canvas we need to ensure that the transformation matrix
+// on the `SurfaceTexture` will be scaled to fill. We rescale and preseve
+// the scaled aspect ratio.
+SkSize ScaleToFill(float scaleX, float scaleY) {
+  const double epsilon = std::numeric_limits<double>::epsilon();
+  // scaleY is negative.
+  const double minScale = fmin(scaleX, fabs(scaleY));
+  const double rescale = 1.0f / (minScale + epsilon);
+  return SkSize::Make(scaleX * rescale, scaleY * rescale);
+}
 
 void PlatformViewAndroidJniImpl::SurfaceTextureGetTransformMatrix(
-    SkMatrix transform) {}
+    SkMatrix& transform) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
 
-void PlatformViewAndroidJniImpl::SurfaceTextureDetachFromGLContext() {}
+  fml::jni::ScopedJavaLocalRef<jobject> surface_texture =
+      surface_texture_.get(env);
+  if (surface_texture.is_null()) {
+    return;
+  }
+
+  fml::jni::ScopedJavaLocalRef<jfloatArray> transformMatrix(
+      env, env->NewFloatArray(16));
+
+  env->CallVoidMethod(surface_texture.obj(), g_get_transform_matrix_method,
+                      transformMatrix.obj());
+  FML_CHECK(CheckException(env));
+
+  float* m = env->GetFloatArrayElements(transformMatrix.obj(), nullptr);
+  float scaleX = m[0], scaleY = m[5];
+  const SkSize scaled = ScaleToFill(scaleX, scaleY);
+  SkScalar matrix3[] = {
+      scaled.fWidth, m[1],           m[2],   //
+      m[4],          scaled.fHeight, m[6],   //
+      m[8],          m[9],           m[10],  //
+  };
+  env->ReleaseFloatArrayElements(transformMatrix.obj(), m, JNI_ABORT);
+  transform.set9(matrix3);
+}
+
+void PlatformViewAndroidJniImpl::SurfaceTextureDetachFromGLContext() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  fml::jni::ScopedJavaLocalRef<jobject> surface_texture =
+      surface_texture_.get(env);
+  if (surface_texture.is_null()) {
+    return;
+  }
+
+  env->CallVoidMethod(surface_texture.obj(), g_detach_from_gl_context_method);
+
+  FML_CHECK(CheckException(env));
+}
 
 }  // namespace flutter

@@ -6,41 +6,44 @@
 #define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_
 
 #include "flutter/fml/macros.h"
+#include "flutter/fml/mapping.h"
+#include "flutter/lib/ui/window/platform_message.h"
+
+#include "third_party/skia/include/core/SkMatrix.h"
 
 namespace flutter {
 
 class PlatformViewAndroidJni {
  public:
+  virtual ~PlatformViewAndroidJni();
+
   virtual void FlutterViewHandlePlatformMessage(
-      const std::string& channel,
       fml::RefPtr<flutter::PlatformMessage> message,
-      int responseId);
+      int responseId) = 0;
 
   virtual void FlutterViewHandlePlatformMessageResponse(
       int responseId,
-      std::unique_ptr<fml::Mapping> data);
+      std::unique_ptr<fml::Mapping> data) = 0;
 
   virtual void FlutterViewUpdateSemantics(std::vector<uint8_t> buffer,
-                                          std::vector<std::string> strings);
+                                          std::vector<std::string> strings) = 0;
 
   virtual void FlutterViewUpdateCustomAccessibilityActions(
       std::vector<uint8_t> actions_buffer,
-      std::vector<std::string> strings);
+      std::vector<std::string> strings) = 0;
 
-  virtual void FlutterViewOnFirstFrame();
+  virtual void FlutterViewOnFirstFrame() = 0;
 
-  virtual void FlutterViewOnPreEngineRestart();
+  virtual void FlutterViewOnPreEngineRestart() = 0;
 
-  virtual void SurfaceTextureAttachToGLContext(int textureId);
+  virtual void SurfaceTextureAttachToGLContext(int textureId) = 0;
 
-  virtual void SurfaceTextureUpdateTexImage();
+  virtual void SurfaceTextureUpdateTexImage() = 0;
 
-  virtual void SurfaceTextureGetTransformMatrix(SkMatrix transform);
+  virtual void SurfaceTextureGetTransformMatrix(SkMatrix& transform) = 0;
 
-  virtual void SurfaceTextureDetachFromGLContext();
-
-  FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroidJni);
-}
+  virtual void SurfaceTextureDetachFromGLContext() = 0;
+};
 
 }  // namespace flutter
 

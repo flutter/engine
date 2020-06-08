@@ -5,18 +5,18 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_IMPL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_IMPL_H_
 
+#include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 
 namespace flutter {
 
-class PlatformViewAndroidJniImpl : public PlatformViewAndroidJni {
+class PlatformViewAndroidJniImpl final : public PlatformViewAndroidJni {
  public:
-  PlatformViewAndroidJniImpl();
+  PlatformViewAndroidJniImpl(fml::jni::JavaObjectWeakGlobalRef java_object);
 
-  ~PlatformViewAndroidJniImpl();
+  ~PlatformViewAndroidJniImpl() override;
 
   void FlutterViewHandlePlatformMessage(
-      const std::string& channel,
       fml::RefPtr<flutter::PlatformMessage> message,
       int responseId) override;
 
@@ -35,18 +35,26 @@ class PlatformViewAndroidJniImpl : public PlatformViewAndroidJni {
 
   void FlutterViewOnPreEngineRestart() override;
 
+  void SetCurrentSurfaceTexture(
+      fml::jni::JavaObjectWeakGlobalRef& surface_texture);
+
   void SurfaceTextureAttachToGLContext(int textureId) override;
 
   void SurfaceTextureUpdateTexImage() override;
 
-  void SurfaceTextureGetTransformMatrix(SkMatrix transform) override;
+  void SurfaceTextureGetTransformMatrix(SkMatrix& transform) override;
 
   void SurfaceTextureDetachFromGLContext() override;
 
  private:
   // Reference to FlutterJNI.
   const fml::jni::JavaObjectWeakGlobalRef java_object_;
-}
+
+  // Reference to the current Surface texture object.
+  fml::jni::JavaObjectWeakGlobalRef surface_texture_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroidJniImpl);
+};
 
 }  // namespace flutter
 
