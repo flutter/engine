@@ -103,7 +103,6 @@ void Animator::BeginFrame(fml::TimePoint frame_start_time,
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending", frame_number_++);
 
   TRACE_EVENT0("flutter", "Animator::BeginFrame");
-  FML_DLOG(ERROR) << "animator BeginFrame start";
   while (!trace_flow_ids_.empty()) {
     uint64_t trace_flow_id = trace_flow_ids_.front();
     TRACE_FLOW_END("flutter", "PointerEvent", trace_flow_id);
@@ -170,7 +169,6 @@ void Animator::BeginFrame(fml::TimePoint frame_start_time,
         },
         kNotifyIdleTaskWaitTime);
   }
-  FML_DLOG(ERROR) << "animator BeginFrame end";
 }
 
 void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
@@ -227,14 +225,12 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
   // an idle. This does NOT provide a guarantee that the UI thread has not
   // started an expensive operation right after posting this message however.
   // To support that, we need edge triggered wakes on VSync.
-  FML_DLOG(ERROR) << "animator fire ui task";
   task_runners_.GetUITaskRunner()->PostTask([self = weak_factory_.GetWeakPtr(),
                                              frame_number = frame_number_]() {
     if (!self.get()) {
       return;
     }
     TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending", frame_number);
-    FML_DLOG(ERROR) << "animator AwaitVSync";
     self->AwaitVSync();
   });
   frame_scheduled_ = true;
@@ -244,13 +240,10 @@ void Animator::AwaitVSync() {
   waiter_->AsyncWaitForVsync(
       [self = weak_factory_.GetWeakPtr()](fml::TimePoint frame_start_time,
                                           fml::TimePoint frame_target_time) {
-        FML_DLOG(ERROR) << "animator AwaitVSync block";
         if (self) {
           if (self->CanReuseLastLayerTree()) {
-            FML_DLOG(ERROR) << "animator DrawLastLayerTree";
             self->DrawLastLayerTree();
           } else {
-            FML_DLOG(ERROR) << "animator BeginFrame";
             self->BeginFrame(frame_start_time, frame_target_time);
           }
         }
