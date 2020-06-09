@@ -4,14 +4,11 @@
 
 package io.flutter.plugin.localization;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.LocaleList;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,8 +25,7 @@ public class LocalizationPlugin {
   private static LocalizationPlugin instance;
 
   public LocalizationPlugin(
-      @NonNull Context context,
-      @NonNull LocalizationChannel localizationChannel) {
+      @NonNull Context context, @NonNull LocalizationChannel localizationChannel) {
 
     this.context = context;
     this.localizationChannel = localizationChannel;
@@ -49,9 +45,9 @@ public class LocalizationPlugin {
       }
 
       // TODO(garyq): This should be modified to achieve Android's full
-      // locale resolution: https://developer.android.com/guide/topics/resources/multilingual-support
-      platformResolvedLocale =
-          Locale.lookup(languageRanges, supportedLocales);
+      // locale resolution:
+      // https://developer.android.com/guide/topics/resources/multilingual-support
+      platformResolvedLocale = Locale.lookup(languageRanges, supportedLocales);
     }
     return platformResolvedLocale;
   }

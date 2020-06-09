@@ -786,10 +786,10 @@ public class FlutterJNI {
   }
   // ----- End Engine Lifecycle Support ----
 
-  // ----- Start Localizaation Support ----
+  // ----- Start Localization Support ----
 
-    /**
-   * Invoked by native to obtain the results of Android's locale reoslution algorithm.
+  /**
+   * Invoked by native to obtain the results of Android's locale resolution algorithm.
    */
   @SuppressWarnings("unused")
   private String[] computePlatformResolvedLocale(@NonNull String[] strings) {
@@ -820,7 +820,6 @@ public class FlutterJNI {
     output[1] = result.getCountry();
     output[2] = result.getScript();
     return output;
-    // return result.getLanguage() + result.getCountry();
   }
 
   // ----- End Localization Support ----

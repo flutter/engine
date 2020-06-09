@@ -6,7 +6,6 @@ package io.flutter.embedding.engine.systemchannels;
 
 import android.os.Build;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -50,7 +49,7 @@ public class LocalizationChannel {
     channel.invokeMethod("setLocale", data);
   }
 
-    /** Send the given {@code locales} to Dart. */
+  /** Send the given {@code platformResolvedLocale} to Dart. */
   public void sendPlatformResolvedLocales(Locale platformResolvedLocale) {
     Log.v(TAG, "Sending Locales to Flutter.");
     // Send platformResolvedLocale first as it may be used in the callback
