@@ -436,42 +436,10 @@ std::vector<std::string>& PlatformViewAndroid::ComputePlatformResolvedLocales(
     platform_resolved_locale_.clear();
     return platform_resolved_locale_;
   }
-  std::string result = FlutterViewComputePlatformResolvedLocale(
+  platform_resolved_locale_ = *FlutterViewComputePlatformResolvedLocale(
       env, view.obj(),
       fml::jni::VectorToStringArray(env, supported_locale_data).obj());
 
-  platform_resolved_locale_.clear();
-  // Decode the locale string.
-  switch (result.size()) {
-    // Only languageCode (2)
-    case 2: {
-      platform_resolved_locale_.emplace_back(result.data(), 2);
-      platform_resolved_locale_.emplace_back("");
-      platform_resolved_locale_.emplace_back("");
-      break;
-    }
-    // Only languageCode (2) and countryCode (2)
-    case 4: {
-      platform_resolved_locale_.emplace_back(result.data(), 2);
-      platform_resolved_locale_.emplace_back(result.data() + 2, 2);
-      platform_resolved_locale_.emplace_back("");
-      break;
-    }
-    // Only languageCode (2) and scriptCode (4)
-    case 6: {
-      platform_resolved_locale_.emplace_back(result.data(), 2);
-      platform_resolved_locale_.emplace_back("");
-      platform_resolved_locale_.emplace_back(result.data() + 2, 4);
-      break;
-    }
-    // languageCode (2), countryCode (2), and scriptCode (4)
-    case 8: {
-      platform_resolved_locale_.emplace_back(result.data(), 2);
-      platform_resolved_locale_.emplace_back(result.data() + 2, 2);
-      platform_resolved_locale_.emplace_back(result.data() + 4, 4);
-      break;
-    }
-  }
   return platform_resolved_locale_;
 }
 

@@ -817,14 +817,14 @@ class Window {
     if (supportedLocales == null) {
       return null;
     }
-    List<String> supportedLocalesData = <String>[];
+    final List<String> supportedLocalesData = <String>[];
     for (Locale locale in supportedLocales) {
       supportedLocalesData.add(locale.languageCode);
       supportedLocalesData.add(locale.countryCode);
       supportedLocalesData.add(locale.scriptCode);
     }
 
-    List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
+    final List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
 
     if (result != null && result.isNotEmpty && result[0] != null) {
       return Locale.fromSubtags(
