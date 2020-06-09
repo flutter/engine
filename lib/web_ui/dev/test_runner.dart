@@ -180,7 +180,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       if (!iosSimulator.booted) {
         await iosSimulator.boot();
         print('INFO: Simulator ${iosSimulator.id} booted.');
-        cleanupCallbacks.add(() {
+        cleanupCallbacks.add(() async {
           iosSimulator.shutdown();
           print('INFO: Simulator ${iosSimulator.id} shutdown.');
         });
