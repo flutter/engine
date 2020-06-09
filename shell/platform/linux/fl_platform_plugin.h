@@ -26,7 +26,8 @@ G_DECLARE_FINAL_TYPE(FlPlatformPlugin,
  * fl_platform_plugin_new:
  * @messenger: an #FlBinaryMessenger
  *
- * Creates a new platform channel.
+ * Creates a new plugin that implements SystemChannels.platform from the
+ * Flutter services library.
  *
  * Returns: a new #FlPlatformPlugin
  */
