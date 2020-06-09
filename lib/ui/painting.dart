@@ -2354,7 +2354,11 @@ class PathMetricIterator implements Iterator<PathMetric> {
   PathMetric get current {
     final PathMetric? currentMetric = _pathMetric;
     if (currentMetric == null) {
-      throw RangeError('No more path metrics.');
+      throw RangeError(
+        'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
+        '- The iteration has not started yet. If so, call "moveNext" to start iteration.'
+        '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".'
+      );
     }
     return currentMetric;
   }

@@ -61,7 +61,7 @@ String? _localeClosure() {
   if (window.locale == null) {
     return null;
   }
-  return window.locale!.toString();
+  return window.locale.toString();
 }
 
 @pragma('vm:entry-point')

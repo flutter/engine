@@ -2021,9 +2021,10 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// to repeatedly call this. Instead, cache the results.
   List<LineMetrics> computeLineMetrics() {
     final Float64List encoded = _computeLineMetrics();
+    final int count = encoded.length ~/ 9;
     int position = 0;
     final List<LineMetrics> metrics = <LineMetrics>[];
-    for (int index = 0; index < metrics.length; index += 1) {
+    for (int index = 0; index < count; index += 1) {
       metrics.add(LineMetrics(
         hardBreak:      encoded[position++] != 0,
         ascent:         encoded[position++],
