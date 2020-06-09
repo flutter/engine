@@ -28,10 +28,10 @@ void main() {
 
   test('computePlatformResolvedLocale basic', () {
     Locale result = window.computePlatformResolvedLocale([
-      Locale.fromSubtags(languageCode: 'fr', countryCode: 'CA'),
-      Locale.fromSubtags(languageCode: 'zh', countryCode: 'CN'),
-      Locale.fromSubtags(languageCode: 'en', countryCode: 'US'),
+      const Locale.fromSubtags(languageCode: 'fr', countryCode: 'CA'),
+      const Locale.fromSubtags(languageCode: 'zh', countryCode: 'CN'),
+      const Locale.fromSubtags(languageCode: 'en', countryCode: 'US'),
     ]);
-    expect(result, Locale.fromSubtags(languageCode: 'en', countryCode: 'US'));
+    expect(result, const Locale.fromSubtags(languageCode: 'en', countryCode: 'US'));
   });
 }
