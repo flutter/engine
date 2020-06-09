@@ -34,6 +34,10 @@ static NSCursor* GetCursorForKind(NSString* kind) {
     return [NSCursor openHandCursor];
   else if ([kind isEqualToString:@"grabbing"])
     return [NSCursor closedHandCursor];
+  else if ([kind isEqualToString:@"resizeLeftRight"])
+    return [NSCursor resizeLeftRightCursor];
+  else if ([kind isEqualToString:@"resizeUpDown"])
+    return [NSCursor resizeUpDownCursor];
   else
     return [NSCursor arrowCursor];
 }
