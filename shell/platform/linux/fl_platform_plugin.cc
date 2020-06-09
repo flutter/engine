@@ -113,7 +113,7 @@ static FlMethodResponse* system_navigator_pop(FlPlatformPlugin* self) {
 
   g_application_quit(app);
 
-  return FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
 
 // Called when a method call is received from Flutter.
