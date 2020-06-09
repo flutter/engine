@@ -68,7 +68,7 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
 
   auto postpreroll_result = embedder->PostPrerollAction(raster_thread_merger);
   ASSERT_EQ(PostPrerollResult::kResubmitFrame, postpreroll_result);
-  ASSERT_FALSE(embedder->SubmitFrame(nullptr, nullptr));
+  ASSERT_TRUE(embedder->SubmitFrame(nullptr, nullptr));
 
   embedder->EndFrame(raster_thread_merger);
   ASSERT_TRUE(raster_thread_merger->IsMerged());
