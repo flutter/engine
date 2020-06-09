@@ -10,7 +10,7 @@
 #include <gtk/gtk.h>
 
 static constexpr char kChannelName[] = "flutter/mousecursor";
-
+static constexpr char kBadArgumentsError[] = "Bad Arguments";
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
 
@@ -29,7 +29,7 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
                                          FlValue* args) {
   if (fl_value_get_type(args) != FL_VALUE_TYPE_MAP) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
-        "Bad Arguments", "Argument map missing or malformed", nullptr));
+        kBadArgumentsError, "Argument map missing or malformed", nullptr));
   }
 
   FlValue* kind_value = fl_value_lookup_string(args, kKindKey);
