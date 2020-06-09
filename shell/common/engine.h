@@ -227,6 +227,11 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///                              collected and send back to Dart.
     ///
     virtual void SetNeedsReportTimings(bool needs_reporting) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Ask the delegate if should have surface.
+    ///
+    virtual bool HaveSurface() = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -749,7 +754,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ViewportMetrics viewport_metrics_;
   std::shared_ptr<AssetManager> asset_manager_;
   bool activity_running_;
-  bool have_surface_;
   FontCollection font_collection_;
   ImageDecoder image_decoder_;
   TaskRunners task_runners_;

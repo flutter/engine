@@ -637,7 +637,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // raster_task.
   bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
                                  task_runners_.GetPlatformTaskRunner();
-
+  have_surface_.store(true);
   auto ui_task = [engine = engine_->GetWeakPtr(),                            //
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
                   raster_task, should_post_raster_task,
@@ -753,6 +753,7 @@ void Shell::OnPlatformViewDestroyed() {
   // Step 0: Post a task onto the UI thread to tell the engine that its output
   // surface is about to go away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
+  have_surface_.store(false);
   animator_should_pause_.store(true);
   latch.Wait();
   if (!should_post_raster_task) {
@@ -1101,6 +1102,11 @@ void Shell::UpdateIsolateDescription(const std::string isolate_name,
 
 void Shell::SetNeedsReportTimings(bool value) {
   needs_report_timings_ = value;
+}
+
+// |Engine::Delegate|
+bool Shell::HaveSurface()  {
+  return have_surface_.load();
 }
 
 void Shell::ReportTimings() {

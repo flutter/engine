@@ -173,6 +173,44 @@ void ShellTest::PumpOneFrame(Shell* shell,
   latch.Wait();
 }
 
+void ShellTest::AnimatorRequestFrame(Shell* shell, double width, double height, bool regenerate_layer_tree, LayerTreeBuilder builder) {
+    // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
+  // tree pipeline nonempty. Without either of this, the layer tree below
+  // won't be rasterized.
+  flutter::ViewportMetrics viewport_metrics = flutter::ViewportMetrics{1, width, height, flutter::kUnsetDepth,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  fml::AutoResetWaitableEvent latch;
+  shell->GetTaskRunners().GetUITaskRunner()->PostTask(
+      [&latch, engine = shell->weak_engine_, &regenerate_layer_tree, &viewport_metrics]() {
+        engine->SetViewportMetrics(viewport_metrics);
+        engine->animator_->RequestFrame(regenerate_layer_tree);
+        latch.Signal();
+      });
+  latch.Wait();
+
+  latch.Reset();
+  // Call |Render| to rasterize a layer tree and trigger |OnFrameRasterized|
+  fml::WeakPtr<RuntimeDelegate> runtime_delegate = shell->weak_engine_;
+  shell->GetTaskRunners().GetUITaskRunner()->PostTask(
+      [&latch, runtime_delegate, &builder, viewport_metrics]() {
+        auto layer_tree = std::make_unique<LayerTree>(
+            SkISize::Make(viewport_metrics.physical_width,
+                          viewport_metrics.physical_height),
+            static_cast<float>(viewport_metrics.physical_depth),
+            static_cast<float>(viewport_metrics.device_pixel_ratio));
+        SkMatrix identity;
+        identity.setIdentity();
+        auto root_layer = std::make_shared<TransformLayer>(identity);
+        layer_tree->set_root_layer(root_layer);
+        if (builder) {
+          builder(root_layer);
+        }
+        runtime_delegate->Render(std::move(layer_tree));
+        latch.Signal();
+      });
+  latch.Wait();
+}
+
 void ShellTest::DispatchFakePointerData(Shell* shell) {
   auto packet = std::make_unique<PointerDataPacket>(1);
   DispatchPointerData(shell, std::move(packet));

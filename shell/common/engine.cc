@@ -50,7 +50,6 @@ Engine::Engine(Delegate& delegate,
       settings_(std::move(settings)),
       animator_(std::move(animator)),
       activity_running_(true),
-      have_surface_(false),
       image_decoder_(task_runners,
                      vm.GetConcurrentWorkerTaskRunner(),
                      io_manager),
@@ -262,13 +261,11 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
 }
 
 void Engine::OnOutputSurfaceCreated() {
-  have_surface_ = true;
   StartAnimatorIfPossible();
   ScheduleFrame();
 }
 
 void Engine::OnOutputSurfaceDestroyed() {
-  have_surface_ = false;
   StopAnimator();
 }
 
@@ -282,7 +279,7 @@ void Engine::SetViewportMetrics(const ViewportMetrics& metrics) {
   if (animator_) {
     if (dimensions_changed)
       animator_->SetDimensionChangePending();
-    if (have_surface_)
+    if (delegate_.HaveSurface())
       ScheduleFrame();
   }
 }
@@ -330,7 +327,7 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
   // Always schedule a frame when the app does become active as per API
   // recommendation
   // https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1622956-applicationdidbecomeactive?language=objc
-  if (state == "AppLifecycleState.resumed" && have_surface_) {
+  if (state == "AppLifecycleState.resumed" && delegate_.HaveSurface()) {
     ScheduleFrame();
   }
   runtime_controller_->SetLifecycleState(state);
@@ -414,7 +411,7 @@ void Engine::HandleSettingsPlatformMessage(PlatformMessage* message) {
   const auto& data = message->data();
   std::string jsonData(reinterpret_cast<const char*>(data.data()), data.size());
   if (runtime_controller_->SetUserSettingsData(std::move(jsonData)) &&
-      have_surface_) {
+      delegate_.HaveSurface()) {
     ScheduleFrame();
   }
 }
@@ -446,7 +443,7 @@ void Engine::StopAnimator() {
 }
 
 void Engine::StartAnimatorIfPossible() {
-  if (activity_running_ && have_surface_)
+  if (activity_running_ && delegate_.HaveSurface())
     animator_->Start();
 }
 

@@ -406,6 +406,8 @@ class Shell final : public PlatformView::Delegate,
   // ui.Window.onReportTimings.
   bool frame_timings_report_scheduled_ = false;
 
+  std::atomic<bool> have_surface_{false};
+
   // Vector of FrameTiming::kCount * n timestamps for n frames whose timings
   // have not been reported yet. Vector of ints instead of FrameTiming is stored
   // here for easier conversions to Dart objects.
@@ -520,6 +522,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   void SetNeedsReportTimings(bool value) override;
+
+  // |Engine::Delegate|
+  bool HaveSurface() override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;
