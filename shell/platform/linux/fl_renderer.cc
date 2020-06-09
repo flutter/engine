@@ -185,6 +185,9 @@ gboolean fl_renderer_make_resource_current(FlRenderer* self, GError** error) {
   FlRendererPrivate* priv =
       static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
 
+  if (priv->resource_surface == nullptr || priv->resource_context == nullptr)
+    return FALSE;
+
   if (!eglMakeCurrent(priv->egl_display, priv->resource_surface,
                       priv->resource_surface, priv->resource_context)) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
