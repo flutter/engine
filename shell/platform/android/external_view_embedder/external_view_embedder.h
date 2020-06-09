@@ -25,7 +25,8 @@ class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
-  bool SubmitFrame(GrContext* context, SkCanvas* background_canvas) override;
+  bool SubmitFrame(GrContext* context,
+                   std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
   PostPrerollResult PostPrerollAction(
@@ -41,9 +42,6 @@ class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void CancelFrame() override;
-
-  // |ExternalViewEmbedder|
-  void FinishFrame() override;
 
   // |ExternalViewEmbedder|
   void EndFrame(
@@ -63,7 +61,7 @@ class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 
   /// Resets the state.
-  void ClearFrame();
+  void Reset();
 };
 
 }  // namespace flutter

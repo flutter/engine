@@ -354,6 +354,7 @@ FILE: ../../../flutter/lib/ui/painting/single_frame_codec.cc
 FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
+FILE: ../../../flutter/lib/ui/painting/vertices_unittests.cc
 FILE: ../../../flutter/lib/ui/plugins.dart
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.cc
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.h
@@ -453,7 +454,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_converter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/profiler.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/render_vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/rrect_renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/accessibility.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/checkable.dart
@@ -473,6 +473,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/serialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/shadow.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/backdrop_filter.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/clip.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/debug_canvas_reuse_overlay.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/image_filter.dart
@@ -484,6 +485,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/platform_view.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/recording_canvas.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/render_vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/scene.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/scene_builder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/surface.dart
@@ -574,6 +576,11 @@ FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/fixtures/shell_test.dart
 FILE: ../../../flutter/shell/common/fixtures/shelltest_screenshot.png
+FILE: ../../../flutter/shell/common/gl_context_switch.cc
+FILE: ../../../flutter/shell/common/gl_context_switch.h
+FILE: ../../../flutter/shell/common/gl_context_switch_test.cc
+FILE: ../../../flutter/shell/common/gl_context_switch_test.h
+FILE: ../../../flutter/shell/common/gl_context_switch_unittests.cc
 FILE: ../../../flutter/shell/common/input_events_unittests.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.h
@@ -589,11 +596,6 @@ FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.h
 FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
-FILE: ../../../flutter/shell/common/renderer_context_manager.cc
-FILE: ../../../flutter/shell/common/renderer_context_manager.h
-FILE: ../../../flutter/shell/common/renderer_context_manager_unittests.cc
-FILE: ../../../flutter/shell/common/renderer_context_test.cc
-FILE: ../../../flutter/shell/common/renderer_context_test.h
 FILE: ../../../flutter/shell/common/run_configuration.cc
 FILE: ../../../flutter/shell/common/run_configuration.h
 FILE: ../../../flutter/shell/common/shell.cc
@@ -616,6 +618,8 @@ FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
 FILE: ../../../flutter/shell/common/surface.cc
 FILE: ../../../flutter/shell/common/surface.h
+FILE: ../../../flutter/shell/common/surface_frame.cc
+FILE: ../../../flutter/shell/common/surface_frame.h
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
 FILE: ../../../flutter/shell/common/thread_host.cc
@@ -642,6 +646,8 @@ FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.h
 FILE: ../../../flutter/shell/platform/android/AndroidManifest.xml
+FILE: ../../../flutter/shell/platform/android/android_context.cc
+FILE: ../../../flutter/shell/platform/android/android_context.h
 FILE: ../../../flutter/shell/platform/android/android_context_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_context_gl.h
 FILE: ../../../flutter/shell/platform/android/android_environment_gl.cc
@@ -727,6 +733,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/system
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyEventChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LifecycleChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LocalizationChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/MouseCursorChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/NavigationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformViewsChannel.java
@@ -754,6 +761,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StringCod
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/FlutterTextUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputConnectionAdaptor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/mouse/MouseCursorPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/AccessibilityEventsDelegate.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformView.java
@@ -937,6 +945,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_metal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_metal.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_switchable_gl_context.h
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_switchable_gl_context.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h
@@ -1189,10 +1199,12 @@ FILE: ../../../flutter/shell/platform/glfw/public/flutter_glfw.h
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.cc
 FILE: ../../../flutter/shell/platform/glfw/text_input_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_basic_message_channel.cc
+FILE: ../../../flutter/shell/platform/linux/fl_basic_message_channel_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_codec_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger.cc
 FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_binary_messenger_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_dart_project.cc
 FILE: ../../../flutter/shell/platform/linux/fl_dart_project_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_engine.cc
@@ -1209,6 +1221,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_method_call.cc
 FILE: ../../../flutter/shell/platform/linux/fl_method_call_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_method_channel.cc
 FILE: ../../../flutter/shell/platform/linux/fl_method_channel_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_method_channel_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_method_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_method_codec_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_method_codec_test.cc

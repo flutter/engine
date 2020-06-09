@@ -166,11 +166,13 @@ class SkTextStyle implements ui.TextStyle {
     final Map<String, dynamic> style = <String, dynamic>{};
 
     if (background != null) {
-      style['backgroundColor'] = background.skiaObject;
+      setSharedSkColor2(background.color);
+      style['backgroundColor'] = sharedSkColor2;
     }
 
     if (color != null) {
-      style['color'] = color.value;
+      setSharedSkColor1(color);
+      style['color'] = sharedSkColor1;
     }
 
     if (decoration != null) {
@@ -216,7 +218,8 @@ class SkTextStyle implements ui.TextStyle {
     }
 
     if (foreground != null) {
-      style['foreground'] = foreground.skiaObject;
+      setSharedSkColor3(foreground.color);
+      style['foregroundColor'] = sharedSkColor3;
     }
 
     // TODO(hterkelsen): Add support for
@@ -464,7 +467,7 @@ class SkParagraphBuilder implements ui.ParagraphBuilder {
     double width,
     double height,
     ui.PlaceholderAlignment alignment, {
-    double scale,
+    double scale = 1.0,
     double baselineOffset,
     ui.TextBaseline baseline,
   }) {

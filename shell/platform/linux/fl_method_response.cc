@@ -26,6 +26,9 @@ struct _FlMethodNotImplementedResponse {
   FlMethodResponse parent_instance;
 };
 
+// Added here to stop the compiler from optimising this function away.
+G_MODULE_EXPORT GType fl_method_response_get_type();
+
 G_DEFINE_TYPE(FlMethodResponse, fl_method_response, G_TYPE_OBJECT)
 G_DEFINE_TYPE(FlMethodSuccessResponse,
               fl_method_success_response,
@@ -81,9 +84,10 @@ static void fl_method_not_implemented_response_init(
 
 G_MODULE_EXPORT FlValue* fl_method_response_get_result(FlMethodResponse* self,
                                                        GError** error) {
-  if (FL_IS_METHOD_SUCCESS_RESPONSE(self))
+  if (FL_IS_METHOD_SUCCESS_RESPONSE(self)) {
     return fl_method_success_response_get_result(
         FL_METHOD_SUCCESS_RESPONSE(self));
+  }
 
   if (FL_IS_METHOD_ERROR_RESPONSE(self)) {
     const gchar* code =

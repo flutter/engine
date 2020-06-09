@@ -14,7 +14,7 @@ G_DECLARE_FINAL_TYPE(FlTestMethodCodec,
                      FlMethodCodec)
 
 // Implement the FlMethodCodec API for the following tests to check it works as
-// expected
+// expected.
 struct _FlTestMethodCodec {
   FlMethodCodec parent_instance;
 };
@@ -23,7 +23,7 @@ G_DEFINE_TYPE(FlTestMethodCodec,
               fl_test_method_codec,
               fl_method_codec_get_type())
 
-// Helper function to convert binary data to text
+// Helper function to convert binary data to text.
 static gchar* message_to_text(GBytes* message) {
   size_t data_length;
   const gchar* data =
@@ -31,12 +31,12 @@ static gchar* message_to_text(GBytes* message) {
   return g_strndup(data, data_length);
 }
 
-// Helper function to convert text to binary data
+// Helper function to convert text to binary data.
 static GBytes* text_to_message(const gchar* text) {
   return g_bytes_new(text, strlen(text));
 }
 
-// Implements FlMethodCodec::encode_method_call
+// Implements FlMethodCodec::encode_method_call.
 static GBytes* fl_test_codec_encode_method_call(FlMethodCodec* codec,
                                                 const gchar* name,
                                                 FlValue* args,
@@ -44,12 +44,12 @@ static GBytes* fl_test_codec_encode_method_call(FlMethodCodec* codec,
   EXPECT_TRUE(FL_IS_TEST_METHOD_CODEC(codec));
 
   g_autofree gchar* text = nullptr;
-  if (args == nullptr || fl_value_get_type(args) == FL_VALUE_TYPE_NULL)
+  if (args == nullptr || fl_value_get_type(args) == FL_VALUE_TYPE_NULL) {
     text = g_strdup_printf("%s()", name);
-  else if (fl_value_get_type(args) == FL_VALUE_TYPE_INT)
+  } else if (fl_value_get_type(args) == FL_VALUE_TYPE_INT) {
     text = g_strdup_printf("%s(%" G_GINT64_FORMAT ")", name,
                            fl_value_get_int(args));
-  else {
+  } else {
     g_set_error(error, FL_MESSAGE_CODEC_ERROR, FL_MESSAGE_CODEC_ERROR_FAILED,
                 "ERROR");
     return nullptr;
@@ -58,7 +58,7 @@ static GBytes* fl_test_codec_encode_method_call(FlMethodCodec* codec,
   return text_to_message(text);
 }
 
-// Implements FlMethodCodec::decode_method_call
+// Implements FlMethodCodec::decode_method_call.
 static gboolean fl_test_codec_decode_method_call(FlMethodCodec* codec,
                                                  GBytes* message,
                                                  gchar** name,
@@ -79,18 +79,18 @@ static gboolean fl_test_codec_decode_method_call(FlMethodCodec* codec,
   }
 }
 
-// Implements FlMethodCodec::encode_success_envelope
+// Implements FlMethodCodec::encode_success_envelope.
 static GBytes* fl_test_codec_encode_success_envelope(FlMethodCodec* codec,
                                                      FlValue* result,
                                                      GError** error) {
   EXPECT_TRUE(FL_IS_TEST_METHOD_CODEC(codec));
 
   g_autofree gchar* text = nullptr;
-  if (result == nullptr || fl_value_get_type(result) == FL_VALUE_TYPE_NULL)
+  if (result == nullptr || fl_value_get_type(result) == FL_VALUE_TYPE_NULL) {
     text = g_strdup("(null)");
-  else if (fl_value_get_type(result) == FL_VALUE_TYPE_INT)
+  } else if (fl_value_get_type(result) == FL_VALUE_TYPE_INT) {
     text = g_strdup_printf("%" G_GINT64_FORMAT, fl_value_get_int(result));
-  else {
+  } else {
     g_set_error(error, FL_MESSAGE_CODEC_ERROR, FL_MESSAGE_CODEC_ERROR_FAILED,
                 "ERROR");
     return nullptr;
@@ -99,7 +99,7 @@ static GBytes* fl_test_codec_encode_success_envelope(FlMethodCodec* codec,
   return text_to_message(text);
 }
 
-// Implements FlMethodCodec::encode_error_envelope
+// Implements FlMethodCodec::encode_error_envelope.
 static GBytes* fl_test_codec_encode_error_envelope(FlMethodCodec* codec,
                                                    const gchar* code,
                                                    const gchar* message,
@@ -115,23 +115,27 @@ static GBytes* fl_test_codec_encode_error_envelope(FlMethodCodec* codec,
 
   g_autofree gchar* text = nullptr;
   if (message == nullptr) {
-    if (details == nullptr || fl_value_get_type(details) == FL_VALUE_TYPE_NULL)
+    if (details == nullptr ||
+        fl_value_get_type(details) == FL_VALUE_TYPE_NULL) {
       text = g_strdup_printf("Error_%s()", code);
-    else
+    } else {
       text = g_strdup_printf("Error_%s(%" G_GINT64_FORMAT ")", code,
                              fl_value_get_int(details));
+    }
   } else {
-    if (details == nullptr || fl_value_get_type(details) == FL_VALUE_TYPE_NULL)
+    if (details == nullptr ||
+        fl_value_get_type(details) == FL_VALUE_TYPE_NULL) {
       text = g_strdup_printf("Error_%s(%s)", code, message);
-    else
+    } else {
       text = g_strdup_printf("Error_%s(%s,%" G_GINT64_FORMAT ")", code, message,
                              fl_value_get_int(details));
+    }
   }
 
   return text_to_message(text);
 }
 
-// Implements FlMethodCodec::decode_response
+// Implements FlMethodCodec::decode_response.
 static FlMethodResponse* fl_test_codec_decode_response(FlMethodCodec* codec,
                                                        GBytes* message,
                                                        GError** error) {

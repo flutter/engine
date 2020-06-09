@@ -21,6 +21,7 @@ import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
@@ -77,6 +78,7 @@ public class FlutterEngine {
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final LifecycleChannel lifecycleChannel;
   @NonNull private final LocalizationChannel localizationChannel;
+  @NonNull private final MouseCursorChannel mouseCursorChannel;
   @NonNull private final NavigationChannel navigationChannel;
   @NonNull private final PlatformChannel platformChannel;
   @NonNull private final SettingsChannel settingsChannel;
@@ -100,6 +102,10 @@ public class FlutterEngine {
           }
 
           platformViewsController.onPreEngineRestart();
+        }
+
+        public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+          platformViewsController.onDisplayPlatformView(viewId, x, y, width, height);
         }
       };
 
@@ -205,6 +211,7 @@ public class FlutterEngine {
     flutterLoader.ensureInitializationComplete(context, dartVmArgs);
 
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
+    flutterJNI.setPlatformViewsController(platformViewsController);
     attachToJni();
 
     this.dartExecutor = new DartExecutor(flutterJNI, context.getAssets());
@@ -218,6 +225,7 @@ public class FlutterEngine {
     keyEventChannel = new KeyEventChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
+    mouseCursorChannel = new MouseCursorChannel(dartExecutor);
     navigationChannel = new NavigationChannel(dartExecutor);
     platformChannel = new PlatformChannel(dartExecutor);
     settingsChannel = new SettingsChannel(dartExecutor);
@@ -389,6 +397,12 @@ public class FlutterEngine {
   @NonNull
   public SystemChannel getSystemChannel() {
     return systemChannel;
+  }
+
+  /** System channel that sends and receives text input requests and state. */
+  @NonNull
+  public MouseCursorChannel getMouseCursorChannel() {
+    return mouseCursorChannel;
   }
 
   /** System channel that sends and receives text input requests and state. */
