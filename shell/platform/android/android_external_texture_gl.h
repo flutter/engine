@@ -45,7 +45,7 @@ class AndroidExternalTextureGL : public flutter::Texture {
 
   enum class AttachmentState { uninitialized, attached, detached };
 
-  std::unique_ptr<PlatformViewAndroidJNIImpl> jni_facade_;
+  std::unique_ptr<PlatformViewAndroidJNI> jni_facade_;
 
   fml::jni::JavaObjectWeakGlobalRef surface_texture_;
 

@@ -39,16 +39,15 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
 
   void FlutterViewOnPreEngineRestart() override;
 
-  void SetCurrentSurfaceTexture(
-      fml::jni::JavaObjectWeakGlobalRef& surface_texture);
+  void SurfaceTextureAttachToGLContext(std::any surface_texture,
+                                       int textureId) override;
 
-  void SurfaceTextureAttachToGLContext(int textureId) override;
+  void SurfaceTextureUpdateTexImage(std::any surface_texture) override;
 
-  void SurfaceTextureUpdateTexImage() override;
+  void SurfaceTextureGetTransformMatrix(std::any surface_texture,
+                                        SkMatrix& transform) override;
 
-  void SurfaceTextureGetTransformMatrix(SkMatrix& transform) override;
-
-  void SurfaceTextureDetachFromGLContext() override;
+  void SurfaceTextureDetachFromGLContext(std::any surface_texture) override;
 
   void FlutterViewOnDisplayPlatformView(int view_id,
                                         int x,

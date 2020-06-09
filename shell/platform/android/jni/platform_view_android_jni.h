@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_
 
+#include <any>
+
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/lib/ui/window/platform_message.h"
@@ -72,25 +74,35 @@ class PlatformViewAndroidJNI {
   /// @brief      Attach the SurfaceTexture to the OpenGL ES context that is
   ///             current on the calling thread.
   ///
-  virtual void SurfaceTextureAttachToGLContext(int textureId) = 0;
+  /// @note       `surface_texture` must be `fml::jni::JavaObjectWeakGlobalRef`
+  ///
+  virtual void SurfaceTextureAttachToGLContext(std::any surface_texture,
+                                               int textureId) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the texture image to the most recent frame from the
   ///             image stream.
   ///
-  virtual void SurfaceTextureUpdateTexImage() = 0;
+  /// @note       `surface_texture` must be `fml::jni::JavaObjectWeakGlobalRef`
+  ///
+  virtual void SurfaceTextureUpdateTexImage(std::any surface_texture) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Gets the transform matrix from the SurfaceTexture.
   ///             Then, it updates the `transform` matrix, so it fill the canvas
   ///             and preserve the aspect ratio.
   ///
-  virtual void SurfaceTextureGetTransformMatrix(SkMatrix& transform) = 0;
+  /// @note       `surface_texture` must be `fml::jni::JavaObjectWeakGlobalRef`
+  ///
+  virtual void SurfaceTextureGetTransformMatrix(std::any surface_texture,
+                                                SkMatrix& transform) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Detaches a SurfaceTexture from the OpenGL ES context.
   ///
-  virtual void SurfaceTextureDetachFromGLContext() = 0;
+  /// @note       `surface_texture` must be `fml::jni::JavaObjectWeakGlobalRef`
+  ///
+  virtual void SurfaceTextureDetachFromGLContext(std::any surface_texture) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Positions and sizes a platform view if using hybrid

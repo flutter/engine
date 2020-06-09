@@ -14,10 +14,10 @@ AndroidExternalTextureGL::AndroidExternalTextureGL(
     int64_t id,
     const fml::jni::JavaObjectWeakGlobalRef& surface_texture,
     std::unique_ptr<PlatformViewAndroidJNI> jni_facade)
-    : Texture(id), surface_texture_(surface_texture), transform(SkMatrix::I()) {
-  jni_facade_ = std::unique_ptr<PlatformViewAndroidJNIImpl>(
-      static_cast<PlatformViewAndroidJNIImpl*>(jni_facade.release()));
-}
+    : Texture(id),
+      jni_facade_(std::move(jni_facade)),
+      surface_texture_(surface_texture),
+      transform(SkMatrix::I()) {}
 
 AndroidExternalTextureGL::~AndroidExternalTextureGL() {
   if (state_ == AttachmentState::attached) {
@@ -72,8 +72,7 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas,
 }
 
 void AndroidExternalTextureGL::UpdateTransform() {
-  jni_facade_->SetCurrentSurfaceTexture(surface_texture_);
-  jni_facade_->SurfaceTextureGetTransformMatrix(transform);
+  jni_facade_->SurfaceTextureGetTransformMatrix(surface_texture_, transform);
 }
 
 void AndroidExternalTextureGL::OnGrContextDestroyed() {
@@ -84,19 +83,16 @@ void AndroidExternalTextureGL::OnGrContextDestroyed() {
 }
 
 void AndroidExternalTextureGL::Attach(jint textureName) {
-  jni_facade_->SetCurrentSurfaceTexture(surface_texture_);
-  jni_facade_->SurfaceTextureAttachToGLContext(textureName);
+  jni_facade_->SurfaceTextureAttachToGLContext(surface_texture_, textureName);
 }
 
 void AndroidExternalTextureGL::Update() {
-  jni_facade_->SetCurrentSurfaceTexture(surface_texture_);
-  jni_facade_->SurfaceTextureUpdateTexImage();
+  jni_facade_->SurfaceTextureUpdateTexImage(surface_texture_);
   UpdateTransform();
 }
 
 void AndroidExternalTextureGL::Detach() {
-  jni_facade_->SetCurrentSurfaceTexture(surface_texture_);
-  jni_facade_->SurfaceTextureDetachFromGLContext();
+  jni_facade_->SurfaceTextureDetachFromGLContext(surface_texture_);
 }
 
 void AndroidExternalTextureGL::OnTextureUnregistered() {}
