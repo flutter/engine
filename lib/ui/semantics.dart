@@ -690,32 +690,32 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// node starts at `elevation` above the parent and ends at `elevation` +
   /// `thickness` above the parent.
   void updateNode({
-    /*required*/ required int id,
-    /*required*/ required int flags,
-    /*required*/ required int actions,
-    /*required*/ required int maxValueLength,
-    /*required*/ required int currentValueLength,
-    /*required*/ required int textSelectionBase,
-    /*required*/ required int textSelectionExtent,
-    /*required*/ required int platformViewId,
-    /*required*/ required int scrollChildren,
-    /*required*/ required int scrollIndex,
-    /*required*/ required double scrollPosition,
-    /*required*/ required double scrollExtentMax,
-    /*required*/ required double scrollExtentMin,
-    /*required*/ required double elevation,
-    /*required*/ required double thickness,
-    /*required*/ required Rect rect,
-    /*required*/ required String label,
-    /*required*/ required String hint,
-    /*required*/ required String value,
-    /*required*/ required String increasedValue,
-    /*required*/ required String decreasedValue,
+    required int id,
+    required int flags,
+    required int actions,
+    required int maxValueLength,
+    required int currentValueLength,
+    required int textSelectionBase,
+    required int textSelectionExtent,
+    required int platformViewId,
+    required int scrollChildren,
+    required int scrollIndex,
+    required double scrollPosition,
+    required double scrollExtentMax,
+    required double scrollExtentMin,
+    required double elevation,
+    required double thickness,
+    required Rect rect,
+    required String label,
+    required String hint,
+    required String value,
+    required String increasedValue,
+    required String decreasedValue,
     TextDirection? textDirection,
-    /*required*/ required Float64List transform,
-    /*required*/ required Int32List childrenInTraversalOrder,
-    /*required*/ required Int32List childrenInHitTestOrder,
-    /*required*/ required Int32List additionalActions,
+    required Float64List transform,
+    required Int32List childrenInTraversalOrder,
+    required Int32List childrenInHitTestOrder,
+    required Int32List additionalActions,
   }) {
     assert(_matrix4IsValid(transform));
     assert(
@@ -802,7 +802,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// For overridden standard actions, `overrideId` corresponds with a
   /// [SemanticsAction.index] value. For custom actions this argument should not be
   /// provided.
-  void updateCustomAction({/*required*/ required int id, String? label, String? hint, int overrideId = -1}) {
+  void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
     assert(id != null); // ignore: unnecessary_null_comparison
     assert(overrideId != null); // ignore: unnecessary_null_comparison
     _updateCustomAction(id, label, hint, overrideId);
