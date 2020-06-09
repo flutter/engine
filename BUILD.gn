@@ -71,6 +71,7 @@ group("flutter") {
     public_deps += [
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
+      "//flutter/lib/ui:ui_benchmarks",
       "//flutter/lib/ui:ui_unittests",
       "//flutter/runtime:runtime_unittests",
       "//flutter/shell/common:shell_unittests",
