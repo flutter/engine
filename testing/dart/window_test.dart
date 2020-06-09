@@ -25,4 +25,13 @@ void main() {
     final FrameTiming timing = FrameTiming(<int>[1000, 8000, 9000, 19500]);
     expect(timing.toString(), 'FrameTiming(buildDuration: 7.0ms, rasterDuration: 10.5ms, totalSpan: 18.5ms)');
   });
+
+  test('computePlatformResolvedLocale basic', () {
+    Locale result = window.computePlatformResolvedLocale([
+      Locale.fromSubtags(languageCode: 'fr', countryCode: 'CA'),
+      Locale.fromSubtags(languageCode: 'zh', countryCode: 'CN'),
+      Locale.fromSubtags(languageCode: 'en', countryCode: 'US'),
+    ]);
+    expect(result, Locale.fromSubtags(languageCode: 'en', countryCode: 'US'));
+  });
 }

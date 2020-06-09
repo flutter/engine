@@ -1107,14 +1107,8 @@ std::vector<std::string>& Shell::ComputePlatformResolvedLocale(
 // |PlatformView::Delegate|
 std::vector<std::string>& Shell::ComputePlatformViewResolvedLocale(
     const std::vector<std::string>& supported_locale_data) {
-  for (size_t i = 0; i < supported_locale_data.size(); i++) {
-    FML_DLOG(ERROR) << "LOCALEIN: " + supported_locale_data[i];
-  }
   std::vector<std::string> result =
       platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
-  for (size_t i = 0; i < result.size(); i++) {
-    FML_DLOG(ERROR) << "#LOCALEOUT: " + result[i];
-  }
   return platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
 }
 

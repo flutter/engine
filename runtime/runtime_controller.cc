@@ -344,7 +344,6 @@ RuntimeController::GetPersistentIsolateData() {
 std::vector<std::string>& RuntimeController::ComputePlatformResolvedLocale(
     const std::vector<std::string>& supported_locale_data) {
   return client_.ComputePlatformResolvedLocale(supported_locale_data);
-  // return std::vector<std::string>();
 }
 
 Dart_Port RuntimeController::GetMainPort() {
