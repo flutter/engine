@@ -55,6 +55,17 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   // Allows to call methods in Java.
   std::unique_ptr<PlatformViewAndroidJNI> jni_facade_;
 
+  // The number of frames the rasterizer task runner will continue
+  // to run on the platform thread after no platform view is rendered.
+  //
+  // Note: this is an arbitrary number that attempts to account for cases
+  // where the platform view might be momentarily off the screen.
+  static const int kDefaultMergedLeaseDuration = 10;
+
+  // Whether the rasterizer task runner should run on the platform thread.
+  // When this is true, the current frame is cancelled and resubmitted.
+  bool should_run_rasterizer_on_platform_thread_ = false;
+
   // The size of the background canvas.
   SkISize frame_size_;
 
