@@ -493,8 +493,8 @@ void Engine::UpdateIsolateDescription(const std::string isolate_name,
 }
 
 std::vector<std::string>& Engine::ComputePlatformResolvedLocale(
-    const std::vector<std::string>& supportedLocaleData) {
-  return delegate_.ComputePlatformResolvedLocale(supportedLocaleData);
+    const std::vector<std::string>& supported_locale_data) {
+  return delegate_.ComputePlatformResolvedLocale(supported_locale_data);
 }
 
 void Engine::SetNeedsReportTimings(bool needs_reporting) {

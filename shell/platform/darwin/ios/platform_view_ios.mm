@@ -192,15 +192,15 @@ void PlatformViewIOS::OnPreEngineRestart() const {
 }
 
 std::vector<std::string>& PlatformViewIOS::ComputePlatformResolvedLocales(
-    const std::vector<std::string>& supportedLocaleData) {
+    const std::vector<std::string>& supported_locale_data) {
   size_t localeDataLength = 3;
   NSMutableArray<NSString*>* supported_locale_identifiers =
-      [NSMutableArray arrayWithCapacity:supportedLocaleData.size() / localeDataLength];
-  for (size_t i = 0; i < supportedLocaleData.size(); i += localeDataLength) {
+      [NSMutableArray arrayWithCapacity:supported_locale_data.size() / localeDataLength];
+  for (size_t i = 0; i < supported_locale_data.size(); i += localeDataLength) {
     NSDictionary<NSString*, NSString*>* dict = @{
-      NSLocaleLanguageCode : [NSString stringWithUTF8String:supportedLocaleData[i].c_str()],
-      NSLocaleCountryCode : [NSString stringWithUTF8String:supportedLocaleData[i + 1].c_str()],
-      NSLocaleScriptCode : [NSString stringWithUTF8String:supportedLocaleData[i + 2].c_str()]
+      NSLocaleLanguageCode : [NSString stringWithUTF8String:supported_locale_data[i].c_str()],
+      NSLocaleCountryCode : [NSString stringWithUTF8String:supported_locale_data[i + 1].c_str()],
+      NSLocaleScriptCode : [NSString stringWithUTF8String:supported_locale_data[i + 2].c_str()]
     };
     [supported_locale_identifiers addObject:[NSLocale localeIdentifierFromComponents:dict]];
   }

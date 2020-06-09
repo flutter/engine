@@ -342,8 +342,8 @@ RuntimeController::GetPersistentIsolateData() {
 
 // |WindowClient|
 std::vector<std::string>& RuntimeController::ComputePlatformResolvedLocale(
-    const std::vector<std::string>& supportedLocaleData) {
-  return client_.ComputePlatformResolvedLocale(supportedLocaleData);
+    const std::vector<std::string>& supported_locale_data) {
+  return client_.ComputePlatformResolvedLocale(supported_locale_data);
   // return std::vector<std::string>();
 }
 

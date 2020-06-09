@@ -228,8 +228,23 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///
     virtual void SetNeedsReportTimings(bool needs_reporting) = 0;
 
+    //--------------------------------------------------------------------------
+    /// @brief      Directly invokes platform-specific APIs to compute the
+    ///             locale the platform would have natively resolved to.
+    ///
+    /// @param[in]  supported_locale_data  The vector of strings that represents
+    ///                                    the locales supported by the app.
+    ///                                    Each locale consists of three
+    ///                                    strings: languageCode, countryCode,
+    ///                                    and scriptCode in that order.
+    ///
+    /// @return     A vector of 3 strings languageCode, countryCode, and
+    ///             scriptCode that the conist the locale selected by the
+    ///             platform. Empty strings mean the value was unassigned. Empty
+    ///             vector represents a null locale.
+    ///
     virtual std::vector<std::string>& ComputePlatformResolvedLocale(
-        const std::vector<std::string>& supportedLocaleData) = 0;
+        const std::vector<std::string>& supported_locale_data) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -777,7 +792,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   // |RuntimeDelegate|
   std::vector<std::string>& ComputePlatformResolvedLocale(
-      const std::vector<std::string>& supportedLocaleData) override;
+      const std::vector<std::string>& supported_locale_data) override;
 
   void SetNeedsReportTimings(bool value) override;
 

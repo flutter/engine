@@ -484,7 +484,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |PlatformView::Delegate|
   std::vector<std::string>& ComputePlatformViewResolvedLocale(
-      const std::vector<std::string>& supportedLocaleData) override;
+      const std::vector<std::string>& supported_locale_data) override;
 
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;
@@ -522,7 +522,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   std::vector<std::string>& ComputePlatformResolvedLocale(
-      const std::vector<std::string>& supportedLocaleData) override;
+      const std::vector<std::string>& supported_locale_data) override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;

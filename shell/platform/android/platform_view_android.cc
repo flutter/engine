@@ -428,7 +428,7 @@ void PlatformViewAndroid::ReleaseResourceContext() const {
 
 // |PlatformView|
 std::vector<std::string>& PlatformViewAndroid::ComputePlatformResolvedLocales(
-    const std::vector<std::string>& supportedLocaleData) {
+    const std::vector<std::string>& supported_locale_data) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = java_object_.get(env);
   if (view.is_null()) {
@@ -438,7 +438,7 @@ std::vector<std::string>& PlatformViewAndroid::ComputePlatformResolvedLocales(
   }
   std::string result = FlutterViewComputePlatformResolvedLocale(
       env, view.obj(),
-      fml::jni::VectorToStringArray(env, supportedLocaleData).obj());
+      fml::jni::VectorToStringArray(env, supported_locale_data).obj());
 
   platform_resolved_locale_.clear();
   // Decode the locale string.

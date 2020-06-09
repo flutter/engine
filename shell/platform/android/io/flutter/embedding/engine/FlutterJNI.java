@@ -818,7 +818,7 @@ public class FlutterJNI {
     return result.getLanguage() + result.getCountry();
   }
 
-  // ----- End Localizaation Support ----
+  // ----- End Localization Support ----
 
   // TODO(mattcarroll): determine if this is nonull or nullable
   @UiThread

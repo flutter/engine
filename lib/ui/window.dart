@@ -810,6 +810,9 @@ class Window {
   /// Each platform may return different results.
   ///
   /// If the platform fails to resolve a locale, then this will return null.
+  ///
+  /// This method returns synchronously and is a direct call to
+  /// platform specific APIs without invoking method channels.
   Locale computePlatformResolvedLocale(List<Locale> supportedLocales) {
     if (supportedLocales == null) {
       return null;

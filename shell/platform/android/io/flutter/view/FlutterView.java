@@ -242,7 +242,7 @@ public class FlutterView extends SurfaceView
         .attachTextInputPlugin(mTextInputPlugin);
 
     // Send initial platform information to Dart
-    mLocalizationPlugin.sendLocalesToDart(getResources().getConfiguration());
+    mLocalizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendUserPlatformSettingsToDart();
   }
 
@@ -409,7 +409,7 @@ public class FlutterView extends SurfaceView
   @Override
   protected void onConfigurationChanged(Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
-    mLocalizationPlugin.sendLocalesToDart(newConfig);
+    mLocalizationPlugin.sendLocalesToFlutter(newConfig);
     sendUserPlatformSettingsToDart();
   }
 

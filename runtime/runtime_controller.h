@@ -524,7 +524,7 @@ class RuntimeController final : public WindowClient {
 
   // |WindowClient|
   std::vector<std::string>& ComputePlatformResolvedLocale(
-      const std::vector<std::string>& supportedLocaleData) override;
+      const std::vector<std::string>& supported_locale_data) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };

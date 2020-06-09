@@ -357,7 +357,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // again (e.g. in onStart).
     if (flutterEngine != null) {
       Log.v(TAG, "Configuration changed. Sending locales and user settings to Flutter.");
-      localizationPlugin.sendLocalesToDart(newConfig);
+      localizationPlugin.sendLocalesToFlutter(newConfig);
       sendUserSettingsToFlutter();
     }
   }
@@ -848,7 +848,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();
-    localizationPlugin.sendLocalesToDart(getResources().getConfiguration());
+    localizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
 
     flutterEngine.getPlatformViewsController().attachToView(this);

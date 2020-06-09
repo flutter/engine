@@ -33,13 +33,6 @@ public class LocalizationPlugin {
 
     this.context = context;
     this.localizationChannel = localizationChannel;
-    localizationChannel.setLocalizationMethodHandler(
-        new LocalizationChannel.LocalizationMethodHandler() {
-          @Override
-          public Locale resolveLocale(List<Locale> supportedLocales) {
-            return resolveNativeLocale(supportedLocales);
-          }
-        });
     instance = this;
   }
 
@@ -55,7 +48,8 @@ public class LocalizationPlugin {
         languageRanges.add(new Locale.LanguageRange(localeString.replace("_", "-")));
       }
 
-      // This needs to be modified to achieve Android's full locale resolution
+      // TODO(garyq): This should be modified to achieve Android's full
+      // locale resolution: https://developer.android.com/guide/topics/resources/multilingual-support
       platformResolvedLocale =
           Locale.lookup(languageRanges, supportedLocales);
     }
@@ -68,7 +62,7 @@ public class LocalizationPlugin {
    * <p>FlutterEngine must be non-null when this method is invoked.
    */
   @SuppressWarnings("deprecation")
-  public void sendLocalesToDart(@NonNull Configuration config) {
+  public void sendLocalesToFlutter(@NonNull Configuration config) {
     List<Locale> locales = new ArrayList<>();
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
       LocaleList localeList = config.getLocales();
@@ -99,14 +93,5 @@ public class LocalizationPlugin {
     // Do not initialize platform resolved locale. We will do
     // this later via the method channel call "resolveLocale".
     // localizationChannel.sendPlatformResolvedLocales(platformResolvedLocale);
-  }
-
-  /**
-   * Cleans up the handler in the LocalizationChannel/
-   *
-   * <p>The TextInputPlugin instance should not be used after calling this.
-   */
-  public void destroy() {
-    localizationChannel.setLocalizationMethodHandler(null);
   }
 }
