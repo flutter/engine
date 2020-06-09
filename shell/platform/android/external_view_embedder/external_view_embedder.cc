@@ -48,7 +48,7 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
   if (should_run_rasterizer_on_platform_thread_) {
     // Don't submit the current frame if the frame will be resubmitted.
-    return false;
+    return true;
   }
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
