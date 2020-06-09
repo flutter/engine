@@ -52,6 +52,10 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
     cursor_name = "grab";
   else if (g_strcmp0(kind, "grabbing") == 0)
     cursor_name = "grabbing";
+  else if (g_strcmp0(kind, "resizeLeftRight") == 0)
+    cursor_name = "ew-resize";
+  else if (g_strcmp0(kind, "resizeUpDown") == 0)
+    cursor_name = "ns-resize";
   else
     cursor_name = "default";
 
