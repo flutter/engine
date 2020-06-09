@@ -444,6 +444,9 @@ Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
       UIDartState::Current()->window()->client()->ComputePlatformResolvedLocale(
           supportedLocales);
 
+  if (results.empty()) {
+    return Dart_Null();
+  }
   FML_DCHECK(results.size() == 3);
   // Convert to dart List of strings.
   Dart_Handle output = Dart_NewListOf(Dart_CoreType_String, results.size());

@@ -443,12 +443,6 @@ std::vector<std::string>& PlatformViewAndroid::ComputePlatformResolvedLocales(
   platform_resolved_locale_.clear();
   // Decode the locale string.
   switch (result.size()) {
-    case 0: {
-      platform_resolved_locale_.emplace_back("");
-      platform_resolved_locale_.emplace_back("");
-      platform_resolved_locale_.emplace_back("");
-      break;
-    }
     // Only languageCode (2)
     case 2: {
       platform_resolved_locale_.emplace_back(result.data(), 2);

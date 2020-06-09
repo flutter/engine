@@ -193,37 +193,34 @@ void PlatformViewIOS::OnPreEngineRestart() const {
 
 std::vector<std::string>& PlatformViewIOS::ComputePlatformResolvedLocales(
     const std::vector<std::string>& supportedLocaleData) {
-  for (size_t i = 0; i < supportedLocaleData.size(); i++) {
-    FML_DLOG(ERROR) << "LOCALE: " + supportedLocaleData[i];
-  }
-  std::vector<NSString*> trimmed_locale_data;
   size_t localeDataLength = 3;
+  NSMutableArray<NSString*>* supported_locale_identifiers =
+      [NSMutableArray arrayWithCapacity:supportedLocaleData.size() / localeDataLength];
   for (size_t i = 0; i < supportedLocaleData.size(); i += localeDataLength) {
-    std::string locale_string = supportedLocaleData[i];
-    // Concat scriptCode
-    if (!supportedLocaleData[i + 2].empty()) {
-      locale_string += "-" + supportedLocaleData[i + 2];
-    }
-    // Concat countryCode
-    if (!supportedLocaleData[i + 1].empty()) {
-      locale_string += "-" + supportedLocaleData[i + 1];
-    }
-    trimmed_locale_data.push_back([NSString stringWithUTF8String:locale_string.c_str()]);
+    NSDictionary<NSString*, NSString*>* dict = @{
+      NSLocaleLanguageCode : [NSString stringWithUTF8String:supportedLocaleData[i].c_str()],
+      NSLocaleCountryCode : [NSString stringWithUTF8String:supportedLocaleData[i + 1].c_str()],
+      NSLocaleScriptCode : [NSString stringWithUTF8String:supportedLocaleData[i + 2].c_str()]
+    };
+    [supported_locale_identifiers addObject:[NSLocale localeIdentifierFromComponents:dict]];
   }
-  NSArray<NSString*>* ios_supported_locales = [NSArray arrayWithObjects:&trimmed_locale_data[0]
-                                                                  count:trimmed_locale_data.size()];
-  // NSString* result = [NSString stringWithUTF8String:param.c_str()];
-  NSArray<NSString*>* result = [NSBundle preferredLocalizationsFromArray:ios_supported_locales];
+  NSArray<NSString*>* result =
+      [NSBundle preferredLocalizationsFromArray:supported_locale_identifiers];
 
+  // Output format should be either empty or 3 strings for language, country, and script.
   platform_resolved_locale_.clear();
+
   if (result != nullptr && [result count] > 0) {
-    platform_resolved_locale_.emplace_back([result firstObject].UTF8String);
-    platform_resolved_locale_.emplace_back("");
-    platform_resolved_locale_.emplace_back("");
-  } else {
-    platform_resolved_locale_.emplace_back("");
-    platform_resolved_locale_.emplace_back("");
-    platform_resolved_locale_.emplace_back("");
+    if (@available(ios 10.0, *)) {
+      NSLocale* locale = [NSLocale localeWithLocaleIdentifier:[result firstObject]];
+      NSString* languageCode = [locale languageCode];
+      platform_resolved_locale_.emplace_back(languageCode == nullptr ? ""
+                                                                     : languageCode.UTF8String);
+      NSString* countryCode = [locale countryCode];
+      platform_resolved_locale_.emplace_back(countryCode == nullptr ? "" : countryCode.UTF8String);
+      NSString* scriptCode = [locale scriptCode];
+      platform_resolved_locale_.emplace_back(scriptCode == nullptr ? "" : scriptCode.UTF8String);
+    }
   }
   return platform_resolved_locale_;
 }
