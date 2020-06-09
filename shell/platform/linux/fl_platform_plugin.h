@@ -18,7 +18,7 @@ G_DECLARE_FINAL_TYPE(FlPlatformPlugin,
 /**
  * FlPlatformPlugin:
  *
- * #FlPlatformPlugin is a platform channel that implements the shell side
+ * #FlPlatformPlugin is a plugin that implements the shell side
  * of PlatformPlugins.platform from the Flutter services library.
  */
 
