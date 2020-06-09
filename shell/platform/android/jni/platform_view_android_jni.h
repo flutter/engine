@@ -5,14 +5,14 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_
 
+#include "flutter/fml/macros.h"
+#include "flutter/fml/mapping.h"
+
 #if OS_ANDROID
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #endif
 
-#include "flutter/fml/macros.h"
-#include "flutter/fml/mapping.h"
 #include "flutter/lib/ui/window/platform_message.h"
-
 #include "third_party/skia/include/core/SkMatrix.h"
 
 namespace flutter {

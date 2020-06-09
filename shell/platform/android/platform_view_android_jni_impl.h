@@ -60,9 +60,6 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
   // Reference to FlutterJNI object.
   const fml::jni::JavaObjectWeakGlobalRef java_object_;
 
-  // Reference to the current Surface texture object.
-  fml::jni::JavaObjectWeakGlobalRef surface_texture_;
-
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroidJNIImpl);
 };
 
