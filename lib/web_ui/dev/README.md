@@ -83,17 +83,17 @@ For Chrome and Firefox, the tests run on a version locked on the [browser_lock.y
 felt test --browser=firefox --firefox-version=70.0.1
 ```
 
-To run tests on Safari use the following command. It works on MacOS devices and it uses the Safari installed on the OS. Currently there is no option for using another Safari version.
+To run tests on Safari use the following command. It works on macOS devices and it uses the Safari installed on the OS. Currently there is no option for using another Safari version.
 
 ```
 felt test --browser=safari
 ```
 
-One can also use Ios Safari for running unit tests. It works on MacOS devices. There are few prerequisite steps:
+One can also use Safari running in iOS Simulator for running unit tests. There are few prerequisite steps:
 
-1. Please make sure that you installed XCode.
+1. Please make sure that you installed Xcode.
 
-2. The default version used in the tests are in browser_lock.yaml file. Install the ios version to use for simulators: XCode > Preferences > Components
+2. The default version used in the tests are in browser_lock.yaml file. Install the ios version to use for simulators: Xcode > Preferences > Components
 
 3. run `xcrun simctl list devices`. If the simulator you want is not installed use step 4.
 
