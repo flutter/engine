@@ -132,15 +132,14 @@ static gboolean fl_renderer_real_start(FlRenderer* self, GError** error) {
   priv->resource_surface = eglCreatePbufferSurface(
       priv->egl_display, egl_config, shared_context_attribs);
   if (priv->resource_surface == nullptr) {
-    g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to create EGL resource surface: %s", get_egl_error());
-    return FALSE;
+    g_warning(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
+              "Failed to create EGL resource surface: %s", get_egl_error());
   }
   priv->resource_context = eglCreateContext(
       priv->egl_display, egl_config, priv->egl_context, context_attributes);
   if (priv->resource_context == nullptr) {
-    g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to create EGL resource context: %s", get_egl_error());
+    g_warning(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
+              "Failed to create EGL resource context: %s", get_egl_error());
     return FALSE;
   }
 
