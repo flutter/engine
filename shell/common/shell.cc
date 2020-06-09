@@ -1105,7 +1105,7 @@ void Shell::SetNeedsReportTimings(bool value) {
 }
 
 // |Engine::Delegate|
-bool Shell::HaveSurface()  {
+bool Shell::HaveSurface() {
   return have_surface_.load();
 }
 

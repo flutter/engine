@@ -101,7 +101,8 @@ TEST_F(ShellTest, VSyncTargetTime) {
 //   // Add native callbacks to listen for window.onBeginFrame
 //   fml::AutoResetWaitableEvent latch;
 //   int on_begin_frame_triggered = 0;
-//   auto nativeOnBeginFrame = [&latch, &on_begin_frame_triggered](Dart_NativeArguments args) {
+//   auto nativeOnBeginFrame = [&latch,
+//   &on_begin_frame_triggered](Dart_NativeArguments args) {
 //     on_begin_frame_triggered ++;
 //     latch.Signal();
 //   };
@@ -153,8 +154,10 @@ TEST_F(ShellTest, VSyncTargetTime) {
 //   fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetUITaskRunner(),
 //                                     [engine = shell->GetEngine()]() {
 //                                       if (engine) {
-//                                         // this implies we can re-use the last
-//                                         // frame to trigger begin frame rather
+//                                         // this implies we can re-use the
+//                                         last
+//                                         // frame to trigger begin frame
+//                                         rather
 //                                         // than re-generating the layer tree.
 //                                         engine->ScheduleFrame(true);
 //                                       }
@@ -167,7 +170,8 @@ TEST_F(ShellTest, VSyncTargetTime) {
 //   ASSERT_EQ(on_begin_frame_triggered, 1);
 //   fml::AutoResetWaitableEvent destory_platform_view_latch;
 //   fml::TaskRunner::RunNowOrPostTask(
-//       shell->GetTaskRunners().GetPlatformTaskRunner(), [platform_view = shell->GetPlatformView(), &destory_platform_view_latch]() {
+//       shell->GetTaskRunners().GetPlatformTaskRunner(), [platform_view =
+//       shell->GetPlatformView(), &destory_platform_view_latch]() {
 //         platform_view->NotifyDestroyed();
 //         destory_platform_view_latch.Signal();
 //       });
@@ -177,14 +181,16 @@ TEST_F(ShellTest, VSyncTargetTime) {
 
 //   fml::AutoResetWaitableEvent create_platform_view_latch;
 //   fml::TaskRunner::RunNowOrPostTask(
-//       shell->GetTaskRunners().GetPlatformTaskRunner(), [platform_view = shell->GetPlatformView(), &create_platform_view_latch]() {
-//         // NotifyCreated triggers animator.RequestFrame, so this is request frame count 3.
-//         platform_view->NotifyCreated();
+//       shell->GetTaskRunners().GetPlatformTaskRunner(), [platform_view =
+//       shell->GetPlatformView(), &create_platform_view_latch]() {
+//         // NotifyCreated triggers animator.RequestFrame, so this is request
+//         frame count 3. platform_view->NotifyCreated();
 //         create_platform_view_latch.Signal();
 //       });
 //   create_platform_view_latch.Wait();
 //   latch.Wait();
-//   // Because the request frame count 2 is called after we destroyed the platform view, so we should only get 2 callbacks.
+//   // Because the request frame count 2 is called after we destroyed the
+//   platform view, so we should only get 2 callbacks.
 //   ASSERT_EQ(on_begin_frame_triggered, 2);
 
 //   // teardown.

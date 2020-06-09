@@ -173,15 +173,20 @@ void ShellTest::PumpOneFrame(Shell* shell,
   latch.Wait();
 }
 
-void ShellTest::AnimatorRequestFrame(Shell* shell, double width, double height, bool regenerate_layer_tree, LayerTreeBuilder builder) {
-    // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
+void ShellTest::AnimatorRequestFrame(Shell* shell,
+                                     double width,
+                                     double height,
+                                     bool regenerate_layer_tree,
+                                     LayerTreeBuilder builder) {
+  // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
   // tree pipeline nonempty. Without either of this, the layer tree below
   // won't be rasterized.
-  flutter::ViewportMetrics viewport_metrics = flutter::ViewportMetrics{1, width, height, flutter::kUnsetDepth,
-                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  flutter::ViewportMetrics viewport_metrics = flutter::ViewportMetrics{
+      1, width, height, flutter::kUnsetDepth, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [&latch, engine = shell->weak_engine_, &regenerate_layer_tree, &viewport_metrics]() {
+      [&latch, engine = shell->weak_engine_, &regenerate_layer_tree,
+       &viewport_metrics]() {
         engine->SetViewportMetrics(viewport_metrics);
         engine->animator_->RequestFrame(regenerate_layer_tree);
         latch.Signal();
