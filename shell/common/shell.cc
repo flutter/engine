@@ -637,12 +637,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // raster_task.
   bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
                                  task_runners_.GetPlatformTaskRunner();
-  have_surface_.store(true);
-  auto ui_task = [engine = engine_->GetWeakPtr(),                            //
-                  raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
-                  raster_task, should_post_raster_task,
-                  &latch  //
-  ] {
+  auto ui_task = [engine = engine_->GetWeakPtr(),
+                  raster_task_runner = task_runners_.GetRasterTaskRunner(),
+                  raster_task, should_post_raster_task, &latch] {
     if (engine) {
       engine->OnOutputSurfaceCreated();
     }
@@ -675,6 +672,8 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     // an output surface.
     fml::TaskRunner::RunNowOrPostTask(ui_task_runner, ui_task);
   };
+
+  have_surface_.store(true);
   animator_should_pause_.store(false);
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetIOTaskRunner(), io_task);
 
@@ -734,29 +733,17 @@ void Shell::OnPlatformViewDestroyed() {
   bool should_post_raster_task = task_runners_.GetRasterTaskRunner() !=
                                  task_runners_.GetPlatformTaskRunner();
 
-  auto ui_task = [engine = engine_->GetWeakPtr(),
-                  raster_task_runner = task_runners_.GetRasterTaskRunner(),
-                  raster_task, should_post_raster_task, &latch]() {
-    if (engine) {
-      engine->OnOutputSurfaceDestroyed();
-    }
-    // Step 1: Next, tell the raster thread that its rasterizer should suspend
-    // access to the underlying surface.
-    if (should_post_raster_task) {
-      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
-    } else {
-      // See comment on should_post_raster_task, in this case we just unblock
-      // the platform thread.
-      latch.Signal();
-    }
-  };
-  // Step 0: Post a task onto the UI thread to tell the engine that its output
+  // Step 0: tell the engine that its output
   // surface is about to go away.
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
   have_surface_.store(false);
   animator_should_pause_.store(true);
-  latch.Wait();
-  if (!should_post_raster_task) {
+  if (should_post_raster_task) {
+    // Step 1: Next, tell the raster thread that its rasterizer should suspend
+    // access to the underlying surface.
+    fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
+                                      raster_task);
+    latch.Wait();
+  } else {
     // See comment on should_post_raster_task, in this case the raster_task
     // wasn't executed, and we just run it here as the platform thread
     // is the raster thread.
