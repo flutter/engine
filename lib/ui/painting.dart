@@ -3104,7 +3104,6 @@ class Gradient extends Shader {
        assert(tileMode != null), // ignore: unnecessary_null_comparison
        assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
-    focalRadius ??= 0.0; // ignore: dead_null_aware_expression
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
