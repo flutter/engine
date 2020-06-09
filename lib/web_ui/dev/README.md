@@ -100,14 +100,14 @@ One can also use Safari running in iOS Simulator for running unit tests. There a
 4. Use felt to create a simulator:
 
 ```
-felt create --majorVersion=11 --minorVersion=1 --device='iPhone.11.Pro'
+felt create_simulator --type='iOS' --version='13.1' --device='iPhone.11.Pro'
 ```
 
 To run tests on ios-safari use the one of the following commands:
 
 ```
 felt test --browser=ios-safari
-felt test --browser=ios-safari --majorVersion=13 --minorVersion=1 --device='iPhone.11.Pro'
+felt test --browser=ios-safari --version='13.1' --device='iPhone.11.Pro'
 felt test --browser=ios-safari test/alarm_clock_test.dart
 ```
 

@@ -33,8 +33,8 @@ class SafariArgParser extends BrowserArgParser {
             'tech previews.',
       );
 
-      // Populate options for Ios Safari.
-      IosSafariArgParser.instance.populateOptions(argParser);
+    // Populate options for Ios Safari.
+    IosSafariArgParser.instance.populateOptions(argParser);
   }
 
   @override
@@ -79,24 +79,17 @@ class IosSafariArgParser extends BrowserArgParser {
     final YamlMap browserLock = BrowserLock.instance.configuration;
     _pinnedIosMajorVersion = browserLock['ios-safari']['majorVersion'] as int;
     _pinnedIosMinorVersion = browserLock['ios-safari']['minorVersion'] as int;
+    final pinnedIosVersion =
+        '${_pinnedIosMajorVersion}.${_pinnedIosMinorVersion}';
     _pinnedIosDevice = browserLock['ios-safari']['device'] as String;
     argParser
-      ..addOption('majorVersion',
-          defaultsTo: '$_pinnedIosMajorVersion',
-          help: 'The major version for the iOS operating system the iOS '
-              'Simulator will use for tests. For example for testing with '
-              'iOS 13.2, use major version as 13. Use command: '
+      ..addOption('version',
+          defaultsTo: '$pinnedIosVersion',
+          help: 'The version for the iOS operating system the iOS Simulator '
+              'will use for tests. For example for testing with iOS 13.2, '
+              'use `13.2`. Use command: '
               '`xcrun simctl list runtimes` to list available versions. Use '
-              'XCode to install more versions: XCode > Preferences > Components'
-              'If this value is not filled version locked in the '
-              'browser_lock.yaml file will be user.')
-      ..addOption('minorVersion',
-          defaultsTo: '$_pinnedIosMinorVersion',
-          help: 'The minor version for the iOS operating system the iOS '
-              'Simulator will use for tests. For example for testing with '
-              'iOS 13.2, use minor version as 2. Use command: '
-              '`xcrun simctl list runtimes` to list available versions. Use '
-              'XCode to install more versions: XCode > Preferences > Components'
+              'XCode to install more versions: Xcode > Preferences > Components'
               'If this value is not filled version locked in the '
               'browser_lock.yaml file will be user.')
       ..addOption('device',
@@ -112,8 +105,13 @@ class IosSafariArgParser extends BrowserArgParser {
 
   @override
   void parseOptions(ArgResults argResults) {
-    _iosMajorVersion = int.parse(argResults['majorVersion'] as String);
-    _iosMinorVersion = int.parse(argResults['minorVersion'] as String);
+    final String iosVersion = argResults['version'] as String;
+    // The version will contain major and minor version seperated by a comma,
+    // for example: 13.1, 12.2
+    assert(iosVersion.split('.').length == 2,
+        'The version should be in format 13.5');
+    _iosMajorVersion = int.parse(iosVersion.split('.')[0]);
+    _iosMinorVersion = int.parse(iosVersion.split('.')[1]);
     _iosDevice = (argResults['device'] as String).replaceAll('.', ' ');
   }
 }

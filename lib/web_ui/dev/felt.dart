@@ -20,7 +20,7 @@ CommandRunner runner = CommandRunner<bool>(
   'Command-line utility for building and testing Flutter web engine.',
 )
   ..addCommand(CleanCommand())
-  ..addCommand(CreateCommand())
+  ..addCommand(CreateSimulatorCommand())
   ..addCommand(LicensesCommand())
   ..addCommand(TestCommand())
   ..addCommand(BuildCommand());

@@ -161,8 +161,8 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runPubGet();
     }
 
-    // In order to run iOS Safari unit tests we need to make sure, iOS
-    // Simulator is booted.
+    // In order to run iOS Safari unit tests we need to make sure iOS Simulator
+    // is booted.
     if (browser == 'ios-safari') {
       final IosSimulatorManager iosSimulatorManager = IosSimulatorManager();
       IosSimulator iosSimulator;
@@ -172,18 +172,19 @@ class TestCommand extends Command<bool> with ArgUtils {
             IosSafariArgParser.instance.iosMinorVersion,
             IosSafariArgParser.instance.iosDevice);
       } catch (e) {
-        throw Exception('Error getting requested simulator. Consider using '
-            '`felt create` command instead. exception: $e');
+        throw Exception('Error getting requested simulator. Try running '
+            '`felt create` command first before running the tests. exception: '
+            '$e');
       }
+
       if (!iosSimulator.booted) {
         await iosSimulator.boot();
         print('INFO: Simulator ${iosSimulator.id} booted.');
+        cleanupCallbacks.add(() {
+          iosSimulator.shutdown();
+          print('INFO: Simulator ${iosSimulator.id} shutdown.');
+        });
       }
-
-      cleanupCallbacks.add(() {
-        iosSimulator.shutdown();
-        print('INFO: Simulator ${iosSimulator.id} shutdown.');
-      });
     }
 
     await _buildTargets();
