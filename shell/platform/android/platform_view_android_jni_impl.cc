@@ -29,9 +29,6 @@
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
 
-#define SURFACE_TEXTURE_LOCAL_REF \
-  (std::any_cast<fml::jni::JavaObjectWeakGlobalRef>(surface_texture))
-
 namespace flutter {
 
 namespace {
@@ -890,12 +887,12 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnPreEngineRestart() {
 }
 
 void PlatformViewAndroidJNIImpl::SurfaceTextureAttachToGLContext(
-    std::any surface_texture,
+    JavaWeakGlobalRef surface_texture,
     int textureId) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   fml::jni::ScopedJavaLocalRef<jobject> surface_texture_local_ref =
-      SURFACE_TEXTURE_LOCAL_REF.get(env);
+      surface_texture.get(env);
   if (surface_texture_local_ref.is_null()) {
     return;
   }
@@ -907,11 +904,11 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureAttachToGLContext(
 }
 
 void PlatformViewAndroidJNIImpl::SurfaceTextureUpdateTexImage(
-    std::any surface_texture) {
+    JavaWeakGlobalRef surface_texture) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   fml::jni::ScopedJavaLocalRef<jobject> surface_texture_local_ref =
-      SURFACE_TEXTURE_LOCAL_REF.get(env);
+      surface_texture.get(env);
   if (surface_texture_local_ref.is_null()) {
     return;
   }
@@ -935,12 +932,12 @@ SkSize ScaleToFill(float scaleX, float scaleY) {
 }
 
 void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
-    std::any surface_texture,
+    JavaWeakGlobalRef surface_texture,
     SkMatrix& transform) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   fml::jni::ScopedJavaLocalRef<jobject> surface_texture_local_ref =
-      SURFACE_TEXTURE_LOCAL_REF.get(env);
+      surface_texture.get(env);
   if (surface_texture_local_ref.is_null()) {
     return;
   }
@@ -965,11 +962,11 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
 }
 
 void PlatformViewAndroidJNIImpl::SurfaceTextureDetachFromGLContext(
-    std::any surface_texture) {
+    JavaWeakGlobalRef surface_texture) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   fml::jni::ScopedJavaLocalRef<jobject> surface_texture_local_ref =
-      SURFACE_TEXTURE_LOCAL_REF.get(env);
+      surface_texture.get(env);
   if (surface_texture_local_ref.is_null()) {
     return;
   }
