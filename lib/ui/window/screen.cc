@@ -31,7 +31,7 @@ void Screen::UpdateScreenMetrics(const ScreenMetrics& metrics) {
       library_.value(), "_updateScreenMetrics",
       {
           tonic::ToDart(screen_id_),
-          tonic::ToDart(metrics.display_name),
+          tonic::ToDart(metrics.screen_name),
           tonic::ToDart(metrics.physical_left),
           tonic::ToDart(metrics.physical_top),
           tonic::ToDart(metrics.physical_width),

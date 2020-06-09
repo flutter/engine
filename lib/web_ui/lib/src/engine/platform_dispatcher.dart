@@ -67,81 +67,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// [PlatformDispatcher] subclasses.
   Map<Object/*!*/, ui.ViewConfiguration/*!*/>/*!*/ _windowConfigurations = <Object/*!*/, ui.ViewConfiguration/*!*/>{};
 
-  /// Opens a new window and returns the window created.
-  ///
-  /// The configuration obtained and the one requested may not match, depending
-  /// on what the platform was able to accommodate.
-  ///
-  /// This function is currently not implemented, but is part of a planned
-  /// feature.
-  @override
-  Future<ui.FlutterView/*?*/> createView(ui.ViewConfigurationRequest/*!*/ configuration) async {
-    throw UnimplementedError();
-    // Awaits the platform window creation response, and calls onWindowOpened before returning.
-  }
-
-  /// Reconfigures an existing window.
-  ///
-  /// The configuration obtained and the one requested may not match, depending
-  /// on what the platform was able to accommodate.
-  ///
-  /// This function is currently not implemented, but is part of a planned
-  /// feature.
-  @override
-  Future<void> configureView(
-      ui.FlutterView/*!*/ view, ui.ViewConfigurationRequest/*!*/ configuration) async {
-    throw UnimplementedError();
-  }
-
-  /// Requests closing a window.
-  ///
-  /// Future completes when the window has been closed.
-  ///
-  /// This function is currently not implemented, but is part of a planned
-  /// feature.
-  @override
-  Future<void> disposeView(ui.FlutterView/*!*/ view) async {
-    throw UnimplementedError();
-  }
-
-  /// Is called when [createView] is called.
-  ///
-  /// Sends the newly opened window.
-  @override
-  ui.ViewCreatedCallback/*?*/ get onViewCreated => _onWindowOpened;
-  ui.ViewCreatedCallback/*?*/ _onWindowOpened;
-  Zone/*!*/ _onWindowOpenedZone = Zone.root; // ignore: unused_field
-  @override
-  set onViewCreated(ui.ViewCreatedCallback/*?*/ callback) {
-    _onWindowOpened = callback;
-    _onWindowOpenedZone = Zone.current;
-  }
-
-  /// Engine code should use this method instead of the callback directly.
-  /// Otherwise zones won't work properly.
-  void invokeOnWindowCreated(Object/*!*/ id) {
-    _invoke1<Object>(_onWindowOpened, _onWindowOpenedZone, id);
-  }
-
-  /// Is called when a window closure is requested by the platform.
-  ///
-  /// Sends the window to be closed.
-  @override
-  ui.ViewDisposedCallback/*?*/ get onViewDisposed => _onWindowClosed;
-  ui.ViewDisposedCallback/*?*/ _onWindowClosed;
-  Zone/*!*/ _onWindowClosedZone = Zone.root; // ignore: unused_field
-  @override
-  set onViewDisposed(ui.ViewDisposedCallback/*?*/ callback) {
-    _onWindowClosed = callback;
-    _onWindowClosedZone = Zone.current;
-  }
-
-  /// Engine code should use this method instead of the callback directly.
-  /// Otherwise zones won't work properly.
-  void invokeOnWindowDisposed(Object/*!*/ id) {
-    _invoke1<Object>(_onWindowClosed, _onWindowClosedZone, id);
-  }
-
   /// A callback that is invoked whenever the platform's [devicePixelRatio],
   /// [physicalSize], [padding], [viewInsets], or [systemGestureInsets]
   /// values change, for example when the device is rotated or when the
@@ -260,7 +185,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
   ///
-  /// It's prefered to use [SchedulerBinding.addTimingsCallback] than to use
+  /// It's preferred to use [SchedulerBinding.addTimingsCallback] than to use
   /// [Window.onReportTimings] directly because
   /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
   ///
@@ -939,7 +864,7 @@ bool _handleWebTestEnd2EndMessage(MethodCodec/*!*/ codec, ByteData/*!*/ data) {
 }
 
 /// Invokes [callback] inside the given [zone].
-void _invoke(void callback/*?*/(), Zone/*!*/ zone) {
+void _invoke(void callback()/*?*/, Zone/*!*/ zone) {
   if (callback == null)
     return;
 
@@ -953,7 +878,7 @@ void _invoke(void callback/*?*/(), Zone/*!*/ zone) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg].
-void _invoke1<A/*?*/>(void callback/*?*/(A/*?*/ a), Zone zone/*!*/, A/*?*/ arg) {
+void _invoke1<A>(void callback(A a)/*?*/, Zone zone/*!*/, A arg) {
   if (callback == null)
     return;
 
@@ -967,12 +892,12 @@ void _invoke1<A/*?*/>(void callback/*?*/(A/*?*/ a), Zone zone/*!*/, A/*?*/ arg) 
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
-void _invoke3<A1/*?*/, A2/*?*/, A3/*?*/ >(
-    void callback/*?*/(A1/*?*/ a1, A2/*?*/ a2, A3/*?*/ a3),
+void _invoke3<A1, A2, A3>(
+    void callback(A1 a1, A2 a2, A3 a3)/*?*/,
     Zone/*!*/ zone,
-    A1/*?*/ arg1,
-    A2/*?*/ arg2,
-    A3/*?*/ arg3,
+    A1 arg1,
+    A2 arg2,
+    A3 arg3,
   ) {
   if (callback == null)
     return;

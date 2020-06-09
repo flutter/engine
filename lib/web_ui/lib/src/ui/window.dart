@@ -209,7 +209,6 @@ abstract class FlutterView {
   WindowPadding get padding => viewConfiguration.padding;
 
   void render(Scene scene) => platformDispatcher.render(scene, this);
-  void dispose() => platformDispatcher.disposeView(this);
 }
 
 abstract class FlutterWindowView extends FlutterView {

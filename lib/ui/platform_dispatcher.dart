@@ -5,10 +5,7 @@
 // @dart = 2.6
 part of dart.ui;
 
-// Callback types for events.
-
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration/*!*/ configuration);
-
 typedef ViewCreatedCallback = void Function(FlutterView/*!*/ view);
 typedef ViewDisposedCallback = void Function(FlutterView/*!*/ view);
 
@@ -19,8 +16,8 @@ typedef ViewDisposedCallback = void Function(FlutterView/*!*/ view);
 /// This is the central entry point for platform messages and configuration
 /// events from the platform.
 ///
-/// It exposes the size of the screen(s), the core scheduler API, the input
-/// event callback, the graphics drawing API, and other such core services.
+/// It exposes the he core scheduler API, the input event callback, the graphics
+/// drawing API, and other such core services.
 ///
 /// It manages the list of the application's [views] and the [screens] attached
 /// to the device, as well as the [configuration] of various platform
@@ -93,31 +90,6 @@ class PlatformDispatcher {
 
   // A map of opaque platform view identifiers to view configurations.
   Map<Object/*!*/, ViewConfiguration/*!*/>/*!*/ _viewConfigurations = <Object/*!*/, ViewConfiguration/*!*/>{};
-
-  /// Is called after [createView] is called and returns with a new view.
-  ///
-  /// Passes the newly created [FlutterView].
-  ViewCreatedCallback/*?*/ get onViewCreated => _onViewCreated;
-  ViewCreatedCallback/*?*/ _onViewCreated;
-  Zone/*!*/ _onViewCreatedZone = Zone.root; // ignore: unused_field
-  set onViewCreated(ViewCreatedCallback/*?*/ callback) {
-    _onViewCreated = callback;
-    _onViewCreatedZone = Zone.current;
-  }
-
-  /// The callback called when a view disposal is requested by the platform.
-  ///
-  /// If the application wishes to allow this disposal, it should call
-  /// [FlutterView.dispose] on the given [FlutterView].
-  ///
-  /// If the disposal is to be ignored, just do nothing.
-  ViewDisposedCallback/*?*/ get onViewDisposed => _onViewDisposed;
-  ViewDisposedCallback/*?*/ _onViewDisposed;
-  Zone/*!*/ _onViewDisposedZone = Zone.root; // ignore: unused_field
-  set onViewDisposed(ViewDisposedCallback/*?*/ callback) {
-    _onViewDisposed = callback;
-    _onViewDisposedZone = Zone.current;
-  }
 
   /// A callback that is invoked whenever any [ViewConfiguration] field in the
   /// [views] or [ScreenConfiguration] field in the [screens] changes, or when a
@@ -232,52 +204,6 @@ class PlatformDispatcher {
   /*late*/ _SetNeedsReportTimingsFunc/*!*/ _setNeedsReportTimings;
   void _nativeSetNeedsReportTimings(bool/*!*/ value)
       native 'PlatformConfiguration_setNeedsReportTimings';
-
-  /// Creates a new view and returns the view created.
-  ///
-  /// The configuration obtained and the one requested may not match, depending
-  /// on what the platform was able to accommodate.
-  ///
-  /// The future returns when the view has been created, and the view has been
-  /// added to [views].
-  ///
-  /// This function is currently not implemented, but is part of a planned
-  /// feature.
-  Future<FlutterView>/*?*/ createView(ViewConfigurationRequest/*!*/ request) async {
-    throw UnimplementedError();
-    // Awaits the platform view creation response, and calls onViewCreated
-    // before returning.
-  }
-
-  /// Reconfigures an existing view.
-  ///
-  /// This can be used to resize, show, hide, or change the order of the given
-  /// view, according to what is in the [ViewConfigurationRequest].
-  ///
-  /// The configuration obtained and the one requested may not match, depending
-  /// on what the platform was able to accommodate.
-  ///
-  /// The Future returns when the view has been reconfigured.
-  ///
-  /// This function is currently not implemented, but is part of a planned
-  /// feature.
-  Future<void> configureView(
-    FlutterView/*!*/ view,
-    ViewConfigurationRequest/*!*/ configuration,
-  ) async {
-    throw UnimplementedError();
-  }
-
-  /// Requests permanently closing a view.
-  ///
-  /// The Future completes when the view has been disposed and has been removed
-  /// from [views].
-  ///
-  /// This function is currently not implemented, but is part of a planned
-  /// feature.
-  Future<void> disposeView(FlutterView/*!*/ view) async {
-    throw UnimplementedError();
-  }
 
   /// Sends a message to a platform-specific plugin.
   ///

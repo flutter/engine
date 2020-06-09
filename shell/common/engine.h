@@ -657,7 +657,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   //----------------------------------------------------------------------------
   /// @brief      Updates the screen metrics for the currently running Flutter
   ///             application. The screen metrics detail the size of the
-  ///             screen that the rendering viewport is in in texels as well
+  ///             screen that the rendering viewport is on in texels as well
   ///             as edge insets if present.
   ///
   /// @see        `ScreenMetrics`,

@@ -6,6 +6,8 @@
 part of dart.ui;
 
 /// A class representing the screen that application windows are displayed on.
+///
+/// Each screen can have separate dimensions, and a separate device pixel ratio.
 class Screen {
     const Screen._({Object/*!*/ screenId, PlatformDispatcher/*!*/ platformDispatcher})
     : _screenId = screenId,

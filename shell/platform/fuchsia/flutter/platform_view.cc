@@ -188,7 +188,7 @@ void PlatformView::FlushViewportMetrics() {
   const auto scale = metrics_.scale;
   const auto scale_z = metrics_.scale_z;
   const flutter::ScreenMetrics screen_metrics{
-      "",                                  // display_name
+      "",                                  // screen_name
       scale,                               // device_pixel_ratio
       0,                                   // physical_left
       0,                                   // physical_top

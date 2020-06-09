@@ -16,29 +16,29 @@ abstract class Scenario {
 
   /// Called by the program when a frame is ready to be drawn.
   ///
-  /// See [FlutterWindow.onBeginFrame] for more details.
+  /// See [PlatformDispatcher.onBeginFrame] for more details.
   void onBeginFrame(Duration duration) {}
 
   /// Called by the program when the microtasks from [onBeginFrame] have been
   /// flushed.
   ///
-  /// See [FlutterWindow.onDrawFrame] for more details.
+  /// See [PlatformDispatcher.onDrawFrame] for more details.
   void onDrawFrame() {}
 
   /// Called by the program when the window metrics have changed.
   ///
-  /// See [FlutterWindow.onMetricsChanged].
+  /// See [PlatformDispatcher.onMetricsChanged].
   void onMetricsChanged() {}
 
   /// Called by the program when a pointer event is received.
   ///
-  /// See [FlutterWindow.onPointerDataPacket].
+  /// See [PlatformDispatcher.onPointerDataPacket].
   void onPointerDataPacket(PointerDataPacket packet) {}
 
   /// Called by the program when an engine side platform channel message is
   /// received.
   ///
-  /// See [FlutterWindow.onPlatformMessage].
+  /// See [PlatformDispatcher.onPlatformMessage].
   void onPlatformMessage(
     String name,
     ByteData data,

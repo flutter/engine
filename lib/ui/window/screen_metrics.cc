@@ -8,7 +8,7 @@
 
 namespace flutter {
 
-ScreenMetrics::ScreenMetrics(std::string p_display_name,
+ScreenMetrics::ScreenMetrics(std::string p_screen_name,
                              double p_device_pixel_ratio,
                              double p_physical_left,
                              double p_physical_top,
@@ -26,7 +26,7 @@ ScreenMetrics::ScreenMetrics(std::string p_display_name,
                              double p_physical_system_gesture_inset_right,
                              double p_physical_system_gesture_inset_bottom,
                              double p_physical_system_gesture_inset_left)
-    : display_name(p_display_name),
+    : screen_name(p_screen_name),
       device_pixel_ratio(p_device_pixel_ratio),
       physical_left(p_physical_left),
       physical_top(p_physical_top),
@@ -52,7 +52,7 @@ ScreenMetrics::ScreenMetrics(std::string p_display_name,
   FML_DCHECK(physical_height >= 0);
 }
 
-ScreenMetrics::ScreenMetrics(std::string p_display_name,
+ScreenMetrics::ScreenMetrics(std::string p_screen_name,
                              double p_device_pixel_ratio,
                              double p_physical_left,
                              double p_physical_top,
@@ -66,7 +66,7 @@ ScreenMetrics::ScreenMetrics(std::string p_display_name,
                              double p_physical_view_inset_right,
                              double p_physical_view_inset_bottom,
                              double p_physical_view_inset_left)
-    : display_name(p_display_name),
+    : screen_name(p_screen_name),
       device_pixel_ratio(p_device_pixel_ratio),
       physical_left(p_physical_left),
       physical_top(p_physical_top),

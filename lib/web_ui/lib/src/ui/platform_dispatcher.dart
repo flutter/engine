@@ -19,13 +19,6 @@ abstract class PlatformDispatcher {
   Iterable<Screen/*!*/>/*!*/ get screens;
 
   Iterable<FlutterView/*!*/>/*!*/ get views;
-  ViewCreatedCallback/*?*/ get onViewCreated;
-  set onViewCreated(ViewCreatedCallback/*?*/ callback);
-  ViewDisposedCallback/*?*/ get onViewDisposed;
-  set onViewDisposed(ViewDisposedCallback/*?*/ callback);
-  Future<FlutterView/*?*/> createView(ViewConfigurationRequest/*!*/ request);
-  Future<void> configureView(FlutterView/*!*/ view, ViewConfigurationRequest/*!*/ configuration);
-  Future<void> disposeView(FlutterView/*!*/ view);
 
   VoidCallback/*?*/ get onMetricsChanged;
   set onMetricsChanged(VoidCallback/*?*/ callback);

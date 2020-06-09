@@ -36,7 +36,7 @@ Map<String, Scenario> _scenarios = <String, Scenario>{
   'platform_view_gesture_accept': PlatformViewForTouchIOSScenario(PlatformDispatcher.instance, 'platform view touch', id: 11, accept: true),
   'platform_view_gesture_reject_after_touches_ended': PlatformViewForTouchIOSScenario(PlatformDispatcher.instance, 'platform view touch', id: 11, accept: false, rejectUntilTouchesEnded: true),
   'tap_status_bar': TouchesScenario(PlatformDispatcher.instance),
-  'text_semantics_focus': SendTextFocusScemantics(PlatformDispatcher.instance),
+  'text_semantics_focus': SendTextFocusSemantics(PlatformDispatcher.instance),
 };
 
 Map<String, dynamic> _currentScenario = <String, dynamic>{

@@ -8,10 +8,10 @@ part of dart.ui;
 /// Signature of callbacks that have no arguments and return no data.
 typedef VoidCallback = void Function();
 
-/// Signature for [FlutterWindow.onBeginFrame].
+/// Signature for [PlatformDispatcher.onBeginFrame].
 typedef FrameCallback = void Function(Duration duration);
 
-/// Signature for [FlutterWindow.onReportTimings].
+/// Signature for [PlatformDispatcher.onReportTimings].
 ///
 /// {@template dart.ui.TimingsCallback.list}
 /// The callback takes a list of [FrameTiming] because it may not be
@@ -25,19 +25,19 @@ typedef FrameCallback = void Function(Duration duration);
 /// {@endtemplate}
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 
-/// Signature for [FlutterWindow.onPointerDataPacket].
+/// Signature for [PlatformDispatcher.onPointerDataPacket].
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 
-/// Signature for [FlutterWindow.onSemanticsAction].
+/// Signature for [PlatformDispatcher.onSemanticsAction].
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
 
 /// Signature for responses to platform messages.
 ///
-/// Used as a parameter to [FlutterWindow.sendPlatformMessage] and
-/// [FlutterWindow.onPlatformMessage].
+/// Used as a parameter to [PlatformDispatcher.sendPlatformMessage] and
+/// [PlatformDispatcher.onPlatformMessage].
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 
-/// Signature for [FlutterWindow.onPlatformMessage].
+/// Signature for [PlatformDispatcher.onPlatformMessage].
 typedef PlatformMessageCallback = void Function(String name, ByteData? data, PlatformMessageResponseCallback? callback);
 
 // Signature for _setNeedsReportTimings.
@@ -72,9 +72,9 @@ enum FramePhase {
 ///
 /// If you're using the whole Flutter framework, please use
 /// [SchedulerBinding.addTimingsCallback] to get this. It's preferred over using
-/// [FlutterWindow.onReportTimings] directly because
+/// [PlatformDispatcher.onReportTimings] directly because
 /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks. If
-/// [SchedulerBinding] is unavailable, then see [FlutterWindow.onReportTimings]
+/// [SchedulerBinding] is unavailable, then see [PlatformDispatcher.onReportTimings]
 /// for how to get this.
 ///
 /// The metrics in debug mode (`flutter run` without any flags) may be very
@@ -88,7 +88,7 @@ class FrameTiming {
   /// [FramePhase.values].
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
-  /// To get the [FrameTiming] of your app, see [FlutterWindow.onReportTimings].
+  /// To get the [FrameTiming] of your app, see [PlatformDispatcher.onReportTimings].
   FrameTiming(List<int> timestamps)
       : assert(timestamps.length == FramePhase.values.length),
         _timestamps = timestamps;
@@ -101,11 +101,11 @@ class FrameTiming {
 
   /// The duration to build the frame on the UI thread.
   ///
-  /// The build starts approximately when [FlutterWindow.onBeginFrame] is called. The
-  /// [Duration] in the [FlutterWindow.onBeginFrame] callback is exactly the
+  /// The build starts approximately when [PlatformDispatcher.onBeginFrame] is called. The
+  /// [Duration] in the [PlatformDispatcher.onBeginFrame] callback is exactly the
   /// `Duration(microseconds: timestampInMicroseconds(FramePhase.buildStart))`.
   ///
-  /// The build finishes when [FlutterWindow.render] is called.
+  /// The build finishes when [FlutterView.render] is called.
   ///
   /// {@template dart.ui.FrameTiming.fps_smoothness_milliseconds}
   /// To ensure smooth animations of X fps, this should not exceed 1000/X
@@ -177,7 +177,7 @@ enum AppLifecycleState {
   /// user input, and running in the background.
   ///
   /// When the application is in this state, the engine will not call the
-  /// [FlutterWindow.onBeginFrame] and [FlutterWindow.onDrawFrame] callbacks.
+  /// [PlatformDispatcher.onBeginFrame] and [PlatformDispatcher.onDrawFrame] callbacks.
   paused,
 
   /// The application is still hosted on a flutter engine but is detached from
@@ -192,8 +192,8 @@ enum AppLifecycleState {
 
 /// A representation of distances for each of the four edges of a rectangle,
 /// used to encode the view insets and padding that applications should place
-/// around their user interface, as exposed by [FlutterWindow.viewInsets] and
-/// [FlutterWindow.padding]. View insets and padding are preferably read via
+/// around their user interface, as exposed by [FlutterView.viewInsets] and
+/// [FlutterView.padding]. View insets and padding are preferably read via
 /// [MediaQuery.of].
 ///
 /// For a generic class that represents distances around a rectangle, see the
@@ -245,7 +245,7 @@ class WindowPadding {
 ///
 /// See also:
 ///
-///  * [FlutterWindow.locale], which specifies the system's currently selected
+///  * [PlatformDispatcher.locale], which specifies the system's currently selected
 ///    [Locale].
 class Locale {
   /// Creates a new Locale object. The first argument is the
@@ -527,10 +527,7 @@ class Locale {
 /// A view into which a Flutter [Scene] is drawn.
 ///
 /// Each [FlutterView] has its own layer tree that is rendered into an area
-/// inside of the [FlutterWindow] whenever [render] is called with a [Scene].
-///
-/// New views can be created by the [PlatformDispatcher], using
-/// [PlatformDispatcher.createView].
+/// inside of a [FlutterWindow] whenever [render] is called with a [Scene].
 ///
 /// ## Insets and Padding
 ///
@@ -542,11 +539,11 @@ class Locale {
 /// represents the system keyboard, which can cover over the bottom view padding
 /// when visible.
 ///
-/// The [FlutterWindow.viewInsets] are the physical pixels which the operating
+/// The [viewInsets] are the physical pixels which the operating
 /// system reserves for system UI, such as the keyboard, which would fully
 /// obscure any content drawn in that area.
 ///
-/// The [FlutterWindow.viewPadding] are the physical pixels on each side of the
+/// The [viewPadding] are the physical pixels on each side of the
 /// display that may be partially obscured by system UI or by physical
 /// intrusions into the display, such as an overscan region on a television or a
 /// "notch" on a phone. Unlike the insets, these areas may have portions that
@@ -556,24 +553,24 @@ class Locale {
 /// opaque keyboard or a partially translucent status bar, which cover an area
 /// without gaps.
 ///
-/// The [FlutterWindow.padding] property is computed from both
-/// [FlutterWindow.viewInsets] and [FlutterWindow.viewPadding]. It will allow a
+/// The [padding] property is computed from both
+/// [viewInsets] and [viewPadding]. It will allow a
 /// view inset to consume view padding where appropriate, such as when a phone's
 /// keyboard is covering the bottom view padding and so "absorbs" it.
 ///
 /// Clients that want to position elements relative to the view padding
-/// regardless of the view insets should use the [FlutterWindow.viewPadding]
+/// regardless of the view insets should use the [viewPadding]
 /// property, e.g. if you wish to draw a widget at the center of the screen with
 /// respect to the iPhone "safe area" regardless of whether the keyboard is
 /// showing.
 ///
-/// [FlutterWindow.padding] is useful for clients that want to know how much
+/// [padding] is useful for clients that want to know how much
 /// padding should be accounted for without concern for the current inset(s)
 /// state, e.g. determining whether a gesture should be considered for scrolling
 /// purposes. This value varies based on the current state of the insets. For
 /// example, a visible keyboard will consume all gestures in the bottom part of
-/// the [FlutterWindow.viewPadding] anyway, so there is no need to account for
-/// that in the [FlutterWindow.padding], which is always safe to use for such
+/// the [viewPadding] anyway, so there is no need to account for
+/// that in the [padding], which is always safe to use for such
 /// calculations.
 ///
 /// See also:
@@ -583,10 +580,10 @@ class Locale {
 abstract class FlutterView {
   /// The platform dispatcher that this view is registered with, and gets its
   /// information from.
-  PlatformDispatcher get platformDispatcher;
+  PlatformDispatcher/*!*/ get platformDispatcher;
 
   /// The configuration of this view.
-  ViewConfiguration get viewConfiguration;
+  ViewConfiguration/*!*/ get viewConfiguration;
 
   /// The number of device pixels for each logical pixel for the screen this
   /// view is displayed on.
@@ -657,7 +654,7 @@ abstract class FlutterView {
   ///    observe when this value changes.
   Size get physicalSize => viewConfiguration.geometry.size;
 
-  /// The physical depth is the maximum elevation that the `FlutterView` allows.
+  /// The physical depth is the maximum elevation that the [FlutterView] allows.
   ///
   /// Physical layers drawn at or above this elevation will have their elevation
   /// clamped to this value. This can happen if the physical layer itself has
@@ -676,9 +673,9 @@ abstract class FlutterView {
   ///
   /// When this property changes, [onMetricsChanged] is called.
   ///
-  /// The relationship between this [FlutterWindow.viewInsets],
-  /// [FlutterWindow.viewPadding], and [FlutterWindow.padding] are described in
-  /// more detail in the documentation for [FlutterWindow].
+  /// The relationship between this [viewInsets],
+  /// [viewPadding], and [padding] are described in
+  /// more detail in the documentation for [FlutterView].
   ///
   /// See also:
   ///
@@ -695,16 +692,16 @@ abstract class FlutterView {
   /// the display (e.g. overscan regions on television screens or phone sensor
   /// housings).
   ///
-  /// Unlike [FlutterWindow.padding], this value does not change relative to
-  /// [FlutterWindow.viewInsets]. For example, on an iPhone X, it will not
+  /// Unlike [padding], this value does not change relative to
+  /// [viewInsets]. For example, on an iPhone X, it will not
   /// change in response to the soft keyboard being visible or hidden, whereas
-  /// [FlutterWindow.padding] will.
+  /// [padding] will.
   ///
   /// When this property changes, [onMetricsChanged] is called.
   ///
-  /// The relationship between this [FlutterWindow.viewInsets],
-  /// [FlutterWindow.viewPadding], and [FlutterWindow.padding] are described in
-  /// more detail in the documentation for [FlutterWindow].
+  /// The relationship between this [viewInsets],
+  /// [viewPadding], and [padding] are described in
+  /// more detail in the documentation for [FlutterView].
   ///
   /// See also:
   ///
@@ -741,16 +738,16 @@ abstract class FlutterView {
   /// This value is calculated by taking `max(0.0, FlutterView.viewPadding -
   /// FlutterView.viewInsets)`. This will treat a system IME that increases the
   /// bottom inset as consuming that much of the bottom padding. For example, on
-  /// an iPhone X, [FlutterView.padding.bottom] is the same as
-  /// [FlutterView.viewPadding.bottom] when the soft keyboard is not drawn (to
+  /// an iPhone X, [padding.bottom] is the same as
+  /// [viewPadding.bottom] when the soft keyboard is not drawn (to
   /// account for the bottom soft button area), but will be `0.0` when the soft
   /// keyboard is visible.
   ///
   /// When this changes, [onMetricsChanged] is called.
   ///
-  /// The relationship between this [FlutterWindow.viewInsets],
-  /// [FlutterWindow.viewPadding], and [FlutterWindow.padding] are described in
-  /// more detail in the documentation for [FlutterWindow].
+  /// The relationship between this [viewInsets],
+  /// [viewPadding], and [padding] are described in
+  /// more detail in the documentation for [FlutterView].
   ///
   /// See also:
   ///
@@ -789,42 +786,6 @@ abstract class FlutterView {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   void render(Scene scene) => platformDispatcher.render(scene, this);
-
-  /// Dispose of this view, closing it permanently.
-  ///
-  /// This function should be called in response to a call to
-  /// [PlatformDispatcher.onViewDisposed], or to permanently dispose of a view
-  /// that the application would like to close.
-  void dispose() => platformDispatcher.disposeView(this);
-}
-
-/// A type of [FlutterView] that can be hosted inside of a [FlutterWindow], into
-/// which a Flutter [Scene] is drawn.
-///
-/// A [FlutterWindowView] has its own layer tree that is rendered into an area
-/// inside of a [FlutterWindow] when [render] is called with a [Scene].
-///
-/// A [FlutterWindow] is a subclass of a [FlutterView] that is a separate window
-/// which can host other [FlutterView]s.
-///
-/// A `FlutterWindowView` can only be created by [PlatformDispatcher.createView]
-/// where the requested configuration includes a parent [FlutterWindow] set as
-/// the [ViewConfiguration.window].
-class FlutterWindowView extends FlutterView {
-  FlutterWindowView._({Object viewId, this.platformDispatcher})
-      : _viewId = viewId;
-
-  /// The opaque ID for this view.
-  final Object _viewId;
-
-  @override
-  final PlatformDispatcher platformDispatcher;
-
-  @override
-  ViewConfiguration get viewConfiguration {
-    assert(platformDispatcher._viewConfigurations.containsKey(_viewId));
-    return platformDispatcher._viewConfigurations[_viewId];
-  }
 }
 
 /// A top-level platform window displaying a Flutter layer tree drawn from a
@@ -870,7 +831,7 @@ class FlutterWindow extends FlutterView {
 /// This class provides backward compatibility with code that was written before
 /// Flutter supported multiple top level windows. New code should refer to the
 /// [WidgetsBinding.instance.platformDispatcher] or [FlutterWindow] class
-/// directly.
+/// directly to modify or retrieve these properties.
 ///
 /// There is also a [PlatformDispatcher.instance] singleton object in `dart:ui`
 /// if `WidgetsBinding` is unavailable. But we strongly advise avoiding a static
@@ -881,8 +842,8 @@ class SingletonFlutterWindow extends FlutterWindow {
       : super._(windowId: windowId, platformDispatcher: platformDispatcher);
 
   /// A callback that is invoked whenever the [devicePixelRatio],
-  /// [physicalSize], [padding], [viewInsets], or [systemGestureInsets]
-  /// values change.
+  /// [physicalSize], [padding], [viewInsets], [PlatformDispatcher.views],
+  /// [PlatformDispatcher.screens], or [systemGestureInsets] values change.
   ///
   /// {@template flutter.lib.ui.window.forwardWarning}
   ///
@@ -1419,5 +1380,6 @@ enum Brightness {
 /// See also:
 ///
 ///  * [PlatformDispatcher.views], contains the current list of Flutter windows
-///    belonging to the application.
+///    belonging to the application, including top level application windows
+///    like this one.
 final SingletonFlutterWindow window = SingletonFlutterWindow._(windowId: 0, platformDispatcher: PlatformDispatcher.instance);

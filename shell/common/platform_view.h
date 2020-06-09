@@ -101,8 +101,8 @@ class PlatformView {
         const ViewportMetrics& metrics) = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      Notifies the delegate the screen metrics of the platform
-    ///             screen have been updated.
+    /// @brief      Notifies the delegate that the screen metrics of the
+    ///             platform screen have been updated.
     ///
     /// @param[in]  metrics  The updated screen metrics.
     ///
@@ -392,7 +392,7 @@ class PlatformView {
   void SetViewportMetrics(const ViewportMetrics& metrics);
 
   //----------------------------------------------------------------------------
-  /// @brief      Used by embedders to specify the updated screen metrics. In
+  /// @brief      Used by embedders to specify updated screen metrics. In
   ///             response to this call, on the raster thread, the rasterizer
   ///             may need to be reconfigured to the updated viewport dimensions
   ///             if they are affected by the change in screen metrics. On the

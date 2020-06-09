@@ -10,7 +10,7 @@ part of ui;
 /// To create a Scene object, use a [SceneBuilder].
 ///
 /// Scene objects can be displayed on the screen using the
-/// [FlutterWindow.render] method.
+/// [FlutterView.render] method.
 abstract class Scene {
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
@@ -105,7 +105,7 @@ abstract class PhysicalShapeEngineLayer implements EngineLayer {}
 
 /// Builds a [Scene] containing the given visuals.
 ///
-/// A [Scene] can then be rendered using [FlutterWindow.render].
+/// A [Scene] can then be rendered using [FlutterView.render].
 ///
 /// To draw graphical operations onto a [Scene], first create a
 /// [Picture] using a [PictureRecorder] and a [Canvas], and then add
@@ -297,8 +297,8 @@ abstract class SceneBuilder {
   ///
   /// The "UI thread" is the thread that includes all the execution of
   /// the main Dart isolate (the isolate that can call
-  /// [FlutterWindow.render]). The UI thread frame time is the total time
-  /// spent executing the [FlutterWindow.onBeginFrame] callback. The "raster
+  /// [FlutterView.render]). The UI thread frame time is the total time
+  /// spent executing the [PlatformDispatcher.onBeginFrame] callback. The "raster
   /// thread" is the thread (running on the CPU) that subsequently
   /// processes the [Scene] provided by the Dart code to turn it into
   /// GPU commands and send it to the GPU.
@@ -400,7 +400,7 @@ abstract class SceneBuilder {
   ///
   /// Returns a [Scene] containing the objects that have been added to
   /// this scene builder. The [Scene] can then be displayed on the
-  /// screen with [FlutterWindow.render].
+  /// screen with [FlutterView.render].
   ///
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.

@@ -74,7 +74,7 @@ class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
 
   void _pop() {
     sendJsonMethodCall(
-      window: window,
+      dispatcher: dispatcher,
       // 'flutter/platform' is the hardcoded name of the 'platform'
       // `SystemChannel` from the `SystemNavigator` API.
       // https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/system_navigator.dart.
