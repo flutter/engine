@@ -259,18 +259,24 @@ class Color {
   /// an [AnimationController].
   static Color/*?*/ lerp(Color/*?*/ a, Color/*?*/ b, double/*!*/ t) {
     assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null)
-      return _scaleAlpha(b, t);
-    if (b == null)
-      return _scaleAlpha(a, 1.0 - t);
-    return Color.fromARGB(
-      lerpDouble(a.alpha, b.alpha, t).toInt().clamp(0, 255) as int,
-      lerpDouble(a.red, b.red, t).toInt().clamp(0, 255) as int,
-      lerpDouble(a.green, b.green, t).toInt().clamp(0, 255) as int,
-      lerpDouble(a.blue, b.blue, t).toInt().clamp(0, 255) as int,
-    );
+    if (b == null) {
+      if (a == null) {
+        return null;
+      } else {
+        return _scaleAlpha(a, 1.0 - t);
+      }
+    } else {
+      if (a == null) {
+        return _scaleAlpha(b, t);
+      } else {
+        return Color.fromARGB(
+          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
+          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
+          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
+          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+        );
+      }
+    }
   }
 
   /// Combine the foreground color as a transparent color over top
@@ -1914,7 +1920,7 @@ class Path extends NativeFieldWrapperClass2 {
   ///
   /// Defaults to the non-zero winding rule, [PathFillType.nonZero].
   PathFillType/*!*/ get fillType => PathFillType.values[_getFillType()];
-  set fillType(PathFillType value) => _setFillType(value.index);
+  set fillType(PathFillType/*!*/ value) => _setFillType(value.index);
 
   int _getFillType() native 'Path_getFillType';
   void _setFillType(int/*!*/ fillType) native 'Path_setFillType';
@@ -2346,7 +2352,7 @@ class PathMetricIterator implements Iterator<PathMetric> {
   PathMetric/*?*/ get current => _pathMetric;
 
   @override
-  bool moveNext() {
+  bool/*!*/ moveNext() {
     if (_pathMeasure._nextContour()) {
       _pathMetric = PathMetric._(_pathMeasure);
       return true;
@@ -3537,7 +3543,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// each matching call to [restore] decrements it.
   ///
   /// This number cannot go below 1.
-  int getSaveCount() native 'Canvas_getSaveCount';
+  int/*!*/ getSaveCount() native 'Canvas_getSaveCount';
 
   /// Add a translation to the current transform, shifting the coordinate space
   /// horizontally by the first argument and vertically by the second argument.
@@ -4171,8 +4177,6 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   /// Returns a picture containing the graphical operations that have been
   /// recorded thus far. After calling this function, both the picture recorder
   /// and the canvas objects are invalid and cannot be used further.
-  ///
-  /// Returns null if the PictureRecorder is not associated with a canvas.
   Picture/*!*/ endRecording() {
     final Picture picture = Picture._();
     _endRecording(picture);
@@ -4290,17 +4294,23 @@ class Shadow {
   /// {@endtemplate}
   static Shadow/*?*/ lerp(Shadow/*?*/ a, Shadow/*?*/ b, double/*!*/ t) {
     assert(t != null);
-    if (a == null && b == null)
-      return null;
-    if (a == null)
-      return b.scale(t);
-    if (b == null)
-      return a.scale(1.0 - t);
-    return Shadow(
-      color: Color.lerp(a.color, b.color, t),
-      offset: Offset.lerp(a.offset, b.offset, t),
-      blurRadius: lerpDouble(a.blurRadius, b.blurRadius, t),
-    );
+    if (b == null) {
+      if (a == null) {
+        return null;
+      } else {
+        return a.scale(1.0 - t);
+      }
+    } else {
+      if (a == null) {
+        return b.scale(t);
+      } else {
+        return Shadow(
+          color: Color.lerp(a.color, b.color, t),
+          offset: Offset.lerp(a.offset, b.offset, t),
+          blurRadius: lerpDouble(a.blurRadius, b.blurRadius, t),
+        );
+      }
+    }
   }
 
   /// Linearly interpolate between two lists of shadows.

@@ -756,6 +756,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_on_display_platform_view_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIII)V");
+
+  if (g_on_display_platform_view_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate onDisplayPlatformView method";
+    return false;
+  }
+
   g_surface_texture_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("android/graphics/SurfaceTexture"));
   if (g_surface_texture_class->is_null()) {

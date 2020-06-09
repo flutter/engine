@@ -801,6 +801,17 @@ public class FlutterJNI {
   }
   // ----- End Engine Lifecycle Support ----
 
+  // @SuppressWarnings("unused")
+  @UiThread
+  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to position a platform view");
+    }
+    platformViewsController.onDisplayPlatformView(viewId, x, y, width, height);
+  }
+
   // TODO(mattcarroll): determine if this is nonull or nullable
   @UiThread
   public Bitmap getBitmap() {

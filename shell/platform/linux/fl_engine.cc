@@ -24,6 +24,7 @@ struct _FlEngine {
   FlDartProject* project;
   FlRenderer* renderer;
   FlBinaryMessenger* binary_messenger;
+  FlutterEngineAOTData aot_data;
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
 
   // Function to call when a platform message is received.
@@ -162,7 +163,15 @@ static void fl_engine_platform_message_response_cb(const uint8_t* data,
 static void fl_engine_dispose(GObject* object) {
   FlEngine* self = FL_ENGINE(object);
 
-  FlutterEngineShutdown(self->engine);
+  if (self->engine != nullptr) {
+    FlutterEngineShutdown(self->engine);
+    self->engine = nullptr;
+  }
+
+  if (self->aot_data != nullptr) {
+    FlutterEngineCollectAOTData(self->aot_data);
+    self->aot_data = nullptr;
+  }
 
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
@@ -232,6 +241,19 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.icu_data_path = fl_dart_project_get_icu_data_path(self->project);
   args.platform_message_callback = fl_engine_platform_message_cb;
   args.custom_task_runners = &custom_task_runners;
+  args.shutdown_dart_vm_when_done = true;
+
+  if (FlutterEngineRunsAOTCompiledDartCode()) {
+    FlutterEngineAOTDataSource source = {};
+    source.type = kFlutterEngineAOTDataSourceTypeElfPath;
+    source.elf_path = fl_dart_project_get_aot_library_path(self->project);
+    if (FlutterEngineCreateAOTData(&source, &self->aot_data) != kSuccess) {
+      g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
+                  "Failed to create AOT data");
+      return FALSE;
+    }
+    args.aot_data = self->aot_data;
+  }
 
   FlutterEngineResult result = FlutterEngineInitialize(
       FLUTTER_ENGINE_VERSION, &config, &args, self, &self->engine);
@@ -388,6 +410,8 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
                                         size_t timestamp,
                                         double x,
                                         double y,
+                                        double scroll_delta_x,
+                                        double scroll_delta_y,
                                         int64_t buttons) {
   g_return_if_fail(FL_IS_ENGINE(self));
 
@@ -400,6 +424,10 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   fl_event.timestamp = timestamp;
   fl_event.x = x;
   fl_event.y = y;
+  if (scroll_delta_x != 0 || scroll_delta_y != 0)
+    fl_event.signal_kind = kFlutterPointerSignalKindScroll;
+  fl_event.scroll_delta_x = scroll_delta_x;
+  fl_event.scroll_delta_y = scroll_delta_y;
   fl_event.device_kind = kFlutterPointerDeviceKindMouse;
   fl_event.buttons = buttons;
   FlutterEngineSendPointerEvent(self->engine, &fl_event, 1);
