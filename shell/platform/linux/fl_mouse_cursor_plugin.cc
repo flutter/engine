@@ -56,7 +56,7 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
     cursor_name = "default";
 
   GdkWindow* window =
-      gtk_widget_get_window(gtk_widget_get_parent(GTK_WIDGET(self->view)));
+      gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
   g_autoptr(GdkCursor) cursor =
       gdk_cursor_new_from_name(gdk_window_get_display(window), cursor_name);
   gdk_window_set_cursor(window, cursor);
