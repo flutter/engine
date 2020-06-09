@@ -69,7 +69,7 @@ BrowserEngine _detectBrowserEngine() {
     return BrowserEngine.firefox;
   }
 
-  // Assume blink otherwise, but issue a warning.
+  // Assume unknown otherwise, but issue a warning.
   print('WARNING: failed to detect current browser engine.');
   return BrowserEngine.unknown;
 }
