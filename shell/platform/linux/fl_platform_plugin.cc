@@ -29,27 +29,32 @@ struct _FlPlatformPlugin {
 
 G_DEFINE_TYPE(FlPlatformPlugin, fl_platform_plugin, G_TYPE_OBJECT)
 
+// Sends the method call response to Flutter.
+static void send_response(FlMethodCall* method_call,
+                          FlMethodResponse* response) {
+  g_autoptr(GError) error = nullptr;
+  if (!fl_method_call_respond(method_call, response, &error))
+    g_warning("Failed to send method call response: %s", error->message);
+}
+
 // Called when clipboard text received.
 static void clipboard_text_cb(GtkClipboard* clipboard,
                               const gchar* text,
                               gpointer user_data) {
   g_autoptr(FlMethodCall) method_call = FL_METHOD_CALL(user_data);
 
-  if (text == nullptr) {
-    g_autoptr(GError) error = nullptr;
-    if (!fl_method_call_respond_error(
-            method_call, kClipboardRequestError,
-            "Failed to retrieve clipboard text from GTK", nullptr, &error))
-      g_warning("Failed to send method call response: %s", error->message);
-    return;
+  g_autoptr(FlMethodResponse) response = nullptr;
+  if (text != nullptr) {
+    g_autoptr(FlValue) result = fl_value_new_map();
+    fl_value_set_string_take(result, kTextKey, fl_value_new_string(text));
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+  } else {
+    response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kClipboardRequestError, "Failed to retrieve clipboard text from GTK",
+        nullptr));
   }
 
-  g_autoptr(FlValue) result = fl_value_new_map();
-  fl_value_set_string_take(result, kTextKey, fl_value_new_string(text));
-
-  g_autoptr(GError) error = nullptr;
-  if (!fl_method_call_respond_success(method_call, result, &error))
-    g_warning("Failed to send method call response: %s", error->message);
+  send_response(method_call, response);
 }
 
 // Called when Flutter wants to copy to the clipboard.
@@ -75,32 +80,29 @@ static FlMethodResponse* clipboard_set_data(FlPlatformPlugin* self,
 }
 
 // Called when Flutter wants to paste from the clipboard.
-static void clipboard_get_data_async(FlPlatformPlugin* self,
-                                     FlMethodCall* method_call) {
+static FlMethodResponse* clipboard_get_data_async(FlPlatformPlugin* self,
+                                                  FlMethodCall* method_call) {
   FlValue* args = fl_method_call_get_args(method_call);
 
   if (fl_value_get_type(args) != FL_VALUE_TYPE_STRING) {
-    g_autoptr(GError) error = nullptr;
-    if (!fl_method_call_respond_error(method_call, kBadArgumentsError,
-                                      "Expected string", nullptr, &error))
-      g_warning("Failed to send method call response: %s", error->message);
-    return;
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Expected string", nullptr));
   }
 
   const gchar* format = fl_value_get_string(args);
   if (strcmp(format, kTextPlainFormat) != 0) {
-    g_autoptr(GError) error = nullptr;
-    if (!fl_method_call_respond_error(method_call, kUnknownClipboardFormatError,
-                                      "GTK clipboard API only supports text.",
-                                      nullptr, &error))
-      g_warning("Failed to send method call response: %s", error->message);
-    return;
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kUnknownClipboardFormatError, "GTK clipboard API only supports text",
+        nullptr));
   }
 
   GtkClipboard* clipboard =
       gtk_clipboard_get_default(gdk_display_get_default());
   gtk_clipboard_request_text(clipboard, clipboard_text_cb,
                              g_object_ref(method_call));
+
+  // Will response later.
+  return nullptr;
 }
 
 // Called when Flutter wants to quit the application.
@@ -126,20 +128,17 @@ static void method_call_cb(FlMethodChannel* channel,
   FlValue* args = fl_method_call_get_args(method_call);
 
   g_autoptr(FlMethodResponse) response = nullptr;
-  if (strcmp(method, kSetClipboardDataMethod) == 0) {
+  if (strcmp(method, kSetClipboardDataMethod) == 0)
     response = clipboard_set_data(self, args);
-  } else if (strcmp(method, kGetClipboardDataMethod) == 0) {
-    clipboard_get_data_async(self, method_call);
-    return;
-  } else if (strcmp(method, kSystemNavigatorPopMethod) == 0) {
+  else if (strcmp(method, kGetClipboardDataMethod) == 0)
+    response = clipboard_get_data_async(self, method_call);
+  else if (strcmp(method, kSystemNavigatorPopMethod) == 0)
     response = system_navigator_pop(self);
-  } else {
+  else
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
-  }
 
-  g_autoptr(GError) error = nullptr;
-  if (!fl_method_call_respond(method_call, response, &error))
-    g_warning("Failed to send method call response: %s", error->message);
+  if (response != nullptr)
+    send_response(method_call, response);
 }
 
 static void fl_platform_plugin_dispose(GObject* object) {
