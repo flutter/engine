@@ -61,14 +61,14 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
 // |ExternalViewEmbedder|
 PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  // This frame may remove existing platform views that aren't contained 
+  // This frame may remove existing platform views that aren't contained
   // in `composition_order_`.
   //
   // If this frame doesn't have platform views, it's still required to keep
-  // the rasterizer running on the platform thread for at least one more 
+  // the rasterizer running on the platform thread for at least one more
   // frame.
   //
-  // To keep the rasterizer running on the platform thread one more frame, 
+  // To keep the rasterizer running on the platform thread one more frame,
   // `kDefaultMergedLeaseDuration` must be at least `1`.
   bool has_platform_views = composition_order_.size() > 0;
   if (has_platform_views) {
