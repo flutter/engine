@@ -790,9 +790,7 @@ public class FlutterJNI {
 
   // ----- Start Localization Support ----
 
-  /**
-   * Sets the localization plugin that is used in various localization methods.
-   */
+  /** Sets the localization plugin that is used in various localization methods. */
   @UiThread
   public void setLocalizationPlugin(@Nullable LocalizationPlugin localizationPlugin) {
     ensureRunningOnMainThread();
