@@ -490,7 +490,7 @@ class RuntimeController final : public WindowClient {
   bool FlushRuntimeStateToIsolate();
 
   // |WindowClient|
-  std::string DefaultRouteName() override;
+  std::string InitialRouteName() override;
 
   // |WindowClient|
   void ScheduleFrame() override;

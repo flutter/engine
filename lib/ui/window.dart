@@ -1137,7 +1137,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///  * [Navigator], a widget that handles routing.
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
-  String get defaultRouteName => platformDispatcher.defaultRouteName;
+  String get defaultRouteName => platformDispatcher.initialRouteName;
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame]
   /// and [onDrawFrame] callbacks be invoked.

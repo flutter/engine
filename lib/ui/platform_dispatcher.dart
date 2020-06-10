@@ -557,8 +557,8 @@ class PlatformDispatcher {
   ///  * [Navigator], a widget that handles routing.
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
-  String/*!*/ get defaultRouteName => _defaultRouteName();
-  String/*!*/ _defaultRouteName() native 'PlatformConfiguration_defaultRouteName';
+  String/*!*/ get initialRouteName => _initialRouteName();
+  String/*!*/ _initialRouteName() native 'PlatformConfiguration_initialRouteName';
 }
 
 /// Configuration of the platform.
@@ -574,7 +574,7 @@ class PlatformConfiguration {
     this.textScaleFactor = 1.0,
     this.locales = const <Locale>[],
     this.platformResolvedLocale,
-    this.defaultRouteName,
+    this.initialRouteName,
   })  : assert(accessibilityFeatures != null),
         assert(alwaysUse24HourFormat != null),
         assert(semanticsEnabled != null),
@@ -591,7 +591,7 @@ class PlatformConfiguration {
     double/*?*/ textScaleFactor,
     List<Locale/*!*/>/*?*/ locales,
     Locale/*?*/ platformResolvedLocale,
-    String/*?*/ defaultRouteName,
+    String/*?*/ initialRouteName,
   }) {
     return PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -601,7 +601,7 @@ class PlatformConfiguration {
       textScaleFactor: textScaleFactor ?? this.textScaleFactor,
       locales: locales ?? this.locales,
       platformResolvedLocale: platformResolvedLocale ?? this.platformResolvedLocale,
-      defaultRouteName: defaultRouteName ?? this.defaultRouteName,
+      initialRouteName: initialRouteName ?? this.initialRouteName,
     );
   }
 
@@ -632,7 +632,7 @@ class PlatformConfiguration {
 
   /// The route or path that the embedder requested when the application was
   /// launched.
-  final String/*?*/ defaultRouteName;
+  final String/*?*/ initialRouteName;
 }
 
 /// Immutable configuration information for a screen.

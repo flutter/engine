@@ -265,7 +265,7 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   PointerDataPacketCallback? get onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback);
 
-  String get defaultRouteName;
+  String get defaultRouteName => platformDispatcher.initialRouteName;
 
   bool get semanticsEnabled =>
       engine.EngineSemanticsOwner.instance.semanticsEnabled;

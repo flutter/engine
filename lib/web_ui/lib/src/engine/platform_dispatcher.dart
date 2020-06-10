@@ -391,9 +391,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             break;
         }
         // As soon as Flutter starts taking control of the app navigation, we
-        // should reset [_defaultRouteName] to "/" so it doesn't have any
+        // should reset [_initialRouteName] to "/" so it doesn't have any
         // further effect after this point.
-        _defaultRouteName = '/';
+        _initialRouteName = '/';
         return;
     }
 
@@ -810,13 +810,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
   @override
-  String/*!*/ get defaultRouteName => _defaultRouteName ??= _browserHistory.currentPath;
+  String/*!*/ get initialRouteName => _initialRouteName ??= _browserHistory.currentPath;
 
-  /// Lazily initialized when the `defaultRouteName` getter is invoked.
+  /// Lazily initialized when the `initialRouteName` getter is invoked.
   ///
   /// The reason for the lazy initialization is to give enough time for the app
   /// to set [locationStrategy] in `lib/src/ui/initialization.dart`.
-  String/*?*/ _defaultRouteName;
+  String/*?*/ _initialRouteName;
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.

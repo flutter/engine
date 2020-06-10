@@ -3189,7 +3189,7 @@ dart:ui,TileMode,init:mirror
 dart:ui,TileMode,init:repeated
 dart:ui,TileMode,init:values
 dart:ui,Window,Window._
-dart:ui,Window,_defaultRouteName
+dart:ui,Window,_initialRouteName
 dart:ui,Window,_sendPlatformMessage
 dart:ui,Window,_zonedPlatformMessageResponseCallback
 dart:ui,Window,get:_accessibilityFeatures
