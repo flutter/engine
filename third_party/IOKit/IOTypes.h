@@ -36,7 +36,7 @@
 #include <mach/message.h>
 #include <mach/vm_types.h>
 
-#include <IOKit/IOReturn.h>
+#include "third_party/IOKit/IOReturn.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,8 +58,6 @@ extern "C" {
  * Simple data types.
  */
 #include <stdbool.h>
-#include <libkern/OSTypes.h>
-
 
 typedef UInt32          IOOptionBits;
 typedef SInt32          IOFixed;

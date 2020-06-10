@@ -36,24 +36,7 @@
 #error This file is not for kernel use
 #endif
 
-#include <sys/cdefs.h>
-#include <sys/types.h>
-
-#include <mach/mach_types.h>
-#include <mach/mach_init.h>
-
-#include <CoreFoundation/CFBase.h>
-#include <CoreFoundation/CFDictionary.h>
-#include <CoreFoundation/CFRunLoop.h>
-
-#include <IOKit/IOTypes.h>
-#include <IOKit/IOKitKeys.h>
-
-#include <IOKit/OSMessageNotification.h>
-
-#include <AvailabilityMacros.h>
-
-#include <dispatch/dispatch.h>
+#include "third_party/IOKit/IOTypes.h"
 
 __BEGIN_DECLS
 
