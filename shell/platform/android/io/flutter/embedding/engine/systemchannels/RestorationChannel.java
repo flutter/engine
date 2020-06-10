@@ -33,8 +33,15 @@ public class RestorationChannel {
 
   public RestorationChannel(
       @NonNull DartExecutor dartExecutor, @NonNull boolean waitForRestorationData) {
+    this(
+        new MethodChannel(dartExecutor, "flutter/restoration", StandardMethodCodec.INSTANCE),
+        waitForRestorationData);
+  }
+
+  RestorationChannel(MethodChannel channel, @NonNull boolean waitForRestorationData) {
+    this.channel = channel;
     this.waitForRestorationData = waitForRestorationData;
-    channel = new MethodChannel(dartExecutor, "flutter/restoration", StandardMethodCodec.INSTANCE);
+
     channel.setMethodCallHandler(handler);
   }
 
@@ -67,6 +74,7 @@ public class RestorationChannel {
     if (pendingResult != null) {
       pendingResult.success(data);
       pendingResult = null;
+      restorationData = data;
     } else if (frameworkHasRequestedData) {
       channel.invokeMethod(
           "push",
