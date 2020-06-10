@@ -63,12 +63,8 @@ void main() {
     expect(() => jsSetLocationStrategy(null), returnsNormally);
     expect(window.locationStrategy, isNull);
 
-    // The listener is removed in a microtask.
-    final Completer<void> microtaskCompleter = Completer<void>.sync();
-    scheduleMicrotask(() {
-      microtaskCompleter.complete();
-    });
-    await microtaskCompleter.future;
+    // The listener is removed asynchronously.
+    await Future<void>.delayed(const Duration(milliseconds: 10));
 
     // No more listeners.
     expect(testStrategy.listeners, isEmpty);
