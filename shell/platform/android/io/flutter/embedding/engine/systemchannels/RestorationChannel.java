@@ -18,17 +18,15 @@ import io.flutter.plugin.common.StandardMethodCodec;
  * store it on disk and - when the app is relaunched - provide the stored data back to the framework
  * to recreate the original state of the app.
  *
- * <p>The channel only accepts restoration data for the engine when {@code waitForRestorationData}
- * is set to true. If it is not set, it will send null to the framework as initial restoration data.
- * When it is set to true, it will wait until {@code setRestorationData(byte[])} has been called
- * before responding to restoration data requests from the framework. In other words, if
- * {@code waitForRestorationData} is true, {@code setRestorationData(byte[])} must be called
- * (possibly with null as argument if no restoration data is available).
+ * <p>The channel can be configured to delay responding to the framework's request for restoration
+ * data via {@code waitForRestorationData} until the engine-side has provided the data. This is
+ * useful for use cases where the engine is pre-warmed at a point in the application's life cycle
+ * where the operating system has not been made available to the engine yet. For example, if the
+ * engine is pre-warmed as part of the Application before an Activity is created, this flag should
+ * be set to true because Android will only provide the restoration data to the Activity.
  *
- * <p>Restoration data for the framework can only be set once via
- * {@code setRestorationData(byte[])}. The current restoration data provided by the framework can be
- * read via {@code getRestorationData()}.
- *
+ * <p>The current restoration data provided by the framework can be read via {@code
+ * getRestorationData()}.
  */
 public class RestorationChannel {
   private static final String TAG = "RestorationChannel";
@@ -36,8 +34,7 @@ public class RestorationChannel {
   public RestorationChannel(
       @NonNull DartExecutor dartExecutor, @NonNull boolean waitForRestorationData) {
     this.waitForRestorationData = waitForRestorationData;
-    MethodChannel channel =
-        new MethodChannel(dartExecutor, "flutter/restoration", StandardMethodCodec.INSTANCE);
+    channel = new MethodChannel(dartExecutor, "flutter/restoration", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(handler);
   }
 
@@ -50,39 +47,51 @@ public class RestorationChannel {
    * the engine never calls {@code setRestorationData}. If it has been set to true, but it later
    * turns out that there is no restoration data, {@code setRestorationData} must be called with
    * null.
-   *
-   * <p>When constructing an engine set this to true if you want to provide restoration data to
-   * the framework by calling {@code setRestorationData(byte[])}.
    */
   public final boolean waitForRestorationData;
 
+  private MethodChannel channel;
   private byte[] restorationData;
   private MethodChannel.Result pendingResult;
   private boolean engineHasProvidedData = false;
   private boolean frameworkHasRequestedData = false;
-
-  /** Whether {@code setRestorationData(byte[])} has been called. */
-  public boolean hasRestorationDataBeenSet() {
-    return engineHasProvidedData;
-  }
 
   /** Obtain the most current restoration data that the framework has provided. */
   public byte[] getRestorationData() {
     return restorationData;
   }
 
-  /** Set the restoration data that will be sent to the framework when the framework requests it. */
+  /** Set the restoration data from which the framework will restore its state. */
   public void setRestorationData(byte[] data) {
-    if (!waitForRestorationData || engineHasProvidedData) {
-      Log.e(
-          TAG,
-          "Channel has not been configured to wait for restoration data or data has already been provided.");
-      return;
-    }
     engineHasProvidedData = true;
     if (pendingResult != null) {
       pendingResult.success(data);
       pendingResult = null;
+    } else if (frameworkHasRequestedData) {
+      channel.invokeMethod(
+          "push",
+          data,
+          new MethodChannel.Result() {
+            @Override
+            public void success(Object result) {
+              restorationData = data;
+            }
+
+            @Override
+            public void error(String errorCode, String errorMessage, Object errorDetails) {
+              Log.e(
+                  TAG,
+                  "Error "
+                      + errorCode
+                      + " while sending restoration data to framework: "
+                      + errorMessage);
+            }
+
+            @Override
+            public void notImplemented() {
+              // Nothing to do.
+            }
+          });
     } else {
       restorationData = data;
     }
@@ -111,6 +120,7 @@ public class RestorationChannel {
               result.success(null);
               break;
             case "get":
+              frameworkHasRequestedData = true;
               if (engineHasProvidedData || !waitForRestorationData) {
                 result.success(restorationData);
               } else {

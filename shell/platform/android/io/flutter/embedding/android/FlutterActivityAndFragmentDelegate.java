@@ -25,7 +25,6 @@ import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
-import io.flutter.embedding.engine.systemchannels.RestorationChannel;
 import io.flutter.plugin.platform.PlatformPlugin;
 import java.util.Arrays;
 
@@ -307,9 +306,8 @@ import java.util.Arrays;
       frameworkBundle = bundle.getByteArray(FRAMEWORK_RESTORATION_BUNDLE_KEY);
     }
 
-    final RestorationChannel restorationChannel = flutterEngine.getRestorationChannel();
-    if (host.shouldRestoreAndSaveState() && !restorationChannel.hasRestorationDataBeenSet()) {
-      restorationChannel.setRestorationData(frameworkBundle);
+    if (host.shouldRestoreAndSaveState()) {
+      flutterEngine.getRestorationChannel().setRestorationData(frameworkBundle);
     }
 
     if (host.shouldAttachEngineToActivity()) {
@@ -465,7 +463,8 @@ import java.util.Arrays;
 
     if (host.shouldRestoreAndSaveState()) {
       bundle.putByteArray(
-          FRAMEWORK_RESTORATION_BUNDLE_KEY, flutterEngine.getRestorationChannel().getRestorationData());
+          FRAMEWORK_RESTORATION_BUNDLE_KEY,
+          flutterEngine.getRestorationChannel().getRestorationData());
     }
 
     if (host.shouldAttachEngineToActivity()) {
@@ -835,9 +834,6 @@ import java.util.Arrays;
      * will be forwarded to the framework via the {@code RestorationChannel} and during {@code
      * onSaveInstanceState(Bundle)} the current framework instance state obtained from {@code
      * RestorationChannel} will be stored in the provided bundle.
-     *
-     * <p>This may only be set to true if the engine in used has the
-     * {@code FlutterEngine.willProvideRestorationData} flag set to true.
      *
      * <p>This defaults to true, unless a cached engine is used.
      */

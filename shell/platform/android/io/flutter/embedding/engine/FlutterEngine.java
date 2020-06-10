@@ -165,6 +165,13 @@ public class FlutterEngine {
   /**
    * Same as {@link #FlutterEngine(Context, String[], boolean)} with added support for configuring
    * whether the engine will receive restoration data.
+   *
+   * <p>When the engine is configured to receive restoration data {@code
+   * RestorationChannel.setRestorationData(byte[] data)} must be called to provide the restoration
+   * data. All requests to get restoration data from the framework will be blocked until that method
+   * is called. If the engine is configured to wait for restoration data, but it turns out later
+   * that no restoration data has been provided by the operating system, that method must still be
+   * called with null as an argument to indicate "no data".
    */
   public FlutterEngine(
       @NonNull Context context,
