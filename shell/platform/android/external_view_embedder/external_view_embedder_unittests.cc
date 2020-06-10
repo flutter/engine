@@ -50,7 +50,7 @@ TEST(AndroidExternalViewEmbedder, CancelFrame) {
 }
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
-  auto embedder = new AndroidExternalViewEmbedder();
+  auto embedder = new AndroidExternalViewEmbedder(nullptr);
   auto platform_thread = new fml::Thread("platform");
   auto rasterizer_thread = new fml::Thread("rasterizer");
   auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
@@ -82,7 +82,7 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
 }
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
-  auto embedder = new AndroidExternalViewEmbedder();
+  auto embedder = new AndroidExternalViewEmbedder(nullptr);
   auto platform_thread = new fml::Thread("platform");
   auto rasterizer_thread = new fml::Thread("rasterizer");
   auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
