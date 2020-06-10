@@ -54,7 +54,9 @@ public class MouseCursorPlugin {
               //  "forbidden": default
               put("grab", Integer.valueOf(PointerIcon.TYPE_GRAB));
               put("grabbing", Integer.valueOf(PointerIcon.TYPE_GRABBING));
-              put("horizontalDoubleArrow", Integer.valueOf(PointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW));
+              put(
+                  "horizontalDoubleArrow",
+                  Integer.valueOf(PointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW));
               put("verticalDoubleArrow", Integer.valueOf(PointerIcon.TYPE_VERTICAL_DOUBLE_ARROW));
             }
           };
