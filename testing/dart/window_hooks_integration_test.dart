@@ -462,10 +462,69 @@ void main() {
         0.0,   // system gesture inset left
       );
 
-    expectEquals(window.viewInsets.bottom, 400.0);
-    expectEquals(window.viewPadding.bottom, 40.0);
-    expectEquals(window.padding.bottom, 0.0);
-    expectEquals(window.physicalDepth, 100.0);
-    expectEquals(window.systemGestureInsets.bottom, 44.0);
+      expect(window.viewInsets.bottom, 400.0);
+      expect(window.viewPadding.bottom, 40.0);
+      expect(window.padding.bottom, 0.0);
+      expect(window.physicalDepth, 100.0);
+      expect(window.systemGestureInsets.bottom, 44.0);
+    });
+
+    test('Screen padding/insets/viewPadding/systemGestureInsets', () {
+      _updateScreenMetrics(
+        0,     // screen id
+        'S0',  // screen name
+        10.0,  // left
+        11.0,  // top
+        800.0, // width
+        600.0, // height
+        2.5,   // device pixel ratio
+        50.0,  // padding top
+        0.0,   // padding right
+        40.0,  // padding bottom
+        0.0,   // padding left
+        0.0,   // inset top
+        0.0,   // inset right
+        0.0,   // inset bottom
+        0.0,   // inset left
+        0.0,   // system gesture inset top
+        0.0,   // system gesture inset right
+        0.0,   // system gesture inset bottom
+        0.0,   // system gesture inset left
+      );
+
+      expect(window.screen.configuration.viewInsets.bottom, 0.0);
+      expect(window.screen.configuration.viewPadding.bottom, 40.0);
+      expect(window.screen.configuration.padding.bottom, 40.0);
+      expect(window.screen.configuration.devicePixelRatio, 2.5);
+      expect(window.screen.configuration.systemGestureInsets.bottom, 0.0);
+
+      _updateScreenMetrics(
+        0,     // window id
+        'S0',  // screen name
+        10.0,  // left
+        11.0,  // top
+        800.0, // width
+        600.0, // height
+        2.5,   // device pixel ratio
+        50.0,  // padding top
+        0.0,   // padding right
+        40.0,  // padding bottom
+        0.0,   // padding left
+        0.0,   // inset top
+        0.0,   // inset right
+        400.0, // inset bottom
+        0.0,   // inset left
+        0.0,   // system gesture inset top
+        0.0,   // system gesture inset right
+        44.0,  // system gesture inset bottom
+        0.0,   // system gesture inset left
+      );
+
+      expect(window.screen.configuration.viewInsets.bottom, 400.0);
+      expect(window.screen.configuration.viewPadding.bottom, 40.0);
+      expect(window.screen.configuration.padding.bottom, 0.0);
+      expect(window.screen.configuration.devicePixelRatio, 2.5);
+      expect(window.screen.configuration.systemGestureInsets.bottom, 44.0);
+    });
   });
 }

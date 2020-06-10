@@ -585,6 +585,9 @@ abstract class FlutterView {
   /// The configuration of this view.
   ViewConfiguration/*!*/ get viewConfiguration;
 
+  /// The [Screen] that this [FlutterView] is displayed on.
+  Screen get screen => viewConfiguration.screen;
+
   /// The number of device pixels for each logical pixel for the screen this
   /// view is displayed on.
   ///
