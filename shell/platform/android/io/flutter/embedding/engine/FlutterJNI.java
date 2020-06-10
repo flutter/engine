@@ -821,7 +821,11 @@ public class FlutterJNI {
     String[] output = new String[localeDataLength];
     output[0] = result.getLanguage();
     output[1] = result.getCountry();
-    output[2] = result.getScript();
+    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+      output[2] = result.getScript();
+    } else {
+      output[2] = "";
+    }
     return output;
   }
 
