@@ -13,7 +13,7 @@ namespace flutter {
 
 AndroidSurfaceGL::AndroidSurfaceGL(
     std::shared_ptr<AndroidContext> android_context,
-    std::unique_ptr<PlatformViewAndroidJNI> jni_facade)
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
     : native_window_(nullptr),
       onscreen_surface_(nullptr),
       offscreen_surface_(nullptr) {
@@ -25,7 +25,7 @@ AndroidSurfaceGL::AndroidSurfaceGL(
     offscreen_surface_ = nullptr;
   }
   external_view_embedder_ =
-      std::make_unique<AndroidExternalViewEmbedder>(std::move(jni_facade));
+      std::make_unique<AndroidExternalViewEmbedder>(jni_facade);
 }
 
 AndroidSurfaceGL::~AndroidSurfaceGL() {

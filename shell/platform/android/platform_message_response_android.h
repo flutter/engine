@@ -24,15 +24,14 @@ class PlatformMessageResponseAndroid : public flutter::PlatformMessageResponse {
  private:
   PlatformMessageResponseAndroid(
       int response_id,
-      std::unique_ptr<PlatformViewAndroidJNI> jni_facade,
+      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
       fml::RefPtr<fml::TaskRunner> platform_task_runner);
 
   ~PlatformMessageResponseAndroid() override;
 
-  int response_id_;
-  fml::jni::JavaObjectWeakGlobalRef weak_java_object_;
-  std::unique_ptr<PlatformViewAndroidJNI> jni_facade_;
-  fml::RefPtr<fml::TaskRunner> platform_task_runner_;
+  const int response_id_;
+  const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
+  const fml::RefPtr<fml::TaskRunner> platform_task_runner_;
 
   FML_FRIEND_MAKE_REF_COUNTED(PlatformMessageResponseAndroid);
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformMessageResponseAndroid);

@@ -22,10 +22,9 @@ namespace flutter {
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
-    std::unique_ptr<PlatformViewAndroidJNI> jni_facade,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     bool use_software_rendering)
-    : PlatformView(delegate, std::move(task_runners)),
-      jni_facade_(std::move(jni_facade)) {
+    : PlatformView(delegate, std::move(task_runners)), jni_facade_(jni_facade) {
   std::shared_ptr<AndroidContext> android_context;
   if (use_software_rendering) {
     android_context = AndroidContext::Create(AndroidRenderingAPI::kSoftware);
@@ -36,8 +35,7 @@ PlatformViewAndroid::PlatformViewAndroid(
     android_context = AndroidContext::Create(AndroidRenderingAPI::kOpenGLES);
 #endif  // SHELL_ENABLE_VULKAN
   }
-  android_surface_ =
-      AndroidSurface::Create(android_context, std::move(jni_facade));
+  android_surface_ = AndroidSurface::Create(android_context, jni_facade);
   FML_CHECK(android_surface_)
       << "Could not create an OpenGL, Vulkan or Software surface to setup "
          "rendering.";
@@ -46,9 +44,9 @@ PlatformViewAndroid::PlatformViewAndroid(
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
-    std::unique_ptr<PlatformViewAndroidJNI> jni_facade)
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
     : PlatformView(delegate, std::move(task_runners)),
-      jni_facade_(std::move(jni_facade)) {}
+      jni_facade_(jni_facade) {}
 
 PlatformViewAndroid::~PlatformViewAndroid() = default;
 
@@ -113,8 +111,7 @@ void PlatformViewAndroid::DispatchPlatformMessage(JNIEnv* env,
   fml::RefPtr<flutter::PlatformMessageResponse> response;
   if (response_id) {
     response = fml::MakeRefCounted<PlatformMessageResponseAndroid>(
-        response_id, std::move(jni_facade_),
-        task_runners_.GetPlatformTaskRunner());
+        response_id, jni_facade_, task_runners_.GetPlatformTaskRunner());
   }
 
   PlatformView::DispatchPlatformMessage(
@@ -128,8 +125,7 @@ void PlatformViewAndroid::DispatchEmptyPlatformMessage(JNIEnv* env,
   fml::RefPtr<flutter::PlatformMessageResponse> response;
   if (response_id) {
     response = fml::MakeRefCounted<PlatformMessageResponseAndroid>(
-        response_id, std::move(jni_facade_),
-        task_runners_.GetPlatformTaskRunner());
+        response_id, jni_facade_, task_runners_.GetPlatformTaskRunner());
   }
 
   PlatformView::DispatchPlatformMessage(

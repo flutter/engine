@@ -15,7 +15,7 @@ namespace flutter {
 class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
  public:
   AndroidExternalViewEmbedder(
-      std::unique_ptr<PlatformViewAndroidJNI> jni_facade);
+      std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
@@ -53,7 +53,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
  private:
   // Allows to call methods in Java.
-  std::unique_ptr<PlatformViewAndroidJNI> jni_facade_;
+  const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
 
   // The number of frames the rasterizer task runner will continue
   // to run on the platform thread after no platform view is rendered.

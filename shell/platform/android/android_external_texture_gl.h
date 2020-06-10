@@ -17,7 +17,7 @@ class AndroidExternalTextureGL : public flutter::Texture {
   AndroidExternalTextureGL(
       int64_t id,
       const fml::jni::JavaObjectWeakGlobalRef& surface_texture,
-      std::unique_ptr<PlatformViewAndroidJNI> jni_facade);
+      std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   ~AndroidExternalTextureGL() override;
 
@@ -45,7 +45,7 @@ class AndroidExternalTextureGL : public flutter::Texture {
 
   enum class AttachmentState { uninitialized, attached, detached };
 
-  std::unique_ptr<PlatformViewAndroidJNI> jni_facade_;
+  std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
 
   fml::jni::JavaObjectWeakGlobalRef surface_texture_;
 

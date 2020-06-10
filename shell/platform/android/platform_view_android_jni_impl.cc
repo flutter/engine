@@ -98,11 +98,10 @@ static jlong AttachJNI(JNIEnv* env,
                        jobject flutterJNI,
                        jboolean is_background_view) {
   fml::jni::JavaObjectWeakGlobalRef java_object(env, flutterJNI);
-  std::unique_ptr<PlatformViewAndroidJNI> jni_facade =
-      std::make_unique<PlatformViewAndroidJNIImpl>(java_object);
+  std::shared_ptr<PlatformViewAndroidJNI> jni_facade =
+      std::make_shared<PlatformViewAndroidJNIImpl>(java_object);
   auto shell_holder = std::make_unique<AndroidShellHolder>(
-      FlutterMain::Get().GetSettings(), std::move(jni_facade),
-      is_background_view);
+      FlutterMain::Get().GetSettings(), jni_facade, is_background_view);
   if (shell_holder->IsValid()) {
     return reinterpret_cast<jlong>(shell_holder.release());
   } else {
