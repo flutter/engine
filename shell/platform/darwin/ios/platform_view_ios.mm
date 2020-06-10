@@ -191,7 +191,7 @@ void PlatformViewIOS::OnPreEngineRestart() const {
   [owner_controller_.get() platformViewsController]->Reset();
 }
 
-std::vector<std::string>& PlatformViewIOS::ComputePlatformResolvedLocales(
+std::unique_ptr<std::vector<std::string>> PlatformViewIOS::ComputePlatformResolvedLocales(
     const std::vector<std::string>& supported_locale_data) {
   size_t localeDataLength = 3;
   NSMutableArray<NSString*>* supported_locale_identifiers =
@@ -208,21 +208,20 @@ std::vector<std::string>& PlatformViewIOS::ComputePlatformResolvedLocales(
       [NSBundle preferredLocalizationsFromArray:supported_locale_identifiers];
 
   // Output format should be either empty or 3 strings for language, country, and script.
-  platform_resolved_locale_.clear();
+  std::unique_ptr<std::vector<std::string>> out = std::make_unique<std::vector<std::string>>();
 
   if (result != nullptr && [result count] > 0) {
     if (@available(ios 10.0, *)) {
       NSLocale* locale = [NSLocale localeWithLocaleIdentifier:[result firstObject]];
       NSString* languageCode = [locale languageCode];
-      platform_resolved_locale_.emplace_back(languageCode == nullptr ? ""
-                                                                     : languageCode.UTF8String);
+      out->emplace_back(languageCode == nullptr ? "" : languageCode.UTF8String);
       NSString* countryCode = [locale countryCode];
-      platform_resolved_locale_.emplace_back(countryCode == nullptr ? "" : countryCode.UTF8String);
+      out->emplace_back(countryCode == nullptr ? "" : countryCode.UTF8String);
       NSString* scriptCode = [locale scriptCode];
-      platform_resolved_locale_.emplace_back(scriptCode == nullptr ? "" : scriptCode.UTF8String);
+      out->emplace_back(scriptCode == nullptr ? "" : scriptCode.UTF8String);
     }
   }
-  return platform_resolved_locale_;
+  return out;
 }
 
 PlatformViewIOS::ScopedObserver::ScopedObserver() : observer_(nil) {}
