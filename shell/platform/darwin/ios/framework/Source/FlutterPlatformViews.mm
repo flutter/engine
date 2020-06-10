@@ -14,9 +14,9 @@
 #include <string>
 
 #include "FlutterPlatformViews_Internal.h"
+#include "flutter/flow/persistent_cache.h"
 #include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 
 namespace flutter {

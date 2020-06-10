@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/common/shell_test_platform_view_vulkan.h"
-#include "flutter/shell/common/persistent_cache.h"
+#include "flutter/flow/persistent_cache.h"
 #include "flutter/vulkan/vulkan_utilities.h"
 
 namespace flutter {

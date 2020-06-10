@@ -54,6 +54,8 @@ source_set_maybe_fuchsia_legacy("flow") {
     "matrix_decomposition.h",
     "paint_utils.cc",
     "paint_utils.h",
+    "persistent_cache.cc",
+    "persistent_cache.h",
     "raster_cache.cc",
     "raster_cache.h",
     "raster_cache_key.cc",
@@ -73,8 +75,9 @@ source_set_maybe_fuchsia_legacy("flow") {
   public_configs = [ "//flutter:config" ]
 
   deps = [
-    "//flutter/common",
+    "//flutter/assets",
     "//flutter/fml",
+    "//third_party/rapidjson",
     "//third_party/skia",
   ]
 
@@ -151,6 +154,7 @@ if (enable_unittests) {
       "layers/transform_layer_unittests.cc",
       "matrix_decomposition_unittests.cc",
       "mutators_stack_unittests.cc",
+      "persistent_cache_unittests.cc",
       "raster_cache_unittests.cc",
       "rtree_unittests.cc",
       "skia_gpu_object_unittests.cc",
@@ -161,6 +165,7 @@ if (enable_unittests) {
 
     deps = [
       ":flow_fixtures",
+      "//flutter/assets",
       "//flutter/fml",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",

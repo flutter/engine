@@ -27,7 +27,7 @@ enum class FilePermission {
   kReadWrite,
 };
 
-std::string CreateTemporaryDirectory();
+std::pair<std::string, fml::UniqueFD> CreateTemporaryDirectory();
 
 /// This can open a directory on POSIX, but not on Windows.
 fml::UniqueFD OpenFile(const char* path,

@@ -9,11 +9,11 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
+#include "flutter/flow/persistent_cache.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/log_settings.h"
 #include "flutter/fml/unique_fd.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/serialization_callbacks.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/switches.h"
@@ -42,8 +42,8 @@ class SkpWarmupTest : public ShellTest {
   void TestWarmup(const SkISize& draw_size, const LayerTreeBuilder& builder) {
     // Create a temp dir to store the persistent cache
     fml::ScopedTemporaryDirectory dir;
+    PersistentCache::ClearCacheForProcess();
     PersistentCache::SetCacheDirectoryPath(dir.path());
-    PersistentCache::ResetCacheForProcess();
 
     auto settings = CreateSettingsForFixture();
     settings.cache_sksl = true;
@@ -116,8 +116,8 @@ class SkpWarmupTest : public ShellTest {
     // Reinitialize shell with clean cache and verify that drawing again dumps
     // the same number of shaders
     fml::RemoveFilesInDirectory(dir.fd());
-    PersistentCache::ResetCacheForProcess();
     DestroyShell(std::move(shell));
+    PersistentCache::ClearCacheForProcess();
     auto config2 = RunConfiguration::InferFromSettings(settings);
     config2.SetEntrypoint("emptyMain");
     shell = CreateShell(settings);
@@ -134,10 +134,12 @@ class SkpWarmupTest : public ShellTest {
     skp_count = 0;
     ASSERT_EQ(second_skp_count, first_skp_count);
 
-    // Reinitialize shell and draw deserialized skps to warm up shaders
+    // Cleanup the first shell run.
     fml::RemoveFilesInDirectory(dir.fd());
-    PersistentCache::ResetCacheForProcess();
     DestroyShell(std::move(shell));
+    PersistentCache::ClearCacheForProcess();
+
+    // Reinitialize shell and draw deserialized skps to warm up shaders
     auto config3 = RunConfiguration::InferFromSettings(settings);
     config3.SetEntrypoint("emptyMain");
     shell = CreateShell(settings);

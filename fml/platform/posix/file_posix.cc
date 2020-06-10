@@ -20,13 +20,20 @@
 
 namespace fml {
 
-std::string CreateTemporaryDirectory() {
+std::pair<std::string, fml::UniqueFD> CreateTemporaryDirectory() {
   char directory_name[] = "/tmp/flutter_XXXXXXXX";
-  auto* result = ::mkdtemp(directory_name);
-  if (result == nullptr) {
-    return "";
+  auto* path = ::mkdtemp(directory_name);
+  if (path == nullptr) {
+    return std::make_pair("", fml::UniqueFD{});
   }
-  return {result};
+
+  auto dir_fd = OpenDirectory(path, false, FilePermission::kRead);
+  if (!dir_fd.is_valid()) {
+    FML_DLOG(ERROR) << "Could not get temporary directory FD at " << path;
+    return std::make_pair("", fml::UniqueFD{});
+  }
+
+  return std::make_pair(path, std::move(dir_fd));
 }
 
 static int ToPosixAccessFlags(FilePermission permission) {

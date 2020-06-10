@@ -44,10 +44,11 @@ fml::UniqueFD CreateDirectory(const fml::UniqueFD& base_directory,
   return CreateDirectory(base_directory, components, permission, 0);
 }
 
-ScopedTemporaryDirectory::ScopedTemporaryDirectory()
-    : path_(CreateTemporaryDirectory()) {
-  if (path_ != "") {
-    dir_fd_ = OpenDirectory(path_.c_str(), false, FilePermission::kRead);
+ScopedTemporaryDirectory::ScopedTemporaryDirectory() {
+  auto [path, dir_fd] = CreateTemporaryDirectory();
+  if (path != "" && dir_fd.is_valid()) {
+    path_ = std::move(path);
+    dir_fd_ = std::move(dir_fd);
   }
 }
 

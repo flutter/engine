@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/flow/persistent_cache.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/icu_util.h"
 #include "flutter/fml/log_settings.h"
@@ -22,13 +23,13 @@
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/engine.h"
-#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+#include "flutter/shell/version/version.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
+#include "third_party/rapidjson/include/rapidjson/stringbuffer.h"
+#include "third_party/rapidjson/include/rapidjson/writer.h"
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
@@ -256,14 +257,10 @@ std::unique_ptr<Shell> Shell::Create(
     Settings settings,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
-  PerformInitializationTasks(settings);
-  PersistentCache::SetCacheSkSL(settings.cache_sksl);
-
   TRACE_EVENT0("flutter", "Shell::Create");
 
   auto vm = DartVMRef::Create(settings);
   FML_CHECK(vm) << "Must be able to initialize the VM.";
-
   auto vm_data = vm->GetVMData();
 
   return Shell::Create(std::move(task_runners),        //
@@ -284,15 +281,14 @@ std::unique_ptr<Shell> Shell::Create(
     const Shell::CreateCallback<PlatformView>& on_create_platform_view,
     const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
     DartVMRef vm) {
-  PerformInitializationTasks(settings);
-  PersistentCache::SetCacheSkSL(settings.cache_sksl);
-
   TRACE_EVENT0("flutter", "Shell::CreateWithSnapshots");
 
   if (!task_runners.IsValid() || !on_create_platform_view ||
       !on_create_rasterizer) {
     return nullptr;
   }
+
+  PerformInitializationTasks(settings);
 
   fml::AutoResetWaitableEvent latch;
   std::unique_ptr<Shell> shell;
@@ -342,8 +338,21 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
             std::make_unique<fml::TaskRunnerAffineWeakPtrFactory<Shell>>(this);
       }));
 
-  // Install service protocol handlers.
+  // Configure the PersistentCache.
+  std::stringstream version;
+  version << "engine-" << GetFlutterEngineVersion() << "_skia-"
+          << GetSkiaVersion();
+  PersistentCache::SetCacheVersion(version.str());
+  PersistentCache::SetCacheSkSL(settings_.cache_sksl);
+  PersistentCache::GetCacheForProcess()->SetIsDumpingSkp(
+      settings_.dump_skp_on_shader_compilation);
+  PersistentCache::GetCacheForProcess()->AddWorkerTaskRunner(
+      task_runners_.GetIOTaskRunner());
+  if (settings_.purge_persistent_cache) {
+    PersistentCache::GetCacheForProcess()->Purge();
+  }
 
+  // Install service protocol handlers.
   service_protocol_handlers_[ServiceProtocol::kScreenshotExtensionName] = {
       task_runners_.GetRasterTaskRunner(),
       std::bind(&Shell::OnServiceProtocolScreenshot, this,
@@ -559,16 +568,6 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   is_setup_ = true;
 
   vm_->GetServiceProtocol()->AddHandler(this, GetServiceProtocolDescription());
-
-  PersistentCache::GetCacheForProcess()->AddWorkerTaskRunner(
-      task_runners_.GetIOTaskRunner());
-
-  PersistentCache::GetCacheForProcess()->SetIsDumpingSkp(
-      settings_.dump_skp_on_shader_compilation);
-
-  if (settings_.purge_persistent_cache) {
-    PersistentCache::GetCacheForProcess()->Purge();
-  }
 
   // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
   // same thread as it was created on. Shell is constructed on the platform

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_COMMON_PERSISTENT_CACHE_H_
-#define FLUTTER_SHELL_COMMON_PERSISTENT_CACHE_H_
+#ifndef FLUTTER_FLOW_PERSISTENT_CACHE_H_
+#define FLUTTER_FLOW_PERSISTENT_CACHE_H_
 
 #include <memory>
 #include <mutex>
@@ -31,11 +31,16 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   static bool gIsReadOnly;
 
   static PersistentCache* GetCacheForProcess();
-  static void ResetCacheForProcess();
+  static void ClearCacheForProcess();
+  static void ResetCacheForProcess();  // Rec-creates the cache.
 
   // This must be called before |GetCacheForProcess|. Otherwise, it won't
   // affect the cache directory returned by |GetCacheForProcess|.
-  static void SetCacheDirectoryPath(std::string path);
+  static void SetCacheDirectoryPath(const std::string& path);
+
+  // This must be called before |GetCacheForProcess|. Otherwise, it won't
+  // affect the cache directory returned by |GetCacheForProcess|.
+  static void SetCacheVersion(const std::string& version);
 
   // Convert a binary SkData key into a Base32 encoded string.
   //
@@ -83,6 +88,7 @@ class PersistentCache : public GrContextOptions::PersistentCache {
 
  private:
   static std::string cache_base_path_;
+  static std::string cache_version_;
 
   static std::shared_ptr<AssetManager> asset_manager_;
 
@@ -125,4 +131,4 @@ class PersistentCache : public GrContextOptions::PersistentCache {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_COMMON_PERSISTENT_CACHE_H_
+#endif  // FLUTTER_FLOW_PERSISTENT_CACHE_H_

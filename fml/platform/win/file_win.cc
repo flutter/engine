@@ -85,12 +85,12 @@ static DWORD GetFileAttributesForUtf8Path(const fml::UniqueFD& base_directory,
   return GetFileAttributesForUtf8Path(full_path.c_str());
 }
 
-std::string CreateTemporaryDirectory() {
+std::pair<std::string, fml::UniqueFD> CreateTemporaryDirectory() {
   // Get the system temporary directory.
   auto temp_dir_container = GetTemporaryDirectoryPath();
   if (temp_dir_container.size() == 0) {
     FML_DLOG(ERROR) << "Could not get system temporary directory.";
-    return {};
+    return std::make_pair("", fml::UniqueFD{});
   }
 
   // Create a UUID.
@@ -98,14 +98,14 @@ std::string CreateTemporaryDirectory() {
   RPC_STATUS status = UuidCreateSequential(&uuid);
   if (status != RPC_S_OK && status != RPC_S_UUID_LOCAL_ONLY) {
     FML_DLOG(ERROR) << "Could not create UUID";
-    return {};
+    return std::make_pair("", fml::UniqueFD{});
   }
 
   RPC_WSTR uuid_string;
   status = UuidToString(&uuid, &uuid_string);
   if (status != RPC_S_OK) {
     FML_DLOG(ERROR) << "Could not create UUID to string.";
-    return {};
+    return std::make_pair("", fml::UniqueFD{});
   }
 
   std::wstring uuid_str(reinterpret_cast<wchar_t*>(uuid_string));
@@ -122,10 +122,11 @@ std::string CreateTemporaryDirectory() {
   if (!dir_fd.is_valid()) {
     FML_DLOG(ERROR) << "Could not get temporary directory FD. "
                     << GetLastErrorMessage();
-    return {};
+    return std::make_pair("", fml::UniqueFD{});
   }
 
-  return WideStringToString(std::move(temp_dir));
+  return std::make_pair(WideStringToString(std::move(temp_dir)),
+                        std::move(dir_fd));
 }
 
 fml::UniqueFD OpenFile(const fml::UniqueFD& base_directory,

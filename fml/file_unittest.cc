@@ -44,10 +44,7 @@ static std::string ReadStringFromFile(const fml::UniqueFD& fd) {
 }
 
 TEST(FileTest, CreateTemporaryAndUnlink) {
-  auto dir_name = fml::CreateTemporaryDirectory();
-  ASSERT_NE(dir_name, "");
-  auto dir =
-      fml::OpenDirectory(dir_name.c_str(), false, fml::FilePermission::kRead);
+  auto [dir_name, dir] = fml::CreateTemporaryDirectory();
   ASSERT_TRUE(dir.is_valid());
   dir.reset();
   ASSERT_TRUE(fml::UnlinkDirectory(dir_name.c_str()));

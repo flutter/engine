@@ -11,10 +11,7 @@ source_set("assets") {
     "directory_asset_bundle.h",
   ]
 
-  deps = [
-    "//flutter/common",
-    "//flutter/fml",
-  ]
+  deps = [ "//flutter/fml" ]
 
   public_configs = [ "//flutter:config" ]
 }

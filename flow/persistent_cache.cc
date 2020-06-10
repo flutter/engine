@@ -2,15 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/common/persistent_cache.h"
+#include "flutter/flow/persistent_cache.h"
 
 #include <future>
 #include <memory>
 #include <string>
 #include <string_view>
-
-#include "rapidjson/document.h"
-#include "third_party/skia/include/utils/SkBase64.h"
 
 #include "flutter/fml/base32.h"
 #include "flutter/fml/file.h"
@@ -19,11 +16,13 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/version/version.h"
+#include "third_party/rapidjson/include/rapidjson/document.h"
+#include "third_party/skia/include/utils/SkBase64.h"
 
 namespace flutter {
 
 std::string PersistentCache::cache_base_path_;
+std::string PersistentCache::cache_version_;
 
 std::shared_ptr<AssetManager> PersistentCache::asset_manager_;
 
@@ -69,14 +68,24 @@ PersistentCache* PersistentCache::GetCacheForProcess() {
   return gPersistentCache.get();
 }
 
+void PersistentCache::ClearCacheForProcess() {
+  std::scoped_lock lock(instance_mutex_);
+  gPersistentCache.reset(nullptr);
+  strategy_set_ = false;
+}
+
 void PersistentCache::ResetCacheForProcess() {
   std::scoped_lock lock(instance_mutex_);
   gPersistentCache.reset(new PersistentCache(gIsReadOnly));
   strategy_set_ = false;
 }
 
-void PersistentCache::SetCacheDirectoryPath(std::string path) {
+void PersistentCache::SetCacheDirectoryPath(const std::string& path) {
   cache_base_path_ = path;
+}
+
+void PersistentCache::SetCacheVersion(const std::string& version) {
+  cache_version_ = version;
 }
 
 bool PersistentCache::Purge() {
@@ -100,31 +109,29 @@ bool PersistentCache::Purge() {
 
 namespace {
 
-constexpr char kEngineComponent[] = "flutter_engine";
-
-static void FreeOldCacheDirectory(const fml::UniqueFD& cache_base_dir) {
-  fml::UniqueFD engine_dir =
-      fml::OpenDirectoryReadOnly(cache_base_dir, kEngineComponent);
-  if (!engine_dir.is_valid()) {
-    return;
-  }
-  fml::VisitFiles(engine_dir, [](const fml::UniqueFD& directory,
-                                 const std::string& filename) {
-    if (filename != GetFlutterEngineVersion()) {
-      auto dir = fml::OpenDirectory(directory, filename.c_str(), false,
-                                    fml::FilePermission::kReadWrite);
-      if (dir.is_valid()) {
-        fml::RemoveDirectoryRecursively(directory, filename.c_str());
-      }
-    }
-    return true;
-  });
+static void FreeOldCacheDirectory(const fml::UniqueFD& cache_base_dir,
+                                  const std::string& cache_version) {
+  fml::VisitFiles(
+      cache_base_dir, [cache_version](const fml::UniqueFD& directory,
+                                      const std::string& filename) {
+        if (filename != cache_version) {
+          auto dir = fml::OpenDirectory(directory, filename.c_str(), false,
+                                        fml::FilePermission::kReadWrite);
+          if (dir.is_valid()) {
+            fml::RemoveDirectoryRecursively(directory, filename.c_str());
+          }
+        }
+        return true;
+      });
 }
 
 static std::shared_ptr<fml::UniqueFD> MakeCacheDirectory(
     const std::string& global_cache_base_path,
+    const std::string& cache_version,
     bool read_only,
     bool cache_sksl) {
+  FML_CHECK(cache_version.length()) << "Cache version unspecified";
+
   fml::UniqueFD cache_base_dir;
   if (global_cache_base_path.length()) {
     cache_base_dir = fml::OpenDirectory(global_cache_base_path.c_str(), false,
@@ -134,9 +141,8 @@ static std::shared_ptr<fml::UniqueFD> MakeCacheDirectory(
   }
 
   if (cache_base_dir.is_valid()) {
-    FreeOldCacheDirectory(cache_base_dir);
-    std::vector<std::string> components = {
-        kEngineComponent, GetFlutterEngineVersion(), "skia", GetSkiaVersion()};
+    FreeOldCacheDirectory(cache_base_dir, cache_version);
+    std::vector<std::string> components = {cache_version};
     if (cache_sksl) {
       components.push_back(PersistentCache::kSkSLSubdirName);
     }
@@ -198,9 +204,9 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
     mapping = asset_manager_->GetAsMapping(kAssetFileName);
   }
   if (mapping == nullptr) {
-    FML_LOG(INFO) << "No sksl asset found.";
+    FML_DLOG(INFO) << "No sksl asset found.";
   } else {
-    FML_LOG(INFO) << "Found sksl asset. Loading SkSLs from it...";
+    FML_DLOG(INFO) << "Found sksl asset. Loading SkSLs from it...";
     rapidjson::Document json_doc;
     rapidjson::ParseResult parse_result =
         json_doc.Parse(reinterpret_cast<const char*>(mapping->GetMapping()),
@@ -225,9 +231,14 @@ std::vector<PersistentCache::SkSLCache> PersistentCache::LoadSkSLs() {
 
 PersistentCache::PersistentCache(bool read_only)
     : is_read_only_(read_only),
-      cache_directory_(MakeCacheDirectory(cache_base_path_, read_only, false)),
-      sksl_cache_directory_(
-          MakeCacheDirectory(cache_base_path_, read_only, true)) {
+      cache_directory_(MakeCacheDirectory(cache_base_path_,
+                                          cache_version_,
+                                          read_only,
+                                          false)),
+      sksl_cache_directory_(MakeCacheDirectory(cache_base_path_,
+                                               cache_version_,
+                                               read_only,
+                                               true)) {
   if (!IsValid()) {
     FML_LOG(WARNING) << "Could not acquire the persistent cache directory. "
                         "Caching of GPU resources on disk is disabled.";
@@ -341,7 +352,7 @@ void PersistentCache::DumpSkp(const SkData& data) {
   auto ticks = fml::TimePoint::Now().ToEpochDelta().ToNanoseconds();
   name_stream << "shader_dump_" << std::to_string(ticks) << ".skp";
   std::string file_name = name_stream.str();
-  FML_LOG(INFO) << "Dumping " << file_name;
+  FML_DLOG(INFO) << "Dumping " << file_name;
   auto mapping = std::make_unique<fml::DataMapping>(
       std::vector<uint8_t>{data.bytes(), data.bytes() + data.size()});
   PersistentCacheStore(GetWorkerTaskRunner(), cache_directory_,
