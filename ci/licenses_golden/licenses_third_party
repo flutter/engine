@@ -1,4 +1,4 @@
-Signature: 8e6c99bc5c2d237d402bdd133ca68688
+Signature: c31f641e71533eef9fd3d50ea22f7dc5
 
 UNUSED LICENSES:
 
@@ -9059,6 +9059,7 @@ FILE: ../../../third_party/dart/sdk/lib/developer/extension.dart
 FILE: ../../../third_party/dart/sdk/lib/developer/timeline.dart
 FILE: ../../../third_party/dart/sdk/lib/io/io_resource_info.dart
 FILE: ../../../third_party/dart/sdk/lib/io/security_context.dart
+FILE: ../../../third_party/dart/sdk/lib/js/_js_annotations.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/asset.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/vmservice.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/_internal/js_dev_runtime/patch/developer_patch.dart
@@ -9084,6 +9085,7 @@ FILE: ../../../third_party/dart/sdk_nnbd/lib/developer/extension.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/developer/timeline.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/io/io_resource_info.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/io/security_context.dart
+FILE: ../../../third_party/dart/sdk_nnbd/lib/js/_js_annotations.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/vmservice/asset.dart
 FILE: ../../../third_party/dart/sdk_nnbd/lib/vmservice/vmservice.dart
 ----------------------------------------------------------------------------------------------------
