@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
+import android.os.Build;
 import android.os.Looper;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -797,17 +798,21 @@ public class FlutterJNI {
       String languageCode = strings[i + 0];
       String countryCode = strings[i + 1];
       String scriptCode = strings[i + 2];
-      Locale.Builder localeBuilder = new Locale.Builder();
-      if (!languageCode.isEmpty()) {
-        localeBuilder.setLanguage(languageCode);
+      if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+        Locale.Builder localeBuilder = new Locale.Builder();
+        if (!languageCode.isEmpty()) {
+          localeBuilder.setLanguage(languageCode);
+        }
+        if (!countryCode.isEmpty()) {
+          localeBuilder.setRegion(countryCode);
+        }
+        if (!scriptCode.isEmpty()) {
+          localeBuilder.setScript(scriptCode);
+        }
+        supportedLocales.add(localeBuilder.build());
+      } else {
+        supportedLocales.add(new Locale(languageCode, countryCode));
       }
-      if (!countryCode.isEmpty()) {
-        localeBuilder.setRegion(countryCode);
-      }
-      if (!scriptCode.isEmpty()) {
-        localeBuilder.setScript(scriptCode);
-      }
-      supportedLocales.add(localeBuilder.build());
     }
     Locale result = LocalizationPlugin.resolveNativeLocale(supportedLocales);
     if (result == null) {
