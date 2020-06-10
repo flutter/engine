@@ -312,6 +312,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (NSString*)accessibilityHint {
+  NSLog(@"hello");
   if (![self isAccessibilityBridgeAlive])
     return nil;
 
