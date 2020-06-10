@@ -58,6 +58,10 @@ void FlutterViewDisplayOverlaySurface(JNIEnv* env,
                                       jint width,
                                       jint height);
 
+void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId);
+
+void SurfaceTextureUpdateTexImage(JNIEnv* env, jobject obj);
+
 void SurfaceTextureGetTransformMatrix(JNIEnv* env,
                                       jobject obj,
                                       jfloatArray result);
