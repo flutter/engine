@@ -173,6 +173,7 @@ public class FlutterJNI {
   @Nullable private Long nativePlatformViewId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;
   @Nullable private PlatformMessageHandler platformMessageHandler;
+  @Nullable private LocalizationPlugin localizationPlugin;
 
   @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
@@ -789,9 +790,21 @@ public class FlutterJNI {
 
   // ----- Start Localization Support ----
 
+  /**
+   * Sets the localization plugin that is used in various localization methods.
+   */
+  @UiThread
+  public void setLocalizationPlugin(@Nullable LocalizationPlugin localizationPlugin) {
+    ensureRunningOnMainThread();
+    this.localizationPlugin = localizationPlugin;
+  }
+
   /** Invoked by native to obtain the results of Android's locale resolution algorithm. */
   @SuppressWarnings("unused")
   private String[] computePlatformResolvedLocale(@NonNull String[] strings) {
+    if (localizationPlugin == null) {
+      return new String[0];
+    }
     List<Locale> supportedLocales = new ArrayList<Locale>();
     final int localeDataLength = 3;
     for (int i = 0; i < strings.length; i += localeDataLength) {
@@ -814,7 +827,7 @@ public class FlutterJNI {
         supportedLocales.add(new Locale(languageCode, countryCode));
       }
     }
-    Locale result = LocalizationPlugin.resolveNativeLocale(supportedLocales);
+    Locale result = localizationPlugin.resolveNativeLocale(supportedLocales);
     if (result == null) {
       return new String[0];
     }

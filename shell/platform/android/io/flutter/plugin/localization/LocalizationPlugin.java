@@ -20,23 +20,18 @@ public class LocalizationPlugin {
   @NonNull private final LocalizationChannel localizationChannel;
   @NonNull private final Context context;
 
-  // This should always be initialized before being used by resolveNativeLocale
-  // since the embedder starts the engine which in turn calls resolveNativeLocale.
-  private static LocalizationPlugin instance;
-
   public LocalizationPlugin(
       @NonNull Context context, @NonNull LocalizationChannel localizationChannel) {
 
     this.context = context;
     this.localizationChannel = localizationChannel;
-    instance = this;
   }
 
-  public static Locale resolveNativeLocale(List<Locale> supportedLocales) {
+  public Locale resolveNativeLocale(List<Locale> supportedLocales) {
     Locale platformResolvedLocale = null;
     if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
       List<Locale.LanguageRange> languageRanges = new ArrayList<>();
-      LocaleList localeList = instance.context.getResources().getConfiguration().getLocales();
+      LocaleList localeList = context.getResources().getConfiguration().getLocales();
       int localeCount = localeList.size();
       for (int index = 0; index < localeCount; ++index) {
         Locale locale = localeList.get(index);

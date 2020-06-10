@@ -237,6 +237,7 @@ public class FlutterView extends SurfaceView
         .getPluginRegistry()
         .getPlatformViewsController()
         .attachTextInputPlugin(mTextInputPlugin);
+    mNativeView.getFlutterJNI().setLocalizationPlugin(mLocalizationPlugin);
 
     // Send initial platform information to Dart
     mLocalizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());

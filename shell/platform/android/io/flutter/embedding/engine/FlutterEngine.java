@@ -340,6 +340,12 @@ public class FlutterEngine {
     return renderer;
   }
 
+  /** The FlutterJNI associated with this engine. */
+  @NonNull
+  public FlutterJNI getFlutterJNI() {
+    return flutterJNI;
+  }
+
   /** System channel that sends accessibility requests and events from Flutter to Android. */
   @NonNull
   public AccessibilityChannel getAccessibilityChannel() {
