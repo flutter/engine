@@ -188,56 +188,6 @@ class ScreenConfiguration {
   final WindowPadding/*!*/ padding;
 }
 
-
-class ViewConfigurationRequest {
-  const ViewConfigurationRequest({
-    this.screen,
-    this.geometry,
-    this.visible,
-    this.order,
-    this.orderView,
-  }) : assert(orderView != null || (order != ViewOrder.aboveOther && order != ViewOrder.belowOther)),
-        assert(orderView == null || (order != ViewOrder.top && order != ViewOrder.bottom)),
-        assert(screen != null || geometry != null || order != null || visible != null, 'At least one parameter must be non-null');
-
-  ViewConfigurationRequest copyWith({
-    Screen/*?*/ screen,
-    Rect/*?*/ geometry,
-    bool/*?*/ visible,
-    ViewOrder/*?*/ order,
-    FlutterView/*?*/ orderView,
-  }) {
-    return ViewConfigurationRequest(
-      screen: screen ?? this.screen,
-      geometry: geometry ?? this.geometry,
-      visible: visible ?? this.visible,
-      order: order ?? this.order,
-      orderView: orderView ?? this.orderView,
-    );
-  }
-
-  final Screen/*?*/ screen;
-  final Rect/*?*/ geometry;
-  final bool/*?*/ visible;
-  final ViewOrder/*?*/ order;
-  final FlutterView/*?*/ orderView;
-
-  @override
-  String toString() {
-    return '$runtimeType[screen: $screen, geometry: $geometry, order: $order]';
-  }
-}
-
-enum ViewOrder {
-  aboveOther,
-
-  belowOther,
-
-  top,
-
-  bottom,
-}
-
 class ViewConfiguration {
   const ViewConfiguration({
     this.screen,

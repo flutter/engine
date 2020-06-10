@@ -173,10 +173,6 @@ class EngineSingletonFlutterWindow extends ui.SingletonFlutterWindow {
 }
 
 /// A type of [FlutterView] that can be hosted inside of a [FlutterWindow].
-///
-/// A window view can only be created by [PlatformDispatcher.createView] where
-/// the requested configuration includes a parent [FlutterWindow] set as the
-/// [ViewConfiguration.window].
 class EngineFlutterWindowView extends ui.FlutterWindowView {
   EngineFlutterWindowView._({Object viewId, this.platformDispatcher})
       : _viewId = viewId;

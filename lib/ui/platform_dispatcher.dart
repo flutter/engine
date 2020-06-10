@@ -656,7 +656,7 @@ class ScreenConfiguration {
         assert(systemGestureInsets != null),
         assert(padding != null);
 
-  /// Makes a new copy of this [ViewConfigurationRequest] with some attributes
+  /// Makes a new copy of this [ScreenConfiguration] with some attributes
   /// replaced.
   ScreenConfiguration copyWith({
     String/*?*/ screenName,
@@ -718,102 +718,7 @@ class ScreenConfiguration {
   }
 }
 
-/// Class that holds the information needed for a view configuration request.
-///
-/// Used to request a different configuration of a [FlutterView], so that
-/// multiple view parameters can be configured simultaneously.
-///
-/// Parameters that shouldn't change with this request may be null. At least one
-/// parameter must be set.
-class ViewConfigurationRequest {
-  /// Const constructor for a [ViewConfigurationRequest].
-  const ViewConfigurationRequest({
-    this.screen,
-    this.geometry,
-    this.visible,
-    this.order,
-    this.orderView,
-  }) : assert(orderView != null || (order != ViewOrder.aboveOther && order != ViewOrder.belowOther)),
-       assert(orderView == null || (order != ViewOrder.top && order != ViewOrder.bottom)),
-       assert(screen != null || geometry != null || order != null || visible != null, 'At least one parameter must be non-null');
-
-  /// Makes a new copy of this [ViewConfigurationRequest] with some attributes
-  /// replaced.
-  ViewConfigurationRequest copyWith({
-    Screen/*?*/ screen,
-    Rect/*?*/ geometry,
-    bool/*?*/ visible,
-    ViewOrder/*?*/ order,
-    FlutterView/*?*/ orderView,
-  }) {
-    return ViewConfigurationRequest(
-      screen: screen ?? this.screen,
-      geometry: geometry ?? this.geometry,
-      visible: visible ?? this.visible,
-      order: order ?? this.order,
-      orderView: orderView ?? this.orderView,
-    );
-  }
-
-  /// The screen that this view should appear on.
-  ///
-  /// If the platform supports spanning multiple screens, this is the screen
-  /// that the upper left corner of the view appears on.
-  final Screen/*?*/ screen;
-
-  /// The geometry requested for the view on the [screen], in logical pixels.
-  ///
-  /// This uses the device pixel ratio of the screen with the upper left corner
-  /// of this view on it.
-  final Rect/*?*/ geometry;
-
-  /// Whether or not the view should be visible.
-  ///
-  /// If this request is given to [PlatformDispatcher.createView], then setting
-  /// this to true means that the view will be made visible as soon as it is
-  /// created.
-  final bool/*?*/ visible;
-
-  /// The depth ordering of this view relative to other views.
-  final ViewOrder/*?*/ order;
-
-  /// The opaque ID of the view to place this view on a layer relative to,
-  /// according to [order].
-  ///
-  /// Only used (and required) if [order] is [ViewOrder.aboveOther] or
-  /// [ViewOrder.belowOther].
-  ///
-  /// This ID corresponds to the view that this one should be above or below.
-  final FlutterView/*?*/ orderView;
-
-  @override
-  String toString() {
-    return '$runtimeType[screen: $screen, geometry: $geometry, order: $order]';
-  }
-}
-
-/// An enum describing how to layer this view in a [ViewConfigurationRequest].
-enum ViewOrder {
-  /// Place this view immediately above the
-  /// [ViewConfigurationRequest.orderView].
-  aboveOther,
-
-  /// Place this view immediately above the
-  /// [ViewConfigurationRequest.orderView].
-  belowOther,
-
-  /// Place this view on top of all other views.
-  top,
-
-  /// Place this view below all other views.
-  bottom,
-}
-
 /// An immutable view configuration.
-///
-/// See also:
-///  * [ViewConfigurationRequest], a class used to request a change to the
-///    view configuration using [PlatformDispatcher.configureView].
 class ViewConfiguration {
   /// A const constructor for an immutable [ViewConfiguration].
   const ViewConfiguration({
