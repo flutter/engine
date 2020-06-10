@@ -87,10 +87,10 @@ source_set("common") {
     "engine.h",
     "isolate_configuration.cc",
     "isolate_configuration.h",
+    "layer_tree_holder.cc",
+    "layer_tree_holder.h",
     "persistent_cache.cc",
     "persistent_cache.h",
-    "pipeline.cc",
-    "pipeline.h",
     "platform_view.cc",
     "platform_view.h",
     "pointer_data_dispatcher.cc",
@@ -105,8 +105,6 @@ source_set("common") {
     "shell_io_manager.h",
     "skia_event_tracer_impl.cc",
     "skia_event_tracer_impl.h",
-    "surface.cc",
-    "surface.h",
     "switches.cc",
     "switches.h",
     "thread_host.cc",
@@ -118,7 +116,6 @@ source_set("common") {
   ]
 
   deps = [
-    ":common_standalone",
     "//flutter/assets",
     "//flutter/common",
     "//flutter/flow",
@@ -138,20 +135,6 @@ source_set("common") {
   ]
 
   public_configs = [ "//flutter:config" ]
-}
-
-source_set("common_standalone") {
-  sources = [
-    "gl_context_switch.cc",
-    "gl_context_switch.h",
-    "surface_frame.cc",
-    "surface_frame.h",
-  ]
-
-  deps = [
-    "//flutter/fml",
-    "//third_party/skia",
-  ]
 }
 
 template("shell_host_executable") {
@@ -203,9 +186,6 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
-      "gl_context_switch_test.cc",
-      "gl_context_switch_test.h",
-      "gl_context_switch_unittests.cc",
       "shell_test.cc",
       "shell_test.h",
       "shell_test_external_view_embedder.cc",
@@ -217,7 +197,6 @@ if (enable_unittests) {
     ]
 
     public_deps = [
-      ":common_standalone",
       "//flutter/flow",
       "//flutter/fml/dart",
       "//flutter/lib/ui",
@@ -267,8 +246,8 @@ if (enable_unittests) {
       "animator_unittests.cc",
       "canvas_spy_unittests.cc",
       "input_events_unittests.cc",
+      "layer_tree_holder_unittests.cc",
       "persistent_cache_unittests.cc",
-      "pipeline_unittests.cc",
       "shell_unittests.cc",
     ]
 
