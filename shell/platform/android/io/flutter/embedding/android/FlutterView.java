@@ -34,7 +34,6 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
-import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
@@ -839,9 +838,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // TODO(mattcarroll): once this is proven to work, move this line ot TextInputPlugin
     textInputPlugin.getInputMethodManager().restartInput(this);
 
-    FlutterJNI jni = this.flutterEngine.getFlutterJNI();
-    if (jni != null)
-      jni.setLocalizationPlugin(localizationPlugin);
+    if (this.flutterEngine.getFlutterJNI() != null) {
+      this.flutterEngine.getFlutterJNI().setLocalizationPlugin(localizationPlugin);
+    }
 
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();

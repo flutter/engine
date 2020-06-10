@@ -76,7 +76,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {}
   // |flutter::PlatformView::Delegate|
   std::vector<std::string>& ComputePlatformViewResolvedLocale(
-      const std::vector<std::string>& supported_locale_data) override {
+      const std::vector<std::string>& supported_locale_data) {
     return mock_locale_data_;
   }
 
