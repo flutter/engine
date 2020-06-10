@@ -43,13 +43,7 @@ class IOSContextMetal final : public IOSContext {
   sk_sp<GrContext> CreateResourceContext() override;
 
   // |IOSContext|
-  bool MakeCurrent() override;
-
-  // |IOSContext|
-  bool ResourceMakeCurrent() override;
-
-  // |IOSContext|
-  bool ClearCurrent() override;
+  std::unique_ptr<GLContextResult> MakeCurrent() override;
 
   // |IOSContext|
   std::unique_ptr<Texture> CreateExternalTexture(

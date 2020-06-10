@@ -25,6 +25,7 @@
 #include "flutter/common/settings.h"
 #include "flutter/fml/macros.h"
 
+#include "flutter_runner_product_configuration.h"
 #include "thread.h"
 #include "unique_fdio_ns.h"
 
@@ -77,6 +78,7 @@ class Application final : public Engine::Delegate,
 
  private:
   flutter::Settings settings_;
+  FlutterRunnerProductConfiguration product_config_;
   TerminationCallback termination_callback_;
   const std::string debug_label_;
   UniqueFDIONS fdio_ns_ = UniqueFDIONSCreate();
@@ -112,10 +114,15 @@ class Application final : public Engine::Delegate,
 
   // |fuchsia::ui::app::ViewProvider|
   void CreateView(
-      zx::eventpair view_token,
+      zx::eventpair token,
       fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> incoming_services,
       fidl::InterfaceHandle<fuchsia::sys::ServiceProvider> outgoing_services)
       override;
+
+  // |fuchsia::ui::app::ViewProvider|
+  void CreateViewWithViewRef(zx::eventpair view_token,
+                             fuchsia::ui::views::ViewRefControl control_ref,
+                             fuchsia::ui::views::ViewRef view_ref) override;
 
   // |flutter::Engine::Delegate|
   void OnEngineTerminate(const Engine* holder) override;

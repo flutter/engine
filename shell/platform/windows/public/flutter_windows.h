@@ -5,14 +5,13 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 
+#include <Windows.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "flutter_export.h"
 #include "flutter_messenger.h"
 #include "flutter_plugin_registrar.h"
-
-#include "Windows.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -39,6 +38,12 @@ typedef struct {
   // This can either be an absolute path or a path relative to the directory
   // containing the executable.
   const wchar_t* icu_data_path;
+
+  // The path to the AOT libary file for your application, if any.
+  // This can either be an absolute path or a path relative to the directory
+  // containing the executable. This can be nullptr for a non-AOT build, as
+  // it will be ignored in that case.
+  const wchar_t* aot_library_path;
 
   // The switches to pass to the Flutter engine.
   //
@@ -109,6 +114,11 @@ FLUTTER_EXPORT UINT FlutterDesktopGetDpiForHWND(HWND hwnd);
 // Gets the DPI for a given |monitor|. If the API is not available, a default
 // DPI of 96 is returned.
 FLUTTER_EXPORT UINT FlutterDesktopGetDpiForMonitor(HMONITOR monitor);
+
+// Reopens stdout and stderr and resysncs the standard library output streams.
+// Should be called if output is being directed somewhere in the runner process
+// (e.g., after an AllocConsole call).
+FLUTTER_EXPORT void FlutterDesktopResyncOutputStreams();
 
 // Runs an instance of a headless Flutter engine.
 //

@@ -58,6 +58,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
 
   ReleaseUnusedDrawableIfNecessary();
 
+  // When there are platform views in the scene, the drawable needs to be presented in the same
+  // transaction as the one created for platform views. When the drawable are being presented from
+  // the raster thread, there is no such transaction.
+  layer_.get().presentsWithTransaction = [[NSThread currentThread] isMainThread];
+
   auto surface = SkSurface::MakeFromCAMetalLayer(context_.get(),            // context
                                                  layer_.get(),              // layer
                                                  kTopLeft_GrSurfaceOrigin,  // origin
@@ -75,6 +80,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
 
   auto submit_callback = [this](const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
     TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
+    if (canvas == nullptr) {
+      FML_DLOG(ERROR) << "Canvas not available.";
+      return false;
+    }
+
     canvas->flush();
 
     if (next_drawable_ == nullptr) {
@@ -117,9 +127,9 @@ flutter::ExternalViewEmbedder* GPUSurfaceMetal::GetExternalViewEmbedder() {
 }
 
 // |Surface|
-bool GPUSurfaceMetal::MakeRenderContextCurrent() {
+std::unique_ptr<GLContextResult> GPUSurfaceMetal::MakeRenderContextCurrent() {
   // This backend has no such concept.
-  return true;
+  return std::make_unique<GLContextDefaultResult>(true);
 }
 
 void GPUSurfaceMetal::ReleaseUnusedDrawableIfNecessary() {

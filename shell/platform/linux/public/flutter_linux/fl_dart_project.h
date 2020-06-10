@@ -19,72 +19,55 @@ G_DECLARE_FINAL_TYPE(FlDartProject, fl_dart_project, FL, DART_PROJECT, GObject)
  * FlDartProject:
  *
  * #FlDartProject represents a Dart project. It is used to provide information
- * about the application when creating a #FlView.
+ * about the application when creating an #FlView.
  */
 
 /**
  * fl_dart_project_new:
- * @path: a file path, e.g. "my_dart_project"
  *
- * Create a Flutter project. The project path should contain the following
- * top-level items:
- * - icudtl.dat (provided as a resource by the Flutter tool)
- * - flutter_assets (as built by the Flutter tool)
+ * Creates a Flutter project for the currently running executable. The following
+ * data files are required relative to the location of the executable:
+ * - data/flutter_assets/ (as built by the Flutter tool).
+ * - data/icudtl.dat (provided as a resource by the Flutter tool).
+ * - lib/libapp.so (as built by the Flutter tool when in AOT mode).
  *
- * The path can either be absolute, or relative to the directory containing the
- * running executable.
- *
- * Returns: a new #FlDartProject
+ * Returns: a new #FlDartProject.
  */
+FlDartProject* fl_dart_project_new();
 
 /**
- * fl_dart_project_new:
- * @path: a file path, e.g. "my_dart_project"
+ * fl_dart_project_get_aot_library_path:
+ * @project: an #FlDartProject.
  *
- * Creates a Flutter project. The project path should contain the following
- * top-level items:
- * - icudtl.dat (provided as a resource by the Flutter tool)
- * - flutter_assets (as built by the Flutter tool)
+ * Gets the path to the AOT library in the Flutter application.
  *
- * The path can either be absolute, or relative to the directory containing the
- * running executable.
- *
- * Returns: a new #FlDartProject
+ * Returns: (type filename): an absolute file path, e.g.
+ * "/projects/my_dart_project/lib/libapp.so".
  */
-FlDartProject* fl_dart_project_new(const gchar* path);
-
-/**
- * fl_dart_project_get_path:
- * @project: a #FlDartProject
- *
- * Gets the path to the directory containing the Flutter application.
- *
- * Returns: (type filename): a file path, e.g. "/projects/my_dart_project"
- */
-const gchar* fl_dart_project_get_path(FlDartProject* project);
+const gchar* fl_dart_project_get_aot_library_path(FlDartProject* project);
 
 /**
  * fl_dart_project_get_assets_path:
- * @project: a #FlDartProject
+ * @project: an #FlDartProject.
  *
  * Gets the path to the directory containing the assets used in the Flutter
  * application.
  *
- * Returns: (type filename): a file path, e.g.
- * "/projects/my_dart_project/assets"
+ * Returns: (type filename): an absolute directory path, e.g.
+ * "/projects/my_dart_project/data/flutter_assets".
  */
-gchar* fl_dart_project_get_assets_path(FlDartProject* project);
+const gchar* fl_dart_project_get_assets_path(FlDartProject* project);
 
 /**
  * fl_dart_project_get_icu_data_path:
- * @project: a #FlDartProject
+ * @project: an #FlDartProject.
  *
  * Gets the path to the ICU data file in the Flutter application.
  *
- * Returns: (type filename): a file path, e.g.
- * "/projects/my_dart_project/icudtl.dat"
+ * Returns: (type filename): an absolute file path, e.g.
+ * "/projects/my_dart_project/data/icudtl.dat".
  */
-gchar* fl_dart_project_get_icu_data_path(FlDartProject* project);
+const gchar* fl_dart_project_get_icu_data_path(FlDartProject* project);
 
 G_END_DECLS
 

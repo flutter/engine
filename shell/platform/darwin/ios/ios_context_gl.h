@@ -9,6 +9,7 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/darwin/ios/ios_context.h"
+#include "flutter/shell/platform/darwin/ios/ios_context_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_render_target_gl.h"
 
 @class CAEAGLLayer;
@@ -32,13 +33,7 @@ class IOSContextGL final : public IOSContext {
   sk_sp<GrContext> CreateResourceContext() override;
 
   // |IOSContext|
-  bool MakeCurrent() override;
-
-  // |IOSContext|
-  bool ClearCurrent() override;
-
-  // |IOSContext|
-  bool ResourceMakeCurrent() override;
+  std::unique_ptr<GLContextResult> MakeCurrent() override;
 
   // |IOSContext|
   std::unique_ptr<Texture> CreateExternalTexture(

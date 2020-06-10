@@ -7,6 +7,7 @@
 #include <android/native_window_jni.h>
 
 #include <utility>
+#include "unicode/uchar.h"
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/settings.h"
@@ -114,6 +115,19 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
 static jmethodID g_on_engine_restart_method = nullptr;
 void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj) {
   env->CallVoidMethod(obj, g_on_engine_restart_method);
+  FML_CHECK(CheckException(env));
+}
+
+static jmethodID g_on_display_platform_view_method = nullptr;
+void FlutterViewOnDisplayPlatformView(JNIEnv* env,
+                                      jobject obj,
+                                      jint view_id,
+                                      jint x,
+                                      jint y,
+                                      jint width,
+                                      jint height) {
+  env->CallVoidMethod(obj, g_on_display_platform_view_method, view_id, x, y,
+                      width, height);
   FML_CHECK(CheckException(env));
 }
 
@@ -484,6 +498,35 @@ static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
       );
 }
 
+static jboolean FlutterTextUtilsIsEmoji(JNIEnv* env,
+                                        jobject obj,
+                                        jint codePoint) {
+  return u_hasBinaryProperty(codePoint, UProperty::UCHAR_EMOJI);
+}
+
+static jboolean FlutterTextUtilsIsEmojiModifier(JNIEnv* env,
+                                                jobject obj,
+                                                jint codePoint) {
+  return u_hasBinaryProperty(codePoint, UProperty::UCHAR_EMOJI_MODIFIER);
+}
+
+static jboolean FlutterTextUtilsIsEmojiModifierBase(JNIEnv* env,
+                                                    jobject obj,
+                                                    jint codePoint) {
+  return u_hasBinaryProperty(codePoint, UProperty::UCHAR_EMOJI_MODIFIER_BASE);
+}
+
+static jboolean FlutterTextUtilsIsVariationSelector(JNIEnv* env,
+                                                    jobject obj,
+                                                    jint codePoint) {
+  return u_hasBinaryProperty(codePoint, UProperty::UCHAR_VARIATION_SELECTOR);
+}
+
+static jboolean FlutterTextUtilsIsRegionalIndicator(JNIEnv* env,
+                                                    jobject obj,
+                                                    jint codePoint) {
+  return u_hasBinaryProperty(codePoint, UProperty::UCHAR_REGIONAL_INDICATOR);
+}
 bool RegisterApi(JNIEnv* env) {
   static const JNINativeMethod flutter_jni_methods[] = {
       // Start of methods from FlutterJNI
@@ -599,6 +642,36 @@ bool RegisterApi(JNIEnv* env) {
           .signature = "(J)Lio/flutter/view/FlutterCallbackInformation;",
           .fnPtr = reinterpret_cast<void*>(&LookupCallbackInformation),
       },
+
+      // Start of methods for FlutterTextUtils
+      {
+          .name = "nativeFlutterTextUtilsIsEmoji",
+          .signature = "(I)Z",
+          .fnPtr = reinterpret_cast<void*>(&FlutterTextUtilsIsEmoji),
+      },
+      {
+          .name = "nativeFlutterTextUtilsIsEmojiModifier",
+          .signature = "(I)Z",
+          .fnPtr = reinterpret_cast<void*>(&FlutterTextUtilsIsEmojiModifier),
+      },
+      {
+          .name = "nativeFlutterTextUtilsIsEmojiModifierBase",
+          .signature = "(I)Z",
+          .fnPtr =
+              reinterpret_cast<void*>(&FlutterTextUtilsIsEmojiModifierBase),
+      },
+      {
+          .name = "nativeFlutterTextUtilsIsVariationSelector",
+          .signature = "(I)Z",
+          .fnPtr =
+              reinterpret_cast<void*>(&FlutterTextUtilsIsVariationSelector),
+      },
+      {
+          .name = "nativeFlutterTextUtilsIsRegionalIndicator",
+          .signature = "(I)Z",
+          .fnPtr =
+              reinterpret_cast<void*>(&FlutterTextUtilsIsRegionalIndicator),
+      },
   };
 
   if (env->RegisterNatives(g_flutter_jni_class->obj(), flutter_jni_methods,
@@ -687,6 +760,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
   if (g_flutter_jni_class->is_null()) {
     FML_LOG(ERROR) << "Failed to find FlutterJNI Class.";
+    return false;
+  }
+
+  g_on_display_platform_view_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIII)V");
+
+  if (g_on_display_platform_view_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate onDisplayPlatformView method";
     return false;
   }
 

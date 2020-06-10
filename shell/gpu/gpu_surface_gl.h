@@ -9,9 +9,10 @@
 #include <memory>
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/gl_context_switch.h"
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/common/surface.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
@@ -45,7 +46,7 @@ class GPUSurfaceGL : public Surface {
   flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |Surface|
-  bool MakeRenderContextCurrent() override;
+  std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
 
  private:
   GPUSurfaceGLDelegate* delegate_;
@@ -58,7 +59,7 @@ class GPUSurfaceGL : public Surface {
   // external view embedder is present.
   const bool render_to_surface_;
   bool valid_ = false;
-  fml::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
+  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGL> weak_factory_;
 
   bool CreateOrUpdateSurfaces(const SkISize& size);
 

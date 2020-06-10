@@ -35,7 +35,7 @@ typedef Callbacker<T> = String Function(Callback<T> callback);
 ///   return _futurize(_doSomethingAndCallback);
 /// }
 /// ```
-Future<T> futurize<T>(Callbacker<T> callbacker) {
+Future<T>/*!*/ futurize<T>(Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
   final String error = callbacker((T t) {
     if (t == null) {
@@ -82,7 +82,7 @@ String float64ListToCssTransform(Float32List matrix) {
     return float64ListToCssTransform3d(matrix);
   } else {
     assert(transformKind == TransformKind.identity);
-    return null;
+    return 'none';
   }
 }
 
@@ -413,10 +413,18 @@ const Set<String> _genericFontFamilies = <String>{
 
 /// A default fallback font family in case an unloaded font has been requested.
 ///
-/// For iOS, default to Helvetica, where it should be available, otherwise
-/// default to Arial.
-final String _fallbackFontFamily =
-    operatingSystem == OperatingSystem.iOs ? 'Helvetica' : 'Arial';
+/// -apple-system targets San Francisco in Safari (on Mac OS X and iOS),
+/// and it targets Neue Helvetica and Lucida Grande on older versions of
+/// Mac OS X. It properly selects between San Francisco Text and
+/// San Francisco Display depending on the text’s size.
+///
+/// For iOS, default to -apple-system, where it should be available, otherwise
+/// default to Arial. BlinkMacSystemFont is used for Chrome on iOS.
+final String _fallbackFontFamily = _isMacOrIOS ?
+    '-apple-system, BlinkMacSystemFont' : 'Arial';
+
+bool get _isMacOrIOS => operatingSystem == OperatingSystem.iOs ||
+    operatingSystem == OperatingSystem.macOs;
 
 /// Create a font-family string appropriate for CSS.
 ///
@@ -425,6 +433,16 @@ final String _fallbackFontFamily =
 String canonicalizeFontFamily(String fontFamily) {
   if (_genericFontFamilies.contains(fontFamily)) {
     return fontFamily;
+  }
+  if (_isMacOrIOS) {
+    // Unlike Safari, Chrome on iOS does not correctly fallback to cupertino
+    // on sans-serif.
+    // Map to San Francisco Text/Display fonts, use -apple-system,
+    // BlinkMacSystemFont.
+    if (fontFamily == '.SF Pro Text' || fontFamily == '.SF Pro Display' ||
+        fontFamily == '.SF UI Text' || fontFamily == '.SF UI Display') {
+      return _fallbackFontFamily;
+    }
   }
   return '"$fontFamily", $_fallbackFontFamily, sans-serif';
 }
@@ -480,4 +498,25 @@ FutureOr<void> sendFontChangeMessage() async {
         );
       });
     }
+}
+
+// Stores matrix in a form that allows zero allocation transforms.
+class _FastMatrix64 {
+  final Float64List matrix;
+  double transformedX = 0, transformedY = 0;
+  _FastMatrix64(this.matrix);
+
+  void transform(double x, double y) {
+    transformedX = matrix[12] + (matrix[0] * x) + (matrix[4] * y);
+    transformedY = matrix[13] + (matrix[1] * x) + (matrix[5] * y);
+  }
+}
+
+/// Roughly the inverse of [ui.Shadow.convertRadiusToSigma].
+///
+/// This does not inverse [ui.Shadow.convertRadiusToSigma] exactly, because on
+/// the Web the difference between sigma and blur radius is different from
+/// Flutter mobile.
+double convertSigmaToRadius(double sigma) {
+  return sigma * 2.0;
 }

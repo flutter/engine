@@ -15,10 +15,8 @@ fi
 
 cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd
 
-./compile_android_aot.sh ../../../out/host_profile_unopt_arm64 ../../../out/$FLUTTER_ENGINE/clang_x64
-
 pushd android
 
-set -o pipefail && ./gradlew assembleAndroidTest && ./gradlew connectedAndroidTest
+set -o pipefail && ./gradlew app:verifyDebugAndroidTestScreenshotTest
 
 popd

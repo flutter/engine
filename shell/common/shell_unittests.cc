@@ -143,7 +143,8 @@ TEST_F(ShellTest,
             ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
       },
       [](Shell& shell) {
-        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
+        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners(),
+                                            shell.GetIsGpuDisabledSyncSwitch());
       });
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
@@ -1218,20 +1219,70 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
                                 << expected_json1 << " or " << expected_json2;
 
   // Cleanup files
-  fml::FileVisitor recursive_cleanup = [&recursive_cleanup](
-                                           const fml::UniqueFD& directory,
-                                           const std::string& filename) {
-    if (fml::IsDirectory(directory, filename.c_str())) {
-      fml::UniqueFD sub_dir =
-          OpenDirectoryReadOnly(directory, filename.c_str());
-      VisitFiles(sub_dir, recursive_cleanup);
-      fml::UnlinkDirectory(directory, filename.c_str());
-    } else {
-      fml::UnlinkFile(directory, filename.c_str());
-    }
-    return true;
-  };
-  VisitFiles(temp_dir.fd(), recursive_cleanup);
+  fml::RemoveFilesInDirectory(temp_dir.fd());
+}
+
+TEST_F(ShellTest, RasterizerScreenshot) {
+  Settings settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(ValidateShell(shell.get()));
+  PlatformViewNotifyCreated(shell.get());
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
+
+  PumpOneFrame(shell.get());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetRasterTaskRunner(), [&shell, &latch]() {
+        Rasterizer::Screenshot screenshot =
+            shell->GetRasterizer()->ScreenshotLastLayerTree(
+                Rasterizer::ScreenshotType::CompressedImage, true);
+        EXPECT_NE(screenshot.data, nullptr);
+
+        latch->Signal();
+      });
+  latch->Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
+  Settings settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(ValidateShell(shell.get()));
+  PlatformViewNotifyCreated(shell.get());
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
+
+  PumpOneFrame(shell.get());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetRasterTaskRunner(), [&shell, &latch]() {
+        SnapshotDelegate* delegate =
+            reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
+        sk_sp<SkImage> image = delegate->MakeRasterSnapshot(
+            SkPicture::MakePlaceholder({0, 0, 50, 50}), SkISize::Make(50, 50));
+        EXPECT_NE(image, nullptr);
+
+        latch->Signal();
+      });
+  latch->Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 }  // namespace testing

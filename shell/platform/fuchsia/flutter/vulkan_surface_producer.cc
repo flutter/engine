@@ -63,9 +63,13 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   std::vector<std::string> extensions = {
       VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
   };
+
+  // On Fuchsia, the validation layers need to be packaged as part of the
+  // flutter_runner in order to work. As a result, we can use the presence
+  // of the layers to mean that we want the layers enabled.
   application_ = std::make_unique<vulkan::VulkanApplication>(
       *vk_, "FlutterRunner", std::move(extensions), VK_MAKE_VERSION(1, 0, 0),
-      VK_MAKE_VERSION(1, 1, 0));
+      VK_MAKE_VERSION(1, 1, 0), true /* enable_validation_layers */);
 
   if (!application_->IsValid() || !vk_->AreInstanceProcsSetup()) {
     // Make certain the application instance was created and it setup the
@@ -148,7 +152,7 @@ void VulkanSurfaceProducer::OnSurfacesPresented(
   // Do a single flush for all canvases derived from the context.
   {
     TRACE_EVENT0("flutter", "GrContext::flushAndSignalSemaphores");
-    context_->flush();
+    context_->flushAndSubmit();
   }
 
   if (!TransitionSurfacesToExternal(surfaces))
@@ -205,16 +209,22 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
     }
 
     VkImageMemoryBarrier image_barrier = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .pNext = nullptr,
-        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        .dstAccessMask = 0,
-        .oldLayout = imageInfo.fImageLayout,
-        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
-        .srcQueueFamilyIndex = 0,
-        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL_KHR,
-        .image = vk_surface->GetVkImage(),
-        .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+      .pNext = nullptr,
+      .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+      .dstAccessMask = 0,
+      .oldLayout = imageInfo.fImageLayout,
+    // Understand why this is causing issues on Intel. TODO(fxb/53449)
+#if defined(__aarch64__)
+      .newLayout = imageInfo.fImageLayout,
+#else
+      .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+#endif
+      .srcQueueFamilyIndex = 0,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL_KHR,
+      .image = vk_surface->GetVkImage(),
+      .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}
+    };
 
     if (!command_buffer->InsertPipelineBarrier(
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,

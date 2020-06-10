@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_GL_DELEGATE_H_
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/gl_context_switch.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "third_party/skia/include/core/SkMatrix.h"
@@ -21,7 +22,7 @@ class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // Called to make the main GL context current on the current thread.
-  virtual bool GLContextMakeCurrent() = 0;
+  virtual std::unique_ptr<GLContextResult> GLContextMakeCurrent() = 0;
 
   // Called to clear the current GL context on the thread. This may be called on
   // either the GPU or IO threads.

@@ -136,7 +136,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              flutter::ViewportMetrics viewport_metrics,
                              LayerTreeBuilder builder) {
   // Set viewport to nonempty, and call Animator::BeginFrame to make the layer
-  // tree pipeline nonempty. Without either of this, the layer tree below
+  // tree holder nonempty. Without either of this, the layer tree below
   // won't be rasterized.
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
@@ -298,7 +298,8 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
             shell_test_external_view_embedder);
       },
       [](Shell& shell) {
-        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
+        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners(),
+                                            shell.GetIsGpuDisabledSyncSwitch());
       });
 }
 void ShellTest::DestroyShell(std::unique_ptr<Shell> shell) {

@@ -31,7 +31,6 @@ part 'engine/compositor/canvas.dart';
 part 'engine/compositor/canvas_kit_canvas.dart';
 part 'engine/compositor/color_filter.dart';
 part 'engine/compositor/embedded_views.dart';
-part 'engine/compositor/engine_delegate.dart';
 part 'engine/compositor/fonts.dart';
 part 'engine/compositor/image.dart';
 part 'engine/compositor/image_filter.dart';
@@ -48,7 +47,6 @@ part 'engine/compositor/picture_recorder.dart';
 part 'engine/compositor/platform_message.dart';
 part 'engine/compositor/raster_cache.dart';
 part 'engine/compositor/rasterizer.dart';
-part 'engine/compositor/runtime_delegate.dart';
 part 'engine/compositor/surface.dart';
 part 'engine/compositor/text.dart';
 part 'engine/compositor/util.dart';
@@ -58,10 +56,12 @@ part 'engine/conic.dart';
 part 'engine/dom_canvas.dart';
 part 'engine/dom_renderer.dart';
 part 'engine/engine_canvas.dart';
+part 'engine/frame_reference.dart';
 part 'engine/history.dart';
 part 'engine/houdini_canvas.dart';
 part 'engine/html_image_codec.dart';
 part 'engine/keyboard.dart';
+part 'engine/mouse_cursor.dart';
 part 'engine/onscreen_logging.dart';
 part 'engine/path_to_svg.dart';
 part 'engine/picture.dart';
@@ -70,7 +70,6 @@ part 'engine/plugins.dart';
 part 'engine/pointer_binding.dart';
 part 'engine/pointer_converter.dart';
 part 'engine/profiler.dart';
-part 'engine/render_vertices.dart';
 part 'engine/rrect_renderer.dart';
 part 'engine/semantics/accessibility.dart';
 part 'engine/semantics/checkable.dart';
@@ -90,6 +89,7 @@ part 'engine/services/serialization.dart';
 part 'engine/shader.dart';
 part 'engine/shadow.dart';
 part 'engine/surface/backdrop_filter.dart';
+part 'engine/surface/canvas.dart';
 part 'engine/surface/clip.dart';
 part 'engine/surface/debug_canvas_reuse_overlay.dart';
 part 'engine/surface/image_filter.dart';
@@ -100,6 +100,7 @@ part 'engine/surface/path_metrics.dart';
 part 'engine/surface/picture.dart';
 part 'engine/surface/platform_view.dart';
 part 'engine/surface/recording_canvas.dart';
+part 'engine/surface/render_vertices.dart';
 part 'engine/surface/scene.dart';
 part 'engine/surface/scene_builder.dart';
 part 'engine/surface/surface.dart';
@@ -108,6 +109,7 @@ part 'engine/surface/surface_stats.dart';
 part 'engine/surface/transform.dart';
 part 'engine/test_embedding.dart';
 part 'engine/text/font_collection.dart';
+part 'engine/text/line_break_properties.dart';
 part 'engine/text/line_breaker.dart';
 part 'engine/text/measurement.dart';
 part 'engine/text/paragraph.dart';
@@ -183,7 +185,7 @@ void webOnlyInitializeEngine() {
   }
 
   bool waitingForAnimation = false;
-  ui.webOnlyScheduleFrameCallback = () {
+  scheduleFrameCallback = () {
     // We're asked to schedule a frame and call `frameHandler` when the frame
     // fires.
     if (!waitingForAnimation) {
@@ -216,6 +218,7 @@ void webOnlyInitializeEngine() {
   };
 
   Keyboard.initialize();
+  MouseCursor.initialize();
 }
 
 class _NullTreeSanitizer implements html.NodeTreeSanitizer {

@@ -11,7 +11,7 @@ import 'dart:isolate';
 import 'package:async/async.dart';
 import 'package:http_multi_server/http_multi_server.dart';
 import 'package:image/image.dart';
-import 'package:package_resolver/package_resolver.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf.dart' as shelf;
@@ -688,9 +688,12 @@ class BrowserManager {
 
     var completer = Completer<BrowserManager>();
 
-    browser.onExit.then((_) {
-      throw Exception('${runtime.name} exited before connecting.');
-    }).catchError((dynamic error, StackTrace stackTrace) {
+    // For the cases where we use a delegator such as `adb` (for Android) or
+    // `xcrun` (for IOS), these delegator processes can shut down before the
+    // websocket is available. Therefore do not throw an error if proccess
+    // exits with exitCode 0. Note that `browser` will throw and error if the
+    // exit code was not 0, which will be processed by the next callback.
+    browser.onExit.catchError((dynamic error, StackTrace stackTrace) {
       if (completer.isCompleted) {
         return;
       }
@@ -710,10 +713,7 @@ class BrowserManager {
       completer.completeError(error, stackTrace);
     });
 
-    return completer.future.timeout(Duration(seconds: 30), onTimeout: () {
-      browser.close();
-      throw Exception('Timed out waiting for ${runtime.name} to connect.');
-    });
+    return completer.future;
   }
 
   /// Starts the browser identified by [browser] using [settings] and has it load [url].
@@ -816,10 +816,14 @@ class BrowserManager {
           'build',
           '$path.browser_test.dart.js.map',
         );
+        PackageConfig packageConfig = await loadPackageConfigUri(
+          await Isolate.packageConfig);
+        Map<String, Uri> packageMap =
+          {for (var p in packageConfig.packages) p.name: p.packageUriRoot};
         final JSStackTraceMapper mapper = JSStackTraceMapper(
           await File(mapPath).readAsString(),
           mapUrl: p.toUri(mapPath),
-          packageResolver: await PackageResolver.current.asSync,
+          packageMap: packageMap,
           sdkRoot: p.toUri(sdkDir),
         );
 
