@@ -137,4 +137,15 @@ public class FlutterEngineTest {
 
     verify(context, atLeast(1)).getApplicationContext();
   }
+
+  @Test
+  public void itNotifiesLowMemoryWarning() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
+
+    FlutterEngine engine =
+        new FlutterEngine(RuntimeEnvironment.application, mock(FlutterLoader.class), mockFlutterJNI);
+    engine.notifyLowMemoryWarning();;
+    verify(mockFlutterJNI, times(1)).notifyLowMemoryWarning();
+  }
 }

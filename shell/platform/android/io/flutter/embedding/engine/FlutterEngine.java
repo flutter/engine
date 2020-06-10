@@ -317,6 +317,20 @@ public class FlutterEngine {
   }
 
   /**
+   * Notify the Dart VM that the system is experiencing memory pressure, and
+   * extra work should be taken to clean up internal resources and collect
+   * garbage.
+   *
+   * This does not notify a Flutter application about memory pressure. For that,
+   * use the {@link SystemChannel#sendMemoryPressureWarning}.
+   */
+  public void notifyLowMemoryWarning() {
+    if (isAttachedToJni()) {
+      flutterJNI.notifyLowMemoryWarning();
+    }
+  }
+
+  /**
    * The Dart execution context associated with this {@code FlutterEngine}.
    *
    * <p>The {@link DartExecutor} can be used to start executing Dart code from a given entrypoint.
