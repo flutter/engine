@@ -26,16 +26,7 @@ AndroidSurfaceGL::AndroidSurfaceGL(
   external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>();
 }
 
-AndroidSurfaceGL::~AndroidSurfaceGL() {
-  if (offscreen_surface_) {
-    android_context_->TeardownSurface(std::move(offscreen_surface_));
-    offscreen_surface_ = nullptr;
-  }
-  if (onscreen_surface_) {
-    android_context_->TeardownSurface(std::move(onscreen_surface_));
-    onscreen_surface_ = nullptr;
-  }
-}
+AndroidSurfaceGL::~AndroidSurfaceGL() = default;
 
 void AndroidSurfaceGL::TeardownOnScreenContext() {
   android_context_->ClearCurrent();
@@ -63,7 +54,6 @@ bool AndroidSurfaceGL::OnScreenSurfaceResize(const SkISize& size) {
   }
 
   android_context_->ClearCurrent();
-  android_context_->TeardownSurface(std::move(onscreen_surface_));
 
   onscreen_surface_ = android_context_->CreateOnscreenSurface(native_window_);
   if (onscreen_surface_->surface == EGL_NO_SURFACE) {
