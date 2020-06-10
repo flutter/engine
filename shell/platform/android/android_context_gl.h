@@ -24,10 +24,13 @@ namespace flutter {
 /// about the lifespam of the `EGLSurface` object.
 ///
 struct AndroidEGLSurface {
-  AndroidEGLSurface(EGLSurface surface);
+  AndroidEGLSurface(EGLSurface surface, EGLDisplay display);
   ~AndroidEGLSurface();
 
   const EGLSurface surface;
+
+ private:
+  const EGLDisplay display_;
 };
 
 //------------------------------------------------------------------------------
@@ -48,9 +51,6 @@ class AndroidContextGL : public AndroidContext {
   /// @brief      Allocates an new EGL window surface that is used for on-screen
   ///             pixels.
   ///
-  /// @attention  Consumers must tear down the surface by calling
-  ///             `AndroidContextGL::TeardownSurface`.
-  ///
   /// @return     The window surface.
   ///
   std::unique_ptr<AndroidEGLSurface> CreateOnscreenSurface(
@@ -59,9 +59,6 @@ class AndroidContextGL : public AndroidContext {
   //----------------------------------------------------------------------------
   /// @brief      Allocates an 1x1 pbuffer surface that is used for making the
   ///             offscreen current for texture uploads.
-  ///
-  /// @attention  Consumers must tear down the surface by calling
-  ///             `AndroidContextGL::TeardownSurface`.
   ///
   /// @return     The pbuffer surface.
   ///
@@ -113,13 +110,6 @@ class AndroidContextGL : public AndroidContext {
   /// @return     The size of an `EGLSurface`.
   ///
   SkISize GetSize(std::unique_ptr<AndroidEGLSurface> surface_wrapper);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Destroys an `EGLSurface`.
-  ///
-  /// @return     Whether the surface was destroyed.
-  ///
-  bool TeardownSurface(std::unique_ptr<AndroidEGLSurface> surface_wrapper);
 
  private:
   fml::RefPtr<AndroidEnvironmentGL> environment_;

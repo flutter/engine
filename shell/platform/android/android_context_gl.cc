@@ -105,9 +105,13 @@ static bool TeardownContext(EGLDisplay display, EGLContext context) {
   return true;
 }
 
-AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface) : surface(surface) {}
+AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface, EGLDisplay display)
+    : surface(surface), display_(display) {}
 
-AndroidEGLSurface::~AndroidEGLSurface() = default;
+AndroidEGLSurface::~AndroidEGLSurface() {
+  auto result = eglDestroySurface(display_, surface);
+  FML_DCHECK(result == EGL_TRUE);
+}
 
 AndroidContextGL::AndroidContextGL(
     AndroidRenderingAPI rendering_api,
@@ -174,7 +178,7 @@ std::unique_ptr<AndroidEGLSurface> AndroidContextGL::CreateOnscreenSurface(
   EGLSurface surface = eglCreateWindowSurface(
       display, config_, reinterpret_cast<EGLNativeWindowType>(window->handle()),
       attribs);
-  return std::make_unique<AndroidEGLSurface>(surface);
+  return std::make_unique<AndroidEGLSurface>(surface, display);
 }
 
 std::unique_ptr<AndroidEGLSurface> AndroidContextGL::CreateOffscreenSurface()
@@ -186,7 +190,7 @@ std::unique_ptr<AndroidEGLSurface> AndroidContextGL::CreateOffscreenSurface()
   const EGLint attribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
 
   EGLSurface surface = eglCreatePbufferSurface(display, config_, attribs);
-  return std::make_unique<AndroidEGLSurface>(surface);
+  return std::make_unique<AndroidEGLSurface>(surface, display);
 }
 
 fml::RefPtr<AndroidEnvironmentGL> AndroidContextGL::Environment() const {
@@ -252,16 +256,6 @@ SkISize AndroidContextGL::GetSize(
     return SkISize::Make(0, 0);
   }
   return SkISize::Make(width, height);
-}
-
-bool AndroidContextGL::TeardownSurface(
-    std::unique_ptr<AndroidEGLSurface> surface_wrapper) {
-  if (surface_wrapper->surface != EGL_NO_SURFACE) {
-    return eglDestroySurface(environment_->Display(),
-                             surface_wrapper->surface) == EGL_TRUE;
-  }
-
-  return true;
 }
 
 }  // namespace flutter
