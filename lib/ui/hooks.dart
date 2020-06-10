@@ -424,7 +424,12 @@ void _invoke1<A>(void callback(A a)?, Zone zone, A arg) {
 
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
 void _invoke3<A1, A2, A3>(
-    void callback(A1 a1, A2 a2, A3 a3)?, Zone zone, A1 arg1, A2 arg2, A3 arg3) {
+  void callback(A1 a1, A2 a2, A3 a3) ?,
+  Zone  zone,
+  A1 arg1,
+  A2 arg2,
+  A3 arg3,
+) {
   if (callback == null) {
     return;
   }

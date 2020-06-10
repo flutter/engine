@@ -458,7 +458,7 @@ void main() {
         0.0,   // inset left
         0.0,   // system gesture inset top
         0.0,   // system gesture inset right
-        44.0,   // system gesture inset bottom
+        44.0,  // system gesture inset bottom
         0.0,   // system gesture inset left
       );
 

@@ -789,7 +789,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
-  std::string InitialRouteName() override;
+  std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree) override;

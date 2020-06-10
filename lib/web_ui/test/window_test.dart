@@ -22,20 +22,20 @@ set strategy(TestLocationStrategy newStrategy) {
 }
 
 void main() {
-  test('window.initialRouteName should not change', () {
+  test('window.defaultRouteName should not change', () {
     window.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
-    expect(window.initialRouteName, '/initial');
+    expect(window.defaultRouteName, '/initial');
 
-    // Changing the URL in the address bar later shouldn't affect [window.initialRouteName].
+    // Changing the URL in the address bar later shouldn't affect [window.defaultRouteName].
     window.locationStrategy.replaceState(null, null, '/newpath');
-    expect(window.initialRouteName, '/initial');
+    expect(window.defaultRouteName, '/initial');
   });
 
-  test('window.initialRouteName should reset after navigation platform message', () {
+  test('window.defaultRouteName should reset after navigation platform message', () {
     window.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
     // Reading it multiple times should return the same value.
-    expect(window.initialRouteName, '/initial');
-    expect(window.initialRouteName, '/initial');
+    expect(window.defaultRouteName, '/initial');
+    expect(window.defaultRouteName, '/initial');
 
     window.sendPlatformMessage(
       'flutter/navigation',
@@ -45,9 +45,9 @@ void main() {
       )),
       emptyCallback,
     );
-    // After a navigation platform message, [window.initialRouteName] should
+    // After a navigation platform message, [window.defaultRouteName] should
     // reset to "/".
-    expect(window.initialRouteName, '/');
+    expect(window.defaultRouteName, '/');
   });
 
   test('can disable location strategy', () async {

@@ -6,8 +6,6 @@
 part of dart.ui;
 
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration/*!*/ configuration);
-typedef ViewCreatedCallback = void Function(FlutterView/*!*/ view);
-typedef ViewDisposedCallback = void Function(FlutterView/*!*/ view);
 
 /// Platform event dispatcher singleton.
 ///
@@ -559,8 +557,8 @@ class PlatformDispatcher {
   ///  * [Navigator], a widget that handles routing.
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
-  String/*!*/ get initialRouteName => _initialRouteName();
-  String/*!*/ _initialRouteName() native 'PlatformConfiguration_initialRouteName';
+  String/*!*/ get defaultRouteName => _defaultRouteName();
+  String/*!*/ _defaultRouteName() native 'PlatformConfiguration_defaultRouteName';
 }
 
 /// Configuration of the platform.
@@ -576,7 +574,7 @@ class PlatformConfiguration {
     this.textScaleFactor = 1.0,
     this.locales = const <Locale>[],
     this.platformResolvedLocale,
-    this.initialRouteName,
+    this.defaultRouteName,
   })  : assert(accessibilityFeatures != null),
         assert(alwaysUse24HourFormat != null),
         assert(semanticsEnabled != null),
@@ -593,7 +591,7 @@ class PlatformConfiguration {
     double/*?*/ textScaleFactor,
     List<Locale/*!*/>/*?*/ locales,
     Locale/*?*/ platformResolvedLocale,
-    String/*?*/ initialRouteName,
+    String/*?*/ defaultRouteName,
   }) {
     return PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -603,7 +601,7 @@ class PlatformConfiguration {
       textScaleFactor: textScaleFactor ?? this.textScaleFactor,
       locales: locales ?? this.locales,
       platformResolvedLocale: platformResolvedLocale ?? this.platformResolvedLocale,
-      initialRouteName: initialRouteName ?? this.initialRouteName,
+      defaultRouteName: defaultRouteName ?? this.defaultRouteName,
     );
   }
 
@@ -634,7 +632,7 @@ class PlatformConfiguration {
 
   /// The route or path that the embedder requested when the application was
   /// launched.
-  final String/*?*/ initialRouteName;
+  final String/*?*/ defaultRouteName;
 }
 
 /// Immutable configuration information for a screen.

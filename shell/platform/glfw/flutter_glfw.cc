@@ -194,7 +194,7 @@ static double GetScreenCoordinatesPerInch() {
 }
 
 // Sends a window metrics update to the Flutter engine using the given
-// framebuffer size and the current window informaftion in |state|.
+// framebuffer size and the current window information in |state|.
 static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
                               int width,
                               int height) {

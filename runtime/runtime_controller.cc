@@ -303,8 +303,8 @@ Window* RuntimeController::GetWindowIfAvailable() {
 }
 
 // |WindowClient|
-std::string RuntimeController::InitialRouteName() {
-  return client_.InitialRouteName();
+std::string RuntimeController::DefaultRouteName() {
+  return client_.DefaultRouteName();
 }
 
 // |WindowClient|

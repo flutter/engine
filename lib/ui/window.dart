@@ -825,13 +825,12 @@ class FlutterWindow extends FlutterView {
 /// A [FlutterWindow] that includes access to setting callbacks and retrieving
 /// properties that reside on the [PlatformDispatcher].
 ///
-/// It is the type of the legacy global [window] singleton, and the
-/// `WidgetsBinding.instance.window` singleton.
+/// It is the type of the `WidgetsBinding.instance.window` singleton and the
+/// legacy global [window] singleton.
 ///
 /// This class provides backward compatibility with code that was written before
-/// Flutter supported multiple top level windows. New code should refer to the
-/// [WidgetsBinding.instance.platformDispatcher] or [FlutterWindow] class
-/// directly to modify or retrieve these properties.
+/// Flutter supported multiple top level windows. To modify or retrieve these
+/// properties, new code should use `WidgetsBinding.instance.platformDispatcher`.
 ///
 /// There is also a [PlatformDispatcher.instance] singleton object in `dart:ui`
 /// if `WidgetsBinding` is unavailable. But we strongly advise avoiding a static
@@ -1138,16 +1137,16 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///  * [Navigator], a widget that handles routing.
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
-  String get initialRouteName => platformDispatcher.initialRouteName;
+  String get defaultRouteName => platformDispatcher.defaultRouteName;
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame]
   /// and [onDrawFrame] callbacks be invoked.
   ///
   /// {@template flutter.lib.ui.window.functionForwardWarning}
-  /// Calling this function calls the same function on the [PlatformDispatcher]
-  /// singleton, so instead of calling it here, you should consider calling it
-  /// on `WidgetsBinding.instance.platformDispatcher` instead (or, as a last
-  /// resort when `WidgetsBinding` isn't available, on
+  /// Calling this function forwards the call to the same function on the
+  /// [PlatformDispatcher] singleton, so instead of calling it here, you should
+  /// consider calling it on `WidgetsBinding.instance.platformDispatcher`
+  /// instead (or, as a last resort when `WidgetsBinding` isn't available, on
   /// [PlatformDispatcher.instance]). The reason this function forwards to the
   /// [PlatformDispatcher] is to avoid breaking code that was written before
   /// Flutter supported multiple windows.

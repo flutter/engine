@@ -19,12 +19,12 @@ namespace flutter {
 
 namespace {
 
-void InitialRouteName(Dart_NativeArguments args) {
+void DefaultRouteName(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
   std::string routeName = UIDartState::Current()
                               ->platform_configuration()
                               ->client()
-                              ->InitialRouteName();
+                              ->DefaultRouteName();
   Dart_SetReturnValue(args, tonic::StdStringToDart(routeName));
 }
 
@@ -429,7 +429,7 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
 void PlatformConfiguration::RegisterNatives(
     tonic::DartLibraryNatives* natives) {
   natives->Register({
-      {"PlatformConfiguration_initialRouteName", InitialRouteName, 1, true},
+      {"PlatformConfiguration_defaultRouteName", DefaultRouteName, 1, true},
       {"PlatformConfiguration_scheduleFrame", ScheduleFrame, 1, true},
       {"PlatformConfiguration_sendPlatformMessage", _SendPlatformMessage, 4,
        true},

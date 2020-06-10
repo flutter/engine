@@ -3189,7 +3189,7 @@ dart:ui,TileMode,init:mirror
 dart:ui,TileMode,init:repeated
 dart:ui,TileMode,init:values
 dart:ui,Window,Window._
-dart:ui,Window,_initialRouteName
+dart:ui,Window,_defaultRouteName
 dart:ui,Window,_sendPlatformMessage
 dart:ui,Window,_zonedPlatformMessageResponseCallback
 dart:ui,Window,get:_accessibilityFeatures
@@ -3220,7 +3220,7 @@ dart:ui,Window,get:_textScaleFactor
 dart:ui,Window,get:_viewInsets
 dart:ui,Window,get:accessibilityFeatures
 dart:ui,Window,get:alwaysUse24HourFormat
-dart:ui,Window,get:initialRouteName
+dart:ui,Window,get:defaultRouteName
 dart:ui,Window,get:devicePixelRatio
 dart:ui,Window,get:initialLifecycleState
 dart:ui,Window,get:locales

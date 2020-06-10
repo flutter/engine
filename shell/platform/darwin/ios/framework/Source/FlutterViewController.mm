@@ -837,9 +837,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)viewDidLayoutSubviews {
-  UIScreen* screen = self.view.window.screen;
   CGSize viewSize = self.view.bounds.size;
-  CGFloat scale = screen.scale;
+  CGFloat scale = [UIScreen mainScreen].scale;
 
   // Purposefully place this not visible.
   _scrollView.get().frame = CGRectMake(0.0, 0.0, viewSize.width, 0.0);
@@ -850,8 +849,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   _viewportMetrics.physical_width = viewSize.width * scale;
   _viewportMetrics.physical_height = viewSize.height * scale;
   _screenMetrics.device_pixel_ratio = scale;
-  _screenMetrics.physical_width = screen.bounds.size.width;
-  _screenMetrics.physical_height = screen.bounds.size.height;
+  _screenMetrics.physical_width = [UIScreen mainScreen].bounds.size.width;
+  _screenMetrics.physical_height = [UIScreen mainScreen].bounds.size.height;
 
   [self updateViewportPadding];
   [self updateViewportMetrics];
@@ -890,7 +889,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 //
 // Viewport padding represents the iOS safe area insets.
 - (void)updateViewportPadding {
-  CGFloat scale = self.view.window.screen.scale;
+  CGFloat scale = [UIScreen mainScreen].scale;
   if (@available(iOS 11, *)) {
     _viewportMetrics.physical_padding_top = self.view.safeAreaInsets.top * scale;
     _viewportMetrics.physical_padding_left = self.view.safeAreaInsets.left * scale;
@@ -905,7 +904,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 //
 // Screen padding represents the iOS safe area insets.
 - (void)updateScreenPadding {
-  CGFloat scale = self.view.window.screen.scale;
+  CGFloat scale = [UIScreen mainScreen].scale;
   if (@available(iOS 11, *)) {
     _screenMetrics.physical_padding_top = self.view.safeAreaInsets.top * scale;
     _screenMetrics.physical_padding_left = self.view.safeAreaInsets.left * scale;

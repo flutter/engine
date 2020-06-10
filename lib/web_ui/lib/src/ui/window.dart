@@ -253,167 +253,35 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onPlatformBrightnessChanged = callback;
   }
 
-  /// A callback that is invoked to notify the application that it is an
-  /// appropriate time to provide a scene using the [SceneBuilder] API and the
-  /// [render] method. When possible, this is driven by the hardware VSync
-  /// signal. This is only called if [scheduleFrame] has been called since the
-  /// last time this callback was invoked.
-  ///
-  /// The [onDrawFrame] callback is invoked immediately after [onBeginFrame],
-  /// after draining any microtasks (e.g. completions of any [Future]s) queued
-  /// by the [onBeginFrame] handler.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  ///
-  /// See also:
-  ///
-  ///  * [SchedulerBinding], the Flutter framework class which manages the
-  ///    scheduling of frames.
-  ///  * [RendererBinding], the Flutter framework class which manages layout and
-  ///    painting.
   FrameCallback? get onBeginFrame;
   set onBeginFrame(FrameCallback? callback);
 
-  /// A callback that is invoked to report the [FrameTiming] of recently
-  /// rasterized frames.
-  ///
-  /// This can be used to see if the application has missed frames (through
-  /// [FrameTiming.buildDuration] and [FrameTiming.rasterDuration]), or high
-  /// latencies (through [FrameTiming.totalSpan]).
-  ///
-  /// Unlike [Timeline], the timing information here is available in the release
-  /// mode (additional to the profile and the debug mode). Hence this can be
-  /// used to monitor the application's performance in the wild.
-  ///
-  /// The callback may not be immediately triggered after each frame. Instead,
-  /// it tries to batch frames together and send all their timings at once to
-  /// decrease the overhead (as this is available in the release mode). The
-  /// timing of any frame will be sent within about 1 second even if there are
-  /// no later frames to batch.
   TimingsCallback? get onReportTimings;
   set onReportTimings(TimingsCallback? callback);
 
-  /// A callback that is invoked for each frame after [onBeginFrame] has
-  /// completed and after the microtask queue has been drained. This can be
-  /// used to implement a second phase of frame rendering that happens
-  /// after any deferred work queued by the [onBeginFrame] phase.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  ///
-  /// See also:
-  ///
-  ///  * [SchedulerBinding], the Flutter framework class which manages the
-  ///    scheduling of frames.
-  ///  * [RendererBinding], the Flutter framework class which manages layout and
-  ///    painting.
   VoidCallback? get onDrawFrame;
   set onDrawFrame(VoidCallback? callback);
 
-  /// A callback that is invoked when pointer data is available.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  ///
-  /// See also:
-  ///
-  ///  * [GestureBinding], the Flutter framework class which manages pointer
-  ///    events.
   PointerDataPacketCallback? get onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback);
 
-  /// The route or path that the embedder requested when the application was
-  /// launched.
-  ///
-  /// This will be the string "`/`" if no particular route was requested.
-  ///
-  /// ## Android
-  ///
-  /// On Android, calling
-  /// [`FlutterView.setInitialRoute`](/javadoc/io/flutter/view/FlutterView.html#setInitialRoute-java.lang.String-)
-  /// will set this value. The value must be set sufficiently early, i.e. before
-  /// the [runApp] call is executed in Dart, for this to have any effect on the
-  /// framework. The `createFlutterView` method in your `FlutterActivity`
-  /// subclass is a suitable time to set the value. The application's
-  /// `AndroidManifest.xml` file must also be updated to have a suitable
-  /// [`<intent-filter>`](https://developer.android.com/guide/topics/manifest/intent-filter-element.html).
-  ///
-  /// ## iOS
-  ///
-  /// On iOS, calling
-  /// [`FlutterViewController.setInitialRoute`](/objcdoc/Classes/FlutterViewController.html#/c:objc%28cs%29FlutterViewController%28im%29setInitialRoute:)
-  /// will set this value. The value must be set sufficiently early, i.e. before
-  /// the [runApp] call is executed in Dart, for this to have any effect on the
-  /// framework. The `application:didFinishLaunchingWithOptions:` method is a
-  /// suitable time to set this value.
-  ///
-  /// See also:
-  ///
-  ///  * [Navigator], a widget that handles routing.
-  ///  * [SystemChannels.navigation], which handles subsequent navigation
-  ///    requests from the embedder.
   String get defaultRouteName;
 
-  /// Whether the user has requested that [updateSemantics] be called when
-  /// the semantic contents of window changes.
-  ///
-  /// The [onSemanticsEnabledChanged] callback is called whenever this value
-  /// changes.
-  ///
-  /// This defaults to `true` on the Web because we may never receive a signal
-  /// that an assistive technology is turned on.
   bool get semanticsEnabled =>
       engine.EngineSemanticsOwner.instance.semanticsEnabled;
 
-  /// A callback that is invoked when the value of [semanticsEnabled] changes.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
   VoidCallback? get onSemanticsEnabledChanged;
   set onSemanticsEnabledChanged(VoidCallback? callback);
 
-  /// A callback that is invoked whenever the user requests an action to be
-  /// performed.
-  ///
-  /// This callback is used when the user expresses the action they wish to
-  /// perform based on the semantics supplied by [updateSemantics].
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
   SemanticsActionCallback? get onSemanticsAction;
   set onSemanticsAction(SemanticsActionCallback? callback);
 
-  /// A callback that is invoked when the value of [accessibilityFlags] changes.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
   VoidCallback? get onAccessibilityFeaturesChanged;
   set onAccessibilityFeaturesChanged(VoidCallback? callback);
 
-  /// Called whenever this window receives a message from a platform-specific
-  /// plugin.
-  ///
-  /// The `name` parameter determines which plugin sent the message. The `data`
-  /// parameter is the payload and is typically UTF-8 encoded JSON but can be
-  /// arbitrary data.
-  ///
-  /// Message handlers must call the function given in the `callback` parameter.
-  /// If the handler does not need to respond, the handler should pass null to
-  /// the callback.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
   PlatformMessageCallback? get onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback);
 
-  /// Change the retained semantics data about this window.
-  ///
-  /// If [semanticsEnabled] is true, the user has requested that this funciton
-  /// be called whenever the semantic content of this window changes.
-  ///
-  /// In either case, this function disposes the given update, which means the
-  /// semantics update cannot be used further.
   void updateSemantics(SemanticsUpdate update) {
     engine.EngineSemanticsOwner.instance.updateSemantics(update);
   }
@@ -426,34 +294,9 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
     PlatformMessageResponseCallback? callback,
   );
 
-  /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
   AccessibilityFeatures _accessibilityFeatures = AccessibilityFeatures._(0);
 
-  /// Updates the application's rendering on the GPU with the newly provided
-  /// [Scene]. This function must be called within the scope of the
-  /// [onBeginFrame] or [onDrawFrame] callbacks being invoked. If this function
-  /// is called a second time during a single [onBeginFrame]/[onDrawFrame]
-  /// callback sequence or called outside the scope of those callbacks, the call
-  /// will be ignored.
-  ///
-  /// To record graphical operations, first create a [PictureRecorder], then
-  /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
-  /// After issuing all the graphical operations, call the
-  /// [PictureRecorder.endRecording] function on the [PictureRecorder] to obtain
-  /// the final [Picture] that represents the issued graphical operations.
-  ///
-  /// Next, create a [SceneBuilder], and add the [Picture] to it using
-  /// [SceneBuilder.addPicture]. With the [SceneBuilder.build] method you can
-  /// then obtain a [Scene] object, which you can display to the user via this
-  /// [render] function.
-  ///
-  /// See also:
-  ///
-  ///  * [SchedulerBinding], the Flutter framework class which manages the
-  ///    scheduling of frames.
-  ///  * [RendererBinding], the Flutter framework class which manages layout and
-  ///    painting.
   void render(Scene scene);
 
   String get initialLifecycleState => 'AppLifecycleState.resumed';
@@ -476,32 +319,11 @@ class AccessibilityFeatures {
   // A bitfield which represents each enabled feature.
   final int _index;
 
-  /// Whether there is a running accessibility service which is changing the
-  /// interaction model of the device.
-  ///
-  /// For example, TalkBack on Android and VoiceOver on iOS enable this flag.
   bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
-
-  /// The platform is inverting the colors of the application.
   bool get invertColors => _kInvertColorsIndex & _index != 0;
-
-  /// The platform is requesting that animations be disabled or simplified.
   bool get disableAnimations => _kDisableAnimationsIndex & _index != 0;
-
-  /// The platform is requesting that text be rendered at a bold font weight.
-  ///
-  /// Only supported on iOS.
   bool get boldText => _kBoldTextIndex & _index != 0;
-
-  /// The platform is requesting that certain animations be simplified and
-  /// parallax effects removed.
-  ///
-  /// Only supported on iOS.
   bool get reduceMotion => _kReduceMotionIndex & _index != 0;
-
-  /// The platform is requesting that UI be rendered with darker colors.
-  ///
-  /// Only supported on iOS.
   bool get highContrast => _kHighContrastIndex & _index != 0;
 
   @override
@@ -605,58 +427,23 @@ enum FramePhase {
 }
 
 class FrameTiming {
-  /// Construct [FrameTiming] with raw timestamps in microseconds.
-  ///
-  /// List [timestamps] must have the same number of elements as
-  /// [FramePhase.values].
-  ///
-  /// This constructor is usually only called by the Flutter engine, or a test.
-  /// To get the [FrameTiming] of your app, see [Window.onReportTimings].
   FrameTiming(List<int> timestamps)
       : assert(timestamps.length == FramePhase.values.length),
         _timestamps = timestamps;
 
-  /// This is a raw timestamp in microseconds from some epoch. The epoch in all
-  /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
   int timestampInMicroseconds(FramePhase phase) => _timestamps[phase.index];
 
   Duration _rawDuration(FramePhase phase) =>
       Duration(microseconds: _timestamps[phase.index]);
 
-  /// The duration to build the frame on the UI thread.
-  ///
-  /// The build starts approximately when [Window.onBeginFrame] is called. The
-  /// [Duration] in the [Window.onBeginFrame] callback is exactly the
-  /// `Duration(microseconds: timestampInMicroseconds(FramePhase.buildStart))`.
-  ///
-  /// The build finishes when [Window.render] is called.
-  ///
-  /// {@template dart.ui.FrameTiming.fps_smoothness_milliseconds}
-  /// To ensure smooth animations of X fps, this should not exceed 1000/X
-  /// milliseconds.
-  /// {@endtemplate}
-  /// {@template dart.ui.FrameTiming.fps_milliseconds}
-  /// That's about 16ms for 60fps, and 8ms for 120fps.
-  /// {@endtemplate}
   Duration get buildDuration =>
       _rawDuration(FramePhase.buildFinish) -
       _rawDuration(FramePhase.buildStart);
 
-  /// The duration to rasterize the frame on the raster thread.
-  ///
-  /// {@macro dart.ui.FrameTiming.fps_smoothness_milliseconds}
-  /// {@macro dart.ui.FrameTiming.fps_milliseconds}
   Duration get rasterDuration =>
       _rawDuration(FramePhase.rasterFinish) -
       _rawDuration(FramePhase.rasterStart);
 
-  /// The timespan between build start and raster finish.
-  ///
-  /// To achieve the lowest latency on an X fps display, this should not exceed
-  /// 1000/X milliseconds.
-  /// {@macro dart.ui.FrameTiming.fps_milliseconds}
-  ///
-  /// See also [buildDuration] and [rasterDuration].
   Duration get totalSpan =>
       _rawDuration(FramePhase.rasterFinish) -
       _rawDuration(FramePhase.buildStart);
@@ -671,66 +458,4 @@ class FrameTiming {
   }
 }
 
-/// The [Window] singleton. This object exposes the size of the display, the
-/// core scheduler API, the input event callback, the graphics drawing API, and
-/// other such core services.
-Window get window => engine.window;
-  FrameCallback? get onBeginFrame => platformDispatcher.onBeginFrame;
-  set onBeginFrame(FrameCallback? callback) {
-    platformDispatcher.onBeginFrame = callback;
-  }
-  VoidCallback? get onDrawFrame => platformDispatcher.onDrawFrame;
-  set onDrawFrame(VoidCallback? callback) {
-    platformDispatcher.onDrawFrame = callback;
-  }
-  TimingsCallback? get onReportTimings => platformDispatcher.onReportTimings;
-  set onReportTimings(TimingsCallback? callback) {
-    platformDispatcher.onReportTimings = callback;
-  }
-  PointerDataPacketCallback? get onPointerDataPacket => platformDispatcher.onPointerDataPacket;
-  set onPointerDataPacket(PointerDataPacketCallback? callback) {
-    platformDispatcher.onPointerDataPacket = callback;
-  }
-  String get initialRouteName => platformDispatcher.initialRouteName;
-  void scheduleFrame() => platformDispatcher.scheduleFrame();
-  void render(Scene scene) => platformDispatcher.render(scene, this);
-  bool get semanticsEnabled => platformDispatcher.semanticsEnabled;
-  VoidCallback? get onSemanticsEnabledChanged => platformDispatcher.onSemanticsEnabledChanged;
-  set onSemanticsEnabledChanged(VoidCallback? callback) {
-    platformDispatcher.onSemanticsEnabledChanged = callback;
-  }
-  SemanticsActionCallback? get onSemanticsAction => platformDispatcher.onSemanticsAction;
-  set onSemanticsAction(SemanticsActionCallback? callback) {
-    platformDispatcher.onSemanticsAction = callback;
-  }
-  AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
-  VoidCallback? get onAccessibilityFeaturesChanged =>
-      platformDispatcher.onAccessibilityFeaturesChanged;
-  set onAccessibilityFeaturesChanged(VoidCallback? callback) {
-    platformDispatcher.onAccessibilityFeaturesChanged = callback;
-    String name,
-    ByteData? data,
-    PlatformMessageResponseCallback? callback,
-  ) {
-    platformDispatcher.sendPlatformMessage(name, data, callback);
-  }
-  PlatformMessageCallback? get onPlatformMessage => platformDispatcher.onPlatformMessage;
-  set onPlatformMessage(PlatformMessageCallback? callback) {
-    platformDispatcher.onPlatformMessage = callback;
-  }
-  bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
-  bool get invertColors => _kInvertColorsIndex & _index != 0;
-  bool get disableAnimations => _kDisableAnimationsIndex & _index != 0;
-  bool get boldText => _kBoldTextIndex & _index != 0;
-  bool get reduceMotion => _kReduceMotionIndex & _index != 0;
-  bool get highContrast => _kHighContrastIndex & _index != 0;
-  FrameTiming(List<int> timestamps)
-  int timestampInMicroseconds(FramePhase phase) => _timestamps[phase.index];
-  Duration _rawDuration(FramePhase phase) => Duration(microseconds: _timestamps[phase.index]);
-  Duration get buildDuration =>
-      _rawDuration(FramePhase.buildFinish) - _rawDuration(FramePhase.buildStart);
-  Duration get rasterDuration =>
-      _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.rasterStart);
-  Duration get totalSpan =>
-      _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.buildStart);
 SingletonFlutterWindow get window => engine.window;

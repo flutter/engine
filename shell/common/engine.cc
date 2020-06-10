@@ -446,7 +446,7 @@ void Engine::StartAnimatorIfPossible() {
     animator_->Start();
 }
 
-std::string Engine::InitialRouteName() {
+std::string Engine::DefaultRouteName() {
   if (!initial_route_.empty()) {
     return initial_route_;
   }

@@ -53,7 +53,7 @@ Dart_Handle ToByteData(const std::vector<uint8_t>& buffer);
 
 class WindowClient {
  public:
-  virtual std::string InitialRouteName() = 0;
+  virtual std::string DefaultRouteName() = 0;
   virtual void ScheduleFrame() = 0;
   virtual void Render(Scene* scene) = 0;
   virtual void UpdateSemantics(SemanticsUpdate* update) = 0;

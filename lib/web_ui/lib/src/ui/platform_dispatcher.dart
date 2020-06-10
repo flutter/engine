@@ -6,8 +6,6 @@
 part of ui;
 
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
-typedef ViewCreatedCallback = void Function(FlutterView view);
-typedef ViewDisposedCallback = void Function(FlutterView view);
 
 abstract class PlatformDispatcher {
   static PlatformDispatcher/*!*/ get instance => engine.EnginePlatformDispatcher.instance;
@@ -84,7 +82,7 @@ abstract class PlatformDispatcher {
   SemanticsActionCallback/*?*/ get onSemanticsAction;
   set onSemanticsAction(SemanticsActionCallback/*?*/ callback);
 
-  String/*!*/ get initialRouteName;
+  String/*!*/ get defaultRouteName;
 
   void setIsolateDebugName(String/*!*/ name) {}
 
@@ -102,7 +100,7 @@ class PlatformConfiguration {
     this.textScaleFactor = 1.0,
     this.locales = const <Locale>[],
     this.platformResolvedLocale,
-    this.initialRouteName,
+    this.defaultRouteName,
   })  : assert(accessibilityFeatures != null),
         assert(alwaysUse24HourFormat != null),
         assert(semanticsEnabled != null),
@@ -118,7 +116,7 @@ class PlatformConfiguration {
     double/*?*/ textScaleFactor,
     List<Locale/*!*/>/*?*/ locales,
     Locale/*?*/ platformResolvedLocale,
-    String/*?*/ initialRouteName,
+    String/*?*/ defaultRouteName,
   }) {
     return PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -128,7 +126,7 @@ class PlatformConfiguration {
       textScaleFactor: textScaleFactor ?? this.textScaleFactor,
       locales: locales ?? this.locales,
       platformResolvedLocale: platformResolvedLocale ?? this.platformResolvedLocale,
-      initialRouteName: initialRouteName ?? this.initialRouteName,
+      defaultRouteName: defaultRouteName ?? this.defaultRouteName,
     );
   }
 
@@ -139,7 +137,7 @@ class PlatformConfiguration {
   final double/*!*/ textScaleFactor;
   final List<Locale/*!*/>/*!*/ locales;
   final Locale/*?*/ platformResolvedLocale;
-  final String/*?*/ initialRouteName;
+  final String/*?*/ defaultRouteName;
 }
 
 class ScreenConfiguration {

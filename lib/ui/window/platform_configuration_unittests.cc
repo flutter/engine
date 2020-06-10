@@ -25,7 +25,7 @@ class DummyWindowClient : public WindowClient {
     std::vector<uint8_t> data;
     isolate_data_.reset(new ::fml::DataMapping(data));
   }
-  virtual std::string InitialRouteName() { return "TestRoute"; }
+  virtual std::string DefaultRouteName() { return "TestRoute"; }
   virtual void ScheduleFrame() {}
   virtual void Render(Scene* scene) {}
   virtual void UpdateSemantics(SemanticsUpdate* update) {}
