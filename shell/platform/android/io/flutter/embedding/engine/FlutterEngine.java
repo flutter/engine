@@ -207,6 +207,7 @@ public class FlutterEngine {
     flutterLoader.ensureInitializationComplete(context, dartVmArgs);
 
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
+    flutterJNI.setPlatformViewsController(platformViewsController);
     attachToJni();
 
     this.dartExecutor = new DartExecutor(flutterJNI, context.getAssets());
