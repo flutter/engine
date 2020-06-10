@@ -20,7 +20,7 @@ AndroidSurfaceGL::AndroidSurfaceGL(
       std::static_pointer_cast<AndroidContextGL>(android_context);
   // Acquire the offscreen surface.
   offscreen_surface_ = android_context_->CreateOffscreenSurface();
-  if (offscreen_surface_->surface == EGL_NO_SURFACE) {
+  if (!offscreen_surface_->IsValid()) {
     offscreen_surface_ = nullptr;
   }
   external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>();
@@ -49,24 +49,24 @@ bool AndroidSurfaceGL::OnScreenSurfaceResize(const SkISize& size) {
   FML_DCHECK(onscreen_surface_);
   FML_DCHECK(native_window_);
 
-  if (size == android_context_->GetSize(std::move(onscreen_surface_))) {
+  if (size == onscreen_surface_->GetSize()) {
     return true;
   }
 
   android_context_->ClearCurrent();
 
   onscreen_surface_ = android_context_->CreateOnscreenSurface(native_window_);
-  if (onscreen_surface_->surface == EGL_NO_SURFACE) {
+  if (onscreen_surface_->IsValid()) {
     FML_LOG(ERROR) << "Unable to create EGL window surface on resize.";
     return false;
   }
-  android_context_->MakeCurrent(std::move(onscreen_surface_));
+  onscreen_surface_->MakeCurrent();
   return true;
 }
 
 bool AndroidSurfaceGL::ResourceContextMakeCurrent() {
   FML_DCHECK(IsValid());
-  return android_context_->ResourceMakeCurrent(std::move(offscreen_surface_));
+  return offscreen_surface_->MakeCurrent();
 }
 
 bool AndroidSurfaceGL::ResourceContextClearCurrent() {
@@ -81,7 +81,7 @@ bool AndroidSurfaceGL::SetNativeWindow(
   native_window_ = window;
   // Create the onscreen surface.
   onscreen_surface_ = android_context_->CreateOnscreenSurface(window);
-  if (onscreen_surface_->surface == EGL_NO_SURFACE) {
+  if (!onscreen_surface_->IsValid()) {
     return false;
   }
   return true;
@@ -91,7 +91,7 @@ std::unique_ptr<GLContextResult> AndroidSurfaceGL::GLContextMakeCurrent() {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
   auto default_context_result = std::make_unique<GLContextDefaultResult>(
-      android_context_->MakeCurrent(std::move(onscreen_surface_)));
+      onscreen_surface_->MakeCurrent());
   return std::move(default_context_result);
 }
 
@@ -103,7 +103,7 @@ bool AndroidSurfaceGL::GLContextClearCurrent() {
 bool AndroidSurfaceGL::GLContextPresent() {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
-  return android_context_->SwapBuffers(std::move(onscreen_surface_));
+  return onscreen_surface_->SwapBuffers();
 }
 
 intptr_t AndroidSurfaceGL::GLContextFBO() const {
