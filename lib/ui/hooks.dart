@@ -111,7 +111,7 @@ void _updateUserSettingsData(String jsonData) {
   if (data.isEmpty) {
     return;
   }
-  _updateTextScaleFactor((data['textScaleFactor'] as num?)!.toDouble());
+  _updateTextScaleFactor((data['textScaleFactor'] as num).toDouble());
   _updateAlwaysUse24HourFormat(data['alwaysUse24HourFormat'] as bool);
   _updatePlatformBrightness(data['platformBrightness'] as String);
 }
