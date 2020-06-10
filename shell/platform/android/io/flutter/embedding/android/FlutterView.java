@@ -838,7 +838,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // TODO(mattcarroll): once this is proven to work, move this line ot TextInputPlugin
     textInputPlugin.getInputMethodManager().restartInput(this);
 
-    this.flutterEngine.getFlutterJNI().setLocalizationPlugin(localizationPlugin);
+    if (this.flutterEngine != null) this.flutterEngine.getFlutterJNI().setLocalizationPlugin(localizationPlugin);
 
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();

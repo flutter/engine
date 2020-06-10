@@ -85,6 +85,12 @@ class MockDelegate : public PlatformView::Delegate {
   void OnPlatformViewRegisterTexture(std::shared_ptr<Texture> texture) override {}
   void OnPlatformViewUnregisterTexture(int64_t texture_id) override {}
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) override {}
+
+  std::vector<std::string> mock_locale_data;
+  std::vector<std::string>& ComputePlatformViewResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) override {
+    return mock_locale_data;
+  }
 };
 }  // namespace
 }  // namespace flutter
