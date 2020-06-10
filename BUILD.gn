@@ -71,7 +71,6 @@ group("flutter") {
     public_deps += [
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
-      "//flutter/lib/ui:ui_benchmarks",
       "//flutter/lib/ui:ui_unittests",
       "//flutter/runtime:runtime_unittests",
       "//flutter/shell/common:shell_unittests",
@@ -86,6 +85,7 @@ group("flutter") {
         "//flutter/fml:fml_benchmarks",
         "//flutter/shell/common:shell_benchmarks",
         "//flutter/third_party/txt:txt_benchmarks",
+        "//flutter/lib/ui:ui_benchmarks",
       ]
     }
 
