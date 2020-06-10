@@ -75,16 +75,17 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {}
   // |flutter::PlatformView::Delegate|
-  std::vector<std::string>& ComputePlatformViewResolvedLocale(
+  std::unique_ptr<std::vector<std::string>> ComputePlatformViewResolvedLocale(
       const std::vector<std::string>& supported_locale_data) {
-    return mock_locale_data_;
+    std::unique_ptr<std::vector<std::string>> out =
+        std::make_unique<std::vector<std::string>>();
+    return out;
   }
 
   bool SemanticsEnabled() const { return semantics_enabled_; }
   int32_t SemanticsFeatures() const { return semantics_features_; }
 
  private:
-  std::vector<std::string> mock_locale_data_;
   bool semantics_enabled_ = false;
   int32_t semantics_features_ = 0;
 };

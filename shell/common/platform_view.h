@@ -225,7 +225,8 @@ class PlatformView {
     ///             platform. Empty strings mean the value was unassigned. Empty
     ///             vector represents a null locale.
     ///
-    virtual std::vector<std::string>& ComputePlatformViewResolvedLocale(
+    virtual std::unique_ptr<std::vector<std::string>>
+    ComputePlatformViewResolvedLocale(
         const std::vector<std::string>& supported_locale_data) = 0;
   };
 
@@ -576,7 +577,8 @@ class PlatformView {
   ///             platform. Empty strings mean the value was unassigned. Empty
   ///             vector represents a null locale.
   ///
-  virtual std::vector<std::string>& ComputePlatformResolvedLocales(
+  virtual std::unique_ptr<std::vector<std::string>>
+  ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data);
 
  protected:

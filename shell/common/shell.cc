@@ -1099,16 +1099,15 @@ void Shell::SetNeedsReportTimings(bool value) {
 }
 
 // |Engine::Delegate|
-std::vector<std::string>& Shell::ComputePlatformResolvedLocale(
+std::unique_ptr<std::vector<std::string>> Shell::ComputePlatformResolvedLocale(
     const std::vector<std::string>& supported_locale_data) {
   return ComputePlatformViewResolvedLocale(supported_locale_data);
 }
 
 // |PlatformView::Delegate|
-std::vector<std::string>& Shell::ComputePlatformViewResolvedLocale(
+std::unique_ptr<std::vector<std::string>>
+Shell::ComputePlatformViewResolvedLocale(
     const std::vector<std::string>& supported_locale_data) {
-  std::vector<std::string> result =
-      platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
   return platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
 }
 

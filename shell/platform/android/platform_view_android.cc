@@ -427,20 +427,20 @@ void PlatformViewAndroid::ReleaseResourceContext() const {
 }
 
 // |PlatformView|
-std::vector<std::string>& PlatformViewAndroid::ComputePlatformResolvedLocales(
+std::unique_ptr<std::vector<std::string>>
+PlatformViewAndroid::ComputePlatformResolvedLocales(
     const std::vector<std::string>& supported_locale_data) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = java_object_.get(env);
   if (view.is_null()) {
     // The Java object died.
-    platform_resolved_locale_.clear();
-    return platform_resolved_locale_;
+    std::unique_ptr<std::vector<std::string>> out =
+        std::make_unique<std::vector<std::string>>();
+    return out;
   }
-  platform_resolved_locale_ = *FlutterViewComputePlatformResolvedLocale(
+  return FlutterViewComputePlatformResolvedLocale(
       env, view.obj(),
       fml::jni::VectorToStringArray(env, supported_locale_data).obj());
-
-  return platform_resolved_locale_;
 }
 
 void PlatformViewAndroid::InstallFirstFrameCallback() {

@@ -137,7 +137,8 @@ void PlatformView::SetNextFrameCallback(const fml::closure& closure) {
   delegate_.OnPlatformViewSetNextFrameCallback(closure);
 }
 
-std::vector<std::string>& PlatformView::ComputePlatformResolvedLocales(
+std::unique_ptr<std::vector<std::string>>
+PlatformView::ComputePlatformResolvedLocales(
     const std::vector<std::string>& supported_locale_data) {
   return delegate_.ComputePlatformViewResolvedLocale(supported_locale_data);
 }

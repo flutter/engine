@@ -483,7 +483,7 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override;
 
   // |PlatformView::Delegate|
-  std::vector<std::string>& ComputePlatformViewResolvedLocale(
+  std::unique_ptr<std::vector<std::string>> ComputePlatformViewResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
 
   // |Animator::Delegate|
@@ -521,7 +521,7 @@ class Shell final : public PlatformView::Delegate,
   void SetNeedsReportTimings(bool value) override;
 
   // |Engine::Delegate|
-  std::vector<std::string>& ComputePlatformResolvedLocale(
+  std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
 
   // |Rasterizer::Delegate|

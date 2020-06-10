@@ -30,7 +30,7 @@ class DartIsolateGroupData;
 /// @brief      Represents an instance of a live isolate. An isolate is a
 ///             separate Dart execution context. Different Dart isolates don't
 ///             share memory and can be scheduled concurrently by the Dart VM on
-///             one of the Dart VM managed worker pool threads.
+///             one of the Dart VM managed worfluker pool threads.
 ///
 ///             The entire lifecycle of a Dart isolate is controlled by the Dart
 ///             VM. Because of this, the engine never holds a strong pointer to

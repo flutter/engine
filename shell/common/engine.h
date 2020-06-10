@@ -243,7 +243,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///             platform. Empty strings mean the value was unassigned. Empty
     ///             vector represents a null locale.
     ///
-    virtual std::vector<std::string>& ComputePlatformResolvedLocale(
+    virtual std::unique_ptr<std::vector<std::string>>
+    ComputePlatformResolvedLocale(
         const std::vector<std::string>& supported_locale_data) = 0;
   };
 
@@ -791,7 +792,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
                                 int64_t isolate_port) override;
 
   // |RuntimeDelegate|
-  std::vector<std::string>& ComputePlatformResolvedLocale(
+  std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
 
   void SetNeedsReportTimings(bool value) override;

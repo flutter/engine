@@ -441,8 +441,10 @@ Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
     supportedLocales.emplace_back(cname);
   }
   std::vector<std::string> results =
-      UIDartState::Current()->window()->client()->ComputePlatformResolvedLocale(
-          supportedLocales);
+      *UIDartState::Current()
+           ->window()
+           ->client()
+           ->ComputePlatformResolvedLocale(supportedLocales);
 
   if (results.empty()) {
     return Dart_Null();
