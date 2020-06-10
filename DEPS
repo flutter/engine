@@ -110,7 +110,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/stuartmorgan/buildroot.git' + '@' + '9412022ec8be310b3fd1e5368f3250a7447ce7b6',
+  'src': 'https://github.com/stuartmorgan/buildroot.git' + '@' + '2adf6592f1a104234f2dda8805e0fe961211232b',
 
    # Fuchsia compatibility
    #
