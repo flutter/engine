@@ -38,6 +38,7 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
