@@ -103,6 +103,10 @@ public class FlutterEngine {
 
           platformViewsController.onPreEngineRestart();
         }
+
+        public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+          platformViewsController.onDisplayPlatformView(viewId, x, y, width, height);
+        }
       };
 
   /**
