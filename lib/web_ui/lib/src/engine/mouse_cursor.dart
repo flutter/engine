@@ -30,8 +30,8 @@ class MouseCursor {
     'forbidden': 'not-allowed',
     'grab': 'grab',
     'grabbing': 'grabbing',
-    'resizeLeftRight': 'ew-resize',
-    'resizeUpDown': 'ns-resize',
+    'horizontalDoubleArrow': 'ew-resize',
+    'verticalDoubleArrow': 'ns-resize',
   };
   static String _mapKindToCssValue(String kind) {
     return _kindToCssValueMap[kind] ?? 'default';
