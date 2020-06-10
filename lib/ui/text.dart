@@ -2062,17 +2062,19 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// [Paragraph].
   @pragma('vm:entry-point')
   ParagraphBuilder(ParagraphStyle style) {
-    List<String?>? strutFontFamilies;
-    if (style._strutStyle != null) {
-      strutFontFamilies = <String?>[];
-      if (style._strutStyle!._fontFamily != null)
-        strutFontFamilies.add(style._strutStyle!._fontFamily);
-      if (style._strutStyle!._fontFamilyFallback != null)
-        strutFontFamilies.addAll(style._strutStyle!._fontFamilyFallback!);
+    List<String>? strutFontFamilies;
+    final StrutStyle? strutStyle = style._strutStyle;
+    if (strutStyle != null) {
+      strutFontFamilies = <String>[];
+      final String? fontFamily = strutStyle._fontFamily;
+      if (fontFamily != null)
+        strutFontFamilies.add(fontFamily);
+      if (strutStyle._fontFamilyFallback != null)
+        strutFontFamilies.addAll(strutStyle._fontFamilyFallback!);
     }
     _constructor(
       style._encoded,
-      style._strutStyle?._encoded,
+      strutStyle?._encoded,
       style._fontFamily,
       strutFontFamilies,
       style._fontSize,
@@ -2111,10 +2113,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     fullFontFamilies.addAll(style._fontFamilyFallback!);
 
     ByteData? encodedFontFeatures;
-    if (style._fontFeatures != null) {
-      encodedFontFeatures = ByteData(style._fontFeatures!.length * FontFeature._kEncodedSize);
+    final List<FontFeature>? fontFeatures = style._fontFeatures;
+    if (fontFeatures != null) {
+      encodedFontFeatures = ByteData(fontFeatures.length * FontFeature._kEncodedSize);
       int byteOffset = 0;
-      for (FontFeature feature in style._fontFeatures!) {
+      for (FontFeature feature in fontFeatures) {
         feature._encode(ByteData.view(encodedFontFeatures.buffer, byteOffset, FontFeature._kEncodedSize));
         byteOffset += FontFeature._kEncodedSize;
       }

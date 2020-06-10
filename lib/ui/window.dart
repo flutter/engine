@@ -473,12 +473,16 @@ class Locale {
   bool operator ==(dynamic other) {
     if (identical(this, other))
       return true;
-    return other is Locale
-        && other.languageCode == languageCode
+    if (other is! Locale) {
+      return false;
+    }
+    final String? countryCode = _countryCode;
+    final String? otherCountryCode = other.countryCode;
+    return other.languageCode == languageCode
         && other.scriptCode == scriptCode // scriptCode cannot be ''
         && (other.countryCode == countryCode // Treat '' as equal to null.
-            || other.countryCode != null && other.countryCode!.isEmpty && countryCode == null
-            || countryCode != null && countryCode!.isEmpty && other.countryCode == null);
+            || otherCountryCode != null && otherCountryCode.isEmpty && countryCode == null
+            || countryCode != null && countryCode.isEmpty && other.countryCode == null);
   }
 
   @override
