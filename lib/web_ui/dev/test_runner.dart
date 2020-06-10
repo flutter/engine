@@ -181,7 +181,7 @@ class TestCommand extends Command<bool> with ArgUtils {
         await iosSimulator.boot();
         print('INFO: Simulator ${iosSimulator.id} booted.');
         cleanupCallbacks.add(() async {
-          iosSimulator.shutdown();
+          await iosSimulator.shutdown();
           print('INFO: Simulator ${iosSimulator.id} shutdown.');
         });
       }
