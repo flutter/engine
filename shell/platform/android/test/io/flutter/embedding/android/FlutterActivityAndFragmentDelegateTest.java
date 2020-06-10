@@ -442,7 +442,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
-  public void itSendsMessageOverSystemChannelWhenToldToTrimMemory() {
+  public void itNotifiesDartExecutorAndSendsMessageOverSystemChannelWhenToldToTrimMemory() {
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
@@ -460,12 +460,12 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onTrimMemory(TRIM_MEMORY_UI_HIDDEN);
 
     // Verify that the call was forwarded to the engine.
-    verify(mockFlutterEngine, times(7)).notifyLowMemoryWarning();
+    verify(mockFlutterEngine.getDartExecutor(), times(7)).notifyLowMemoryWarning();
     verify(mockFlutterEngine.getSystemChannel(), times(1)).sendMemoryPressureWarning();
   }
 
   @Test
-  public void itSendsMessageOverSystemChannelWhenInformedOfLowMemory() {
+  public void itNotifiesDartExecutorAndSendsMessageOverSystemChannelWhenInformedOfLowMemory() {
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
@@ -477,7 +477,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onLowMemory();
 
     // Verify that the call was forwarded to the engine.
-    verify(mockFlutterEngine, times(1)).notifyLowMemoryWarning();
+    verify(mockFlutterEngine.getDartExecutor(), times(1)).notifyLowMemoryWarning();
     verify(mockFlutterEngine.getSystemChannel(), times(1)).sendMemoryPressureWarning();
   }
 
