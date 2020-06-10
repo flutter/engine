@@ -110,11 +110,22 @@ class PlatformViewAndroidJNI {
 
   //----------------------------------------------------------------------------
   /// @brief      Positions and sizes a platform view if using hybrid
-  /// composition.
+  ///             composition.
   ///
   /// @note       Must be called from the platform thread.
   ///
   virtual void FlutterViewOnDisplayPlatformView(int view_id,
+                                                int x,
+                                                int y,
+                                                int width,
+                                                int height) = 0;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Positions and sizes an overlay surface in hybrid composition.
+  ///
+  /// @note       Must be called from the platform thread.
+  ///
+  virtual void FlutterViewDisplayOverlaySurface(int surface_id,
                                                 int x,
                                                 int y,
                                                 int width,

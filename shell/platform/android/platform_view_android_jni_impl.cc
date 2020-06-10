@@ -90,6 +90,8 @@ static jmethodID g_detach_from_gl_context_method = nullptr;
 
 static jmethodID g_on_display_platform_view_method = nullptr;
 
+static jmethodID g_on_display_overlay_surface_method = nullptr;
+
 // Called By Java
 static jlong AttachJNI(JNIEnv* env,
                        jclass clazz,
@@ -706,6 +708,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_on_display_overlay_surface_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "onDisplayOverlaySurface", "(IIIII)V");
+
+  if (g_on_display_overlay_surface_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate onDisplayOverlaySurface method";
+    return false;
+  }
+
   g_surface_texture_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("android/graphics/SurfaceTexture"));
   if (g_surface_texture_class->is_null()) {
@@ -991,6 +1001,25 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
 
   env->CallVoidMethod(java_object.obj(), g_on_display_platform_view_method,
                       view_id, x, y, width, height);
+
+  FML_CHECK(CheckException(env));
+}
+
+void PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(
+    int surface_id,
+    int x,
+    int y,
+    int width,
+    int height) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return;
+  }
+
+  env->CallVoidMethod(java_object.obj(), g_on_display_overlay_surface_method,
+                      surface_id, x, y, width, height);
 
   FML_CHECK(CheckException(env));
 }
