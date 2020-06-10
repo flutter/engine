@@ -86,8 +86,5 @@ public class LocalizationPlugin {
     }
 
     localizationChannel.sendLocales(locales);
-    // Do not initialize platform resolved locale. We will do
-    // this later via the method channel call "resolveLocale".
-    // localizationChannel.sendPlatformResolvedLocales(platformResolvedLocale);
   }
 }

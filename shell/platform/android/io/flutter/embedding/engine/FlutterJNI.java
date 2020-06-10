@@ -788,9 +788,7 @@ public class FlutterJNI {
 
   // ----- Start Localization Support ----
 
-  /**
-   * Invoked by native to obtain the results of Android's locale resolution algorithm.
-   */
+  /** Invoked by native to obtain the results of Android's locale resolution algorithm. */
   @SuppressWarnings("unused")
   private String[] computePlatformResolvedLocale(@NonNull String[] strings) {
     List<Locale> supportedLocales = new ArrayList<Locale>();

@@ -561,6 +561,21 @@ class PlatformView {
   ///
   void MarkTextureFrameAvailable(int64_t texture_id);
 
+  //--------------------------------------------------------------------------
+  /// @brief      Directly invokes platform-specific APIs to compute the
+  ///             locale the platform would have natively resolved to.
+  ///
+  /// @param[in]  supported_locale_data  The vector of strings that represents
+  ///                                    the locales supported by the app.
+  ///                                    Each locale consists of three
+  ///                                    strings: languageCode, countryCode,
+  ///                                    and scriptCode in that order.
+  ///
+  /// @return     A vector of 3 strings languageCode, countryCode, and
+  ///             scriptCode that the conist the locale selected by the
+  ///             platform. Empty strings mean the value was unassigned. Empty
+  ///             vector represents a null locale.
+  ///
   virtual std::vector<std::string>& ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data);
 

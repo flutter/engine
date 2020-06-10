@@ -26,12 +26,19 @@ void main() {
     expect(timing.toString(), 'FrameTiming(buildDuration: 7.0ms, rasterDuration: 10.5ms, totalSpan: 18.5ms)');
   });
 
-  test('computePlatformResolvedLocale basic', () {
-    Locale result = window.computePlatformResolvedLocale([
-      const Locale.fromSubtags(languageCode: 'fr', countryCode: 'CA'),
-      const Locale.fromSubtags(languageCode: 'zh', countryCode: 'CN'),
-      const Locale.fromSubtags(languageCode: 'en', countryCode: 'US'),
-    ]);
-    expect(result, const Locale.fromSubtags(languageCode: 'en', countryCode: 'US'));
-  });
+  // test('computePlatformResolvedLocale basic', () {
+  //   final List<Locale> supportedLocales = <Locale>[
+  //     const Locale.fromSubtag(languageCode: 'zh', scriptCode: 'Hans');
+  //     const Locale.fromSubtag(languageCode: 'zh', scriptCode: 'Hant');
+  //     const Locale.fromSubtag(languageCode: 'fr', countryCode: 'FR');
+  //     const Locale.fromSubtag(languageCode: 'fr', countryCode: 'FR');
+  //     const Locale.fromSubtag(languageCode: 'fr', countryCode: 'CA');
+  //     const Locale.fromSubtag(languageCode: 'en', countryCode: 'US');
+  //     const Locale.fromSubtag(languageCode: 'en', countryCode: 'UK');
+  //     const Locale.fromSubtag(languageCode: 'en', countryCode: 'IN');
+  //     const Locale.fromSubtag(languageCode: 'en');
+  //   ];
+  //   final Locale result = window.computePlatformResolvedLocale(supportedLocales);
+  //   expect(result, const Locale.fromSubtag(languageCode: 'en', countryCode: 'US'));
+  // }, skip: isBrowser || isWindows);
 }

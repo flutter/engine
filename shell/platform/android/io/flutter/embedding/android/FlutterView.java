@@ -813,9 +813,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
     localizationPlugin =
-        new LocalizationPlugin(
-            getContext(),
-            this.flutterEngine.getLocalizationChannel());
+        new LocalizationPlugin(getContext(), this.flutterEngine.getLocalizationChannel());
     androidKeyProcessor =
         new AndroidKeyProcessor(this.flutterEngine.getKeyEventChannel(), textInputPlugin);
     androidTouchProcessor = new AndroidTouchProcessor(this.flutterEngine.getRenderer());
