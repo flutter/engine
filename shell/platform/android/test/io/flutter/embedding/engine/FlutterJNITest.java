@@ -21,6 +21,7 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
+@TargetApi(24) // LocaleList and scriptCode are API 24+.
 public class FlutterJNITest {
   @Test
   public void itAllowsFirstFrameListenersToRemoveThemselvesInline() {
@@ -82,6 +83,17 @@ public class FlutterJNITest {
     assertEquals(result.length, 3);
     assertEquals(result[0], "zh");
     assertEquals(result[1], "");
+    assertEquals(result[2], "");
+
+    supportedLocales =
+        new String[] {
+          "fr", "FR", "",
+          "ar", "", "",
+          "en", "CA", ""
+        };
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result[0], "en");
+    assertEquals(result[1], "CA");
     assertEquals(result[2], "");
   }
 }
