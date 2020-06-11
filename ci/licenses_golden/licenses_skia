@@ -1,4 +1,4 @@
-Signature: d8b5746c35fc3ecabdd42c429969fd64
+Signature: cf1a17f3c23c6e815a0a8f9edf7b4389
 
 UNUSED LICENSES:
 
@@ -6000,7 +6000,6 @@ FILE: ../../../third_party/skia/src/core/SkMath.cpp
 FILE: ../../../third_party/skia/src/core/SkPathMeasure.cpp
 FILE: ../../../third_party/skia/src/core/SkPoint.cpp
 FILE: ../../../third_party/skia/src/core/SkPtrRecorder.h
-FILE: ../../../third_party/skia/src/core/SkReader32.h
 FILE: ../../../third_party/skia/src/core/SkStroke.cpp
 FILE: ../../../third_party/skia/src/core/SkWriter32.h
 FILE: ../../../third_party/skia/src/effects/SkPackBits.h
@@ -6349,6 +6348,8 @@ FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/nano_flags.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/schema.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/task_builder.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/fm_driver/fm_driver.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_render_skps/perf_puppeteer_render_skps.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_render_skps/perf_puppeteer_render_skps_test.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_skottie_frames/perf_puppeteer_skottie_frames.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_skottie_frames/perf_puppeteer_skottie_frames_test.go
 ----------------------------------------------------------------------------------------------------
