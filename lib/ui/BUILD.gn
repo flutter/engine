@@ -184,6 +184,8 @@ if (current_toolchain == host_toolchain) {
   executable("ui_benchmarks") {
     testonly = true
 
+    configs += [ "//flutter:export_dynamic_symbols" ]
+
     sources = [
       "ui_benchmarks.cc",
     ]
