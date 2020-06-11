@@ -1,9 +1,22 @@
 package io.flutter.embedding.engine;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times; 
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.os.LocaleList;
+import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
+import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.plugin.localization.LocalizationPlugin;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Locale;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -43,5 +56,36 @@ public class FlutterJNITest {
 
     // --- Verify Results ---
     assertEquals(1, callbackInvocationCount.get());
+  }
+
+  @Test
+  public void computePlatformResolvedLocaleCallsLocalizationPluginProperly() {
+    // --- Test Setup ---
+    FlutterJNI flutterJNI = new FlutterJNI();
+
+    Context context = mock(Context.class);
+    Resources resources = mock(Resources.class);
+    Configuration config = mock(Configuration.class);
+    DartExecutor dartExecutor = mock(DartExecutor.class);
+    LocaleList localeList = new LocaleList(
+      new Locale("es", "MX"),
+      new Locale("zh", "CN"),
+      new Locale("en", "US")
+    );
+    when(context.getResources()).thenReturn(resources);
+    when(resources.getConfiguration()).thenReturn(config);
+    when(config.getLocales()).thenReturn(localeList);
+
+    flutterJNI.setLocalizationPlugin(new LocalizationPlugin(context, new LocalizationChannel(dartExecutor)));
+    String[] supportedLocales = new String[] {
+      "fr", "FR", "",
+      "zh", "", "",
+      "en", "CA", ""
+    };
+    String[] result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "zh");
+    assertEquals(result[1], "");
+    assertEquals(result[2], "");
   }
 }
