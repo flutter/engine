@@ -36,6 +36,7 @@ public class LocalizationPlugin {
       for (int index = 0; index < localeCount; ++index) {
         Locale locale = localeList.get(index);
         String localeString = locale.toString();
+        // This string replacement converts the locale string into the ranges format.
         languageRanges.add(new Locale.LanguageRange(localeString.replace("_", "-")));
       }
 
@@ -64,20 +65,6 @@ public class LocalizationPlugin {
       }
     } else {
       locales.add(config.locale);
-    }
-
-    Locale platformResolvedLocale = null;
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-      List<Locale.LanguageRange> languageRanges = new ArrayList<>();
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
-      }
-      // TODO(garyq) implement a real locale resolution.
-      platformResolvedLocale =
-          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
     }
 
     localizationChannel.sendLocales(locales);
