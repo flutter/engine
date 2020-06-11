@@ -93,8 +93,30 @@ public class FlutterJNITest {
           "en", "CA", ""
         };
     result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 0); // This should change when full algo is implemented.
+
+    supportedLocales =
+        new String[] {
+          "fr", "FR", "",
+          "ar", "", "",
+          "en", "US", ""
+        };
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 3);
     assertEquals(result[0], "en");
-    assertEquals(result[1], "CA");
+    assertEquals(result[1], "US");
+    assertEquals(result[2], "");
+
+    supportedLocales =
+        new String[] {
+          "ar", "", "",
+          "es", "MX", "",
+          "en", "US", ""
+        };
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "es");
+    assertEquals(result[1], "MX");
     assertEquals(result[2], "");
   }
 }
