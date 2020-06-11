@@ -4,6 +4,13 @@
 
 package io.flutter.embedding.android;
 
+import java.util.Map;
+import java.util.HashMap;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.util.Log;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
@@ -12,29 +19,96 @@ import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 
 public class AndroidKeyProcessor {
+  private static final String TAG = "AndroidKeyProcessor";
+
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final TextInputPlugin textInputPlugin;
+  @NonNull private final Context context;
   private int combiningCharacter;
 
-  public AndroidKeyProcessor(
-      @NonNull KeyEventChannel keyEventChannel, @NonNull TextInputPlugin textInputPlugin) {
+  private Map<Long, KeyEvent> pendingEvents = new HashMap<Long, KeyEvent>();
+  private boolean dispatchingKeyEvent = false;
+
+  public AndroidKeyProcessor(@NonNull Context context, @NonNull KeyEventChannel keyEventChannel, @NonNull TextInputPlugin textInputPlugin) {
     this.keyEventChannel = keyEventChannel;
     this.textInputPlugin = textInputPlugin;
+    this.context = context;
+    this.keyEventChannel.setKeyProcessor(this);
   }
 
-  public void onKeyUp(@NonNull KeyEvent keyEvent) {
+  public boolean onKeyUp(@NonNull KeyEvent keyEvent) {
+    if (dispatchingKeyEvent) {
+      // Don't handle it if it is from our own delayed event synthesis.
+      return false;
+    }
+
     Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());
     keyEventChannel.keyUp(new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter));
+    pendingEvents.put(keyEvent.getEventTime(), keyEvent);
+    return true;
   }
 
-  public void onKeyDown(@NonNull KeyEvent keyEvent) {
+  public boolean onKeyDown(@NonNull KeyEvent keyEvent) {
+    if (dispatchingKeyEvent) {
+      // Don't handle it if it is from our own delayed event synthesis.
+      return false;
+    }
+
+    // If the textInputPlugin is still valid and accepting text, then we'll try
+    // and send the key event to it, assuming that if the event can be sent, that
+    // it has been handled.
     if (textInputPlugin.getLastInputConnection() != null
         && textInputPlugin.getInputMethodManager().isAcceptingText()) {
-      textInputPlugin.getLastInputConnection().sendKeyEvent(keyEvent);
+      if (textInputPlugin.getLastInputConnection().sendKeyEvent(keyEvent)) {
+        return true;
+      }
     }
 
     Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());
     keyEventChannel.keyDown(new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter));
+    pendingEvents.put(keyEvent.getEventTime(), keyEvent);
+    return true;
+  }
+
+  public void onKeyEventHandled(@NonNull long timestamp) {
+    if (!pendingEvents.containsKey(timestamp)) {
+      Log.e(TAG, "Key with timestamp " + timestamp + " not found in pending key events list");
+      return;
+    }
+    Log.e(TAG, "Removing handled key with timestamp " + timestamp + " from pending key events list");
+    // Since this event was already reported to Android as handled, we just
+    // remove it from the map of pending events.
+    pendingEvents.remove(timestamp);
+  }
+
+  public void onKeyEventNotHandled(@NonNull long timestamp) {
+    if (!pendingEvents.containsKey(timestamp)) {
+      Log.e(TAG, "Key with timestamp " + timestamp + " not found in pending key events list");
+      return;
+    }
+    Log.e(TAG, "Removing unhandled key with timestamp " + timestamp + " from pending key events list");
+    // Since this event was NOT handled by the framework we now synthesize a
+    // new, identical, key event to pass along.
+    KeyEvent pendingEvent = pendingEvents.remove(timestamp);
+    Activity activity = getActivity(context);
+    if (activity != null) {
+      // Turn on dispatchingKeyEvent so that we don't dispatch to ourselves and
+      // send it to the framework again.
+      dispatchingKeyEvent = true;
+      activity.dispatchKeyEvent(pendingEvent);
+      dispatchingKeyEvent = false;
+    }
+  }
+
+  private Activity getActivity(Context context) {
+    if (context instanceof Activity) {
+      return (Activity) context;
+    }
+    if (context instanceof ContextWrapper) {
+      // Recurse up chain of base contexts until we find an Activity.
+      return getActivity(((ContextWrapper) context).getBaseContext());
+    }
+    return null;
   }
 
   /**
