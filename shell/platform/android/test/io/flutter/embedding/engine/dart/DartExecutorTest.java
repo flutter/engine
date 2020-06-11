@@ -47,7 +47,6 @@ public class DartExecutorTest {
 
     DartExecutor dartExecutor = new DartExecutor(mockFlutterJNI, mock(AssetManager.class));
     dartExecutor.notifyLowMemoryWarning();
-    ;
     verify(mockFlutterJNI, times(1)).notifyLowMemoryWarning();
   }
 }
