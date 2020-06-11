@@ -65,20 +65,19 @@ public class FlutterJNITest {
     Configuration config = mock(Configuration.class);
     DartExecutor dartExecutor = mock(DartExecutor.class);
     LocaleList localeList = new LocaleList(
-      new Locale("es", "MX"),
-      new Locale("zh", "CN"),
-      new Locale("en", "US")
-    );
+        new Locale("es", "MX"), new Locale("zh", "CN"), new Locale("en", "US"));
     when(context.getResources()).thenReturn(resources);
     when(resources.getConfiguration()).thenReturn(config);
     when(config.getLocales()).thenReturn(localeList);
 
-    flutterJNI.setLocalizationPlugin(new LocalizationPlugin(context, new LocalizationChannel(dartExecutor)));
-    String[] supportedLocales = new String[] {
-      "fr", "FR", "",
-      "zh", "", "",
-      "en", "CA", ""
-    };
+    flutterJNI.setLocalizationPlugin(
+        new LocalizationPlugin(context, new LocalizationChannel(dartExecutor)));
+    String[] supportedLocales =
+        new String[] {
+          "fr", "FR", "",
+          "zh", "", "",
+          "en", "CA", ""
+        };
     String[] result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
     assertEquals(result.length, 3);
     assertEquals(result[0], "zh");
