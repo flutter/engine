@@ -742,14 +742,13 @@ void Shell::OnPlatformViewDestroyed() {
     // access to the underlying surface.
     fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
                                       raster_task);
-    latch.Wait();
   } else {
     // See comment on should_post_raster_task, in this case the raster_task
     // wasn't executed, and we just run it here as the platform thread
     // is the raster thread.
     raster_task();
-    latch.Wait();
   }
+  latch.Wait();
 }
 
 // |PlatformView::Delegate|
