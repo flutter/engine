@@ -81,10 +81,6 @@ static jmethodID g_on_first_frame_method = nullptr;
 static jmethodID g_on_engine_restart_method = nullptr;
 
 static jmethodID g_on_begin_frame_method = nullptr;
-void FlutterViewBeginFrame(JNIEnv* env, jobject obj) {
-  env->CallVoidMethod(obj, g_on_begin_frame_method);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_attach_to_gl_context_method = nullptr;
 
