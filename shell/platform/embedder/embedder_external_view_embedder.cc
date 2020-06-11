@@ -183,7 +183,7 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
 
     if (!render_target) {
       FML_LOG(ERROR) << "Embedder did not return a valid render target.";
-      return false;
+      return;
     }
     matched_render_targets[pending_key] = std::move(render_target);
   }
@@ -202,7 +202,7 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
              ->Render(*render_target.second)) {
       FML_LOG(ERROR)
           << "Could not render into the embedder supplied render target.";
-      return false;
+      return;
     }
   }
 
