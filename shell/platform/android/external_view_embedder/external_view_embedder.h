@@ -25,7 +25,7 @@ class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
-  bool SubmitFrame(GrContext* context,
+  void SubmitFrame(GrContext* context,
                    std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|

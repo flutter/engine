@@ -40,7 +40,7 @@ std::vector<SkCanvas*> AndroidExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-bool AndroidExternalViewEmbedder::SubmitFrame(
+void AndroidExternalViewEmbedder::SubmitFrame(
     GrContext* context,
     std::unique_ptr<SurfaceFrame> frame) {
   // TODO(egarciad): Implement hybrid composition.
@@ -48,14 +48,14 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
   if (should_run_rasterizer_on_platform_thread_) {
     // Don't submit the current frame if the frame will be resubmitted.
-    return true;
+    return;
   }
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
     frame->SkiaCanvas()->drawPicture(
         picture_recorders_[view_id]->finishRecordingAsPicture());
   }
-  return frame->Submit();
+  frame->Submit();
 }
 
 // |ExternalViewEmbedder|

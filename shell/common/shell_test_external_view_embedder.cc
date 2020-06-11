@@ -33,10 +33,10 @@ SkCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
 }
 
 // |ExternalViewEmbedder|
-bool ShellTestExternalViewEmbedder::SubmitFrame(
+void ShellTestExternalViewEmbedder::SubmitFrame(
     GrContext* context,
     std::unique_ptr<SurfaceFrame> frame) {
-  return frame->Submit();
+  frame->Submit();
 }
 
 // |ExternalViewEmbedder|

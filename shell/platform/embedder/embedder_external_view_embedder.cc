@@ -129,7 +129,7 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 }
 
 // |ExternalViewEmbedder|
-bool EmbedderExternalViewEmbedder::SubmitFrame(
+void EmbedderExternalViewEmbedder::SubmitFrame(
     GrContext* context,
     std::unique_ptr<SurfaceFrame> frame) {
   auto [matched_render_targets, pending_keys] =
@@ -264,7 +264,7 @@ bool EmbedderExternalViewEmbedder::SubmitFrame(
                                            std::move(render_target.second));
   }
 
-  return frame->Submit();
+  frame->Submit();
 }
 
 }  // namespace flutter
