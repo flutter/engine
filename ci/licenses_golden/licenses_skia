@@ -1,4 +1,4 @@
-Signature: 6cd8421a478237328e0213714a5746fe
+Signature: 0b0e34a8f9f39867f62c2c33b10d339c
 
 UNUSED LICENSES:
 
@@ -1086,6 +1086,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Release-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Release-ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Release-CMake.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Release-Fast.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Release-NoDEPS.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Release-Static.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Release-SwiftShader.json
@@ -3932,6 +3933,8 @@ FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCpuDescriptorManager.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DCpuDescriptorManager.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DDescriptorHeap.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DDescriptorHeap.h
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DDescriptorTableManager.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DDescriptorTableManager.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DGpu.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DOpsRenderPass.cpp
@@ -5265,6 +5268,7 @@ FILE: ../../../third_party/skia/modules/sksg/include/SkSGDashEffect.h
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGDashEffect.cpp
 FILE: ../../../third_party/skia/modules/skshaper/src/SkShaper_coretext.cpp
 FILE: ../../../third_party/skia/samplecode/Sample3D.cpp
+FILE: ../../../third_party/skia/samplecode/SampleFitCubicToCircle.cpp
 FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
 FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkCompressedDataUtils.h
@@ -5996,7 +6000,6 @@ FILE: ../../../third_party/skia/src/core/SkMath.cpp
 FILE: ../../../third_party/skia/src/core/SkPathMeasure.cpp
 FILE: ../../../third_party/skia/src/core/SkPoint.cpp
 FILE: ../../../third_party/skia/src/core/SkPtrRecorder.h
-FILE: ../../../third_party/skia/src/core/SkReader32.h
 FILE: ../../../third_party/skia/src/core/SkStroke.cpp
 FILE: ../../../third_party/skia/src/core/SkWriter32.h
 FILE: ../../../third_party/skia/src/effects/SkPackBits.h
