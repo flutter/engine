@@ -9,6 +9,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
@@ -350,6 +351,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)addInternalPlugins {
+  [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
   _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:self];
   _keyEventChannel =
       [FlutterBasicMessageChannel messageChannelWithName:@"flutter/keyevent"
@@ -405,7 +407,7 @@ static void CommonInit(FlutterViewController* controller) {
   FlutterPointerEvent flutterEvent = {
       .struct_size = sizeof(flutterEvent),
       .phase = phase,
-      .timestamp = static_cast<size_t>(event.timestamp * NSEC_PER_MSEC),
+      .timestamp = static_cast<size_t>(event.timestamp * USEC_PER_SEC),
       .x = locationInBackingCoordinates.x,
       .y = -locationInBackingCoordinates.y,  // convertPointToBacking makes this negative.
       .device_kind = kFlutterPointerDeviceKindMouse,

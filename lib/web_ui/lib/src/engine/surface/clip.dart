@@ -28,7 +28,9 @@ mixin _DomClip on PersistedContainerSurface {
     if (!debugShowClipLayers) {
       // Hide overflow in production mode. When debugging we want to see the
       // clipped picture in full.
-      element.style.overflow = 'hidden';
+      element.style
+        ..overflow = 'hidden'
+        ..zIndex = '0';
     } else {
       // Display the outline of the clipping region. When debugShowClipLayers is
       // `true` we don't hide clip overflow (see above). This outline helps
@@ -41,6 +43,7 @@ mixin _DomClip on PersistedContainerSurface {
       _surfaceStatsFor(this).allocatedDomNodeCount++;
     }
     _childContainer.style.position = 'absolute';
+
     element.append(_childContainer);
     return element;
   }
@@ -100,6 +103,9 @@ class PersistedClipRect extends PersistedContainerSurface
       apply();
     }
   }
+
+  @override
+  bool get isClipping => true;
 }
 
 /// A surface that creates a rounded rectangular clip.
@@ -153,6 +159,9 @@ class PersistedClipRRect extends PersistedContainerSurface
       apply();
     }
   }
+
+  @override
+  bool get isClipping => true;
 }
 
 class PersistedPhysicalShape extends PersistedContainerSurface
@@ -319,16 +328,18 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     }
     if (oldSurface.path != path) {
       oldSurface._clipElement?.remove();
-      // Reset style on prior element since we may have switched between
-      // rect/rrect and arbitrary path.
-      final html.CssStyleDeclaration style = rootElement.style;
-      style.transform = '';
-      style.left = '';
-      style.top = '';
-      style.borderRadius = '';
       domRenderer.setElementStyle(rootElement, 'clip-path', '');
       domRenderer.setElementStyle(rootElement, '-webkit-clip-path', '');
       _applyShape();
+      // This null check is in update since we don't want to unnecessarily
+      // clear style in apply on first build.
+      if (path == null) {
+        // Reset style on prior element when path becomes null.
+        final html.CssStyleDeclaration style = rootElement.style;
+        style.left = '';
+        style.top = '';
+        style.borderRadius = '';
+      }
     } else {
       _clipElement = oldSurface._clipElement;
     }
@@ -395,6 +406,9 @@ class PersistedClipPath extends PersistedContainerSurface
     _clipElement = null;
     super.discard();
   }
+
+  @override
+  bool get isClipping => true;
 }
 
 /// Creates an svg clipPath and applies it to [element].

@@ -30,30 +30,6 @@ bool debugShowClipLayers = false;
 /// reasonable.
 const double _kScreenPixelRatioWarningThreshold = 6.0;
 
-/// A monotonically increasing frame number being rendered.
-///
-/// Used for debugging only.
-int _debugFrameNumber = 1;
-
-List<FrameReference<dynamic>> _frameReferences = <FrameReference<dynamic>>[];
-
-/// A temporary reference to a value of type [V].
-///
-/// The value automatically gets set to null after the current frame is
-/// rendered.
-///
-/// It is useful to think of this as a weak reference that's scoped to a
-/// single frame.
-class FrameReference<V> {
-  /// Creates a frame reference to a value.
-  FrameReference([this.value]) {
-    _frameReferences.add(this);
-  }
-
-  /// The current value of this reference.
-  V value;
-}
-
 /// Performs any outstanding painting work enqueued by [PersistedPicture]s.
 void commitScene(PersistedScene scene) {
   if (_paintQueue.isNotEmpty) {
@@ -78,7 +54,8 @@ void commitScene(PersistedScene scene) {
   if (_retainedSurfaces.isNotEmpty) {
     for (int i = 0; i < _retainedSurfaces.length; i++) {
       final PersistedSurface retainedSurface = _retainedSurfaces[i];
-      assert(debugAssertSurfaceState(retainedSurface, PersistedSurfaceState.pendingRetention));
+      assert(debugAssertSurfaceState(
+          retainedSurface, PersistedSurfaceState.pendingRetention));
       retainedSurface.state = PersistedSurfaceState.active;
     }
     _retainedSurfaces = <PersistedSurface>[];
@@ -110,322 +87,6 @@ void commitScene(PersistedScene scene) {
     _debugFrameNumber++;
     return true;
   }());
-}
-
-/// Surfaces that were retained this frame.
-///
-/// Surfaces should be added to this list directly. Instead, if a surface needs
-/// to be retained call [_retainSurface].
-List<PersistedSurface> get debugRetainedSurfaces => _retainedSurfaces;
-List<PersistedSurface> _retainedSurfaces = <PersistedSurface>[];
-
-/// Maps every surface currently active on the screen to debug statistics.
-Map<PersistedSurface, _DebugSurfaceStats> _surfaceStats =
-    <PersistedSurface, _DebugSurfaceStats>{};
-
-List<Map<PersistedSurface, _DebugSurfaceStats>> _surfaceStatsTimeline =
-    <Map<PersistedSurface, _DebugSurfaceStats>>[];
-
-/// Returns debug statistics for the given [surface].
-_DebugSurfaceStats _surfaceStatsFor(PersistedSurface surface) {
-  if (!_debugExplainSurfaceStats) {
-    throw Exception(
-        '_surfaceStatsFor is only available when _debugExplainSurfaceStats is set to true.');
-  }
-  return _surfaceStats.putIfAbsent(surface, () => _DebugSurfaceStats(surface));
-}
-
-/// Compositor information collected for one frame useful for assessing the
-/// efficiency of constructing the frame.
-///
-/// This information is only available in debug mode.
-///
-/// For stats pertaining to a single surface the numeric counter fields are
-/// typically either 0 or 1. For aggregated stats, the numbers can be >1.
-class _DebugSurfaceStats {
-  _DebugSurfaceStats(this.surface);
-
-  /// The surface these stats are for, or `null` if these are aggregated stats.
-  final PersistedSurface surface;
-
-  /// How many times a surface was retained from a previously rendered frame.
-  int retainSurfaceCount = 0;
-
-  /// How many times a surface reused an HTML element from a previously rendered
-  /// surface.
-  int reuseElementCount = 0;
-
-  /// If a surface is a [PersistedPicture], how many times it painted.
-  int paintCount = 0;
-
-  /// If a surface is a [PersistedPicture], how many pixels it painted.
-  int paintPixelCount = 0;
-
-  /// If a surface is a [PersistedPicture], how many times it reused a
-  /// previously allocated `<canvas>` element when it painted.
-  int reuseCanvasCount = 0;
-
-  /// If a surface is a [PersistedPicture], how many times it allocated a new
-  /// bitmap canvas.
-  int allocateBitmapCanvasCount = 0;
-
-  /// If a surface is a [PersistedPicture], how many pixels it allocated for
-  /// the bitmap.
-  ///
-  /// For aggregated stats, this is the total sum of all pixels across all
-  /// canvases.
-  int allocatedBitmapSizeInPixels = 0;
-
-  /// The number of HTML DOM nodes a surface allocated.
-  ///
-  /// For aggregated stats, this is the total sum of all DOM nodes across all
-  /// surfaces.
-  int allocatedDomNodeCount = 0;
-
-  /// Adds all counters of [oneSurfaceStats] into this object.
-  void aggregate(_DebugSurfaceStats oneSurfaceStats) {
-    retainSurfaceCount += oneSurfaceStats.retainSurfaceCount;
-    reuseElementCount += oneSurfaceStats.reuseElementCount;
-    paintCount += oneSurfaceStats.paintCount;
-    paintPixelCount += oneSurfaceStats.paintPixelCount;
-    reuseCanvasCount += oneSurfaceStats.reuseCanvasCount;
-    allocateBitmapCanvasCount += oneSurfaceStats.allocateBitmapCanvasCount;
-    allocatedBitmapSizeInPixels += oneSurfaceStats.allocatedBitmapSizeInPixels;
-    allocatedDomNodeCount += oneSurfaceStats.allocatedDomNodeCount;
-  }
-}
-
-html.CanvasRenderingContext2D _debugSurfaceStatsOverlayCtx;
-
-void _debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
-  final int overlayWidth = html.window.innerWidth;
-  const int rowHeight = 30;
-  const int rowCount = 4;
-  const int overlayHeight = rowHeight * rowCount;
-  const int strokeWidth = 2;
-
-  _surfaceStatsTimeline.add(_surfaceStats);
-
-  while (_surfaceStatsTimeline.length > (overlayWidth / strokeWidth)) {
-    _surfaceStatsTimeline.removeAt(0);
-  }
-
-  if (_debugSurfaceStatsOverlayCtx == null) {
-    final html.CanvasElement _debugSurfaceStatsOverlay = html.CanvasElement(
-      width: overlayWidth,
-      height: overlayHeight,
-    );
-    _debugSurfaceStatsOverlay.style
-      ..position = 'fixed'
-      ..left = '0'
-      ..top = '0'
-      ..zIndex = '1000'
-      ..opacity = '0.8';
-    _debugSurfaceStatsOverlayCtx = _debugSurfaceStatsOverlay.context2D;
-    html.document.body.append(_debugSurfaceStatsOverlay);
-  }
-
-  _debugSurfaceStatsOverlayCtx
-    ..fillStyle = 'black'
-    ..beginPath()
-    ..rect(0, 0, overlayWidth, overlayHeight)
-    ..fill();
-
-  final double physicalScreenWidth =
-      html.window.innerWidth * EngineWindow.browserDevicePixelRatio;
-  final double physicalScreenHeight =
-      html.window.innerHeight * EngineWindow.browserDevicePixelRatio;
-  final double physicsScreenPixelCount =
-      physicalScreenWidth * physicalScreenHeight;
-
-  final int totalDomNodeCount = scene.rootElement.querySelectorAll('*').length;
-
-  for (int i = 0; i < _surfaceStatsTimeline.length; i++) {
-    final Map<PersistedSurface, _DebugSurfaceStats> statsMap =
-        _surfaceStatsTimeline[i];
-    final _DebugSurfaceStats totals = _DebugSurfaceStats(null);
-    int pixelCount = 0;
-    for (_DebugSurfaceStats oneSurfaceStats in statsMap.values) {
-      totals.aggregate(oneSurfaceStats);
-      if (oneSurfaceStats.surface is PersistedPicture) {
-        final PersistedPicture picture = oneSurfaceStats.surface;
-        pixelCount += picture.bitmapPixelCount;
-      }
-    }
-
-    final double repaintRate = totals.paintPixelCount / pixelCount;
-    final double domAllocationRate =
-        totals.allocatedDomNodeCount / totalDomNodeCount;
-    final double bitmapAllocationRate =
-        totals.allocatedBitmapSizeInPixels / physicsScreenPixelCount;
-    final double surfaceRetainRate =
-        totals.retainSurfaceCount / _surfaceStatsTimeline[i].length;
-
-    // Repaints
-    _debugSurfaceStatsOverlayCtx
-      ..lineWidth = strokeWidth
-      ..strokeStyle = 'red'
-      ..beginPath()
-      ..moveTo(strokeWidth * i, rowHeight)
-      ..lineTo(strokeWidth * i, rowHeight * (1 - repaintRate))
-      ..stroke();
-
-    // DOM allocations
-    _debugSurfaceStatsOverlayCtx
-      ..lineWidth = strokeWidth
-      ..strokeStyle = 'red'
-      ..beginPath()
-      ..moveTo(strokeWidth * i, 2 * rowHeight)
-      ..lineTo(strokeWidth * i, rowHeight * (2 - domAllocationRate))
-      ..stroke();
-
-    // Bitmap allocations
-    _debugSurfaceStatsOverlayCtx
-      ..lineWidth = strokeWidth
-      ..strokeStyle = 'red'
-      ..beginPath()
-      ..moveTo(strokeWidth * i, 3 * rowHeight)
-      ..lineTo(strokeWidth * i, rowHeight * (3 - bitmapAllocationRate))
-      ..stroke();
-
-    // Surface retentions
-    _debugSurfaceStatsOverlayCtx
-      ..lineWidth = strokeWidth
-      ..strokeStyle = 'green'
-      ..beginPath()
-      ..moveTo(strokeWidth * i, 4 * rowHeight)
-      ..lineTo(strokeWidth * i, rowHeight * (4 - surfaceRetainRate))
-      ..stroke();
-  }
-
-  _debugSurfaceStatsOverlayCtx
-    ..font = 'normal normal 14px sans-serif'
-    ..fillStyle = 'white'
-    ..fillText('Repaint rate', 5, rowHeight - 5)
-    ..fillText('DOM alloc rate', 5, 2 * rowHeight - 5)
-    ..fillText('Bitmap alloc rate', 5, 3 * rowHeight - 5)
-    ..fillText('Retain rate', 5, 4 * rowHeight - 5);
-
-  for (int i = 1; i <= rowCount; i++) {
-    _debugSurfaceStatsOverlayCtx
-      ..lineWidth = 1
-      ..strokeStyle = 'blue'
-      ..beginPath()
-      ..moveTo(0, overlayHeight - rowHeight * i)
-      ..lineTo(overlayWidth, overlayHeight - rowHeight * i)
-      ..stroke();
-  }
-}
-
-/// Prints debug statistics for the current frame to the console.
-void _debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
-  int pictureCount = 0;
-  int paintCount = 0;
-
-  int bitmapCanvasCount = 0;
-  int bitmapReuseCount = 0;
-  int bitmapAllocationCount = 0;
-  int bitmapPaintCount = 0;
-  int bitmapPixelsAllocated = 0;
-
-  int domCanvasCount = 0;
-  int domPaintCount = 0;
-
-  int surfaceRetainCount = 0;
-  int elementReuseCount = 0;
-
-  int totalAllocatedDomNodeCount = 0;
-
-  void countReusesRecursively(PersistedSurface surface) {
-    final _DebugSurfaceStats stats = _surfaceStatsFor(surface);
-    assert(stats != null);
-
-    surfaceRetainCount += stats.retainSurfaceCount;
-    elementReuseCount += stats.reuseElementCount;
-    totalAllocatedDomNodeCount += stats.allocatedDomNodeCount;
-
-    if (surface is PersistedStandardPicture) {
-      pictureCount += 1;
-      paintCount += stats.paintCount;
-
-      if (surface._canvas is DomCanvas) {
-        domCanvasCount++;
-        domPaintCount += stats.paintCount;
-      }
-
-      if (surface._canvas is BitmapCanvas) {
-        bitmapCanvasCount++;
-        bitmapPaintCount += stats.paintCount;
-      }
-
-      bitmapReuseCount += stats.reuseCanvasCount;
-      bitmapAllocationCount += stats.allocateBitmapCanvasCount;
-      bitmapPixelsAllocated += stats.allocatedBitmapSizeInPixels;
-    }
-
-    surface.visitChildren(countReusesRecursively);
-  }
-
-  scene.visitChildren(countReusesRecursively);
-
-  final StringBuffer buf = StringBuffer();
-  buf
-    ..writeln(
-        '---------------------- FRAME #$frameNumber -------------------------')
-    ..writeln('Surfaces retained: $surfaceRetainCount')
-    ..writeln('Elements reused: $elementReuseCount')
-    ..writeln('Elements allocated: $totalAllocatedDomNodeCount')
-    ..writeln('Pictures: $pictureCount')
-    ..writeln('  Painted: $paintCount')
-    ..writeln('  Skipped painting: ${pictureCount - paintCount}')
-    ..writeln('DOM canvases:')
-    ..writeln('  Painted: $domPaintCount')
-    ..writeln('  Skipped painting: ${domCanvasCount - domPaintCount}')
-    ..writeln('Bitmap canvases: $bitmapCanvasCount')
-    ..writeln('  Painted: $bitmapPaintCount')
-    ..writeln('  Skipped painting: ${bitmapCanvasCount - bitmapPaintCount}')
-    ..writeln('  Reused: $bitmapReuseCount')
-    ..writeln('  Allocated: $bitmapAllocationCount')
-    ..writeln('  Allocated pixels: $bitmapPixelsAllocated')
-    ..writeln('  Available for reuse: ${_recycledCanvases.length}');
-
-  // A microtask will fire after the DOM is flushed, letting us probe into
-  // actual <canvas> tags.
-  scheduleMicrotask(() {
-    final List<html.Element> canvasElements =
-        html.document.querySelectorAll('canvas');
-    final StringBuffer canvasInfo = StringBuffer();
-    final int pixelCount = canvasElements
-        .cast<html.CanvasElement>()
-        .map<int>((html.CanvasElement e) {
-      final int pixels = e.width * e.height;
-      canvasInfo.writeln('    - ${e.width} x ${e.height} = $pixels pixels');
-      return pixels;
-    }).fold(0, (int total, int pixels) => total + pixels);
-    final double physicalScreenWidth =
-        html.window.innerWidth * EngineWindow.browserDevicePixelRatio;
-    final double physicalScreenHeight =
-        html.window.innerHeight * EngineWindow.browserDevicePixelRatio;
-    final double physicsScreenPixelCount =
-        physicalScreenWidth * physicalScreenHeight;
-    final double screenPixelRatio = pixelCount / physicsScreenPixelCount;
-    final String screenDescription =
-        '1 screen is $physicalScreenWidth x $physicalScreenHeight = $physicsScreenPixelCount pixels';
-    final String canvasPixelDescription =
-        '$pixelCount (${screenPixelRatio.toStringAsFixed(2)} x screens';
-    buf
-      ..writeln('  Elements: ${canvasElements.length}')
-      ..writeln(canvasInfo)
-      ..writeln('  Pixels: $canvasPixelDescription; $screenDescription)')
-      ..writeln('-----------------------------------------------------------');
-    final bool screenPixelRatioTooHigh =
-        screenPixelRatio > _kScreenPixelRatioWarningThreshold;
-    if (screenPixelRatioTooHigh) {
-      print(
-          'WARNING: pixel/screen ratio too high (${screenPixelRatio.toStringAsFixed(2)}x)');
-    }
-    print(buf);
-  });
 }
 
 /// Signature of a function that receives a [PersistedSurface].
@@ -502,8 +163,10 @@ class PersistedSurfaceException implements Exception {
 /// Verifies that the [surface] is in one of the valid states.
 ///
 /// This function should be used inside an assertion expression.
-bool debugAssertSurfaceState(PersistedSurface surface, PersistedSurfaceState state1, [PersistedSurfaceState state2, PersistedSurfaceState state3]) {
-  final List<PersistedSurfaceState> validStates = [ state1, state2, state3 ];
+bool debugAssertSurfaceState(
+    PersistedSurface surface, PersistedSurfaceState state1,
+    [PersistedSurfaceState state2, PersistedSurfaceState state3]) {
+  final List<PersistedSurfaceState> validStates = [state1, state2, state3];
 
   if (validStates.contains(surface.state)) {
     return true;
@@ -521,7 +184,27 @@ bool debugAssertSurfaceState(PersistedSurface surface, PersistedSurfaceState sta
 /// compute the fewest amount of mutations necessary to update the browser DOM.
 abstract class PersistedSurface implements ui.EngineLayer {
   /// Creates a persisted surface.
-  PersistedSurface();
+  PersistedSurface(PersistedSurface oldLayer)
+    : _oldLayer = FrameReference<PersistedSurface>(
+            oldLayer != null && oldLayer.isActive ? oldLayer : null);
+
+  /// The surface that is being updated using this surface.
+  ///
+  /// If not null this surface will reuse the old surface's HTML [element].
+  ///
+  /// This value is set to null at the end of the frame.
+  PersistedSurface get oldLayer => _oldLayer.value;
+  final FrameReference<PersistedSurface> _oldLayer;
+
+  /// The index of this surface in its parent's [PersistedContainerSurface._children]
+  /// list.
+  ///
+  /// This index is used to detect whether any child nodes moved within a
+  /// container layer. The index is cached by the child to avoid a linear
+  /// look-up in the parent's child list.
+  ///
+  /// This index is updated by [PersistedContainerSurface.update].
+  int _index = -1;
 
   /// Controls the algorithm that reuses the DOM resources owned by this
   /// surface.
@@ -571,7 +254,8 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// reused before the request to retain it came in. In this case, the surface
   /// is [revive]d and rebuilt from scratch.
   void tryRetain() {
-    assert(debugAssertSurfaceState(this, PersistedSurfaceState.active, PersistedSurfaceState.released));
+    assert(debugAssertSurfaceState(
+        this, PersistedSurfaceState.active, PersistedSurfaceState.released));
     // Request that the layer is retained, but only if it's still active. It
     // could have been released.
     if (isActive) {
@@ -664,8 +348,9 @@ abstract class PersistedSurface implements ui.EngineLayer {
     if (rootElement != null) {
       try {
         throw null;
-      } catch(_, stack) {
-        print('Attempted to build a $runtimeType, but it already has an HTML element ${rootElement.tagName}.');
+      } catch (_, stack) {
+        print(
+            'Attempted to build a $runtimeType, but it already has an HTML element ${rootElement.tagName}.');
         print(stack.toString().split('\n').take(20).join('\n'));
       }
     }
@@ -690,7 +375,8 @@ abstract class PersistedSurface implements ui.EngineLayer {
   @mustCallSuper
   void adoptElements(covariant PersistedSurface oldSurface) {
     assert(oldSurface.rootElement != null);
-    assert(debugAssertSurfaceState(oldSurface, PersistedSurfaceState.active, PersistedSurfaceState.pendingUpdate));
+    assert(debugAssertSurfaceState(oldSurface, PersistedSurfaceState.active,
+        PersistedSurfaceState.pendingUpdate));
     assert(() {
       if (oldSurface.isPendingUpdate) {
         final PersistedContainerSurface self = this;
@@ -719,7 +405,8 @@ abstract class PersistedSurface implements ui.EngineLayer {
     assert(oldSurface != null);
     assert(!identical(oldSurface, this));
     assert(debugAssertSurfaceState(this, PersistedSurfaceState.created));
-    assert(debugAssertSurfaceState(oldSurface, PersistedSurfaceState.active, PersistedSurfaceState.pendingUpdate));
+    assert(debugAssertSurfaceState(oldSurface, PersistedSurfaceState.active,
+        PersistedSurfaceState.pendingUpdate));
 
     adoptElements(oldSurface);
 
@@ -917,7 +604,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
 
 /// A surface that doesn't have child surfaces.
 abstract class PersistedLeafSurface extends PersistedSurface {
-  PersistedLeafSurface();
+  PersistedLeafSurface() : super(null);
 
   @override
   void visitChildren(PersistedSurfaceVisitor visitor) {
@@ -931,19 +618,9 @@ abstract class PersistedContainerSurface extends PersistedSurface {
   ///
   /// `oldLayer` points to the surface rendered in the previous frame that's
   /// being updated by this layer.
-  PersistedContainerSurface(PersistedSurface oldLayer)
-      : _oldLayer = FrameReference<PersistedSurface>(
-            oldLayer != null && oldLayer.isActive ? oldLayer : null) {
+  PersistedContainerSurface(PersistedSurface oldLayer) : super(oldLayer) {
     assert(oldLayer == null || runtimeType == oldLayer.runtimeType);
   }
-
-  /// The surface that is being updated using this surface.
-  ///
-  /// If not null this surface will reuse the old surface's HTML [element].
-  ///
-  /// This value is set to null at the end of the frame.
-  PersistedSurface get oldLayer => _oldLayer.value;
-  final FrameReference<PersistedSurface> _oldLayer;
 
   final List<PersistedSurface> _children = <PersistedSurface>[];
 
@@ -954,7 +631,11 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
   /// Adds a child to this container.
   void appendChild(PersistedSurface child) {
-    assert(debugAssertSurfaceState(child, PersistedSurfaceState.created, PersistedSurfaceState.pendingRetention, PersistedSurfaceState.pendingUpdate));
+    assert(debugAssertSurfaceState(
+        child,
+        PersistedSurfaceState.created,
+        PersistedSurfaceState.pendingRetention,
+        PersistedSurfaceState.pendingUpdate));
     _children.add(child);
     child.parent = this;
   }
@@ -991,7 +672,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       } else if (child is PersistedContainerSurface && child.oldLayer != null) {
         final PersistedSurface oldLayer = child.oldLayer;
         assert(oldLayer.rootElement != null);
-        assert(debugAssertSurfaceState(oldLayer, PersistedSurfaceState.pendingUpdate));
+        assert(debugAssertSurfaceState(
+            oldLayer, PersistedSurfaceState.pendingUpdate));
         child.update(child.oldLayer);
       } else {
         assert(debugAssertSurfaceState(child, PersistedSurfaceState.created));
@@ -999,7 +681,9 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         child.build();
       }
       containerElement.append(child.rootElement);
+      child._index = i;
     }
+    _debugValidateContainerNewState();
   }
 
   @override
@@ -1018,7 +702,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
   @override
   void update(PersistedContainerSurface oldSurface) {
-    assert(debugAssertSurfaceState(oldSurface, PersistedSurfaceState.active, PersistedSurfaceState.pendingUpdate));
+    assert(debugAssertSurfaceState(oldSurface, PersistedSurfaceState.active,
+        PersistedSurfaceState.pendingUpdate));
     assert(runtimeType == oldSurface.runtimeType);
     super.update(oldSurface);
     assert(debugAssertSurfaceState(oldSurface, PersistedSurfaceState.released));
@@ -1038,6 +723,11 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     }
   }
 
+  // Children should override if they are performing clipping.
+  //
+  // Used by BackdropFilter to locate it's ancestor clip element.
+  bool get isClipping => false;
+
   void _debugValidateContainerUpdate(PersistedContainerSurface oldSurface) {
     // At the end of this all children should have an element each, and it
     // should be attached to this container's element.
@@ -1051,9 +741,18 @@ abstract class PersistedContainerSurface extends PersistedSurface {
           assert(oldChild.childContainer == null);
         }
       }
+      _debugValidateContainerNewState();
+      return true;
+    }());
+  }
+
+  void _debugValidateContainerNewState() {
+    assert(() {
       for (int i = 0; i < _children.length; i++) {
         final PersistedSurface newChild = _children[i];
-        assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active, PersistedSurfaceState.pendingRetention));
+        assert(newChild._index == i);
+        assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active,
+            PersistedSurfaceState.pendingRetention));
         assert(newChild.rootElement != null);
         assert(newChild.rootElement.parent == childContainer);
       }
@@ -1076,18 +775,22 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       final PersistedSurface newChild = _children[i];
       if (newChild.isPendingRetention) {
         newChild.retain();
-        assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.pendingRetention));
+        assert(debugAssertSurfaceState(
+            newChild, PersistedSurfaceState.pendingRetention));
       } else if (newChild is PersistedContainerSurface &&
           newChild.oldLayer != null) {
         final PersistedContainerSurface oldLayer = newChild.oldLayer;
-        assert(debugAssertSurfaceState(oldLayer, PersistedSurfaceState.pendingUpdate));
+        assert(debugAssertSurfaceState(
+            oldLayer, PersistedSurfaceState.pendingUpdate));
         newChild.update(oldLayer);
-        assert(debugAssertSurfaceState(oldLayer, PersistedSurfaceState.released));
+        assert(
+            debugAssertSurfaceState(oldLayer, PersistedSurfaceState.released));
         assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
       } else {
         newChild.build();
         assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
       }
+      newChild._index = i;
       assert(newChild.rootElement != null);
       containerElement.append(newChild.rootElement);
     }
@@ -1112,6 +815,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
   void _updateManyToOne(PersistedContainerSurface oldSurface) {
     assert(_children.length == 1);
     final PersistedSurface newChild = _children[0];
+    newChild._index = 0;
 
     // Retained child is moved to the correct location in the tree; all others
     // are released.
@@ -1126,14 +830,16 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       newChild.retain();
 
       _discardActiveChildren(oldSurface);
-      assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.pendingRetention));
+      assert(debugAssertSurfaceState(
+          newChild, PersistedSurfaceState.pendingRetention));
       return;
     }
 
     // Updated child is moved to the correct location in the tree; all others
     // are released.
     if (newChild is PersistedContainerSurface && newChild.oldLayer != null) {
-      assert(debugAssertSurfaceState(newChild.oldLayer, PersistedSurfaceState.pendingUpdate));
+      assert(debugAssertSurfaceState(
+          newChild.oldLayer, PersistedSurfaceState.pendingUpdate));
       assert(newChild.rootElement == null);
       assert(newChild.oldLayer.rootElement != null);
 
@@ -1176,7 +882,8 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         childContainer.append(newChild.rootElement);
       }
 
-      assert(debugAssertSurfaceState(bestMatch, PersistedSurfaceState.released));
+      assert(
+          debugAssertSurfaceState(bestMatch, PersistedSurfaceState.released));
     } else {
       newChild.build();
       childContainer.append(newChild.rootElement);
@@ -1201,68 +908,147 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
     // Memoize container element for efficiency. [childContainer] is polymorphic
     final html.Element containerElement = childContainer;
-
-    PersistedSurface nextSibling;
-
-    // Inserts the DOM node of the child before the DOM node of the next sibling
-    // if it has moved as a result of the update. Does nothing if the new child
-    // is already in the right location in the DOM tree.
-    void insertDomNodeIfMoved(PersistedSurface newChild) {
-      assert(newChild.rootElement != null);
-      assert(newChild.parent == this);
-      final bool reparented = newChild.rootElement.parent != containerElement;
-      // Do not check for sibling if reparented. It's obvious that we moved.
-      final bool moved = reparented ||
-          newChild.rootElement.nextElementSibling != nextSibling?.rootElement;
-      if (moved) {
-        if (nextSibling == null) {
-          // We're at the end of the list.
-          containerElement.append(newChild.rootElement);
-        } else {
-          // We're in the middle of the list.
-          containerElement.insertBefore(
-              newChild.rootElement, nextSibling.rootElement);
-        }
-      }
-    }
-
     final Map<PersistedSurface, PersistedSurface> matches =
         _matchChildren(oldSurface);
 
-    for (int bottomInNew = _children.length - 1;
-        bottomInNew >= 0;
-        bottomInNew--) {
-      final PersistedSurface newChild = _children[bottomInNew];
+    // This pair of lists maps from _children indices to oldSurface._children indices.
+    // These lists are initialized lazily, only when we discover that we will need to
+    // move nodes around. Otherwise, these lists remain null.
+    List<int> indexMapNew;
+    List<int> indexMapOld;
+
+    // Whether children need to move around the DOM. It is common for children
+    // to be updated/retained but never move. Knowing this allows us to bypass
+    // the expensive logic that figures out the minimal number of moves.
+    bool requiresDomInserts = false;
+
+    for (int topInNew = 0; topInNew < _children.length; topInNew += 1) {
+      final PersistedSurface newChild = _children[topInNew];
+
+      // The old child surface that `newChild` was updated or retained from.
+      PersistedSurface matchedOldChild;
+      // Whether the child is getting a new parent. This happens in the
+      // following situations:
+      // - It's a new child and is being attached for the first time.
+      // - It's an existing child is being updated or retained and at the same
+      //   time moved to another parent.
+      bool isReparenting = true;
+
       if (newChild.isPendingRetention) {
+        isReparenting = newChild.rootElement.parent != containerElement;
         newChild.retain();
-        assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.pendingRetention));
+        matchedOldChild = newChild;
+        assert(debugAssertSurfaceState(
+            newChild, PersistedSurfaceState.pendingRetention));
       } else if (newChild is PersistedContainerSurface &&
           newChild.oldLayer != null) {
         final PersistedContainerSurface oldLayer = newChild.oldLayer;
-        assert(debugAssertSurfaceState(oldLayer, PersistedSurfaceState.pendingUpdate));
+        isReparenting = oldLayer.rootElement.parent != containerElement;
+        matchedOldChild = oldLayer;
+        assert(debugAssertSurfaceState(
+            oldLayer, PersistedSurfaceState.pendingUpdate));
         newChild.update(oldLayer);
-        assert(debugAssertSurfaceState(oldLayer, PersistedSurfaceState.released));
+        assert(
+            debugAssertSurfaceState(oldLayer, PersistedSurfaceState.released));
         assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
       } else {
-        final PersistedSurface matchedOldChild = matches[newChild];
+        matchedOldChild = matches[newChild];
         if (matchedOldChild != null) {
-          assert(debugAssertSurfaceState(matchedOldChild, PersistedSurfaceState.active));
+          assert(debugAssertSurfaceState(
+              matchedOldChild, PersistedSurfaceState.active));
+          isReparenting = matchedOldChild.rootElement.parent != containerElement;
           newChild.update(matchedOldChild);
-          assert(debugAssertSurfaceState(matchedOldChild, PersistedSurfaceState.released));
-          assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
+          assert(debugAssertSurfaceState(
+              matchedOldChild, PersistedSurfaceState.released));
+          assert(
+              debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
         } else {
           newChild.build();
-          assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
+          assert(
+              debugAssertSurfaceState(newChild, PersistedSurfaceState.active));
         }
       }
-      insertDomNodeIfMoved(newChild);
+
+      int indexInOld = -1;
+      if (matchedOldChild != null && !isReparenting) {
+        assert(
+          matchedOldChild._index != -1,
+          'Invalid index ${matchedOldChild._index} of child layer ${matchedOldChild.runtimeType}',
+        );
+        indexInOld = matchedOldChild._index;
+      }
+
+      // indexInOld != topInNew indicates that at least one child has moved and
+      // therefore we'll need to find the minimum moves necessary to update the
+      // child list.
+      if (!requiresDomInserts && indexInOld != topInNew) {
+        requiresDomInserts = true;
+        indexMapNew = <int>[];
+        indexMapOld = <int>[];
+
+        // Because up until this moment we haven't been populating the
+        // indexMapNew and indexMapOld, we backfill them with indices up until
+        // the current index.
+        for (int backfill = 0; backfill < topInNew; backfill++) {
+          indexMapNew.add(backfill);
+          indexMapOld.add(backfill);
+        }
+      }
+      if (requiresDomInserts && indexInOld != -1) {
+        indexMapNew.add(topInNew);
+        indexMapOld.add(indexInOld);
+      }
+
+      newChild._index = topInNew;
       assert(newChild.rootElement != null);
-      assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active, PersistedSurfaceState.pendingRetention));
-      nextSibling = newChild;
+      assert(debugAssertSurfaceState(newChild, PersistedSurfaceState.active,
+          PersistedSurfaceState.pendingRetention));
+    }
+
+    // Avoid calling `_insertChildDomNodes` unnecessarily. Only call it if we
+    // actually need to move DOM nodes around.
+    if (requiresDomInserts) {
+      assert(indexMapNew.length == indexMapOld.length);
+      _insertChildDomNodes(indexMapNew, indexMapOld);
+    } else {
+      // The fast path, where nothing needs to move, should not intialize the
+      // mapping lists at all.
+      assert(indexMapNew == null);
+      assert(indexMapOld == null);
     }
 
     // Remove elements that were not reused this frame.
     _discardActiveChildren(oldSurface);
+  }
+
+  /// Performs the minimum number of DOM moves necessary to put all children in
+  /// the right place in the DOM.
+  void _insertChildDomNodes(List<int> indexMapNew, List<int> indexMapOld) {
+    final List<int> stationaryIndices = longestIncreasingSubsequence(indexMapOld);
+
+    // Convert to stationary new indices
+    for (int i = 0; i < stationaryIndices.length; i++) {
+      stationaryIndices[i] = indexMapNew[stationaryIndices[i]];
+    }
+
+    html.HtmlElement refNode;
+    final html.Element containerElement = childContainer;
+    for (int i = _children.length - 1; i >= 0; i -= 1) {
+      final int indexInNew = indexMapNew.indexOf(i);
+      final bool isStationary = indexInNew != -1 && stationaryIndices.contains(i);
+      final PersistedSurface child = _children[i];
+      final html.HtmlElement childElement = child.rootElement;
+      assert(childElement != null);
+      if (!isStationary) {
+        if (refNode == null) {
+          containerElement.append(childElement);
+        } else {
+          containerElement.insertBefore(childElement, refNode);
+        }
+      }
+      refNode = childElement;
+      assert(child.rootElement.parent == childContainer);
+    }
   }
 
   Map<PersistedSurface, PersistedSurface> _matchChildren(
@@ -1274,7 +1060,9 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     final List<PersistedSurface> newChildren = <PersistedSurface>[];
     for (int i = 0; i < newUnfilteredChildCount; i++) {
       final PersistedSurface child = _children[i];
-      if (child.isCreated) {
+      // If child has an old layer, it means it's scheduled for an explicit
+      // update, and therefore there's no need to try to match it.
+      if (child.isCreated && child.oldLayer == null) {
         newChildren.add(child);
       }
     }
@@ -1330,7 +1118,9 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       final _PersistedSurfaceMatch match = allMatches[i];
       // This may be null if it has been claimed.
       final PersistedSurface matchedChild = oldChildren[match.oldChildIndex];
-      if (matchedChild != null) {
+      // Whether the new child hasn't found a match yet.
+      final bool newChildNeedsMatch = result[match.newChild] == null;
+      if (matchedChild != null && newChildNeedsMatch) {
         oldChildren[match.oldChildIndex] = null;
         result[match.newChild] = matchedChild; // claim it
       }
@@ -1412,4 +1202,13 @@ class _PersistedSurfaceMatch {
   /// The score of how well [newChild] matched the old child as computed by
   /// [PersistedSurface.matchForUpdate].
   final double matchQuality;
+
+  @override
+  String toString() {
+    if (assertionsEnabled) {
+      return '_PersistedSurfaceMatch(${newChild.runtimeType}#${newChild.hashCode}: $oldChildIndex, quality: $matchQuality)';
+    } else {
+      return super.toString();
+    }
+  }
 }

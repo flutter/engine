@@ -414,6 +414,75 @@ void main() {
     },
   );
 
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'correctly detects events on the semantics placeholder',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance.debugOverrideDetector(context);
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      final html.Element semanticsPlaceholder =
+          html.Element.tag('flt-semantics-placeholder');
+      glassPane.append(semanticsPlaceholder);
+
+      // Press on the semantics placeholder.
+      semanticsPlaceholder.dispatchEvent(context.primaryDown(
+        clientX: 10.0,
+        clientY: 10.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[1].change, equals(ui.PointerChange.down));
+      expect(packets[0].data[1].physicalX, equals(10.0));
+      expect(packets[0].data[1].physicalY, equals(10.0));
+      packets.clear();
+
+      // Drag on the semantics placeholder.
+      semanticsPlaceholder.dispatchEvent(context.primaryMove(
+        clientX: 12.0,
+        clientY: 10.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(12.0));
+      expect(packets[0].data[0].physicalY, equals(10.0));
+      packets.clear();
+
+      // Keep dragging.
+      semanticsPlaceholder.dispatchEvent(context.primaryMove(
+        clientX: 15.0,
+        clientY: 10.0,
+      ));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(15.0));
+      expect(packets[0].data[0].physicalY, equals(10.0));
+      packets.clear();
+
+      // Release the pointer on the semantics placeholder.
+      html.window.dispatchEvent(context.primaryUp(
+        clientX: 100.0,
+        clientY: 200.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(100.0));
+      expect(packets[0].data[0].physicalY, equals(200.0));
+      expect(packets[0].data[1].change, equals(ui.PointerChange.up));
+      expect(packets[0].data[1].physicalX, equals(100.0));
+      expect(packets[0].data[1].physicalY, equals(200.0));
+      packets.clear();
+
+      semanticsPlaceholder.remove();
+    },
+  );
+
   // BUTTONED ADAPTERS
 
   _testEach<_ButtonedEventMixin>(
@@ -1442,6 +1511,67 @@ void main() {
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[0].data[1].synthesized, equals(false));
       expect(packets[0].data[1].buttons, equals(2));
+      packets.clear();
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    [_PointerEventContext(), _MouseEventContext()],
+    'correctly detects up event outside of glasspane',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance.debugOverrideDetector(context);
+      // This can happen when the up event occurs while the mouse is outside the
+      // browser window.
+
+      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      // Press and drag around.
+      glassPane.dispatchEvent(context.primaryDown(
+        clientX: 10.0,
+        clientY: 10.0,
+      ));
+      glassPane.dispatchEvent(context.primaryMove(
+        clientX: 12.0,
+        clientY: 10.0,
+      ));
+      glassPane.dispatchEvent(context.primaryMove(
+        clientX: 15.0,
+        clientY: 10.0,
+      ));
+      glassPane.dispatchEvent(context.primaryMove(
+        clientX: 20.0,
+        clientY: 10.0,
+      ));
+      packets.clear();
+
+      // Move outside the glasspane.
+      html.window.dispatchEvent(context.primaryMove(
+        clientX: 900.0,
+        clientY: 1900.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(900.0));
+      expect(packets[0].data[0].physicalY, equals(1900.0));
+      packets.clear();
+
+      // Release outside the glasspane.
+      html.window.dispatchEvent(context.primaryUp(
+        clientX: 1000.0,
+        clientY: 2000.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.move));
+      expect(packets[0].data[0].physicalX, equals(1000.0));
+      expect(packets[0].data[0].physicalY, equals(2000.0));
+      expect(packets[0].data[1].change, equals(ui.PointerChange.up));
+      expect(packets[0].data[1].physicalX, equals(1000.0));
+      expect(packets[0].data[1].physicalY, equals(2000.0));
       packets.clear();
     },
   );

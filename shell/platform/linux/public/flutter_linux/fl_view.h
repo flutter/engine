@@ -12,12 +12,49 @@
 #include <gtk/gtk.h>
 
 #include "fl_dart_project.h"
+#include "fl_engine.h"
 
 G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(FlView, fl_view, FL, VIEW, GtkWidget)
 
+/**
+ * FlView:
+ *
+ * #FlView is a GTK widget that is capable of displaying a Flutter application.
+ *
+ * The following example shows how to set up a view in a GTK application:
+ * |[<!-- language="C" -->
+ *   FlDartProject *project = fl_dart_project_new ();
+ *   FlView *view = fl_view_new (project);
+ *   gtk_widget_show (GTK_WIDGET (view));
+ *   gtk_container_add (GTK_CONTAINER (parent), view);
+ *
+ *   FlBinaryMessenger *mesenger =
+ *     fl_engine_get_binary_messenger (fl_view_get_engine (view));
+ *   setup_channels_or_plugins (messenger);
+ * ]|
+ */
+
+/**
+ * fl_view_new:
+ * @project: The project to show.
+ *
+ * Creates a widget to show Flutter application.
+ *
+ * Returns: a new #FlView.
+ */
 FlView* fl_view_new(FlDartProject* project);
+
+/**
+ * fl_view_get_engine:
+ * @view: an #FlView.
+ *
+ * Gets the engine being rendered in the view.
+ *
+ * Returns: an #FlEngine.
+ */
+FlEngine* fl_view_get_engine(FlView* view);
 
 G_END_DECLS
 

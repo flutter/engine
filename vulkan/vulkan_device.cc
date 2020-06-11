@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_device.h"
+#include "vulkan_device.h"
 
 #include <limits>
 #include <map>
 #include <vector>
 
-#include "flutter/vulkan/vulkan_proc_table.h"
-#include "flutter/vulkan/vulkan_surface.h"
-#include "flutter/vulkan/vulkan_utilities.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
+#include "vulkan_proc_table.h"
+#include "vulkan_surface.h"
+#include "vulkan_utilities.h"
 
 namespace vulkan {
 
@@ -30,11 +30,13 @@ static uint32_t FindGraphicsQueueIndex(
 }
 
 VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
-                           VulkanHandle<VkPhysicalDevice> physical_device)
+                           VulkanHandle<VkPhysicalDevice> physical_device,
+                           bool enable_validation_layers)
     : vk(p_vk),
       physical_device_(std::move(physical_device)),
       graphics_queue_index_(std::numeric_limits<uint32_t>::max()),
-      valid_(false) {
+      valid_(false),
+      enable_validation_layers_(enable_validation_layers) {
   if (!physical_device_ || !vk.AreInstanceProcsSetup()) {
     return;
   }
@@ -69,7 +71,8 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
 #endif
   };
 
-  auto enabled_layers = DeviceLayersToEnable(vk, physical_device_);
+  auto enabled_layers =
+      DeviceLayersToEnable(vk, physical_device_, enable_validation_layers_);
 
   const char* layers[enabled_layers.size()];
 

@@ -16,7 +16,7 @@ typedef WebOnlyImageCodecChunkCallback = void Function(
 
 class HtmlCodec implements ui.Codec {
   final String src;
-  final WebOnlyImageCodecChunkCallback chunkCallback;
+  final WebOnlyImageCodecChunkCallback/*?*/ chunkCallback;
 
   HtmlCodec(this.src, {this.chunkCallback});
 
@@ -149,7 +149,7 @@ class HtmlImage implements ui.Image {
       return imgElement.clone(true);
     } else {
       _requiresClone = true;
-      imgElement.style..position = 'absolute';
+      imgElement.style.position = 'absolute';
       return imgElement;
     }
   }

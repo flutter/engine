@@ -177,7 +177,8 @@ static const UIAccessibilityTraits UIAccessibilityTraitUndocumentedEmptyLine = 0
   FlutterInactiveTextInput* _inactive_text_input;
 }
 
-- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridge>)bridge uid:(int32_t)uid {
+- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
+                           uid:(int32_t)uid {
   self = [super initWithBridge:bridge uid:uid];
 
   if (self) {
@@ -200,7 +201,7 @@ static const UIAccessibilityTraits UIAccessibilityTraitUndocumentedEmptyLine = 0
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsFocused)) {
     // The text input view must have a non-trivial size for the accessibility
     // system to send text editing events.
-    [self bridge] -> textInputView().frame = CGRectMake(0.0, 0.0, 1.0, 1.0);
+    [self bridge]->textInputView().frame = CGRectMake(0.0, 0.0, 1.0, 1.0);
   }
 }
 
@@ -216,7 +217,7 @@ static const UIAccessibilityTraits UIAccessibilityTraitUndocumentedEmptyLine = 0
  */
 - (UIView<UITextInput>*)textInputSurrogate {
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsFocused)) {
-    return [self bridge] -> textInputView();
+    return [self bridge]->textInputView();
   } else {
     return _inactive_text_input;
   }

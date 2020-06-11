@@ -1,6 +1,6 @@
 package io.flutter.embedding.android;
 
-import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
+import static android.content.ComponentCallbacks2.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
@@ -27,9 +27,11 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
+import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import org.junit.Before;
 import org.junit.Test;
@@ -220,7 +222,18 @@ public class FlutterActivityAndFragmentDelegateTest {
   public void itGivesHostAnOpportunityToConfigureFlutterTextureView() {
     // ---- Test setup ----
     Host customMockHost = mock(Host.class);
+    when(customMockHost.getContext()).thenReturn(RuntimeEnvironment.application);
+    when(customMockHost.getActivity()).thenReturn(Robolectric.setupActivity(Activity.class));
+    when(customMockHost.getLifecycle()).thenReturn(mock(Lifecycle.class));
+    when(customMockHost.getFlutterShellArgs()).thenReturn(new FlutterShellArgs(new String[] {}));
+    when(customMockHost.getDartEntrypointFunctionName()).thenReturn("main");
+    when(customMockHost.getAppBundlePath()).thenReturn("/fake/path");
+    when(customMockHost.getInitialRoute()).thenReturn("/");
     when(customMockHost.getRenderMode()).thenReturn(RenderMode.texture);
+    when(customMockHost.getTransparencyMode()).thenReturn(TransparencyMode.transparent);
+    when(customMockHost.provideFlutterEngine(any(Context.class))).thenReturn(mockFlutterEngine);
+    when(customMockHost.shouldAttachEngineToActivity()).thenReturn(true);
+    when(customMockHost.shouldDestroyEngineWithHost()).thenReturn(true);
 
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate =
@@ -429,7 +442,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
-  public void itSendsMessageOverSystemChannelWhenToldToTrimMemory() {
+  public void itNotifiesDartExecutorAndSendsMessageOverSystemChannelWhenToldToTrimMemory() {
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
@@ -438,14 +451,21 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onAttach(RuntimeEnvironment.application);
 
     // Emulate the host and call the method that we expect to be forwarded.
+    delegate.onTrimMemory(TRIM_MEMORY_RUNNING_MODERATE);
     delegate.onTrimMemory(TRIM_MEMORY_RUNNING_LOW);
+    delegate.onTrimMemory(TRIM_MEMORY_RUNNING_CRITICAL);
+    delegate.onTrimMemory(TRIM_MEMORY_BACKGROUND);
+    delegate.onTrimMemory(TRIM_MEMORY_COMPLETE);
+    delegate.onTrimMemory(TRIM_MEMORY_MODERATE);
+    delegate.onTrimMemory(TRIM_MEMORY_UI_HIDDEN);
 
     // Verify that the call was forwarded to the engine.
+    verify(mockFlutterEngine.getDartExecutor(), times(7)).notifyLowMemoryWarning();
     verify(mockFlutterEngine.getSystemChannel(), times(1)).sendMemoryPressureWarning();
   }
 
   @Test
-  public void itSendsMessageOverSystemChannelWhenInformedOfLowMemory() {
+  public void itNotifiesDartExecutorAndSendsMessageOverSystemChannelWhenInformedOfLowMemory() {
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
 
@@ -457,6 +477,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onLowMemory();
 
     // Verify that the call was forwarded to the engine.
+    verify(mockFlutterEngine.getDartExecutor(), times(1)).notifyLowMemoryWarning();
     verify(mockFlutterEngine.getSystemChannel(), times(1)).sendMemoryPressureWarning();
   }
 
@@ -602,6 +623,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(engine.getLifecycleChannel()).thenReturn(mock(LifecycleChannel.class));
     when(engine.getNavigationChannel()).thenReturn(mock(NavigationChannel.class));
     when(engine.getSystemChannel()).thenReturn(mock(SystemChannel.class));
+    when(engine.getTextInputChannel()).thenReturn(mock(TextInputChannel.class));
+    when(engine.getMouseCursorChannel()).thenReturn(mock(MouseCursorChannel.class));
     when(engine.getActivityControlSurface()).thenReturn(mock(ActivityControlSurface.class));
 
     return engine;

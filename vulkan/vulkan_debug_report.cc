@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_debug_report.h"
+#include "vulkan_debug_report.h"
 
 #include <iomanip>
 #include <vector>
 
 #include "flutter/fml/compiler_specific.h"
-#include "flutter/vulkan/vulkan_utilities.h"
+#include "vulkan_utilities.h"
 
 namespace vulkan {
 
@@ -182,8 +182,7 @@ VulkanDebugReport::VulkanDebugReport(
     const VulkanProcTable& p_vk,
     const VulkanHandle<VkInstance>& application)
     : vk(p_vk), application_(application), valid_(false) {
-  if (!IsDebuggingEnabled() || !vk.CreateDebugReportCallbackEXT ||
-      !vk.DestroyDebugReportCallbackEXT) {
+  if (!vk.CreateDebugReportCallbackEXT || !vk.DestroyDebugReportCallbackEXT) {
     return;
   }
 

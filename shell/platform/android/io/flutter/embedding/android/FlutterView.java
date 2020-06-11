@@ -14,12 +14,18 @@ import android.os.Build;
 import android.os.LocaleList;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
+import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.PointerIcon;
+import android.view.Surface;
 import android.view.View;
+import android.view.ViewStructure;
 import android.view.WindowInsets;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
+import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
@@ -34,9 +40,11 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -69,7 +77,7 @@ import java.util.Set;
  * See <a>https://source.android.com/devices/graphics/arch-tv#surface_or_texture</a> for more
  * information comparing {@link android.view.SurfaceView} and {@link android.view.TextureView}.
  */
-public class FlutterView extends FrameLayout {
+public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseCursorViewDelegate {
   private static final String TAG = "FlutterView";
 
   // Internal view hierarchy references.
@@ -91,6 +99,7 @@ public class FlutterView extends FrameLayout {
   //
   // These components essentially add some additional behavioral logic on top of
   // existing, stateless system channels, e.g., KeyEventChannel, TextInputChannel, etc.
+  @Nullable private MouseCursorPlugin mouseCursorPlugin;
   @Nullable private TextInputPlugin textInputPlugin;
   @Nullable private AndroidKeyProcessor androidKeyProcessor;
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
@@ -264,7 +273,7 @@ public class FlutterView extends FrameLayout {
     super(context, attrs);
 
     this.flutterTextureView = flutterTextureView;
-    this.renderSurface = flutterSurfaceView;
+    this.renderSurface = flutterTextureView;
 
     init();
   }
@@ -283,6 +292,9 @@ public class FlutterView extends FrameLayout {
     // FlutterView needs to be focusable so that the InputMethodManager can interact with it.
     setFocusable(true);
     setFocusableInTouchMode(true);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS);
+    }
   }
 
   /**
@@ -374,6 +386,71 @@ public class FlutterView extends FrameLayout {
     sendViewportMetricsToFlutter();
   }
 
+  // TODO(garyq): Add support for notch cutout API: https://github.com/flutter/flutter/issues/56592
+  // Decide if we want to zero the padding of the sides. When in Landscape orientation,
+  // android may decide to place the software navigation bars on the side. When the nav
+  // bar is hidden, the reported insets should be removed to prevent extra useless space
+  // on the sides.
+  private enum ZeroSides {
+    NONE,
+    LEFT,
+    RIGHT,
+    BOTH
+  }
+
+  private ZeroSides calculateShouldZeroSides() {
+    // We get both orientation and rotation because rotation is all 4
+    // rotations relative to default rotation while orientation is portrait
+    // or landscape. By combining both, we can obtain a more precise measure
+    // of the rotation.
+    Context context = getContext();
+    int orientation = context.getResources().getConfiguration().orientation;
+    int rotation =
+        ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE))
+            .getDefaultDisplay()
+            .getRotation();
+
+    if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+      if (rotation == Surface.ROTATION_90) {
+        return ZeroSides.RIGHT;
+      } else if (rotation == Surface.ROTATION_270) {
+        // In android API >= 23, the nav bar always appears on the "bottom" (USB) side.
+        return Build.VERSION.SDK_INT >= 23 ? ZeroSides.LEFT : ZeroSides.RIGHT;
+      }
+      // Ambiguous orientation due to landscape left/right default. Zero both sides.
+      else if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
+        return ZeroSides.BOTH;
+      }
+    }
+    // Square orientation deprecated in API 16, we will not check for it and return false
+    // to be safe and not remove any unique padding for the devices that do use it.
+    return ZeroSides.NONE;
+  }
+
+  // TODO(garyq): Use new Android R getInsets API
+  // TODO(garyq): The keyboard detection may interact strangely with
+  //   https://github.com/flutter/flutter/issues/22061
+
+  // Uses inset heights and screen heights as a heuristic to determine if the insets should
+  // be padded. When the on-screen keyboard is detected, we want to include the full inset
+  // but when the inset is just the hidden nav bar, we want to provide a zero inset so the space
+  // can be used.
+  @TargetApi(20)
+  @RequiresApi(20)
+  private int guessBottomKeyboardInset(WindowInsets insets) {
+    int screenHeight = getRootView().getHeight();
+    // Magic number due to this being a heuristic. This should be replaced, but we have not
+    // found a clean way to do it yet (Sept. 2018)
+    final double keyboardHeightRatioHeuristic = 0.18;
+    if (insets.getSystemWindowInsetBottom() < screenHeight * keyboardHeightRatioHeuristic) {
+      // Is not a keyboard, so return zero as inset.
+      return 0;
+    } else {
+      // Is a keyboard, so return the full inset.
+      return insets.getSystemWindowInsetBottom();
+    }
+  }
+
   /**
    * Invoked when Android's desired window insets change, i.e., padding.
    *
@@ -395,16 +472,35 @@ public class FlutterView extends FrameLayout {
   public final WindowInsets onApplyWindowInsets(@NonNull WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
+    boolean statusBarHidden = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
+    boolean navigationBarHidden =
+        (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) != 0;
+    // We zero the left and/or right sides to prevent the padding the
+    // navigation bar would have caused.
+    ZeroSides zeroSides = ZeroSides.NONE;
+    if (navigationBarHidden) {
+      zeroSides = calculateShouldZeroSides();
+    }
+
     // Status bar (top) and left/right system insets should partially obscure the content (padding).
-    viewportMetrics.paddingTop = insets.getSystemWindowInsetTop();
-    viewportMetrics.paddingRight = insets.getSystemWindowInsetRight();
+    viewportMetrics.paddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
+    viewportMetrics.paddingRight =
+        zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH
+            ? 0
+            : insets.getSystemWindowInsetRight();
     viewportMetrics.paddingBottom = 0;
-    viewportMetrics.paddingLeft = insets.getSystemWindowInsetLeft();
+    viewportMetrics.paddingLeft =
+        zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH
+            ? 0
+            : insets.getSystemWindowInsetLeft();
 
     // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
     viewportMetrics.viewInsetTop = 0;
     viewportMetrics.viewInsetRight = 0;
-    viewportMetrics.viewInsetBottom = insets.getSystemWindowInsetBottom();
+    viewportMetrics.viewInsetBottom =
+        navigationBarHidden
+            ? guessBottomKeyboardInset(insets)
+            : insets.getSystemWindowInsetBottom();
     viewportMetrics.viewInsetLeft = 0;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -663,6 +759,16 @@ public class FlutterView extends FrameLayout {
   }
   // -------- End: Accessibility ---------
 
+  // -------- Start: Mouse -------
+  @Override
+  @TargetApi(Build.VERSION_CODES.N)
+  @RequiresApi(Build.VERSION_CODES.N)
+  @NonNull
+  public PointerIcon getSystemPointerIcon(int type) {
+    return PointerIcon.getSystemIcon(getContext(), type);
+  }
+  // -------- End: Mouse ---------
+
   /**
    * Connects this {@code FlutterView} to the given {@link FlutterEngine}.
    *
@@ -701,10 +807,13 @@ public class FlutterView extends FrameLayout {
 
     // Initialize various components that know how to process Android View I/O
     // in a way that Flutter understands.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      mouseCursorPlugin = new MouseCursorPlugin(this, this.flutterEngine.getMouseCursorChannel());
+    }
     textInputPlugin =
         new TextInputPlugin(
             this,
-            this.flutterEngine.getDartExecutor(),
+            this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
     androidKeyProcessor =
         new AndroidKeyProcessor(this.flutterEngine.getKeyEventChannel(), textInputPlugin);
@@ -853,7 +962,22 @@ public class FlutterView extends FrameLayout {
     } else {
       locales.add(config.locale);
     }
-    flutterEngine.getLocalizationChannel().sendLocales(locales);
+
+    Locale platformResolvedLocale = null;
+    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+      List<Locale.LanguageRange> languageRanges = new ArrayList<>();
+      LocaleList localeList = config.getLocales();
+      int localeCount = localeList.size();
+      for (int index = 0; index < localeCount; ++index) {
+        Locale locale = localeList.get(index);
+        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
+      }
+      // TODO(garyq) implement a real locale resolution.
+      platformResolvedLocale =
+          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
+    }
+
+    flutterEngine.getLocalizationChannel().sendLocales(locales, platformResolvedLocale);
   }
 
   /**
@@ -896,6 +1020,17 @@ public class FlutterView extends FrameLayout {
 
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
+  }
+
+  @Override
+  public void onProvideAutofillVirtualStructure(ViewStructure structure, int flags) {
+    super.onProvideAutofillVirtualStructure(structure, flags);
+    textInputPlugin.onProvideAutofillVirtualStructure(structure, flags);
+  }
+
+  @Override
+  public void autofill(SparseArray<AutofillValue> values) {
+    textInputPlugin.autofill(values);
   }
 
   /**

@@ -49,6 +49,8 @@ source_set("flutter_windows_source") {
     "keyboard_hook_handler.h",
     "platform_handler.cc",
     "platform_handler.h",
+    "string_conversion.cc",
+    "string_conversion.h",
     "text_input_plugin.cc",
     "text_input_plugin.h",
     "win32_flutter_window.cc",
@@ -60,8 +62,6 @@ source_set("flutter_windows_source") {
     "window_state.h",
   ]
 
-  defines = [ "USE_RAPID_JSON" ]
-
   configs += [
     "//flutter/shell/platform/common/cpp:desktop_library_implementation",
     "//third_party/angle:gl_prototypes",
@@ -72,8 +72,9 @@ source_set("flutter_windows_source") {
   deps = [
     ":flutter_windows_headers",
     "//flutter/shell/platform/common/cpp:common_cpp",
+    "//flutter/shell/platform/common/cpp:common_cpp_input",
     "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper",
-    "//flutter/shell/platform/embedder:embedder_with_symbol_prefix",
+    "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows",
     "//third_party/angle:libEGL_static",  # the order of libEGL_static and libGLESv2_static is important.. if reversed, will cause a linker error DllMain already defined in LIBCMTD.lib
     "//third_party/angle:libGLESv2_static",
@@ -110,6 +111,7 @@ executable("flutter_windows_unittests") {
 
   sources = [
     "dpi_utils_unittests.cc",
+    "string_conversion_unittests.cc",
     "testing/win32_flutter_window_test.cc",
     "testing/win32_flutter_window_test.h",
     "testing/win32_window_test.cc",
@@ -125,11 +127,6 @@ executable("flutter_windows_unittests") {
     ":flutter_windows_headers",
     ":flutter_windows_source",
     "//flutter/testing",
-
-    # TODO(chunhtai): Consider refactoring flutter_root/testing so that there's a testing
-    # target that doesn't require a Dart runtime to be linked in.
-    # https://github.com/flutter/flutter/issues/41414.
-    "//third_party/dart/runtime:libdart_jit",
     "//third_party/rapidjson",
   ]
 }

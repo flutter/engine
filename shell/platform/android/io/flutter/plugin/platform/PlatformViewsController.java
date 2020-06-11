@@ -216,7 +216,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             throw new IllegalStateException(
                 "Sending touch to an unknown view with id: " + touch.viewId);
           }
-          View view = vdControllers.get(touch.viewId).getView();
 
           MotionEvent event =
               MotionEvent.obtain(
@@ -235,7 +234,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                   touch.source,
                   touch.flags);
 
-          view.dispatchTouchEvent(event);
+          vdControllers.get(touch.viewId).dispatchTouchEvent(event);
         }
 
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -404,7 +403,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return registry;
   }
 
-  public void onFlutterViewDestroyed() {
+  /**
+   * Invoked when the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@link
+   * PlatformViewsController} attaches to JNI.
+   */
+  public void onAttachedToJNI() {
+    // Currently no action needs to be taken after JNI attachment.
+  }
+
+  /**
+   * Invoked when the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@link
+   * PlatformViewsController} detaches from JNI.
+   */
+  public void onDetachedFromJNI() {
+    // Dispose all virtual displays so that any future updates to textures will not be
+    // propagated to the native peer.
     flushAllViews();
   }
 
@@ -519,5 +532,13 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       controller.dispose();
     }
     vdControllers.clear();
+  }
+
+  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+  }
+
+  public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
   }
 }

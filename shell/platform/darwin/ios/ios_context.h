@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "flutter/flow/gl_context_switch.h"
 #include "flutter/flow/texture.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -84,42 +85,12 @@ class IOSContext {
   /// @attention  Only one context may be bound to a thread at any given time.
   ///             Making a binding on a thread, clears the old binding.
   ///
-  /// @return     If the on-screen context could be bound to the current thread.
+  /// @return     A GLContextResult that represents the result of the method.
+  ///             The GetResult() returns a bool that indicates If the on-screen context could be
+  ///             bound to the current
+  /// thread.
   ///
-  virtual bool MakeCurrent() = 0;
-
-  //----------------------------------------------------------------------------
-  /// @brief      When using client rendering APIs whose contexts need to be
-  ///             bound to a specific thread, the engine will call this method
-  ///             to give the off-screen context a chance to bind to the current
-  ///             thread.
-  ///
-  /// @attention  Client rendering APIs that have no-concept of thread local
-  ///             bindings (anything that is not OpenGL) will always return
-  ///             `true`.
-  ///
-  /// @attention  Client rendering APIs for which a GrContext cannot be created
-  ///             (software rendering) will always return `false`.
-  ///
-  /// @attention  This binds the off-screen context to the current thread. To
-  ///             bind the on-screen context to the thread, use the
-  ///             `MakeCurrent` method instead.
-  ///
-  /// @attention  Only one context may be bound to a thread at any given time.
-  ///             Making a binding on a thread, clears the old binding.
-  ///
-  /// @return     If the off-screen context could be bound to the current
-  ///             thread.
-  ///
-  virtual bool ResourceMakeCurrent() = 0;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Clears the context binding of the current thread if one is
-  ///             present. Does noting otherwise.
-  ///
-  /// @return     `true` is the current context bound to the thread is cleared.
-  ///
-  virtual bool ClearCurrent() = 0;
+  virtual std::unique_ptr<GLContextResult> MakeCurrent() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates an external texture proxy of the appropriate client

@@ -12,11 +12,14 @@ ShellTestPlatformViewGL::ShellTestPlatformViewGL(
     PlatformView::Delegate& delegate,
     TaskRunners task_runners,
     std::shared_ptr<ShellTestVsyncClock> vsync_clock,
-    CreateVsyncWaiter create_vsync_waiter)
+    CreateVsyncWaiter create_vsync_waiter,
+    std::shared_ptr<ShellTestExternalViewEmbedder>
+        shell_test_external_view_embedder)
     : ShellTestPlatformView(delegate, std::move(task_runners)),
       gl_surface_(SkISize::Make(800, 600)),
       create_vsync_waiter_(std::move(create_vsync_waiter)),
-      vsync_clock_(vsync_clock) {}
+      vsync_clock_(vsync_clock),
+      shell_test_external_view_embedder_(shell_test_external_view_embedder) {}
 
 ShellTestPlatformViewGL::~ShellTestPlatformViewGL() = default;
 
@@ -41,8 +44,9 @@ PointerDataDispatcherMaker ShellTestPlatformViewGL::GetDispatcherMaker() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool ShellTestPlatformViewGL::GLContextMakeCurrent() {
-  return gl_surface_.MakeCurrent();
+std::unique_ptr<GLContextResult>
+ShellTestPlatformViewGL::GLContextMakeCurrent() {
+  return std::make_unique<GLContextDefaultResult>(gl_surface_.MakeCurrent());
 }
 
 // |GPUSurfaceGLDelegate|
@@ -70,7 +74,7 @@ ShellTestPlatformViewGL::GetGLProcResolver() const {
 
 // |GPUSurfaceGLDelegate|
 ExternalViewEmbedder* ShellTestPlatformViewGL::GetExternalViewEmbedder() {
-  return nullptr;
+  return shell_test_external_view_embedder_.get();
 }
 
 }  // namespace testing

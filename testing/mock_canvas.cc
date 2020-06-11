@@ -60,10 +60,9 @@ void MockCanvas::didConcat(const SkMatrix& matrix) {
   draw_calls_.emplace_back(DrawCall{current_layer_, ConcatMatrixData{matrix}});
 }
 
-void MockCanvas::didConcat44(const SkScalar matrix[]) {
-  SkMatrix44 m44;
-  m44.setColMajor(matrix);
-  draw_calls_.emplace_back(DrawCall{current_layer_, ConcatMatrix44Data{m44}});
+void MockCanvas::didConcat44(const SkM44& matrix) {
+  draw_calls_.emplace_back(
+      DrawCall{current_layer_, ConcatMatrix44Data{matrix}});
 }
 
 void MockCanvas::didScale(SkScalar x, SkScalar y) {
@@ -225,31 +224,12 @@ void MockCanvas::onDrawRRect(const SkRRect&, const SkPaint&) {
   FML_DCHECK(false);
 }
 
-#if defined(SK_SUPPORT_LEGACY_ONDRAWBITMAP_VIRTUALS)
-void MockCanvas::onDrawBitmap(const SkBitmap&,
-                              SkScalar,
-                              SkScalar,
-                              const SkPaint*) {
-  FML_DCHECK(false);
-}
-#endif
-
 void MockCanvas::onDrawImage(const SkImage*,
                              SkScalar,
                              SkScalar,
                              const SkPaint*) {
   FML_DCHECK(false);
 }
-
-#if defined(SK_SUPPORT_LEGACY_ONDRAWBITMAP_VIRTUALS)
-void MockCanvas::onDrawBitmapRect(const SkBitmap&,
-                                  const SkRect*,
-                                  const SkRect&,
-                                  const SkPaint*,
-                                  SrcRectConstraint) {
-  FML_DCHECK(false);
-}
-#endif
 
 void MockCanvas::onDrawImageRect(const SkImage*,
                                  const SkRect*,

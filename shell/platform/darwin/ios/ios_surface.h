@@ -10,9 +10,9 @@
 #include <memory>
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/common/surface.h"
 
 @class CALayer;
 
@@ -78,10 +78,10 @@ class IOSSurface : public ExternalViewEmbedder {
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  bool SubmitFrame(GrContext* context, SkCanvas* background_canvas) override;
+  bool SubmitFrame(GrContext* context, std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
-  void FinishFrame() override;
+  void EndFrame(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
  public:
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurface);

@@ -95,13 +95,13 @@ DEF_SWITCH(EndlessTraceBuffer,
            "indefinitely however.")
 DEF_SWITCH(EnableSoftwareRendering,
            "enable-software-rendering",
-           "Enable rendering using the Skia software backend. This is useful"
-           "when testing Flutter on emulators. By default, Flutter will"
+           "Enable rendering using the Skia software backend. This is useful "
+           "when testing Flutter on emulators. By default, Flutter will "
            "attempt to either use OpenGL or Vulkan.")
 DEF_SWITCH(SkiaDeterministicRendering,
            "skia-deterministic-rendering",
-           "Skips the call to SkGraphics::Init(), thus avoiding swapping out"
-           "some Skia function pointers based on available CPU features. This"
+           "Skips the call to SkGraphics::Init(), thus avoiding swapping out "
+           "some Skia function pointers based on available CPU features. This "
            "is used to obtain 100% deterministic behavior in Skia rendering.")
 DEF_SWITCH(FlutterAssetsDir,
            "flutter-assets-dir",
@@ -174,6 +174,12 @@ DEF_SWITCH(DisableDartAsserts,
            "disabled. This flag may be specified if the user wishes to run "
            "with assertions disabled in the debug product mode (i.e. with JIT "
            "or DBC).")
+DEF_SWITCH(DisableHttp,
+           "disable-http",
+           "Dart VM has a master switch that can be set to disable insecure "
+           "HTTP and WebSocket protocols. Localhost or loopback addresses are "
+           "exempted. This flag can be specified if the embedder wants this "
+           "for a particular platform.")
 DEF_SWITCH(
     ForceMultithreading,
     "force-multithreading",

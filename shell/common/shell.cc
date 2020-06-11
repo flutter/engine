@@ -20,7 +20,6 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
-#include "flutter/runtime/start_up.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
@@ -175,12 +174,6 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   return shell;
 }
 
-static void RecordStartupTimestamp() {
-  if (engine_main_enter_ts == 0) {
-    engine_main_enter_ts = Dart_TimelineGetMicros();
-  }
-}
-
 static void Tokenize(const std::string& input,
                      std::vector<std::string>* results,
                      char delimiter) {
@@ -197,7 +190,7 @@ static void Tokenize(const std::string& input,
 // TODO(chinmaygarde): The unfortunate side effect of this call is that settings
 // that cause shell initialization failures will still lead to some of their
 // settings being applied.
-static void PerformInitializationTasks(const Settings& settings) {
+static void PerformInitializationTasks(Settings& settings) {
   {
     fml::LogSettings log_settings;
     log_settings.min_log_level =
@@ -207,7 +200,10 @@ static void PerformInitializationTasks(const Settings& settings) {
 
   static std::once_flag gShellSettingsInitialization = {};
   std::call_once(gShellSettingsInitialization, [&settings] {
-    RecordStartupTimestamp();
+    if (settings.engine_start_timestamp.count() == 0) {
+      settings.engine_start_timestamp =
+          std::chrono::microseconds(Dart_TimelineGetMicros());
+    }
 
     tonic::SetLogHandler(
         [](const char* message) { FML_LOG(ERROR) << message; });
@@ -342,7 +338,7 @@ Shell::Shell(DartVMRef vm, TaskRunners task_runners, Settings settings)
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetRasterTaskRunner(), fml::MakeCopyable([this]() mutable {
         this->weak_factory_gpu_ =
-            std::make_unique<fml::WeakPtrFactory<Shell>>(this);
+            std::make_unique<fml::TaskRunnerAffineWeakPtrFactory<Shell>>(this);
       }));
 
   // Install service protocol handlers.
@@ -546,6 +542,14 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   weak_rasterizer_ = rasterizer_->GetWeakPtr();
   weak_platform_view_ = platform_view_->GetWeakPtr();
 
+  // Setup the time-consuming default font manager right after engine created.
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
+                                    [engine = weak_engine_] {
+                                      if (engine) {
+                                        engine->SetupDefaultFontManager();
+                                      }
+                                    });
+
   is_setup_ = true;
 
   vm_->GetServiceProtocol()->AddHandler(this, GetServiceProtocolDescription());
@@ -575,7 +579,7 @@ const TaskRunners& Shell::GetTaskRunners() const {
   return task_runners_;
 }
 
-fml::WeakPtr<Rasterizer> Shell::GetRasterizer() const {
+fml::TaskRunnerAffineWeakPtr<Rasterizer> Shell::GetRasterizer() const {
   FML_DCHECK(is_setup_);
   return weak_rasterizer_;
 }
@@ -606,7 +610,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // a synchronous fashion.
   fml::AutoResetWaitableEvent latch;
   auto raster_task =
-      fml::MakeCopyable([& waiting_for_first_frame = waiting_for_first_frame_,
+      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
                          rasterizer = rasterizer_->GetWeakPtr(),  //
                          surface = std::move(surface),            //
                          &latch]() mutable {
@@ -931,12 +935,17 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_time) {
+void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
+  // record the target time for use by rasterizer.
+  {
+    std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+    latest_frame_target_time_.emplace(frame_target_time);
+  }
   if (engine_) {
-    engine_->BeginFrame(frame_time);
+    engine_->BeginFrame(frame_target_time);
   }
 }
 
@@ -951,17 +960,27 @@ void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
+void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
+                           fml::TimePoint frame_target_time) {
   FML_DCHECK(is_setup_);
 
+  // record the target time for use by rasterizer.
+  {
+    std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+    if (!latest_frame_target_time_) {
+      latest_frame_target_time_ = frame_target_time;
+    } else if (latest_frame_target_time_ < frame_target_time) {
+      latest_frame_target_time_ = frame_target_time;
+    }
+  }
+
   task_runners_.GetRasterTaskRunner()->PostTask(
-      [& waiting_for_first_frame = waiting_for_first_frame_,
+      [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
-       pipeline = std::move(pipeline)]() {
+       layer_tree_holder = std::move(layer_tree_holder)]() {
         if (rasterizer) {
-          rasterizer->Draw(pipeline);
-
+          rasterizer->Draw(std::move(layer_tree_holder));
           if (waiting_for_first_frame.load()) {
             waiting_for_first_frame.store(false);
             waiting_for_first_frame_condition.notify_all();
@@ -1163,6 +1182,13 @@ fml::Milliseconds Shell::GetFrameBudget() {
   } else {
     return fml::kDefaultFrameBudget;
   }
+}
+
+fml::TimePoint Shell::GetLatestFrameTargetTime() const {
+  std::scoped_lock time_recorder_lock(time_recorder_mutex_);
+  FML_CHECK(latest_frame_target_time_.has_value())
+      << "GetLatestFrameTargetTime called before OnAnimatorBeginFrame";
+  return latest_frame_target_time_.value();
 }
 
 // |ServiceProtocol::Handler|
@@ -1447,7 +1473,7 @@ fml::Status Shell::WaitForFirstFrame(fml::TimeDelta timeout) {
   std::unique_lock<std::mutex> lock(waiting_for_first_frame_mutex_);
   bool success = waiting_for_first_frame_condition_.wait_for(
       lock, std::chrono::milliseconds(timeout.ToMilliseconds()),
-      [& waiting_for_first_frame = waiting_for_first_frame_] {
+      [&waiting_for_first_frame = waiting_for_first_frame_] {
         return !waiting_for_first_frame.load();
       });
   if (success) {

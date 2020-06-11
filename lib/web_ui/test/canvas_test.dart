@@ -13,7 +13,6 @@ import 'mock_engine_canvas.dart';
 void main() {
   setUpAll(() {
     WebExperiments.ensureInitialized();
-    Profiler.ensureInitialized();
   });
 
   group('EngineCanvas', () {
@@ -36,16 +35,17 @@ void main() {
     }
 
     testCanvas('draws laid out paragraph', (EngineCanvas canvas) {
-      final RecordingCanvas recordingCanvas =
-          RecordingCanvas(const ui.Rect.fromLTWH(0, 0, 100, 100));
+      final ui.Rect screenRect = const ui.Rect.fromLTWH(0, 0, 100, 100);
+      final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
       final ui.ParagraphBuilder builder =
           ui.ParagraphBuilder(ui.ParagraphStyle());
       builder.addText('sample');
       paragraph = builder.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 100));
       recordingCanvas.drawParagraph(paragraph, const ui.Offset(10, 10));
+      recordingCanvas.endRecording();
       canvas.clear();
-      recordingCanvas.apply(canvas);
+      recordingCanvas.apply(canvas, screenRect);
     }, whenDone: () {
       expect(mockCanvas.methodCallLog, hasLength(3));
 
@@ -60,15 +60,16 @@ void main() {
 
     testCanvas('ignores paragraphs that were not laid out',
         (EngineCanvas canvas) {
-      final RecordingCanvas recordingCanvas =
-          RecordingCanvas(const ui.Rect.fromLTWH(0, 0, 100, 100));
+      final ui.Rect screenRect = const ui.Rect.fromLTWH(0, 0, 100, 100);
+      final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
       final ui.ParagraphBuilder builder =
           ui.ParagraphBuilder(ui.ParagraphStyle());
       builder.addText('sample');
       final ui.Paragraph paragraph = builder.build();
       recordingCanvas.drawParagraph(paragraph, const ui.Offset(10, 10));
+      recordingCanvas.endRecording();
       canvas.clear();
-      recordingCanvas.apply(canvas);
+      recordingCanvas.apply(canvas, screenRect);
     }, whenDone: () {
       expect(mockCanvas.methodCallLog, hasLength(2));
       expect(mockCanvas.methodCallLog[0].methodName, 'clear');

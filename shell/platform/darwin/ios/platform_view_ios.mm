@@ -10,16 +10,46 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 
 namespace flutter {
+
+PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+    const std::function<void(bool)>& set_semantics_enabled)
+    : AccessibilityBridgePtr(set_semantics_enabled, nullptr) {}
+
+PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+    const std::function<void(bool)>& set_semantics_enabled,
+    AccessibilityBridge* bridge)
+    : accessibility_bridge_(bridge), set_semantics_enabled_(set_semantics_enabled) {
+  if (bridge) {
+    set_semantics_enabled_(true);
+  }
+}
+
+PlatformViewIOS::AccessibilityBridgePtr::~AccessibilityBridgePtr() {
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(false);
+  }
+}
+
+void PlatformViewIOS::AccessibilityBridgePtr::reset(AccessibilityBridge* bridge) {
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(false);
+  }
+  accessibility_bridge_.reset(bridge);
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(true);
+  }
+}
 
 PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
                                  IOSRenderingAPI rendering_api,
                                  flutter::TaskRunners task_runners)
     : PlatformView(delegate, std::move(task_runners)),
-      ios_context_(IOSContext::Create(rendering_api)) {}
+      ios_context_(IOSContext::Create(rendering_api)),
+      accessibility_bridge_([this](bool enabled) { PlatformView::SetSemanticsEnabled(enabled); }) {}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
@@ -69,6 +99,9 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
 
 void PlatformViewIOS::attachView() {
   FML_DCHECK(owner_controller_);
+  FML_DCHECK(owner_controller_.get().isViewLoaded)
+      << "FlutterViewController's view should be loaded "
+         "before attaching to PlatformViewIOS.";
   ios_surface_ =
       [static_cast<FlutterView*>(owner_controller_.get().view) createSurface:ios_context_];
   FML_DCHECK(ios_surface_ != nullptr);
@@ -117,13 +150,14 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
     return;
   }
   if (enabled && !accessibility_bridge_) {
-    accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-        static_cast<FlutterView*>(owner_controller_.get().view), this,
-        [owner_controller_.get() platformViewsController]);
+    accessibility_bridge_.reset(
+        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
+                                [owner_controller_.get() platformViewsController]));
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
+  } else {
+    PlatformView::SetSemanticsEnabled(enabled);
   }
-  PlatformView::SetSemanticsEnabled(enabled);
 }
 
 // |shell:PlatformView|
@@ -154,15 +188,7 @@ void PlatformViewIOS::OnPreEngineRestart() const {
   if (!owner_controller_) {
     return;
   }
-  [owner_controller_.get() platformViewsController] -> Reset();
-}
-
-fml::scoped_nsprotocol<FlutterTextInputPlugin*> PlatformViewIOS::GetTextInputPlugin() const {
-  return text_input_plugin_;
-}
-
-void PlatformViewIOS::SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin) {
-  text_input_plugin_ = plugin;
+  [owner_controller_.get() platformViewsController]->Reset();
 }
 
 PlatformViewIOS::ScopedObserver::ScopedObserver() : observer_(nil) {}

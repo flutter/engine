@@ -22,6 +22,7 @@ import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.plugin.common.StandardMessageCodec;
+import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
 import java.nio.ByteBuffer;
@@ -103,10 +104,15 @@ public class FlutterJNI {
       @NonNull String[] args,
       @Nullable String bundlePath,
       @NonNull String appStoragePath,
-      @NonNull String engineCachesPath);
+      @NonNull String engineCachesPath,
+      long initTimeMillis);
 
-  // TODO(mattcarroll): add javadocs
-  public static native void nativeRecordStartTimestamp(long initTimeMillis);
+  /**
+   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
+   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
+   * noticeable time, but later calls will return a reference to the preexisting font manager.
+   */
+  public static native void nativePrefetchDefaultFontManager();
 
   // TODO(mattcarroll): add javadocs
   @UiThread
@@ -146,9 +152,24 @@ public class FlutterJNI {
   @NonNull
   public static native FlutterCallbackInformation nativeLookupCallbackInformation(long handle);
 
+  // ----- Start FlutterTextUtils Methods ----
+
+  public native boolean nativeFlutterTextUtilsIsEmoji(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsEmojiModifier(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsEmojiModifierBase(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsVariationSelector(int codePoint);
+
+  public native boolean nativeFlutterTextUtilsIsRegionalIndicator(int codePoint);
+
+  // ----- End Engine FlutterTextUtils Methods ----
+
   @Nullable private Long nativePlatformViewId;
   @Nullable private AccessibilityDelegate accessibilityDelegate;
   @Nullable private PlatformMessageHandler platformMessageHandler;
+  @Nullable private PlatformViewsController platformViewsController;
 
   @NonNull
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
@@ -395,6 +416,12 @@ public class FlutterJNI {
   private native void nativeDispatchPointerDataPacket(
       long nativePlatformViewId, @NonNull ByteBuffer buffer, int position);
   // ------ End Touch Interaction Support ---
+
+  @UiThread
+  public void setPlatformViewsController(@NonNull PlatformViewsController platformViewsController) {
+    ensureRunningOnMainThread();
+    this.platformViewsController = platformViewsController;
+  }
 
   // ------ Start Accessibility Support -----
   /**
@@ -761,7 +788,29 @@ public class FlutterJNI {
       listener.onPreEngineRestart();
     }
   }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to position an overlay surface");
+    }
+    platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+  }
   // ----- End Engine Lifecycle Support ----
+
+  // @SuppressWarnings("unused")
+  @UiThread
+  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to position a platform view");
+    }
+    platformViewsController.onDisplayPlatformView(viewId, x, y, width, height);
+  }
 
   // TODO(mattcarroll): determine if this is nonull or nullable
   @UiThread
@@ -773,6 +822,22 @@ public class FlutterJNI {
 
   // TODO(mattcarroll): determine if this is nonull or nullable
   private native Bitmap nativeGetBitmap(long nativePlatformViewId);
+
+  /**
+   * Notifies the Dart VM of a low memory event, or that the application is in a state such that now
+   * is an appropriate time to free resources, such as going to the background.
+   *
+   * <p>This is distinct from sending a SystemChannel message about low memory, which only notifies
+   * the running Flutter application.
+   */
+  @UiThread
+  public void notifyLowMemoryWarning() {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeNotifyLowMemoryWarning();
+  }
+
+  private native void nativeNotifyLowMemoryWarning();
 
   private void ensureRunningOnMainThread() {
     if (Looper.myLooper() != mainLooper) {

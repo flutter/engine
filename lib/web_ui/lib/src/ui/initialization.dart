@@ -6,7 +6,20 @@
 part of ui;
 
 /// Initializes the platform.
-Future<void> webOnlyInitializePlatform({
+Future<void>/*!*/ webOnlyInitializePlatform({
+  engine.AssetManager/*?*/ assetManager,
+}) {
+  final Future<void> initializationFuture = _initializePlatform(assetManager: assetManager);
+  scheduleMicrotask(() {
+    // Access [engine.lineLookup] to force the lazy unpacking of line break data
+    // now. Removing this line won't break anything. It's just an optimization
+    // to make the unpacking happen while we are waiting for network requests.
+    engine.lineLookup;
+  });
+  return initializationFuture;
+}
+
+Future<void> _initializePlatform({
   engine.AssetManager assetManager,
 }) async {
   if (!debugEmulateFlutterTesterEnvironment) {
@@ -32,17 +45,18 @@ Future<void> webOnlyInitializePlatform({
   _webOnlyIsInitialized = true;
 }
 
-engine.AssetManager _assetManager;
+// TODO(yjbanov): can we make this late non-null? See https://github.com/dart-lang/sdk/issues/42214
+engine.AssetManager/*?*/ _assetManager;
 engine.FontCollection _fontCollection;
 
 bool _webOnlyIsInitialized = false;
-bool get webOnlyIsInitialized => _webOnlyIsInitialized;
+bool/*!*/ get webOnlyIsInitialized => _webOnlyIsInitialized;
 
 /// Specifies that the platform should use the given [AssetManager] to load
 /// assets.
 ///
 /// The given asset manager is used to initialize the font collection.
-Future<void> webOnlySetAssetManager(engine.AssetManager assetManager) async {
+Future<void>/*!*/ webOnlySetAssetManager(engine.AssetManager/*!*/ assetManager) async {
   assert(assetManager != null, 'Cannot set assetManager to null');
   if (assetManager == _assetManager) {
     return;
@@ -78,10 +92,10 @@ Future<void> webOnlySetAssetManager(engine.AssetManager assetManager) async {
 ///
 /// For example in these tests we use a predictable-size font which makes widget
 /// tests less flaky.
-bool get debugEmulateFlutterTesterEnvironment =>
+bool/*!*/ get debugEmulateFlutterTesterEnvironment =>
     _debugEmulateFlutterTesterEnvironment;
 
-set debugEmulateFlutterTesterEnvironment(bool value) {
+set debugEmulateFlutterTesterEnvironment(bool/*!*/ value) {
   _debugEmulateFlutterTesterEnvironment = value;
   if (_debugEmulateFlutterTesterEnvironment) {
     const Size logicalSize = Size(800.0, 600.0);
@@ -93,7 +107,7 @@ set debugEmulateFlutterTesterEnvironment(bool value) {
 bool _debugEmulateFlutterTesterEnvironment = false;
 
 /// This class handles downloading assets over the network.
-engine.AssetManager get webOnlyAssetManager => _assetManager;
+engine.AssetManager/*!*/ get webOnlyAssetManager => _assetManager;
 
 /// A collection of fonts that may be used by the platform.
-engine.FontCollection get webOnlyFontCollection => _fontCollection;
+engine.FontCollection/*!*/ get webOnlyFontCollection => _fontCollection;
