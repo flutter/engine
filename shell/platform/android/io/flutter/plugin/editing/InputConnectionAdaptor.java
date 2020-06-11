@@ -343,14 +343,11 @@ class InputConnectionAdaptor extends BaseInputConnection {
         int selStart = Selection.getSelectionStart(mEditable);
         int selEnd = Selection.getSelectionEnd(mEditable);
         if (selStart == selEnd && !event.isShiftPressed()) {
-          Selection.moveLeft(mEditable, mLayout);
-          int newSelStart = Selection.getSelectionStart(mEditable);
-          setSelection(newSelStart, newSelStart);
+          int newSel = Math.max(flutterTextUtils.getOffsetBefore(mEditable, selStart), 0);
+          setSelection(newSel, newSel);
         } else {
-          Selection.extendLeft(mEditable, mLayout);
-          int newSelStart = Selection.getSelectionStart(mEditable);
-          int newSelEnd = Selection.getSelectionEnd(mEditable);
-          setSelection(newSelStart, newSelEnd);
+          int newSelEnd = Math.max(flutterTextUtils.getOffsetBefore(mEditable, selEnd), 0);
+          setSelection(selStart, newSelEnd);
         }
         return true;
       } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
