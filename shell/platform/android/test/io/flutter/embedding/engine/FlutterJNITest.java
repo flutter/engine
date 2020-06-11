@@ -118,5 +118,22 @@ public class FlutterJNITest {
     assertEquals(result[0], "es");
     assertEquals(result[1], "MX");
     assertEquals(result[2], "");
+
+    // Empty supportedLocales.
+    supportedLocales = new String[] {};
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 0);
+
+    // Empty preferredLocales.
+    supportedLocales =
+        new String[] {
+          "fr", "FR", "",
+          "zh", "", "",
+          "en", "CA", ""
+        };
+    localeList = new LocaleList();
+    when(config.getLocales()).thenReturn(localeList);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 0);
   }
 }
