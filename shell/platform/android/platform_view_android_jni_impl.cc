@@ -721,7 +721,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   }
 
   g_on_begin_frame_method =
-    env->GetMethodID(g_flutter_jni_class->obj(), "onBeginFrame", "()V");
+      env->GetMethodID(g_flutter_jni_class->obj(), "onBeginFrame", "()V");
 
   if (g_on_begin_frame_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onBeginFrame method";

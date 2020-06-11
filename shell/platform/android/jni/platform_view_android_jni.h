@@ -131,8 +131,8 @@ class PlatformViewAndroidJNI {
                                                 int width,
                                                 int height) = 0;
   //----------------------------------------------------------------------------
-  /// @brief      Initiates the initialization of a frame if using hybrid 
-  ///             composition.
+  /// @brief      Initiates a frame if using hybrid composition.
+  ///
   ///
   /// @note       Must be called from the platform thread.
   ///
