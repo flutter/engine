@@ -157,7 +157,7 @@ class ChannelBuffers {
 
   bool _isEmpty(String channel) {
     final _RingBuffer<_StoredMessage>? queue = _messages[channel];
-    return (queue == null) ? true : queue.isEmpty;
+    return queue == null || queue.isEmpty;
   }
 
   /// Changes the capacity of the queue associated with the given channel.

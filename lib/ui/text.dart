@@ -85,7 +85,7 @@ class FontWeight {
     assert(t != null); // ignore: unnecessary_null_comparison
     if (a == null && b == null)
       return null;
-    return values[_lerpInt(a?.index ?? normal.index, b?.index ?? normal.index, t).round().clamp(0, 8) as int];
+    return values[_lerpInt((a ?? normal).index, (b ?? normal).index, t).round().clamp(0, 8) as int];
   }
 
   @override
@@ -2023,20 +2023,20 @@ class Paragraph extends NativeFieldWrapperClass2 {
     final Float64List encoded = _computeLineMetrics();
     final int count = encoded.length ~/ 9;
     int position = 0;
-    final List<LineMetrics> metrics = <LineMetrics>[];
-    for (int index = 0; index < count; index += 1) {
-      metrics.add(LineMetrics(
-        hardBreak:      encoded[position++] != 0,
-        ascent:         encoded[position++],
-        descent:        encoded[position++],
-        unscaledAscent: encoded[position++],
-        height:         encoded[position++],
-        width:          encoded[position++],
-        left:           encoded[position++],
-        baseline:       encoded[position++],
-        lineNumber:     encoded[position++].toInt(),
-      ));
-    }
+    final List<LineMetrics> metrics = <LineMetrics>[
+      for (int index = 0; index < count; index += 1)
+        LineMetrics(
+          hardBreak:      encoded[position++] != 0,
+          ascent:         encoded[position++],
+          descent:        encoded[position++],
+          unscaledAscent: encoded[position++],
+          height:         encoded[position++],
+          width:          encoded[position++],
+          left:           encoded[position++],
+          baseline:       encoded[position++],
+          lineNumber:     encoded[position++].toInt(),
+        )
+    ];
     return metrics;
   }
   Float64List _computeLineMetrics() native 'Paragraph_computeLineMetrics';
@@ -2272,12 +2272,11 @@ final ByteData _fontChangeMessage = utf8.encoder.convert(
 ).buffer.asByteData();
 
 FutureOr<void> _sendFontChangeMessage() async {
-  if (window.onPlatformMessage != null)
-    window.onPlatformMessage!(
-      'flutter/system',
-      _fontChangeMessage,
-      (_) {},
-    );
+  window.onPlatformMessage?.call(
+    'flutter/system',
+    _fontChangeMessage,
+    (_) {},
+  );
 }
 
 String _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';

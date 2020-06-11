@@ -1349,10 +1349,7 @@ class Paint {
   ///  * [colorFilter], which overrides [shader].
   ///  * [color], which is used if [shader] and [colorFilter] are null.
   Shader? get shader {
-    final List<dynamic>? objects = _objects;
-    if (objects == null)
-      return null;
-    return objects[_kShaderIndex] as Shader?;
+    return _objects?[_kShaderIndex] as Shader?;
   }
   set shader(Shader? value) {
     _ensureObjectsInitialized()[_kShaderIndex] = value;
@@ -1365,11 +1362,7 @@ class Paint {
   ///
   /// When a shape is being drawn, [colorFilter] overrides [color] and [shader].
   ColorFilter? get colorFilter {
-    final List<dynamic>? objects = _objects;
-    if (objects == null || objects[_kColorFilterIndex] == null) {
-      return null;
-    }
-    return objects[_kColorFilterIndex].creator as ColorFilter?;
+    return _objects?[_kColorFilterIndex]?.creator as ColorFilter?;
   }
 
   set colorFilter(ColorFilter? value) {
@@ -1406,10 +1399,7 @@ class Paint {
   ///
   ///  * [MaskFilter], which is used for drawing geometry.
   ImageFilter? get imageFilter {
-    final List<dynamic>? objects = _objects;
-    if (objects == null || objects[_kImageFilterIndex] == null)
-      return null;
-    return objects[_kImageFilterIndex].creator as ImageFilter?;
+    return _objects?[_kImageFilterIndex]?.creator as ImageFilter?;
   }
 
   set imageFilter(ImageFilter? value) {
@@ -2809,7 +2799,9 @@ class _ColorFilter extends NativeFieldWrapperClass2 {
 class ImageFilter {
   /// Creates an image filter that applies a Gaussian blur.
   ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0 })
-      : _data = _makeList(sigmaX, sigmaY),
+      : assert(sigmaX != null), // ignore: unnecessary_null_comparison
+        assert(sigmaY != null), // ignore: unnecessary_null_comparison
+        _data = _makeList(sigmaX, sigmaY),
         _filterQuality = null,
         _type = _kTypeBlur;
 
@@ -2819,7 +2811,8 @@ class ImageFilter {
   /// when used with [BackdropFilter] would magnify the background image.
   ImageFilter.matrix(Float64List matrix4,
                      { FilterQuality filterQuality = FilterQuality.low })
-      : _data = Float64List.fromList(matrix4),
+      : assert(matrix4 != null), // ignore: unnecessary_null_comparison
+        _data = Float64List.fromList(matrix4),
         _filterQuality = filterQuality,
         _type = _kTypeMatrix {
     if (matrix4.length != 16)
