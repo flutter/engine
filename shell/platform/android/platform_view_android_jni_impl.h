@@ -62,6 +62,9 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
                                         int width,
                                         int height) override;
 
+  void FlutterViewBeginFrame() override;
+
+
  private:
   // Reference to FlutterJNI object.
   const fml::jni::JavaObjectWeakGlobalRef java_object_;

@@ -79,10 +79,6 @@ static jmethodID g_update_custom_accessibility_actions_method = nullptr;
 static jmethodID g_on_first_frame_method = nullptr;
 
 static jmethodID g_on_engine_restart_method = nullptr;
-void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj) {
-  env->CallVoidMethod(obj, g_on_engine_restart_method);
-  FML_CHECK(CheckException(env));
-}
 
 static jmethodID g_on_begin_frame_method = nullptr;
 void FlutterViewBeginFrame(JNIEnv* env, jobject obj) {
@@ -720,8 +716,16 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_on_display_platform_view_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIII)V");
+
+  if (g_on_display_platform_view_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate onDisplayPlatformView method";
+    return false;
+  }
+
   g_on_begin_frame_method =
-      env->GetMethodID(g_flutter_jni_class->obj(), "onBeginFrame", "()V");
+    env->GetMethodID(g_flutter_jni_class->obj(), "onBeginFrame", "()V");
 
   if (g_on_begin_frame_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onBeginFrame method";
@@ -1040,6 +1044,19 @@ void PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(
 
   env->CallVoidMethod(java_object.obj(), g_on_display_overlay_surface_method,
                       surface_id, x, y, width, height);
+
+  FML_CHECK(CheckException(env));
+}
+
+void PlatformViewAndroidJNIImpl::FlutterViewBeginFrame() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return;
+  }
+
+  env->CallVoidMethod(java_object.obj(), g_on_begin_frame_method);
 
   FML_CHECK(CheckException(env));
 }
