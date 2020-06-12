@@ -54,7 +54,7 @@ TEST_F(TextureLayerTest, PaintingEmptyLayerDies) {
   EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
 }
 
-TEST_F(TextureLayerTest, PaintingWithFilterQuality) {
+TEST_F(TextureLayerTest, PaintingWithLowFilterQuality) {
   const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
   const SkSize layer_size = SkSize::Make(8.0f, 8.0f);
   const int64_t texture_id = 0;

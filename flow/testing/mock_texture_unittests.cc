@@ -41,7 +41,7 @@ TEST(MockTextureTest, PaintCalls) {
   EXPECT_EQ(texture->paint_calls(), expected_paint_calls);
 }
 
-TEST(MockTextureTest, PaintCallsWithFilterQuality) {
+TEST(MockTextureTest, PaintCallsWithLowFilterQuality) {
   SkCanvas canvas;
   const SkRect paint_bounds1 = SkRect::MakeWH(1.0f, 1.0f);
   const SkRect paint_bounds2 = SkRect::MakeWH(2.0f, 2.0f);
