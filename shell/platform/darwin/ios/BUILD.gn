@@ -98,6 +98,8 @@ source_set("flutter_framework_source") {
     "ios_surface_gl.mm",
     "ios_surface_software.h",
     "ios_surface_software.mm",
+    "ios_switchable_gl_context.h",
+    "ios_switchable_gl_context.mm",
     "platform_view_ios.h",
     "platform_view_ios.mm",
     "rendering_api_selection.h",

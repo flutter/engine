@@ -7,12 +7,16 @@
 
 #include "flutter/flow/embedded_views.h"
 
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flutter {
 
-class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
+class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
  public:
+  AndroidExternalViewEmbedder(
+      std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
       int view_id,
@@ -25,7 +29,8 @@ class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
-  bool SubmitFrame(GrContext* context, SkCanvas* background_canvas) override;
+  bool SubmitFrame(GrContext* context,
+                   std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
   PostPrerollResult PostPrerollAction(
@@ -43,13 +48,24 @@ class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
   void CancelFrame() override;
 
   // |ExternalViewEmbedder|
-  void FinishFrame() override;
-
-  // |ExternalViewEmbedder|
   void EndFrame(
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
  private:
+  // Allows to call methods in Java.
+  const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
+
+  // The number of frames the rasterizer task runner will continue
+  // to run on the platform thread after no platform view is rendered.
+  //
+  // Note: this is an arbitrary number that attempts to account for cases
+  // where the platform view might be momentarily off the screen.
+  static const int kDefaultMergedLeaseDuration = 10;
+
+  // Whether the rasterizer task runner should run on the platform thread.
+  // When this is true, the current frame is cancelled and resubmitted.
+  bool should_run_rasterizer_on_platform_thread_ = false;
+
   // The size of the background canvas.
   SkISize frame_size_;
 
@@ -63,7 +79,7 @@ class AndroidExternalViewEmbedder : public ExternalViewEmbedder {
   std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
 
   /// Resets the state.
-  void ClearFrame();
+  void Reset();
 };
 
 }  // namespace flutter

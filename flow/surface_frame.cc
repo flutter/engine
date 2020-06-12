@@ -2,20 +2,29 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/common/surface.h"
-
+#include "flutter/flow/surface_frame.h"
 #include "flutter/fml/logging.h"
-#include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 
 SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
                            bool supports_readback,
                            const SubmitCallback& submit_callback)
+    : surface_(surface),
+      supports_readback_(supports_readback),
+      submit_callback_(submit_callback) {
+  FML_DCHECK(submit_callback_);
+}
+
+SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
+                           bool supports_readback,
+                           const SubmitCallback& submit_callback,
+                           std::unique_ptr<GLContextResult> context_result)
     : submitted_(false),
       surface_(surface),
       supports_readback_(supports_readback),
-      submit_callback_(submit_callback) {
+      submit_callback_(submit_callback),
+      context_result_(std::move(context_result)) {
   FML_DCHECK(submit_callback_);
 }
 
@@ -33,6 +42,10 @@ bool SurfaceFrame::Submit() {
 
   submitted_ = PerformSubmit();
 
+  return submitted_;
+}
+
+bool SurfaceFrame::IsSubmitted() const {
   return submitted_;
 }
 
@@ -54,18 +67,6 @@ bool SurfaceFrame::PerformSubmit() {
   }
 
   return false;
-}
-
-Surface::Surface() = default;
-
-Surface::~Surface() = default;
-
-flutter::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
-  return nullptr;
-}
-
-bool Surface::MakeRenderContextCurrent() {
-  return true;
 }
 
 }  // namespace flutter

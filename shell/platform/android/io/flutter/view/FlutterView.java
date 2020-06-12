@@ -321,6 +321,7 @@ public class FlutterView extends SurfaceView
   }
 
   public void onMemoryPressure() {
+    mNativeView.getFlutterJNI().notifyLowMemoryWarning();
     systemChannel.sendMemoryPressureWarning();
   }
 

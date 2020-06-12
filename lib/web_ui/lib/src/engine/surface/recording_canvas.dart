@@ -19,6 +19,31 @@ double _measureBorderRadius(double x, double y) {
   return clampedX * clampedX + clampedY * clampedY;
 }
 
+class RawRecordingCanvas extends BitmapCanvas
+    implements ui.PictureRecorder {
+  RawRecordingCanvas(ui.Size size) : super(ui.Offset.zero & size);
+
+  @override
+  void dispose() {
+    clear();
+  }
+
+  RecordingCanvas beginRecording(ui.Rect bounds) =>
+      throw UnsupportedError('');
+
+  @override
+  ui.Picture endRecording() => throw UnsupportedError('');
+
+  RecordingCanvas _canvas; // ignore: unused_field
+
+  bool _isRecording = true; // ignore: unused_field
+
+  @override
+  bool get isRecording => true;
+
+  ui.Rect cullRect;
+}
+
 /// Records canvas commands to be applied to a [EngineCanvas].
 ///
 /// See [Canvas] for docs for these methods.
@@ -517,12 +542,12 @@ class RecordingCanvas {
   }
 
   void drawVertices(
-      ui.Vertices vertices, ui.BlendMode blendMode, SurfacePaint paint) {
+      SurfaceVertices vertices, ui.BlendMode blendMode, SurfacePaint paint) {
     assert(!_debugRecordingEnded);
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawVertices command = PaintDrawVertices(vertices, blendMode, paint.paintData);
-    _growPaintBoundsByPoints(vertices.positions, 0, paint, command);
+    _growPaintBoundsByPoints(vertices._positions, 0, paint, command);
     _commands.add(command);
   }
 

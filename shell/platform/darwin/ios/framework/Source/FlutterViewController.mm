@@ -39,6 +39,7 @@ NSNotificationName const FlutterViewControllerShowHomeIndicator =
 @interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
+@property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 @end
 
 // The following conditional compilation defines an API 13 concept on earlier API targets so that
@@ -552,9 +553,11 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
-  [self surfaceUpdated:NO];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
-  [self flushOngoingTouches];
+  if ([_engine.get() viewController] == self) {
+    [self surfaceUpdated:NO];
+    [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+    [self flushOngoingTouches];
+  }
 
   [super viewDidDisappear:animated];
 }
@@ -1238,6 +1241,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
   return [_engine.get() valuePublishedByPlugin:pluginKey];
+}
+
+- (void)presentViewController:(UIViewController*)viewControllerToPresent
+                     animated:(BOOL)flag
+                   completion:(void (^)(void))completion {
+  self.isPresentingViewControllerAnimating = YES;
+  [super presentViewController:viewControllerToPresent
+                      animated:flag
+                    completion:^{
+                      self.isPresentingViewControllerAnimating = NO;
+                      if (completion) {
+                        completion();
+                      }
+                    }];
+}
+
+- (BOOL)isPresentingViewController {
+  return self.presentedViewController != nil || self.isPresentingViewControllerAnimating;
 }
 
 @end

@@ -11,7 +11,7 @@
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/platform/android/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 
 namespace flutter {
 
@@ -36,10 +36,12 @@ bool GetSkColorType(int32_t buffer_format,
 
 }  // anonymous namespace
 
-AndroidSurfaceSoftware::AndroidSurfaceSoftware() {
+AndroidSurfaceSoftware::AndroidSurfaceSoftware(
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
   GetSkColorType(WINDOW_FORMAT_RGBA_8888, &target_color_type_,
                  &target_alpha_type_);
-  external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>();
+  external_view_embedder_ =
+      std::make_unique<AndroidExternalViewEmbedder>(jni_facade);
 }
 
 AndroidSurfaceSoftware::~AndroidSurfaceSoftware() = default;
@@ -57,7 +59,8 @@ bool AndroidSurfaceSoftware::ResourceContextClearCurrent() {
   return false;
 }
 
-std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface() {
+std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface(
+    GrContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }
@@ -143,7 +146,7 @@ ExternalViewEmbedder* AndroidSurfaceSoftware::GetExternalViewEmbedder() {
 
 void AndroidSurfaceSoftware::TeardownOnScreenContext() {}
 
-bool AndroidSurfaceSoftware::OnScreenSurfaceResize(const SkISize& size) const {
+bool AndroidSurfaceSoftware::OnScreenSurfaceResize(const SkISize& size) {
   return true;
 }
 

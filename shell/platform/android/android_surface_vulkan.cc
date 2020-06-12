@@ -12,9 +12,11 @@
 
 namespace flutter {
 
-AndroidSurfaceVulkan::AndroidSurfaceVulkan()
+AndroidSurfaceVulkan::AndroidSurfaceVulkan(
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
     : proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {
-  external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>();
+  external_view_embedder_ =
+      std::make_unique<AndroidExternalViewEmbedder>(jni_facade);
 }
 
 AndroidSurfaceVulkan::~AndroidSurfaceVulkan() = default;
@@ -27,7 +29,8 @@ void AndroidSurfaceVulkan::TeardownOnScreenContext() {
   // Nothing to do.
 }
 
-std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
+std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface(
+    GrContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }
@@ -54,7 +57,7 @@ std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
   return gpu_surface;
 }
 
-bool AndroidSurfaceVulkan::OnScreenSurfaceResize(const SkISize& size) const {
+bool AndroidSurfaceVulkan::OnScreenSurfaceResize(const SkISize& size) {
   return true;
 }
 

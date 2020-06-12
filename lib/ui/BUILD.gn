@@ -164,6 +164,7 @@ if (current_toolchain == host_toolchain) {
       "painting/image_decoder_test.cc",
       "painting/image_decoder_test.h",
       "painting/image_decoder_unittests.cc",
+      "painting/vertices_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]
 
@@ -171,11 +172,30 @@ if (current_toolchain == host_toolchain) {
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/common",
+      "//flutter/shell/common:shell_test_fixture_sources",
       "//flutter/testing",
       "//flutter/testing:dart",
       "//flutter/testing:opengl",
       "//flutter/third_party/tonic",
       "//third_party/dart/runtime/bin:elf_loader",
+    ]
+  }
+
+  executable("ui_benchmarks") {
+    testonly = true
+
+    configs += [ "//flutter:export_dynamic_symbols" ]
+
+    sources = [
+      "ui_benchmarks.cc",
+    ]
+
+    deps = [
+      ":ui",
+      ":ui_unittests_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/shell/common:common",
+      "//flutter/testing:fixture_test",
     ]
   }
 }
