@@ -55,6 +55,7 @@ class ImageRoleManager extends RoleManager {
 
   void _setLabel(html.Element element) {
     if (semanticsObject.hasLabel) {
+      print('>>> semanticsObject.label = ${semanticsObject.label}');
       element.setAttribute('aria-label', semanticsObject.label);
     }
   }

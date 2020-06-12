@@ -74,6 +74,7 @@ class LabelAndValue extends RoleManager {
       combinedValue.write(semanticsObject.value);
     }
 
+    print('>>> combinedValue.toString() = ${combinedValue.toString()}');
     semanticsObject.element
         .setAttribute('aria-label', combinedValue.toString());
 

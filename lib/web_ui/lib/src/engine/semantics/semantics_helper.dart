@@ -203,6 +203,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
     // page receives focus. 'tab-index' makes sure the button is the first
     // target of tab. 'aria-label' is used to define the placeholder message
     // to the assistive technology user.
+    print('>>> placeholderMessage = $placeholderMessage');
     _semanticsPlaceholder
       ..setAttribute('role', 'button')
       ..setAttribute('aria-live', 'true')
@@ -377,6 +378,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       tryEnableSemantics(event);
     }, true);
 
+    print('>>> placeholderMessage = $placeholderMessage');
     _semanticsPlaceholder
       ..setAttribute('role', 'button')
       ..setAttribute('aria-label', placeholderMessage);
