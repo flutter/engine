@@ -4,12 +4,6 @@
 
 package io.flutter.embedding.android;
 
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.MapEntry;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -20,40 +14,61 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Map.Entry;
 
+/**
+ * A class to process key events from Android, passing them to the framework as messages using
+ * {@link KeyEventChannel}.
+ */
 public class AndroidKeyProcessor {
   private static final String TAG = "AndroidKeyProcessor";
 
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final TextInputPlugin textInputPlugin;
-  @NonNull private final Context context;
-  private int combiningCharacter;
+  @NonNull private int combiningCharacter;
+  @NonNull private EventResponder eventResponder;
 
-  private Map<Long, KeyEvent> pendingEvents = new HashMap<Long, KeyEvent>();
-  private boolean dispatchingKeyEvent = false;
-
-  public AndroidKeyProcessor(@NonNull Context context, @NonNull KeyEventChannel keyEventChannel, @NonNull TextInputPlugin textInputPlugin) {
+  public AndroidKeyProcessor(
+      @NonNull Context context,
+      @NonNull KeyEventChannel keyEventChannel,
+      @NonNull TextInputPlugin textInputPlugin) {
     this.keyEventChannel = keyEventChannel;
     this.textInputPlugin = textInputPlugin;
-    this.context = context;
-    this.keyEventChannel.setKeyProcessor(this);
+    this.eventResponder = new EventResponder(context);
+    this.keyEventChannel.setEventResponseHandler(eventResponder);
   }
 
+  /**
+   * Called when a key up event is received by the {@link FlutterView}.
+   *
+   * @param keyEvent the Android key event to respond to.
+   * @return true if the key event was handled and should not be propagated.
+   */
   public boolean onKeyUp(@NonNull KeyEvent keyEvent) {
-    if (dispatchingKeyEvent) {
+    if (eventResponder.dispatchingKeyEvent) {
       // Don't handle it if it is from our own delayed event synthesis.
       return false;
     }
 
     Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());
-    KeyEventChannel.FlutterKeyEvent flutterEvent = new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter);
+    KeyEventChannel.FlutterKeyEvent flutterEvent =
+        new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter);
     keyEventChannel.keyUp(flutterEvent);
-    pendingEvents.put(flutterEvent.eventId, keyEvent);
+    eventResponder.addEvent(flutterEvent.eventId, keyEvent);
     return true;
   }
 
+  /**
+   * Called when a key down event is received by the {@link FlutterView}.
+   *
+   * @param keyEvent the Android key event to respond to.
+   * @return true if the key event was handled and should not be propagated.
+   */
   public boolean onKeyDown(@NonNull KeyEvent keyEvent) {
-    if (dispatchingKeyEvent) {
+    if (eventResponder.dispatchingKeyEvent) {
       // Don't handle it if it is from our own delayed event synthesis.
       return false;
     }
@@ -69,55 +84,11 @@ public class AndroidKeyProcessor {
     }
 
     Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());
-    KeyEventChannel.FlutterKeyEvent flutterEvent = new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter);
+    KeyEventChannel.FlutterKeyEvent flutterEvent =
+        new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter);
     keyEventChannel.keyDown(flutterEvent);
-    pendingEvents.put(flutterEvent.eventId, keyEvent);
+    eventResponder.addEvent(flutterEvent.eventId, keyEvent);
     return true;
-  }
-
-  public void onKeyEventHandled(@NonNull long id) {
-    if (!pendingEvents.containsKey(id)) {
-      Log.e(TAG, "Key with id " + id + " not found in pending key events list. " +
-                 "There are " + pendingEvents.size() + " pending events.");
-      return;
-    }
-    // Since this event was already reported to Android as handled, we just
-    // remove it from the map of pending events.
-    pendingEvents.remove(id);
-    Log.e(TAG, "Removing handled key with id " + id + " from pending key events list. " +
-               "There are now " + pendingEvents.size() + " pending events.");
-  }
-
-  public void onKeyEventNotHandled(@NonNull long id) {
-    if (!pendingEvents.containsKey(id)) {
-      Log.e(TAG, "Key with id " + id + " not found in pending key events list. " +
-                 "There are " + pendingEvents.size() + " pending events.");
-      return;
-    }
-    // Since this event was NOT handled by the framework we now synthesize a
-    // new, identical, key event to pass along.
-    KeyEvent pendingEvent = pendingEvents.remove(id);
-    Log.e(TAG, "Removing unhandled key with id " + id + " from pending key events list. " +
-               "There are now " + pendingEvents.size() + " pending events.");
-    Activity activity = getActivity(context);
-    if (activity != null) {
-      // Turn on dispatchingKeyEvent so that we don't dispatch to ourselves and
-      // send it to the framework again.
-      dispatchingKeyEvent = true;
-      activity.dispatchKeyEvent(pendingEvent);
-      dispatchingKeyEvent = false;
-    }
-  }
-
-  private Activity getActivity(Context context) {
-    if (context instanceof Activity) {
-      return (Activity) context;
-    }
-    if (context instanceof ContextWrapper) {
-      // Recurse up chain of base contexts until we find an Activity.
-      return getActivity(((ContextWrapper) context).getBaseContext());
-    }
-    return null;
   }
 
   /**
@@ -165,7 +136,8 @@ public class AndroidKeyProcessor {
         combiningCharacter = plainCodePoint;
       }
     } else {
-      // The new character is a regular character. Apply combiningCharacter to it, if it exists.
+      // The new character is a regular character. Apply combiningCharacter to it, if
+      // it exists.
       if (combiningCharacter != 0) {
         int combinedChar = KeyCharacterMap.getDeadChar(combiningCharacter, newCharacterCodePoint);
         if (combinedChar > 0) {
@@ -176,5 +148,94 @@ public class AndroidKeyProcessor {
     }
 
     return complexCharacter;
+  }
+
+  public static class EventResponder implements KeyEventChannel.EventResponseHandler {
+    // The maximum number of pending events that are held before starting to
+    // complain.
+    private static final long MAX_PENDING_EVENTS = 1000;
+    private final Deque<Entry<Long, KeyEvent>> pendingEvents =
+        new ArrayDeque<Entry<Long, KeyEvent>>();
+    @NonNull private final Context context;
+    public boolean dispatchingKeyEvent = false;
+
+    public EventResponder(@NonNull Context context) {
+      this.context = context;
+    }
+
+    /**
+     * Removes the pending event with the given id from the cache of pending events.
+     *
+     * @param id the id of the event to be removed.
+     */
+    private KeyEvent removePendingEvent(@NonNull long id) {
+      if (pendingEvents.getFirst().getKey() != id) {
+        throw new AssertionError("Event response received out of order");
+      }
+      return pendingEvents.removeFirst().getValue();
+    }
+
+    /**
+     * Called whenever the framework responds that a given key event was handled by the framework.
+     *
+     * @param id the event id of the event to be marked as being handled by the framework. Must not
+     *     be null.
+     */
+    @Override
+    public void onKeyEventHandled(@NonNull long id) {
+      removePendingEvent(id);
+    }
+
+    /**
+     * Called whenever the framework responds that a given key event wasn't handled by the
+     * framework.
+     *
+     * @param id the event id of the event to be marked as not being handled by the framework. Must
+     *     not be null.
+     */
+    @Override
+    public void onKeyEventNotHandled(@NonNull long id) {
+      KeyEvent pendingEvent = removePendingEvent(id);
+
+      // Since the framework didn't handle it, dispatch the key again.
+      Activity activity = getActivity(context);
+      if (activity != null) {
+        // Turn on dispatchingKeyEvent so that we don't dispatch to ourselves and
+        // send it to the framework again.
+        dispatchingKeyEvent = true;
+        activity.dispatchKeyEvent(pendingEvent);
+        dispatchingKeyEvent = false;
+      }
+    }
+
+    /** Adds an Android key event with an id to the event responder to wait for a response. */
+    public void addEvent(long id, @NonNull KeyEvent event) {
+      pendingEvents.addLast(new SimpleImmutableEntry<Long, KeyEvent>(id, event));
+      if (pendingEvents.size() > MAX_PENDING_EVENTS) {
+        Log.e(
+            TAG,
+            "There are "
+                + pendingEvents.size()
+                + " keyboard events "
+                + "that have not yet received a response. Are responses being sent?");
+      }
+    }
+
+    /**
+     * Gets the nearest ancestor Activity for the given Context.
+     *
+     * @param context the context to look in for the activity.
+     * @return null if no Activity found.
+     */
+    private Activity getActivity(Context context) {
+      if (context instanceof Activity) {
+        return (Activity) context;
+      }
+      if (context instanceof ContextWrapper) {
+        // Recurse up chain of base contexts until we find an Activity.
+        return getActivity(((ContextWrapper) context).getBaseContext());
+      }
+      return null;
+    }
   }
 }

@@ -10,44 +10,63 @@ import android.view.InputDevice;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.JSONMessageCodec;
 import java.util.HashMap;
 import java.util.Map;
-import org.json.JSONObject;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Event message channel for key events to/from the Flutter framework.
  *
- * <p>Sends key up/down events to the framework, and receives asynchronous messages
- * from the framework about whether or not the key was handled.
-*/
+ * <p>Sends key up/down events to the framework, and receives asynchronous messages from the
+ * framework about whether or not the key was handled.
+ */
 public class KeyEventChannel {
   private static final String TAG = "KeyEventChannel";
   private static long eventIdSerial = 0;
 
   /**
-   * Sets the key processor to be used to receive messages from the framework on
-   * this channel.
+   * Sets the event response handler to be used to receive key event response messages from the
+   * framework on this channel.
    */
-  public void setKeyProcessor(AndroidKeyProcessor processor) {
-    this.processor = processor;
+  public void setEventResponseHandler(EventResponseHandler handler) {
+    this.eventResponseHandler = handler;
   }
-  private AndroidKeyProcessor processor;
+
+  private EventResponseHandler eventResponseHandler;
+
+  /** A handler of incoming key handling messages. */
+  public interface EventResponseHandler {
+
+    /**
+     * Called whenever the framework responds that a given key event was handled by the framework.
+     *
+     * @param id the event id of the event to be marked as being handled by the framework. Must not
+     *     be null.
+     */
+    public void onKeyEventHandled(@NonNull long id);
+
+    /**
+     * Called whenever the framework responds that a given key event wasn't handled by the
+     * framework.
+     *
+     * @param id the event id of the event to be marked as not being handled by the framework. Must
+     *     not be null.
+     */
+    public void onKeyEventNotHandled(@NonNull long id);
+  }
 
   private final BasicMessageChannel.MessageHandler<Object> messageHandler =
       new BasicMessageChannel.MessageHandler<Object>() {
         @Override
         public void onMessage(
             @Nullable Object message, @NonNull BasicMessageChannel.Reply<Object> reply) {
-          Log.v(TAG, "Received key event channel message.");
-
-          // If there is no processor to respond to this message then we don't need to
-          // parse it.
-          if (processor == null) {
+          // If there is no handler to respond to this message then we don't
+          // need to parse it.
+          if (eventResponseHandler == null) {
             return;
           }
 
@@ -56,15 +75,12 @@ public class KeyEventChannel {
             final String type = annotatedEvent.getString("type");
             final JSONObject data = annotatedEvent.getJSONObject("data");
 
-            Log.v(TAG, "Received " + type + " message.");
             switch (type) {
               case "keyHandled":
-              Log.w(TAG, "Handled key event " + data.getLong("eventId"));
-              processor.onKeyEventHandled(data.getLong("eventId"));
+                eventResponseHandler.onKeyEventHandled(data.getLong("eventId"));
                 break;
               case "keyNotHandled":
-              Log.w(TAG, "Did not handle key event " + data.getLong("eventId"));
-              processor.onKeyEventNotHandled(data.getLong("eventId"));
+                eventResponseHandler.onKeyEventNotHandled(data.getLong("eventId"));
                 break;
             }
           } catch (JSONException e) {
