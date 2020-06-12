@@ -8,7 +8,7 @@ part of ui;
 /// The possible actions that can be conveyed from the operating system
 /// accessibility APIs to a semantics node.
 class SemanticsAction {
-  const SemanticsAction._(this.index) : assert(index != null);
+  const SemanticsAction._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -298,7 +298,7 @@ class SemanticsFlag {
   static const int _kIsFocusableIndex = 1 << 21;
   static const int _kIsLinkIndex = 1 << 22;
 
-  const SemanticsFlag._(this.index) : assert(index != null);
+  const SemanticsFlag._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
   /// The numerical value for this flag.
   ///

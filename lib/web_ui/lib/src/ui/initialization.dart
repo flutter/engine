@@ -57,7 +57,7 @@ bool get webOnlyIsInitialized => _webOnlyIsInitialized;
 ///
 /// The given asset manager is used to initialize the font collection.
 Future<void> webOnlySetAssetManager(engine.AssetManager assetManager) async {
-  assert(assetManager != null, 'Cannot set assetManager to null');
+  assert(assetManager != null, 'Cannot set assetManager to null'); // ignore: unnecessary_null_comparison
   if (assetManager == _assetManager) {
     return;
   }

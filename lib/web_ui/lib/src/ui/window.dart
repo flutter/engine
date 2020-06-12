@@ -187,7 +187,7 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ])  : assert(_languageCode != null),
+  ])  : assert(_languageCode != null), // ignore: unnecessary_null_comparison
         assert(_languageCode != ''),
         scriptCode = null;
 
@@ -211,7 +211,7 @@ class Locale {
     String languageCode = 'und',
     this.scriptCode,
     String? countryCode,
-  })  : assert(languageCode != null),
+  })  : assert(languageCode != null), // ignore: unnecessary_null_comparison
         assert(languageCode != ''),
         _languageCode = languageCode,
         assert(scriptCode != ''),
@@ -969,7 +969,7 @@ enum Brightness {
 // TODO(flutter_web): see https://github.com/flutter/flutter/issues/33614.
 class CallbackHandle {
   CallbackHandle.fromRawHandle(this._handle)
-    : assert(_handle != null, "'_handle' must not be null.");
+    : assert(_handle != null, "'_handle' must not be null."); // ignore: unnecessary_null_comparison
 
   final int _handle;
 
@@ -1004,18 +1004,14 @@ class IsolateNameServer {
   factory IsolateNameServer._() => throw UnsupportedError('Namespace');
 
   static dynamic lookupPortByName(String name) {
-    assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
 
   static bool registerPortWithName(dynamic port, String name) {
-    assert(port != null, "'port' cannot be null.");
-    assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
 
   static bool removePortNameMapping(String name) {
-    assert(name != null, "'name' cannot be null.");
     throw UnimplementedError();
   }
 }

@@ -7,7 +7,7 @@ part of ui;
 
 // ignore: unused_element, Used in Shader assert.
 bool _offsetIsValid(Offset offset) {
-  assert(offset != null, 'Offset argument was null.');
+  assert(offset != null, 'Offset argument was null.'); // ignore: unnecessary_null_comparison
   assert(!offset.dx.isNaN && !offset.dy.isNaN,
       'Offset argument contained a NaN value.');
   return true;
@@ -15,7 +15,7 @@ bool _offsetIsValid(Offset offset) {
 
 // ignore: unused_element, Used in Shader assert.
 bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4 != null, 'Matrix4 argument was null.');
+  assert(matrix4 != null, 'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
 }
@@ -171,7 +171,7 @@ class Color {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   static Color? lerp(Color? a, Color? b, double t) {
-    assert(t != null);
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
       if (a == null) {
         return null;
@@ -234,7 +234,7 @@ class Color {
   ///
   /// The [opacity] value may not be null.
   static int getAlphaFromOpacity(double opacity) {
-    assert(opacity != null);
+    assert(opacity != null); // ignore: unnecessary_null_comparison
     return (opacity.clamp(0.0, 1.0) * 255).round();
   }
 
@@ -1369,8 +1369,8 @@ class MaskFilter {
   const MaskFilter.blur(
     this._style,
     this._sigma,
-  )   : assert(_style != null),
-        assert(_sigma != null);
+  )   : assert(_style != null), // ignore: unnecessary_null_comparison
+        assert(_sigma != null); // ignore: unnecessary_null_comparison
 
   final BlurStyle _style;
   final double _sigma;
@@ -1678,8 +1678,8 @@ class Shadow {
     this.color = const Color(_kColorDefault),
     this.offset = Offset.zero,
     this.blurRadius = 0.0,
-  })  : assert(color != null, 'Text shadow color was null.'),
-        assert(offset != null, 'Text shadow offset was null.'),
+  })  : assert(color != null, 'Text shadow color was null.'), // ignore: unnecessary_null_comparison
+        assert(offset != null, 'Text shadow offset was null.'), // ignore: unnecessary_null_comparison
         assert(blurRadius >= 0.0,
             'Text shadow blur radius should be non-negative.');
 
@@ -1761,7 +1761,7 @@ class Shadow {
   /// an [AnimationController].
   /// {@endtemplate}
   static Shadow? lerp(Shadow? a, Shadow? b, double t) {
-    assert(t != null);
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
       if (a == null) {
         return null;
@@ -1787,7 +1787,7 @@ class Shadow {
   ///
   /// {@macro dart.ui.shadow.lerp}
   static List<Shadow>? lerpList(List<Shadow>? a, List<Shadow>? b, double t) {
-    assert(t != null);
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (a == null && b == null) {
       return null;
     }

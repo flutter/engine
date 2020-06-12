@@ -108,8 +108,8 @@ class Tangent {
   ///
   /// The arguments must not be null.
   const Tangent(this.position, this.vector)
-      : assert(position != null),
-        assert(vector != null);
+      : assert(position != null), // ignore: unnecessary_null_comparison
+        assert(vector != null); // ignore: unnecessary_null_comparison
 
   /// Creates a [Tangent] based on the angle rather than the vector.
   ///

@@ -269,8 +269,8 @@ abstract class Path {
   /// curve order is reduced where possible so that cubics may be turned into
   /// quadratics, and quadratics maybe turned into lines.
   static Path combine(PathOperation operation, Path path1, Path path2) {
-    assert(path1 != null);
-    assert(path2 != null);
+    assert(path1 != null); // ignore: unnecessary_null_comparison
+    assert(path2 != null); // ignore: unnecessary_null_comparison
     if (engine.experimentalUseSkia) {
       return engine.SkPath.combine(operation, path1, path2);
     }
