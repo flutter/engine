@@ -65,7 +65,7 @@ public class RestorationChannel {
   // framework should be restored to in case the app is terminated.
   private byte[] restorationData;
   private MethodChannel channel;
-  private MethodChannel.Result pendingFrameworkRequest;
+  private MethodChannel.Result pendingFrameworkRestorationChannelRequest;
   private boolean engineHasProvidedData = false;
   private boolean frameworkHasRequestedData = false;
 
@@ -77,14 +77,17 @@ public class RestorationChannel {
   /** Set the restoration data from which the framework will restore its state. */
   public void setRestorationData(byte[] data) {
     engineHasProvidedData = true;
-    if (pendingFrameworkRequest != null) {
+    if (pendingFrameworkRestorationChannelRequest != null) {
       // If their is a pending request from the framework, answer it.
-      pendingFrameworkRequest.success(data);
-      pendingFrameworkRequest = null;
+      pendingFrameworkRestorationChannelRequest.success(data);
+      pendingFrameworkRestorationChannelRequest = null;
       restorationData = data;
     } else if (frameworkHasRequestedData) {
       // If the framework has previously received the engine's restoration data, push the new data
-      // directly to it.
+      // directly to it. This case can happen when "waitForRestorationData" is false and the
+      // framework retrieved the restoration state before it was set via this method.
+      // Experimentally, this can also be used to restore a previously used engine to another state,
+      // e.g. when the engine is attached to a new activity.
       channel.invokeMethod(
           "push",
           data,
@@ -141,7 +144,7 @@ public class RestorationChannel {
               if (engineHasProvidedData || !waitForRestorationData) {
                 result.success(restorationData);
               } else {
-                pendingFrameworkRequest = result;
+                pendingFrameworkRestorationChannelRequest = result;
               }
               break;
             default:
