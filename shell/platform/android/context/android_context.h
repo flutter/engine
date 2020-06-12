@@ -8,7 +8,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/ref_ptr.h"
-#include "flutter/shell/common/platform_view.h"
 
 namespace flutter {
 

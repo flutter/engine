@@ -14,6 +14,8 @@ source_set("external_view_embedder") {
   sources = [
     "external_view_embedder.cc",
     "external_view_embedder.h",
+    "surface_pool.cc",
+    "surface_pool.h",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -22,6 +24,7 @@ source_set("external_view_embedder") {
     "//flutter/common",
     "//flutter/flow",
     "//flutter/fml",
+    "//flutter/shell/platform/android/context",
     "//flutter/shell/platform/android/jni",
     "//third_party/skia",
   ]
