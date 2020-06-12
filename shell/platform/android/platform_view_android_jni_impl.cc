@@ -737,7 +737,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     FML_LOG(ERROR) << "Could not locate onEndFrame method";
     return false;
   }
-  
+
   g_on_display_overlay_surface_method = env->GetMethodID(
       g_flutter_jni_class->obj(), "onDisplayOverlaySurface", "(IIIII)V");
 
