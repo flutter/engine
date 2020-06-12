@@ -174,9 +174,9 @@ public class FlutterEngine {
    * this extra work by delaying initialization until the data is available.
    *
    * <p>When {@code waitForRestorationData} is set, {@code
-   * RestorationChannel.setRestorationData(byte[] data)} must be called at a later point in time.
-   * If it later turns out that no restoration data is available to restore the framework from,
-   * that method must still be called with null as an argument to indicate "no data".
+   * RestorationChannel.setRestorationData(byte[] data)} must be called at a later point in time. If
+   * it later turns out that no restoration data is available to restore the framework from, that
+   * method must still be called with null as an argument to indicate "no data".
    *
    * <p>If the framework never requests the restoration data, this flag has no effect.
    */

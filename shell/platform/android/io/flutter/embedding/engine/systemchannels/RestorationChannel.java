@@ -49,9 +49,9 @@ public class RestorationChannel {
    * Whether the channel delays responding to the framework's initial request for restoration data
    * until {@code setRestorationData} has been called.
    *
-   * <p>If the engine never calls {@code setRestorationData} this flag must be set to false.
-   * If set to true, the engine must call {@code setRestorationData} either with the actual
-   * restoration data as argument or null if it turns out that there is no restoration data.
+   * <p>If the engine never calls {@code setRestorationData} this flag must be set to false. If set
+   * to true, the engine must call {@code setRestorationData} either with the actual restoration
+   * data as argument or null if it turns out that there is no restoration data.
    *
    * <p>If the response to the framework's request for restoration data is not delayed until the
    * data has been set via {@code setRestorationData}, the framework may intermittently initialize
