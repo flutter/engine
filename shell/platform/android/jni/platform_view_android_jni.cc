@@ -2,13 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/common/pipeline.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 
 namespace flutter {
 
-size_t GetNextPipelineTraceID() {
-  static std::atomic_size_t PipelineLastTraceID = {0};
-  return ++PipelineLastTraceID;
-}
+PlatformViewAndroidJNI::~PlatformViewAndroidJNI() = default;
 
 }  // namespace flutter

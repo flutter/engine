@@ -534,6 +534,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     vdControllers.clear();
   }
 
+  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+  }
+
+  public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+  }
+
+  public void onBeginFrame() {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+  }
+
   public void onEndFrame() {
     // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
   }
