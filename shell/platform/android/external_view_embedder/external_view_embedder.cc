@@ -30,10 +30,9 @@ void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
                                               &rtree_factory);
 
   composition_order_.push_back(view_id);
-  // Update params.
+  // Update params if they changed.
   if (view_params_.count(view_id) == 1 &&
       view_params_[view_id] == *params.get()) {
-    // Do nothing if the params didn't change.
     return;
   }
   view_params_[view_id] = EmbeddedViewParams(*params.get());
