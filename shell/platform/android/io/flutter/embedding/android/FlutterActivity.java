@@ -64,7 +64,7 @@ import java.lang.reflect.Method;
  *   <li>Chooses Flutter's initial route.
  *   <li>Renders {@code Activity} transparently, if desired.
  *   <li>Offers hooks for subclasses to provide and configure a {@link FlutterEngine}.
- *   <li>Save and restore instance state, see {@code shouldRestoreAndSaveState()};
+ *   <li>Save and restore instance state, see {@code #shouldRestoreAndSaveState()};
  * </ul>
  *
  * <p><strong>Dart entrypoint, initial route, and app bundle path</strong>
