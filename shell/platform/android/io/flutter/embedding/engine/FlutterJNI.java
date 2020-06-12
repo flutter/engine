@@ -845,10 +845,10 @@ public class FlutterJNI {
   public void notifyLowMemoryWarning() {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeNotifyLowMemoryWarning();
+    nativeNotifyLowMemoryWarning(nativePlatformViewId);
   }
 
-  private native void nativeNotifyLowMemoryWarning();
+  private native void nativeNotifyLowMemoryWarning(long nativePlatformViewId);
 
   private void ensureRunningOnMainThread() {
     if (Looper.myLooper() != mainLooper) {
