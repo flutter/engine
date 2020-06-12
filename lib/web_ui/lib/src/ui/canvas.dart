@@ -358,7 +358,7 @@ abstract class Canvas {
   /// Use [ClipOp.difference] to subtract the provided rectangle from the
   /// current clip.
   void clipRect(Rect rect,
-      {ClipOp clipOp/*!*/ = ClipOp.intersect, bool doAntiAlias = true});
+      {ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true});
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rounded rectangle.

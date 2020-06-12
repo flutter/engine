@@ -70,9 +70,7 @@ class _RingBuffer<T> {
     int result = 0;
     while (_queue.length > lengthLimit) {
       final T item = _queue.removeFirst();
-      if (_dropItemCallback != null) {
-        _dropItemCallback!(item);
-      }
+      _dropItemCallback?.call(item);
       result += 1;
     }
     return result;
