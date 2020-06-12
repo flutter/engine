@@ -143,6 +143,10 @@ public class RestorationChannel {
               frameworkHasRequestedData = true;
               if (engineHasProvidedData || !waitForRestorationData) {
                 result.success(restorationData);
+                // Do not delete the restoration data on the engine side after sending it to the
+                // framework. We may need to hand this data back to the operating system if the
+                // framework never modifies the data (and thus doesn't send us any
+                // data back).
               } else {
                 pendingFrameworkRestorationChannelRequest = result;
               }
