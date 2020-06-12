@@ -11,7 +11,6 @@ import android.os.LocaleList;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
