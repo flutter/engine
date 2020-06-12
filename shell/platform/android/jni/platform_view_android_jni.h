@@ -139,8 +139,8 @@ class PlatformViewAndroidJNI {
   virtual void FlutterViewBeginFrame() = 0;
 
   //----------------------------------------------------------------------------
-  /// @brief      Terminates a frame if using hybrid composition.
-  ///
+  /// @brief      Indicates that the current frame ended.
+  ///             It's used to clean up state.
   ///
   /// @note       Must be called from the platform thread.
   ///
