@@ -610,9 +610,11 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
-  if (_viewportMetrics.physical_width)
-    [self surfaceUpdated:YES];
-  [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
+  if ([_engine.get() viewController] == self) {
+    if (_viewportMetrics.physical_width)
+      [self surfaceUpdated:YES];
+    [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
+  }
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
@@ -892,6 +894,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Keyboard events
 
 - (void)keyboardWillChangeFrame:(NSNotification*)notification {
+  if ([_engine.get() viewController] != self) {
+    return;
+  }
   NSDictionary* info = [notification userInfo];
 
   if (@available(iOS 9, *)) {
@@ -923,6 +928,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
+  if ([_engine.get() viewController] != self) {
+    return;
+  }
   _viewportMetrics.physical_view_inset_bottom = 0;
   [self updateViewportMetrics];
 }
