@@ -64,6 +64,7 @@ import java.lang.reflect.Method;
  *   <li>Chooses Flutter's initial route.
  *   <li>Renders {@code Activity} transparently, if desired.
  *   <li>Offers hooks for subclasses to provide and configure a {@link FlutterEngine}.
+     <li>Save and restore instance state, see {@code shouldRestoreAndSaveState()};
  * </ul>
  *
  * <p><strong>Dart entrypoint, initial route, and app bundle path</strong>
@@ -956,6 +957,7 @@ public class FlutterActivity extends Activity
       return getIntent().getBooleanExtra(EXTRA_ENABLE_STATE_RESTORATION, false);
     }
     if (getCachedEngineId() != null) {
+      // Prevent overwriting the existing state in a cached engine with restoration state.
       return false;
     }
     return true;

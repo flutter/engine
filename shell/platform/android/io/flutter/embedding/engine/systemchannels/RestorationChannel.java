@@ -20,10 +20,10 @@ import io.flutter.plugin.common.StandardMethodCodec;
  *
  * <p>The channel can be configured to delay responding to the framework's request for restoration
  * data via {@code waitForRestorationData} until the engine-side has provided the data. This is
- * useful for use cases where the engine is pre-warmed at a point in the application's life cycle
- * where the operating system has not been made available to the engine yet. For example, if the
- * engine is pre-warmed as part of the Application before an Activity is created, this flag should
- * be set to true because Android will only provide the restoration data to the Activity.
+ * useful when the engine is pre-warmed at a point in the application's life cycle where the
+ * restoration data is not available yet. For example, if the engine is pre-warmed as part of the
+ * Application before an Activity is created, this flag should be set to true because Android will
+ * only provide the restoration data to the Activity during the onCreate callback.
  *
  * <p>The current restoration data provided by the framework can be read via {@code
  * getRestorationData()}.
@@ -46,20 +46,26 @@ public class RestorationChannel {
   }
 
   /**
-   * Whether {@code setRestorationData} will be called to provide restoration data for the
-   * framework.
+   * Whether the channel delays responding to the framework's initial request for restoration data
+   * until {@code setRestorationData} has been called.
    *
-   * <p>When this is set to true, the channel will delay answering any requests for restoration data
-   * by the framework until {@code setRestorationData} has been called. It must be set to false if
-   * the engine never calls {@code setRestorationData}. If it has been set to true, but it later
-   * turns out that there is no restoration data, {@code setRestorationData} must be called with
-   * null.
+   * <p>If the engine never calls {@code setRestorationData} this flag must be set to false.
+   * If set to true, the engine must call {@code setRestorationData} either with the actual
+   * restoration data as argument or null if it turns out that there is no restoration data.
+   *
+   * <p>If the response to the framework's request for restoration data is not delayed until the
+   * data has been set via {@code setRestorationData}, the framework may intermittently initialize
+   * itself to default values until the restoration data has been made available. Setting this flag
+   * to true avoids that extra work.
    */
   public final boolean waitForRestorationData;
 
-  private MethodChannel channel;
+  // Holds the the most current restoration data which may have been provided by the engine
+  // via "setRestorationData" or by the framework via the method channel. This is the data the
+  // framework should be restored to in case the app is terminated.
   private byte[] restorationData;
-  private MethodChannel.Result pendingResult;
+  private MethodChannel channel;
+  private MethodChannel.Result pendingFrameworkRequest;
   private boolean engineHasProvidedData = false;
   private boolean frameworkHasRequestedData = false;
 
@@ -71,11 +77,14 @@ public class RestorationChannel {
   /** Set the restoration data from which the framework will restore its state. */
   public void setRestorationData(byte[] data) {
     engineHasProvidedData = true;
-    if (pendingResult != null) {
-      pendingResult.success(data);
-      pendingResult = null;
+    if (pendingFrameworkRequest != null) {
+      // If their is a pending request from the framework, answer it.
+      pendingFrameworkRequest.success(data);
+      pendingFrameworkRequest = null;
       restorationData = data;
     } else if (frameworkHasRequestedData) {
+      // If the framework has previously received the engine's restoration data, push the new data
+      // directly to it.
       channel.invokeMethod(
           "push",
           data,
@@ -101,6 +110,7 @@ public class RestorationChannel {
             }
           });
     } else {
+      // Otherwise, just cache the data until the framework asks for it.
       restorationData = data;
     }
   }
@@ -121,7 +131,6 @@ public class RestorationChannel {
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           final String method = call.method;
           final Object args = call.arguments;
-          Log.v(TAG, "Received '" + method + "' message.");
           switch (method) {
             case "put":
               restorationData = (byte[]) args;
@@ -132,7 +141,7 @@ public class RestorationChannel {
               if (engineHasProvidedData || !waitForRestorationData) {
                 result.success(restorationData);
               } else {
-                pendingResult = result;
+                pendingFrameworkRequest = result;
               }
               break;
             default:

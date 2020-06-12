@@ -166,18 +166,25 @@ public class FlutterEngine {
    * Same as {@link #FlutterEngine(Context, String[], boolean)} with added support for configuring
    * whether the engine will receive restoration data.
    *
-   * <p>When the engine is configured to receive restoration data {@code
-   * RestorationChannel.setRestorationData(byte[] data)} must be called to provide the restoration
-   * data. All requests to get restoration data from the framework will be blocked until that method
-   * is called. If the engine is configured to wait for restoration data, but it turns out later
-   * that no restoration data has been provided by the operating system, that method must still be
-   * called with null as an argument to indicate "no data".
+   * <p>The {@code waitForRestorationData} flag controls whether the engine delays responding to
+   * requests from the framework for restoration data until that data has been provided to the
+   * engine via {@code RestorationChannel.setRestorationData(byte[] data)}. If the flag is false,
+   * the framework may temporarily initialize itself to default values before the restoration data
+   * has been made available to the engine. Setting {@code waitForRestorationData} to true avoids
+   * this extra work by delaying initialization until the data is available.
+   *
+   * <p>When {@code waitForRestorationData} is set, {@code
+   * RestorationChannel.setRestorationData(byte[] data)} must be called at a later point in time.
+   * If it later turns out that no restoration data is available to restore the framework from,
+   * that method must still be called with null as an argument to indicate "no data".
+   *
+   * <p>If the framework never requests the restoration data, this flag has no effect.
    */
   public FlutterEngine(
       @NonNull Context context,
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins,
-      boolean willProvideRestorationData) {
+      boolean waitForRestorationData) {
     this(
         context,
         FlutterLoader.getInstance(),
@@ -185,7 +192,7 @@ public class FlutterEngine {
         new PlatformViewsController(),
         dartVmArgs,
         automaticallyRegisterPlugins,
-        willProvideRestorationData);
+        waitForRestorationData);
   }
 
   /**
@@ -252,7 +259,7 @@ public class FlutterEngine {
       @NonNull PlatformViewsController platformViewsController,
       @Nullable String[] dartVmArgs,
       boolean automaticallyRegisterPlugins,
-      boolean willProvideRestorationData) {
+      boolean waitForRestorationData) {
     this.flutterJNI = flutterJNI;
     flutterLoader.startInitialization(context.getApplicationContext());
     flutterLoader.ensureInitializationComplete(context, dartVmArgs);
@@ -275,7 +282,7 @@ public class FlutterEngine {
     mouseCursorChannel = new MouseCursorChannel(dartExecutor);
     navigationChannel = new NavigationChannel(dartExecutor);
     platformChannel = new PlatformChannel(dartExecutor);
-    restorationChannel = new RestorationChannel(dartExecutor, willProvideRestorationData);
+    restorationChannel = new RestorationChannel(dartExecutor, waitForRestorationData);
     settingsChannel = new SettingsChannel(dartExecutor);
     systemChannel = new SystemChannel(dartExecutor);
     textInputChannel = new TextInputChannel(dartExecutor);

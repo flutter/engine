@@ -299,19 +299,19 @@ import java.util.Arrays;
     Log.v(TAG, "onActivityCreated. Giving framework and plugins an opportunity to restore state.");
     ensureAlive();
 
-    Bundle pluginsBundle = null;
-    byte[] frameworkBundle = null;
+    Bundle pluginState = null;
+    byte[] frameworkState = null;
     if (bundle != null) {
-      pluginsBundle = bundle.getBundle(PLUGINS_RESTORATION_BUNDLE_KEY);
-      frameworkBundle = bundle.getByteArray(FRAMEWORK_RESTORATION_BUNDLE_KEY);
+      pluginState = bundle.getBundle(PLUGINS_RESTORATION_BUNDLE_KEY);
+      frameworkState = bundle.getByteArray(FRAMEWORK_RESTORATION_BUNDLE_KEY);
     }
 
     if (host.shouldRestoreAndSaveState()) {
-      flutterEngine.getRestorationChannel().setRestorationData(frameworkBundle);
+      flutterEngine.getRestorationChannel().setRestorationData(frameworkState);
     }
 
     if (host.shouldAttachEngineToActivity()) {
-      flutterEngine.getActivityControlSurface().onRestoreInstanceState(pluginsBundle);
+      flutterEngine.getActivityControlSurface().onRestoreInstanceState(pluginState);
     }
   }
 
