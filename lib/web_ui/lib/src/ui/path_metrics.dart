@@ -80,7 +80,7 @@ abstract class PathMetric {
   /// Returns null if the contour has zero [length].
   ///
   /// The distance is clamped to the [length] of the current contour.
-  Tangent getTangentForOffset(double distance);
+  Tangent? getTangentForOffset(double distance);
 
   /// Given a start and stop distance, return the intervening segment(s).
   ///
