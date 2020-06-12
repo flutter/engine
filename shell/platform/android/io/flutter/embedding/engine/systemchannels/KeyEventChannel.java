@@ -16,6 +16,8 @@ import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.JSONMessageCodec;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONObject;
+import org.json.JSONException;
 
 /**
  * Event message channel for key events to/from the Flutter framework.
@@ -25,6 +27,7 @@ import java.util.Map;
 */
 public class KeyEventChannel {
   private static final String TAG = "KeyEventChannel";
+  private static long eventIdSerial = 0;
 
   /**
    * Sets the key processor to be used to receive messages from the framework on
@@ -40,30 +43,35 @@ public class KeyEventChannel {
         @Override
         public void onMessage(
             @Nullable Object message, @NonNull BasicMessageChannel.Reply<Object> reply) {
+          Log.v(TAG, "Received key event channel message.");
+
           // If there is no processor to respond to this message then we don't need to
           // parse it.
           if (processor == null) {
             return;
           }
 
-          @SuppressWarnings("unchecked")
-          final HashMap<String, Object> annotatedEvent = (HashMap<String, Object>) message;
-          final String type = (String) annotatedEvent.get("type");
-          @SuppressWarnings("unchecked")
-          final HashMap<String, Object> data = (HashMap<String, Object>) annotatedEvent.get("data");
+          try {
+            final JSONObject annotatedEvent = (JSONObject) message;
+            final String type = annotatedEvent.getString("type");
+            final JSONObject data = annotatedEvent.getJSONObject("data");
 
-          Log.v(TAG, "Received " + type + " message.");
-          switch (type) {
-            case "keyHandled":
-              Log.w(TAG, "Handled key event " + (long) data.get("eventId"));
-              processor.onKeyEventHandled((long) data.get("eventId"));
-              break;
-            case "keyNotHandled":
-              Log.w(TAG, "Did not handle key event " + (long) data.get("eventId"));
-              processor.onKeyEventNotHandled((long) data.get("eventId"));
-              break;
+            Log.v(TAG, "Received " + type + " message.");
+            switch (type) {
+              case "keyHandled":
+              Log.w(TAG, "Handled key event " + data.getLong("eventId"));
+              processor.onKeyEventHandled(data.getLong("eventId"));
+                break;
+              case "keyNotHandled":
+              Log.w(TAG, "Did not handle key event " + data.getLong("eventId"));
+              processor.onKeyEventNotHandled(data.getLong("eventId"));
+                break;
+            }
+          } catch (JSONException e) {
+            Log.e(TAG, "Unable to unpack JSON message: " + e);
+          } finally {
+            reply.reply(null);
           }
-          reply.reply(null);
         }
       };
 
@@ -144,8 +152,7 @@ public class KeyEventChannel {
           androidKeyEvent.getScanCode(),
           androidKeyEvent.getMetaState(),
           androidKeyEvent.getSource(),
-          androidKeyEvent.getRepeatCount(),
-          androidKeyEvent.getEventTime());
+          androidKeyEvent.getRepeatCount());
     }
 
     public FlutterKeyEvent(
@@ -158,8 +165,7 @@ public class KeyEventChannel {
         int scanCode,
         int metaState,
         int source,
-        int repeatCount,
-        long eventId) {
+        int repeatCount) {
       this.deviceId = deviceId;
       this.flags = flags;
       this.plainCodePoint = plainCodePoint;
@@ -170,7 +176,7 @@ public class KeyEventChannel {
       this.metaState = metaState;
       this.source = source;
       this.repeatCount = repeatCount;
-      this.eventId = eventId;
+      this.eventId = eventIdSerial++;
       InputDevice device = InputDevice.getDevice(deviceId);
       if (device != null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {

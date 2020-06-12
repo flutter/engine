@@ -5,7 +5,10 @@
 package io.flutter.embedding.android;
 
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.MapEntry;
 
 import android.app.Activity;
 import android.content.Context;
@@ -43,8 +46,9 @@ public class AndroidKeyProcessor {
     }
 
     Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());
-    keyEventChannel.keyUp(new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter));
-    pendingEvents.put(keyEvent.getEventTime(), keyEvent);
+    KeyEventChannel.FlutterKeyEvent flutterEvent = new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter);
+    keyEventChannel.keyUp(flutterEvent);
+    pendingEvents.put(flutterEvent.eventId, keyEvent);
     return true;
   }
 
@@ -65,31 +69,36 @@ public class AndroidKeyProcessor {
     }
 
     Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());
-    keyEventChannel.keyDown(new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter));
-    pendingEvents.put(keyEvent.getEventTime(), keyEvent);
+    KeyEventChannel.FlutterKeyEvent flutterEvent = new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter);
+    keyEventChannel.keyDown(flutterEvent);
+    pendingEvents.put(flutterEvent.eventId, keyEvent);
     return true;
   }
 
-  public void onKeyEventHandled(@NonNull long timestamp) {
-    if (!pendingEvents.containsKey(timestamp)) {
-      Log.e(TAG, "Key with timestamp " + timestamp + " not found in pending key events list");
+  public void onKeyEventHandled(@NonNull long id) {
+    if (!pendingEvents.containsKey(id)) {
+      Log.e(TAG, "Key with id " + id + " not found in pending key events list. " +
+                 "There are " + pendingEvents.size() + " pending events.");
       return;
     }
-    Log.e(TAG, "Removing handled key with timestamp " + timestamp + " from pending key events list");
     // Since this event was already reported to Android as handled, we just
     // remove it from the map of pending events.
-    pendingEvents.remove(timestamp);
+    pendingEvents.remove(id);
+    Log.e(TAG, "Removing handled key with id " + id + " from pending key events list. " +
+               "There are now " + pendingEvents.size() + " pending events.");
   }
 
-  public void onKeyEventNotHandled(@NonNull long timestamp) {
-    if (!pendingEvents.containsKey(timestamp)) {
-      Log.e(TAG, "Key with timestamp " + timestamp + " not found in pending key events list");
+  public void onKeyEventNotHandled(@NonNull long id) {
+    if (!pendingEvents.containsKey(id)) {
+      Log.e(TAG, "Key with id " + id + " not found in pending key events list. " +
+                 "There are " + pendingEvents.size() + " pending events.");
       return;
     }
-    Log.e(TAG, "Removing unhandled key with timestamp " + timestamp + " from pending key events list");
     // Since this event was NOT handled by the framework we now synthesize a
     // new, identical, key event to pass along.
-    KeyEvent pendingEvent = pendingEvents.remove(timestamp);
+    KeyEvent pendingEvent = pendingEvents.remove(id);
+    Log.e(TAG, "Removing unhandled key with id " + id + " from pending key events list. " +
+               "There are now " + pendingEvents.size() + " pending events.");
     Activity activity = getActivity(context);
     if (activity != null) {
       // Turn on dispatchingKeyEvent so that we don't dispatch to ourselves and
