@@ -17,7 +17,7 @@
 
 #if SHELL_ENABLE_VULKAN
 #include "flutter/shell/platform/android/android_surface_vulkan.h"
-#endif
+#endif  // SHELL_ENABLE_VULKAN
 
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
@@ -32,16 +32,17 @@ std::unique_ptr<AndroidSurface> SurfaceFactory(
   std::unique_ptr<AndroidSurface> surface;
   switch (android_context->RenderingApi()) {
     case AndroidRenderingAPI::kSoftware:
-      surface =
-          std::make_unique<AndroidSurfaceSoftware>(android_context, jni_facade);
+      surface = std::make_unique<AndroidSurfaceSoftware>(
+          android_context, jni_facade, SurfaceFactory);
       break;
     case AndroidRenderingAPI::kOpenGLES:
-      surface = std::make_unique<AndroidSurfaceGL>(android_context, jni_facade);
+      surface = std::make_unique<AndroidSurfaceGL>(android_context, jni_facade,
+                                                   SurfaceFactory);
       break;
     case AndroidRenderingAPI::kVulkan:
 #if SHELL_ENABLE_VULKAN
-      surface =
-          std::make_unique<AndroidSurfaceVulkan>(android_context, jni_facade);
+      surface = std::make_unique<AndroidSurfaceVulkan>(
+          android_context, jni_facade, SurfaceFactory);
 #endif  // SHELL_ENABLE_VULKAN
       break;
   }
