@@ -7,16 +7,16 @@
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/android/android_native_window.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
 class AndroidSurface {
  public:
-  static std::unique_ptr<AndroidSurface> Create(
+  typedef std::unique_ptr<AndroidSurface> (*Factory)(
       std::shared_ptr<AndroidContext> android_context,
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 

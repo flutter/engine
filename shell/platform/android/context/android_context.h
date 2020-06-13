@@ -26,10 +26,9 @@ class AndroidContext {
 
   ~AndroidContext();
 
-  static std::shared_ptr<AndroidContext> Create(
-      AndroidRenderingAPI rendering_api);
-
   AndroidRenderingAPI RenderingApi() const;
+
+  bool IsValid() const;
 
  private:
   const AndroidRenderingAPI rendering_api_;

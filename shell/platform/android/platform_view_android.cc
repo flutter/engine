@@ -10,14 +10,44 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
-#include "flutter/shell/platform/android/android_context.h"
+#include "flutter/shell/platform/android/android_context_gl.h"
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 #include "flutter/shell/platform/android/android_surface_gl.h"
+#include "flutter/shell/platform/android/android_surface_software.h"
+
+#if SHELL_ENABLE_VULKAN
+#include "flutter/shell/platform/android/android_surface_vulkan.h"
+#endif
+
+#include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_message_response_android.h"
 #include "flutter/shell/platform/android/vsync_waiter_android.h"
 
 namespace flutter {
+
+std::unique_ptr<AndroidSurface> SurfaceFactory(
+    std::shared_ptr<AndroidContext> android_context,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
+  std::unique_ptr<AndroidSurface> surface;
+  switch (android_context->RenderingApi()) {
+    case AndroidRenderingAPI::kSoftware:
+      surface =
+          std::make_unique<AndroidSurfaceSoftware>(android_context, jni_facade);
+      break;
+    case AndroidRenderingAPI::kOpenGLES:
+      surface = std::make_unique<AndroidSurfaceGL>(android_context, jni_facade);
+      break;
+    case AndroidRenderingAPI::kVulkan:
+#if SHELL_ENABLE_VULKAN
+      surface =
+          std::make_unique<AndroidSurfaceVulkan>(android_context, jni_facade);
+#endif  // SHELL_ENABLE_VULKAN
+      break;
+  }
+  FML_CHECK(surface);
+  return surface->IsValid() ? std::move(surface) : nullptr;
+}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
@@ -27,15 +57,22 @@ PlatformViewAndroid::PlatformViewAndroid(
     : PlatformView(delegate, std::move(task_runners)), jni_facade_(jni_facade) {
   std::shared_ptr<AndroidContext> android_context;
   if (use_software_rendering) {
-    android_context = AndroidContext::Create(AndroidRenderingAPI::kSoftware);
+    android_context =
+        std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   } else {
 #if SHELL_ENABLE_VULKAN
-    android_context = AndroidContext::Create(AndroidRenderingAPI::kVulkan);
+    android_context =
+        std::make_shared<AndroidContext>(AndroidRenderingAPI::kVulkan);
 #else   // SHELL_ENABLE_VULKAN
-    android_context = AndroidContext::Create(AndroidRenderingAPI::kOpenGLES);
+    android_context = std::make_shared<AndroidContextGL>(
+        AndroidRenderingAPI::kOpenGLES,
+        fml::MakeRefCounted<AndroidEnvironmentGL>());
 #endif  // SHELL_ENABLE_VULKAN
   }
-  android_surface_ = AndroidSurface::Create(android_context, jni_facade);
+  FML_CHECK(android_context->IsValid())
+      << "Could not create an Android context.";
+
+  android_surface_ = SurfaceFactory(android_context, jni_facade);
   FML_CHECK(android_surface_)
       << "Could not create an OpenGL, Vulkan or Software surface to setup "
          "rendering.";

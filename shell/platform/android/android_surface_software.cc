@@ -37,11 +37,12 @@ bool GetSkColorType(int32_t buffer_format,
 }  // anonymous namespace
 
 AndroidSurfaceSoftware::AndroidSurfaceSoftware(
+    std::shared_ptr<AndroidContext> android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
   GetSkColorType(WINDOW_FORMAT_RGBA_8888, &target_color_type_,
                  &target_alpha_type_);
-  external_view_embedder_ =
-      std::make_unique<AndroidExternalViewEmbedder>(jni_facade);
+  external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_facade, nullptr);
 }
 
 AndroidSurfaceSoftware::~AndroidSurfaceSoftware() = default;

@@ -12,9 +12,9 @@
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/platform/android/android_context_gl.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
-#include "flutter/shell/platform/android/android_surface.h"
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
 
 namespace flutter {
 

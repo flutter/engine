@@ -9,11 +9,13 @@
 namespace flutter {
 
 AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
+    std::shared_ptr<AndroidContext> android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    std::shared_ptr<AndroidContext> android_context)
+    AndroidSurface::Factory surface_factory)
     : ExternalViewEmbedder(),
-      jni_facade_(jni_facade),
-      android_context_(android_context),
+      android_context_(std::move(android_context)),
+      jni_facade_(std::move(jni_facade)),
+      surface_factory_(surface_factory),
       surface_pool_(std::make_unique<SurfacePool>()) {}
 
 // |ExternalViewEmbedder|
@@ -51,6 +53,16 @@ std::vector<SkCanvas*> AndroidExternalViewEmbedder::GetCurrentCanvases() {
     canvases.push_back(picture_recorders_[view_id]->getRecordingCanvas());
   }
   return canvases;
+}
+
+SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) {
+  EmbeddedViewParams* params = &view_params_[view_id];
+  FML_CHECK(params != nullptr);
+  return SkRect::MakeXYWH(params->offsetPixels.x(),                          //
+                          params->offsetPixels.y(),                          //
+                          params->sizePoints.width() * device_pixel_ratio_,  //
+                          params->sizePoints.height() * device_pixel_ratio_  //
+  );
 }
 
 // |ExternalViewEmbedder|
@@ -95,7 +107,7 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
     // view layer.
     for (size_t j = i + 1; j > 0; j--) {
       int64_t current_view_id = composition_order_[j - 1];
-      SkRect current_view_rect = GetPlatformViewRect(current_view_id);
+      SkRect current_view_rect = GetViewRect(current_view_id);
       // Each rect corresponds to a native view that renders Flutter UI.
       std::list<SkRect> intersection_rects =
           rtree->searchNonOverlappingDrawnRects(current_view_rect);
@@ -128,7 +140,7 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
         );
         // Clip the background canvas, so it doesn't contain any of the pixels
         // drawn on the overlay layer.
-        background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
+        background_canvas->clipRect(intersection_rect, SkClipOp::kDifference);
       }
       overlay_layers[current_view_id] = intersection_rects;
     }
@@ -145,7 +157,7 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
       CreateSurfaceIfNeeded(context,            //
                             view_id,            //
                             pictures[view_id],  //
-                            overlay_rect,       //
+                            overlay_rect        //
                             )
           ->Submit();
     }
@@ -159,8 +171,8 @@ AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrContext* context,
                                                    int64_t view_id,
                                                    sk_sp<SkPicture> picture,
                                                    SkRect& rect) {
-  std::shared_ptr<OverlayLayer> layer =
-      surface_pool_->GetLayer(context, jni_facade_, android_context_);
+  std::shared_ptr<OverlayLayer> layer = surface_pool_->GetLayer(
+      context, android_context_, jni_facade_, surface_factory_);
 
   std::unique_ptr<SurfaceFrame> frame =
       layer->surface->AcquireFrame(frame_size_);
@@ -224,6 +236,7 @@ void AndroidExternalViewEmbedder::BeginFrame(SkISize frame_size,
                                              double device_pixel_ratio) {
   Reset();
   frame_size_ = frame_size;
+  device_pixel_ratio_ = device_pixel_ratio;
 }
 
 // |ExternalViewEmbedder|

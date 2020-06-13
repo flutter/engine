@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-
 source_set("surface") {
   sources = [
     "android_surface.cc",
     "android_surface.h",
+    "android_native_window.cc",
+    "android_native_window.h",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -16,5 +16,7 @@ source_set("surface") {
     "//flutter/fml",
     "//flutter/flow",
     "//third_party/skia",
+    "//flutter/shell/platform/android/context",
+    "//flutter/shell/platform/android/jni",
   ]
 }

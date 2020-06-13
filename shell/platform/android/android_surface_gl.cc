@@ -24,8 +24,8 @@ AndroidSurfaceGL::AndroidSurfaceGL(
   if (!offscreen_surface_->IsValid()) {
     offscreen_surface_ = nullptr;
   }
-  external_view_embedder_ =
-      std::make_unique<AndroidExternalViewEmbedder>(jni_facade);
+  external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_facade, nullptr);
 }
 
 AndroidSurfaceGL::~AndroidSurfaceGL() = default;
