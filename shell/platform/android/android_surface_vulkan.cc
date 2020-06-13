@@ -18,7 +18,7 @@ AndroidSurfaceVulkan::AndroidSurfaceVulkan(
     AndroidSurface::Factory surface_factory)
     : proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {
   external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>(
-      android_context, jni_facade, surface_factory);
+      std::move(android_context), std::move(jni_facade), surface_factory);
 }
 
 AndroidSurfaceVulkan::~AndroidSurfaceVulkan() = default;

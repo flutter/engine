@@ -43,7 +43,7 @@ AndroidSurfaceSoftware::AndroidSurfaceSoftware(
   GetSkColorType(WINDOW_FORMAT_RGBA_8888, &target_color_type_,
                  &target_alpha_type_);
   external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>(
-      android_context, jni_facade, surface_factory);
+      std::move(android_context), std::move(jni_facade), surface_factory);
 }
 
 AndroidSurfaceSoftware::~AndroidSurfaceSoftware() = default;
