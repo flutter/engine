@@ -522,6 +522,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
 
+  // When multiple viewControllers share one engine
+  // Maybe engine's current viewController is not self
+  if ([_engine.get() viewController] != self) {
+    [_engine.get() setViewController:self];
+  }
+  
   // Send platform settings to Flutter, e.g., platform brightness.
   [self onUserSettingsChanged:nil];
 
