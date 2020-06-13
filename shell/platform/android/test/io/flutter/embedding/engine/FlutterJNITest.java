@@ -1,8 +1,12 @@
 package io.flutter.embedding.engine;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
+import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,5 +47,68 @@ public class FlutterJNITest {
 
     // --- Verify Results ---
     assertEquals(1, callbackInvocationCount.get());
+  }
+
+  @Test
+  public void onDisplayPlatformView__callsPlatformViewsController() {
+    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
+
+    FlutterJNI flutterJNI = new FlutterJNI();
+    flutterJNI.setPlatformViewsController(platformViewsController);
+
+    // --- Execute Test ---
+    flutterJNI.onDisplayPlatformView(
+        /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+
+    // --- Verify Results ---
+    verify(platformViewsController, times(1))
+        .onDisplayPlatformView(
+            /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+  }
+
+  @Test
+  public void onDisplayOverlaySurface__callsPlatformViewsController() {
+    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
+
+    FlutterJNI flutterJNI = new FlutterJNI();
+    flutterJNI.setPlatformViewsController(platformViewsController);
+
+    // --- Execute Test ---
+    flutterJNI.onDisplayOverlaySurface(
+        /*id=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+
+    // --- Verify Results ---
+    verify(platformViewsController, times(1))
+        .onDisplayOverlaySurface(/*id=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+  }
+
+  @Test
+  public void onBeginFrame__callsPlatformViewsController() {
+    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
+
+    // --- Test Setup ---
+    FlutterJNI flutterJNI = new FlutterJNI();
+    flutterJNI.setPlatformViewsController(platformViewsController);
+
+    // --- Execute Test ---
+    flutterJNI.onBeginFrame();
+
+    // --- Verify Results ---
+    verify(platformViewsController, times(1)).onBeginFrame();
+  }
+
+  @Test
+  public void onEndFrame__callsPlatformViewsController() {
+    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
+
+    // --- Test Setup ---
+    FlutterJNI flutterJNI = new FlutterJNI();
+    flutterJNI.setPlatformViewsController(platformViewsController);
+
+    // --- Execute Test ---
+    flutterJNI.onEndFrame();
+
+    // --- Verify Results ---
+    verify(platformViewsController, times(1)).onEndFrame();
   }
 }

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.9
+
 part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
@@ -12,7 +13,7 @@ part of dart.ui;
 // `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
 // updated.
 class SemanticsAction {
-  const SemanticsAction._(this.index) : assert(index != null);
+  const SemanticsAction._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -42,7 +43,7 @@ class SemanticsAction {
   /// The numerical value for this action.
   ///
   /// Each action has one bit set in this bit field.
-  final int/*!*/ index;
+  final int index;
 
   /// The equivalent of a user briefly tapping the screen with the finger
   /// without moving it.
@@ -300,12 +301,12 @@ class SemanticsFlag {
   // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
   // value in testing/dart/semantics_test.dart, or tests will fail.
 
-  const SemanticsFlag._(this.index) : assert(index != null);
+  const SemanticsFlag._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
   /// The numerical value for this flag.
   ///
   /// Each flag has one bit set in this bit field.
-  final int/*!*/ index;
+  final int index;
 
   /// The semantics node has the quality of either being "checked" or "unchecked".
   ///
@@ -650,19 +651,21 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// reading direction of all these strings is given by `textDirection`.
   ///
   /// The fields `textSelectionBase` and `textSelectionExtent` describe the
-  /// currently selected text within `value`.
+  /// currently selected text within `value`. A value of -1 indicates no
+  /// current text selection base or extent.
   ///
-  /// The field `maxValueLength` is used to indicate that an editable text field
-  /// has a limit on the number of characters entered. If it is -1 there is
-  /// no limit on the number of characters entered. The field
+  /// The field `maxValueLength` is used to indicate that an editable text
+  /// field has a limit on the number of characters entered. If it is -1 there
+  /// is no limit on the number of characters entered. The field
   /// `currentValueLength` indicates how much of that limit has already been
-  /// used up. When `maxValueLength` is set, `currentValueLength` must also be
-  /// set.
+  /// used up. When `maxValueLength` is >= 0, `currentValueLength` must also be
+  /// >= 0, otherwise it should be specified to be -1.
   ///
   /// The field `platformViewId` references the platform view, whose semantics
   /// nodes will be added as children to this node. If a platform view is
-  /// specified, `childrenInHitTestOrder` and `childrenInTraversalOrder` must be
-  /// empty.
+  /// specified, `childrenInHitTestOrder` and `childrenInTraversalOrder` must
+  /// be empty. A value of -1 indicates that this node is not associated with a
+  /// platform view.
   ///
   /// For scrollable nodes `scrollPosition` describes the current scroll
   /// position in logical pixel. `scrollExtentMax` and `scrollExtentMin`
@@ -687,35 +690,36 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// node starts at `elevation` above the parent and ends at `elevation` +
   /// `thickness` above the parent.
   void updateNode({
-    int id,
-    int flags,
-    int actions,
-    int maxValueLength,
-    int currentValueLength,
-    int textSelectionBase,
-    int textSelectionExtent,
-    int platformViewId,
-    int scrollChildren,
-    int scrollIndex,
-    double scrollPosition,
-    double scrollExtentMax,
-    double scrollExtentMin,
-    double elevation,
-    double thickness,
-    Rect rect,
-    String label,
-    String hint,
-    String value,
-    String increasedValue,
-    String decreasedValue,
-    TextDirection textDirection,
-    Float64List transform,
-    Int32List childrenInTraversalOrder,
-    Int32List childrenInHitTestOrder,
-    Int32List additionalActions,
+    required int id,
+    required int flags,
+    required int actions,
+    required int maxValueLength,
+    required int currentValueLength,
+    required int textSelectionBase,
+    required int textSelectionExtent,
+    required int platformViewId,
+    required int scrollChildren,
+    required int scrollIndex,
+    required double scrollPosition,
+    required double scrollExtentMax,
+    required double scrollExtentMin,
+    required double elevation,
+    required double thickness,
+    required Rect rect,
+    required String label,
+    required String hint,
+    required String value,
+    required String increasedValue,
+    required String decreasedValue,
+    TextDirection? textDirection,
+    required Float64List transform,
+    required Int32List childrenInTraversalOrder,
+    required Int32List childrenInHitTestOrder,
+    required Int32List additionalActions,
   }) {
     assert(_matrix4IsValid(transform));
     assert(
+      // ignore: unnecessary_null_comparison
       scrollChildren == 0 || scrollChildren == null || (scrollChildren > 0 && childrenInHitTestOrder != null),
       'If a node has scrollChildren, it must have childrenInHitTestOrder',
     );
@@ -798,28 +802,28 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// For overridden standard actions, `overrideId` corresponds with a
   /// [SemanticsAction.index] value. For custom actions this argument should not be
   /// provided.
-  void updateCustomAction({/*required*/ int/*!*/ id, String/*?*/ label, String/*?*/ hint, int/*!*/ overrideId = -1}) {
-    assert(id != null);
-    assert(overrideId != null);
+  void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
+    assert(id != null); // ignore: unnecessary_null_comparison
+    assert(overrideId != null); // ignore: unnecessary_null_comparison
     _updateCustomAction(id, label, hint, overrideId);
   }
   void _updateCustomAction(
-      int/*!*/ id,
-      String/*?*/ label,
-      String/*?*/ hint,
-      int/*!*/ overrideId) native 'SemanticsUpdateBuilder_updateCustomAction';
+      int id,
+      String? label,
+      String? hint,
+      int overrideId) native 'SemanticsUpdateBuilder_updateCustomAction';
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
   /// The returned object can be passed to [Window.updateSemantics] to actually
   /// update the semantics retained by the system.
-  SemanticsUpdate/*!*/ build() {
+  SemanticsUpdate build() {
     final SemanticsUpdate semanticsUpdate = SemanticsUpdate._();
     _build(semanticsUpdate);
     return semanticsUpdate;
   }
-  void _build(SemanticsUpdate/*!*/ outSemanticsUpdate) native 'SemanticsUpdateBuilder_build';
+  void _build(SemanticsUpdate outSemanticsUpdate) native 'SemanticsUpdateBuilder_build';
 }
 
 /// An opaque object representing a batch of semantics updates.
