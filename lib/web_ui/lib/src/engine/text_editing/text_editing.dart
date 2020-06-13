@@ -68,6 +68,8 @@ void _hideAutofillElements(html.HtmlElement domElement) {
     ..outline = 'none'
     ..border = 'none'
     ..resize = 'none'
+    ..width = '0'
+    ..height = '0'
     ..textShadow = 'transparent'
     ..transformOrigin = '0 0 0';
 
@@ -500,7 +502,13 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
   @override
   void placeElement() {
     super.placeElement();
-    _geometry?.applyToDomElement(domElement);
+    if (hasAutofillGroup) {
+      _geometry?.applyToDomElement(focusedFormElement());
+      placeForm();
+      focusedFormElement().focus();
+    } else {
+      _geometry?.applyToDomElement(domElement);
+    }
   }
 }
 
@@ -572,7 +580,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     _setStaticStyleAttributes(domElement);
     _style?.applyToDomElement(domElement);
     if (_inputConfiguration.autofillGroup != null) {
-      _inputConfiguration.autofillGroup.placeForm(domElement);
+      // skip this for now.
+      // _inputConfiguration.autofillGroup.placeForm(domElement);
     } else {
       domRenderer.glassPaneElement.append(domElement);
     }
@@ -647,6 +656,10 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     _inputConfiguration.autofillGroup?.removeForm();
   }
 
+  bool get hasAutofillGroup => _inputConfiguration.autofillGroup != null;
+  html.FormElement focusedFormElement() =>
+      _inputConfiguration.autofillGroup.formElement;
+
   @mustCallSuper
   @override
   void setEditingState(EditingState editingState) {
@@ -662,6 +675,10 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   @mustCallSuper
   void placeElement() {
     domElement.focus();
+  }
+
+  void placeForm() {
+    _inputConfiguration.autofillGroup.placeForm(domElement);
   }
 
   void _handleChange(html.Event event) {
@@ -1373,6 +1390,7 @@ class EditableTextGeometry {
   /// case this method should not be used.
   void applyToDomElement(html.HtmlElement domElement) {
     final String cssTransform = float64ListToCssTransform(globalTransform);
+    print('updated transform: $cssTransform');
     domElement.style
       ..width = '${width}px'
       ..height = '${height}px'
