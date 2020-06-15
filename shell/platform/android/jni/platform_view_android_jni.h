@@ -150,7 +150,6 @@ class PlatformViewAndroidJNI {
   //----------------------------------------------------------------------------
   /// @brief      Instantiates an overlay surface in hybrid composition.
   ///
-  ///
   /// @note       Must be called from the platform thread.
   ///
   virtual void FlutterViewCreateOverlaySurface() = 0;
