@@ -818,9 +818,6 @@ class Window {
   /// This method returns synchronously and is a direct call to
   /// platform specific APIs without invoking method channels.
   Locale? computePlatformResolvedLocale(List<Locale> supportedLocales) {
-    if (supportedLocales == null) {
-      return null;
-    }
     final List<String?> supportedLocalesData = <String?>[];
     for (Locale locale in supportedLocales) {
       supportedLocalesData.add(locale.languageCode);
@@ -830,7 +827,7 @@ class Window {
 
     final List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
 
-    if (result != null && result.isNotEmpty && result[0] != null) {
+    if (result.isNotEmpty) {
       return Locale.fromSubtags(
         languageCode: result[0],
         countryCode: result[1] == '' ? null : result[1],
