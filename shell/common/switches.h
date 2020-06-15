@@ -132,8 +132,7 @@ DEF_SWITCH(TraceSkia,
 DEF_SWITCH(
     TraceWhitelist,
     "trace-whitelist",
-    "(deprecated) Use --trace-allowlist instead. "
-    "comma separated list of whitelisted prefixes.")
+    "(deprecated) Use --trace-allowlist instead.")
 DEF_SWITCH(
     TraceAllowlist,
     "trace-allowlist",
