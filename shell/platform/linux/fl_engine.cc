@@ -38,7 +38,7 @@ struct _FlEngine {
 
 G_DEFINE_QUARK(fl_engine_error_quark, fl_engine_error)
 
-static void fl_view_plugin_registry_iface_init(
+static void fl_engine_plugin_registry_iface_init(
     FlPluginRegistryInterface* iface);
 
 G_DEFINE_TYPE_WITH_CODE(
@@ -46,7 +46,7 @@ G_DEFINE_TYPE_WITH_CODE(
     fl_engine,
     G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
-                          fl_view_plugin_registry_iface_init))
+                          fl_engine_plugin_registry_iface_init))
 
 // Subclass of GSource that integrates Flutter tasks into the GLib main loop.
 typedef struct {
@@ -181,7 +181,7 @@ static void fl_engine_platform_message_response_cb(const uint8_t* data,
 }
 
 // Implements FlPluginRegistry::get_registrar_for_plugin.
-static FlPluginRegistrar* fl_view_get_registrar_for_plugin(
+static FlPluginRegistrar* fl_engine_get_registrar_for_plugin(
     FlPluginRegistry* registry,
     const gchar* name) {
   FlEngine* self = FL_ENGINE(registry);
@@ -189,9 +189,9 @@ static FlPluginRegistrar* fl_view_get_registrar_for_plugin(
   return fl_plugin_registrar_new(nullptr, self->binary_messenger);
 }
 
-static void fl_view_plugin_registry_iface_init(
+static void fl_engine_plugin_registry_iface_init(
     FlPluginRegistryInterface* iface) {
-  iface->get_registrar_for_plugin = fl_view_get_registrar_for_plugin;
+  iface->get_registrar_for_plugin = fl_engine_get_registrar_for_plugin;
 }
 
 static void fl_engine_dispose(GObject* object) {
