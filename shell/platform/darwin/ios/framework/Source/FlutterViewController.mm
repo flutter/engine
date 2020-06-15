@@ -527,7 +527,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   if ([_engine.get() viewController] != self) {
     [_engine.get() setViewController:self];
   }
-  
+
   // Send platform settings to Flutter, e.g., platform brightness.
   [self onUserSettingsChanged:nil];
 

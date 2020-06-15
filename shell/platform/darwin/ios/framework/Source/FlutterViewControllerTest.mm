@@ -62,7 +62,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 - (void)testViewWillAppearResetEngineViewController {
   id engine = OCMClassMock([FlutterEngine class]);
-  
+
   // 1. create view controller A
   FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:engine
                                                                                  nibName:nil
@@ -76,11 +76,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                                   bundle:nil];
   // now engine's view controller is B
   OCMStub([engine viewController]).andReturn(viewControllerB);
-  
+
   // 3. mock B disappear and release, now engine's view controller should be nil
   [viewControllerB viewDidDisappear:NO];
   viewControllerB = nil;
-  
+
   // 4. mock A appear again, now engine's view controller should be A
   [viewControllerA viewWillAppear:NO];
   OCMStub([engine viewController]).andReturn(viewControllerA);
