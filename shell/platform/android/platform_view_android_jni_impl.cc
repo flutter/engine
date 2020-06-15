@@ -542,7 +542,7 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeNotifyLowMemoryWarning",
-          .signature = "()V",
+          .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&NotifyLowMemoryWarning),
       },
 
