@@ -101,15 +101,14 @@ public class FlutterViewTest {
 
     Configuration configuration = RuntimeEnvironment.application.getResources().getConfiguration();
     // 1 invocation of channels.
-    flutterView.attachToFlutterEngine(flutterEngine);
-    // localizationChannel now stored by plugin, so only 1 invocation.
+    flutterView.attachToFlutterEngine(flutterEngine);.
     flutterView.onConfigurationChanged(configuration);
     flutterView.detachFromFlutterEngine();
 
     // Should fizzle.
     flutterView.onConfigurationChanged(configuration);
 
-    verify(flutterEngine, times(1)).getLocalizationChannel();
+    verify(flutterEngine, times(1)).getLocalizationPlugin();
     verify(flutterEngine, times(2)).getSettingsChannel();
   }
 
