@@ -146,6 +146,14 @@ class PlatformViewAndroidJNI {
   /// @note       Must be called from the platform thread.
   ///
   virtual void FlutterViewEndFrame() = 0;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Instantiates an overlay surface in hybrid composition.
+  ///
+  ///
+  /// @note       Must be called from the platform thread.
+  ///
+  virtual void FlutterViewCreateOverlaySurface() = 0;
 };
 
 }  // namespace flutter

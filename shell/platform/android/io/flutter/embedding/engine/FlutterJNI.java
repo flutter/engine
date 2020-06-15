@@ -830,7 +830,7 @@ public class FlutterJNI {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position an overlay surface");
     }
-    platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+    return platformViewsController.createOverlaySurface();
   }
   // ----- End Engine Lifecycle Support ----
 

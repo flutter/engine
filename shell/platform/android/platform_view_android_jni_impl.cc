@@ -25,6 +25,8 @@
 #include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/flutter_main.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/platform_view_android_jni.h"
 
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
@@ -81,34 +83,10 @@ static jmethodID g_on_first_frame_method = nullptr;
 static jmethodID g_on_engine_restart_method = nullptr;
 
 static jmethodID g_create_overlay_surface_method = nullptr;
-static jmethodID g_flutter_overlay_layer_get_id_method = nullptr;
-static jmethodID g_flutter_overlay_layer_get_surface_method = nullptr;
-
-std::unique_ptr<AndroidFlutterOverlaySurface> FlutterViewCreateOverlaySurface(
-    JNIEnv* env,
-    jobject obj) {
-  jobject joverlay_layer =
-      env->CallObjectMethod(obj, g_create_overlay_surface_method);
-  jlong layer_id = env->CallLongMethod(joverlay_layer,
-                                       g_flutter_overlay_layer_get_id_method);
-  jobject surface = env->CallObjectMethod(
-      joverlay_layer, g_flutter_overlay_layer_get_surface_method);
-
-  FML_CHECK(CheckException(env));
-  return std::make_unique<AndroidFlutterOverlaySurface>(
-      layer_id, fml::MakeRefCounted<AndroidNativeWindow>(
-                    ANativeWindow_fromSurface(env, surface)));
-}
 
 static jmethodID g_on_begin_frame_method = nullptr;
 
 static jmethodID g_on_end_frame_method = nullptr;
-
-static jmethodID g_create_overlay_surface_method = nullptr;
-
-static jmethodID g_flutter_overlay_layer_get_id_method = nullptr;
-
-static jmethodID g_flutter_overlay_layer_get_surface_method = nullptr;
 
 static jmethodID g_attach_to_gl_context_method = nullptr;
 

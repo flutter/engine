@@ -5,15 +5,17 @@
 package io.flutter.embedding.engine;
 
 import android.view.Surface;
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
 
 public class FlutterOverlaySurface {
-  // @NonNull
+  @NonNull
   private final Surface surface;
 
   private final long id;
 
-  // @Keep
-  public FlutterOverlaySurface(long id, Surface surface) {
+  @Keep
+  public FlutterOverlaySurface(long id, @NonNull Surface surface) {
     this.id = id;
     this.surface = surface;
   }
