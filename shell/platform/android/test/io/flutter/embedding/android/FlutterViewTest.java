@@ -101,7 +101,7 @@ public class FlutterViewTest {
 
     Configuration configuration = RuntimeEnvironment.application.getResources().getConfiguration();
     // 1 invocation of channels.
-    flutterView.attachToFlutterEngine(flutterEngine);.
+    flutterView.attachToFlutterEngine(flutterEngine);
     flutterView.onConfigurationChanged(configuration);
     flutterView.detachFromFlutterEngine();
 
