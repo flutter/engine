@@ -426,40 +426,17 @@ void Window::CompletePlatformMessageResponse(int response_id,
 }
 
 Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
-  intptr_t length;
-  Dart_ListLength(supportedLocalesHandle, &length);
-  size_t u_length = static_cast<size_t>(length);
-  std::vector<std::string> supportedLocales;
-  for (size_t i = 0; i < u_length; i++) {
-    const char* cname = nullptr;
-    Dart_Handle element = Dart_ListGetAt(supportedLocalesHandle, i);
-    if (Dart_IsNull(element)) {
-      supportedLocales.emplace_back("");
-      continue;
-    }
-    Dart_StringToCString(Dart_ListGetAt(supportedLocalesHandle, i), &cname);
-    supportedLocales.emplace_back(cname);
-  }
+  std::vector<std::string> supportedLocales =
+      tonic::DartConverter<std::vector<std::string>>::FromDart(
+          supportedLocalesHandle);
+
   std::vector<std::string> results =
       *UIDartState::Current()
            ->window()
            ->client()
            ->ComputePlatformResolvedLocale(supportedLocales);
 
-  if (results.empty()) {
-    return Dart_Null();
-  }
-  FML_DCHECK(results.size() == 3);
-  // Convert to dart List of strings.
-  Dart_Handle output = Dart_NewListOf(Dart_CoreType_String, results.size());
-  for (size_t i = 0; i < results.size(); i++) {
-    Dart_ListSetAt(
-        output, i,
-        results[i].empty() ? Dart_Null() : tonic::ToDart(results[i]));
-  }
-
-  Dart_ListLength(output, &length);
-  return output;
+  return tonic::DartConverter<std::vector<std::string>>::ToDart(results);
 }
 
 static void _ComputePlatformResolvedLocale(Dart_NativeArguments args) {

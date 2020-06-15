@@ -64,6 +64,8 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
 
   void FlutterViewBeginFrame() override;
 
+  void FlutterViewEndFrame() override;
+
   std::unique_ptr<std::vector<std::string>>
   FlutterViewComputePlatformResolvedLocale(
       std::vector<std::string> supported_locales_data) override;

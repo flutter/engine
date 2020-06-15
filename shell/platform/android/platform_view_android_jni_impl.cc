@@ -82,6 +82,8 @@ static jmethodID g_on_engine_restart_method = nullptr;
 
 static jmethodID g_on_begin_frame_method = nullptr;
 
+static jmethodID g_on_end_frame_method = nullptr;
+
 static jmethodID g_attach_to_gl_context_method = nullptr;
 
 static jmethodID g_update_tex_image_method = nullptr;
@@ -517,7 +519,7 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeNotifyLowMemoryWarning",
-          .signature = "()V",
+          .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&NotifyLowMemoryWarning),
       },
 
@@ -728,6 +730,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   if (g_on_begin_frame_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onBeginFrame method";
+    return false;
+  }
+
+  g_on_end_frame_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "onEndFrame", "()V");
+
+  if (g_on_end_frame_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate onEndFrame method";
     return false;
   }
 
@@ -1069,6 +1079,19 @@ void PlatformViewAndroidJNIImpl::FlutterViewBeginFrame() {
   FML_CHECK(CheckException(env));
 }
 
+void PlatformViewAndroidJNIImpl::FlutterViewEndFrame() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return;
+  }
+
+  env->CallVoidMethod(java_object.obj(), g_on_end_frame_method);
+
+  FML_CHECK(CheckException(env));
+}
+
 std::unique_ptr<std::vector<std::string>>
 PlatformViewAndroidJNIImpl::FlutterViewComputePlatformResolvedLocale(
     std::vector<std::string> supported_locales_data) {
@@ -1089,13 +1112,10 @@ PlatformViewAndroidJNIImpl::FlutterViewComputePlatformResolvedLocale(
 
   FML_CHECK(CheckException(env));
 
-  if (env->GetArrayLength(result) > 0) {
+  int length = env->GetArrayLength(result);
+  for (int i = 0; i < length; i++) {
     out->emplace_back(fml::jni::JavaStringToString(
-        env, (jstring)env->GetObjectArrayElement(result, 0)));
-    out->emplace_back(fml::jni::JavaStringToString(
-        env, (jstring)env->GetObjectArrayElement(result, 1)));
-    out->emplace_back(fml::jni::JavaStringToString(
-        env, (jstring)env->GetObjectArrayElement(result, 2)));
+        env, (jstring)env->GetObjectArrayElement(result, i)));
   }
   return out;
 }  // namespace flutter

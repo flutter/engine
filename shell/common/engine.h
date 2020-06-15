@@ -239,7 +239,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///                                    and scriptCode in that order.
     ///
     /// @return     A vector of 3 strings languageCode, countryCode, and
-    ///             scriptCode that the conist the locale selected by the
+    ///             scriptCode that represents the locale selected by the
     ///             platform. Empty strings mean the value was unassigned. Empty
     ///             vector represents a null locale.
     ///

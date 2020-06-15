@@ -186,4 +186,19 @@ public class FlutterJNITest {
     // --- Verify Results ---
     verify(platformViewsController, times(1)).onBeginFrame();
   }
+
+  @Test
+  public void onEndFrame__callsPlatformViewsController() {
+    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
+
+    // --- Test Setup ---
+    FlutterJNI flutterJNI = new FlutterJNI();
+    flutterJNI.setPlatformViewsController(platformViewsController);
+
+    // --- Execute Test ---
+    flutterJNI.onEndFrame();
+
+    // --- Verify Results ---
+    verify(platformViewsController, times(1)).onEndFrame();
+  }
 }

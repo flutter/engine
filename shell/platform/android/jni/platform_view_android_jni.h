@@ -138,6 +138,17 @@ class PlatformViewAndroidJNI {
   ///
   virtual void FlutterViewBeginFrame() = 0;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Indicates that the current frame ended.
+  ///             It's used to clean up state.
+  ///
+  /// @note       Must be called from the platform thread.
+  ///
+  virtual void FlutterViewEndFrame() = 0;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Computes the locale Android would select.
+  ///
   virtual std::unique_ptr<std::vector<std::string>>
   FlutterViewComputePlatformResolvedLocale(
       std::vector<std::string> supported_locales_data) = 0;
