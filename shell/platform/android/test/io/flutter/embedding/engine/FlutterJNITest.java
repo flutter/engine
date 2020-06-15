@@ -111,4 +111,20 @@ public class FlutterJNITest {
     // --- Verify Results ---
     verify(platformViewsController, times(1)).onEndFrame();
   }
+
+  @Test
+  public void createOverlaySurface__callsPlatformViewsController() {
+    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
+
+    FlutterJNI flutterJNI = new FlutterJNI();
+    flutterJNI.setPlatformViewsController(platformViewsController);
+
+    // --- Execute Test ---
+    flutterJNI.onDisplayOverlaySurface(
+        /*id=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+
+    // --- Verify Results ---
+    verify(platformViewsController, times(1))
+        .onDisplayOverlaySurface(/*id=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+  }
 }

@@ -821,6 +821,17 @@ public class FlutterJNI {
     }
     platformViewsController.onEndFrame();
   }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public FlutterOverlaySurface createOverlaySurface() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to position an overlay surface");
+    }
+    platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+  }
   // ----- End Engine Lifecycle Support ----
 
   // @SuppressWarnings("unused")

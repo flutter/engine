@@ -130,6 +130,7 @@ class PlatformViewAndroidJNI {
                                                 int y,
                                                 int width,
                                                 int height) = 0;
+
   //----------------------------------------------------------------------------
   /// @brief      Initiates a frame if using hybrid composition.
   ///
