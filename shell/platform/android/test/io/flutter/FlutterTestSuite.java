@@ -4,6 +4,7 @@
 
 package io.flutter;
 
+import io.flutter.embedding.android.AndroidKeyProcessorTest;
 import io.flutter.embedding.android.FlutterActivityAndFragmentDelegateTest;
 import io.flutter.embedding.android.FlutterActivityTest;
 import io.flutter.embedding.android.FlutterAndroidComponentTest;
@@ -14,6 +15,7 @@ import io.flutter.embedding.engine.FlutterEngineCacheTest;
 import io.flutter.embedding.engine.FlutterEnginePluginRegistryTest;
 import io.flutter.embedding.engine.FlutterJNITest;
 import io.flutter.embedding.engine.LocalizationPluginTest;
+import io.flutter.embedding.engine.KeyEventChannelTest;
 import io.flutter.embedding.engine.RenderingComponentTest;
 import io.flutter.embedding.engine.plugins.shim.ShimPluginRegistryTest;
 import io.flutter.embedding.engine.renderer.FlutterRendererTest;
@@ -40,6 +42,7 @@ import test.io.flutter.embedding.engine.dart.DartExecutorTest;
 @RunWith(Suite.class)
 @SuiteClasses({
   DartExecutorTest.class,
+  AndroidKeyProcessorTest.class,
   FlutterActivityAndFragmentDelegateTest.class,
   FlutterActivityTest.class,
   FlutterAndroidComponentTest.class,

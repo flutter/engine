@@ -29,7 +29,7 @@ public class AndroidKeyProcessor {
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final TextInputPlugin textInputPlugin;
   @NonNull private int combiningCharacter;
-  @NonNull private EventResponder eventResponder;
+  @NonNull public final EventResponder eventResponder;
 
   public AndroidKeyProcessor(
       @NonNull Context context,
