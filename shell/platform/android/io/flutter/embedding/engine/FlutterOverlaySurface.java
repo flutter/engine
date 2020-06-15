@@ -9,8 +9,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
 public class FlutterOverlaySurface {
-  @NonNull
-  private final Surface surface;
+  @NonNull private final Surface surface;
 
   private final long id;
 

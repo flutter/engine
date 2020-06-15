@@ -24,8 +24,8 @@
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/flutter_main.h"
-#include "flutter/shell/platform/android/platform_view_android.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/platform_view_android.h"
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 
 #define ANDROID_SHELL_HOLDER \
@@ -717,7 +717,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   g_create_overlay_surface_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "createOverlaySurface",
-        "()Lio/flutter/embedding/engine/FlutterOverlaySurface;");
+                       "()Lio/flutter/embedding/engine/FlutterOverlaySurface;");
 
   g_flutter_jni_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
