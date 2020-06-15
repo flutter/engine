@@ -799,6 +799,39 @@ public class FlutterJNI {
     }
     platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
   }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void onBeginFrame() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to begin the frame");
+    }
+    platformViewsController.onBeginFrame();
+  }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void onEndFrame() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to end the frame");
+    }
+    platformViewsController.onEndFrame();
+  }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public FlutterOverlaySurface createOverlaySurface() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to position an overlay surface");
+    }
+    platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+  }
   // ----- End Engine Lifecycle Support ----
 
   // @SuppressWarnings("unused")

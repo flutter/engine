@@ -7,9 +7,12 @@ package io.flutter.embedding.engine;
 import android.view.Surface;
 
 public class FlutterOverlaySurface {
+  // @NonNull
   private final Surface surface;
+
   private final long id;
 
+  // @Keep
   public FlutterOverlaySurface(long id, Surface surface) {
     this.id = id;
     this.surface = surface;
