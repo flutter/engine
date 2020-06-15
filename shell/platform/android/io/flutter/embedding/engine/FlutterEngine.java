@@ -292,7 +292,6 @@ public class FlutterEngine {
     // possible.
     this.renderer = new FlutterRenderer(flutterJNI);
 
-
     this.platformViewsController = platformViewsController;
     this.platformViewsController.onAttachedToJNI();
 
