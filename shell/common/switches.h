@@ -129,10 +129,9 @@ DEF_SWITCH(TraceSkia,
            "Trace Skia calls. This is useful when debugging the GPU threed."
            "By default, Skia tracing is not enabled to reduce the number of "
            "traced events")
-DEF_SWITCH(
-    TraceWhitelist,
-    "trace-whitelist",
-    "(deprecated) Use --trace-allowlist instead.")
+DEF_SWITCH(TraceWhitelist,
+           "trace-whitelist",
+           "(deprecated) Use --trace-allowlist instead.")
 DEF_SWITCH(
     TraceAllowlist,
     "trace-allowlist",
