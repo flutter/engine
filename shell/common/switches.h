@@ -132,8 +132,13 @@ DEF_SWITCH(TraceSkia,
 DEF_SWITCH(
     TraceWhitelist,
     "trace-whitelist",
-    "Filters out all trace events except those that are specified in this "
+    "(deprecated) Use --trace-allowlist instead. "
     "comma separated list of whitelisted prefixes.")
+DEF_SWITCH(
+    TraceAllowlist,
+    "trace-allowlist",
+    "Filters out all trace events except those that are specified in this "
+    "comma separated list of allowed prefixes.")
 DEF_SWITCH(DumpSkpOnShaderCompilation,
            "dump-skp-on-shader-compilation",
            "Automatically dump the skp that triggers new shader compilations. "
