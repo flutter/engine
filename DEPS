@@ -41,7 +41,7 @@ vars = {
   'dart_args_tag': '1.6.0',
   'dart_async_tag': '2.4.1',
   'dart_bazel_worker_tag': 'v0.1.22',
-  'dart_boringssl_gen_rev': 'b9e27cff1ff0803e97ab1f88764a83be4aa94a6d',
+  'dart_boringssl_gen_rev': '429ccb1877f7987a6f3988228bc2440e61293499',
   'dart_boringssl_rev': '4dfd5af70191b068aebe567b8e29ce108cee85ce',
   'dart_dart2js_info_tag': '0.6.0',
   'dart_dart_style_tag': '1.3.6',
@@ -148,7 +148,7 @@ deps = {
    Var('chromium_git') + '/chromium/src/ios.git' + '@' + Var('ios_tools_revision'),
 
   'src/third_party/icu':
-   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '5005010d694e16571b8dfbf07d70817841f80a69',
+   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '8d29692df640668ed7e4d1817715440c4e05697a',
 
   'src/third_party/khronos':
    Var('chromium_git') + '/chromium/src/third_party/khronos.git' + '@' + '7122230e90547962e0f0c627f62eeed3c701f275',
