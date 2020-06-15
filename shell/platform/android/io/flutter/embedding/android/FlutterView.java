@@ -813,7 +813,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             this.flutterEngine.getTextInputChannel(),
             this.flutterEngine.getPlatformViewsController());
     localizationPlugin =
-        new LocalizationPlugin(getContext(), this.flutterEngine.getLocalizationChannel());
+        this.flutterEngine.getLocalizationPlugin();
     androidKeyProcessor =
         new AndroidKeyProcessor(this.flutterEngine.getKeyEventChannel(), textInputPlugin);
     androidTouchProcessor = new AndroidTouchProcessor(this.flutterEngine.getRenderer());
@@ -837,10 +837,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // now that an engine is attached.
     // TODO(mattcarroll): once this is proven to work, move this line ot TextInputPlugin
     textInputPlugin.getInputMethodManager().restartInput(this);
-
-    if (this.flutterEngine.getFlutterJNI() != null) {
-      this.flutterEngine.getFlutterJNI().setLocalizationPlugin(localizationPlugin);
-    }
 
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();
