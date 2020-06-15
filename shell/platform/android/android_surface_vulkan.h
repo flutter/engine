@@ -53,9 +53,10 @@ class AndroidSurfaceVulkan : public AndroidSurface,
   fml::RefPtr<vulkan::VulkanProcTable> vk() override;
 
  private:
+  const std::unique_ptr<AndroidExternalViewEmbedder> external_view_embedder_;
+
   fml::RefPtr<vulkan::VulkanProcTable> proc_table_;
   fml::RefPtr<AndroidNativeWindow> native_window_;
-  std::unique_ptr<AndroidExternalViewEmbedder> external_view_embedder_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceVulkan);
 };

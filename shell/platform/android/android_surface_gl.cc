@@ -15,18 +15,20 @@ AndroidSurfaceGL::AndroidSurfaceGL(
     std::shared_ptr<AndroidContext> android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     AndroidSurface::Factory surface_factory)
-    : native_window_(nullptr),
+    : external_view_embedder_(std::make_unique<AndroidExternalViewEmbedder>(
+          std::move(android_context),
+          std::move(jni_facade),
+          surface_factory)),
+      android_context_(
+          std::static_pointer_cast<AndroidContextGL>(android_context)),
+      native_window_(nullptr),
       onscreen_surface_(nullptr),
       offscreen_surface_(nullptr) {
-  android_context_ =
-      std::static_pointer_cast<AndroidContextGL>(android_context);
   // Acquire the offscreen surface.
   offscreen_surface_ = android_context_->CreateOffscreenSurface();
   if (!offscreen_surface_->IsValid()) {
     offscreen_surface_ = nullptr;
   }
-  external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>(
-      std::move(android_context), std::move(jni_facade), surface_factory);
 }
 
 AndroidSurfaceGL::~AndroidSurfaceGL() = default;

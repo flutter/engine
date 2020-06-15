@@ -64,9 +64,10 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
  private:
+  const std::unique_ptr<AndroidExternalViewEmbedder> external_view_embedder_;
+  const std::shared_ptr<AndroidContextGL> android_context_;
+
   fml::RefPtr<AndroidNativeWindow> native_window_;
-  std::unique_ptr<AndroidExternalViewEmbedder> external_view_embedder_;
-  std::shared_ptr<AndroidContextGL> android_context_;
   std::unique_ptr<AndroidEGLSurface> onscreen_surface_;
   std::unique_ptr<AndroidEGLSurface> offscreen_surface_;
 
