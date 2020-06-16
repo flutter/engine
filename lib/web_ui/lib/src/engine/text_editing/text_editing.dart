@@ -1432,7 +1432,6 @@ class EditableTextGeometry {
   /// case this method should not be used.
   void applyToDomElement(html.HtmlElement domElement) {
     final String cssTransform = float64ListToCssTransform(globalTransform);
-    print('updated transform: $cssTransform');
     domElement.style
       ..width = '${width}px'
       ..height = '${height}px'
