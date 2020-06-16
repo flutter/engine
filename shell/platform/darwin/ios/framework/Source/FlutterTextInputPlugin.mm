@@ -552,7 +552,14 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   if (toIndex >= fromIndex) {
     return [FlutterTextRange rangeWithNSRange:NSMakeRange(fromIndex, toIndex - fromIndex)];
   } else {
-    return [FlutterTextRange rangeWithNSRange:NSMakeRange(toIndex, 0)];
+    // toIndex may be less than fromIndex, because
+    // UITextInputStringTokenizer does not handle CJK characters
+    // well in some cases. See:
+    // https://github.com/flutter/flutter/issues/58750#issuecomment-644469521
+    // The length is set to fromIndex - toIndex to match the native
+    // UITextField behavior (deletes the newline character after the caret when
+    // word delete mode is engaged).
+    return [FlutterTextRange rangeWithNSRange:NSMakeRange(toIndex, fromIndex - toIndex)];
   }
 }
 
