@@ -690,6 +690,11 @@ bool RegisterApi(JNIEnv* env) {
       env->GetMethodID(g_flutter_jni_class->obj(), "createOverlaySurface",
                        "()Lio/flutter/embedding/engine/FlutterOverlaySurface;");
 
+  if (g_create_overlay_surface_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate createOverlaySurface method";
+    return false;
+  }
+
   return true;
 }
 
@@ -713,10 +718,6 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     FML_LOG(ERROR) << "Could not locate FlutterCallbackInformation constructor";
     return false;
   }
-
-  g_create_overlay_surface_method =
-      env->GetMethodID(g_flutter_jni_class->obj(), "createOverlaySurface",
-                       "()Lio/flutter/embedding/engine/FlutterOverlaySurface;");
 
   g_flutter_jni_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
@@ -746,14 +747,6 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   if (g_on_end_frame_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onEndFrame method";
-    return false;
-  }
-
-  g_create_overlay_surface_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "createOverlaySurface", "()V");
-
-  if (g_create_overlay_surface_method == nullptr) {
-    FML_LOG(ERROR) << "Could not locate createOverlaySurface method";
     return false;
   }
 
