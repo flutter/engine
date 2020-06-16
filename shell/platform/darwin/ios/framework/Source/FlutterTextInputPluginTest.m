@@ -236,17 +236,16 @@ FLUTTER_ASSERT_ARC
   [engine stopMocking];
 }
 
-- (void)testTextRangeFromPositionDoesNotOverflow {
+- (void)testTextRangeFromPositionMatchesUITextViewBehavior {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
-  FlutterTextPosition* fromPosition = [[FlutterTextPosition alloc] initWithIndex:1];
+  FlutterTextPosition* fromPosition = [[FlutterTextPosition alloc] initWithIndex:2];
   FlutterTextPosition* toPosition = [[FlutterTextPosition alloc] initWithIndex:0];
 
   FlutterTextRange* flutterRange = [inputView textRangeFromPosition:fromPosition
                                                          toPosition:toPosition];
   NSRange range = flutterRange.range;
 
-  // The resulting NSRange's length should not
-  // overflow, even with fromPosition > toPosition.
-  XCTAssertLessThan(range.length, 100);
+  XCTAssertLessThan(range.location, 0);
+  XCTAssertLessThan(range.length, 2);
 }
 @end
