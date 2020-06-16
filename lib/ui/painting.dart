@@ -1701,7 +1701,6 @@ class Codec extends NativeFieldWrapperClass2 {
 /// The data can be for either static or animated images. The following image
 /// formats are supported: {@macro flutter.dart:ui.imageFormats}
 ///
-<<<<<<< HEAD
 /// The `targetWidth` and `targetHeight` arguments specify the size of the
 /// output image, in image pixels. If they are not equal to the intrinsic
 /// dimensions of the image, then the image will be scaled after being decoded.
@@ -1713,14 +1712,6 @@ class Codec extends NativeFieldWrapperClass2 {
 /// avoided, since it causes the image to use more memory than necessary.
 /// Instead, prefer scaling the [Canvas] transform. If the image must be scaled
 /// up, the `allowUpscaling` parameter must be set to true.
-=======
-/// The [targetWidth] and [targetHeight] arguments specify the size of the output
-/// image, in image pixels. If they are not equal to the intrinsic dimensions of the
-/// image, then the image will be scaled after being decoded. If only one dimension
-/// is specified, the omitted dimension will be scaled to maintain the original
-/// aspect ratio. If both are not specified, then the image maintains its real
-/// size.
->>>>>>> upstream/master
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
