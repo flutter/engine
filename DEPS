@@ -26,7 +26,7 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': 'ac16760df46352bd3341d8be0ef3f70a273dbfe0',
+  'skia_revision': 'f4ec452b7ab35de73d394cdcf1db674a91d88559',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -521,7 +521,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'XHlPK04NIeR4zKTtbAkK6uG5btCqZpYCjGkt1cS9ZSEC'
+        'version': 'OiCnNR9u9l20StF2dYxW0Nnar1hjOCW2_X0alianjSMC'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -541,7 +541,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'ThzHh1jhD0gz3w4Zfw5c9SMvUvmIa58BoHXBda6-OaEC'
+        'version': 'YEXbypPnavSNgov6GK1bIFmNr7Jw9nnUGchWTdp1QQ4C'
        }
      ],
      'condition': 'host_os == "linux"',
