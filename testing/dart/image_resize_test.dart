@@ -12,6 +12,12 @@ import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
 void main() {
+  bool assertsEnabled = false;
+  assert(() {
+    assertsEnabled = true;
+    return true;
+  }());
+
   test('no resize by default', () async {
     final Uint8List bytes = await readFile('4x4.png');
     final Codec codec = await instantiateImageCodec(bytes);
@@ -129,7 +135,7 @@ void main() {
       threw = true;
     }
     expect(threw, true);
-  });
+  }, skip: !assertsEnabled);
 
   test('pixels: upscale image varying width and height', () async {
     final BlackSquare blackSquare = BlackSquare.create();
@@ -157,7 +163,7 @@ void main() {
       threw = true;
     }
     expect(threw, true);
-  });
+  }, skip: !assertsEnabled);
 
   test('pixels: large negative dimensions', () async {
     final BlackSquare blackSquare = BlackSquare.create();
