@@ -134,7 +134,7 @@ class IntegrationTestsManager {
         ChromeDriverInstaller.withVersion(chromeDriverVersion);
     // TODO(yjbanov): remove this dynamic hack when chromeDriverInstaller.install returns Future<void>
     //                https://github.com/flutter/flutter/issues/59376
-    dynamic installationFuture = chromeDriverInstaller.install(alwaysInstall: true) as dynamic;
+    final dynamic installationFuture = chromeDriverInstaller.install(alwaysInstall: true) as dynamic;
     await installationFuture;
     io.Directory.current = temp;
   }
