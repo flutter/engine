@@ -556,9 +556,8 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
     // UITextInputStringTokenizer does not handle CJK characters
     // well in some cases. See:
     // https://github.com/flutter/flutter/issues/58750#issuecomment-644469521
-    // The length is set to fromIndex - toIndex to match the native
-    // UITextField behavior (deletes the newline character after the caret when
-    // word delete mode is engaged).
+    // Swap fromPosition and toPosition to match the behavior of native
+    // UITextViews.
     return [FlutterTextRange rangeWithNSRange:NSMakeRange(toIndex, fromIndex - toIndex)];
   }
 }
