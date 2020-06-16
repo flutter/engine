@@ -56,6 +56,22 @@ void MockJNI::FlutterViewDisplayOverlaySurface(int surface_id,
                                                int width,
                                                int height) {}
 
+void MockJNI::FlutterViewBeginFrame() {}
+
+void MockJNI::FlutterViewEndFrame() {}
+
+std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>
+MockJNI::FlutterViewCreateOverlaySurface() {
+  auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
+  auto metadata = std::make_unique<PlatformViewAndroidJNI::OverlayMetadata>(
+      overlay_surface_id_, window);
+
+  jni_calls_.push_back(FlutterViewCreateOverlaySurfaceCall{metadata.get()});
+
+  overlay_surface_id_++;
+  return metadata;
+}
+
 std::vector<MockJNI::JNICall>& MockJNI::GetCalls() {
   return jni_calls_;
 }

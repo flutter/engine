@@ -4,8 +4,6 @@
 
 source_set("surface") {
   sources = [
-    "android_native_window.cc",
-    "android_native_window.h",
     "android_surface.cc",
     "android_surface.h",
   ]
@@ -13,10 +11,25 @@ source_set("surface") {
   public_configs = [ "//flutter:config" ]
 
   deps = [
+    ":native_window",
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/shell/platform/android/context",
     "//flutter/shell/platform/android/jni",
+    "//third_party/skia",
+  ]
+}
+
+source_set("native_window") {
+  sources = [
+    "android_native_window.cc",
+    "android_native_window.h",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+
+  deps = [
+    "//flutter/fml",
     "//third_party/skia",
   ]
 }

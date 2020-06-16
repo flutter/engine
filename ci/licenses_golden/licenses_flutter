@@ -701,6 +701,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/Flutte
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineCache.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEnginePluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterJNI.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterOverlaySurface.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterShellArgs.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartExecutor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java
@@ -735,6 +736,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/system
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/NavigationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformViewsChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/RestorationChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SettingsChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SystemChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/TextInputChannel.java
@@ -914,6 +916,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewControllerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/IOKit.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTest.mm
@@ -1109,6 +1112,7 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unitt
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/collect_traces.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/compositor_context.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/compositor_context.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc

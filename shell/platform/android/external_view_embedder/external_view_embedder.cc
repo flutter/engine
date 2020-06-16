@@ -60,7 +60,7 @@ std::vector<SkCanvas*> AndroidExternalViewEmbedder::GetCurrentCanvases() {
 
 SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) {
   EmbeddedViewParams* params = &view_params_[view_id];
-  FML_CHECK(params != nullptr);
+  FML_CHECK(params);
   return SkRect::MakeXYWH(params->offsetPixels.x(),                          //
                           params->offsetPixels.y(),                          //
                           params->sizePoints.width() * device_pixel_ratio_,  //

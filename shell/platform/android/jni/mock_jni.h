@@ -22,7 +22,12 @@ class MockJNI final : public PlatformViewAndroidJNI {
     int responseId;
   };
 
-  using JNICall = std::variant<FlutterViewHandlePlatformMessageCall>;
+  struct FlutterViewCreateOverlaySurfaceCall {
+    PlatformViewAndroidJNI::OverlayMetadata* metadata;
+  };
+
+  using JNICall = std::variant<FlutterViewHandlePlatformMessageCall,
+                               FlutterViewCreateOverlaySurfaceCall>;
 
   MockJNI();
 
@@ -69,11 +74,20 @@ class MockJNI final : public PlatformViewAndroidJNI {
                                         int y,
                                         int width,
                                         int height) override;
+
+  void FlutterViewBeginFrame() override;
+
+  void FlutterViewEndFrame() override;
+
+  std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>
+  FlutterViewCreateOverlaySurface() override;
+
   // Gets the JNI calls.
   std::vector<JNICall>& GetCalls();
 
  private:
   std::vector<JNICall> jni_calls_;
+  int overlay_surface_id_ = 0;
 };
 
 }  // namespace flutter

@@ -6,12 +6,6 @@
 
 namespace flutter {
 
-OverlayMetadata::OverlayMetadata(int id,
-                                 fml::RefPtr<AndroidNativeWindow> window)
-    : id(id), window(std::move(window)) {}
-
-OverlayMetadata::~OverlayMetadata() = default;
-
 OverlayLayer::OverlayLayer(int id,
                            std::unique_ptr<AndroidSurface> android_surface,
                            std::unique_ptr<Surface> surface)
@@ -34,13 +28,17 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
   if (available_layer_index_ >= layers_.size()) {
     std::unique_ptr<AndroidSurface> android_surface =
         surface_factory(android_context, jni_facade);
-    // TODO(egarciad): jni_facade->FlutterViewCreateOverlaySurface(..)
-    // Then, android_surface->SetNativeWindow(overlay_layer->GetWindow())
-    // https://github.com/flutter/flutter/issues/55270
+    std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata> java_metadata =
+        jni_facade->FlutterViewCreateOverlaySurface();
+
+    FML_CHECK(java_metadata->window);
+    android_surface->SetNativeWindow(java_metadata->window);
+
     std::unique_ptr<Surface> surface =
         android_surface->CreateGPUSurface(gr_context);
+
     std::shared_ptr<OverlayLayer> layer =
-        std::make_shared<OverlayLayer>(0,                           //
+        std::make_shared<OverlayLayer>(java_metadata->id,           //
                                        std::move(android_surface),  //
                                        std::move(surface)           //
         );
