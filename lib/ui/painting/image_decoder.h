@@ -47,6 +47,7 @@ class ImageDecoder {
     std::optional<ImageInfo> decompressed_image_info;
     std::optional<uint32_t> target_width;
     std::optional<uint32_t> target_height;
+    bool allow_upscaling = false;
   };
 
   using ImageResult = std::function<void(SkiaGPUObject<SkImage>)>;
@@ -72,6 +73,7 @@ class ImageDecoder {
 sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
                                        std::optional<uint32_t> target_width,
                                        std::optional<uint32_t> target_height,
+                                       bool allow_upscaling,
                                        const fml::tracing::TraceFlow& flow);
 
 }  // namespace flutter

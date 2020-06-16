@@ -364,6 +364,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
       ImageDecoder::ImageDescriptor image_descriptor;
       image_descriptor.target_width = target_width;
       image_descriptor.target_height = target_height;
+      image_descriptor.allow_upscaling = false;
       image_descriptor.data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
       ASSERT_TRUE(image_descriptor.data);
@@ -463,6 +464,7 @@ TEST_F(ImageDecoderFixtureTest, CanResizeWithoutDecode) {
       ImageDecoder::ImageDescriptor image_descriptor;
       image_descriptor.target_width = target_width;
       image_descriptor.target_height = target_height;
+      image_descriptor.allow_upscaling = false;
       image_descriptor.data = decompressed_data;
       image_descriptor.decompressed_image_info = info;
 
@@ -530,9 +532,34 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
-  ASSERT_EQ(ImageFromCompressedData(data, 6, 2, fml::tracing::TraceFlow(""))
+  ASSERT_EQ(
+      ImageFromCompressedData(data, 6, 2, false, fml::tracing::TraceFlow(""))
+          ->dimensions(),
+      SkISize::Make(6, 2));
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecodingNoUpscaling) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(ImageFromCompressedData(data, 900, 300, false,
+                                    fml::tracing::TraceFlow(""))
                 ->dimensions(),
-            SkISize::Make(6, 2));
+            SkISize::Make(600, 200));
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecodingWithUpscaling) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(
+      ImageFromCompressedData(data, 900, 300, true, fml::tracing::TraceFlow(""))
+          ->dimensions(),
+      SkISize::Make(900, 300));
 }
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
@@ -543,7 +570,7 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
 
   auto decode = [data](std::optional<uint32_t> target_width,
                        std::optional<uint32_t> target_height) {
-    return ImageFromCompressedData(data, target_width, target_height,
+    return ImageFromCompressedData(data, target_width, target_height, false,
                                    fml::tracing::TraceFlow(""));
   };
 
