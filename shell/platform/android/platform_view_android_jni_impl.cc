@@ -24,6 +24,7 @@
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/flutter_main.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 
 #define ANDROID_SHELL_HOLDER \
@@ -80,6 +81,8 @@ static jmethodID g_on_first_frame_method = nullptr;
 
 static jmethodID g_on_engine_restart_method = nullptr;
 
+static jmethodID g_create_overlay_surface_method = nullptr;
+
 static jmethodID g_on_begin_frame_method = nullptr;
 
 static jmethodID g_on_end_frame_method = nullptr;
@@ -92,6 +95,9 @@ static jmethodID g_get_transform_matrix_method = nullptr;
 
 static jmethodID g_detach_from_gl_context_method = nullptr;
 
+static jmethodID g_compute_platform_resolved_locale_method = nullptr;
+
+// Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
 
 static jmethodID g_on_display_overlay_surface_method = nullptr;
@@ -683,6 +689,10 @@ bool RegisterApi(JNIEnv* env) {
     return false;
   }
 
+  g_create_overlay_surface_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "createOverlaySurface",
+                       "()Lio/flutter/embedding/engine/FlutterOverlaySurface;");
+
   return true;
 }
 
@@ -706,6 +716,10 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     FML_LOG(ERROR) << "Could not locate FlutterCallbackInformation constructor";
     return false;
   }
+
+  g_create_overlay_surface_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "createOverlaySurface",
+                       "()Lio/flutter/embedding/engine/FlutterOverlaySurface;");
 
   g_flutter_jni_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
@@ -735,6 +749,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   if (g_on_end_frame_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onEndFrame method";
+    return false;
+  }
+
+  g_create_overlay_surface_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "createOverlaySurface", "()V");
+
+  if (g_create_overlay_surface_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate createOverlaySurface method";
     return false;
   }
 
@@ -782,6 +804,15 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   if (g_detach_from_gl_context_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate detachFromGlContext method";
+    return false;
+  }
+
+  g_compute_platform_resolved_locale_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "computePlatformResolvedLocale",
+      "([Ljava/lang/String;)[Ljava/lang/String;");
+
+  if (g_compute_platform_resolved_locale_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate computePlatformResolvedLocale method";
     return false;
   }
 
@@ -1078,6 +1109,47 @@ void PlatformViewAndroidJNIImpl::FlutterViewEndFrame() {
   env->CallVoidMethod(java_object.obj(), g_on_end_frame_method);
 
   FML_CHECK(CheckException(env));
+}
+
+void PlatformViewAndroidJNIImpl::FlutterViewCreateOverlaySurface() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return;
+  }
+
+  env->CallVoidMethod(java_object.obj(), g_create_overlay_surface_method);
+
+  FML_CHECK(CheckException(env));
+}
+
+std::unique_ptr<std::vector<std::string>>
+PlatformViewAndroidJNIImpl::FlutterViewComputePlatformResolvedLocale(
+    std::vector<std::string> supported_locales_data) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  std::unique_ptr<std::vector<std::string>> out =
+      std::make_unique<std::vector<std::string>>();
+
+  auto java_object = java_object_.get(env);
+  if (java_object.is_null()) {
+    return out;
+  }
+  fml::jni::ScopedJavaLocalRef<jobjectArray> j_locales_data =
+      fml::jni::VectorToStringArray(env, supported_locales_data);
+  jobjectArray result = (jobjectArray)env->CallObjectMethod(
+      java_object.obj(), g_compute_platform_resolved_locale_method,
+      j_locales_data.obj());
+
+  FML_CHECK(CheckException(env));
+
+  int length = env->GetArrayLength(result);
+  for (int i = 0; i < length; i++) {
+    out->emplace_back(fml::jni::JavaStringToString(
+        env, (jstring)env->GetObjectArrayElement(result, i)));
+  }
+  return out;
 }
 
 }  // namespace flutter
