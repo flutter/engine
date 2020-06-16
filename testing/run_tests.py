@@ -160,6 +160,8 @@ def RunEngineBenchmarks(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'fml_benchmarks', filter)
 
+  RunEngineExecutable(build_dir, 'ui_benchmarks', filter)
+
   if IsLinux():
     RunEngineExecutable(build_dir, 'txt_benchmarks', filter)
 
@@ -181,6 +183,8 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
   snapshot_command = [
     dart,
     frontend_server,
+    '--enable-experiment=non-nullable',
+    '--no-null-safety',
     '--sdk-root',
     flutter_patched_sdk,
     '--incremental',

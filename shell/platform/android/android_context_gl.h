@@ -23,14 +23,43 @@ namespace flutter {
 /// This can be used in conjuction to unique_ptr to provide better guarantees
 /// about the lifespam of the `EGLSurface` object.
 ///
-struct AndroidEGLSurface {
-  AndroidEGLSurface(EGLSurface surface, EGLDisplay display);
+class AndroidEGLSurface {
+ public:
+  AndroidEGLSurface(EGLSurface surface, EGLDisplay display, EGLContext context);
   ~AndroidEGLSurface();
 
-  const EGLSurface surface;
+  //----------------------------------------------------------------------------
+  /// @return     Whether the current `EGLSurface` reference is valid. That is,
+  /// if
+  ///             the surface doesn't point to `EGL_NO_SURFACE`.
+  ///
+  bool IsValid() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Binds the EGLContext context to the current rendering thread
+  ///             and to the draw and read surface.
+  ///
+  /// @return     Whether the surface was made current.
+  ///
+  bool MakeCurrent();
+
+  //----------------------------------------------------------------------------
+  /// @brief      This only applies to on-screen surfaces such as those created
+  ///             by `AndroidContextGL::CreateOnscreenSurface`.
+  ///
+  /// @return     Whether the EGL surface color buffer was swapped.
+  ///
+  bool SwapBuffers();
+
+  //----------------------------------------------------------------------------
+  /// @return     The size of an `EGLSurface`.
+  ///
+  SkISize GetSize() const;
 
  private:
+  const EGLSurface surface_;
   const EGLDisplay display_;
+  const EGLContext context_;
 };
 
 //------------------------------------------------------------------------------
@@ -81,35 +110,6 @@ class AndroidContextGL : public AndroidContext {
   /// @return     Whether the current context was successfully clear.
   ///
   bool ClearCurrent();
-
-  //----------------------------------------------------------------------------
-  /// @brief      Binds the EGLContext context to the current rendering thread
-  ///             and to the draw and read surface.
-  ///
-  /// @return     Whether the surface was made current.
-  ///
-  bool MakeCurrent(std::unique_ptr<AndroidEGLSurface> surface_wrapper);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Binds the resource EGLContext context to the current rendering
-  ///             thread and to the draw and read surface.
-  ///
-  /// @return     Whether the surface was made current.
-  ///
-  bool ResourceMakeCurrent(std::unique_ptr<AndroidEGLSurface> surface_wrapper);
-
-  //----------------------------------------------------------------------------
-  /// @brief      This only applies to on-screen surfaces such as those created
-  ///             by `AndroidContextGL::CreateOnscreenSurface`.
-  ///
-  /// @return     Whether the EGL surface color buffer was swapped.
-  ///
-  bool SwapBuffers(std::unique_ptr<AndroidEGLSurface> surface_wrapper);
-
-  //----------------------------------------------------------------------------
-  /// @return     The size of an `EGLSurface`.
-  ///
-  SkISize GetSize(std::unique_ptr<AndroidEGLSurface> surface_wrapper);
 
  private:
   fml::RefPtr<AndroidEnvironmentGL> environment_;
