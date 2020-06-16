@@ -624,7 +624,7 @@ abstract class Window {
   ///
   /// This method returns synchronously and is a direct call to
   /// platform specific APIs without invoking method channels.
-  Locale computePlatformResolvedLocale(List<Locale> supportedLocales) {
+  Locale? computePlatformResolvedLocale(List<Locale> supportedLocales) {
     // TODO(garyq): Implement on web.
     return null;
   }
