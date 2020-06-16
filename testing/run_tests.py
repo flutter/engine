@@ -139,6 +139,8 @@ def RunCCTests(build_dir, filter):
 
   RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags)
 
+  RunEngineExecutable(build_dir, 'jni_unittests', filter, shuffle_flags)
+
   RunEngineExecutable(build_dir, 'android_external_view_embedder_unittests', filter, shuffle_flags)
 
   # These unit-tests are Objective-C and can only run on Darwin.

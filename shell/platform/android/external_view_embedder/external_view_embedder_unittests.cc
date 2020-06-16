@@ -29,13 +29,15 @@ TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
 TEST(AndroidExternalViewEmbedder, CompositeEmbeddedView) {
   auto embedder = new AndroidExternalViewEmbedder(nullptr, nullptr, nullptr);
 
+  ASSERT_EQ(nullptr, embedder->CompositeEmbeddedView(0));
   embedder->PrerollCompositeEmbeddedView(
       0, std::make_unique<EmbeddedViewParams>());
-  ASSERT_TRUE(embedder->CompositeEmbeddedView(0) != nullptr);
+  ASSERT_NE(nullptr, embedder->CompositeEmbeddedView(0));
 
+  ASSERT_EQ(nullptr, embedder->CompositeEmbeddedView(1));
   embedder->PrerollCompositeEmbeddedView(
       1, std::make_unique<EmbeddedViewParams>());
-  ASSERT_TRUE(embedder->CompositeEmbeddedView(1) != nullptr);
+  ASSERT_NE(nullptr, embedder->CompositeEmbeddedView(1));
 }
 
 TEST(AndroidExternalViewEmbedder, CancelFrame) {
@@ -98,6 +100,37 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
 
   embedder->EndFrame(raster_thread_merger);
   ASSERT_FALSE(raster_thread_merger->IsMerged());
+}
+
+TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
+  auto embedder = new AndroidExternalViewEmbedder(nullptr, nullptr, nullptr);
+  embedder->BeginFrame(SkISize::Make(100, 100), nullptr, 1.5);
+
+  auto view_params = std::make_unique<EmbeddedViewParams>();
+  view_params->offsetPixels = SkPoint::Make(10, 20);
+  view_params->sizePoints = SkSize::Make(30, 40);
+
+  auto view_id = 0;
+  embedder->PrerollCompositeEmbeddedView(view_id, std::move(view_params));
+  ASSERT_EQ(SkRect::MakeXYWH(10, 20, 45, 60), embedder->GetViewRect(view_id));
+}
+
+TEST(AndroidExternalViewEmbedder, PlatformViewRect__ChangedParams) {
+  auto embedder = new AndroidExternalViewEmbedder(nullptr, nullptr, nullptr);
+  embedder->BeginFrame(SkISize::Make(100, 100), nullptr, 1.5);
+
+  auto view_id = 0;
+  auto view_params_1 = std::make_unique<EmbeddedViewParams>();
+  view_params_1->offsetPixels = SkPoint::Make(10, 20);
+  view_params_1->sizePoints = SkSize::Make(30, 40);
+  embedder->PrerollCompositeEmbeddedView(view_id, std::move(view_params_1));
+
+  auto view_params_2 = std::make_unique<EmbeddedViewParams>();
+  view_params_2->offsetPixels = SkPoint::Make(50, 60);
+  view_params_2->sizePoints = SkSize::Make(70, 80);
+  embedder->PrerollCompositeEmbeddedView(view_id, std::move(view_params_2));
+
+  ASSERT_EQ(SkRect::MakeXYWH(50, 60, 105, 120), embedder->GetViewRect(view_id));
 }
 
 }  // namespace testing

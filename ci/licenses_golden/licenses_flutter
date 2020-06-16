@@ -669,6 +669,7 @@ FILE: ../../../flutter/shell/platform/android/external_view_embedder/external_vi
 FILE: ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder_unittests.cc
 FILE: ../../../flutter/shell/platform/android/external_view_embedder/surface_pool.cc
 FILE: ../../../flutter/shell/platform/android/external_view_embedder/surface_pool.h
+FILE: ../../../flutter/shell/platform/android/external_view_embedder/surface_pool_unittests.cc
 FILE: ../../../flutter/shell/platform/android/flutter_main.cc
 FILE: ../../../flutter/shell/platform/android/flutter_main.h
 FILE: ../../../flutter/shell/platform/android/io/flutter/Log.java
@@ -781,6 +782,9 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterRunArgument
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/TextureRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/VsyncWaiter.java
+FILE: ../../../flutter/shell/platform/android/jni/mock_jni.cc
+FILE: ../../../flutter/shell/platform/android/jni/mock_jni.h
+FILE: ../../../flutter/shell/platform/android/jni/mock_jni_unittest.cc
 FILE: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.cc
 FILE: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.h
 FILE: ../../../flutter/shell/platform/android/library_loader.cc
@@ -795,6 +799,8 @@ FILE: ../../../flutter/shell/platform/android/surface/android_native_window.cc
 FILE: ../../../flutter/shell/platform/android/surface/android_native_window.h
 FILE: ../../../flutter/shell/platform/android/surface/android_surface.cc
 FILE: ../../../flutter/shell/platform/android/surface/android_surface.h
+FILE: ../../../flutter/shell/platform/android/surface/mock_android_surface.cc
+FILE: ../../../flutter/shell/platform/android/surface/mock_android_surface.h
 FILE: ../../../flutter/shell/platform/android/vsync_waiter_android.cc
 FILE: ../../../flutter/shell/platform/android/vsync_waiter_android.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/basic_message_channel_unittests.cc

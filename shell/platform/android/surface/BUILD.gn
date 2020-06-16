@@ -20,3 +20,18 @@ source_set("surface") {
     "//third_party/skia",
   ]
 }
+
+source_set("mock_surface") {
+  sources = [
+    "mock_android_surface.cc",
+    "mock_android_surface.h",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+
+  deps = [
+    ":surface",
+    "//flutter/shell/gpu:gpu_surface_gl",
+    "//third_party/skia",
+  ]
+}

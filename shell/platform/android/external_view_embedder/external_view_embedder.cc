@@ -42,7 +42,10 @@ void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
 
 // |ExternalViewEmbedder|
 SkCanvas* AndroidExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
-  return picture_recorders_[view_id]->getRecordingCanvas();
+  if (picture_recorders_.count(view_id) == 1) {
+    return picture_recorders_[view_id]->getRecordingCanvas();
+  }
+  return nullptr;
 }
 
 // |ExternalViewEmbedder|
