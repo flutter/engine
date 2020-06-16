@@ -6,6 +6,12 @@
 
 namespace flutter {
 
+OverlayMetadata::OverlayMetadata(int id,
+                                 fml::RefPtr<AndroidNativeWindow> window)
+    : id(id), window(std::move(window)) {}
+
+OverlayMetadata::~OverlayMetadata() = default;
+
 OverlayLayer::OverlayLayer(int id,
                            std::unique_ptr<AndroidSurface> android_surface,
                            std::unique_ptr<Surface> surface)

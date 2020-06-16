@@ -11,6 +11,29 @@
 
 namespace flutter {
 
+//------------------------------------------------------------------------------
+/// The metadata returned from Java which is converted into an |OverlayLayer|
+/// by |SurfacePool|.
+///
+struct OverlayMetadata {
+  OverlayMetadata(int id, fml::RefPtr<AndroidNativeWindow> window);
+
+  ~OverlayMetadata();
+
+  // A unique id to identify the overlay when it gets recycled.
+  const int id;
+
+  // Holds a reference to the native window. That is, an `ANativeWindow`,
+  // which is the C counterpart of the `android.view.Surface` object in Java.
+  const fml::RefPtr<AndroidNativeWindow> window;
+};
+
+//------------------------------------------------------------------------------
+/// An Overlay layer represents an `android.view.View` in the C side.
+///
+/// The `id` is used to uniquely identify the layer and recycle it between
+/// frames.
+///
 struct OverlayLayer {
   OverlayLayer(int id,
                std::unique_ptr<AndroidSurface> android_surface,
@@ -18,15 +41,20 @@ struct OverlayLayer {
 
   ~OverlayLayer();
 
+  // A unique id to identify the overlay when it gets recycled.
   const int id;
 
+  // A GPU surface.
   const std::unique_ptr<AndroidSurface> android_surface;
 
+  // A GPU surface. This may change when the overlay is recycled.
   std::unique_ptr<Surface> surface;
 
   // The `GrContext` that is currently used by the overlay surfaces.
   // We track this to know when the GrContext for the Flutter app has changed
   // so we can update the overlay with the new context.
+  //
+  // This may change when the overlay is recycled.
   GrContext* gr_context;
 };
 
