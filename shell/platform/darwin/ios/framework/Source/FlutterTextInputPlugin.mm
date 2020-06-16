@@ -549,7 +549,11 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
                            toPosition:(UITextPosition*)toPosition {
   NSUInteger fromIndex = ((FlutterTextPosition*)fromPosition).index;
   NSUInteger toIndex = ((FlutterTextPosition*)toPosition).index;
-  return [FlutterTextRange rangeWithNSRange:NSMakeRange(fromIndex, toIndex - fromIndex)];
+  if (toIndex >= fromIndex) {
+    return [FlutterTextRange rangeWithNSRange:NSMakeRange(fromIndex, toIndex - fromIndex)];
+  } else {
+    return [FlutterTextRange rangeWithNSRange:NSMakeRange(toIndex, 0)];
+  }
 }
 
 - (NSUInteger)decrementOffsetPosition:(NSUInteger)position {
