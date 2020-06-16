@@ -241,11 +241,11 @@ FLUTTER_ASSERT_ARC
   FlutterTextPosition* fromPosition = [[FlutterTextPosition alloc] initWithIndex:2];
   FlutterTextPosition* toPosition = [[FlutterTextPosition alloc] initWithIndex:0];
 
-  FlutterTextRange* flutterRange = [inputView textRangeFromPosition:fromPosition
-                                                         toPosition:toPosition];
+  FlutterTextRange* flutterRange = (FlutterTextRange*)[inputView textRangeFromPosition:fromPosition
+                                                                            toPosition:toPosition];
   NSRange range = flutterRange.range;
 
-  XCTAssertLessThan(range.location, 0);
-  XCTAssertLessThan(range.length, 2);
+  XCTAssertEqual(range.location, 0);
+  XCTAssertEqual(range.length, 2);
 }
 @end
