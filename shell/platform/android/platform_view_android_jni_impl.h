@@ -66,6 +66,10 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
 
   void FlutterViewEndFrame() override;
 
+  std::unique_ptr<std::vector<std::string>>
+  FlutterViewComputePlatformResolvedLocale(
+      std::vector<std::string> supported_locales_data) override;
+
  private:
   // Reference to FlutterJNI object.
   const fml::jni::JavaObjectWeakGlobalRef java_object_;
