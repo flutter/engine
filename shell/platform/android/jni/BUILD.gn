@@ -22,8 +22,9 @@ source_set("jni") {
 }
 
 source_set("mock_jni") {
+  testonly = true
+
   sources = [
-    "mock_jni.cc",
     "mock_jni.h",
   ]
 
@@ -31,7 +32,6 @@ source_set("mock_jni") {
 
   deps = [
     ":jni",
-    "//third_party/skia",
   ]
 }
 
@@ -47,10 +47,10 @@ executable("jni_unittests") {
   ]
 
   deps = [
-    ":jni",
     ":jni_fixtures",
     ":mock_jni",
     "//flutter/testing",
     "//flutter/testing:dart",
+    "//flutter/testing:skia",
   ]
 }

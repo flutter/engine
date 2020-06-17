@@ -41,10 +41,12 @@ executable("android_external_view_embedder_unittests") {
   deps = [
     ":external_view_embedder",
     ":external_view_embedder_fixtures",
+    "//flutter/shell/gpu:gpu_surface_gl",
     "//flutter/shell/platform/android/jni:mock_jni",
     "//flutter/shell/platform/android/surface:mock_surface",
     "//flutter/testing",
     "//flutter/testing:dart",
     "//flutter/testing:skia",
+    "//third_party/googletest:gmock",
   ]
 }

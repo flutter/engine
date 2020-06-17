@@ -35,16 +35,23 @@ source_set("native_window") {
 }
 
 source_set("mock_surface") {
+  testonly = true
+
   sources = [
     "mock_android_surface.cc",
     "mock_android_surface.h",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [
+    "//flutter:config",
+    "//third_party/googletest:gmock_config",
+  ]
 
   deps = [
     ":surface",
     "//flutter/shell/gpu:gpu_surface_gl",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
     "//third_party/skia",
   ]
 }

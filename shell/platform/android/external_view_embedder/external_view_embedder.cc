@@ -240,6 +240,7 @@ void AndroidExternalViewEmbedder::BeginFrame(SkISize frame_size,
   Reset();
   frame_size_ = frame_size;
   device_pixel_ratio_ = device_pixel_ratio;
+  jni_facade_->FlutterViewBeginFrame();
 }
 
 // |ExternalViewEmbedder|
@@ -254,6 +255,7 @@ void AndroidExternalViewEmbedder::EndFrame(
     raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
     should_run_rasterizer_on_platform_thread_ = false;
   }
+  jni_facade_->FlutterViewEndFrame();
 }
 
 }  // namespace flutter

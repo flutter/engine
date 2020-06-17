@@ -7,6 +7,7 @@
 
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
+#include "gmock/gmock.h"
 
 namespace flutter {
 
@@ -17,30 +18,25 @@ namespace flutter {
 class MockAndroidSurface final : public GPUSurfaceGLDelegate,
                                  public AndroidSurface {
  public:
-  MockAndroidSurface(int id);
+  MOCK_METHOD(bool, IsValid, (), (const, override));
 
-  ~MockAndroidSurface() override;
+  MOCK_METHOD(void, TeardownOnScreenContext, (), (override));
 
-  // |AndroidSurface|
-  bool IsValid() const override;
+  MOCK_METHOD(std::unique_ptr<Surface>,
+              CreateGPUSurface,
+              (GrContext * gr_context),
+              (override));
 
-  // |AndroidSurface|
-  void TeardownOnScreenContext() override;
+  MOCK_METHOD(bool, OnScreenSurfaceResize, (const SkISize& size), (override));
 
-  // |AndroidSurface|
-  std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context) override;
+  MOCK_METHOD(bool, ResourceContextMakeCurrent, (), (override));
 
-  // |AndroidSurface|
-  bool OnScreenSurfaceResize(const SkISize& size) override;
+  MOCK_METHOD(bool, ResourceContextClearCurrent, (), (override));
 
-  // |AndroidSurface|
-  bool ResourceContextMakeCurrent() override;
-
-  // |AndroidSurface|
-  bool ResourceContextClearCurrent() override;
-
-  // |AndroidSurface|
-  bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) override;
+  MOCK_METHOD(bool,
+              SetNativeWindow,
+              (fml::RefPtr<AndroidNativeWindow> window),
+              (override));
 
   // |GPUSurfaceGLDelegate|
   std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
@@ -56,12 +52,6 @@ class MockAndroidSurface final : public GPUSurfaceGLDelegate,
 
   // |GPUSurfaceGLDelegate|
   ExternalViewEmbedder* GetExternalViewEmbedder() override;
-
-  // Used in unit tests.
-  int GetId() const;
-
- private:
-  int id_;
 };
 
 }  // namespace flutter

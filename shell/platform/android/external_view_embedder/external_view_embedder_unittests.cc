@@ -5,14 +5,22 @@
 #include "flutter/fml/raster_thread_merger.h"
 #include "flutter/fml/thread.h"
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
+#include "flutter/shell/platform/android/jni/mock_jni.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
 namespace testing {
 
-TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
-  auto embedder = new AndroidExternalViewEmbedder(nullptr, nullptr, nullptr);
+using ::testing::Mock;
 
+TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
+  auto mock_jni = std::make_shared<MockJNI>();
+
+  EXPECT_CALL(*mock_jni, FlutterViewBeginFrame());
+
+  auto embedder =
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
   embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0);
 
   embedder->PrerollCompositeEmbeddedView(
@@ -26,8 +34,28 @@ TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
   ASSERT_EQ(SkISize::Make(10, 20), canvases[1]->getBaseLayerSize());
 }
 
+TEST(AndroidExternalViewEmbedder, GetCurrentCanvases__CompositeOrder) {
+  auto mock_jni = std::make_shared<MockJNI>();
+  EXPECT_CALL(*mock_jni, FlutterViewBeginFrame());
+
+  auto embedder =
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
+  embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0);
+
+  embedder->PrerollCompositeEmbeddedView(
+      0, std::make_unique<EmbeddedViewParams>());
+  embedder->PrerollCompositeEmbeddedView(
+      1, std::make_unique<EmbeddedViewParams>());
+
+  auto canvases = embedder->GetCurrentCanvases();
+  ASSERT_EQ(2UL, canvases.size());
+  ASSERT_EQ(embedder->CompositeEmbeddedView(0), canvases[0]);
+  ASSERT_EQ(embedder->CompositeEmbeddedView(1), canvases[1]);
+}
+
 TEST(AndroidExternalViewEmbedder, CompositeEmbeddedView) {
-  auto embedder = new AndroidExternalViewEmbedder(nullptr, nullptr, nullptr);
+  auto embedder =
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, nullptr, nullptr);
 
   ASSERT_EQ(nullptr, embedder->CompositeEmbeddedView(0));
   embedder->PrerollCompositeEmbeddedView(
@@ -41,7 +69,8 @@ TEST(AndroidExternalViewEmbedder, CompositeEmbeddedView) {
 }
 
 TEST(AndroidExternalViewEmbedder, CancelFrame) {
-  auto embedder = new AndroidExternalViewEmbedder(nullptr, nullptr, nullptr);
+  auto embedder =
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, nullptr, nullptr);
 
   embedder->PrerollCompositeEmbeddedView(
       0, std::make_unique<EmbeddedViewParams>());
@@ -52,7 +81,12 @@ TEST(AndroidExternalViewEmbedder, CancelFrame) {
 }
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
-  auto embedder = new AndroidExternalViewEmbedder(nullptr, nullptr, nullptr);
+  auto mock_jni = std::make_shared<MockJNI>();
+  EXPECT_CALL(*mock_jni, FlutterViewBeginFrame());
+  EXPECT_CALL(*mock_jni, FlutterViewEndFrame());
+
+  auto embedder =
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
   auto platform_thread = new fml::Thread("platform");
   auto rasterizer_thread = new fml::Thread("rasterizer");
   auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
@@ -84,7 +118,11 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
 }
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
-  auto embedder = new AndroidExternalViewEmbedder(nullptr, nullptr, nullptr);
+  auto mock_jni = std::make_shared<MockJNI>();
+  EXPECT_CALL(*mock_jni, FlutterViewEndFrame());
+
+  auto embedder =
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
   auto platform_thread = new fml::Thread("platform");
   auto rasterizer_thread = new fml::Thread("rasterizer");
   auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
@@ -103,7 +141,11 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
 }
 
 TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
-  auto embedder = new AndroidExternalViewEmbedder(nullptr, nullptr, nullptr);
+  auto mock_jni = std::make_shared<MockJNI>();
+  EXPECT_CALL(*mock_jni, FlutterViewBeginFrame());
+
+  auto embedder =
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
   embedder->BeginFrame(SkISize::Make(100, 100), nullptr, 1.5);
 
   auto view_params = std::make_unique<EmbeddedViewParams>();
@@ -116,7 +158,11 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
 }
 
 TEST(AndroidExternalViewEmbedder, PlatformViewRect__ChangedParams) {
-  auto embedder = new AndroidExternalViewEmbedder(nullptr, nullptr, nullptr);
+  auto mock_jni = std::make_shared<MockJNI>();
+  EXPECT_CALL(*mock_jni, FlutterViewBeginFrame());
+
+  auto embedder =
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
   embedder->BeginFrame(SkISize::Make(100, 100), nullptr, 1.5);
 
   auto view_id = 0;
