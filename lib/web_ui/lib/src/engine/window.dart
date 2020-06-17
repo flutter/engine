@@ -13,16 +13,19 @@ const bool _debugPrintPlatformMessages = false;
 /// This may be overridden in tests, for example, to pump fake frames.
 ui.VoidCallback? scheduleFrameCallback;
 
+typedef _UrlStrategyListener = void Function(JsUrlStrategy);
+
+// KEEP THIS JS NAME IN SYNC WITH flutter_web_plugins.
+// Find it at: `lib/src/js_url_strategy.dart`.
+@JS('_flutter_web_set_location_strategy')
+/// A JavaScript hook to customize the URL strategy of a Flutter app.
+external set _onUrlStrategy(_UrlStrategyListener? listener);
+
 /// The Web implementation of [ui.Window].
 class EngineWindow extends ui.Window {
   EngineWindow() {
     _addBrightnessMediaQueryListener();
-    js.context['_flutter_web_set_location_strategy'] = (LocationStrategy strategy) {
-      locationStrategy = strategy;
-    };
-    registerHotRestartListener(() {
-      js.context['_flutter_web_set_location_strategy'] = null;
-    });
+    _addUrlStrategyListener();
   }
 
   @override
@@ -173,24 +176,24 @@ class EngineWindow extends ui.Window {
     if (_browserHistory is MultiEntriesBrowserHistory) {
       return;
     }
-    final LocationStrategy? strategy = _browserHistory.locationStrategy;
+    final JsUrlStrategy? strategy = _browserHistory.urlStrategy;
     if (strategy != null)
-      await _browserHistory.setLocationStrategy(null);
+      await _browserHistory.setUrlStrategy(null);
     _browserHistory = MultiEntriesBrowserHistory();
     if (strategy != null)
-      await _browserHistory.setLocationStrategy(strategy);
+      await _browserHistory.setUrlStrategy(strategy);
   }
 
   Future<void> _useSingleEntryBrowserHistory() async {
     if (_browserHistory is SingleEntryBrowserHistory) {
       return;
     }
-    final LocationStrategy? strategy = _browserHistory.locationStrategy;
+    final JsUrlStrategy? strategy = _browserHistory.urlStrategy;
     if (strategy != null)
-      await _browserHistory.setLocationStrategy(null);
+      await _browserHistory.setUrlStrategy(null);
     _browserHistory = SingleEntryBrowserHistory();
     if (strategy != null)
-      await _browserHistory.setLocationStrategy(strategy);
+      await _browserHistory.setUrlStrategy(strategy);
   }
 
   /// Simulates clicking the browser's back button.
@@ -198,12 +201,12 @@ class EngineWindow extends ui.Window {
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.
   ///
-  /// The reason for the lazy initialization is to give enough time for the app to set [locationStrategy]
+  /// The reason for the lazy initialization is to give enough time for the app to set [urlStrategy]
   /// in `lib/src/ui/initialization.dart`.
   String? _defaultRouteName;
 
   @override
-  String get defaultRouteName => _defaultRouteName ??= _browserHistory.currentPath;
+  String get defaultRouteName => _defaultRouteName ??= urlStrategy?.getPath() ?? '/';
 
   @override
   void scheduleFrame() {
@@ -214,17 +217,30 @@ class EngineWindow extends ui.Window {
     scheduleFrameCallback!();
   }
 
+  @visibleForTesting
+  JsUrlStrategy? urlStrategy = ui.debugEmulateFlutterTesterEnvironment
+      ? null
+      : convertToJsUrlStrategy(const HashUrlStrategy());
+
   /// Change the strategy to use for handling browser history location.
   /// Setting this member will automatically update [_browserHistory].
   ///
   /// By setting this to null, the browser history will be disabled.
-  set locationStrategy(LocationStrategy? strategy) {
-    _browserHistory.setLocationStrategy(strategy);
+  Future<void> setUrlStrategy(JsUrlStrategy? strategy) {
+    _isHistoryInitialized = true;
+    urlStrategy = strategy;
+    return _browserHistory.setUrlStrategy(strategy);
   }
 
-  /// Returns the currently active location strategy.
+  /// Given a [UrlStrategy] instance, converts it to [JsUrlStrategy] and sets it
+  /// on [_browserHistory].
+  ///
+  /// This is only a convenience for testing. Apps will use JS-interop to set
+  /// their [UrlStrategy].
   @visibleForTesting
-  LocationStrategy? get locationStrategy => _browserHistory.locationStrategy;
+  Future<void> debugConvertAndSetUrlStrategy(UrlStrategy? strategy) {
+    return setUrlStrategy(convertToJsUrlStrategy(strategy));
+  }
 
   @override
   ui.VoidCallback? get onTextScaleFactorChanged => _onTextScaleFactorChanged;
@@ -646,27 +662,11 @@ class EngineWindow extends ui.Window {
         return;
 
       case 'flutter/navigation':
-        const MethodCodec codec = JSONMethodCodec();
-        final MethodCall decoded = codec.decodeMethodCall(data);
-        final Map<String, dynamic> message = decoded.arguments as Map<String, dynamic>;
-        switch (decoded.method) {
-          case 'routeUpdated':
-            _useSingleEntryBrowserHistory().then((void data) {
-              _browserHistory.setRouteName(message['routeName']);
-              _replyToPlatformMessage(
-                  callback, codec.encodeSuccessEnvelope(true));
-            });
-            break;
-          case 'routeInformationUpdated':
-            assert(_browserHistory is MultiEntriesBrowserHistory);
-            _browserHistory.setRouteName(
-              message['location'],
-              state: message['state'],
-            );
-            _replyToPlatformMessage(
-              callback, codec.encodeSuccessEnvelope(true));
-            break;
-        }
+        _handleNavigationMessage(data, callback).then((handled) {
+          if (!handled && callback != null) {
+            callback(null);
+          }
+        });
         // As soon as Flutter starts taking control of the app navigation, we
         // should reset [_defaultRouteName] to "/" so it doesn't have any
         // further effect after this point.
@@ -683,6 +683,46 @@ class EngineWindow extends ui.Window {
     // implemented. Look at [MethodChannel.invokeMethod] to see how [null] is
     // handled.
     _replyToPlatformMessage(callback, null);
+  }
+
+  bool _isHistoryInitialized = false;
+
+  @visibleForTesting
+  Future<void> debugResetHistory() async {
+    _isHistoryInitialized = false;
+    urlStrategy = null;
+    await _browserHistory.setUrlStrategy(null);
+    _browserHistory = MultiEntriesBrowserHistory();
+  }
+
+  Future<bool> _handleNavigationMessage(
+    ByteData? data,
+    ui.PlatformMessageResponseCallback? callback,
+  ) async {
+    const MethodCodec codec = JSONMethodCodec();
+    final MethodCall decoded = codec.decodeMethodCall(data);
+    final Map<String, dynamic> arguments = decoded.arguments;
+
+    if (!_isHistoryInitialized) {
+      await setUrlStrategy(urlStrategy);
+    }
+
+    switch (decoded.method) {
+      case 'routeUpdated':
+        await _useSingleEntryBrowserHistory();
+        _browserHistory.setRouteName(arguments['routeName']);
+        _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+        return true;
+      case 'routeInformationUpdated':
+        assert(_browserHistory is MultiEntriesBrowserHistory);
+        _browserHistory.setRouteName(
+          arguments['location'],
+          state: arguments['state'],
+        );
+        _replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+        return true;
+    }
+    return false;
   }
 
   int _getHapticFeedbackDuration(String? type) {
@@ -753,6 +793,16 @@ class EngineWindow extends ui.Window {
     _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
     registerHotRestartListener(() {
       _removeBrightnessMediaQueryListener();
+    });
+  }
+
+  void _addUrlStrategyListener() {
+    // TODO(mdebbar): Do we need "allowInterop" here?
+    _onUrlStrategy = allowInterop((JsUrlStrategy strategy) {
+      setUrlStrategy(strategy);
+    });
+    registerHotRestartListener(() {
+      _onUrlStrategy = null;
     });
   }
 

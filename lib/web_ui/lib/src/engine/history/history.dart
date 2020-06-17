@@ -25,21 +25,21 @@ abstract class BrowserHistory {
   late ui.VoidCallback _unsubscribe;
 
   /// The strategy to interact with html browser history.
-  LocationStrategy? get locationStrategy => _locationStrategy;
-  LocationStrategy? _locationStrategy;
+  JsUrlStrategy? get urlStrategy => _urlStrategy;
+  JsUrlStrategy? _urlStrategy;
   /// Updates the strategy.
   ///
   /// This method will also remove any previous modifications to the html
   /// browser history and start anew.
-  Future<void> setLocationStrategy(LocationStrategy? strategy) async {
-    if (strategy != _locationStrategy) {
-      await _tearoffStrategy(_locationStrategy);
-      _locationStrategy = strategy;
-      await _setupStrategy(_locationStrategy);
+  Future<void> setUrlStrategy(JsUrlStrategy? strategy) async {
+    if (strategy != _urlStrategy) {
+      await _tearoffStrategy(_urlStrategy);
+      _urlStrategy = strategy;
+      await _setupStrategy(_urlStrategy);
     }
   }
 
-  Future<void> _setupStrategy(LocationStrategy? strategy) async {
+  Future<void> _setupStrategy(JsUrlStrategy? strategy) async {
     if (strategy == null) {
       return;
     }
@@ -47,7 +47,7 @@ abstract class BrowserHistory {
     await setup();
   }
 
-  Future<void> _tearoffStrategy(LocationStrategy? strategy) async {
+  Future<void> _tearoffStrategy(JsUrlStrategy? strategy) async {
     if (strategy == null) {
       return;
     }
@@ -58,28 +58,28 @@ abstract class BrowserHistory {
 
   /// Exit this application and return to the previous page.
   Future<void> exit() async {
-    if (_locationStrategy != null) {
-      await _tearoffStrategy(_locationStrategy);
+    if (_urlStrategy != null) {
+      await _tearoffStrategy(_urlStrategy);
       // Now the history should be in the original state, back one more time to
       // exit the application.
-      await _locationStrategy!.back();
-      _locationStrategy = null;
+      await _urlStrategy!.go(-1);
+      _urlStrategy = null;
     }
   }
 
   /// This method does the same thing as the browser back button.
   Future<void> back() {
-    if (locationStrategy != null) {
-      return locationStrategy!.back();
+    if (_urlStrategy != null) {
+      return _urlStrategy!.go(-1);
     }
     return Future<void>.value();
   }
 
   /// The path of the current location of the user's browser.
-  String get currentPath => locationStrategy?.path ?? '/';
+  String get currentPath => urlStrategy?.getPath() ?? '/';
 
   /// The state of the current location of the user's browser.
-  dynamic get currentState => locationStrategy?.state;
+  dynamic get currentState => urlStrategy?.getState();
 
   /// Update the url with the given [routeName] and [state].
   void setRouteName(String? routeName, {dynamic? state});
@@ -134,10 +134,10 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
   @override
   void setRouteName(String? routeName, {dynamic? state}) {
-    if (locationStrategy != null) {
+    if (urlStrategy != null) {
       assert(routeName != null);
       _lastSeenSerialCount += 1;
-      locationStrategy!.pushState(
+      urlStrategy!.pushState(
         _tagWithSerialCount(state, _lastSeenSerialCount),
         'flutter',
         routeName!,
@@ -147,13 +147,13 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
   @override
   void onPopState(covariant html.PopStateEvent event) {
-    assert(locationStrategy != null);
+    assert(urlStrategy != null);
     // May be a result of direct url access while the flutter application is
     // already running.
     if (!_hasSerialCount(event.state)) {
       // In this case we assume this will be the next history entry from the
       // last seen entry.
-      locationStrategy!.replaceState(
+      urlStrategy!.replaceState(
         _tagWithSerialCount(event.state, _lastSeenSerialCount + 1),
         'flutter',
         currentPath);
@@ -176,7 +176,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
   @override
   Future<void> setup() {
     if (!_hasSerialCount(currentState)) {
-      locationStrategy!.replaceState(
+      urlStrategy!.replaceState(
         _tagWithSerialCount(currentState, 0),
         'flutter',
         currentPath
@@ -193,11 +193,11 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     assert(_hasSerialCount(currentState));
     int backCount = _currentSerialCount;
     if (backCount > 0) {
-      await locationStrategy!.back(count: backCount);
+      await urlStrategy!.go(-backCount);
     }
     // Unwrap state.
     assert(_hasSerialCount(currentState) && _currentSerialCount == 0);
-    locationStrategy!.replaceState(
+    urlStrategy!.replaceState(
       currentState['state'],
       'flutter',
       currentPath,
@@ -251,8 +251,8 @@ class SingleEntryBrowserHistory extends BrowserHistory {
 
   @override
   void setRouteName(String? routeName, {dynamic? state}) {
-    if (locationStrategy != null) {
-      _setupFlutterEntry(locationStrategy!, replace: true, path: routeName);
+    if (urlStrategy != null) {
+      _setupFlutterEntry(urlStrategy!, replace: true, path: routeName);
     }
   }
 
@@ -260,7 +260,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
   @override
   void onPopState(covariant html.PopStateEvent event) {
     if (_isOriginEntry(event.state)) {
-      _setupFlutterEntry(_locationStrategy!);
+      _setupFlutterEntry(_urlStrategy!);
 
       // 2. Send a 'popRoute' platform message so the app can handle it accordingly.
       if (window._onPlatformMessage != null) {
@@ -302,14 +302,14 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       // 2. Then we remove the new entry.
       // This will take us back to our "flutter" entry and it causes a new
       // popstate event that will be handled in the "else if" section above.
-      _locationStrategy!.back();
+      _urlStrategy!.go(-1);
     }
   }
 
   /// This method should be called when the Origin Entry is active. It just
   /// replaces the state of the entry so that we can recognize it later using
   /// [_isOriginEntry] inside [_popStateListener].
-  void _setupOriginEntry(LocationStrategy strategy) {
+  void _setupOriginEntry(JsUrlStrategy strategy) {
     assert(strategy != null); // ignore: unnecessary_null_comparison
     strategy.replaceState(_wrapOriginState(currentState), 'origin', '');
   }
@@ -317,7 +317,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
   /// This method is used manipulate the Flutter Entry which is always the
   /// active entry while the Flutter app is running.
   void _setupFlutterEntry(
-    LocationStrategy strategy, {
+    JsUrlStrategy strategy, {
     bool replace = false,
     String? path,
   }) {
@@ -339,19 +339,19 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       // the "origin" and "flutter" entries, we can safely assume they are
       // already setup.
     } else {
-      _setupOriginEntry(locationStrategy!);
-      _setupFlutterEntry(locationStrategy!, replace: false, path: path);
+      _setupOriginEntry(urlStrategy!);
+      _setupFlutterEntry(urlStrategy!, replace: false, path: path);
     }
     return Future<void>.value();
   }
 
   @override
   Future<void> tearDown() async {
-    if (locationStrategy != null) {
+    if (urlStrategy != null) {
       // We need to remove the flutter entry that we pushed in setup.
-      await locationStrategy!.back();
+      await urlStrategy!.go(-1);
       // Restores original state.
-      locationStrategy!.replaceState(_unwrapOriginState(currentState), 'flutter', currentPath);
+      urlStrategy!.replaceState(_unwrapOriginState(currentState), 'flutter', currentPath);
     }
   }
 }
