@@ -31,107 +31,72 @@ void _updateWindowMetrics(
   double systemGestureInsetBottom,
   double systemGestureInsetLeft,
 ) {
-  assert(PlatformDispatcher.instance._screens[screenId] != null);
-  final ViewConfiguration previousConfiguration =
-      PlatformDispatcher.instance._viewConfigurations[id] ?? ViewConfiguration(screen: PlatformDispatcher.instance._screens[screenId]);
-  PlatformDispatcher.instance._viewConfigurations[id] = previousConfiguration.copyWith(
-    screen: PlatformDispatcher.instance._screens[screenId],
-    geometry: Rect.fromLTWH(left, top, width, height),
-    depth: depth,
-    viewPadding: WindowPadding._(
-      top: viewPaddingTop,
-      right: viewPaddingRight,
-      bottom: viewPaddingBottom,
-      left: viewPaddingLeft,
-    ),
-    viewInsets: WindowPadding._(
-      top: viewInsetTop,
-      right: viewInsetRight,
-      bottom: viewInsetBottom,
-      left: viewInsetLeft,
-    ),
-    padding: WindowPadding._(
-      top: math.max(0.0, viewPaddingTop - viewInsetTop),
-      right: math.max(0.0, viewPaddingRight - viewInsetRight),
-      bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
-      left: math.max(0.0, viewPaddingLeft - viewInsetLeft),
-    ),
-    systemGestureInsets: WindowPadding._(
-      top: math.max(0.0, systemGestureInsetTop),
-      right: math.max(0.0, systemGestureInsetRight),
-      bottom: math.max(0.0, systemGestureInsetBottom),
-      left: math.max(0.0, systemGestureInsetLeft),
-    ),
-  );
-  if (!PlatformDispatcher.instance._views.containsKey(id)) {
-    PlatformDispatcher.instance._views[id] = FlutterWindow._(windowId: id, platformDispatcher: PlatformDispatcher.instance);
-  }
-  _invoke(
-    PlatformDispatcher.instance.onMetricsChanged,
-    PlatformDispatcher.instance._onMetricsChangedZone,
+  PlatformDispatcher.instance._updateViewMetrics(
+    id,
+    screenId,
+    left,
+    top,
+    width,
+    height,
+    depth,
+    viewPaddingTop,
+    viewPaddingRight,
+    viewPaddingBottom,
+    viewPaddingLeft,
+    viewInsetTop,
+    viewInsetRight,
+    viewInsetBottom,
+    viewInsetLeft,
+    systemGestureInsetTop,
+    systemGestureInsetRight,
+    systemGestureInsetBottom,
+    systemGestureInsetLeft,
   );
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateScreenMetrics(
-  Object/*!*/ id,
-  String/*!*/ screenName,
-  double/*!*/ left,
-  double/*!*/ top,
-  double/*!*/ width,
-  double/*!*/ height,
-  double/*!*/ devicePixelRatio,
-  double/*!*/ viewPaddingTop,
-  double/*!*/ viewPaddingRight,
-  double/*!*/ viewPaddingBottom,
-  double/*!*/ viewPaddingLeft,
-  double/*!*/ viewInsetTop,
-  double/*!*/ viewInsetRight,
-  double/*!*/ viewInsetBottom,
-  double/*!*/ viewInsetLeft,
-  double/*!*/ systemGestureInsetTop,
-  double/*!*/ systemGestureInsetRight,
-  double/*!*/ systemGestureInsetBottom,
-  double/*!*/ systemGestureInsetLeft,
+  Object id,
+  String screenName,
+  double left,
+  double top,
+  double width,
+  double height,
+  double devicePixelRatio,
+  double viewPaddingTop,
+  double viewPaddingRight,
+  double viewPaddingBottom,
+  double viewPaddingLeft,
+  double viewInsetTop,
+  double viewInsetRight,
+  double viewInsetBottom,
+  double viewInsetLeft,
+  double systemGestureInsetTop,
+  double systemGestureInsetRight,
+  double systemGestureInsetBottom,
+  double systemGestureInsetLeft,
 ) {
-  final ScreenConfiguration previousConfiguration =
-      PlatformDispatcher.instance._screenConfigurations[id] ?? const ScreenConfiguration();
-  PlatformDispatcher.instance._screenConfigurations[id] = previousConfiguration.copyWith(
-    screenName: screenName,
-    geometry: Rect.fromLTWH(left, top, width, height),
-    devicePixelRatio: devicePixelRatio,
-    viewPadding: WindowPadding._(
-      top: viewPaddingTop,
-      right: viewPaddingRight,
-      bottom: viewPaddingBottom,
-      left: viewPaddingLeft,
-    ),
-    viewInsets: WindowPadding._(
-      top: viewInsetTop,
-      right: viewInsetRight,
-      bottom: viewInsetBottom,
-      left: viewInsetLeft,
-    ),
-    padding: WindowPadding._(
-      top: math.max(0.0, viewPaddingTop - viewInsetTop),
-      right: math.max(0.0, viewPaddingRight - viewInsetRight),
-      bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
-      left: math.max(0.0, viewPaddingLeft - viewInsetLeft),
-    ),
-    systemGestureInsets: WindowPadding._(
-      top: math.max(0.0, systemGestureInsetTop),
-      right: math.max(0.0, systemGestureInsetRight),
-      bottom: math.max(0.0, systemGestureInsetBottom),
-      left: math.max(0.0, systemGestureInsetLeft),
-    ),
-  );
-  if (!PlatformDispatcher.instance._screens.containsKey(id)) {
-    PlatformDispatcher.instance._screens[id] = Screen._(screenId: id, platformDispatcher: PlatformDispatcher.instance);
-  }
-  _invoke(
-    PlatformDispatcher.instance.onMetricsChanged,
-    PlatformDispatcher.instance._onMetricsChangedZone,
+  PlatformDispatcher.instance._updateScreenMetrics(
+    id,
+    screenName,
+    left,
+    top,
+    width,
+    height,
+    devicePixelRatio,
+    viewPaddingTop,
+    viewPaddingRight,
+    viewPaddingBottom,
+    viewPaddingLeft,
+    viewInsetTop,
+    viewInsetRight,
+    viewInsetBottom,
+    viewInsetLeft,
+    systemGestureInsetTop,
+    systemGestureInsetRight,
+    systemGestureInsetBottom,
+    systemGestureInsetLeft,
   );
 }
 
@@ -151,38 +116,7 @@ _LocaleClosure? _getLocaleClosure() => _localeClosure;
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateLocales(List<String> locales) {
-  const int stringsPerLocale = 4;
-  final int numLocales = locales.length ~/ stringsPerLocale;
-  final PlatformConfiguration previousConfiguration = PlatformDispatcher.instance.configuration;
-  final List<Locale> newLocales = <Locale>[];
-  bool localesDiffer = numLocales != previousConfiguration.locales.length;
-  for (int localeIndex = 0; localeIndex < numLocales; localeIndex++) {
-    final String countryCode = locales[localeIndex * stringsPerLocale + 1];
-    final String scriptCode = locales[localeIndex * stringsPerLocale + 2];
-
-    newLocales.add(Locale.fromSubtags(
-      languageCode: locales[localeIndex * stringsPerLocale],
-      countryCode: countryCode.isEmpty ? null : countryCode,
-      scriptCode: scriptCode.isEmpty ? null : scriptCode,
-    ));
-    if (!localesDiffer && newLocales.last != previousConfiguration.locales[localeIndex]) {
-      localesDiffer = true;
-    }
-  }
-  if (!localesDiffer) {
-    return;
-  }
-  PlatformDispatcher.instance._configuration = previousConfiguration.copyWith(
-    locales: newLocales,
-  );
-  _invoke(
-    PlatformDispatcher.instance.onPlatformConfigurationChanged,
-    PlatformDispatcher.instance._onPlatformConfigurationChangedZone,
-  );
-  _invoke(
-    PlatformDispatcher.instance.onLocaleChanged,
-    PlatformDispatcher.instance._onLocaleChangedZone,
-  );
+  PlatformDispatcher.instance._updateLocales(locales);
 }
 
 @pragma('vm:entry-point')
@@ -192,115 +126,32 @@ void _updateUserSettingsData(String jsonData) {
   if (data.isEmpty) {
     return;
   }
-
-  final double textScaleFactor = (data['textScaleFactor'] as num).toDouble();
-  final bool alwaysUse24HourFormat = data['alwaysUse24HourFormat'] as bool;
-  final Brightness platformBrightness =
-      data['platformBrightness'] as String == 'dark' ? Brightness.dark : Brightness.light;
-  final PlatformConfiguration previousConfiguration = PlatformDispatcher.instance.configuration;
-  final bool platformBrightnessChanged =
-      previousConfiguration.platformBrightness != platformBrightness;
-  final bool textScaleFactorChanged = previousConfiguration.textScaleFactor != textScaleFactor;
-  final bool alwaysUse24HourFormatChanged =
-      previousConfiguration.alwaysUse24HourFormat != alwaysUse24HourFormat;
-  if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged) {
-    return;
-  }
-  PlatformDispatcher.instance._configuration = previousConfiguration.copyWith(
-    textScaleFactor: textScaleFactor,
-    alwaysUse24HourFormat: alwaysUse24HourFormat,
-    platformBrightness: platformBrightness,
-  );
-  _invoke(
-    PlatformDispatcher.instance.onPlatformConfigurationChanged,
-    PlatformDispatcher.instance._onPlatformConfigurationChangedZone,
-  );
-  if (textScaleFactorChanged) {
-    _invoke(
-      PlatformDispatcher.instance.onTextScaleFactorChanged,
-      PlatformDispatcher.instance._onTextScaleFactorChangedZone,
-    );
-  }
-  if (platformBrightnessChanged) {
-    _invoke(
-      PlatformDispatcher.instance.onPlatformBrightnessChanged,
-      PlatformDispatcher.instance._onPlatformBrightnessChangedZone,
-    );
-  }
+  PlatformDispatcher.instance._updateUserSettingsData(data);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateLifecycleState(String state) {
-  // We do not update the state if the state has already been used to initialize
-  // the lifecycleState.
-  if (!PlatformDispatcher.instance._initialLifecycleStateAccessed)
-    PlatformDispatcher.instance._initialLifecycleState = state;
+  PlatformDispatcher.instance._updateLifecycleState(state);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateSemanticsEnabled(bool enabled) {
-  final PlatformConfiguration previousConfiguration = PlatformDispatcher.instance.configuration;
-  if (previousConfiguration.semanticsEnabled == enabled) {
-    return;
-  }
-  PlatformDispatcher.instance._configuration = previousConfiguration.copyWith(
-    semanticsEnabled: enabled,
-  );
-  _invoke(PlatformDispatcher.instance.onPlatformConfigurationChanged,
-      PlatformDispatcher.instance._onPlatformConfigurationChangedZone);
-  _invoke(PlatformDispatcher.instance.onSemanticsEnabledChanged,
-      PlatformDispatcher.instance._onSemanticsEnabledChangedZone);
+  PlatformDispatcher.instance._updateSemanticsEnabled(enabled);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateAccessibilityFeatures(int values) {
   final AccessibilityFeatures newFeatures = AccessibilityFeatures._(values);
-  final PlatformConfiguration previousConfiguration = PlatformDispatcher.instance.configuration;
-  if (newFeatures == previousConfiguration.accessibilityFeatures) {
-    return;
-  }
-  PlatformDispatcher.instance._configuration = previousConfiguration.copyWith(
-    accessibilityFeatures: newFeatures,
-  );
-  _invoke(
-    PlatformDispatcher.instance.onPlatformConfigurationChanged,
-    PlatformDispatcher.instance._onPlatformConfigurationChangedZone,
-  );
-  _invoke(
-    PlatformDispatcher.instance.onAccessibilityFeaturesChanged,
-    PlatformDispatcher.instance._onAccessibilityFeaturesChangedZone,
-  );
+  PlatformDispatcher.instance._updateAccessibilityFeatures(newFeatures);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _dispatchPlatformMessage(String name, ByteData? data, int responseId) {
-  if (name == ChannelBuffers.kControlChannelName) {
-    try {
-      channelBuffers.handleMessage(data!);
-    } catch (ex) {
-      _printDebug('Message to "$name" caused exception $ex');
-    } finally {
-      PlatformDispatcher.instance._respondToPlatformMessage(responseId, null);
-    }
-  } else if (PlatformDispatcher.instance.onPlatformMessage != null) {
-    _invoke3<String, ByteData?, PlatformMessageResponseCallback>(
-      PlatformDispatcher.instance.onPlatformMessage,
-      PlatformDispatcher.instance._onPlatformMessageZone,
-      name,
-      data,
-      (ByteData? responseData) {
-        PlatformDispatcher.instance._respondToPlatformMessage(responseId, responseData);
-      },
-    );
-  } else {
-    channelBuffers.push(name, data, (ByteData? responseData) {
-      PlatformDispatcher.instance._respondToPlatformMessage(responseId, responseData);
-    });
-  }
+  PlatformDispatcher.instance._dispatchPlatformMessage(name, data, responseId);
 }
 
 @pragma('vm:entry-point')
@@ -424,8 +275,8 @@ void _invoke1<A>(void callback(A a)?, Zone zone, A arg) {
 
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
 void _invoke3<A1, A2, A3>(
-  void callback(A1 a1, A2 a2, A3 a3) ?,
-  Zone  zone,
+  void callback(A1 a1, A2 a2, A3 a3)?,
+  Zone zone,
   A1 arg1,
   A2 arg2,
   A3 arg3,

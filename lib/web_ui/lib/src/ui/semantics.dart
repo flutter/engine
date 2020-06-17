@@ -610,7 +610,8 @@ class SemanticsFlag {
 /// An object that creates [SemanticsUpdate] objects.
 ///
 /// Once created, the [SemanticsUpdate] objects can be passed to
-/// [PlatformDispatcher.updateSemantics] to update the semantics conveyed to the user.
+/// [PlatformDispatcher.updateSemantics] to update the semantics conveyed to the
+/// user.
 class SemanticsUpdateBuilder {
   /// Creates an empty [SemanticsUpdateBuilder] object.
   SemanticsUpdateBuilder();
@@ -638,10 +639,10 @@ class SemanticsUpdateBuilder {
   ///
   /// The `actions` are a bit field of [SemanticsAction]s that can be undertaken
   /// by this node. If the user wishes to undertake one of these actions on this
-  /// node, the [PlatformDispatcher.onSemanticsAction] will be called with `id` and one of
-  /// the possible [SemanticsAction]s. Because the semantics tree is maintained
-  /// asynchronously, the [PlatformDispatcher.onSemanticsAction] callback might be called
-  /// with an action that is no longer possible.
+  /// node, the [PlatformDispatcher.onSemanticsAction] will be called with `id`
+  /// and one of the possible [SemanticsAction]s. Because the semantics tree is
+  /// maintained asynchronously, the [PlatformDispatcher.onSemanticsAction]
+  /// callback might be called with an action that is no longer possible.
   ///
   /// The `label` is a string that describes this node. The `value` property
   /// describes the current value of the node as a string. The `increasedValue`
@@ -734,8 +735,8 @@ class SemanticsUpdateBuilder {
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
-  /// The returned object can be passed to [PlatformDispatcher.updateSemantics] to actually
-  /// update the semantics retained by the system.
+  /// The returned object can be passed to [PlatformDispatcher.updateSemantics]
+  /// to actually update the semantics retained by the system.
   SemanticsUpdate build() {
     return SemanticsUpdate._(
       nodeUpdates: _nodeUpdates,

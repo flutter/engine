@@ -11,15 +11,7 @@ const bool/*!*/ _debugPrintPlatformMessages = false;
 /// The Web implementation of [ui.FlutterWindow].
 class EngineFlutterWindow extends ui.FlutterWindow {
   EngineFlutterWindow({Object windowId, this.platformDispatcher})
-    : _windowId = windowId {
-    _addBrightnessMediaQueryListener();
-    js.context['_flutter_web_set_location_strategy'] = (LocationStrategy strategy) {
-      locationStrategy = strategy;
-    };
-    registerHotRestartListener(() {
-      js.context['_flutter_web_set_location_strategy'] = null;
-    });
-  }
+    : _windowId = windowId;
 
   final Object _windowId;
   final ui.PlatformDispatcher platformDispatcher;
@@ -180,10 +172,6 @@ class EngineFlutterWindowView extends ui.FlutterWindowView {
   final Object _viewId;
 
   final ui.PlatformDispatcher platformDispatcher;
-
-  /// Returns the currently active location strategy.
-  @visibleForTesting
-  LocationStrategy get locationStrategy => _browserHistory.locationStrategy;
 
   @override
   ui.ViewConfiguration get viewConfiguration {

@@ -23,16 +23,16 @@ set strategy(TestLocationStrategy newStrategy) {
 
 void main() {
   test('window.defaultRouteName should not change', () {
-    window.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
+    EnginePlatformDispatcher.instance.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
     expect(window.defaultRouteName, '/initial');
 
     // Changing the URL in the address bar later shouldn't affect [window.defaultRouteName].
-    window.locationStrategy.replaceState(null, null, '/newpath');
+    EnginePlatformDispatcher.instance.locationStrategy.replaceState(null, null, '/newpath');
     expect(window.defaultRouteName, '/initial');
   });
 
   test('window.defaultRouteName should reset after navigation platform message', () {
-    window.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
+    EnginePlatformDispatcher.instance.locationStrategy = TestLocationStrategy.fromEntry(TestHistoryEntry('initial state', null, '/initial'));
     // Reading it multiple times should return the same value.
     expect(window.defaultRouteName, '/initial');
     expect(window.defaultRouteName, '/initial');
@@ -54,9 +54,9 @@ void main() {
     final testStrategy = TestLocationStrategy.fromEntry(
       TestHistoryEntry(null, null, '/'),
     );
-    window.locationStrategy = testStrategy;
+    EnginePlatformDispatcher.instance.locationStrategy = testStrategy;
 
-    expect(window.locationStrategy, testStrategy);
+    expect(EnginePlatformDispatcher.instance.locationStrategy, testStrategy);
     // A single listener should've been setup.
     expect(testStrategy.listeners, hasLength(1));
     // The initial entry should be there, plus another "flutter" entry.
@@ -67,7 +67,7 @@ void main() {
 
     // Now, let's disable location strategy and make sure things get cleaned up.
     expect(() => jsSetLocationStrategy(null), returnsNormally);
-    expect(window.locationStrategy, isNull);
+    expect(EnginePlatformDispatcher.instance.locationStrategy, isNull);
 
     // The listener is removed asynchronously.
     await Future<void>.delayed(const Duration(milliseconds: 10));

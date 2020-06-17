@@ -45,7 +45,7 @@ Future<developer.ServiceExtensionResponse> _scheduleFrame(
 void _setupHooks() {  // ignore: unused_element
   assert(() {
     // In debug mode, register the schedule frame extension.
-    developer.registerExtension('ext.ui.PlatformDispatcher.instance.scheduleFrame', _scheduleFrame);
+    developer.registerExtension('ext.ui.window.scheduleFrame', _scheduleFrame);
     return true;
   }());
 }

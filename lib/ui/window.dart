@@ -177,7 +177,8 @@ enum AppLifecycleState {
   /// user input, and running in the background.
   ///
   /// When the application is in this state, the engine will not call the
-  /// [PlatformDispatcher.onBeginFrame] and [PlatformDispatcher.onDrawFrame] callbacks.
+  /// [PlatformDispatcher.onBeginFrame] and [PlatformDispatcher.onDrawFrame]
+  /// callbacks.
   paused,
 
   /// The application is still hosted on a flutter engine but is detached from
@@ -245,8 +246,8 @@ class WindowPadding {
 ///
 /// See also:
 ///
-///  * [PlatformDispatcher.locale], which specifies the system's currently selected
-///    [Locale].
+///  * [PlatformDispatcher.locale], which specifies the system's currently
+///    selected [Locale].
 class Locale {
   /// Creates a new Locale object. The first argument is the
   /// primary language subtag, the second is the region (also
@@ -543,47 +544,44 @@ class Locale {
 /// system reserves for system UI, such as the keyboard, which would fully
 /// obscure any content drawn in that area.
 ///
-/// The [viewPadding] are the physical pixels on each side of the
-/// display that may be partially obscured by system UI or by physical
-/// intrusions into the display, such as an overscan region on a television or a
-/// "notch" on a phone. Unlike the insets, these areas may have portions that
-/// show the user view-painted pixels without being obscured, such as a
-/// notch at the top of a phone that covers only a subset of the area. Insets,
-/// on the other hand, either partially or fully obscure the window, such as an
-/// opaque keyboard or a partially translucent status bar, which cover an area
-/// without gaps.
+/// The [viewPadding] are the physical pixels on each side of the display that
+/// may be partially obscured by system UI or by physical intrusions into the
+/// display, such as an overscan region on a television or a "notch" on a phone.
+/// Unlike the insets, these areas may have portions that show the user
+/// view-painted pixels without being obscured, such as a notch at the top of a
+/// phone that covers only a subset of the area. Insets, on the other hand,
+/// either partially or fully obscure the window, such as an opaque keyboard or
+/// a partially translucent status bar, which cover an area without gaps.
 ///
-/// The [padding] property is computed from both
-/// [viewInsets] and [viewPadding]. It will allow a
-/// view inset to consume view padding where appropriate, such as when a phone's
-/// keyboard is covering the bottom view padding and so "absorbs" it.
+/// The [padding] property is computed from both [viewInsets] and [viewPadding].
+/// It will allow a view inset to consume view padding where appropriate, such
+/// as when a phone's keyboard is covering the bottom view padding and so
+/// "absorbs" it.
 ///
 /// Clients that want to position elements relative to the view padding
-/// regardless of the view insets should use the [viewPadding]
-/// property, e.g. if you wish to draw a widget at the center of the screen with
-/// respect to the iPhone "safe area" regardless of whether the keyboard is
-/// showing.
+/// regardless of the view insets should use the [viewPadding] property, e.g. if
+/// you wish to draw a widget at the center of the screen with respect to the
+/// iPhone "safe area" regardless of whether the keyboard is showing.
 ///
-/// [padding] is useful for clients that want to know how much
-/// padding should be accounted for without concern for the current inset(s)
-/// state, e.g. determining whether a gesture should be considered for scrolling
-/// purposes. This value varies based on the current state of the insets. For
-/// example, a visible keyboard will consume all gestures in the bottom part of
-/// the [viewPadding] anyway, so there is no need to account for
-/// that in the [padding], which is always safe to use for such
-/// calculations.
+/// [padding] is useful for clients that want to know how much padding should be
+/// accounted for without concern for the current inset(s) state, e.g.
+/// determining whether a gesture should be considered for scrolling purposes.
+/// This value varies based on the current state of the insets. For example, a
+/// visible keyboard will consume all gestures in the bottom part of the
+/// [viewPadding] anyway, so there is no need to account for that in the
+/// [padding], which is always safe to use for such calculations.
 ///
 /// See also:
 ///
 ///  * [FlutterWindow], a special case of a [FlutterView] that is represented on
 ///    the platform as a separate window which can host other [FlutterView]s.
 abstract class FlutterView {
-  /// The platform dispatcher that this view is registered with, and gets its
-  /// information from.
-  PlatformDispatcher/*!*/ get platformDispatcher;
+  /// The [PlatformDispatcher] that this view is registered with, that it gets
+  /// its configuration information from.
+  PlatformDispatcher get platformDispatcher;
 
-  /// The configuration of this view.
-  ViewConfiguration/*!*/ get viewConfiguration;
+  /// The configuration information for this view.
+  ViewConfiguration get viewConfiguration;
 
   /// The [Screen] that this [FlutterView] is displayed on.
   Screen get screen => viewConfiguration.screen;
@@ -741,16 +739,14 @@ abstract class FlutterView {
   /// This value is calculated by taking `max(0.0, FlutterView.viewPadding -
   /// FlutterView.viewInsets)`. This will treat a system IME that increases the
   /// bottom inset as consuming that much of the bottom padding. For example, on
-  /// an iPhone X, [padding.bottom] is the same as
-  /// [viewPadding.bottom] when the soft keyboard is not drawn (to
-  /// account for the bottom soft button area), but will be `0.0` when the soft
-  /// keyboard is visible.
+  /// an iPhone X, [padding.bottom] is the same as [viewPadding.bottom] when the
+  /// soft keyboard is not drawn (to account for the bottom soft button area),
+  /// but will be `0.0` when the soft keyboard is visible.
   ///
   /// When this changes, [onMetricsChanged] is called.
   ///
-  /// The relationship between this [viewInsets],
-  /// [viewPadding], and [padding] are described in
-  /// more detail in the documentation for [FlutterView].
+  /// The relationship between this [viewInsets], [viewPadding], and [padding]
+  /// are described in more detail in the documentation for [FlutterView].
   ///
   /// See also:
   ///
@@ -798,17 +794,12 @@ abstract class FlutterView {
 /// `WidgetsBinding.instance.platformDispatcher.views`. Only views that are of
 /// type [FlutterWindow] are top level platform windows.
 ///
-/// There is also a [PlatformDispatcher.instance] singleton object in `dart:ui`
-/// if `WidgetsBinding` is unavailable, but we strongly advise avoiding a static
-/// reference to it. See the documentation for [PlatformDispatcher.instance] for
-/// more details about why it should be avoided.
-///
 /// See also:
 ///
 ///  * [PlatformDispatcher], which manages the current list of [FlutterView]
 ///    (and thus [FlutterWindow]) instances.
 class FlutterWindow extends FlutterView {
-  FlutterWindow._({Object windowId, this.platformDispatcher})
+  FlutterWindow._(Object windowId, this.platformDispatcher)
       : _windowId = windowId;
 
   /// The opaque ID for this view.
@@ -821,33 +812,37 @@ class FlutterWindow extends FlutterView {
   @override
   ViewConfiguration get viewConfiguration {
     assert(platformDispatcher._viewConfigurations.containsKey(_windowId));
-    return platformDispatcher._viewConfigurations[_windowId];
+    return platformDispatcher._viewConfigurations[_windowId] ?? const ViewConfiguration(Screen.invalid);
   }
 }
 
-/// A [FlutterWindow] that includes access to setting callbacks and retrieving
-/// properties that reside on the [PlatformDispatcher].
+/// The [FlutterWindow] in apps that only have one window.
 ///
-/// It is the type of the `WidgetsBinding.instance.window` singleton and the
-/// legacy global [window] singleton.
+/// This is a [FlutterWindow] that includes convenience access to setting
+/// callbacks and retrieving properties that reside on the [PlatformDispatcher]
+/// for the common case of an application with only one window.
 ///
-/// This class provides backward compatibility with code that was written before
-/// Flutter supported multiple top level windows. To modify or retrieve these
-/// properties, new code should use `WidgetsBinding.instance.platformDispatcher`.
+/// It is typically accessed using the `WidgetsBinding.instance.window`
+/// singleton. For applications that have more than one window, consider using
+/// the the APIs on `WidgetsBinding.instance.platformDispatcher` directly.
 ///
-/// There is also a [PlatformDispatcher.instance] singleton object in `dart:ui`
-/// if `WidgetsBinding` is unavailable. But we strongly advise avoiding a static
-/// reference to it. See the documentation for [PlatformDispatcher.instance] for
-/// more details about why it should be avoided.
+/// While there is also a [window] singleton object in `dart:ui`, unless you are
+/// implementing your own binding, consider avoiding a static reference to it.
+/// See the documentation for [window] for more details about why you might want
+/// to avoid using it directly.
 class SingletonFlutterWindow extends FlutterWindow {
-  SingletonFlutterWindow._({Object windowId, PlatformDispatcher platformDispatcher})
-      : super._(windowId: windowId, platformDispatcher: platformDispatcher);
+  SingletonFlutterWindow._(Object windowId, PlatformDispatcher platformDispatcher)
+      : super._(windowId, platformDispatcher);
 
   /// A callback that is invoked whenever the [devicePixelRatio],
   /// [physicalSize], [padding], [viewInsets], [PlatformDispatcher.views],
   /// [PlatformDispatcher.screens], or [systemGestureInsets] values change.
   ///
-  /// {@template flutter.lib.ui.window.forwardWarning}
+  /// {@template flutter.lib.ui.window.callbackForwardWarning}
+  /// Setting this callback also sets the callback on the [PlatformDispatcher]
+  /// singleton. In applications with more than one window, consider setting it
+  /// on `WidgetsBinding.instance.platformDispatcher` directly.
+  /// {@endtemplate}
   ///
   /// See [PlatformDispatcher.onMetricsChanged] for more information.
   VoidCallback? get onMetricsChanged => platformDispatcher.onMetricsChanged;
@@ -859,13 +854,9 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// {@template flutter.lib.ui.window.accessorForwardWarning}
   /// Accessing this value returns the value contained in the
-  /// [PlatformDispatcher] singleton, so instead of getting it from here, you
-  /// should consider getting it from
-  /// `WidgetsBinding.instance.platformDispatcher` instead (or, as a last resort
-  /// when `WidgetsBinding` isn't available, from
-  /// [PlatformDispatcher.instance]). The reason this value forwards to the
-  /// [PlatformDispatcher] is to avoid breaking code that was written before
-  /// Flutter supported multiple windows.
+  /// [PlatformDispatcher] singleton, in applications with more than one window,
+  /// consider getting it from `WidgetsBinding.instance.platformDispatcher`
+  /// directly.
   /// {@endtemplate}
   ///
   /// This establishes the language and formatting conventions that window
@@ -926,7 +917,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -948,7 +939,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// It is used to initialize [SchedulerBinding.lifecycleState] at startup
   /// with any buffered lifecycle state events.
-  String get initialLifecycleState => platformDispatcher.initialLifecycleState;
+  String? get initialLifecycleState => platformDispatcher.initialLifecycleState;
 
   /// The system-reported text scale.
   ///
@@ -976,7 +967,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1000,7 +991,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1018,7 +1009,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// time to provide a scene using the [SceneBuilder] API and the [render]
   /// method.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
   /// When possible, this is driven by the hardware VSync signal. This is only
   /// called if [scheduleFrame] has been called since the last time this
@@ -1045,7 +1036,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// A callback that is invoked for each frame after [onBeginFrame] has
   /// completed and after the microtask queue has been drained.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
   /// This can be used to implement a second phase of frame rendering that
   /// happens after any deferred work queued by the [onBeginFrame] phase.
@@ -1067,9 +1058,9 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
-  /// It's prefered to use [SchedulerBinding.addTimingsCallback] than to use
+  /// Consider using [SchedulerBinding.addTimingsCallback] instead of
   /// [FlutterWindow.onReportTimings] directly because
   /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
   ///
@@ -1094,7 +1085,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked when pointer data is available.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1147,12 +1138,9 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// {@template flutter.lib.ui.window.functionForwardWarning}
   /// Calling this function forwards the call to the same function on the
-  /// [PlatformDispatcher] singleton, so instead of calling it here, you should
+  /// [PlatformDispatcher] singleton. In applications with more than one window,
   /// consider calling it on `WidgetsBinding.instance.platformDispatcher`
-  /// instead (or, as a last resort when `WidgetsBinding` isn't available, on
-  /// [PlatformDispatcher.instance]). The reason this function forwards to the
-  /// [PlatformDispatcher] is to avoid breaking code that was written before
-  /// Flutter supported multiple windows.
+  /// directly.
   /// {@endtemplate}
   ///
   /// See also:
@@ -1172,7 +1160,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked when the value of [semanticsEnabled] changes.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1184,7 +1172,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// A callback that is invoked whenever the user requests an action to be
   /// performed.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
   /// This callback is used when the user expresses the action they wish to
   /// perform based on the semantics supplied by [updateSemantics].
@@ -1201,7 +1189,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1241,7 +1229,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.
   ///
-  /// {@macro flutter.lib.ui.window.forwardWarning}
+  /// {@macro flutter.lib.ui.window.callbackForwardWarning}
   ///
   /// The `name` parameter determines which plugin sent the message. The `data`
   /// parameter is the payload and is typically UTF-8 encoded JSON but can be
@@ -1353,19 +1341,14 @@ enum Brightness {
   light,
 }
 
-/// The [SingletonFlutterWindow] representing the "only" window on platforms
+/// The [SingletonFlutterWindow] representing "the" window on platforms
 /// where there is only one window, such as single-display mobile devices.
-///
-/// This is a legacy object for code that was written before Flutter supported
-/// multiple windows. New code should use the API on
-/// `WidgetsBinding.instance.platformDispatcher`, or, where that is not
-/// available, on [PlatformDispatcher.instance].
 ///
 /// On platforms with more than one window, this window typically represents the
 /// first window created, but it may not be visible.
 ///
-/// Please try to avoid statically referencing this and instead use a
-/// binding for dependency resolution such as `WidgetsBinding.instance.window`.
+/// It is better to avoid statically referencing this and instead use a binding
+/// for dependency resolution such as `WidgetsBinding.instance.window`.
 ///
 /// Static access of this "window" object means that Flutter has few, if any
 /// options to fake or mock the given object in tests. Even in cases where Dart
@@ -1374,14 +1357,17 @@ enum Brightness {
 /// reasonable for a future of Flutter where we legitimately want to select an
 /// appropriate implementation at runtime.
 ///
-/// The only place that using `WidgetsBinding.instance.platformDispatcher` is
-/// inappropriate is if access to these APIs is required before invoking
-/// `runApp()`. In that case, it is acceptable (though unfortunate) to use the
-/// [PlatformDispatcher.instance] object statically.
+/// Flutter's binding uses this singleton, and if you are implementing your own
+/// binding, of course, it may make sense to use the [window] object directly.
+///
+/// If you need to access these APIs before invoking `runApp()`, but are using
+/// Flutter bindings, instantiate the bindings yourself by calling
+/// `WidgetsFlutterBinding.ensureInitialized()` and then use
+/// `WidgetsBinding.instance.window`.
 ///
 /// See also:
 ///
 ///  * [PlatformDispatcher.views], contains the current list of Flutter windows
 ///    belonging to the application, including top level application windows
 ///    like this one.
-final SingletonFlutterWindow window = SingletonFlutterWindow._(windowId: 0, platformDispatcher: PlatformDispatcher.instance);
+final SingletonFlutterWindow window = SingletonFlutterWindow._(0, PlatformDispatcher.instance);

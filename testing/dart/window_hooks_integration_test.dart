@@ -46,26 +46,27 @@ void main() {
   PlatformMessageCallback? originalOnPlatformMessage;
   VoidCallback? originalOnTextScaleFactorChanged;
 
-    Object? oldWindowId;
-    Object? oldScreenId;
-    Rect? oldGeometry;
-    double? oldDepth;
-    WindowPadding? oldPadding;
-    WindowPadding? oldInsets;
-    WindowPadding? oldSystemGestureInsets;
+  Object? oldWindowId;
+  Object? oldScreenId;
+  Rect? oldGeometry;
+  double? oldDepth;
+  WindowPadding? oldPadding;
+  WindowPadding? oldInsets;
+  WindowPadding? oldSystemGestureInsets;
 
   void setUp() {
     PlatformDispatcher.instance._viewConfigurations.clear();
-      PlatformDispatcher.instance._screenConfigurations.clear();
-      PlatformDispatcher.instance._views.clear();
-      PlatformDispatcher.instance._screens.clear();
-      PlatformDispatcher.instance._screenConfigurations[0] = const ScreenConfiguration();
-      PlatformDispatcher.instance._screens[0] = Screen._(screenId: 0, platformDispatcher: PlatformDispatcher.instance);
-      PlatformDispatcher.instance._viewConfigurations[0] = ViewConfiguration(screen: PlatformDispatcher.instance._screens[0]);
-      PlatformDispatcher.instance._views[0] = FlutterWindow._(windowId: 0, platformDispatcher: PlatformDispatcher.instance);
-      oldWindowId = window._windowId;
+    PlatformDispatcher.instance._screenConfigurations.clear();
+    PlatformDispatcher.instance._views.clear();
+    PlatformDispatcher.instance._screens.clear();
+    PlatformDispatcher.instance._screenConfigurations[0] = const ScreenConfiguration();
+    final Screen newScreen = Screen._(0, PlatformDispatcher.instance);
+    PlatformDispatcher.instance._screens[0] = newScreen;
+    PlatformDispatcher.instance._viewConfigurations[0] = ViewConfiguration(newScreen);
+    PlatformDispatcher.instance._views[0] = FlutterWindow._(0, PlatformDispatcher.instance);
+    oldWindowId = window._windowId;
     oldScreenId = window.viewConfiguration.screen._screenId;
-      oldGeometry = window.viewConfiguration.geometry;
+    oldGeometry = window.viewConfiguration.geometry;
     oldDepth = window.physicalDepth;
     oldPadding = window.viewPadding;
     oldInsets = window.viewInsets;
@@ -356,9 +357,9 @@ void main() {
   test('onTextScaleFactorChanged preserves callback zone', () {
     late Zone innerZone;
     late Zone runZoneTextScaleFactor;
-      Zone runZonePlatformBrightness;
-    late double textScaleFactor;
-      Brightness platformBrightness;
+    late Zone runZonePlatformBrightness;
+    double? textScaleFactor;
+    Brightness? platformBrightness;
 
     runZoned(() {
       innerZone = Zone.current;
@@ -372,41 +373,21 @@ void main() {
       };
     });
 
-    window.onTextScaleFactorChanged();
+    PlatformDispatcher.instance.onTextScaleFactorChanged?.call();
 
     _updateUserSettingsData('{"textScaleFactor": 0.5, "platformBrightness": "light", "alwaysUse24HourFormat": true}');
-    expect(runZoneTextScaleFactor, isNotNull);
-    expect(runZoneTextScaleFactor, same(innerZone));
-    expect(textScaleFactor, equals(0.5));
+    expectNotEquals(runZoneTextScaleFactor, null);
+    expectEquals(runZoneTextScaleFactor, innerZone);
+    expectEquals(textScaleFactor, 0.5);
 
     textScaleFactor = null;
     platformBrightness = null;
 
-    window.onPlatformBrightnessChanged();
+    PlatformDispatcher.instance.onPlatformBrightnessChanged?.call();
 
     _updateUserSettingsData('{"textScaleFactor": 0.5, "platformBrightness": "dark", "alwaysUse24HourFormat": true}');
-    expect(runZonePlatformBrightness, isNotNull);
-    expect(runZonePlatformBrightness, same(innerZone));
-    expect(platformBrightness, equals(Brightness.dark));
-  });
-
-  test('onThemeBrightnessMode preserves callback zone', () {
-    late Zone innerZone;
-    late Zone runZone;
-    late Brightness platformBrightness;
-
-    runZoned(() {
-      innerZone = Zone.current;
-      window.onPlatformBrightnessChanged = () {
-        runZone = Zone.current;
-        platformBrightness = window.platformBrightness;
-      };
-    });
-
-    window.onPlatformBrightnessChanged!();
-    _updatePlatformBrightness('dark');
-    expectNotEquals(runZone, null);
-    expectIdentical(runZone, innerZone);
+    expectNotEquals(runZonePlatformBrightness, null);
+    expectEquals(runZonePlatformBrightness, innerZone);
     expectEquals(platformBrightness, Brightness.dark);
   });
 
@@ -462,11 +443,11 @@ void main() {
         0.0,   // system gesture inset left
       );
 
-      expect(window.viewInsets.bottom, 400.0);
-      expect(window.viewPadding.bottom, 40.0);
-      expect(window.padding.bottom, 0.0);
-      expect(window.physicalDepth, 100.0);
-      expect(window.systemGestureInsets.bottom, 44.0);
+      expectEquals(window.viewInsets.bottom, 400.0);
+      expectEquals(window.viewPadding.bottom, 40.0);
+      expectEquals(window.padding.bottom, 0.0);
+      expectEquals(window.physicalDepth, 100.0);
+      expectEquals(window.systemGestureInsets.bottom, 44.0);
     });
 
     test('Screen padding/insets/viewPadding/systemGestureInsets', () {
@@ -492,11 +473,11 @@ void main() {
         0.0,   // system gesture inset left
       );
 
-      expect(window.screen.configuration.viewInsets.bottom, 0.0);
-      expect(window.screen.configuration.viewPadding.bottom, 40.0);
-      expect(window.screen.configuration.padding.bottom, 40.0);
-      expect(window.screen.configuration.devicePixelRatio, 2.5);
-      expect(window.screen.configuration.systemGestureInsets.bottom, 0.0);
+      expectEquals(window.screen.configuration.viewInsets.bottom, 0.0);
+      expectEquals(window.screen.configuration.viewPadding.bottom, 40.0);
+      expectEquals(window.screen.configuration.padding.bottom, 40.0);
+      expectEquals(window.screen.configuration.devicePixelRatio, 2.5);
+      expectEquals(window.screen.configuration.systemGestureInsets.bottom, 0.0);
 
       _updateScreenMetrics(
         0,     // window id
@@ -520,11 +501,11 @@ void main() {
         0.0,   // system gesture inset left
       );
 
-      expect(window.screen.configuration.viewInsets.bottom, 400.0);
-      expect(window.screen.configuration.viewPadding.bottom, 40.0);
-      expect(window.screen.configuration.padding.bottom, 0.0);
-      expect(window.screen.configuration.devicePixelRatio, 2.5);
-      expect(window.screen.configuration.systemGestureInsets.bottom, 44.0);
+      expectEquals(window.screen.configuration.viewInsets.bottom, 400.0);
+      expectEquals(window.screen.configuration.viewPadding.bottom, 40.0);
+      expectEquals(window.screen.configuration.padding.bottom, 0.0);
+      expectEquals(window.screen.configuration.devicePixelRatio, 2.5);
+      expectEquals(window.screen.configuration.systemGestureInsets.bottom, 44.0);
     });
   });
 }

@@ -19,6 +19,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// these.
   EnginePlatformDispatcher._() {
     _addBrightnessMediaQueryListener();
+    js.context['_flutter_web_set_location_strategy'] = (LocationStrategy strategy) {
+      locationStrategy = strategy;
+    };
+    registerHotRestartListener(() {
+      js.context['_flutter_web_set_location_strategy'] = null;
+    });
   }
 
   /// The [EnginePlatformDispatcher] singleton.
@@ -832,6 +838,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   set locationStrategy(LocationStrategy/*!*/ strategy) {
     _browserHistory.locationStrategy = strategy;
   }
+
+  /// Returns the currently active location strategy.
+  @visibleForTesting
+  LocationStrategy get locationStrategy => _browserHistory.locationStrategy;
 
   @visibleForTesting
   Rasterizer/*?*/ rasterizer = experimentalUseSkia ? Rasterizer(Surface()) : null;

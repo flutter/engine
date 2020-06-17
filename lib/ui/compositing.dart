@@ -648,13 +648,13 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///  - 0x08: visualizeEngineStatistics - graph UI thread frame times
   /// Set enabledOptions to 0x0F to enable all the currently defined features.
   ///
-  /// The "UI thread" is the thread that includes all the execution of
-  /// the main Dart isolate (the isolate that can call
-  /// [FlutterView.render]). The UI thread frame time is the total time
-  /// spent executing the [PlatformDispatcher.onBeginFrame] callback. The "raster
-  /// thread" is the thread (running on the CPU) that subsequently
-  /// processes the [Scene] provided by the Dart code to turn it into
-  /// GPU commands and send it to the GPU.
+  /// The "UI thread" is the thread that includes all the execution of the main
+  /// Dart isolate (the isolate that can call [FlutterView.render]). The UI
+  /// thread frame time is the total time spent executing the
+  /// [PlatformDispatcher.onBeginFrame] callback. The "raster thread" is the
+  /// thread (running on the CPU) that subsequently processes the [Scene]
+  /// provided by the Dart code to turn it into GPU commands and send it to the
+  /// GPU.
   ///
   /// See also the [PerformanceOverlayOption] enum in the rendering library.
   /// for more details.
