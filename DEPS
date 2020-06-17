@@ -110,7 +110,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/dnfield/buildroot.git' + '@' + '9c44bf4702ee29864a94a746cdeb3f54c4a7694d',
+  'src': 'https://github.com/dnfield/buildroot.git' + '@' + '36dd615da14134d101757581eb7ed9caffbb0c1f',
 
    # Fuchsia compatibility
    #
