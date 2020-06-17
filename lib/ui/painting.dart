@@ -1750,7 +1750,8 @@ String? _instantiateImageCodec(
   _ImageInfo? imageInfo,
   int targetWidth,
   int targetHeight,
-  bool allowUpscaling) native 'instantiateImageCodec';
+  bool allowUpscaling,
+) native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
 ///
