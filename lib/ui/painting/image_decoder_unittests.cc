@@ -551,6 +551,19 @@ TEST(ImageDecoderTest, VerifySimpleDecodingNoUpscaling) {
       SkISize::Make(600, 200));
 }
 
+TEST(ImageDecoderTest, VerifySimpleDecodingNoUpscalingOneDimension) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(
+      ImageFromCompressedData(data, 1200, 200, ImageUpscalingMode::kNotAllowed,
+                              fml::tracing::TraceFlow(""))
+          ->dimensions(),
+      SkISize::Make(600, 200));
+}
+
 TEST(ImageDecoderTest, VerifySimpleDecodingWithUpscaling) {
   auto data = OpenFixtureAsSkData("Horizontal.jpg");
   auto image = SkImage::MakeFromEncoded(data);

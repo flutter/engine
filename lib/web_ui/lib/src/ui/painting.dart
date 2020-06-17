@@ -1579,8 +1579,8 @@ class Codec {
 /// failed.
 Future<Codec> instantiateImageCodec(
   Uint8List list, {
-  int targetWidth,
-  int targetHeight,
+  int? targetWidth,
+  int? targetHeight,
   bool allowUpscaling = false,
 }) {
   return _futurize<Codec>((engine.Callback<Codec> callback) =>
@@ -1649,10 +1649,10 @@ void decodeImageFromPixels(
   int height,
   PixelFormat format,
   ImageDecoderCallback callback, {
-  int rowBytes,
-  int targetWidth,
-  int targetHeight,
-  bool allowUpscaling,
+  int? rowBytes,
+  int? targetWidth,
+  int? targetHeight,
+  bool allowUpscaling = false,
 }) {
   final _ImageInfo imageInfo =
       _ImageInfo(width, height, format.index, rowBytes);

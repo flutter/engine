@@ -53,9 +53,10 @@ static SkISize GetResizedDimensions(SkISize current_size,
       target_width = std::min(current_size.width(),
                               static_cast<int32_t>(target_width.value()));
     }
-    if (target_height)
+    if (target_height) {
       target_height = std::min(current_size.height(),
                                static_cast<int32_t>(target_height.value()));
+    }
   }
 
   if (target_width && target_height) {

@@ -1704,9 +1704,12 @@ class Codec extends NativeFieldWrapperClass2 {
 /// The `targetWidth` and `targetHeight` arguments specify the size of the
 /// output image, in image pixels. If they are not equal to the intrinsic
 /// dimensions of the image, then the image will be scaled after being decoded.
-/// If only one dimension is specified, the omitted dimension will be scaled to
-/// maintain the original aspect ratio. If both are not specified, then the
-/// image maintains its intrinsic size.
+/// If the `allowUpscaling` parameter is not set to true, both dimensions will
+/// be capped at the intrinsic dimensions of the image, even if only one of
+/// them would have exceeded those intrinsic dimensions. If exactly one of these
+/// two arguments is specified, then the aspect ratio will be maintained while
+/// forcing the image to match the other given dimension. If neither is
+/// specified, then the image maintains its intrinsic size.
 ///
 /// Scaling the image to larger than its intrinsic size should usually be
 /// avoided, since it causes the image to use more memory than necessary.
@@ -1781,10 +1784,12 @@ Future<void> _decodeImageFromListAsync(Uint8List list,
 /// The `targetWidth` and `targetHeight` arguments specify the size of the
 /// output image, in image pixels. If they are not equal to the intrinsic
 /// dimensions of the image, then the image will be scaled after being decoded.
-/// If exactly one of these two arguments is specified, then the aspect ratio
-/// will be maintained while forcing the image to match the other given
-/// dimension. If neither is specified, then the image maintains its intrinsic
-/// size.
+/// If the `allowUpscaling` parameter is not set to true, both dimensions will
+/// be capped at the intrinsic dimensions of the image, even if only one of
+/// them would have exceeded those intrinsic dimensions. If exactly one of these
+/// two arguments is specified, then the aspect ratio will be maintained while
+/// forcing the image to match the other given dimension. If neither is
+/// specified, then the image maintains its intrinsic size.
 ///
 /// Scaling the image to larger than its intrinsic size should usually be
 /// avoided, since it causes the image to use more memory than necessary.
