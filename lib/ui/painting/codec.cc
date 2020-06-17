@@ -223,7 +223,9 @@ static void InstantiateImageCodec(Dart_NativeArguments args) {
     if (target_height > 0) {
       descriptor.target_height = target_height;
     }
-    descriptor.allow_upscaling = allow_upscaling;
+    descriptor.image_upscaling = allow_upscaling
+                                     ? ImageUpscalingMode::kAllowed
+                                     : ImageUpscalingMode::kNotAllowed;
     descriptor.data = std::move(buffer);
 
     ui_codec = fml::MakeRefCounted<SingleFrameCodec>(std::move(descriptor));
