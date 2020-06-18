@@ -42,9 +42,7 @@ source_set("surface_mock") {
     "android_surface_mock.h",
   ]
 
-  public_configs = [
-    "//flutter:config",
-  ]
+  public_configs = [ "//flutter:config" ]
 
   deps = [
     ":surface",
