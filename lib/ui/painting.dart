@@ -1722,7 +1722,7 @@ Future<Codec> instantiateImageCodec(
   Uint8List list, {
   int? targetWidth,
   int? targetHeight,
-  bool allowUpscaling = false,
+  bool allowUpscaling = true,
 }) {
   return _futurize((_Callback<Codec> callback) {
     return _instantiateImageCodec(
@@ -1804,7 +1804,7 @@ void decodeImageFromPixels(
   int? rowBytes,
   int? targetWidth,
   int? targetHeight,
-  bool allowUpscaling = false,
+  bool allowUpscaling = true,
 }) {
   if (targetWidth != null) {
     assert(allowUpscaling || targetWidth <= width);

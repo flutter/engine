@@ -60,7 +60,7 @@ void main() {
 
   test('upscale image by 5x - no upscaling', () async {
     final Uint8List bytes = await readFile('4x4.png');
-    final Codec codec = await instantiateImageCodec(bytes, targetWidth: 10);
+    final Codec codec = await instantiateImageCodec(bytes, targetWidth: 10, allowUpscaling: false);
     final FrameInfo frame = await codec.getNextFrame();
     final int codecHeight = frame.image.height;
     final int codecWidth = frame.image.width;
@@ -82,7 +82,7 @@ void main() {
   test('upscale image varying width and height - no upscaling', () async {
     final Uint8List bytes = await readFile('4x4.png');
     final Codec codec =
-        await instantiateImageCodec(bytes, targetWidth: 10, targetHeight: 1);
+        await instantiateImageCodec(bytes, targetWidth: 10, targetHeight: 1, allowUpscaling: false);
     final FrameInfo frame = await codec.getNextFrame();
     final int codecHeight = frame.image.height;
     final int codecWidth = frame.image.width;
@@ -129,6 +129,7 @@ void main() {
         PixelFormat.rgba8888,
         (Image image) => null,
         targetHeight: 10,
+        allowUpscaling: false,
       );
     } catch (e) {
       expect(e is AssertionError, true);
@@ -157,6 +158,7 @@ void main() {
         (Image image) => null,
         targetHeight: 10,
         targetWidth: 1,
+        allowUpscaling: false,
       );
     } catch (e) {
       expect(e is AssertionError, true);
