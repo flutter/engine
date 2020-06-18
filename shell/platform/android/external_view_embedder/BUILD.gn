@@ -47,6 +47,5 @@ executable("android_external_view_embedder_unittests") {
     "//flutter/testing",
     "//flutter/testing:dart",
     "//flutter/testing:skia",
-    "//third_party/googletest:gmock",
   ]
 }
