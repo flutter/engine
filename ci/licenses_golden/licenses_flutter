@@ -784,9 +784,9 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterRunArgument
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/TextureRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/VsyncWaiter.java
-FILE: ../../../flutter/shell/platform/android/jni/mock_jni.cc
-FILE: ../../../flutter/shell/platform/android/jni/mock_jni.h
 FILE: ../../../flutter/shell/platform/android/jni/mock_jni_unittest.cc
+FILE: ../../../flutter/shell/platform/android/jni/jni_mock.h
+FILE: ../../../flutter/shell/platform/android/jni/jni_mock_unittest.cc
 FILE: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.cc
 FILE: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.h
 FILE: ../../../flutter/shell/platform/android/library_loader.cc
@@ -801,8 +801,8 @@ FILE: ../../../flutter/shell/platform/android/surface/android_native_window.cc
 FILE: ../../../flutter/shell/platform/android/surface/android_native_window.h
 FILE: ../../../flutter/shell/platform/android/surface/android_surface.cc
 FILE: ../../../flutter/shell/platform/android/surface/android_surface.h
-FILE: ../../../flutter/shell/platform/android/surface/mock_android_surface.cc
-FILE: ../../../flutter/shell/platform/android/surface/mock_android_surface.h
+FILE: ../../../flutter/shell/platform/android/surface/android_surface_mock.cc
+FILE: ../../../flutter/shell/platform/android/surface/android_surface_mock.h
 FILE: ../../../flutter/shell/platform/android/vsync_waiter_android.cc
 FILE: ../../../flutter/shell/platform/android/vsync_waiter_android.h
 FILE: ../../../flutter/shell/platform/common/cpp/client_wrapper/basic_message_channel_unittests.cc
