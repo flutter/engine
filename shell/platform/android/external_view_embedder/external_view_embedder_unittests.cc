@@ -2,25 +2,53 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/flow/surface.h"
 #include "flutter/fml/raster_thread_merger.h"
 #include "flutter/fml/thread.h"
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
-#include "flutter/shell/platform/android/jni/mock_jni.h"
+#include "flutter/shell/platform/android/jni/jni_mock.h"
+#include "flutter/shell/platform/android/surface/android_surface_mock.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "third_party/skia/include/gpu/GrContext.h"
 
 namespace flutter {
 namespace testing {
 
-using ::testing::Mock;
+using ::testing::ByMove;
+using ::testing::Return;
+
+class SurfaceMock : public Surface {
+ public:
+  MOCK_METHOD(bool, IsValid, (), (override));
+
+  MOCK_METHOD(std::unique_ptr<SurfaceFrame>,
+              AcquireFrame,
+              (const SkISize& size),
+              (override));
+
+  MOCK_METHOD(SkMatrix, GetRootTransformation, (), (const, override));
+
+  MOCK_METHOD(GrContext*, GetContext, (), (override));
+
+  MOCK_METHOD(flutter::ExternalViewEmbedder*,
+              GetExternalViewEmbedder,
+              (),
+              (override));
+
+  MOCK_METHOD(std::unique_ptr<GLContextResult>,
+              MakeRenderContextCurrent,
+              (),
+              (override));
+};
 
 TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
-  auto mock_jni = std::make_shared<MockJNI>();
+  auto jni_mock = std::make_shared<JNIMock>();
 
-  EXPECT_CALL(*mock_jni, FlutterViewBeginFrame());
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
 
   auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
   embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0);
 
   embedder->PrerollCompositeEmbeddedView(
@@ -35,11 +63,11 @@ TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
 }
 
 TEST(AndroidExternalViewEmbedder, GetCurrentCanvases__CompositeOrder) {
-  auto mock_jni = std::make_shared<MockJNI>();
-  EXPECT_CALL(*mock_jni, FlutterViewBeginFrame());
+  auto jni_mock = std::make_shared<JNIMock>();
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
 
   auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
   embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0);
 
   embedder->PrerollCompositeEmbeddedView(
@@ -81,12 +109,10 @@ TEST(AndroidExternalViewEmbedder, CancelFrame) {
 }
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
-  auto mock_jni = std::make_shared<MockJNI>();
-  EXPECT_CALL(*mock_jni, FlutterViewBeginFrame());
-  EXPECT_CALL(*mock_jni, FlutterViewEndFrame());
+  auto jni_mock = std::make_shared<JNIMock>();
 
   auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
   auto platform_thread = new fml::Thread("platform");
   auto rasterizer_thread = new fml::Thread("rasterizer");
   auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
@@ -97,6 +123,7 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
       platform_queue_id, rasterizer_queue_id);
   ASSERT_FALSE(raster_thread_merger->IsMerged());
 
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
   embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0);
   // Push a platform view.
   embedder->PrerollCompositeEmbeddedView(
@@ -106,7 +133,9 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
   ASSERT_EQ(PostPrerollResult::kResubmitFrame, postpreroll_result);
   ASSERT_TRUE(embedder->SubmitFrame(nullptr, nullptr));
 
+  EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
   embedder->EndFrame(raster_thread_merger);
+
   ASSERT_TRUE(raster_thread_merger->IsMerged());
 
   int pending_frames = 0;
@@ -118,11 +147,10 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
 }
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
-  auto mock_jni = std::make_shared<MockJNI>();
-  EXPECT_CALL(*mock_jni, FlutterViewEndFrame());
+  auto jni_mock = std::make_shared<JNIMock>();
 
   auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
   auto platform_thread = new fml::Thread("platform");
   auto rasterizer_thread = new fml::Thread("rasterizer");
   auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
@@ -136,16 +164,19 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
   PostPrerollResult result = embedder->PostPrerollAction(raster_thread_merger);
   ASSERT_EQ(PostPrerollResult::kSuccess, result);
 
+  EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
   embedder->EndFrame(raster_thread_merger);
+
   ASSERT_FALSE(raster_thread_merger->IsMerged());
 }
 
 TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
-  auto mock_jni = std::make_shared<MockJNI>();
-  EXPECT_CALL(*mock_jni, FlutterViewBeginFrame());
+  auto jni_mock = std::make_shared<JNIMock>();
 
   auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
   embedder->BeginFrame(SkISize::Make(100, 100), nullptr, 1.5);
 
   auto view_params = std::make_unique<EmbeddedViewParams>();
@@ -158,11 +189,12 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
 }
 
 TEST(AndroidExternalViewEmbedder, PlatformViewRect__ChangedParams) {
-  auto mock_jni = std::make_shared<MockJNI>();
-  EXPECT_CALL(*mock_jni, FlutterViewBeginFrame());
+  auto jni_mock = std::make_shared<JNIMock>();
 
   auto embedder =
-      std::make_unique<AndroidExternalViewEmbedder>(nullptr, mock_jni, nullptr);
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
   embedder->BeginFrame(SkISize::Make(100, 100), nullptr, 1.5);
 
   auto view_id = 0;
@@ -177,6 +209,136 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRect__ChangedParams) {
   embedder->PrerollCompositeEmbeddedView(view_id, std::move(view_params_2));
 
   ASSERT_EQ(SkRect::MakeXYWH(50, 60, 105, 120), embedder->GetViewRect(view_id));
+}
+
+TEST(AndroidExternalViewEmbedder, SubmitFrame__RecycleSurfaces) {
+  auto jni_mock = std::make_shared<JNIMock>();
+  auto android_context =
+      std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
+
+  auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
+  auto gr_context = GrContext::MakeMock(nullptr);
+  auto frame_size = SkISize::Make(1000, 1000);
+  auto surface_factory =
+      [gr_context, window, frame_size](
+          std::shared_ptr<AndroidContext> android_context,
+          std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
+        auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();
+        auto surface_mock = std::make_unique<SurfaceMock>();
+        auto surface_frame_1 = std::make_unique<SurfaceFrame>(
+            SkSurface::MakeNull(1000, 1000), false,
+            [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+              return true;
+            });
+        auto surface_frame_2 = std::make_unique<SurfaceFrame>(
+            SkSurface::MakeNull(1000, 1000), false,
+            [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+              return true;
+            });
+
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
+            .Times(2 /* frames */)
+            .WillOnce(Return(ByMove(std::move(surface_frame_1))))
+            .WillOnce(Return(ByMove(std::move(surface_frame_2))));
+
+        EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
+            .WillOnce(Return(ByMove(std::move(surface_mock))));
+
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        return android_surface_mock;
+      };
+  auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
+      android_context, jni_mock, surface_factory);
+
+  // ------------------ First frame ------------------ //
+  {
+    EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
+    embedder->BeginFrame(frame_size, nullptr, 1.5);
+
+    // Add an Android view.
+    auto view_params_1 = std::make_unique<EmbeddedViewParams>();
+    view_params_1->offsetPixels = SkPoint::Make(100, 100);
+    // TODO(egarciad): Investigate why Flow applies the device pixel ratio to
+    // the offsetPixels, but not the sizePoints.
+    view_params_1->sizePoints = SkSize::Make(200, 200);
+    embedder->PrerollCompositeEmbeddedView(0, std::move(view_params_1));
+    // This is the recording canvas flow writes to.
+    auto canvas_1 = embedder->CompositeEmbeddedView(0);
+
+    auto rect_paint = SkPaint();
+    rect_paint.setColor(SkColors::kCyan);
+    rect_paint.setStyle(SkPaint::Style::kFill_Style);
+
+    // This simulates Flutter UI that doesn't intersect with the Android view.
+    canvas_1->drawRect(SkRect::MakeXYWH(0, 0, 50, 50), rect_paint);
+    // This simulates Flutter UI that intersects with the Android view.
+    canvas_1->drawRect(SkRect::MakeXYWH(50, 50, 200, 200), rect_paint);
+    canvas_1->drawRect(SkRect::MakeXYWH(150, 150, 100, 100), rect_paint);
+
+    // Create a new overlay surface.
+    EXPECT_CALL(*jni_mock, FlutterViewCreateOverlaySurface())
+        .WillOnce(Return(
+            ByMove(std::make_unique<PlatformViewAndroidJNI::OverlayMetadata>(
+                0, window))));
+    // The JNI call to display the Android view.
+    EXPECT_CALL(*jni_mock,
+                FlutterViewOnDisplayPlatformView(0, 100, 100, 300, 300));
+    // The JNI call to display the overlay surface.
+    EXPECT_CALL(*jni_mock,
+                FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));
+
+    auto surface_frame =
+        std::make_unique<SurfaceFrame>(SkSurface::MakeNull(1000, 1000), false,
+                                       [](const SurfaceFrame& surface_frame,
+                                          SkCanvas* canvas) { return true; });
+
+    embedder->SubmitFrame(gr_context.get(), std::move(surface_frame));
+
+    EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
+    embedder->EndFrame(nullptr);
+  }
+
+  // ------------------ Second frame ------------------ //
+  {
+    EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
+    embedder->BeginFrame(frame_size, nullptr, 1.5);
+
+    // Add an Android view.
+    auto view_params_1 = std::make_unique<EmbeddedViewParams>();
+    view_params_1->offsetPixels = SkPoint::Make(100, 100);
+    // TODO(egarciad): Investigate why Flow applies the device pixel ratio to
+    // the offsetPixels, but not the sizePoints.
+    view_params_1->sizePoints = SkSize::Make(200, 200);
+    embedder->PrerollCompositeEmbeddedView(0, std::move(view_params_1));
+    // This is the recording canvas flow writes to.
+    auto canvas_1 = embedder->CompositeEmbeddedView(0);
+
+    auto rect_paint = SkPaint();
+    rect_paint.setColor(SkColors::kCyan);
+    rect_paint.setStyle(SkPaint::Style::kFill_Style);
+
+    // This simulates Flutter UI that doesn't intersect with the Android view.
+    canvas_1->drawRect(SkRect::MakeXYWH(0, 0, 50, 50), rect_paint);
+    // This simulates Flutter UI that intersects with the Android view.
+    canvas_1->drawRect(SkRect::MakeXYWH(50, 50, 200, 200), rect_paint);
+    canvas_1->drawRect(SkRect::MakeXYWH(150, 150, 100, 100), rect_paint);
+
+    // Don't create a new overlay surface since it's recycled from the first
+    // frame.
+    EXPECT_CALL(*jni_mock, FlutterViewCreateOverlaySurface()).Times(0);
+    // The JNI call to display the Android view.
+    EXPECT_CALL(*jni_mock,
+                FlutterViewOnDisplayPlatformView(0, 100, 100, 300, 300));
+    // The JNI call to display the overlay surface.
+    EXPECT_CALL(*jni_mock,
+                FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));
+
+    auto surface_frame =
+        std::make_unique<SurfaceFrame>(SkSurface::MakeNull(1000, 1000), false,
+                                       [](const SurfaceFrame& surface_frame,
+                                          SkCanvas* canvas) { return true; });
+    embedder->SubmitFrame(gr_context.get(), std::move(surface_frame));
+  }
 }
 
 }  // namespace testing

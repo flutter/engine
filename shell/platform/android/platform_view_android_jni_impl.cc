@@ -1105,13 +1105,15 @@ PlatformViewAndroidJNIImpl::FlutterViewCreateOverlaySurface() {
 
   auto java_object = java_object_.get(env);
   if (java_object.is_null()) {
-    return;
+    return nullptr;
   }
 
   env->CallVoidMethod(java_object.obj(), g_create_overlay_surface_method);
 
   FML_CHECK(CheckException(env));
-  return nullptr;
+  // TODO(egarciad): Wire this up.
+  // https://github.com/flutter/flutter/issues/55270
+  return std::make_unique<PlatformViewAndroidJNI::OverlayMetadata>(0, nullptr);
 }
 
 }  // namespace flutter

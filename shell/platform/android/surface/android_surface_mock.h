@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_MOCK_ANDROID_SURFACE_H_
-#define FLUTTER_SHELL_PLATFORM_ANDROID_MOCK_ANDROID_SURFACE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_MOCK_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_MOCK_H_
 
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
@@ -15,7 +15,7 @@ namespace flutter {
 /// Mock for |AndroidSurface|. This implementation can be used in unit
 /// tests without requiring the Android toolchain.
 ///
-class MockAndroidSurface final : public GPUSurfaceGLDelegate,
+class AndroidSurfaceMock final : public GPUSurfaceGLDelegate,
                                  public AndroidSurface {
  public:
   MOCK_METHOD(bool, IsValid, (), (const, override));
@@ -56,4 +56,4 @@ class MockAndroidSurface final : public GPUSurfaceGLDelegate,
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_MOCK_ANDROID_SURFACE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_MOCK_H_

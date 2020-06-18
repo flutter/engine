@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_JNI_H_
-#define FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_JNI_H_
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
 
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "gmock/gmock.h"
@@ -14,7 +14,7 @@ namespace flutter {
 /// Mock for |PlatformViewAndroidJNI|. This implementation can be used in unit
 /// tests without requiring the Android toolchain.
 ///
-class MockJNI : public PlatformViewAndroidJNI {
+class JNIMock final : public PlatformViewAndroidJNI {
  public:
   MOCK_METHOD(void,
               FlutterViewHandlePlatformMessage,
@@ -83,4 +83,4 @@ class MockJNI : public PlatformViewAndroidJNI {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_JNI_H_
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_

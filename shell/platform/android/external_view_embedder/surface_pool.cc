@@ -23,7 +23,7 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
     GrContext* gr_context,
     std::shared_ptr<AndroidContext> android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    AndroidSurface::Factory surface_factory) {
+    const AndroidSurface::Factory& surface_factory) {
   // Allocate a new surface if there isn't one available.
   if (available_layer_index_ >= layers_.size()) {
     std::unique_ptr<AndroidSurface> android_surface =

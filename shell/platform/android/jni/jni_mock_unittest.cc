@@ -2,23 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/android/jni/mock_jni.h"
+#include "flutter/shell/platform/android/jni/jni_mock.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
 namespace testing {
 
-TEST(MockJNI, FlutterViewHandlePlatformMessage) {
-  MockJNI mock_jni;
+TEST(JNIMock, FlutterViewHandlePlatformMessage) {
+  JNIMock mock;
 
   auto message =
       fml::MakeRefCounted<PlatformMessage>("<channel-name>", nullptr);
   auto response_id = 1;
 
-  EXPECT_CALL(mock_jni, FlutterViewHandlePlatformMessage(message, response_id));
+  EXPECT_CALL(mock, FlutterViewHandlePlatformMessage(message, response_id));
 
-  mock_jni.FlutterViewHandlePlatformMessage(message, response_id);
+  mock.FlutterViewHandlePlatformMessage(message, response_id);
 }
 
 }  // namespace testing

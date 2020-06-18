@@ -19,7 +19,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   AndroidExternalViewEmbedder(
       std::shared_ptr<AndroidContext> android_context,
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-      AndroidSurface::Factory surface_factory);
+      const AndroidSurface::Factory& surface_factory);
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(

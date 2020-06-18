@@ -21,11 +21,11 @@ source_set("jni") {
   ]
 }
 
-source_set("mock_jni") {
+source_set("jni_mock") {
   testonly = true
 
   sources = [
-    "mock_jni.h",
+    "jni_mock.h",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -43,12 +43,12 @@ executable("jni_unittests") {
   testonly = true
 
   sources = [
-    "mock_jni_unittest.cc",
+    "jni_mock_unittest.cc",
   ]
 
   deps = [
     ":jni_fixtures",
-    ":mock_jni",
+    ":jni_mock",
     "//flutter/testing",
     "//flutter/testing:dart",
     "//flutter/testing:skia",

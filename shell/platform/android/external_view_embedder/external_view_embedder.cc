@@ -11,7 +11,7 @@ namespace flutter {
 AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
     std::shared_ptr<AndroidContext> android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    AndroidSurface::Factory surface_factory)
+    const AndroidSurface::Factory& surface_factory)
     : ExternalViewEmbedder(),
       android_context_(std::move(android_context)),
       jni_facade_(std::move(jni_facade)),
@@ -22,11 +22,11 @@ AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
 void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
-  auto rtree_factory = RTreeFactory();
-  view_rtrees_[view_id] = rtree_factory.getInstance();
-
   TRACE_EVENT0("flutter",
                "AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView");
+
+  auto rtree_factory = RTreeFactory();
+  view_rtrees_[view_id] = rtree_factory.getInstance();
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
   picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_),
                                               &rtree_factory);
@@ -89,18 +89,18 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
 
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
-    SkPoint view_offset = view_params_[view_id].offsetPixels;
-    SkSize view_size = view_params_[view_id].sizePoints;
+    SkRect view_rect = GetViewRect(view_id);
 
     // Display the platform view. If it's already displayed, then it's
     // just positioned and sized.
     jni_facade_->FlutterViewOnDisplayPlatformView(view_id,            //
-                                                  view_offset.x(),    //
-                                                  view_offset.y(),    //
-                                                  view_size.width(),  //
-                                                  view_size.height()  //
+                                                  view_rect.x(),      //
+                                                  view_rect.y(),      //
+                                                  view_rect.width(),  //
+                                                  view_rect.height()  //
     );
 
+    pictures[view_id] = picture_recorders_[view_id]->finishRecordingAsPicture();
     sk_sp<RTree> rtree = view_rtrees_[view_id];
     // Determinate if Flutter UI intersects with any of the previous
     // platform views stacked by z position.
@@ -115,6 +115,7 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
       std::list<SkRect> intersection_rects =
           rtree->searchNonOverlappingDrawnRects(current_view_rect);
       auto allocation_size = intersection_rects.size();
+
       // Limit the number of native views, so it doesn't grow for ever.
       //
       // In this case, the rects are merged into a single one that is the union
@@ -147,7 +148,6 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
       }
       overlay_layers[current_view_id] = intersection_rects;
     }
-    pictures[view_id] = picture_recorders_[view_id]->finishRecordingAsPicture();
     background_canvas->drawPicture(pictures[view_id]);
   }
   // Submit the background canvas frame before switching the GL context to
@@ -255,6 +255,7 @@ void AndroidExternalViewEmbedder::EndFrame(
     raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
     should_run_rasterizer_on_platform_thread_ = false;
   }
+  surface_pool_->RecycleLayers();
   jni_facade_->FlutterViewEndFrame();
 }
 

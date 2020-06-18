@@ -34,12 +34,12 @@ source_set("native_window") {
   ]
 }
 
-source_set("mock_surface") {
+source_set("surface_mock") {
   testonly = true
 
   sources = [
-    "mock_android_surface.cc",
-    "mock_android_surface.h",
+    "android_surface_mock.cc",
+    "android_surface_mock.h",
   ]
 
   public_configs = [
