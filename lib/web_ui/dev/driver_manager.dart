@@ -131,4 +131,15 @@ abstract class DriverManager {
 
   @protected
   Future<void> _startDriver(String driverPath);
+
+  static DriverManager chooseDriver(String browser) {
+    if (browser == 'chrome') {
+      return ChromeDriverManager(browser);
+    } else if (browser == 'safari' && io.Platform.isMacOS) {
+      return SafariDriverManager(browser);
+    } else {
+      throw StateError('Integration tests are only supported on Chrome or '
+          'on Safari (running on MacOS)');
+    }
+  }
 }

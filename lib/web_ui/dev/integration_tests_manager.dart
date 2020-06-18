@@ -25,19 +25,14 @@ class IntegrationTestsManager {
   final DriverManager _driverManager;
 
   IntegrationTestsManager(this._browser, this._useSystemFlutter)
-      : _driverManager = _browser == 'chrome'
-            ? ChromeDriverManager(_browser)
-            : (_browser == 'safari' && io.Platform.isMacOS)
-                ? SafariDriverManager(_browser)
-                : throw StateError(_unsupportedConfigurationWarning);
+      : _driverManager = DriverManager.chooseDriver(_browser);
 
   Future<bool> runTests() async {
-    if (_browser != 'chrome' && _browser != 'safari' && io.Platform.isMacOS) {
-      io.stderr.writeln(_unsupportedConfigurationWarning);
-      return false;
-    } else {
+    if (validateIfTestsShouldRun()) {
       await _driverManager.prepareDriver();
       return await _runTests();
+    } else {
+      return false;
     }
   }
 
@@ -284,6 +279,21 @@ class IntegrationTestsManager {
       }
       throw StateError('Error in test files. Check the logs for '
           'further instructions');
+    }
+  }
+
+  /// Validate the given `browser`, `platform` combination is suitable for
+  /// integration tests to run.
+  bool validateIfTestsShouldRun() {
+    // Chrome tests should run at all Platforms (Linux, MacOS, Windows).
+    // They can also run successfully on CI and local.
+    if (_browser == 'chrome') {
+      return true;
+    } else if (_browser == 'safari' && io.Platform.isMacOS && !isLuci) {
+      return true;
+    } else {
+      io.stderr.writeln(_unsupportedConfigurationWarning);
+      return false;
     }
   }
 }
