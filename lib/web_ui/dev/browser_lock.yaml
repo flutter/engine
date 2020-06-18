@@ -12,5 +12,5 @@ edge:
   launcher_version: '1.2.0.0'
 ios-safari:
   majorVersion: 13
-  minorVersion: 5
+  minorVersion: 0
   device: 'iPhone 11'
