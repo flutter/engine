@@ -44,7 +44,6 @@ source_set("surface_mock") {
 
   public_configs = [
     "//flutter:config",
-    "//third_party/googletest:gmock_config",
   ]
 
   deps = [
