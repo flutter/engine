@@ -785,7 +785,6 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterRunArgument
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/TextureRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/VsyncWaiter.java
-FILE: ../../../flutter/shell/platform/android/jni/mock_jni_unittest.cc
 FILE: ../../../flutter/shell/platform/android/jni/jni_mock.h
 FILE: ../../../flutter/shell/platform/android/jni/jni_mock_unittest.cc
 FILE: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.cc
