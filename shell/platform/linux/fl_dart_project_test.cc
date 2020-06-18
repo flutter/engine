@@ -24,3 +24,10 @@ TEST(FlDartProjectTest, GetPaths) {
   EXPECT_STREQ(fl_dart_project_get_icu_data_path(project),
                expected_icu_data_path);
 }
+
+TEST(FlDartProjectTest, EnableMirrors) {
+  g_autoptr(FlDartProject) project = fl_dart_project_new();
+  EXPECT_FALSE(fl_dart_project_get_enable_mirrors(project));
+  fl_dart_project_set_enable_mirrors(project, TRUE);
+  EXPECT_TRUE(fl_dart_project_get_enable_mirrors(project));
+}

@@ -36,6 +36,26 @@ G_DECLARE_FINAL_TYPE(FlDartProject, fl_dart_project, FL, DART_PROJECT, GObject)
 FlDartProject* fl_dart_project_new();
 
 /**
+ * fl_dart_project_set_enable_mirrors:
+ * @project: an #FlDartProject.
+ * @enable_mirrors: %TRUE if the dart:mirrors library should be used.
+ *
+ * Sets if this Flutter project can use the dart:mirrors library.
+ */
+void fl_dart_project_set_enable_mirrors(FlDartProject* project,
+                                        gboolean enable_mirrors);
+
+/**
+ * fl_dart_project_get_enable_mirrors:
+ * @project: an #FlDartProject.
+ *
+ * Gets if this Flutter project can use the dart:mirrors library.
+ *
+ * Returns: %TRUE if the dart:mirrors library can be used.
+ */
+gboolean fl_dart_project_get_enable_mirrors(FlDartProject* project);
+
+/**
  * fl_dart_project_get_aot_library_path:
  * @project: an #FlDartProject.
  *
