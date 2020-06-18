@@ -329,7 +329,7 @@ class ChromeIntegrationArguments extends IntegrationArguments {
       '--$mode',
       '--browser-name=chrome',
       if (isLuci) '--chrome-binary=${preinstalledChromeExecutable()}',
-      '--headless',
+      if (isLuci) '--headless',
       '--local-engine=host_debug_unopt',
     ];
   }

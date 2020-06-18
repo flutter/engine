@@ -28,20 +28,23 @@ class ChromeDriverManager extends DriverManager {
     _browserDriverDir.createSync(recursive: true);
     temporaryDirectories.add(_drivers);
 
-    io.Directory temp = io.Directory.current;
+    final io.Directory temp = io.Directory.current;
     io.Directory.current = _browserDriverDir;
 
-    // TODO(nurhan): https://github.com/flutter/flutter/issues/53179
-    final String chromeDriverVersion = await queryChromeDriverVersion();
-    ChromeDriverInstaller chromeDriverInstaller =
-        ChromeDriverInstaller.withVersion(chromeDriverVersion);
-    await chromeDriverInstaller.install(alwaysInstall: true);
-    io.Directory.current = temp;
+    try {
+      // TODO(nurhan): https://github.com/flutter/flutter/issues/53179
+      final String chromeDriverVersion = await queryChromeDriverVersion();
+      ChromeDriverInstaller chromeDriverInstaller =
+          ChromeDriverInstaller.withVersion(chromeDriverVersion);
+      await chromeDriverInstaller.install(alwaysInstall: true);
+    } finally {
+      io.Directory.current = temp;
+    }
   }
 
-  /// Driver should already exist on LUCI as a CIPD package.
+  /// Throw an error if driver directory does not exists.
   ///
-  /// Throw an error if directory does not exists.
+  /// Driver should already exist on LUCI as a CIPD package.
   Future<void> _verifyDriverForLUCI() {
     if (!_browserDriverDir.existsSync()) {
       throw StateError('Failed to locate Chrome driver on LUCI on path:'
@@ -89,13 +92,6 @@ class SafariDriverManager extends DriverManager {
 /// tests.
 abstract class DriverManager {
   /// Installation directory for browser's driver.
-  ///
-  /// Always re-install since driver can change frequently.
-  /// It usually changes with each the browser version changes.
-  /// A better solution would be installing the browser and the driver at the
-  /// same time.
-  // TODO(nurhan): https://github.com/flutter/flutter/issues/53179. Partly
-  // solved. Remaining local integration tests using the locked Chrome version.
   @protected
   final io.Directory _browserDriverDir;
 
@@ -125,6 +121,12 @@ abstract class DriverManager {
     await _startDriver(_browserDriverDir.path);
   }
 
+  /// Always re-install since driver can change frequently.
+  /// It usually changes with each the browser version changes.
+  /// A better solution would be installing the browser and the driver at the
+  /// same time.
+  /// TODO(nurhan): https://github.com/flutter/flutter/issues/53179. Partly
+  // solved. Remaining local integration tests using the locked Chrome version.
   Future<void> _installDriver();
 
   Future<void> _verifyDriverForLUCI();
