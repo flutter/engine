@@ -14,7 +14,7 @@ namespace flutter {
 AndroidSurfaceGL::AndroidSurfaceGL(
     std::shared_ptr<AndroidContext> android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    AndroidSurface::Factory surface_factory)
+    const AndroidSurface::Factory& surface_factory)
     : external_view_embedder_(std::make_unique<AndroidExternalViewEmbedder>(
           std::move(android_context),
           std::move(jni_facade),
