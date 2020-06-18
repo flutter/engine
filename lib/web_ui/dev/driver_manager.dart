@@ -4,6 +4,7 @@
 
 import 'dart:io' as io;
 
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as pathlib;
 import 'package:web_driver_installer/chrome_driver_installer.dart';
 import 'package:web_driver_installer/safari_driver_runner.dart';
@@ -41,11 +42,12 @@ class ChromeDriverManager extends DriverManager {
   /// Driver should already exist on LUCI as a CIPD package.
   ///
   /// Throw an error if directory does not exists.
-  void _verifyDriverForLUCI() {
+  Future<void> _verifyDriverForLUCI() {
     if (!_browserDriverDir.existsSync()) {
       throw StateError('Failed to locate Chrome driver on LUCI on path:'
           '${_browserDriverDir.path}');
     }
+    return Future<void>.value();
   }
 
   Future<void> _startDriver(String driverPath) async {
@@ -67,9 +69,10 @@ class SafariDriverManager extends DriverManager {
     return new Future<void>.value();
   }
 
-  void _verifyDriverForLUCI() {
+  Future<void> _verifyDriverForLUCI() {
     // No-op.
     // macOS comes with Safari Driver installed.
+    return Future<void>.value();
   }
 
   Future<void> _startDriver(String driverPath) async {
@@ -82,7 +85,7 @@ class SafariDriverManager extends DriverManager {
   }
 }
 
-/// Interface for preparing the browser driver before running the integration
+/// Abstract class for preparing the browser driver before running the integration
 /// tests.
 abstract class DriverManager {
   /// Installation directory for browser's driver.
@@ -93,12 +96,14 @@ abstract class DriverManager {
   /// same time.
   // TODO(nurhan): https://github.com/flutter/flutter/issues/53179. Partly
   // solved. Remaining local integration tests using the locked Chrome version.
+  @protected
   final io.Directory _browserDriverDir;
 
   /// This is the parent directory for all drivers.
   ///
   /// This directory is saved to [temporaryDirectories] and deleted before
   /// tests shutdown.
+  @protected
   final io.Directory _drivers;
 
   DriverManager(String browser)
@@ -122,7 +127,8 @@ abstract class DriverManager {
 
   Future<void> _installDriver();
 
-  void _verifyDriverForLUCI();
+  Future<void> _verifyDriverForLUCI();
 
+  @protected
   Future<void> _startDriver(String driverPath);
 }
