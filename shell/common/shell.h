@@ -31,7 +31,6 @@
 #include "flutter/runtime/service_protocol.h"
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/engine.h"
-#include "flutter/shell/common/layer_tree_holder.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell_io_manager.h"
@@ -483,6 +482,10 @@ class Shell final : public PlatformView::Delegate,
   // |PlatformView::Delegate|
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override;
 
+  // |PlatformView::Delegate|
+  std::unique_ptr<std::vector<std::string>> ComputePlatformViewResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) override;
+
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;
 
@@ -490,7 +493,7 @@ class Shell final : public PlatformView::Delegate,
   void OnAnimatorNotifyIdle(int64_t deadline) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDraw(std::shared_ptr<LayerTreeHolder> layer_tree_holder,
+  void OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
                       fml::TimePoint frame_target_time) override;
 
   // |Animator::Delegate|
@@ -516,6 +519,10 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   void SetNeedsReportTimings(bool value) override;
+
+  // |Engine::Delegate|
+  std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;

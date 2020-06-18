@@ -69,6 +69,10 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
   std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>
   FlutterViewCreateOverlaySurface() override;
 
+  std::unique_ptr<std::vector<std::string>>
+  FlutterViewComputePlatformResolvedLocale(
+      std::vector<std::string> supported_locales_data) override;
+
  private:
   // Reference to FlutterJNI object.
   const fml::jni::JavaObjectWeakGlobalRef java_object_;

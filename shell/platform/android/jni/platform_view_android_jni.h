@@ -168,13 +168,19 @@ class PlatformViewAndroidJNI {
 
   //----------------------------------------------------------------------------
   /// @brief      Instantiates an overlay surface in hybrid composition and
-  /// provides
-  ///             the necessary metadata to operate the surface in C.
+  ///             provides the necessary metadata to operate the surface in C.
   ///
   /// @note       Must be called from the platform thread.
   ///
   virtual std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>
   FlutterViewCreateOverlaySurface() = 0;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Computes the locale Android would select.
+  ///
+  virtual std::unique_ptr<std::vector<std::string>>
+  FlutterViewComputePlatformResolvedLocale(
+      std::vector<std::string> supported_locales_data) = 0;
 };
 
 }  // namespace flutter
