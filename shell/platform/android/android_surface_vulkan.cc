@@ -16,11 +16,11 @@ AndroidSurfaceVulkan::AndroidSurfaceVulkan(
     std::shared_ptr<AndroidContext> android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     AndroidSurface::Factory surface_factory)
-    : proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()),
-      external_view_embedder_(std::make_unique<AndroidExternalViewEmbedder>(
+    : external_view_embedder_(std::make_unique<AndroidExternalViewEmbedder>(
           std::move(android_context),
           std::move(jni_facade),
-          surface_factory)) {}
+          surface_factory)),
+      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
 
 AndroidSurfaceVulkan::~AndroidSurfaceVulkan() = default;
 
