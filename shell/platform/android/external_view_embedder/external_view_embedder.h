@@ -14,6 +14,16 @@
 
 namespace flutter {
 
+//------------------------------------------------------------------------------
+/// Allows to embed Android views into a Flutter application.
+///
+/// This class calls Java methods via |PlatformViewAndroidJNI| to manage the
+/// lifecycle of the Android view corresponding to |flutter::PlatformViewLayer|.
+///
+/// It also orchestrates overlay surfaces. These are Android views
+/// that render above (by Z order) the Android view corresponding to
+/// |flutter::PlatformViewLayer|.
+///
 class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
  public:
   AndroidExternalViewEmbedder(
@@ -57,7 +67,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // Gets the rect based on the device pixel ratio of a platform view displayed
   // on the screen.
-  SkRect GetViewRect(int view_id);
+  SkRect GetViewRect(int view_id) const;
 
  private:
   static const int kMaxLayerAllocations = 2;
@@ -99,14 +109,15 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   // The platform view's picture recorder keyed off the platform view id, which
   // contains any subsequent operation until the next platform view or the end
   // of the last leaf node in the layer tree.
-  std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
+  std::unordered_map<int64_t, std::unique_ptr<SkPictureRecorder>>
+      picture_recorders_;
 
   // The params for a platform view, which contains the size, position and
   // mutation stack.
-  std::map<int64_t, EmbeddedViewParams> view_params_;
+  std::unordered_map<int64_t, EmbeddedViewParams> view_params_;
 
   // The r-tree that captures the operations for the picture recorders.
-  std::map<int64_t, sk_sp<RTree>> view_rtrees_;
+  std::unordered_map<int64_t, sk_sp<RTree>> view_rtrees_;
 
   // Resets the state.
   void Reset();

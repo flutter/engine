@@ -74,7 +74,7 @@ PlatformViewAndroid::PlatformViewAndroid(
       << "Could not create an Android context.";
 
   android_surface_ = SurfaceFactory(android_context, jni_facade);
-  FML_CHECK(android_surface_)
+  FML_CHECK(android_surface_ && android_surface_->IsValid())
       << "Could not create an OpenGL, Vulkan or Software surface to setup "
          "rendering.";
 }

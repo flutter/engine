@@ -33,10 +33,11 @@ TEST(SurfacePool, GetLayer__AllocateOneLayer) {
   auto surface_factory =
       [gr_context, window](std::shared_ptr<AndroidContext> android_context,
                            std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
-        auto mock_surface = std::make_unique<AndroidSurfaceMock>();
-        EXPECT_CALL(*mock_surface, CreateGPUSurface(gr_context.get()));
-        EXPECT_CALL(*mock_surface, SetNativeWindow(window));
-        return mock_surface;
+        auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();
+        EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()));
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
+        return android_surface_mock;
       };
   auto layer = pool->GetLayer(gr_context.get(), android_context, jni_mock,
                               surface_factory);
@@ -62,10 +63,11 @@ TEST(SurfacePool, GetUnusedLayers) {
   auto surface_factory =
       [gr_context, window](std::shared_ptr<AndroidContext> android_context,
                            std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
-        auto mock_surface = std::make_unique<AndroidSurfaceMock>();
-        EXPECT_CALL(*mock_surface, CreateGPUSurface(gr_context.get()));
-        EXPECT_CALL(*mock_surface, SetNativeWindow(window));
-        return mock_surface;
+        auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();
+        EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()));
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
+        return android_surface_mock;
       };
   auto layer = pool->GetLayer(gr_context.get(), android_context, jni_mock,
                               surface_factory);
@@ -96,13 +98,16 @@ TEST(SurfacePool, GetLayer__Recycle) {
       [gr_context_1, gr_context_2, window](
           std::shared_ptr<AndroidContext> android_context,
           std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
-        auto mock_surface = std::make_unique<AndroidSurfaceMock>();
+        auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();
         // Allocate two GPU surfaces for each gr context.
-        EXPECT_CALL(*mock_surface, CreateGPUSurface(gr_context_1.get()));
-        EXPECT_CALL(*mock_surface, CreateGPUSurface(gr_context_2.get()));
+        EXPECT_CALL(*android_surface_mock,
+                    CreateGPUSurface(gr_context_1.get()));
+        EXPECT_CALL(*android_surface_mock,
+                    CreateGPUSurface(gr_context_2.get()));
         // Set the native window once.
-        EXPECT_CALL(*mock_surface, SetNativeWindow(window));
-        return mock_surface;
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
+        return android_surface_mock;
       };
   auto layer_1 = pool->GetLayer(gr_context_1.get(), android_context, jni_mock,
                                 surface_factory);
@@ -139,10 +144,11 @@ TEST(SurfacePool, GetLayer__AllocateTwoLayers) {
   auto surface_factory =
       [gr_context, window](std::shared_ptr<AndroidContext> android_context,
                            std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
-        auto mock_surface = std::make_unique<AndroidSurfaceMock>();
-        EXPECT_CALL(*mock_surface, CreateGPUSurface(gr_context.get()));
-        EXPECT_CALL(*mock_surface, SetNativeWindow(window));
-        return mock_surface;
+        auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();
+        EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()));
+        EXPECT_CALL(*android_surface_mock, SetNativeWindow(window));
+        EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
+        return android_surface_mock;
       };
   auto layer_1 = pool->GetLayer(gr_context.get(), android_context, jni_mock,
                                 surface_factory);

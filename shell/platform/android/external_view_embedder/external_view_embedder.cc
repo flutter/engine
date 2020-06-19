@@ -26,24 +26,24 @@ void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
                "AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView");
 
   auto rtree_factory = RTreeFactory();
-  view_rtrees_[view_id] = rtree_factory.getInstance();
-  picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
-  picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_),
-                                              &rtree_factory);
+  view_rtrees_.insert({view_id, rtree_factory.getInstance()});
 
+  picture_recorders_.insert({view_id, std::make_unique<SkPictureRecorder>()});
+  picture_recorders_.at(view_id)->beginRecording(SkRect::Make(frame_size_),
+                                                 &rtree_factory);
   composition_order_.push_back(view_id);
-  // Update params if they changed.
+  // Update params only if they changed.
   if (view_params_.count(view_id) == 1 &&
-      view_params_[view_id] == *params.get()) {
+      view_params_.at(view_id) == *params.get()) {
     return;
   }
-  view_params_[view_id] = EmbeddedViewParams(*params.get());
+  view_params_.insert_or_assign(view_id, EmbeddedViewParams(*params.get()));
 }
 
 // |ExternalViewEmbedder|
 SkCanvas* AndroidExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   if (picture_recorders_.count(view_id) == 1) {
-    return picture_recorders_[view_id]->getRecordingCanvas();
+    return picture_recorders_.at(view_id)->getRecordingCanvas();
   }
   return nullptr;
 }
@@ -53,14 +53,15 @@ std::vector<SkCanvas*> AndroidExternalViewEmbedder::GetCurrentCanvases() {
   std::vector<SkCanvas*> canvases;
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
-    canvases.push_back(picture_recorders_[view_id]->getRecordingCanvas());
+    canvases.push_back(picture_recorders_.at(view_id)->getRecordingCanvas());
   }
   return canvases;
 }
 
-SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) {
-  EmbeddedViewParams* params = &view_params_[view_id];
+SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
+  const EmbeddedViewParams* params = &(view_params_.at(view_id));
   FML_CHECK(params);
+  // TODO(egarciad): The rect should be computed from the mutator stack.
   return SkRect::MakeXYWH(params->offsetPixels.x(),                          //
                           params->offsetPixels.y(),                          //
                           params->sizePoints.width() * device_pixel_ratio_,  //
@@ -79,8 +80,8 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
     return true;
   }
 
-  std::map<int64_t, std::list<SkRect>> overlay_layers;
-  std::map<int64_t, sk_sp<SkPicture>> pictures;
+  std::unordered_map<int64_t, std::list<SkRect>> overlay_layers;
+  std::unordered_map<int64_t, sk_sp<SkPicture>> pictures;
   SkCanvas* background_canvas = frame->SkiaCanvas();
 
   // Restore the clip context after exiting this method since it's changed
@@ -100,8 +101,11 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
                                                   view_rect.height()  //
     );
 
-    pictures[view_id] = picture_recorders_[view_id]->finishRecordingAsPicture();
-    sk_sp<RTree> rtree = view_rtrees_[view_id];
+    sk_sp<SkPicture> picture =
+        picture_recorders_.at(view_id)->finishRecordingAsPicture();
+    FML_CHECK(picture);
+    pictures.insert({view_id, picture});
+    sk_sp<RTree> rtree = view_rtrees_.at(view_id);
     // Determinate if Flutter UI intersects with any of the previous
     // platform views stacked by z position.
     //
@@ -146,9 +150,9 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
         // drawn on the overlay layer.
         background_canvas->clipRect(intersection_rect, SkClipOp::kDifference);
       }
-      overlay_layers[current_view_id] = intersection_rects;
+      overlay_layers.insert({current_view_id, intersection_rects});
     }
-    background_canvas->drawPicture(pictures[view_id]);
+    background_canvas->drawPicture(pictures.at(view_id));
   }
   // Submit the background canvas frame before switching the GL context to
   // the surfaces above.
@@ -156,11 +160,11 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
 
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
-    for (SkRect& overlay_rect : overlay_layers[view_id]) {
-      CreateSurfaceIfNeeded(context,            //
-                            view_id,            //
-                            pictures[view_id],  //
-                            overlay_rect        //
+    for (SkRect& overlay_rect : overlay_layers.at(view_id)) {
+      CreateSurfaceIfNeeded(context,               //
+                            view_id,               //
+                            pictures.at(view_id),  //
+                            overlay_rect           //
                             )
           ->Submit();
     }
