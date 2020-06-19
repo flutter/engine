@@ -48,7 +48,8 @@ class FlutterWindowsView {
 
   ~FlutterWindowsView();
 
-  // Factory for creating FlutterWindowsView requiring an implementator of FlutterWindowBindingHandler.
+  // Factory for creating FlutterWindowsView requiring an implementator of
+  // FlutterWindowBindingHandler.
   static FlutterDesktopViewControllerRef CreateFlutterWindowsView(
       std::unique_ptr<FlutterWindowBindingHandler> windowbinding);
 
@@ -119,7 +120,6 @@ class FlutterWindowsView {
   void OnFontChange();
 
  private:
-
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
   void SendWindowMetrics(size_t width, size_t height, double dpiscale) const;

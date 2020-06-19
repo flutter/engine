@@ -79,7 +79,7 @@ class Win32FlutterWindow : public Win32Window,
   // |GetPhysicalHeight|
   float GetPhysicalHeight() override;
 
-   // state of the mouse button
+  // state of the mouse button
   bool pointer_is_down_ = false;
 
   // The handle to the Flutter engine instance.

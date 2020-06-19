@@ -17,11 +17,10 @@ namespace flutter {
 class FlutterWindowsView;
 
 // Represents the type of a WindowsRenderTarget
-enum WindowsRenderTargetType { HWND /*, Visual*/};
+enum WindowsRenderTargetType { HWND /*, Visual*/ };
 
 struct WindowsRenderTarget {
-
-// Creates a new HWND backed render target from window
+  // Creates a new HWND backed render target from window
   static WindowsRenderTarget CreateForHWND(::HWND window) {
     WindowsRenderTarget wrt;
     wrt.type_ = WindowsRenderTargetType::HWND;
@@ -32,11 +31,11 @@ struct WindowsRenderTarget {
   // Returns the type of instance
   WindowsRenderTargetType GetType() { return type_; }
 
-// Returns the physical window for HWND backed instances
+  // Returns the physical window for HWND backed instances
   ::HWND GetWindowHandle() { return std::get<::HWND>(render_target_); }
 
  private:
-// prevent external construction
+  // prevent external construction
   WindowsRenderTarget() : render_target_(static_cast<::HWND>(0)) {}
 
   // type of instance
@@ -56,7 +55,8 @@ class FlutterWindowBindingHandler {
   // Caller provides a view for implementor to use to communicate state changes.
   virtual void SetView(FlutterWindowsView* view) = 0;
 
-  // Implementor returns a valid WindowsRenderTarget representing the backing window.
+  // Implementor returns a valid WindowsRenderTarget representing the backing
+  // window.
   virtual WindowsRenderTarget GetRenderTarget() = 0;
 
   // Implementor returns the scale factor for the backing window.
