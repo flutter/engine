@@ -16,7 +16,7 @@ import android.os.Build;
 import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import android.annotation.TargetApi;
 
 /**
  * Paints a Flutter UI provided by an {@link android.media.ImageReader} onto a {@link
@@ -30,7 +30,7 @@ import androidx.annotation.RequiresApi;
  * an {@link android.media.Image} and renders it to the {@link android.graphics.Canvas} in {@code
  * onDraw}.
  */
-@RequiresApi(api = Build.VERSION_CODES.KITKAT)
+@TargetApi(api = Build.VERSION_CODES.K)
 public class FlutterImageView extends View {
   private final ImageReader imageReader;
   @Nullable private Image nextImage;
@@ -46,6 +46,7 @@ public class FlutterImageView extends View {
   }
 
   /** Acquires the next image to be drawn to the {@link android.graphics.Canvas}. */
+  @TargetApi(api = Build.VERSION_CODES.KITKAT)
   public void acquireLatestImage() {
     nextImage = imageReader.acquireLatestImage();
     invalidate();
@@ -71,7 +72,7 @@ public class FlutterImageView extends View {
     drawImagePlane(canvas);
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.P)
+  @TargetApi(api = Build.VERSION_CODES.P)
   private void drawImageBuffer(@NonNull Canvas canvas) {
     final HardwareBuffer buffer = currentImage.getHardwareBuffer();
 
