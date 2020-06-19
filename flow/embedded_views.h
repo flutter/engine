@@ -204,7 +204,7 @@ class EmbeddedViewParams {
 
   // Clippings are ignored in this operation
   // TODO(cyanglaz): Factoring clipping.
-  //
+  // https://github.com/flutter/flutter/issues/59821
   SkRect GetBoundingRectAfterMutations() const {
     SkPath path;
     SkRect starting_rect = SkRect::MakeSize(sizePoints);
