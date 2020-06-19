@@ -14,7 +14,7 @@ const bool experimentalUseSkia =
 /// When CanvasKit pushes a new release to NPM, update this URL to reflect the
 /// most recent version. For example, if CanvasKit releases version 0.34.0 to
 /// NPM, update this URL to `https://unpkg.com/canvaskit-wasm@0.34.0/bin/`.
-const String canvasKitBaseUrl = 'https://unpkg.com/canvaskit-wasm@0.14.0/bin/';
+const String canvasKitBaseUrl = 'https://unpkg.com/canvaskit-wasm@0.16.2/bin/';
 
 /// Initialize the Skia backend.
 ///
@@ -27,9 +27,8 @@ Future<void> initializeSkia() {
     final js.JsObject canvasKitInitArgs = js.JsObject.jsify(<String, dynamic>{
       'locateFile': (String file, String unusedBase) => canvasKitBaseUrl + file,
     });
-    final js.JsObject canvasKitInit =
+    final js.JsObject canvasKitInitPromise =
         js.JsObject(js.context['CanvasKitInit'], <dynamic>[canvasKitInitArgs]);
-    final js.JsObject canvasKitInitPromise = canvasKitInit.callMethod('ready');
     canvasKitInitPromise.callMethod('then', <dynamic>[
       (js.JsObject ck) {
         canvasKit = ck;
@@ -51,6 +50,11 @@ js.JsObject canvasKit;
 
 /// The Skia font collection.
 SkiaFontCollection skiaFontCollection;
+
+/// Initializes [skiaFontCollection].
+void ensureSkiaFontCollectionInitialized() {
+  skiaFontCollection ??= SkiaFontCollection();
+}
 
 /// The scene host, where the root canvas and overlay canvases are added to.
 html.Element skiaSceneHost;

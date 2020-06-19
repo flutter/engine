@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.9
 part of ui;
 
 // ignore: unused_element, Used in Shader assert.
 bool _offsetIsValid(Offset offset) {
-  assert(offset != null, 'Offset argument was null.');
+  assert(offset != null, 'Offset argument was null.'); // ignore: unnecessary_null_comparison
   assert(!offset.dx.isNaN && !offset.dy.isNaN,
       'Offset argument contained a NaN value.');
   return true;
@@ -15,12 +15,12 @@ bool _offsetIsValid(Offset offset) {
 
 // ignore: unused_element, Used in Shader assert.
 bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4 != null, 'Matrix4 argument was null.');
+  assert(matrix4 != null, 'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
 }
 
-void _validateColorStops(List<Color> colors, List<double> colorStops) {
+void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   if (colorStops == null) {
     if (colors.length != 2)
       throw ArgumentError(
@@ -33,7 +33,7 @@ void _validateColorStops(List<Color> colors, List<double> colorStops) {
 }
 
 Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
+  return a.withAlpha(_clampInt((a.alpha * factor).round(), 0, 255));
 }
 
 /// An immutable 32 bit color value in ARGB
@@ -131,7 +131,7 @@ class Color {
     if (component <= 0.03928) {
       return component / 12.92;
     }
-    return math.pow((component + 0.055) / 1.055, 2.4);
+    return math.pow((component + 0.055) / 1.055, 2.4) as double;
   }
 
   /// Returns a brightness value between 0 for darkest and 1 for lightest.
@@ -170,23 +170,26 @@ class Color {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static Color lerp(Color a, Color b, double t) {
-    assert(t != null);
-    if (a == null && b == null) {
-      return null;
-    }
-    if (a == null) {
-      return _scaleAlpha(b, t);
-    }
+  static Color? lerp(Color? a, Color? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
-      return _scaleAlpha(a, 1.0 - t);
+      if (a == null) {
+        return null;
+      } else {
+        return _scaleAlpha(a, 1.0 - t);
+      }
+    } else {
+      if (a == null) {
+        return _scaleAlpha(b, t);
+      } else {
+        return Color.fromARGB(
+          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
+          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
+          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
+          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+        );
+      }
     }
-    return Color.fromARGB(
-      lerpDouble(a.alpha, b.alpha, t).toInt().clamp(0, 255),
-      lerpDouble(a.red, b.red, t).toInt().clamp(0, 255),
-      lerpDouble(a.green, b.green, t).toInt().clamp(0, 255),
-      lerpDouble(a.blue, b.blue, t).toInt().clamp(0, 255),
-    );
   }
 
   /// Combine the foreground color as a transparent color over top
@@ -231,7 +234,7 @@ class Color {
   ///
   /// The [opacity] value may not be null.
   static int getAlphaFromOpacity(double opacity) {
-    assert(opacity != null);
+    assert(opacity != null); // ignore: unnecessary_null_comparison
     return (opacity.clamp(0.0, 1.0) * 255).round();
   }
 
@@ -999,15 +1002,15 @@ abstract class Paint {
   ///  * [ImageShader], a shader that tiles an [Image].
   ///  * [colorFilter], which overrides [shader].
   ///  * [color], which is used if [shader] and [colorFilter] are null.
-  Shader get shader;
-  set shader(Shader value);
+  Shader? get shader;
+  set shader(Shader? value);
 
   /// A mask filter (for example, a blur) to apply to a shape after it has been
   /// drawn but before it has been composited into the image.
   ///
   /// See [MaskFilter] for details.
-  MaskFilter get maskFilter;
-  set maskFilter(MaskFilter value);
+  MaskFilter? get maskFilter;
+  set maskFilter(MaskFilter? value);
 
   /// Controls the performance vs quality trade-off to use when applying
   /// filters, such as [maskFilter], or when drawing images, as with
@@ -1024,8 +1027,8 @@ abstract class Paint {
   /// See [ColorFilter] for details.
   ///
   /// When a shape is being drawn, [colorFilter] overrides [color] and [shader].
-  ColorFilter get colorFilter;
-  set colorFilter(ColorFilter value);
+  ColorFilter? get colorFilter;
+  set colorFilter(ColorFilter? value);
 
   double get strokeMiterLimit;
   set strokeMiterLimit(double value);
@@ -1052,8 +1055,8 @@ abstract class Paint {
   /// See also:
   ///
   ///  * [MaskFilter], which is used for drawing geometry.
-  ImageFilter get imageFilter;
-  set imageFilter(ImageFilter value);
+  ImageFilter? get imageFilter;
+  set imageFilter(ImageFilter? value);
 }
 
 /// Base class for objects such as [Gradient] and [ImageShader] which
@@ -1090,9 +1093,9 @@ abstract class Gradient extends Shader {
     Offset from,
     Offset to,
     List<Color> colors, [
-    List<double> colorStops,
+    List<double>? colorStops,
     TileMode tileMode = TileMode.clamp,
-    Float64List matrix4,
+    Float64List? matrix4,
   ]) =>
       engine.GradientLinear(from, to, colors, colorStops, tileMode, matrix4);
 
@@ -1125,17 +1128,20 @@ abstract class Gradient extends Shader {
   /// circle and `focalRadius` being the radius of that circle. If `focal` is
   /// provided and not equal to `center`, at least one of the two offsets must
   /// not be equal to [Offset.zero].
-  factory Gradient.radial(Offset center, double radius, List<Color> colors,
-      [List<double> colorStops,
-      TileMode tileMode = TileMode.clamp,
-      Float64List matrix4,
-      Offset focal,
-      double focalRadius = 0.0]) {
-    focalRadius ??= 0.0;
+  factory Gradient.radial(
+    Offset center,
+    double radius,
+    List<Color> colors, [
+    List<double>? colorStops,
+    TileMode tileMode = TileMode.clamp,
+    Float64List? matrix4,
+    Offset? focal,
+    double focalRadius = 0.0,
+  ]) {
     _validateColorStops(colors, colorStops);
     // If focal is null or focal radius is null, this should be treated as a regular radial gradient
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
-    final Float32List matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
+    final Float32List? matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
       return engine.GradientRadial(
           center, radius, colors, colorStops, tileMode, matrix32);
@@ -1176,14 +1182,14 @@ abstract class Gradient extends Shader {
   factory Gradient.sweep(
     Offset center,
     List<Color> colors, [
-    List<double> colorStops,
+    List<double>? colorStops,
     TileMode tileMode = TileMode.clamp,
-    double startAngle = 0.0,
-    double endAngle = math.pi * 2,
-    Float64List matrix4,
+    double startAngle/*?*/ = 0.0,
+    double endAngle/*!*/ = math.pi * 2,
+    Float64List? matrix4,
   ]) =>
       engine.GradientSweep(
-          center, colors, colorStops, tileMode, startAngle, endAngle, engine.toMatrix32(matrix4));
+          center, colors, colorStops, tileMode, startAngle, endAngle, matrix4 != null ? engine.toMatrix32(matrix4) : null);
 }
 
 /// Opaque handle to raw decoded image data (pixels).
@@ -1206,7 +1212,7 @@ abstract class Image {
   ///
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
-  Future<ByteData> toByteData(
+  Future<ByteData?> toByteData(
       {ImageByteFormat format = ImageByteFormat.rawRgba});
 
   /// Release the resources used by this object. The object is no longer usable
@@ -1363,8 +1369,8 @@ class MaskFilter {
   const MaskFilter.blur(
     this._style,
     this._sigma,
-  )   : assert(_style != null),
-        assert(_sigma != null);
+  )   : assert(_style != null), // ignore: unnecessary_null_comparison
+        assert(_sigma != null); // ignore: unnecessary_null_comparison
 
   final BlurStyle _style;
   final double _sigma;
@@ -1388,7 +1394,7 @@ class MaskFilter {
   int get hashCode => hashValues(_style, _sigma);
 
   List<dynamic> webOnlySerializeToCssPaint() {
-    return <dynamic>[_style?.index, _sigma];
+    return <dynamic>[_style.index, _sigma];
   }
 
   @override
@@ -1496,9 +1502,8 @@ enum PixelFormat {
 }
 
 class _ImageInfo {
-  _ImageInfo(this.width, this.height, this.format, this.rowBytes) {
-    rowBytes ??= width * 4;
-  }
+  _ImageInfo(this.width, this.height, this.format, int? rowBytes) : this.rowBytes = rowBytes ?? width * 4;
+
   int width;
   int height;
   int format;
@@ -1525,7 +1530,7 @@ abstract class FrameInfo {
   int get _durationMillis => 0;
 
   /// The [Image] object for this frame.
-  Image get image => null;
+  Image get image;
 }
 
 /// A handle to an image codec.
@@ -1552,11 +1557,11 @@ class Codec {
   ///
   /// The returned future can complete with an error if the decoding has failed.
   Future<FrameInfo> getNextFrame() {
-    return engine.futurize(_getNextFrame);
+    return engine.futurize<FrameInfo>(_getNextFrame);
   }
 
   /// Returns an error message on failure, null on success.
-  String _getNextFrame(engine.Callback<FrameInfo> callback) => null;
+  String? _getNextFrame(engine.Callback<FrameInfo> callback) => null;
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -1574,10 +1579,11 @@ class Codec {
 /// failed.
 Future<Codec> instantiateImageCodec(
   Uint8List list, {
-  int targetWidth,
-  int targetHeight,
+  int? targetWidth,
+  int? targetHeight,
+  bool allowUpscaling = true,
 }) {
-  return engine.futurize((engine.Callback<Codec> callback) =>
+  return _futurize<Codec>((engine.Callback<Codec> callback) =>
       // TODO: Implement targetWidth and targetHeight support.
       _instantiateImageCodec(list, callback, null));
 }
@@ -1585,8 +1591,8 @@ Future<Codec> instantiateImageCodec(
 /// Instantiates a [Codec] object for an image binary data.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(
-    Uint8List list, engine.Callback<Codec> callback, _ImageInfo imageInfo) {
+String? _instantiateImageCodec(
+    Uint8List list, engine.Callback<Codec> callback, _ImageInfo? imageInfo) {
   if (engine.experimentalUseSkia) {
     if (imageInfo == null) {
       engine.skiaInstantiateImageCodec(list, callback);
@@ -1601,15 +1607,15 @@ String _instantiateImageCodec(
   return null;
 }
 
-Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
-    {engine.WebOnlyImageCodecChunkCallback chunkCallback}) {
-  return engine.futurize((engine.Callback<Codec> callback) =>
+Future<Codec?> webOnlyInstantiateImageCodecFromUrl(Uri uri,
+    {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) {
+  return _futurize<Codec?>((engine.Callback<Codec> callback) =>
       _instantiateImageCodecFromUrl(uri, chunkCallback, callback));
 }
 
-String _instantiateImageCodecFromUrl(
+String? _instantiateImageCodecFromUrl(
     Uri uri,
-    engine.WebOnlyImageCodecChunkCallback chunkCallback,
+    engine.WebOnlyImageCodecChunkCallback? chunkCallback,
     engine.Callback<Codec> callback) {
   callback(engine.HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
   return null;
@@ -1637,12 +1643,20 @@ Future<void> _decodeImageFromListAsync(
 /// [rowBytes] is the number of bytes consumed by each row of pixels in the
 /// data buffer.  If unspecified, it defaults to [width] multipled by the
 /// number of bytes per pixel in the provided [format].
-void decodeImageFromPixels(Uint8List pixels, int width, int height,
-    PixelFormat format, ImageDecoderCallback callback,
-    {int rowBytes}) {
+void decodeImageFromPixels(
+  Uint8List pixels,
+  int width,
+  int height,
+  PixelFormat format,
+  ImageDecoderCallback callback, {
+  int? rowBytes,
+  int? targetWidth,
+  int? targetHeight,
+  bool allowUpscaling = true,
+}) {
   final _ImageInfo imageInfo =
       _ImageInfo(width, height, format.index, rowBytes);
-  final Future<Codec> codecFuture = engine.futurize(
+  final Future<Codec> codecFuture = _futurize(
       (engine.Callback<Codec> callback) =>
           _instantiateImageCodec(pixels, callback, imageInfo));
   codecFuture
@@ -1668,8 +1682,8 @@ class Shadow {
     this.color = const Color(_kColorDefault),
     this.offset = Offset.zero,
     this.blurRadius = 0.0,
-  })  : assert(color != null, 'Text shadow color was null.'),
-        assert(offset != null, 'Text shadow offset was null.'),
+  })  : assert(color != null, 'Text shadow color was null.'), // ignore: unnecessary_null_comparison
+        assert(offset != null, 'Text shadow offset was null.'), // ignore: unnecessary_null_comparison
         assert(blurRadius >= 0.0,
             'Text shadow blur radius should be non-negative.');
 
@@ -1750,22 +1764,25 @@ class Shadow {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   /// {@endtemplate}
-  static Shadow lerp(Shadow a, Shadow b, double t) {
-    assert(t != null);
-    if (a == null && b == null) {
-      return null;
-    }
-    if (a == null) {
-      return b.scale(t);
-    }
+  static Shadow? lerp(Shadow? a, Shadow? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (b == null) {
-      return a.scale(1.0 - t);
+      if (a == null) {
+        return null;
+      } else {
+        return a.scale(1.0 - t);
+      }
+    } else {
+      if (a == null) {
+        return b.scale(t);
+      } else {
+        return Shadow(
+          color: Color.lerp(a.color, b.color, t)!,
+          offset: Offset.lerp(a.offset, b.offset, t)!,
+          blurRadius: _lerpDouble(a.blurRadius, b.blurRadius, t),
+        );
+      }
     }
-    return Shadow(
-      color: Color.lerp(a.color, b.color, t),
-      offset: Offset.lerp(a.offset, b.offset, t),
-      blurRadius: lerpDouble(a.blurRadius, b.blurRadius, t),
-    );
   }
 
   /// Linearly interpolate between two lists of shadows.
@@ -1773,8 +1790,8 @@ class Shadow {
   /// If the lists differ in length, excess items are lerped with null.
   ///
   /// {@macro dart.ui.shadow.lerp}
-  static List<Shadow> lerpList(List<Shadow> a, List<Shadow> b, double t) {
-    assert(t != null);
+  static List<Shadow>? lerpList(List<Shadow>? a, List<Shadow>? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (a == null && b == null) {
       return null;
     }
@@ -1783,7 +1800,7 @@ class Shadow {
     final List<Shadow> result = <Shadow>[];
     final int commonLength = math.min(a.length, b.length);
     for (int i = 0; i < commonLength; i += 1)
-      result.add(Shadow.lerp(a[i], b[i], t));
+      result.add(Shadow.lerp(a[i], b[i], t)!);
     for (int i = commonLength; i < a.length; i += 1)
       result.add(a[i].scale(1.0 - t));
     for (int i = commonLength; i < b.length; i += 1) {

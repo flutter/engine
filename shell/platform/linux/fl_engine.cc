@@ -6,7 +6,10 @@
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
+#include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
+#include "flutter/shell/platform/linux/fl_renderer_headless.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
 
 #include <gmodule.h>
 
@@ -24,6 +27,7 @@ struct _FlEngine {
   FlDartProject* project;
   FlRenderer* renderer;
   FlBinaryMessenger* binary_messenger;
+  FlutterEngineAOTData aot_data;
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
 
   // Function to call when a platform message is received.
@@ -34,7 +38,15 @@ struct _FlEngine {
 
 G_DEFINE_QUARK(fl_engine_error_quark, fl_engine_error)
 
-G_DEFINE_TYPE(FlEngine, fl_engine, G_TYPE_OBJECT)
+static void fl_engine_plugin_registry_iface_init(
+    FlPluginRegistryInterface* iface);
+
+G_DEFINE_TYPE_WITH_CODE(
+    FlEngine,
+    fl_engine,
+    G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
+                          fl_engine_plugin_registry_iface_init))
 
 // Subclass of GSource that integrates Flutter tasks into the GLib main loop.
 typedef struct {
@@ -107,6 +119,15 @@ static bool fl_engine_gl_present(void* user_data) {
   return result;
 }
 
+static bool fl_engine_gl_make_resource_current(void* user_data) {
+  FlEngine* self = static_cast<FlEngine*>(user_data);
+  g_autoptr(GError) error = nullptr;
+  gboolean result = fl_renderer_make_resource_current(self->renderer, &error);
+  if (!result)
+    g_warning("%s", error->message);
+  return result;
+}
+
 // Called by the engine to determine if it is on the GTK thread.
 static bool fl_engine_runs_task_on_current_thread(void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
@@ -159,10 +180,32 @@ static void fl_engine_platform_message_response_cb(const uint8_t* data,
                         (GDestroyNotify)g_bytes_unref);
 }
 
+// Implements FlPluginRegistry::get_registrar_for_plugin.
+static FlPluginRegistrar* fl_engine_get_registrar_for_plugin(
+    FlPluginRegistry* registry,
+    const gchar* name) {
+  FlEngine* self = FL_ENGINE(registry);
+
+  return fl_plugin_registrar_new(nullptr, self->binary_messenger);
+}
+
+static void fl_engine_plugin_registry_iface_init(
+    FlPluginRegistryInterface* iface) {
+  iface->get_registrar_for_plugin = fl_engine_get_registrar_for_plugin;
+}
+
 static void fl_engine_dispose(GObject* object) {
   FlEngine* self = FL_ENGINE(object);
 
-  FlutterEngineShutdown(self->engine);
+  if (self->engine != nullptr) {
+    FlutterEngineShutdown(self->engine);
+    self->engine = nullptr;
+  }
+
+  if (self->aot_data != nullptr) {
+    FlutterEngineCollectAOTData(self->aot_data);
+    self->aot_data = nullptr;
+  }
 
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
@@ -192,11 +235,15 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
   g_return_val_if_fail(FL_IS_DART_PROJECT(project), nullptr);
   g_return_val_if_fail(FL_IS_RENDERER(renderer), nullptr);
 
-  FlEngine* self =
-      static_cast<FlEngine*>(g_object_new(fl_engine_get_type(), nullptr));
-  self->project = static_cast<FlDartProject*>(g_object_ref(project));
-  self->renderer = static_cast<FlRenderer*>(g_object_ref(renderer));
+  FlEngine* self = FL_ENGINE(g_object_new(fl_engine_get_type(), nullptr));
+  self->project = FL_DART_PROJECT(g_object_ref(project));
+  self->renderer = FL_RENDERER(g_object_ref(renderer));
   return self;
+}
+
+G_MODULE_EXPORT FlEngine* fl_engine_new_headless(FlDartProject* project) {
+  g_autoptr(FlRendererHeadless) renderer = fl_renderer_headless_new();
+  return fl_engine_new(project, FL_RENDERER(renderer));
 }
 
 gboolean fl_engine_start(FlEngine* self, GError** error) {
@@ -213,6 +260,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   config.open_gl.clear_current = fl_engine_gl_clear_current;
   config.open_gl.fbo_callback = fl_engine_gl_get_fbo;
   config.open_gl.present = fl_engine_gl_present;
+  config.open_gl.make_resource_current = fl_engine_gl_make_resource_current;
 
   FlutterTaskRunnerDescription platform_task_runner = {};
   platform_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
@@ -232,6 +280,19 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.icu_data_path = fl_dart_project_get_icu_data_path(self->project);
   args.platform_message_callback = fl_engine_platform_message_cb;
   args.custom_task_runners = &custom_task_runners;
+  args.shutdown_dart_vm_when_done = true;
+
+  if (FlutterEngineRunsAOTCompiledDartCode()) {
+    FlutterEngineAOTDataSource source = {};
+    source.type = kFlutterEngineAOTDataSourceTypeElfPath;
+    source.elf_path = fl_dart_project_get_aot_library_path(self->project);
+    if (FlutterEngineCreateAOTData(&source, &self->aot_data) != kSuccess) {
+      g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
+                  "Failed to create AOT data");
+      return FALSE;
+    }
+    args.aot_data = self->aot_data;
+  }
 
   FlutterEngineResult result = FlutterEngineInitialize(
       FLUTTER_ENGINE_VERSION, &config, &args, self, &self->engine);
@@ -277,6 +338,12 @@ gboolean fl_engine_send_platform_message_response(
   g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
   g_return_val_if_fail(handle != nullptr, FALSE);
 
+  if (self->engine == nullptr) {
+    g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
+                "No engine to send response to");
+    return FALSE;
+  }
+
   gsize data_length = 0;
   const uint8_t* data = nullptr;
   if (response != nullptr) {
@@ -287,7 +354,7 @@ gboolean fl_engine_send_platform_message_response(
       self->engine, handle, data, data_length);
 
   if (result != kSuccess) {
-    g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
+    g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
                 "Failed to send platorm message response");
     return FALSE;
   }
@@ -308,6 +375,12 @@ void fl_engine_send_platform_message(FlEngine* self,
   if (callback != nullptr) {
     task = g_task_new(self, cancellable, callback, user_data);
 
+    if (self->engine == nullptr) {
+      g_task_return_new_error(task, fl_engine_error_quark(),
+                              FL_ENGINE_ERROR_FAILED, "No engine to send to");
+      return;
+    }
+
     FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
         self->engine, fl_engine_platform_message_response_cb, task,
         &response_handle);
@@ -318,6 +391,8 @@ void fl_engine_send_platform_message(FlEngine* self,
       g_object_unref(task);
       return;
     }
+  } else if (self->engine == nullptr) {
+    return;
   }
 
   FlutterPlatformMessage fl_message = {};
@@ -358,6 +433,9 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
                                          double pixel_ratio) {
   g_return_if_fail(FL_IS_ENGINE(self));
 
+  if (self->engine == nullptr)
+    return;
+
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(FlutterWindowMetricsEvent);
   event.width = width;
@@ -371,8 +449,13 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
                                         size_t timestamp,
                                         double x,
                                         double y,
+                                        double scroll_delta_x,
+                                        double scroll_delta_y,
                                         int64_t buttons) {
   g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->engine == nullptr)
+    return;
 
   FlutterPointerEvent fl_event = {};
   fl_event.struct_size = sizeof(fl_event);
@@ -380,6 +463,10 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
   fl_event.timestamp = timestamp;
   fl_event.x = x;
   fl_event.y = y;
+  if (scroll_delta_x != 0 || scroll_delta_y != 0)
+    fl_event.signal_kind = kFlutterPointerSignalKindScroll;
+  fl_event.scroll_delta_x = scroll_delta_x;
+  fl_event.scroll_delta_y = scroll_delta_y;
   fl_event.device_kind = kFlutterPointerDeviceKindMouse;
   fl_event.buttons = buttons;
   FlutterEngineSendPointerEvent(self->engine, &fl_event, 1);

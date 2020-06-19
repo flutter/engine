@@ -12,7 +12,7 @@ typedef Callback<T> = void Function(T result);
 ///
 /// Return value should be null on success, and a string error message on
 /// failure.
-typedef Callbacker<T> = String Function(Callback<T> callback);
+typedef Callbacker<T> = String/*?*/ Function(Callback<T> callback);
 
 /// Converts a method that receives a value-returning callback to a method that
 /// returns a Future.
@@ -35,7 +35,7 @@ typedef Callbacker<T> = String Function(Callback<T> callback);
 ///   return _futurize(_doSomethingAndCallback);
 /// }
 /// ```
-Future<T> futurize<T>(Callbacker<T> callbacker) {
+Future<T>/*!*/ futurize<T>(Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
   final String error = callbacker((T t) {
     if (t == null) {

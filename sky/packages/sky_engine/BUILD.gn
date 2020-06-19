@@ -182,6 +182,16 @@ copy("copy_dart_ui") {
   ]
 }
 
+copy("copy_allowed_experiments") {
+  sources = [
+    "//third_party/dart/sdk/lib/_internal/allowed_experiments.json",
+  ]
+
+  outputs = [
+    "$root_gen_dir/dart-pkg/sky_engine/lib/_internal/allowed_experiments.json",
+  ]
+}
+
 group("copy_dart_sdk") {
   deps = [
     ":_http",
@@ -189,6 +199,7 @@ group("copy_dart_sdk") {
     ":async",
     ":collection",
     ":convert",
+    ":copy_allowed_experiments",
     ":core",
     ":developer",
     ":ffi",

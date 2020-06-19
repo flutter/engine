@@ -212,10 +212,10 @@ static void PerformInitializationTasks(Settings& settings) {
       InitSkiaEventTracer(settings.trace_skia);
     }
 
-    if (!settings.trace_whitelist.empty()) {
+    if (!settings.trace_allowlist.empty()) {
       std::vector<std::string> prefixes;
-      Tokenize(settings.trace_whitelist, &prefixes, ',');
-      fml::tracing::TraceSetWhitelist(prefixes);
+      Tokenize(settings.trace_allowlist, &prefixes, ',');
+      fml::tracing::TraceSetAllowlist(prefixes);
     }
 
     if (!settings.skia_deterministic_rendering_on_cpu) {
@@ -1096,6 +1096,19 @@ void Shell::UpdateIsolateDescription(const std::string isolate_name,
 
 void Shell::SetNeedsReportTimings(bool value) {
   needs_report_timings_ = value;
+}
+
+// |Engine::Delegate|
+std::unique_ptr<std::vector<std::string>> Shell::ComputePlatformResolvedLocale(
+    const std::vector<std::string>& supported_locale_data) {
+  return ComputePlatformViewResolvedLocale(supported_locale_data);
+}
+
+// |PlatformView::Delegate|
+std::unique_ptr<std::vector<std::string>>
+Shell::ComputePlatformViewResolvedLocale(
+    const std::vector<std::string>& supported_locale_data) {
+  return platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
 }
 
 void Shell::ReportTimings() {

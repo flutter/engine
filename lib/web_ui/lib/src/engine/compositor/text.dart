@@ -163,14 +163,14 @@ class SkTextStyle implements ui.TextStyle {
     List<ui.Shadow> shadows,
     List<ui.FontFeature> fontFeatures,
   }) {
-    final Map<String, dynamic> style = <String, dynamic>{};
+    final js.JsObject style = js.JsObject(js.context['Object']);
 
     if (background != null) {
-      style['backgroundColor'] = background.skiaObject;
+      style['backgroundColor'] = makeFreshSkColor(background.color);
     }
 
     if (color != null) {
-      style['color'] = color.value;
+      style['color'] = makeFreshSkColor(color);
     }
 
     if (decoration != null) {
@@ -209,14 +209,14 @@ class SkTextStyle implements ui.TextStyle {
       fontFamilies.addAll(fontFamilyFallback);
     }
 
-    style['fontFamilies'] = fontFamilies;
+    style['fontFamilies'] = js.JsArray.from(fontFamilies);
 
     if (fontWeight != null || fontStyle != null) {
       style['fontStyle'] = toSkFontStyle(fontWeight, fontStyle);
     }
 
     if (foreground != null) {
-      style['foreground'] = foreground.skiaObject;
+      style['foregroundColor'] = makeFreshSkColor(foreground.color);
     }
 
     // TODO(hterkelsen): Add support for
@@ -229,8 +229,7 @@ class SkTextStyle implements ui.TextStyle {
     //   - locale
     //   - shadows
     //   - fontFeatures
-    skTextStyle = canvasKit
-        .callMethod('TextStyle', <js.JsObject>[js.JsObject.jsify(style)]);
+    skTextStyle = canvasKit.callMethod('TextStyle', <js.JsObject>[style]);
     assert(skTextStyle != null);
   }
 }
@@ -464,7 +463,7 @@ class SkParagraphBuilder implements ui.ParagraphBuilder {
     double width,
     double height,
     ui.PlaceholderAlignment alignment, {
-    double scale,
+    double scale = 1.0,
     double baselineOffset,
     ui.TextBaseline baseline,
   }) {

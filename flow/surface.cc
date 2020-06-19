@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/common/surface.h"
+#include "flutter/flow/surface.h"
 
 namespace flutter {
 
@@ -14,8 +14,8 @@ flutter::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
   return nullptr;
 }
 
-bool Surface::MakeRenderContextCurrent() {
-  return true;
+std::unique_ptr<GLContextResult> Surface::MakeRenderContextCurrent() {
+  return std::make_unique<GLContextDefaultResult>(true);
 }
 
 }  // namespace flutter

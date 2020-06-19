@@ -23,6 +23,12 @@ EGLContext eglCreateContext(EGLDisplay dpy,
   return nullptr;
 }
 
+EGLSurface eglCreatePbufferSurface(EGLDisplay dpy,
+                                   EGLConfig config,
+                                   const EGLint* attrib_list) {
+  return nullptr;
+}
+
 EGLSurface eglCreateWindowSurface(EGLDisplay dpy,
                                   EGLConfig config,
                                   EGLNativeWindowType win,
@@ -32,6 +38,10 @@ EGLSurface eglCreateWindowSurface(EGLDisplay dpy,
 
 EGLDisplay eglGetDisplay(EGLNativeDisplayType display_id) {
   return nullptr;
+}
+
+EGLint eglGetError() {
+  return EGL_SUCCESS;
 }
 
 void (*eglGetProcAddress(const char* procname))(void) {

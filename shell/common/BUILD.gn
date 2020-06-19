@@ -97,8 +97,6 @@ source_set("common") {
     "pointer_data_dispatcher.h",
     "rasterizer.cc",
     "rasterizer.h",
-    "renderer_context_manager.cc",
-    "renderer_context_manager.h",
     "run_configuration.cc",
     "run_configuration.h",
     "shell.cc",
@@ -107,8 +105,6 @@ source_set("common") {
     "shell_io_manager.h",
     "skia_event_tracer_impl.cc",
     "skia_event_tracer_impl.h",
-    "surface.cc",
-    "surface.h",
     "switches.cc",
     "switches.h",
     "thread_host.cc",
@@ -120,7 +116,6 @@ source_set("common") {
   ]
 
   deps = [
-    ":surface_frame",
     "//flutter/assets",
     "//flutter/common",
     "//flutter/flow",
@@ -140,18 +135,6 @@ source_set("common") {
   ]
 
   public_configs = [ "//flutter:config" ]
-}
-
-source_set("surface_frame") {
-  sources = [
-    "surface_frame.cc",
-    "surface_frame.h",
-  ]
-
-  deps = [
-    "//flutter/fml",
-    "//third_party/skia",
-  ]
 }
 
 template("shell_host_executable") {
@@ -203,8 +186,6 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
-      "renderer_context_test.cc",
-      "renderer_context_test.h",
       "shell_test.cc",
       "shell_test.h",
       "shell_test_external_view_embedder.cc",
@@ -242,21 +223,21 @@ if (enable_unittests) {
 
         defines += [ "SHELL_ENABLE_GL" ]
       }
+    }
 
-      if (test_enable_vulkan) {
-        sources += [
-          "shell_test_platform_view_vulkan.cc",
-          "shell_test_platform_view_vulkan.h",
-        ]
+    if (test_enable_vulkan) {
+      sources += [
+        "shell_test_platform_view_vulkan.cc",
+        "shell_test_platform_view_vulkan.h",
+      ]
 
-        public_deps += [
-          "//flutter/shell/gpu:gpu_surface_vulkan",
-          "//flutter/testing:vulkan",
-          "//flutter/vulkan",
-        ]
+      public_deps += [
+        "//flutter/shell/gpu:gpu_surface_vulkan",
+        "//flutter/testing:vulkan",
+        "//flutter/vulkan",
+      ]
 
-        defines += [ "SHELL_ENABLE_VULKAN" ]
-      }
+      defines += [ "SHELL_ENABLE_VULKAN" ]
     }
   }
 
@@ -267,7 +248,6 @@ if (enable_unittests) {
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",
-      "renderer_context_manager_unittests.cc",
       "shell_unittests.cc",
     ]
 
@@ -282,6 +262,10 @@ if (enable_unittests) {
 
     if (!defined(defines)) {
       defines = []
+    }
+
+    if (test_enable_vulkan) {
+      defines += [ "SHELL_ENABLE_VULKAN" ]
     }
   }
 

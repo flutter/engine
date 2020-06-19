@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.9
 part of ui;
 
 /// An iterable collection of [PathMetric] objects describing a [Path].
@@ -80,14 +80,14 @@ abstract class PathMetric {
   /// Returns null if the contour has zero [length].
   ///
   /// The distance is clamped to the [length] of the current contour.
-  Tangent getTangentForOffset(double distance);
+  Tangent? getTangentForOffset(double distance);
 
   /// Given a start and stop distance, return the intervening segment(s).
   ///
   /// `start` and `end` are pinned to legal values (0..[length])
   /// Returns null if the segment is 0 length or `start` > `stop`.
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
-  Path extractPath(double start, double end, {bool startWithMoveTo = true});
+  Path? extractPath(double start, double end, {bool startWithMoveTo = true});
 
   /// Whether the contour is closed.
   ///
@@ -108,8 +108,8 @@ class Tangent {
   ///
   /// The arguments must not be null.
   const Tangent(this.position, this.vector)
-      : assert(position != null),
-        assert(vector != null);
+      : assert(position != null), // ignore: unnecessary_null_comparison
+        assert(vector != null); // ignore: unnecessary_null_comparison
 
   /// Creates a [Tangent] based on the angle rather than the vector.
   ///

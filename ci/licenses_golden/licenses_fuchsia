@@ -1,4 +1,4 @@
-Signature: 163fae226fa74ca073a0b648793cd0f8
+Signature: 8350b75d113a41c4617f4d112df3446e
 
 UNUSED LICENSES:
 
@@ -497,7 +497,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mediacodec/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mem/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.memorypressure/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.migration/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.auth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.session/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/meta.json
@@ -1294,7 +1293,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/setui.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/sl4f_client.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/ssh.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/storage.dart
-FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/test.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/common.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/cpu_metrics.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/drm_fps.dart
@@ -1447,7 +1445,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mem/range.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.memorypressure/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.migration/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.migration/migration.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.auth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.session/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.session/modular_config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.testing/meta.json
@@ -2229,7 +2226,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mediacodec/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mem/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.memorypressure/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.migration/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.auth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.session/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.testing/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/meta.json
@@ -2592,12 +2588,10 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/logger.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/module.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/service_connection.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/agent/agent.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/agent/internal/_agent_context.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/agent/internal/_agent_impl.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/internal/_component_context.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/lifecycle/internal/_lifecycle_impl.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/lifecycle/lifecycle.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/embedded_module.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/intent.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/internal/_fidl_transformers.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/internal/_module_context.dart
@@ -2720,7 +2714,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/cpp/message_buff
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/cpp/message_builder.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/cpp/message_part.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/walker.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/linearizing.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/message.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/message_buffer.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/message_builder.cc
@@ -2913,7 +2906,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.cobalt/cobalt_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/presentation_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/audio_capturer.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.mem/buffer.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.auth/account/account.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/agent/agent.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/agent/agent_context.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/agent/agent_controller/agent_controller.fidl
@@ -3137,8 +3129,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.math/math.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.playback/problem.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.playback/seeking_reader.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/audio.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/basemgr/base_shell.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/basemgr/user_provider.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module/module_context.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module/module_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/session/focus.fidl
@@ -3252,6 +3242,7 @@ FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/update.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.gesture/gesture_listener.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.a2dp/audio_mode.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/connection_options.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.sys/pairing_options.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/device.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/device_watcher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.camera3/stream.fidl
@@ -3271,6 +3262,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.legacymetrics/metrics_recorder.fid
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location.position/position.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location.sensor/sensor.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.location/types.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.audio/effects_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.drm/properties.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.drm/types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.target/target_discovery.fidl
@@ -3279,6 +3271,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/profile_provider.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.memorypressure/memorypressure.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/session/session_restart_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/socket.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/input.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/light.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/night_mode.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/events.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/keyboard.fidl

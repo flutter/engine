@@ -17,6 +17,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.embedding.engine.FlutterOverlaySurface;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
@@ -532,5 +533,26 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       controller.dispose();
     }
     vdControllers.clear();
+  }
+
+  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+  }
+
+  public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+  }
+
+  public void onBeginFrame() {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+  }
+
+  public void onEndFrame() {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+  }
+
+  public FlutterOverlaySurface createOverlaySurface() {
+    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+    return null;
   }
 }

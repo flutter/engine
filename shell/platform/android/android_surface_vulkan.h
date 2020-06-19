@@ -12,6 +12,7 @@
 #include "flutter/shell/platform/android/android_native_window.h"
 #include "flutter/shell/platform/android/android_surface.h"
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/vulkan/vulkan_window.h"
 
 namespace flutter {
@@ -19,7 +20,7 @@ namespace flutter {
 class AndroidSurfaceVulkan : public AndroidSurface,
                              public GPUSurfaceVulkanDelegate {
  public:
-  AndroidSurfaceVulkan();
+  AndroidSurfaceVulkan(std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   ~AndroidSurfaceVulkan() override;
 
@@ -27,13 +28,13 @@ class AndroidSurfaceVulkan : public AndroidSurface,
   bool IsValid() const override;
 
   // |AndroidSurface|
-  std::unique_ptr<Surface> CreateGPUSurface() override;
+  std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context) override;
 
   // |AndroidSurface|
   void TeardownOnScreenContext() override;
 
   // |AndroidSurface|
-  bool OnScreenSurfaceResize(const SkISize& size) const override;
+  bool OnScreenSurfaceResize(const SkISize& size) override;
 
   // |AndroidSurface|
   bool ResourceContextMakeCurrent() override;

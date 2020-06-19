@@ -67,7 +67,7 @@ Future<int> runProcess(
 }
 
 /// Runs [executable]. Do not follow the exit code or the output.
-void startProcess(
+Future<void> startProcess(
   String executable,
   List<String> arguments, {
   String workingDirectory,
@@ -219,7 +219,7 @@ void cleanup() async {
     }
   }
 
-  cleanupCallbacks.forEach((element) {
-    element.call();
-  });
+  for (final AsyncCallback callback in cleanupCallbacks) {
+    await callback();
+  }
 }

@@ -29,23 +29,15 @@ bool IsTrailingSurrogate(char32_t code_point) {
 
 }  // namespace
 
-TextInputModel::TextInputModel(const std::string& input_type,
-                               const std::string& input_action)
-    : input_type_(input_type),
-      input_action_(input_action),
-      selection_base_(text_.begin()),
-      selection_extent_(text_.begin()) {}
+TextInputModel::TextInputModel()
+    : selection_base_(text_.begin()), selection_extent_(text_.begin()) {}
 
 TextInputModel::~TextInputModel() = default;
 
 bool TextInputModel::SetEditingState(size_t selection_base,
                                      size_t selection_extent,
                                      const std::string& text) {
-  if (selection_base > selection_extent) {
-    return false;
-  }
-  // Only checks extent since it is implicitly greater-than-or-equal-to base.
-  if (selection_extent > text.size()) {
+  if (selection_base > text.size() || selection_extent > text.size()) {
     return false;
   }
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
@@ -57,8 +49,7 @@ bool TextInputModel::SetEditingState(size_t selection_base,
 }
 
 void TextInputModel::DeleteSelected() {
-  selection_base_ = text_.erase(selection_base_, selection_extent_);
-  // Moves extent back to base, so that it is a single cursor placement again.
+  selection_base_ = text_.erase(selection_start(), selection_end());
   selection_extent_ = selection_base_;
 }
 
@@ -182,7 +173,8 @@ bool TextInputModel::MoveCursorToEnd() {
 bool TextInputModel::MoveCursorForward() {
   // If about to move set to the end of the highlight (when not selecting).
   if (selection_base_ != selection_extent_) {
-    selection_base_ = selection_extent_;
+    selection_base_ = selection_end();
+    selection_extent_ = selection_base_;
     return true;
   }
   // If not at the end, move the extent forward.
@@ -199,6 +191,7 @@ bool TextInputModel::MoveCursorBack() {
   // If about to move set to the beginning of the highlight
   // (when not selecting).
   if (selection_base_ != selection_extent_) {
+    selection_base_ = selection_start();
     selection_extent_ = selection_base_;
     return true;
   }

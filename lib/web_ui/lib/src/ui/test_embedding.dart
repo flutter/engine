@@ -4,12 +4,12 @@
 
 // TODO(flutter_web): the Web-only API below need to be cleaned up.
 
-// @dart = 2.6
+// @dart = 2.9
 part of ui;
 
 /// Used to track when the platform is initialized. This ensures the test fonts
 /// are available.
-Future<void> _testPlatformInitializedFuture;
+Future<void>? _testPlatformInitializedFuture;
 
 /// If the platform is already initialized (by a previous test), then run the test
 /// body immediately. Otherwise, initialize the platform then run the test.
@@ -22,12 +22,13 @@ Future<dynamic> ensureTestPlatformInitializedThenRunTest(
     _testPlatformInitializedFuture = webOnlyInitializePlatform(
         assetManager: engine.WebOnlyMockAssetManager());
   }
-  return _testPlatformInitializedFuture.then<dynamic>((_) => body());
+  return _testPlatformInitializedFuture!.then<dynamic>((_) => body());
 }
 
 /// Used to track when the platform is initialized. This ensures the test fonts
 /// are available.
-Future<void> _platformInitializedFuture;
+// TODO(yjbanov): can we make this late non-null? See https://github.com/dart-lang/sdk/issues/42214
+Future<void>? _platformInitializedFuture;
 
 /// Initializes domRenderer with specific devicePixelRatio and physicalSize.
 Future<void> webOnlyInitializeTestDomRenderer({double devicePixelRatio = 3.0}) {
@@ -40,11 +41,11 @@ Future<void> webOnlyInitializeTestDomRenderer({double devicePixelRatio = 3.0}) {
   engine.window.debugOverrideDevicePixelRatio(devicePixelRatio);
   engine.window.webOnlyDebugPhysicalSizeOverride =
       Size(800 * devicePixelRatio, 600 * devicePixelRatio);
-  webOnlyScheduleFrameCallback = () {};
+  engine.scheduleFrameCallback = () {};
   debugEmulateFlutterTesterEnvironment = true;
 
   if (_platformInitializedFuture != null) {
-    return _platformInitializedFuture;
+    return _platformInitializedFuture!;
   }
 
   // Only load the Ahem font once and await the same future in all tests.

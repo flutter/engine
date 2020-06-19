@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 // Synced 2019-05-30T14:20:57.833907.
 
-// @dart = 2.6
+// @dart = 2.9
 part of ui;
 
 /// Whether to slant the glyphs in the font
@@ -131,12 +131,11 @@ class FontWeight {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static FontWeight lerp(FontWeight a, FontWeight b, double t) {
-    assert(t != null);
-    return values[
-        lerpDouble(a?.index ?? normal.index, b?.index ?? normal.index, t)
-            .round()
-            .clamp(0, 8)];
+  static FontWeight? lerp(FontWeight? a, FontWeight? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
+    if (a == null && b == null)
+      return null;
+    return values[_clampInt(lerpDouble(a?.index ?? normal.index, b?.index ?? normal.index, t)!.round(), 0, 8)];
   }
 
   @override
@@ -151,7 +150,7 @@ class FontWeight {
       6: 'FontWeight.w700',
       7: 'FontWeight.w800',
       8: 'FontWeight.w900',
-    }[index];
+    }[index]!;
   }
 }
 
@@ -169,9 +168,9 @@ class FontFeature {
   ///
   /// See <https://docs.microsoft.com/en-us/typography/opentype/spec/featuretags>
   const FontFeature(this.feature, [this.value = 1])
-      : assert(feature != null),
+      : assert(feature != null), // ignore: unnecessary_null_comparison
         assert(feature.length == 4),
-        assert(value != null),
+        assert(value != null), // ignore: unnecessary_null_comparison
         assert(value >= 0);
 
   /// Create a [FontFeature] object that enables the feature with the given tag.
@@ -452,8 +451,9 @@ class TextHeightBehavior {
   /// Creates a new TextHeightBehavior object from an encoded form.
   ///
   /// See [encode] for the creation of the encoded form.
-  const TextHeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) == 0,
-                                                      applyHeightToLastDescent = (encoded & 0x2) == 0;
+  const TextHeightBehavior.fromEncoded(int encoded)
+      : applyHeightToFirstAscent = (encoded & 0x1) == 0,
+        applyHeightToLastDescent = (encoded & 0x2) == 0;
 
 
   /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
@@ -539,25 +539,25 @@ abstract class TextStyle {
   /// * `background`: The paint drawn as a background for the text.
   /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
   factory TextStyle({
-    Color color,
-    TextDecoration decoration,
-    Color decorationColor,
-    TextDecorationStyle decorationStyle,
-    double decorationThickness,
-    FontWeight fontWeight,
-    FontStyle fontStyle,
-    TextBaseline textBaseline,
-    String fontFamily,
-    List<String> fontFamilyFallback,
-    double fontSize,
-    double letterSpacing,
-    double wordSpacing,
-    double height,
-    Locale locale,
-    Paint background,
-    Paint foreground,
-    List<Shadow> shadows,
-    List<FontFeature> fontFeatures,
+    Color? color,
+    TextDecoration? decoration,
+    Color? decorationColor,
+    TextDecorationStyle? decorationStyle,
+    double? decorationThickness,
+    FontWeight? fontWeight,
+    FontStyle? fontStyle,
+    TextBaseline? textBaseline,
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? letterSpacing,
+    double? wordSpacing,
+    double? height,
+    Locale? locale,
+    Paint? background,
+    Paint? foreground,
+    List<Shadow>? shadows,
+    List<FontFeature>? fontFeatures,
   }) {
     if (engine.experimentalUseSkia) {
       return engine.SkTextStyle(
@@ -576,8 +576,8 @@ abstract class TextStyle {
           wordSpacing: wordSpacing,
           height: height,
           locale: locale,
-          background: background,
-          foreground: foreground,
+          background: background as engine.SkPaint?,
+          foreground: foreground as engine.SkPaint?,
           shadows: shadows,
           fontFeatures: fontFeatures,
       );
@@ -665,18 +665,18 @@ abstract class ParagraphStyle {
   ///
   /// * `locale`: The locale used to select region-specific glyphs.
   factory ParagraphStyle({
-    TextAlign textAlign,
-    TextDirection textDirection,
-    int maxLines,
-    String fontFamily,
-    double fontSize,
-    double height,
-    TextHeightBehavior textHeightBehavior,
-    FontWeight fontWeight,
-    FontStyle fontStyle,
-    StrutStyle strutStyle,
-    String ellipsis,
-    Locale locale,
+    TextAlign? textAlign,
+    TextDirection? textDirection,
+    int? maxLines,
+    String? fontFamily,
+    double? fontSize,
+    double? height,
+    TextHeightBehavior? textHeightBehavior,
+    FontWeight? fontWeight,
+    FontStyle? fontStyle,
+    StrutStyle? strutStyle,
+    String? ellipsis,
+    Locale? locale,
   }) {
     if (engine.experimentalUseSkia) {
       return engine.SkParagraphStyle(
@@ -749,14 +749,14 @@ abstract class StrutStyle {
   ///   of the [fontFamily] and `(lineHeight + leading) * fontSize`. Otherwise, it
   ///   will be determined by the Ascent + half-leading of the first text.
   factory StrutStyle({
-    String fontFamily,
-    List<String> fontFamilyFallback,
-    double fontSize,
-    double height,
-    double leading,
-    FontWeight fontWeight,
-    FontStyle fontStyle,
-    bool forceStrutHeight,
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? height,
+    double? leading,
+    FontWeight? fontWeight,
+    FontStyle? fontStyle,
+    bool? forceStrutHeight,
   }) = engine.EngineStrutStyle;
 }
 
@@ -1000,10 +1000,10 @@ class TextPosition {
   ///
   /// The arguments must not be null (so the [offset] argument is required).
   const TextPosition({
-    this.offset,
+    required this.offset,
     this.affinity = TextAffinity.downstream,
-  })  : assert(offset != null),
-        assert(affinity != null);
+  })  : assert(offset != null), // ignore: unnecessary_null_comparison
+        assert(affinity != null); // ignore: unnecessary_null_comparison
 
   /// The index of the character that immediately follows the position in the
   /// string representation of the text.
@@ -1050,16 +1050,16 @@ class TextRange {
   /// Instead of creating an empty text range, consider using the [empty]
   /// constant.
   const TextRange({
-    this.start,
-    this.end,
-  })  : assert(start != null && start >= -1),
-        assert(end != null && end >= -1);
+    required this.start,
+    required this.end,
+  })  : assert(start != null && start >= -1), // ignore: unnecessary_null_comparison
+        assert(end != null && end >= -1); // ignore: unnecessary_null_comparison
 
   /// A text range that starts and ends at offset.
   ///
   /// The [offset] argument must be non-null and greater than or equal to -1.
   const TextRange.collapsed(int offset)
-      : assert(offset != null && offset >= -1),
+      : assert(offset != null && offset >= -1), // ignore: unnecessary_null_comparison
         start = offset,
         end = offset;
 
@@ -1136,8 +1136,8 @@ class ParagraphConstraints {
   ///
   /// The [width] argument must not be null.
   const ParagraphConstraints({
-    this.width,
-  }) : assert(width != null);
+    required this.width,
+  }) : assert(width != null); // ignore: unnecessary_null_comparison
 
   /// The width the paragraph should use whey computing the positions of glyphs.
   ///
@@ -1245,22 +1245,22 @@ enum BoxWidthStyle {
 
 abstract class LineMetrics {
   factory LineMetrics({
-    bool hardBreak,
-    double ascent,
-    double descent,
-    double unscaledAscent,
-    double height,
-    double width,
-    double left,
-    double baseline,
-    int lineNumber,
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber,
   }) = engine.EngineLineMetrics;
 
   /// {@template dart.ui.LineMetrics.hardBreak}
   /// True if this line ends with an explicit line break (e.g. '\n') or is the end
   /// of the paragraph. False otherwise.
   /// {@endtemplate}
-  final bool hardBreak;
+  bool get hardBreak;
 
   /// {@template dart.ui.LineMetrics.ascent}
   /// The rise from the [baseline] as calculated from the font and style for this line.
@@ -1273,7 +1273,7 @@ abstract class LineMetrics {
   /// metrics directly reflects the intended signage of the value. For example,
   /// the y coordinate of the top edge of the line is `baseline - ascent`.
   /// {@endtemplate}
-  final double ascent;
+  double get ascent;
 
   /// {@template dart.ui.LineMetrics.descent}
   /// The drop from the [baseline] as calculated from the font and style for this line.
@@ -1283,7 +1283,7 @@ abstract class LineMetrics {
   ///
   /// The y coordinate of the bottom edge of the line is `baseline + descent`.
   /// {@endtemplate}
-  final double descent;
+  double get descent;
 
   /// {@template dart.ui.LineMetrics.unscaledAscent}
   /// The rise from the [baseline] as calculated from the font and style for this line
@@ -1293,7 +1293,7 @@ abstract class LineMetrics {
   /// defined in fonts as negative. This is to ensure the signage of operations with
   /// these metrics directly reflects the intended signage of the value.
   /// {@endtemplate}
-  final double unscaledAscent;
+  double get unscaledAscent;
 
   /// {@template dart.ui.LineMetrics.height}
   /// Total height of the line from the top edge to the bottom edge.
@@ -1302,7 +1302,7 @@ abstract class LineMetrics {
   /// separately due to rounding causing sub-pixel differences from the unrounded
   /// values.
   /// {@endtemplate}
-  final double height;
+  double get height;
 
   /// {@template dart.ui.LineMetrics.width}
   /// Width of the line from the left edge of the leftmost glyph to the right
@@ -1315,14 +1315,14 @@ abstract class LineMetrics {
   ///  * [Paragraph.width], the max width passed in during layout.
   ///  * [Paragraph.longestLine], the width of the longest line in the paragraph.
   /// {@endtemplate}
-  final double width;
+  double get width;
 
   /// {@template dart.ui.LineMetrics.left}
   /// The x coordinate of left edge of the line.
   ///
   /// The right edge can be obtained with `left + width`.
   /// {@endtemplate}
-  final double left;
+  double get left;
 
   /// {@template dart.ui.LineMetrics.baseline}
   /// The y coordinate of the baseline for this line from the top of the paragraph.
@@ -1330,7 +1330,7 @@ abstract class LineMetrics {
   /// The bottom edge of the paragraph up to and including this line may be obtained
   /// through `baseline + descent`.
   /// {@endtemplate}
-  final double baseline;
+  double get baseline;
 
   /// {@template dart.ui.LineMetrics.lineNumber}
   /// The number of this line in the overall paragraph, with the first line being
@@ -1338,7 +1338,7 @@ abstract class LineMetrics {
   ///
   /// For example, the first line is line 0, second line is line 1.
   /// {@endtemplate}
-  final int lineNumber;
+  int get lineNumber;
 }
 
 /// A paragraph of text.
@@ -1490,7 +1490,7 @@ abstract class ParagraphBuilder {
     if (engine.experimentalUseSkia) {
       return engine.SkParagraphBuilder(style);
     } else {
-      return engine.EngineParagraphBuilder(style);
+      return engine.EngineParagraphBuilder(style as engine.EngineParagraphStyle);
     }
   }
 
@@ -1572,9 +1572,9 @@ abstract class ParagraphBuilder {
     double width,
     double height,
     PlaceholderAlignment alignment, {
-    double scale,
-    double baselineOffset,
-    TextBaseline baseline,
+    double scale = 1.0,
+    double? baselineOffset,
+    TextBaseline? baseline,
   });
 }
 
@@ -1583,13 +1583,13 @@ abstract class ParagraphBuilder {
 /// * `list`: A list of bytes containing the font file.
 /// * `fontFamily`: The family name used to identify the font in text styles.
 ///  If this is not provided, then the family name will be extracted from the font file.
-Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
+Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   if (engine.experimentalUseSkia) {
     return engine.skiaFontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
         (_) => engine.sendFontChangeMessage()
     );
   } else {
-    return _fontCollection.loadFontFromList(list, fontFamily: fontFamily).then(
+    return _fontCollection!.loadFontFromList(list, fontFamily: fontFamily!).then(
       (_) => engine.sendFontChangeMessage()
     );
   }

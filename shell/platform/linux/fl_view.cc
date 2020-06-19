@@ -6,6 +6,8 @@
 
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event_plugin.h"
+#include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
+#include "flutter/shell/platform/linux/fl_platform_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer_x11.h"
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
@@ -33,6 +35,8 @@ struct _FlView {
 
   // Flutter system channel handlers.
   FlKeyEventPlugin* key_event_plugin;
+  FlMouseCursorPlugin* mouse_cursor_plugin;
+  FlPlatformPlugin* platform_plugin;
   FlTextInputPlugin* text_input_plugin;
 };
 
@@ -86,10 +90,23 @@ static gboolean fl_view_send_pointer_button_event(FlView* self,
   if (self->engine == nullptr)
     return FALSE;
 
-  fl_engine_send_mouse_pointer_event(self->engine, phase,
-                                     event->time * kMicrosecondsPerMillisecond,
-                                     event->x, event->y, self->button_state);
+  gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
+  fl_engine_send_mouse_pointer_event(
+      self->engine, phase, event->time * kMicrosecondsPerMillisecond,
+      event->x * scale_factor, event->y * scale_factor, 0, 0,
+      self->button_state);
+
   return TRUE;
+}
+
+// Updates the engine with the current window metrics.
+static void fl_view_send_window_metrics(FlView* self) {
+  GtkAllocation allocation;
+  gtk_widget_get_allocation(GTK_WIDGET(self), &allocation);
+  gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
+  fl_engine_send_window_metrics_event(
+      self->engine, allocation.width * scale_factor,
+      allocation.height * scale_factor, scale_factor);
 }
 
 // Implements FlPluginRegistry::get_registrar_for_plugin.
@@ -116,6 +133,8 @@ static void fl_view_constructed(GObject* object) {
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   self->key_event_plugin = fl_key_event_plugin_new(messenger);
+  self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
+  self->platform_plugin = fl_platform_plugin_new(messenger);
   self->text_input_plugin = fl_text_input_plugin_new(messenger);
 }
 
@@ -152,6 +171,17 @@ static void fl_view_get_property(GObject* object,
   }
 }
 
+static void fl_view_notify(GObject* object, GParamSpec* pspec) {
+  FlView* self = FL_VIEW(object);
+
+  if (strcmp(pspec->name, "scale-factor") == 0) {
+    fl_view_send_window_metrics(self);
+  }
+
+  if (G_OBJECT_CLASS(fl_view_parent_class)->notify != nullptr)
+    G_OBJECT_CLASS(fl_view_parent_class)->notify(object, pspec);
+}
+
 static void fl_view_dispose(GObject* object) {
   FlView* self = FL_VIEW(object);
 
@@ -159,6 +189,8 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->renderer);
   g_clear_object(&self->engine);
   g_clear_object(&self->key_event_plugin);
+  g_clear_object(&self->mouse_cursor_plugin);
+  g_clear_object(&self->platform_plugin);
   g_clear_object(&self->text_input_plugin);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
@@ -184,7 +216,8 @@ static void fl_view_realize(GtkWidget* widget) {
   window_attributes.event_mask =
       gtk_widget_get_events(widget) | GDK_EXPOSURE_MASK |
       GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK |
-      GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK;
+      GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK | GDK_SMOOTH_SCROLL_MASK |
+      GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK;
 
   gint window_attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL;
 
@@ -215,9 +248,7 @@ static void fl_view_size_allocate(GtkWidget* widget,
                            allocation->height);
   }
 
-  // TODO(robert-ancell): This pixel ratio won't work on hidpi displays.
-  fl_engine_send_window_metrics_event(self->engine, allocation->width,
-                                      allocation->height, 1);
+  fl_view_send_window_metrics(self);
 }
 
 // Implements GtkWidget::button_press_event.
@@ -241,6 +272,43 @@ static gboolean fl_view_button_release_event(GtkWidget* widget,
   return fl_view_send_pointer_button_event(self, event);
 }
 
+// Implements GtkWidget::scroll_event.
+static gboolean fl_view_scroll_event(GtkWidget* widget, GdkEventScroll* event) {
+  FlView* self = FL_VIEW(widget);
+
+  // TODO(robert-ancell): Update to use GtkEventControllerScroll when we can
+  // depend on GTK 3.24.
+
+  gdouble scroll_delta_x = 0.0, scroll_delta_y = 0.0;
+  if (event->direction == GDK_SCROLL_SMOOTH) {
+    scroll_delta_x = event->delta_x;
+    scroll_delta_y = event->delta_y;
+  } else if (event->direction == GDK_SCROLL_UP) {
+    scroll_delta_y = -1;
+  } else if (event->direction == GDK_SCROLL_DOWN) {
+    scroll_delta_y = 1;
+  } else if (event->direction == GDK_SCROLL_LEFT) {
+    scroll_delta_x = -1;
+  } else if (event->direction == GDK_SCROLL_RIGHT) {
+    scroll_delta_x = 1;
+  }
+
+  // TODO: See if this can be queried from the OS; this value is chosen
+  // arbitrarily to get something that feels reasonable.
+  const int kScrollOffsetMultiplier = 20;
+  scroll_delta_x *= kScrollOffsetMultiplier;
+  scroll_delta_y *= kScrollOffsetMultiplier;
+
+  gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
+  fl_engine_send_mouse_pointer_event(
+      self->engine, self->button_state != 0 ? kMove : kHover,
+      event->time * kMicrosecondsPerMillisecond, event->x * scale_factor,
+      event->y * scale_factor, scroll_delta_x, scroll_delta_y,
+      self->button_state);
+
+  return TRUE;
+}
+
 // Implements GtkWidget::motion_notify_event.
 static gboolean fl_view_motion_notify_event(GtkWidget* widget,
                                             GdkEventMotion* event) {
@@ -249,10 +317,11 @@ static gboolean fl_view_motion_notify_event(GtkWidget* widget,
   if (self->engine == nullptr)
     return FALSE;
 
-  fl_engine_send_mouse_pointer_event(self->engine,
-                                     self->button_state != 0 ? kMove : kHover,
-                                     event->time * kMicrosecondsPerMillisecond,
-                                     event->x, event->y, self->button_state);
+  gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
+  fl_engine_send_mouse_pointer_event(
+      self->engine, self->button_state != 0 ? kMove : kHover,
+      event->time * kMicrosecondsPerMillisecond, event->x * scale_factor,
+      event->y * scale_factor, 0, 0, self->button_state);
 
   return TRUE;
 }
@@ -261,10 +330,8 @@ static gboolean fl_view_motion_notify_event(GtkWidget* widget,
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  if (fl_text_input_plugin_filter_keypress(self->text_input_plugin, event))
-    return TRUE;
-
   fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
+  fl_text_input_plugin_filter_keypress(self->text_input_plugin, event);
 
   return TRUE;
 }
@@ -274,10 +341,8 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
                                           GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
 
-  if (fl_text_input_plugin_filter_keypress(self->text_input_plugin, event))
-    return TRUE;
-
   fl_key_event_plugin_send_key_event(self->key_event_plugin, event);
+  fl_text_input_plugin_filter_keypress(self->text_input_plugin, event);
 
   return TRUE;
 }
@@ -286,11 +351,13 @@ static void fl_view_class_init(FlViewClass* klass) {
   G_OBJECT_CLASS(klass)->constructed = fl_view_constructed;
   G_OBJECT_CLASS(klass)->set_property = fl_view_set_property;
   G_OBJECT_CLASS(klass)->get_property = fl_view_get_property;
+  G_OBJECT_CLASS(klass)->notify = fl_view_notify;
   G_OBJECT_CLASS(klass)->dispose = fl_view_dispose;
   GTK_WIDGET_CLASS(klass)->realize = fl_view_realize;
   GTK_WIDGET_CLASS(klass)->size_allocate = fl_view_size_allocate;
   GTK_WIDGET_CLASS(klass)->button_press_event = fl_view_button_press_event;
   GTK_WIDGET_CLASS(klass)->button_release_event = fl_view_button_release_event;
+  GTK_WIDGET_CLASS(klass)->scroll_event = fl_view_scroll_event;
   GTK_WIDGET_CLASS(klass)->motion_notify_event = fl_view_motion_notify_event;
   GTK_WIDGET_CLASS(klass)->key_press_event = fl_view_key_press_event;
   GTK_WIDGET_CLASS(klass)->key_release_event = fl_view_key_release_event;
