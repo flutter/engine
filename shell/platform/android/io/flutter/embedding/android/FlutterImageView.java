@@ -17,23 +17,41 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
-class FlutterImageView extends View implements RenderSurface {
+/**
+ * Paints a Flutter UI provided by an {@link android.media.ImageReader} onto a {@link
+ * android.graphics.Canvas}.
+ * 
+ * <p>A {@code FlutterImageView} is intended for situations where a developer needs to render a
+ * Flutter UI, but also needs to render an interactive {@link
+ * io.flutter.plugin.platform.PlatformView}.
+ * 
+ * <p>This {@code View} takes an {@link android.media.ImageReader} that provides the Flutter UI
+ * in an {@link android.media.Image} and renders it to the {@link android.graphics.Canvas} in
+ * {@code onDraw}.
+ */
+@RequiresApi(api = Build.VERSION_CODES.KITKAT)
+public class FlutterImageView extends View {
   private final ImageReader imageReader;
   @Nullable private Image nextImage;
-  private Image currentImage;
+  @Nullable private Image currentImage;
 
-  public FlutterImageView(Context context, ImageReader imageReader) {
+  /**
+   * Constructs a {@code FlutterImageView} with an {@link android.media.ImageReader} that provides
+   * the Flutter UI.
+   */
+  public FlutterImageView(@Nonnull Context context, @Nonnull ImageReader imageReader) {
     super(context, null);
     this.imageReader = imageReader;
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+  /**
+   * Acquires the next image to be drawn to the {@link android.graphics.Canvas}.
+   */
   public void acquireLatestImage() {
     nextImage = imageReader.acquireLatestImage();
     invalidate();
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.P)
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
@@ -41,7 +59,9 @@ class FlutterImageView extends View implements RenderSurface {
       return;
     }
 
-    currentImage.close();
+    if (currentImage != null) {
+      currentImage.close();
+    }
     currentImage = nextImage;
     nextImage = null;
 
@@ -53,7 +73,7 @@ class FlutterImageView extends View implements RenderSurface {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.P)
-  private void drawImageBuffer(Canvas canvas) {
+  private void drawImageBuffer(@Nonnull Canvas canvas) {
     final HardwareBuffer buffer = currentImage.getHardwareBuffer();
 
     final Bitmap bitmap = Bitmap.wrapHardwareBuffer(
@@ -62,8 +82,7 @@ class FlutterImageView extends View implements RenderSurface {
     canvas.drawBitmap(bitmap, 0, 0, null);
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-  private void drawImagePlane(Canvas canvas) {
+  private void drawImagePlane(@Nonnull Canvas canvas) {
     if (currentImage == null) {
       return;
     }
