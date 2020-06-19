@@ -201,6 +201,33 @@ class EmbeddedViewParams {
            sizePoints == other.sizePoints &&
            mutatorsStack == other.mutatorsStack;
   }
+
+  // Clippings are ignored in this operation
+  // TODO(cyanglaz): Factoring clipping.
+  //
+  SkRect GetBoundingRectAfterMutations() const {
+    SkPath path;
+    SkRect starting_rect = SkRect::MakeSize(sizePoints);
+    path.addRect(starting_rect);
+    std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter =
+        mutatorsStack.Bottom();
+    while (iter != mutatorsStack.Top()) {
+      switch ((*iter)->GetType()) {
+        case transform: {
+          const SkMatrix& matrix = (*iter)->GetMatrix();
+          path.transform(matrix);
+          break;
+        }
+        case clip_rect:
+        case clip_rrect:
+        case clip_path:
+        case opacity:
+          break;
+      }
+      ++iter;
+    }
+    return path.computeTightBounds();
+  }
 };
 
 enum class PostPrerollResult { kResubmitFrame, kSuccess };
