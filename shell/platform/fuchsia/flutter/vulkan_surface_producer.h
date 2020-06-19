@@ -25,7 +25,8 @@ namespace flutter_runner {
 class VulkanSurfaceProducer final : public SurfaceProducer,
                                     public vulkan::VulkanProvider {
  public:
-  VulkanSurfaceProducer(scenic::Session* scenic_session);
+  VulkanSurfaceProducer(scenic::Session* scenic_session,
+                        bool enable_persistant_cache);
 
   ~VulkanSurfaceProducer();
 
@@ -71,7 +72,8 @@ class VulkanSurfaceProducer final : public SurfaceProducer,
   zx::time last_produce_time_ = async::Now(async_get_default_dispatcher());
   fml::WeakPtrFactory<VulkanSurfaceProducer> weak_factory_{this};
 
-  bool Initialize(scenic::Session* scenic_session);
+  bool Initialize(scenic::Session* scenic_session,
+                  bool enable_persistant_cache);
 
   // Disallow copy and assignment.
   VulkanSurfaceProducer(const VulkanSurfaceProducer&) = delete;

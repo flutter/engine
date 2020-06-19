@@ -48,6 +48,11 @@ FlutterRunnerProductConfiguration::FlutterRunnerProductConfiguration(
     if (val.IsBool())
       enable_shader_warmup_dart_hooks_ = val.GetBool();
   }
+  if (document.HasMember("enable_persistent_cache")) {
+    auto& val = document["enable_persistent_cache"];
+    if (val.IsBool())
+      enable_persistent_cache_ = val.GetBool();
+  }
 }
 
 }  // namespace flutter_runner
