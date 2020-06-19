@@ -26,9 +26,9 @@ import androidx.annotation.RequiresApi;
  * Flutter UI, but also needs to render an interactive {@link
  * io.flutter.plugin.platform.PlatformView}.
  *
- * <p>This {@code View} takes an {@link android.media.ImageReader} that provides the Flutter UI
- * in an {@link android.media.Image} and renders it to the {@link android.graphics.Canvas} in
- * {@code onDraw}.
+ * <p>This {@code View} takes an {@link android.media.ImageReader} that provides the Flutter UI in
+ * an {@link android.media.Image} and renders it to the {@link android.graphics.Canvas} in {@code
+ * onDraw}.
  */
 @RequiresApi(api = Build.VERSION_CODES.KITKAT)
 public class FlutterImageView extends View {
@@ -45,9 +45,7 @@ public class FlutterImageView extends View {
     this.imageReader = imageReader;
   }
 
-  /**
-   * Acquires the next image to be drawn to the {@link android.graphics.Canvas}.
-   */
+  /** Acquires the next image to be drawn to the {@link android.graphics.Canvas}. */
   public void acquireLatestImage() {
     nextImage = imageReader.acquireLatestImage();
     invalidate();
@@ -77,9 +75,7 @@ public class FlutterImageView extends View {
   private void drawImageBuffer(@NonNull Canvas canvas) {
     final HardwareBuffer buffer = currentImage.getHardwareBuffer();
 
-    final Bitmap bitmap = Bitmap.wrapHardwareBuffer(
-        buffer,
-        ColorSpace.get(ColorSpace.Named.SRGB));
+    final Bitmap bitmap = Bitmap.wrapHardwareBuffer(buffer, ColorSpace.get(ColorSpace.Named.SRGB));
     canvas.drawBitmap(bitmap, 0, 0, null);
   }
 
@@ -97,10 +93,9 @@ public class FlutterImageView extends View {
     final int desiredWidth = imagePlane.getRowStride() / imagePlane.getPixelStride();
     final int desiredHeight = currentImage.getHeight();
 
-    final Bitmap bitmap = android.graphics.Bitmap.createBitmap(
-      desiredWidth,
-      desiredHeight,
-      android.graphics.Bitmap.Config.ARGB_8888);
+    final Bitmap bitmap =
+        android.graphics.Bitmap.createBitmap(
+            desiredWidth, desiredHeight, android.graphics.Bitmap.Config.ARGB_8888);
 
     bitmap.copyPixelsFromBuffer(imagePlane.getBuffer());
     canvas.drawBitmap(bitmap, 0, 0, null);

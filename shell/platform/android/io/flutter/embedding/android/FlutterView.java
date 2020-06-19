@@ -156,8 +156,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
   /**
    * Deprecated - use {@link #FlutterView(Context, FlutterSurfaceView)} or {@link
-   * #FlutterView(Context, FlutterTextureView)} or {@link
-   * #FlutterView(Context, FlutterImageView)} instead.
+   * #FlutterView(Context, FlutterTextureView)} or {@link #FlutterView(Context, FlutterImageView)}
+   * instead.
    */
   @Deprecated
   public FlutterView(@NonNull Context context, @NonNull RenderMode renderMode) {
@@ -170,8 +170,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       flutterTextureView = new FlutterTextureView(context);
       renderSurface = flutterTextureView;
     } else {
-      throw new IllegalArgumentException(String.format("RenderMode not supported with this constructor: ",
-       renderMode));
+      throw new IllegalArgumentException(
+          String.format("RenderMode not supported with this constructor: ", renderMode));
     }
 
     init();
@@ -259,12 +259,12 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       flutterSurfaceView =
           new FlutterSurfaceView(context, transparencyMode == TransparencyMode.transparent);
       renderSurface = flutterSurfaceView;
-    } else if (renderMode == RenderMode.texture){
+    } else if (renderMode == RenderMode.texture) {
       flutterTextureView = new FlutterTextureView(context);
       renderSurface = flutterTextureView;
     } else {
-      throw new IllegalArgumentException(String.format("RenderMode not supported with this constructor: ",
-       renderMode));
+      throw new IllegalArgumentException(
+          String.format("RenderMode not supported with this constructor: ", renderMode));
     }
 
     init();
@@ -1054,12 +1054,11 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     texture,
     /**
      * {@code RenderMode}, which paints Paints a Flutter UI provided by an {@link
-     * android.media.ImageReader} onto a {@link android.graphics.Canvas}.
-     * This mode is not as performant as {@link RenderMode#surface}, but a {@code FlutterView} in
-     * this mode can handle full interactivity with a {@link
-     * io.flutter.plugin.platform.PlatformView}. Unless {@link
-     * io.flutter.plugin.platform.PlatformView}s are required developers should strongly prefer
-     * the {@link RenderMode#surface} render mode.
+     * android.media.ImageReader} onto a {@link android.graphics.Canvas}. This mode is not as
+     * performant as {@link RenderMode#surface}, but a {@code FlutterView} in this mode can handle
+     * full interactivity with a {@link io.flutter.plugin.platform.PlatformView}. Unless {@link
+     * io.flutter.plugin.platform.PlatformView}s are required developers should strongly prefer the
+     * {@link RenderMode#surface} render mode.
      */
     image
   }
