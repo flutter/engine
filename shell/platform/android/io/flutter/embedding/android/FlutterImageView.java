@@ -67,14 +67,14 @@ public class FlutterImageView extends View {
     currentImage = nextImage;
     nextImage = null;
 
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+    if (29) {
       drawImageBuffer(canvas);
     }
 
     drawImagePlane(canvas);
   }
 
-  @TargetApi(Build.VERSION_CODES.Q)
+  @TargetApi(29)
   private void drawImageBuffer(@NonNull Canvas canvas) {
     final HardwareBuffer buffer = currentImage.getHardwareBuffer();
 
