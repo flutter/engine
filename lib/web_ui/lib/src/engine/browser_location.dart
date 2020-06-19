@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+
 part of engine;
 
 // TODO(mdebbar): add other strategies.
@@ -23,17 +23,17 @@ abstract class LocationStrategy {
   ui.VoidCallback onPopState(html.EventListener fn);
 
   /// The active path in the browser history.
-  String get path;
+  String? get path;
 
   /// Given a path that's internal to the app, create the external url that
   /// will be used in the browser.
   String prepareExternalUrl(String internalUrl);
 
   /// Push a new history entry.
-  void pushState(dynamic state, String title, String url);
+  void pushState(dynamic state, String title, String? url);
 
   /// Replace the currently active history entry.
-  void replaceState(dynamic state, String title, String url);
+  void replaceState(dynamic state, String title, String? url);
 
   /// Go to the previous history entry.
   Future<void> back();
@@ -94,13 +94,13 @@ class HashLocationStrategy extends LocationStrategy {
   }
 
   @override
-  void pushState(dynamic state, String title, String url) {
-    _platformLocation.pushState(state, title, prepareExternalUrl(url));
+  void pushState(dynamic state, String title, String? url) {
+    _platformLocation.pushState(state, title, prepareExternalUrl(url!));
   }
 
   @override
-  void replaceState(dynamic state, String title, String url) {
-    _platformLocation.replaceState(state, title, prepareExternalUrl(url));
+  void replaceState(dynamic state, String title, String? url) {
+    _platformLocation.replaceState(state, title, prepareExternalUrl(url!));
   }
 
   @override
@@ -115,7 +115,7 @@ class HashLocationStrategy extends LocationStrategy {
   /// `history.back` transition.
   Future<void> _waitForPopState() {
     final Completer<void> completer = Completer<void>();
-    ui.VoidCallback unsubscribe;
+    late ui.VoidCallback unsubscribe;
     unsubscribe = onPopState((_) {
       unsubscribe();
       completer.complete();
@@ -141,7 +141,7 @@ abstract class PlatformLocation {
 
   String get pathname;
   String get search;
-  String get hash;
+  String? get hash;
 
   void pushState(dynamic state, String title, String url);
   void replaceState(dynamic state, String title, String url);

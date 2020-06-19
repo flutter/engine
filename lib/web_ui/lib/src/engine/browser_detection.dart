@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+
 part of engine;
 
 /// The HTML engine used by the current browser.
@@ -28,7 +28,7 @@ enum BrowserEngine {
 }
 
 /// Lazily initialized current browser engine.
-BrowserEngine _browserEngine;
+BrowserEngine? _browserEngine;
 
 /// Override the value of [browserEngine].
 ///
@@ -36,16 +36,13 @@ BrowserEngine _browserEngine;
 /// app is running on.
 ///
 /// This is intended to be used for testing and debugging only.
-BrowserEngine debugBrowserEngineOverride;
+BrowserEngine? debugBrowserEngineOverride;
 
 /// Returns the [BrowserEngine] used by the current browser.
 ///
 /// This is used to implement browser-specific behavior.
 BrowserEngine get browserEngine {
-  if (debugBrowserEngineOverride != null) {
-    return debugBrowserEngineOverride;
-  }
-  return _browserEngine ??= _detectBrowserEngine();
+  return debugBrowserEngineOverride ?? (_browserEngine ??= _detectBrowserEngine());
 }
 
 BrowserEngine _detectBrowserEngine() {
@@ -99,13 +96,13 @@ enum OperatingSystem {
 }
 
 /// Lazily initialized current operating system.
-OperatingSystem _operatingSystem;
+OperatingSystem? _operatingSystem;
 
 /// Returns the [OperatingSystem] the current browsers works on.
 ///
 /// This is used to implement operating system specific behavior such as
 /// soft keyboards.
-OperatingSystem get operatingSystem {
+OperatingSystem? get operatingSystem {
   if (debugOperatingSystemOverride != null) {
     return debugOperatingSystemOverride;
   }
@@ -118,7 +115,7 @@ OperatingSystem get operatingSystem {
 /// app is running on.
 ///
 /// This is intended to be used for testing and debugging only.
-OperatingSystem debugOperatingSystemOverride;
+OperatingSystem? debugOperatingSystemOverride;
 
 OperatingSystem _detectOperatingSystem() {
   final String platform = html.window.navigator.platform;

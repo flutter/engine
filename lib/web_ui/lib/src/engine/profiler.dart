@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+
 part of engine;
 
 /// A function that receives a benchmark [value] labeleb by [name].
@@ -38,7 +38,7 @@ R timeAction<R>(String name, Action<R> action) {
     final Stopwatch stopwatch = Stopwatch()..start();
     final R result = action();
     stopwatch.stop();
-    Profiler.instance.benchmark(name, stopwatch.elapsedMicroseconds);
+    Profiler.instance!.benchmark(name, stopwatch.elapsedMicroseconds);
     return result;
   }
 }
@@ -71,7 +71,7 @@ class Profiler {
     return Profiler._instance ??= Profiler._();
   }
 
-  static Profiler get instance {
+  static Profiler? get instance {
     _checkBenchmarkMode();
     if (_instance == null) {
       throw Exception(
@@ -83,7 +83,7 @@ class Profiler {
     return _instance;
   }
 
-  static Profiler _instance;
+  static Profiler? _instance;
 
   static void _checkBenchmarkMode() {
     if (!isBenchmarkMode) {
@@ -99,7 +99,7 @@ class Profiler {
   void benchmark(String name, num value) {
     _checkBenchmarkMode();
 
-    final OnBenchmark onBenchmark =
+    final OnBenchmark? onBenchmark =
         js_util.getProperty(html.window, '_flutter_internal_on_benchmark');
     if (onBenchmark != null) {
       onBenchmark(name, value);

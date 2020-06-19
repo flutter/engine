@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 part of engine;
 
 const double kEpsilon = 0.000000001;
@@ -36,10 +35,7 @@ class SurfacePathMetrics extends IterableBase<ui.PathMetric>
 /// Maintains a single instance of computed segments for set of PathMetric
 /// objects exposed through iterator.
 class _SurfacePathMeasure {
-  _SurfacePathMeasure(this._path, this.forceClosed) {
-    // nextContour will increment this to the zero based index.
-    _currentContourIndex = -1;
-  }
+  _SurfacePathMeasure(this._path, this.forceClosed);
 
   final SurfacePath _path;
   final List<_PathContourMeasure> _contours = [];
@@ -48,12 +44,12 @@ class _SurfacePathMeasure {
   // have been implied when using [Path.addRect])
   final bool forceClosed;
 
-  int _currentContourIndex;
+  // nextContour will increment this to the zero based index.
+  int _currentContourIndex = -1;
   int get currentContourIndex => _currentContourIndex;
 
   // Iterator index into [Path.subPaths]
   int _subPathIndex = -1;
-  _PathContourMeasure _contourMeasure;
 
   double length(int contourIndex) {
     assert(contourIndex <= currentContourIndex,
@@ -71,7 +67,7 @@ class _SurfacePathMeasure {
   /// Returns null if the contour has zero [length].
   ///
   /// The distance is clamped to the [length] of the current contour.
-  ui.Tangent getTangentForOffset(int contourIndex, double distance) {
+  ui.Tangent? getTangentForOffset(int contourIndex, double distance) {
     return _contours[contourIndex].getTangentForOffset(distance);
   }
 
@@ -104,13 +100,11 @@ class _SurfacePathMeasure {
       return false;
     }
     ++_subPathIndex;
-    _contourMeasure =
-        _PathContourMeasure(_path.subpaths[_subPathIndex], forceClosed);
-    _contours.add(_contourMeasure);
+    _contours.add(_PathContourMeasure(_path.subpaths[_subPathIndex], forceClosed));
     return true;
   }
 
-  ui.Path extractPath(int contourIndex, double start, double end,
+  ui.Path? extractPath(int contourIndex, double start, double end,
       {bool startWithMoveTo = true}) {
     return _contours[contourIndex].extractPath(start, end, startWithMoveTo);
   }
@@ -136,7 +130,7 @@ class _PathContourMeasure {
   double _contourLength = 0.0;
   bool _isClosed = false;
 
-  ui.Tangent getTangentForOffset(double distance) {
+  ui.Tangent? getTangentForOffset(double distance) {
     final segmentIndex = _segmentIndexAtDistance(distance);
     if (segmentIndex == -1) {
       return null;
@@ -190,7 +184,7 @@ class _PathContourMeasure {
     return segment.computeTangent(t);
   }
 
-  ui.Path extractPath(
+  ui.Path? extractPath(
       double startDistance, double stopDistance, bool startWithMoveTo) {
     if (startDistance < 0) {
       startDistance = 0;
@@ -284,23 +278,23 @@ class _PathContourMeasure {
       currentX = x;
       currentY = y;
     };
-    _EllipseSegmentResult ellipseResult;
+    late final _EllipseSegmentResult ellipseResult = _EllipseSegmentResult();
     for (PathCommand command in commands) {
       switch (command.type) {
         case PathCommandTypes.moveTo:
-          final MoveTo moveTo = command;
+          final MoveTo moveTo = command as MoveTo;
           currentX = moveTo.x;
           currentY = moveTo.y;
           haveSeenMoveTo = true;
           break;
         case PathCommandTypes.lineTo:
           assert(haveSeenMoveTo);
-          final LineTo lineTo = command;
+          final LineTo lineTo = command as LineTo;
           lineToHandler(lineTo.x, lineTo.y);
           break;
         case PathCommandTypes.bezierCurveTo:
           assert(haveSeenMoveTo);
-          final BezierCurveTo curve = command;
+          final BezierCurveTo curve = command as BezierCurveTo;
           // Compute cubic curve distance.
           distance = _computeCubicSegments(
               currentX,
@@ -318,7 +312,7 @@ class _PathContourMeasure {
           break;
         case PathCommandTypes.quadraticCurveTo:
           assert(haveSeenMoveTo);
-          final QuadraticCurveTo quadraticCurveTo = command;
+          final QuadraticCurveTo quadraticCurveTo = command as QuadraticCurveTo;
           // Compute quad curve distance.
           distance = _computeQuadSegments(
               currentX,
@@ -334,8 +328,7 @@ class _PathContourMeasure {
         case PathCommandTypes.close:
           break;
         case PathCommandTypes.ellipse:
-          final Ellipse ellipse = command;
-          ellipseResult ??= _EllipseSegmentResult();
+          final Ellipse ellipse = command as Ellipse;
           _computeEllipseSegments(
               currentX,
               currentY,
@@ -356,7 +349,7 @@ class _PathContourMeasure {
           _isClosed = true;
           break;
         case PathCommandTypes.rRect:
-          final RRectCommand rrectCommand = command;
+          final RRectCommand rrectCommand = command as RRectCommand;
           final ui.RRect rrect = rrectCommand.rrect;
           RRectMetricsRenderer(moveToCallback: (double x, double y) {
             currentX = x;
@@ -373,7 +366,6 @@ class _PathContourMeasure {
               double startAngle,
               double endAngle,
               bool antiClockwise) {
-            ellipseResult ??= _EllipseSegmentResult();
             _computeEllipseSegments(
                 currentX,
                 currentY,
@@ -395,7 +387,7 @@ class _PathContourMeasure {
           _isClosed = true;
           break;
         case PathCommandTypes.rect:
-          final RectCommand rectCommand = command;
+          final RectCommand rectCommand = command as RectCommand;
           final double x = rectCommand.x;
           final double y = rectCommand.y;
           final double width = rectCommand.width;
@@ -498,13 +490,13 @@ class _PathContourMeasure {
   }
 
   static bool _quadTooCurvy(
-      double x0, double y0, double x1, double y1, double x2, double y2) {
+      double x0, double? y0, double x1, double y1, double x2, double y2) {
     // (a/4 + b/2 + c/4) - (a/2 + c/2)  =  -a/4 + b/2 - c/4
     final double dx = (x1 / 2) - (x0 + x2) / 4;
     if (dx.abs() > _fTolerance) {
       return true;
     }
-    final double dy = (y1 / 2) - (y0 + y2) / 4;
+    final double dy = (y1 / 2) - (y0! + y2) / 4;
     if (dy.abs() > _fTolerance) {
       return true;
     }
@@ -614,11 +606,11 @@ class _PathContourMeasure {
 class SurfacePathMetricIterator implements Iterator<ui.PathMetric> {
   SurfacePathMetricIterator._(this._pathMeasure) : assert(_pathMeasure != null);
 
-  SurfacePathMetric _pathMetric;
+  SurfacePathMetric? _pathMetric;
   _SurfacePathMeasure _pathMeasure;
 
   @override
-  SurfacePathMetric get current => _pathMetric;
+  SurfacePathMetric get current => _pathMetric!;
 
   @override
   bool moveNext() {
@@ -699,7 +691,7 @@ class SurfacePathMetric implements ui.PathMetric {
   ///
   /// The distance is clamped to the [length] of the current contour.
   @override
-  ui.Tangent getTangentForOffset(double distance) {
+  ui.Tangent? getTangentForOffset(double distance) {
     return _measure.getTangentForOffset(contourIndex, distance);
   }
 
@@ -708,7 +700,7 @@ class SurfacePathMetric implements ui.PathMetric {
   /// `start` and `end` are pinned to legal values (0..[length])
   /// Returns null if the segment is 0 length or `start` > `stop`.
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
-  ui.Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
+  ui.Path? extractPath(double start, double end, {bool startWithMoveTo = true}) {
     return _measure.extractPath(contourIndex, start, end,
         startWithMoveTo: startWithMoveTo);
   }
@@ -717,11 +709,11 @@ class SurfacePathMetric implements ui.PathMetric {
   String toString() => 'PathMetric';
 }
 
+/// Contains temprary data returned by
 class _EllipseSegmentResult {
-  double endPointX;
-  double endPointY;
-  double distance;
-  _EllipseSegmentResult();
+  double endPointX = 0;
+  double endPointY = 0;
+  double distance = 0;
 }
 
 // Given a vector dx, dy representing slope, normalize and return as [ui.Offset].
