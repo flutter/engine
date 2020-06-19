@@ -34,8 +34,7 @@ group("web_sdk") {
     ":flutter_dartdevc_kernel_sdk",
     ":flutter_dartdevc_kernel_sdk_outline",
     ":flutter_dartdevc_kernel_sdk_outline_strong",
-
-    # ":flutter_dartdevc_canvaskit_kernel_sdk_strong",
+    ":flutter_dartdevc_canvaskit_kernel_sdk_strong",
     ":flutter_dartdevc_kernel_sdk_strong",
     ":web_engine_sources",
     ":web_ui_library",
