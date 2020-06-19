@@ -28,9 +28,10 @@ void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
   auto rtree_factory = RTreeFactory();
   view_rtrees_.insert({view_id, rtree_factory.getInstance()});
 
-  picture_recorders_.insert({view_id, std::make_unique<SkPictureRecorder>()});
-  picture_recorders_.at(view_id)->beginRecording(SkRect::Make(frame_size_),
-                                                 &rtree_factory);
+  auto picture_recorder = std::make_unique<SkPictureRecorder>();
+  picture_recorder->beginRecording(SkRect::Make(frame_size_), &rtree_factory);
+
+  picture_recorders_.insert({view_id, std::move(picture_recorder)});
   composition_order_.push_back(view_id);
   // Update params only if they changed.
   if (view_params_.count(view_id) == 1 &&
@@ -59,14 +60,13 @@ std::vector<SkCanvas*> AndroidExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
-  const EmbeddedViewParams* params = &(view_params_.at(view_id));
-  FML_CHECK(params);
+  const EmbeddedViewParams& params = view_params_.at(view_id);
   // TODO(egarciad): The rect should be computed from the mutator stack.
   // https://github.com/flutter/flutter/issues/59821
-  return SkRect::MakeXYWH(params->offsetPixels.x(),                          //
-                          params->offsetPixels.y(),                          //
-                          params->sizePoints.width() * device_pixel_ratio_,  //
-                          params->sizePoints.height() * device_pixel_ratio_  //
+  return SkRect::MakeXYWH(params.offsetPixels.x(),                          //
+                          params.offsetPixels.y(),                          //
+                          params.sizePoints.width() * device_pixel_ratio_,  //
+                          params.sizePoints.height() * device_pixel_ratio_  //
   );
 }
 
@@ -113,15 +113,15 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
     // This is done by querying the r-tree that holds the records for the
     // picture recorder corresponding to the flow layers added after a platform
     // view layer.
-    for (size_t j = i + 1; j > 0; j--) {
-      int64_t current_view_id = composition_order_[j - 1];
+    for (ssize_t j = i; j >= 0; j--) {
+      int64_t current_view_id = composition_order_[j];
       SkRect current_view_rect = GetViewRect(current_view_id);
       // Each rect corresponds to a native view that renders Flutter UI.
       std::list<SkRect> intersection_rects =
           rtree->searchNonOverlappingDrawnRects(current_view_rect);
       auto allocation_size = intersection_rects.size();
 
-      // Limit the number of native views, so it doesn't grow for ever.
+      // Limit the number of native views, so it doesn't grow forever.
       //
       // In this case, the rects are merged into a single one that is the union
       // of all the rects.
@@ -142,11 +142,7 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
         // To workaround it, round the floating point bounds and make the rect
         // slighly larger. For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4,
         // 5}.
-        intersection_rect.setLTRB(std::floor(intersection_rect.left()),  //
-                                  std::floor(intersection_rect.top()),   //
-                                  std::ceil(intersection_rect.right()),  //
-                                  std::ceil(intersection_rect.bottom())  //
-        );
+        intersection_rect.set(intersection_rect.roundOut());
         // Clip the background canvas, so it doesn't contain any of the pixels
         // drawn on the overlay layer.
         background_canvas->clipRect(intersection_rect, SkClipOp::kDifference);
@@ -159,9 +155,8 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
   // the surfaces above.
   frame->Submit();
 
-  for (size_t i = 0; i < composition_order_.size(); i++) {
-    int64_t view_id = composition_order_[i];
-    for (SkRect& overlay_rect : overlay_layers.at(view_id)) {
+  for (int64_t view_id : composition_order_) {
+    for (const SkRect& overlay_rect : overlay_layers.at(view_id)) {
       CreateSurfaceIfNeeded(context,               //
                             view_id,               //
                             pictures.at(view_id),  //
@@ -178,7 +173,7 @@ std::unique_ptr<SurfaceFrame>
 AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrContext* context,
                                                    int64_t view_id,
                                                    sk_sp<SkPicture> picture,
-                                                   SkRect& rect) {
+                                                   const SkRect& rect) {
   std::shared_ptr<OverlayLayer> layer = surface_pool_->GetLayer(
       context, android_context_, jni_facade_, surface_factory_);
 

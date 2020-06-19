@@ -38,7 +38,7 @@ struct OverlayLayer {
   // so we can update the overlay with the new context.
   //
   // This may change when the overlay is recycled.
-  GrContext* gr_context;
+  intptr_t gr_context_key;
 };
 
 // This class isn't thread safe.

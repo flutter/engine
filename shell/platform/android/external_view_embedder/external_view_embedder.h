@@ -127,7 +127,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   std::unique_ptr<SurfaceFrame> CreateSurfaceIfNeeded(GrContext* context,
                                                       int64_t view_id,
                                                       sk_sp<SkPicture> picture,
-                                                      SkRect& rect);
+                                                      const SkRect& rect);
 };
 
 }  // namespace flutter

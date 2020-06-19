@@ -43,7 +43,8 @@ TEST(SurfacePool, GetLayer__AllocateOneLayer) {
                               surface_factory);
 
   ASSERT_NE(nullptr, layer);
-  ASSERT_EQ(gr_context.get(), layer->gr_context);
+  ASSERT_EQ(reinterpret_cast<intptr_t>(gr_context.get()),
+            layer->gr_context_key);
 }
 
 TEST(SurfacePool, GetUnusedLayers) {
@@ -119,8 +120,10 @@ TEST(SurfacePool, GetLayer__Recycle) {
 
   ASSERT_NE(nullptr, layer_1);
   ASSERT_EQ(layer_1, layer_2);
-  ASSERT_EQ(gr_context_2.get(), layer_1->gr_context);
-  ASSERT_EQ(gr_context_2.get(), layer_2->gr_context);
+  ASSERT_EQ(reinterpret_cast<intptr_t>(gr_context_2.get()),
+            layer_1->gr_context_key);
+  ASSERT_EQ(reinterpret_cast<intptr_t>(gr_context_2.get()),
+            layer_2->gr_context_key);
 }
 
 TEST(SurfacePool, GetLayer__AllocateTwoLayers) {

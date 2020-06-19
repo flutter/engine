@@ -24,6 +24,7 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
     std::shared_ptr<AndroidContext> android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     const AndroidSurface::Factory& surface_factory) {
+  intptr_t gr_context_key = reinterpret_cast<intptr_t>(gr_context);
   // Allocate a new surface if there isn't one available.
   if (available_layer_index_ >= layers_.size()) {
     std::unique_ptr<AndroidSurface> android_surface =
@@ -47,14 +48,14 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
                                        std::move(android_surface),  //
                                        std::move(surface)           //
         );
-    layer->gr_context = gr_context;
+    layer->gr_context_key = gr_context_key;
     layers_.push_back(layer);
   }
   std::shared_ptr<OverlayLayer> layer = layers_[available_layer_index_];
   // Since the surfaces are recycled, it's possible that the GrContext is
   // different.
-  if (gr_context != layer->gr_context) {
-    layer->gr_context = gr_context;
+  if (gr_context_key != layer->gr_context_key) {
+    layer->gr_context_key = gr_context_key;
     // The overlay already exists, but the GrContext was changed so we need to
     // recreate the rendering surface with the new GrContext.
     std::unique_ptr<Surface> surface =
