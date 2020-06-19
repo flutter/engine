@@ -37,11 +37,11 @@ class EngineLineMetrics implements ui.LineMetrics {
         assert(width != null),
         assert(left != null),
         assert(lineNumber != null && lineNumber >= 0),
-        ascent = double.nan,
-        descent = double.nan,
-        unscaledAscent = double.nan,
-        height = double.nan,
-        baseline = double.nan;
+        ascent = double.infinity,
+        descent = double.infinity,
+        unscaledAscent = double.infinity,
+        height = double.infinity,
+        baseline = double.infinity;
 
   /// The text to be rendered on the screen representing this line.
   final String? displayText;
@@ -124,6 +124,23 @@ class EngineLineMetrics implements ui.LineMetrics {
         left == typedOther.left &&
         baseline == typedOther.baseline &&
         lineNumber == typedOther.lineNumber;
+  }
+
+  @override
+  String toString() {
+    if (assertionsEnabled) {
+      return 'LineMetrics(hardBreak: $hardBreak, '
+                        'ascent: $ascent, '
+                        'descent: $descent, '
+                        'unscaledAscent: $unscaledAscent, '
+                        'height: $height, '
+                        'width: $width, '
+                        'left: $left, '
+                        'baseline: $baseline, '
+                        'lineNumber: $lineNumber)';
+    } else {
+      return super.toString();
+    }
   }
 }
 

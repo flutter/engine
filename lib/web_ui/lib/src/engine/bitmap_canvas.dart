@@ -44,7 +44,7 @@ class BitmapCanvas extends EngineCanvas {
   ParagraphGeometricStyle? _cachedLastStyle;
 
   /// List of extra sibling elements created for paragraphs and clipping.
-  final List<html.Element?> _children = <html.Element?>[];
+  final List<html.Element> _children = <html.Element>[];
 
   /// The number of pixels along the width of the bitmap that the canvas element
   /// renders into.
@@ -177,7 +177,7 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPool.clear();
     final int len = _children.length;
     for (int i = 0; i < len; i++) {
-      html.Element child = _children[i]!;
+      html.Element child = _children[i];
       // Don't remove children that have been reused by CrossFrameCache.
       if (child.parent == rootElement) {
         child.remove();
@@ -417,7 +417,7 @@ class BitmapCanvas extends EngineCanvas {
           break;
       }
     }
-    imgElement.style.mixBlendMode = _stringForBlendMode(blendMode)!;
+    imgElement.style.mixBlendMode = _stringForBlendMode(blendMode) ?? '';
     if (_canvasPool.isClipped) {
       // Reset width/height since they may have been previously set.
       imgElement.style
@@ -560,7 +560,7 @@ class BitmapCanvas extends EngineCanvas {
         style
           ..position = 'absolute'
           ..backgroundImage = "url('${image.imgElement.src}')"
-          ..backgroundBlendMode = _stringForBlendMode(colorFilterBlendMode)!
+          ..backgroundBlendMode = _stringForBlendMode(colorFilterBlendMode) ?? ''
           ..backgroundColor = colorToCssString(filterColor);
         break;
     }

@@ -718,7 +718,7 @@ class EngineWindow extends ui.Window {
   }
 
   @visibleForTesting
-  Rasterizer? rasterizer = experimentalUseSkia ? Rasterizer(Surface(HtmlViewEmbedder())) : null;
+  late Rasterizer? rasterizer = experimentalUseSkia ? Rasterizer(Surface(HtmlViewEmbedder())) : null;
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {

@@ -25,10 +25,8 @@ class EnginePictureRecorder implements ui.PictureRecorder {
 
   @override
   ui.Picture endRecording() {
-    // Returning null is what the flutter engine does:
-    // lib/ui/painting/picture_recorder.cc
     if (!_isRecording) {
-      return null!;
+      throw StateError('PictureRecorder is not recording a picture.');
     }
     _isRecording = false;
     _canvas!.endRecording();

@@ -90,22 +90,19 @@ class EngineAutofillForm {
 
   final Map<String?, AutofillInfo>? items;
 
-  factory EngineAutofillForm.fromFrameworkMessage(
+  static EngineAutofillForm? fromFrameworkMessage(
     Map<String, dynamic>? focusedElementAutofill,
     List<dynamic>? fields,
   ) {
     // Autofill value can be null if focused text element does not have an
     // autofill hint set.
     if (focusedElementAutofill == null) {
-      return null!;
+      return null;
     }
 
     // If there is only one text field in the autofill model, `fields` will be
     // null. `focusedElementAutofill` contains the information about the one
     // text field.
-    final bool singleElement = (fields == null);
-    final AutofillInfo focusedElement =
-        AutofillInfo.fromFrameworkMessage(focusedElementAutofill);
     final Map<String?, html.HtmlElement> elements = <String?, html.HtmlElement>{};
     final Map<String?, AutofillInfo> items = <String?, AutofillInfo>{};
     final html.FormElement formElement = html.FormElement();
@@ -115,13 +112,15 @@ class EngineAutofillForm {
 
     _hideAutofillElements(formElement);
 
-    if (!singleElement) {
-      for (Map<String, dynamic> field in fields as Iterable<Map<String, dynamic>>) {
-        final Map<String, dynamic>? autofillInfo = field['autofill'];
+    if (fields != null) {
+      for (Map<String, dynamic> field in fields.cast<Map<String, dynamic>>()) {
+        final Map<String, dynamic> autofillInfo = field['autofill'];
         final AutofillInfo autofill =
             AutofillInfo.fromFrameworkMessage(autofillInfo);
 
         // The focused text editing element will not be created here.
+        final AutofillInfo focusedElement =
+            AutofillInfo.fromFrameworkMessage(focusedElementAutofill);
         if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
           EngineInputType engineInputType =
               EngineInputType.fromName(field['inputType']['name']);
@@ -225,12 +224,8 @@ class AutofillInfo {
   /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
   final String? hint;
 
-  factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic>? autofill) {
-    // Autofill value can be null if no TextFields is set with autofill hint.
-    if (autofill == null) {
-      return null!;
-    }
-
+  factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill) {
+    assert(autofill != null);
     final String? uniqueIdentifier = autofill['uniqueIdentifier'];
     final List<dynamic> hintsList = autofill['hints'];
     final EditingState editingState =
@@ -404,6 +399,7 @@ class InputConfiguration {
     this.autofill,
     this.autofillGroup,
   });
+
   InputConfiguration.fromFrameworkMessage(
       Map<String, dynamic> flutterInputConfiguration)
       : inputType = EngineInputType.fromName(
@@ -411,8 +407,9 @@ class InputConfiguration {
         inputAction = flutterInputConfiguration['inputAction'],
         obscureText = flutterInputConfiguration['obscureText'],
         autocorrect = flutterInputConfiguration['autocorrect'],
-        autofill = AutofillInfo.fromFrameworkMessage(
-            flutterInputConfiguration['autofill']),
+        autofill = flutterInputConfiguration.containsKey('autofill')
+          ? AutofillInfo.fromFrameworkMessage(flutterInputConfiguration['autofill'])
+          : null,
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
             flutterInputConfiguration['autofill'],
             flutterInputConfiguration['fields']);

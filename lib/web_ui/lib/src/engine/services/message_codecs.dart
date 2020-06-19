@@ -31,17 +31,11 @@ class StringCodec implements MessageCodec<String> {
 
   @override
   String decodeMessage(ByteData message) {
-    if (message == null) {
-      return null!;
-    }
     return utf8.decoder.convert(message.buffer.asUint8List());
   }
 
   @override
   ByteData encodeMessage(String message) {
-    if (message == null) {
-      return null!;
-    }
     final Uint8List encoded = utf8.encoder.convert(message);
     return encoded.buffer.asByteData();
   }

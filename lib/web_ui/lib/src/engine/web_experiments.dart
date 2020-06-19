@@ -47,7 +47,7 @@ class WebExperiments {
   void updateExperiment(String name, bool enabled) {
     switch (name) {
       case 'useCanvasText':
-        _useCanvasText = enabled;
+        useCanvasText = enabled;
         break;
     }
   }

@@ -16,9 +16,9 @@ class LayerScene implements ui.Scene {
   void dispose() {}
 
   @override
-  Future<ui.Image> toImage(int width, int height) => null!;
-
-  html.Element? get webOnlyRootElement => null;
+  Future<ui.Image> toImage(int width, int height) {
+    throw UnsupportedError('LayerScene.toImage not implemented.');
+  }
 }
 
 class LayerSceneBuilder implements ui.SceneBuilder {

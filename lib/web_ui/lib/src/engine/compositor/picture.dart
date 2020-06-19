@@ -21,7 +21,6 @@ class SkPicture implements ui.Picture {
 
   @override
   Future<ui.Image> toImage(int width, int height) {
-    // TODO: implement toImage
-    return null!;
+    throw UnsupportedError('SkPicture.toImage not implemented');
   }
 }

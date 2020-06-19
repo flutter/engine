@@ -347,7 +347,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   void build() {
     if (rootElement != null) {
       try {
-        throw null!;
+        throw '';
       } catch (_, stack) {
         print(
             'Attempted to build a $runtimeType, but it already has an HTML element ${rootElement!.tagName}.');

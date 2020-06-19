@@ -127,7 +127,7 @@ class _PathContourMeasure {
   double get length => _contourLength;
   bool get isClosed => _isClosed;
 
-  double _contourLength = 0.0;
+  double _contourLength = 0;
   bool _isClosed = false;
 
   ui.Tangent? getTangentForOffset(double distance) {
@@ -278,6 +278,7 @@ class _PathContourMeasure {
       currentX = x;
       currentY = y;
     };
+    print('>>> before late final');
     late final _EllipseSegmentResult ellipseResult = _EllipseSegmentResult();
     for (PathCommand command in commands) {
       switch (command.type) {
@@ -329,6 +330,7 @@ class _PathContourMeasure {
           break;
         case PathCommandTypes.ellipse:
           final Ellipse ellipse = command as Ellipse;
+          print('>>> case PathCommandTypes.ellipse');
           _computeEllipseSegments(
               currentX,
               currentY,
@@ -351,6 +353,7 @@ class _PathContourMeasure {
         case PathCommandTypes.rRect:
           final RRectCommand rrectCommand = command as RRectCommand;
           final ui.RRect rrect = rrectCommand.rrect;
+          print('>>> case PathCommandTypes.rRect');
           RRectMetricsRenderer(moveToCallback: (double x, double y) {
             currentX = x;
             currentY = y;
@@ -366,6 +369,7 @@ class _PathContourMeasure {
               double startAngle,
               double endAngle,
               bool antiClockwise) {
+            print('>>> RRectMetricsRenderer.ellipseCallback');
             _computeEllipseSegments(
                 currentX,
                 currentY,
@@ -711,6 +715,9 @@ class SurfacePathMetric implements ui.PathMetric {
 
 /// Contains temprary data returned by
 class _EllipseSegmentResult {
+  _EllipseSegmentResult() {
+    print('>>> _EllipseSegmentResult constructor');
+  }
   double endPointX = 0;
   double endPointY = 0;
   double distance = 0;
