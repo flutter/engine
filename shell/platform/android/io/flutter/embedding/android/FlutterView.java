@@ -228,8 +228,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * <p>{@code FlutterView} requires an {@code Activity} instead of a generic {@code Context} to be
    * compatible with {@link PlatformViewsController}.
    */
-  public FlutterView(@NonNull Context context, @NonNull FlutterSurfaceView flutterSurfaceView) {
-    this(context, null, flutterSurfaceView);
+  public FlutterView(@NonNull Context context, @NonNull FlutterImageView flutterImageView) {
+    this(context, null, flutterImageView);
   }
 
   /**

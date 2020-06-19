@@ -14,17 +14,18 @@ import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.os.Build;
 import android.view.View;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 /**
  * Paints a Flutter UI provided by an {@link android.media.ImageReader} onto a {@link
  * android.graphics.Canvas}.
- * 
+ *
  * <p>A {@code FlutterImageView} is intended for situations where a developer needs to render a
  * Flutter UI, but also needs to render an interactive {@link
  * io.flutter.plugin.platform.PlatformView}.
- * 
+ *
  * <p>This {@code View} takes an {@link android.media.ImageReader} that provides the Flutter UI
  * in an {@link android.media.Image} and renders it to the {@link android.graphics.Canvas} in
  * {@code onDraw}.
@@ -39,7 +40,7 @@ public class FlutterImageView extends View {
    * Constructs a {@code FlutterImageView} with an {@link android.media.ImageReader} that provides
    * the Flutter UI.
    */
-  public FlutterImageView(@Nonnull Context context, @Nonnull ImageReader imageReader) {
+  public FlutterImageView(@NonNull Context context, @NonNull ImageReader imageReader) {
     super(context, null);
     this.imageReader = imageReader;
   }
@@ -73,7 +74,7 @@ public class FlutterImageView extends View {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.P)
-  private void drawImageBuffer(@Nonnull Canvas canvas) {
+  private void drawImageBuffer(@NonNull Canvas canvas) {
     final HardwareBuffer buffer = currentImage.getHardwareBuffer();
 
     final Bitmap bitmap = Bitmap.wrapHardwareBuffer(
@@ -82,7 +83,7 @@ public class FlutterImageView extends View {
     canvas.drawBitmap(bitmap, 0, 0, null);
   }
 
-  private void drawImagePlane(@Nonnull Canvas canvas) {
+  private void drawImagePlane(@NonNull Canvas canvas) {
     if (currentImage == null) {
       return;
     }
