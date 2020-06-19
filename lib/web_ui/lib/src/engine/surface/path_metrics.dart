@@ -278,8 +278,9 @@ class _PathContourMeasure {
       currentX = x;
       currentY = y;
     };
-    print('>>> before late final');
-    late final _EllipseSegmentResult ellipseResult = _EllipseSegmentResult();
+
+    // TODO(yjbanov): make late final (https://github.com/dart-lang/sdk/issues/42422)
+    _EllipseSegmentResult? ellipseResult;
     for (PathCommand command in commands) {
       switch (command.type) {
         case PathCommandTypes.moveTo:
@@ -330,7 +331,7 @@ class _PathContourMeasure {
           break;
         case PathCommandTypes.ellipse:
           final Ellipse ellipse = command as Ellipse;
-          print('>>> case PathCommandTypes.ellipse');
+          ellipseResult ??= _EllipseSegmentResult();
           _computeEllipseSegments(
               currentX,
               currentY,
@@ -343,17 +344,16 @@ class _PathContourMeasure {
               ellipse.radiusX,
               ellipse.radiusY,
               ellipse.anticlockwise,
-              ellipseResult,
+              ellipseResult!,
               _segments);
-          distance = ellipseResult.distance;
-          currentX = ellipseResult.endPointX;
-          currentY = ellipseResult.endPointY;
+          distance = ellipseResult!.distance;
+          currentX = ellipseResult!.endPointX;
+          currentY = ellipseResult!.endPointY;
           _isClosed = true;
           break;
         case PathCommandTypes.rRect:
           final RRectCommand rrectCommand = command as RRectCommand;
           final ui.RRect rrect = rrectCommand.rrect;
-          print('>>> case PathCommandTypes.rRect');
           RRectMetricsRenderer(moveToCallback: (double x, double y) {
             currentX = x;
             currentY = y;
@@ -369,7 +369,7 @@ class _PathContourMeasure {
               double startAngle,
               double endAngle,
               bool antiClockwise) {
-            print('>>> RRectMetricsRenderer.ellipseCallback');
+            ellipseResult ??= _EllipseSegmentResult();
             _computeEllipseSegments(
                 currentX,
                 currentY,
@@ -382,11 +382,11 @@ class _PathContourMeasure {
                 radiusX,
                 radiusY,
                 antiClockwise,
-                ellipseResult,
+                ellipseResult!,
                 _segments);
-            distance = ellipseResult.distance;
-            currentX = ellipseResult.endPointX;
-            currentY = ellipseResult.endPointY;
+            distance = ellipseResult!.distance;
+            currentX = ellipseResult!.endPointX;
+            currentY = ellipseResult!.endPointY;
           }).render(rrect);
           _isClosed = true;
           break;
@@ -713,11 +713,7 @@ class SurfacePathMetric implements ui.PathMetric {
   String toString() => 'PathMetric';
 }
 
-/// Contains temprary data returned by
 class _EllipseSegmentResult {
-  _EllipseSegmentResult() {
-    print('>>> _EllipseSegmentResult constructor');
-  }
   double endPointX = 0;
   double endPointY = 0;
   double distance = 0;
