@@ -462,11 +462,20 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  // TODO(arbreng: fxb/55805) Our ScopedFrame implementation doesnt do the
+  // right thing here so initialize the base class directly. This wont be
+  // needed after we move to using the embedder API on Fuchsia.
+  auto frame = std::make_unique<flutter::CompositorContext::ScopedFrame>(
+      compositor_context, nullptr, recorder.getRecordingCanvas(), nullptr,
+      root_surface_transformation, false, true, nullptr);
+#else
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
   // https://github.com/flutter/flutter/issues/23435
   auto frame = compositor_context.AcquireFrame(
       nullptr, recorder.getRecordingCanvas(), nullptr,
       root_surface_transformation, false, true, nullptr);
+#endif  // defined(LEGACY_FUCHSIA_EMBEDDER)
 
   frame->Raster(*tree, true);
 
