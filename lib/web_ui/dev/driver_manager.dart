@@ -7,7 +7,9 @@ import 'dart:io' as io;
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as pathlib;
 import 'package:web_driver_installer/chrome_driver_installer.dart';
+import 'package:web_driver_installer/firefox_driver_installer.dart';
 import 'package:web_driver_installer/safari_driver_runner.dart';
+import 'package:yaml/yaml.dart';
 
 import 'chrome_installer.dart';
 import 'common.dart';
@@ -57,6 +59,61 @@ class ChromeDriverManager extends DriverManager {
     await startProcess('./chromedriver/chromedriver', ['--port=4444'],
         workingDirectory: driverPath);
     print('INFO: Driver started');
+  }
+}
+
+/// [DriverManager] implementation for Firefox.
+///
+/// This manager can be used for both MacOS and Linux.
+class FirefoxDriverManager extends DriverManager {
+  FirefoxDriverManager(String browser) : super(browser);
+
+  FirefoxDriverInstaller firefoxDriverInstaller =
+      FirefoxDriverInstaller(geckoDriverVersion: getLockedDeckoDriverVersion());
+
+  Future<void> _installDriver() async {
+    if (_browserDriverDir.existsSync()) {
+      _browserDriverDir.deleteSync(recursive: true);
+    }
+
+    _browserDriverDir.createSync(recursive: true);
+    temporaryDirectories.add(_drivers);
+
+    final io.Directory temp = io.Directory.current;
+    io.Directory.current = _browserDriverDir;
+
+    try {
+      await firefoxDriverInstaller.install(alwaysInstall: false);
+    } finally {
+      io.Directory.current = temp;
+    }
+  }
+
+  /// Throw an error if driver directory does not exists.
+  ///
+  /// Driver should already exist on LUCI as a CIPD package.
+  Future<void> _verifyDriverForLUCI() {
+    if (!_browserDriverDir.existsSync()) {
+      throw StateError('Failed to locate Firefox driver on LUCI on path:'
+          '${_browserDriverDir.path}');
+    }
+    return Future<void>.value();
+  }
+
+  Future<void> _startDriver(String driverPath) async {
+    await startProcess('./firefoxdriver/geckodriver', ['--port=4444'],
+        workingDirectory: driverPath);
+    print('INFO: Driver started');
+  }
+
+  /// Get the geckodriver version to be used with [FirefoxDriverInstaller].
+  ///
+  /// For different versions of geckodriver. See:
+  /// https://github.com/mozilla/geckodriver/releases
+  static String getLockedDeckoDriverVersion() {
+    final YamlMap browserLock = BrowserLock.instance.configuration;
+    String geckoDriverReleaseVersion = browserLock['geckodriver'] as String;
+    return geckoDriverReleaseVersion;
   }
 }
 
@@ -137,11 +194,13 @@ abstract class DriverManager {
   static DriverManager chooseDriver(String browser) {
     if (browser == 'chrome') {
       return ChromeDriverManager(browser);
+    } else if (browser == 'firefox') {
+      return FirefoxDriverManager(browser);
     } else if (browser == 'safari' && io.Platform.isMacOS) {
       return SafariDriverManager(browser);
     } else {
-      throw StateError('Integration tests are only supported on Chrome or '
-          'on Safari (running on MacOS)');
+      throw StateError('Integration tests are only supported on Firefox, Chrome'
+          ' or on Safari (running on MacOS)');
     }
   }
 }
