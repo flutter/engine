@@ -4,7 +4,18 @@
 
 package io.flutter.embedding.android;
 
-impo
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.ColorSpace;
+import android.hardware.HardwareBuffer;
+import android.media.Image;
+import android.media.Image.Plane;
+import android.media.ImageReader;
+import android.os.Build;
+import android.view.View;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 class FlutterImageView extends View implements RenderSurface {
   private final ImageReader imageReader;
