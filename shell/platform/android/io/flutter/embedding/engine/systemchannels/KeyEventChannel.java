@@ -5,13 +5,13 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.os.Build;
-import android.util.Log;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.Log;
 import io.flutter.plugin.common.BasicMessageChannel;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMessageCodec;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +26,6 @@ import org.json.JSONObject;
  */
 public class KeyEventChannel {
   private static final String TAG = "KeyEventChannel";
-  private static long eventIdSerial = 0;
 
   /**
    * Sets the event response handler to be used to receive key event response messages from the
@@ -47,7 +46,7 @@ public class KeyEventChannel {
      * @param id the event id of the event to be marked as being handled by the framework. Must not
      *     be null.
      */
-    public void onKeyEventHandled(@NonNull long id);
+    public void onKeyEventHandled(long id);
 
     /**
      * Called whenever the framework responds that a given key event wasn't handled by the
@@ -56,48 +55,50 @@ public class KeyEventChannel {
      * @param id the event id of the event to be marked as not being handled by the framework. Must
      *     not be null.
      */
-    public void onKeyEventNotHandled(@NonNull long id);
+    public void onKeyEventNotHandled(long id);
   }
 
-  private final BasicMessageChannel.MessageHandler<Object> messageHandler =
-      new BasicMessageChannel.MessageHandler<Object>() {
-        @Override
-        public void onMessage(
-            @Nullable Object message, @NonNull BasicMessageChannel.Reply<Object> reply) {
-          // If there is no handler to respond to this message then we don't
-          // need to parse it.
-          if (eventResponseHandler == null) {
-            return;
-          }
+  /**
+   * A constructor that creates a KeyEventChannel with the default message handler.
+   *
+   * @param binaryMessenger the binary messenger used to send messages on this channel.
+   */
+  public KeyEventChannel(@NonNull BinaryMessenger binaryMessenger) {
+    this.channel =
+        new BasicMessageChannel<>(binaryMessenger, "flutter/keyevent", JSONMessageCodec.INSTANCE);
+  }
 
-          try {
-            final JSONObject annotatedEvent = (JSONObject) message;
-            final String type = annotatedEvent.getString("type");
-            final JSONObject data = annotatedEvent.getJSONObject("data");
+  /**
+   * Creates a reply handler for this an event with the given eventId.
+   *
+   * @param eventId the event ID to create a reply for.
+   */
+  BasicMessageChannel.Reply<Object> createReplyHandler(long eventId) {
+    return message -> {
+      if (eventResponseHandler == null) {
+        return;
+      }
 
-            switch (type) {
-              case "keyHandled":
-                eventResponseHandler.onKeyEventHandled(data.getLong("eventId"));
-                break;
-              case "keyNotHandled":
-                eventResponseHandler.onKeyEventNotHandled(data.getLong("eventId"));
-                break;
-            }
-          } catch (JSONException e) {
-            Log.e(TAG, "Unable to unpack JSON message: " + e);
-          } finally {
-            reply.reply(null);
-          }
+      try {
+        if (message == null) {
+          eventResponseHandler.onKeyEventNotHandled(eventId);
+          return;
         }
-      };
+        final JSONObject annotatedEvent = (JSONObject) message;
+        final boolean handled = annotatedEvent.getBoolean("handled");
+        if (handled) {
+          eventResponseHandler.onKeyEventHandled(eventId);
+        } else {
+          eventResponseHandler.onKeyEventNotHandled(eventId);
+        }
+      } catch (JSONException e) {
+        Log.e(TAG, "Unable to unpack JSON message: " + e);
+        eventResponseHandler.onKeyEventNotHandled(eventId);
+      }
+    };
+  }
 
   @NonNull public final BasicMessageChannel<Object> channel;
-
-  public KeyEventChannel(@NonNull DartExecutor dartExecutor) {
-    this.channel =
-        new BasicMessageChannel<>(dartExecutor, "flutter/keyevent", JSONMessageCodec.INSTANCE);
-    this.channel.setMessageHandler(messageHandler);
-  }
 
   public void keyUp(@NonNull FlutterKeyEvent keyEvent) {
     Map<String, Object> message = new HashMap<>();
@@ -105,7 +106,7 @@ public class KeyEventChannel {
     message.put("keymap", "android");
     encodeKeyEvent(keyEvent, message);
 
-    channel.send(message);
+    channel.send(message, createReplyHandler(keyEvent.eventId));
   }
 
   public void keyDown(@NonNull FlutterKeyEvent keyEvent) {
@@ -114,7 +115,7 @@ public class KeyEventChannel {
     message.put("keymap", "android");
     encodeKeyEvent(keyEvent, message);
 
-    channel.send(message);
+    channel.send(message, createReplyHandler(keyEvent.eventId));
   }
 
   private void encodeKeyEvent(
@@ -136,7 +137,10 @@ public class KeyEventChannel {
     message.put("eventId", event.eventId);
   }
 
-  /** Key event as defined by Flutter. */
+  /**
+   * A key event as defined by Flutter that includes an id for the specific event to be used when
+   * responding to the event.
+   */
   public static class FlutterKeyEvent {
     public final int deviceId;
     public final int flags;
@@ -152,12 +156,12 @@ public class KeyEventChannel {
     public final int repeatCount;
     public final long eventId;
 
-    public FlutterKeyEvent(@NonNull KeyEvent androidKeyEvent) {
-      this(androidKeyEvent, null);
+    public FlutterKeyEvent(@NonNull KeyEvent androidKeyEvent, long eventId) {
+      this(androidKeyEvent, null, eventId);
     }
 
     public FlutterKeyEvent(
-        @NonNull KeyEvent androidKeyEvent, @Nullable Character complexCharacter) {
+        @NonNull KeyEvent androidKeyEvent, @Nullable Character complexCharacter, long eventId) {
       this(
           androidKeyEvent.getDeviceId(),
           androidKeyEvent.getFlags(),
@@ -168,7 +172,8 @@ public class KeyEventChannel {
           androidKeyEvent.getScanCode(),
           androidKeyEvent.getMetaState(),
           androidKeyEvent.getSource(),
-          androidKeyEvent.getRepeatCount());
+          androidKeyEvent.getRepeatCount(),
+          eventId);
     }
 
     public FlutterKeyEvent(
@@ -181,7 +186,8 @@ public class KeyEventChannel {
         int scanCode,
         int metaState,
         int source,
-        int repeatCount) {
+        int repeatCount,
+        long eventId) {
       this.deviceId = deviceId;
       this.flags = flags;
       this.plainCodePoint = plainCodePoint;
@@ -192,7 +198,7 @@ public class KeyEventChannel {
       this.metaState = metaState;
       this.source = source;
       this.repeatCount = repeatCount;
-      this.eventId = eventIdSerial++;
+      this.eventId = eventId;
       InputDevice device = InputDevice.getDevice(deviceId);
       if (device != null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {

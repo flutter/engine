@@ -25,11 +25,12 @@ import java.util.Map.Entry;
  */
 public class AndroidKeyProcessor {
   private static final String TAG = "AndroidKeyProcessor";
+  private static long eventIdSerial = 0;
 
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final TextInputPlugin textInputPlugin;
-  @NonNull private int combiningCharacter;
-  @NonNull public final EventResponder eventResponder;
+  private int combiningCharacter;
+  @NonNull EventResponder eventResponder;
 
   public AndroidKeyProcessor(
       @NonNull Context context,
@@ -39,6 +40,17 @@ public class AndroidKeyProcessor {
     this.textInputPlugin = textInputPlugin;
     this.eventResponder = new EventResponder(context);
     this.keyEventChannel.setEventResponseHandler(eventResponder);
+  }
+
+  /**
+   * Set the event responder for this key processor.
+   *
+   * <p>Typically used by the testing framework to inject mocks.
+   *
+   * @param eventResponder the event responder to use instead of the default responder.
+   */
+  public void setEventResponder(@NonNull EventResponder eventResponder) {
+    this.eventResponder = eventResponder;
   }
 
   /**
@@ -55,7 +67,7 @@ public class AndroidKeyProcessor {
 
     Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());
     KeyEventChannel.FlutterKeyEvent flutterEvent =
-        new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter);
+        new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter, eventIdSerial++);
     keyEventChannel.keyUp(flutterEvent);
     eventResponder.addEvent(flutterEvent.eventId, keyEvent);
     return true;
@@ -85,7 +97,7 @@ public class AndroidKeyProcessor {
 
     Character complexCharacter = applyCombiningCharacterToBaseCharacter(keyEvent.getUnicodeChar());
     KeyEventChannel.FlutterKeyEvent flutterEvent =
-        new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter);
+        new KeyEventChannel.FlutterKeyEvent(keyEvent, complexCharacter, eventIdSerial++);
     keyEventChannel.keyDown(flutterEvent);
     eventResponder.addEvent(flutterEvent.eventId, keyEvent);
     return true;
@@ -124,7 +136,7 @@ public class AndroidKeyProcessor {
       return null;
     }
 
-    Character complexCharacter = (char) newCharacterCodePoint;
+    char complexCharacter = (char) newCharacterCodePoint;
     boolean isNewCodePointACombiningCharacter =
         (newCharacterCodePoint & KeyCharacterMap.COMBINING_ACCENT) != 0;
     if (isNewCodePointACombiningCharacter) {
@@ -154,10 +166,9 @@ public class AndroidKeyProcessor {
     // The maximum number of pending events that are held before starting to
     // complain.
     private static final long MAX_PENDING_EVENTS = 1000;
-    private final Deque<Entry<Long, KeyEvent>> pendingEvents =
-        new ArrayDeque<Entry<Long, KeyEvent>>();
+    final Deque<Entry<Long, KeyEvent>> pendingEvents = new ArrayDeque<Entry<Long, KeyEvent>>();
     @NonNull private final Context context;
-    public boolean dispatchingKeyEvent = false;
+    boolean dispatchingKeyEvent = false;
 
     public EventResponder(@NonNull Context context) {
       this.context = context;
@@ -168,9 +179,13 @@ public class AndroidKeyProcessor {
      *
      * @param id the id of the event to be removed.
      */
-    private KeyEvent removePendingEvent(@NonNull long id) {
+    private KeyEvent removePendingEvent(long id) {
       if (pendingEvents.getFirst().getKey() != id) {
-        throw new AssertionError("Event response received out of order");
+        throw new AssertionError(
+            "Event response received out of order. Should have seen event "
+                + pendingEvents.getFirst().getKey()
+                + " first. Instead, received "
+                + id);
       }
       return pendingEvents.removeFirst().getValue();
     }
@@ -182,7 +197,7 @@ public class AndroidKeyProcessor {
      *     be null.
      */
     @Override
-    public void onKeyEventHandled(@NonNull long id) {
+    public void onKeyEventHandled(long id) {
       removePendingEvent(id);
     }
 
@@ -194,18 +209,8 @@ public class AndroidKeyProcessor {
      *     not be null.
      */
     @Override
-    public void onKeyEventNotHandled(@NonNull long id) {
-      KeyEvent pendingEvent = removePendingEvent(id);
-
-      // Since the framework didn't handle it, dispatch the key again.
-      Activity activity = getActivity(context);
-      if (activity != null) {
-        // Turn on dispatchingKeyEvent so that we don't dispatch to ourselves and
-        // send it to the framework again.
-        dispatchingKeyEvent = true;
-        activity.dispatchKeyEvent(pendingEvent);
-        dispatchingKeyEvent = false;
-      }
+    public void onKeyEventNotHandled(long id) {
+      dispatchKeyEvent(removePendingEvent(id));
     }
 
     /** Adds an Android key event with an id to the event responder to wait for a response. */
@@ -218,6 +223,23 @@ public class AndroidKeyProcessor {
                 + pendingEvents.size()
                 + " keyboard events "
                 + "that have not yet received a response. Are responses being sent?");
+      }
+    }
+
+    /**
+     * Dispatches the event to the activity associated with the context.
+     *
+     * @param event the event to be dispatched to the activity.
+     */
+    public void dispatchKeyEvent(KeyEvent event) {
+      // Since the framework didn't handle it, dispatch the key again.
+      Activity activity = getActivity(context);
+      if (activity != null) {
+        // Turn on dispatchingKeyEvent so that we don't dispatch to ourselves and
+        // send it to the framework again.
+        dispatchingKeyEvent = true;
+        activity.dispatchKeyEvent(event);
+        dispatchingKeyEvent = false;
       }
     }
 

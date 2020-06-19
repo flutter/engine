@@ -1,7 +1,9 @@
 package io.flutter.embedding.android;
 
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -9,45 +11,31 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.annotation.TargetApi;
+import android.app.Application;
 import android.content.Context;
-import android.content.res.Configuration;
-import android.content.res.Resources;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowInsets;
-import android.view.WindowManager;
+import android.view.KeyEvent;
+import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.loader.FlutterLoader;
-import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
-import io.flutter.embedding.android.AndroidKeyProcessor;
-import io.flutter.plugin.platform.PlatformViewsController;
-import java.util.concurrent.atomic.AtomicReference;
+import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.util.FakeKeyEvent;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
-import org.robolectric.annotation.Implementation;
-import org.robolectric.annotation.Implements;
-import org.robolectric.shadows.ShadowDisplay;
 
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 @TargetApi(28)
 public class AndroidKeyProcessorTest {
   @Mock FlutterJNI mockFlutterJni;
-  @Mock FlutterLoader mockFlutterLoader;
-  @Spy PlatformViewsController platformViewsController;
 
   @Before
   public void setUp() {
@@ -56,29 +44,82 @@ public class AndroidKeyProcessorTest {
   }
 
   @Test
-  public void sendsKeyEventsToEventResponder() {
-    // Setup test.
-    AtomicReference<SettingsChannel.PlatformBrightness> reportedBrightness =
-        new AtomicReference<>();
-
-    Context spiedContext = spy(RuntimeEnvironment.application);
-
-    Resources spiedResources = spy(spiedContext.getResources());
-    when(spiedContext.getResources()).thenReturn(spiedResources);
-
-    FlutterView flutterView = new FlutterView(spiedContext);
-    FlutterEngine flutterEngine =
-        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
-
-    KeyEventChannel fakeKeyEventChannel = mock(KeyEventChannel.class);
+  public void sendsKeyDownEventsToEventResponder() {
+    FlutterEngine flutterEngine = mockFlutterEngine();
+    KeyEventChannel fakeKeyEventChannel = flutterEngine.getKeyEventChannel();
     TextInputPlugin fakeTextInputPlugin = mock(TextInputPlugin.class);
-    when(fakeTextInputPlugin.getLastInputConnection()).thenAnswer(null);
 
-    AndroidKeyProcessor processor = AndroidKeyProcessor(spiedContext, fakeKeyEventChannel, fakeTextInputPlugin);
+    AndroidKeyProcessor processor =
+        new AndroidKeyProcessor(
+            RuntimeEnvironment.application, fakeKeyEventChannel, fakeTextInputPlugin);
 
-    processor.onKeyDown(KeyEvent(KeyEvent.ACTION_DOWN, 65));
-    assertEquals(processor.eventResponder.dispatchingKeyEvent, false);
-    processor.onKeyUp(KeyEvent(KeyEvent.ACTION_DOWN, 65));
-    assertEquals(processor.eventResponder.dispatchingKeyEvent, false);
+    processor.onKeyDown(new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65));
+    assertFalse(processor.eventResponder.dispatchingKeyEvent);
+    verify(fakeKeyEventChannel, times(1)).keyDown(any(KeyEventChannel.FlutterKeyEvent.class));
+    verify(fakeKeyEventChannel, times(0)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
+    assertEquals(1, processor.eventResponder.pendingEvents.size());
+    Map.Entry<Long, KeyEvent> firstPendingEvent =
+        processor.eventResponder.pendingEvents.peekFirst();
+    assertNotNull(firstPendingEvent);
+    processor.eventResponder.onKeyEventHandled(firstPendingEvent.getKey());
+    assertEquals(0, processor.eventResponder.pendingEvents.size());
+  }
+
+  @Test
+  public void unhandledKeyEventsAreSynthesized() {
+    FlutterEngine flutterEngine = mockFlutterEngine();
+    KeyEventChannel fakeKeyEventChannel = flutterEngine.getKeyEventChannel();
+    TextInputPlugin fakeTextInputPlugin = mock(TextInputPlugin.class);
+    Application spiedApplication = spy(RuntimeEnvironment.application);
+    Context spiedContext = spy(spiedApplication.getBaseContext());
+    when(spiedApplication.getBaseContext()).thenReturn(spiedContext);
+
+    AndroidKeyProcessor processor =
+        new AndroidKeyProcessor(spiedApplication, fakeKeyEventChannel, fakeTextInputPlugin);
+    AndroidKeyProcessor.EventResponder eventResponder =
+        spy(new AndroidKeyProcessor.EventResponder(spiedContext));
+    processor.setEventResponder(eventResponder);
+
+    KeyEvent event = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
+    processor.onKeyDown(event);
+    assertFalse(processor.eventResponder.dispatchingKeyEvent);
+    assertEquals(1, processor.eventResponder.pendingEvents.size());
+    Map.Entry<Long, KeyEvent> firstPendingEvent =
+        processor.eventResponder.pendingEvents.peekFirst();
+    assertNotNull(firstPendingEvent);
+    processor.eventResponder.onKeyEventNotHandled(firstPendingEvent.getKey());
+    assertEquals(0, processor.eventResponder.pendingEvents.size());
+    verify(eventResponder).dispatchKeyEvent(event);
+  }
+
+  @Test
+  public void sendsKeyUpEventsToEventResponder() {
+    FlutterEngine flutterEngine = mockFlutterEngine();
+    KeyEventChannel fakeKeyEventChannel = flutterEngine.getKeyEventChannel();
+    TextInputPlugin fakeTextInputPlugin = mock(TextInputPlugin.class);
+
+    AndroidKeyProcessor processor =
+        new AndroidKeyProcessor(
+            RuntimeEnvironment.application, fakeKeyEventChannel, fakeTextInputPlugin);
+
+    processor.onKeyUp(new FakeKeyEvent(KeyEvent.ACTION_UP, 65));
+    assertFalse(processor.eventResponder.dispatchingKeyEvent);
+    verify(fakeKeyEventChannel, times(0)).keyDown(any(KeyEventChannel.FlutterKeyEvent.class));
+    verify(fakeKeyEventChannel, times(1)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
+    Map.Entry<Long, KeyEvent> firstPendingEvent =
+        processor.eventResponder.pendingEvents.peekFirst();
+    assertNotNull(firstPendingEvent);
+    processor.eventResponder.onKeyEventHandled(firstPendingEvent.getKey());
+    assertEquals(0, processor.eventResponder.pendingEvents.size());
+  }
+
+  @NonNull
+  private FlutterEngine mockFlutterEngine() {
+    // Mock FlutterEngine and all of its required direct calls.
+    FlutterEngine engine = mock(FlutterEngine.class);
+    when(engine.getKeyEventChannel()).thenReturn(mock(KeyEventChannel.class));
+    when(engine.getTextInputChannel()).thenReturn(mock(TextInputChannel.class));
+
+    return engine;
   }
 }
