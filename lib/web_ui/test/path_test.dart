@@ -5,7 +5,6 @@
 // @dart = 2.6
 import 'dart:js_util' as js_util;
 import 'dart:html' as html;
-import 'dart:math' as math;
 import 'package:test/test.dart';
 import 'package:ui/ui.dart' hide window;
 import 'package:ui/src/engine.dart';
