@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -13,11 +14,9 @@ import android.hardware.HardwareBuffer;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
-import android.os.Build;
 import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.annotation.TargetApi;
 
 /**
  * Paints a Flutter UI provided by an {@link android.media.ImageReader} onto a {@link
