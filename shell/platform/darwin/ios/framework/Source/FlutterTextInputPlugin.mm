@@ -357,7 +357,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
       selectedRange.length != oldSelectedRange.length) {
     needsEditingStateUpdate = YES;
     [self.inputDelegate selectionWillChange:self];
-    [self _setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]];
+    [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:selectedRange]];
     _selectionAffinity = _kTextAffinityDownstream;
     if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)])
       _selectionAffinity = _kTextAffinityUpstream;
@@ -400,7 +400,8 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   return [[_selectedTextRange copy] autorelease];
 }
 
-- (void)_setSelectedTextRange:(UITextRange*)selectedTextRange {
+// Change the range of selected text, without notifying the framework.
+- (void)setSelectedTextRangeLocal:(UITextRange*)selectedTextRange {
   if (_selectedTextRange != selectedTextRange) {
     UITextRange* oldSelectedRange = _selectedTextRange;
     if (self.hasText) {
@@ -415,7 +416,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 }
 
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
-  [self _setSelectedTextRange:selectedTextRange];
+  [self setSelectedTextRangeLocal:selectedTextRange];
   [self updateEditingState];
 }
 
@@ -437,7 +438,9 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   return [self.text substringWithRange:textRange];
 }
 
-- (void)_replaceRange:(NSRange)range withText:(NSString*)text {
+// Replace the text within the specified range with the given text,
+// without notifying the framework.
+- (void)replaceRangeLocal:(NSRange)range withText:(NSString*)text {
   NSRange selectedRange = _selectedTextRange.range;
 
   // Adjust the text selection:
@@ -453,13 +456,14 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 
   [self.text replaceCharactersInRange:[self clampSelection:range forText:self.text]
                            withString:text];
-  [self _setSelectedTextRange:[FlutterTextRange rangeWithNSRange:[self clampSelection:selectedRange
-                                                                              forText:self.text]]];
+  [self setSelectedTextRangeLocal:[FlutterTextRange
+                                      rangeWithNSRange:[self clampSelection:selectedRange
+                                                                    forText:self.text]]];
 }
 
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
   NSRange replaceRange = ((FlutterTextRange*)range).range;
-  [self _replaceRange:replaceRange withText:text];
+  [self replaceRangeLocal:replaceRange withText:text];
   [self updateEditingState];
 }
 
@@ -522,11 +526,11 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 
   if (markedTextRange.length > 0) {
     // Replace text in the marked range with the new text.
-    [self _replaceRange:markedTextRange withText:markedText];
+    [self replaceRangeLocal:markedTextRange withText:markedText];
     markedTextRange.length = markedText.length;
   } else {
     // Replace text in the selected range with the new text.
-    [self _replaceRange:selectedRange withText:markedText];
+    [self replaceRangeLocal:selectedRange withText:markedText];
     markedTextRange = NSMakeRange(selectedRange.location, markedText.length);
   }
 
@@ -535,8 +539,9 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 
   NSUInteger selectionLocation = markedSelectedRange.location + markedTextRange.location;
   selectedRange = NSMakeRange(selectionLocation, markedSelectedRange.length);
-  [self _setSelectedTextRange:[FlutterTextRange rangeWithNSRange:[self clampSelection:selectedRange
-                                                                              forText:self.text]]];
+  [self setSelectedTextRangeLocal:[FlutterTextRange
+                                      rangeWithNSRange:[self clampSelection:selectedRange
+                                                                    forText:self.text]]];
   [self updateEditingState];
 }
 
