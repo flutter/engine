@@ -264,6 +264,7 @@ if (enable_unittests) {
       "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",
       "shell_unittests.cc",
+      "skp_shader_warmup_unittests.cc",
     ]
 
     deps = [
