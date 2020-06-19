@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.android;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -30,6 +31,7 @@ import android.annotation.TargetApi;
  * an {@link android.media.Image} and renders it to the {@link android.graphics.Canvas} in {@code
  * onDraw}.
  */
+@SuppressLint("ViewConstructor")
 @TargetApi(Build.VERSION_CODES.KITKAT)
 public class FlutterImageView extends View {
   private final ImageReader imageReader;
@@ -65,7 +67,7 @@ public class FlutterImageView extends View {
     currentImage = nextImage;
     nextImage = null;
 
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
       drawImageBuffer(canvas);
     }
 
