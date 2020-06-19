@@ -145,7 +145,7 @@ class BrowserHistory {
   /// replaces the state of the entry so that we can recognize it later using
   /// [_isOriginEntry] inside [_popStateListener].
   void _setupOriginEntry(LocationStrategy strategy) {
-    assert(strategy != null);
+    assert(strategy != null); // ignore: unnecessary_null_comparison
     strategy.replaceState(_originState, 'origin', '');
   }
 
@@ -156,7 +156,7 @@ class BrowserHistory {
     bool replace = false,
     String? path,
   }) {
-    assert(strategy != null);
+    assert(strategy != null); // ignore: unnecessary_null_comparison
     path ??= currentPath;
     if (replace) {
       strategy.replaceState(_flutterState, 'flutter', path);

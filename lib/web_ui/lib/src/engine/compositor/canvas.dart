@@ -243,7 +243,7 @@ class SkCanvas {
   }
 
   void saveLayer(ui.Rect bounds, SkPaint paint) {
-    assert(bounds != null, 'Use saveLayerWithoutBounds');
+    assert(bounds != null, 'Use saveLayerWithoutBounds'); // ignore: unnecessary_null_comparison
     skCanvas.callMethod('saveLayer', <js.JsObject?>[
       makeSkRect(bounds),
       paint.skiaObject,

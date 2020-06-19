@@ -199,7 +199,7 @@ abstract class RoleManager {
   ///
   /// A single role object manages exactly one [SemanticsObject].
   RoleManager(this.role, this.semanticsObject)
-      : assert(semanticsObject != null);
+      : assert(semanticsObject != null); // ignore: unnecessary_null_comparison
 
   /// Role identifier.
   final Role role;
@@ -612,7 +612,7 @@ class SemanticsObject {
   void updateWith(SemanticsNodeUpdate update) {
     // Update all field values and their corresponding dirty flags before
     // applying the updates to the DOM.
-    assert(update.flags != null);
+    assert(update.flags != null); // ignore: unnecessary_null_comparison
     if (_flags != update.flags) {
       _flags = update.flags;
       _markFlagsDirty();
@@ -1112,8 +1112,8 @@ class EngineSemanticsOwner {
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
   void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
-    assert(child != null);
-    assert(parent != null);
+    assert(child != null); // ignore: unnecessary_null_comparison
+    assert(parent != null); // ignore: unnecessary_null_comparison
     child._parent = parent;
     _attachments[child.id] = parent;
   }
@@ -1247,7 +1247,7 @@ class EngineSemanticsOwner {
   /// The default mode is [AccessibilityMode.unknown].
   AccessibilityMode get mode => _mode;
   set mode(AccessibilityMode value) {
-    assert(value != null);
+    assert(value != null); // ignore: unnecessary_null_comparison
     _mode = value;
   }
 
@@ -1484,8 +1484,6 @@ class EngineSemanticsOwner {
       for (SemanticsNodeUpdate update in update._nodeUpdates!) {
         // Node was added to the tree.
         assert(_semanticsTree.containsKey(update.id));
-        // We created a DOM element for it.
-        assert(_semanticsTree[update.id]!.element != null);
       }
 
       return true;

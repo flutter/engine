@@ -29,14 +29,14 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.width,
     required this.left,
     required this.lineNumber,
-  })  : assert(displayText != null),
-        assert(startIndex != null),
-        assert(endIndex != null),
-        assert(endIndexWithoutNewlines != null),
-        assert(hardBreak != null),
-        assert(width != null),
-        assert(left != null),
-        assert(lineNumber != null && lineNumber >= 0),
+  })  : assert(displayText != null), // ignore: unnecessary_null_comparison
+        assert(startIndex != null), // ignore: unnecessary_null_comparison
+        assert(endIndex != null), // ignore: unnecessary_null_comparison
+        assert(endIndexWithoutNewlines != null), // ignore: unnecessary_null_comparison
+        assert(hardBreak != null), // ignore: unnecessary_null_comparison
+        assert(width != null), // ignore: unnecessary_null_comparison
+        assert(left != null), // ignore: unnecessary_null_comparison
+        assert(lineNumber != null && lineNumber >= 0), // ignore: unnecessary_null_comparison
         ascent = double.infinity,
         descent = double.infinity,
         unscaledAscent = double.infinity,
@@ -289,7 +289,7 @@ class EngineParagraph implements ui.Paragraph {
       _didExceedMaxLines = false;
     }
 
-    if (_measurementResult!.isSingleLine && constraints != null) {
+    if (_measurementResult!.isSingleLine) {
       switch (_textAlign) {
         case ui.TextAlign.center:
           _alignOffset = (constraints.width - maxIntrinsicWidth) / 2.0;
@@ -373,8 +373,8 @@ class EngineParagraph implements ui.Paragraph {
     ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
     ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight,
   }) {
-    assert(boxHeightStyle != null);
-    assert(boxWidthStyle != null);
+    assert(boxHeightStyle != null); // ignore: unnecessary_null_comparison
+    assert(boxWidthStyle != null); // ignore: unnecessary_null_comparison
     // Zero-length ranges and invalid ranges return an empty list.
     if (start == end || start < 0 || end < 0) {
       return <ui.TextBox>[];
@@ -818,7 +818,7 @@ class EngineTextStyle implements ui.TextStyle {
         return 'Ahem';
       }
     }
-    if (_fontFamily == null || _fontFamily.isEmpty) {
+    if (_fontFamily.isEmpty) {
       return DomRenderer.defaultFontFamily;
     }
     return _fontFamily;
@@ -887,7 +887,7 @@ class EngineTextStyle implements ui.TextStyle {
           'fontWeight: ${_fontWeight ?? "unspecified"}, '
           'fontStyle: ${_fontStyle ?? "unspecified"}, '
           'textBaseline: ${_textBaseline ?? "unspecified"}, '
-          'fontFamily: ${_isFontFamilyProvided && _fontFamily != null ? _fontFamily : "unspecified"}, '
+          'fontFamily: ${_isFontFamilyProvided && _fontFamily != '' ? _fontFamily : "unspecified"}, '
           'fontFamilyFallback: ${_isFontFamilyProvided && _fontFamilyFallback != null && _fontFamilyFallback!.isNotEmpty ? _fontFamilyFallback : "unspecified"}, '
           'fontSize: ${_fontSize != null ? _fontSize!.toStringAsFixed(1) : "unspecified"}, '
           'letterSpacing: ${_letterSpacing != null ? "${_letterSpacing}x" : "unspecified"}, '
@@ -1155,9 +1155,7 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       if (style._textBaseline != null) {
         textBaseline = style._textBaseline;
       }
-      if (style._fontFamily != null) {
-        fontFamily = style._fontFamily;
-      }
+      fontFamily = style._fontFamily;
       if (style._fontSize != null) {
         fontSize = style._fontSize;
       }
@@ -1387,8 +1385,8 @@ void _applyParagraphStyleToElement({
   required EngineParagraphStyle style,
   EngineParagraphStyle? previousStyle,
 }) {
-  assert(element != null);
-  assert(style != null);
+  assert(element != null); // ignore: unnecessary_null_comparison
+  assert(style != null); // ignore: unnecessary_null_comparison
   // TODO(yjbanov): What do we do about ParagraphStyle._locale and ellipsis?
   final html.CssStyleDeclaration cssStyle = element.style;
   if (previousStyle == null) {
@@ -1456,8 +1454,8 @@ void _applyTextStyleToElement({
   EngineTextStyle? previousStyle,
   bool isSpan = false,
 }) {
-  assert(element != null);
-  assert(style != null);
+  assert(element != null); // ignore: unnecessary_null_comparison
+  assert(style != null); // ignore: unnecessary_null_comparison
   bool updateDecoration = false;
   final html.CssStyleDeclaration cssStyle = element.style;
   if (previousStyle == null) {
@@ -1478,14 +1476,10 @@ void _applyTextStyleToElement({
     // For test environment use effectiveFontFamily since we need to
     // consistently use Ahem font.
     if (isSpan && !ui.debugEmulateFlutterTesterEnvironment) {
-      if (style._fontFamily != null) {
-        cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
-      }
+      cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
     } else {
-      if (style._effectiveFontFamily != null) {
-        cssStyle.fontFamily =
-            canonicalizeFontFamily(style._effectiveFontFamily);
-      }
+      cssStyle.fontFamily =
+          canonicalizeFontFamily(style._effectiveFontFamily);
     }
     if (style._letterSpacing != null) {
       cssStyle.letterSpacing = '${style._letterSpacing}px';
@@ -1704,7 +1698,6 @@ String? textAlignToCssValue(ui.TextAlign? align, ui.TextDirection textDirection)
       }
       break;
   }
-  throw AssertionError('Unsupported TextAlign value $align');
 }
 
 /// Determines if lists [a] and [b] are deep equivalent.

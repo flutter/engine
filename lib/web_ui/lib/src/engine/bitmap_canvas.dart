@@ -12,7 +12,7 @@ class BitmapCanvas extends EngineCanvas {
   /// Painting outside these bounds will result in cropping.
   ui.Rect get bounds => _bounds;
   set bounds(ui.Rect newValue) {
-    assert(newValue != null);
+    assert(newValue != null); // ignore: unnecessary_null_comparison
     _bounds = newValue;
     final int newCanvasPositionX = _bounds.left.floor() - kPaddingPixels;
     final int newCanvasPositionY = _bounds.top.floor() - kPaddingPixels;
@@ -100,7 +100,7 @@ class BitmapCanvas extends EngineCanvas {
   /// as the [Rect.size] of the bounds fully fit within the size used to
   /// initialize this canvas.
   BitmapCanvas(this._bounds)
-      : assert(_bounds != null),
+      : assert(_bounds != null), // ignore: unnecessary_null_comparison
         _widthInBitmapPixels = _widthToPhysical(_bounds.width),
         _heightInBitmapPixels = _heightToPhysical(_bounds.height),
         _canvasPool = _CanvasPool(_widthToPhysical(_bounds.width),
@@ -161,7 +161,7 @@ class BitmapCanvas extends EngineCanvas {
 
   // Used by picture to assess if canvas is large enough to reuse as is.
   bool doesFitBounds(ui.Rect newBounds) {
-    assert(newBounds != null);
+    assert(newBounds != null); // ignore: unnecessary_null_comparison
     return _widthInBitmapPixels >= _widthToPhysical(newBounds.width) &&
         _heightInBitmapPixels >= _heightToPhysical(newBounds.height);
   }
@@ -902,7 +902,7 @@ String? _stringForStrokeCap(ui.StrokeCap? strokeCap) {
 }
 
 String _stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
-  assert(strokeJoin != null);
+  assert(strokeJoin != null); // ignore: unnecessary_null_comparison
   switch (strokeJoin) {
     case ui.StrokeJoin.round:
       return 'round';

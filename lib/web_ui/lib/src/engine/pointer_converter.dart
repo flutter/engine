@@ -228,7 +228,7 @@ class PointerDataConverter {
     double scrollDeltaX = 0.0,
     double scrollDeltaY = 0.0,
   }) {
-    assert(change != null);
+    assert(change != null); // ignore: unnecessary_null_comparison
     if (signalKind == null ||
       signalKind == ui.PointerSignalKind.none) {
       switch (change) {

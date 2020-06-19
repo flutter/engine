@@ -37,11 +37,6 @@ class FontCollection {
       }
     }
 
-    if (byteData == null) {
-      throw AssertionError(
-          'There was a problem trying to load FontManifest.json');
-    }
-
     final List<dynamic>? fontManifest =
         json.decode(utf8.decode(byteData.buffer.asUint8List()));
     if (fontManifest == null) {
@@ -314,4 +309,4 @@ class _PolyfillFontManager extends FontManager {
 }
 
 final bool supportsFontLoadingApi = js_util.hasProperty(html.window, 'FontFace');
-final bool supportsFontsClearApi = html.document.fonts != null && js_util.hasProperty(html.document.fonts, 'clear');
+final bool supportsFontsClearApi = js_util.hasProperty(html.document, 'fonts') && js_util.hasProperty(html.document.fonts, 'clear');

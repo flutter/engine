@@ -420,7 +420,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
   _ButtonSanitizer _getSanitizer(int device) {
     final _ButtonSanitizer sanitizer = _sanitizers[device]!;
-    assert(sanitizer != null);
+    assert(sanitizer != null); // ignore: unnecessary_null_comparison
     return sanitizer;
   }
 
@@ -509,9 +509,9 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required html.PointerEvent event,
     required _SanitizedDetails details,
   }) {
-    assert(data != null);
-    assert(event != null);
-    assert(details != null);
+    assert(data != null); // ignore: unnecessary_null_comparison
+    assert(event != null); // ignore: unnecessary_null_comparison
+    assert(details != null); // ignore: unnecessary_null_comparison
     final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType);
     // We force `device: _mouseDeviceId` on mouse pointers because Wheel events
     // might come before any PointerEvents, and since wheel events don't contain
@@ -788,9 +788,9 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required html.MouseEvent event,
     required _SanitizedDetails details,
   }) {
-    assert(data != null);
-    assert(event != null);
-    assert(details != null);
+    assert(data != null); // ignore: unnecessary_null_comparison
+    assert(event != null); // ignore: unnecessary_null_comparison
+    assert(details != null); // ignore: unnecessary_null_comparison
     _pointerDataConverter!.convert(
       data,
       change: details.change,

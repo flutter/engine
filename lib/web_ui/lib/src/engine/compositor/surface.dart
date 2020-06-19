@@ -14,8 +14,8 @@ class SurfaceFrame {
 
   SurfaceFrame(this.skiaSurface, this.submitCallback)
       : _submitted = false,
-        assert(skiaSurface != null),
-        assert(submitCallback != null);
+        assert(skiaSurface != null), // ignore: unnecessary_null_comparison
+        assert(submitCallback != null); // ignore: unnecessary_null_comparison
 
   /// Submit this frame to be drawn.
   bool submit() {
@@ -54,7 +54,7 @@ class Surface {
     canvasKit.callMethod('setCurrentContext', <int?>[surface.context]);
     SubmitCallback submitCallback =
         (SurfaceFrame surfaceFrame, SkCanvas canvas) {
-      return _presentSurface(canvas);
+      return _presentSurface();
     };
 
     return SurfaceFrame(surface, submitCallback);
@@ -134,11 +134,7 @@ class Surface {
     return SkSurface(skSurface, glContext);
   }
 
-  bool _presentSurface(SkCanvas canvas) {
-    if (canvas == null) {
-      return false;
-    }
-
+  bool _presentSurface() {
     canvasKit.callMethod('setCurrentContext', <dynamic>[_surface!.context]);
     _surface!.getCanvas().flush();
     return true;

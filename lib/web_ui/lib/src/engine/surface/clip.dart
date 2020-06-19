@@ -222,9 +222,6 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   }
 
   void _applyShape() {
-    if (path == null) {
-      return;
-    }
     // Handle special case of round rect physical shape mapping to
     // rounded div.
     final ui.RRect? roundRect = path.webOnlyPathAsRoundedRect;
@@ -331,15 +328,6 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       domRenderer.setElementStyle(rootElement, 'clip-path', '');
       domRenderer.setElementStyle(rootElement, '-webkit-clip-path', '');
       _applyShape();
-      // This null check is in update since we don't want to unnecessarily
-      // clear style in apply on first build.
-      if (path == null) {
-        // Reset style on prior element when path becomes null.
-        final html.CssStyleDeclaration style = rootElement!.style;
-        style.left = '';
-        style.top = '';
-        style.borderRadius = '';
-      }
     } else {
       _clipElement = oldSurface._clipElement;
     }
@@ -371,15 +359,6 @@ class PersistedClipPath extends PersistedContainerSurface
 
   @override
   void apply() {
-    if (clipPath == null) {
-      if (_clipElement != null) {
-        domRenderer.setElementStyle(childContainer, 'clip-path', '');
-        domRenderer.setElementStyle(childContainer, '-webkit-clip-path', '');
-        _clipElement!.remove();
-        _clipElement = null;
-      }
-      return;
-    }
     _clipElement?.remove();
     final String svgClipPath = createSvgClipDef(childContainer as html.HtmlElement, clipPath);
     _clipElement =

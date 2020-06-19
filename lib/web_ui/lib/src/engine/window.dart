@@ -34,7 +34,7 @@ class EngineWindow extends ui.Window {
   static double get browserDevicePixelRatio {
     double ratio = html.window.devicePixelRatio as double;
     // Guard against WebOS returning 0.
-    return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
+    return (_unsafeIsNull(ratio) || ratio == 0.0) ? 1.0 : ratio;
   }
 
   /// Overrides the default device pixel ratio.
@@ -497,7 +497,7 @@ class EngineWindow extends ui.Window {
 
     switch (name) {
       case 'flutter/assets':
-        assert(ui.webOnlyAssetManager != null);
+        assert(ui.webOnlyAssetManager != null); // ignore: unnecessary_null_comparison
         final String url = utf8.decode(data!.buffer.asUint8List());
         ui.webOnlyAssetManager.load(url).then((ByteData assetData) {
           _replyToPlatformMessage(callback, assetData);

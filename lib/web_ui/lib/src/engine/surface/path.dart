@@ -465,7 +465,7 @@ class SurfacePath implements ui.Path {
   /// The `points` argument is interpreted as offsets from the origin.
   @override
   void addPolygon(List<ui.Offset> points, bool close) {
-    assert(points != null);
+    assert(points != null); // ignore: unnecessary_null_comparison
     if (points.isEmpty) {
       return;
     }
@@ -505,6 +505,7 @@ class SurfacePath implements ui.Path {
   /// matrix stored in column major order.
   @override
   void addPath(ui.Path path, ui.Offset offset, {Float64List? matrix4}) {
+    // ignore: unnecessary_null_comparison
     assert(path != null); // path is checked on the engine side
     assert(offsetIsValid(offset));
     if (matrix4 != null) {
@@ -540,6 +541,7 @@ class SurfacePath implements ui.Path {
   /// matrix stored in column major order.
   @override
   void extendWithPath(ui.Path path, ui.Offset offset, {Float64List? matrix4}) {
+    // ignore: unnecessary_null_comparison
     assert(path != null); // path is checked on the engine side
     assert(offsetIsValid(offset));
     if (matrix4 != null) {

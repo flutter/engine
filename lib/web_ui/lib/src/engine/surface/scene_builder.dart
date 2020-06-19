@@ -78,7 +78,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     Float64List matrix4, {
     ui.TransformEngineLayer? oldLayer,
   }) {
-    if (matrix4 == null) {
+    if (matrix4 == null) { // ignore: unnecessary_null_comparison
       throw ArgumentError('"matrix4" argument cannot be null');
     }
     if (matrix4.length != 16) {
@@ -114,7 +114,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.ClipRectEngineLayer? oldLayer,
   }) {
-    assert(clipBehavior != null);
+    assert(clipBehavior != null); // ignore: unnecessary_null_comparison
     assert(clipBehavior != ui.Clip.none);
     return _pushSurface(PersistedClipRect(oldLayer as PersistedClipRect?, rect)) as ui.ClipRectEngineLayer;
   }
@@ -144,7 +144,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.ClipPathEngineLayer? oldLayer,
   }) {
-    assert(clipBehavior != null);
+    assert(clipBehavior != null); // ignore: unnecessary_null_comparison
     assert(clipBehavior != ui.Clip.none);
     return _pushSurface(PersistedClipPath(oldLayer as PersistedClipPath?, path, clipBehavior)) as ui.ClipPathEngineLayer;
   }
@@ -181,7 +181,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null);
+    assert(filter != null); // ignore: unnecessary_null_comparison
     throw UnimplementedError();
   }
 
@@ -200,7 +200,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilter filter, {
     ui.ImageFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null);
+    assert(filter != null); // ignore: unnecessary_null_comparison
     return _pushSurface(PersistedImageFilter(oldLayer as PersistedImageFilter?, filter)) as ui.ImageFilterEngineLayer;
   }
 
@@ -255,7 +255,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.none,
     ui.PhysicalShapeEngineLayer? oldLayer,
   }) {
-    assert(color != null, 'color must not be null');
+    assert(color != null, 'color must not be null'); // ignore: unnecessary_null_comparison
     return _pushSurface(PersistedPhysicalShape(
       oldLayer as PersistedPhysicalShape?,
       path as SurfacePath,
@@ -379,7 +379,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     bool freeze = false,
     ui.FilterQuality filterQuality = ui.FilterQuality.low,
   }) {
-    assert(offset != null, 'Offset argument was null');
+    assert(offset != null, 'Offset argument was null'); // ignore: unnecessary_null_comparison
     _addTexture(offset.dx, offset.dy, width, height, textureId, filterQuality.index);
   }
 
@@ -414,7 +414,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     double width = 0.0,
     double height = 0.0,
   }) {
-    assert(offset != null, 'Offset argument was null');
+    assert(offset != null, 'Offset argument was null'); // ignore: unnecessary_null_comparison
     _addPlatformView(offset.dx, offset.dy, width, height, viewId);
   }
 

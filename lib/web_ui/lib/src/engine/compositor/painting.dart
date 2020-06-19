@@ -114,9 +114,6 @@ class SkPaint extends SkiaObject implements ui.Paint {
 
   void _syncColor(js.JsObject object) {
     ui.Color colorValue = _defaultPaintColor;
-    if (_color != null) {
-      colorValue = _color;
-    }
     object.callMethod('setColorInt', <int>[
       colorValue.value,
     ]);

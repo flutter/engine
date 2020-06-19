@@ -38,8 +38,8 @@ class _PaintRequest {
   _PaintRequest({
     required this.canvasSize,
     required this.paintCallback,
-  })  : assert(canvasSize != null),
-        assert(paintCallback != null);
+  })  : assert(canvasSize != null), // ignore: unnecessary_null_comparison
+        assert(paintCallback != null); // ignore: unnecessary_null_comparison
 
   final ui.Size canvasSize;
   final ui.VoidCallback paintCallback;

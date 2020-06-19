@@ -142,28 +142,6 @@ class DomRenderer {
     element.classes.add(className);
   }
 
-  void attachBeforeElement(
-      html.Element parent, html.Element before, html.Element newElement) {
-    assert(parent != null);
-    if (parent != null) {
-      assert(() {
-        if (before == null) {
-          return true;
-        }
-        if (before.parent != parent) {
-          throw Exception(
-            'attachBeforeElement was called with `before` element that\'s '
-            'not a child of the `parent` element:\n'
-            '  before: $before\n'
-            '  parent: $parent',
-          );
-        }
-        return true;
-      }());
-      parent.insertBefore(newElement, before);
-    }
-  }
-
   html.Element createElement(String tagName, {html.Element? parent}) {
     final html.Element element = html.document.createElement(tagName);
     parent?.append(element);
@@ -556,10 +534,10 @@ flt-glass-pane * {
   /// See w3c screen api: https://www.w3.org/TR/screen-orientation/
   Future<bool> setPreferredOrientation(List<dynamic>? orientations) {
     final html.Screen screen = html.window.screen;
-    if (screen != null) {
+    if (!_unsafeIsNull(screen)) {
       final html.ScreenOrientation screenOrientation =
           screen.orientation;
-      if (screenOrientation != null) {
+      if (!_unsafeIsNull(screenOrientation)) {
         if (orientations!.isEmpty) {
           screenOrientation.unlock();
           return Future.value(true);

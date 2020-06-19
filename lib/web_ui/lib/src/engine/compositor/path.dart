@@ -93,7 +93,7 @@ class SkPath implements ui.Path {
 
   @override
   void addPolygon(List<ui.Offset> points, bool close) {
-    assert(points != null);
+    assert(points != null); // ignore: unnecessary_null_comparison
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/58824
     final List<List<double>>? encodedPoints = encodePointList(points);
     _skPath!.callMethod('addPoly', <dynamic>[encodedPoints, close]);

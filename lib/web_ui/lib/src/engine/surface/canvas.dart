@@ -25,7 +25,7 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void saveLayer(ui.Rect? bounds, ui.Paint paint) {
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     if (bounds == null) {
       _saveLayerWithoutBounds(paint);
     } else {
@@ -74,7 +74,7 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void transform(Float64List matrix4) {
-    assert(matrix4 != null);
+    assert(matrix4 != null); // ignore: unnecessary_null_comparison
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
@@ -89,8 +89,8 @@ class SurfaceCanvas implements ui.Canvas {
   void clipRect(ui.Rect rect,
       {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {
     assert(rectIsValid(rect));
-    assert(clipOp != null);
-    assert(doAntiAlias != null);
+    assert(clipOp != null); // ignore: unnecessary_null_comparison
+    assert(doAntiAlias != null); // ignore: unnecessary_null_comparison
     _clipRect(rect, clipOp, doAntiAlias);
   }
 
@@ -101,7 +101,7 @@ class SurfaceCanvas implements ui.Canvas {
   @override
   void clipRRect(ui.RRect rrect, {bool doAntiAlias = true}) {
     assert(rrectIsValid(rrect));
-    assert(doAntiAlias != null);
+    assert(doAntiAlias != null); // ignore: unnecessary_null_comparison
     _clipRRect(rrect, doAntiAlias);
   }
 
@@ -111,8 +111,9 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void clipPath(ui.Path path, {bool doAntiAlias = true}) {
+    // ignore: unnecessary_null_comparison
     assert(path != null); // path is checked on the engine side
-    assert(doAntiAlias != null);
+    assert(doAntiAlias != null); // ignore: unnecessary_null_comparison
     _clipPath(path, doAntiAlias);
   }
 
@@ -122,8 +123,8 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    assert(color != null);
-    assert(blendMode != null);
+    assert(color != null); // ignore: unnecessary_null_comparison
+    assert(blendMode != null); // ignore: unnecessary_null_comparison
     _drawColor(color, blendMode);
   }
 
@@ -135,7 +136,7 @@ class SurfaceCanvas implements ui.Canvas {
   void drawLine(ui.Offset p1, ui.Offset p2, ui.Paint paint) {
     assert(offsetIsValid(p1));
     assert(offsetIsValid(p2));
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     _drawLine(p1, p2, paint);
   }
 
@@ -145,7 +146,7 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawPaint(ui.Paint paint) {
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     _drawPaint(paint);
   }
 
@@ -156,7 +157,7 @@ class SurfaceCanvas implements ui.Canvas {
   @override
   void drawRect(ui.Rect rect, ui.Paint paint) {
     assert(rectIsValid(rect));
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     _drawRect(rect, paint);
   }
 
@@ -167,7 +168,7 @@ class SurfaceCanvas implements ui.Canvas {
   @override
   void drawRRect(ui.RRect rrect, ui.Paint paint) {
     assert(rrectIsValid(rrect));
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     _drawRRect(rrect, paint);
   }
 
@@ -179,7 +180,7 @@ class SurfaceCanvas implements ui.Canvas {
   void drawDRRect(ui.RRect outer, ui.RRect inner, ui.Paint paint) {
     assert(rrectIsValid(outer));
     assert(rrectIsValid(inner));
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     _drawDRRect(outer, inner, paint);
   }
 
@@ -190,7 +191,7 @@ class SurfaceCanvas implements ui.Canvas {
   @override
   void drawOval(ui.Rect rect, ui.Paint paint) {
     assert(rectIsValid(rect));
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     _drawOval(rect, paint);
   }
 
@@ -201,7 +202,7 @@ class SurfaceCanvas implements ui.Canvas {
   @override
   void drawCircle(ui.Offset c, double radius, ui.Paint paint) {
     assert(offsetIsValid(c));
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     _drawCircle(c, radius, paint);
   }
 
@@ -213,7 +214,7 @@ class SurfaceCanvas implements ui.Canvas {
   void drawArc(ui.Rect rect, double startAngle, double sweepAngle, bool useCenter,
       ui.Paint paint) {
     assert(rectIsValid(rect));
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     const double pi = math.pi;
     const double pi2 = 2.0 * pi;
 
@@ -248,8 +249,9 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawPath(ui.Path path, ui.Paint paint) {
+    // ignore: unnecessary_null_comparison
     assert(path != null); // path is checked on the engine side
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     _drawPath(path, paint);
   }
 
@@ -259,9 +261,10 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawImage(ui.Image image, ui.Offset offset, ui.Paint paint) {
+    // ignore: unnecessary_null_comparison
     assert(image != null); // image is checked on the engine side
     assert(offsetIsValid(offset));
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     _drawImage(image, offset, paint);
   }
 
@@ -271,10 +274,11 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawImageRect(ui.Image image, ui.Rect src, ui.Rect dst, ui.Paint paint) {
+    // ignore: unnecessary_null_comparison
     assert(image != null); // image is checked on the engine side
     assert(rectIsValid(src));
     assert(rectIsValid(dst));
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
     _drawImageRect(image, src, dst, paint);
   }
 
@@ -284,10 +288,11 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawImageNine(ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {
+    // ignore: unnecessary_null_comparison
     assert(image != null); // image is checked on the engine side
     assert(rectIsValid(center));
     assert(rectIsValid(dst));
-    assert(paint != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
 
     // Assert you can fit the scaled part of the image (exluding the
     // center source).
@@ -434,6 +439,7 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawPicture(ui.Picture picture) {
+    // ignore: unnecessary_null_comparison
     assert(picture != null); // picture is checked on the engine side
     // TODO(het): Support this
     throw UnimplementedError();
@@ -441,7 +447,7 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    assert(paragraph != null);
+    assert(paragraph != null); // ignore: unnecessary_null_comparison
     assert(offsetIsValid(offset));
     _drawParagraph(paragraph, offset);
   }
@@ -452,18 +458,18 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawPoints(ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {
-    assert(pointMode != null);
-    assert(points != null);
-    assert(paint != null);
+    assert(pointMode != null); // ignore: unnecessary_null_comparison
+    assert(points != null); // ignore: unnecessary_null_comparison
+    assert(paint != null); // ignore: unnecessary_null_comparison
     final Float32List pointList =  offsetListToFloat32List(points);
     drawRawPoints(pointMode, pointList, paint);
   }
 
   @override
   void drawRawPoints(ui.PointMode pointMode, Float32List points, ui.Paint paint) {
-    assert(pointMode != null);
-    assert(points != null);
-    assert(paint != null);
+    assert(pointMode != null); // ignore: unnecessary_null_comparison
+    assert(points != null); // ignore: unnecessary_null_comparison
+    assert(paint != null); // ignore: unnecessary_null_comparison
     if (points.length % 2 != 0) {
       throw ArgumentError('"points" must have an even number of values.');
     }
@@ -472,12 +478,9 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
-    if (vertices == null) {
-      return;
-    }
     //assert(vertices != null); // vertices is checked on the engine side
-    assert(paint != null);
-    assert(blendMode != null);
+    assert(paint != null); // ignore: unnecessary_null_comparison
+    assert(blendMode != null); // ignore: unnecessary_null_comparison
     _canvas.drawVertices(vertices as SurfaceVertices, blendMode, paint as SurfacePaint);
   }
 
@@ -491,12 +494,13 @@ class SurfaceCanvas implements ui.Canvas {
     ui.Rect? cullRect,
     ui.Paint paint,
   ) {
+    // ignore: unnecessary_null_comparison
     assert(atlas != null); // atlas is checked on the engine side
-    assert(transforms != null);
-    assert(rects != null);
-    assert(colors != null);
-    assert(blendMode != null);
-    assert(paint != null);
+    assert(transforms != null); // ignore: unnecessary_null_comparison
+    assert(rects != null); // ignore: unnecessary_null_comparison
+    assert(colors != null); // ignore: unnecessary_null_comparison
+    assert(blendMode != null); // ignore: unnecessary_null_comparison
+    assert(paint != null); // ignore: unnecessary_null_comparison
 
     final int rectCount = rects.length;
     if (transforms.length != rectCount) {
@@ -521,12 +525,13 @@ class SurfaceCanvas implements ui.Canvas {
     ui.Rect? cullRect,
     ui.Paint paint,
   ) {
+    // ignore: unnecessary_null_comparison
     assert(atlas != null); // atlas is checked on the engine side
-    assert(rstTransforms != null);
-    assert(rects != null);
-    assert(colors != null);
-    assert(blendMode != null);
-    assert(paint != null);
+    assert(rstTransforms != null); // ignore: unnecessary_null_comparison
+    assert(rects != null); // ignore: unnecessary_null_comparison
+    assert(colors != null); // ignore: unnecessary_null_comparison
+    assert(blendMode != null); // ignore: unnecessary_null_comparison
+    assert(paint != null); // ignore: unnecessary_null_comparison
 
     final int rectCount = rects.length;
     if (rstTransforms.length != rectCount) {
@@ -536,7 +541,7 @@ class SurfaceCanvas implements ui.Canvas {
       throw ArgumentError(
           '"rstTransforms" and "rects" lengths must be a multiple of four.');
     }
-    if (colors != null && colors.length * 4 != rectCount) {
+    if (colors.length * 4 != rectCount) {
       throw ArgumentError(
           'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
     }
@@ -552,9 +557,10 @@ class SurfaceCanvas implements ui.Canvas {
     double elevation,
     bool transparentOccluder,
   ) {
+    // ignore: unnecessary_null_comparison
     assert(path != null); // path is checked on the engine side
-    assert(color != null);
-    assert(transparentOccluder != null);
+    assert(color != null); // ignore: unnecessary_null_comparison
+    assert(transparentOccluder != null); // ignore: unnecessary_null_comparison
     _canvas.drawShadow(path, color, elevation, transparentOccluder);
   }
 }

@@ -192,11 +192,11 @@ class SurfacePaint implements ui.Paint {
     result.write('Paint(');
     if (style == ui.PaintingStyle.stroke) {
       result.write('$style');
-      if (strokeWidth != null && strokeWidth != 0.0)
+      if (strokeWidth != 0.0)
         result.write(' $strokeWidth');
       else
         result.write(' hairline');
-      if (strokeCap != null && strokeCap != ui.StrokeCap.butt)
+      if (strokeCap != ui.StrokeCap.butt)
         result.write(' $strokeCap');
       semicolon = '; ';
     }
@@ -205,10 +205,7 @@ class SurfacePaint implements ui.Paint {
       semicolon = '; ';
     }
     if (color != _defaultPaintColor) {
-      if (color != null)
-        result.write('$semicolon$color');
-      else
-        result.write('${semicolon}no color');
+      result.write('$semicolon$color');
       semicolon = '; ';
     }
     result.write(')');

@@ -111,11 +111,6 @@ class SkiaFontCollection {
       }
     }
 
-    if (byteData == null) {
-      throw AssertionError(
-          'There was a problem trying to load FontManifest.json');
-    }
-
     final List<dynamic>? fontManifest =
         json.decode(utf8.decode(byteData.buffer.asUint8List()));
     if (fontManifest == null) {
@@ -198,7 +193,7 @@ class _RegisteredFont {
   final String actualFamily;
 
   _RegisteredFont(this.bytes, this.flutterFamily, this.actualFamily)
-      : assert(bytes != null),
-        assert(flutterFamily != null),
-        assert(actualFamily != null);
+      : assert(bytes != null), // ignore: unnecessary_null_comparison
+        assert(flutterFamily != null), // ignore: unnecessary_null_comparison
+        assert(actualFamily != null); // ignore: unnecessary_null_comparison
 }

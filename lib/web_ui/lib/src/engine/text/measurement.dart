@@ -559,7 +559,7 @@ class CanvasTextMeasurementService extends TextMeasurementService {
   ) {
     final String text = paragraph._plainText!;
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
-    assert(text != null);
+    assert(text != null); // ignore: unnecessary_null_comparison
 
     // TODO(mdebbar): Check if the whole text can fit in a single-line. Then avoid all this ceremony.
     _canvasContext.font = style.cssFontString;

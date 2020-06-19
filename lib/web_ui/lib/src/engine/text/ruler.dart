@@ -170,8 +170,8 @@ class TextDimensions {
   /// The primary efficiency gain is from rare occurrence of rich text in
   /// typical apps.
   void updateText(EngineParagraph from, ParagraphGeometricStyle style) {
-    assert(from != null);
-    assert(_element != null);
+    assert(from != null); // ignore: unnecessary_null_comparison
+    assert(_element != null); // ignore: unnecessary_null_comparison
     assert(from._debugHasSameRootStyle(style));
     assert(() {
       final bool wasEmptyOrPlainText = _element.childNodes.isEmpty ||
@@ -558,7 +558,7 @@ class ParagraphRuler {
   ///
   /// This method must be called before calling any of the `measure*` methods.
   void willMeasure(EngineParagraph paragraph) {
-    assert(paragraph != null);
+    assert(paragraph != null); // ignore: unnecessary_null_comparison
     assert(() {
       if (_paragraph != null) {
         throw Exception(
@@ -926,15 +926,15 @@ class MeasurementResult {
     required this.lines,
     required ui.TextAlign? textAlign,
     required ui.TextDirection? textDirection,
-  })  : assert(constraintWidth != null),
-        assert(isSingleLine != null),
-        assert(width != null),
-        assert(height != null),
-        assert(naturalHeight != null),
-        assert(minIntrinsicWidth != null),
-        assert(maxIntrinsicWidth != null),
-        assert(alphabeticBaseline != null),
-        assert(ideographicBaseline != null),
+  })  : assert(constraintWidth != null), // ignore: unnecessary_null_comparison
+        assert(isSingleLine != null), // ignore: unnecessary_null_comparison
+        assert(width != null), // ignore: unnecessary_null_comparison
+        assert(height != null), // ignore: unnecessary_null_comparison
+        assert(naturalHeight != null), // ignore: unnecessary_null_comparison
+        assert(minIntrinsicWidth != null), // ignore: unnecessary_null_comparison
+        assert(maxIntrinsicWidth != null), // ignore: unnecessary_null_comparison
+        assert(alphabeticBaseline != null), // ignore: unnecessary_null_comparison
+        assert(ideographicBaseline != null), // ignore: unnecessary_null_comparison
         this.textAlign = textAlign ?? ui.TextAlign.start,
         this.textDirection = textDirection ?? ui.TextDirection.ltr;
 }

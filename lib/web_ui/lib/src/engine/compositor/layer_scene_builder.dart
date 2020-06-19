@@ -140,7 +140,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null);
+    assert(filter != null); // ignore: unnecessary_null_comparison
     throw UnimplementedError();
   }
 
@@ -148,7 +148,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilter filter, {
     ui.ImageFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null);
+    assert(filter != null); // ignore: unnecessary_null_comparison
     pushLayer(ImageFilterLayer(filter));
     return null;
   }

@@ -554,9 +554,6 @@ class RecordingCanvas {
   void drawRawPoints(
       ui.PointMode pointMode, Float32List points, SurfacePaint paint) {
     assert(!_debugRecordingEnded);
-    if (paint.strokeWidth == null) {
-      return;
-    }
     _hasArbitraryPaint = true;
     _didDraw = true;
     final PaintDrawPoints command = PaintDrawPoints(pointMode, points, paint.paintData);
@@ -1573,11 +1570,7 @@ class Ellipse extends PathCommand {
         anticlockwise ? startAngle - endAngle : endAngle - startAngle,
         matrix4,
         bezierPath);
-    if (matrix4 != null) {
-      targetPath._addPathWithMatrix(bezierPath as SurfacePath, 0, 0, matrix4);
-    } else {
-      targetPath._addPath(bezierPath as SurfacePath, 0, 0);
-    }
+    targetPath._addPathWithMatrix(bezierPath as SurfacePath, 0, 0, matrix4);
   }
 
   void _drawArcWithBezier(
@@ -1855,11 +1848,7 @@ class RRectCommand extends PathCommand {
   void transform(Float32List matrix4, SurfacePath targetPath) {
     final ui.Path roundRectPath = ui.Path();
     _RRectToPathRenderer(roundRectPath).render(rrect);
-    if (matrix4 != null) {
-      targetPath._addPathWithMatrix(roundRectPath as SurfacePath, 0, 0, matrix4);
-    } else {
-      targetPath._addPath(roundRectPath as SurfacePath, 0, 0);
-    }
+    targetPath._addPathWithMatrix(roundRectPath as SurfacePath, 0, 0, matrix4);
   }
 
   @override
@@ -2185,7 +2174,7 @@ double _getPaintSpread(SurfacePaint paint) {
     // See also: https://developer.mozilla.org/en-US/docs/Web/CSS/filter-function/blur
     spread += maskFilter.webOnlySigma * 2.0;
   }
-  if (paint.strokeWidth != null && paint.strokeWidth != 0) {
+  if (paint.strokeWidth != 0) {
     // The multiplication by sqrt(2) is to account for line joints that
     // meet at 90-degree angle. Division by 2 is because only half of the
     // stroke is sticking out of the original shape. The other half is

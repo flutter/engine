@@ -23,8 +23,8 @@ class SkVertices implements ui.Vertices {
     List<ui.Offset>? textureCoordinates,
     List<ui.Color>? colors,
     List<int>? indices,
-  })  : assert(mode != null),
-        assert(positions != null) {
+  })  : assert(mode != null), // ignore: unnecessary_null_comparison
+        assert(positions != null) { // ignore: unnecessary_null_comparison
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length)
       throw ArgumentError(
@@ -51,8 +51,8 @@ class SkVertices implements ui.Vertices {
     Float32List? textureCoordinates,
     Int32List? colors,
     Uint16List? indices,
-  })  : assert(mode != null),
-        assert(positions != null) {
+  })  : assert(mode != null), // ignore: unnecessary_null_comparison
+        assert(positions != null) { // ignore: unnecessary_null_comparison
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length)
       throw ArgumentError(

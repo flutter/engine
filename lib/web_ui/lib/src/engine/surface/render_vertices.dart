@@ -18,8 +18,8 @@ class SurfaceVertices implements ui.Vertices {
     List<ui.Offset> positions, {
     List<ui.Color>? colors,
     List<int>? indices,
-  })  : assert(mode != null),
-        assert(positions != null),
+  })  : assert(mode != null), // ignore: unnecessary_null_comparison
+        assert(positions != null), // ignore: unnecessary_null_comparison
         _mode = mode,
         _colors = colors != null ? _int32ListFromColors(colors) : null,
         _indices = indices != null ? Uint16List.fromList(indices) : null,
@@ -32,8 +32,8 @@ class SurfaceVertices implements ui.Vertices {
     Float32List positions, {
     Int32List? colors,
     Uint16List? indices,
-  })  : assert(mode != null),
-        assert(positions != null),
+  })  : assert(mode != null), // ignore: unnecessary_null_comparison
+        assert(positions != null), // ignore: unnecessary_null_comparison
         _mode = mode,
         _positions = positions,
         _colors = colors,
@@ -184,7 +184,7 @@ class _WebGlRenderer implements _GlRenderer {
 
     // Setup geometry.
     Object positionsBuffer = gl.createBuffer()!;
-    assert(positionsBuffer != null);
+    assert(positionsBuffer != null); // ignore: unnecessary_null_comparison
     gl.bindArrayBuffer(positionsBuffer);
     gl.bufferData(positions, gl.kStaticDraw);
     js_util.callMethod(
@@ -212,7 +212,7 @@ class _WebGlRenderer implements _GlRenderer {
 
   @override
   void drawHairline(html.CanvasRenderingContext2D? _ctx, Float32List positions) {
-    assert(positions != null);
+    assert(positions != null); // ignore: unnecessary_null_comparison
     final int pointCount = positions.length ~/ 2;
     _ctx!.lineWidth = 1.0;
     _ctx.beginPath();

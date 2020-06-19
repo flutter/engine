@@ -210,7 +210,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// surface.
   PersistedSurfaceState get state => _state;
   set state(PersistedSurfaceState newState) {
-    assert(newState != null);
+    assert(newState != null); // ignore: unnecessary_null_comparison
     assert(newState != _state,
         'Attempted to set state that the surface is already in. This likely indicates a bug in the compositor.');
     assert(_debugValidateStateTransition(newState));
@@ -402,7 +402,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   @protected
   @mustCallSuper
   void update(covariant PersistedSurface oldSurface) {
-    assert(oldSurface != null);
+    assert(oldSurface != null); // ignore: unnecessary_null_comparison
     assert(!identical(oldSurface, this));
     assert(debugAssertSurfaceState(this, PersistedSurfaceState.created));
     assert(debugAssertSurfaceState(oldSurface, PersistedSurfaceState.active,
@@ -1038,7 +1038,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       final bool isStationary = indexInNew != -1 && stationaryIndices.contains(i);
       final PersistedSurface child = _children[i];
       final html.HtmlElement childElement = child.rootElement as html.HtmlElement;
-      assert(childElement != null);
+      assert(childElement != null); // ignore: unnecessary_null_comparison
       if (!isStationary) {
         if (refNode == null) {
           containerElement!.append(childElement);

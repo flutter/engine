@@ -608,6 +608,7 @@ class _PathContourMeasure {
 
 /// Tracks iteration from one segment of a path to the next for measurement.
 class SurfacePathMetricIterator implements Iterator<ui.PathMetric> {
+  // ignore: unnecessary_null_comparison
   SurfacePathMetricIterator._(this._pathMeasure) : assert(_pathMeasure != null);
 
   SurfacePathMetric? _pathMetric;
@@ -651,7 +652,7 @@ const double _fTolerance = 0.5;
 /// to maintain consistency with native platforms.
 class SurfacePathMetric implements ui.PathMetric {
   SurfacePathMetric._(this._measure)
-      : assert(_measure != null),
+      : assert(_measure != null), // ignore: unnecessary_null_comparison
         length = _measure.length(_measure.currentContourIndex),
         isClosed = _measure.isClosed(_measure.currentContourIndex),
         contourIndex = _measure.currentContourIndex;
@@ -729,9 +730,9 @@ ui.Offset _normalizeSlope(double dx, double dy) {
 
 class _SurfaceTangent extends ui.Tangent {
   const _SurfaceTangent(ui.Offset position, ui.Offset vector, this.t)
-      : assert(position != null),
-        assert(vector != null),
-        assert(t != null),
+      : assert(position != null), // ignore: unnecessary_null_comparison
+        assert(vector != null), // ignore: unnecessary_null_comparison
+        assert(t != null), // ignore: unnecessary_null_comparison
         super(position, vector);
 
   // Normalized distance of tangent point from start of a contour.

@@ -225,7 +225,7 @@ class AutofillInfo {
   final String? hint;
 
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill) {
-    assert(autofill != null);
+    assert(autofill != null); // ignore: unnecessary_null_comparison
     final String? uniqueIdentifier = autofill['uniqueIdentifier'];
     final List<dynamic> hintsList = autofill['hints'];
     final EditingState editingState =

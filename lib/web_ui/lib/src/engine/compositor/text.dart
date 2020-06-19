@@ -403,7 +403,7 @@ class SkParagraph implements ui.Paragraph {
 
   @override
   void layout(ui.ParagraphConstraints constraints) {
-    assert(constraints.width != null);
+    assert(constraints.width != null); // ignore: unnecessary_null_comparison
 
     // Infinite width breaks layout, just use a very large number instead.
     // TODO(het): Remove this once https://bugs.chromium.org/p/skia/issues/detail?id=9874

@@ -31,6 +31,7 @@ abstract class MessageCodec<T> {
 class MethodCall {
   /// Creates a [MethodCall] representing the invocation of [method] with the
   /// specified [arguments].
+  // ignore: unnecessary_null_comparison
   const MethodCall(this.method, [this.arguments]) : assert(method != null);
 
   /// The name of the method to be called.
@@ -100,7 +101,7 @@ class PlatformException implements Exception {
     required this.code,
     this.message,
     this.details,
-  }) : assert(code != null);
+  }) : assert(code != null); // ignore: unnecessary_null_comparison
 
   /// An error code.
   final String code;

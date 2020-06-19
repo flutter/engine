@@ -6,14 +6,14 @@
 part of engine;
 
 bool _offsetIsValid(ui.Offset offset) {
-  assert(offset != null, 'Offset argument was null.');
+  assert(offset != null, 'Offset argument was null.'); // ignore: unnecessary_null_comparison
   assert(!offset.dx.isNaN && !offset.dy.isNaN,
       'Offset argument contained a NaN value.');
   return true;
 }
 
 bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4 != null, 'Matrix4 argument was null.');
+  assert(matrix4 != null, 'Matrix4 argument was null.'); // ignore: unnecessary_null_comparison
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
 }
@@ -39,10 +39,10 @@ class GradientSweep extends EngineGradient {
   GradientSweep(this.center, this.colors, this.colorStops, this.tileMode,
       this.startAngle, this.endAngle, this.matrix4)
       : assert(_offsetIsValid(center)),
-        assert(colors != null),
-        assert(tileMode != null),
-        assert(startAngle != null),
-        assert(endAngle != null),
+        assert(colors != null), // ignore: unnecessary_null_comparison
+        assert(tileMode != null), // ignore: unnecessary_null_comparison
+        assert(startAngle != null), // ignore: unnecessary_null_comparison
+        assert(endAngle != null), // ignore: unnecessary_null_comparison
         assert(startAngle < endAngle),
         assert(matrix4 == null || _matrix4IsValid(matrix4)),
         super._() {
@@ -90,8 +90,8 @@ class GradientLinear extends EngineGradient {
     Float64List? matrix,
   )   : assert(_offsetIsValid(from)),
         assert(_offsetIsValid(to)),
-        assert(colors != null),
-        assert(tileMode != null),
+        assert(colors != null), // ignore: unnecessary_null_comparison
+        assert(tileMode != null), // ignore: unnecessary_null_comparison
         this.matrix4 = matrix == null ? null : _FastMatrix64(matrix),
         super._() {
     if (assertionsEnabled) {
