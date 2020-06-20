@@ -54,9 +54,11 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   SkCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size,
-                  GrContext* context,
-                  double device_pixel_ratio) override;
+  void BeginFrame(
+      SkISize frame_size,
+      GrContext* context,
+      double device_pixel_ratio,
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override;

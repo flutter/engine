@@ -42,14 +42,41 @@ class SurfaceMock : public Surface {
               (override));
 };
 
+fml::RefPtr<fml::RasterThreadMerger> GetThreadMergerFromPlatformThread() {
+  auto rasterizer_thread = new fml::Thread("rasterizer");
+  auto rasterizer_queue_id =
+      rasterizer_thread->GetTaskRunner()->GetTaskQueueId();
+
+  // Assume the current thread is the platform thread.
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto platform_queue_id = fml::MessageLoop::GetCurrentTaskQueueId();
+
+  return fml::MakeRefCounted<fml::RasterThreadMerger>(platform_queue_id,
+                                                      rasterizer_queue_id);
+}
+
+fml::RefPtr<fml::RasterThreadMerger> GetThreadMergerFromRasterThread() {
+  auto platform_thread = new fml::Thread("rasterizer");
+  auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
+
+  // Assume the current thread is the raster thread.
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  auto rasterizer_queue_id = fml::MessageLoop::GetCurrentTaskQueueId();
+
+  return fml::MakeRefCounted<fml::RasterThreadMerger>(platform_queue_id,
+                                                      rasterizer_queue_id);
+}
+
 TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
   auto jni_mock = std::make_shared<JNIMock>();
 
-  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
-
   auto embedder =
       std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
-  embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0);
+  auto raster_thread_merger = GetThreadMergerFromPlatformThread();
+
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
+  embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0,
+                       raster_thread_merger);
 
   embedder->PrerollCompositeEmbeddedView(
       0, std::make_unique<EmbeddedViewParams>());
@@ -64,11 +91,14 @@ TEST(AndroidExternalViewEmbedder, GetCurrentCanvases) {
 
 TEST(AndroidExternalViewEmbedder, GetCurrentCanvases__CompositeOrder) {
   auto jni_mock = std::make_shared<JNIMock>();
-  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
 
   auto embedder =
       std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
-  embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0);
+  auto raster_thread_merger = GetThreadMergerFromPlatformThread();
+
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
+  embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0,
+                       raster_thread_merger);
 
   embedder->PrerollCompositeEmbeddedView(
       0, std::make_unique<EmbeddedViewParams>());
@@ -110,21 +140,15 @@ TEST(AndroidExternalViewEmbedder, CancelFrame) {
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
   auto jni_mock = std::make_shared<JNIMock>();
-
   auto embedder =
       std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
-  auto platform_thread = new fml::Thread("platform");
-  auto rasterizer_thread = new fml::Thread("rasterizer");
-  auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
-  auto rasterizer_queue_id =
-      rasterizer_thread->GetTaskRunner()->GetTaskQueueId();
 
-  auto raster_thread_merger = fml::MakeRefCounted<fml::RasterThreadMerger>(
-      platform_queue_id, rasterizer_queue_id);
+  auto raster_thread_merger = GetThreadMergerFromPlatformThread();
   ASSERT_FALSE(raster_thread_merger->IsMerged());
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
-  embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0);
+  embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0,
+                       raster_thread_merger);
   // Push a platform view.
   embedder->PrerollCompositeEmbeddedView(
       0, std::make_unique<EmbeddedViewParams>());
@@ -148,17 +172,10 @@ TEST(AndroidExternalViewEmbedder, RasterizerRunsOnPlatformThread) {
 
 TEST(AndroidExternalViewEmbedder, RasterizerRunsOnRasterizerThread) {
   auto jni_mock = std::make_shared<JNIMock>();
-
   auto embedder =
       std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
-  auto platform_thread = new fml::Thread("platform");
-  auto rasterizer_thread = new fml::Thread("rasterizer");
-  auto platform_queue_id = platform_thread->GetTaskRunner()->GetTaskQueueId();
-  auto rasterizer_queue_id =
-      rasterizer_thread->GetTaskRunner()->GetTaskQueueId();
 
-  auto raster_thread_merger = fml::MakeRefCounted<fml::RasterThreadMerger>(
-      platform_queue_id, rasterizer_queue_id);
+  auto raster_thread_merger = GetThreadMergerFromPlatformThread();
   ASSERT_FALSE(raster_thread_merger->IsMerged());
 
   PostPrerollResult result = embedder->PostPrerollAction(raster_thread_merger);
@@ -175,9 +192,11 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRect) {
 
   auto embedder =
       std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto raster_thread_merger = GetThreadMergerFromPlatformThread();
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
-  embedder->BeginFrame(SkISize::Make(100, 100), nullptr, 1.5);
+  embedder->BeginFrame(SkISize::Make(100, 100), nullptr, 1.5,
+                       raster_thread_merger);
 
   auto view_params = std::make_unique<EmbeddedViewParams>();
   view_params->offsetPixels = SkPoint::Make(10, 20);
@@ -193,9 +212,11 @@ TEST(AndroidExternalViewEmbedder, PlatformViewRect__ChangedParams) {
 
   auto embedder =
       std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+  auto raster_thread_merger = GetThreadMergerFromPlatformThread();
 
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
-  embedder->BeginFrame(SkISize::Make(100, 100), nullptr, 1.5);
+  embedder->BeginFrame(SkISize::Make(100, 100), nullptr, 1.5,
+                       raster_thread_merger);
 
   auto view_id = 0;
   auto view_params_1 = std::make_unique<EmbeddedViewParams>();
@@ -252,11 +273,12 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__RecycleSurfaces) {
       };
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, surface_factory);
+  auto raster_thread_merger = GetThreadMergerFromPlatformThread();
 
   // ------------------ First frame ------------------ //
   {
     EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
-    embedder->BeginFrame(frame_size, nullptr, 1.5);
+    embedder->BeginFrame(frame_size, nullptr, 1.5, raster_thread_merger);
 
     // Add an Android view.
     auto view_params_1 = std::make_unique<EmbeddedViewParams>();
@@ -298,13 +320,13 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__RecycleSurfaces) {
     embedder->SubmitFrame(gr_context.get(), std::move(surface_frame));
 
     EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
-    embedder->EndFrame(nullptr);
+    embedder->EndFrame(raster_thread_merger);
   }
 
   // ------------------ Second frame ------------------ //
   {
     EXPECT_CALL(*jni_mock, FlutterViewBeginFrame());
-    embedder->BeginFrame(frame_size, nullptr, 1.5);
+    embedder->BeginFrame(frame_size, nullptr, 1.5, raster_thread_merger);
 
     // Add an Android view.
     auto view_params_1 = std::make_unique<EmbeddedViewParams>();
@@ -341,7 +363,28 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__RecycleSurfaces) {
                                        [](const SurfaceFrame& surface_frame,
                                           SkCanvas* canvas) { return true; });
     embedder->SubmitFrame(gr_context.get(), std::move(surface_frame));
+
+    EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
+    embedder->EndFrame(raster_thread_merger);
   }
+}
+
+TEST(AndroidExternalViewEmbedder, DoesNotCallJNIPlatformThreadOnlyMethods) {
+  auto jni_mock = std::make_shared<JNIMock>();
+
+  auto embedder =
+      std::make_unique<AndroidExternalViewEmbedder>(nullptr, jni_mock, nullptr);
+
+  // While on the raster thread, don't make JNI calls as these methods can only
+  // run on the platform thread.
+  auto raster_thread_merger = GetThreadMergerFromRasterThread();
+
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame()).Times(0);
+  embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0,
+                       raster_thread_merger);
+
+  EXPECT_CALL(*jni_mock, FlutterViewEndFrame()).Times(0);
+  embedder->EndFrame(raster_thread_merger);
 }
 
 }  // namespace testing

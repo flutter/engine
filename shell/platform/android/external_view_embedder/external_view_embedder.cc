@@ -234,13 +234,18 @@ void AndroidExternalViewEmbedder::Reset() {
 }
 
 // |ExternalViewEmbedder|
-void AndroidExternalViewEmbedder::BeginFrame(SkISize frame_size,
-                                             GrContext* context,
-                                             double device_pixel_ratio) {
+void AndroidExternalViewEmbedder::BeginFrame(
+    SkISize frame_size,
+    GrContext* context,
+    double device_pixel_ratio,
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   Reset();
   frame_size_ = frame_size;
   device_pixel_ratio_ = device_pixel_ratio;
-  jni_facade_->FlutterViewBeginFrame();
+  // JNI method must be called on the platform thread.
+  if (raster_thread_merger->IsOnPlatformThread()) {
+    jni_facade_->FlutterViewBeginFrame();
+  }
 }
 
 // |ExternalViewEmbedder|
@@ -256,7 +261,10 @@ void AndroidExternalViewEmbedder::EndFrame(
     should_run_rasterizer_on_platform_thread_ = false;
   }
   surface_pool_->RecycleLayers();
-  jni_facade_->FlutterViewEndFrame();
+  // JNI method must be called on the platform thread.
+  if (raster_thread_merger->IsOnPlatformThread()) {
+    jni_facade_->FlutterViewEndFrame();
+  }
 }
 
 }  // namespace flutter
