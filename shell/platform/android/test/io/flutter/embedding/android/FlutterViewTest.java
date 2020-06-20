@@ -55,6 +55,16 @@ public class FlutterViewTest {
   }
 
   @Test
+  public void imageView_test() {
+    final ImageReader mockReader = mock(ImageReader.class);
+    final FlutterImageView imageView = spy(new FlutterImageView(RuntimeEnvironment.application, mockReader));
+
+    imageView.acquireLatestImage();
+    verify(mockReader, times(1)).acquireLatestImage();
+    verify(imageView, times(1)).invalidate();
+  }
+
+  @Test
   public void attachToFlutterEngine_alertsPlatformViews() {
     FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
     FlutterEngine flutterEngine =
