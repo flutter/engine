@@ -180,8 +180,8 @@ void EmbedderLayers::PushPlatformViewLayer(
   layer.platform_view = platform_views_referenced_.back().get();
 
   const auto layer_bounds =
-      SkRect::MakeXYWH(params.finalBoundingRect().x(),                          //
-                       params.finalBoundingRect().y(),                          //
+      SkRect::MakeXYWH(params.finalBoundingRect().x(),                     //
+                       params.finalBoundingRect().y(),                     //
                        params.sizePoints().width() * device_pixel_ratio_,  //
                        params.sizePoints().height() * device_pixel_ratio_  //
       );

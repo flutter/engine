@@ -206,9 +206,11 @@ class EmbeddedViewParams {
     final_bounding_rect_ = other.final_bounding_rect_;
   };
 
-  // The original size of the platform view before any mutation matrix is applied.
+  // The original size of the platform view before any mutation matrix is
+  // applied.
   const SkSize& sizePoints() const { return size_points_; };
-  // The mutators stack contains the detailed step by step mutations for this platform view.
+  // The mutators stack contains the detailed step by step mutations for this
+  // platform view.
   const MutatorsStack& mutatorsStack() const { return mutators_stack_; };
   // The bounding rect of the platform view after applying all the mutations.
   //
