@@ -192,8 +192,6 @@ class EmbeddedViewParams {
       : matrix_(matrix),
         size_points_(size_points),
         mutators_stack_(mutators_stack) {
-    offset_pixels_ =
-        SkPoint::Make(matrix.getTranslateX(), matrix.getTranslateY());
     SkPath path;
     SkRect starting_rect = SkRect::MakeSize(size_points);
     path.addRect(starting_rect);
@@ -202,21 +200,23 @@ class EmbeddedViewParams {
   }
 
   EmbeddedViewParams(const EmbeddedViewParams& other) {
-    offset_pixels_ = other.offset_pixels_;
     size_points_ = other.size_points_;
     mutators_stack_ = other.mutators_stack_;
     matrix_ = other.matrix_;
     final_bounding_rect_ = other.final_bounding_rect_;
   };
 
-  const SkPoint& offsetPixels() const { return offset_pixels_; };
+  // The original size of the platform view before any mutation matrix is applied.
   const SkSize& sizePoints() const { return size_points_; };
+  // The mutators stack contains the detailed step by step mutations for this platform view.
   const MutatorsStack& mutatorsStack() const { return mutators_stack_; };
+  // The bounding rect of the platform view after applying all the mutations.
+  //
+  // Clippings are ignored.
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
   bool operator==(const EmbeddedViewParams& other) const {
-    return offset_pixels_ == other.offset_pixels_ &&
-           size_points_ == other.size_points_ &&
+    return size_points_ == other.size_points_ &&
            mutators_stack_ == other.mutators_stack_ &&
            final_bounding_rect_ == other.final_bounding_rect_ &&
            matrix_ == other.matrix_;
@@ -224,7 +224,6 @@ class EmbeddedViewParams {
 
  private:
   SkMatrix matrix_;
-  SkPoint offset_pixels_;
   SkSize size_points_;
   MutatorsStack mutators_stack_;
   SkRect final_bounding_rect_;
