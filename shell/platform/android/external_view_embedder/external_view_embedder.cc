@@ -13,8 +13,8 @@ AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     const AndroidSurface::Factory& surface_factory)
     : ExternalViewEmbedder(),
-      android_context_(std::move(android_context)),
-      jni_facade_(std::move(jni_facade)),
+      android_context_(android_context),
+      jni_facade_(jni_facade),
       surface_factory_(surface_factory),
       surface_pool_(std::make_unique<SurfacePool>()) {}
 

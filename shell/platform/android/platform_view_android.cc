@@ -29,25 +29,22 @@ namespace flutter {
 std::unique_ptr<AndroidSurface> SurfaceFactory(
     std::shared_ptr<AndroidContext> android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
-  std::unique_ptr<AndroidSurface> surface;
+  FML_CHECK(SurfaceFactory);
   switch (android_context->RenderingApi()) {
     case AndroidRenderingAPI::kSoftware:
-      surface = std::make_unique<AndroidSurfaceSoftware>(
+      return std::make_unique<AndroidSurfaceSoftware>(
           android_context, jni_facade, SurfaceFactory);
-      break;
     case AndroidRenderingAPI::kOpenGLES:
-      surface = std::make_unique<AndroidSurfaceGL>(android_context, jni_facade,
-                                                   SurfaceFactory);
-      break;
+      return std::make_unique<AndroidSurfaceGL>(android_context, jni_facade,
+                                                SurfaceFactory);
     case AndroidRenderingAPI::kVulkan:
 #if SHELL_ENABLE_VULKAN
-      surface = std::make_unique<AndroidSurfaceVulkan>(
-          android_context, jni_facade, SurfaceFactory);
+      return std::make_unique<AndroidSurfaceVulkan>(android_context, jni_facade,
+                                                    SurfaceFactory);
 #endif  // SHELL_ENABLE_VULKAN
-      break;
+      return nullptr;
   }
-  FML_CHECK(surface);
-  return surface->IsValid() ? std::move(surface) : nullptr;
+  return nullptr;
 }
 
 PlatformViewAndroid::PlatformViewAndroid(
@@ -70,10 +67,10 @@ PlatformViewAndroid::PlatformViewAndroid(
         fml::MakeRefCounted<AndroidEnvironmentGL>());
 #endif  // SHELL_ENABLE_VULKAN
   }
-  FML_CHECK(android_context->IsValid())
+  FML_CHECK(android_context && android_context->IsValid())
       << "Could not create an Android context.";
 
-  android_surface_ = SurfaceFactory(android_context, jni_facade);
+  android_surface_ = SurfaceFactory(std::move(android_context), jni_facade);
   FML_CHECK(android_surface_ && android_surface_->IsValid())
       << "Could not create an OpenGL, Vulkan or Software surface to setup "
          "rendering.";

@@ -15,10 +15,10 @@ AndroidSurfaceGL::AndroidSurfaceGL(
     std::shared_ptr<AndroidContext> android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     const AndroidSurface::Factory& surface_factory)
-    : external_view_embedder_(std::make_unique<AndroidExternalViewEmbedder>(
-          std::move(android_context),
-          std::move(jni_facade),
-          surface_factory)),
+    : external_view_embedder_(
+          std::make_unique<AndroidExternalViewEmbedder>(android_context,
+                                                        jni_facade,
+                                                        surface_factory)),
       android_context_(
           std::static_pointer_cast<AndroidContextGL>(android_context)),
       native_window_(nullptr),
