@@ -353,7 +353,7 @@ mixin SaveElementStackTracking on EngineCanvas {
     // DO NOT USE Matrix4.skew(sx, sy)! It treats sx and sy values as radians,
     // but in our case they are transform matrix values.
     final Matrix4 skewMatrix = Matrix4.identity();
-    final Float32List storage = skewMatrix.storage!;
+    final Float32List storage = skewMatrix.storage;
     storage[1] = sy;
     storage[4] = sx;
     _currentTransform.multiply(skewMatrix);

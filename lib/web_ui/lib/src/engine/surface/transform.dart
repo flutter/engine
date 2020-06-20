@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 part of engine;
 
 /// A surface that transforms its children using CSS transform.
@@ -11,7 +10,7 @@ class PersistedTransform extends PersistedContainerSurface
   PersistedTransform(PersistedTransform? oldLayer, this.matrix4)
       : super(oldLayer);
 
-  final Float32List? matrix4;
+  final Float32List matrix4;
 
   @override
   void recomputeTransformAndClip() {
@@ -35,7 +34,7 @@ class PersistedTransform extends PersistedContainerSurface
 
   @override
   void apply() {
-    rootElement!.style.transform = float64ListToCssTransform(matrix4!);
+    rootElement!.style.transform = float64ListToCssTransform(matrix4);
   }
 
   @override
@@ -47,8 +46,8 @@ class PersistedTransform extends PersistedContainerSurface
     }
 
     bool matrixChanged = false;
-    for (int i = 0; i < matrix4!.length; i++) {
-      if (matrix4![i] != oldSurface.matrix4![i]) {
+    for (int i = 0; i < matrix4.length; i++) {
+      if (matrix4[i] != oldSurface.matrix4[i]) {
         matrixChanged = true;
         break;
       }

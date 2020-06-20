@@ -827,8 +827,9 @@ class SemanticsObject {
         hasChildren ? getOrCreateChildContainer() : null;
 
     final bool hasZeroRectOffset = _rect!.top == 0.0 && _rect!.left == 0.0;
+    final Float32List? transform = _transform;
     final bool hasIdentityTransform =
-        _transform == null || isIdentityFloat32ListTransform(_transform!);
+        transform == null || isIdentityFloat32ListTransform(transform);
 
     if (hasZeroRectOffset &&
         hasIdentityTransform &&
@@ -848,19 +849,19 @@ class SemanticsObject {
     late Matrix4 effectiveTransform;
     bool effectiveTransformIsIdentity = true;
     if (!hasZeroRectOffset) {
-      if (_transform == null) {
+      if (transform == null) {
         final double left = _rect!.left;
         final double top = _rect!.top;
         effectiveTransform = Matrix4.translationValues(left, top, 0.0);
         effectiveTransformIsIdentity = left == 0.0 && top == 0.0;
       } else {
         // Clone to avoid mutating _transform.
-        effectiveTransform = Matrix4.fromFloat32List(_transform).clone()
+        effectiveTransform = Matrix4.fromFloat32List(transform).clone()
           ..translate(_rect!.left, _rect!.top, 0.0);
         effectiveTransformIsIdentity = effectiveTransform.isIdentity();
       }
     } else if (!hasIdentityTransform) {
-      effectiveTransform = Matrix4.fromFloat32List(_transform);
+      effectiveTransform = Matrix4.fromFloat32List(transform!);
       effectiveTransformIsIdentity = false;
     }
 

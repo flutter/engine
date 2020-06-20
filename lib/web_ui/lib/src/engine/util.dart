@@ -52,7 +52,7 @@ Future<T> futurize<T>(Callbacker<T> callbacker) {
 
 /// Converts [matrix] to CSS transform value.
 String matrix4ToCssTransform(Matrix4 matrix) {
-  return float64ListToCssTransform(matrix.storage!);
+  return float64ListToCssTransform(matrix.storage);
 }
 
 /// Applies a transform to the [element].

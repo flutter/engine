@@ -431,7 +431,7 @@ class BitmapCanvas extends EngineCanvas {
       }
     } else {
       final String cssTransform = float64ListToCssTransform(
-          transformWithOffset(_canvasPool.currentTransform, p).storage!);
+          transformWithOffset(_canvasPool.currentTransform, p).storage);
       imgElement.style
         ..transformOrigin = '0 0 0'
         ..transform = cssTransform
@@ -728,7 +728,7 @@ class BitmapCanvas extends EngineCanvas {
     } else {
       setElementTransform(
         paragraphElement,
-        transformWithOffset(_canvasPool.currentTransform, offset).storage!,
+        transformWithOffset(_canvasPool.currentTransform, offset).storage,
       );
       rootElement.append(paragraphElement);
     }
@@ -948,7 +948,7 @@ List<html.Element?> _clipContent(List<_SaveClipEntry> clipStack,
         ..overflow = 'hidden'
         ..width = '${rect.right - clipOffsetX}px'
         ..height = '${rect.bottom - clipOffsetY}px';
-      setElementTransform(curElement, newClipTransform.storage!);
+      setElementTransform(curElement, newClipTransform.storage);
     } else if (entry.rrect != null) {
       final ui.RRect roundRect = entry.rrect!;
       final String borderRadius =
@@ -963,7 +963,7 @@ List<html.Element?> _clipContent(List<_SaveClipEntry> clipStack,
         ..overflow = 'hidden'
         ..width = '${roundRect.right - clipOffsetX}px'
         ..height = '${roundRect.bottom - clipOffsetY}px';
-      setElementTransform(curElement, newClipTransform.storage!);
+      setElementTransform(curElement, newClipTransform.storage);
     } else if (entry.path != null) {
       curElement.style.transform = matrix4ToCssTransform(newClipTransform);
       String svgClipPath = createSvgClipDef(curElement as html.HtmlElement, entry.path!);
@@ -979,7 +979,7 @@ List<html.Element?> _clipContent(List<_SaveClipEntry> clipStack,
     reverseTransformDiv.style.position = 'absolute';
     setElementTransform(
       reverseTransformDiv,
-      (newClipTransform.clone()..invert()).storage!,
+      (newClipTransform.clone()..invert()).storage,
     );
     curElement.append(reverseTransformDiv);
     curElement = reverseTransformDiv;
@@ -989,7 +989,7 @@ List<html.Element?> _clipContent(List<_SaveClipEntry> clipStack,
   domRenderer.append(curElement!, content);
   setElementTransform(
     content,
-    transformWithOffset(currentTransform, offset).storage!,
+    transformWithOffset(currentTransform, offset).storage,
   );
   return <html.Element?>[root]..addAll(clipDefs);
 }

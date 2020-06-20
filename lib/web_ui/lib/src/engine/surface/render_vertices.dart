@@ -262,7 +262,7 @@ ui.Rect _computeVerticesBounds(Float32List positions, Matrix4 transform) {
 
 ui.Rect _transformBounds(
     Matrix4 transform, double left, double top, double right, double bottom) {
-  final Float32List storage = transform.storage!;
+  final Float32List storage = transform.storage;
   final double m0 = storage[0];
   final double m1 = storage[1];
   final double m4 = storage[4];

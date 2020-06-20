@@ -520,7 +520,7 @@ class SurfacePath implements ui.Path {
       subpaths.addAll(path.subpaths);
     } else {
       subpaths.addAll(path
-          ._transform(Matrix4.translationValues(dx, dy, 0.0).storage!)
+          ._transform(Matrix4.translationValues(dx, dy, 0.0).storage)
           .subpaths);
     }
   }
@@ -530,7 +530,7 @@ class SurfacePath implements ui.Path {
     assert(matrix4IsValid(matrix));
     final Matrix4 transform = Matrix4.fromFloat32List(matrix);
     transform.translate(dx, dy);
-    subpaths.addAll(path._transform(transform.storage!).subpaths);
+    subpaths.addAll(path._transform(transform.storage).subpaths);
   }
 
   /// Adds the given path to this path by extending the current segment of this
