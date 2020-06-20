@@ -186,48 +186,48 @@ class EmbeddedViewParams {
  public:
   EmbeddedViewParams() = default;
 
+  EmbeddedViewParams(SkMatrix matrix,
+                     SkSize size_points,
+                     MutatorsStack mutators_stack)
+      : matrix_(matrix),
+        size_points_(size_points),
+        mutators_stack_(mutators_stack) {
+    offset_pixels_ =
+        SkPoint::Make(matrix.getTranslateX(), matrix.getTranslateY());
+    SkPath path;
+    SkRect starting_rect = SkRect::MakeSize(size_points);
+    path.addRect(starting_rect);
+    path.transform(matrix);
+    final_bounding_rect_ = path.computeTightBounds();
+  }
+
   EmbeddedViewParams(const EmbeddedViewParams& other) {
-    offsetPixels = other.offsetPixels;
-    sizePoints = other.sizePoints;
-    mutatorsStack = other.mutatorsStack;
+    offset_pixels_ = other.offset_pixels_;
+    size_points_ = other.size_points_;
+    mutators_stack_ = other.mutators_stack_;
+    matrix_ = other.matrix_;
+    final_bounding_rect_ = other.final_bounding_rect_;
   };
 
-  SkPoint offsetPixels;
-  SkSize sizePoints;
-  MutatorsStack mutatorsStack;
+  const SkPoint& offsetPixels() const { return offset_pixels_; };
+  const SkSize& sizePoints() const { return size_points_; };
+  const MutatorsStack& mutatorsStack() const { return mutators_stack_; };
+  const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
   bool operator==(const EmbeddedViewParams& other) const {
-    return offsetPixels == other.offsetPixels &&
-           sizePoints == other.sizePoints &&
-           mutatorsStack == other.mutatorsStack;
+    return offset_pixels_ == other.offset_pixels_ &&
+           size_points_ == other.size_points_ &&
+           mutators_stack_ == other.mutators_stack_ &&
+           final_bounding_rect_ == other.final_bounding_rect_ &&
+           matrix_ == other.matrix_;
   }
 
-  // Clippings are ignored in this operation
-  // TODO(cyanglaz): Factoring clipping.
-  // https://github.com/flutter/flutter/issues/59821
-  SkRect GetBoundingRectAfterMutations() const {
-    SkPath path;
-    SkRect starting_rect = SkRect::MakeSize(sizePoints);
-    path.addRect(starting_rect);
-    std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter =
-        mutatorsStack.Bottom();
-    while (iter != mutatorsStack.Top()) {
-      switch ((*iter)->GetType()) {
-        case transform: {
-          const SkMatrix& matrix = (*iter)->GetMatrix();
-          path.transform(matrix);
-          break;
-        }
-        case clip_rect:
-        case clip_rrect:
-        case clip_path:
-        case opacity:
-          break;
-      }
-      ++iter;
-    }
-    return path.computeTightBounds();
-  }
+ private:
+  SkMatrix matrix_;
+  SkPoint offset_pixels_;
+  SkSize size_points_;
+  MutatorsStack mutators_stack_;
+  SkRect final_bounding_rect_;
 };
 
 enum class PostPrerollResult { kResubmitFrame, kSuccess };

@@ -3,21 +3,18 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/embedded_views.h"
-#include "gtest/gtest.h"
 #include "flutter/fml/logging.h"
-
+#include "gtest/gtest.h"
 
 namespace flutter {
 namespace testing {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithNoMutations) {
   MutatorsStack stack;
-  EmbeddedViewParams params;
-  params.sizePoints = SkSize::Make(1, 1);;
-  params.offsetPixels = SkPoint::Make(0, 0);
-  params.mutatorsStack = stack;
+  SkMatrix matrix;
 
-  SkRect rect = params.GetBoundingRectAfterMutations();
+  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
+  const SkRect& rect = params.finalBoundingRect();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), 1));
@@ -26,15 +23,11 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithNoMutations) {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithScale) {
   MutatorsStack stack;
-  SkMatrix scale = SkMatrix::Scale(2, 2);
-  stack.PushTransform(scale);
+  SkMatrix matrix = SkMatrix::Scale(2, 2);
+  stack.PushTransform(matrix);
 
-  EmbeddedViewParams params;
-  params.sizePoints = SkSize::Make(1, 1);;
-  params.offsetPixels = SkPoint::Make(0, 0);
-  params.mutatorsStack = stack;
-
-  SkRect rect = params.GetBoundingRectAfterMutations();
+  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
+  const SkRect& rect = params.finalBoundingRect();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), 2));
@@ -43,15 +36,11 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithScale) {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithTranslate) {
   MutatorsStack stack;
-  SkMatrix trans = SkMatrix::MakeTrans(1, 1);
-  stack.PushTransform(trans);
+  SkMatrix matrix = SkMatrix::MakeTrans(1, 1);
+  stack.PushTransform(matrix);
 
-  EmbeddedViewParams params;
-  params.sizePoints = SkSize::Make(1, 1);;
-  params.offsetPixels = SkPoint::Make(0, 0);
-  params.mutatorsStack = stack;
-
-  SkRect rect = params.GetBoundingRectAfterMutations();
+  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
+  const SkRect& rect = params.finalBoundingRect();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), 1));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 1));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), 1));
@@ -60,16 +49,13 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithTranslate) {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation90) {
   MutatorsStack stack;
-  SkMatrix rotate;
-  rotate.setRotate(90);
-  stack.PushTransform(rotate);
+  SkMatrix matrix;
+  matrix.setRotate(90);
+  stack.PushTransform(matrix);
 
-  EmbeddedViewParams params;
-  params.sizePoints = SkSize::Make(1, 1);;
-  params.offsetPixels = SkPoint::Make(0, 0);
-  params.mutatorsStack = stack;
+  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
+  const SkRect& rect = params.finalBoundingRect();
 
-  SkRect rect = params.GetBoundingRectAfterMutations();
   FML_DLOG(ERROR) << rect.x();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), -1));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 0));
@@ -79,38 +65,29 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation90) {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation45) {
   MutatorsStack stack;
-  SkMatrix rotate;
-  rotate.setRotate(45);
-  stack.PushTransform(rotate);
+  SkMatrix matrix;
+  matrix.setRotate(45);
+  stack.PushTransform(matrix);
 
-  EmbeddedViewParams params;
-  params.sizePoints = SkSize::Make(1, 1);;
-  params.offsetPixels = SkPoint::Make(0, 0);
-  params.mutatorsStack = stack;
-
-  SkRect rect = params.GetBoundingRectAfterMutations();
-  ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), -sqrt(2)/2));
+  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
+  const SkRect& rect = params.finalBoundingRect();
+  ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), -sqrt(2) / 2));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), sqrt(2)));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.height(), sqrt(2)));
 }
 
-TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithTranslateScalingAndRotation) {
+TEST(EmbeddedViewParams,
+     GetBoundingRectAfterMutationsWithTranslateScaleAndRotation) {
+  SkMatrix matrix = SkMatrix::MakeTrans(2, 2);
+  matrix.preScale(3, 3);
+  matrix.preRotate(90);
+
   MutatorsStack stack;
-  SkMatrix translate = SkMatrix::MakeTrans(2, 2);
-  SkMatrix scale = SkMatrix::MakeScale(3, 3);
-  SkMatrix rotate;
-  rotate.setRotate(90);
-  stack.PushTransform(translate);
-  stack.PushTransform(scale);
-  stack.PushTransform(rotate);
+  stack.PushTransform(matrix);
 
-  EmbeddedViewParams params;
-  params.sizePoints = SkSize::Make(1, 1);;
-  params.offsetPixels = SkPoint::Make(0, 0);
-  params.mutatorsStack = stack;
-
-  SkRect rect = params.GetBoundingRectAfterMutations();
+  EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
+  const SkRect& rect = params.finalBoundingRect();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), -1));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 2));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), 3));
