@@ -46,7 +46,7 @@ class SurfacePaint implements ui.Paint {
   }
 
   @override
-  ui.StrokeCap get strokeCap => _paintData.strokeCap!;
+  ui.StrokeCap get strokeCap => _paintData.strokeCap ?? ui.StrokeCap.butt;
 
   @override
   set strokeCap(ui.StrokeCap value) {
@@ -58,7 +58,7 @@ class SurfacePaint implements ui.Paint {
   }
 
   @override
-  ui.StrokeJoin get strokeJoin => _paintData.strokeJoin!;
+  ui.StrokeJoin get strokeJoin => _paintData.strokeJoin ?? ui.StrokeJoin.miter;
 
   @override
   set strokeJoin(ui.StrokeJoin value) {
@@ -82,7 +82,7 @@ class SurfacePaint implements ui.Paint {
   }
 
   @override
-  ui.Color get color => _paintData.color!;
+  ui.Color get color => _paintData.color ?? _defaultPaintColor;
 
   @override
   set color(ui.Color value) {
@@ -129,7 +129,7 @@ class SurfacePaint implements ui.Paint {
   }
 
   @override
-  ui.FilterQuality get filterQuality => _paintData.filterQuality!;
+  ui.FilterQuality get filterQuality => _paintData.filterQuality ?? ui.FilterQuality.none;
 
   @override
   set filterQuality(ui.FilterQuality value) {
