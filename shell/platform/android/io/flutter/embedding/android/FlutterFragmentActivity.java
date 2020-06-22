@@ -555,7 +555,7 @@ public class FlutterFragmentActivity extends FragmentActivity
     return null;
   }
 
-   /**
+  /**
    * Hook for subclasses to easily configure a {@code FlutterEngine}.
    *
    * <p>This method is called after {@link #provideFlutterEngine(Context)}.
@@ -704,7 +704,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   private boolean isDebuggable() {
     return (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
   }
-  
+
   /**
    * Registers all plugins that an app lists in its pubspec.yaml.
    *
