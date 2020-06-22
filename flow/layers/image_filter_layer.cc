@@ -31,7 +31,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     TryToPrepareRasterCache(context, this, matrix);
   } else {
     render_count_++;
-    context->raster_cache->Prepare(context, GetCacheableChild(), matrix);
+    TryToPrepareRasterCache(context, GetCacheableChild(), matrix);
   }
 }
 

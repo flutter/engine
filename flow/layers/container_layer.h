@@ -55,6 +55,37 @@ class ContainerLayer : public Layer {
   FML_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
 };
 
+//------------------------------------------------------------------------------
+/// Some ContainerLayer objects need to cache their children. The existing
+/// layer caching mechanism only supports caching an individual layer as it
+/// uses the unique_id() of that layer as the cache key. If a ContainerLayer
+/// has multiple children and needs to cache them then it will need to first
+/// collect them into a single layer object to satisfy the caching mechanism.
+/// This utility class will silently collect all of the children of a
+/// ContainerLayer into a single merged ContainerLayer automatically.
+///
+/// The Flutter Widget objects that produce these layers tend to enforce
+/// having only a single child Widget object which means that there is really
+/// only a single child being added to this engine layer anyway, but due to
+/// the complicated mechanism that turns trees of Widgets eventually into a
+/// tree of engine layers, the associated layer may end up with multiple
+/// direct child layers. This class implements a protection against the
+/// incidental creation of "extra" children.
+///
+/// When the layer needs to recurse to perform some opertion on its children,
+/// it can call GetChildContainer() to return the hidden container containing
+/// all of the real children.
+///
+/// When the layer wants to cache the rendered contents of its children, it
+/// should call GetCacheableChild() for best performance.
+///
+/// Note that since the implicit child container is created new every time
+/// this layer is recreated, the child container will be different for each
+/// frame of an animation that modifies the properties of this layer.
+/// The GetCacheableChild() method will attempt to find the single actual
+/// child of this layer and return that instead since that child will more
+/// likely remain stable across the frames of an animation.
+///
 class MergedContainerLayer : public ContainerLayer {
  public:
   MergedContainerLayer();
