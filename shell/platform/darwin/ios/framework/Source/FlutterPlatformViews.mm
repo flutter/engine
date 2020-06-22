@@ -163,13 +163,13 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   NSObject<FlutterPlatformView>* embedded_view = [factory createWithFrame:CGRectZero
                                                            viewIdentifier:viewId
                                                                 arguments:params];
+  UIView* platform_view = [embedded_view view];
   // Set a unique view identifier, so the platform view can be identified in unit tests.
-  [embedded_view view].accessibilityIdentifier =
-      [NSString stringWithFormat:@"platform_view[%ld]", viewId];
+  platform_view.accessibilityIdentifier = [NSString stringWithFormat:@"platform_view[%ld]", viewId];
   views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
 
   FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
-                  initWithEmbeddedView:embedded_view.view
+                  initWithEmbeddedView:platform_view
                  flutterViewController:flutter_view_controller_.get()
       gestureRecognizersBlockingPolicy:gesture_recognizers_blocking_policies[viewType]]
       autorelease];
