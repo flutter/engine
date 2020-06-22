@@ -15,7 +15,7 @@ import 'common.dart';
 import 'utils.dart';
 
 const String _unsupportedConfigurationWarning = 'WARNING: integration tests '
-    'are only supported on Chrome, Firefox or on Safari (running on MacOS)';
+    'are only supported on Chrome, Firefox and on Safari (running on macOS)';
 
 class IntegrationTestsManager {
   final String _browser;
@@ -285,7 +285,7 @@ class IntegrationTestsManager {
   /// Validate the given `browser`, `platform` combination is suitable for
   /// integration tests to run.
   bool validateIfTestsShouldRun() {
-    // Chrome tests should run at all Platforms (Linux, MacOS, Windows).
+    // Chrome tests should run at all Platforms (Linux, macOS, Windows).
     // They can also run successfully on CI and local.
     if (_browser == 'chrome') {
       return true;

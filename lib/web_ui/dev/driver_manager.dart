@@ -18,10 +18,11 @@ import 'utils.dart';
 
 /// [DriverManager] implementation for Chrome.
 ///
-/// This manager can be used for both MacOS and Linux.
+/// This manager can be used for both macOS and Linux.
 class ChromeDriverManager extends DriverManager {
   ChromeDriverManager(String browser) : super(browser);
 
+  @override
   Future<void> _installDriver() async {
     if (_browserDriverDir.existsSync()) {
       _browserDriverDir.deleteSync(recursive: true);
@@ -47,6 +48,7 @@ class ChromeDriverManager extends DriverManager {
   /// Throw an error if driver directory does not exists.
   ///
   /// Driver should already exist on LUCI as a CIPD package.
+  @override
   Future<void> _verifyDriverForLUCI() {
     if (!_browserDriverDir.existsSync()) {
       throw StateError('Failed to locate Chrome driver on LUCI on path:'
@@ -55,6 +57,7 @@ class ChromeDriverManager extends DriverManager {
     return Future<void>.value();
   }
 
+  @override
   Future<void> _startDriver(String driverPath) async {
     await startProcess('./chromedriver/chromedriver', ['--port=4444'],
         workingDirectory: driverPath);
@@ -64,13 +67,14 @@ class ChromeDriverManager extends DriverManager {
 
 /// [DriverManager] implementation for Firefox.
 ///
-/// This manager can be used for both MacOS and Linux.
+/// This manager can be used for both macOS and Linux.
 class FirefoxDriverManager extends DriverManager {
   FirefoxDriverManager(String browser) : super(browser);
 
   FirefoxDriverInstaller firefoxDriverInstaller =
-      FirefoxDriverInstaller(geckoDriverVersion: getLockedDeckoDriverVersion());
+      FirefoxDriverInstaller(geckoDriverVersion: getLockedGeckoDriverVersion());
 
+  @override
   Future<void> _installDriver() async {
     if (_browserDriverDir.existsSync()) {
       _browserDriverDir.deleteSync(recursive: true);
@@ -89,9 +93,10 @@ class FirefoxDriverManager extends DriverManager {
     }
   }
 
-  /// Throw an error if driver directory does not exists.
+  /// Throw an error if driver directory does not exist.
   ///
   /// Driver should already exist on LUCI as a CIPD package.
+  @override
   Future<void> _verifyDriverForLUCI() {
     if (!_browserDriverDir.existsSync()) {
       throw StateError('Failed to locate Firefox driver on LUCI on path:'
@@ -100,6 +105,7 @@ class FirefoxDriverManager extends DriverManager {
     return Future<void>.value();
   }
 
+  @override
   Future<void> _startDriver(String driverPath) async {
     await startProcess('./firefoxdriver/geckodriver', ['--port=4444'],
         workingDirectory: driverPath);
@@ -110,7 +116,7 @@ class FirefoxDriverManager extends DriverManager {
   ///
   /// For different versions of geckodriver. See:
   /// https://github.com/mozilla/geckodriver/releases
-  static String getLockedDeckoDriverVersion() {
+  static String getLockedGeckoDriverVersion() {
     final YamlMap browserLock = BrowserLock.instance.configuration;
     String geckoDriverReleaseVersion = browserLock['geckodriver'] as String;
     return geckoDriverReleaseVersion;
@@ -119,22 +125,25 @@ class FirefoxDriverManager extends DriverManager {
 
 /// [DriverManager] implementation for Safari.
 ///
-/// This manager is will only be created/used for MacOS.
+/// This manager is will only be created/used for macOS.
 class SafariDriverManager extends DriverManager {
   SafariDriverManager(String browser) : super(browser);
 
+  @override
   Future<void> _installDriver() {
     // No-op.
     // macOS comes with Safari Driver installed.
     return new Future<void>.value();
   }
 
+  @override
   Future<void> _verifyDriverForLUCI() {
     // No-op.
     // macOS comes with Safari Driver installed.
     return Future<void>.value();
   }
 
+  @override
   Future<void> _startDriver(String driverPath) async {
     final SafariDriverRunner safariDriverRunner = SafariDriverRunner();
 
@@ -200,7 +209,7 @@ abstract class DriverManager {
       return SafariDriverManager(browser);
     } else {
       throw StateError('Integration tests are only supported on Firefox, Chrome'
-          ' or on Safari (running on MacOS)');
+          ' and on Safari (running on macOS)');
     }
   }
 }
