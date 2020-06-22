@@ -117,8 +117,6 @@ source_set_maybe_fuchsia_legacy("runtime_unittests_common") {
     "dart_lifecycle_unittests.cc",
     "dart_service_isolate_unittests.cc",
     "dart_vm_unittests.cc",
-    "runtime_test.cc",
-    "runtime_test.h",
   ]
 
   public_deps = [
@@ -128,6 +126,8 @@ source_set_maybe_fuchsia_legacy("runtime_unittests_common") {
     "//flutter/fml",
     "//flutter/lib/snapshot",
     "//flutter/testing",
+    "//flutter/testing:dart",
+    "//flutter/testing:fixture_test",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:elf_loader",
     "//third_party/skia",
