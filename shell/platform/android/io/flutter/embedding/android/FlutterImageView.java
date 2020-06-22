@@ -68,6 +68,7 @@ public class FlutterImageView extends View {
 
     if (android.os.Build.VERSION.SDK_INT >= 29) {
       drawImageBuffer(canvas);
+      return;
     }
 
     drawImagePlane(canvas);
