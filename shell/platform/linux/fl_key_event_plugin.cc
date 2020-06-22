@@ -78,8 +78,10 @@ void fl_key_event_plugin_send_key_event(FlKeyEventPlugin* self,
   fl_value_set_string_take(message, kScanCodeKey, fl_value_new_int(scan_code));
   fl_value_set_string_take(message, kToolkitKey,
                            fl_value_new_string(kGtkToolkit));
-  fl_value_set_string_take(message, kKeyCodeKey, fl_value_new_int(event->keyval));
-  fl_value_set_string_take(message, kModifiersKey, fl_value_new_int(event->state));
+  fl_value_set_string_take(message, kKeyCodeKey,
+                           fl_value_new_int(event->keyval));
+  fl_value_set_string_take(message, kModifiersKey,
+                           fl_value_new_int(event->state));
   if (unicodeScalarValues != 0) {
     fl_value_set_string_take(message, kUnicodeScalarValuesKey,
                              fl_value_new_int(unicodeScalarValues));
