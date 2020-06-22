@@ -423,10 +423,10 @@ class BitmapCanvas extends EngineCanvas {
       imgElement.style
         ..removeProperty('width')
         ..removeProperty('height');
-      final List<html.Element?> clipElements = _clipContent(
+      final List<html.Element> clipElements = _clipContent(
           _canvasPool._clipStack!, imgElement, p, _canvasPool.currentTransform);
-      for (html.Element? clipElement in clipElements) {
-        rootElement.append(clipElement!);
+      for (html.Element clipElement in clipElements) {
+        rootElement.append(clipElement);
         _children.add(clipElement);
       }
     } else {
@@ -716,13 +716,13 @@ class BitmapCanvas extends EngineCanvas {
     final html.Element paragraphElement =
         _drawParagraphElement(paragraph, offset);
     if (_canvasPool.isClipped) {
-      final List<html.Element?> clipElements = _clipContent(
+      final List<html.Element> clipElements = _clipContent(
           _canvasPool._clipStack!,
           paragraphElement as html.HtmlElement,
           offset,
           _canvasPool.currentTransform);
-      for (html.Element? clipElement in clipElements) {
-        rootElement.append(clipElement!);
+      for (html.Element clipElement in clipElements) {
+        rootElement.append(clipElement);
         _children.add(clipElement);
       }
     } else {
@@ -921,7 +921,7 @@ String _stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
 /// overflow:hidden with bounds to clip child or sets a clip-path to clip
 /// it's contents. The clipping rectangles are nested and returned together
 /// with a list of svg elements that provide clip-paths.
-List<html.Element?> _clipContent(List<_SaveClipEntry> clipStack,
+List<html.Element> _clipContent(List<_SaveClipEntry> clipStack,
     html.HtmlElement content, ui.Offset offset, Matrix4 currentTransform) {
   html.Element? root, curElement;
   final List<html.Element> clipDefs = <html.Element>[];
@@ -991,7 +991,7 @@ List<html.Element?> _clipContent(List<_SaveClipEntry> clipStack,
     content,
     transformWithOffset(currentTransform, offset).storage,
   );
-  return <html.Element?>[root]..addAll(clipDefs);
+  return <html.Element>[root]..addAll(clipDefs);
 }
 
 /// Converts a [maskFilter] to the value to be used on a `<canvas>`.

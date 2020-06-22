@@ -26,7 +26,9 @@ class EnginePictureRecorder implements ui.PictureRecorder {
   @override
   ui.Picture endRecording() {
     if (!_isRecording) {
-      throw StateError('PictureRecorder is not recording a picture.');
+      // The mobile version returns an empty picture in this case. To match the
+      // behavior we produce a blank picture too.
+      beginRecording(ui.Rect.largest);
     }
     _isRecording = false;
     _canvas!.endRecording();
