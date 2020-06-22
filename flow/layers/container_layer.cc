@@ -189,7 +189,6 @@ Layer* MergedContainerLayer::GetCacheableChild() const {
     return child_container->layers()[0].get();
   }
 
-  FML_LOG(INFO) << "Single child layer contains multiple children";
   return child_container;
 }
 

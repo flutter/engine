@@ -41,7 +41,6 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
 
   if (context.raster_cache) {
     if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
-      FML_LOG(ERROR) << "Rendered filtered output from cache";
       return;
     }
     const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
@@ -52,7 +51,6 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
 
       if (context.raster_cache->Draw(GetCacheableChild(),
                                      *context.leaf_nodes_canvas, &paint)) {
-        FML_LOG(ERROR) << "Filtered from cached child";
         return;
       }
     }
