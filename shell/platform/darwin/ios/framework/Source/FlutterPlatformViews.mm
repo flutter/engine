@@ -458,7 +458,7 @@ void FlutterPlatformViewsController::Reset() {
 }
 
 SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
-  UIView* platform_view = [views_[view_id].get() view];
+  UIView* platform_view = [touch_interceptors_[view_id] embeddedView];
   UIScreen* screen = [UIScreen mainScreen];
   CGRect platform_view_cgrect = [platform_view convertRect:platform_view.bounds
                                                     toView:flutter_view_];
@@ -731,6 +731,7 @@ void FlutterPlatformViewsController::DisposeViews() {
 @implementation FlutterTouchInterceptingView {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
   FlutterPlatformViewGestureRecognizersBlockingPolicy _blockingPolicy;
+  UIView* _embeddedView;
 }
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
                flutterViewController:(UIViewController*)flutterViewController
@@ -739,6 +740,7 @@ void FlutterPlatformViewsController::DisposeViews() {
   self = [super initWithFrame:embeddedView.frame];
   if (self) {
     self.multipleTouchEnabled = YES;
+    _embeddedView = embeddedView;
     embeddedView.autoresizingMask =
         (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
 
@@ -758,6 +760,10 @@ void FlutterPlatformViewsController::DisposeViews() {
     [self addGestureRecognizer:forwardingRecognizer];
   }
   return self;
+}
+
+- (UIView*)embeddedView {
+  return _embeddedView;
 }
 
 - (void)releaseGesture {
