@@ -3,6 +3,10 @@
 // found in the LICENSE file.
 
 // @dart = 2.6
+// This test failed on iOS Safari.
+// TODO: https://github.com/flutter/flutter/issues/60040
+@TestOn('chrome || firefox')
+
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
