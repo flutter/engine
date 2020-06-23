@@ -29,15 +29,13 @@ class PlatformViewAndroid final : public PlatformView {
   // background execution.
   PlatformViewAndroid(PlatformView::Delegate& delegate,
                       flutter::TaskRunners task_runners,
-                      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-                      bool use_embedded_view);
+                      std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   // Creates a PlatformViewAndroid with a rendering surface.
   PlatformViewAndroid(PlatformView::Delegate& delegate,
                       flutter::TaskRunners task_runners,
                       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-                      bool use_software_rendering,
-                      bool use_embedded_view);
+                      bool use_software_rendering);
 
   ~PlatformViewAndroid() override;
 
@@ -77,6 +75,7 @@ class PlatformViewAndroid final : public PlatformView {
       const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
 
  private:
+
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
 
   std::unique_ptr<AndroidSurface> android_surface_;

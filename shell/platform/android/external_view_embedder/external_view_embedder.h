@@ -26,6 +26,7 @@ namespace flutter {
 ///
 class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
  public:
+
   AndroidExternalViewEmbedder(
       std::shared_ptr<AndroidContext> android_context,
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,

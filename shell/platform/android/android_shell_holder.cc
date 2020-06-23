@@ -57,14 +57,13 @@ AndroidShellHolder::AndroidShellHolder(
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
   Shell::CreateCallback<PlatformView> on_create_platform_view =
-      [is_background_view, &jni_facade, &weak_platform_view, use_embedded_view = settings.use_embedded_view](Shell& shell) {
+      [is_background_view, &jni_facade, &weak_platform_view](Shell& shell) {
         std::unique_ptr<PlatformViewAndroid> platform_view_android;
         if (is_background_view) {
           platform_view_android = std::make_unique<PlatformViewAndroid>(
               shell,                   // delegate
               shell.GetTaskRunners(),  // task runners
-              jni_facade,               // JNI interop
-              use_embedded_view
+              jni_facade              // JNI interop
           );
         } else {
           platform_view_android = std::make_unique<PlatformViewAndroid>(
@@ -72,8 +71,7 @@ AndroidShellHolder::AndroidShellHolder(
               shell.GetTaskRunners(),  // task runners
               jni_facade,              // JNI interop
               shell.GetSettings()
-                  .enable_software_rendering,  // use software rendering,
-              use_embedded_view
+                  .enable_software_rendering  // use software rendering,
           );
         }
         weak_platform_view = platform_view_android->GetWeakPtr();
