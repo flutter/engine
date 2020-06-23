@@ -126,9 +126,9 @@ class BrowserPlatform extends PlatformPlugin {
                   config.suiteDefaults.precompiledPath != null))
           .add(_wrapperHandler);
       // Screenshot tests are only enabled in chrome for now.
-      //if (name == 'chrome') {
+      if (name == 'chrome') {
         cascade = cascade.add(_screeshotHandler);
-      //}
+      }
     }
 
     var pipeline = shelf.Pipeline()
@@ -142,9 +142,9 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   Future<shelf.Response> _screeshotHandler(shelf.Request request) async {
-    // if (browserName != 'chrome') {
-    //   throw Exception('Screenshots tests are only available in Chrome.');
-    // }
+    if (browserName != 'chrome') {
+      throw Exception('Screenshots tests are only available in Chrome.');
+    }
 
     if (!request.requestedUri.path.endsWith('/screenshot')) {
       return shelf.Response.notFound(
