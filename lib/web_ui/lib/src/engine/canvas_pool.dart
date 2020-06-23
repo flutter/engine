@@ -86,8 +86,9 @@ class _CanvasPool extends _SaveStackTracking {
   void _createCanvas() {
     bool requiresClearRect = false;
     bool reused = false;
+    html.CanvasElement canvas;
     if (_reusablePool != null && _reusablePool!.isNotEmpty) {
-      _canvas = _reusablePool!.removeAt(0);
+      canvas = _canvas = _reusablePool!.removeAt(0);
       requiresClearRect = true;
       reused = true;
     } else {
@@ -101,7 +102,7 @@ class _CanvasPool extends _SaveStackTracking {
           _widthInBitmapPixels / EngineWindow.browserDevicePixelRatio;
       final double cssHeight =
           _heightInBitmapPixels / EngineWindow.browserDevicePixelRatio;
-      html.CanvasElement canvas = html.CanvasElement(
+      canvas = html.CanvasElement(
         width: _widthInBitmapPixels,
         height: _heightInBitmapPixels,
       );
@@ -129,22 +130,22 @@ class _CanvasPool extends _SaveStackTracking {
     // Before appending canvas, check if canvas is already on rootElement. This
     // optimization prevents DOM .append call when a PersistentSurface is
     // reused. Reading lastChild is faster than append call.
-    if (_rootElement!.lastChild != _canvas) {
-      _rootElement!.append(_canvas!);
+    if (_rootElement!.lastChild != canvas) {
+      _rootElement!.append(canvas);
     }
 
     if (_activeElementCount == 0) {
-      _canvas!.style.zIndex = '-1';
+      canvas.style.zIndex = '-1';
     } else if (reused) {
       // If a canvas is the first element we set z-index = -1 to workaround
       // blink compositing bug. To make sure this does not leak when reused
       // reset z-index.
-      _canvas!.style.removeProperty('z-index');
+      canvas.style.removeProperty('z-index');
     }
     ++_activeElementCount;
 
-    _context = _canvas!.context2D;
-    _contextHandle = ContextStateHandle(this, _context);
+    final html.CanvasRenderingContext2D context = _context = canvas.context2D;
+    _contextHandle = ContextStateHandle(this, context);
     _initializeViewport(requiresClearRect);
     _replayClipStack();
   }
@@ -311,9 +312,10 @@ class _CanvasPool extends _SaveStackTracking {
   }
 
   void resetTransform() {
-    if (_canvas != null) {
-      _canvas!.style.transformOrigin = '';
-      _canvas!.style.transform = '';
+    final html.CanvasElement? canvas = _canvas;
+    if (canvas != null) {
+      canvas.style.transformOrigin = '';
+      canvas.style.transform = '';
     }
   }
 
@@ -704,7 +706,7 @@ class _CanvasPool extends _SaveStackTracking {
 // to initialize current values.
 //
 class ContextStateHandle {
-  final html.CanvasRenderingContext2D? context;
+  final html.CanvasRenderingContext2D context;
   final _CanvasPool _canvasPool;
 
   ContextStateHandle(this._canvasPool, this.context);
@@ -720,7 +722,7 @@ class ContextStateHandle {
   set blendMode(ui.BlendMode? blendMode) {
     if (blendMode != _currentBlendMode) {
       _currentBlendMode = blendMode;
-      context!.globalCompositeOperation =
+      context.globalCompositeOperation =
           _stringForBlendMode(blendMode) ?? 'source-over';
     }
   }
@@ -729,14 +731,14 @@ class ContextStateHandle {
     strokeCap ??= ui.StrokeCap.butt;
     if (strokeCap != _currentStrokeCap) {
       _currentStrokeCap = strokeCap;
-      context!.lineCap = _stringForStrokeCap(strokeCap)!;
+      context.lineCap = _stringForStrokeCap(strokeCap)!;
     }
   }
 
   set lineWidth(double lineWidth) {
     if (lineWidth != _currentLineWidth) {
       _currentLineWidth = lineWidth;
-      context!.lineWidth = lineWidth;
+      context.lineWidth = lineWidth;
     }
   }
 
@@ -744,21 +746,21 @@ class ContextStateHandle {
     strokeJoin ??= ui.StrokeJoin.miter;
     if (strokeJoin != _currentStrokeJoin) {
       _currentStrokeJoin = strokeJoin;
-      context!.lineJoin = _stringForStrokeJoin(strokeJoin);
+      context.lineJoin = _stringForStrokeJoin(strokeJoin);
     }
   }
 
   set fillStyle(Object? colorOrGradient) {
     if (!identical(colorOrGradient, _currentFillStyle)) {
       _currentFillStyle = colorOrGradient;
-      context!.fillStyle = colorOrGradient;
+      context.fillStyle = colorOrGradient;
     }
   }
 
   set strokeStyle(Object? colorOrGradient) {
     if (!identical(colorOrGradient, _currentStrokeStyle)) {
       _currentStrokeStyle = colorOrGradient;
-      context!.strokeStyle = colorOrGradient;
+      context.strokeStyle = colorOrGradient;
     }
   }
 
@@ -812,7 +814,7 @@ class ContextStateHandle {
     if (!_renderMaskFilterForWebkit) {
       if (_currentFilter != maskFilter) {
         _currentFilter = maskFilter;
-        context!.filter = _maskFilterToCanvasFilter(maskFilter);
+        context.filter = _maskFilterToCanvasFilter(maskFilter);
       }
     } else {
       // WebKit does not support the `filter` property. Instead we apply a
@@ -822,13 +824,13 @@ class ContextStateHandle {
       // Note that on WebKit the cached value of _currentFilter is not useful.
       // Instead we destructure it into the shadow properties and cache those.
       if (maskFilter != null) {
-        context!.save();
-        context!.shadowBlur = convertSigmaToRadius(maskFilter.webOnlySigma);
+        context.save();
+        context.shadowBlur = convertSigmaToRadius(maskFilter.webOnlySigma);
         if (paint.color != null) {
           // Shadow color must be fully opaque.
-          context!.shadowColor = colorToCssString(paint.color!.withAlpha(255))!;
+          context.shadowColor = colorToCssString(paint.color!.withAlpha(255))!;
         } else {
-          context!.shadowColor = colorToCssString(const ui.Color(0xFF000000))!;
+          context.shadowColor = colorToCssString(const ui.Color(0xFF000000))!;
         }
 
         // On the web a shadow must always be painted together with the shape
@@ -838,7 +840,7 @@ class ContextStateHandle {
         // where the shape is.
         const double kOutsideTheBoundsOffset = 50000;
 
-        context!.translate(-kOutsideTheBoundsOffset, 0);
+        context.translate(-kOutsideTheBoundsOffset, 0);
 
         // Shadow offset is not affected by the current canvas context transform.
         // We have to apply the transform ourselves. To do that we transform the
@@ -855,8 +857,8 @@ class ContextStateHandle {
 
         tempVector[0] = tempVector[1] = 0;
         _canvasPool.currentTransform.transform2(tempVector);
-        context!.shadowOffsetX = shadowOffsetX - tempVector[0];
-        context!.shadowOffsetY = shadowOffsetY - tempVector[1];
+        context.shadowOffsetX = shadowOffsetX - tempVector[0];
+        context.shadowOffsetY = shadowOffsetY - tempVector[1];
       }
     }
   }
@@ -879,49 +881,49 @@ class ContextStateHandle {
       // On Safari (WebKit) we use a translated shadow to emulate
       // MaskFilter.blur. We use restore to undo the translation and
       // shadow attributes.
-      context!.restore();
+      context.restore();
     }
   }
 
   void paint(ui.PaintingStyle? style) {
     if (style == ui.PaintingStyle.stroke) {
-      context!.stroke();
+      context.stroke();
     } else {
-      context!.fill();
+      context.fill();
     }
   }
 
   void paintPath(ui.PaintingStyle? style, ui.PathFillType pathFillType) {
     if (style == ui.PaintingStyle.stroke) {
-      context!.stroke();
+      context.stroke();
     } else {
       if (pathFillType == ui.PathFillType.nonZero) {
-        context!.fill();
+        context.fill();
       } else {
-        context!.fill('evenodd');
+        context.fill('evenodd');
       }
     }
   }
 
   void reset() {
-    context!.fillStyle = '';
+    context.fillStyle = '';
     // Read back fillStyle/strokeStyle values from context so that input such
     // as rgba(0, 0, 0, 0) is correctly compared and doesn't cause diff on
     // setter.
-    _currentFillStyle = context!.fillStyle;
-    context!.strokeStyle = '';
-    _currentStrokeStyle = context!.strokeStyle;
-    context!.shadowBlur = 0;
-    context!.shadowColor = 'none';
-    context!.shadowOffsetX = 0;
-    context!.shadowOffsetY = 0;
-    context!.globalCompositeOperation = 'source-over';
+    _currentFillStyle = context.fillStyle;
+    context.strokeStyle = '';
+    _currentStrokeStyle = context.strokeStyle;
+    context.shadowBlur = 0;
+    context.shadowColor = 'none';
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 0;
+    context.globalCompositeOperation = 'source-over';
     _currentBlendMode = ui.BlendMode.srcOver;
-    context!.lineWidth = 1.0;
+    context.lineWidth = 1.0;
     _currentLineWidth = 1.0;
-    context!.lineCap = 'butt';
+    context.lineCap = 'butt';
     _currentStrokeCap = ui.StrokeCap.butt;
-    context!.lineJoin = 'miter';
+    context.lineJoin = 'miter';
     _currentStrokeJoin = ui.StrokeJoin.miter;
   }
 }
