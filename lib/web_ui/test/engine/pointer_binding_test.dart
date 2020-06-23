@@ -462,7 +462,6 @@ void main() {
     [
       _BrowserUnitTestContext(_PointerEventContext(), shouldSkip: isIosSafari),
       _BrowserUnitTestContext(_MouseEventContext(), shouldSkip: isIosSafari),
-      _BrowserUnitTestContext(_TouchEventContext(), shouldSkip: isIosSafari)
     ],
     'correctly detects events on the semantics placeholder',
     (_ButtonedEventMixin context) {
