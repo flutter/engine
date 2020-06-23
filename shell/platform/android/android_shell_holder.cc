@@ -65,7 +65,7 @@ AndroidShellHolder::AndroidShellHolder(
           platform_view_android = std::make_unique<PlatformViewAndroid>(
               shell,                   // delegate
               shell.GetTaskRunners(),  // task runners
-              jni_facade              // JNI interop
+              jni_facade               // JNI interop
           );
         } else {
           platform_view_android = std::make_unique<PlatformViewAndroid>(
@@ -73,7 +73,7 @@ AndroidShellHolder::AndroidShellHolder(
               shell.GetTaskRunners(),  // task runners
               jni_facade,              // JNI interop
               shell.GetSettings()
-                  .enable_software_rendering  // use software rendering,
+                  .enable_software_rendering  // use software rendering
           );
         }
         weak_platform_view = platform_view_android->GetWeakPtr();

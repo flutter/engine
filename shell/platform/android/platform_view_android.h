@@ -75,7 +75,6 @@ class PlatformViewAndroid final : public PlatformView {
       const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
 
  private:
-
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
 
   std::unique_ptr<AndroidSurface> android_surface_;

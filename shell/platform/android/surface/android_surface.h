@@ -16,7 +16,6 @@ namespace flutter {
 
 class AndroidSurface {
  public:
-
   using Factory = std::function<std::unique_ptr<AndroidSurface>(
       std::shared_ptr<AndroidContext> android_context,
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade)>;
