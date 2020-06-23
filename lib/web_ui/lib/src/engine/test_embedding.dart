@@ -60,7 +60,7 @@ class TestLocationStrategy extends LocationStrategy {
   bool get withinAppHistory => _currentEntryIndex >= 0;
 
   @override
-  void pushState(dynamic state, String title, String? url) {
+  void pushState(dynamic state, String title, String url) {
     assert(withinAppHistory);
     _currentEntryIndex++;
     // When pushing a new state, we need to remove all entries that exist after

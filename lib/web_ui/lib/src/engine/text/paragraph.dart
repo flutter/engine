@@ -278,7 +278,7 @@ class EngineParagraph implements ui.Paragraph {
     _measurementResult = _measurementService.measure(this, constraints);
     if (Profiler.isBenchmarkMode) {
       stopwatch.stop();
-      Profiler.instance!.benchmark('text_layout', stopwatch.elapsedMicroseconds.toDouble());
+      Profiler.instance.benchmark('text_layout', stopwatch.elapsedMicroseconds.toDouble());
     }
 
     _lastUsedConstraints = constraints;
@@ -653,7 +653,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   ui.TextAlign get _effectiveTextAlign => _textAlign ?? ui.TextAlign.start;
   ui.TextDirection get _effectiveTextDirection => _textDirection ?? ui.TextDirection.ltr;
 
-  String? get _effectiveFontFamily {
+  String get _effectiveFontFamily {
     if (assertionsEnabled) {
       // In the flutter tester environment, we use a predictable-size font
       // "Ahem". This makes widget tests predictable and less flaky.
@@ -661,10 +661,11 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         return 'Ahem';
       }
     }
-    if (_fontFamily == null || _fontFamily!.isEmpty) {
+    final String? fontFamily = _fontFamily;
+    if (fontFamily == null || fontFamily.isEmpty) {
       return DomRenderer.defaultFontFamily;
     }
-    return _fontFamily;
+    return fontFamily;
   }
 
   double? get _lineHeight {
@@ -1414,9 +1415,7 @@ void _applyParagraphStyleToElement({
       cssStyle.fontStyle =
           style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
     }
-    if (style._effectiveFontFamily != null) {
-      cssStyle.fontFamily = canonicalizeFontFamily(style._effectiveFontFamily);
-    }
+    cssStyle.fontFamily = canonicalizeFontFamily(style._effectiveFontFamily);
   } else {
     if (style._textAlign != previousStyle._textAlign) {
       cssStyle.textAlign = textAlignToCssValue(

@@ -38,7 +38,7 @@ R timeAction<R>(String name, Action<R> action) {
     final Stopwatch stopwatch = Stopwatch()..start();
     final R result = action();
     stopwatch.stop();
-    Profiler.instance!.benchmark(name, stopwatch.elapsedMicroseconds.toDouble());
+    Profiler.instance.benchmark(name, stopwatch.elapsedMicroseconds.toDouble());
     return result;
   }
 }
@@ -71,16 +71,17 @@ class Profiler {
     return Profiler._instance ??= Profiler._();
   }
 
-  static Profiler? get instance {
+  static Profiler get instance {
     _checkBenchmarkMode();
-    if (_instance == null) {
+    final Profiler? profiler = _instance;
+    if (profiler == null) {
       throw Exception(
         'Profiler has not been properly initialized. '
         'Make sure Profiler.ensureInitialized() is being called before you '
         'access Profiler.instance',
       );
     }
-    return _instance;
+    return profiler;
   }
 
   static Profiler? _instance;

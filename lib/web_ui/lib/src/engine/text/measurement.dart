@@ -147,7 +147,7 @@ class RulerManager {
   /// The returned ruler is marked as hit so there's no need to do that
   /// elsewhere.
   @visibleForTesting
-  ParagraphRuler? findOrCreateRuler(ParagraphGeometricStyle style) {
+  ParagraphRuler findOrCreateRuler(ParagraphGeometricStyle style) {
     ParagraphRuler? ruler = _rulers[style];
     if (ruler == null) {
       if (assertionsEnabled) {
@@ -240,7 +240,7 @@ abstract class TextMeasurementService {
     assert(rulerManager != null);
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     final ParagraphRuler ruler =
-        TextMeasurementService.rulerManager!.findOrCreateRuler(style)!;
+        TextMeasurementService.rulerManager!.findOrCreateRuler(style);
 
     if (assertionsEnabled) {
       if (paragraph._plainText == null) {
@@ -280,7 +280,7 @@ abstract class TextMeasurementService {
   }) {
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     final ParagraphRuler ruler =
-        TextMeasurementService.rulerManager!.findOrCreateRuler(style)!;
+        TextMeasurementService.rulerManager!.findOrCreateRuler(style);
 
     return ruler.measureBoxesForRange(
       paragraph._plainText!,
@@ -361,7 +361,7 @@ class DomTextMeasurementService extends TextMeasurementService {
     assert(paragraph._plainText != null);
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     final ParagraphRuler ruler =
-        TextMeasurementService.rulerManager!.findOrCreateRuler(style)!;
+        TextMeasurementService.rulerManager!.findOrCreateRuler(style);
 
     final String text = paragraph._plainText!.substring(start, end);
     final ui.Paragraph substringParagraph = paragraph._cloneWithText(text);
@@ -383,7 +383,7 @@ class DomTextMeasurementService extends TextMeasurementService {
 
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     final ParagraphRuler ruler =
-        TextMeasurementService.rulerManager!.findOrCreateRuler(style)!;
+        TextMeasurementService.rulerManager!.findOrCreateRuler(style);
     ruler.willMeasure(paragraph);
     final int position = ruler.hitTest(constraints!, offset);
     ruler.didMeasure();

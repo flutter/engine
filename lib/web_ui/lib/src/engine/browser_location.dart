@@ -30,10 +30,10 @@ abstract class LocationStrategy {
   String prepareExternalUrl(String internalUrl);
 
   /// Push a new history entry.
-  void pushState(dynamic state, String title, String? url);
+  void pushState(dynamic state, String title, String url);
 
   /// Replace the currently active history entry.
-  void replaceState(dynamic state, String title, String? url);
+  void replaceState(dynamic state, String title, String url);
 
   /// Go to the previous history entry.
   Future<void> back();
@@ -94,13 +94,13 @@ class HashLocationStrategy extends LocationStrategy {
   }
 
   @override
-  void pushState(dynamic state, String title, String? url) {
-    _platformLocation.pushState(state, title, prepareExternalUrl(url!));
+  void pushState(dynamic state, String title, String url) {
+    _platformLocation.pushState(state, title, prepareExternalUrl(url));
   }
 
   @override
-  void replaceState(dynamic state, String title, String? url) {
-    _platformLocation.replaceState(state, title, prepareExternalUrl(url!));
+  void replaceState(dynamic state, String title, String url) {
+    _platformLocation.replaceState(state, title, prepareExternalUrl(url));
   }
 
   @override

@@ -370,21 +370,22 @@ flt-glass-pane * {
     // IMPORTANT: the glass pane element must come after the scene element in the DOM node list so
     //            it can intercept input events.
     _glassPaneElement?.remove();
-    _glassPaneElement = createElement('flt-glass-pane');
-    _glassPaneElement!.style
+    final html.Element glassPaneElement = createElement('flt-glass-pane');
+    _glassPaneElement = glassPaneElement;
+    glassPaneElement.style
       ..position = 'absolute'
       ..top = '0'
       ..right = '0'
       ..bottom = '0'
       ..left = '0';
-    bodyElement.append(_glassPaneElement!);
+    bodyElement.append(glassPaneElement);
 
     _sceneHostElement = createElement('flt-scene-host');
 
     // Don't allow the scene to receive pointer events.
     _sceneHostElement!.style.pointerEvents = 'none';
 
-    _glassPaneElement!.append(_sceneHostElement!);
+    glassPaneElement.append(_sceneHostElement!);
 
     final html.Element _accesibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
@@ -395,10 +396,10 @@ flt-glass-pane * {
     // pointer events through to the semantics tree. However, for platform
     // views, the pointer events will not pass through, and will be handled
     // by the platform view.
-    glassPaneElement!
+    glassPaneElement
         .insertBefore(_accesibilityPlaceholder, _sceneHostElement);
 
-    PointerBinding.initInstance(_glassPaneElement);
+    PointerBinding.initInstance(glassPaneElement);
 
     // Hide the DOM nodes used to render the scene from accessibility, because
     // the accessibility tree is built from the SemanticsNode tree as a parallel
