@@ -7,9 +7,12 @@ part of engine;
 
 /// A class representing the screen that application windows are displayed on.
 class EngineScreen extends ui.Screen {
-  EngineScreen({Object screenId, ui.PlatformDispatcher platformDispatcher})
+  const EngineScreen(Object screenId, ui.PlatformDispatcher/*?*/ platformDispatcher)
       : _screenId = screenId,
         _platformDispatcher = platformDispatcher;
+
+  /// The value to use to indicate an invalid value for a [Screen] object.
+  static const ui.Screen invalid = EngineScreen(-1, null);
 
   /// The opaque ID for this screen.
   final Object _screenId;

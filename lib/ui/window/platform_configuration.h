@@ -48,8 +48,6 @@ enum class AccessibilityFeatureFlag : int32_t {
   kHighContrast = 1 << 5,
 };
 
-Dart_Handle ToByteData(const std::vector<uint8_t>& buffer);
-
 class WindowClient {
  public:
   virtual std::string InitialRouteName() = 0;

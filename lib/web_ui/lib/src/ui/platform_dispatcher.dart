@@ -2,93 +2,93 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.9
 part of ui;
 
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
 
 abstract class PlatformDispatcher {
-  static PlatformDispatcher/*!*/ get instance => engine.EnginePlatformDispatcher.instance;
+  static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
 
-  PlatformConfiguration/*!*/ get configuration;
-  VoidCallback/*?*/ get onPlatformConfigurationChanged;
-  set onPlatformConfigurationChanged(VoidCallback/*?*/ callback);
+  PlatformConfiguration get configuration;
+  VoidCallback? get onPlatformConfigurationChanged;
+  set onPlatformConfigurationChanged(VoidCallback? callback);
 
-  Iterable<Screen/*!*/>/*!*/ get screens;
+  Iterable<Screen> get screens;
 
-  Iterable<FlutterView/*!*/>/*!*/ get views;
+  Iterable<FlutterView> get views;
 
-  VoidCallback/*?*/ get onMetricsChanged;
-  set onMetricsChanged(VoidCallback/*?*/ callback);
+  VoidCallback? get onMetricsChanged;
+  set onMetricsChanged(VoidCallback? callback);
 
-  FrameCallback/*?*/ get onBeginFrame;
-  set onBeginFrame(FrameCallback/*?*/ callback);
+  FrameCallback? get onBeginFrame;
+  set onBeginFrame(FrameCallback? callback);
 
-  VoidCallback/*?*/ get onDrawFrame;
-  set onDrawFrame(VoidCallback/*?*/ callback);
+  VoidCallback? get onDrawFrame;
+  set onDrawFrame(VoidCallback? callback);
 
-  PointerDataPacketCallback/*?*/ get onPointerDataPacket;
-  set onPointerDataPacket(PointerDataPacketCallback/*?*/ callback);
+  PointerDataPacketCallback? get onPointerDataPacket;
+  set onPointerDataPacket(PointerDataPacketCallback? callback);
 
-  TimingsCallback/*?*/ get onReportTimings;
-  set onReportTimings(TimingsCallback/*?*/ callback);
+  TimingsCallback? get onReportTimings;
+  set onReportTimings(TimingsCallback? callback);
 
   void sendPlatformMessage(
-      String/*!*/ name,
-      ByteData/*?*/ data,
-      PlatformMessageResponseCallback/*?*/ callback,
+      String name,
+      ByteData? data,
+      PlatformMessageResponseCallback? callback,
   );
 
-  PlatformMessageCallback/*?*/ get onPlatformMessage;
-  set onPlatformMessage(PlatformMessageCallback/*?*/ callback);
+  PlatformMessageCallback? get onPlatformMessage;
+  set onPlatformMessage(PlatformMessageCallback? callback);
 
   void scheduleFrame();
 
-  void render(Scene/*!*/ scene, [FlutterView/*!*/ view]);
+  void render(Scene scene, [FlutterView view]);
 
-  AccessibilityFeatures/*!*/ get accessibilityFeatures;
+  AccessibilityFeatures get accessibilityFeatures;
 
-  VoidCallback/*?*/ get onAccessibilityFeaturesChanged;
-  set onAccessibilityFeaturesChanged(VoidCallback/*?*/ callback);
+  VoidCallback? get onAccessibilityFeaturesChanged;
+  set onAccessibilityFeaturesChanged(VoidCallback? callback);
 
-  void updateSemantics(SemanticsUpdate/*!*/ update);
+  void updateSemantics(SemanticsUpdate update) {
+    engine.EngineSemanticsOwner.instance.updateSemantics(update);
+  }
 
-  Locale/*!*/ get locale;
+  Locale get locale;
 
-  List<Locale/*!*/>/*!*/ get locales => configuration.locales;
+  List<Locale> get locales => configuration.locales;
 
-  Locale/*!*/ get platformResolvedLocale => configuration.platformResolvedLocale;
+  Locale? computePlatformResolvedLocale(List<Locale> supportedLocales);
 
-  VoidCallback/*?*/ get onLocaleChanged;
-  set onLocaleChanged(VoidCallback/*?*/ callback);
+  VoidCallback? get onLocaleChanged;
+  set onLocaleChanged(VoidCallback? callback);
 
-  bool/*!*/ get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
+  bool get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
 
-  double/*!*/ get textScaleFactor => configuration.textScaleFactor;
+  double get textScaleFactor => configuration.textScaleFactor;
 
-  VoidCallback/*?*/ get onTextScaleFactorChanged;
-  set onTextScaleFactorChanged(VoidCallback/*?*/ callback);
+  VoidCallback? get onTextScaleFactorChanged;
+  set onTextScaleFactorChanged(VoidCallback? callback);
 
-  Brightness/*!*/ get platformBrightness => configuration.platformBrightness;
+  Brightness get platformBrightness => configuration.platformBrightness;
 
-  VoidCallback/*?*/ get onPlatformBrightnessChanged;
-  set onPlatformBrightnessChanged(VoidCallback/*?*/ callback);
+  VoidCallback? get onPlatformBrightnessChanged;
+  set onPlatformBrightnessChanged(VoidCallback? callback);
 
-  bool/*!*/ get semanticsEnabled => configuration.semanticsEnabled;
+  bool get semanticsEnabled => configuration.semanticsEnabled;
 
-  VoidCallback/*?*/ get onSemanticsEnabledChanged;
-  set onSemanticsEnabledChanged(VoidCallback/*?*/ callback);
+  VoidCallback? get onSemanticsEnabledChanged;
+  set onSemanticsEnabledChanged(VoidCallback? callback);
 
-  SemanticsActionCallback/*?*/ get onSemanticsAction;
-  set onSemanticsAction(SemanticsActionCallback/*?*/ callback);
+  SemanticsActionCallback? get onSemanticsAction;
+  set onSemanticsAction(SemanticsActionCallback? callback);
 
-  String/*!*/ get initialRouteName;
+  String get initialRouteName;
 
-  void setIsolateDebugName(String/*!*/ name) {}
+  void setIsolateDebugName(String name) {}
 
-  ByteData/*?*/ getPersistentIsolateData() => null;
-
-  String/*?*/ get initialLifecycleState;
+  ByteData? getPersistentIsolateData() => null;
 }
 
 class PlatformConfiguration {
@@ -109,14 +109,14 @@ class PlatformConfiguration {
         assert(locales != null);
 
   PlatformConfiguration copyWith({
-    AccessibilityFeatures/*?*/ accessibilityFeatures,
-    bool/*?*/ alwaysUse24HourFormat,
-    bool/*?*/ semanticsEnabled,
-    Brightness/*?*/ platformBrightness,
-    double/*?*/ textScaleFactor,
-    List<Locale/*!*/>/*?*/ locales,
-    Locale/*?*/ platformResolvedLocale,
-    String/*?*/ initialRouteName,
+    AccessibilityFeatures? accessibilityFeatures,
+    bool? alwaysUse24HourFormat,
+    bool? semanticsEnabled,
+    Brightness? platformBrightness,
+    double? textScaleFactor,
+    List<Locale>? locales,
+    Locale? platformResolvedLocale,
+    String? initialRouteName,
   }) {
     return PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -130,14 +130,14 @@ class PlatformConfiguration {
     );
   }
 
-  final AccessibilityFeatures/*!*/ accessibilityFeatures;
-  final bool/*!*/ alwaysUse24HourFormat;
-  final bool/*!*/ semanticsEnabled;
-  final Brightness/*!*/ platformBrightness;
-  final double/*!*/ textScaleFactor;
-  final List<Locale/*!*/>/*!*/ locales;
-  final Locale/*?*/ platformResolvedLocale;
-  final String/*?*/ initialRouteName;
+  final AccessibilityFeatures accessibilityFeatures;
+  final bool alwaysUse24HourFormat;
+  final bool semanticsEnabled;
+  final Brightness platformBrightness;
+  final double textScaleFactor;
+  final List<Locale> locales;
+  final Locale? platformResolvedLocale;
+  final String? initialRouteName;
 }
 
 class ScreenConfiguration {
@@ -158,13 +158,13 @@ class ScreenConfiguration {
         assert(padding != null);
 
   ScreenConfiguration copyWith({
-    String/*?*/ screenName,
-    Rect/*?*/ geometry,
-    double/*?*/ devicePixelRatio,
-    WindowPadding/*?*/ viewInsets,
-    WindowPadding/*?*/ viewPadding,
-    WindowPadding/*?*/ systemGestureInsets,
-    WindowPadding/*?*/ padding,
+    String? screenName,
+    Rect? geometry,
+    double? devicePixelRatio,
+    WindowPadding? viewInsets,
+    WindowPadding? viewPadding,
+    WindowPadding? systemGestureInsets,
+    WindowPadding? padding,
   }) {
     return ScreenConfiguration(
       screenName: screenName ?? this.screenName,
@@ -177,18 +177,18 @@ class ScreenConfiguration {
     );
   }
 
-  final String/*!*/ screenName;
-  final Rect/*!*/ geometry;
-  final double/*!*/ devicePixelRatio;
-  final WindowPadding/*!*/ viewInsets;
-  final WindowPadding/*!*/ viewPadding;
-  final WindowPadding/*!*/ systemGestureInsets;
-  final WindowPadding/*!*/ padding;
+  final String screenName;
+  final Rect geometry;
+  final double devicePixelRatio;
+  final WindowPadding viewInsets;
+  final WindowPadding viewPadding;
+  final WindowPadding systemGestureInsets;
+  final WindowPadding padding;
 }
 
 class ViewConfiguration {
   const ViewConfiguration({
-    this.screen,
+    this.screen = Screen.invalid,
     this.window,
     this.geometry = Rect.zero,
     this.depth = double.maxFinite,
@@ -207,15 +207,15 @@ class ViewConfiguration {
         assert(padding != null);
 
   ViewConfiguration copyWith({
-    Screen/*?*/ screen,
-    FlutterWindow/*?*/ window,
-    Rect/*?*/ geometry,
-    double/*?*/ depth,
-    bool/*?*/ visible,
-    WindowPadding/*?*/ viewInsets,
-    WindowPadding/*?*/ viewPadding,
-    WindowPadding/*?*/ systemGestureInsets,
-    WindowPadding/*?*/ padding,
+    Screen? screen,
+    FlutterWindow? window,
+    Rect? geometry,
+    double? depth,
+    bool? visible,
+    WindowPadding? viewInsets,
+    WindowPadding? viewPadding,
+    WindowPadding? systemGestureInsets,
+    WindowPadding? padding,
   }) {
     return ViewConfiguration(
       screen: screen ?? this.screen,
@@ -230,15 +230,15 @@ class ViewConfiguration {
     );
   }
 
-  final Screen/*!*/ screen;
-  final FlutterWindow/*?*/ window;
-  final Rect/*!*/ geometry;
-  final double/*!*/ depth;
-  final bool/*!*/ visible;
-  final WindowPadding/*!*/ viewInsets;
-  final WindowPadding/*!*/ viewPadding;
-  final WindowPadding/*!*/ systemGestureInsets;
-  final WindowPadding/*!*/ padding;
+  final Screen screen;
+  final FlutterWindow? window;
+  final Rect geometry;
+  final double depth;
+  final bool visible;
+  final WindowPadding viewInsets;
+  final WindowPadding viewPadding;
+  final WindowPadding systemGestureInsets;
+  final WindowPadding padding;
 
   @override
   String toString() {

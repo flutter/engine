@@ -26,7 +26,7 @@ class EngineSingletonFlutterWindow extends ui.SingletonFlutterWindow {
   EngineSingletonFlutterWindow({Object windowId, this.platformDispatcher})
       : _windowId = windowId {
     final EnginePlatformDispatcher engineDispatcher = platformDispatcher as EnginePlatformDispatcher;
-    final ui.Screen newScreen = EngineScreen(screenId: 0, platformDispatcher: platformDispatcher);
+    final ui.Screen newScreen = EngineScreen(0, platformDispatcher);
     engineDispatcher._screens[0] = newScreen;
     engineDispatcher._screenConfigurations[0] = ui.ScreenConfiguration();
     engineDispatcher._windows[windowId] = this;
@@ -159,6 +159,99 @@ class EngineSingletonFlutterWindow extends ui.SingletonFlutterWindow {
 
   /// Overrides the value of [physicalSize] in tests.
   ui.Size webOnlyDebugPhysicalSizeOverride;
+
+  ui.VoidCallback/*?*/ get onMetricsChanged => platformDispatcher.onMetricsChanged;
+  set onMetricsChanged(ui.VoidCallback/*?*/ callback) {
+    platformDispatcher.onMetricsChanged = callback;
+  }
+
+  ui.Locale get locale => platformDispatcher.locale;
+  List<ui.Locale> get locales => platformDispatcher.locales;
+
+  ui.Locale/*?*/ computePlatformResolvedLocale(List<ui.Locale> supportedLocales) {
+    // TODO(garyq): Implement on web.
+    return null;
+  }
+
+  ui.VoidCallback/*?*/ get onLocaleChanged => platformDispatcher.onLocaleChanged;
+  set onLocaleChanged(ui.VoidCallback/*?*/ callback) {
+    platformDispatcher.onLocaleChanged = callback;
+  }
+
+  double get textScaleFactor => platformDispatcher.textScaleFactor;
+  bool get alwaysUse24HourFormat => platformDispatcher.alwaysUse24HourFormat;
+
+  ui.VoidCallback/*?*/ get onTextScaleFactorChanged => platformDispatcher.onTextScaleFactorChanged;
+  set onTextScaleFactorChanged(ui.VoidCallback/*?*/ callback) {
+    platformDispatcher.onTextScaleFactorChanged = callback;
+  }
+
+  ui.Brightness get platformBrightness => platformDispatcher.platformBrightness;
+
+  ui.VoidCallback/*?*/ get onPlatformBrightnessChanged => platformDispatcher.onPlatformBrightnessChanged;
+  set onPlatformBrightnessChanged(ui.VoidCallback/*?*/ callback) {
+    platformDispatcher.onPlatformBrightnessChanged = callback;
+  }
+
+  ui.FrameCallback/*?*/ get onBeginFrame => platformDispatcher.onBeginFrame;
+  set onBeginFrame(ui.FrameCallback/*?*/ callback) {
+    platformDispatcher.onBeginFrame = callback;
+  }
+
+  ui.TimingsCallback/*?*/ get onReportTimings => platformDispatcher.onReportTimings;
+  set onReportTimings(ui.TimingsCallback/*?*/ callback) {
+    platformDispatcher.onReportTimings = callback;
+  }
+
+  ui.VoidCallback/*?*/ get onDrawFrame => platformDispatcher.onDrawFrame;
+  set onDrawFrame(ui.VoidCallback/*?*/ callback) {
+    platformDispatcher.onDrawFrame = callback;
+  }
+
+  ui.PointerDataPacketCallback/*?*/ get onPointerDataPacket => platformDispatcher.onPointerDataPacket;
+  set onPointerDataPacket(ui.PointerDataPacketCallback/*?*/ callback) {
+    platformDispatcher.onPointerDataPacket = callback;
+  }
+
+  String get defaultRouteName => platformDispatcher.initialRouteName;
+
+  bool get semanticsEnabled => EngineSemanticsOwner.instance.semanticsEnabled;
+
+  ui.VoidCallback/*?*/ get onSemanticsEnabledChanged => platformDispatcher.onSemanticsEnabledChanged;
+  set onSemanticsEnabledChanged(ui.VoidCallback/*?*/ callback) {
+    platformDispatcher.onSemanticsEnabledChanged = callback;
+  }
+
+  ui.SemanticsActionCallback/*?*/ get onSemanticsAction => platformDispatcher.onSemanticsAction;
+  set onSemanticsAction(ui.SemanticsActionCallback/*?*/ callback) {
+    platformDispatcher.onSemanticsAction = callback;
+  }
+
+  ui.VoidCallback/*?*/ get onAccessibilityFeaturesChanged => platformDispatcher.onAccessibilityFeaturesChanged;
+  set onAccessibilityFeaturesChanged(ui.VoidCallback/*?*/ callback) {
+    platformDispatcher.onAccessibilityFeaturesChanged = callback;
+  }
+
+  ui.PlatformMessageCallback/*?*/ get onPlatformMessage => platformDispatcher.onPlatformMessage;
+  set onPlatformMessage(ui.PlatformMessageCallback/*?*/ callback) {
+    platformDispatcher.onPlatformMessage = callback;
+  }
+
+  void sendPlatformMessage(
+      String name,
+      ByteData/*?*/ data,
+      ui.PlatformMessageResponseCallback/*?*/ callback,
+      ) {
+    platformDispatcher.sendPlatformMessage(name, data, callback);
+  }
+
+  void updateSemantics(ui.SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+
+  ui.AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
+
+  void render(ui.Scene scene) => platformDispatcher.render(scene, this);
+
+  String get initialLifecycleState => 'AppLifecycleState.resumed';
 }
 
 /// The window singleton.

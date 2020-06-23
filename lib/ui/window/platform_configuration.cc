@@ -406,7 +406,7 @@ Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
 
   std::vector<std::string> results =
       *UIDartState::Current()
-           ->window()
+           ->platform_configuration()
            ->client()
            ->ComputePlatformResolvedLocale(supportedLocales);
 

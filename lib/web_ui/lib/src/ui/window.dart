@@ -213,45 +213,36 @@ abstract class FlutterView {
 
 abstract class FlutterWindowView extends FlutterView {
   @override
-  ViewConfiguration/*!*/ get viewConfiguration;
+  ViewConfiguration get viewConfiguration;
 }
 
 abstract class FlutterWindow extends FlutterView {
   @override
-  ViewConfiguration/*!*/ get viewConfiguration;
+  ViewConfiguration get viewConfiguration;
 }
 
 abstract class SingletonFlutterWindow extends FlutterWindow {
-  VoidCallback/*?*/ get onMetricsChanged => platformDispatcher.onMetricsChanged;
-  set onMetricsChanged(VoidCallback/*?*/ callback) {
-    platformDispatcher.onMetricsChanged = callback;
-  }
+  VoidCallback? get onMetricsChanged;
+  set onMetricsChanged(VoidCallback? callback);
 
-  Locale get locale => platformDispatcher.locale;
-  List<Locale> get locales => platformDispatcher.locales;
+  Locale get locale;
+  List<Locale> get locales;
 
-  Locale? get platformResolvedLocale => platformDispatcher.platformResolvedLocale;
+  Locale? computePlatformResolvedLocale(List<Locale> supportedLocales);
 
-  VoidCallback? get onLocaleChanged => platformDispatcher.onLocaleChanged;
-  set onLocaleChanged(VoidCallback? callback) {
-    platformDispatcher.onLocaleChanged = callback;
-  }
+  VoidCallback? get onLocaleChanged;
+  set onLocaleChanged(VoidCallback? callback);
 
-  String get initialLifecycleState => platformDispatcher.initialLifecycleState;
-  double get textScaleFactor => platformDispatcher.textScaleFactor;
-  bool get alwaysUse24HourFormat => platformDispatcher.alwaysUse24HourFormat;
+  double get textScaleFactor;
+  bool get alwaysUse24HourFormat;
 
-  VoidCallback? get onTextScaleFactorChanged => platformDispatcher.onTextScaleFactorChanged;
-  set onTextScaleFactorChanged(VoidCallback? callback) {
-    platformDispatcher.onTextScaleFactorChanged = callback;
-  }
+  VoidCallback? get onTextScaleFactorChanged;
+  set onTextScaleFactorChanged(VoidCallback? callback);
 
-  Brightness get platformBrightness => platformDispatcher.platformBrightness;
+  Brightness get platformBrightness;
 
-  VoidCallback? get onPlatformBrightnessChanged => platformDispatcher.onPlatformBrightnessChanged;
-  set onPlatformBrightnessChanged(VoidCallback? callback) {
-    platformDispatcher.onPlatformBrightnessChanged = callback;
-  }
+  VoidCallback? get onPlatformBrightnessChanged;
+  set onPlatformBrightnessChanged(VoidCallback? callback);
 
   FrameCallback? get onBeginFrame;
   set onBeginFrame(FrameCallback? callback);
@@ -265,10 +256,9 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   PointerDataPacketCallback? get onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback);
 
-  String get defaultRouteName => platformDispatcher.initialRouteName;
+  String get defaultRouteName;
 
-  bool get semanticsEnabled =>
-      engine.EngineSemanticsOwner.instance.semanticsEnabled;
+  bool get semanticsEnabled;
 
   VoidCallback? get onSemanticsEnabledChanged;
   set onSemanticsEnabledChanged(VoidCallback? callback);
@@ -282,11 +272,7 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   PlatformMessageCallback? get onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback);
 
-  void updateSemantics(SemanticsUpdate update) {
-    engine.EngineSemanticsOwner.instance.updateSemantics(update);
-  }
-
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+  void updateSemantics(SemanticsUpdate update);
 
   void sendPlatformMessage(
     String name,
@@ -294,12 +280,11 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
     PlatformMessageResponseCallback? callback,
   );
 
-  AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
-  AccessibilityFeatures _accessibilityFeatures = AccessibilityFeatures._(0);
+  AccessibilityFeatures get accessibilityFeatures;
 
   void render(Scene scene);
 
-  String get initialLifecycleState => 'AppLifecycleState.resumed';
+  String get initialLifecycleState;
 
   void setIsolateDebugName(String name) {}
 

@@ -374,7 +374,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         if (experimentalUseSkia) {
           rasterizer.viewEmbedder.handlePlatformViewCall(data, callback);
         } else {
-          handlePlatformViewCall(data, callback);
+          ui.handlePlatformViewCall(data, callback);
         }
         return;
 
@@ -557,7 +557,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// in order to arrive at the most appropriate locale for the app.
   ///
   /// See [locales], which is the list of locales the user/device prefers.
-  ui.Locale/*!*/ get platformResolvedLocale => configuration.platformResolvedLocale;
+  ui.Locale/*?*/ computePlatformResolvedLocale(List<ui.Locale> supportedLocales) {
+    // TODO(garyq): Implement on web.
+    return null;
+  }
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -627,8 +630,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// It is used to initialize [SchedulerBinding.lifecycleState] at startup
   /// with any buffered lifecycle state events.
-  String/*?*/ get initialLifecycleState => _initialLifecycleState;
-  String/*?*/ _initialLifecycleState;
+  String/*?*/ get initialLifecycleState => 'AppLifecycleState.resumed';
 
   /// The system-reported text scale.
   ///

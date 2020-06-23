@@ -37,6 +37,11 @@ class DummyWindowClient : public WindowClient {
   virtual std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() {
     return isolate_data_;
   }
+  virtual std::unique_ptr<std::vector<std::string>>
+  ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) {
+      return nullptr;
+      };
 
  private:
   FontCollection font_collection_;
