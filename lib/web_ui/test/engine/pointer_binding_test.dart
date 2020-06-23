@@ -18,40 +18,24 @@ List<ui.PointerData> _allPointerData(List<ui.PointerDataPacket> packets) {
   return packets.expand((ui.PointerDataPacket packet) => packet.data).toList();
 }
 
-/// Helper class for encapsulating test skip information with test `context`.
-///
-/// Some tests should be skipped depending on the browser and the OS. This class
-/// is used for combining [shouldSkip] information with the `context`.
-/// See: [_PointerEventContext] [_MouseEventContext] [_TouchEventContext].
-/// TODO: https://github.com/flutter/flutter/issues/60033
-class _BrowserUnitTestContext<T extends _BasicEventContext> {
-  /// Should this test be skipped.
-  final bool shouldSkip;
-
-  /// Implementation of [_BasicEventContext].
-  ///
-  /// See: [_PointerEventContext] [_MouseEventContext] [_TouchEventContext].
-  final T testContext;
-
-  _BrowserUnitTestContext(this.testContext, {this.shouldSkip = false});
-}
-
 typedef _ContextTestBody<T> = void Function(T);
 
 void _testEach<T extends _BasicEventContext>(
-  Iterable<_BrowserUnitTestContext> contexts,
+  Iterable<T> contexts,
   String description,
   _ContextTestBody<T> body,
 ) {
-  for (_BrowserUnitTestContext context in contexts) {
-    if (context.testContext.isSupported) {
-      test('${context.testContext.name} $description', () {
-        body(context.testContext);
-      }, skip: context.shouldSkip);
+  for (T context in contexts) {
+    if (context.isSupported) {
+      test('${context.name} $description', () {
+        body(context);
+      });
     }
   }
 }
 
+/// Some methods in this class are skipped for iOS-Safari.
+/// TODO: https://github.com/flutter/flutter/issues/60033
 bool get isIosSafari => (browserEngine == BrowserEngine.webkit &&
     operatingSystem == OperatingSystem.iOs);
 
@@ -415,9 +399,9 @@ void main() {
 
   _testEach<_BasicEventContext>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
-      _BrowserUnitTestContext(_TouchEventContext())
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
     ],
     'can receive pointer events on the glass pane',
     (_BasicEventContext context) {
@@ -436,9 +420,9 @@ void main() {
 
   _testEach<_BasicEventContext>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
-      _BrowserUnitTestContext(_TouchEventContext())
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
     ],
     'does create an add event if got a pointerdown',
     (_BasicEventContext context) {
@@ -460,8 +444,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext(), shouldSkip: isIosSafari),
-      _BrowserUnitTestContext(_MouseEventContext(), shouldSkip: isIosSafari),
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
     ],
     'correctly detects events on the semantics placeholder',
     (_ButtonedEventMixin context) {
@@ -534,8 +518,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
+      _PointerEventContext(),
+      _MouseEventContext(),
     ],
     'creates an add event if the first pointer activity is a hover',
     (_ButtonedEventMixin context) {
@@ -558,8 +542,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
+      _PointerEventContext(),
+      _MouseEventContext(),
     ],
     'sends a pointermove event instead of the second pointerdown in a row',
     (_ButtonedEventMixin context) {
@@ -595,8 +579,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext(), shouldSkip: isIosSafari),
-      _BrowserUnitTestContext(_MouseEventContext(), shouldSkip: isIosSafari),
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
     ],
     'does synthesize add or hover or move for scroll',
     (_ButtonedEventMixin context) {
@@ -717,8 +701,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext(), shouldSkip: isIosSafari),
-      _BrowserUnitTestContext(_MouseEventContext(), shouldSkip: isIosSafari),
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext()
     ],
     'does calculate delta and pointer identifier correctly',
     (_ButtonedEventMixin context) {
@@ -845,8 +829,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext(), shouldSkip: isIosSafari),
-      _BrowserUnitTestContext(_MouseEventContext(), shouldSkip: isIosSafari),
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
     ],
     'correctly converts buttons of down, move and up events',
     (_ButtonedEventMixin context) {
@@ -1015,8 +999,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
+      _PointerEventContext(),
+      _MouseEventContext(),
     ],
     'correctly handles button changes during a down sequence',
     (_ButtonedEventMixin context) {
@@ -1080,8 +1064,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext(), shouldSkip: isIosSafari),
-      _BrowserUnitTestContext(_MouseEventContext(), shouldSkip: isIosSafari),
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
     ],
     'synthesizes a pointerup event when pointermove comes before the up',
     (_ButtonedEventMixin context) {
@@ -1163,8 +1147,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
+      _PointerEventContext(),
+      _MouseEventContext(),
     ],
     'correctly handles uncontinuous button changes during a down sequence',
     (_ButtonedEventMixin context) {
@@ -1236,8 +1220,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
+      _PointerEventContext(),
+      _MouseEventContext(),
     ],
     'handles RMB click when the browser sends it as a move',
     (_ButtonedEventMixin context) {
@@ -1272,8 +1256,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
+      _PointerEventContext(),
+      _MouseEventContext(),
     ],
     'correctly handles hover after RMB click',
     (_ButtonedEventMixin context) {
@@ -1323,8 +1307,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
+      _PointerEventContext(),
+      _MouseEventContext(),
     ],
     'correctly handles LMB click after RMB click',
     (_ButtonedEventMixin context) {
@@ -1392,8 +1376,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
+      _PointerEventContext(),
+      _MouseEventContext(),
     ],
     'correctly handles two consecutive RMB clicks with no up in between',
     (_ButtonedEventMixin context) {
@@ -1457,8 +1441,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
+      _PointerEventContext(),
+      _MouseEventContext(),
     ],
     'correctly handles two consecutive RMB clicks with up in between',
     (_ButtonedEventMixin context) {
@@ -1540,8 +1524,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
-      _BrowserUnitTestContext(_MouseEventContext()),
+      _PointerEventContext(),
+      _MouseEventContext(),
     ],
     'correctly handles two consecutive RMB clicks in two different locations',
     (_ButtonedEventMixin context) {
@@ -1610,8 +1594,8 @@ void main() {
 
   _testEach<_ButtonedEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext(), shouldSkip: true),
-      _BrowserUnitTestContext(_MouseEventContext(), shouldSkip: true),
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
     ],
     'correctly detects up event outside of glasspane',
     (_ButtonedEventMixin context) {
@@ -1676,8 +1660,8 @@ void main() {
 
   _testEach<_MultiPointerEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext(), shouldSkip: true),
-      _BrowserUnitTestContext(_TouchEventContext(), shouldSkip: true),
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _TouchEventContext(),
     ],
     'treats each pointer separately',
     (_MultiPointerEventMixin context) {
@@ -1867,8 +1851,8 @@ void main() {
 
   _testEach<_MultiPointerEventMixin>(
     [
-      _BrowserUnitTestContext(_PointerEventContext(), shouldSkip: true),
-      _BrowserUnitTestContext(_TouchEventContext(), shouldSkip: true),
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _TouchEventContext(),
     ],
     'correctly parses cancel event',
     (_MultiPointerEventMixin context) {
@@ -1914,7 +1898,7 @@ void main() {
 
   _testEach<_PointerEventContext>(
     [
-      _BrowserUnitTestContext(_PointerEventContext()),
+      if (!isIosSafari) _PointerEventContext(),
     ],
     'does not synthesize pointer up if from different device',
     (_PointerEventContext context) {
@@ -1956,7 +1940,7 @@ void main() {
 
   _testEach(
     [
-      _BrowserUnitTestContext(_TouchEventContext(), shouldSkip: true),
+      if (!isIosSafari) _TouchEventContext(),
     ],
     'does calculate delta and pointer identifier correctly',
     (_TouchEventContext context) {
