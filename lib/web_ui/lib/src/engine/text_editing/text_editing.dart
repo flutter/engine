@@ -503,9 +503,9 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
   void placeElement() {
     super.placeElement();
     if (hasAutofillGroup) {
-       _geometry?.applyToDomElement(focusedFormElement());
+       _geometry?.applyToDomElement(focusedFormElement);
        placeForm();
-       focusedFormElement().focus();
+       focusedFormElement.focus();
     } else {
       _geometry?.applyToDomElement(domElement);
     }
@@ -584,7 +584,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     _setStaticStyleAttributes(domElement);
     _style?.applyToDomElement(domElement);
-    if (hasAutofillGroup) {
+    if (!hasAutofillGroup) {
       // If there is an Autofill Group the `FormElement`, it will be appended to the
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
