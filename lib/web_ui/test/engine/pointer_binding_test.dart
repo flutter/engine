@@ -25,7 +25,7 @@ List<ui.PointerData> _allPointerData(List<ui.PointerDataPacket> packets) {
 /// See: [_PointerEventContext] [_MouseEventContext] [_TouchEventContext].
 /// TODO: https://github.com/flutter/flutter/issues/60033
 class _BrowserUnitTestContext<T extends _BasicEventContext> {
-  /// Should this test skipped.
+  /// Should this test be skipped.
   final bool shouldSkip;
 
   /// Implementation of [_BasicEventContext].
@@ -66,7 +66,9 @@ void main() {
   });
 
   test('_PointerEventContext generates expected events', () {
-    if (!_PointerEventContext().isSupported) return;
+    if (!_PointerEventContext().isSupported) {
+      return;
+    }
 
     html.PointerEvent expectCorrectType(html.Event e) {
       expect(e.runtimeType, equals(html.PointerEvent));
@@ -232,7 +234,9 @@ void main() {
   });
 
   test('_TouchEventContext generates expected events', () {
-    if (!_TouchEventContext().isSupported) return;
+    if (!_TouchEventContext().isSupported) {
+      return;
+    }
 
     html.TouchEvent expectCorrectType(html.Event e) {
       expect(e.runtimeType, equals(html.TouchEvent));
@@ -326,7 +330,9 @@ void main() {
   });
 
   test('_MouseEventContext generates expected events', () {
-    if (!_MouseEventContext().isSupported) return;
+    if (!_MouseEventContext().isSupported) {
+      return;
+    }
 
     html.MouseEvent expectCorrectType(html.Event e) {
       expect(e.runtimeType, equals(html.MouseEvent));
