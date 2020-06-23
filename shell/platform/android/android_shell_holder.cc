@@ -28,6 +28,8 @@ static WindowData GetDefaultWindowData() {
   return window_data;
 }
 
+bool AndroidShellHolder::use_embedded_view;
+
 AndroidShellHolder::AndroidShellHolder(
     flutter::Settings settings,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
@@ -102,6 +104,7 @@ AndroidShellHolder::AndroidShellHolder(
     io_runner = thread_host_.io_thread->GetTaskRunner();
   }
   if (settings.use_embedded_view) {
+    use_embedded_view = true;
     // Embedded views requires the gpu and the platform views to be the same.
     // The plan is to eventually dynamically merge the threads when there's a
     // platform view in the layer tree.
@@ -125,6 +128,7 @@ AndroidShellHolder::AndroidShellHolder(
                     on_create_rasterizer      // rasterizer create callback
       );
   } else {
+    use_embedded_view = false;
     flutter::TaskRunners task_runners(thread_label,     // label
                                       platform_runner,  // platform
                                       gpu_runner,       // raster
