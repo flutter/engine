@@ -135,7 +135,7 @@ class Surface {
     if (skSurface == null) {
       return null;
     } else {
-      return SkSurface(skSurface, glContext);
+      return SkSurface(skSurface, grContext, glContext);
     }
   }
 
@@ -153,12 +153,13 @@ class Surface {
 /// A Dart wrapper around Skia's SkSurface.
 class SkSurface {
   final js.JsObject _surface;
+  final js.JsObject _grContext;
   final int _glContext;
 
-  SkSurface(this._surface, this._glContext);
+  SkSurface(this._surface, this._grContext, this._glContext);
 
   SkCanvas getCanvas() {
-    final js.JsObject/*!*/ skCanvas = _surface.callMethod('getCanvas');
+    final js.JsObject /*!*/ skCanvas = _surface.callMethod('getCanvas');
     return SkCanvas(skCanvas);
   }
 
@@ -169,5 +170,7 @@ class SkSurface {
 
   void dispose() {
     _surface.callMethod('dispose');
+    _grContext.callMethod('releaseResourcesAndAbandonContext');
+    _grContext.callMethod('delete');
   }
 }

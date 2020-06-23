@@ -9,7 +9,7 @@ part of engine;
 ///
 /// This class is backed by a Skia object that must be explicitly
 /// deleted to avoid a memory leak. This is done by extending [SkiaObject].
-class SkPaint extends SkiaObject implements ui.Paint {
+class SkPaint extends ResurrectableSkiaObject implements ui.Paint {
   SkPaint();
 
   static const ui.Color _defaultPaintColor = ui.Color(0xFF000000);
@@ -161,31 +161,14 @@ class SkPaint extends SkiaObject implements ui.Paint {
   }
 
   void _syncMaskFilter(js.JsObject object) {
-    js.JsObject skMaskFilter;
+    SkMaskFilter skMaskFilter;
     if (_maskFilter != null) {
       final ui.BlurStyle blurStyle = _maskFilter.webOnlyBlurStyle;
       final double sigma = _maskFilter.webOnlySigma;
 
-      js.JsObject skBlurStyle;
-      switch (blurStyle) {
-        case ui.BlurStyle.normal:
-          skBlurStyle = canvasKit['BlurStyle']['Normal'];
-          break;
-        case ui.BlurStyle.solid:
-          skBlurStyle = canvasKit['BlurStyle']['Solid'];
-          break;
-        case ui.BlurStyle.outer:
-          skBlurStyle = canvasKit['BlurStyle']['Outer'];
-          break;
-        case ui.BlurStyle.inner:
-          skBlurStyle = canvasKit['BlurStyle']['Inner'];
-          break;
-      }
-
-      skMaskFilter = canvasKit.callMethod(
-          'MakeBlurMaskFilter', <dynamic>[skBlurStyle, sigma, true]);
+      skMaskFilter = SkMaskFilter.blur(blurStyle, sigma);
     }
-    object.callMethod('setMaskFilter', <js.JsObject>[skMaskFilter]);
+    object.callMethod('setMaskFilter', <js.JsObject>[skMaskFilter?.skiaObject]);
   }
 
   ui.MaskFilter _maskFilter;
@@ -231,7 +214,7 @@ class SkPaint extends SkiaObject implements ui.Paint {
     js.JsObject skColorFilterJs;
     if (_colorFilter != null) {
       SkColorFilter skFilter = _colorFilter._toSkColorFilter();
-      skColorFilterJs = skFilter.skColorFilter;
+      skColorFilterJs = skFilter.skiaObject;
     }
     object.callMethod('setColorFilter', <js.JsObject>[skColorFilterJs]);
   }
@@ -259,7 +242,7 @@ class SkPaint extends SkiaObject implements ui.Paint {
   void _syncImageFilter(js.JsObject object) {
     js.JsObject imageFilterJs;
     if (_imageFilter != null) {
-      imageFilterJs = _imageFilter.skImageFilter;
+      imageFilterJs = _imageFilter.skiaObject;
     }
     object.callMethod('setImageFilter', <js.JsObject>[imageFilterJs]);
   }

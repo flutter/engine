@@ -49,7 +49,8 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     bool isComplexHint = false,
     bool willChangeHint = false,
   }) {
-    currentLayer.add(PictureLayer(picture, offset, isComplexHint, willChangeHint));
+    currentLayer
+        .add(PictureLayer(picture, offset, isComplexHint, willChangeHint));
   }
 
   @override

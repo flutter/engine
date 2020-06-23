@@ -6,7 +6,7 @@
 part of engine;
 
 class SkPicture implements ui.Picture {
-  final js.JsObject skPicture;
+  final SkiaObject skPicture;
   final ui.Rect cullRect;
 
   SkPicture(this.skPicture, this.cullRect);
@@ -16,7 +16,7 @@ class SkPicture implements ui.Picture {
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    skPicture.delete();
   }
 
   @override

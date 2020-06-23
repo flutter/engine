@@ -168,7 +168,7 @@ class SkCanvas {
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
     final SkParagraph skParagraph = paragraph;
     skCanvas.callMethod('drawParagraph', <dynamic>[
-      skParagraph.skParagraph,
+      skParagraph.skParagraph.skiaObject,
       offset.dx,
       offset.dy,
     ]);
@@ -183,7 +183,8 @@ class SkCanvas {
 
   void drawPicture(ui.Picture picture) {
     final SkPicture skPicture = picture;
-    skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture.skPicture]);
+    skCanvas.callMethod(
+        'drawPicture', <js.JsObject>[skPicture.skPicture.skiaObject]);
   }
 
   // TODO(hterkelsen): https://github.com/flutter/flutter/issues/58824
@@ -260,7 +261,7 @@ class SkCanvas {
       'saveLayer',
       <dynamic>[
         null,
-        skImageFilter.skImageFilter,
+        skImageFilter.skiaObject,
         0,
         makeSkRect(bounds),
       ],
