@@ -5,8 +5,8 @@
 package io.flutter.plugin.editing;
 
 import android.graphics.Paint;
-import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.Log;
+import io.flutter.embedding.engine.FlutterJNI;
 
 class FlutterTextUtils {
   public static final int LINE_FEED = 0x0A;
@@ -143,14 +143,12 @@ class FlutterTextUtils {
       boolean isZwj = false;
       int lastSeenVariantSelectorCharCount = 0;
       do {
-        Log.e("justin", "do " + lastOffset);
         if (isZwj) {
           deleteCharCount += Character.charCount(codePoint) + lastSeenVariantSelectorCharCount + 1;
           isZwj = false;
         }
         lastSeenVariantSelectorCharCount = 0;
         if (isEmojiModifier(codePoint)) {
-          Log.e("justin", "Before: isEmojiModifier");
           codePoint = Character.codePointBefore(text, lastOffset);
           lastOffset -= Character.charCount(codePoint);
           if (lastOffset > 0 && isVariationSelector(codePoint)) {
@@ -168,16 +166,13 @@ class FlutterTextUtils {
         }
 
         if (lastOffset > 0) {
-          Log.e("justin", "Before: lastOffset > 0 (" + lastOffset + ")");
           codePoint = Character.codePointBefore(text, lastOffset);
           lastOffset -= Character.charCount(codePoint);
           if (codePoint == ZERO_WIDTH_JOINER) {
-            Log.e("justin", "is ZWJ");
             isZwj = true;
             codePoint = Character.codePointBefore(text, lastOffset);
             lastOffset -= Character.charCount(codePoint);
             if (lastOffset > 0 && isVariationSelector(codePoint)) {
-              Log.e("justin", "is ZWJ and lastOffset > 0 and isVariationSelector");
               codePoint = Character.codePointBefore(text, lastOffset);
               lastSeenVariantSelectorCharCount = Character.charCount(codePoint);
               lastOffset -= Character.charCount(codePoint);
@@ -195,15 +190,13 @@ class FlutterTextUtils {
   }
 
   /**
-   * Gets the offset of the next character following the given offset, with
-   * consideration for multi-byte characters.
+   * Gets the offset of the next character following the given offset, with consideration for
+   * multi-byte characters.
    */
   public int getOffsetAfter(CharSequence text, int offset, Paint paint) {
-    Log.e("justin", "getOffsetAfter " + text + ", " + offset);
     final int len = text.length();
 
     if (offset >= len - 1) {
-      Log.e("justin", "over length " + len);
       return len;
     }
 
@@ -212,13 +205,11 @@ class FlutterTextUtils {
     int nextOffset = offset + nextCharCount;
 
     if (nextOffset == 0) {
-      Log.e("justin", "nextOffset == zero");
       return 0;
     }
 
     // Line Feed
     if (codePoint == LINE_FEED) {
-      Log.e("justin", "line feed");
       codePoint = Character.codePointAt(text, nextOffset);
       if (codePoint == CARRIAGE_RETURN) {
         ++nextCharCount;
@@ -228,7 +219,6 @@ class FlutterTextUtils {
 
     // Flags
     if (isRegionalIndicatorSymbol(codePoint)) {
-      Log.e("justin", "flag");
       codePoint = Character.codePointAt(text, nextOffset);
       nextOffset += Character.charCount(codePoint);
       int regionalIndicatorSymbolCount = 1;
@@ -245,7 +235,6 @@ class FlutterTextUtils {
 
     // Keycaps
     if (codePoint == COMBINING_ENCLOSING_KEYCAP) {
-      Log.e("justin", "keycap");
       codePoint = Character.codePointBefore(text, nextOffset);
       nextOffset += Character.charCount(codePoint);
       if (nextOffset < len && isVariationSelector(codePoint)) {
@@ -260,7 +249,6 @@ class FlutterTextUtils {
     }
 
     if (isEmoji(codePoint)) {
-      Log.e("justin", "emoji at " + nextOffset);
       boolean isZwj = false;
       int lastSeenVariantSelectorCharCount = 0;
       do {
@@ -270,13 +258,11 @@ class FlutterTextUtils {
         }
         lastSeenVariantSelectorCharCount = 0;
         if (isEmojiModifier(codePoint)) {
-          Log.e("justin", "isEmojiModifier");
           codePoint = Character.codePointAt(text, nextOffset);
           nextOffset += Character.charCount(codePoint);
           if (nextOffset < len && isVariationSelector(codePoint)) {
             codePoint = Character.codePointAt(text, nextOffset);
             if (!isEmoji(codePoint)) {
-              Log.e("justin", "emoji not emoji so return " + offset + " + " + nextCharCount);
               return offset + nextCharCount;
             }
             lastSeenVariantSelectorCharCount = Character.charCount(codePoint);
@@ -285,14 +271,12 @@ class FlutterTextUtils {
           if (isEmojiModifierBase(codePoint)) {
             nextCharCount += lastSeenVariantSelectorCharCount + Character.charCount(codePoint);
           }
-          Log.e("justin", "break b/c isEmojiModifier");
           break;
         }
 
         if (nextOffset < len) {
           codePoint = Character.codePointAt(text, nextOffset);
           nextOffset += Character.charCount(codePoint);
-          Log.e("justin", "emoji nextOffset < len so move forward. is this a zwj? " + (codePoint == ZERO_WIDTH_JOINER) + " at " + nextOffset + " after moved forward by " + Character.charCount(codePoint));
           if (codePoint == ZERO_WIDTH_JOINER) {
             isZwj = true;
             codePoint = Character.codePointAt(text, nextOffset);
@@ -306,14 +290,11 @@ class FlutterTextUtils {
         }
 
         if (nextOffset >= len) {
-          Log.e("justin", "emoji nextOffset >= len " + nextOffset + " >= " + len);
           break;
         }
-        Log.e("justin", "emoji while " + isZwj + " and " + isEmoji(codePoint));
       } while (isZwj && isEmoji(codePoint));
     }
 
-    Log.e("justin", "done " + (offset + nextCharCount));
     return offset + nextCharCount;
   }
 }
