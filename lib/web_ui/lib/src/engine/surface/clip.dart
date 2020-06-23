@@ -297,9 +297,9 @@ class PersistedPhysicalShape extends PersistedContainerSurface
         html.Element.html(svgClipPath, treeSanitizer: _NullTreeSanitizer());
     domRenderer.append(rootElement!, _clipElement!);
     domRenderer.setElementStyle(
-        rootElement, 'clip-path', 'url(#svgClip$_clipIdCounter)');
+        rootElement!, 'clip-path', 'url(#svgClip$_clipIdCounter)');
     domRenderer.setElementStyle(
-        rootElement, '-webkit-clip-path', 'url(#svgClip$_clipIdCounter)');
+        rootElement!, '-webkit-clip-path', 'url(#svgClip$_clipIdCounter)');
     final html.CssStyleDeclaration rootElementStyle = rootElement!.style;
     rootElementStyle
       ..overflow = ''
@@ -325,8 +325,8 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     }
     if (oldSurface.path != path) {
       oldSurface._clipElement?.remove();
-      domRenderer.setElementStyle(rootElement, 'clip-path', '');
-      domRenderer.setElementStyle(rootElement, '-webkit-clip-path', '');
+      domRenderer.setElementStyle(rootElement!, 'clip-path', '');
+      domRenderer.setElementStyle(rootElement!, '-webkit-clip-path', '');
       _applyShape();
     } else {
       _clipElement = oldSurface._clipElement;

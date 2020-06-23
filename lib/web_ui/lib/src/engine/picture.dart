@@ -10,10 +10,10 @@ class EnginePictureRecorder implements ui.PictureRecorder {
   EnginePictureRecorder();
 
   RecordingCanvas? _canvas;
-  ui.Rect? cullRect;
+  late ui.Rect cullRect;
   bool _isRecording = false;
 
-  RecordingCanvas beginRecording(ui.Rect? bounds) {
+  RecordingCanvas beginRecording(ui.Rect bounds) {
     assert(!_isRecording);
     cullRect = bounds;
     _isRecording = true;

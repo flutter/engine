@@ -180,23 +180,23 @@ abstract class _RRectRenderer {
 
 /// Renders RRect to a 2d canvas.
 class _RRectToCanvasRenderer extends _RRectRenderer {
-  final html.CanvasRenderingContext2D? context;
+  final html.CanvasRenderingContext2D context;
   _RRectToCanvasRenderer(this.context);
   void beginPath() {
-    context!.beginPath();
+    context.beginPath();
   }
 
   void moveTo(double x, double y) {
-    context!.moveTo(x, y);
+    context.moveTo(x, y);
   }
 
   void lineTo(double x, double y) {
-    context!.lineTo(x, y);
+    context.lineTo(x, y);
   }
 
   void ellipse(double centerX, double centerY, double radiusX, double radiusY,
       double rotation, double startAngle, double endAngle, bool antiClockwise) {
-    DomRenderer.ellipse(context!, centerX, centerY, radiusX, radiusY, rotation, startAngle,
+    DomRenderer.ellipse(context, centerX, centerY, radiusX, radiusY, rotation, startAngle,
         endAngle, antiClockwise);
   }
 }
