@@ -715,7 +715,7 @@ bool RegisterApi(JNIEnv* env) {
     return false;
   }
   g_overlay_surface_surface_method = env->GetMethodID(
-      overlay_surface_class.obj(), "getSurface", "Landroid/view/Surface;");
+      overlay_surface_class.obj(), "getSurface", "()Landroid/view/Surface;");
   if (g_overlay_surface_surface_method == nullptr) {
     FML_LOG(ERROR)
         << "Could not locate FlutterOverlaySurface#getSurface() method";
