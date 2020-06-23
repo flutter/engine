@@ -29,8 +29,6 @@ class FlutterMain {
 
   FlutterMain(flutter::Settings settings);
 
-  // TODO(cyanlaz): Remove `useEmbeddedView` when dynamic thread merging is done.
-  // https://github.com/flutter/flutter/issues/59930
   static void Init(JNIEnv* env,
                    jclass clazz,
                    jobject context,
@@ -38,8 +36,7 @@ class FlutterMain {
                    jstring kernelPath,
                    jstring appStoragePath,
                    jstring engineCachesPath,
-                   jlong initTimeMillis,
-                   jboolean useEmbeddedView);
+                   jlong initTimeMillis);
 
   void SetupObservatoryUriCallback(JNIEnv* env);
 

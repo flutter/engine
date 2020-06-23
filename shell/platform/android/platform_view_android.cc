@@ -51,7 +51,8 @@ PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    bool use_software_rendering)
+    bool use_software_rendering,
+    bool use_embedded_view)
     : PlatformView(delegate, std::move(task_runners)), jni_facade_(jni_facade) {
   std::shared_ptr<AndroidContext> android_context;
   if (use_software_rendering) {
@@ -70,7 +71,7 @@ PlatformViewAndroid::PlatformViewAndroid(
   FML_CHECK(android_context && android_context->IsValid())
       << "Could not create an Android context.";
 
-  android_surface_ = SurfaceFactory(std::move(android_context), jni_facade);
+  android_surface_ = SurfaceFactory(std::move(android_context), jni_facade, use_embedded_view);
   FML_CHECK(android_surface_ && android_surface_->IsValid())
       << "Could not create an OpenGL, Vulkan or Software surface to setup "
          "rendering.";
@@ -79,7 +80,8 @@ PlatformViewAndroid::PlatformViewAndroid(
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    bool use_embedded_view)
     : PlatformView(delegate, std::move(task_runners)),
       jni_facade_(jni_facade) {}
 

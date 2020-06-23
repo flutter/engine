@@ -63,8 +63,7 @@ void FlutterMain::Init(JNIEnv* env,
                        jstring kernelPath,
                        jstring appStoragePath,
                        jstring engineCachesPath,
-                       jlong initTimeMillis,
-                       jboolean useEmbeddedView) {
+                       jlong initTimeMillis) {
   std::vector<std::string> args;
   args.push_back("flutter");
   for (auto& arg : fml::jni::StringArrayToVector(env, jargs)) {
@@ -73,10 +72,6 @@ void FlutterMain::Init(JNIEnv* env,
   auto command_line = fml::CommandLineFromIterators(args.begin(), args.end());
 
   auto settings = SettingsFromCommandLine(command_line);
-
-  // TODO(cyanlaz): Remove this when dynamic thread merging is done.
-  // https://github.com/flutter/flutter/issues/59930
-  settings.use_embedded_view = useEmbeddedView;
 
   int64_t init_time_micros = initTimeMillis * 1000;
   settings.engine_start_timestamp =
@@ -171,7 +166,7 @@ bool FlutterMain::Register(JNIEnv* env) {
       {
           .name = "nativeInit",
           .signature = "(Landroid/content/Context;[Ljava/lang/String;Ljava/"
-                       "lang/String;Ljava/lang/String;Ljava/lang/String;J;Z)V",
+                       "lang/String;Ljava/lang/String;Ljava/lang/String;J)V",
           .fnPtr = reinterpret_cast<void*>(&Init),
       },
       {

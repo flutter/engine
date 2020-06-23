@@ -238,6 +238,9 @@ public class FlutterLoader {
       // https://github.com/flutter/flutter/issues/59930
       Bundle bundle = applicationInfo.metaData;
       boolean use_embedded_view = bundle.getBoolean("io.flutter.embedded_views_preview");
+      if (use_embedded_view) {
+        shellArgs.add("--use-embedded-view");
+      }
 
       FlutterJNI.nativeInit(
           applicationContext,
@@ -245,8 +248,7 @@ public class FlutterLoader {
           kernelPath,
           result.appStoragePath,
           result.engineCachesPath,
-          initTimeMillis,
-          use_embedded_view);
+          initTimeMillis);
 
       initialized = true;
     } catch (Exception e) {
