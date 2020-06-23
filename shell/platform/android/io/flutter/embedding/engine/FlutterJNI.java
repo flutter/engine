@@ -110,7 +110,8 @@ public class FlutterJNI {
       @Nullable String bundlePath,
       @NonNull String appStoragePath,
       @NonNull String engineCachesPath,
-      long initTimeMillis);
+      long initTimeMillis,
+      boolean useEmbeddedView);
 
   /**
    * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
