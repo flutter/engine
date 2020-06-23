@@ -559,7 +559,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   bool get hasAutofillGroup => _inputConfiguration.autofillGroup != null;
 
-  html.FormElement focusedFormElement() =>
+  html.FormElement get focusedFormElement =>
       _inputConfiguration.autofillGroup.formElement;
 
   @override
@@ -585,7 +585,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     _setStaticStyleAttributes(domElement);
     _style?.applyToDomElement(domElement);
     if (hasAutofillGroup) {
-      // If there is an Autofill Group the `FormElemen` will be appended to the
+      // If there is an Autofill Group the `FormElement`, it will be appended to the
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
