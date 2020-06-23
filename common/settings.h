@@ -213,6 +213,8 @@ struct Settings {
   /// to log a timeline event that tracks the latency of engine startup.
   std::chrono::microseconds engine_start_timestamp = {};
 
+  bool use_embedded_view = false;
+
   std::string ToString() const;
 };
 

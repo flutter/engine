@@ -63,7 +63,8 @@ void FlutterMain::Init(JNIEnv* env,
                        jstring kernelPath,
                        jstring appStoragePath,
                        jstring engineCachesPath,
-                       jlong initTimeMillis) {
+                       jlong initTimeMillis,
+                       jboolean useEmbeddedView) {
   std::vector<std::string> args;
   args.push_back("flutter");
   for (auto& arg : fml::jni::StringArrayToVector(env, jargs)) {
@@ -98,6 +99,8 @@ void FlutterMain::Init(JNIEnv* env,
       settings.application_kernel_asset = application_kernel_path;
     }
   }
+
+  settings.use_embedded_view = useEmbeddedView;
 
   settings.task_observer_add = [](intptr_t key, fml::closure callback) {
     fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
@@ -165,8 +168,7 @@ bool FlutterMain::Register(JNIEnv* env) {
   static const JNINativeMethod methods[] = {
       {
           .name = "nativeInit",
-          .signature = "(Landroid/content/Context;[Ljava/lang/String;Ljava/"
-                       "lang/String;Ljava/lang/String;Ljava/lang/String;J)V",
+          .signature = "(Landroid/content/Context;[Ljava/lang/String;Ljava/",
           .fnPtr = reinterpret_cast<void*>(&Init),
       },
       {

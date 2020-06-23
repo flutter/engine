@@ -201,7 +201,6 @@ public class FlutterLoader {
               + applicationInfo.nativeLibraryDir
               + File.separator
               + DEFAULT_LIBRARY);
-
       if (args != null) {
         Collections.addAll(shellArgs, args);
       }
@@ -234,13 +233,18 @@ public class FlutterLoader {
       }
 
       long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
+
+      Bundle bundle = applicationInfo.metaData;
+      boolean use_embedded_view = bundle.getBoolean("io.flutter.embedded_views_preview");
+
       FlutterJNI.nativeInit(
           applicationContext,
           shellArgs.toArray(new String[0]),
           kernelPath,
           result.appStoragePath,
           result.engineCachesPath,
-          initTimeMillis);
+          initTimeMillis,
+          use_embedded_view);
 
       initialized = true;
     } catch (Exception e) {
