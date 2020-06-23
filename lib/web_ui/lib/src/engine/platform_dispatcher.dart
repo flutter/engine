@@ -5,12 +5,15 @@
 // @dart = 2.6
 part of engine;
 
+/// When set to true, all platform messages will be printed to the console.
+const bool/*!*/ _debugPrintPlatformMessages = false;
+
 /// Requests that the browser schedule a frame.
 ///
 /// This may be overridden in tests, for example, to pump fake frames.
 ui.VoidCallback/*?*/ scheduleFrameCallback;
 
-/// Platform event dispatcher.
+/// The Web implementation of [ui.PlatformDispatcher].
 ///
 /// This is the central entry point for platform messages and configuration
 /// events from the platform.
@@ -225,14 +228,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _invoke1<List<ui.FrameTiming>>(_onReportTimings, _onReportTimingsZone, timings);
   }
 
-  @override
-  void sendPlatformMessage(
-    String/*!*/ name,
-    ByteData/*?*/ data,
-    ui.PlatformMessageResponseCallback/*?*/ callback,
-  ) {
-    _sendPlatformMessage(name, data, _zonedPlatformMessageResponseCallback(callback));
-  }
 
   @override
   ui.PlatformMessageCallback/*?*/ get onPlatformMessage => _onPlatformMessage;
@@ -254,6 +249,16 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       data,
       callback,
     );
+  }
+
+  @override
+  void sendPlatformMessage(
+    String/*!*/ name,
+    ByteData/*?*/ data,
+    ui.PlatformMessageResponseCallback/*?*/ callback,
+  ) {
+    _sendPlatformMessage(
+        name, data, _zonedPlatformMessageResponseCallback(callback));
   }
 
   /// Wraps the given [callback] in another callback that ensures that the

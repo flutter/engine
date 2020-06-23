@@ -74,8 +74,8 @@ enum FramePhase {
 /// [SchedulerBinding.addTimingsCallback] to get this. It's preferred over using
 /// [PlatformDispatcher.onReportTimings] directly because
 /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks. If
-/// [SchedulerBinding] is unavailable, then see [PlatformDispatcher.onReportTimings]
-/// for how to get this.
+/// [SchedulerBinding] is unavailable, then see
+/// [PlatformDispatcher.onReportTimings] for how to get this.
 ///
 /// The metrics in debug mode (`flutter run` without any flags) may be very
 /// different from those in profile and release modes due to the debug overhead.
@@ -88,7 +88,8 @@ class FrameTiming {
   /// [FramePhase.values].
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
-  /// To get the [FrameTiming] of your app, see [PlatformDispatcher.onReportTimings].
+  /// To get the [FrameTiming] of your app, see
+  /// [PlatformDispatcher.onReportTimings].
   FrameTiming(List<int> timestamps)
       : assert(timestamps.length == FramePhase.values.length),
         _timestamps = timestamps;
@@ -101,9 +102,10 @@ class FrameTiming {
 
   /// The duration to build the frame on the UI thread.
   ///
-  /// The build starts approximately when [PlatformDispatcher.onBeginFrame] is called. The
-  /// [Duration] in the [PlatformDispatcher.onBeginFrame] callback is exactly the
-  /// `Duration(microseconds: timestampInMicroseconds(FramePhase.buildStart))`.
+  /// The build starts approximately when [PlatformDispatcher.onBeginFrame] is
+  /// called. The [Duration] in the [PlatformDispatcher.onBeginFrame] callback
+  /// is exactly the `Duration(microseconds:
+  /// timestampInMicroseconds(FramePhase.buildStart))`.
   ///
   /// The build finishes when [FlutterView.render] is called.
   ///
@@ -674,9 +676,8 @@ abstract class FlutterView {
   ///
   /// When this property changes, [onMetricsChanged] is called.
   ///
-  /// The relationship between this [viewInsets],
-  /// [viewPadding], and [padding] are described in
-  /// more detail in the documentation for [FlutterView].
+  /// The relationship between this [viewInsets], [viewPadding], and [padding]
+  /// are described in more detail in the documentation for [FlutterView].
   ///
   /// See also:
   ///
@@ -693,16 +694,14 @@ abstract class FlutterView {
   /// the display (e.g. overscan regions on television screens or phone sensor
   /// housings).
   ///
-  /// Unlike [padding], this value does not change relative to
-  /// [viewInsets]. For example, on an iPhone X, it will not
-  /// change in response to the soft keyboard being visible or hidden, whereas
-  /// [padding] will.
+  /// Unlike [padding], this value does not change relative to [viewInsets]. For
+  /// example, on an iPhone X, it will not change in response to the soft
+  /// keyboard being visible or hidden, whereas [padding] will.
   ///
   /// When this property changes, [onMetricsChanged] is called.
   ///
-  /// The relationship between this [viewInsets],
-  /// [viewPadding], and [padding] are described in
-  /// more detail in the documentation for [FlutterView].
+  /// The relationship between this [viewInsets], [viewPadding], and [padding]
+  /// are described in more detail in the documentation for [FlutterView].
   ///
   /// See also:
   ///
@@ -756,35 +755,6 @@ abstract class FlutterView {
   ///  * [Scaffold], which automatically applies the padding in material design
   ///    applications.
   WindowPadding get padding => viewConfiguration.padding;
-
-  /// Updates the view's rendering on the GPU with the newly provided
-  /// [Scene].
-  ///
-  /// This function must be called within the scope of the
-  /// [PlatformDispatcher.onBeginFrame] or [PlatformDispatcher.onDrawFrame]
-  /// callbacks being invoked. If this function is called a second time during a
-  /// single [PlatformDispatcher.onBeginFrame]/[PlatformDispatcher.onDrawFrame]
-  /// callback sequence or called outside the scope of those callbacks, the call
-  /// will be ignored.
-  ///
-  /// To record graphical operations, first create a [PictureRecorder], then
-  /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
-  /// After issuing all the graphical operations, call the
-  /// [PictureRecorder.endRecording] function on the [PictureRecorder] to obtain
-  /// the final [Picture] that represents the issued graphical operations.
-  ///
-  /// Next, create a [SceneBuilder], and add the [Picture] to it using
-  /// [SceneBuilder.addPicture]. With the [SceneBuilder.build] method you can
-  /// then obtain a [Scene] object, which you can display to the user via this
-  /// [render] function.
-  ///
-  /// See also:
-  ///
-  ///  * [SchedulerBinding], the Flutter framework class which manages the
-  ///    scheduling of frames.
-  ///  * [RendererBinding], the Flutter framework class which manages layout and
-  ///    painting.
-  void render(Scene scene) => platformDispatcher.render(scene, this);
 }
 
 /// A top-level platform window displaying a Flutter layer tree drawn from a
@@ -896,24 +866,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// This method returns synchronously and is a direct call to
   /// platform specific APIs without invoking method channels.
   Locale? computePlatformResolvedLocale(List<Locale> supportedLocales) {
-    final List<String?> supportedLocalesData = <String?>[];
-    for (Locale locale in supportedLocales) {
-      supportedLocalesData.add(locale.languageCode);
-      supportedLocalesData.add(locale.countryCode);
-      supportedLocalesData.add(locale.scriptCode);
-    }
-
-    final List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
-
-    if (result.isNotEmpty) {
-      return Locale.fromSubtags(
-          languageCode: result[0],
-          countryCode: result[1] == '' ? null : result[1],
-          scriptCode: result[2] == '' ? null : result[2]);
-    }
-    return null;
+    platformDispatcher.computePlatformResolvedLocale(supportedLocales);
   }
-  List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) native 'Window_computePlatformResolvedLocale';
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -1148,6 +1102,34 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
   void scheduleFrame() => platformDispatcher.scheduleFrame();
+
+  /// Updates the view's rendering on the GPU with the newly provided [Scene].
+  ///
+  /// This function must be called within the scope of the
+  /// [PlatformDispatcher.onBeginFrame] or [PlatformDispatcher.onDrawFrame]
+  /// callbacks being invoked. If this function is called a second time during a
+  /// single [PlatformDispatcher.onBeginFrame]/[PlatformDispatcher.onDrawFrame]
+  /// callback sequence or called outside the scope of those callbacks, the call
+  /// will be ignored.
+  ///
+  /// To record graphical operations, first create a [PictureRecorder], then
+  /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
+  /// After issuing all the graphical operations, call the
+  /// [PictureRecorder.endRecording] function on the [PictureRecorder] to obtain
+  /// the final [Picture] that represents the issued graphical operations.
+  ///
+  /// Next, create a [SceneBuilder], and add the [Picture] to it using
+  /// [SceneBuilder.addPicture]. With the [SceneBuilder.build] method you can
+  /// then obtain a [Scene] object, which you can display to the user via this
+  /// [render] function.
+  ///
+  /// See also:
+  ///
+  ///  * [SchedulerBinding], the Flutter framework class which manages the
+  ///    scheduling of frames.
+  ///  * [RendererBinding], the Flutter framework class which manages layout and
+  ///    painting.
+  void render(Scene scene) => platformDispatcher.render(scene, this);
 
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.

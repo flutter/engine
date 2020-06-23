@@ -12,11 +12,11 @@
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_library_natives.h"
+#include "third_party/tonic/dart_microtask_queue.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
-
 namespace {
 
 void InitialRouteName(Dart_NativeArguments args) {
@@ -38,7 +38,6 @@ void Render(Dart_NativeArguments args) {
   Dart_Handle exception = nullptr;
   Scene* scene =
       tonic::DartConverter<Scene*>::FromArguments(args, 1, exception);
-  // The view argument is currently ignored.
   if (exception) {
     Dart_ThrowException(exception);
     return;
@@ -180,24 +179,11 @@ void GetPersistentIsolateData(Dart_NativeArguments args) {
                                         persistent_isolate_data->GetSize()));
 }
 
-}  // namespace
-
 Dart_Handle ToByteData(const std::vector<uint8_t>& buffer) {
-  Dart_Handle data_handle =
-      Dart_NewTypedData(Dart_TypedData_kByteData, buffer.size());
-  if (Dart_IsError(data_handle))
-    return data_handle;
-
-  Dart_TypedData_Type type;
-  void* data = nullptr;
-  intptr_t num_bytes = 0;
-  FML_CHECK(!Dart_IsError(
-      Dart_TypedDataAcquireData(data_handle, &type, &data, &num_bytes)));
-
-  memcpy(data, buffer.data(), num_bytes);
-  Dart_TypedDataReleaseData(data_handle);
-  return data_handle;
+  return tonic::DartByteData::Create(buffer.data(), buffer.size());
 }
+
+}  // namespace
 
 WindowClient::~WindowClient() {}
 
@@ -231,19 +217,6 @@ void PlatformConfiguration::UpdateLocales(
       library_.value(), "_updateLocales",
       {
           tonic::ToDart<std::vector<std::string>>(locales),
-      }));
-}
-
-void PlatformConfiguration::UpdatePlatformResolvedLocale(
-    const std::vector<std::string>& locale) {
-  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
-    return;
-  tonic::DartState::Scope scope(dart_state);
-  tonic::LogIfError(tonic::DartInvokeField(
-      library_.value(), "_updatePlatformResolvedLocale",
-      {
-          tonic::ToDart<std::vector<std::string>>(locale),
       }));
 }
 
@@ -426,6 +399,27 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
+Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
+  std::vector<std::string> supportedLocales =
+      tonic::DartConverter<std::vector<std::string>>::FromDart(
+          supportedLocalesHandle);
+
+  std::vector<std::string> results =
+      *UIDartState::Current()
+           ->window()
+           ->client()
+           ->ComputePlatformResolvedLocale(supportedLocales);
+
+  return tonic::DartConverter<std::vector<std::string>>::ToDart(results);
+}
+
+static void _ComputePlatformResolvedLocale(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  Dart_Handle result =
+      ComputePlatformResolvedLocale(Dart_GetNativeArgument(args, 1));
+  Dart_SetReturnValue(args, result);
+}
+
 void PlatformConfiguration::RegisterNatives(
     tonic::DartLibraryNatives* natives) {
   natives->Register({
@@ -445,6 +439,8 @@ void PlatformConfiguration::RegisterNatives(
        true},
       {"PlatformConfiguration_getPersistentIsolateData",
        GetPersistentIsolateData, 1, true},
+      {"PlatformConfiguration_computePlatformResolvedLocale", _ComputePlatformResolvedLocale,
+       2, true},
   });
 }
 

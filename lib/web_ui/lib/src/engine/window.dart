@@ -5,9 +5,6 @@
 // @dart = 2.6
 part of engine;
 
-/// When set to true, all platform messages will be printed to the console.
-const bool/*!*/ _debugPrintPlatformMessages = false;
-
 /// The Web implementation of [ui.FlutterWindow].
 class EngineFlutterWindow extends ui.FlutterWindow {
   EngineFlutterWindow({Object windowId, this.platformDispatcher})
@@ -140,7 +137,7 @@ class EngineSingletonFlutterWindow extends ui.SingletonFlutterWindow {
       height = html.window.innerHeight * devicePixelRatio;
       width = html.window.innerWidth * devicePixelRatio;
     }
-    // First confirm both heught and width is effected.
+    // First confirm both height and width are affected.
     if (_physicalSize.height != height && _physicalSize.width != width) {
       // If prior to rotation height is bigger than width it should be the
       // opposite after the rotation and vice versa.
@@ -162,23 +159,6 @@ class EngineSingletonFlutterWindow extends ui.SingletonFlutterWindow {
 
   /// Overrides the value of [physicalSize] in tests.
   ui.Size webOnlyDebugPhysicalSizeOverride;
-}
-
-/// A type of [FlutterView] that can be hosted inside of a [FlutterWindow].
-class EngineFlutterWindowView extends ui.FlutterWindowView {
-  EngineFlutterWindowView._({Object viewId, this.platformDispatcher})
-      : _viewId = viewId;
-
-  final Object _viewId;
-
-  final ui.PlatformDispatcher platformDispatcher;
-
-  @override
-  ui.ViewConfiguration get viewConfiguration {
-    final EnginePlatformDispatcher engineDispatcher = platformDispatcher as EnginePlatformDispatcher;
-    assert(engineDispatcher._windowConfigurations.containsKey(_viewId));
-    return engineDispatcher._windowConfigurations[_viewId];
-  }
 }
 
 /// The window singleton.

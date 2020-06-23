@@ -593,19 +593,34 @@ class PlatformDispatcher {
     _invoke(onLocaleChanged, _onLocaleChangedZone);
   }
 
+  /// Performs the platform-native locale resolution.
+  ///
+  /// Each platform may return different results.
+  ///
+  /// If the platform fails to resolve a locale, then this will return null.
+  ///
+  /// This method returns synchronously and is a direct call to
+  /// platform specific APIs without invoking method channels.
+  Locale? computePlatformResolvedLocale(List<Locale> supportedLocales) {
+    final List<String?> supportedLocalesData = <String?>[];
+    for (Locale locale in supportedLocales) {
+      supportedLocalesData.add(locale.languageCode);
+      supportedLocalesData.add(locale.countryCode);
+      supportedLocalesData.add(locale.scriptCode);
+    }
 
-  /// The locale that the platform's native locale resolution system resolves
-  /// to.
-  ///
-  /// This value may differ between platforms and is meant to allow Flutter's
-  /// locale resolution algorithms access to a locale that is consistent with
-  /// other apps on the device. Using this property is optional.
-  ///
-  /// This value may be used in a custom [localeListResolutionCallback] or used
-  /// directly in order to arrive at the most appropriate locale for the app.
-  ///
-  /// See [locales], which is the list of locales the user/device prefers.
-  Locale? get platformResolvedLocale => configuration.platformResolvedLocale;
+    final List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
+
+    if (result.isNotEmpty) {
+      return Locale.fromSubtags(
+        languageCode: result[0],
+        countryCode: result[1] == '' ? null : result[1],
+        scriptCode: result[2] == '' ? null : result[2]);
+    }
+    return null;
+  }
+  List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) native 'Window_computePlatformResolvedLocale';
+
 
   /// A callback that is invoked whenever [locale] changes value.
   ///

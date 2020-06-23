@@ -12,6 +12,7 @@
 
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
+#include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/screen.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -37,8 +38,6 @@ class FontCollection;
 class PlatformMessage;
 class Scene;
 
-Dart_Handle ToByteData(const std::vector<uint8_t>& buffer);
-
 // Must match the AccessibilityFeatureFlag enum in framework.
 enum class AccessibilityFeatureFlag : int32_t {
   kAccessibleNavigation = 1 << 0,
@@ -63,6 +62,9 @@ class WindowClient {
                                         int64_t isolate_port) = 0;
   virtual void SetNeedsReportTimings(bool value) = 0;
   virtual std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() = 0;
+  virtual std::unique_ptr<std::vector<std::string>>
+  ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) = 0;
 
  protected:
   virtual ~WindowClient();
@@ -78,7 +80,6 @@ class PlatformConfiguration final {
 
   void DidCreateIsolate();
   void UpdateLocales(const std::vector<std::string>& locales);
-  void UpdatePlatformResolvedLocale(const std::vector<std::string>& locale);
   void UpdateUserSettingsData(const std::string& data);
   void UpdateLifecycleState(const std::string& data);
   void UpdateSemanticsEnabled(bool enabled);
@@ -101,9 +102,10 @@ class PlatformConfiguration final {
   Screen* get_screen(int screen_id) { return screens_[screen_id].get(); }
 
  private:
+  WindowClient* client_;
   tonic::DartPersistentValue library_;
   ViewportMetrics viewport_metrics_;
-  WindowClient* client_;
+
   std::unordered_map<int, std::unique_ptr<Window>> windows_;
   std::unordered_map<int, std::unique_ptr<Screen>> screens_;
 
