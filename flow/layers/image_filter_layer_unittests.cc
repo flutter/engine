@@ -267,8 +267,7 @@ TEST_F(ImageFilterLayerTest, ChildIsCached) {
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   auto mock_layer = std::make_shared<MockLayer>(child_path);
-  auto layer =
-      std::make_shared<ImageFilterLayer>(layer_filter);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   layer->Add(mock_layer);
 
   SkMatrix cache_ctm = initial_transform;
@@ -299,8 +298,7 @@ TEST_F(ImageFilterLayerTest, ChildrenNotCached) {
   const SkPath child_path2 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2);
-  auto layer =
-      std::make_shared<ImageFilterLayer>(layer_filter);
+  auto layer = std::make_shared<ImageFilterLayer>(layer_filter);
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
