@@ -176,7 +176,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
 
   final SurfacePath path;
   final ui.Rect pathBounds;
-  final double? elevation;
+  final double elevation;
   final ui.Color color;
   final ui.Color shadowColor;
   final ui.Clip clipBehavior;

@@ -106,7 +106,7 @@ class SurfaceShadowData {
 /// (cannot) use Skia's shadow API directly. However, this algorithms is
 /// consistent with [computePenumbraBounds] used by [RecordingCanvas] during
 /// bounds estimation.
-SurfaceShadowData? computeShadow(ui.Rect shape, double? elevation) {
+SurfaceShadowData? computeShadow(ui.Rect shape, double elevation) {
   if (elevation == 0.0) {
     return null;
   }
@@ -115,7 +115,7 @@ SurfaceShadowData? computeShadow(ui.Rect shape, double? elevation) {
       (kLightRadius + shape.width * 0.5) / kLightHeight;
   final double penumbraTangentY =
       (kLightRadius + shape.height * 0.5) / kLightHeight;
-  final double penumbraWidth = elevation! * penumbraTangentX;
+  final double penumbraWidth = elevation * penumbraTangentX;
   final double penumbraHeight = elevation * penumbraTangentY;
   return SurfaceShadowData(
     // There's no way to express different blur along different dimensions, so
@@ -128,7 +128,7 @@ SurfaceShadowData? computeShadow(ui.Rect shape, double? elevation) {
 
 /// Applies a CSS shadow to the [shape].
 void applyCssShadow(
-    html.Element? element, ui.Rect shape, double? elevation, ui.Color color) {
+    html.Element? element, ui.Rect shape, double elevation, ui.Color color) {
   final SurfaceShadowData? shadow = computeShadow(shape, elevation);
   if (shadow == null) {
     element!.style.boxShadow = 'none';

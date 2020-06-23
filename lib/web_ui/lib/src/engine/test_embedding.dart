@@ -10,7 +10,7 @@ const bool _debugLogHistoryActions = false;
 class TestHistoryEntry {
   final dynamic state;
   final String? title;
-  final String? url;
+  final String url;
 
   const TestHistoryEntry(this.state, this.title, this.url);
 
@@ -37,7 +37,7 @@ class TestLocationStrategy extends LocationStrategy {
         history = <TestHistoryEntry>[initialEntry];
 
   @override
-  String? get path => currentEntry.url;
+  String get path => currentEntry.url;
 
   int _currentEntryIndex;
   int get currentEntryIndex => _currentEntryIndex;

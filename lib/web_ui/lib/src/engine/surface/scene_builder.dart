@@ -249,7 +249,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   @override
   ui.PhysicalShapeEngineLayer pushPhysicalShape({
     required ui.Path path,
-    double? elevation,
+    required double elevation,
     required ui.Color color,
     ui.Color? shadowColor,
     ui.Clip clipBehavior = ui.Clip.none,

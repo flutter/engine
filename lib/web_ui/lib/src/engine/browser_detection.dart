@@ -102,11 +102,8 @@ OperatingSystem? _operatingSystem;
 ///
 /// This is used to implement operating system specific behavior such as
 /// soft keyboards.
-OperatingSystem? get operatingSystem {
-  if (debugOperatingSystemOverride != null) {
-    return debugOperatingSystemOverride;
-  }
-  return _operatingSystem ??= _detectOperatingSystem();
+OperatingSystem get operatingSystem {
+  return debugOperatingSystemOverride ?? (_operatingSystem ??= _detectOperatingSystem());
 }
 
 /// Override the value of [operatingSystem].

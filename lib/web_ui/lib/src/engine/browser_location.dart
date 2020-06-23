@@ -23,7 +23,7 @@ abstract class LocationStrategy {
   ui.VoidCallback onPopState(html.EventListener fn);
 
   /// The active path in the browser history.
-  String? get path;
+  String get path;
 
   /// Given a path that's internal to the app, create the external url that
   /// will be used in the browser.
