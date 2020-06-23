@@ -6,7 +6,7 @@
 part of engine;
 
 /// A function that receives a benchmark [value] labeleb by [name].
-typedef OnBenchmark = void Function(String name, num value);
+typedef OnBenchmark = void Function(String name, double value);
 
 /// A function that computes a value of type [R].
 ///
@@ -38,7 +38,7 @@ R timeAction<R>(String name, Action<R> action) {
     final Stopwatch stopwatch = Stopwatch()..start();
     final R result = action();
     stopwatch.stop();
-    Profiler.instance!.benchmark(name, stopwatch.elapsedMicroseconds);
+    Profiler.instance!.benchmark(name, stopwatch.elapsedMicroseconds.toDouble());
     return result;
   }
 }
@@ -96,7 +96,7 @@ class Profiler {
   }
 
   /// Used to send benchmark data to whoever is listening to them.
-  void benchmark(String name, num value) {
+  void benchmark(String name, double value) {
     _checkBenchmarkMode();
 
     final OnBenchmark? onBenchmark =

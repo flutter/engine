@@ -26,15 +26,15 @@ class SurfacePath implements ui.Path {
   final List<Subpath> subpaths;
   ui.PathFillType _fillType = ui.PathFillType.nonZero;
 
-  Subpath? get _currentSubpath => subpaths.isEmpty ? null : subpaths.last;
+  Subpath get _currentSubpath => subpaths.last;
 
-  List<PathCommand>? get _commands => _currentSubpath?.commands;
+  List<PathCommand> get _commands => _currentSubpath.commands;
 
   /// The current x-coordinate for this path.
-  double get _currentX => _currentSubpath?.currentX ?? 0.0;
+  double get _currentX => subpaths.isNotEmpty ? _currentSubpath.currentX : 0.0;
 
   /// The current y-coordinate for this path.
-  double get _currentY => _currentSubpath?.currentY ?? 0.0;
+  double get _currentY => subpaths.isNotEmpty ? _currentSubpath.currentY : 0.0;
 
   /// Recorder used for hit testing paths.
   static RawRecordingCanvas? _rawRecorder;
@@ -85,15 +85,15 @@ class SurfacePath implements ui.Path {
 
   /// Sets the current point to (x, y).
   void _setCurrentPoint(double x, double y) {
-    _currentSubpath!.currentX = x;
-    _currentSubpath!.currentY = y;
+    _currentSubpath.currentX = x;
+    _currentSubpath.currentY = y;
   }
 
   /// Starts a new subpath at the given coordinate.
   @override
   void moveTo(double x, double y) {
     _openNewSubpath(x, y);
-    _commands!.add(MoveTo(x, y));
+    _commands.add(MoveTo(x, y));
   }
 
   /// Starts a new subpath at the given offset from the current point.
@@ -102,7 +102,7 @@ class SurfacePath implements ui.Path {
     final double newX = _currentX + dx;
     final double newY = _currentY + dy;
     _openNewSubpath(newX, newY);
-    _commands!.add(MoveTo(newX, newY));
+    _commands.add(MoveTo(newX, newY));
   }
 
   /// Adds a straight line segment from the current point to the given
@@ -112,7 +112,7 @@ class SurfacePath implements ui.Path {
     if (subpaths.isEmpty) {
       moveTo(0.0, 0.0);
     }
-    _commands!.add(LineTo(x, y));
+    _commands.add(LineTo(x, y));
     _setCurrentPoint(x, y);
   }
 
@@ -125,7 +125,7 @@ class SurfacePath implements ui.Path {
     if (subpaths.isEmpty) {
       moveTo(0.0, 0.0);
     }
-    _commands!.add(LineTo(newX, newY));
+    _commands.add(LineTo(newX, newY));
     _setCurrentPoint(newX, newY);
   }
 
@@ -141,7 +141,7 @@ class SurfacePath implements ui.Path {
   @override
   void quadraticBezierTo(double x1, double y1, double x2, double y2) {
     _ensurePathStarted();
-    _commands!.add(QuadraticCurveTo(x1, y1, x2, y2));
+    _commands.add(QuadraticCurveTo(x1, y1, x2, y2));
     _setCurrentPoint(x2, y2);
   }
 
@@ -152,7 +152,7 @@ class SurfacePath implements ui.Path {
   @override
   void relativeQuadraticBezierTo(double x1, double y1, double x2, double y2) {
     _ensurePathStarted();
-    _commands!.add(QuadraticCurveTo(
+    _commands.add(QuadraticCurveTo(
         x1 + _currentX, y1 + _currentY, x2 + _currentX, y2 + _currentY));
     _setCurrentPoint(x2 + _currentX, y2 + _currentY);
   }
@@ -164,7 +164,7 @@ class SurfacePath implements ui.Path {
   void cubicTo(
       double x1, double y1, double x2, double y2, double x3, double y3) {
     _ensurePathStarted();
-    _commands!.add(BezierCurveTo(x1, y1, x2, y2, x3, y3));
+    _commands.add(BezierCurveTo(x1, y1, x2, y2, x3, y3));
     _setCurrentPoint(x3, y3);
   }
 
@@ -176,7 +176,7 @@ class SurfacePath implements ui.Path {
   void relativeCubicTo(
       double x1, double y1, double x2, double y2, double x3, double y3) {
     _ensurePathStarted();
-    _commands!.add(BezierCurveTo(x1 + _currentX, y1 + _currentY, x2 + _currentX,
+    _commands.add(BezierCurveTo(x1 + _currentX, y1 + _currentY, x2 + _currentX,
         y2 + _currentY, x3 + _currentX, y3 + _currentY));
     _setCurrentPoint(x3 + _currentX, y3 + _currentY);
   }
@@ -238,7 +238,7 @@ class SurfacePath implements ui.Path {
     } else {
       lineTo(startX, startY);
     }
-    _commands!.add(Ellipse(center.dx, center.dy, radiusX, radiusY, 0.0,
+    _commands.add(Ellipse(center.dx, center.dy, radiusX, radiusY, 0.0,
         startAngle, startAngle + sweepAngle, sweepAngle.isNegative));
 
     _setCurrentPoint(radiusX * math.cos(startAngle + sweepAngle) + center.dx,
@@ -291,7 +291,7 @@ class SurfacePath implements ui.Path {
     // (a "lineto") joining the endpoints.
     // http://www.w3.org/TR/SVG/implnote.html#ArcOutOfRangeParameters
     if (isSamePoint || rx.toInt() == 0 || ry.toInt() == 0) {
-      _commands!.add(LineTo(arcEnd.dx, arcEnd.dy));
+      _commands.add(LineTo(arcEnd.dx, arcEnd.dy));
       _setCurrentPoint(arcEnd.dx, arcEnd.dy);
       return;
     }
@@ -367,7 +367,7 @@ class SurfacePath implements ui.Path {
       sweepAngle -= math.pi * 2.0;
     }
 
-    _commands!.add(Ellipse(cx, cy, rx, ry, xAxisRotation, startAngle,
+    _commands.add(Ellipse(cx, cy, rx, ry, xAxisRotation, startAngle,
         startAngle + sweepAngle, sweepAngle.isNegative));
 
     _setCurrentPoint(arcEnd.dx, arcEnd.dy);
@@ -411,7 +411,7 @@ class SurfacePath implements ui.Path {
   void addRect(ui.Rect rect) {
     assert(rectIsValid(rect));
     _openNewSubpath(rect.left, rect.top);
-    _commands!.add(RectCommand(rect.left, rect.top, rect.width, rect.height));
+    _commands.add(RectCommand(rect.left, rect.top, rect.width, rect.height));
   }
 
   /// Adds a new subpath that consists of a curve that forms the
@@ -429,7 +429,7 @@ class SurfacePath implements ui.Path {
 
     /// At startAngle = 0, the path will begin at center + cos(0) * radius.
     _openNewSubpath(center.dx + radiusX, center.dy);
-    _commands!.add(Ellipse(
+    _commands.add(Ellipse(
         center.dx, center.dy, radiusX, radiusY, 0.0, 0.0, 2 * math.pi, false));
   }
 
@@ -449,7 +449,7 @@ class SurfacePath implements ui.Path {
     final double radiusY = oval.height / 2;
     _openNewSubpath(radiusX * math.cos(startAngle) + center.dx,
         radiusY * math.sin(startAngle) + center.dy);
-    _commands!.add(Ellipse(center.dx, center.dy, radiusX, radiusY, 0.0,
+    _commands.add(Ellipse(center.dx, center.dy, radiusX, radiusY, 0.0,
         startAngle, startAngle + sweepAngle, sweepAngle.isNegative));
 
     _setCurrentPoint(radiusX * math.cos(startAngle + sweepAngle) + center.dx,
@@ -494,7 +494,7 @@ class SurfacePath implements ui.Path {
     // the rounded corner).
     // TODO(het): Is this the current point in Flutter?
     _openNewSubpath(rrect.tallMiddleRect.left, rrect.top);
-    _commands!.add(RRectCommand(rrect));
+    _commands.add(RRectCommand(rrect));
   }
 
   /// Adds a new subpath that consists of the given `path` offset by the given
@@ -557,7 +557,7 @@ class SurfacePath implements ui.Path {
     if (dx == 0.0 && dy == 0.0) {
       assert(path.subpaths.length == 1);
       _ensurePathStarted();
-      _commands!.addAll(path.subpaths.single.commands);
+      _commands.addAll(path.subpaths.single.commands);
       _setCurrentPoint(
           path.subpaths.single.currentX, path.subpaths.single.currentY);
     } else {
@@ -575,8 +575,8 @@ class SurfacePath implements ui.Path {
   @override
   void close() {
     _ensurePathStarted();
-    _commands!.add(const CloseCommand());
-    _setCurrentPoint(_currentSubpath!.startX, _currentSubpath!.startY);
+    _commands.add(const CloseCommand());
+    _setCurrentPoint(_currentSubpath.startX, _currentSubpath.startY);
   }
 
   /// Clears the [Path] object of all subpaths, returning it to the
@@ -675,17 +675,17 @@ class SurfacePath implements ui.Path {
       _rawRecorder = null;
     }
     final double dpr = window.devicePixelRatio;
-    _rawRecorder ??=
+    final RawRecordingCanvas rawRecorder = _rawRecorder ??=
         RawRecordingCanvas(ui.Size(size.width / dpr, size.height / dpr));
     // Account for the shift due to padding.
-    _rawRecorder!.translate(-BitmapCanvas.kPaddingPixels.toDouble(),
+    rawRecorder.translate(-BitmapCanvas.kPaddingPixels.toDouble(),
         -BitmapCanvas.kPaddingPixels.toDouble());
-    _rawRecorder!.drawPath(
+    rawRecorder.drawPath(
         this, (SurfacePaint()..color = const ui.Color(0xFF000000)).paintData);
-    final double recorderDevicePixelRatio = _rawRecorder!._devicePixelRatio;
-    final bool result = _rawRecorder!._canvasPool.context!.isPointInPath(
+    final double recorderDevicePixelRatio = rawRecorder._devicePixelRatio;
+    final bool result = rawRecorder._canvasPool.context.isPointInPath(
         pointX * recorderDevicePixelRatio, pointY * recorderDevicePixelRatio);
-    _rawRecorder!.dispose();
+    rawRecorder.dispose();
     return result;
   }
 

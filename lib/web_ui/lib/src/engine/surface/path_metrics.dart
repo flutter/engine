@@ -494,13 +494,13 @@ class _PathContourMeasure {
   }
 
   static bool _quadTooCurvy(
-      double x0, double? y0, double x1, double y1, double x2, double y2) {
+      double x0, double y0, double x1, double y1, double x2, double y2) {
     // (a/4 + b/2 + c/4) - (a/2 + c/2)  =  -a/4 + b/2 - c/4
     final double dx = (x1 / 2) - (x0 + x2) / 4;
     if (dx.abs() > _fTolerance) {
       return true;
     }
-    final double dy = (y1 / 2) - (y0! + y2) / 4;
+    final double dy = (y1 / 2) - (y0 + y2) / 4;
     if (dy.abs() > _fTolerance) {
       return true;
     }

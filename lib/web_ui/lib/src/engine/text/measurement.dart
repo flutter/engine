@@ -275,8 +275,8 @@ abstract class TextMeasurementService {
     ui.ParagraphConstraints constraints, {
     required int start,
     required int end,
-    double? alignOffset,
-    ui.TextDirection? textDirection,
+    required double alignOffset,
+    required ui.TextDirection textDirection,
   }) {
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     final ParagraphRuler ruler =

@@ -697,7 +697,7 @@ class BitmapCanvas extends EngineCanvas {
       }
 
       if (style != _cachedLastStyle) {
-        html.CanvasRenderingContext2D ctx = _canvasPool.context!;
+        html.CanvasRenderingContext2D ctx = _canvasPool.context;
         ctx.font = style.cssFontString;
         _cachedLastStyle = style;
       }

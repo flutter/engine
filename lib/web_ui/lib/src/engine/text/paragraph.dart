@@ -155,8 +155,8 @@ class EngineParagraph implements ui.Paragraph {
     required ParagraphGeometricStyle geometricStyle,
     required String? plainText,
     required ui.Paint? paint,
-    required ui.TextAlign? textAlign,
-    required ui.TextDirection? textDirection,
+    required ui.TextAlign textAlign,
+    required ui.TextDirection textDirection,
     required ui.Paint? background,
   })  : assert((plainText == null && paint == null) ||
             (plainText != null && paint != null)),
@@ -172,8 +172,8 @@ class EngineParagraph implements ui.Paragraph {
   final ParagraphGeometricStyle _geometricStyle;
   final String? _plainText;
   final SurfacePaint? _paint;
-  final ui.TextAlign? _textAlign;
-  final ui.TextDirection? _textDirection;
+  final ui.TextAlign _textAlign;
+  final ui.TextDirection _textDirection;
   final SurfacePaint? _background;
 
   @visibleForTesting
@@ -278,7 +278,7 @@ class EngineParagraph implements ui.Paragraph {
     _measurementResult = _measurementService.measure(this, constraints);
     if (Profiler.isBenchmarkMode) {
       stopwatch.stop();
-      Profiler.instance!.benchmark('text_layout', stopwatch.elapsedMicroseconds);
+      Profiler.instance!.benchmark('text_layout', stopwatch.elapsedMicroseconds.toDouble());
     }
 
     _lastUsedConstraints = constraints;
@@ -385,7 +385,7 @@ class EngineParagraph implements ui.Paragraph {
     // https://github.com/flutter/flutter/issues/55587
     if (_plainText == null) {
       return <ui.TextBox>[
-        ui.TextBox.fromLTRBD(0, 0, 0, _lineHeight, _textDirection!)
+        ui.TextBox.fromLTRBD(0, 0, 0, _lineHeight, _textDirection),
       ];
     }
 
@@ -453,7 +453,7 @@ class EngineParagraph implements ui.Paragraph {
       top,
       line.left + line.width - widthAfterBox,
       top + _lineHeight,
-      _textDirection!,
+      _textDirection,
     );
   }
 
@@ -648,6 +648,10 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   final EngineStrutStyle? _strutStyle;
   final String? _ellipsis;
   final ui.Locale? _locale;
+
+  // The effective style attributes should be consistent with paragraph_style.h.
+  ui.TextAlign get _effectiveTextAlign => _textAlign ?? ui.TextAlign.start;
+  ui.TextDirection get _effectiveTextDirection => _textDirection ?? ui.TextDirection.ltr;
 
   String? get _effectiveFontFamily {
     if (assertionsEnabled) {
@@ -1116,8 +1120,8 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
     ui.TextBaseline? textBaseline;
     String? fontFamily = _paragraphStyle._fontFamily;
     double? fontSize = _paragraphStyle._fontSize;
-    final ui.TextAlign? textAlign = _paragraphStyle._textAlign;
-    final ui.TextDirection? textDirection = _paragraphStyle._textDirection;
+    final ui.TextAlign textAlign = _paragraphStyle._effectiveTextAlign;
+    final ui.TextDirection textDirection = _paragraphStyle._effectiveTextDirection;
     double? letterSpacing;
     double? wordSpacing;
     double? height;
@@ -1330,8 +1334,8 @@ class EngineParagraphBuilder implements ui.ParagraphBuilder {
       ),
       plainText: null,
       paint: null,
-      textAlign: _paragraphStyle._textAlign,
-      textDirection: _paragraphStyle._textDirection,
+      textAlign: _paragraphStyle._effectiveTextAlign,
+      textDirection: _paragraphStyle._effectiveTextDirection,
       background: null,
     );
   }

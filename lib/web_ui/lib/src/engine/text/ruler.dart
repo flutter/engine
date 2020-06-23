@@ -727,8 +727,8 @@ class ParagraphRuler {
     ui.ParagraphConstraints constraints, {
     required int start,
     required int end,
-    double? alignOffset,
-    ui.TextDirection? textDirection,
+    required double alignOffset,
+    required ui.TextDirection textDirection,
   }) {
     assert(!_debugIsDisposed);
     assert(start >= 0 && start <= plainText.length);
@@ -770,11 +770,11 @@ class ParagraphRuler {
       }
 
       boxes.add(ui.TextBox.fromLTRBD(
-        rect.left + alignOffset! as double,
+        rect.left + alignOffset as double,
         rect.top as double,
         rect.right + alignOffset as double,
         rect.bottom as double,
-        textDirection!,
+        textDirection,
       ));
       previousRect = rect;
     }
