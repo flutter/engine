@@ -57,12 +57,17 @@ public class LocalizationPlugin {
     } else if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
       // Modern locale resolution without languageRange
       // https://developer.android.com/guide/topics/resources/multilingual-support#postN
-      List<Locale.LanguageRange> languageRanges = new ArrayList<>();
       LocaleList localeList = context.getResources().getConfiguration().getLocales();
       for (int index = 0; index < localeCount; ++index) {
         Locale preferredLocale = localeList.get(index);
         for (Locale locale : supportedLocales) {
           if (preferredLocale == locale) {
+            return locale;
+          }
+        }
+        for (Locale locale : supportedLocales) {
+          // Look for exact language only match as described in android docs.
+          if (preferredLocale.getLanguage() == locale.toLanguageTag()) {
             return locale;
           }
         }
