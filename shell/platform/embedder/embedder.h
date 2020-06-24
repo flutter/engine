@@ -336,6 +336,13 @@ typedef struct {
   size_t width;
   /// Physical height of the window.
   size_t height;
+  /// Pixel density scale factor for the window. This will be identical to the
+  /// value of the pixel ratio for the screen that this window appears on.
+  double pixel_ratio;
+  /// The id for the window that corresponds to these metrics.
+  size_t window_id;
+  /// The id of the screen that this window appears on.
+  size_t screen_id;
 } FlutterWindowMetricsEvent;
 
 typedef struct {
@@ -347,6 +354,8 @@ typedef struct {
   size_t height;
   /// Scale factor for the physical screen.
   double pixel_ratio;
+  /// The id for the screen that corresponds to these metrics.
+  size_t screen_id;
 } FlutterScreenMetricsEvent;
 
 /// The phase of the pointer event.

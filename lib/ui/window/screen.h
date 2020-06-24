@@ -16,7 +16,7 @@ namespace flutter {
 
 class Screen final {
  public:
-  explicit Screen(int id);
+  explicit Screen(ScreenMetrics metrics);
 
   ~Screen();
 
@@ -24,13 +24,12 @@ class Screen final {
 
   const ScreenMetrics& screen_metrics() { return screen_metrics_; }
 
-  int screen_id() { return screen_id_; }
+  int screen_id() { return screen_metrics_.screen_id; }
 
   void UpdateScreenMetrics(const ScreenMetrics& metrics);
 
  private:
   tonic::DartPersistentValue library_;
-  int screen_id_;
   ScreenMetrics screen_metrics_;
 };
 

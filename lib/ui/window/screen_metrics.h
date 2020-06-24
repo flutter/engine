@@ -16,7 +16,8 @@ struct ScreenMetrics {
   ScreenMetrics(const ScreenMetrics& other) = default;
 
   // Create a ScreenMetrics instance.
-  ScreenMetrics(std::string p_screen_name,
+  ScreenMetrics(int64_t screen_id,
+                std::string p_screen_name,
                 double p_device_pixel_ratio,
                 double p_physical_left,
                 double p_physical_top,
@@ -36,7 +37,8 @@ struct ScreenMetrics {
                 double p_physical_system_gesture_inset_left);
 
   // Create a ScreenMetrics instance without system gesture insets.
-  ScreenMetrics(std::string p_screen_name,
+  ScreenMetrics(int64_t screen_id,
+                std::string p_screen_name,
                 double p_device_pixel_ratio,
                 double p_physical_left,
                 double p_physical_top,
@@ -51,10 +53,12 @@ struct ScreenMetrics {
                 double p_physical_view_inset_bottom,
                 double p_physical_view_inset_left);
 
-  ScreenMetrics(double p_device_pixel_ratio,
+  ScreenMetrics(int64_t screen_id,
+                double p_device_pixel_ratio,
                 double p_physical_width,
                 double p_physical_height);
 
+  int64_t screen_id = -1;
   std::string screen_name = "";
   double device_pixel_ratio = 1.0;
   double physical_left = 0;

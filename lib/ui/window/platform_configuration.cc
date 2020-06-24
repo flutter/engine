@@ -9,6 +9,7 @@
 #include "flutter/lib/ui/window/platform_message_response_dart.h"
 #include "flutter/lib/ui/window/screen.h"
 #include "flutter/lib/ui/window/window.h"
+#include "lib/ui/window/screen_metrics.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_library_natives.h"
@@ -189,9 +190,10 @@ WindowClient::~WindowClient() {}
 
 PlatformConfiguration::PlatformConfiguration(WindowClient* client)
     : client_(client) {
-  // For now, there's only one window and one screen.
-  screens_.insert(std::make_pair(0, std::unique_ptr<Screen>(new Screen(0))));
-  windows_.insert(std::make_pair(0, std::unique_ptr<Window>(new Window(0, 0))));
+  // For now, there's only one window and one screen. Their configurations will
+  // be updated at a later time.
+  screens_.insert(std::make_pair(0, std::unique_ptr<Screen>(new Screen(ScreenMetrics(0, 1.0, 0.0, 0.0)))));
+  windows_.insert(std::make_pair(0, std::unique_ptr<Window>(new Window(ViewportMetrics(0, 0, 0.0, 0.0)))));
 }
 
 PlatformConfiguration::~PlatformConfiguration() {}

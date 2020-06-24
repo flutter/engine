@@ -126,8 +126,8 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
                              LayerTreeBuilder builder) {
-  PumpOneFrame(shell, flutter::ViewportMetrics(width, height),
-               flutter::ScreenMetrics(1.0, width, height), std::move(builder));
+  PumpOneFrame(shell, flutter::ViewportMetrics(0, 0, width, height),
+               flutter::ScreenMetrics(0, 1.0, width, height), std::move(builder));
 }
 
 void ShellTest::PumpOneFrame(Shell* shell,

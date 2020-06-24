@@ -20,7 +20,9 @@ struct ViewportMetrics {
   ViewportMetrics(const ViewportMetrics& other) = default;
 
   // Create a 2D ViewportMetrics instance.
-  ViewportMetrics(double p_physical_left,
+  ViewportMetrics(int64_t view_id,
+                  int64_t screen_id,
+                  double p_physical_left,
                   double p_physical_top,
                   double p_physical_width,
                   double p_physical_height,
@@ -38,7 +40,9 @@ struct ViewportMetrics {
                   double p_physical_system_gesture_inset_left);
 
   // Create a ViewportMetrics instance that contains z information.
-  ViewportMetrics(double p_physical_left,
+  ViewportMetrics(int64_t view_id,
+                  int64_t screen_id,
+                  double p_physical_left,
                   double p_physical_top,
                   double p_physical_width,
                   double p_physical_height,
@@ -54,8 +58,13 @@ struct ViewportMetrics {
                   double p_physical_view_inset_bottom,
                   double p_physical_view_inset_left);
 
-  ViewportMetrics(double p_physical_width, double p_physical_height);
+  ViewportMetrics(int64_t view_id,
+                  int64_t screen_id,
+                  double p_physical_width,
+                  double p_physical_height);
 
+  int64_t view_id = -1;
+  int64_t screen_id = -1;
   double physical_left = 0;
   double physical_top = 0;
   double physical_width = 0;

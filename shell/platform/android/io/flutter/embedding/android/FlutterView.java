@@ -103,9 +103,11 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Nullable private AndroidTouchProcessor androidTouchProcessor;
   @Nullable private AccessibilityBridge accessibilityBridge;
 
-  // Directly implemented View behavior that communicates with Flutter.
+  // Directly implemented View and screen behavior that communicates with Flutter.
   private final FlutterRenderer.ViewportMetrics viewportMetrics =
       new FlutterRenderer.ViewportMetrics();
+  private final FlutterRenderer.ScreenMetrics screenMetrics =
+      new FlutterRenderer.ScreenMetrics();
 
   private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener =
       new AccessibilityBridge.OnAccessibilityChangeListener() {
@@ -415,7 +417,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             + height);
     viewportMetrics.width = width;
     viewportMetrics.height = height;
-    sendViewportMetricsToFlutter();
+    sendMetricsToFlutter();
   }
 
   // TODO(garyq): Add support for notch cutout API: https://github.com/flutter/flutter/issues/56592
@@ -568,7 +570,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             + ", Bottom: "
             + viewportMetrics.viewInsetBottom);
 
-    sendViewportMetricsToFlutter();
+    sendMetricsToFlutter();
 
     return newInsets;
   }
@@ -613,7 +615,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
               + ", Right: "
               + viewportMetrics.viewInsetRight);
 
-      sendViewportMetricsToFlutter();
+      sendMetricsToFlutter();
       return true;
     } else {
       return super.fitSystemWindows(insets);
@@ -875,7 +877,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();
     localizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
-    sendViewportMetricsToFlutter();
+    sendMetricsToFlutter();
 
     flutterEngine.getPlatformViewsController().attachToView(this);
 
@@ -958,7 +960,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Adds a {@link FlutterEngineAttachmentListener}, which is notifed whenever this {@code
+   * Adds a {@link FlutterEngineAttachmentListener}, which is notified whenever this {@code
    * FlutterView} attached to/detaches from a {@link FlutterEngine}.
    */
   @VisibleForTesting
@@ -1005,17 +1007,17 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         .send();
   }
 
-  // TODO(mattcarroll): consider introducing a system channel for this communication instead of JNI
-  private void sendViewportMetricsToFlutter() {
+  private void sendMetricsToFlutter() {
     if (!isAttachedToFlutterEngine()) {
       Log.w(
           TAG,
-          "Tried to send viewport metrics from Android to Flutter but this "
+          "Tried to send metrics from Android to Flutter but this "
               + "FlutterView was not attached to a FlutterEngine.");
       return;
     }
 
-    viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
+    screenMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
+    flutterEngine.getRenderer().setScreenMetrics(screenMetrics);
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }
 

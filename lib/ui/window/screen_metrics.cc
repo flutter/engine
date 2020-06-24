@@ -8,7 +8,8 @@
 
 namespace flutter {
 
-ScreenMetrics::ScreenMetrics(std::string p_screen_name,
+ScreenMetrics::ScreenMetrics(int64_t p_screen_id,
+                             std::string p_screen_name,
                              double p_device_pixel_ratio,
                              double p_physical_left,
                              double p_physical_top,
@@ -26,7 +27,8 @@ ScreenMetrics::ScreenMetrics(std::string p_screen_name,
                              double p_physical_system_gesture_inset_right,
                              double p_physical_system_gesture_inset_bottom,
                              double p_physical_system_gesture_inset_left)
-    : screen_name(p_screen_name),
+    : screen_id(p_screen_id),
+      screen_name(p_screen_name),
       device_pixel_ratio(p_device_pixel_ratio),
       physical_left(p_physical_left),
       physical_top(p_physical_top),
@@ -52,7 +54,8 @@ ScreenMetrics::ScreenMetrics(std::string p_screen_name,
   FML_DCHECK(physical_height >= 0);
 }
 
-ScreenMetrics::ScreenMetrics(std::string p_screen_name,
+ScreenMetrics::ScreenMetrics(int64_t p_screen_id,
+                             std::string p_screen_name,
                              double p_device_pixel_ratio,
                              double p_physical_left,
                              double p_physical_top,
@@ -66,7 +69,8 @@ ScreenMetrics::ScreenMetrics(std::string p_screen_name,
                              double p_physical_view_inset_right,
                              double p_physical_view_inset_bottom,
                              double p_physical_view_inset_left)
-    : screen_name(p_screen_name),
+    : screen_id(p_screen_id),
+      screen_name(p_screen_name),
       device_pixel_ratio(p_device_pixel_ratio),
       physical_left(p_physical_left),
       physical_top(p_physical_top),
@@ -86,10 +90,12 @@ ScreenMetrics::ScreenMetrics(std::string p_screen_name,
   FML_DCHECK(physical_height >= 0);
 }
 
-ScreenMetrics::ScreenMetrics(double p_device_pixel_ratio,
+ScreenMetrics::ScreenMetrics(int64_t p_screen_id,
+                             double p_device_pixel_ratio,
                              double p_physical_width,
                              double p_physical_height)
-    : device_pixel_ratio(p_device_pixel_ratio),
+    : screen_id(p_screen_id),
+      device_pixel_ratio(p_device_pixel_ratio),
       physical_width(p_physical_width),
       physical_height(p_physical_height) {
   // Ensure we don't have nonsensical dimensions.

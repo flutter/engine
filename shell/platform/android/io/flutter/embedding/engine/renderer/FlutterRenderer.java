@@ -224,7 +224,16 @@ public class FlutterRenderer implements TextureRegistry {
     Log.v(
         TAG,
         "Setting viewport metrics\n"
-            + "Size: "
+            + "View ID: "
+            + viewportMetrics.viewId
+            + "Screen ID: "
+            + viewportMetrics.screenId
+            + "Geometry: "
+            + "("
+            + viewportMetrics.left
+            + ", "
+            + viewportMetrics.top
+            + ") "
             + viewportMetrics.width
             + " x "
             + viewportMetrics.height
@@ -256,8 +265,11 @@ public class FlutterRenderer implements TextureRegistry {
             + ", B: "
             + viewportMetrics.viewInsetBottom);
 
-    flutterJNI.setViewportMetrics(
-        viewportMetrics.devicePixelRatio,
+      flutterJNI.setViewportMetrics(
+        viewportMetrics.viewId,
+        viewportMetrics.screenId,
+        viewportMetrics.left,
+        viewportMetrics.top,
         viewportMetrics.width,
         viewportMetrics.height,
         viewportMetrics.paddingTop,
@@ -272,6 +284,75 @@ public class FlutterRenderer implements TextureRegistry {
         viewportMetrics.systemGestureInsetRight,
         viewportMetrics.systemGestureInsetBottom,
         viewportMetrics.systemGestureInsetLeft);
+  }
+
+  public void setScreenMetrics(@NonNull ScreenMetrics screenMetrics) {
+    Log.v(
+        TAG,
+        "Setting viewport metrics\n"
+            + "Screen ID: "
+            + screenMetrics.screenId
+            + "Screen Name: "
+            + screenMetrics.screenName
+            + "Device Pixel Ratio: "
+            + screenMetrics.devicePixelRatio
+            + "Geometry: "
+            + "("
+            + screenMetrics.left
+            + ", "
+            + screenMetrics.top
+            + ") "
+            + screenMetrics.width
+            + " x "
+            + screenMetrics.height
+            + "\n"
+            + "Padding - L: "
+            + screenMetrics.paddingLeft
+            + ", T: "
+            + screenMetrics.paddingTop
+            + ", R: "
+            + screenMetrics.paddingRight
+            + ", B: "
+            + screenMetrics.paddingBottom
+            + "\n"
+            + "Insets - L: "
+            + screenMetrics.viewInsetLeft
+            + ", T: "
+            + screenMetrics.viewInsetTop
+            + ", R: "
+            + screenMetrics.viewInsetRight
+            + ", B: "
+            + screenMetrics.viewInsetBottom
+            + "\n"
+            + "System Gesture Insets - L: "
+            + screenMetrics.systemGestureInsetLeft
+            + ", T: "
+            + screenMetrics.systemGestureInsetTop
+            + ", R: "
+            + screenMetrics.systemGestureInsetRight
+            + ", B: "
+            + screenMetrics.viewInsetBottom);
+
+      flutterJNI.setScreenMetrics(
+        screenMetrics.screenId,
+        screenMetrics.screenName,
+        screenMetrics.devicePixelRatio,
+        screenMetrics.left,
+        screenMetrics.top,
+        screenMetrics.width,
+        screenMetrics.height,
+        screenMetrics.paddingTop,
+        screenMetrics.paddingRight,
+        screenMetrics.paddingBottom,
+        screenMetrics.paddingLeft,
+        screenMetrics.viewInsetTop,
+        screenMetrics.viewInsetRight,
+        screenMetrics.viewInsetBottom,
+        screenMetrics.viewInsetLeft,
+        screenMetrics.systemGestureInsetTop,
+        screenMetrics.systemGestureInsetRight,
+        screenMetrics.systemGestureInsetBottom,
+        screenMetrics.systemGestureInsetLeft);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
@@ -328,7 +409,38 @@ public class FlutterRenderer implements TextureRegistry {
    * pixels, not logical pixels.
    */
   public static final class ViewportMetrics {
+    public int viewId = 0;
+    public int screenId = 0;
+    public int left = 0;
+    public int top = 0;
+    public int width = 0;
+    public int height = 0;
+    public int paddingTop = 0;
+    public int paddingRight = 0;
+    public int paddingBottom = 0;
+    public int paddingLeft = 0;
+    public int viewInsetTop = 0;
+    public int viewInsetRight = 0;
+    public int viewInsetBottom = 0;
+    public int viewInsetLeft = 0;
+    public int systemGestureInsetTop = 0;
+    public int systemGestureInsetRight = 0;
+    public int systemGestureInsetBottom = 0;
+    public int systemGestureInsetLeft = 0;
+  }
+
+  /**
+   * Mutable data structure that holds all screen metrics properties that Flutter cares about.
+   *
+   * <p>All distance measurements, e.g., width, height, padding, viewInsets, are measured in device
+   * pixels, not logical pixels.
+   */
+  public static final class ScreenMetrics {
+    public int screenId = 0;
+    public String screenName = "";
     public float devicePixelRatio = 1.0f;
+    public int left = 0;
+    public int top = 0;
     public int width = 0;
     public int height = 0;
     public int paddingTop = 0;

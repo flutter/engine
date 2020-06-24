@@ -4,12 +4,13 @@
 
 #include "flutter/lib/ui/window/screen.h"
 
+#include "lib/ui/window/screen_metrics.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
 namespace flutter {
-Screen::Screen(int screen_id) : screen_id_(screen_id) {}
+Screen::Screen(ScreenMetrics metrics) : screen_metrics_(metrics) {}
 
 Screen::~Screen() {}
 
@@ -30,7 +31,7 @@ void Screen::UpdateScreenMetrics(const ScreenMetrics& metrics) {
   tonic::LogIfError(tonic::DartInvokeField(
       library_.value(), "_updateScreenMetrics",
       {
-          tonic::ToDart(screen_id_),
+          tonic::ToDart(metrics.screen_id),
           tonic::ToDart(metrics.screen_name),
           tonic::ToDart(metrics.physical_left),
           tonic::ToDart(metrics.physical_top),

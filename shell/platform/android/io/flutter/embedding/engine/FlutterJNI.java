@@ -355,7 +355,10 @@ public class FlutterJNI {
    */
   @UiThread
   public void setViewportMetrics(
-      float devicePixelRatio,
+      int viewId,
+      int screenId,
+      int physicalLeft,
+      int physicalTop,
       int physicalWidth,
       int physicalHeight,
       int physicalPaddingTop,
@@ -374,7 +377,10 @@ public class FlutterJNI {
     ensureAttachedToNative();
     nativeSetViewportMetrics(
         nativePlatformViewId,
-        devicePixelRatio,
+        viewId,
+        screenId,
+        physicalLeft,
+        physicalTop,
         physicalWidth,
         physicalHeight,
         physicalPaddingTop,
@@ -393,7 +399,83 @@ public class FlutterJNI {
 
   private native void nativeSetViewportMetrics(
       long nativePlatformViewId,
+      long viewId,
+      long screenId,
+      int physicalLeft,
+      int physicalTop,
+      int physicalWidth,
+      int physicalHeight,
+      int physicalPaddingTop,
+      int physicalPaddingRight,
+      int physicalPaddingBottom,
+      int physicalPaddingLeft,
+      int physicalViewInsetTop,
+      int physicalViewInsetRight,
+      int physicalViewInsetBottom,
+      int physicalViewInsetLeft,
+      int systemGestureInsetTop,
+      int systemGestureInsetRight,
+      int systemGestureInsetBottom,
+      int systemGestureInsetLeft);
+
+    /**
+   * Call this method to notify Flutter of the current device viewport metrics that are applies to
+   * the Flutter UI that is being rendered.
+   *
+   * <p>This method should be invoked with initial values upon attaching to native. Then, it should
+   * be invoked any time those metrics change while {@code FlutterJNI} is attached to native.
+   */
+  @UiThread
+  public void setScreenMetrics(
+      long screenId,
+      String screenName,
       float devicePixelRatio,
+      int physicalLeft,
+      int physicalTop,
+      int physicalWidth,
+      int physicalHeight,
+      int physicalPaddingTop,
+      int physicalPaddingRight,
+      int physicalPaddingBottom,
+      int physicalPaddingLeft,
+      int physicalViewInsetTop,
+      int physicalViewInsetRight,
+      int physicalViewInsetBottom,
+      int physicalViewInsetLeft,
+      int systemGestureInsetTop,
+      int systemGestureInsetRight,
+      int systemGestureInsetBottom,
+      int systemGestureInsetLeft) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeSetScreenMetrics(
+        screenId,
+        screenName,
+        devicePixelRatio,
+        physicalLeft,
+        physicalTop,
+        physicalWidth,
+        physicalHeight,
+        physicalPaddingTop,
+        physicalPaddingRight,
+        physicalPaddingBottom,
+        physicalPaddingLeft,
+        physicalViewInsetTop,
+        physicalViewInsetRight,
+        physicalViewInsetBottom,
+        physicalViewInsetLeft,
+        systemGestureInsetTop,
+        systemGestureInsetRight,
+        systemGestureInsetBottom,
+        systemGestureInsetLeft);
+  }
+
+  private native void nativeSetScreenMetrics(
+      long screenId,
+      String screenName,
+      float devicePixelRatio,
+      int physicalLeft,
+      int physicalTop,
       int physicalWidth,
       int physicalHeight,
       int physicalPaddingTop,

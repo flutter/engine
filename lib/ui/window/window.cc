@@ -4,14 +4,15 @@
 
 #include "flutter/lib/ui/window/window.h"
 
+#include "lib/ui/window/viewport_metrics.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
 namespace flutter {
 
-Window::Window(int window_id, int screen_id)
-    : window_id_(window_id), screen_id_(screen_id) {}
+Window::Window(ViewportMetrics metrics)
+    : viewport_metrics_(metrics) {}
 
 Window::~Window() {}
 
@@ -32,8 +33,8 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
   tonic::LogIfError(tonic::DartInvokeField(
       library_.value(), "_updateWindowMetrics",
       {
-          tonic::ToDart(window_id_),
-          tonic::ToDart(screen_id_),
+          tonic::ToDart(metrics.view_id),
+          tonic::ToDart(metrics.screen_id),
           tonic::ToDart(metrics.physical_top),
           tonic::ToDart(metrics.physical_left),
           tonic::ToDart(metrics.physical_width),

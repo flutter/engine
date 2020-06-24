@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+
 #include <vector>
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h"
@@ -297,12 +298,15 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   CGSize scaledSize = [view convertRectToBacking:view.bounds].size;
   double pixelRatio = view.bounds.size.width == 0 ? 1 : scaledSize.width / view.bounds.size.width;
 
-  // The screen is currently always the same size as the window.
+  // TODO(gspencergoog): Currently, there is only one screen, and it is always
+  // the same size as the window. This will change as screen support is added.
+  // See https://github.com/flutter/flutter/issues/60131
   const FlutterScreenMetricsEvent screenMetricsEvent = {
       .struct_size = sizeof(screenMetricsEvent),
       .width = static_cast<size_t>(scaledSize.width),
       .height = static_cast<size_t>(scaledSize.height),
       .pixel_ratio = pixelRatio,
+      .screen_id = 0,
   };
   FlutterEngineSendScreenMetricsEvent(_engine, &screenMetricsEvent);
 
@@ -310,6 +314,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
       .struct_size = sizeof(windowMetricsEvent),
       .width = static_cast<size_t>(scaledSize.width),
       .height = static_cast<size_t>(scaledSize.height),
+      .pixel_ratio = pixelRatio,
+      .window_id = 0,
   };
   FlutterEngineSendWindowMetricsEvent(_engine, &windowMetricsEvent);
 }

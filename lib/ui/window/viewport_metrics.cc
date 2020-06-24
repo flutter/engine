@@ -8,7 +8,9 @@
 
 namespace flutter {
 
-ViewportMetrics::ViewportMetrics(double p_physical_left,
+ViewportMetrics::ViewportMetrics(int64_t p_view_id,
+                                 int64_t p_screen_id,
+                                 double p_physical_left,
                                  double p_physical_top,
                                  double p_physical_width,
                                  double p_physical_height,
@@ -24,7 +26,9 @@ ViewportMetrics::ViewportMetrics(double p_physical_left,
                                  double p_physical_system_gesture_inset_right,
                                  double p_physical_system_gesture_inset_bottom,
                                  double p_physical_system_gesture_inset_left)
-    : physical_left(p_physical_left),
+    : view_id(p_view_id),
+      screen_id(p_screen_id),
+      physical_left(p_physical_left),
       physical_top(p_physical_top),
       physical_width(p_physical_width),
       physical_height(p_physical_height),
@@ -47,7 +51,9 @@ ViewportMetrics::ViewportMetrics(double p_physical_left,
   FML_DCHECK(physical_height >= 0);
 }
 
-ViewportMetrics::ViewportMetrics(double p_physical_left,
+ViewportMetrics::ViewportMetrics(int64_t p_view_id,
+                                 int64_t p_screen_id,
+                                 double p_physical_left,
                                  double p_physical_top,
                                  double p_physical_width,
                                  double p_physical_height,
@@ -62,7 +68,9 @@ ViewportMetrics::ViewportMetrics(double p_physical_left,
                                  double p_physical_view_inset_right,
                                  double p_physical_view_inset_bottom,
                                  double p_physical_view_inset_left)
-    : physical_left(p_physical_left),
+    : view_id(p_view_id),
+      screen_id(p_screen_id),
+      physical_left(p_physical_left),
       physical_top(p_physical_top),
       physical_width(p_physical_width),
       physical_height(p_physical_height),
@@ -82,9 +90,14 @@ ViewportMetrics::ViewportMetrics(double p_physical_left,
   FML_DCHECK(physical_height >= 0);
 }
 
-ViewportMetrics::ViewportMetrics(double p_physical_width,
+ViewportMetrics::ViewportMetrics(int64_t p_view_id,
+                                 int64_t p_screen_id,
+                                 double p_physical_width,
                                  double p_physical_height)
-    : physical_width(p_physical_width), physical_height(p_physical_height) {
+    : view_id(p_view_id),
+      screen_id(p_screen_id),
+      physical_width(p_physical_width),
+      physical_height(p_physical_height) {
   // Ensure we don't have nonsensical dimensions.
   FML_DCHECK(physical_width >= 0);
   FML_DCHECK(physical_height >= 0);
