@@ -56,6 +56,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void EndFrame(
+      bool should_resubmit_frame,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|

@@ -43,6 +43,7 @@ bool ShellTestExternalViewEmbedder::SubmitFrame(
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::EndFrame(
+    bool should_resubmit_frame,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   end_frame_call_back_();
 }
