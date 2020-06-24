@@ -56,35 +56,45 @@ class ContainerLayer : public Layer {
 };
 
 //------------------------------------------------------------------------------
-/// Some ContainerLayer objects need to cache their children. The existing
-/// layer caching mechanism only supports caching an individual layer as it
-/// uses the unique_id() of that layer as the cache key. If a ContainerLayer
-/// has multiple children and needs to cache them then it will need to first
-/// collect them into a single layer object to satisfy the caching mechanism.
-/// This utility class will silently collect all of the children of a
-/// ContainerLayer into a single merged ContainerLayer automatically.
+/// Some ContainerLayer objects perform a rendering operation or filter on
+/// the rendered output of their children. Often that operation is changed
+/// slightly from frame to frame as part of an animation. During such an
+/// animation, the children can be cached if they are stable to avoid having
+/// to render them on every frame. Even if the children are not stable,
+/// rendering them into the raster cache during a Preroll operation will save
+/// an extra change of rendering surface during the Paint phase as compared
+/// to using the SaveLayer that would otherwise be needed with no caching.
 ///
-/// The Flutter Widget objects that produce these layers tend to enforce
-/// having only a single child Widget object which means that there is really
-/// only a single child being added to this engine layer anyway, but due to
-/// the complicated mechanism that turns trees of Widgets eventually into a
-/// tree of engine layers, the associated layer may end up with multiple
-/// direct child layers. This class implements a protection against the
-/// incidental creation of "extra" children.
+/// Typically the Flutter Widget objects that lead to the creation of these
+/// layers will try to enforce only a single child Widget by their design.
+/// Unfortunately, the process of turning Widgets eventually into engine
+/// layers is not a 1:1 process so this layer might end up with multiple
+/// child layers even if the Widget only had a single child Widget.
 ///
-/// When the layer needs to recurse to perform some opertion on its children,
+/// When such a layer goes to cache the output of its children, it will
+/// need to supply a single layer to the cache mechanism since the raster
+/// cache uses a layer unique_id() as part of the cache key. If this layer
+/// ended up with multiple children, then it must first collect them into
+/// one layer for the cache mechanism. In order to provide a single layer
+/// for all of the children, this utility class will implicitly collect
+/// the children into a secondary ContainerLayer called the child container.
+///
+/// A by-product of creating a hidden child container, though, is that the
+/// child container is created new every time this layer is created with
+/// different properties, such as during an animation. In that scenario,
+/// it would be best to cache the single real child of this layer if it
+/// is unique and if it is stable from frame to frame. To facilitate this
+/// optimal caching strategy, this class implements two accessor methods
+/// to be used for different purposes:
+///
+/// When the layer needs to recurse to perform some operation on its children,
 /// it can call GetChildContainer() to return the hidden container containing
 /// all of the real children.
 ///
 /// When the layer wants to cache the rendered contents of its children, it
-/// should call GetCacheableChild() for best performance.
-///
-/// Note that since the implicit child container is created new every time
-/// this layer is recreated, the child container will be different for each
-/// frame of an animation that modifies the properties of this layer.
-/// The GetCacheableChild() method will attempt to find the single actual
-/// child of this layer and return that instead since that child will more
-/// likely remain stable across the frames of an animation.
+/// should call GetCacheableChild() for best performance. This method may
+/// end up returning the same layer as GetChildContainer(), but only if the
+/// conditions for optimal caching of a single child are not met.
 ///
 class MergedContainerLayer : public ContainerLayer {
  public:
@@ -94,19 +104,9 @@ class MergedContainerLayer : public ContainerLayer {
 
  protected:
   /**
-   * @brief Returns the ContainerLayer used to hold all of the children
-   * of the OpacityLayer.
-   *
-   * Often opacity layers will only have a single child since the associated
-   * Flutter widget is specified with only a single child widget pointer.
-   * But depending on the structure of the child tree that single widget at
-   * the framework level can turn into multiple children at the engine
-   * API level since there is no guarantee of a 1:1 correspondence of widgets
-   * to engine layers. This synthetic child container layer is established to
-   * hold all of the children in a single layer so that we can cache their
-   * output, but this synthetic layer will typically not be the best choice
-   * for the layer cache since the synthetic container is created fresh with
-   * each new OpacityLayer, and so may not be stable from frame to frame.
+   * @brief Returns the ContainerLayer used to hold all of the children of the
+   * MergedContainerLayer. Note that this may not be the best layer to use
+   * for caching the children.
    *
    * @see GetCacheableChild()
    * @return the ContainerLayer child used to hold the children
@@ -115,30 +115,11 @@ class MergedContainerLayer : public ContainerLayer {
 
   /**
    * @brief Returns the best choice for a Layer object that can be used
-   * in RasterCache operations to cache the children of the OpacityLayer.
+   * in RasterCache operations to cache the children.
    *
    * The returned Layer must represent all children and try to remain stable
-   * if the OpacityLayer is reconstructed in subsequent frames of the scene.
-   *
-   * Note that since the synthetic child container returned from the
-   * GetChildContainer() method is created fresh with each new OpacityLayer,
-   * its return value will not be a good candidate for caching. But if the
-   * standard recommendations for animations are followed and the child widget
-   * is wrapped with a RepaintBoundary widget at the framework level, then
-   * the synthetic child container should contain the same single child layer
-   * on each frame. Under those conditions, that single child of the child
-   * container will be the best candidate for caching in the RasterCache
-   * and this method will return that single child if possible to improve
-   * the performance of caching the children.
-   *
-   * Note that if GetCacheableChild() does not find a single stable child of
-   * the child container it will return the child container as a fallback.
-   * Even though that child is new in each frame of an animation and thus we
-   * cannot reuse the cached layer raster between animation frames, the single
-   * container child will allow us to paint the child onto an offscreen buffer
-   * during Preroll() which reduces one render target switch compared to
-   * painting the child on the fly via an AutoSaveLayer in Paint() and thus
-   * still improves our performance.
+   * if the MergedContainerLayer is reconstructed in subsequent frames of
+   * the scene.
    *
    * @see GetChildContainer()
    * @return the best candidate Layer for caching the children

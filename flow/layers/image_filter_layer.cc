@@ -7,7 +7,9 @@
 namespace flutter {
 
 ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
-    : filter_(std::move(filter)), render_count_(1) {}
+    : filter_(std::move(filter)),
+      transformed_filter_(nullptr),
+      render_count_(1) {}
 
 void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
@@ -27,10 +29,23 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
   }
   set_paint_bounds(child_bounds);
 
+  transformed_filter_ = nullptr;
   if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
+    // We have rendered this same ImageFilterLayer object enough
+    // times to consider its properties and children to be stable
+    // from frame to frame so we try to cache the layer itself
+    // for maximum performance.
     TryToPrepareRasterCache(context, this, matrix);
-  } else {
+  } else if ((transformed_filter_ = filter_->makeWithLocalMatrix(matrix))) {
+    // This ImageFilterLayer is not yet considered stable so we
+    // increment the count to measure how many times it has been
+    // seen from frame to frame.
     render_count_++;
+    // And for now we will still try to cache the children as that
+    // provides a large performance benefit to avoid rendering the
+    // child layers themselves and also avoiding a rendering surface
+    // switch to do so during the Paint phase. This benefit is seen
+    // most during animations involving the ImageFilter.
     TryToPrepareRasterCache(context, GetCacheableChild(), matrix);
   }
 }
@@ -43,11 +58,9 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
     if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
       return;
     }
-    const SkMatrix& ctm = context.leaf_nodes_canvas->getTotalMatrix();
-    sk_sp<SkImageFilter> transformed_filter = filter_->makeWithLocalMatrix(ctm);
-    if (transformed_filter) {
+    if (transformed_filter_) {
       SkPaint paint;
-      paint.setImageFilter(transformed_filter);
+      paint.setImageFilter(transformed_filter_);
 
       if (context.raster_cache->Draw(GetCacheableChild(),
                                      *context.leaf_nodes_canvas, &paint)) {
