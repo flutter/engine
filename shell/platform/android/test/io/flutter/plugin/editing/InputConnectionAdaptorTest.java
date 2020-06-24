@@ -37,6 +37,7 @@ import org.robolectric.shadows.ShadowClipboardManager;
 @Config(manifest = Config.NONE, shadows = ShadowClipboardManager.class)
 @RunWith(RobolectricTestRunner.class)
 public class InputConnectionAdaptorTest {
+  /*
   @Test
   public void inputConnectionAdaptor_ReceivesEnter() throws NullPointerException {
     View testView = new View(RuntimeEnvironment.application);
@@ -156,7 +157,6 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testSendKeyEvent_leftKeyMovesCaretLeftComplexEmoji() {
-    SAMPLE_EMOJI_TEXT
     int selStart = 75;
     Editable editable = sampleEditable(selStart, selStart, SAMPLE_EMOJI_TEXT);
     InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
@@ -341,7 +341,150 @@ public class InputConnectionAdaptorTest {
     assertEquals(selStart + 1, Selection.getSelectionStart(editable));
     assertEquals(selStart + 1, Selection.getSelectionEnd(editable));
   }
+  */
 
+  @Test
+  public void testSendKeyEvent_rightKeyMovesCaretRightComplexEmoji() {
+    int selStart = 0;
+    Editable editable = sampleEditable(selStart, selStart, SAMPLE_EMOJI_TEXT);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
+    boolean didConsume;
+
+    // First CodePoint
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 1);
+
+    // Simple Emoji
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 3);
+
+    // Regional Indicator Symbol odd
+    // TODO(justinmc): This seems to be wrong. The character is commented below
+    // as even, but the code treats it as odd.
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 5);
+
+    // Regional Indicator Symbol even
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 9);
+
+    // Carriage Return
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 10);
+
+    // Line Feed and Carriage Return
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 12);
+
+    // Line Feed
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 13);
+
+
+    // TODO(justinmc): 403 is failing, keep checking failures from here.
+
+
+    // Emoji Modifier with invalid base
+    //adaptor.setSelection(14, 14);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 14);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 15);
+
+    // Emoji Modifier
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 16);
+
+    // Variation Selector
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 19);
+
+    // Variation Selector with invalid base
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 20);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 21);
+
+    // Emoji Tag Sequence
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 23);
+
+    // ----- Start Emoji Tag Sequence with invalid base testing ----
+    // Pass base tag
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 37);
+
+    // Pass the sequence
+    for (int i = 0; i < 6; i++) {
+      didConsume = adaptor.sendKeyEvent(downKeyDown);
+      assertTrue(didConsume);
+    }
+    assertEquals(Selection.getSelectionStart(editable), 49);
+    // ----- End Emoji Tag Sequence with invalid base testing ----
+
+    // Zero Width Joiner with invalid base
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 51);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 52);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 53);
+
+    // Zero Width Joiner
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 55);
+
+    // Keycap with invalid base
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 56);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 58);
+
+    // Keycap
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 59);
+
+    // Non-Spacing Mark
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 60);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 61);
+
+    // Normal Character
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 62);
+    
+    // TODO(justinmc): I'm definiteely missing a bunch, should end like 74.
+  }
+
+  /*
   @Test
   public void testSendKeyEvent_rightKeyExtendsSelectionRight() {
     int selStart = 5;
@@ -621,6 +764,7 @@ public class InputConnectionAdaptorTest {
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 0);
   }
+  */
 
   private static final String SAMPLE_TEXT =
       "Lorem ipsum dolor sit amet," + "\nconsectetur adipiscing elit.";
