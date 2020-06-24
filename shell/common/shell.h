@@ -284,7 +284,7 @@ class Shell final : public PlatformView::Delegate,
   /// @brief      Used by embedders to notify that there is a low memory
   ///             warning. The shell will attempt to purge caches. Current, only
   ///             the rasterizer cache is purged.
-  void NotifyLowMemoryWarning();
+  void NotifyLowMemoryWarning() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to check if all shell subcomponents are
@@ -397,7 +397,6 @@ class Shell final : public PlatformView::Delegate,
   std::atomic<bool> waiting_for_first_frame_ = true;
   std::mutex waiting_for_first_frame_mutex_;
   std::condition_variable waiting_for_first_frame_condition_;
-  size_t notify_low_memory_trace_id_ = 0;
 
   // Written in the UI thread and read from the raster thread. Hence make it
   // atomic.
