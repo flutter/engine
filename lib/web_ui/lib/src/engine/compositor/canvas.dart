@@ -168,7 +168,7 @@ class SkCanvas {
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
     final SkParagraph skParagraph = paragraph;
     skCanvas.callMethod('drawParagraph', <dynamic>[
-      skParagraph.skParagraph,
+      skParagraph.skiaObject,
       offset.dx,
       offset.dy,
     ]);

@@ -282,40 +282,47 @@ Map<String, js.JsObject> toSkFontStyle(
   return style;
 }
 
-class SkParagraph implements ui.Paragraph {
-  SkParagraph(this.skParagraph, this._textDirection, this._fontFamily);
+class SkParagraph extends SkiaObject implements ui.Paragraph {
+  final ParagraphBuildBuffer buildBuffer;
+  SkParagraph(
+    this.buildBuffer,
+  )   : this._textDirection = buildBuffer.textDirection,
+        this._fontFamily = buildBuffer.fontFamily;
 
-  final js.JsObject skParagraph;
+  @override
+  js.JsObject createDefault() => buildBuffer.makeParagraph();
+
+  @override
+  js.JsObject resurrect() => buildBuffer.makeParagraph();
+
   final ui.TextDirection _textDirection;
   final String _fontFamily;
 
   @override
   double get alphabeticBaseline =>
-      skParagraph.callMethod('getAlphabeticBaseline');
+      skiaObject.callMethod('getAlphabeticBaseline');
 
   @override
-  bool get didExceedMaxLines => skParagraph.callMethod('didExceedMaxLines');
+  bool get didExceedMaxLines => skiaObject.callMethod('didExceedMaxLines');
 
   @override
-  double get height => skParagraph.callMethod('getHeight');
+  double get height => skiaObject.callMethod('getHeight');
 
   @override
   double get ideographicBaseline =>
-      skParagraph.callMethod('getIdeographicBaseline');
+      skiaObject.callMethod('getIdeographicBaseline');
 
   @override
-  double get longestLine => skParagraph.callMethod('getLongestLine');
+  double get longestLine => skiaObject.callMethod('getLongestLine');
 
   @override
-  double get maxIntrinsicWidth =>
-      skParagraph.callMethod('getMaxIntrinsicWidth');
+  double get maxIntrinsicWidth => skiaObject.callMethod('getMaxIntrinsicWidth');
 
   @override
-  double get minIntrinsicWidth =>
-      skParagraph.callMethod('getMinIntrinsicWidth');
+  double get minIntrinsicWidth => skiaObject.callMethod('getMinIntrinsicWidth');
 
   @override
-  double get width => skParagraph.callMethod('getMaxWidth');
+  double get width => skiaObject.callMethod('getMaxWidth');
 
   // TODO(hterkelsen): Implement placeholders once it's in CanvasKit
   @override
@@ -361,7 +368,7 @@ class SkParagraph implements ui.Paragraph {
     }
 
     List<js.JsObject> skRects =
-        skParagraph.callMethod('getRectsForRange', <dynamic>[
+        skiaObject.callMethod('getRectsForRange', <dynamic>[
       start,
       end,
       heightStyle,
@@ -387,7 +394,7 @@ class SkParagraph implements ui.Paragraph {
   @override
   ui.TextPosition getPositionForOffset(ui.Offset offset) {
     js.JsObject positionWithAffinity =
-        skParagraph.callMethod('getGlyphPositionAtCoordinate', <double>[
+        skiaObject.callMethod('getGlyphPositionAtCoordinate', <double>[
       offset.dx,
       offset.dy,
     ]);
@@ -397,7 +404,7 @@ class SkParagraph implements ui.Paragraph {
   @override
   ui.TextRange getWordBoundary(ui.TextPosition position) {
     js.JsObject skRange =
-        skParagraph.callMethod('getWordBoundary', <int>[position.offset]);
+        skiaObject.callMethod('getWordBoundary', <int>[position.offset]);
     return ui.TextRange(start: skRange['start'], end: skRange['end']);
   }
 
@@ -418,7 +425,7 @@ class SkParagraph implements ui.Paragraph {
     // TODO(het): CanvasKit throws an exception when laid out with
     // a font that wasn't registered.
     try {
-      skParagraph.callMethod('layout', <double>[width]);
+      skiaObject.callMethod('layout', <double>[width]);
     } catch (e) {
       html.window.console.warn('CanvasKit threw an exception while laying '
           'out the paragraph. The font was "$_fontFamily". Exception:\n$e');
@@ -439,23 +446,64 @@ class SkParagraph implements ui.Paragraph {
   }
 }
 
-class SkParagraphBuilder implements ui.ParagraphBuilder {
-  js.JsObject _paragraphBuilder;
-  ui.TextDirection _textDirection;
-  String _fontFamily;
+enum ParagraphBuildCommand {
+  pop,
+  text,
+  push,
+}
 
-  SkParagraphBuilder(ui.ParagraphStyle style) {
+class ParagraphBuildCommandData {
+  final ParagraphBuildCommand command;
+  final String text;
+  final ui.TextStyle style;
+
+  ParagraphBuildCommandData(this.command, {this.text, this.style});
+}
+
+class ParagraphBuildBuffer {
+  final ui.ParagraphStyle style;
+  final List<ParagraphBuildCommandData> commands = [];
+  ParagraphBuildBuffer(this.style);
+
+  ui.TextDirection get textDirection =>
+      (style as SkParagraphStyle)._textDirection;
+  String get fontFamily => (style as SkParagraphStyle)._fontFamily;
+
+  js.JsObject makeParagraph() {
     SkParagraphStyle skStyle = style;
-    _textDirection = skStyle._textDirection;
-    _fontFamily = skStyle._fontFamily;
-    _paragraphBuilder = canvasKit['ParagraphBuilder'].callMethod(
+    js.JsObject builder = canvasKit['ParagraphBuilder'].callMethod(
       'Make',
       <js.JsObject>[
         skStyle.skParagraphStyle,
         skiaFontCollection.skFontMgr,
       ],
     );
+    for (final command in commands) {
+      switch (command.command) {
+        case ParagraphBuildCommand.text:
+          builder.callMethod('addText', <String>[command.text]);
+          break;
+        case ParagraphBuildCommand.pop:
+          builder.callMethod('pop');
+          break;
+        case ParagraphBuildCommand.push:
+          final SkTextStyle skStyle = command.style;
+          builder.callMethod('pushStyle', <js.JsObject>[skStyle.skTextStyle]);
+          break;
+      }
+    }
+
+    js.JsObject paragraph = builder.callMethod('build');
+    builder.callMethod('delete');
+    return paragraph;
   }
+}
+
+class SkParagraphBuilder implements ui.ParagraphBuilder {
+  final ParagraphBuildBuffer _buildBuffer;
+
+  SkParagraphBuilder(ui.ParagraphStyle style)
+      : _buildBuffer = ParagraphBuildBuffer(style) {}
 
   // TODO(hterkelsen): Implement placeholders.
   @override
@@ -472,16 +520,13 @@ class SkParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
-    _paragraphBuilder.callMethod('addText', <String>[text]);
+    _buildBuffer.commands
+        .add(ParagraphBuildCommandData(ParagraphBuildCommand.text, text: text));
   }
 
   @override
   ui.Paragraph build() {
-    final SkParagraph paragraph = SkParagraph(
-        _paragraphBuilder.callMethod('build'), _textDirection, _fontFamily);
-    _paragraphBuilder.callMethod('delete');
-    _paragraphBuilder = null;
-    return paragraph;
+    return SkParagraph(_buildBuffer);
   }
 
   @override
@@ -493,13 +538,13 @@ class SkParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void pop() {
-    _paragraphBuilder.callMethod('pop');
+    _buildBuffer.commands
+        .add(ParagraphBuildCommandData(ParagraphBuildCommand.pop));
   }
 
   @override
   void pushStyle(ui.TextStyle style) {
-    final SkTextStyle skStyle = style;
-    _paragraphBuilder
-        .callMethod('pushStyle', <js.JsObject>[skStyle.skTextStyle]);
+    _buildBuffer.commands.add(
+        ParagraphBuildCommandData(ParagraphBuildCommand.push, style: style));
   }
 }
