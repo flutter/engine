@@ -15,7 +15,7 @@ namespace flutter {
 ///
 class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
  public:
-  using EndFrameCallBack = std::function<void(void)>;
+  using EndFrameCallBack = std::function<void(bool)>;
 
   ShellTestExternalViewEmbedder(const EndFrameCallBack& end_frame_call_back,
                                 PostPrerollResult post_preroll_result)

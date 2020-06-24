@@ -153,7 +153,7 @@ void IOSSurface::EndFrame(bool should_resubmit_frame,
                           fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::EndFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  return platform_views_controller_->EndFrame(raster_status, raster_thread_merger);
+  return platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger);
 }
 
 }  // namespace flutter

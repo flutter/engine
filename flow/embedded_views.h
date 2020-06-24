@@ -288,7 +288,8 @@ class ExternalViewEmbedder {
                            std::unique_ptr<SurfaceFrame> frame);
 
   // This method provides the embedder a way to do additional tasks after
-  // |SubmitFrame|. For example, merge tasks if `should_resubmit_frame` is true.
+  // |SubmitFrame|. For example, merge task runners if `should_resubmit_frame`
+  // is true.
   //
   // For example on the iOS embedder, threads are merged in this call.
   // A new frame on the platform thread starts immediately. If the GPU thread
