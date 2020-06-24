@@ -93,7 +93,7 @@ public class LocalizationPlugin {
       }
       // Look for exact language only match.
       for (Locale locale : supportedLocales) {
-        if (preferredLocale.getLanguage() == locale.toLanguageTag()) {
+        if (preferredLocale.getLanguage() == locale.toString()) {
           return locale;
         }
       }
