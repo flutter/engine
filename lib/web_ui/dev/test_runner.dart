@@ -167,6 +167,9 @@ class TestCommand extends Command<bool> with ArgUtils {
       final IosSimulatorManager iosSimulatorManager = IosSimulatorManager();
       IosSimulator iosSimulator;
       try {
+        // In order to provide more failure information print simulator info
+        final String output  = await _listExistingSimulators();
+        print('output: $output');
         iosSimulator = await iosSimulatorManager.getSimulator(
             IosSafariArgParser.instance.iosMajorVersion,
             IosSafariArgParser.instance.iosMinorVersion,
@@ -195,6 +198,18 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runSpecificTests(targetFiles);
     }
     return true;
+  }
+
+  Future<String> _listExistingSimulators() async {
+    final io.ProcessResult versionResult =
+        await io.Process.run('xcrun', ['simctl', 'list']);
+
+    if (versionResult.exitCode != 0) {
+      throw Exception('Failed to list iOS simulators.');
+    }
+    final String output = versionResult.stdout as String;
+
+    return output;
   }
 
   /// Builds all test targets that will be run.
