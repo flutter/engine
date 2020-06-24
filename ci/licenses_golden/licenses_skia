@@ -1,4 +1,4 @@
-Signature: a25b157e6e702b128bf4a8a794671e0b
+Signature: ddfb5e871373de9a6efdbecef8c93160
 
 UNUSED LICENSES:
 
@@ -2339,6 +2339,7 @@ FILE: ../../../third_party/skia/include/codec/SkAndroidCodec.h
 FILE: ../../../third_party/skia/include/codec/SkCodec.h
 FILE: ../../../third_party/skia/include/core/SkEncodedImageFormat.h
 FILE: ../../../third_party/skia/include/core/SkFilterQuality.h
+FILE: ../../../third_party/skia/include/core/SkPathBuilder.h
 FILE: ../../../third_party/skia/include/core/SkPixmap.h
 FILE: ../../../third_party/skia/include/core/SkPngChunkReader.h
 FILE: ../../../third_party/skia/include/core/SkPoint3.h
@@ -2426,6 +2427,7 @@ FILE: ../../../third_party/skia/src/core/SkMiniRecorder.h
 FILE: ../../../third_party/skia/src/core/SkNextID.h
 FILE: ../../../third_party/skia/src/core/SkOpts.cpp
 FILE: ../../../third_party/skia/src/core/SkOpts.h
+FILE: ../../../third_party/skia/src/core/SkPathBuilder.cpp
 FILE: ../../../third_party/skia/src/core/SkPathPriv.h
 FILE: ../../../third_party/skia/src/core/SkPictureCommon.h
 FILE: ../../../third_party/skia/src/core/SkPictureImageGenerator.cpp
@@ -5223,6 +5225,7 @@ FILE: ../../../third_party/skia/experimental/skrive/src/Artboard.cpp
 FILE: ../../../third_party/skia/experimental/skrive/src/Color.cpp
 FILE: ../../../third_party/skia/experimental/skrive/src/Component.cpp
 FILE: ../../../third_party/skia/experimental/skrive/src/Drawable.cpp
+FILE: ../../../third_party/skia/experimental/skrive/src/Ellipse.cpp
 FILE: ../../../third_party/skia/experimental/skrive/src/Node.cpp
 FILE: ../../../third_party/skia/experimental/skrive/src/Paint.cpp
 FILE: ../../../third_party/skia/experimental/skrive/src/Shape.cpp
