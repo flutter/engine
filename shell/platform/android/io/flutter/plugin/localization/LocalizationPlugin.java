@@ -47,6 +47,7 @@ public class LocalizationPlugin {
         String localeString = locale.toString();
         // This string replacement converts the locale string into the ranges format.
         languageRanges.add(new Locale.LanguageRange(localeString.replace("_", "-")));
+        languageRanges.add(new Locale.LanguageRange(locale.languageCode));
         languageRanges.add(new Locale.LanguageRange(locale.languageCode + "-*"));
       }
       Locale platformResolvedLocale = Locale.lookup(languageRanges, supportedLocales);
@@ -60,19 +61,20 @@ public class LocalizationPlugin {
       LocaleList localeList = context.getResources().getConfiguration().getLocales();
       for (int index = 0; index < localeCount; ++index) {
         Locale preferredLocale = localeList.get(index);
+        // Look for exact match.
         for (Locale locale : supportedLocales) {
           if (preferredLocale == locale) {
             return locale;
           }
         }
+        // Look for exact language only match.
         for (Locale locale : supportedLocales) {
-          // Look for exact language only match as described in android docs.
           if (preferredLocale.getLanguage() == locale.toLanguageTag()) {
             return locale;
           }
         }
+        // Look for any locale with matching language.
         for (Locale locale : supportedLocales) {
-          // Look for any locale with matching language as described in android docs.
           if (preferredLocale.getLanguage() == locale.getLanguage()) {
             return locale;
           }
@@ -83,13 +85,14 @@ public class LocalizationPlugin {
       // Legacy locale resolution
       // https://developer.android.com/guide/topics/resources/multilingual-support#preN
       Locale preferredLocale = context.getResources().getConfiguration().locale;
+      // Look for exact match.
       for (Locale locale : supportedLocales) {
         if (preferredLocale == locale) {
           return locale;
         }
       }
+      // Look for exact language only match.
       for (Locale locale : supportedLocales) {
-        // Look for exact language only match as described in android docs.
         if (preferredLocale.getLanguage() == locale.toLanguageTag()) {
           return locale;
         }
