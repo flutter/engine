@@ -27,7 +27,9 @@ TEST(FlDartProjectTest, GetPaths) {
 
 TEST(FlDartProjectTest, EnableMirrors) {
   g_autoptr(FlDartProject) project = fl_dart_project_new();
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   EXPECT_FALSE(fl_dart_project_get_enable_mirrors(project));
   fl_dart_project_set_enable_mirrors(project, TRUE);
   EXPECT_TRUE(fl_dart_project_get_enable_mirrors(project));
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }

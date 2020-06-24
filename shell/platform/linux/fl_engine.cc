@@ -276,7 +276,10 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
 
   g_autoptr(GPtrArray) command_line_args =
       g_ptr_array_new_with_free_func(g_free);
-  if (fl_dart_project_get_enable_mirrors(self->project)) {
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  gboolean enable_mirrors = fl_dart_project_get_enable_mirrors(self->project);
+  G_GNUC_END_IGNORE_DEPRECATIONS
+  if (enable_mirrors) {
     g_ptr_array_add(command_line_args, g_strdup("dart-flags"));
     g_ptr_array_add(command_line_args, g_strdup("--enable_mirrors"));
   }
