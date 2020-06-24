@@ -14,7 +14,7 @@ import 'package:test_core/src/runner/hack_register_platform.dart'
 import 'package:test_api/src/backend/runtime.dart'; // ignore: implementation_imports
 import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
-import 'package:simulators/simulator_manager.dart';
+import 'simulator_manager.dart';
 
 import 'environment.dart';
 import 'exceptions.dart';
@@ -168,7 +168,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       IosSimulator iosSimulator;
       try {
         // In order to provide more failure information print simulator info
-        final String output  = await _listExistingSimulators();
+        final String output  = await iosSimulatorManager.listExistingSimulators();
         print('output: $output');
         iosSimulator = await iosSimulatorManager.getSimulator(
             IosSafariArgParser.instance.iosMajorVersion,
@@ -198,18 +198,6 @@ class TestCommand extends Command<bool> with ArgUtils {
       await _runSpecificTests(targetFiles);
     }
     return true;
-  }
-
-  Future<String> _listExistingSimulators() async {
-    final io.ProcessResult versionResult =
-        await io.Process.run('xcrun', ['simctl', 'list']);
-
-    if (versionResult.exitCode != 0) {
-      throw Exception('Failed to list iOS simulators.');
-    }
-    final String output = versionResult.stdout as String;
-
-    return output;
   }
 
   /// Builds all test targets that will be run.
