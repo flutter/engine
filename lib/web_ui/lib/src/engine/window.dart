@@ -26,15 +26,13 @@ class EngineWindow extends ui.Window {
   }
 
   @override
-  double get devicePixelRatio => _debugDevicePixelRatio != null
-      ? _debugDevicePixelRatio!
-      : browserDevicePixelRatio;
+  double get devicePixelRatio => _debugDevicePixelRatio ?? browserDevicePixelRatio;
 
   /// Returns device pixel ratio returned by browser.
   static double get browserDevicePixelRatio {
-    double ratio = html.window.devicePixelRatio as double;
-    // Guard against WebOS returning 0.
-    return (_unsafeIsNull(ratio) || ratio == 0.0) ? 1.0 : ratio;
+    double? ratio = html.window.devicePixelRatio as double?;
+    // Guard against WebOS returning 0 and other browsers returning null.
+    return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
   }
 
   /// Overrides the default device pixel ratio.

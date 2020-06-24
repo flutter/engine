@@ -28,7 +28,7 @@ enum BrowserEngine {
 }
 
 /// Lazily initialized current browser engine.
-BrowserEngine? _browserEngine;
+late final BrowserEngine _browserEngine = _detectBrowserEngine();
 
 /// Override the value of [browserEngine].
 ///
@@ -42,7 +42,7 @@ BrowserEngine? debugBrowserEngineOverride;
 ///
 /// This is used to implement browser-specific behavior.
 BrowserEngine get browserEngine {
-  return debugBrowserEngineOverride ?? (_browserEngine ??= _detectBrowserEngine());
+  return debugBrowserEngineOverride ?? _browserEngine;
 }
 
 BrowserEngine _detectBrowserEngine() {
@@ -96,14 +96,14 @@ enum OperatingSystem {
 }
 
 /// Lazily initialized current operating system.
-OperatingSystem? _operatingSystem;
+late final OperatingSystem _operatingSystem = _detectOperatingSystem();
 
 /// Returns the [OperatingSystem] the current browsers works on.
 ///
 /// This is used to implement operating system specific behavior such as
 /// soft keyboards.
 OperatingSystem get operatingSystem {
-  return debugOperatingSystemOverride ?? (_operatingSystem ??= _detectOperatingSystem());
+  return debugOperatingSystemOverride ?? _operatingSystem;
 }
 
 /// Override the value of [operatingSystem].

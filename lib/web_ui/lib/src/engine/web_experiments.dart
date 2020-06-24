@@ -16,11 +16,8 @@ class WebExperiments {
     });
   }
 
-  static WebExperiments? ensureInitialized() {
-    if (WebExperiments.instance == null) {
-      WebExperiments.instance = WebExperiments._();
-    }
-    return WebExperiments.instance;
+  static WebExperiments ensureInitialized() {
+    return WebExperiments.instance ?? (WebExperiments.instance = WebExperiments._());
   }
 
   static WebExperiments? instance;

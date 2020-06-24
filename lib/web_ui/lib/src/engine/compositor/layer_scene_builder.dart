@@ -178,9 +178,9 @@ class LayerSceneBuilder implements ui.SceneBuilder {
 
   @override
   ui.PhysicalShapeEngineLayer pushPhysicalShape({
-    ui.Path? path,
-    double? elevation,
-    ui.Color? color,
+    required ui.Path path,
+    required double elevation,
+    required ui.Color color,
     ui.Color? shadowColor,
     ui.Clip clipBehavior = ui.Clip.none,
     ui.EngineLayer? oldLayer,

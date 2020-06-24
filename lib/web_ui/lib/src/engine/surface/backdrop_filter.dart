@@ -85,11 +85,11 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     PersistedContainerSurface? parentSurface = parent;
     while (parentSurface != null) {
       if (parentSurface.isClipping) {
-        _activeClipBounds = parentSurface._localClipBounds;
-        left = _activeClipBounds!.left;
-        top = _activeClipBounds!.top;
-        width = _activeClipBounds!.width;
-        height = _activeClipBounds!.height;
+        final ui.Rect activeClipBounds = (_activeClipBounds = parentSurface._localClipBounds)!;
+        left = activeClipBounds.left;
+        top = activeClipBounds.top;
+        width = activeClipBounds.width;
+        height = activeClipBounds.height;
         break;
       }
       parentSurface = parentSurface.parent;
