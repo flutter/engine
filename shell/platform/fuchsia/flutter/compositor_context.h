@@ -39,8 +39,7 @@ class CompositorContext final : public flutter::CompositorContext {
   void OnDestroyView(int64_t view_id);
 
   flutter::ExternalViewEmbedder* GetViewEmbedder() {
-    return reinterpret_cast<flutter::ExternalViewEmbedder*>(
-        &session_connection_.scene_update_context());
+    return &session_connection_.scene_update_context();
   }
 
  private:

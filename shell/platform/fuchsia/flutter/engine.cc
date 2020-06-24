@@ -103,12 +103,12 @@ Engine::Engine(Delegate& delegate,
   OnEnableWireframe on_enable_wireframe_callback = std::bind(
       &Engine::OnDebugWireframeSettingsChanged, this, std::placeholders::_1);
 
-  OnCreateView on_create_view_callback =
-      std::bind(&Engine::OnCreateViewMethodCall, this, std::placeholders::_1,
+  flutter_runner::OnCreateView on_create_view_callback =
+      std::bind(&Engine::OnCreateView, this, std::placeholders::_1,
                 std::placeholders::_2, std::placeholders::_3);
 
-  OnDestroyView on_destroy_view_callback =
-      std::bind(&Engine::OnDestroyViewMethodCall, this, std::placeholders::_1);
+  flutter_runner::OnDestroyView on_destroy_view_callback =
+      std::bind(&Engine::OnDestroyView, this, std::placeholders::_1);
 
   OnGetViewEmbedder on_get_view_embedder_callback =
       std::bind(&Engine::GetViewEmbedder, this);
@@ -519,9 +519,7 @@ void Engine::OnDebugWireframeSettingsChanged(bool enabled) {
       });
 }
 
-void Engine::OnCreateViewMethodCall(int64_t view_id,
-                                    bool hit_testable,
-                                    bool focusable) {
+void Engine::OnCreateView(int64_t view_id, bool hit_testable, bool focusable) {
   if (!shell_) {
     return;
   }
@@ -538,7 +536,7 @@ void Engine::OnCreateViewMethodCall(int64_t view_id,
       });
 }
 
-void Engine::OnDestroyViewMethodCall(int64_t view_id) {
+void Engine::OnDestroyView(int64_t view_id) {
   if (!shell_) {
     return;
   }
