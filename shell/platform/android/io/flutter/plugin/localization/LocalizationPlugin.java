@@ -27,8 +27,7 @@ public class LocalizationPlugin {
   }
 
   /**
-   * Computes the {@link Locale} in supportedLocales that best matches the user's
-   * preferred locales.
+   * Computes the {@link Locale} in supportedLocales that best matches the user's preferred locales.
    *
    * <p>FlutterEngine must be non-null when this method is invoked.
    */
@@ -106,7 +105,6 @@ public class LocalizationPlugin {
       }
     }
     return supportedLocales.get(0);
-    
   }
 
   /**

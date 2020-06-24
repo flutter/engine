@@ -1,4 +1,4 @@
-package io.flutter.embedding.engine;
+package io.flutter.plugin.localization;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -65,7 +65,7 @@ public class LocalizationPluginTest {
           "en", "", "",
           "de", "DE", "",
           "es", "ES", "",
-          "fr", "FR", ""
+          "fr", "FR", "",
           "it", "IT", ""
         };
     localeList = new LocaleList(new Locale("fr", "CH"));
@@ -93,6 +93,5 @@ public class LocalizationPluginTest {
     assertEquals(result[0], "it");
     assertEquals(result[1], "IT");
     assertEquals(result[2], "");
-
   }
 }
