@@ -505,6 +505,15 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
     if (hasAutofillGroup) {
        _geometry?.applyToDomElement(focusedFormElement);
        placeForm();
+       // On Chrome, when a form is focused, it opens an autofill menu
+       // immeddiately.
+       // Flutter framework sends `setEditableSizeAndTransform` for informing
+       // the engine about the location of the text field. This call will
+       // arrive after `show` call.
+       // Therefore on Chrome we place the element when
+       //  `setEditableSizeAndTransform` method is called and focus on the form
+       // only after placing it to the correct position. Hence autofill menu
+       // does not appear on top-left of the page.
        focusedFormElement.focus();
     } else {
       _geometry?.applyToDomElement(domElement);
