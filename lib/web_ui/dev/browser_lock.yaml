@@ -13,7 +13,7 @@ edge:
 ios-safari:
   majorVersion: 13
   minorVersion: 0
-  device: 'iPhone 11'
+  device: 'iPhone 11 Pro'
 ## geckodriver is used for testing Firefox Browser. It works with multiple
 ## Firefox Browser versions.
 ## See: https://github.com/mozilla/geckodriver/releases

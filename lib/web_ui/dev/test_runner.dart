@@ -168,8 +168,6 @@ class TestCommand extends Command<bool> with ArgUtils {
       IosSimulator iosSimulator;
       try {
         // In order to provide more failure information print simulator info
-        final String output  = await iosSimulatorManager.listExistingSimulators();
-        print('output: $output');
         iosSimulator = await iosSimulatorManager.getSimulator(
             IosSafariArgParser.instance.iosMajorVersion,
             IosSafariArgParser.instance.iosMinorVersion,

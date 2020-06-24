@@ -99,7 +99,7 @@ class IosSimulatorManager {
     final String simulatorVersion =
         '-- iOS ${osMajorVersion}.${osMinorVersion} --';
     final String simulatorsList =
-        await _listExistingSimulators(osMajorVersion, osMinorVersion);
+        await listExistingSimulators(osMajorVersion, osMinorVersion);
 
     // The simulator list, have the version string followed by a list of phone
     // names along with their ids and their statuses. Example output:
@@ -150,6 +150,9 @@ class IosSimulatorManager {
     final String output = versionResult.stdout as String;
     // If the requested iOS version simulators exists, there should be a block
     // starting with: `-- iOS osMajorVersion.osMinorVersion --`
+
+    print('output: $output');
+
     final bool versionCheck =
         output.contains('-- iOS ${osMajorVersion}.${osMinorVersion} --');
 
