@@ -237,9 +237,11 @@ public class FlutterLoader {
       // TODO(cyanlaz): Remove this when dynamic thread merging is done.
       // https://github.com/flutter/flutter/issues/59930
       Bundle bundle = applicationInfo.metaData;
-      boolean use_embedded_view = bundle.getBoolean("io.flutter.embedded_views_preview");
-      if (use_embedded_view) {
-        shellArgs.add("--use-embedded-view");
+      if (bundle != null) {
+        boolean use_embedded_view = bundle.getBoolean("io.flutter.embedded_views_preview");
+        if (use_embedded_view) {
+          shellArgs.add("--use-embedded-view");
+        }
       }
 
       FlutterJNI.nativeInit(
