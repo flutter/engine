@@ -281,8 +281,8 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   gboolean enable_mirrors = fl_dart_project_get_enable_mirrors(self->project);
   G_GNUC_END_IGNORE_DEPRECATIONS
   if (enable_mirrors) {
-    g_ptr_array_add(command_line_args, g_strdup("dart-flags"));
-    g_ptr_array_add(command_line_args, g_strdup("--enable_mirrors"));
+    g_ptr_array_add(command_line_args,
+                    g_strdup("--dart-flags=--enable_mirrors=true"));
   }
 
   FlutterProjectArgs args = {};
