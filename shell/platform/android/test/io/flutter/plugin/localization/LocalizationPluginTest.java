@@ -11,6 +11,7 @@ import android.content.res.Resources;
 import android.os.LocaleList;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.embedding.engine.FlutterJNI;
 import java.util.Locale;
 import org.junit.Test;
 import org.junit.runner.RunWith;
