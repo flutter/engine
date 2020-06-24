@@ -108,25 +108,25 @@ AndroidShellHolder::AndroidShellHolder(
     // Embedded views requires the gpu and the platform views to be the same.
     // The plan is to eventually dynamically merge the threads when there's a
     // platform view in the layer tree.
-    // For now we use a fixed thread configuration with the same thread used as the
-    // gpu and platform task runner.
-    // TODO(amirh/chinmaygarde): remove this, and dynamically change the thread configuration.
-    // https://github.com/flutter/flutter/issues/23975
+    // For now we use a fixed thread configuration with the same thread used as
+    // the gpu and platform task runner.
+    // TODO(amirh/chinmaygarde): remove this, and dynamically change the thread
+    // configuration. https://github.com/flutter/flutter/issues/23975
     // https://github.com/flutter/flutter/issues/59930
     flutter::TaskRunners task_runners(thread_label,     // label
                                       platform_runner,  // platform
-                                      platform_runner,       // raster
+                                      platform_runner,  // raster
                                       ui_runner,        // ui
                                       io_runner         // io
     );
 
     shell_ =
-      Shell::Create(task_runners,             // task runners
-                    GetDefaultWindowData(),   // window data
-                    settings_,                // settings
-                    on_create_platform_view,  // platform view create callback
-                    on_create_rasterizer      // rasterizer create callback
-      );
+        Shell::Create(task_runners,             // task runners
+                      GetDefaultWindowData(),   // window data
+                      settings_,                // settings
+                      on_create_platform_view,  // platform view create callback
+                      on_create_rasterizer      // rasterizer create callback
+        );
   } else {
     use_embedded_view = false;
     flutter::TaskRunners task_runners(thread_label,     // label
@@ -137,12 +137,12 @@ AndroidShellHolder::AndroidShellHolder(
     );
 
     shell_ =
-      Shell::Create(task_runners,             // task runners
-                    GetDefaultWindowData(),   // window data
-                    settings_,                // settings
-                    on_create_platform_view,  // platform view create callback
-                    on_create_rasterizer      // rasterizer create callback
-      );
+        Shell::Create(task_runners,             // task runners
+                      GetDefaultWindowData(),   // window data
+                      settings_,                // settings
+                      on_create_platform_view,  // platform view create callback
+                      on_create_rasterizer      // rasterizer create callback
+        );
   }
 
   platform_view_ = weak_platform_view;

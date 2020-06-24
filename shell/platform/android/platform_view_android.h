@@ -116,7 +116,6 @@ class PlatformViewAndroid final : public PlatformView {
   void FireFirstFrameCallback();
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroid);
-
 };
 }  // namespace flutter
 

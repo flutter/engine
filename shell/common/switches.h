@@ -194,8 +194,10 @@ DEF_SWITCH(
 DEF_SWITCH(UseEmbeddedView,
            "use-embedded-view",
            "Whether an android application uses embedded views."
-           "This is a temporary flag to make the raster task runner runs on the platform thread."
-           "This flag should be removed once the dynamic thread merging is enabled on android.")
+           "This is a temporary flag to make the raster task runner runs on "
+           "the platform thread."
+           "This flag should be removed once the dynamic thread merging is "
+           "enabled on android.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);
