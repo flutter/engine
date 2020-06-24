@@ -26,6 +26,13 @@ public class LocalizationPlugin {
     this.localizationChannel = localizationChannel;
   }
 
+  /**
+   * Computes the {@link Locale} in supportedLocales that best matches the user's
+   * preferred locales.
+   *
+   * <p>FlutterEngine must be non-null when this method is invoked.
+   */
+  @SuppressWarnings("deprecation")
   public Locale resolveNativeLocale(List<Locale> supportedLocales) {
     if (supportedLocales == null || supportedLocales.isEmpty()) {
       return null;
@@ -47,8 +54,8 @@ public class LocalizationPlugin {
         String localeString = locale.toString();
         // This string replacement converts the locale string into the ranges format.
         languageRanges.add(new Locale.LanguageRange(localeString.replace("_", "-")));
-        languageRanges.add(new Locale.LanguageRange(locale.languageCode));
-        languageRanges.add(new Locale.LanguageRange(locale.languageCode + "-*"));
+        languageRanges.add(new Locale.LanguageRange(locale.getLanguage()));
+        languageRanges.add(new Locale.LanguageRange(locale.getLanguage() + "-*"));
       }
       Locale platformResolvedLocale = Locale.lookup(languageRanges, supportedLocales);
       if (platformResolvedLocale != null) {
@@ -59,7 +66,7 @@ public class LocalizationPlugin {
       // Modern locale resolution without languageRange
       // https://developer.android.com/guide/topics/resources/multilingual-support#postN
       LocaleList localeList = context.getResources().getConfiguration().getLocales();
-      for (int index = 0; index < localeCount; ++index) {
+      for (int index = 0; index < localeList.size(); ++index) {
         Locale preferredLocale = localeList.get(index);
         // Look for exact match.
         for (Locale locale : supportedLocales) {
@@ -81,25 +88,25 @@ public class LocalizationPlugin {
         }
       }
       return supportedLocales.get(0);
-    } else {
-      // Legacy locale resolution
-      // https://developer.android.com/guide/topics/resources/multilingual-support#preN
-      Locale preferredLocale = context.getResources().getConfiguration().locale;
-      // Look for exact match.
-      for (Locale locale : supportedLocales) {
-        if (preferredLocale == locale) {
-          return locale;
-        }
-      }
-      // Look for exact language only match.
-      for (Locale locale : supportedLocales) {
-        if (preferredLocale.getLanguage() == locale.toString()) {
-          return locale;
-        }
-      }
-      return supportedLocales.get(0);
     }
-    return null;
+
+    // Legacy locale resolution
+    // https://developer.android.com/guide/topics/resources/multilingual-support#preN
+    Locale preferredLocale = context.getResources().getConfiguration().locale;
+    // Look for exact match.
+    for (Locale locale : supportedLocales) {
+      if (preferredLocale == locale) {
+        return locale;
+      }
+    }
+    // Look for exact language only match.
+    for (Locale locale : supportedLocales) {
+      if (preferredLocale.getLanguage() == locale.toString()) {
+        return locale;
+      }
+    }
+    return supportedLocales.get(0);
+    
   }
 
   /**
