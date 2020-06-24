@@ -86,9 +86,9 @@ class EngineAutofillForm {
 
   final html.FormElement? formElement;
 
-  final Map<String?, html.HtmlElement>? elements;
+  final Map<String, html.HtmlElement>? elements;
 
-  final Map<String?, AutofillInfo>? items;
+  final Map<String, AutofillInfo>? items;
 
   static EngineAutofillForm? fromFrameworkMessage(
     Map<String, dynamic>? focusedElementAutofill,
@@ -103,8 +103,8 @@ class EngineAutofillForm {
     // If there is only one text field in the autofill model, `fields` will be
     // null. `focusedElementAutofill` contains the information about the one
     // text field.
-    final Map<String?, html.HtmlElement> elements = <String?, html.HtmlElement>{};
-    final Map<String?, AutofillInfo> items = <String?, AutofillInfo>{};
+    final Map<String, html.HtmlElement> elements = <String, html.HtmlElement>{};
+    final Map<String, AutofillInfo> items = <String, AutofillInfo>{};
     final html.FormElement formElement = html.FormElement();
 
     // Validation is in the framework side.
@@ -164,10 +164,10 @@ class EngineAutofillForm {
   /// [TextEditingStrategy.addEventHandlers] method call and all
   /// listeners are removed during [TextEditingStrategy.disable] method call.
   List<StreamSubscription<html.Event>> addInputEventListeners() {
-    Iterable<String?> keys = elements!.keys;
+    Iterable<String> keys = elements!.keys;
     List<StreamSubscription<html.Event>> subscriptions =
         <StreamSubscription<html.Event>>[];
-    keys.forEach((String? key) {
+    keys.forEach((String key) {
       final html.Element element = elements![key]!;
       subscriptions.add(element.onInput.listen((html.Event e) {
         _handleChange(element, key);
@@ -207,7 +207,7 @@ class EngineAutofillForm {
 /// These values are to be used when a text field have autofill enabled.
 @visibleForTesting
 class AutofillInfo {
-  AutofillInfo({this.editingState, this.uniqueIdentifier, this.hint});
+  AutofillInfo({this.editingState, required this.uniqueIdentifier, required this.hint});
 
   /// The current text and selection state of a text field.
   final EditingState? editingState;
@@ -215,18 +215,18 @@ class AutofillInfo {
   /// Unique value set by the developer.
   ///
   /// Used as id of the text field.
-  final String? uniqueIdentifier;
+  final String uniqueIdentifier;
 
   /// Attribute used for autofill.
   ///
   /// Used as a guidance to the browser as to the type of information expected
   /// in the field.
   /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
-  final String? hint;
+  final String hint;
 
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill) {
     assert(autofill != null); // ignore: unnecessary_null_comparison
-    final String? uniqueIdentifier = autofill['uniqueIdentifier'];
+    final String uniqueIdentifier = autofill['uniqueIdentifier']!;
     final List<dynamic> hintsList = autofill['hints'];
     final EditingState editingState =
         EditingState.fromFrameworkMessage(autofill['editingValue']);
@@ -238,15 +238,15 @@ class AutofillInfo {
 
   void applyToDomElement(html.HtmlElement domElement,
       {bool focusedElement = false}) {
-    domElement.id = hint!;
+    domElement.id = hint;
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
-      element.name = hint!;
-      element.id = uniqueIdentifier!;
-      element.autocomplete = hint!;
+      element.name = hint;
+      element.id = uniqueIdentifier;
+      element.autocomplete = hint;
       // Do not change the element type for the focused element.
       if (focusedElement == false) {
-        if (hint!.contains('password')) {
+        if (hint.contains('password')) {
           element.type = 'password';
         } else {
           element.type = 'text';
@@ -254,9 +254,9 @@ class AutofillInfo {
       }
     } else if (domElement is html.TextAreaElement) {
       html.TextAreaElement element = domElement;
-      element.name = hint!;
-      element.id = uniqueIdentifier!;
-      element.setAttribute('autocomplete', hint!);
+      element.name = hint;
+      element.id = uniqueIdentifier;
+      element.setAttribute('autocomplete', hint);
     }
   }
 }
