@@ -20,7 +20,6 @@
 namespace flutter {
 
 class AndroidShellHolder {
-
  public:
 
   // Whether the application sets to use embedded_view view

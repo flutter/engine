@@ -213,7 +213,7 @@ struct Settings {
   /// to log a timeline event that tracks the latency of engine startup.
   std::chrono::microseconds engine_start_timestamp = {};
 
-  /// Does the application claim that it uses the android embedded view for platform views.
+  /// Whether the application claims that it uses the android embedded view for platform views.
   ///
   /// A `true` value will result the raster task runner always run on the platform thread.
   // TODO(cyanlaz): Remove this when dynamic thread merging is done.
