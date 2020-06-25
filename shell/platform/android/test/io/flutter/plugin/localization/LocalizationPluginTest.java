@@ -2,6 +2,7 @@
 package io.flutter.embedding.engine;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -319,7 +320,7 @@ public class LocalizationPluginTest {
     try {
       field.set(null, apiVersion);
     } catch (Exception e) {
-      assert(false);
+      assertTrue(false);
     }
   }
 }
