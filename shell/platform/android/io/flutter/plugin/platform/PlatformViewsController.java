@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import android.view.ViewGroup.LayoutParams;
+
 /**
  * Manages platform views.
  *
@@ -550,6 +552,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   public void onDisplayPlatformView(int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
     io.flutter.Log.e("onDisplayPlatformView ", "mutators stack " + mutatorsStack.getMutators().size());
+    View aView = new View(context);
+    aView.setLayoutParams(new LayoutParams(width, height));
+    aView.setBackgroundColor(150);
+    flutterView.addView(aView);
+    
     // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
   }
 

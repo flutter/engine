@@ -113,6 +113,7 @@ static jmethodID g_overlay_surface_surface_method = nullptr;
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_mutators_stack_class = nullptr;
 static jmethodID g_mutators_stack_init_method = nullptr;
 static jmethodID g_mutators_stack_push_transform_method = nullptr;
+static jmethodID g_mutators_stack_push_cliprect_method = nullptr;
 
 // Called By Java
 static jlong AttachJNI(JNIEnv* env,
@@ -779,6 +780,12 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_mutators_stack_push_cliprect_method = env->GetMethodID(g_mutators_stack_class->obj(), "pushClipRect", "(IIII)V");
+  if (g_mutators_stack_push_cliprect_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterMutatorsStack.pushCilpRect method";
+    return false;
+  }
+
   g_on_display_platform_view_method = env->GetMethodID(
       g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIIILio/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack;)V");
 
@@ -1105,34 +1112,6 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
     return;
   }
 
-//   import android.graphics.Matrix;
-// import android.graphics.Rect;
-
-  // jclass matrixClass = env->FindClass("android/graphics/Matrix");
-  // if (matrix == nullptr) {
-  //   return;
-  // }
-  // jmethodID matrixInitMethod = env->GetMethodID(matrixClass, "<init>", "()V");
-
-
-  // jclass mutatorClass = env->FindClass("io/flutter/embedding/engine/mutatorsstack/FlutterMutator");
-  // if (mutatorClass == nullptr) {
-  //   return;
-  // }
-  // jmethodID mutatorInitTransform = env->GetMethodID(mutatorClass, "<init>", "(Landroid/graphics/Matrix)V");
-
-  // jclass mutatorsStackClass = env->FindClass("io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack");
-
-  // if (mutatorsStackClass == nullptr) {
-  //     FML_DLOG(ERROR) << "mutatorsStackClass not found";
-  //     return;
-  // }
-  // jmethodID mutatorsStackInit = env->GetMethodID(mutatorsStackClass, "<init>", "()V");
-  // if (mutatorsStackInit == nullptr) {
-  //     FML_DLOG(ERROR) << "mutatorsStackClass.Init not found";
-  //     return;
-  // }
-  // jmethodID mutatorsStackPush = env->GetMethodID(mutatorsStackClass, "push", "(io/flutter/embedding/engine/mutatorsstack/FlutterMutator)V");
   jobject mutatorsStack = env->NewObject(g_mutators_stack_class->obj(), g_mutators_stack_init_method);
 
   std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
@@ -1147,7 +1126,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
           env, env->NewFloatArray(9));
 
         env->SetFloatArrayRegion(transformMatrix.obj(), 0, 9, matrix_array);
-        FML_DLOG(ERROR) << "================ mutatorsStack try push ==================";
+        FML_DLOG(ERROR) << "================ mutatorsStack try push transform ==================";
         FML_DLOG(ERROR) << "getTranslateX " << matrix.getTranslateX();
         FML_DLOG(ERROR) << "getTranslateY " << matrix.getTranslateY();
         FML_DLOG(ERROR) << "getSkewX " << matrix.getSkewX();
@@ -1156,21 +1135,18 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
         FML_DLOG(ERROR) << "getScaleY " << matrix.getScaleY();
         FML_DLOG(ERROR) << "getPerspX " << matrix.getPerspX();
         FML_DLOG(ERROR) << "getPerspY " << matrix.getPerspY();
-  //       float* m = env->GetFloatArrayElements(transformMatrix.obj(), nullptr);
-  //       float scaleX = m[0], scaleY = m[5];
-  //       const SkSize scaled = ScaleToFill(scaleX, scaleY);
-  //       SkScalar matrix3[] = {
-  //           scaled.fWidth, m[1],           m[2],   //
-  //           m[4],          scaled.fHeight, m[6],   //
-  //           m[8],          m[9],           m[10],  //
-  //       };
-  // env->ReleaseFloatArrayElements(transformMatrix.obj(), m, JNI_ABORT);
-  // transform.set9(matrix3);
 
         env->CallVoidMethod(mutatorsStack, g_mutators_stack_push_transform_method, transformMatrix.obj());
         break;
       }
       case clip_rect: {
+        const SkRect& rect = (*iter)->GetRect();
+                FML_DLOG(ERROR) << "================ mutatorsStack try push rect ==================";
+        FML_DLOG(ERROR) << "left " << rect.left();
+        FML_DLOG(ERROR) << "top " << rect.top();
+        FML_DLOG(ERROR) << "right " << rect.right();
+        FML_DLOG(ERROR) << "bottom " << rect.bottom();
+        env->CallVoidMethod(mutatorsStack, g_mutators_stack_push_cliprect_method, (int)rect.left(), (int)rect.top(), (int)rect.right(), (int)rect.bottom());
         break;
       }
       case clip_rrect:
@@ -1182,11 +1158,6 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
     ++iter;
   }
   FML_DLOG(ERROR) << "size " << i;
-
-
-  // jobject hashMapObj = env->NewObject(env, hashMapClass, hashMapInit, mMap.size());
-  // jmethodID hashMapOut = env->GetMethodID(env, hashMapClass, "put",
-  //           "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
 
   env->CallVoidMethod(java_object.obj(), g_on_display_platform_view_method,
                       view_id, x, y, width, height, mutatorsStack);

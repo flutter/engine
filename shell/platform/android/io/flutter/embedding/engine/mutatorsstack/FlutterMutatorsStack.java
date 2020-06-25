@@ -41,6 +41,14 @@ public class FlutterMutatorsStack {
     mutators.add(mutator);
   }
 
+  public void pushClipRect(int left, int top, int right, int bottom) {
+    Rect rect = new Rect(left, top, right, bottom);
+    io.flutter.Log.e("rect ", "----------------- Java rect -----------------");
+    io.flutter.Log.e("rect ", "rect " + rect);
+    FlutterMutator mutator = new FlutterMutator(rect);
+    mutators.add(mutator);
+  }
+
   public List<FlutterMutator> getMutators() {
     return mutators;
   }
