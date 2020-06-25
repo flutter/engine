@@ -12,6 +12,7 @@ import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -22,6 +23,16 @@ import java.util.Map.Entry;
 /**
  * A class to process key events from Android, passing them to the framework as messages using
  * {@link KeyEventChannel}.
+ *
+ * <p>A class that sends Android key events to the framework, and re-dispatches those not handled by
+ * the framework.
+ *
+ * <p>Flutter uses asynchronous event handling to avoid blocking the UI thread, but Android requires
+ * that events are handled synchronously. So, when a key event is received by Flutter, it tells
+ * Android synchronously that the key has been handled so that it won't propagate to other
+ * components. Flutter then uses "delayed event synthesis", where it sends the event to the
+ * framework, and if the framework responds that it has not handled the event, then this class
+ * synthesizes a new event to send to Android, without handling it this time.
  */
 public class AndroidKeyProcessor {
   private static final String TAG = "AndroidKeyProcessor";
@@ -32,6 +43,16 @@ public class AndroidKeyProcessor {
   private int combiningCharacter;
   @NonNull EventResponder eventResponder;
 
+  /**
+   * Constructor for AndroidKeyProcessor.
+   *
+   * @param context takes the application context so that this processor can find the activity for
+   *     re-dispatching of events that were not handled by the framework.
+   * @param keyEventChannel the event channel to listen to for new key events.
+   * @param textInputPlugin a plugin, which, if set, is given key events before the framework is,
+   *     and if it has a valid input connection and is accepting text, then it will handle the event
+   *     and the framework will not receive it.
+   */
   public AndroidKeyProcessor(
       @NonNull Context context,
       @NonNull KeyEventChannel keyEventChannel,
@@ -49,6 +70,7 @@ public class AndroidKeyProcessor {
    *
    * @param eventResponder the event responder to use instead of the default responder.
    */
+  @VisibleForTesting
   public void setEventResponder(@NonNull EventResponder eventResponder) {
     this.eventResponder = eventResponder;
   }
@@ -57,7 +79,8 @@ public class AndroidKeyProcessor {
    * Called when a key up event is received by the {@link FlutterView}.
    *
    * @param keyEvent the Android key event to respond to.
-   * @return true if the key event was handled and should not be propagated.
+   * @return true if the key event should not be propagated to other Android components. Delayed
+   *     synthesis events will return false, so that other components may handle them.
    */
   public boolean onKeyUp(@NonNull KeyEvent keyEvent) {
     if (eventResponder.dispatchingKeyEvent) {
@@ -77,7 +100,8 @@ public class AndroidKeyProcessor {
    * Called when a key down event is received by the {@link FlutterView}.
    *
    * @param keyEvent the Android key event to respond to.
-   * @return true if the key event was handled and should not be propagated.
+   * @return true if the key event should not be propagated to other Android components. Delayed
+   *     synthesis events will return false, so that other components may handle them.
    */
   public boolean onKeyDown(@NonNull KeyEvent keyEvent) {
     if (eventResponder.dispatchingKeyEvent) {
@@ -168,7 +192,7 @@ public class AndroidKeyProcessor {
     private static final long MAX_PENDING_EVENTS = 1000;
     final Deque<Entry<Long, KeyEvent>> pendingEvents = new ArrayDeque<Entry<Long, KeyEvent>>();
     @NonNull private final Context context;
-    boolean dispatchingKeyEvent = false;
+    @VisibleForTesting boolean dispatchingKeyEvent = false;
 
     public EventResponder(@NonNull Context context) {
       this.context = context;
@@ -215,6 +239,13 @@ public class AndroidKeyProcessor {
 
     /** Adds an Android key event with an id to the event responder to wait for a response. */
     public void addEvent(long id, @NonNull KeyEvent event) {
+      if (pendingEvents.size() > 0 && pendingEvents.getFirst().getKey() >= id) {
+        throw new AssertionError(
+            "New events must have ids greater than the most recent pending event. New id "
+                + id
+                + " is less than or equal to the last event id of "
+                + pendingEvents.getFirst().getKey());
+      }
       pendingEvents.addLast(new SimpleImmutableEntry<Long, KeyEvent>(id, event));
       if (pendingEvents.size() > MAX_PENDING_EVENTS) {
         Log.e(

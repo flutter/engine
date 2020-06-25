@@ -134,26 +134,99 @@ public class KeyEventChannel {
     message.put("productId", event.productId);
     message.put("deviceId", event.deviceId);
     message.put("repeatCount", event.repeatCount);
-    message.put("eventId", event.eventId);
   }
 
-  /**
-   * A key event as defined by Flutter that includes an id for the specific event to be used when
-   * responding to the event.
-   */
+  /** A key event as defined by Flutter. */
   public static class FlutterKeyEvent {
+    /**
+     * The id for the device this event came from.
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getDeviceId()">KeyEvent.getDeviceId()</a>
+     */
     public final int deviceId;
+    /**
+     * The flags for this key event.
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getFlags()">KeyEvent.getFlags()</a>
+     */
     public final int flags;
+    /**
+     * The code point for the Unicode character produced by this event if no meta keys were pressed
+     * (by passing 0 to {@code KeyEvent.getUnicodeChar(int)}).
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getUnicodeChar(int)">KeyEvent.getUnicodeChar(int)</a>
+     */
     public final int plainCodePoint;
+    /**
+     * The code point for the Unicode character produced by this event, taking into account the meta
+     * keys currently pressed.
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getUnicodeChar()">KeyEvent.getUnicodeChar()</a>
+     */
     public final int codePoint;
+    /**
+     * The Android key code for this event.
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getKeyCode()">KeyEvent.getKeyCode()</a>
+     */
     public final int keyCode;
+    /**
+     * The character produced by this event, including any combining characters pressed before it.
+     */
     @Nullable public final Character complexCharacter;
+    /**
+     * The Android scan code for the key pressed.
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getScanCode()">KeyEvent.getScanCode()</a>
+     */
     public final int scanCode;
+    /**
+     * The meta key state for the Android key event.
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getMetaState()">KeyEvent.getMetaState()</a>
+     */
     public final int metaState;
+    /**
+     * The source of the key event.
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getSource()">KeyEvent.getSource()</a>
+     */
     public final int source;
+    /**
+     * The vendorId of the device that produced this key event.
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/InputDevice?hl=en#getVendorId()">InputDevice.getVendorId()</a>
+     */
     public final int vendorId;
+    /**
+     * The productId of the device that produced this key event.
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/InputDevice?hl=en#getProductId()">InputDevice.getProductId()</a>
+     */
     public final int productId;
+    /**
+     * The repeat count for this event.
+     *
+     * @see <a
+     *     href="https://developer.android.com/reference/android/view/KeyEvent?hl=en#getRepeatCount()">KeyEvent.getRepeatCount()</a>
+     */
     public final int repeatCount;
+    /**
+     * The unique id for this Flutter key event.
+     *
+     * <p>This id is used to identify pending events when results are received from the framework.
+     * This ID does not come from Android.
+     */
     public final long eventId;
 
     public FlutterKeyEvent(@NonNull KeyEvent androidKeyEvent, long eventId) {
