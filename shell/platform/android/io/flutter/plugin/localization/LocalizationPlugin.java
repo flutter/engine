@@ -69,7 +69,7 @@ public class LocalizationPlugin {
         Locale preferredLocale = localeList.get(index);
         // Look for exact match.
         for (Locale locale : supportedLocales) {
-          if (preferredLocale == locale) {
+          if (preferredLocale.equals(locale)) {
             return locale;
           }
         }
@@ -94,7 +94,7 @@ public class LocalizationPlugin {
     Locale preferredLocale = context.getResources().getConfiguration().locale;
     // Look for exact match.
     for (Locale locale : supportedLocales) {
-      if (preferredLocale == locale) {
+      if (preferredLocale.equals(locale)) {
         return locale;
       }
     }
