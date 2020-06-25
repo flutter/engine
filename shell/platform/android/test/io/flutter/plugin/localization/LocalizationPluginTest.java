@@ -307,7 +307,7 @@ public class LocalizationPluginTest {
     assertEquals(result[2], "");
   }
 
-  static void setApiVersion(int apiVersion) throws Exception {
+  static void setApiVersion(int apiVersion) {
     Field field = Build.VERSION.class.getField("SDK_INT");
 
     field.setAccessible(true);
@@ -316,6 +316,10 @@ public class LocalizationPluginTest {
     modifiersField.setAccessible(true);
     modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
 
-    field.set(null, apiVersion);
- }
+    try {
+      field.set(null, apiVersion);
+    } catch (Exception e) {
+      assert(false);
+    }
+  }
 }
