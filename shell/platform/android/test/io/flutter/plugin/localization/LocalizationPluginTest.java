@@ -56,7 +56,11 @@ public class LocalizationPluginTest {
     localeList = new LocaleList();
     when(config.getLocales()).thenReturn(localeList);
     result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
-    assertEquals(result.length, 0);
+    // The first locale is default.
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "fr");
+    assertEquals(result[1], "FR");
+    assertEquals(result[2], "");
 
     // Example from https://developer.android.com/guide/topics/resources/multilingual-support#postN
     supportedLocales =
