@@ -1,4 +1,4 @@
-// Part of the embeddiing.engine package to allow access to FlutterJNI methods.
+// Part of the embedding.engine package to allow access to FlutterJNI methods.
 package io.flutter.embedding.engine;
 
 import static org.junit.Assert.assertEquals;
