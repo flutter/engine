@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.graphics.Rect;
+import android.media.ImageReader;
 import android.os.Build;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
@@ -171,7 +172,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       renderSurface = flutterTextureView;
     } else {
       throw new IllegalArgumentException(
-          String.format("RenderMode not supported with this constructor: ", renderMode));
+          String.format("RenderMode not supported with this constructor: %s", renderMode));
     }
 
     init();
@@ -265,7 +266,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       renderSurface = flutterTextureView;
     } else {
       throw new IllegalArgumentException(
-          String.format("RenderMode not supported with this constructor: ", renderMode));
+          String.format("RenderMode not supported with this constructor: %s", renderMode));
     }
 
     init();
@@ -303,6 +304,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     super(context, attrs);
 
     this.flutterImageView = flutterImageView;
+    this.renderSurface = flutterImageView;
 
     init();
   }
@@ -938,6 +940,26 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     flutterRenderer.setSemanticsEnabled(false);
     renderSurface.detachFromRenderer();
     flutterEngine = null;
+  }
+
+  public void convertToImageView() {
+    renderSurface.detachFromRenderer();
+
+    ImageReader imageReader = PlatformViewsController.createImageReader(getWidth(), getHeight());
+    flutterImageView = new FlutterImageView(getContext(), imageReader);
+    renderSurface = flutterImageView;
+    if (flutterEngine != null) {
+      renderSurface.attachToRenderer(flutterEngine.getRenderer());
+    }
+
+    removeAllViews();
+    addView(flutterImageView);
+  }
+
+  public void acquireLatestImageViewFrame() {
+    if (flutterImageView != null) {
+      flutterImageView.acquireLatestImage();
+    }
   }
 
   /** Returns true if this {@code FlutterView} is currently attached to a {@link FlutterEngine}. */
