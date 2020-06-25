@@ -82,6 +82,24 @@ public class LocalizationPluginTest {
     assertEquals(result[1], "FR");
     assertEquals(result[2], "");
 
+    supportedLocales =
+        new String[] {
+          "en", "", "",
+          "de", "DE", "",
+          "es", "ES", "",
+          "fr", "FR", "",
+          "fr", "", "",
+          "it", "IT", ""
+        };
+    localeList = new LocaleList(new Locale("fr", "CH"));
+    when(config.getLocales()).thenReturn(localeList);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    // The call will use the new (> API 24) algorithm.
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "fr");
+    assertEquals(result[1], "");
+    assertEquals(result[2], "");
+
     // Example from https://developer.android.com/guide/topics/resources/multilingual-support#postN
     supportedLocales =
         new String[] {
@@ -159,6 +177,24 @@ public class LocalizationPluginTest {
     assertEquals(result[1], "FR");
     assertEquals(result[2], "");
 
+    supportedLocales =
+        new String[] {
+          "en", "", "",
+          "de", "DE", "",
+          "es", "ES", "",
+          "fr", "FR", "",
+          "fr", "", "",
+          "it", "IT", ""
+        };
+    localeList = new LocaleList(new Locale("fr", "CH"));
+    when(config.getLocales()).thenReturn(localeList);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    // The call will use the new (> API 24) algorithm.
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "fr");
+    assertEquals(result[1], "");
+    assertEquals(result[2], "");
+
     // Example from https://developer.android.com/guide/topics/resources/multilingual-support#postN
     supportedLocales =
         new String[] {
@@ -179,9 +215,9 @@ public class LocalizationPluginTest {
 
   // Tests the legacy pre API 24 algorithm.
   @Test
-  public void computePlatformResolvedLocaleAPI24() {
+  public void computePlatformResolvedLocaleAPI16() {
     // --- Test Setup ---
-    setApiVersion(20);
+    setApiVersion(16);
     FlutterJNI flutterJNI = new FlutterJNI();
 
     Context context = mock(Context.class);
