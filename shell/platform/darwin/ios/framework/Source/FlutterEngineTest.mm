@@ -9,10 +9,6 @@
 
 FLUTTER_ASSERT_ARC
 
-@interface FlutterEngine (TestLowMemory)
-- (void)notifyLowMemory;
-@end
-
 @interface FlutterEngineTest : XCTestCase
 @end
 
@@ -81,29 +77,6 @@ FLUTTER_ASSERT_ARC
     engine = nil;
   }
   OCMVerify([plugin detachFromEngineForRegistrar:[OCMArg any]]);
-}
-
-- (void)testCallsNotifyLowMemory {
-  id project = OCMClassMock([FlutterDartProject class]);
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"tester" project:project];
-  XCTAssertNotNil(engine);
-  id mockEngine = OCMPartialMock(engine);
-  OCMStub([mockEngine notifyLowMemory]);
-
-  // TODO(dnfield): We should be testing this, but it requires mocking out the
-  // platform view.
-  // [engine setViewController:nil];
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:UIApplicationDidReceiveMemoryWarningNotification
-                    object:nil];
-  OCMVerify([mockEngine notifyLowMemory]);
-  OCMReject([mockEngine notifyLowMemory]);
-
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:UIApplicationDidEnterBackgroundNotification
-                    object:nil];
-
-  OCMVerify([mockEngine notifyLowMemory]);
 }
 
 @end

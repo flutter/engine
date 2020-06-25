@@ -168,6 +168,7 @@ source_set("ios_test_flutter_mrc") {
   ]
   sources = [
     "framework/Source/accessibility_bridge_test.mm",
+    "framework/Source/FlutterEnginePlatformViewTest.mm",
   ]
   deps = [
     ":flutter_framework_source",
