@@ -121,7 +121,7 @@ class EngineColorFilter implements ui.ColorFilter {
   static const int _TypeSrgbToLinearGamma = 4; // MakeSRGBToLinearGamma
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (other is! EngineColorFilter) {
       return false;
     }

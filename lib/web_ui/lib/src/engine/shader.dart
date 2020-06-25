@@ -278,7 +278,7 @@ class EngineImageFilter implements ui.ImageFilter {
   final double sigmaY;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (other is! EngineImageFilter) {
       return false;
     }

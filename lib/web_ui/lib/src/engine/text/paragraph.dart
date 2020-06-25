@@ -103,7 +103,7 @@ class EngineLineMetrics implements ui.LineMetrics {
       );
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
@@ -687,7 +687,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
@@ -830,7 +830,7 @@ class EngineTextStyle implements ui.TextStyle {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
@@ -975,7 +975,7 @@ class EngineStrutStyle implements ui.StrutStyle {
   final bool? _forceStrutHeight;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }

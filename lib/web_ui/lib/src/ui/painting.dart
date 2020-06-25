@@ -239,7 +239,7 @@ class Color {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
@@ -1382,7 +1382,7 @@ class MaskFilter {
   BlurStyle get webOnlyBlurStyle => _style;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (other is! MaskFilter) {
       return false;
     }
@@ -1810,7 +1810,7 @@ class Shadow {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }

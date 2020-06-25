@@ -398,7 +398,7 @@ class EmbeddedViewParams {
   final ui.Size size;
   final MutatorsStack mutators;
 
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
@@ -459,7 +459,7 @@ class Mutator {
 
   double get alphaFloat => alpha! / 255.0;
 
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
@@ -524,7 +524,7 @@ class MutatorsStack extends Iterable<Mutator> {
     _mutators.removeLast();
   }
 
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(other, this)) {
       return true;
     }

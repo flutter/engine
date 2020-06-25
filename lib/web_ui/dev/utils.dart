@@ -27,7 +27,7 @@ class FilePath {
       path.relative(_absolutePath, from: environment.webUiRootDir.path);
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return other is FilePath && _absolutePath == other._absolutePath;
   }
 
