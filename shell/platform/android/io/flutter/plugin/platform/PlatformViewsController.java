@@ -549,7 +549,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   public void onDisplayPlatformView(int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
-    io.flutter.Log.e("onDisplayPlatformView ", "mutators stack " + mutatorsStack);
+    io.flutter.Log.e("onDisplayPlatformView ", "mutators stack " + mutatorsStack.getMutators().size());
     // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
   }
 

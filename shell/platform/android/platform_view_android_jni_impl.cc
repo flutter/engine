@@ -109,6 +109,11 @@ static jmethodID g_overlay_surface_id_method = nullptr;
 
 static jmethodID g_overlay_surface_surface_method = nullptr;
 
+// Mutators
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_mutators_stack_class = nullptr;
+static jmethodID g_mutators_stack_init_method = nullptr;
+static jmethodID g_mutators_stack_push_transform_method = nullptr;
+
 // Called By Java
 static jlong AttachJNI(JNIEnv* env,
                        jclass clazz,
@@ -756,13 +761,32 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_mutators_stack_class = new fml::jni::ScopedJavaGlobalRef<jclass>(env, env->FindClass("io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack"));
+  if (g_mutators_stack_class == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterMutatorsStack";
+    return false;
+  }
+
+  g_mutators_stack_init_method = env->GetMethodID(g_mutators_stack_class->obj(), "<init>", "()V");
+  if (g_mutators_stack_init_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterMutatorsStack.init method";
+    return false;
+  }
+
+  g_mutators_stack_push_transform_method = env->GetMethodID(g_mutators_stack_class->obj(), "pushTransform", "([F)V");
+  if (g_mutators_stack_push_transform_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterMutatorsStack.pushTransform method";
+    return false;
+  }
+
   g_on_display_platform_view_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIII;io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack)V");
+      g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIIILio/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack;)V");
 
   if (g_on_display_platform_view_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onDisplayPlatformView method";
     return false;
   }
+  FML_LOG(ERROR) << "found onDisplayPlatformView";
 
   g_on_begin_frame_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "onBeginFrame", "()V");
@@ -1075,7 +1099,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
                                                                   int height,
                                                                   MutatorsStack mutators_stack) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
-
+  FML_DLOG(ERROR) << "FlutterViewOnDisplayPlatformView start";
   auto java_object = java_object_.get(env);
   if (java_object.is_null()) {
     return;
@@ -1097,29 +1121,67 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
   // }
   // jmethodID mutatorInitTransform = env->GetMethodID(mutatorClass, "<init>", "(Landroid/graphics/Matrix)V");
 
-  jclass mutatorsStackClass = env->FindClass("io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStatck");
-  jmethodID mutatorsStackInit = env->GetMethodID(mutatorsStackClass, "<init>", "()V");
-  // jmethodID mutatorsStackPush = env->GetMethodID(mutatorsStackClass, "push", "(io/flutter/embedding/engine/mutatorsstack/FlutterMutator)V");
-  jobject mutatorsStack = env->NewObject(mutatorsStackClass, mutatorsStackInit, "()V");
+  // jclass mutatorsStackClass = env->FindClass("io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack");
 
-  // std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
-  // while (iter != mutators_stack.Top()) {
-  //   switch ((*iter)->GetType()) {
-  //     case transform: {
-  //       CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
-  //       head.layer.transform = CATransform3DConcat(head.layer.transform, transform);
-  //       break;
-  //     }
-  //     case clip_rect: {
-  //       break;
-  //     }
-  //     case clip_rrect:
-  //     case clip_path:
-  //     case opacity:
-  //       break;
-  //   }
-  //   ++iter;
+  // if (mutatorsStackClass == nullptr) {
+  //     FML_DLOG(ERROR) << "mutatorsStackClass not found";
+  //     return;
   // }
+  // jmethodID mutatorsStackInit = env->GetMethodID(mutatorsStackClass, "<init>", "()V");
+  // if (mutatorsStackInit == nullptr) {
+  //     FML_DLOG(ERROR) << "mutatorsStackClass.Init not found";
+  //     return;
+  // }
+  // jmethodID mutatorsStackPush = env->GetMethodID(mutatorsStackClass, "push", "(io/flutter/embedding/engine/mutatorsstack/FlutterMutator)V");
+  jobject mutatorsStack = env->NewObject(g_mutators_stack_class->obj(), g_mutators_stack_init_method);
+
+  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
+  int i = 0;
+  while (iter != mutators_stack.Top()) {
+    switch ((*iter)->GetType()) {
+      case transform: {
+        const SkMatrix& matrix = (*iter)->GetMatrix();
+        SkScalar matrix_array[9];
+        matrix.get9(matrix_array);
+        fml::jni::ScopedJavaLocalRef<jfloatArray> transformMatrix(
+          env, env->NewFloatArray(9));
+
+        env->SetFloatArrayRegion(transformMatrix.obj(), 0, 9, matrix_array);
+        FML_DLOG(ERROR) << "================ mutatorsStack try push ==================";
+        FML_DLOG(ERROR) << "getTranslateX " << matrix.getTranslateX();
+        FML_DLOG(ERROR) << "getTranslateY " << matrix.getTranslateY();
+        FML_DLOG(ERROR) << "getSkewX " << matrix.getSkewX();
+        FML_DLOG(ERROR) << "getSkewY " << matrix.getSkewY();
+        FML_DLOG(ERROR) << "getScaleX " << matrix.getScaleX();
+        FML_DLOG(ERROR) << "getScaleY " << matrix.getScaleY();
+        FML_DLOG(ERROR) << "getPerspX " << matrix.getPerspX();
+        FML_DLOG(ERROR) << "getPerspY " << matrix.getPerspY();
+  //       float* m = env->GetFloatArrayElements(transformMatrix.obj(), nullptr);
+  //       float scaleX = m[0], scaleY = m[5];
+  //       const SkSize scaled = ScaleToFill(scaleX, scaleY);
+  //       SkScalar matrix3[] = {
+  //           scaled.fWidth, m[1],           m[2],   //
+  //           m[4],          scaled.fHeight, m[6],   //
+  //           m[8],          m[9],           m[10],  //
+  //       };
+  // env->ReleaseFloatArrayElements(transformMatrix.obj(), m, JNI_ABORT);
+  // transform.set9(matrix3);
+
+        env->CallVoidMethod(mutatorsStack, g_mutators_stack_push_transform_method, transformMatrix.obj());
+        break;
+      }
+      case clip_rect: {
+        break;
+      }
+      case clip_rrect:
+      case clip_path:
+      case opacity:
+        break;
+    }
+    ++ i;
+    ++iter;
+  }
+  FML_DLOG(ERROR) << "size " << i;
 
 
   // jobject hashMapObj = env->NewObject(env, hashMapClass, hashMapInit, mMap.size());
@@ -1128,6 +1190,8 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
 
   env->CallVoidMethod(java_object.obj(), g_on_display_platform_view_method,
                       view_id, x, y, width, height, mutatorsStack);
+
+  FML_DLOG(ERROR) << "FlutterViewOnDisplayPlatformView end";
 
   FML_CHECK(CheckException(env));
 }
