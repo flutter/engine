@@ -15,9 +15,9 @@
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/android/android_native_window.h"
-#include "flutter/shell/platform/android/android_surface.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/surface/android_native_window.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
 
 namespace flutter {
 
@@ -117,7 +117,6 @@ class PlatformViewAndroid final : public PlatformView {
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroid);
 };
-
 }  // namespace flutter
 
 #endif  // SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_H_

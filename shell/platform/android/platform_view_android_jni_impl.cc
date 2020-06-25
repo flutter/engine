@@ -102,6 +102,10 @@ static jmethodID g_on_display_platform_view_method = nullptr;
 
 static jmethodID g_on_display_overlay_surface_method = nullptr;
 
+static jmethodID g_overlay_surface_id_method = nullptr;
+
+static jmethodID g_overlay_surface_surface_method = nullptr;
+
 // Called By Java
 static jlong AttachJNI(JNIEnv* env,
                        jclass clazz,
@@ -698,6 +702,26 @@ bool RegisterApi(JNIEnv* env) {
     return false;
   }
 
+  fml::jni::ScopedJavaLocalRef<jclass> overlay_surface_class(
+      env, env->FindClass("io/flutter/embedding/engine/FlutterOverlaySurface"));
+  if (overlay_surface_class.is_null()) {
+    FML_LOG(ERROR) << "Could not locate FlutterOverlaySurface class";
+    return false;
+  }
+  g_overlay_surface_id_method =
+      env->GetMethodID(overlay_surface_class.obj(), "getId", "()I");
+  if (g_overlay_surface_id_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate FlutterOverlaySurface#getId() method";
+    return false;
+  }
+  g_overlay_surface_surface_method = env->GetMethodID(
+      overlay_surface_class.obj(), "getSurface", "()Landroid/view/Surface;");
+  if (g_overlay_surface_surface_method == nullptr) {
+    FML_LOG(ERROR)
+        << "Could not locate FlutterOverlaySurface#getSurface() method";
+    return false;
+  }
+
   return true;
 }
 
@@ -1104,17 +1128,36 @@ void PlatformViewAndroidJNIImpl::FlutterViewEndFrame() {
   FML_CHECK(CheckException(env));
 }
 
-void PlatformViewAndroidJNIImpl::FlutterViewCreateOverlaySurface() {
+std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>
+PlatformViewAndroidJNIImpl::FlutterViewCreateOverlaySurface() {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
   if (java_object.is_null()) {
-    return;
+    return nullptr;
   }
 
-  env->CallVoidMethod(java_object.obj(), g_create_overlay_surface_method);
-
+  fml::jni::ScopedJavaLocalRef<jobject> overlay(
+      env, env->CallObjectMethod(java_object.obj(),
+                                 g_create_overlay_surface_method));
   FML_CHECK(CheckException(env));
+
+  if (overlay.is_null()) {
+    return std::make_unique<PlatformViewAndroidJNI::OverlayMetadata>(0,
+                                                                     nullptr);
+  }
+
+  jint overlay_id =
+      env->CallIntMethod(overlay.obj(), g_overlay_surface_id_method);
+
+  jobject overlay_surface =
+      env->CallObjectMethod(overlay.obj(), g_overlay_surface_surface_method);
+
+  auto overlay_window = fml::MakeRefCounted<AndroidNativeWindow>(
+      ANativeWindow_fromSurface(env, overlay_surface));
+
+  return std::make_unique<PlatformViewAndroidJNI::OverlayMetadata>(
+      overlay_id, std::move(overlay_window));
 }
 
 std::unique_ptr<std::vector<std::string>>
