@@ -23,9 +23,11 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @TargetApi(24) // LocaleList and scriptCode are API 24+.
 public class LocalizationPluginTest {
+  // This test should be synced with the version for API 24.
   @Test
-  public void computePlatformResolvedLocaleCallsLocalizationPluginProperly() {
+  public void computePlatformResolvedLocaleAPI26() {
     // --- Test Setup ---
+    setApiVersion(26);
     FlutterJNI flutterJNI = new FlutterJNI();
 
     Context context = mock(Context.class);
@@ -97,4 +99,184 @@ public class LocalizationPluginTest {
     assertEquals(result[1], "IT");
     assertEquals(result[2], "");
   }
+
+  // This test should be synced with the version for API 26.
+  @Test
+  public void computePlatformResolvedLocaleAPI24() {
+    // --- Test Setup ---
+    setApiVersion(24);
+    FlutterJNI flutterJNI = new FlutterJNI();
+
+    Context context = mock(Context.class);
+    Resources resources = mock(Resources.class);
+    Configuration config = mock(Configuration.class);
+    DartExecutor dartExecutor = mock(DartExecutor.class);
+    LocaleList localeList =
+        new LocaleList(new Locale("es", "MX"), new Locale("zh", "CN"), new Locale("en", "US"));
+    when(context.getResources()).thenReturn(resources);
+    when(resources.getConfiguration()).thenReturn(config);
+    when(config.getLocales()).thenReturn(localeList);
+
+    flutterJNI.setLocalizationPlugin(
+        new LocalizationPlugin(context, new LocalizationChannel(dartExecutor)));
+
+    // Empty supportedLocales.
+    String[] supportedLocales = new String[] {};
+    String[] result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 0);
+
+    // Empty preferredLocales.
+    supportedLocales =
+        new String[] {
+          "fr", "FR", "",
+          "zh", "", "",
+          "en", "CA", ""
+        };
+    localeList = new LocaleList();
+    when(config.getLocales()).thenReturn(localeList);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    // The first locale is default.
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "fr");
+    assertEquals(result[1], "FR");
+    assertEquals(result[2], "");
+
+    // Example from https://developer.android.com/guide/topics/resources/multilingual-support#postN
+    supportedLocales =
+        new String[] {
+          "en", "", "",
+          "de", "DE", "",
+          "es", "ES", "",
+          "fr", "FR", "",
+          "it", "IT", ""
+        };
+    localeList = new LocaleList(new Locale("fr", "CH"));
+    when(config.getLocales()).thenReturn(localeList);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    // The call will use the new (> API 24) algorithm.
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "fr");
+    assertEquals(result[1], "FR");
+    assertEquals(result[2], "");
+
+    // Example from https://developer.android.com/guide/topics/resources/multilingual-support#postN
+    supportedLocales =
+        new String[] {
+          "en", "", "",
+          "de", "DE", "",
+          "es", "ES", "",
+          "it", "IT", ""
+        };
+    localeList = new LocaleList(new Locale("fr", "CH"), new Locale("it", "CH"));
+    when(config.getLocales()).thenReturn(localeList);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    // The call will use the new (> API 24) algorithm.
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "it");
+    assertEquals(result[1], "IT");
+    assertEquals(result[2], "");
+  }
+
+  // Tests the legacy pre API 24 algorithm.
+  @Test
+  public void computePlatformResolvedLocaleAPI24() {
+    // --- Test Setup ---
+    setApiVersion(20);
+    FlutterJNI flutterJNI = new FlutterJNI();
+
+    Context context = mock(Context.class);
+    Resources resources = mock(Resources.class);
+    Configuration config = mock(Configuration.class);
+    DartExecutor dartExecutor = mock(DartExecutor.class);
+    Locale userLocale = new Locale("es", "MX");
+    when(context.getResources()).thenReturn(resources);
+    when(resources.getConfiguration()).thenReturn(config);
+    when(config.locale).thenReturn(userLocale);
+
+    flutterJNI.setLocalizationPlugin(
+        new LocalizationPlugin(context, new LocalizationChannel(dartExecutor)));
+
+    // Empty supportedLocales.
+    String[] supportedLocales = new String[] {};
+    String[] result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 0);
+
+    // Empty null preferred locale.
+    supportedLocales =
+        new String[] {
+          "fr", "FR", "",
+          "zh", "", "",
+          "en", "CA", ""
+        };
+    userLocale = null;
+    when(config.locale).thenReturn(userLocale);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    // The first locale is default.
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "fr");
+    assertEquals(result[1], "FR");
+    assertEquals(result[2], "");
+
+    // Example from https://developer.android.com/guide/topics/resources/multilingual-support#postN
+    supportedLocales =
+        new String[] {
+          "en", "", "",
+          "de", "DE", "",
+          "es", "ES", "",
+          "fr", "FR", "",
+          "it", "IT", ""
+        };
+    userLocale = new Locale("fr", "CH");
+    when(config.locale).thenReturn(userLocale);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "en");
+    assertEquals(result[1], "");
+    assertEquals(result[2], "");
+
+    supportedLocales =
+        new String[] {
+          "en", "", "",
+          "de", "DE", "",
+          "es", "ES", "",
+          "fr", "FR", "",
+          "it", "IT", ""
+        };
+    userLocale = new Locale("it", "IT");
+    when(config.locale).thenReturn(userLocale);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "it");
+    assertEquals(result[1], "IT");
+    assertEquals(result[2], "");
+
+    supportedLocales =
+        new String[] {
+          "en", "", "",
+          "de", "DE", "",
+          "es", "ES", "",
+          "fr", "FR", "",
+          "fr", "", "",
+          "it", "IT", ""
+        };
+    userLocale = new Locale("fr", "CH");
+    when(config.locale).thenReturn(userLocale);
+    result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
+    assertEquals(result.length, 3);
+    assertEquals(result[0], "fr");
+    assertEquals(result[1], "");
+    assertEquals(result[2], "");
+  }
+
+  static void setApiVersion(int apiVersion) throws Exception {
+    Field field = Build.VERSION.class.getField("SDK_INT");
+
+    field.setAccessible(true);
+
+    Field modifiersField = Field.class.getDeclaredField("modifiers");
+    modifiersField.setAccessible(true);
+    modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+    field.set(null, apiVersion);
+ }
 }
