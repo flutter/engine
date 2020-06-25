@@ -37,7 +37,8 @@ class SkVertices implements ui.Vertices {
       throw ArgumentError(
           '"indices" values must be valid indices in the positions list.');
 
-    final js.JsArray<js.JsArray<double>> encodedPositions = encodePointList(positions);
+    final js.JsArray<js.JsArray<double>> encodedPositions =
+        encodePointList(positions);
     final js.JsArray<js.JsArray<double>> encodedTextures =
         encodePointList(textureCoordinates);
     final js.JsArray<Float32List> encodedColors =
