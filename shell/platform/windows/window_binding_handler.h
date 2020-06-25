@@ -30,7 +30,7 @@ class FlutterWindowBindingHandler {
 
   // Returns a valid WindowsRenderTarget representing the backing
   // window.
-  
+
   virtual WindowsRenderTarget GetRenderTarget() = 0;
 
   // Returns the scale factor for the backing window.

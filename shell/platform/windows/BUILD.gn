@@ -51,7 +51,6 @@ source_set("flutter_windows_source") {
     "string_conversion.h",
     "text_input_plugin.cc",
     "text_input_plugin.h",
-    "window_binding_handler.h",
     "win32_dpi_utils.cc",
     "win32_dpi_utils.h",
     "win32_flutter_window.cc",
@@ -62,6 +61,7 @@ source_set("flutter_windows_source") {
     "win32_task_runner.h",
     "win32_window.cc",
     "win32_window.h",
+    "window_binding_handler.h",
     "window_state.h",
   ]
 
