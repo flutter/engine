@@ -118,7 +118,7 @@ class SkiaFontCollection {
           'There was a problem trying to load FontManifest.json');
     }
 
-    for (Map<String, dynamic> fontFamily in fontManifest as Iterable<Map<String, dynamic>>) {
+    for (Map<String, dynamic> fontFamily in fontManifest.cast<Map<String, dynamic>>()) {
       final String? family = fontFamily['family'];
       final List<dynamic> fontAssets = fontFamily['fonts'];
 

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 part of engine;
 
 class SkPicture implements ui.Picture {
@@ -21,6 +20,6 @@ class SkPicture implements ui.Picture {
 
   @override
   Future<ui.Image> toImage(int width, int height) {
-    throw UnsupportedError('SkPicture.toImage not implemented');
+    throw UnsupportedError('Picture.toImage not yet implemented for CanvasKit and HTML');
   }
 }
