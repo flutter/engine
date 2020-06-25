@@ -17,13 +17,9 @@
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-#if FLUTTER_SHELL_ENABLE_METAL
-#include "flutter/shell/platform/darwin/ios/ios_surface_metal.h"
-#endif  //  FLUTTER_SHELL_ENABLE_METAL
-
-@implementation FlutterView
-
-id<FlutterViewEngineDelegate> _delegate;
+@implementation FlutterView {
+  id<FlutterViewEngineDelegate> _delegate;
+}
 
 - (instancetype)init {
   @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
@@ -56,67 +52,28 @@ id<FlutterViewEngineDelegate> _delegate;
 }
 
 - (void)layoutSubviews {
-  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
-    CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
-    layer.allowsGroupOpacity = YES;
+  if ([self.layer isKindOfClass:NSClassFromString(@"CAEAGLLayer")] ||
+      [self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
     CGFloat screenScale = [UIScreen mainScreen].scale;
-    layer.contentsScale = screenScale;
-    layer.rasterizationScale = screenScale;
-  }
-
-#if FLUTTER_SHELL_ENABLE_METAL
-  if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
-    CGFloat screenScale = [UIScreen mainScreen].scale;
+    self.layer.allowsGroupOpacity = YES;
     self.layer.contentsScale = screenScale;
     self.layer.rasterizationScale = screenScale;
   }
 
-#endif  //  FLUTTER_SHELL_ENABLE_METAL
   [super layoutSubviews];
 }
 
 + (Class)layerClass {
-#if TARGET_IPHONE_SIMULATOR
-  return [CALayer class];
-#else  // TARGET_IPHONE_SIMULATOR
-#if FLUTTER_SHELL_ENABLE_METAL
-  return [CAMetalLayer class];
-#else   // FLUTTER_SHELL_ENABLE_METAL
-  return [CAEAGLLayer class];
-#endif  //  FLUTTER_SHELL_ENABLE_METAL
-#endif  // TARGET_IPHONE_SIMULATOR
+  return flutter::GetCoreAnimationLayerClassForRenderingAPI();
 }
 
 - (std::unique_ptr<flutter::IOSSurface>)createSurface:
-    (std::shared_ptr<flutter::IOSGLContext>)context {
-  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
-    fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
-        reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
-    if (flutter::IsIosEmbeddedViewsPreviewEnabled()) {
-      // TODO(amirh): We can lower this to iOS 8.0 once we have a Metal rendering backend.
-      // https://github.com/flutter/flutter/issues/24132
-      if (@available(iOS 9.0, *)) {
-        // TODO(amirh): only do this if there's an embedded view.
-        // https://github.com/flutter/flutter/issues/24133
-        eagl_layer.get().presentsWithTransaction = YES;
-      }
-    }
-    return std::make_unique<flutter::IOSSurfaceGL>(context, std::move(eagl_layer),
-                                                   [_delegate platformViewsController]);
-  }
-#if FLUTTER_SHELL_ENABLE_METAL
-  else if ([self.layer isKindOfClass:[CAMetalLayer class]]) {
-    return std::make_unique<flutter::IOSSurfaceMetal>(
-        fml::scoped_nsobject<CAMetalLayer>(reinterpret_cast<CAMetalLayer*>([self.layer retain])),
-        [_delegate platformViewsController]);
-  }
-#endif  //  FLUTTER_SHELL_ENABLE_METAL
-
-  else {
-    fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
-    return std::make_unique<flutter::IOSSurfaceSoftware>(std::move(layer),
-                                                         [_delegate platformViewsController]);
-  }
+    (std::shared_ptr<flutter::IOSContext>)ios_context {
+  return flutter::IOSSurface::Create(
+      std::move(ios_context),                              // context
+      fml::scoped_nsobject<CALayer>{[self.layer retain]},  // layer
+      [_delegate platformViewsController]                  // platform views controller
+  );
 }
 
 - (void)drawLayer:(CALayer*)layer inContext:(CGContextRef)context {

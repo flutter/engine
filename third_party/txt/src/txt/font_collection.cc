@@ -150,19 +150,24 @@ FontCollection::GetMinikinFontCollectionForFamilies(
   }
   // Search for default font family if no user font families were found.
   if (minikin_families.empty()) {
-    const auto default_font_family = GetDefaultFontFamily();
-    std::shared_ptr<minikin::FontFamily> minikin_family =
-        FindFontFamilyInManagers(default_font_family);
-    if (minikin_family != nullptr) {
-      minikin_families.push_back(minikin_family);
+    const auto default_font_families = GetDefaultFontFamilies();
+    for (const auto& family : default_font_families) {
+      std::shared_ptr<minikin::FontFamily> minikin_family =
+          FindFontFamilyInManagers(family);
+      if (minikin_family != nullptr) {
+        minikin_families.push_back(minikin_family);
+        break;
+      }
     }
   }
   // Default font family also not found. We fail to get a FontCollection.
   if (minikin_families.empty()) {
+    font_collections_cache_[family_key] = nullptr;
     return nullptr;
   }
   if (enable_font_fallback_) {
-    for (std::string fallback_family : fallback_fonts_for_locale_[locale]) {
+    for (const std::string& fallback_family :
+         fallback_fonts_for_locale_[locale]) {
       auto it = fallback_fonts_.find(fallback_family);
       if (it != fallback_fonts_.end()) {
         minikin_families.push_back(it->second);
@@ -208,30 +213,35 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
     return nullptr;
   }
 
-  std::vector<minikin::Font> minikin_fonts;
-
-  // Add fonts to the Minikin font family.
+  std::vector<sk_sp<SkTypeface>> skia_typefaces;
   for (int i = 0; i < font_style_set->count(); ++i) {
-    TRACE_EVENT0("flutter", "CreateMinikinFont");
-    // Create the skia typeface.
+    TRACE_EVENT0("flutter", "CreateSkiaTypeface");
     sk_sp<SkTypeface> skia_typeface(
         sk_sp<SkTypeface>(font_style_set->createTypeface(i)));
-    if (skia_typeface == nullptr) {
-      continue;
+    if (skia_typeface != nullptr) {
+      skia_typefaces.emplace_back(std::move(skia_typeface));
     }
+  }
 
+  std::sort(skia_typefaces.begin(), skia_typefaces.end(),
+            [](const sk_sp<SkTypeface>& a, const sk_sp<SkTypeface>& b) {
+              SkFontStyle a_style = a->fontStyle();
+              SkFontStyle b_style = b->fontStyle();
+              return (a_style.weight() != b_style.weight())
+                         ? a_style.weight() < b_style.weight()
+                         : a_style.slant() < b_style.slant();
+            });
+
+  std::vector<minikin::Font> minikin_fonts;
+  for (const sk_sp<SkTypeface>& skia_typeface : skia_typefaces) {
     // Create the minikin font from the skia typeface.
     // Divide by 100 because the weights are given as "100", "200", etc.
-    minikin::Font minikin_font(
+    minikin_fonts.emplace_back(
         std::make_shared<FontSkia>(skia_typeface),
         minikin::FontStyle{skia_typeface->fontStyle().weight() / 100,
                            skia_typeface->isItalic()});
-
-    minikin_fonts.emplace_back(std::move(minikin_font));
   }
 
-  TRACE_EVENT1("flutter", "minikin::FontFamily", "MinikinFontsCount",
-               std::to_string(minikin_fonts.size()).c_str());
   return std::make_shared<minikin::FontFamily>(std::move(minikin_fonts));
 }
 
@@ -267,7 +277,10 @@ const std::shared_ptr<minikin::FontFamily>& FontCollection::DoMatchFallbackFont(
     typeface->getFamilyName(&sk_family_name);
     std::string family_name(sk_family_name.c_str());
 
-    fallback_fonts_for_locale_[locale].insert(family_name);
+    if (std::find(fallback_fonts_for_locale_[locale].begin(),
+                  fallback_fonts_for_locale_[locale].end(),
+                  family_name) == fallback_fonts_for_locale_[locale].end())
+      fallback_fonts_for_locale_[locale].push_back(family_name);
 
     return GetFallbackFontFamily(manager, family_name);
   }
@@ -301,5 +314,27 @@ FontCollection::GetFallbackFontFamily(const sk_sp<SkFontMgr>& manager,
 void FontCollection::ClearFontFamilyCache() {
   font_collections_cache_.clear();
 }
+
+#if FLUTTER_ENABLE_SKSHAPER
+
+sk_sp<skia::textlayout::FontCollection>
+FontCollection::CreateSktFontCollection() {
+  if (!skt_collection_) {
+    skt_collection_ = sk_make_sp<skia::textlayout::FontCollection>();
+
+    skt_collection_->setDefaultFontManager(default_font_manager_,
+                                           GetDefaultFontFamilies()[0].c_str());
+    skt_collection_->setAssetFontManager(asset_font_manager_);
+    skt_collection_->setDynamicFontManager(dynamic_font_manager_);
+    skt_collection_->setTestFontManager(test_font_manager_);
+    if (!enable_font_fallback_) {
+      skt_collection_->disableFontFallback();
+    }
+  }
+
+  return skt_collection_;
+}
+
+#endif  // FLUTTER_ENABLE_SKSHAPER
 
 }  // namespace txt

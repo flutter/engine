@@ -24,12 +24,12 @@ TransformLayer::TransformLayer(const SkMatrix& transform)
   }
 }
 
-TransformLayer::~TransformLayer() = default;
-
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+  TRACE_EVENT0("flutter", "TransformLayer::Preroll");
+
   SkMatrix child_matrix;
   child_matrix.setConcat(matrix, transform_);
-
+  context->mutators_stack.PushTransform(transform_);
   SkRect previous_cull_rect = context->cull_rect;
   SkMatrix inverse_transform_;
   // Perspective projections don't produce rectangles that are useful for
@@ -47,15 +47,21 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(child_paint_bounds);
 
   context->cull_rect = previous_cull_rect;
+  context->mutators_stack.Pop();
 }
 
 #if defined(OS_FUCHSIA)
 
 void TransformLayer::UpdateScene(SceneUpdateContext& context) {
+  TRACE_EVENT0("flutter", "TransformLayer::UpdateScene");
   FML_DCHECK(needs_system_composite());
 
-  SceneUpdateContext::Transform transform(context, transform_);
-  UpdateSceneChildren(context);
+  if (!transform_.isIdentity()) {
+    SceneUpdateContext::Transform transform(context, transform_);
+    UpdateSceneChildren(context);
+  } else {
+    UpdateSceneChildren(context);
+  }
 }
 
 #endif  // defined(OS_FUCHSIA)
@@ -66,6 +72,7 @@ void TransformLayer::Paint(PaintContext& context) const {
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->concat(transform_);
+
   PaintChildren(context);
 }
 

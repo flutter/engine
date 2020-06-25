@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #include "flutter/fml/logging.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 #include <AudioToolbox/AudioToolbox.h>
 #include <Foundation/Foundation.h>
@@ -79,7 +80,8 @@ using namespace flutter;
     [self setSystemChromeSystemUIOverlayStyle:args];
     result(nil);
   } else if ([method isEqualToString:@"SystemNavigator.pop"]) {
-    [self popSystemNavigator];
+    NSNumber* isAnimated = args;
+    [self popSystemNavigator:isAnimated.boolValue];
     result(nil);
   } else if ([method isEqualToString:@"Clipboard.getData"]) {
     result([self getClipboardData:args]);
@@ -107,14 +109,16 @@ using namespace flutter;
 
   if (@available(iOS 10, *)) {
     if ([@"HapticFeedbackType.lightImpact" isEqualToString:feedbackType]) {
-      [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
+      [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] autorelease]
+          impactOccurred];
     } else if ([@"HapticFeedbackType.mediumImpact" isEqualToString:feedbackType]) {
-      [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium]
+      [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium] autorelease]
           impactOccurred];
     } else if ([@"HapticFeedbackType.heavyImpact" isEqualToString:feedbackType]) {
-      [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleHeavy] impactOccurred];
+      [[[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleHeavy] autorelease]
+          impactOccurred];
     } else if ([@"HapticFeedbackType.selectionClick" isEqualToString:feedbackType]) {
-      [[[UISelectionFeedbackGenerator alloc] init] selectionChanged];
+      [[[[UISelectionFeedbackGenerator alloc] init] autorelease] selectionChanged];
     }
   }
 }
@@ -158,6 +162,15 @@ using namespace flutter;
   // UIViewControllerBasedStatusBarAppearance
   [UIApplication sharedApplication].statusBarHidden =
       ![overlays containsObject:@"SystemUiOverlay.top"];
+  if ([overlays containsObject:@"SystemUiOverlay.bottom"]) {
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:FlutterViewControllerShowHomeIndicator
+                      object:nil];
+  } else {
+    [[NSNotificationCenter defaultCenter]
+        postNotificationName:FlutterViewControllerHideHomeIndicator
+                      object:nil];
+  }
 }
 
 - (void)restoreSystemChromeSystemUIOverlays {
@@ -165,17 +178,22 @@ using namespace flutter;
 }
 
 - (void)setSystemChromeSystemUIOverlayStyle:(NSDictionary*)message {
-  NSString* style = message[@"statusBarBrightness"];
-  if (style == (id)[NSNull null])
+  NSString* brightness = message[@"statusBarBrightness"];
+  if (brightness == (id)[NSNull null])
     return;
 
   UIStatusBarStyle statusBarStyle;
-  if ([style isEqualToString:@"Brightness.dark"])
+  if ([brightness isEqualToString:@"Brightness.dark"]) {
     statusBarStyle = UIStatusBarStyleLightContent;
-  else if ([style isEqualToString:@"Brightness.light"])
-    statusBarStyle = UIStatusBarStyleDefault;
-  else
+  } else if ([brightness isEqualToString:@"Brightness.light"]) {
+    if (@available(iOS 13, *)) {
+      statusBarStyle = UIStatusBarStyleDarkContent;
+    } else {
+      statusBarStyle = UIStatusBarStyleDefault;
+    }
+  } else {
     return;
+  }
 
   NSNumber* infoValue = [[NSBundle mainBundle]
       objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"];
@@ -194,7 +212,7 @@ using namespace flutter;
   }
 }
 
-- (void)popSystemNavigator {
+- (void)popSystemNavigator:(BOOL)isAnimated {
   // Apple's human user guidelines say not to terminate iOS applications. However, if the
   // root view of the app is a navigation controller, it is instructed to back up a level
   // in the navigation hierarchy.
@@ -202,11 +220,11 @@ using namespace flutter;
   // outside the context of a UINavigationController, and still wants to be popped.
   UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
   if ([viewController isKindOfClass:[UINavigationController class]]) {
-    [((UINavigationController*)viewController) popViewControllerAnimated:NO];
+    [((UINavigationController*)viewController) popViewControllerAnimated:isAnimated];
   } else {
     auto engineViewController = static_cast<UIViewController*>([_engine.get() viewController]);
     if (engineViewController != viewController) {
-      [engineViewController dismissViewControllerAnimated:NO completion:nil];
+      [engineViewController dismissViewControllerAnimated:isAnimated completion:nil];
     }
   }
 }
@@ -223,7 +241,11 @@ using namespace flutter;
 
 - (void)setClipboardData:(NSDictionary*)data {
   UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
-  pasteboard.string = data[@"text"];
+  if (data[@"text"]) {
+    pasteboard.string = data[@"text"];
+  } else {
+    pasteboard.string = @"null";
+  }
 }
 
 @end

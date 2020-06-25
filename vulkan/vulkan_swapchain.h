@@ -11,9 +11,9 @@
 
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
-#include "flutter/vulkan/vulkan_handle.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "vulkan_handle.h"
 
 namespace vulkan {
 
@@ -56,8 +56,7 @@ class VulkanSwapchain {
 
   /// Submit a previously acquired. There must not be consecutive calls to
   /// |Submit| without and interleaving |AcquireFrame|.
-  FML_WARN_UNUSED_RESULT
-  bool Submit();
+  [[nodiscard]] bool Submit();
 
   SkISize GetSize() const;
 

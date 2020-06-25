@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <string_view>
+
 #include "flutter/common/settings.h"
 #include "flutter/fml/command_line.h"
-#include "flutter/fml/string_view.h"
 
 #ifndef SHELL_COMMON_SWITCHES_H_
 #define SHELL_COMMON_SWITCHES_H_
@@ -48,7 +49,11 @@ DEF_SWITCH(IsolateSnapshotInstructions,
            "isolate-snapshot-instr",
            "The isolate instructions snapshot that will be memory mapped as "
            "read and executable. SnapshotAssetPath must be present.")
-DEF_SWITCH(CacheDirPath, "cache-dir-path", "Path to the cache directory.")
+DEF_SWITCH(CacheDirPath,
+           "cache-dir-path",
+           "Path to the cache directory. "
+           "This is different from the persistent_cache_path in embedder.h, "
+           "which is used for Skia shader cache.")
 DEF_SWITCH(ICUDataFilePath, "icu-data-file-path", "Path to the ICU data file.")
 DEF_SWITCH(ICUSymbolPrefix,
            "icu-symbol-prefix",
@@ -61,6 +66,11 @@ DEF_SWITCH(DartFlags,
            "dart-flags",
            "Flags passed directly to the Dart VM without being interpreted "
            "by the Flutter shell.")
+DEF_SWITCH(DeviceObservatoryHost,
+           "observatory-host",
+           "The hostname/IP address on which the Dart Observatory should "
+           "be served. If not set, defaults to 127.0.0.1 or ::1 depending on "
+           "whether --ipv6 is specified.")
 DEF_SWITCH(DeviceObservatoryPort,
            "observatory-port",
            "A custom Dart Observatory port. The default is to pick a randomly "
@@ -71,7 +81,8 @@ DEF_SWITCH(DisableObservatory,
            "in release mode.")
 DEF_SWITCH(IPv6,
            "ipv6",
-           "Bind to the IPv6 localhost address for the Dart Observatory.")
+           "Bind to the IPv6 localhost address for the Dart Observatory. "
+           "Ignored if --observatory-host is set.")
 DEF_SWITCH(EnableDartProfiling,
            "enable-dart-profiling",
            "Enable Dart profiling. Profiling information can be viewed from "
@@ -84,13 +95,13 @@ DEF_SWITCH(EndlessTraceBuffer,
            "indefinitely however.")
 DEF_SWITCH(EnableSoftwareRendering,
            "enable-software-rendering",
-           "Enable rendering using the Skia software backend. This is useful"
-           "when testing Flutter on emulators. By default, Flutter will"
+           "Enable rendering using the Skia software backend. This is useful "
+           "when testing Flutter on emulators. By default, Flutter will "
            "attempt to either use OpenGL or Vulkan.")
 DEF_SWITCH(SkiaDeterministicRendering,
            "skia-deterministic-rendering",
-           "Skips the call to SkGraphics::Init(), thus avoiding swapping out"
-           "some Skia function pointers based on available CPU features. This"
+           "Skips the call to SkGraphics::Init(), thus avoiding swapping out "
+           "some Skia function pointers based on available CPU features. This "
            "is used to obtain 100% deterministic behavior in Skia rendering.")
 DEF_SWITCH(FlutterAssetsDir,
            "flutter-assets-dir",
@@ -101,9 +112,14 @@ DEF_SWITCH(DisableServiceAuthCodes,
            "disable-service-auth-codes",
            "Disable the requirement for authentication codes for communicating"
            " with the VM service.")
+DEF_SWITCH(EnableServicePortFallback,
+           "enable-service-port-fallback",
+           "Allow the VM service to fallback to automatic port selection if"
+           " binding to a specified port fails.")
 DEF_SWITCH(StartPaused,
            "start-paused",
            "Start the application paused in the Dart debugger.")
+DEF_SWITCH(EnableCheckedMode, "enable-checked-mode", "Enable checked mode.")
 DEF_SWITCH(TraceStartup,
            "trace-startup",
            "Trace early application lifecycle. Automatically switches to an "
@@ -113,11 +129,25 @@ DEF_SWITCH(TraceSkia,
            "Trace Skia calls. This is useful when debugging the GPU threed."
            "By default, Skia tracing is not enabled to reduce the number of "
            "traced events")
+DEF_SWITCH(TraceWhitelist,
+           "trace-whitelist",
+           "(deprecated) Use --trace-allowlist instead.")
+DEF_SWITCH(
+    TraceAllowlist,
+    "trace-allowlist",
+    "Filters out all trace events except those that are specified in this "
+    "comma separated list of allowed prefixes.")
 DEF_SWITCH(DumpSkpOnShaderCompilation,
            "dump-skp-on-shader-compilation",
            "Automatically dump the skp that triggers new shader compilations. "
            "This is useful for writing custom ShaderWarmUp to reduce jank. "
            "By default, this is not enabled to reduce the overhead. ")
+DEF_SWITCH(CacheSkSL,
+           "cache-sksl",
+           "Only cache the shader in SkSL instead of binary or GLSL. This "
+           "should only be used during development phases. The generated SkSLs "
+           "can later be used in the release build for shader precompilation "
+           "at launch in order to eliminate the shader-compile jank.")
 DEF_SWITCH(
     TraceSystrace,
     "trace-systrace",
@@ -147,11 +177,32 @@ DEF_SWITCH(DisableDartAsserts,
            "disabled. This flag may be specified if the user wishes to run "
            "with assertions disabled in the debug product mode (i.e. with JIT "
            "or DBC).")
+DEF_SWITCH(DisableHttp,
+           "disable-http",
+           "Dart VM has a master switch that can be set to disable insecure "
+           "HTTP and WebSocket protocols. Localhost or loopback addresses are "
+           "exempted. This flag can be specified if the embedder wants this "
+           "for a particular platform.")
+DEF_SWITCH(
+    ForceMultithreading,
+    "force-multithreading",
+    "Uses separate threads for the platform, UI, GPU and IO task runners. "
+    "By default, a single thread is used for all task runners. Only available "
+    "in the flutter_tester.")
+// TODO(cyanlaz): Remove this when dynamic thread merging is done.
+// https://github.com/flutter/flutter/issues/59930
+DEF_SWITCH(UseEmbeddedView,
+           "use-embedded-view",
+           "Whether an android application uses embedded views."
+           "This is a temporary flag to make the raster task runner runs on "
+           "the platform thread."
+           "This flag should be removed once the dynamic thread merging is "
+           "enabled on android.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);
 
-const fml::StringView FlagForSwitch(Switch swtch);
+const std::string_view FlagForSwitch(Switch swtch);
 
 Settings SettingsFromCommandLine(const fml::CommandLine& command_line);
 

@@ -35,8 +35,6 @@ namespace flutter {
 class FontCollection;
 class Scene;
 
-Dart_Handle ToByteData(const std::vector<uint8_t>& buffer);
-
 // Must match the AccessibilityFeatureFlag enum in window.dart.
 enum class AccessibilityFeatureFlag : int32_t {
   kAccessibleNavigation = 1 << 0,
@@ -44,6 +42,7 @@ enum class AccessibilityFeatureFlag : int32_t {
   kDisableAnimations = 1 << 2,
   kBoldText = 1 << 3,
   kReduceMotion = 1 << 4,
+  kHighContrast = 1 << 5,
 };
 
 class WindowClient {
@@ -57,6 +56,10 @@ class WindowClient {
   virtual void UpdateIsolateDescription(const std::string isolate_name,
                                         int64_t isolate_port) = 0;
   virtual void SetNeedsReportTimings(bool value) = 0;
+  virtual std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() = 0;
+  virtual std::unique_ptr<std::vector<std::string>>
+  ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) = 0;
 
  protected:
   virtual ~WindowClient();

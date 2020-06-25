@@ -7,7 +7,7 @@
 
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
-#include "flutter/vulkan/vulkan_handle.h"
+#include "vulkan_handle.h"
 
 namespace vulkan {
 
@@ -22,12 +22,12 @@ class VulkanImage {
 
   bool IsValid() const;
 
-  FML_WARN_UNUSED_RESULT
-  bool InsertImageMemoryBarrier(const VulkanCommandBuffer& command_buffer,
-                                VkPipelineStageFlagBits src_pipline_bits,
-                                VkPipelineStageFlagBits dest_pipline_bits,
-                                VkAccessFlagBits dest_access_flags,
-                                VkImageLayout dest_layout);
+  [[nodiscard]] bool InsertImageMemoryBarrier(
+      const VulkanCommandBuffer& command_buffer,
+      VkPipelineStageFlagBits src_pipline_bits,
+      VkPipelineStageFlagBits dest_pipline_bits,
+      VkAccessFlagBits dest_access_flags,
+      VkImageLayout dest_layout);
 
  private:
   VulkanHandle<VkImage> handle_;

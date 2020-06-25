@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/lib/ui/painting/matrix.h"
+#include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -20,11 +21,12 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SemanticsUpdate);
 
 DART_BIND_ALL(SemanticsUpdate, FOR_EACH_BINDING)
 
-fml::RefPtr<SemanticsUpdate> SemanticsUpdate::create(
-    SemanticsNodeUpdates nodes,
-    CustomAccessibilityActionUpdates actions) {
-  return fml::MakeRefCounted<SemanticsUpdate>(std::move(nodes),
-                                              std::move(actions));
+void SemanticsUpdate::create(Dart_Handle semantics_update_handle,
+                             SemanticsNodeUpdates nodes,
+                             CustomAccessibilityActionUpdates actions) {
+  auto semantics_update = fml::MakeRefCounted<SemanticsUpdate>(
+      std::move(nodes), std::move(actions));
+  semantics_update->AssociateWithDartWrapper(semantics_update_handle);
 }
 
 SemanticsUpdate::SemanticsUpdate(SemanticsNodeUpdates nodes,

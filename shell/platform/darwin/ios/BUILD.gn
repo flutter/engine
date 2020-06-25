@@ -5,9 +5,10 @@
 assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
-import("$flutter_root/common/config.gni")
-import("$flutter_root/shell/gpu/gpu.gni")
-import("$flutter_root/shell/platform/darwin/common/framework_shared.gni")
+import("//flutter/common/config.gni")
+import("//flutter/shell/gpu/gpu.gni")
+import("//flutter/shell/platform/darwin/common/framework_shared.gni")
+import("//flutter/testing/testing.gni")
 
 _flutter_framework_dir = "$root_out_dir/Flutter.framework"
 
@@ -30,20 +31,19 @@ _flutter_framework_headers = [
   "framework/Headers/FlutterPlatformViews.h",
   "framework/Headers/FlutterPlugin.h",
   "framework/Headers/FlutterPluginAppLifeCycleDelegate.h",
-  "framework/Headers/FlutterTexture.h",
   "framework/Headers/FlutterViewController.h",
 ]
 
 _flutter_framework_headers_copy_dir = "$_flutter_framework_dir/Headers"
 
-shared_library("create_flutter_framework_dylib") {
+source_set("flutter_framework_source") {
   visibility = [ ":*" ]
-
-  output_name = "Flutter"
+  cflags_objc = flutter_cflags_objc
+  cflags_objcc = flutter_cflags_objcc
 
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
-    "framework/Source/FlutterAppDelegate_Internal.h",
+    "framework/Source/FlutterBinaryMessengerRelay.mm",
     "framework/Source/FlutterCallbackCache.mm",
     "framework/Source/FlutterCallbackCache_Internal.h",
     "framework/Source/FlutterDartProject.mm",
@@ -68,6 +68,8 @@ shared_library("create_flutter_framework_dylib") {
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
     "framework/Source/FlutterViewController_Internal.h",
+    "framework/Source/SemanticsObject.h",
+    "framework/Source/SemanticsObject.mm",
     "framework/Source/accessibility_bridge.h",
     "framework/Source/accessibility_bridge.mm",
     "framework/Source/accessibility_text_entry.h",
@@ -76,66 +78,166 @@ shared_library("create_flutter_framework_dylib") {
     "framework/Source/platform_message_response_darwin.mm",
     "framework/Source/platform_message_router.h",
     "framework/Source/platform_message_router.mm",
+    "framework/Source/profiler_metrics_ios.h",
+    "framework/Source/profiler_metrics_ios.mm",
     "framework/Source/vsync_waiter_ios.h",
     "framework/Source/vsync_waiter_ios.mm",
+    "ios_context.h",
+    "ios_context.mm",
+    "ios_context_gl.h",
+    "ios_context_gl.mm",
+    "ios_context_software.h",
+    "ios_context_software.mm",
     "ios_external_texture_gl.h",
     "ios_external_texture_gl.mm",
-    "ios_gl_context.h",
-    "ios_gl_context.mm",
-    "ios_gl_render_target.h",
-    "ios_gl_render_target.mm",
+    "ios_render_target_gl.h",
+    "ios_render_target_gl.mm",
     "ios_surface.h",
     "ios_surface.mm",
     "ios_surface_gl.h",
     "ios_surface_gl.mm",
     "ios_surface_software.h",
     "ios_surface_software.mm",
+    "ios_switchable_gl_context.h",
+    "ios_switchable_gl_context.mm",
     "platform_view_ios.h",
     "platform_view_ios.mm",
+    "rendering_api_selection.h",
+    "rendering_api_selection.mm",
   ]
-
-  if (shell_enable_metal) {
-    sources += [
-      "ios_surface_metal.h",
-      "ios_surface_metal.mm",
-    ]
-  }
 
   sources += _flutter_framework_headers
-
-  deps = [
-    ":ios_gpu_configuration",
-    "$flutter_root/common",
-    "$flutter_root/flow",
-    "$flutter_root/fml",
-    "$flutter_root/lib/ui",
-    "$flutter_root/runtime",
-    "$flutter_root/runtime:libdart",
-    "$flutter_root/shell/common",
-    "$flutter_root/shell/platform/darwin/common",
-    "$flutter_root/shell/platform/darwin/common:framework_shared",
-    "//third_party/skia",
-  ]
-
-  public_configs = [ "$flutter_root:config" ]
 
   defines = [ "FLUTTER_FRAMEWORK=1" ]
 
   if (shell_enable_metal) {
     defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
+
+    sources += [
+      "ios_context_metal.h",
+      "ios_context_metal.mm",
+      "ios_external_texture_metal.h",
+      "ios_external_texture_metal.mm",
+      "ios_surface_metal.h",
+      "ios_surface_metal.mm",
+    ]
   }
 
+  deps = [
+    ":ios_gpu_configuration",
+    "//flutter/common",
+    "//flutter/flow",
+    "//flutter/fml",
+    "//flutter/lib/ui",
+    "//flutter/runtime",
+    "//flutter/runtime:libdart",
+    "//flutter/shell/common",
+    "//flutter/shell/platform/darwin/common",
+    "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/shell/profiling:profiling",
+    "//third_party/skia",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+
   libs = [
+    "AudioToolbox.framework",
     "CoreMedia.framework",
     "CoreVideo.framework",
-    "UIKit.framework",
     "OpenGLES.framework",
-    "AudioToolbox.framework",
     "QuartzCore.framework",
+    "UIKit.framework",
+  ]
+  if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "debug") {
+    # This is required by the profiler_metrics_ios.mm to get GPU statistics.
+    # Usage in release builds will cause rejection from the App Store.
+    libs += [ "IOKit.framework" ]
+  }
+}
+
+ios_test_flutter_path = rebase_path("$root_out_dir/libios_test_flutter.dylib")
+platform_frameworks_path = "$ios_sdk_path/../../Library/Frameworks/"
+
+# For tests that rely on manual reference counting.
+source_set("ios_test_flutter_mrc") {
+  visibility = [ ":*" ]
+  cflags = [
+    "-fvisibility=default",
+    "-F$platform_frameworks_path",
+    "-mios-simulator-version-min=$ios_testing_deployment_target",
+  ]
+  sources = [
+    "framework/Source/accessibility_bridge_test.mm",
+  ]
+  deps = [
+    ":flutter_framework_source",
+    "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/third_party/tonic",
+    "//flutter/third_party/txt",
+    "//third_party/ocmock:ocmock",
+    "//third_party/rapidjson",
+    "//third_party/skia",
   ]
 }
 
-copy("copy_framework_dylib") {
+# NOTE: This currently only supports simulator targets because of the install_name.
+# TODO(54504): Switch the install_name and make the test runner copy the dynamic
+#              library into the testing bundle.
+shared_library("ios_test_flutter") {
+  visibility = [ ":*" ]
+  cflags = [
+    "-fvisibility=default",
+    "-F$platform_frameworks_path",
+    "-fobjc-arc",
+    "-mios-simulator-version-min=$ios_testing_deployment_target",
+  ]
+  ldflags = [
+    "-F$platform_frameworks_path",
+    "-Wl,-framework,XCTest",
+    "-Wl,-install_name,$ios_test_flutter_path",
+  ]
+  configs -= [
+    "//build/config/gcc:symbol_visibility_hidden",
+    "//build/config:symbol_visibility_hidden",
+  ]
+  sources = [
+    "framework/Source/FlutterBinaryMessengerRelayTest.mm",
+    "framework/Source/FlutterEngineTest.mm",
+    "framework/Source/FlutterPluginAppLifeCycleDelegateTest.m",
+    "framework/Source/FlutterTextInputPluginTest.m",
+    "framework/Source/FlutterViewControllerTest.mm",
+    "framework/Source/SemanticsObjectTest.mm",
+  ]
+  deps = [
+    ":flutter_framework_source",
+    ":ios_test_flutter_mrc",
+    "//flutter/shell/platform/darwin/common:framework_shared",
+    "//flutter/third_party/tonic",
+    "//flutter/third_party/txt",
+    "//third_party/ocmock:ocmock",
+    "//third_party/rapidjson",
+    "//third_party/skia",
+  ]
+  public_configs = [ "//flutter:config" ]
+}
+
+shared_library("create_flutter_framework_dylib") {
+  visibility = [ ":*" ]
+
+  output_name = "Flutter"
+
+  ldflags = [ "-Wl,-install_name,@rpath/Flutter.framework/Flutter" ]
+
+  public = _flutter_framework_headers
+
+  deps = [
+    ":flutter_framework_source",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
+copy("copy_dylib") {
   visibility = [ ":*" ]
 
   sources = [
@@ -150,39 +252,19 @@ copy("copy_framework_dylib") {
   ]
 }
 
-action("copy_dylib_and_update_framework_install_name") {
-  visibility = [ ":*" ]
-  stamp_file = "$root_out_dir/flutter_install_name_stamp"
-  script = "$flutter_root/sky/tools/change_install_name.py"
-
-  inputs = [
-    "$_flutter_framework_dir/Flutter",
-  ]
-  outputs = [
-    stamp_file,
-  ]
-
-  args = [
-    "--dylib",
-    rebase_path("$_flutter_framework_dir/Flutter"),
-    "--install_name",
-    "@rpath/Flutter.framework/Flutter",
-    "--stamp",
-    rebase_path(stamp_file),
-  ]
-
-  deps = [
-    ":copy_framework_dylib",
-  ]
-}
-
-copy("copy_framework_info_plist") {
+action("copy_framework_info_plist") {
+  script = "//flutter/build/copy_info_plist.py"
   visibility = [ ":*" ]
   sources = [
     "framework/Info.plist",
   ]
   outputs = [
     "$_flutter_framework_dir/Info.plist",
+  ]
+  args = [
+    rebase_path(sources[0]),
+    rebase_path(outputs[0]),
+    "--bitcode=$flutter_enable_bitcode",
   ]
 }
 
@@ -197,7 +279,7 @@ copy("copy_framework_module_map") {
 }
 
 action("copy_framework_headers") {
-  script = "$flutter_root/sky/tools/install_framework_headers.py"
+  script = "//flutter/sky/tools/install_framework_headers.py"
   visibility = [ ":*" ]
   sources = get_path_info(_flutter_framework_headers, "abspath") +
             framework_shared_headers
@@ -258,7 +340,7 @@ shared_library("copy_and_verify_framework_headers") {
 group("flutter_framework") {
   deps = [
     ":copy_and_verify_framework_headers",
-    ":copy_dylib_and_update_framework_install_name",
+    ":copy_dylib",
     ":copy_framework_icu",
     ":copy_framework_info_plist",
     ":copy_framework_module_map",

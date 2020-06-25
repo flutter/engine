@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.9
+
 part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
@@ -11,7 +13,7 @@ part of dart.ui;
 // `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
 // updated.
 class SemanticsAction {
-  const SemanticsAction._(this.index);
+  const SemanticsAction._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -34,6 +36,9 @@ class SemanticsAction {
   static const int _kDismissIndex = 1 << 18;
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
+  // READ THIS: if you add an action here, you MUST update the
+  // numSemanticsActions value in testing/dart/semantics_test.dart, or tests
+  // will fail.
 
   /// The numerical value for this action.
   ///
@@ -259,7 +264,8 @@ class SemanticsAction {
       case _kMoveCursorBackwardByWordIndex:
         return 'SemanticsAction.moveCursorBackwardByWord';
     }
-    return null;
+    assert(false, 'Unhandled index: $index');
+    return '';
   }
 }
 
@@ -288,8 +294,14 @@ class SemanticsFlag {
   static const int _kHasToggledStateIndex = 1 << 16;
   static const int _kIsToggledIndex = 1 << 17;
   static const int _kHasImplicitScrollingIndex = 1 << 18;
+  static const int _kIsMultilineIndex = 1 << 19;
+  static const int _kIsReadOnlyIndex = 1 << 20;
+  static const int _kIsFocusableIndex = 1 << 21;
+  static const int _kIsLinkIndex = 1 << 22;
+  // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
+  // value in testing/dart/semantics_test.dart, or tests will fail.
 
-  const SemanticsFlag._(this.index);
+  const SemanticsFlag._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
   /// The numerical value for this flag.
   ///
@@ -330,7 +342,7 @@ class SemanticsFlag {
 
   /// Whether the semantic node represents a button.
   ///
-  /// Platforms has special handling for buttons, for example Android's TalkBack
+  /// Platforms have special handling for buttons, for example Android's TalkBack
   /// and iOS's VoiceOver provides an additional hint when the focused object is
   /// a button.
   static const SemanticsFlag isButton = SemanticsFlag._(_kIsButtonIndex);
@@ -340,6 +352,23 @@ class SemanticsFlag {
   /// Text fields are announced as such and allow text input via accessibility
   /// affordances.
   static const SemanticsFlag isTextField = SemanticsFlag._(_kIsTextFieldIndex);
+
+  /// Whether the semantic node is read only.
+  ///
+  /// Only applicable when [isTextField] is true.
+  static const SemanticsFlag isReadOnly = SemanticsFlag._(_kIsReadOnlyIndex);
+
+  /// Whether the semantic node is an interactive link.
+  ///
+  /// Platforms have special handling for links, for example iOS's VoiceOver
+  /// provides an additional hint when the focused object is a link, as well as
+  /// the ability to parse the links through another navigation menu.
+  static const SemanticsFlag isLink = SemanticsFlag._(_kIsLinkIndex);
+
+  /// Whether the semantic node is able to hold the user's focus.
+  ///
+  /// The focused element is usually the current receiver of keyboard inputs.
+  static const SemanticsFlag isFocusable = SemanticsFlag._(_kIsFocusableIndex);
 
   /// Whether the semantic node currently holds the user's focus.
   ///
@@ -379,6 +408,13 @@ class SemanticsFlag {
   /// This is usually used for text fields to indicate that its content
   /// is a password or contains other sensitive information.
   static const SemanticsFlag isObscured = SemanticsFlag._(_kIsObscuredIndex);
+
+  /// Whether the value of the semantics node is coming from a multi-line text
+  /// field.
+  ///
+  /// This is used for text fields to distinguish single-line text fields from
+  /// multi-line ones.
+  static const SemanticsFlag isMultiline = SemanticsFlag._(_kIsMultilineIndex);
 
   /// Whether the semantics node is the root of a subtree for which a route name
   /// should be announced.
@@ -438,7 +474,7 @@ class SemanticsFlag {
 
   /// Whether the semantics node represents an image.
   ///
-  /// Both TalkBack and VoiceOver will inform the user the the semantics node
+  /// Both TalkBack and VoiceOver will inform the user the semantics node
   /// represents an image.
   static const SemanticsFlag isImage = SemanticsFlag._(_kIsImageIndex);
 
@@ -448,9 +484,12 @@ class SemanticsFlag {
   /// Platforms may use this information to make polite announcements to the
   /// user to inform them of updates to this node.
   ///
-  /// An example of a live region is a [SnackBar] widget. On Android, A live
-  /// region causes a polite announcement to be generated automatically, even
-  /// if the user does not have focus of the widget.
+  /// An example of a live region is a [SnackBar] widget. On Android and iOS,
+  /// live region causes a polite announcement to be generated automatically,
+  /// even if the widget does not have accessibility focus. This announcement
+  /// may not be spoken if the OS accessibility services are already
+  /// announcing something else, such as reading the label of a focused
+  /// widget or providing a system announcement.
   static const SemanticsFlag isLiveRegion = SemanticsFlag._(_kIsLiveRegionIndex);
 
   /// The semantics node has the quality of either being "on" or "off".
@@ -506,6 +545,10 @@ class SemanticsFlag {
     _kHasToggledStateIndex: hasToggledState,
     _kIsToggledIndex: isToggled,
     _kHasImplicitScrollingIndex: hasImplicitScrolling,
+    _kIsMultilineIndex: isMultiline,
+    _kIsReadOnlyIndex: isReadOnly,
+    _kIsFocusableIndex: isFocusable,
+    _kIsLinkIndex: isLink,
   };
 
   @override
@@ -549,8 +592,17 @@ class SemanticsFlag {
         return 'SemanticsFlag.isToggled';
       case _kHasImplicitScrollingIndex:
         return 'SemanticsFlag.hasImplicitScrolling';
+      case _kIsMultilineIndex:
+        return 'SemanticsFlag.isMultiline';
+      case _kIsReadOnlyIndex:
+        return 'SemanticsFlag.isReadOnly';
+      case _kIsFocusableIndex:
+        return 'SemanticsFlag.isFocusable';
+      case _kIsLinkIndex:
+        return 'SemanticsFlag.isLink';
     }
-    return null;
+    assert(false, 'Unhandled index: $index');
+    return '';
   }
 }
 
@@ -598,13 +650,22 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// string describes what result an action performed on this node has. The
   /// reading direction of all these strings is given by `textDirection`.
   ///
-  /// The fields 'textSelectionBase' and 'textSelectionExtent' describe the
-  /// currently selected text within `value`.
+  /// The fields `textSelectionBase` and `textSelectionExtent` describe the
+  /// currently selected text within `value`. A value of -1 indicates no
+  /// current text selection base or extent.
+  ///
+  /// The field `maxValueLength` is used to indicate that an editable text
+  /// field has a limit on the number of characters entered. If it is -1 there
+  /// is no limit on the number of characters entered. The field
+  /// `currentValueLength` indicates how much of that limit has already been
+  /// used up. When `maxValueLength` is >= 0, `currentValueLength` must also be
+  /// >= 0, otherwise it should be specified to be -1.
   ///
   /// The field `platformViewId` references the platform view, whose semantics
   /// nodes will be added as children to this node. If a platform view is
-  /// specified, `childrenInHitTestOrder` and `childrenInTraversalOrder` must be
-  /// empty.
+  /// specified, `childrenInHitTestOrder` and `childrenInTraversalOrder` must
+  /// be empty. A value of -1 indicates that this node is not associated with a
+  /// platform view.
   ///
   /// For scrollable nodes `scrollPosition` describes the current scroll
   /// position in logical pixel. `scrollExtentMax` and `scrollExtentMin`
@@ -629,33 +690,36 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// node starts at `elevation` above the parent and ends at `elevation` +
   /// `thickness` above the parent.
   void updateNode({
-    int id,
-    int flags,
-    int actions,
-    int textSelectionBase,
-    int textSelectionExtent,
-    int platformViewId,
-    int scrollChildren,
-    int scrollIndex,
-    double scrollPosition,
-    double scrollExtentMax,
-    double scrollExtentMin,
-    double elevation,
-    double thickness,
-    Rect rect,
-    String label,
-    String hint,
-    String value,
-    String increasedValue,
-    String decreasedValue,
-    TextDirection textDirection,
-    Float64List transform,
-    Int32List childrenInTraversalOrder,
-    Int32List childrenInHitTestOrder,
-    Int32List additionalActions,
+    required int id,
+    required int flags,
+    required int actions,
+    required int maxValueLength,
+    required int currentValueLength,
+    required int textSelectionBase,
+    required int textSelectionExtent,
+    required int platformViewId,
+    required int scrollChildren,
+    required int scrollIndex,
+    required double scrollPosition,
+    required double scrollExtentMax,
+    required double scrollExtentMin,
+    required double elevation,
+    required double thickness,
+    required Rect rect,
+    required String label,
+    required String hint,
+    required String value,
+    required String increasedValue,
+    required String decreasedValue,
+    TextDirection? textDirection,
+    required Float64List transform,
+    required Int32List childrenInTraversalOrder,
+    required Int32List childrenInHitTestOrder,
+    required Int32List additionalActions,
   }) {
     assert(_matrix4IsValid(transform));
     assert(
+      // ignore: unnecessary_null_comparison
       scrollChildren == 0 || scrollChildren == null || (scrollChildren > 0 && childrenInHitTestOrder != null),
       'If a node has scrollChildren, it must have childrenInHitTestOrder',
     );
@@ -663,6 +727,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       id,
       flags,
       actions,
+      maxValueLength,
+      currentValueLength,
       textSelectionBase,
       textSelectionExtent,
       platformViewId,
@@ -693,6 +759,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int id,
     int flags,
     int actions,
+    int maxValueLength,
+    int currentValueLength,
     int textSelectionBase,
     int textSelectionExtent,
     int platformViewId,
@@ -734,19 +802,28 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// For overridden standard actions, `overrideId` corresponds with a
   /// [SemanticsAction.index] value. For custom actions this argument should not be
   /// provided.
-  void updateCustomAction({int id, String label, String hint, int overrideId = -1}) {
-    assert(id != null);
-    assert(overrideId != null);
+  void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
+    assert(id != null); // ignore: unnecessary_null_comparison
+    assert(overrideId != null); // ignore: unnecessary_null_comparison
     _updateCustomAction(id, label, hint, overrideId);
   }
-  void _updateCustomAction(int id, String label, String hint, int overrideId) native 'SemanticsUpdateBuilder_updateCustomAction';
+  void _updateCustomAction(
+      int id,
+      String? label,
+      String? hint,
+      int overrideId) native 'SemanticsUpdateBuilder_updateCustomAction';
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
   /// The returned object can be passed to [Window.updateSemantics] to actually
   /// update the semantics retained by the system.
-  SemanticsUpdate build() native 'SemanticsUpdateBuilder_build';
+  SemanticsUpdate build() {
+    final SemanticsUpdate semanticsUpdate = SemanticsUpdate._();
+    _build(semanticsUpdate);
+    return semanticsUpdate;
+  }
+  void _build(SemanticsUpdate outSemanticsUpdate) native 'SemanticsUpdateBuilder_build';
 }
 
 /// An opaque object representing a batch of semantics updates.

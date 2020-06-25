@@ -4,28 +4,52 @@
 
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-#import <QuartzCore/CAEAGLLayer.h>
-
 #include <utility>
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
-#include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 
 namespace flutter {
 
-PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
-                                 flutter::TaskRunners task_runners)
-    : PlatformView(delegate, std::move(task_runners)) {
-#if !TARGET_IPHONE_SIMULATOR
-  gl_context_ = std::make_shared<IOSGLContext>();
-#endif  // !TARGET_IPHONE_SIMULATOR
+PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+    const std::function<void(bool)>& set_semantics_enabled)
+    : AccessibilityBridgePtr(set_semantics_enabled, nullptr) {}
+
+PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+    const std::function<void(bool)>& set_semantics_enabled,
+    AccessibilityBridge* bridge)
+    : accessibility_bridge_(bridge), set_semantics_enabled_(set_semantics_enabled) {
+  if (bridge) {
+    set_semantics_enabled_(true);
+  }
 }
+
+PlatformViewIOS::AccessibilityBridgePtr::~AccessibilityBridgePtr() {
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(false);
+  }
+}
+
+void PlatformViewIOS::AccessibilityBridgePtr::reset(AccessibilityBridge* bridge) {
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(false);
+  }
+  accessibility_bridge_.reset(bridge);
+  if (accessibility_bridge_) {
+    set_semantics_enabled_(true);
+  }
+}
+
+PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
+                                 IOSRenderingAPI rendering_api,
+                                 flutter::TaskRunners task_runners)
+    : PlatformView(delegate, std::move(task_runners)),
+      ios_context_(IOSContext::Create(rendering_api)),
+      accessibility_bridge_([this](bool enabled) { PlatformView::SetSemanticsEnabled(enabled); }) {}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
@@ -43,36 +67,68 @@ fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() co
 }
 
 void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.reset();
     accessibility_bridge_.reset();
   }
   owner_controller_ = owner_controller;
-  if (owner_controller_) {
-    ios_surface_ =
-        [static_cast<FlutterView*>(owner_controller.get().view) createSurface:gl_context_];
-    FML_DCHECK(ios_surface_ != nullptr);
 
-    if (accessibility_bridge_) {
-      accessibility_bridge_.reset(
-          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                  [owner_controller.get() platformViewsController]));
-    }
-    // Do not call `NotifyCreated()` here - let FlutterViewController take care
-    // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
-    // it can occasionally get invoked before the viewport is sized resulting in
-    // a framebuffer that will not be able to completely attach.
+  // Add an observer that will clear out the owner_controller_ ivar and
+  // the accessibility_bridge_ in case the view controller is deleted.
+  dealloc_view_controller_observer_.reset(
+      [[[NSNotificationCenter defaultCenter] addObserverForName:FlutterViewControllerWillDealloc
+                                                         object:owner_controller_.get()
+                                                          queue:[NSOperationQueue mainQueue]
+                                                     usingBlock:^(NSNotification* note) {
+                                                       // Implicit copy of 'this' is fine.
+                                                       accessibility_bridge_.reset();
+                                                       owner_controller_.reset();
+                                                     }] retain]);
+
+  if (owner_controller_ && [owner_controller_.get() isViewLoaded]) {
+    this->attachView();
   }
+  // Do not call `NotifyCreated()` here - let FlutterViewController take care
+  // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
+  // it can occasionally get invoked before the viewport is sized resulting in
+  // a framebuffer that will not be able to completely attach.
+}
+
+void PlatformViewIOS::attachView() {
+  FML_DCHECK(owner_controller_);
+  FML_DCHECK(owner_controller_.get().isViewLoaded)
+      << "FlutterViewController's view should be loaded "
+         "before attaching to PlatformViewIOS.";
+  ios_surface_ =
+      [static_cast<FlutterView*>(owner_controller_.get().view) createSurface:ios_context_];
+  FML_DCHECK(ios_surface_ != nullptr);
+
+  if (accessibility_bridge_) {
+    accessibility_bridge_.reset(
+        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
+                                [owner_controller_.get() platformViewsController]));
+  }
+}
+
+PointerDataDispatcherMaker PlatformViewIOS::GetDispatcherMaker() {
+  return [](DefaultPointerDataDispatcher::Delegate& delegate) {
+    return std::make_unique<SmoothPointerDataDispatcher>(delegate);
+  };
 }
 
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
-  RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
+  RegisterTexture(ios_context_->CreateExternalTexture(
+      texture_id, fml::scoped_nsobject<NSObject<FlutterTexture>>{[texture retain]}));
 }
 
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (!ios_surface_) {
     FML_DLOG(INFO) << "Could not CreateRenderingSurface, this PlatformViewIOS "
                       "has no ViewController.";
@@ -83,15 +139,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 
 // |PlatformView|
 sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
-  if (!gl_context_ || !gl_context_->ResourceMakeCurrent()) {
-    FML_DLOG(INFO) << "Could not make resource context current on IO thread. "
-                      "Async texture uploads will be disabled. On Simulators, "
-                      "this is expected.";
-    return nullptr;
-  }
-
-  return ShellIOManager::CreateCompatibleResourceLoadingContext(
-      GrBackend::kOpenGL_GrBackend, GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
+  return ios_context_->CreateResourceContext();
 }
 
 // |PlatformView|
@@ -102,13 +150,14 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
     return;
   }
   if (enabled && !accessibility_bridge_) {
-    accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-        static_cast<FlutterView*>(owner_controller_.get().view), this,
-        [owner_controller_.get() platformViewsController]);
+    accessibility_bridge_.reset(
+        new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
+                                [owner_controller_.get() platformViewsController]));
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
+  } else {
+    PlatformView::SetSemanticsEnabled(enabled);
   }
-  PlatformView::SetSemanticsEnabled(enabled);
 }
 
 // |shell:PlatformView|
@@ -139,15 +188,59 @@ void PlatformViewIOS::OnPreEngineRestart() const {
   if (!owner_controller_) {
     return;
   }
-  [owner_controller_.get() platformViewsController] -> Reset();
+  [owner_controller_.get() platformViewsController]->Reset();
 }
 
-fml::scoped_nsprotocol<FlutterTextInputPlugin*> PlatformViewIOS::GetTextInputPlugin() const {
-  return text_input_plugin_;
+std::unique_ptr<std::vector<std::string>> PlatformViewIOS::ComputePlatformResolvedLocales(
+    const std::vector<std::string>& supported_locale_data) {
+  size_t localeDataLength = 3;
+  NSMutableArray<NSString*>* supported_locale_identifiers =
+      [NSMutableArray arrayWithCapacity:supported_locale_data.size() / localeDataLength];
+  for (size_t i = 0; i < supported_locale_data.size(); i += localeDataLength) {
+    NSDictionary<NSString*, NSString*>* dict = @{
+      NSLocaleLanguageCode : [NSString stringWithUTF8String:supported_locale_data[i].c_str()],
+      NSLocaleCountryCode : [NSString stringWithUTF8String:supported_locale_data[i + 1].c_str()],
+      NSLocaleScriptCode : [NSString stringWithUTF8String:supported_locale_data[i + 2].c_str()]
+    };
+    [supported_locale_identifiers addObject:[NSLocale localeIdentifierFromComponents:dict]];
+  }
+  NSArray<NSString*>* result =
+      [NSBundle preferredLocalizationsFromArray:supported_locale_identifiers];
+
+  // Output format should be either empty or 3 strings for language, country, and script.
+  std::unique_ptr<std::vector<std::string>> out = std::make_unique<std::vector<std::string>>();
+
+  if (result != nullptr && [result count] > 0) {
+    if (@available(ios 10.0, *)) {
+      NSLocale* locale = [NSLocale localeWithLocaleIdentifier:[result firstObject]];
+      NSString* languageCode = [locale languageCode];
+      out->emplace_back(languageCode == nullptr ? "" : languageCode.UTF8String);
+      NSString* countryCode = [locale countryCode];
+      out->emplace_back(countryCode == nullptr ? "" : countryCode.UTF8String);
+      NSString* scriptCode = [locale scriptCode];
+      out->emplace_back(scriptCode == nullptr ? "" : scriptCode.UTF8String);
+    }
+  }
+  return out;
 }
 
-void PlatformViewIOS::SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin) {
-  text_input_plugin_ = plugin;
+PlatformViewIOS::ScopedObserver::ScopedObserver() : observer_(nil) {}
+
+PlatformViewIOS::ScopedObserver::~ScopedObserver() {
+  if (observer_) {
+    [[NSNotificationCenter defaultCenter] removeObserver:observer_];
+    [observer_ release];
+  }
+}
+
+void PlatformViewIOS::ScopedObserver::reset(id<NSObject> observer) {
+  if (observer != observer_) {
+    if (observer_) {
+      [[NSNotificationCenter defaultCenter] removeObserver:observer_];
+      [observer_ release];
+    }
+    observer_ = observer;
+  }
 }
 
 }  // namespace flutter

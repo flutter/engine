@@ -39,7 +39,7 @@ class TypefaceFontStyleSet : public SkFontStyleSet {
   int count() override;
 
   // |SkFontStyleSet|
-  void getStyle(int index, SkFontStyle*, SkString* style) override;
+  void getStyle(int index, SkFontStyle* style, SkString* name) override;
 
   // |SkFontStyleSet|
   SkTypeface* createTypeface(int index) override;
@@ -73,7 +73,8 @@ class TypefaceFontAssetProvider : public FontAssetProvider {
   SkFontStyleSet* MatchFamily(const std::string& family_name) override;
 
  private:
-  std::unordered_map<std::string, TypefaceFontStyleSet> registered_families_;
+  std::unordered_map<std::string, sk_sp<TypefaceFontStyleSet>>
+      registered_families_;
   std::vector<std::string> family_names_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TypefaceFontAssetProvider);

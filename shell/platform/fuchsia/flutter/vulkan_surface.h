@@ -29,6 +29,7 @@ struct VulkanImage {
   VulkanImage(VulkanImage&&) = default;
   VulkanImage& operator=(VulkanImage&&) = default;
 
+  VkExternalMemoryImageCreateInfo vk_external_image_create_info;
   VkImageCreateInfo vk_image_create_info;
   VkMemoryRequirements vk_memory_requirements;
   vulkan::VulkanHandle<VkImage> vk_image;
@@ -68,7 +69,7 @@ class VulkanSurface final
   // Note: It is safe for the caller to collect the surface in the
   // |on_writes_committed| callback.
   void SignalWritesFinished(
-      std::function<void(void)> on_writes_committed) override;
+      const std::function<void(void)>& on_writes_committed) override;
 
   // |flutter::SceneUpdateContext::SurfaceProducerSurface|
   scenic::Image* GetImage() override;
@@ -132,10 +133,11 @@ class VulkanSurface final
   // For better safety in retained rendering, Flutter uses a retained
   // |EntityNode| associated with the retained surface instead of using the
   // retained surface directly. Hence Flutter can't modify the surface during
-  // retained rendering.
-  const scenic::EntityNode& GetRetainedNode() {
+  // retained rendering. However, the node itself is modifiable to be able
+  // to adjust its position.
+  scenic::EntityNode* GetRetainedNode() {
     used_in_retained_rendering_ = true;
-    return *retained_node_;
+    return retained_node_.get();
   }
 
   // Check whether the retained surface (and its associated |EntityNode|) is
@@ -200,7 +202,7 @@ class VulkanSurface final
   size_t age_ = 0;
   bool valid_ = false;
 
-  flutter::LayerRasterCacheKey retained_key_ = {0, SkMatrix::MakeScale(1, 1)};
+  flutter::LayerRasterCacheKey retained_key_ = {0, SkMatrix::Scale(1, 1)};
   std::unique_ptr<scenic::EntityNode> retained_node_ = nullptr;
 
   std::atomic<bool> used_in_retained_rendering_ = {false};

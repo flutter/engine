@@ -8,67 +8,51 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
-#include "flutter/shell/platform/darwin/ios/ios_gl_render_target.h"
+#include "flutter/shell/platform/darwin/ios/ios_context.h"
+#include "flutter/shell/platform/darwin/ios/ios_render_target_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @class CAEAGLLayer;
 
 namespace flutter {
 
-class IOSSurfaceGL final : public IOSSurface,
-                           public GPUSurfaceGLDelegate,
-                           public flutter::ExternalViewEmbedder {
+class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
  public:
-  IOSSurfaceGL(std::shared_ptr<IOSGLContext> context,
-               fml::scoped_nsobject<CAEAGLLayer> layer,
-               FlutterPlatformViewsController* platform_views_controller);
-
-  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer, std::shared_ptr<IOSGLContext> context);
+  IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer,
+               std::shared_ptr<IOSContext> context,
+               FlutterPlatformViewsController* platform_views_controller = nullptr);
 
   ~IOSSurfaceGL() override;
 
+  // |IOSSurface|
   bool IsValid() const override;
 
-  bool ResourceContextMakeCurrent() override;
-
+  // |IOSSurface|
   void UpdateStorageSizeIfNecessary() override;
 
-  std::unique_ptr<Surface> CreateGPUSurface() override;
-
-  std::unique_ptr<Surface> CreateSecondaryGPUSurface(GrContext* gr_context);
-
-  bool GLContextMakeCurrent() override;
-
-  bool GLContextClearCurrent() override;
-
-  bool GLContextPresent() override;
-
-  intptr_t GLContextFBO() const override;
-
-  bool UseOffscreenSurface() const override;
+  // |IOSSurface|
+  std::unique_ptr<Surface> CreateGPUSurface(GrContext* gr_context) override;
 
   // |GPUSurfaceGLDelegate|
-  flutter::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+  std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
 
-  // |flutter::ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size) override;
+  // |GPUSurfaceGLDelegate|
+  bool GLContextClearCurrent() override;
 
-  // |flutter::ExternalViewEmbedder|
-  void PrerollCompositeEmbeddedView(int view_id) override;
+  // |GPUSurfaceGLDelegate|
+  bool GLContextPresent() override;
 
-  // |flutter::ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override;
+  // |GPUSurfaceGLDelegate|
+  intptr_t GLContextFBO() const override;
 
-  // |flutter::ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params) override;
+  // |GPUSurfaceGLDelegate|
+  bool SurfaceSupportsReadback() const override;
 
-  // |flutter::ExternalViewEmbedder|
-  bool SubmitFrame(GrContext* context) override;
+  // |GPUSurfaceGLDelegate|
+  ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
  private:
-  std::shared_ptr<IOSGLContext> context_;
-  std::unique_ptr<IOSGLRenderTarget> render_target_;
+  std::unique_ptr<IOSRenderTargetGL> render_target_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceGL);
 };

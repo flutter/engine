@@ -36,18 +36,21 @@ class PlatformViewEmbedder final : public PlatformView {
   };
 
   // Creates a platform view that sets up an OpenGL rasterizer.
-  PlatformViewEmbedder(PlatformView::Delegate& delegate,
-                       flutter::TaskRunners task_runners,
-                       EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
-                       bool fbo_reset_after_present,
-                       PlatformDispatchTable platform_dispatch_table);
+  PlatformViewEmbedder(
+      PlatformView::Delegate& delegate,
+      flutter::TaskRunners task_runners,
+      EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
+      bool fbo_reset_after_present,
+      PlatformDispatchTable platform_dispatch_table,
+      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
   // Create a platform view that sets up a software rasterizer.
   PlatformViewEmbedder(
       PlatformView::Delegate& delegate,
       flutter::TaskRunners task_runners,
       EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
-      PlatformDispatchTable platform_dispatch_table);
+      PlatformDispatchTable platform_dispatch_table,
+      std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
   ~PlatformViewEmbedder() override;
 
@@ -72,6 +75,10 @@ class PlatformViewEmbedder final : public PlatformView {
 
   // |PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
+
+  // |PlatformView|
+  std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocales(
+      const std::vector<std::string>& supported_locale_data) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewEmbedder);
 };

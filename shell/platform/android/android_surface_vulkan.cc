@@ -12,8 +12,15 @@
 
 namespace flutter {
 
-AndroidSurfaceVulkan::AndroidSurfaceVulkan()
-    : proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
+AndroidSurfaceVulkan::AndroidSurfaceVulkan(
+    std::shared_ptr<AndroidContext> android_context,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    AndroidSurface::Factory surface_factory)
+    : external_view_embedder_(
+          std::make_unique<AndroidExternalViewEmbedder>(android_context,
+                                                        jni_facade,
+                                                        surface_factory)),
+      proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>()) {}
 
 AndroidSurfaceVulkan::~AndroidSurfaceVulkan() = default;
 
@@ -21,13 +28,12 @@ bool AndroidSurfaceVulkan::IsValid() const {
   return proc_table_->HasAcquiredMandatoryProcAddresses();
 }
 
-// |AndroidSurface|
 void AndroidSurfaceVulkan::TeardownOnScreenContext() {
   // Nothing to do.
 }
 
-// |AndroidSurface|
-std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
+std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface(
+    GrContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }
@@ -45,7 +51,7 @@ std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
   }
 
   auto gpu_surface = std::make_unique<GPUSurfaceVulkan>(
-      proc_table_, std::move(vulkan_surface_android));
+      this, std::move(vulkan_surface_android), true);
 
   if (!gpu_surface->IsValid()) {
     return nullptr;
@@ -54,28 +60,32 @@ std::unique_ptr<Surface> AndroidSurfaceVulkan::CreateGPUSurface() {
   return gpu_surface;
 }
 
-// |AndroidSurface|
-bool AndroidSurfaceVulkan::OnScreenSurfaceResize(const SkISize& size) const {
+bool AndroidSurfaceVulkan::OnScreenSurfaceResize(const SkISize& size) {
   return true;
 }
 
-// |AndroidSurface|
 bool AndroidSurfaceVulkan::ResourceContextMakeCurrent() {
   FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
   return false;
 }
 
-// |AndroidSurface|
 bool AndroidSurfaceVulkan::ResourceContextClearCurrent() {
   FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
   return false;
 }
 
-// |AndroidSurface|
 bool AndroidSurfaceVulkan::SetNativeWindow(
     fml::RefPtr<AndroidNativeWindow> window) {
   native_window_ = std::move(window);
   return native_window_ && native_window_->IsValid();
+}
+
+ExternalViewEmbedder* AndroidSurfaceVulkan::GetExternalViewEmbedder() {
+  return external_view_embedder_.get();
+}
+
+fml::RefPtr<vulkan::VulkanProcTable> AndroidSurfaceVulkan::vk() {
+  return proc_table_;
 }
 
 }  // namespace flutter

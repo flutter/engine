@@ -4,11 +4,11 @@
 
 #include "include/flutter/plugin_registrar.h"
 
-#include "include/flutter/engine_method_result.h"
-#include "include/flutter/method_channel.h"
-
 #include <iostream>
 #include <map>
+
+#include "include/flutter/engine_method_result.h"
+#include "include/flutter/method_channel.h"
 
 namespace flutter {
 
@@ -26,7 +26,7 @@ void ForwardToHandler(FlutterDesktopMessengerRef messenger,
   auto* response_handle = message->response_handle;
   BinaryReply reply_handler = [messenger, response_handle](
                                   const uint8_t* reply,
-                                  const size_t reply_size) mutable {
+                                  size_t reply_size) mutable {
     if (!response_handle) {
       std::cerr << "Error: Response can be set only once. Ignoring "
                    "duplicate response."
@@ -65,7 +65,8 @@ class BinaryMessengerImpl : public BinaryMessenger {
   // |flutter::BinaryMessenger|
   void Send(const std::string& channel,
             const uint8_t* message,
-            const size_t message_size) const override;
+            size_t message_size,
+            BinaryReply reply) const override;
 
   // |flutter::BinaryMessenger|
   void SetMessageHandler(const std::string& channel,
@@ -82,9 +83,31 @@ class BinaryMessengerImpl : public BinaryMessenger {
 
 void BinaryMessengerImpl::Send(const std::string& channel,
                                const uint8_t* message,
-                               const size_t message_size) const {
-  FlutterDesktopMessengerSend(messenger_, channel.c_str(), message,
-                              message_size);
+                               size_t message_size,
+                               BinaryReply reply) const {
+  if (reply == nullptr) {
+    FlutterDesktopMessengerSend(messenger_, channel.c_str(), message,
+                                message_size);
+    return;
+  }
+  struct Captures {
+    BinaryReply reply;
+  };
+  auto captures = new Captures();
+  captures->reply = reply;
+
+  auto message_reply = [](const uint8_t* data, size_t data_size,
+                          void* user_data) {
+    auto captures = reinterpret_cast<Captures*>(user_data);
+    captures->reply(data, data_size);
+    delete captures;
+  };
+  bool result = FlutterDesktopMessengerSendWithReply(
+      messenger_, channel.c_str(), message, message_size, message_reply,
+      captures);
+  if (!result) {
+    delete captures;
+  }
 }
 
 void BinaryMessengerImpl::SetMessageHandler(const std::string& channel,
@@ -103,7 +126,7 @@ void BinaryMessengerImpl::SetMessageHandler(const std::string& channel,
                                      ForwardToHandler, message_handler);
 }
 
-// PluginRegistrar:
+// ===== PluginRegistrar =====
 
 PluginRegistrar::PluginRegistrar(FlutterDesktopPluginRegistrarRef registrar)
     : registrar_(registrar) {
@@ -120,6 +143,22 @@ void PluginRegistrar::AddPlugin(std::unique_ptr<Plugin> plugin) {
 void PluginRegistrar::EnableInputBlockingForChannel(
     const std::string& channel) {
   FlutterDesktopRegistrarEnableInputBlocking(registrar_, channel.c_str());
+}
+
+// ===== PluginRegistrarManager =====
+
+// static
+PluginRegistrarManager* PluginRegistrarManager::GetInstance() {
+  static PluginRegistrarManager* instance = new PluginRegistrarManager();
+  return instance;
+}
+
+PluginRegistrarManager::PluginRegistrarManager() = default;
+
+// static
+void PluginRegistrarManager::OnRegistrarDestroyed(
+    FlutterDesktopPluginRegistrarRef registrar) {
+  GetInstance()->registrars()->erase(registrar);
 }
 
 }  // namespace flutter

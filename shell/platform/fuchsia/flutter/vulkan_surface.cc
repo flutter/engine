@@ -19,7 +19,24 @@ namespace flutter_runner {
 
 namespace {
 
+// Immutable format is technically limited to R8G8B8A8_SRGB but
+// R8G8B8A8_UNORM works with existing ARM drivers so we allow that
+// until we have a more reliable API for creating external Vulkan
+// images using sysmem. TODO(fxb/52835)
+#if defined(__aarch64__)
+constexpr SkColorType kSkiaColorType = kRGBA_8888_SkColorType;
+constexpr fuchsia::images::PixelFormat kPixelFormat =
+    fuchsia::images::PixelFormat::R8G8B8A8;
+constexpr VkFormat kVulkanFormat = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr VkImageCreateFlags kVulkanImageCreateFlags = 0;
+#else
 constexpr SkColorType kSkiaColorType = kBGRA_8888_SkColorType;
+constexpr fuchsia::images::PixelFormat kPixelFormat =
+    fuchsia::images::PixelFormat::BGRA_8;
+constexpr VkFormat kVulkanFormat = VK_FORMAT_B8G8R8A8_UNORM;
+constexpr VkImageCreateFlags kVulkanImageCreateFlags =
+    VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+#endif
 
 }  // namespace
 
@@ -32,16 +49,21 @@ bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
   FML_DCHECK(out_vulkan_image != nullptr);
 
   // The image creation parameters need to be the same as those in scenic
-  // (garnet/lib/ui/gfx/resources/gpu_image.cc and
-  // garnet/public/lib/escher/util/image_utils.cc) or else the different vulkan
+  // (src/ui/scenic/lib/gfx/resources/gpu_image.cc and
+  // src/ui/lib/escher/util/image_utils.cc) or else the different vulkan
   // devices may interpret the bytes differently.
   // TODO(SCN-1369): Use API to coordinate this with scenic.
+  out_vulkan_image->vk_external_image_create_info = {
+      .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
+      .pNext = nullptr,
+      .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_TEMP_ZIRCON_VMO_BIT_FUCHSIA,
+  };
   out_vulkan_image->vk_image_create_info = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+      .pNext = &out_vulkan_image->vk_external_image_create_info,
+      .flags = kVulkanImageCreateFlags,
       .imageType = VK_IMAGE_TYPE_2D,
-      .format = VK_FORMAT_B8G8R8A8_UNORM,
+      .format = kVulkanFormat,
       .extent = VkExtent3D{static_cast<uint32_t>(size.width()),
                            static_cast<uint32_t>(size.height()), 1},
       .mipLevels = 1,
@@ -68,7 +90,7 @@ bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
     }
 
     out_vulkan_image->vk_image = {
-        vk_image, [& vulkan_provider = vulkan_provider](VkImage image) {
+        vk_image, [&vulkan_provider = vulkan_provider](VkImage image) {
           vulkan_provider.vk().DestroyImage(vulkan_provider.vk_device(), image,
                                             NULL);
         }};
@@ -230,9 +252,14 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
     }
   }
 
+  VkMemoryDedicatedAllocateInfo dedicated_allocate_info = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
+      .pNext = nullptr,
+      .image = vulkan_image_.vk_image,
+      .buffer = VK_NULL_HANDLE};
   VkExportMemoryAllocateInfoKHR export_allocate_info = {
       .sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR,
-      .pNext = nullptr,
+      .pNext = &dedicated_allocate_info,
       .handleTypes =
           VK_EXTERNAL_MEMORY_HANDLE_TYPE_TEMP_ZIRCON_VMO_BIT_FUCHSIA};
 
@@ -244,7 +271,8 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
   };
 
   {
-    TRACE_EVENT0("flutter", "vkAllocateMemory");
+    TRACE_EVENT1("flutter", "vkAllocateMemory", "allocationSize",
+                 alloc_info.allocationSize);
     VkDeviceMemory vk_memory = VK_NULL_HANDLE;
     if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().AllocateMemory(
             vulkan_provider_.vk_device(), &alloc_info, NULL, &vk_memory)) !=
@@ -252,8 +280,8 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
       return false;
     }
 
-    vk_memory_ = {vk_memory, [& vulkan_provider =
-                                  vulkan_provider_](VkDeviceMemory memory) {
+    vk_memory_ = {vk_memory,
+                  [&vulkan_provider = vulkan_provider_](VkDeviceMemory memory) {
                     vulkan_provider.vk().FreeMemory(vulkan_provider.vk_device(),
                                                     memory, NULL);
                   }};
@@ -324,7 +352,7 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrContext> context,
                                              sk_render_target,          //
                                              kTopLeft_GrSurfaceOrigin,  //
                                              color_type,                //
-                                             nullptr,                   //
+                                             SkColorSpace::MakeSRGB(),  //
                                              &sk_surface_props          //
       );
 
@@ -347,7 +375,7 @@ bool VulkanSurface::PushSessionImageSetupOps(scenic::Session* session) {
   image_info.width = sk_surface_->width();
   image_info.height = sk_surface_->height();
   image_info.stride = 4 * sk_surface_->width();
-  image_info.pixel_format = fuchsia::images::PixelFormat::BGRA_8;
+  image_info.pixel_format = kPixelFormat;
   image_info.color_space = fuchsia::images::ColorSpace::SRGB;
   switch (vulkan_image_.vk_image_create_info.tiling) {
     case VK_IMAGE_TILING_OPTIMAL:
@@ -441,7 +469,7 @@ bool VulkanSurface::FlushSessionAcquireAndReleaseEvents() {
 }
 
 void VulkanSurface::SignalWritesFinished(
-    std::function<void(void)> on_writes_committed) {
+    const std::function<void(void)>& on_writes_committed) {
   FML_DCHECK(on_writes_committed);
 
   if (!valid_) {

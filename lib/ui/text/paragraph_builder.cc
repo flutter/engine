@@ -75,12 +75,13 @@ const int psTextDirectionIndex = 2;
 const int psFontWeightIndex = 3;
 const int psFontStyleIndex = 4;
 const int psMaxLinesIndex = 5;
-const int psFontFamilyIndex = 6;
-const int psFontSizeIndex = 7;
-const int psHeightIndex = 8;
-const int psStrutStyleIndex = 9;
-const int psEllipsisIndex = 10;
-const int psLocaleIndex = 11;
+const int psTextHeightBehaviorIndex = 6;
+const int psFontFamilyIndex = 7;
+const int psFontSizeIndex = 8;
+const int psHeightIndex = 9;
+const int psStrutStyleIndex = 10;
+const int psEllipsisIndex = 11;
+const int psLocaleIndex = 12;
 
 const int psTextAlignMask = 1 << psTextAlignIndex;
 const int psTextDirectionMask = 1 << psTextDirectionIndex;
@@ -90,6 +91,7 @@ const int psMaxLinesMask = 1 << psMaxLinesIndex;
 const int psFontFamilyMask = 1 << psFontFamilyIndex;
 const int psFontSizeMask = 1 << psFontSizeIndex;
 const int psHeightMask = 1 << psHeightIndex;
+const int psTextHeightBehaviorMask = 1 << psTextHeightBehaviorIndex;
 const int psStrutStyleMask = 1 << psStrutStyleIndex;
 const int psEllipsisMask = 1 << psEllipsisIndex;
 const int psLocaleMask = 1 << psLocaleIndex;
@@ -128,6 +130,7 @@ const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 }  // namespace
 
 static void ParagraphBuilder_constructor(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   DartCallConstructor(&ParagraphBuilder::create, args);
 }
 
@@ -204,6 +207,7 @@ void decodeStrut(Dart_Handle strut_data,
   }
   if (mask & sHeightMask) {
     paragraph_style.strut_height = float_data[float_count++];
+    paragraph_style.strut_has_height_override = true;
   }
   if (mask & sLeadingMask) {
     paragraph_style.strut_leading = float_data[float_count++];
@@ -261,6 +265,11 @@ ParagraphBuilder::ParagraphBuilder(
 
   if (mask & psHeightMask) {
     style.height = height;
+    style.has_height_override = true;
+  }
+
+  if (mask & psTextHeightBehaviorMask) {
+    style.text_height_behavior = encoded[psTextHeightBehaviorIndex];
   }
 
   if (mask & psStrutStyleMask) {
@@ -281,9 +290,16 @@ ParagraphBuilder::ParagraphBuilder(
 
   FontCollection& font_collection =
       UIDartState::Current()->window()->client()->GetFontCollection();
-  m_paragraphBuilder = std::make_unique<txt::ParagraphBuilder>(
-      style, font_collection.GetFontCollection());
-}  // namespace flutter
+
+#if FLUTTER_ENABLE_SKSHAPER
+#define FLUTTER_PARAGRAPH_BUILDER txt::ParagraphBuilder::CreateSkiaBuilder
+#else
+#define FLUTTER_PARAGRAPH_BUILDER txt::ParagraphBuilder::CreateTxtBuilder
+#endif
+
+  m_paragraphBuilder =
+      FLUTTER_PARAGRAPH_BUILDER(style, font_collection.GetFontCollection());
+}
 
 ParagraphBuilder::~ParagraphBuilder() = default;
 
@@ -401,6 +417,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
   if (mask & tsHeightMask) {
     style.height = height;
+    style.has_height_override = true;
   }
 
   if (mask & tsLocaleMask) {
@@ -428,8 +445,10 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
   }
 
   if (mask & tsFontFamilyMask) {
-    style.font_families.insert(style.font_families.end(), fontFamilies.begin(),
-                               fontFamilies.end());
+    // The child style's font families override the parent's font families.
+    // If the child's fonts are not available, then the font collection will
+    // use the system fallback fonts (not the parent's fonts).
+    style.font_families = fontFamilies;
   }
 
   if (mask & tsFontFeaturesMask) {
@@ -475,8 +494,8 @@ Dart_Handle ParagraphBuilder::addPlaceholder(double width,
   return Dart_Null();
 }
 
-fml::RefPtr<Paragraph> ParagraphBuilder::build() {
-  return Paragraph::Create(m_paragraphBuilder->Build());
+void ParagraphBuilder::build(Dart_Handle paragraph_handle) {
+  Paragraph::Create(paragraph_handle, m_paragraphBuilder->Build());
 }
 
 }  // namespace flutter

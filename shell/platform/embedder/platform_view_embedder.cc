@@ -11,21 +11,25 @@ PlatformViewEmbedder::PlatformViewEmbedder(
     flutter::TaskRunners task_runners,
     EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
     bool fbo_reset_after_present,
-    PlatformDispatchTable platform_dispatch_table)
+    PlatformDispatchTable platform_dispatch_table,
+    std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : PlatformView(delegate, std::move(task_runners)),
-      embedder_surface_(
-          std::make_unique<EmbedderSurfaceGL>(gl_dispatch_table,
-                                              fbo_reset_after_present)),
+      embedder_surface_(std::make_unique<EmbedderSurfaceGL>(
+          gl_dispatch_table,
+          fbo_reset_after_present,
+          std::move(external_view_embedder))),
       platform_dispatch_table_(platform_dispatch_table) {}
 
 PlatformViewEmbedder::PlatformViewEmbedder(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
     EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
-    PlatformDispatchTable platform_dispatch_table)
+    PlatformDispatchTable platform_dispatch_table,
+    std::unique_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : PlatformView(delegate, std::move(task_runners)),
-      embedder_surface_(
-          std::make_unique<EmbedderSurfaceSoftware>(software_dispatch_table)),
+      embedder_surface_(std::make_unique<EmbedderSurfaceSoftware>(
+          software_dispatch_table,
+          std::move(external_view_embedder))),
       platform_dispatch_table_(platform_dispatch_table) {}
 
 PlatformViewEmbedder::~PlatformViewEmbedder() = default;
@@ -87,6 +91,15 @@ std::unique_ptr<VsyncWaiter> PlatformViewEmbedder::CreateVSyncWaiter() {
 
   return std::make_unique<VsyncWaiterEmbedder>(
       platform_dispatch_table_.vsync_callback, task_runners_);
+}
+
+// |PlatformView|
+std::unique_ptr<std::vector<std::string>>
+PlatformViewEmbedder::ComputePlatformResolvedLocales(
+    const std::vector<std::string>& supported_locale_data) {
+  std::unique_ptr<std::vector<std::string>> out =
+      std::make_unique<std::vector<std::string>>();
+  return out;
 }
 
 }  // namespace flutter

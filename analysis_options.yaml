@@ -10,7 +10,17 @@
 #    private fields, especially on the Window object):
 
 analyzer:
+  enable-experiment:
+    - non-nullable
+  exclude: [
+    # this test pretends to be part of dart:ui and results in lots of false
+    # positives.
+    testing/dart/window_hooks_integration_test.dart,
+    # Fixture depends on dart:ui and raises false positives.
+    flutter_frontend_server/test/fixtures/lib/main.dart
+  ]
   strong-mode:
+    implicit-casts: false
     implicit-dynamic: false
   errors:
     # treat missing required parameters as a warning (not a hint)
@@ -20,6 +30,8 @@ analyzer:
     native_function_body_in_non_sdk_code: ignore
     # allow having TODOs in the code
     todo: ignore
+    # allow dart:ui to import dart:_internal
+    import_internal_library: ignore
   # `flutter analyze` (without `--watch`) just ignores directories
   # that contain a .dartignore file, and this file does not have any
   # effect on what files are actually analyzed.
@@ -36,7 +48,7 @@ linter:
     - always_specify_types
     - annotate_overrides
     # - avoid_annotating_with_dynamic # conflicts with always_specify_types
-    - avoid_as
+    # - avoid_as # required for implicit-casts: false
     # - avoid_bool_literals_in_conditional_expressions # not yet tested
     # - avoid_catches_without_on_clauses # we do this commonly
     # - avoid_catching_errors # we do this commonly

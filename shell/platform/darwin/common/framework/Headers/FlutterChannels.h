@@ -103,11 +103,7 @@ FLUTTER_EXPORT
  * @param message The message. Must be supported by the codec of this channel.
  * @param callback A callback to be invoked with the message reply from Flutter.
  */
-- (void)sendMessage:(id _Nullable)message
-              reply:(FlutterReply _Nullable)callback
-    // TODO: Add macOS support for replies once
-    // https://github.com/flutter/flutter/issues/18852 is fixed.
-    API_UNAVAILABLE(macos);
+- (void)sendMessage:(id _Nullable)message reply:(FlutterReply _Nullable)callback;
 
 /**
  * Registers a message handler with this channel.
@@ -118,6 +114,14 @@ FLUTTER_EXPORT
  * @param handler The message handler.
  */
 - (void)setMessageHandler:(FlutterMessageHandler _Nullable)handler;
+
+/**
+ * Adjusts the number of messages that will get buffered when sending messages to
+ * channels that aren't fully setup yet.  For example, the engine isn't running
+ * yet or the channel's message handler isn't setup on the Dart side yet.
+ */
+- (void)resizeChannelBuffer:(NSInteger)newSize;
+
 @end
 
 /**
@@ -238,11 +242,7 @@ FLUTTER_EXPORT
  */
 - (void)invokeMethod:(NSString*)method
            arguments:(id _Nullable)arguments
-              result:(FlutterResult _Nullable)callback
-    // TODO: Add macOS support for replies once
-    // https://github.com/flutter/flutter/issues/18852 is fixed.
-    API_UNAVAILABLE(macos);
-
+              result:(FlutterResult _Nullable)callback;
 /**
  * Registers a handler for method calls from the Flutter side.
  *
@@ -252,6 +252,14 @@ FLUTTER_EXPORT
  * @param handler The method call handler.
  */
 - (void)setMethodCallHandler:(FlutterMethodCallHandler _Nullable)handler;
+
+/**
+ * Adjusts the number of messages that will get buffered when sending messages to
+ * channels that aren't fully setup yet.  For example, the engine isn't running
+ * yet or the channel's message handler isn't setup on the Dart side yet.
+ */
+- (void)resizeChannelBuffer:(NSInteger)newSize;
+
 @end
 
 /**

@@ -10,9 +10,9 @@
 #include "flutter/fml/synchronization/semaphore.h"
 #include "flutter/fml/trace_event.h"
 
+#include <deque>
 #include <memory>
 #include <mutex>
-#include <queue>
 
 namespace flutter {
 
@@ -60,25 +60,27 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
       }
     }
 
-    void Complete(ResourcePtr resource) {
+    [[nodiscard]] bool Complete(ResourcePtr resource) {
+      bool result = false;
       if (continuation_) {
-        continuation_(std::move(resource), trace_id_);
+        result = continuation_(std::move(resource), trace_id_);
         continuation_ = nullptr;
         TRACE_EVENT_ASYNC_END0("flutter", "PipelineProduce", trace_id_);
         TRACE_FLOW_STEP("flutter", "PipelineItem", trace_id_);
       }
+      return result;
     }
 
     operator bool() const { return continuation_ != nullptr; }
 
    private:
     friend class Pipeline;
-    using Continuation = std::function<void(ResourcePtr, size_t)>;
+    using Continuation = std::function<bool(ResourcePtr, size_t)>;
 
     Continuation continuation_;
     size_t trace_id_;
 
-    ProducerContinuation(Continuation continuation, size_t trace_id)
+    ProducerContinuation(const Continuation& continuation, size_t trace_id)
         : continuation_(continuation), trace_id_(trace_id) {
       TRACE_FLOW_BEGIN("flutter", "PipelineItem", trace_id_);
       TRACE_EVENT_ASYNC_BEGIN0("flutter", "PipelineItem", trace_id_);
@@ -88,7 +90,8 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     FML_DISALLOW_COPY_AND_ASSIGN(ProducerContinuation);
   };
 
-  explicit Pipeline(uint32_t depth) : empty_(depth), available_(0) {}
+  explicit Pipeline(uint32_t depth)
+      : depth_(depth), empty_(depth), available_(0), inflight_(0) {}
 
   ~Pipeline() = default;
 
@@ -98,6 +101,11 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     if (!empty_.TryWait()) {
       return {};
     }
+    ++inflight_;
+    FML_TRACE_COUNTER("flutter", "Pipeline Depth",
+                      reinterpret_cast<int64_t>(this),      //
+                      "frames in flight", inflight_.load()  //
+    );
 
     return ProducerContinuation{
         std::bind(&Pipeline::ProducerCommit, this, std::placeholders::_1,
@@ -105,10 +113,30 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
         GetNextPipelineTraceID()};         // trace id
   }
 
+  // Create a `ProducerContinuation` that will only push the task if the queue
+  // is empty.
+  // Prefer using |Produce|. ProducerContinuation returned by this method
+  // doesn't guarantee that the frame will be rendered.
+  ProducerContinuation ProduceIfEmpty() {
+    if (!empty_.TryWait()) {
+      return {};
+    }
+    ++inflight_;
+    FML_TRACE_COUNTER("flutter", "Pipeline Depth",
+                      reinterpret_cast<int64_t>(this),      //
+                      "frames in flight", inflight_.load()  //
+    );
+
+    return ProducerContinuation{
+        std::bind(&Pipeline::ProducerCommitIfEmpty, this, std::placeholders::_1,
+                  std::placeholders::_2),  // continuation
+        GetNextPipelineTraceID()};         // trace id
+  }
+
   using Consumer = std::function<void(ResourcePtr)>;
 
-  FML_WARN_UNUSED_RESULT
-  PipelineConsumeResult Consume(Consumer consumer) {
+  /// @note Procedure doesn't copy all closures.
+  [[nodiscard]] PipelineConsumeResult Consume(const Consumer& consumer) {
     if (consumer == nullptr) {
       return PipelineConsumeResult::NoneAvailable;
     }
@@ -124,7 +152,7 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     {
       std::scoped_lock lock(queue_mutex_);
       std::tie(resource, trace_id) = std::move(queue_.front());
-      queue_.pop();
+      queue_.pop_front();
       items_count = queue_.size();
     }
 
@@ -134,6 +162,7 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
     }
 
     empty_.Signal();
+    --inflight_;
 
     TRACE_FLOW_END("flutter", "PipelineItem", trace_id);
     TRACE_EVENT_ASYNC_END0("flutter", "PipelineItem", trace_id);
@@ -143,19 +172,39 @@ class Pipeline : public fml::RefCountedThreadSafe<Pipeline<R>> {
   }
 
  private:
+  const uint32_t depth_;
   fml::Semaphore empty_;
   fml::Semaphore available_;
+  std::atomic<int> inflight_;
   std::mutex queue_mutex_;
-  std::queue<std::pair<ResourcePtr, size_t>> queue_;
+  std::deque<std::pair<ResourcePtr, size_t>> queue_;
 
-  void ProducerCommit(ResourcePtr resource, size_t trace_id) {
+  bool ProducerCommit(ResourcePtr resource, size_t trace_id) {
     {
       std::scoped_lock lock(queue_mutex_);
-      queue_.emplace(std::move(resource), trace_id);
+      queue_.emplace_back(std::move(resource), trace_id);
     }
 
     // Ensure the queue mutex is not held as that would be a pessimization.
     available_.Signal();
+    return true;
+  }
+
+  bool ProducerCommitIfEmpty(ResourcePtr resource, size_t trace_id) {
+    {
+      std::scoped_lock lock(queue_mutex_);
+      if (!queue_.empty()) {
+        // Bail if the queue is not empty, opens up spaces to produce other
+        // frames.
+        empty_.Signal();
+        return false;
+      }
+      queue_.emplace_back(std::move(resource), trace_id);
+    }
+
+    // Ensure the queue mutex is not held as that would be a pessimization.
+    available_.Signal();
+    return true;
   }
 
   FML_DISALLOW_COPY_AND_ASSIGN(Pipeline);

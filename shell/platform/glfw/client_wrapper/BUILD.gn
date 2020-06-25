@@ -2,24 +2,27 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("$flutter_root/shell/platform/common/cpp/client_wrapper/publish.gni")
-import("$flutter_root/testing/testing.gni")
+import("//flutter/shell/platform/common/cpp/client_wrapper/publish.gni")
+import("//flutter/testing/testing.gni")
 
 _wrapper_includes = [
+  "include/flutter/flutter_engine.h",
   "include/flutter/flutter_window.h",
   "include/flutter/flutter_window_controller.h",
   "include/flutter/plugin_registrar_glfw.h",
 ]
 
-_wrapper_sources = [ "flutter_window_controller.cc" ]
+_wrapper_sources = [
+  "flutter_engine.cc",
+  "flutter_window_controller.cc",
+]
 
 # This code will be merged into .../common/cpp/client_wrapper for client use,
 # so uses header paths that assume the merged state. Include the header
 # header directory of the core wrapper files so these includes will work.
 config("relative_core_wrapper_headers") {
-  include_dirs = [
-    "$flutter_root/shell/platform/common/cpp/client_wrapper/include/flutter",
-  ]
+  include_dirs =
+      [ "//flutter/shell/platform/common/cpp/client_wrapper/include/flutter" ]
 }
 
 # GLFW client wrapper build for internal use by the shell implementation.
@@ -28,27 +31,27 @@ source_set("client_wrapper_glfw") {
   public = _wrapper_includes
 
   deps = [
-    "$flutter_root/shell/platform/common/cpp:common_cpp_library_headers",
-    "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper",
-    "$flutter_root/shell/platform/glfw:flutter_glfw_headers",
+    "//flutter/shell/platform/common/cpp:common_cpp_library_headers",
+    "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper",
+    "//flutter/shell/platform/glfw:flutter_glfw_headers",
   ]
 
-  configs += [
-    "$flutter_root/shell/platform/common/cpp:desktop_library_implementation",
-  ]
+  configs +=
+      [ "//flutter/shell/platform/common/cpp:desktop_library_implementation" ]
 
   public_configs = [
     ":relative_core_wrapper_headers",
-    "$flutter_root/shell/platform/common/cpp:relative_flutter_library_headers",
-    "$flutter_root/shell/platform/glfw:relative_flutter_glfw_headers",
+    "//flutter/shell/platform/common/cpp:relative_flutter_library_headers",
+    "//flutter/shell/platform/glfw:relative_flutter_glfw_headers",
   ]
 }
 
-# Copies the GLFW client wrapper code to the output directory, merging it into
-# the core wrapper.
-publish_client_wrapper("publish_wrapper_glfw") {
+# Copies the GLFW client wrapper code to the output directory with a _glfw
+# suffix.
+publish_client_wrapper_extension("publish_wrapper_glfw") {
   public = _wrapper_includes
   sources = _wrapper_sources
+  directory_suffix = "glfw"
 }
 
 source_set("client_wrapper_library_stubs_glfw") {
@@ -60,7 +63,7 @@ source_set("client_wrapper_library_stubs_glfw") {
   defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
 
   public_deps = [
-    "$flutter_root/shell/platform/glfw:flutter_glfw_headers",
+    "//flutter/shell/platform/glfw:flutter_glfw_headers",
   ]
 }
 
@@ -71,20 +74,22 @@ test_fixtures("client_wrapper_glfw_fixtures") {
 executable("client_wrapper_glfw_unittests") {
   testonly = true
 
-  # TODO: Add more unit tests.
   sources = [
+    "flutter_engine_unittests.cc",
     "flutter_window_controller_unittests.cc",
+    "flutter_window_unittests.cc",
   ]
 
   deps = [
     ":client_wrapper_glfw",
     ":client_wrapper_glfw_fixtures",
     ":client_wrapper_library_stubs_glfw",
-    "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_library_stubs",
-    "$flutter_root/testing",
+    "//flutter/shell/platform/common/cpp/client_wrapper:client_wrapper_library_stubs",
+    "//flutter/testing",
 
-    # TODO: Consider refactoring flutter_root/testing so that there's a testing
+    # TODO(chunhtai): Consider refactoring flutter_root/testing so that there's a testing
     # target that doesn't require a Dart runtime to be linked in.
+    # https://github.com/flutter/flutter/issues/41414.
     "//third_party/dart/runtime:libdart_jit",
   ]
 }

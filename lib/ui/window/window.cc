@@ -18,16 +18,19 @@ namespace flutter {
 namespace {
 
 void DefaultRouteName(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   std::string routeName =
       UIDartState::Current()->window()->client()->DefaultRouteName();
   Dart_SetReturnValue(args, tonic::StdStringToDart(routeName));
 }
 
 void ScheduleFrame(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->window()->client()->ScheduleFrame();
 }
 
 void Render(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   Dart_Handle exception = nullptr;
   Scene* scene =
       tonic::DartConverter<Scene*>::FromArguments(args, 1, exception);
@@ -39,6 +42,7 @@ void Render(Dart_NativeArguments args) {
 }
 
 void UpdateSemantics(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   Dart_Handle exception = nullptr;
   SemanticsUpdate* update =
       tonic::DartConverter<SemanticsUpdate*>::FromArguments(args, 1, exception);
@@ -50,6 +54,7 @@ void UpdateSemantics(Dart_NativeArguments args) {
 }
 
 void SetIsolateDebugName(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   Dart_Handle exception = nullptr;
   const std::string name =
       tonic::DartConverter<std::string>::FromArguments(args, 1, exception);
@@ -61,12 +66,15 @@ void SetIsolateDebugName(Dart_NativeArguments args) {
 }
 
 void SetNeedsReportTimings(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   Dart_Handle exception = nullptr;
   bool value = tonic::DartConverter<bool>::FromArguments(args, 1, exception);
   UIDartState::Current()->window()->client()->SetNeedsReportTimings(value);
 }
 
 void ReportUnhandledException(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+
   Dart_Handle exception = nullptr;
 
   auto error_name =
@@ -142,24 +150,27 @@ void _RespondToPlatformMessage(Dart_NativeArguments args) {
   tonic::DartCallStatic(&RespondToPlatformMessage, args);
 }
 
-}  // namespace
+void GetPersistentIsolateData(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+
+  auto persistent_isolate_data =
+      UIDartState::Current()->window()->client()->GetPersistentIsolateData();
+
+  if (!persistent_isolate_data) {
+    Dart_SetReturnValue(args, Dart_Null());
+    return;
+  }
+
+  Dart_SetReturnValue(
+      args, tonic::DartByteData::Create(persistent_isolate_data->GetMapping(),
+                                        persistent_isolate_data->GetSize()));
+}
 
 Dart_Handle ToByteData(const std::vector<uint8_t>& buffer) {
-  Dart_Handle data_handle =
-      Dart_NewTypedData(Dart_TypedData_kByteData, buffer.size());
-  if (Dart_IsError(data_handle))
-    return data_handle;
-
-  Dart_TypedData_Type type;
-  void* data = nullptr;
-  intptr_t num_bytes = 0;
-  FML_CHECK(!Dart_IsError(
-      Dart_TypedDataAcquireData(data_handle, &type, &data, &num_bytes)));
-
-  memcpy(data, buffer.data(), num_bytes);
-  Dart_TypedDataReleaseData(data_handle);
-  return data_handle;
+  return tonic::DartByteData::Create(buffer.data(), buffer.size());
 }
+
+}  // namespace
 
 WindowClient::~WindowClient() {}
 
@@ -185,6 +196,7 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
           tonic::ToDart(metrics.device_pixel_ratio),
           tonic::ToDart(metrics.physical_width),
           tonic::ToDart(metrics.physical_height),
+          tonic::ToDart(metrics.physical_depth),
           tonic::ToDart(metrics.physical_padding_top),
           tonic::ToDart(metrics.physical_padding_right),
           tonic::ToDart(metrics.physical_padding_bottom),
@@ -193,6 +205,10 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
           tonic::ToDart(metrics.physical_view_inset_right),
           tonic::ToDart(metrics.physical_view_inset_bottom),
           tonic::ToDart(metrics.physical_view_inset_left),
+          tonic::ToDart(metrics.physical_system_gesture_inset_top),
+          tonic::ToDart(metrics.physical_system_gesture_inset_right),
+          tonic::ToDart(metrics.physical_system_gesture_inset_bottom),
+          tonic::ToDart(metrics.physical_system_gesture_inset_left),
       }));
 }
 
@@ -238,6 +254,7 @@ void Window::UpdateSemanticsEnabled(bool enabled) {
   if (!dart_state)
     return;
   tonic::DartState::Scope scope(dart_state);
+  UIDartState::ThrowIfUIOperationsProhibited();
 
   tonic::LogIfError(tonic::DartInvokeField(
       library_.value(), "_updateSemanticsEnabled", {tonic::ToDart(enabled)}));
@@ -256,13 +273,21 @@ void Window::UpdateAccessibilityFeatures(int32_t values) {
 
 void Window::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
+    FML_DLOG(WARNING)
+        << "Dropping platform message for lack of DartState on channel: "
+        << message->channel();
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
   Dart_Handle data_handle =
       (message->hasData()) ? ToByteData(message->data()) : Dart_Null();
-  if (Dart_IsError(data_handle))
+  if (Dart_IsError(data_handle)) {
+    FML_DLOG(WARNING)
+        << "Dropping platform message because of a Dart error on channel: "
+        << message->channel();
     return;
+  }
 
   int response_id = 0;
   if (auto response = message->response()) {
@@ -374,6 +399,27 @@ void Window::CompletePlatformMessageResponse(int response_id,
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
+Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
+  std::vector<std::string> supportedLocales =
+      tonic::DartConverter<std::vector<std::string>>::FromDart(
+          supportedLocalesHandle);
+
+  std::vector<std::string> results =
+      *UIDartState::Current()
+           ->window()
+           ->client()
+           ->ComputePlatformResolvedLocale(supportedLocales);
+
+  return tonic::DartConverter<std::vector<std::string>>::ToDart(results);
+}
+
+static void _ComputePlatformResolvedLocale(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  Dart_Handle result =
+      ComputePlatformResolvedLocale(Dart_GetNativeArgument(args, 1));
+  Dart_SetReturnValue(args, result);
+}
+
 void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
       {"Window_defaultRouteName", DefaultRouteName, 1, true},
@@ -385,6 +431,9 @@ void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
       {"Window_setIsolateDebugName", SetIsolateDebugName, 2, true},
       {"Window_reportUnhandledException", ReportUnhandledException, 2, true},
       {"Window_setNeedsReportTimings", SetNeedsReportTimings, 2, true},
+      {"Window_getPersistentIsolateData", GetPersistentIsolateData, 1, true},
+      {"Window_computePlatformResolvedLocale", _ComputePlatformResolvedLocale,
+       2, true},
   });
 }
 

@@ -4,6 +4,8 @@
 
 // TODO(dnfield): remove unused_element ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
+// @dart = 2.9
+
 part of dart.ui;
 
 // Corelib 'print' implementation.
@@ -11,8 +13,13 @@ void _print(dynamic arg) {
   _Logger._printString(arg.toString());
 }
 
+void _printDebug(dynamic arg) {
+  _Logger._printDebugString(arg.toString());
+}
+
 class _Logger {
-  static void _printString(String s) native 'Logger_PrintString';
+  static void _printString(String? s) native 'Logger_PrintString';
+  static void _printDebugString(String? s) native 'Logger_PrintDebugString';
 }
 
 // If we actually run on big endian machines, we'll need to do something smarter
@@ -66,18 +73,18 @@ List<int> saveCompilationTrace() {
   final dynamic result = _saveCompilationTrace();
   if (result is Error)
     throw result;
-  return result;
+  return result as List<int>;
 }
 
 dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
 
 void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
 
-int _getCallbackHandle(Function closure) native 'GetCallbackHandle';
-Function _getCallbackFromHandle(int handle) native 'GetCallbackFromHandle';
+int? _getCallbackHandle(Function closure) native 'GetCallbackHandle';
+Function? _getCallbackFromHandle(int handle) native 'GetCallbackFromHandle';
 
 // Required for gen_snapshot to work correctly.
-int _isolateId; // ignore: unused_element
+int? _isolateId; // ignore: unused_element
 
 @pragma('vm:entry-point')
 Function _getPrintClosure() => _print;  // ignore: unused_element

@@ -16,16 +16,25 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 
 namespace flutter {
 
+static WindowData GetDefaultWindowData() {
+  WindowData window_data;
+  window_data.lifecycle_state = "AppLifecycleState.detached";
+  return window_data;
+}
+
+bool AndroidShellHolder::use_embedded_view;
+
 AndroidShellHolder::AndroidShellHolder(
     flutter::Settings settings,
-    fml::jni::JavaObjectWeakGlobalRef java_object,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     bool is_background_view)
-    : settings_(std::move(settings)), java_object_(java_object) {
+    : settings_(std::move(settings)), jni_facade_(jni_facade) {
   static size_t shell_count = 1;
   auto thread_label = std::to_string(shell_count++);
 
@@ -39,31 +48,30 @@ AndroidShellHolder::AndroidShellHolder(
                                       ThreadHost::Type::IO};
   }
 
-  // Detach from JNI when the UI and GPU threads exit.
+  // Detach from JNI when the UI and raster threads exit.
   auto jni_exit_task([key = thread_destruct_key_]() {
     FML_CHECK(pthread_setspecific(key, reinterpret_cast<void*>(1)) == 0);
   });
   thread_host_.ui_thread->GetTaskRunner()->PostTask(jni_exit_task);
   if (!is_background_view) {
-    thread_host_.gpu_thread->GetTaskRunner()->PostTask(jni_exit_task);
+    thread_host_.raster_thread->GetTaskRunner()->PostTask(jni_exit_task);
   }
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
   Shell::CreateCallback<PlatformView> on_create_platform_view =
-      [is_background_view, java_object, &weak_platform_view](Shell& shell) {
+      [is_background_view, &jni_facade, &weak_platform_view](Shell& shell) {
         std::unique_ptr<PlatformViewAndroid> platform_view_android;
         if (is_background_view) {
           platform_view_android = std::make_unique<PlatformViewAndroid>(
               shell,                   // delegate
               shell.GetTaskRunners(),  // task runners
-              java_object              // java object handle for JNI interop
+              jni_facade               // JNI interop
           );
-
         } else {
           platform_view_android = std::make_unique<PlatformViewAndroid>(
               shell,                   // delegate
               shell.GetTaskRunners(),  // task runners
-              java_object,             // java object handle for JNI interop
+              jni_facade,              // JNI interop
               shell.GetSettings()
                   .enable_software_rendering  // use software rendering
           );
@@ -73,7 +81,8 @@ AndroidShellHolder::AndroidShellHolder(
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
-    return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
+    return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners(),
+                                        shell.GetIsGpuDisabledSyncSwitch());
   };
 
   // The current thread will be used as the platform thread. Ensure that the
@@ -90,23 +99,51 @@ AndroidShellHolder::AndroidShellHolder(
     ui_runner = single_task_runner;
     io_runner = single_task_runner;
   } else {
-    gpu_runner = thread_host_.gpu_thread->GetTaskRunner();
+    gpu_runner = thread_host_.raster_thread->GetTaskRunner();
     ui_runner = thread_host_.ui_thread->GetTaskRunner();
     io_runner = thread_host_.io_thread->GetTaskRunner();
   }
-  flutter::TaskRunners task_runners(thread_label,     // label
-                                    platform_runner,  // platform
-                                    gpu_runner,       // gpu
-                                    ui_runner,        // ui
-                                    io_runner         // io
-  );
+  if (settings.use_embedded_view) {
+    use_embedded_view = true;
+    // Embedded views requires the gpu and the platform views to be the same.
+    // The plan is to eventually dynamically merge the threads when there's a
+    // platform view in the layer tree.
+    // For now we use a fixed thread configuration with the same thread used as
+    // the gpu and platform task runner.
+    // TODO(amirh/chinmaygarde): remove this, and dynamically change the thread
+    // configuration. https://github.com/flutter/flutter/issues/23975
+    // https://github.com/flutter/flutter/issues/59930
+    flutter::TaskRunners task_runners(thread_label,     // label
+                                      platform_runner,  // platform
+                                      platform_runner,  // raster
+                                      ui_runner,        // ui
+                                      io_runner         // io
+    );
 
-  shell_ =
-      Shell::Create(task_runners,             // task runners
-                    settings_,                // settings
-                    on_create_platform_view,  // platform view create callback
-                    on_create_rasterizer      // rasterizer create callback
-      );
+    shell_ =
+        Shell::Create(task_runners,             // task runners
+                      GetDefaultWindowData(),   // window data
+                      settings_,                // settings
+                      on_create_platform_view,  // platform view create callback
+                      on_create_rasterizer      // rasterizer create callback
+        );
+  } else {
+    use_embedded_view = false;
+    flutter::TaskRunners task_runners(thread_label,     // label
+                                      platform_runner,  // platform
+                                      gpu_runner,       // raster
+                                      ui_runner,        // ui
+                                      io_runner         // io
+    );
+
+    shell_ =
+        Shell::Create(task_runners,             // task runners
+                      GetDefaultWindowData(),   // window data
+                      settings_,                // settings
+                      on_create_platform_view,  // platform view create callback
+                      on_create_rasterizer      // rasterizer create callback
+        );
+  }
 
   platform_view_ = weak_platform_view;
   FML_DCHECK(platform_view_);
@@ -114,10 +151,10 @@ AndroidShellHolder::AndroidShellHolder(
   is_valid_ = shell_ != nullptr;
 
   if (is_valid_) {
-    task_runners.GetGPUTaskRunner()->PostTask([]() {
+    shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask([]() {
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
-      // set the GPU thread to slightly lower priority than it.
+      // set the raster thread to slightly lower priority than it.
       if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
         // Defensive fallback. Depending on the OEM, it may not be possible
         // to set priority to -5.
@@ -126,7 +163,7 @@ AndroidShellHolder::AndroidShellHolder(
         }
       }
     });
-    task_runners.GetUITaskRunner()->PostTask([]() {
+    shell_->GetTaskRunners().GetUITaskRunner()->PostTask([]() {
       if (::setpriority(PRIO_PROCESS, gettid(), -1) != 0) {
         FML_LOG(ERROR) << "Failed to set UI task runner priority";
       }
@@ -157,53 +194,7 @@ void AndroidShellHolder::Launch(RunConfiguration config) {
     return;
   }
 
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = shell_->GetEngine(),  //
-                         config = std::move(config)     //
-  ]() mutable {
-        FML_LOG(INFO) << "Attempting to launch engine configuration...";
-        if (!engine ||
-            engine->Run(std::move(config)) == Engine::RunStatus::Failure) {
-          FML_LOG(ERROR) << "Could not launch engine in configuration.";
-        } else {
-          FML_LOG(INFO) << "Isolate for engine configuration successfully "
-                           "started and run.";
-        }
-      }));
-}
-
-void AndroidShellHolder::SetViewportMetrics(
-    const flutter::ViewportMetrics& metrics) {
-  if (!IsValid()) {
-    return;
-  }
-
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = shell_->GetEngine(), metrics]() {
-        if (engine) {
-          engine->SetViewportMetrics(metrics);
-        }
-      });
-}
-
-void AndroidShellHolder::DispatchPointerDataPacket(
-    std::unique_ptr<flutter::PointerDataPacket> packet) {
-  if (!IsValid()) {
-    return;
-  }
-
-  TRACE_EVENT0("flutter", "AndroidShellHolder::DispatchPointerDataPacket");
-  TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
-
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [engine = shell_->GetEngine(), packet = std::move(packet),
-       flow_id = next_pointer_flow_id_] {
-        if (engine) {
-          engine->DispatchPointerDataPacket(*packet, flow_id);
-        }
-      }));
-
-  next_pointer_flow_id_++;
+  shell_->RunEngine(std::move(config));
 }
 
 Rasterizer::Screenshot AndroidShellHolder::Screenshot(
@@ -220,4 +211,8 @@ fml::WeakPtr<PlatformViewAndroid> AndroidShellHolder::GetPlatformView() {
   return platform_view_;
 }
 
+void AndroidShellHolder::NotifyLowMemoryWarning() {
+  FML_DCHECK(shell_);
+  shell_->NotifyLowMemoryWarning();
+}
 }  // namespace flutter

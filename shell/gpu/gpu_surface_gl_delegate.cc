@@ -8,22 +8,20 @@
 
 namespace flutter {
 
+GPUSurfaceGLDelegate::~GPUSurfaceGLDelegate() = default;
+
 bool GPUSurfaceGLDelegate::GLContextFBOResetAfterPresent() const {
   return false;
 }
 
-bool GPUSurfaceGLDelegate::UseOffscreenSurface() const {
-  return false;
+bool GPUSurfaceGLDelegate::SurfaceSupportsReadback() const {
+  return true;
 }
 
 SkMatrix GPUSurfaceGLDelegate::GLContextSurfaceTransformation() const {
   SkMatrix matrix;
   matrix.setIdentity();
   return matrix;
-}
-
-flutter::ExternalViewEmbedder* GPUSurfaceGLDelegate::GetExternalViewEmbedder() {
-  return nullptr;
 }
 
 GPUSurfaceGLDelegate::GLProcResolver GPUSurfaceGLDelegate::GetGLProcResolver()
@@ -97,6 +95,10 @@ sk_sp<const GrGLInterface> GPUSurfaceGLDelegate::GetGLInterface() const {
 sk_sp<const GrGLInterface>
 GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface() {
   return CreateGLInterface(nullptr);
+}
+
+ExternalViewEmbedder* GPUSurfaceGLDelegate::GetExternalViewEmbedder() {
+  return nullptr;
 }
 
 }  // namespace flutter

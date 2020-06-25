@@ -57,6 +57,8 @@ void VsyncWaiterAndroid::OnNativeVsync(JNIEnv* env,
                                        jlong frameTimeNanos,
                                        jlong frameTargetTimeNanos,
                                        jlong java_baton) {
+  TRACE_EVENT0("flutter", "VSYNC");
+
   auto frame_time = fml::TimePoint::FromEpochDelta(
       fml::TimeDelta::FromNanoseconds(frameTimeNanos));
   auto target_time = fml::TimePoint::FromEpochDelta(
@@ -87,7 +89,7 @@ bool VsyncWaiterAndroid::Register(JNIEnv* env) {
       .fnPtr = reinterpret_cast<void*>(&OnNativeVsync),
   }};
 
-  jclass clazz = env->FindClass("io/flutter/view/VsyncWaiter");
+  jclass clazz = env->FindClass("io/flutter/embedding/engine/FlutterJNI");
 
   if (clazz == nullptr) {
     return false;

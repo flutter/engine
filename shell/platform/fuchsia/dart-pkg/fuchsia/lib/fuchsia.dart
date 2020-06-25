@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 library fuchsia;
 
 import 'dart:io';
@@ -18,8 +19,12 @@ Handle _environment;
 @pragma('vm:entry-point')
 Handle _outgoingServices;
 
+@pragma('vm:entry-point')
+Handle _viewRef;
+
 class MxStartupInfo {
   // TODO: refactor Handle to a Channel
+  // https://github.com/flutter/flutter/issues/49439
   static Handle takeEnvironment() {
     if (_outgoingServices == null && Platform.isFuchsia) {
       throw Exception(
@@ -31,6 +36,7 @@ class MxStartupInfo {
   }
 
   // TODO: refactor Handle to a Channel
+  // https://github.com/flutter/flutter/issues/49439
   static Handle takeOutgoingServices() {
     if (_outgoingServices == null && Platform.isFuchsia) {
       throw Exception(
@@ -38,6 +44,18 @@ class MxStartupInfo {
     }
     Handle handle = _outgoingServices;
     _outgoingServices = null;
+    return handle;
+  }
+
+  // TODO: refactor Handle to a ViewRef
+  // https://github.com/flutter/flutter/issues/49439
+  static Handle takeViewRef() {
+    if (_viewRef == null && Platform.isFuchsia) {
+      throw Exception(
+          'Attempting to call takeViewRef more than once per process');
+    }
+    Handle handle = _viewRef;
+    _viewRef = null;
     return handle;
   }
 }

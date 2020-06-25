@@ -10,6 +10,9 @@ import sys
 import os
 
 
+DSYMUTIL = os.path.join(os.path.dirname(__file__), '..', '..', '..',
+                        'buildtools', 'mac-x64', 'clang', 'bin', 'dsymutil')
+
 def main():
   parser = argparse.ArgumentParser(description='Creates Flutter.framework')
 
@@ -19,6 +22,7 @@ def main():
   parser.add_argument('--simulator-out-dir', type=str, required=True)
   parser.add_argument('--strip', action="store_true", default=False)
   parser.add_argument('--dsym', action="store_true", default=False)
+  parser.add_argument('--strip-bitcode', dest='strip_bitcode', action="store_true", default=False)
 
   args = parser.parse_args()
 
@@ -32,27 +36,31 @@ def main():
   simulator_dylib = os.path.join(simulator_framework, 'Flutter')
 
   if not os.path.isdir(arm64_framework):
-    print 'Cannot find iOS arm64 Framework at', arm64_framework
+    print('Cannot find iOS arm64 Framework at %s' % arm64_framework)
     return 1
 
   if not os.path.isdir(armv7_framework):
-    print 'Cannot find iOS armv7 Framework at', armv7_framework
+    print('Cannot find iOS armv7 Framework at %s' % armv7_framework)
     return 1
 
   if not os.path.isdir(simulator_framework):
-    print 'Cannot find iOS simulator Framework at', simulator_framework
+    print('Cannot find iOS simulator Framework at %s' % simulator_framework)
     return 1
 
   if not os.path.isfile(arm64_dylib):
-    print 'Cannot find iOS arm64 dylib at', arm64_dylib
+    print('Cannot find iOS arm64 dylib at %s' % arm64_dylib)
     return 1
 
   if not os.path.isfile(armv7_dylib):
-    print 'Cannot find iOS armv7 dylib at', armv7_dylib
+    print('Cannot find iOS armv7 dylib at %s' % armv7_dylib)
     return 1
 
   if not os.path.isfile(simulator_dylib):
-    print 'Cannot find iOS simulator dylib at', simulator_dylib
+    print('Cannot find iOS simulator dylib at %s' % simulator_dylib)
+    return 1
+
+  if not os.path.isfile(DSYMUTIL):
+    print('Cannot find dsymutil at %s' % DSYMUTIL)
     return 1
 
   shutil.rmtree(fat_framework, True)
@@ -70,9 +78,12 @@ def main():
     linker_out
   ])
 
+  if args.strip_bitcode:
+    subprocess.check_call(['xcrun', 'bitcode_strip', '-r', linker_out, '-o', linker_out])
+
   if args.dsym:
     dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
-    subprocess.check_call(['dsymutil', '-o', dsym_out, linker_out])
+    subprocess.check_call([DSYMUTIL, '-o', dsym_out, linker_out])
 
   if args.strip:
     # copy unstripped

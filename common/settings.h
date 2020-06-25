@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <stdint.h>
 
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -73,7 +74,10 @@ struct Settings {
   // libraries.
   MappingCallback dart_library_sources_kernel;
 
-  std::string application_library_path;
+  // Path to a library containing the application's compiled Dart code.
+  // This is a vector so that the embedder can provide fallback paths in
+  // case the primary path to the library can not be loaded.
+  std::vector<std::string> application_library_path;
 
   std::string application_kernel_asset;       // deprecated
   std::string application_kernel_list_asset;  // deprecated
@@ -85,14 +89,21 @@ struct Settings {
   std::vector<std::string> dart_entrypoint_args;
 
   // Isolate settings
+  bool enable_checked_mode = false;
   bool start_paused = false;
   bool trace_skia = false;
+  std::string trace_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
   bool dump_skp_on_shader_compilation = false;
+  bool cache_sksl = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
+
+  // Used to signal the embedder whether HTTP connections are disabled.
+  bool disable_http = false;
+
   // Used as the script URI in debug messages. Does not affect how the Dart code
   // is executed.
   std::string advisory_script_uri = "main.dart";
@@ -101,15 +112,25 @@ struct Settings {
   std::string advisory_script_entrypoint = "main";
 
   // Observatory settings
+
+  // Whether the Dart VM service should be enabled.
   bool enable_observatory = false;
-  // Port on target will be auto selected by the OS. A message will be printed
-  // on the target with the port after it has been selected.
+
+  // The IP address to which the Dart VM service is bound.
+  std::string observatory_host;
+
+  // The port to which the Dart VM service is bound. When set to `0`, a free
+  // port will be automatically selected by the OS. A message is logged on the
+  // target indicating the URL at which the VM service can be accessed.
   uint32_t observatory_port = 0;
-  bool ipv6 = false;
 
   // Determines whether an authentication code is required to communicate with
   // the VM service.
   bool disable_service_auth_codes = true;
+
+  // Determine whether the vmservice should fallback to automatic port selection
+  // after failing to bind to a specified port.
+  bool enable_service_port_fallback = false;
 
   // Font settings
   bool use_test_fonts = false;
@@ -171,6 +192,35 @@ struct Settings {
   // Callback to handle the timings of a rasterized frame. This is called as
   // soon as a frame is rasterized.
   FrameRasterizedCallback frame_rasterized_callback;
+
+  // This data will be available to the isolate immediately on launch via the
+  // Window.getPersistentIsolateData callback. This is meant for information
+  // that the isolate cannot request asynchronously (platform messages can be
+  // used for that purpose). This data is held for the lifetime of the shell and
+  // is available on isolate restarts in the shell instance. Due to this,
+  // the buffer must be as small as possible.
+  std::shared_ptr<const fml::Mapping> persistent_isolate_data;
+
+  /// Max size of old gen heap size in MB, or 0 for unlimited, -1 for default
+  /// value.
+  ///
+  /// See also:
+  /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
+  int64_t old_gen_heap_size = -1;
+
+  /// A timestamp representing when the engine started. The value is based
+  /// on the clock used by the Dart timeline APIs. This timestamp is used
+  /// to log a timeline event that tracks the latency of engine startup.
+  std::chrono::microseconds engine_start_timestamp = {};
+
+  /// Whether the application claims that it uses the android embedded view for
+  /// platform views.
+  ///
+  /// A `true` value will result the raster task runner always run on the
+  /// platform thread.
+  // TODO(cyanlaz): Remove this when dynamic thread merging is done.
+  // https://github.com/flutter/flutter/issues/59930
+  bool use_embedded_view = false;
 
   std::string ToString() const;
 };

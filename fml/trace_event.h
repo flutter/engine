@@ -8,15 +8,16 @@
 #include "flutter/fml/build_config.h"
 
 #if defined(OS_FUCHSIA)
-#if !defined(FUCHSIA_SDK)
 
 // Forward to the system tracing mechanism on Fuchsia.
 
-#include <trace/event.h>
+#include <lib/trace/event.h>
 
 // TODO(DNO-448): This is disabled because the Fuchsia counter id json parsing
 // only handles ints whereas this can produce ints or strings.
-#define FML_TRACE_COUNTER(a, b, c, args...)
+#define FML_TRACE_COUNTER(a, b, c, arg1, ...) \
+  ::fml::tracing::TraceCounterNopHACK((a), (b), (c), (arg1), __VA_ARGS__);
+
 #define FML_TRACE_EVENT(a, b, args...) TRACE_DURATION(a, b)
 
 #define TRACE_EVENT0(a, b) TRACE_DURATION(a, b)
@@ -27,8 +28,11 @@
 #define TRACE_EVENT_ASYNC_BEGIN1(a, b, c, d, e) TRACE_ASYNC_BEGIN(a, b, c, d, e)
 #define TRACE_EVENT_ASYNC_END1(a, b, c, d, e) TRACE_ASYNC_END(a, b, c, d, e)
 #define TRACE_EVENT_INSTANT0(a, b) TRACE_INSTANT(a, b, TRACE_SCOPE_THREAD)
+#define TRACE_EVENT_INSTANT1(a, b, k1, v1) \
+  TRACE_INSTANT(a, b, TRACE_SCOPE_THREAD, k1, v1)
+#define TRACE_EVENT_INSTANT2(a, b, k1, v1, k2, v2) \
+  TRACE_INSTANT(a, b, TRACE_SCOPE_THREAD, k1, v1, k2, v2)
 
-#endif  //  !defined(FUCHSIA_SDK)
 #endif  //  defined(OS_FUCHSIA)
 
 #include <cstddef>
@@ -41,7 +45,13 @@
 #include "flutter/fml/time/time_point.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
-#if !defined(OS_FUCHSIA) || defined(FUCHSIA_SDK)
+#if (FLUTTER_RELEASE && !defined(OS_FUCHSIA))
+#define FLUTTER_TIMELINE_ENABLED 0
+#else
+#define FLUTTER_TIMELINE_ENABLED 1
+#endif
+
+#if !defined(OS_FUCHSIA)
 #ifndef TRACE_EVENT_HIDE_MACROS
 
 #define __FML__TOKEN_CAT__(x, y) x##y
@@ -51,7 +61,7 @@
                                                        __LINE__)(name);
 
 // This macro has the FML_ prefix so that it does not collide with the macros
-// from trace/event.h on Fuchsia.
+// from lib/trace/event.h on Fuchsia.
 //
 // TODO(chinmaygarde): All macros here should have the FML prefix.
 #define FML_TRACE_COUNTER(category_group, name, counter_id, arg1, ...)         \
@@ -94,6 +104,14 @@
 #define TRACE_EVENT_INSTANT0(category_group, name) \
   ::fml::tracing::TraceEventInstant0(category_group, name);
 
+#define TRACE_EVENT_INSTANT1(category_group, name, arg1_name, arg1_val) \
+  ::fml::tracing::TraceEventInstant1(category_group, name, arg1_name, arg1_val);
+
+#define TRACE_EVENT_INSTANT2(category_group, name, arg1_name, arg1_val, \
+                             arg2_name, arg2_val)                       \
+  ::fml::tracing::TraceEventInstant2(category_group, name, arg1_name,   \
+                                     arg1_val, arg2_name, arg2_val);
+
 #define TRACE_FLOW_BEGIN(category, name, id) \
   ::fml::tracing::TraceEventFlowBegin0(category, name, id);
 
@@ -104,13 +122,23 @@
   ::fml::tracing::TraceEventFlowEnd0(category, name, id);
 
 #endif  // TRACE_EVENT_HIDE_MACROS
-#endif  // !defined(OS_FUCHSIA) || defined(FUCHSIA_SDK)
+#endif  // !defined(OS_FUCHSIA)
 
 namespace fml {
 namespace tracing {
 
 using TraceArg = const char*;
 using TraceIDArg = int64_t;
+
+void TraceSetAllowlist(const std::vector<std::string>& allowlist);
+
+void TraceTimelineEvent(TraceArg category_group,
+                        TraceArg name,
+                        int64_t timestamp_micros,
+                        TraceIDArg id,
+                        Dart_Timeline_Event_Type type,
+                        const std::vector<const char*>& names,
+                        const std::vector<std::string>& values);
 
 void TraceTimelineEvent(TraceArg category_group,
                         TraceArg name,
@@ -171,16 +199,28 @@ void TraceCounter(TraceArg category,
                   TraceArg name,
                   TraceIDArg identifier,
                   Args... args) {
+#if FLUTTER_TIMELINE_ENABLED
   auto split = SplitArguments(args...);
   TraceTimelineEvent(category, name, identifier, Dart_Timeline_Event_Counter,
                      split.first, split.second);
+#endif  // FLUTTER_TIMELINE_ENABLED
 }
+
+// HACK: Used to NOP FML_TRACE_COUNTER macro without triggering unused var
+// warnings at usage sites.
+template <typename... Args>
+void TraceCounterNopHACK(TraceArg category,
+                         TraceArg name,
+                         TraceIDArg identifier,
+                         Args... args) {}
 
 template <typename... Args>
 void TraceEvent(TraceArg category, TraceArg name, Args... args) {
+#if FLUTTER_TIMELINE_ENABLED
   auto split = SplitArguments(args...);
   TraceTimelineEvent(category, name, 0, Dart_Timeline_Event_Begin, split.first,
                      split.second);
+#endif  // FLUTTER_TIMELINE_ENABLED
 }
 
 void TraceEvent0(TraceArg category_group, TraceArg name);
@@ -199,10 +239,42 @@ void TraceEvent2(TraceArg category_group,
 
 void TraceEventEnd(TraceArg name);
 
+template <typename... Args>
 void TraceEventAsyncComplete(TraceArg category_group,
                              TraceArg name,
                              TimePoint begin,
-                             TimePoint end);
+                             TimePoint end,
+                             Args... args) {
+#if FLUTTER_TIMELINE_ENABLED
+  auto identifier = TraceNonce();
+  const auto split = SplitArguments(args...);
+
+  if (begin > end) {
+    std::swap(begin, end);
+  }
+
+  const int64_t begin_micros = begin.ToEpochDelta().ToMicroseconds();
+  const int64_t end_micros = end.ToEpochDelta().ToMicroseconds();
+
+  TraceTimelineEvent(category_group,                   // group
+                     name,                             // name
+                     begin_micros,                     // timestamp_micros
+                     identifier,                       // identifier
+                     Dart_Timeline_Event_Async_Begin,  // type
+                     split.first,                      // names
+                     split.second                      // values
+  );
+
+  TraceTimelineEvent(category_group,                 // group
+                     name,                           // name
+                     end_micros,                     // timestamp_micros
+                     identifier,                     // identifier
+                     Dart_Timeline_Event_Async_End,  // type
+                     split.first,                    // names
+                     split.second                    // values
+  );
+#endif  // FLUTTER_TIMELINE_ENABLED
+}
 
 void TraceEventAsyncBegin0(TraceArg category_group,
                            TraceArg name,
@@ -224,6 +296,18 @@ void TraceEventAsyncEnd1(TraceArg category_group,
 
 void TraceEventInstant0(TraceArg category_group, TraceArg name);
 
+void TraceEventInstant1(TraceArg category_group,
+                        TraceArg name,
+                        TraceArg arg1_name,
+                        TraceArg arg1_val);
+
+void TraceEventInstant2(TraceArg category_group,
+                        TraceArg name,
+                        TraceArg arg1_name,
+                        TraceArg arg1_val,
+                        TraceArg arg2_name,
+                        TraceArg arg2_val);
+
 void TraceEventFlowBegin0(TraceArg category_group,
                           TraceArg name,
                           TraceIDArg id);
@@ -242,6 +326,41 @@ class ScopedInstantEnd {
   const char* label_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ScopedInstantEnd);
+};
+
+// A move-only utility object that creates a new flow with a unique ID and
+// automatically ends it when it goes out of scope. When tracing using multiple
+// overlapping flows, it often gets hard to make sure to end the flow
+// (especially with early returns), or, end/step on the wrong flow. This
+// leads to corrupted or missing traces in the UI.
+class TraceFlow {
+ public:
+  TraceFlow(const char* label) : label_(label), nonce_(TraceNonce()) {
+    TraceEventFlowBegin0("flutter", label_, nonce_);
+  }
+
+  ~TraceFlow() { End(label_); }
+
+  TraceFlow(TraceFlow&& other) : label_(other.label_), nonce_(other.nonce_) {
+    other.nonce_ = 0;
+  }
+
+  void Step(const char* label) const {
+    TraceEventFlowStep0("flutter", label, nonce_);
+  }
+
+  void End(const char* label = nullptr) {
+    if (nonce_ != 0) {
+      TraceEventFlowEnd0("flutter", label == nullptr ? label_ : label, nonce_);
+      nonce_ = 0;
+    }
+  }
+
+ private:
+  const char* label_;
+  size_t nonce_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(TraceFlow);
 };
 
 }  // namespace tracing

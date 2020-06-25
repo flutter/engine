@@ -41,6 +41,25 @@ enum class TextDirection {
   ltr,
 };
 
+// Allows disabling height adjustments to first line's ascent and the
+// last line's descent. If disabled, the line will use the default font
+// metric provided ascent/descent and ParagraphStyle.height will not take
+// effect.
+//
+// The default behavior is kAll where height adjustments are enabled for all
+// lines.
+//
+// Multiple behaviors can be applied at once with a bitwise | operator. For
+// example, disabling first ascent and last descent can achieved with:
+//
+//   (kDisableFirstAscent | kDisableLastDescent).
+enum TextHeightBehavior {
+  kAll = 0x0,
+  kDisableFirstAscent = 0x1,
+  kDisableLastDescent = 0x2,
+  kDisableAll = 0x1 | 0x2,
+};
+
 class ParagraphStyle {
  public:
   // Default TextStyle. Used in GetTextStyle() to obtain the base TextStyle to
@@ -50,6 +69,8 @@ class ParagraphStyle {
   std::string font_family = "";
   double font_size = 14;
   double height = 1;
+  size_t text_height_behavior = TextHeightBehavior::kAll;
+  bool has_height_override = false;
 
   // Strut properties. strut_enabled must be set to true for the rest of the
   // properties to take effect.
@@ -60,6 +81,7 @@ class ParagraphStyle {
   std::vector<std::string> strut_font_families;
   double strut_font_size = 14;
   double strut_height = 1;
+  bool strut_has_height_override = false;
   double strut_leading = -1;  // Negative to use font's default leading. [0,inf)
                               // to use custom leading as a ratio of font size.
   bool force_strut_height = false;

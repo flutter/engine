@@ -30,7 +30,7 @@ CLANG_FORMAT="../buildtools/$OS/clang/bin/clang-format"
 $CLANG_FORMAT --version
 
 # Compute the diffs.
-FILETYPES="*.c *.cc *.cpp *.h *.m *.mm"
+CLANG_FILETYPES="*.c *.cc *.cpp *.h *.m *.mm"
 DIFF_OPTS="-U0 --no-color --name-only"
 
 if git remote get-url upstream >/dev/null 2>&1; then
@@ -42,10 +42,14 @@ fi;
 
 BASE_SHA="$(git fetch $UPSTREAM master > /dev/null 2>&1 && \
            (git merge-base --fork-point FETCH_HEAD HEAD || git merge-base FETCH_HEAD HEAD))"
-FILES_TO_CHECK="$(git diff $DIFF_OPTS $BASE_SHA..HEAD -- $FILETYPES)"
-
+# Disable glob matching otherwise a file in the current directory that matches
+# $CLANG_FILETYPES will cause git to query for that exact file instead of doing
+# a match.
+set -f
+CLANG_FILES_TO_CHECK="$(git ls-files $CLANG_FILETYPES)"
+set +f
 FAILED_CHECKS=0
-for f in $FILES_TO_CHECK; do
+for f in $CLANG_FILES_TO_CHECK; do
   set +e
   CUR_DIFF="$(diff -u "$f" <("$CLANG_FORMAT" --style=file "$f"))"
   set -e
@@ -54,6 +58,24 @@ for f in $FILES_TO_CHECK; do
     FAILED_CHECKS=$(($FAILED_CHECKS+1))
   fi
 done
+
+GOOGLE_JAVA_FORMAT="../third_party/android_tools/google-java-format/google-java-format-1.7-all-deps.jar"
+if [[ -f "$GOOGLE_JAVA_FORMAT" && -f "$(which java)" ]]; then
+  java -jar "$GOOGLE_JAVA_FORMAT" --version 2>&1
+  JAVA_FILETYPES="*.java"
+  JAVA_FILES_TO_CHECK="$(git diff $DIFF_OPTS $BASE_SHA -- $JAVA_FILETYPES)"
+  for f in $JAVA_FILES_TO_CHECK; do
+    set +e
+    CUR_DIFF="$(diff -u "$f" <(java -jar "$GOOGLE_JAVA_FORMAT" "$f"))"
+    set -e
+    if [[ ! -z "$CUR_DIFF" ]]; then
+      echo "$CUR_DIFF"
+      FAILED_CHECKS=$(($FAILED_CHECKS+1))
+    fi
+  done
+else
+  echo "WARNING: Cannot find google-java-format, skipping Java file formatting!"
+fi
 
 if [[ $FAILED_CHECKS -ne 0 ]]; then
   echo ""
@@ -75,4 +97,4 @@ if [[ ! -z "$TRAILING_SPACES" ]]; then
 fi
 
 # Check GN format consistency
-./ci/check_gn_format.py --dry-run true --root-directory . --gn-binary "../buildtools/$OS/gn"
+./ci/check_gn_format.py --dry-run --root-directory . --gn-binary "third_party/gn/gn"

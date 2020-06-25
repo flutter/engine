@@ -6,17 +6,22 @@
 
 namespace flutter {
 
-ColorFilterLayer::ColorFilterLayer(SkColor color, SkBlendMode blend_mode)
-    : color_(color), blend_mode_(blend_mode) {}
+ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
+    : filter_(std::move(filter)) {}
 
-ColorFilterLayer::~ColorFilterLayer() = default;
+void ColorFilterLayer::Preroll(PrerollContext* context,
+                               const SkMatrix& matrix) {
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context);
+  ContainerLayer::Preroll(context, matrix);
+}
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
   FML_DCHECK(needs_painting());
 
   SkPaint paint;
-  paint.setColorFilter(SkColorFilters::Blend(color_, blend_mode_));
+  paint.setColorFilter(filter_);
 
   Layer::AutoSaveLayer save =
       Layer::AutoSaveLayer::Create(context, paint_bounds(), &paint);

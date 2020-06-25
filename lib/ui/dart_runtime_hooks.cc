@@ -47,11 +47,12 @@ namespace flutter {
 #define DECLARE_FUNCTION(name, count) \
   extern void name(Dart_NativeArguments args);
 
-#define BUILTIN_NATIVE_LIST(V) \
-  V(Logger_PrintString, 1)     \
-  V(SaveCompilationTrace, 0)   \
-  V(ScheduleMicrotask, 1)      \
-  V(GetCallbackHandle, 1)      \
+#define BUILTIN_NATIVE_LIST(V)  \
+  V(Logger_PrintString, 1)      \
+  V(Logger_PrintDebugString, 1) \
+  V(SaveCompilationTrace, 0)    \
+  V(ScheduleMicrotask, 1)       \
+  V(GetCallbackHandle, 1)       \
   V(GetCallbackFromHandle, 1)
 
 BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
@@ -141,6 +142,14 @@ static void InitDartIO(Dart_Handle builtin_library,
   Dart_Handle result =
       Dart_SetField(platform_type, ToDart("_localeClosure"), locale_closure);
   PropagateIfError(result);
+
+  // Register dart:io service extensions used for network profiling.
+  Dart_Handle network_profiling_type =
+      Dart_GetType(io_lib, ToDart("_NetworkProfiling"), 0, nullptr);
+  PropagateIfError(network_profiling_type);
+  result = Dart_Invoke(network_profiling_type,
+                       ToDart("_registerServiceExtension"), 0, nullptr);
+  PropagateIfError(result);
 }
 
 void DartRuntimeHooks::Install(bool is_ui_isolate,
@@ -150,6 +159,12 @@ void DartRuntimeHooks::Install(bool is_ui_isolate,
   InitDartCore(builtin, script_uri);
   InitDartAsync(builtin, is_ui_isolate);
   InitDartIO(builtin, script_uri);
+}
+
+void Logger_PrintDebugString(Dart_NativeArguments args) {
+#ifndef NDEBUG
+  Logger_PrintString(args);
+#endif
 }
 
 // Implementation of native functions which are used for some

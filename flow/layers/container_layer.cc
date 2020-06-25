@@ -8,11 +8,8 @@ namespace flutter {
 
 ContainerLayer::ContainerLayer() {}
 
-ContainerLayer::~ContainerLayer() = default;
-
 void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
-  layer->set_parent(this);
-  layers_.push_back(std::move(layer));
+  layers_.emplace_back(std::move(layer));
 }
 
 void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
@@ -23,17 +20,50 @@ void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(child_paint_bounds);
 }
 
+void ContainerLayer::Paint(PaintContext& context) const {
+  FML_DCHECK(needs_painting());
+
+  PaintChildren(context);
+}
+
 void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
+#if defined(OS_FUCHSIA)
+  child_layer_exists_below_ = context->child_scene_layer_exists_below;
+  context->child_scene_layer_exists_below = false;
+#endif
+
+  // Platform views have no children, so context->has_platform_view should
+  // always be false.
+  FML_DCHECK(!context->has_platform_view);
+  bool child_has_platform_view = false;
   for (auto& layer : layers_) {
+    // Reset context->has_platform_view to false so that layers aren't treated
+    // as if they have a platform view based on one being previously found in a
+    // sibling tree.
+    context->has_platform_view = false;
+
     layer->Preroll(context, child_matrix);
 
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);
     }
     child_paint_bounds->join(layer->paint_bounds());
+
+    child_has_platform_view =
+        child_has_platform_view || context->has_platform_view;
   }
+
+  context->has_platform_view = child_has_platform_view;
+
+#if defined(OS_FUCHSIA)
+  if (child_layer_exists_below_) {
+    set_needs_system_composite(true);
+  }
+  context->child_scene_layer_exists_below =
+      context->child_scene_layer_exists_below || child_layer_exists_below_;
+#endif
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {
@@ -48,21 +78,83 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
   }
 }
 
+void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
+                                             Layer* layer,
+                                             const SkMatrix& matrix) {
+  if (!context->has_platform_view && context->raster_cache &&
+      SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
+    context->raster_cache->Prepare(context, layer, matrix);
+  }
+}
+
 #if defined(OS_FUCHSIA)
+
+void ContainerLayer::CheckForChildLayerBelow(PrerollContext* context) {
+  // All ContainerLayers make the check in PrerollChildren.
+}
 
 void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
   UpdateSceneChildren(context);
 }
 
 void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
+  auto update_scene_layers = [&] {
+    // Paint all of the layers which need to be drawn into the container.
+    // These may be flattened down to a containing Scenic Frame.
+    for (auto& layer : layers_) {
+      if (layer->needs_system_composite()) {
+        layer->UpdateScene(context);
+      }
+    }
+  };
+
   FML_DCHECK(needs_system_composite());
 
-  // Paint all of the layers which need to be drawn into the container.
-  // These may be flattened down to a containing
-  for (auto& layer : layers_) {
-    if (layer->needs_system_composite()) {
-      layer->UpdateScene(context);
+  // If there is embedded Fuchsia content in the scene (a ChildSceneLayer),
+  // PhysicalShapeLayers that appear above the embedded content will be turned
+  // into their own Scenic layers.
+  if (child_layer_exists_below_) {
+    float global_scenic_elevation =
+        context.GetGlobalElevationForNextScenicLayer();
+    float local_scenic_elevation =
+        global_scenic_elevation - context.scenic_elevation();
+    float z_translation = -local_scenic_elevation;
+
+    // Retained rendering: speedup by reusing a retained entity node if
+    // possible. When an entity node is reused, no paint layer is added to the
+    // frame so we won't call PhysicalShapeLayer::Paint.
+    LayerRasterCacheKey key(unique_id(), context.Matrix());
+    if (context.HasRetainedNode(key)) {
+      TRACE_EVENT_INSTANT0("flutter", "retained layer cache hit");
+      scenic::EntityNode* retained_node = context.GetRetainedNode(key);
+      FML_DCHECK(context.top_entity());
+      FML_DCHECK(retained_node->session() == context.session());
+
+      // Re-adjust the elevation.
+      retained_node->SetTranslation(0.f, 0.f, z_translation);
+
+      context.top_entity()->entity_node().AddChild(*retained_node);
+      return;
     }
+
+    TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
+    // If we can't find an existing retained surface, create one.
+    SceneUpdateContext::Frame frame(
+        context, SkRRect::MakeRect(paint_bounds()), SK_ColorTRANSPARENT,
+        SkScalarRoundToInt(context.alphaf() * 255),
+        "flutter::PhysicalShapeLayer", z_translation, this);
+
+    frame.AddPaintLayer(this);
+
+    // Node: UpdateSceneChildren needs to be called here so that |frame| is
+    // still in scope (and therefore alive) while UpdateSceneChildren is being
+    // called.
+    float scenic_elevation = context.scenic_elevation();
+    context.set_scenic_elevation(scenic_elevation + local_scenic_elevation);
+    update_scene_layers();
+    context.set_scenic_elevation(scenic_elevation);
+  } else {
+    update_scene_layers();
   }
 }
 

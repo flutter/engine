@@ -9,9 +9,10 @@
 /// This library exposes the lowest-level services that Flutter frameworks use
 /// to bootstrap applications, such as classes for driving the input, graphics
 /// text, layout, and rendering subsystems.
+// @dart = 2.9
 library dart.ui;
 
-import 'dart:_internal' hide Symbol; // ignore: import_internal_library, unused_import
+import 'dart:_internal' hide Symbol; // ignore: unused_import
 import 'dart:async';
 import 'dart:collection' as collection;
 import 'dart:convert';
@@ -22,6 +23,8 @@ import 'dart:math' as math;
 import 'dart:nativewrappers';
 import 'dart:typed_data';
 
+part 'annotations.dart';
+part 'channel_buffers.dart';
 part 'compositing.dart';
 part 'geometry.dart';
 part 'hash_codes.dart';

@@ -43,7 +43,8 @@ SkFontStyleSet* TypefaceFontAssetProvider::MatchFamily(
   if (found == registered_families_.end()) {
     return nullptr;
   }
-  return SkRef(&found->second);
+  sk_sp<TypefaceFontStyleSet> font_style_set = found->second;
+  return font_style_set.release();
 }
 
 void TypefaceFontAssetProvider::RegisterTypeface(sk_sp<SkTypeface> typeface) {
@@ -69,13 +70,11 @@ void TypefaceFontAssetProvider::RegisterTypeface(
   auto family_it = registered_families_.find(canonical_name);
   if (family_it == registered_families_.end()) {
     family_names_.push_back(family_name_alias);
-    family_it = registered_families_
-                    .emplace(std::piecewise_construct,
-                             std::forward_as_tuple(canonical_name),
-                             std::forward_as_tuple())
-                    .first;
+    auto value =
+        std::make_pair(canonical_name, sk_make_sp<TypefaceFontStyleSet>());
+    family_it = registered_families_.emplace(value).first;
   }
-  family_it->second.registerTypeface(std::move(typeface));
+  family_it->second->registerTypeface(std::move(typeface));
 }
 
 TypefaceFontStyleSet::TypefaceFontStyleSet() = default;
@@ -93,8 +92,16 @@ int TypefaceFontStyleSet::count() {
   return typefaces_.size();
 }
 
-void TypefaceFontStyleSet::getStyle(int index, SkFontStyle*, SkString* style) {
-  FML_DCHECK(false);
+void TypefaceFontStyleSet::getStyle(int index,
+                                    SkFontStyle* style,
+                                    SkString* name) {
+  FML_DCHECK(static_cast<size_t>(index) < typefaces_.size());
+  if (style) {
+    *style = typefaces_[index]->fontStyle();
+  }
+  if (name) {
+    name->reset();
+  }
 }
 
 SkTypeface* TypefaceFontStyleSet::createTypeface(int i) {
@@ -106,14 +113,7 @@ SkTypeface* TypefaceFontStyleSet::createTypeface(int i) {
 }
 
 SkTypeface* TypefaceFontStyleSet::matchStyle(const SkFontStyle& pattern) {
-  if (typefaces_.empty())
-    return nullptr;
-
-  for (const sk_sp<SkTypeface>& typeface : typefaces_)
-    if (typeface->fontStyle() == pattern)
-      return SkRef(typeface.get());
-
-  return SkRef(typefaces_[0].get());
+  return matchStyleCSS3(pattern);
 }
 
 }  // namespace txt

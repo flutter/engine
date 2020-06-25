@@ -14,28 +14,31 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
               const SkMatrix& root_surface_transformation,
               bool instrumentation_enabled,
               SessionConnection& session_connection)
-      : flutter::CompositorContext::ScopedFrame(context,
-                                                nullptr,
-                                                nullptr,
-                                                nullptr,
-                                                root_surface_transformation,
-                                                instrumentation_enabled),
+      : flutter::CompositorContext::ScopedFrame(
+            context,
+            session_connection.vulkan_surface_producer()->gr_context(),
+            nullptr,
+            nullptr,
+            root_surface_transformation,
+            instrumentation_enabled,
+            true,
+            nullptr),
         session_connection_(session_connection) {}
 
  private:
   SessionConnection& session_connection_;
 
-  bool Raster(flutter::LayerTree& layer_tree,
-              bool ignore_raster_cache) override {
+  flutter::RasterStatus Raster(flutter::LayerTree& layer_tree,
+                               bool ignore_raster_cache) override {
     if (!session_connection_.has_metrics()) {
-      return true;
+      return flutter::RasterStatus::kSuccess;
     }
 
     {
       // Preroll the Flutter layer tree. This allows Flutter to perform
       // pre-paint optimizations.
       TRACE_EVENT0("flutter", "Preroll");
-      layer_tree.Preroll(*this, true /* ignore raster cache */);
+      layer_tree.Preroll(*this, ignore_raster_cache);
     }
 
     {
@@ -49,10 +52,11 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
     {
       // Flush all pending session ops.
       TRACE_EVENT0("flutter", "SessionPresent");
-      session_connection_.Present(*this);
+
+      session_connection_.Present(this);
     }
 
-    return true;
+    return flutter::RasterStatus::kSuccess;
   }
 
   FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
@@ -61,15 +65,19 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
 CompositorContext::CompositorContext(
     std::string debug_label,
     fuchsia::ui::views::ViewToken view_token,
+    scenic::ViewRefPair view_ref_pair,
     fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
-    fit::closure session_error_callback,
+    fml::closure session_error_callback,
     zx_handle_t vsync_event_handle)
     : debug_label_(std::move(debug_label)),
-      session_connection_(debug_label_,
-                          std::move(view_token),
-                          std::move(session),
-                          std::move(session_error_callback),
-                          vsync_event_handle) {}
+      session_connection_(
+          debug_label_,
+          std::move(view_token),
+          std::move(view_ref_pair),
+          std::move(session),
+          session_error_callback,
+          [](auto) {},
+          vsync_event_handle) {}
 
 void CompositorContext::OnSessionMetricsDidChange(
     const fuchsia::ui::gfx::Metrics& metrics) {
@@ -82,14 +90,21 @@ void CompositorContext::OnSessionSizeChangeHint(float width_change_factor,
                                               height_change_factor);
 }
 
+void CompositorContext::OnWireframeEnabled(bool enabled) {
+  session_connection_.set_enable_wireframe(enabled);
+}
+
 CompositorContext::~CompositorContext() = default;
 
 std::unique_ptr<flutter::CompositorContext::ScopedFrame>
-CompositorContext::AcquireFrame(GrContext* gr_context,
-                                SkCanvas* canvas,
-                                flutter::ExternalViewEmbedder* view_embedder,
-                                const SkMatrix& root_surface_transformation,
-                                bool instrumentation_enabled) {
+CompositorContext::AcquireFrame(
+    GrContext* gr_context,
+    SkCanvas* canvas,
+    flutter::ExternalViewEmbedder* view_embedder,
+    const SkMatrix& root_surface_transformation,
+    bool instrumentation_enabled,
+    bool surface_supports_readback,
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   // TODO: The AcquireFrame interface is too broad and must be refactored to get
   // rid of the context and canvas arguments as those seem to be only used for
   // colorspace correctness purposes on the mobile shells.

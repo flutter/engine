@@ -6,16 +6,23 @@
 #define FLUTTER_SHELL_GPU_GPU_SURFACE_GL_DELEGATE_H_
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/gl_context_switch.h"
 #include "flutter/fml/macros.h"
+#include "flutter/shell/gpu/gpu_surface_delegate.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 namespace flutter {
 
-class GPUSurfaceGLDelegate {
+class GPUSurfaceGLDelegate : public GPUSurfaceDelegate {
  public:
+  ~GPUSurfaceGLDelegate() override;
+
+  // |GPUSurfaceDelegate|
+  ExternalViewEmbedder* GetExternalViewEmbedder() override;
+
   // Called to make the main GL context current on the current thread.
-  virtual bool GLContextMakeCurrent() = 0;
+  virtual std::unique_ptr<GLContextResult> GLContextMakeCurrent() = 0;
 
   // Called to clear the current GL context on the thread. This may be called on
   // either the GPU or IO threads.
@@ -35,16 +42,13 @@ class GPUSurfaceGLDelegate {
   // subsequent frames.
   virtual bool GLContextFBOResetAfterPresent() const;
 
-  // Create an offscreen surface to render into before onscreen composition.
-  virtual bool UseOffscreenSurface() const;
+  // Indicates whether or not the surface supports pixel readback as used in
+  // circumstances such as a BackdropFilter.
+  virtual bool SurfaceSupportsReadback() const;
 
   // A transformation applied to the onscreen surface before the canvas is
   // flushed.
   virtual SkMatrix GLContextSurfaceTransformation() const;
-
-  // Get a reference to the external views embedder. This happens on the same
-  // thread that the renderer is operating on.
-  virtual flutter::ExternalViewEmbedder* GetExternalViewEmbedder();
 
   sk_sp<const GrGLInterface> GetGLInterface() const;
 

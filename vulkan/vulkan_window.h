@@ -12,12 +12,12 @@
 
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
+#include "vulkan_proc_table.h"
 
 namespace vulkan {
 
@@ -32,7 +32,8 @@ class VulkanBackbuffer;
 class VulkanWindow {
  public:
   VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
-               std::unique_ptr<VulkanNativeSurface> native_surface);
+               std::unique_ptr<VulkanNativeSurface> native_surface,
+               bool render_to_surface);
 
   ~VulkanWindow();
 
@@ -57,8 +58,7 @@ class VulkanWindow {
 
   bool CreateSkiaBackendContext(GrVkBackendContext* context);
 
-  FML_WARN_UNUSED_RESULT
-  bool RecreateSwapchain();
+  [[nodiscard]] bool RecreateSwapchain();
 
   FML_DISALLOW_COPY_AND_ASSIGN(VulkanWindow);
 };

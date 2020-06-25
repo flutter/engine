@@ -16,19 +16,14 @@
 namespace flutter {
 
 IOSSurfaceSoftware::IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
+                                       std::shared_ptr<IOSContext> context,
                                        FlutterPlatformViewsController* platform_views_controller)
-    : IOSSurface(platform_views_controller), layer_(std::move(layer)) {
-  UpdateStorageSizeIfNecessary();
-}
+    : IOSSurface(std::move(context), platform_views_controller), layer_(std::move(layer)) {}
 
 IOSSurfaceSoftware::~IOSSurfaceSoftware() = default;
 
 bool IOSSurfaceSoftware::IsValid() const {
   return layer_;
-}
-
-bool IOSSurfaceSoftware::ResourceContextMakeCurrent() {
-  return false;
 }
 
 void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
@@ -38,12 +33,12 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Android oddities.
 }
 
-std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface() {
+std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }
 
-  auto surface = std::make_unique<GPUSurfaceSoftware>(this);
+  auto surface = std::make_unique<GPUSurfaceSoftware>(this, true /* render to surface */);
 
   if (!surface->IsValid()) {
     return nullptr;
@@ -127,45 +122,9 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
   return true;
 }
 
-flutter::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
-  if (IsIosEmbeddedViewsPreviewEnabled()) {
-    return this;
-  } else {
-    return nullptr;
-  }
-}
-
-void IOSSurfaceSoftware::BeginFrame(SkISize frame_size) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  FML_CHECK(platform_views_controller != nullptr);
-  platform_views_controller->SetFrameSize(frame_size);
-}
-
-void IOSSurfaceSoftware::PrerollCompositeEmbeddedView(int view_id) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  FML_CHECK(platform_views_controller != nullptr);
-  platform_views_controller->PrerollCompositeEmbeddedView(view_id);
-}
-
-std::vector<SkCanvas*> IOSSurfaceSoftware::GetCurrentCanvases() {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->GetCurrentCanvases();
-}
-
-SkCanvas* IOSSurfaceSoftware::CompositeEmbeddedView(int view_id,
-                                                    const flutter::EmbeddedViewParams& params) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  FML_CHECK(platform_views_controller != nullptr);
-  return platform_views_controller->CompositeEmbeddedView(view_id, params);
-}
-
-bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
-  FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
-  if (platform_views_controller == nullptr) {
-    return true;
-  }
-  return platform_views_controller->SubmitFrame(false, nullptr, nullptr);
+// |GPUSurfaceSoftwareDelegate|
+ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
+  return GetExternalViewEmbedderIfEnabled();
 }
 
 }  // namespace flutter

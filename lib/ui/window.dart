@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.9
 part of dart.ui;
 
 /// Signature of callbacks that have no arguments and return no data.
@@ -19,7 +20,8 @@ typedef FrameCallback = void Function(Duration duration);
 /// overhead (as this is available in the release mode). The list is sorted in
 /// ascending order of time (earliest frame first). The timing of any frame
 /// will be sent within about 1 second (100ms if in the profile/debug mode)
-/// even if there are no later frames to batch.
+/// even if there are no later frames to batch. The timing of the first frame
+/// will be sent immediately without batching.
 /// {@endtemplate}
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 
@@ -27,16 +29,19 @@ typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 
 /// Signature for [Window.onSemanticsAction].
-typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData args);
+typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
 
 /// Signature for responses to platform messages.
 ///
 /// Used as a parameter to [Window.sendPlatformMessage] and
 /// [Window.onPlatformMessage].
-typedef PlatformMessageResponseCallback = void Function(ByteData data);
+typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 
 /// Signature for [Window.onPlatformMessage].
-typedef PlatformMessageCallback = void Function(String name, ByteData data, PlatformMessageResponseCallback callback);
+typedef PlatformMessageCallback = void Function(String name, ByteData? data, PlatformMessageResponseCallback? callback);
+
+// Signature for _setNeedsReportTimings.
+typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 
 /// Various important time points in the lifetime of a frame.
 ///
@@ -52,12 +57,12 @@ enum FramePhase {
   /// See also [FrameTiming.buildDuration].
   buildFinish,
 
-  /// When the GPU thread starts rasterizing a frame.
+  /// When the raster thread starts rasterizing a frame.
   ///
   /// See also [FrameTiming.rasterDuration].
   rasterStart,
 
-  /// When the GPU thread finishes rasterizing a frame.
+  /// When the raster thread finishes rasterizing a frame.
   ///
   /// See also [FrameTiming.rasterDuration].
   rasterFinish,
@@ -65,7 +70,12 @@ enum FramePhase {
 
 /// Time-related performance metrics of a frame.
 ///
-/// See [Window.onReportTimings] for how to get this.
+/// If you're using the whole Flutter framework, please use
+/// [SchedulerBinding.addTimingsCallback] to get this. It's preferred over using
+/// [Window.onReportTimings] directly because
+/// [SchedulerBinding.addTimingsCallback] allows multiple callbacks. If
+/// [SchedulerBinding] is unavailable, then see [Window.onReportTimings] for how
+/// to get this.
 ///
 /// The metrics in debug mode (`flutter run` without any flags) may be very
 /// different from those in profile and release modes due to the debug overhead.
@@ -105,7 +115,7 @@ class FrameTiming {
   /// {@endtemplate}
   Duration get buildDuration => _rawDuration(FramePhase.buildFinish) - _rawDuration(FramePhase.buildStart);
 
-  /// The duration to rasterize the frame on the GPU thread.
+  /// The duration to rasterize the frame on the raster thread.
   ///
   /// {@macro dart.ui.FrameTiming.fps_smoothness_milliseconds}
   /// {@macro dart.ui.FrameTiming.fps_milliseconds}
@@ -167,18 +177,16 @@ enum AppLifecycleState {
   ///
   /// When the application is in this state, the engine will not call the
   /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
-  ///
-  /// Android apps in this state should assume that they may enter the
-  /// [suspending] state at any time.
   paused,
 
-  /// The application will be suspended momentarily.
+  /// The application is still hosted on a flutter engine but is detached from
+  /// any host views.
   ///
-  /// When the application is in this state, the engine will not call the
-  /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
-  ///
-  /// On iOS, this state is currently unused.
-  suspending,
+  /// When the application is in this state, the engine is running without
+  /// a view. It can either be in the progress of attaching a view when engine
+  /// was first initializes, or after the view being destroyed due to a Navigator
+  /// pop.
+  detached,
 }
 
 /// A representation of distances for each of the four edges of a rectangle,
@@ -198,7 +206,7 @@ enum AppLifecycleState {
 ///  * [Scaffold], which automatically applies the padding in material design
 ///    applications.
 class WindowPadding {
-  const WindowPadding._({ this.left, this.top, this.right, this.bottom });
+  const WindowPadding._({ required this.left, required this.top, required this.right, required this.bottom });
 
   /// The distance from the left edge to the first unpadded pixel, in physical pixels.
   final double left;
@@ -274,7 +282,7 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ]) : assert(_languageCode != null),
+  ]) : assert(_languageCode != null), // ignore: unnecessary_null_comparison
        assert(_languageCode != ''),
        scriptCode = null;
 
@@ -297,8 +305,8 @@ class Locale {
   const Locale.fromSubtags({
     String languageCode = 'und',
     this.scriptCode,
-    String countryCode,
-  }) : assert(languageCode != null),
+    String? countryCode,
+  }) : assert(languageCode != null), // ignore: unnecessary_null_comparison
        assert(languageCode != ''),
        _languageCode = languageCode,
        assert(scriptCode != ''),
@@ -426,7 +434,7 @@ class Locale {
   ///
   ///  * [Locale.fromSubtags], which describes the conventions for creating
   ///    [Locale] objects.
-  final String scriptCode;
+  final String? scriptCode;
 
   /// The region subtag for the locale.
   ///
@@ -447,8 +455,8 @@ class Locale {
   ///
   ///  * [Locale.fromSubtags], which describes the conventions for creating
   ///    [Locale] objects.
-  String get countryCode => _deprecatedRegionSubtagMap[_countryCode] ?? _countryCode;
-  final String _countryCode;
+  String? get countryCode => _deprecatedRegionSubtagMap[_countryCode] ?? _countryCode;
+  final String? _countryCode;
 
   // This map is generated by //flutter/tools/gen_locale.dart
   // Mappings generated for language subtag registry as of 2019-02-27.
@@ -465,48 +473,51 @@ class Locale {
   bool operator ==(dynamic other) {
     if (identical(this, other))
       return true;
-    if (other is! Locale)
+    if (other is! Locale) {
       return false;
-    final Locale typedOther = other;
-    return languageCode == typedOther.languageCode
-        && scriptCode == typedOther.scriptCode
-        && countryCode == typedOther.countryCode;
+    }
+    final String? countryCode = _countryCode;
+    final String? otherCountryCode = other.countryCode;
+    return other.languageCode == languageCode
+        && other.scriptCode == scriptCode // scriptCode cannot be ''
+        && (other.countryCode == countryCode // Treat '' as equal to null.
+            || otherCountryCode != null && otherCountryCode.isEmpty && countryCode == null
+            || countryCode != null && countryCode.isEmpty && other.countryCode == null);
   }
 
   @override
-  int get hashCode => hashValues(languageCode, scriptCode, countryCode);
+  int get hashCode => hashValues(languageCode, scriptCode, countryCode == '' ? null : countryCode);
 
-  static Locale cachedLocale;
-  static String cachedLocaleString;
+  static Locale? _cachedLocale;
+  static String? _cachedLocaleString;
 
   /// Returns a string representing the locale.
   ///
   /// This identifier happens to be a valid Unicode Locale Identifier using
   /// underscores as separator, however it is intended to be used for debugging
   /// purposes only. For parseable results, use [toLanguageTag] instead.
+  @keepToString
   @override
-  String toString() => _toLanguageTag('_');
+  String toString() {
+    if (!identical(_cachedLocale, this)) {
+      _cachedLocale = this;
+      _cachedLocaleString = _rawToString('_');
+    }
+    return _cachedLocaleString!;
+  }
 
   /// Returns a syntactically valid Unicode BCP47 Locale Identifier.
   ///
   /// Some examples of such identifiers: "en", "es-419", "hi-Deva-IN" and
   /// "zh-Hans-CN". See http://www.unicode.org/reports/tr35/ for technical
   /// details.
-  String toLanguageTag() => _toLanguageTag();
-
-  String _toLanguageTag([String separator = '-']) {
-    if (!identical(cachedLocale, this)) {
-      cachedLocale = this;
-      cachedLocaleString = _rawToString(separator);
-    }
-    return cachedLocaleString;
-  }
+  String toLanguageTag() => _rawToString('-');
 
   String _rawToString(String separator) {
     final StringBuffer out = StringBuffer(languageCode);
-    if (scriptCode != null)
+    if (scriptCode != null && scriptCode!.isNotEmpty)
       out.write('$separator$scriptCode');
-    if (_countryCode != null)
+    if (_countryCode != null && _countryCode!.isNotEmpty)
       out.write('$separator$countryCode');
     return out.toString();
   }
@@ -514,8 +525,15 @@ class Locale {
 
 /// The most basic interface to the host operating system's user interface.
 ///
+/// It exposes the size of the display, the core scheduler API, the input event
+/// callback, the graphics drawing API, and other such core services.
+///
 /// There is a single Window instance in the system, which you can
-/// obtain from the [window] property.
+/// obtain from `WidgetsBinding.instance.window`.
+///
+/// There is also a [window] singleton object in `dart:ui` if `WidgetsBinding`
+/// is unavailable. But we strongly advise to avoid statically referencing it.
+/// See the document of [window] for more details of why it should be avoided.
 ///
 /// ## Insets and Padding
 ///
@@ -559,7 +577,9 @@ class Locale {
 /// [Window.viewPadding] anyway, so there is no need to account for that in the
 /// [Window.padding], which is always safe to use for such calculations.
 class Window {
-  Window._();
+  Window._() {
+    _setNeedsReportTimings = _nativeSetNeedsReportTimings;
+  }
 
   /// The number of device pixels for each logical pixel. This number might not
   /// be a power of two. Indeed, it might not even be an integer. For example,
@@ -607,12 +627,26 @@ class Window {
   Size get physicalSize => _physicalSize;
   Size _physicalSize = Size.zero;
 
+  /// The physical depth is the maximum elevation that the Window allows.
+  ///
+  /// Physical layers drawn at or above this elevation will have their elevation
+  /// clamped to this value. This can happen if the physical layer itself has
+  /// an elevation larger than available depth, or if some ancestor of the layer
+  /// causes it to have a cumulative elevation that is larger than the available
+  /// depth.
+  ///
+  /// The default value is [double.maxFinite], which is used for platforms that
+  /// do not specify a maximum elevation. This property is currently on expected
+  /// to be set to a non-default value on Fuchsia.
+  double get physicalDepth => _physicalDepth;
+  double _physicalDepth = double.maxFinite;
+
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but over which the operating system
   /// will likely place system UI, such as the keyboard, that fully obscures
   /// any content.
   ///
-  /// When this changes, [onMetricsChanged] is called.
+  /// When this property changes, [onMetricsChanged] is called.
   ///
   /// The relationship between this [Window.viewInsets], [Window.viewPadding],
   /// and [Window.padding] are described in more detail in the documentation for
@@ -639,7 +673,7 @@ class Window {
   /// response to the soft keyboard being visible or hidden, whereas
   /// [Window.padding] will.
   ///
-  /// When this changes, [onMetricsChanged] is called.
+  /// When this property changes, [onMetricsChanged] is called.
   ///
   /// The relationship between this [Window.viewInsets], [Window.viewPadding],
   /// and [Window.padding] are described in more detail in the documentation for
@@ -654,6 +688,24 @@ class Window {
   ///    applications.
   WindowPadding get viewPadding => _viewPadding;
   WindowPadding _viewPadding = WindowPadding.zero;
+
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the application can render, but where the operating system will
+  /// consume input gestures for the sake of system navigation.
+  ///
+  /// For example, an operating system might use the vertical edges of the
+  /// screen, where swiping inwards from the edges takes users backward
+  /// through the history of screens they previously visited.
+  ///
+  /// When this property changes, [onMetricsChanged] is called.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  ///  * [MediaQuery.of], a simpler mechanism for the same.
+  WindowPadding get systemGestureInsets => _systemGestureInsets;
+  WindowPadding _systemGestureInsets = WindowPadding.zero;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but which may be partially obscured by
@@ -686,9 +738,10 @@ class Window {
   WindowPadding _padding = WindowPadding.zero;
 
   /// A callback that is invoked whenever the [devicePixelRatio],
-  /// [physicalSize], [padding], or [viewInsets] values change, for example
-  /// when the device is rotated or when the application is resized (e.g. when
-  /// showing applications side-by-side on Android).
+  /// [physicalSize], [padding], [viewInsets], or [systemGestureInsets]
+  /// values change, for example when the device is rotated or when the
+  /// application is resized (e.g. when showing applications side-by-side
+  /// on Android).
   ///
   /// The engine invokes this callback in the same zone in which the callback
   /// was set.
@@ -701,10 +754,10 @@ class Window {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    register for notifications when this is called.
   ///  * [MediaQuery.of], a simpler mechanism for the same.
-  VoidCallback get onMetricsChanged => _onMetricsChanged;
-  VoidCallback _onMetricsChanged;
-  Zone _onMetricsChangedZone;
-  set onMetricsChanged(VoidCallback callback) {
+  VoidCallback? get onMetricsChanged => _onMetricsChanged;
+  VoidCallback? _onMetricsChanged;
+  Zone _onMetricsChangedZone = Zone.root;
+  set onMetricsChanged(VoidCallback? callback) {
     _onMetricsChanged = callback;
     _onMetricsChangedZone = Zone.current;
   }
@@ -719,9 +772,9 @@ class Window {
   ///
   /// This is equivalent to `locales.first` and will provide an empty non-null locale
   /// if the [locales] list has not been set or is empty.
-  Locale get locale {
-    if (_locales != null && _locales.isNotEmpty) {
-      return _locales.first;
+  Locale? get locale {
+    if (_locales != null && _locales!.isNotEmpty) {
+      return _locales!.first;
     }
     return null;
   }
@@ -740,8 +793,36 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<Locale> get locales => _locales;
-  List<Locale> _locales;
+  List<Locale>? get locales => _locales;
+  List<Locale>? _locales;
+
+  /// Performs the platform-native locale resolution.
+  ///
+  /// Each platform may return different results.
+  ///
+  /// If the platform fails to resolve a locale, then this will return null.
+  ///
+  /// This method returns synchronously and is a direct call to
+  /// platform specific APIs without invoking method channels.
+  Locale? computePlatformResolvedLocale(List<Locale> supportedLocales) {
+    final List<String?> supportedLocalesData = <String?>[];
+    for (Locale locale in supportedLocales) {
+      supportedLocalesData.add(locale.languageCode);
+      supportedLocalesData.add(locale.countryCode);
+      supportedLocalesData.add(locale.scriptCode);
+    }
+
+    final List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
+
+    if (result.isNotEmpty) {
+      return Locale.fromSubtags(
+        languageCode: result[0],
+        countryCode: result[1] == '' ? null : result[1],
+        scriptCode: result[2] == '' ? null : result[2]);
+    }
+    return null;
+  }
+  List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) native 'Window_computePlatformResolvedLocale';
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -752,10 +833,10 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback get onLocaleChanged => _onLocaleChanged;
-  VoidCallback _onLocaleChanged;
-  Zone _onLocaleChangedZone;
-  set onLocaleChanged(VoidCallback callback) {
+  VoidCallback? get onLocaleChanged => _onLocaleChanged;
+  VoidCallback? _onLocaleChanged;
+  Zone _onLocaleChangedZone = Zone.root;
+  set onLocaleChanged(VoidCallback? callback) {
     _onLocaleChanged = callback;
     _onLocaleChangedZone = Zone.current;
   }
@@ -770,7 +851,7 @@ class Window {
     _initialLifecycleStateAccessed = true;
     return _initialLifecycleState;
   }
-  String _initialLifecycleState;
+  late String _initialLifecycleState;
   /// Tracks if the initial state has been accessed. Once accessed, we
   /// will stop updating the [initialLifecycleState], as it is not the
   /// preferred way to access the state.
@@ -807,10 +888,10 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback get onTextScaleFactorChanged => _onTextScaleFactorChanged;
-  VoidCallback _onTextScaleFactorChanged;
-  Zone _onTextScaleFactorChangedZone;
-  set onTextScaleFactorChanged(VoidCallback callback) {
+  VoidCallback? get onTextScaleFactorChanged => _onTextScaleFactorChanged;
+  VoidCallback? _onTextScaleFactorChanged;
+  Zone _onTextScaleFactorChangedZone = Zone.root;
+  set onTextScaleFactorChanged(VoidCallback? callback) {
     _onTextScaleFactorChanged = callback;
     _onTextScaleFactorChangedZone = Zone.current;
   }
@@ -829,10 +910,10 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
-  VoidCallback _onPlatformBrightnessChanged;
-  Zone _onPlatformBrightnessChangedZone;
-  set onPlatformBrightnessChanged(VoidCallback callback) {
+  VoidCallback? get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
+  VoidCallback? _onPlatformBrightnessChanged;
+  Zone _onPlatformBrightnessChangedZone = Zone.root;
+  set onPlatformBrightnessChanged(VoidCallback? callback) {
     _onPlatformBrightnessChanged = callback;
     _onPlatformBrightnessChangedZone = Zone.current;
   }
@@ -856,10 +937,10 @@ class Window {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  FrameCallback get onBeginFrame => _onBeginFrame;
-  FrameCallback _onBeginFrame;
-  Zone _onBeginFrameZone;
-  set onBeginFrame(FrameCallback callback) {
+  FrameCallback? get onBeginFrame => _onBeginFrame;
+  FrameCallback? _onBeginFrame;
+  Zone _onBeginFrameZone = Zone.root;
+  set onBeginFrame(FrameCallback? callback) {
     _onBeginFrame = callback;
     _onBeginFrameZone = Zone.current;
   }
@@ -878,16 +959,20 @@ class Window {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  VoidCallback get onDrawFrame => _onDrawFrame;
-  VoidCallback _onDrawFrame;
-  Zone _onDrawFrameZone;
-  set onDrawFrame(VoidCallback callback) {
+  VoidCallback? get onDrawFrame => _onDrawFrame;
+  VoidCallback? _onDrawFrame;
+  Zone _onDrawFrameZone = Zone.root;
+  set onDrawFrame(VoidCallback? callback) {
     _onDrawFrame = callback;
     _onDrawFrameZone = Zone.current;
   }
 
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
+  ///
+  /// It's prefered to use [SchedulerBinding.addTimingsCallback] than to use
+  /// [Window.onReportTimings] directly because
+  /// [SchedulerBinding.addTimingsCallback] allows multiple callbacks.
   ///
   /// This can be used to see if the application has missed frames (through
   /// [FrameTiming.buildDuration] and [FrameTiming.rasterDuration]), or high
@@ -903,10 +988,10 @@ class Window {
   /// Flutter spends less than 0.1ms every 1 second to report the timings
   /// (measured on iPhone6S). The 0.1ms is about 0.6% of 16ms (frame budget for
   /// 60fps), or 0.01% CPU usage per second.
-  TimingsCallback get onReportTimings => _onReportTimings;
-  TimingsCallback _onReportTimings;
-  Zone _onReportTimingsZone;
-  set onReportTimings(TimingsCallback callback) {
+  TimingsCallback? get onReportTimings => _onReportTimings;
+  TimingsCallback? _onReportTimings;
+  Zone _onReportTimingsZone = Zone.root;
+  set onReportTimings(TimingsCallback? callback) {
     if ((callback == null) != (_onReportTimings == null)) {
       _setNeedsReportTimings(callback != null);
     }
@@ -914,7 +999,8 @@ class Window {
     _onReportTimingsZone = Zone.current;
   }
 
-  void _setNeedsReportTimings(bool value) native 'Window_setNeedsReportTimings';
+  late _SetNeedsReportTimingsFunc _setNeedsReportTimings;
+  void _nativeSetNeedsReportTimings(bool value) native 'Window_setNeedsReportTimings';
 
   /// A callback that is invoked when pointer data is available.
   ///
@@ -925,10 +1011,10 @@ class Window {
   ///
   ///  * [GestureBinding], the Flutter framework class which manages pointer
   ///    events.
-  PointerDataPacketCallback get onPointerDataPacket => _onPointerDataPacket;
-  PointerDataPacketCallback _onPointerDataPacket;
-  Zone _onPointerDataPacketZone;
-  set onPointerDataPacket(PointerDataPacketCallback callback) {
+  PointerDataPacketCallback? get onPointerDataPacket => _onPointerDataPacket;
+  PointerDataPacketCallback? _onPointerDataPacket;
+  Zone _onPointerDataPacketZone = Zone.root;
+  set onPointerDataPacket(PointerDataPacketCallback? callback) {
     _onPointerDataPacket = callback;
     _onPointerDataPacketZone = Zone.current;
   }
@@ -1013,10 +1099,10 @@ class Window {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  VoidCallback get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
-  VoidCallback _onSemanticsEnabledChanged;
-  Zone _onSemanticsEnabledChangedZone;
-  set onSemanticsEnabledChanged(VoidCallback callback) {
+  VoidCallback? get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
+  VoidCallback? _onSemanticsEnabledChanged;
+  Zone _onSemanticsEnabledChangedZone = Zone.root;
+  set onSemanticsEnabledChanged(VoidCallback? callback) {
     _onSemanticsEnabledChanged = callback;
     _onSemanticsEnabledChangedZone = Zone.current;
   }
@@ -1029,28 +1115,29 @@ class Window {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  SemanticsActionCallback get onSemanticsAction => _onSemanticsAction;
-  SemanticsActionCallback _onSemanticsAction;
-  Zone _onSemanticsActionZone;
-  set onSemanticsAction(SemanticsActionCallback callback) {
+  SemanticsActionCallback? get onSemanticsAction => _onSemanticsAction;
+  SemanticsActionCallback? _onSemanticsAction;
+  Zone _onSemanticsActionZone = Zone.root;
+  set onSemanticsAction(SemanticsActionCallback? callback) {
     _onSemanticsAction = callback;
     _onSemanticsActionZone = Zone.current;
   }
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
-  AccessibilityFeatures _accessibilityFeatures;
+  // The zero value matches the default value in `window_data.h`.
+  AccessibilityFeatures _accessibilityFeatures = const AccessibilityFeatures._(0);
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  VoidCallback get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
-  VoidCallback _onAccessibilityFeaturesChanged;
-  Zone _onAccessibilityFlagsChangedZone;
-  set onAccessibilityFeaturesChanged(VoidCallback callback) {
+  VoidCallback? get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
+  VoidCallback? _onAccessibilityFeaturesChanged;
+  Zone _onAccessibilityFeaturesChangedZone = Zone.root;
+  set onAccessibilityFeaturesChanged(VoidCallback? callback) {
     _onAccessibilityFeaturesChanged = callback;
-    _onAccessibilityFlagsChangedZone = Zone.current;
+    _onAccessibilityFeaturesChangedZone = Zone.current;
   }
 
   /// Change the retained semantics data about this window.
@@ -1082,16 +1169,16 @@ class Window {
   /// The framework invokes [callback] in the same zone in which this method
   /// was called.
   void sendPlatformMessage(String name,
-                           ByteData data,
-                           PlatformMessageResponseCallback callback) {
-    final String error =
+                           ByteData? data,
+                           PlatformMessageResponseCallback? callback) {
+    final String? error =
         _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
     if (error != null)
       throw Exception(error);
   }
-  String _sendPlatformMessage(String name,
-                              PlatformMessageResponseCallback callback,
-                              ByteData data) native 'Window_sendPlatformMessage';
+  String? _sendPlatformMessage(String name,
+                              PlatformMessageResponseCallback? callback,
+                              ByteData? data) native 'Window_sendPlatformMessage';
 
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.
@@ -1106,31 +1193,43 @@ class Window {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  PlatformMessageCallback get onPlatformMessage => _onPlatformMessage;
-  PlatformMessageCallback _onPlatformMessage;
-  Zone _onPlatformMessageZone;
-  set onPlatformMessage(PlatformMessageCallback callback) {
+  PlatformMessageCallback? get onPlatformMessage => _onPlatformMessage;
+  PlatformMessageCallback? _onPlatformMessage;
+  Zone _onPlatformMessageZone = Zone.root;
+  set onPlatformMessage(PlatformMessageCallback? callback) {
     _onPlatformMessage = callback;
     _onPlatformMessageZone = Zone.current;
   }
 
   /// Called by [_dispatchPlatformMessage].
-  void _respondToPlatformMessage(int responseId, ByteData data)
+  void _respondToPlatformMessage(int responseId, ByteData? data)
       native 'Window_respondToPlatformMessage';
 
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
-  static PlatformMessageResponseCallback _zonedPlatformMessageResponseCallback(PlatformMessageResponseCallback callback) {
+  static PlatformMessageResponseCallback? _zonedPlatformMessageResponseCallback(PlatformMessageResponseCallback? callback) {
     if (callback == null)
       return null;
 
     // Store the zone in which the callback is being registered.
     final Zone registrationZone = Zone.current;
 
-    return (ByteData data) {
+    return (ByteData? data) {
       registrationZone.runUnaryGuarded(callback, data);
     };
   }
+
+
+  /// The embedder can specify data that the isolate can request synchronously
+  /// on launch. This accessor fetches that data.
+  ///
+  /// This data is persistent for the duration of the Flutter application and is
+  /// available even after isolate restarts. Because of this lifecycle, the size
+  /// of this data must be kept to a minimum.
+  ///
+  /// For asynchronous communication between the embedder and isolate, a
+  /// platform channel may be used.
+  ByteData? getPersistentIsolateData() native 'Window_getPersistentIsolateData';
 }
 
 /// Additional accessibility features that may be enabled by the platform.
@@ -1149,6 +1248,7 @@ class AccessibilityFeatures {
   static const int _kDisableAnimationsIndex = 1 << 2;
   static const int _kBoldTextIndex = 1 << 3;
   static const int _kReduceMotionIndex = 1 << 4;
+  static const int _kHighContrastIndex = 1 << 5;
 
   // A bitfield which represents each enabled feature.
   final int _index;
@@ -1176,6 +1276,11 @@ class AccessibilityFeatures {
   /// Only supported on iOS.
   bool get reduceMotion => _kReduceMotionIndex & _index != 0;
 
+  /// The platform is requesting that UI be rendered with darker colors.
+  ///
+  /// Only supported on iOS.
+  bool get highContrast => _kHighContrastIndex & _index != 0;
+
   @override
   String toString() {
     final List<String> features = <String>[];
@@ -1189,6 +1294,8 @@ class AccessibilityFeatures {
       features.add('boldText');
     if (reduceMotion)
       features.add('reduceMotion');
+    if (highContrast)
+      features.add('highContrast');
     return 'AccessibilityFeatures$features';
   }
 
@@ -1196,8 +1303,8 @@ class AccessibilityFeatures {
   bool operator ==(dynamic other) {
     if (other.runtimeType != runtimeType)
       return false;
-    final AccessibilityFeatures typedOther = other;
-    return _index == typedOther._index;
+    return other is AccessibilityFeatures
+        && other._index == _index;
   }
 
   @override
@@ -1219,7 +1326,19 @@ enum Brightness {
   light,
 }
 
-/// The [Window] singleton. This object exposes the size of the display, the
-/// core scheduler API, the input event callback, the graphics drawing API, and
-/// other such core services.
+/// The [Window] singleton.
+///
+/// Please try to avoid statically referencing this and instead use a
+/// binding for dependency resolution such as `WidgetsBinding.instance.window`.
+///
+/// Static access of this "window" object means that Flutter has few, if any
+/// options to fake or mock the given object in tests. Even in cases where Dart
+/// offers special language constructs to forcefully shadow such properties,
+/// those mechanisms would only be reasonable for tests and they would not be
+/// reasonable for a future of Flutter where we legitimately want to select an
+/// appropriate implementation at runtime.
+///
+/// The only place that `WidgetsBinding.instance.window` is inappropriate is if
+/// a `Window` is required before invoking `runApp()`. In that case, it is
+/// acceptable (though unfortunate) to use this object statically.
 final Window window = Window._();

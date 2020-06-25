@@ -8,7 +8,9 @@
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/fml/file.h"
+#include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/common/persistent_cache.h"
 
 namespace flutter {
 
@@ -17,8 +19,10 @@ RunConfiguration RunConfiguration::InferFromSettings(
     fml::RefPtr<fml::TaskRunner> io_worker) {
   auto asset_manager = std::make_shared<AssetManager>();
 
-  asset_manager->PushBack(std::make_unique<DirectoryAssetBundle>(
-      fml::Duplicate(settings.assets_dir)));
+  if (fml::UniqueFD::traits_type::IsValid(settings.assets_dir)) {
+    asset_manager->PushBack(std::make_unique<DirectoryAssetBundle>(
+        fml::Duplicate(settings.assets_dir)));
+  }
 
   asset_manager->PushBack(
       std::make_unique<DirectoryAssetBundle>(fml::OpenDirectory(
@@ -32,13 +36,17 @@ RunConfiguration RunConfiguration::InferFromSettings(
 RunConfiguration::RunConfiguration(
     std::unique_ptr<IsolateConfiguration> configuration)
     : RunConfiguration(std::move(configuration),
-                       std::make_shared<AssetManager>()) {}
+                       std::make_shared<AssetManager>()) {
+  PersistentCache::SetAssetManager(asset_manager_);
+}
 
 RunConfiguration::RunConfiguration(
     std::unique_ptr<IsolateConfiguration> configuration,
     std::shared_ptr<AssetManager> asset_manager)
     : isolate_configuration_(std::move(configuration)),
-      asset_manager_(std::move(asset_manager)) {}
+      asset_manager_(std::move(asset_manager)) {
+  PersistentCache::SetAssetManager(asset_manager_);
+}
 
 RunConfiguration::RunConfiguration(RunConfiguration&&) = default;
 

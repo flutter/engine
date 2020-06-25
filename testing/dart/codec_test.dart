@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -28,8 +29,8 @@ void main() {
   test('Fails with invalid data', () async {
     final Uint8List data = Uint8List.fromList(<int>[1, 2, 3]);
     expect(
-      ui.instantiateImageCodec(data),
-      throwsA(exceptionWithMessage('operation failed'))
+      () => ui.instantiateImageCodec(data),
+      throwsA(exceptionWithMessage('Could not instantiate image codec.'))
     );
   });
 

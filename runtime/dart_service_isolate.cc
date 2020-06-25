@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/posix_wrappers.h"
 #include "flutter/runtime/embedder_resources.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -19,12 +20,12 @@
     return handle;                  \
   }
 
-#define SHUTDOWN_ON_ERROR(handle)           \
-  if (Dart_IsError(handle)) {               \
-    *error = strdup(Dart_GetError(handle)); \
-    Dart_ExitScope();                       \
-    Dart_ShutdownIsolate();                 \
-    return false;                           \
+#define SHUTDOWN_ON_ERROR(handle)                \
+  if (Dart_IsError(handle)) {                    \
+    *error = fml::strdup(Dart_GetError(handle)); \
+    Dart_ExitScope();                            \
+    Dart_ShutdownIsolate();                      \
+    return false;                                \
   }
 
 namespace flutter {
@@ -50,7 +51,6 @@ const uint8_t* GetSymbol(Dart_NativeFunction native_function) {
 
 std::mutex DartServiceIsolate::callbacks_mutex_;
 
-FML_GUARDED_BY(DartServiceIsolate::callbacks_mutex_)
 std::set<std::unique_ptr<DartServiceIsolate::ObservatoryServerStateCallback>>
     DartServiceIsolate::callbacks_;
 
@@ -76,13 +76,13 @@ void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
     }
   }
 
-  for (auto callback_to_fire : callbacks_to_fire) {
+  for (const auto& callback_to_fire : callbacks_to_fire) {
     callback_to_fire(uri);
   }
 }
 
 DartServiceIsolate::CallbackHandle DartServiceIsolate::AddServerStatusCallback(
-    DartServiceIsolate::ObservatoryServerStateCallback callback) {
+    const DartServiceIsolate::ObservatoryServerStateCallback& callback) {
   if (!callback) {
     return 0;
   }
@@ -131,6 +131,7 @@ bool DartServiceIsolate::Startup(std::string server_ip,
                                  Dart_LibraryTagHandler embedder_tag_handler,
                                  bool disable_origin_check,
                                  bool disable_service_auth_codes,
+                                 bool enable_service_port_fallback,
                                  char** error) {
   Dart_Isolate isolate = Dart_CurrentIsolate();
   FML_CHECK(isolate);
@@ -197,6 +198,9 @@ bool DartServiceIsolate::Startup(std::string server_ip,
       Dart_SetField(library, Dart_NewStringFromCString("_authCodesDisabled"),
                     Dart_NewBoolean(disable_service_auth_codes));
   SHUTDOWN_ON_ERROR(result);
+  result = Dart_SetField(
+      library, Dart_NewStringFromCString("_enableServicePortFallback"),
+      Dart_NewBoolean(enable_service_port_fallback));
   return true;
 }
 

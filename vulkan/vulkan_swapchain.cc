@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/vulkan/vulkan_swapchain.h"
+#include "vulkan_swapchain.h"
 
-#include "flutter/vulkan/vulkan_backbuffer.h"
-#include "flutter/vulkan/vulkan_device.h"
-#include "flutter/vulkan/vulkan_image.h"
-#include "flutter/vulkan/vulkan_proc_table.h"
-#include "flutter/vulkan/vulkan_surface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
+#include "vulkan_backbuffer.h"
+#include "vulkan_device.h"
+#include "vulkan_image.h"
+#include "vulkan_proc_table.h"
+#include "vulkan_surface.h"
 
 namespace vulkan {
 
@@ -488,7 +488,7 @@ bool VulkanSwapchain::Submit() {
   // Step 0:
   // Make sure Skia has flushed all work for the surface to the gpu.
   // ---------------------------------------------------------------------------
-  surface->flush();
+  surface->flushAndSubmit();
 
   // ---------------------------------------------------------------------------
   // Step 1:

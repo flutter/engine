@@ -5,8 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_SURFACE_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_SURFACE_H_
 
+#include "flutter/flow/embedded_views.h"
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
-#include "flutter/shell/common/surface.h"
 
 namespace flutter {
 

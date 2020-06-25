@@ -14,27 +14,28 @@
 namespace flutter {
 
 class Texture {
- protected:
-  Texture(int64_t id);
-
  public:
-  // Called from GPU thread.
-  virtual ~Texture();
+  Texture(int64_t id);  // Called from UI or raster thread.
+  virtual ~Texture();   // Called from raster thread.
 
-  // Called from GPU thread.
+  // Called from raster thread.
   virtual void Paint(SkCanvas& canvas,
                      const SkRect& bounds,
                      bool freeze,
-                     GrContext* context) = 0;
+                     GrContext* context,
+                     SkFilterQuality quality) = 0;
 
-  // Called from GPU thread.
+  // Called from raster thread.
   virtual void OnGrContextCreated() = 0;
 
-  // Called from GPU thread.
+  // Called from raster thread.
   virtual void OnGrContextDestroyed() = 0;
 
-  // Called on GPU thread.
+  // Called on raster thread.
   virtual void MarkNewFrameAvailable() = 0;
+
+  // Called on raster thread.
+  virtual void OnTextureUnregistered() = 0;
 
   int64_t Id() { return id_; }
 
@@ -47,21 +48,20 @@ class Texture {
 class TextureRegistry {
  public:
   TextureRegistry();
-  ~TextureRegistry();
 
-  // Called from GPU thread.
+  // Called from raster thread.
   void RegisterTexture(std::shared_ptr<Texture> texture);
 
-  // Called from GPU thread.
+  // Called from raster thread.
   void UnregisterTexture(int64_t id);
 
-  // Called from GPU thread.
+  // Called from raster thread.
   std::shared_ptr<Texture> GetTexture(int64_t id);
 
-  // Called from GPU thread.
+  // Called from raster thread.
   void OnGrContextCreated();
 
-  // Called from GPU thread.
+  // Called from raster thread.
   void OnGrContextDestroyed();
 
  private:

@@ -26,13 +26,20 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
 DART_BIND_ALL(Picture, FOR_EACH_BINDING)
 
-fml::RefPtr<Picture> Picture::Create(
-    flutter::SkiaGPUObject<SkPicture> picture) {
-  return fml::MakeRefCounted<Picture>(std::move(picture));
+fml::RefPtr<Picture> Picture::Create(Dart_Handle dart_handle,
+                                     flutter::SkiaGPUObject<SkPicture> picture,
+                                     size_t external_allocation_size) {
+  auto canvas_picture = fml::MakeRefCounted<Picture>(std::move(picture),
+                                                     external_allocation_size);
+
+  canvas_picture->AssociateWithDartWrapper(dart_handle);
+  return canvas_picture;
 }
 
-Picture::Picture(flutter::SkiaGPUObject<SkPicture> picture)
-    : picture_(std::move(picture)) {}
+Picture::Picture(flutter::SkiaGPUObject<SkPicture> picture,
+                 size_t external_allocation_size)
+    : picture_(std::move(picture)),
+      external_allocation_size_(external_allocation_size) {}
 
 Picture::~Picture() = default;
 
@@ -48,11 +55,13 @@ Dart_Handle Picture::toImage(uint32_t width,
 
 void Picture::dispose() {
   ClearDartWrapper();
+  picture_.reset();
 }
 
-size_t Picture::GetAllocationSize() {
+size_t Picture::GetAllocationSize() const {
   if (auto picture = picture_.get()) {
-    return picture->approximateBytesUsed();
+    return picture->approximateBytesUsed() + sizeof(Picture) +
+           external_allocation_size_;
   } else {
     return sizeof(Picture);
   }
@@ -75,7 +84,7 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
       new tonic::DartPersistentValue(dart_state, raw_image_callback);
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
-  auto gpu_task_runner = dart_state->GetTaskRunners().GetGPUTaskRunner();
+  auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
   auto snapshot_delegate = dart_state->GetSnapshotDelegate();
 
   // We can't create an image on this task runner because we don't have a
@@ -111,9 +120,9 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
     delete image_callback;
   });
 
-  // Kick things off on the GPU.
+  // Kick things off on the raster rask runner.
   fml::TaskRunner::RunNowOrPostTask(
-      gpu_task_runner,
+      raster_task_runner,
       [ui_task_runner, snapshot_delegate, picture, picture_bounds, ui_task] {
         sk_sp<SkImage> raster_image =
             snapshot_delegate->MakeRasterSnapshot(picture, picture_bounds);

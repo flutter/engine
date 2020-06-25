@@ -38,7 +38,8 @@ void PlatformView::DispatchPlatformMessage(
 
 void PlatformView::DispatchPointerDataPacket(
     std::unique_ptr<PointerDataPacket> packet) {
-  delegate_.OnPlatformViewDispatchPointerDataPacket(std::move(packet));
+  delegate_.OnPlatformViewDispatchPointerDataPacket(
+      pointer_data_packet_converter_.Convert(std::move(packet)));
 }
 
 void PlatformView::DispatchSemanticsAction(int32_t id,
@@ -68,7 +69,7 @@ void PlatformView::NotifyCreated() {
   auto* platform_view = this;
   fml::ManualResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetGPUTaskRunner(), [platform_view, &surface, &latch]() {
+      task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch]() {
         surface = platform_view->CreateRenderingSurface();
         latch.Signal();
       });
@@ -87,6 +88,12 @@ sk_sp<GrContext> PlatformView::CreateResourceContext() const {
 }
 
 void PlatformView::ReleaseResourceContext() const {}
+
+PointerDataDispatcherMaker PlatformView::GetDispatcherMaker() {
+  return [](DefaultPointerDataDispatcher::Delegate& delegate) {
+    return std::make_unique<DefaultPointerDataDispatcher>(delegate);
+  };
+}
 
 fml::WeakPtr<PlatformView> PlatformView::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
@@ -122,12 +129,20 @@ std::unique_ptr<Surface> PlatformView::CreateRenderingSurface() {
   return nullptr;
 }
 
-void PlatformView::SetNextFrameCallback(fml::closure closure) {
+void PlatformView::SetNextFrameCallback(const fml::closure& closure) {
   if (!closure) {
     return;
   }
 
-  delegate_.OnPlatformViewSetNextFrameCallback(std::move(closure));
+  delegate_.OnPlatformViewSetNextFrameCallback(closure);
+}
+
+std::unique_ptr<std::vector<std::string>>
+PlatformView::ComputePlatformResolvedLocales(
+    const std::vector<std::string>& supported_locale_data) {
+  std::unique_ptr<std::vector<std::string>> out =
+      std::make_unique<std::vector<std::string>>();
+  return out;
 }
 
 }  // namespace flutter
