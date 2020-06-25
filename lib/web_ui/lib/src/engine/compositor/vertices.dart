@@ -115,5 +115,3 @@ class SkVertices implements ui.Vertices {
     }
   }
 }
-  }
-}
