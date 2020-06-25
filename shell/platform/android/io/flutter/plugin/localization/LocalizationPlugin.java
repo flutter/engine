@@ -75,13 +75,13 @@ public class LocalizationPlugin {
         }
         // Look for exact language only match.
         for (Locale locale : supportedLocales) {
-          if (preferredLocale.getLanguage() == locale.toLanguageTag()) {
+          if (preferredLocale.getLanguage().equals(locale.toLanguageTag())) {
             return locale;
           }
         }
         // Look for any locale with matching language.
         for (Locale locale : supportedLocales) {
-          if (preferredLocale.getLanguage() == locale.getLanguage()) {
+          if (preferredLocale.getLanguage().equals(locale.getLanguage())) {
             return locale;
           }
         }
@@ -100,7 +100,7 @@ public class LocalizationPlugin {
     }
     // Look for exact language only match.
     for (Locale locale : supportedLocales) {
-      if (preferredLocale.getLanguage() == locale.toString()) {
+      if (preferredLocale.getLanguage().equals(locale.toString())) {
         return locale;
       }
     }
