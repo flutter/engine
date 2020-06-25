@@ -36,17 +36,28 @@ void ImageFilterLayer::Preroll(PrerollContext* context,
     // from frame to frame so we try to cache the layer itself
     // for maximum performance.
     TryToPrepareRasterCache(context, this, matrix);
-  } else if ((transformed_filter_ = filter_->makeWithLocalMatrix(matrix))) {
+  } else {
     // This ImageFilterLayer is not yet considered stable so we
     // increment the count to measure how many times it has been
     // seen from frame to frame.
     render_count_++;
-    // And for now we will still try to cache the children as that
-    // provides a large performance benefit to avoid rendering the
-    // child layers themselves and also avoiding a rendering surface
-    // switch to do so during the Paint phase. This benefit is seen
-    // most during animations involving the ImageFilter.
-    TryToPrepareRasterCache(context, GetCacheableChild(), matrix);
+
+    // Now we will try to pre-render the children into the cache.
+    // To apply the filter to pre-rendered children, we must first
+    // modify the filter to be aware of the transform under which
+    // the cached bitmap was produced. Some SkImageFilter
+    // instances can do this operation on some transforms and some
+    // (filters or transforms) cannot. We can only cache the children
+    // and apply the filter on the fly if this operation succeeds.
+    transformed_filter_ = filter_->makeWithLocalMatrix(matrix);
+    if (transformed_filter_) {
+      // With a modified SkImageFilter we can now try to cache the
+      // children to avoid their rendering costs if they remain
+      // stable between frames and also avoiding a rendering surface
+      // switch during the Paint phase even if they are not stable.
+      // This benefit is seen most during animations.
+      TryToPrepareRasterCache(context, GetCacheableChild(), matrix);
+    }
   }
 }
 
