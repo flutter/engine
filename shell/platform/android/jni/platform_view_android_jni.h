@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_JNI_PLATFORM_VIEW_ANDROID_JNI_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_JNI_PLATFORM_VIEW_ANDROID_JNI_H_
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 
@@ -119,7 +120,8 @@ class PlatformViewAndroidJNI {
                                                 int x,
                                                 int y,
                                                 int width,
-                                                int height) = 0;
+                                                int height,
+                                                MutatorsStack mutators_stack) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Positions and sizes an overlay surface in hybrid composition.

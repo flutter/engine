@@ -25,6 +25,7 @@ import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.engine.FlutterOverlaySurface;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
+import io.flutter.embedding.engine.mutatorsstack.*;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.TextureRegistry;
@@ -547,7 +548,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     vdControllers.clear();
   }
 
-  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
+    io.flutter.Log.e("onDisplayPlatformView ", "mutators stack " + mutatorsStack);
     // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
   }
 

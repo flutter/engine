@@ -20,7 +20,9 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
+import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
+import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -901,13 +903,13 @@ public class FlutterJNI {
 
   // @SuppressWarnings("unused")
   @UiThread
-  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
     ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position a platform view");
     }
-    platformViewsController.onDisplayPlatformView(viewId, x, y, width, height);
+    platformViewsController.onDisplayPlatformView(viewId, x, y, width, height, mutatorsStack);
   }
 
   // TODO(mattcarroll): determine if this is nonull or nullable

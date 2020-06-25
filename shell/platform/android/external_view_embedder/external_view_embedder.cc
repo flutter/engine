@@ -46,6 +46,11 @@ SkCanvas* AndroidExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   if (picture_recorders_.count(view_id) == 1) {
     return picture_recorders_.at(view_id)->getRecordingCanvas();
   }
+  // const EmbeddedViewParams& params = view_params_.at(view_id);
+  // jni_facade_->FlutterViewOnCompositePlatformView(view_id, //
+  //                                     params.sizePoints().width(),  //
+  //                                     params.sizePoints().height(),  //
+  //                                     params.mutatorsStack());
   return nullptr;
 }
 
@@ -147,13 +152,15 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
 
   for (int64_t view_id : composition_order_) {
     SkRect view_rect = GetViewRect(view_id);
+    const EmbeddedViewParams& params = view_params_.at(view_id);
     // Display the platform view. If it's already displayed, then it's
     // just positioned and sized.
     jni_facade_->FlutterViewOnDisplayPlatformView(view_id,            //
                                                   view_rect.x(),      //
                                                   view_rect.y(),      //
                                                   view_rect.width(),  //
-                                                  view_rect.height()  //
+                                                  view_rect.height(),
+                                                  params.mutatorsStack()  //
     );
     for (const SkRect& overlay_rect : overlay_layers.at(view_id)) {
       CreateSurfaceIfNeeded(context,               //

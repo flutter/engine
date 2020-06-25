@@ -27,6 +27,7 @@
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 
+
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
 
@@ -99,6 +100,8 @@ static jmethodID g_compute_platform_resolved_locale_method = nullptr;
 
 // Called By Java
 static jmethodID g_on_display_platform_view_method = nullptr;
+
+// static jmethodID g_on_composite_platform_view_method = nullptr;
 
 static jmethodID g_on_display_overlay_surface_method = nullptr;
 
@@ -754,7 +757,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   }
 
   g_on_display_platform_view_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIII)V");
+      g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIII;io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack)V");
 
   if (g_on_display_platform_view_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onDisplayPlatformView method";
@@ -1069,7 +1072,8 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
                                                                   int x,
                                                                   int y,
                                                                   int width,
-                                                                  int height) {
+                                                                  int height,
+                                                                  MutatorsStack mutators_stack) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
@@ -1077,11 +1081,73 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
     return;
   }
 
+//   import android.graphics.Matrix;
+// import android.graphics.Rect;
+
+  // jclass matrixClass = env->FindClass("android/graphics/Matrix");
+  // if (matrix == nullptr) {
+  //   return;
+  // }
+  // jmethodID matrixInitMethod = env->GetMethodID(matrixClass, "<init>", "()V");
+
+
+  // jclass mutatorClass = env->FindClass("io/flutter/embedding/engine/mutatorsstack/FlutterMutator");
+  // if (mutatorClass == nullptr) {
+  //   return;
+  // }
+  // jmethodID mutatorInitTransform = env->GetMethodID(mutatorClass, "<init>", "(Landroid/graphics/Matrix)V");
+
+  jclass mutatorsStackClass = env->FindClass("io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStatck");
+  jmethodID mutatorsStackInit = env->GetMethodID(mutatorsStackClass, "<init>", "()V");
+  // jmethodID mutatorsStackPush = env->GetMethodID(mutatorsStackClass, "push", "(io/flutter/embedding/engine/mutatorsstack/FlutterMutator)V");
+  jobject mutatorsStack = env->NewObject(mutatorsStackClass, mutatorsStackInit, "()V");
+
+  // std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
+  // while (iter != mutators_stack.Top()) {
+  //   switch ((*iter)->GetType()) {
+  //     case transform: {
+  //       CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
+  //       head.layer.transform = CATransform3DConcat(head.layer.transform, transform);
+  //       break;
+  //     }
+  //     case clip_rect: {
+  //       break;
+  //     }
+  //     case clip_rrect:
+  //     case clip_path:
+  //     case opacity:
+  //       break;
+  //   }
+  //   ++iter;
+  // }
+
+
+  // jobject hashMapObj = env->NewObject(env, hashMapClass, hashMapInit, mMap.size());
+  // jmethodID hashMapOut = env->GetMethodID(env, hashMapClass, "put",
+  //           "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+
   env->CallVoidMethod(java_object.obj(), g_on_display_platform_view_method,
-                      view_id, x, y, width, height);
+                      view_id, x, y, width, height, mutatorsStack);
 
   FML_CHECK(CheckException(env));
 }
+
+// void PlatformViewAndroidJNIImpl::FlutterViewOnCompositePlatformView(int view_id,
+//                                                         int width,
+//                                                         int height,
+//                                                         MutatorsStack mutators_stack) {
+//   JNIEnv* env = fml::jni::AttachCurrentThread();
+
+//   auto java_object = java_object_.get(env);
+//   if (java_object.is_null()) {
+//     return;
+//   }
+
+//   env->CallVoidMethod(java_object.obj(), g_on_composite_platform_view_method,
+//                       view_id, width, height, mutators_stack);
+
+//   FML_CHECK(CheckException(env));
+// }
 
 void PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(
     int surface_id,

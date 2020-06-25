@@ -54,7 +54,8 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
                                         int x,
                                         int y,
                                         int width,
-                                        int height) override;
+                                        int height,
+                                        MutatorsStack mutators_stack) override;
 
   void FlutterViewDisplayOverlaySurface(int surface_id,
                                         int x,
