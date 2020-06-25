@@ -124,7 +124,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
     // Mac Web Engine Try bots are failing. Investigate further.
     // TODO: https://github.com/flutter/flutter/issues/60251
-    if(isSafariOnMacOS && isLuci) {
+    if(isSafariOnIoS && isLuci) {
       return true;
     }
 
@@ -276,6 +276,10 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Whether [browser] is set to "safari".
   bool get isSafariOnMacOS => browser == 'safari'
       && io.Platform.isMacOS;
+    
+  /// Whether [browser] is set to "ios-safari".
+  bool get isSafariOnIoS => browser == 'ios-safari'
+      && io.Platform.isIOS;
 
   /// Use system flutter instead of cloning the repository.
   ///
