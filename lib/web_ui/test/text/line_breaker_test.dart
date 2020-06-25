@@ -174,7 +174,9 @@ class Line {
 
   @override
   bool operator ==(Object other) {
-    return other is Line && text == other.text && breakType == other.breakType;
+    return other is Line
+        && other.text == text
+        && other.breakType == breakType;
   }
 
   String get escapedText {

@@ -85,7 +85,9 @@ class BenchmarkDatapoint {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return name == other.name && value == other.value;
+    return other is BenchmarkDatapoint
+        && other.name == name
+        && other.value == value;
   }
 
   @override

@@ -28,7 +28,8 @@ class FilePath {
 
   @override
   bool operator ==(Object other) {
-    return other is FilePath && _absolutePath == other._absolutePath;
+    return other is FilePath
+        && other._absolutePath == _absolutePath;
   }
 
   @override

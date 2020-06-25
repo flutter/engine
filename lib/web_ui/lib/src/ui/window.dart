@@ -379,13 +379,10 @@ class Locale {
     if (identical(this, other)) {
       return true;
     }
-    if (other is! Locale) {
-      return false;
-    }
-    final Locale typedOther = other;
-    return languageCode == typedOther.languageCode &&
-        scriptCode == typedOther.scriptCode &&
-        countryCode == typedOther.countryCode;
+    return other is Locale
+        && other.languageCode == languageCode
+        && other.scriptCode == scriptCode
+        && other.countryCode == countryCode;
   }
 
   @override
@@ -930,8 +927,8 @@ class AccessibilityFeatures {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    final AccessibilityFeatures typedOther = other;
-    return _index == typedOther._index;
+    return other is AccessibilityFeatures
+        && other._index == _index;
   }
 
   @override

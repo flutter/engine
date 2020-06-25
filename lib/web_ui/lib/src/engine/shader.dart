@@ -279,11 +279,9 @@ class EngineImageFilter implements ui.ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other is! EngineImageFilter) {
-      return false;
-    }
-    final EngineImageFilter typedOther = other;
-    return sigmaX == typedOther.sigmaX && sigmaY == typedOther.sigmaY;
+    return other is EngineImageFilter
+        && other.sigmaX == sigmaX
+        && other.sigmaY == sigmaY;
   }
 
   @override

@@ -102,17 +102,17 @@ class ParagraphGeometricStyle {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    final ParagraphGeometricStyle typedOther = other;
-    return fontWeight == typedOther.fontWeight &&
-        fontStyle == typedOther.fontStyle &&
-        fontFamily == typedOther.fontFamily &&
-        fontSize == typedOther.fontSize &&
-        lineHeight == typedOther.lineHeight &&
-        maxLines == typedOther.maxLines &&
-        letterSpacing == typedOther.letterSpacing &&
-        wordSpacing == typedOther.wordSpacing &&
-        decoration == typedOther.decoration &&
-        ellipsis == typedOther.ellipsis;
+    return other is ParagraphGeometricStyle
+        && other.fontWeight == fontWeight
+        && other.fontStyle == fontStyle
+        && other.fontFamily == fontFamily
+        && other.fontSize == fontSize
+        && other.lineHeight == lineHeight
+        && other.maxLines == maxLines
+        && other.letterSpacing == letterSpacing
+        && other.wordSpacing == wordSpacing
+        && other.decoration == decoration
+        && other.ellipsis == ellipsis;
   }
 
   @override

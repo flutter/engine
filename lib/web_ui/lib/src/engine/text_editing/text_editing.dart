@@ -352,10 +352,10 @@ class EditingState {
     if (runtimeType != other.runtimeType) {
       return false;
     }
-    final EditingState typedOther = other;
-    return text == typedOther.text &&
-        baseOffset == typedOther.baseOffset &&
-        extentOffset == typedOther.extentOffset;
+    return other is EditingState
+        && other.text == text
+        && other.baseOffset == baseOffset
+        && other.extentOffset == extentOffset;
   }
 
   @override

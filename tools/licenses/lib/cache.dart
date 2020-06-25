@@ -30,8 +30,8 @@ abstract class Key {
       return true;
     if (runtimeType != other.runtimeType)
       return false;
-    final Key typedOther = other;
-    return _value == typedOther._value;
+    return other is Key
+        && other._value == _value;
   }
 
   @override

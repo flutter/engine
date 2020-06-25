@@ -122,19 +122,11 @@ class EngineColorFilter implements ui.ColorFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other is! EngineColorFilter) {
-      return false;
-    }
-    final EngineColorFilter typedOther = other;
-
-    if (_type != typedOther._type) {
-      return false;
-    }
-    if (!_listEquals<double>(_matrix, typedOther._matrix)) {
-      return false;
-    }
-
-    return _color == typedOther._color && _blendMode == typedOther._blendMode;
+    return other is EngineColorFilter
+        && other._type == _type
+        && _listEquals<double>(other._matrix, _matrix)
+        && other._color == _color
+        && other._blendMode == _blendMode;
   }
 
   SkColorFilter? _toSkColorFilter() {
