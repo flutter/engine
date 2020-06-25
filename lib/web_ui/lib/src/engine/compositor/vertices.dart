@@ -6,7 +6,9 @@
 part of engine;
 
 js.JsArray<Float32List> _encodeRawColorList(Int32List rawColors) {
-  if (rawColors == null) return null;
+  if (rawColors == null) {
+    return null;
+  }
   final int colorCount = rawColors.length;
   final List<ui.Color> colors = List<ui.Color>(colorCount);
   for (int i = 0; i < colorCount; ++i) {
@@ -111,5 +113,7 @@ class SkVertices implements ui.Vertices {
     } else {
       return false;
     }
+  }
+}
   }
 }
