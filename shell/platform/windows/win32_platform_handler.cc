@@ -225,7 +225,7 @@ void PlatformHandler::HandleMethodCall(
       return;
     }
     ScopedClipboard clipboard;
-    if (!clipboard.Open(view_->GetRenderTarget()->GetWindowHandle())) {
+    if (!clipboard.Open(std::get<::HWND>(*view_->GetRenderTarget()))) {
       rapidjson::Document error_code;
       error_code.SetInt(::GetLastError());
       result->Error(kClipboardError, "Unable to open clipboard", &error_code);
@@ -263,7 +263,7 @@ void PlatformHandler::HandleMethodCall(
 
     ScopedClipboard clipboard;
 
-    if (!clipboard.Open(view_->GetRenderTarget()->GetWindowHandle())) {
+    if (!clipboard.Open(std::get<::HWND>(*view_->GetRenderTarget()))) {
       rapidjson::Document error_code;
       error_code.SetInt(::GetLastError());
       result->Error(kClipboardError, "Unable to open clipboard", &error_code);

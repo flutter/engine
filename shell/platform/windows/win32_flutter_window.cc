@@ -21,7 +21,7 @@ void Win32FlutterWindow::SetView(FlutterWindowsView* window) {
 }
 
 WindowsRenderTarget Win32FlutterWindow::GetRenderTarget() {
-  return WindowsRenderTarget::CreateForHWND(GetWindowHandle());
+  return WindowsRenderTarget(GetWindowHandle());
 }
 
 float Win32FlutterWindow::GetDpiScale() {
