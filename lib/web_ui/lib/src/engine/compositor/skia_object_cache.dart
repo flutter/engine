@@ -119,7 +119,7 @@ abstract class ResurrectableSkiaObject extends SkiaObject {
   }
 
   /// Do not use this field outside this class. Use [skiaObject] instead.
-  js.JsObject _skiaObject;
+  js.JsObject? _skiaObject;
 
   /// Instantiates a new Skia-backed JavaScript object containing default
   /// values.
@@ -142,7 +142,7 @@ abstract class ResurrectableSkiaObject extends SkiaObject {
 
 /// A [SkiaObject] which is deleted once and cannot be used again.
 class OneShotSkiaObject extends SkiaObject {
-  js.JsObject _skiaObject;
+  js.JsObject? _skiaObject;
 
   OneShotSkiaObject(this._skiaObject) {
     SkiaObjects.manageOneShot(this);

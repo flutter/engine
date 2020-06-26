@@ -29,7 +29,7 @@ void ContainerLayer::Paint(PaintContext& context) const {
 void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   child_layer_exists_below_ = context->child_scene_layer_exists_below;
   context->child_scene_layer_exists_below = false;
 #endif
@@ -57,7 +57,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 
   context->has_platform_view = child_has_platform_view;
 
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   if (child_layer_exists_below_) {
     set_needs_system_composite(true);
   }
@@ -87,7 +87,7 @@ void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
   }
 }
 
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 
 void ContainerLayer::CheckForChildLayerBelow(PrerollContext* context) {
   // All ContainerLayers make the check in PrerollChildren.
@@ -158,6 +158,38 @@ void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
   }
 }
 
-#endif  // defined(OS_FUCHSIA)
+#endif
+
+MergedContainerLayer::MergedContainerLayer() {
+  // Ensure the layer has only one direct child.
+  //
+  // Any children will actually be added as children of this empty
+  // ContainerLayer which can be accessed via ::GetContainerLayer().
+  // If only one child is ever added to this layer then that child
+  // will become the layer returned from ::GetCacheableChild().
+  // If multiple child layers are added, then this implicit container
+  // child becomes the cacheable child, but at the potential cost of
+  // not being as stable in the raster cache from frame to frame.
+  ContainerLayer::Add(std::make_shared<ContainerLayer>());
+}
+
+void MergedContainerLayer::Add(std::shared_ptr<Layer> layer) {
+  GetChildContainer()->Add(std::move(layer));
+}
+
+ContainerLayer* MergedContainerLayer::GetChildContainer() const {
+  FML_DCHECK(layers().size() == 1);
+
+  return static_cast<ContainerLayer*>(layers()[0].get());
+}
+
+Layer* MergedContainerLayer::GetCacheableChild() const {
+  ContainerLayer* child_container = GetChildContainer();
+  if (child_container->layers().size() == 1) {
+    return child_container->layers()[0].get();
+  }
+
+  return child_container;
+}
 
 }  // namespace flutter
