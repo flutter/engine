@@ -80,11 +80,11 @@ public class PlatformViewsChannel {
 
         private void create(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           Map<String, Object> createArgs = call.arguments();
-          double width = (createArgs.containsKey("width")) ? (double) createArgs.get("width") : 0;
-          double height =
-              (createArgs.containsKey("height")) ? (double) createArgs.get("height") : 0;
           boolean usesHybridComposition =
               createArgs.containsKey("hybrid") && (boolean) createArgs.get("hybrid");
+          // In hybrid mode, the size of the view is determined by the size of the Flow layer.
+          double width = (usesHybridComposition) ? 0 : (double) createArgs.get("width");
+          double height = (usesHybridComposition) ? 0 : (double) createArgs.get("height");
 
           PlatformViewCreationRequest request =
               new PlatformViewCreationRequest(
