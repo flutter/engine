@@ -574,7 +574,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     initializeRootImageViewIfNeeded();
     FlutterImageView overlayView = overlayLayerViews.get(id);
     if (overlayView.getParent() == null) {
-      flutterView.addView(overlayView);
+      ((FlutterView) flutterView).addView(overlayView);
     }
 
     FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams((int) width, (int) height);
