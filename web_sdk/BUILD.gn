@@ -199,7 +199,7 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
 }
 
 # Compiles the DDC CanvasKit SDK's JS code.
-prebuilt_dart_action("flutter_dartdevc_canvaskit_kernel_sdk") {
+prebuilt_dart_action("  ") {
   deps = [
     "//third_party/dart:create_sdk",
     "//third_party/dart/pkg:pkg_files_stamp",
@@ -255,7 +255,6 @@ prebuilt_dart_action("flutter_dartdevc_canvaskit_kernel_sdk") {
 # Compiles the DDC CanvasKit SDK's JS code for null safety.
 prebuilt_dart_action("flutter_dartdevc_canvaskit_kernel_sdk_sound") {
   deps = [
-    ":flutter_dartdevc_kernel_sdk_outline_sound",
     "//third_party/dart:create_sdk",
     "//third_party/dart/pkg:pkg_files_stamp",
     "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
@@ -311,7 +310,6 @@ prebuilt_dart_action("flutter_dartdevc_canvaskit_kernel_sdk_sound") {
 # Compiles the DDC SDK's JS code for null safety.
 prebuilt_dart_action("flutter_dartdevc_kernel_sdk_sound") {
   deps = [
-    ":flutter_dartdevc_kernel_sdk_outline_sound",
     "//third_party/dart:create_sdk",
     "//third_party/dart/pkg:pkg_files_stamp",
     "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
