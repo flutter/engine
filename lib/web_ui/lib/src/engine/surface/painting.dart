@@ -161,7 +161,6 @@ class SurfacePaint implements ui.Paint {
   @override
   set strokeMiterLimit(double value) {
     assert(value != null); // ignore: unnecessary_null_comparison
-    throw UnsupportedError('SurfacePaint.strokeMiterLimit');
   }
 
   @override
