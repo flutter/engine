@@ -271,8 +271,8 @@ prebuilt_dart_action("flutter_dartdevc_canvaskit_kernel_sdk_sound") {
   script = "//third_party/dart/pkg/dev_compiler/bin/dartdevc.dart"
 
   outputs = [
-    "$root_out_dir/flutter_web_sdk/kernel/amd-canvaskit-strong/dart_sdk.js",
-    "$root_out_dir/flutter_web_sdk/kernel/amd-canvaskit-strong/dart_sdk.js.map",
+    "$root_out_dir/flutter_web_sdk/kernel/amd-canvaskit-sound/dart_sdk.js",
+    "$root_out_dir/flutter_web_sdk/kernel/amd-canvaskit-sound/dart_sdk.js.map",
   ]
 
   args = [
@@ -302,12 +302,12 @@ prebuilt_dart_action("flutter_dartdevc_canvaskit_kernel_sdk_sound") {
     "amd",
     "-o",
     rebase_path(
-        "$root_out_dir/flutter_web_sdk/kernel/amd-canvaskit-strong/dart_sdk.js"),
+        "$root_out_dir/flutter_web_sdk/kernel/amd-canvaskit-sound/dart_sdk.js"),
     "--modules",
     "legacy",
     "-o",
     rebase_path(
-        "$root_out_dir/flutter_web_sdk/kernel/legacy-canvaskit-strong/dart_sdk.js"),
+        "$root_out_dir/flutter_web_sdk/kernel/legacy-canvaskit-sound/dart_sdk.js"),
   ]
 }
 
@@ -328,8 +328,8 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk_sound") {
   script = "//third_party/dart/pkg/dev_compiler/bin/dartdevc.dart"
 
   outputs = [
-    "$root_out_dir/flutter_web_sdk/kernel/amd-strong/dart_sdk.js",
-    "$root_out_dir/flutter_web_sdk/kernel/amd-strong/dart_sdk.js.map",
+    "$root_out_dir/flutter_web_sdk/kernel/amd-sound/dart_sdk.js",
+    "$root_out_dir/flutter_web_sdk/kernel/amd-sound/dart_sdk.js.map",
   ]
 
   args = [
@@ -357,12 +357,12 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk_sound") {
     "--modules",
     "amd",
     "-o",
-    rebase_path("$root_out_dir/flutter_web_sdk/kernel/amd-strong/dart_sdk.js"),
+    rebase_path("$root_out_dir/flutter_web_sdk/kernel/amd-sound/dart_sdk.js"),
     "--modules",
     "legacy",
     "-o",
     rebase_path(
-        "$root_out_dir/flutter_web_sdk/kernel/legacy-strong/dart_sdk.js"),
+        "$root_out_dir/flutter_web_sdk/kernel/legacy-sound/dart_sdk.js"),
   ]
 }
 
