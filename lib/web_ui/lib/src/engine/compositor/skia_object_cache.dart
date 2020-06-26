@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 part of engine;
 
 /// A cache of Skia objects whose memory Flutter manages.
@@ -42,7 +41,7 @@ class SkiaObjectCache {
   /// will be deleted.
   void add(SkiaObject object) {
     _itemQueue.addFirst(object);
-    DoubleLinkedQueueEntry<SkiaObject> item = _itemQueue.firstEntry();
+    DoubleLinkedQueueEntry<SkiaObject> item = _itemQueue.firstEntry()!;
     _itemMap[object] = item;
 
     if (_itemQueue.length > maximumSize) {
@@ -52,10 +51,10 @@ class SkiaObjectCache {
 
   /// Records that [object] was used in the most recent frame.
   void markUsed(SkiaObject object) {
-    DoubleLinkedQueueEntry<SkiaObject> item = _itemMap[object];
+    DoubleLinkedQueueEntry<SkiaObject> item = _itemMap[object]!;
     item.remove();
     _itemQueue.addFirst(object);
-    DoubleLinkedQueueEntry<SkiaObject> newItem = _itemQueue.firstEntry();
+    DoubleLinkedQueueEntry<SkiaObject> newItem = _itemQueue.firstEntry()!;
     _itemMap[object] = newItem;
   }
 
@@ -76,7 +75,7 @@ class SkiaObjectCache {
 /// These objects are automatically deleted when no longer used.
 abstract class SkiaObject {
   /// The JavaScript object that's mapped onto a Skia C++ object in the WebAssembly heap.
-  js.JsObject get skiaObject;
+  js.JsObject? get skiaObject;
 
   /// Deletes the associated C++ object from the WebAssembly heap.
   void delete();
@@ -110,7 +109,7 @@ abstract class ResurrectableSkiaObject extends SkiaObject {
   }
 
   @override
-  js.JsObject get skiaObject {
+  js.JsObject? get skiaObject {
     if (_skiaObject == null) {
       _skiaObject = resurrect();
       SkiaObjects.manageResurrectable(this);
@@ -135,7 +134,7 @@ abstract class ResurrectableSkiaObject extends SkiaObject {
 
   @override
   void delete() {
-    _skiaObject.callMethod('delete');
+    _skiaObject!.callMethod('delete');
     _skiaObject = null;
   }
 }
@@ -149,7 +148,7 @@ class OneShotSkiaObject extends SkiaObject {
   }
 
   @override
-  js.JsObject get skiaObject {
+  js.JsObject? get skiaObject {
     if (_skiaObject == null) {
       throw StateError('Attempting to use a Skia object that has been freed.');
     }
@@ -159,7 +158,7 @@ class OneShotSkiaObject extends SkiaObject {
 
   @override
   void delete() {
-    _skiaObject.callMethod('delete');
+    _skiaObject!.callMethod('delete');
     _skiaObject = null;
   }
 }
@@ -188,7 +187,7 @@ class SkiaObjects {
     if (_addedCleanupCallback) {
       return;
     }
-    window.rasterizer.addPostFrameCallback(postFrameCleanUp);
+    window.rasterizer!.addPostFrameCallback(postFrameCleanUp);
     _addedCleanupCallback = true;
   }
 

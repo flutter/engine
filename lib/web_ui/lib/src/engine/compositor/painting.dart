@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+
 part of engine;
 
 /// The implementation of [ui.Paint] used by the CanvasKit backend.
@@ -152,7 +153,7 @@ class SkPaint extends ResurrectableSkiaObject implements ui.Paint {
   @override
   set maskFilter(ui.MaskFilter? value) {
     _maskFilter = value;
-    _syncMaskFilter(skiaObject);
+    _syncMaskFilter(skiaObject!);
   }
 
   void _syncMaskFilter(js.JsObject object) {
@@ -163,8 +164,7 @@ class SkPaint extends ResurrectableSkiaObject implements ui.Paint {
 
       skMaskFilter = SkMaskFilter.blur(blurStyle, sigma);
     }
-    object
-        .callMethod('setMaskFilter', <js.JsObject?>[skMaskFilter?.skiaObject]);
+    object.callMethod('setMaskFilter', <js.JsObject?>[skMaskFilter?.skiaObject]);
   }
 
   ui.MaskFilter? _maskFilter;

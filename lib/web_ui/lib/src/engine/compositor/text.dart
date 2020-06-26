@@ -291,32 +291,33 @@ class SkParagraph implements ui.Paragraph {
 
   @override
   double get alphabeticBaseline =>
-      skParagraph.skiaObject.callMethod('getAlphabeticBaseline');
+      skParagraph.skiaObject!.callMethod('getAlphabeticBaseline');
 
   @override
   bool get didExceedMaxLines =>
-      skParagraph.skiaObject.callMethod('didExceedMaxLines');
+      skParagraph.skiaObject!.callMethod('didExceedMaxLines');
 
   @override
-  double get height => skParagraph.skiaObject.callMethod('getHeight');
+  double get height => skParagraph.skiaObject!.callMethod('getHeight');
 
   @override
   double get ideographicBaseline =>
-      skParagraph.skiaObject.callMethod('getIdeographicBaseline');
+      skParagraph.skiaObject!.callMethod('getIdeographicBaseline');
 
   @override
-  double get longestLine => skParagraph.skiaObject.callMethod('getLongestLine');
+  double get longestLine =>
+      skParagraph.skiaObject!.callMethod('getLongestLine');
 
   @override
   double get maxIntrinsicWidth =>
-      skParagraph.skiaObject.callMethod('getMaxIntrinsicWidth');
+      skParagraph.skiaObject!.callMethod('getMaxIntrinsicWidth');
 
   @override
   double get minIntrinsicWidth =>
-      skParagraph.skiaObject.callMethod('getMinIntrinsicWidth');
+      skParagraph.skiaObject!.callMethod('getMinIntrinsicWidth');
 
   @override
-  double get width => skParagraph.skiaObject.callMethod('getMaxWidth');
+  double get width => skParagraph.skiaObject!.callMethod('getMaxWidth');
 
   // TODO(hterkelsen): Implement placeholders once it's in CanvasKit
   @override
@@ -362,7 +363,7 @@ class SkParagraph implements ui.Paragraph {
     }
 
     List<js.JsObject> skRects =
-        skParagraph.skiaObject.callMethod('getRectsForRange', <dynamic>[
+        skParagraph.skiaObject!.callMethod('getRectsForRange', <dynamic>[
       start,
       end,
       heightStyle,
@@ -387,7 +388,7 @@ class SkParagraph implements ui.Paragraph {
 
   @override
   ui.TextPosition getPositionForOffset(ui.Offset offset) {
-    js.JsObject positionWithAffinity = skParagraph.skiaObject
+    js.JsObject positionWithAffinity = skParagraph.skiaObject!
         .callMethod('getGlyphPositionAtCoordinate', <double>[
       offset.dx,
       offset.dy,
@@ -397,7 +398,7 @@ class SkParagraph implements ui.Paragraph {
 
   @override
   ui.TextRange getWordBoundary(ui.TextPosition position) {
-    js.JsObject skRange = skParagraph.skiaObject
+    js.JsObject skRange = skParagraph.skiaObject!
         .callMethod('getWordBoundary', <int>[position.offset]);
     return ui.TextRange(start: skRange['start'], end: skRange['end']);
   }
@@ -419,7 +420,7 @@ class SkParagraph implements ui.Paragraph {
     // TODO(het): CanvasKit throws an exception when laid out with
     // a font that wasn't registered.
     try {
-      skParagraph.skiaObject.callMethod('layout', <double>[width]);
+      skParagraph.skiaObject!.callMethod('layout', <double>[width]);
     } catch (e) {
       html.window.console.warn('CanvasKit threw an exception while laying '
           'out the paragraph. The font was "$_fontFamily". Exception:\n$e');
