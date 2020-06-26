@@ -829,39 +829,39 @@ class SurfacePath implements ui.Path {
 
             double denom = x1 - (2 * cpX) + x2;
             if (denom.abs() > epsilon) {
-              final num t1 = (x1 - cpX) / denom;
+              final double t1 = (x1 - cpX) / denom;
               if ((t1 >= 0) && (t1 <= 1.0)) {
                 // Solve (x,y) for curve at t = tx to find extrema
-                final num tprime = 1.0 - t1;
-                final num extremaX = (tprime * tprime * x1) +
+                final double tprime = 1.0 - t1;
+                final double extremaX = (tprime * tprime * x1) +
                     (2 * t1 * tprime * cpX) +
                     (t1 * t1 * x2);
-                final num extremaY = (tprime * tprime * y1) +
+                final double extremaY = (tprime * tprime * y1) +
                     (2 * t1 * tprime * cpY) +
                     (t1 * t1 * y2);
                 // Expand bounds.
-                minX = math.min(minX, extremaX as double);
+                minX = math.min(minX, extremaX);
                 maxX = math.max(maxX, extremaX);
-                minY = math.min(minY, extremaY as double);
+                minY = math.min(minY, extremaY);
                 maxY = math.max(maxY, extremaY);
               }
             }
             // Now calculate dy/dt = 0
             denom = y1 - (2 * cpY) + y2;
             if (denom.abs() > epsilon) {
-              final num t2 = (y1 - cpY) / denom;
+              final double t2 = (y1 - cpY) / denom;
               if ((t2 >= 0) && (t2 <= 1.0)) {
-                final num tprime2 = 1.0 - t2;
-                final num extrema2X = (tprime2 * tprime2 * x1) +
+                final double tprime2 = 1.0 - t2;
+                final double extrema2X = (tprime2 * tprime2 * x1) +
                     (2 * t2 * tprime2 * cpX) +
                     (t2 * t2 * x2);
-                final num extrema2Y = (tprime2 * tprime2 * y1) +
+                final double extrema2Y = (tprime2 * tprime2 * y1) +
                     (2 * t2 * tprime2 * cpY) +
                     (t2 * t2 * y2);
                 // Expand bounds.
-                minX = math.min(minX, extrema2X as double);
+                minX = math.min(minX, extrema2X);
                 maxX = math.max(maxX, extrema2X);
-                minY = math.min(minY, extrema2Y as double);
+                minY = math.min(minY, extrema2Y);
                 maxY = math.max(maxY, extrema2Y);
               }
             }
@@ -904,31 +904,31 @@ class SurfacePath implements ui.Path {
               // Now find roots for quadratic equation with known coefficients
               // a,b,c
               // The roots are (-b+-sqrt(b*b-4*a*c)) / 2a
-              num s = (b * b) - (4 * a * c);
+              double s = (b * b) - (4 * a * c);
               // If s is negative, we have no real roots
               if ((s >= 0.0) && (a.abs() > epsilon)) {
                 if (s == 0.0) {
                   // we have only 1 root
-                  final num t = -b / (2 * a);
-                  final num tprime = 1.0 - t;
+                  final double t = -b / (2 * a);
+                  final double tprime = 1.0 - t;
                   if ((t >= 0.0) && (t <= 1.0)) {
                     extremaX = ((tprime * tprime * tprime) * startX) +
                         ((3 * tprime * tprime * t) * cpX1) +
                         ((3 * tprime * t * t) * cpX2) +
-                        (t * t * t * endX) as double;
+                        (t * t * t * endX);
                     minX = math.min(extremaX, minX);
                     maxX = math.max(extremaX, maxX);
                   }
                 } else {
                   // we have 2 roots
                   s = math.sqrt(s);
-                  num t = (-b - s) / (2 * a);
-                  num tprime = 1.0 - t;
+                  double t = (-b - s) / (2 * a);
+                  double tprime = 1.0 - t;
                   if ((t >= 0.0) && (t <= 1.0)) {
                     extremaX = ((tprime * tprime * tprime) * startX) +
                         ((3 * tprime * tprime * t) * cpX1) +
                         ((3 * tprime * t * t) * cpX2) +
-                        (t * t * t * endX) as double;
+                        (t * t * t * endX);
                     minX = math.min(extremaX, minX);
                     maxX = math.max(extremaX, maxX);
                   }
@@ -962,13 +962,13 @@ class SurfacePath implements ui.Path {
               // Now find roots for quadratic equation with known coefficients
               // a,b,c
               // The roots are (-b+-sqrt(b*b-4*a*c)) / 2a
-              num s = (b * b) - (4 * a * c);
+              double s = (b * b) - (4 * a * c);
               // If s is negative, we have no real roots
               if ((s >= 0.0) && (a.abs() > epsilon)) {
                 if (s == 0.0) {
                   // we have only 1 root
-                  final num t = -b / (2 * a);
-                  final num tprime = 1.0 - t;
+                  final double t = -b / (2 * a);
+                  final double tprime = 1.0 - t;
                   if ((t >= 0.0) && (t <= 1.0)) {
                     extremaY = ((tprime * tprime * tprime) * startY) +
                         ((3 * tprime * tprime * t) * cpY1) +
@@ -980,8 +980,8 @@ class SurfacePath implements ui.Path {
                 } else {
                   // we have 2 roots
                   s = math.sqrt(s);
-                  final num t = (-b - s) / (2 * a);
-                  final num tprime = 1.0 - t;
+                  final double t = (-b - s) / (2 * a);
+                  final double tprime = 1.0 - t;
                   if ((t >= 0.0) && (t <= 1.0)) {
                     extremaY = ((tprime * tprime * tprime) * startY) +
                         ((3 * tprime * tprime * t) * cpY1) +
@@ -991,8 +991,8 @@ class SurfacePath implements ui.Path {
                     maxY = math.max(extremaY, maxY);
                   }
                   // check 2nd root
-                  final num t2 = (-b + s) / (2 * a);
-                  final num tprime2 = 1.0 - t2;
+                  final double t2 = (-b + s) / (2 * a);
+                  final double tprime2 = 1.0 - t2;
                   if ((t2 >= 0.0) && (t2 <= 1.0)) {
                     extremaY = ((tprime2 * tprime2 * tprime2) * startY) +
                         ((3 * tprime2 * tprime2 * t2) * cpY1) +
