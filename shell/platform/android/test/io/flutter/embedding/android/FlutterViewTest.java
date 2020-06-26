@@ -375,7 +375,11 @@ public class FlutterViewTest {
   public void flutterImageView_acquiresImageAndInvalidates() {
     final ImageReader mockReader = mock(ImageReader.class);
     final FlutterImageView imageView =
-        spy(new FlutterImageView(RuntimeEnvironment.application, mockReader));
+        spy(
+            new FlutterImageView(
+                RuntimeEnvironment.application,
+                mockReader,
+                FlutterImageView.SurfaceKind.background));
 
     imageView.acquireLatestImage();
     verify(mockReader, times(1)).acquireLatestImage();
