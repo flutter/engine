@@ -215,8 +215,8 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
    */
   public void pause() {
     if (flutterRenderer != null) {
-      // Don't remove the `flutterUiDisplayListener` as `nFlutterUiDisplayed` will make the
-      // `FlutterSurfaceView` visible.
+      // Don't remove the `flutterUiDisplayListener` as `onFlutterUiDisplayed()` will make
+      // the `FlutterSurfaceView` visible.
       flutterRenderer = null;
       isAttachedToFlutterRenderer = false;
     } else {
