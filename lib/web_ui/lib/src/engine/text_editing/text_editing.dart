@@ -500,7 +500,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
   void placeElement() {
     super.placeElement();
     if (hasAutofillGroup) {
-       _geometry?.applyToDomElement(focusedFormElement);
+       _geometry?.applyToDomElement(focusedFormElement!);
        placeForm();
        // On Chrome, when a form is focused, it opens an autofill menu
        // immeddiately.
@@ -511,7 +511,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
        //  `setEditableSizeAndTransform` method is called and focus on the form
        // only after placing it to the correct position. Hence autofill menu
        // does not appear on top-left of the page.
-       focusedFormElement.focus();
+       focusedFormElement!.focus();
     } else {
       _geometry?.applyToDomElement(domElement);
     }
@@ -570,8 +570,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   bool get hasAutofillGroup => _inputConfiguration.autofillGroup != null;
 
-  html.FormElement get focusedFormElement =>
-      _inputConfiguration.autofillGroup.formElement;
+  html.FormElement? get focusedFormElement =>
+      _inputConfiguration.autofillGroup?.formElement;
 
   @override
   void initializeTextEditing(
@@ -600,7 +600,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      domRenderer.glassPaneElement.append(domElement);
+      domRenderer.glassPaneElement!.append(domElement);
     }
 
     initializeElementPlacement();
@@ -688,7 +688,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   }
 
   void placeForm() {
-    _inputConfiguration.autofillGroup.placeForm(domElement);
+    _inputConfiguration.autofillGroup!.placeForm(domElement);
   }
 
   void _handleChange(html.Event event) {
@@ -816,7 +816,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      domRenderer.glassPaneElement.append(domElement);
+      domRenderer.glassPaneElement!.append(domElement);
     }
   }
 
@@ -946,7 +946,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      domRenderer.glassPaneElement.append(domElement);
+      domRenderer.glassPaneElement!.append(domElement);
     }
   }
 
@@ -994,15 +994,15 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   @override
   void initializeTextEditing(
     InputConfiguration inputConfig, {
-    @required _OnChangeCallback onChange,
-    @required _OnActionCallback onAction,
+    required _OnChangeCallback onChange,
+    required _OnActionCallback onAction,
   }) {
     super.initializeTextEditing(inputConfig,
         onChange: onChange, onAction: onAction);
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      domRenderer.glassPaneElement.append(domElement);
+      domRenderer.glassPaneElement!.append(domElement);
     }
   }
 
