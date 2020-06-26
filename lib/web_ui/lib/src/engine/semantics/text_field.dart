@@ -25,7 +25,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
     // TODO(yjbanov): move into initializer list when https://github.com/dart-lang/sdk/issues/37881 is fixed.
     assert((domElement is html.InputElement) ||
         (domElement is html.TextAreaElement));
-    useDomElement(domElement);
+    super.domElement = domElement;
   }
 
   @override

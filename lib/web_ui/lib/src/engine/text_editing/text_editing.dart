@@ -548,12 +548,10 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   bool isEnabled = false;
 
   html.HtmlElement get domElement => _domElement!;
-  html.HtmlElement? _domElement;
-
-  /// Overrides the HTML element used for text editing.
-  void useDomElement(html.HtmlElement element) {
+  set domElement(html.HtmlElement element) {
     _domElement = element;
   }
+  html.HtmlElement? _domElement;
 
   late InputConfiguration _inputConfiguration;
   EditingState? _lastEditingState;
