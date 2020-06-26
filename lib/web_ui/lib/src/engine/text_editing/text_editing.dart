@@ -126,7 +126,7 @@ class EngineAutofillForm {
               EngineInputType.fromName(field['inputType']['name']);
 
           html.HtmlElement htmlElement = engineInputType.createDomElement();
-          autofill.editingState!.applyToDomElement(htmlElement);
+          autofill.editingState.applyToDomElement(htmlElement);
           autofill.applyToDomElement(htmlElement);
           _hideAutofillElements(htmlElement);
 
@@ -207,10 +207,10 @@ class EngineAutofillForm {
 /// These values are to be used when a text field have autofill enabled.
 @visibleForTesting
 class AutofillInfo {
-  AutofillInfo({this.editingState, required this.uniqueIdentifier, required this.hint});
+  AutofillInfo({required this.editingState, required this.uniqueIdentifier, required this.hint});
 
   /// The current text and selection state of a text field.
-  final EditingState? editingState;
+  final EditingState editingState;
 
   /// Unique value set by the developer.
   ///
@@ -668,7 +668,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       _subscriptions[i].cancel();
     }
     _subscriptions.clear();
-    _domElement?.remove();
+    domElement.remove();
     _domElement = null;
     _inputConfiguration.autofillGroup?.removeForm();
   }
@@ -1377,7 +1377,7 @@ class EditableTextStyle {
   final ui.TextAlign textAlign;
   final ui.TextDirection textDirection;
 
-  String? get align => textAlignToCssValue(textAlign, textDirection);
+  String get align => textAlignToCssValue(textAlign, textDirection)!;
 
   String get cssFont => '${fontWeight} ${fontSize}px ${fontFamily}';
 
@@ -1418,10 +1418,10 @@ class EditableTextGeometry {
   }
 
   /// The width of the editable in local coordinates, i.e. before applying [globalTransform].
-  final double? width;
+  final double width;
 
   /// The height of the editable in local coordinates, i.e. before applying [globalTransform].
-  final double? height;
+  final double height;
 
   /// The aggregate transform rooted at the global (screen) coordinate system
   /// that places and sizes the editable.
