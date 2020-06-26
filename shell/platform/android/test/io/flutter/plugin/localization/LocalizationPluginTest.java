@@ -231,7 +231,7 @@ public class LocalizationPluginTest {
     Locale userLocale = new Locale("es", "MX");
     when(context.getResources()).thenReturn(resources);
     when(resources.getConfiguration()).thenReturn(config);
-    when(config.locale).thenReturn(userLocale);
+    when(config.getAttribute("locale")).thenReturn(userLocale);
 
     flutterJNI.setLocalizationPlugin(
         new LocalizationPlugin(context, new LocalizationChannel(dartExecutor)));
@@ -249,7 +249,7 @@ public class LocalizationPluginTest {
           "en", "CA", ""
         };
     userLocale = null;
-    when(config.locale).thenReturn(userLocale);
+    when(config.getAttribute("locale")).thenReturn(userLocale);
     result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
     // The first locale is default.
     assertEquals(result.length, 3);
@@ -267,7 +267,7 @@ public class LocalizationPluginTest {
           "it", "IT", ""
         };
     userLocale = new Locale("fr", "CH");
-    when(config.locale).thenReturn(userLocale);
+    when(config.getAttribute("locale")).thenReturn(userLocale);
     result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
     assertEquals(result.length, 3);
     assertEquals(result[0], "en");
@@ -283,7 +283,7 @@ public class LocalizationPluginTest {
           "it", "IT", ""
         };
     userLocale = new Locale("it", "IT");
-    when(config.locale).thenReturn(userLocale);
+    when(config.getAttribute("locale")).thenReturn(userLocale);
     result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
     assertEquals(result.length, 3);
     assertEquals(result[0], "it");
@@ -300,7 +300,7 @@ public class LocalizationPluginTest {
           "it", "IT", ""
         };
     userLocale = new Locale("fr", "CH");
-    when(config.locale).thenReturn(userLocale);
+    when(config.getAttribute("locale")).thenReturn(userLocale);
     result = flutterJNI.computePlatformResolvedLocale(supportedLocales);
     assertEquals(result.length, 3);
     assertEquals(result[0], "fr");
