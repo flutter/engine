@@ -54,7 +54,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private Context context;
 
   // The View currently rendering the Flutter UI associated with these platform views.
-  private FlutterView flutterView;
+  // TODO(egarciad): Investigate if this can be downcasted to `FlutterView`.
+  private View flutterView;
 
   // The texture registry maintaining the textures into which the embedded views will be rendered.
   private TextureRegistry textureRegistry;
@@ -349,7 +350,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * This {@code PlatformViewsController} and its {@code FlutterEngine} is now attached to an
    * Android {@code View} that renders a Flutter UI.
    */
-  public void attachToView(@NonNull FlutterView flutterView) {
+  public void attachToView(@NonNull View flutterView) {
     this.flutterView = flutterView;
 
     // Inform all existing platform views that they are now associated with
@@ -559,7 +560,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private void initializeRootImageViewIfNeeded() {
     if (!flutterViewConvertedToImageView) {
-      flutterView.convertToImageView();
+      ((FlutterView) flutterView).convertToImageView();
       flutterViewConvertedToImageView = true;
     }
   }
@@ -601,7 +602,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
 
     if (flutterViewConvertedToImageView) {
-      flutterView.acquireLatestImageViewFrame();
+      ((FlutterView) flutterView).acquireLatestImageViewFrame();
     }
   }
 
