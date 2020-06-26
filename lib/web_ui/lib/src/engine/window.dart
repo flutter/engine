@@ -494,12 +494,13 @@ class EngineWindow extends ui.Window {
     }
 
     switch (name) {
+      /// This should be in sync with shell/common/shell.cc
       case 'flutter/skia':
-      const MethodCodec codec = JSONMethodCodec();
+        const MethodCodec codec = JSONMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
           case 'Skia.setResourceCacheMaxBytes':
-            if(decoded.arguments is int) {
+            if (decoded.arguments is int) {
               rasterizer?.setSkiaResourceCacheMaxBytes(decoded.arguments);
             }
             break;
