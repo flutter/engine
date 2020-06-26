@@ -231,7 +231,8 @@ public class LocalizationPluginTest {
     Locale userLocale = new Locale("es", "MX");
     when(context.getResources()).thenReturn(resources);
     when(resources.getConfiguration()).thenReturn(config);
-    when(config.getAttribute("locale")).thenReturn(userLocale);
+    config.setLocale(userLocale);
+    // when(config.getAttribute("locale")).thenReturn(userLocale);
 
     flutterJNI.setLocalizationPlugin(
         new LocalizationPlugin(context, new LocalizationChannel(dartExecutor)));
@@ -329,6 +330,8 @@ public class LocalizationPluginTest {
   }
 
   private class TestConfiguration extends Configuration {
+    public Locale locale = null;
+
     public void setLocale(Locale locale) {
       this.Locale = locale;
     }
