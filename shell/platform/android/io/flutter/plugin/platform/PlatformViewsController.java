@@ -9,14 +9,21 @@ import static android.view.MotionEvent.PointerProperties;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.PixelFormat;
+import android.hardware.HardwareBuffer;
+import android.media.ImageReader;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.embedding.android.FlutterImageView;
+import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.FlutterOverlaySurface;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
@@ -25,6 +32,7 @@ import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.TextureRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -46,6 +54,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private Context context;
 
   // The View currently rendering the Flutter UI associated with these platform views.
+  // TODO(egarciad): Investigate if this can be downcasted to `FlutterView`.
   private View flutterView;
 
   // The texture registry maintaining the textures into which the embedded views will be rendered.
@@ -70,6 +79,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // platform view that
   // it is associated with(e.g if a platform view creates other views in the same virtual display.
   private final HashMap<Context, View> contextToPlatformView;
+
+  // Map of unique IDs to views that render overlay layers.
+  private final SparseArray<FlutterImageView> overlayLayerViews;
+
+  // Next available unique ID for use in overlayLayerViews.
+  private int nextOverlayLayerId = 0;
+
+  // Tracks whether the flutterView has been converted to use a FlutterImageView.
+  private boolean flutterViewConvertedToImageView = false;
+
+  // Overlay layer IDs that were displayed since the start of the current frame.
+  private HashSet<Integer> currentFrameUsedOverlayLayerIds;
 
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
@@ -283,6 +304,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     vdControllers = new HashMap<>();
     accessibilityEventsDelegate = new AccessibilityEventsDelegate();
     contextToPlatformView = new HashMap<>();
+    overlayLayerViews = new SparseArray<>();
+    currentFrameUsedOverlayLayerIds = new HashSet<>();
   }
 
   /**
@@ -535,24 +558,77 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     vdControllers.clear();
   }
 
+  private void initializeRootImageViewIfNeeded() {
+    if (!flutterViewConvertedToImageView) {
+      ((FlutterView) flutterView).convertToImageView();
+      flutterViewConvertedToImageView = true;
+    }
+  }
+
   public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+    initializeRootImageViewIfNeeded();
     // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
   }
 
   public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
-    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+    initializeRootImageViewIfNeeded();
+    FlutterImageView overlayView = overlayLayerViews.get(id);
+    if (overlayView.getParent() == null) {
+      ((FlutterView) flutterView).addView(overlayView);
+    }
+
+    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams((int) width, (int) height);
+    layoutParams.leftMargin = (int) x;
+    layoutParams.topMargin = (int) y;
+    overlayView.setLayoutParams(layoutParams);
+    overlayView.setVisibility(View.VISIBLE);
+    overlayView.bringToFront();
+    currentFrameUsedOverlayLayerIds.add(id);
   }
 
   public void onBeginFrame() {
-    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+    currentFrameUsedOverlayLayerIds.clear();
   }
 
   public void onEndFrame() {
-    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
+    for (int i = 0; i < overlayLayerViews.size(); i++) {
+      int key = overlayLayerViews.keyAt(i);
+      FlutterImageView overlayView = overlayLayerViews.valueAt(i);
+      if (currentFrameUsedOverlayLayerIds.contains(key)) {
+        overlayView.acquireLatestImage();
+      } else {
+        overlayView.setVisibility(View.GONE);
+      }
+    }
+
+    if (flutterViewConvertedToImageView) {
+      ((FlutterView) flutterView).acquireLatestImageViewFrame();
+    }
   }
 
+  @TargetApi(19)
+  public static ImageReader createImageReader(int width, int height) {
+    if (android.os.Build.VERSION.SDK_INT >= 29) {
+      return ImageReader.newInstance(
+          width,
+          height,
+          PixelFormat.RGBA_8888,
+          3,
+          HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE | HardwareBuffer.USAGE_GPU_COLOR_OUTPUT);
+    } else {
+      return ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 3);
+    }
+  }
+
+  @TargetApi(19)
   public FlutterOverlaySurface createOverlaySurface() {
-    // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
-    return null;
+    ImageReader imageReader = createImageReader(flutterView.getWidth(), flutterView.getHeight());
+    FlutterImageView imageView =
+        new FlutterImageView(
+            flutterView.getContext(), imageReader, FlutterImageView.SurfaceKind.overlay);
+    int id = nextOverlayLayerId++;
+    overlayLayerViews.put(id, imageView);
+
+    return new FlutterOverlaySurface(id, imageReader.getSurface());
   }
 }

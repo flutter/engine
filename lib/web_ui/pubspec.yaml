@@ -8,7 +8,6 @@ dependencies:
   meta: ^1.1.8
 
 dev_dependencies:
-  # Pin the analyzer version as a temporary workaround for https://github.com/dart-lang/sdk/issues/42163
   analyzer: 0.39.10
   http: 0.12.1
   image: 2.1.13
@@ -27,9 +26,9 @@ dev_dependencies:
     git:
       url: git://github.com/flutter/web_installers.git
       path: packages/simulators/
-      ref: 9ede7e3c069180b28322bb3f0d0307c824071fb5
+      ref: 1da6bb8df222f0d124e737e8abc20d68ddb7ea43
   web_driver_installer:
     git:
       url: git://github.com/flutter/web_installers.git
       path: packages/web_drivers/
-      ref: 90c69a79b2764c93875dc8ed4f4932c27a6f3a86
+      ref: 1cea0d79cad1ebc217c4bcbeba1be41470674a49

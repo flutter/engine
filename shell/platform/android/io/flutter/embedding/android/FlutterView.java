@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.graphics.Rect;
+import android.media.ImageReader;
 import android.os.Build;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
@@ -79,6 +80,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   // Internal view hierarchy references.
   @Nullable private FlutterSurfaceView flutterSurfaceView;
   @Nullable private FlutterTextureView flutterTextureView;
+  @Nullable private FlutterImageView flutterImageView;
   @Nullable private RenderSurface renderSurface;
   private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners = new HashSet<>();
   private boolean isFlutterUiDisplayed;
@@ -155,7 +157,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
   /**
    * Deprecated - use {@link #FlutterView(Context, FlutterSurfaceView)} or {@link
-   * #FlutterView(Context, FlutterTextureView)} instead.
+   * #FlutterView(Context, FlutterTextureView)} or {@link #FlutterView(Context, FlutterImageView)}
+   * instead.
    */
   @Deprecated
   public FlutterView(@NonNull Context context, @NonNull RenderMode renderMode) {
@@ -164,9 +167,12 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     if (renderMode == RenderMode.surface) {
       flutterSurfaceView = new FlutterSurfaceView(context);
       renderSurface = flutterSurfaceView;
-    } else {
+    } else if (renderMode == RenderMode.texture) {
       flutterTextureView = new FlutterTextureView(context);
       renderSurface = flutterTextureView;
+    } else {
+      throw new IllegalArgumentException(
+          String.format("RenderMode not supported with this constructor: %s", renderMode));
     }
 
     init();
@@ -217,6 +223,18 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
+   * Constructs a {@code FlutterView} programmatically, without any XML attributes, uses the given
+   * {@link FlutterImageView} to render the Flutter UI.
+   *
+   * <p>{@code FlutterView} requires an {@code Activity} instead of a generic {@code Context} to be
+   * compatible with {@link PlatformViewsController}.
+   */
+  @TargetApi(19)
+  public FlutterView(@NonNull Context context, @NonNull FlutterImageView flutterImageView) {
+    this(context, null, flutterImageView);
+  }
+
+  /**
    * Constructs a {@code FlutterView} in an XML-inflation-compliant manner.
    *
    * <p>{@code FlutterView} requires an {@code Activity} instead of a generic {@code Context} to be
@@ -243,9 +261,12 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       flutterSurfaceView =
           new FlutterSurfaceView(context, transparencyMode == TransparencyMode.transparent);
       renderSurface = flutterSurfaceView;
-    } else {
+    } else if (renderMode == RenderMode.texture) {
       flutterTextureView = new FlutterTextureView(context);
       renderSurface = flutterTextureView;
+    } else {
+      throw new IllegalArgumentException(
+          String.format("RenderMode not supported with this constructor: %s", renderMode));
     }
 
     init();
@@ -275,15 +296,31 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     init();
   }
 
+  @TargetApi(19)
+  private FlutterView(
+      @NonNull Context context,
+      @Nullable AttributeSet attrs,
+      @NonNull FlutterImageView flutterImageView) {
+    super(context, attrs);
+
+    this.flutterImageView = flutterImageView;
+    this.renderSurface = flutterImageView;
+
+    init();
+  }
+
   private void init() {
     Log.v(TAG, "Initializing FlutterView");
 
     if (flutterSurfaceView != null) {
       Log.v(TAG, "Internally using a FlutterSurfaceView.");
       addView(flutterSurfaceView);
-    } else {
+    } else if (flutterTextureView != null) {
       Log.v(TAG, "Internally using a FlutterTextureView.");
       addView(flutterTextureView);
+    } else {
+      Log.v(TAG, "Internally using a FlutterImageView.");
+      addView(flutterImageView);
     }
 
     // FlutterView needs to be focusable so that the InputMethodManager can interact with it.
@@ -905,6 +942,25 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     flutterEngine = null;
   }
 
+  public void convertToImageView() {
+    renderSurface.pause();
+
+    ImageReader imageReader = PlatformViewsController.createImageReader(getWidth(), getHeight());
+    flutterImageView =
+        new FlutterImageView(getContext(), imageReader, FlutterImageView.SurfaceKind.background);
+    renderSurface = flutterImageView;
+    if (flutterEngine != null) {
+      renderSurface.attachToRenderer(flutterEngine.getRenderer());
+    }
+    addView(flutterImageView);
+  }
+
+  public void acquireLatestImageViewFrame() {
+    if (flutterImageView != null) {
+      flutterImageView.acquireLatestImage();
+    }
+  }
+
   /** Returns true if this {@code FlutterView} is currently attached to a {@link FlutterEngine}. */
   @VisibleForTesting
   public boolean isAttachedToFlutterEngine() {
@@ -1018,7 +1074,16 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
      * android.graphics.SurfaceTexture} are required, developers should strongly prefer the {@link
      * RenderMode#surface} render mode.
      */
-    texture
+    texture,
+    /**
+     * {@code RenderMode}, which paints Paints a Flutter UI provided by an {@link
+     * android.media.ImageReader} onto a {@link android.graphics.Canvas}. This mode is not as
+     * performant as {@link RenderMode#surface}, but a {@code FlutterView} in this mode can handle
+     * full interactivity with a {@link io.flutter.plugin.platform.PlatformView}. Unless {@link
+     * io.flutter.plugin.platform.PlatformView}s are required developers should strongly prefer the
+     * {@link RenderMode#surface} render mode.
+     */
+    image
   }
 
   /**
