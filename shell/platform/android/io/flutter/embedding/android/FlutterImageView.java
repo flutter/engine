@@ -102,9 +102,11 @@ public class FlutterImageView extends View implements RenderSurface {
     switch (kind) {
       case background:
         // TODO: Swap the surface back to the original one.
+        // https://github.com/flutter/flutter/issues/58291
         break;
       case overlay:
         // TODO: Handle this in the native side.
+        // https://github.com/flutter/flutter/issues/59904
         break;
     }
   }
