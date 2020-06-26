@@ -222,7 +222,8 @@ def GetRunnerTarget(runner_type, product, aot):
 
 def GetTargetsToBuild(product=False, additional_targets=[]):
   targets_to_build = [
-      'flutter/shell/platform/fuchsia:fuchsia',
+      'flutter:flutter',
+      'flutter:fuchsia_tests',
   ] + additional_targets
   return targets_to_build
 
