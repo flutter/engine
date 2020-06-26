@@ -239,7 +239,7 @@ public class PlatformViewsChannel {
     void createAndroidViewForPlatformView(@NonNull PlatformViewCreationRequest request);
 
     /**
-     * The Flutter application would like dispose of an existing Android {@code View} rendered in
+     * The Flutter application would like to dispose of an existing Android {@code View} rendered in
      * the view hierarchy.
      */
     void disposeAndroidViewForPlatformView(int viewId);
@@ -253,8 +253,8 @@ public class PlatformViewsChannel {
     long createVirtualDisplayForPlatformView(@NonNull PlatformViewCreationRequest request);
 
     /**
-     * The Flutter application would like dispose of an existing Android {@code View} rendered in a
-     * virtual display.
+     * The Flutter application would like to dispose of an existing Android {@code View} rendered in
+     * a virtual display.
      */
     void disposeVirtualDisplayForPlatformView(int viewId);
 
