@@ -114,12 +114,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
         }
 
+        @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
         @Override
         public long createVirtualDisplayForPlatformView(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
           // API level 20 is required for VirtualDisplay#setSurface which we use when resizing a
-          // platform
-          // view.
+          // platform view.
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
           if (!validateDirection(request.direction)) {
             throw new IllegalStateException(
@@ -278,6 +278,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           vdControllers.get(touch.viewId).dispatchTouchEvent(event);
         }
 
+        @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
         @Override
         public void setDirection(int viewId, int direction) {
           if (!validateDirection(direction)) {
