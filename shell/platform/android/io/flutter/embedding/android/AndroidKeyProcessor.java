@@ -4,15 +4,12 @@
 
 package io.flutter.embedding.android;
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.ContextWrapper;
 import android.util.Log;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
+import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -41,38 +38,36 @@ public class AndroidKeyProcessor {
   @NonNull private final KeyEventChannel keyEventChannel;
   @NonNull private final TextInputPlugin textInputPlugin;
   private int combiningCharacter;
-  @NonNull EventResponder eventResponder;
+  @NonNull private EventResponder eventResponder;
 
   /**
    * Constructor for AndroidKeyProcessor.
    *
-   * @param context takes the application context so that this processor can find the activity for
-   *     re-dispatching of events that were not handled by the framework.
+   * <p>The view is used as the destination to send the synthesized key to. This means that the the
+   * next thing in the focus chain will get the event when the framework returns false from
+   * onKeyDown/onKeyUp
+   *
+   * <p>It is possible that that in the middle of the async round trip, the focus chain could
+   * change, and instead of the native widget that was "next" when the event was fired getting the
+   * event, it may be the next widget when the event is synthesized that gets it. In practice, this
+   * shouldn't be a huge problem, as this is an unlikely occurance to happen without user input, and
+   * it may actually be desired behavior, but it is possible.
+   *
+   * @param view takes the activity to use for re-dispatching of events that were not handled by the
+   *     framework.
    * @param keyEventChannel the event channel to listen to for new key events.
    * @param textInputPlugin a plugin, which, if set, is given key events before the framework is,
    *     and if it has a valid input connection and is accepting text, then it will handle the event
    *     and the framework will not receive it.
    */
   public AndroidKeyProcessor(
-      @NonNull Context context,
+      @NonNull View view,
       @NonNull KeyEventChannel keyEventChannel,
       @NonNull TextInputPlugin textInputPlugin) {
     this.keyEventChannel = keyEventChannel;
     this.textInputPlugin = textInputPlugin;
-    this.eventResponder = new EventResponder(context);
+    this.eventResponder = new EventResponder(view);
     this.keyEventChannel.setEventResponseHandler(eventResponder);
-  }
-
-  /**
-   * Set the event responder for this key processor.
-   *
-   * <p>Typically used by the testing framework to inject mocks.
-   *
-   * @param eventResponder the event responder to use instead of the default responder.
-   */
-  @VisibleForTesting
-  public void setEventResponder(@NonNull EventResponder eventResponder) {
-    this.eventResponder = eventResponder;
   }
 
   /**
@@ -110,8 +105,8 @@ public class AndroidKeyProcessor {
     }
 
     // If the textInputPlugin is still valid and accepting text, then we'll try
-    // and send the key event to it, assuming that if the event can be sent, that
-    // it has been handled.
+    // and send the key event to it, assuming that if the event can be sent,
+    // that it has been handled.
     if (textInputPlugin.getLastInputConnection() != null
         && textInputPlugin.getInputMethodManager().isAcceptingText()) {
       if (textInputPlugin.getLastInputConnection().sendKeyEvent(keyEvent)) {
@@ -186,16 +181,16 @@ public class AndroidKeyProcessor {
     return complexCharacter;
   }
 
-  public static class EventResponder implements KeyEventChannel.EventResponseHandler {
+  private static class EventResponder implements KeyEventChannel.EventResponseHandler {
     // The maximum number of pending events that are held before starting to
     // complain.
     private static final long MAX_PENDING_EVENTS = 1000;
     final Deque<Entry<Long, KeyEvent>> pendingEvents = new ArrayDeque<Entry<Long, KeyEvent>>();
-    @NonNull private final Context context;
-    @VisibleForTesting boolean dispatchingKeyEvent = false;
+    @NonNull private final View view;
+    boolean dispatchingKeyEvent = false;
 
-    public EventResponder(@NonNull Context context) {
-      this.context = context;
+    public EventResponder(@NonNull View view) {
+      this.view = view;
     }
 
     /**
@@ -264,31 +259,13 @@ public class AndroidKeyProcessor {
      */
     public void dispatchKeyEvent(KeyEvent event) {
       // Since the framework didn't handle it, dispatch the key again.
-      Activity activity = getActivity(context);
-      if (activity != null) {
+      if (view != null) {
         // Turn on dispatchingKeyEvent so that we don't dispatch to ourselves and
         // send it to the framework again.
         dispatchingKeyEvent = true;
-        activity.dispatchKeyEvent(event);
+        view.dispatchKeyEvent(event);
         dispatchingKeyEvent = false;
       }
-    }
-
-    /**
-     * Gets the nearest ancestor Activity for the given Context.
-     *
-     * @param context the context to look in for the activity.
-     * @return null if no Activity found.
-     */
-    private Activity getActivity(Context context) {
-      if (context instanceof Activity) {
-        return (Activity) context;
-      }
-      if (context instanceof ContextWrapper) {
-        // Recurse up chain of base contexts until we find an Activity.
-        return getActivity(((ContextWrapper) context).getBaseContext());
-      }
-      return null;
     }
   }
 }

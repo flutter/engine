@@ -1,19 +1,15 @@
 package io.flutter.embedding.android;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.annotation.TargetApi;
-import android.app.Application;
-import android.content.Context;
 import android.view.KeyEvent;
+import android.view.View;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -21,14 +17,15 @@ import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.util.FakeKeyEvent;
-import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
@@ -44,73 +41,97 @@ public class AndroidKeyProcessorTest {
   }
 
   @Test
-  public void sendsKeyDownEventsToEventResponder() {
+  public void respondsTrueWhenHandlingNewEvents() {
     FlutterEngine flutterEngine = mockFlutterEngine();
     KeyEventChannel fakeKeyEventChannel = flutterEngine.getKeyEventChannel();
-    TextInputPlugin fakeTextInputPlugin = mock(TextInputPlugin.class);
+    View fakeView = mock(View.class);
 
     AndroidKeyProcessor processor =
-        new AndroidKeyProcessor(
-            RuntimeEnvironment.application, fakeKeyEventChannel, fakeTextInputPlugin);
+        new AndroidKeyProcessor(fakeView, fakeKeyEventChannel, mock(TextInputPlugin.class));
 
-    processor.onKeyDown(new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65));
-    assertFalse(processor.eventResponder.dispatchingKeyEvent);
+    boolean result = processor.onKeyDown(new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65));
+    assertEquals(true, result);
     verify(fakeKeyEventChannel, times(1)).keyDown(any(KeyEventChannel.FlutterKeyEvent.class));
     verify(fakeKeyEventChannel, times(0)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
-    assertEquals(1, processor.eventResponder.pendingEvents.size());
-    Map.Entry<Long, KeyEvent> firstPendingEvent =
-        processor.eventResponder.pendingEvents.peekFirst();
-    assertNotNull(firstPendingEvent);
-    processor.eventResponder.onKeyEventHandled(firstPendingEvent.getKey());
-    assertEquals(0, processor.eventResponder.pendingEvents.size());
+    verify(fakeView, times(0)).dispatchKeyEvent(any(KeyEvent.class));
   }
 
-  @Test
-  public void unhandledKeyEventsAreSynthesized() {
+  public void synthesizesEventsWhenKeyDownNotHandled() {
     FlutterEngine flutterEngine = mockFlutterEngine();
     KeyEventChannel fakeKeyEventChannel = flutterEngine.getKeyEventChannel();
-    TextInputPlugin fakeTextInputPlugin = mock(TextInputPlugin.class);
-    Application spiedApplication = spy(RuntimeEnvironment.application);
-    Context spiedContext = spy(spiedApplication.getBaseContext());
-    when(spiedApplication.getBaseContext()).thenReturn(spiedContext);
-
+    View fakeView = mock(View.class);
+    ArgumentCaptor<KeyEventChannel.EventResponseHandler> handlerCaptor =
+        ArgumentCaptor.forClass(KeyEventChannel.EventResponseHandler.class);
+    verify(fakeKeyEventChannel).setEventResponseHandler(handlerCaptor.capture());
     AndroidKeyProcessor processor =
-        new AndroidKeyProcessor(spiedApplication, fakeKeyEventChannel, fakeTextInputPlugin);
-    AndroidKeyProcessor.EventResponder eventResponder =
-        spy(new AndroidKeyProcessor.EventResponder(spiedContext));
-    processor.setEventResponder(eventResponder);
+        new AndroidKeyProcessor(fakeView, fakeKeyEventChannel, mock(TextInputPlugin.class));
+    ArgumentCaptor<KeyEventChannel.FlutterKeyEvent> eventCaptor =
+        ArgumentCaptor.forClass(KeyEventChannel.FlutterKeyEvent.class);
+    FakeKeyEvent fakeKeyEvent = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
 
-    KeyEvent event = new FakeKeyEvent(KeyEvent.ACTION_DOWN, 65);
-    processor.onKeyDown(event);
-    assertFalse(processor.eventResponder.dispatchingKeyEvent);
-    assertEquals(1, processor.eventResponder.pendingEvents.size());
-    Map.Entry<Long, KeyEvent> firstPendingEvent =
-        processor.eventResponder.pendingEvents.peekFirst();
-    assertNotNull(firstPendingEvent);
-    processor.eventResponder.onKeyEventNotHandled(firstPendingEvent.getKey());
-    assertEquals(0, processor.eventResponder.pendingEvents.size());
-    verify(eventResponder).dispatchKeyEvent(event);
+    boolean result = processor.onKeyDown(fakeKeyEvent);
+    assertEquals(true, result);
+
+    // Capture the FlutterKeyEvent so we can find out its event ID to use when
+    // faking our response.
+    verify(fakeKeyEventChannel, times(1)).keyDown(eventCaptor.capture());
+    boolean[] dispatchResult = {true};
+    when(fakeView.dispatchKeyEvent(any(KeyEvent.class)))
+        .then(
+            new Answer<Boolean>() {
+              @Override
+              public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                KeyEvent event = (KeyEvent) invocation.getArguments()[0];
+                assertEquals(fakeKeyEvent, event);
+                dispatchResult[0] = processor.onKeyDown(event);
+                return dispatchResult[0];
+              }
+            });
+
+    // Fake a response from the framework.
+    handlerCaptor.getValue().onKeyEventNotHandled(eventCaptor.getValue().eventId);
+    verify(fakeView, times(1)).dispatchKeyEvent(fakeKeyEvent);
+    assertEquals(false, dispatchResult[0]);
+    verify(fakeKeyEventChannel, times(0)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
   }
 
-  @Test
-  public void sendsKeyUpEventsToEventResponder() {
+  public void synthesizesEventsWhenKeyUpNotHandled() {
     FlutterEngine flutterEngine = mockFlutterEngine();
     KeyEventChannel fakeKeyEventChannel = flutterEngine.getKeyEventChannel();
-    TextInputPlugin fakeTextInputPlugin = mock(TextInputPlugin.class);
-
+    View fakeView = mock(View.class);
+    ArgumentCaptor<KeyEventChannel.EventResponseHandler> handlerCaptor =
+        ArgumentCaptor.forClass(KeyEventChannel.EventResponseHandler.class);
+    verify(fakeKeyEventChannel).setEventResponseHandler(handlerCaptor.capture());
     AndroidKeyProcessor processor =
-        new AndroidKeyProcessor(
-            RuntimeEnvironment.application, fakeKeyEventChannel, fakeTextInputPlugin);
+        new AndroidKeyProcessor(fakeView, fakeKeyEventChannel, mock(TextInputPlugin.class));
+    ArgumentCaptor<KeyEventChannel.FlutterKeyEvent> eventCaptor =
+        ArgumentCaptor.forClass(KeyEventChannel.FlutterKeyEvent.class);
+    FakeKeyEvent fakeKeyEvent = new FakeKeyEvent(KeyEvent.ACTION_UP, 65);
 
-    processor.onKeyUp(new FakeKeyEvent(KeyEvent.ACTION_UP, 65));
-    assertFalse(processor.eventResponder.dispatchingKeyEvent);
-    verify(fakeKeyEventChannel, times(0)).keyDown(any(KeyEventChannel.FlutterKeyEvent.class));
-    verify(fakeKeyEventChannel, times(1)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
-    Map.Entry<Long, KeyEvent> firstPendingEvent =
-        processor.eventResponder.pendingEvents.peekFirst();
-    assertNotNull(firstPendingEvent);
-    processor.eventResponder.onKeyEventHandled(firstPendingEvent.getKey());
-    assertEquals(0, processor.eventResponder.pendingEvents.size());
+    boolean result = processor.onKeyUp(fakeKeyEvent);
+    assertEquals(true, result);
+
+    // Capture the FlutterKeyEvent so we can find out its event ID to use when
+    // faking our response.
+    verify(fakeKeyEventChannel, times(1)).keyUp(eventCaptor.capture());
+    boolean[] dispatchResult = {true};
+    when(fakeView.dispatchKeyEvent(any(KeyEvent.class)))
+        .then(
+            new Answer<Boolean>() {
+              @Override
+              public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                KeyEvent event = (KeyEvent) invocation.getArguments()[0];
+                assertEquals(fakeKeyEvent, event);
+                dispatchResult[0] = processor.onKeyUp(event);
+                return dispatchResult[0];
+              }
+            });
+
+    // Fake a response from the framework.
+    handlerCaptor.getValue().onKeyEventNotHandled(eventCaptor.getValue().eventId);
+    verify(fakeView, times(1)).dispatchKeyEvent(fakeKeyEvent);
+    assertEquals(false, dispatchResult[0]);
+    verify(fakeKeyEventChannel, times(0)).keyUp(any(KeyEventChannel.FlutterKeyEvent.class));
   }
 
   @NonNull
