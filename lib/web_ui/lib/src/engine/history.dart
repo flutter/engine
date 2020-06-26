@@ -113,7 +113,7 @@ class BrowserHistory {
       // brings us here.
       assert(_userProvidedRouteName != null);
 
-      final String? newRouteName = _userProvidedRouteName;
+      final String newRouteName = _userProvidedRouteName!;
       _userProvidedRouteName = null;
 
       // Send a 'pushRoute' platform message so the app handles it accordingly.
