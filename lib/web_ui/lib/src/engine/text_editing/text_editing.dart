@@ -1377,7 +1377,7 @@ class EditableTextStyle {
   final ui.TextAlign textAlign;
   final ui.TextDirection textDirection;
 
-  String get align => textAlignToCssValue(textAlign, textDirection)!;
+  String? get align => textAlignToCssValue(textAlign, textDirection);
 
   String get cssFont => '${fontWeight} ${fontSize}px ${fontFamily}';
 
