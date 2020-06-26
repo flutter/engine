@@ -92,16 +92,18 @@ public class LocalizationPlugin {
     // Legacy locale resolution
     // https://developer.android.com/guide/topics/resources/multilingual-support#preN
     Locale preferredLocale = context.getResources().getConfiguration().locale;
-    // Look for exact match.
-    for (Locale locale : supportedLocales) {
-      if (preferredLocale.equals(locale)) {
-        return locale;
+    if (preferredLocale != null) {
+      // Look for exact match.
+      for (Locale locale : supportedLocales) {
+        if (preferredLocale.equals(locale)) {
+          return locale;
+        }
       }
-    }
-    // Look for exact language only match.
-    for (Locale locale : supportedLocales) {
-      if (preferredLocale.getLanguage().equals(locale.toString())) {
-        return locale;
+      // Look for exact language only match.
+      for (Locale locale : supportedLocales) {
+        if (preferredLocale.getLanguage().equals(locale.toString())) {
+          return locale;
+        }
       }
     }
     return supportedLocales.get(0);

@@ -331,7 +331,7 @@ public class LocalizationPluginTest {
       modifiersField.setAccessible(true);
       modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
 
-      field.set(config, apiVersion);
+      field.set(config, locale);
     } catch (Exception e) {
       assertTrue(false);
     }
