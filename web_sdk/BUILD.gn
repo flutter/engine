@@ -169,7 +169,6 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
 
   args = [
     "--enable-experiment=non-nullable",
-    "-k",
     "--compile-sdk",
     "dart:core",
 
@@ -221,7 +220,6 @@ prebuilt_dart_action("flutter_dartdevc_canvaskit_kernel_sdk") {
 
   args = [
     "--enable-experiment=non-nullable",
-    "-k",
     "--compile-sdk",
     "dart:core",
 
@@ -278,7 +276,6 @@ prebuilt_dart_action("flutter_dartdevc_canvaskit_kernel_sdk_sound") {
   args = [
     "--enable-experiment=non-nullable",
     "--sound-null-safety",
-    "-k",
     "--compile-sdk",
     "dart:core",
 
@@ -335,7 +332,6 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk_sound") {
   args = [
     "--enable-experiment=non-nullable",
     "--sound-null-safety",
-    "-k",
     "--compile-sdk",
     "dart:core",
 
