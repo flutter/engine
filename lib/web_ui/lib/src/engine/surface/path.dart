@@ -939,7 +939,7 @@ class SurfacePath implements ui.Path {
                     extremaX = ((tprime * tprime * tprime) * startX) +
                         ((3 * tprime * tprime * t) * cpX1) +
                         ((3 * tprime * t * t) * cpX2) +
-                        (t * t * t * endX) as double;
+                        (t * t * t * endX);
 
                     minX = math.min(extremaX, minX);
                     maxX = math.max(extremaX, maxX);
@@ -973,7 +973,7 @@ class SurfacePath implements ui.Path {
                     extremaY = ((tprime * tprime * tprime) * startY) +
                         ((3 * tprime * tprime * t) * cpY1) +
                         ((3 * tprime * t * t) * cpY2) +
-                        (t * t * t * endY) as double;
+                        (t * t * t * endY);
                     minY = math.min(extremaY, minY);
                     maxY = math.max(extremaY, maxY);
                   }
@@ -986,7 +986,7 @@ class SurfacePath implements ui.Path {
                     extremaY = ((tprime * tprime * tprime) * startY) +
                         ((3 * tprime * tprime * t) * cpY1) +
                         ((3 * tprime * t * t) * cpY2) +
-                        (t * t * t * endY) as double;
+                        (t * t * t * endY);
                     minY = math.min(extremaY, minY);
                     maxY = math.max(extremaY, maxY);
                   }
@@ -997,7 +997,7 @@ class SurfacePath implements ui.Path {
                     extremaY = ((tprime2 * tprime2 * tprime2) * startY) +
                         ((3 * tprime2 * tprime2 * t2) * cpY1) +
                         ((3 * tprime2 * t2 * t2) * cpY2) +
-                        (t2 * t2 * t2 * endY) as double;
+                        (t2 * t2 * t2 * endY);
                     minY = math.min(extremaY, minY);
                     maxY = math.max(extremaY, maxY);
                   }
