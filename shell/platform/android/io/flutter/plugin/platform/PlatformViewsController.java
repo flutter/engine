@@ -91,6 +91,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Overlay layer IDs that were displayed since the start of the current frame.
   private HashSet<Integer> currentFrameUsedOverlayLayerIds;
 
+  // Platform view IDs that were displayed since the start of the current frame.
+  private HashSet<Integer> currentFrameUsedPlatformViewIds;
+
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
 
@@ -109,7 +112,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             platformViewRequests.remove(viewId);
           }
           if (platformViews.get(viewId) != null) {
-            ((FlutterView) flutterView).addView(platformViews.get(viewId));
+            ((FlutterView) flutterView).removeView(platformViews.get(viewId));
             platformViews.remove(viewId);
           }
         }
@@ -325,6 +328,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     contextToPlatformView = new HashMap<>();
     overlayLayerViews = new SparseArray<>();
     currentFrameUsedOverlayLayerIds = new HashSet<>();
+    currentFrameUsedPlatformViewIds = new HashSet<>();
 
     platformViewRequests = new SparseArray<>();
     platformViews = new SparseArray<>();
@@ -636,6 +640,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     platformView.setLayoutParams(layoutParams);
     platformView.setVisibility(View.VISIBLE);
     platformView.bringToFront();
+    currentFrameUsedPlatformViewIds.add(viewId);
   }
 
   public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
@@ -657,19 +662,32 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   public void onBeginFrame() {
     currentFrameUsedOverlayLayerIds.clear();
+    currentFrameUsedPlatformViewIds.clear();
   }
 
   public void onEndFrame() {
+    // Hide overlay surfaces that aren't rendered in the current frame.
     for (int i = 0; i < overlayLayerViews.size(); i++) {
-      int key = overlayLayerViews.keyAt(i);
+      int overlayId = overlayLayerViews.keyAt(i);
       FlutterImageView overlayView = overlayLayerViews.valueAt(i);
-      if (currentFrameUsedOverlayLayerIds.contains(key)) {
+      if (currentFrameUsedOverlayLayerIds.contains(overlayId)) {
         overlayView.acquireLatestImage();
       } else {
         overlayView.setVisibility(View.GONE);
       }
     }
-
+    // Hide platform views that aren't rendered in the current frame.
+    // The platform view is destroyed  by the framework after the widget is disposed.
+    //
+    // The framework diposes the platform view, when its `State` object will never
+    // build again.
+    for (int i = 0; i < platformViews.size(); i++) {
+      int viewId = platformViews.keyAt(i);
+      if (!currentFrameUsedPlatformViewIds.contains(viewId)) {
+        platformViews.get(viewId).setVisibility(View.GONE);
+      }
+    }
+    // If the background surface is still an image, then acquire the latest image.
     if (flutterViewConvertedToImageView) {
       ((FlutterView) flutterView).acquireLatestImageViewFrame();
     }
