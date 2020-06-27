@@ -18,6 +18,12 @@ namespace flutter {
 
 class FlutterWindowsView;
 
+// Structure containing physical bounds of a Window
+struct PhysicalWindowBounds {
+  size_t width;
+  size_t height;
+};
+
 using WindowsRenderTarget = std::variant<
     /*winrt::Windows::UI::Composition::SpriteVisual, */ HWND>;
 
@@ -38,11 +44,8 @@ class WindowBindingHandler {
   // Returns the scale factor for the backing window.
   virtual float GetDpiScale() = 0;
 
-  // Returns the width of the backing window in physical pixels.
-  virtual float GetPhysicalWidth() = 0;
-
-  // Returns the height of the backing window in physical pixels.
-  virtual float GetPhysicalHeight() = 0;
+  // Returns the bounds of the backing window in physical pixels.
+  virtual PhysicalWindowBounds GetPhysicalWindowBounds() = 0;
 };
 
 }  // namespace flutter

@@ -70,10 +70,7 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
   float GetDpiScale() override;
 
   // |FlutterWindowBindingHandler|
-  float GetPhysicalWidth() override;
-
-  // |FlutterWindowBindingHandler|
-  float GetPhysicalHeight() override;
+  PhysicalWindowBounds GetPhysicalWindowBounds() override;
 
   // A pointer to a FlutterWindowsView that can be used to update engine
   // windowing and input state.

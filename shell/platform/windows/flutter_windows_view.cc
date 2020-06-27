@@ -68,8 +68,9 @@ void FlutterWindowsView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
 
   process_events_ = true;
 
-  SendWindowMetrics(binding_handler_->GetPhysicalWidth(),
-                    binding_handler_->GetPhysicalHeight(),
+  PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
+
+  SendWindowMetrics(bounds.width, bounds.height,
                     binding_handler_->GetDpiScale());
 }
 

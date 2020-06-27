@@ -31,12 +31,8 @@ float Win32FlutterWindow::GetDpiScale() {
   return static_cast<float>(GetCurrentDPI()) / static_cast<float>(base_dpi);
 }
 
-float Win32FlutterWindow::GetPhysicalWidth() {
-  return GetCurrentWidth();
-}
-
-float Win32FlutterWindow::GetPhysicalHeight() {
-  return GetCurrentHeight();
+PhysicalWindowBounds Win32FlutterWindow::GetPhysicalWindowBounds() {
+  return {GetCurrentWidth(), GetCurrentHeight()};
 }
 
 // Translates button codes from Win32 API to FlutterPointerMouseButtons.
