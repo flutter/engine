@@ -272,10 +272,6 @@ void FlutterWindowsView::SendScroll(double x,
   FlutterPointerEvent event = {};
   SetEventPhaseFromCursorButtonState(&event);
   event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
-  // TODO: See if this can be queried from the OS; this value is chosen
-  // arbitrarily to get something that feels reasonable.
-
-  // scroll_offset_multiplier should be 20 for win32 and 1 for UWP
   event.x = x;
   event.y = y;
   event.scroll_delta_x = delta_x * scroll_offset_multiplier;

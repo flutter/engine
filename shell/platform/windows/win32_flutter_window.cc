@@ -8,6 +8,8 @@ namespace flutter {
 // constant for machines running at 100% scaling.
 constexpr int base_dpi = 96;
 
+// TODO: See if this can be queried from the OS; this value is chosen
+// arbitrarily to get something that feels reasonable.
 constexpr int kScrollOffsetMultiplier = 20;
 
 Win32FlutterWindow::Win32FlutterWindow(int width, int height) : view_(nullptr) {

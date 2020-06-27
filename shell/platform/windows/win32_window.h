@@ -13,22 +13,6 @@
 
 namespace flutter {
 
-// Struct holding the mouse state. The engine doesn't keep track of which mouse
-// buttons have been pressed, so it's the embedding's responsibility.
-struct MouseStateWin32 {
-  // True if the last event sent to Flutter had at least one mouse button
-  // pressed.
-  bool flutter_state_is_down = false;
-
-  // True if kAdd has been sent to Flutter. Used to determine whether
-  // to send a kAdd event before sending an incoming mouse event, since Flutter
-  // expects pointers to be added before events are sent for them.
-  bool flutter_state_is_added = false;
-
-  // The currently pressed buttons, as represented in FlutterPointerEvent.
-  uint64_t buttons = 0;
-};
-
 // A class abstraction for a high DPI aware Win32 Window.  Intended to be
 // inherited from by classes that wish to specialize with custom
 // rendering and input handling.
