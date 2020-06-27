@@ -40,7 +40,7 @@ struct MouseState {
   uint64_t buttons = 0;
 };
 
-// An OS windowing neutral abstration for flutter
+// An OS-windowing neutral abstration for flutter
 // view that works with win32 hwnds and Windows::UI::Composition visuals.
 class FlutterWindowsView {
  public:
@@ -51,10 +51,10 @@ class FlutterWindowsView {
   // Factory for creating FlutterWindowsView requiring an implementator of
   // FlutterWindowBindingHandler.
   static FlutterDesktopViewControllerRef CreateFlutterWindowsView(
-      std::unique_ptr<FlutterWindowBindingHandler> windowbinding);
+      std::unique_ptr<FlutterWindowBindingHandler> window_binding);
 
-  // Configures the window instance with an instance of a running Flutter engine
-  // returning a configured FlutterDesktopWindowControllerRef.
+  // Configures the window instance with an instance of a running Flutter
+  // engine.
   void SetState(FLUTTER_API_SYMBOL(FlutterEngine) state);
 
   // Returns the currently configured Plugin Registrar.
@@ -64,10 +64,11 @@ class FlutterWindowsView {
   // messages.
   void HandlePlatformMessage(const FlutterPlatformMessage*);
 
-  // Create rendering surface for Flutter engine to draw into.
+  // Creates rendering surface for Flutter engine to draw into.
+  // Should be called before calling FlutterEngineRun using this view.
   void CreateRenderSurface();
 
-  // Destroy current rendering surface if one has been allocated.
+  // Destroys current rendering surface if one has been allocated.
   void DestroyRenderSurface();
 
   // Return the currently configured WindowsRenderTarget.
@@ -79,35 +80,35 @@ class FlutterWindowsView {
   bool MakeResourceCurrent();
   bool SwapBuffers();
 
-  // Notify view that backing window size has changed.
+  // Notifies view that backing window size has changed.
   // Typically called by currently configured FlutterWindowBindingHandler
   void OnWindowSizeChanged(size_t width, size_t height) const;
 
-  // Notify view that backing window mouse has moved.
+  // Notifies view that backing window mouse has moved.
   // Typically called by currently configured FlutterWindowBindingHandler
   void OnPointerMove(double x, double y);
 
-  // Notify view that backing window mouse pointer button has been pressed.
+  // Notifies view that backing window mouse pointer button has been pressed.
   // Typically called by currently configured FlutterWindowBindingHandler
   void OnPointerDown(double x, double y, FlutterPointerMouseButtons button);
 
-  // Notify view that backing window mouse pointer button has been released.
+  // Notifies view that backing window mouse pointer button has been released.
   // Typically called by currently configured FlutterWindowBindingHandler
   void OnPointerUp(double x, double y, FlutterPointerMouseButtons button);
 
-  // Notify view that backing window mouse pointer has left the window.
+  // Notifies view that backing window mouse pointer has left the window.
   // Typically called by currently configured FlutterWindowBindingHandler
   void OnPointerLeave();
 
-  // Notify view that backing window has received text.
+  // Notifies view that backing window has received text.
   // Typically called by currently configured FlutterWindowBindingHandler
   void OnText(const std::u16string&);
 
-  // Notify view that backing window size has received key press.
+  // Notifies view that backing window size has received key press.
   // Typically called by currently configured FlutterWindowBindingHandler
   void OnKey(int key, int scancode, int action, char32_t character);
 
-  // Notify view that backing window size has recevied scroll.
+  // Notifies view that backing window size has recevied scroll.
   // Typically called by currently configured FlutterWindowBindingHandler
   void OnScroll(double x,
                 double y,
@@ -115,7 +116,7 @@ class FlutterWindowsView {
                 double delta_y,
                 int scroll_offset_multiplier);
 
-  // Notify view that backing window size has had system font change.
+  // Notifies view that backing window size has had system font change.
   // Typically called by currently configured FlutterWindowBindingHandler
   void OnFontChange();
 
@@ -153,19 +154,15 @@ class FlutterWindowsView {
                   double delta_y,
                   int scroll_offset_multiplier);
 
-  // Set's |event_data|'s phase to either kMove or kHover depending on the
-  // current
-  // primary mouse button state.
+  // Sets |event_data|'s phase to either kMove or kHover depending on the
+  // current primary mouse button state.
   void SetEventPhaseFromCursorButtonState(
       FlutterPointerEvent* event_data) const;
 
-  // Sends a pointer event to the Flutter engine based on givern data.  Since
+  // Sends a pointer event to the Flutter engine based on given data.  Since
   // all input messages are passed in physical pixel values, no translation is
   // needed before passing on to engine.
   void SendPointerEventWithData(const FlutterPointerEvent& event_data);
-
-  // Gets the current mouse state.
-  MouseState GetMouseState() const { return mouse_state_; }
 
   // Resets the mouse state to its default values.
   void ResetMouseState() { mouse_state_ = MouseState(); }
