@@ -182,24 +182,17 @@ class FlutterWindowsView {
   // Updates the currently pressed buttons.
   void SetMouseButtons(uint64_t buttons) { mouse_state_.buttons = buttons; }
 
-  std::unique_ptr<AngleSurfaceManager> surface_manager = nullptr;
-  EGLSurface render_surface = EGL_NO_SURFACE;
+  // Currently configured WindowsRenderTarget for this view used by
+  // surface_manager for creation of render surfaces and bound to the physical
+  // os window.
+  std::unique_ptr<WindowsRenderTarget> render_target_;
 
-  // state of the mouse button.
-  bool pointer_is_down_ = false;
+  // An object used for intializing Angle and creating / destroying render
+  // surfaces. Surface creation functionality requires a valid render_target.
+  std::unique_ptr<AngleSurfaceManager> surface_manager_ = nullptr;
 
   // The handle to the Flutter engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
-
-  // Whether or not to track mouse movements to send kHover events.
-  bool hover_tracking_is_enabled_ = false;
-
-  // Whether or not the pointer has been added (or if tracking is enabled, has
-  // been added since it was last removed).
-  bool pointer_currently_added_ = false;
-
-  // Set to true to be notified when the mouse leaves the window.
-  bool tracking_mouse_leave_ = false;
 
   // Keeps track of mouse state in relation to the window.
   MouseState mouse_state_;
@@ -225,12 +218,6 @@ class FlutterWindowsView {
 
   // should we forword input messages or not
   bool process_events_ = false;
-
-  // flag indicating if the message loop should be running.
-  bool messageloop_running_ = false;
-
-  // Currently configured WindowsRenderTarget for view.
-  std::unique_ptr<WindowsRenderTarget> render_target_;
 
   // Currently configured FlutterWindowBindingHandler for view.
   std::unique_ptr<flutter::FlutterWindowBindingHandler> binding_handler_{

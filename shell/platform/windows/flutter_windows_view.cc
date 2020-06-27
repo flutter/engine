@@ -5,7 +5,7 @@
 namespace flutter {
 
 FlutterWindowsView::FlutterWindowsView() {
-  surface_manager = std::make_unique<AngleSurfaceManager>();
+  surface_manager_ = std::make_unique<AngleSurfaceManager>();
 }
 
 FlutterWindowsView::~FlutterWindowsView() {
@@ -320,30 +320,29 @@ void FlutterWindowsView::SendPointerEventWithData(
 }
 
 bool FlutterWindowsView::MakeCurrent() {
-  return surface_manager->MakeCurrent(render_surface);
+  return surface_manager_->MakeCurrent();
 }
 
 bool FlutterWindowsView::MakeResourceCurrent() {
-  return surface_manager->MakeResourceCurrent();
+  return surface_manager_->MakeResourceCurrent();
 }
 
 bool FlutterWindowsView::ClearContext() {
-  return surface_manager->MakeCurrent(nullptr);
+  return surface_manager_->ClearContext();
 }
 
 bool FlutterWindowsView::SwapBuffers() {
-  return surface_manager->SwapBuffers(render_surface);
+  return surface_manager_->SwapBuffers();
 }
 
 void FlutterWindowsView::CreateRenderSurface() {
-  render_surface = surface_manager->CreateSurface(render_target_.get());
+  surface_manager_->CreateSurface(render_target_.get());
 }
 
 void FlutterWindowsView::DestroyRenderSurface() {
-  if (surface_manager) {
-    surface_manager->DestroySurface(render_surface);
+  if (surface_manager_) {
+    surface_manager_->DestroySurface();
   }
-  render_surface = EGL_NO_SURFACE;
 }
 
 WindowsRenderTarget* FlutterWindowsView::GetRenderTarget() {
