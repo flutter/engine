@@ -23,8 +23,7 @@ namespace flutter {
 // future, there will likely be a CoreWindow-based FlutterWindow as well.  At
 // the point may make sense to dependency inject the native window rather than
 // inherit.
-class Win32FlutterWindow : public Win32Window,
-                           public FlutterWindowBindingHandler {
+class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
  public:
   // Create flutter Window for use as child window
   Win32FlutterWindow(int width, int height);
@@ -62,7 +61,7 @@ class Win32FlutterWindow : public Win32Window,
   void OnFontChange() override;
 
   // |FlutterWindowBindingHandler|
-  void SetView(FlutterWindowsView* view) override;
+  void SetView(WindowBindingHandlerDelegate* view) override;
 
   // |FlutterWindowBindingHandler|
   WindowsRenderTarget GetRenderTarget() override;
@@ -78,7 +77,7 @@ class Win32FlutterWindow : public Win32Window,
 
   // A pointer to a FlutterWindowsView that can be used to update engine
   // windowing and input state.
-  FlutterWindowsView* view_;
+  WindowBindingHandlerDelegate* binding_handler_delegate_;
 };
 
 }  // namespace flutter

@@ -62,6 +62,7 @@ source_set("flutter_windows_source") {
     "win32_window.cc",
     "win32_window.h",
     "window_binding_handler.h",
+    "window_binding_handler_delegate.h",
     "window_state.h",
   ]
 

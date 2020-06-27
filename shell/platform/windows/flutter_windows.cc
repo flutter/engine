@@ -204,7 +204,7 @@ FlutterDesktopViewControllerRef FlutterDesktopCreateViewController(
     int width,
     int height,
     const FlutterDesktopEngineProperties& engine_properties) {
-  std::unique_ptr<flutter::FlutterWindowBindingHandler> window_wrapper =
+  std::unique_ptr<flutter::WindowBindingHandler> window_wrapper =
       std::make_unique<flutter::Win32FlutterWindow>(width, height);
 
   FlutterDesktopViewControllerRef state =

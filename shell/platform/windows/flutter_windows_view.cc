@@ -16,7 +16,7 @@ FlutterWindowsView::~FlutterWindowsView() {
 }
 
 FlutterDesktopViewControllerRef FlutterWindowsView::CreateFlutterWindowsView(
-    std::unique_ptr<FlutterWindowBindingHandler> windowbinding) {
+    std::unique_ptr<WindowBindingHandler> windowbinding) {
   auto state = std::make_unique<FlutterDesktopViewControllerState>();
   state->view = std::make_unique<flutter::FlutterWindowsView>();
 

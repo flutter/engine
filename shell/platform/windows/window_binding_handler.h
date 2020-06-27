@@ -5,12 +5,14 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_BINDING_HANDLER_H_
 
+#include "flutter/shell/platform/windows/public/flutter_windows.h"
+
 #include <string>
 #include <variant>
 
 #include <windows.h>
 
-#include "flutter/shell/platform/windows/public/flutter_windows.h"
+#include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 
 namespace flutter {
 
@@ -20,13 +22,13 @@ using WindowsRenderTarget = std::variant<
     /*winrt::Windows::UI::Composition::SpriteVisual, */ HWND>;
 
 // Abstract class for binding Windows platform windows to Flutter views.
-class FlutterWindowBindingHandler {
+class WindowBindingHandler {
  public:
-  virtual ~FlutterWindowBindingHandler() = default;
+  virtual ~WindowBindingHandler() = default;
 
   // Sets the view used to communicate state changes from Window to view such
   // as key presses, mouse position updates etc.
-  virtual void SetView(FlutterWindowsView* view) = 0;
+  virtual void SetView(WindowBindingHandlerDelegate* view) = 0;
 
   // Returns a valid WindowsRenderTarget representing the backing
   // window.
