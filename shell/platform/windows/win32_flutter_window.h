@@ -61,33 +61,20 @@ class Win32FlutterWindow : public Win32Window,
   // |Win32Window|
   void OnFontChange() override;
 
-  // |SetView|
+  // |FlutterWindowBindingHandler|
   void SetView(FlutterWindowsView* view) override;
 
-  // |GetRenderTarget|
+  // |FlutterWindowBindingHandler|
   WindowsRenderTarget GetRenderTarget() override;
 
-  // |GetDpiScale|
+  // |FlutterWindowBindingHandler|
   float GetDpiScale() override;
 
-  // |GetPhysicalWidth|
+  // |FlutterWindowBindingHandler|
   float GetPhysicalWidth() override;
 
-  // |GetPhysicalHeight|
+  // |FlutterWindowBindingHandler|
   float GetPhysicalHeight() override;
-
-  // state of the mouse button
-  bool pointer_is_down_ = false;
-
-  // The handle to the Flutter engine instance.
-  FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
-
-  // Whether or not to track mouse movements to send kHover events.
-  bool hover_tracking_is_enabled_ = false;
-
-  // Whether or not the pointer has been added (or if tracking is enabled, has
-  // been added since it was last removed).
-  bool pointer_currently_added_ = false;
 
   // A pointer to a FlutterWindowsView that can be used to update engine
   // windowing and input state.

@@ -220,8 +220,7 @@ class FlutterWindowsView {
   bool process_events_ = false;
 
   // Currently configured FlutterWindowBindingHandler for view.
-  std::unique_ptr<flutter::FlutterWindowBindingHandler> binding_handler_{
-      nullptr};
+  std::unique_ptr<flutter::FlutterWindowBindingHandler> binding_handler_;
 };
 
 }  // namespace flutter

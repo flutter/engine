@@ -116,7 +116,7 @@ class ScopedClipboard {
 
   // Attempts to open the clipboard for the given window, returning true if
   // successful.
-  bool Open(::HWND window);
+  bool Open(HWND window);
 
   // Returns true if there is string data available to get.
   bool HasString();
@@ -148,7 +148,7 @@ ScopedClipboard::~ScopedClipboard() {
   }
 }
 
-bool ScopedClipboard::Open(::HWND window) {
+bool ScopedClipboard::Open(HWND window) {
   opened_ = ::OpenClipboard(window);
   return opened_;
 }
@@ -225,7 +225,7 @@ void PlatformHandler::HandleMethodCall(
       return;
     }
     ScopedClipboard clipboard;
-    if (!clipboard.Open(std::get<::HWND>(*view_->GetRenderTarget()))) {
+    if (!clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()))) {
       rapidjson::Document error_code;
       error_code.SetInt(::GetLastError());
       result->Error(kClipboardError, "Unable to open clipboard", &error_code);
@@ -263,7 +263,7 @@ void PlatformHandler::HandleMethodCall(
 
     ScopedClipboard clipboard;
 
-    if (!clipboard.Open(std::get<::HWND>(*view_->GetRenderTarget()))) {
+    if (!clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()))) {
       rapidjson::Document error_code;
       error_code.SetInt(::GetLastError());
       result->Error(kClipboardError, "Unable to open clipboard", &error_code);

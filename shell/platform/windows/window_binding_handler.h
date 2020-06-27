@@ -17,7 +17,7 @@ namespace flutter {
 class FlutterWindowsView;
 
 using WindowsRenderTarget = std::variant<
-    /*winrt::Windows::UI::Composition::SpriteVisual, */ ::HWND>;
+    /*winrt::Windows::UI::Composition::SpriteVisual, */ HWND>;
 
 // Abstract class for binding Windows platform windows to Flutter views.
 class FlutterWindowBindingHandler {

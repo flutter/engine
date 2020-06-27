@@ -43,7 +43,7 @@ class Win32Window {
   // non-client DPI scaling so that the non-client area automatically
   // responsponds to changes in DPI.  All other messages are handled by
   // MessageHandler.
-  static LRESULT CALLBACK WndProc(::HWND const window,
+  static LRESULT CALLBACK WndProc(HWND const window,
                                   UINT const message,
                                   WPARAM const wparam,
                                   LPARAM const lparam) noexcept;
@@ -52,7 +52,7 @@ class Win32Window {
   // size change and DPI.  Delegates handling of these to member overloads that
   // inheriting classes can handle.
   LRESULT
-  MessageHandler(::HWND window,
+  MessageHandler(HWND window,
                  UINT const message,
                  WPARAM const wparam,
                  LPARAM const lparam) noexcept;
@@ -62,7 +62,7 @@ class Win32Window {
   // the window to the new suggested size.  If |top_level| is not set, the
   // |lParam| will not contain a suggested size hence ignore it.
   LRESULT
-  HandleDpiChange(::HWND hWnd, WPARAM wParam, LPARAM lParam, bool top_level);
+  HandleDpiChange(HWND hWnd, WPARAM wParam, LPARAM lParam, bool top_level);
 
   // Called when the DPI changes either when a
   // user drags the window between monitors of differing DPI or when the user
@@ -109,13 +109,13 @@ class Win32Window {
   void Destroy();
 
   // Activates tracking for a "mouse leave" event.
-  void TrackMouseLeaveEvent(::HWND hwnd);
+  void TrackMouseLeaveEvent(HWND hwnd);
 
   // Stores new width and height and calls |OnResize| to notify inheritors
   void HandleResize(UINT width, UINT height);
 
   // Retrieves a class instance pointer for |window|
-  static Win32Window* GetThisFromHandle(::HWND const window) noexcept;
+  static Win32Window* GetThisFromHandle(HWND const window) noexcept;
   int current_dpi_ = 0;
   int current_width_ = 0;
   int current_height_ = 0;
@@ -125,7 +125,7 @@ class Win32Window {
   const static long kWmDpiChangedBeforeParent = 0x02E2;
 
   // Member variable to hold window handle.
-  ::HWND window_handle_ = nullptr;
+  HWND window_handle_ = nullptr;
 
   // Member variable to hold the window title.
   std::wstring window_class_name_;

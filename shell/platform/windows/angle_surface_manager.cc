@@ -180,7 +180,7 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target) {
 
   surface = eglCreateWindowSurface(
       egl_display_, egl_config_,
-      static_cast<EGLNativeWindowType>(std::get<::HWND>(*render_target)),
+      static_cast<EGLNativeWindowType>(std::get<HWND>(*render_target)),
       surfaceAttributes);
   if (surface == EGL_NO_SURFACE) {
     std::cerr << "Surface creation failed." << std::endl;

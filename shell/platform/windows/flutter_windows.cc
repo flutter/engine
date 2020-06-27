@@ -268,7 +268,7 @@ FlutterDesktopViewRef FlutterDesktopGetView(
 }
 
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view_ref) {
-  return std::get<::HWND>(*view_ref->view->GetRenderTarget());
+  return std::get<HWND>(*view_ref->view->GetRenderTarget());
 }
 
 UINT FlutterDesktopGetDpiForHWND(HWND hwnd) {
