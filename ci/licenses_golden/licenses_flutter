@@ -1315,6 +1315,7 @@ FILE: ../../../flutter/shell/platform/windows/win32_window.cc
 FILE: ../../../flutter/shell/platform/windows/win32_window.h
 FILE: ../../../flutter/shell/platform/windows/win32_window_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/window_binding_handler.h
+FILE: ../../../flutter/shell/platform/windows/window_binding_handler_delegate.h
 FILE: ../../../flutter/shell/platform/windows/window_state.h
 FILE: ../../../flutter/shell/profiling/sampling_profiler.cc
 FILE: ../../../flutter/shell/profiling/sampling_profiler.h
