@@ -116,16 +116,24 @@ abstract class SkiaObject {
 abstract class ResurrectableSkiaObject extends SkiaObject {
   ResurrectableSkiaObject() {
     _skiaObject = createDefault();
-    SkiaObjects.manageResurrectable(this);
+    if (isResurrectionExpensive) {
+      SkiaObjects.manageExpensive(this);
+    } else {
+      SkiaObjects.manageResurrectable(this);
+    }
   }
 
   @override
-  js.JsObject? get skiaObject {
+  js.JsObject get skiaObject {
     if (_skiaObject == null) {
       _skiaObject = resurrect();
-      SkiaObjects.manageResurrectable(this);
+      if (isResurrectionExpensive) {
+        SkiaObjects.manageExpensive(this);
+      } else {
+        SkiaObjects.manageResurrectable(this);
+      }
     }
-    return _skiaObject;
+    return _skiaObject!;
   }
 
   /// Do not use this field outside this class. Use [skiaObject] instead.
@@ -142,6 +150,11 @@ abstract class ResurrectableSkiaObject extends SkiaObject {
   /// Creates a new Skia-backed JavaScript object containing data representing
   /// the current state of the Dart object.
   js.JsObject resurrect();
+
+  /// Whether or not it is expensive to resurrect this object.
+  ///
+  /// Defaults to false.
+  bool get isResurrectionExpensive => false;
 
   @override
   void delete() {
@@ -167,7 +180,7 @@ class OneShotSkiaObject extends SkiaObject {
     if (_skiaObject == null) {
       throw StateError('Attempting to use a Skia object that has been freed.');
     }
-    SkiaObjects.objectCache.markUsed(this);
+    SkiaObjects.oneShotCache.markUsed(this);
     return _skiaObject;
   }
 
@@ -190,7 +203,11 @@ class SkiaObjects {
   static int maximumCacheSize = 8192;
 
   @visibleForTesting
-  static final SkiaObjectCache objectCache = SkiaObjectCache(maximumCacheSize);
+  static final SkiaObjectCache oneShotCache = SkiaObjectCache(maximumCacheSize);
+
+  @visibleForTesting
+  static final SkiaObjectCache expensiveCache =
+      SkiaObjectCache(maximumCacheSize);
 
   @visibleForTesting
   static final List<SkiaObjectCache> cachesToResize = <SkiaObjectCache>[];
@@ -220,7 +237,16 @@ class SkiaObjects {
   /// be able to resurrect them.
   static void manageOneShot(OneShotSkiaObject object) {
     registerCleanupCallback();
-    objectCache.add(object);
+    oneShotCache.add(object);
+  }
+
+  /// Starts managing the lifecycle of a resurrectable object that is expensive.
+  ///
+  /// Since it's expensive to resurrect, we shouldn't just delete it after every
+  /// frame. Instead, add it to a cache and only delete it when the cache fills.
+  static void manageExpensive(ResurrectableSkiaObject object) {
+    registerCleanupCallback();
+    expensiveCache.add(object);
   }
 
   /// Marks that [cache] has overflown its maximum size and show be resized.

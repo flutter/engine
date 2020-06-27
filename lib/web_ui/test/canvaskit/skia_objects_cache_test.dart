@@ -63,6 +63,34 @@ void main() {
       expect(testObject.resurrectCount, 1);
       expect(testObject.deleteCount, 2);
     });
+
+    test('is added to SkiaObjects cache if expensive', () {
+      TestSkiaObject object1 = TestSkiaObject(isExpensive: true);
+      expect(SkiaObjects.expensiveCache.length, 1);
+      expect(SkiaObjects.expensiveCache.debugContains(object1), isTrue);
+
+      TestSkiaObject object2 = TestSkiaObject(isExpensive: true);
+      expect(SkiaObjects.expensiveCache.length, 2);
+      expect(SkiaObjects.expensiveCache.debugContains(object2), isTrue);
+
+      SkiaObjects.postFrameCleanUp();
+      expect(SkiaObjects.expensiveCache.length, 2);
+      expect(SkiaObjects.expensiveCache.debugContains(object1), isTrue);
+      expect(SkiaObjects.expensiveCache.debugContains(object2), isTrue);
+
+      TestSkiaObject object3 = TestSkiaObject(isExpensive: true);
+      TestSkiaObject object4 = TestSkiaObject(isExpensive: true);
+      TestSkiaObject object5 = TestSkiaObject(isExpensive: true);
+      expect(SkiaObjects.expensiveCache.length, 5);
+      expect(SkiaObjects.cachesToResize.length, 1);
+
+      SkiaObjects.postFrameCleanUp();
+      expect(object1.deleteCount, 1);
+      expect(object2.deleteCount, 1);
+      expect(SkiaObjects.expensiveCache.length, 3);
+      expect(SkiaObjects.expensiveCache.debugContains(object1), isFalse);
+      expect(SkiaObjects.expensiveCache.debugContains(object2), isFalse);
+    });
   });
 
   group(OneShotSkiaObject, () {
@@ -77,29 +105,29 @@ void main() {
       }
 
       OneShotSkiaObject object1 = OneShotSkiaObject(_makeJsObject());
-      expect(SkiaObjects.objectCache.length, 1);
-      expect(SkiaObjects.objectCache.contains(object1), isTrue);
+      expect(SkiaObjects.oneShotCache.length, 1);
+      expect(SkiaObjects.oneShotCache.debugContains(object1), isTrue);
 
       OneShotSkiaObject object2 = OneShotSkiaObject(_makeJsObject());
-      expect(SkiaObjects.objectCache.length, 2);
-      expect(SkiaObjects.objectCache.contains(object2), isTrue);
+      expect(SkiaObjects.oneShotCache.length, 2);
+      expect(SkiaObjects.oneShotCache.debugContains(object2), isTrue);
 
       SkiaObjects.postFrameCleanUp();
-      expect(SkiaObjects.objectCache.length, 2);
-      expect(SkiaObjects.objectCache.contains(object1), isTrue);
-      expect(SkiaObjects.objectCache.contains(object2), isTrue);
+      expect(SkiaObjects.oneShotCache.length, 2);
+      expect(SkiaObjects.oneShotCache.debugContains(object1), isTrue);
+      expect(SkiaObjects.oneShotCache.debugContains(object2), isTrue);
 
       OneShotSkiaObject object3 = OneShotSkiaObject(_makeJsObject());
       OneShotSkiaObject object4 = OneShotSkiaObject(_makeJsObject());
       OneShotSkiaObject object5 = OneShotSkiaObject(_makeJsObject());
-      expect(SkiaObjects.objectCache.length, 5);
+      expect(SkiaObjects.oneShotCache.length, 5);
       expect(SkiaObjects.cachesToResize.length, 1);
 
       SkiaObjects.postFrameCleanUp();
       expect(deleteCount, 2);
-      expect(SkiaObjects.objectCache.length, 3);
-      expect(SkiaObjects.objectCache.contains(object1), isFalse);
-      expect(SkiaObjects.objectCache.contains(object2), isFalse);
+      expect(SkiaObjects.oneShotCache.length, 3);
+      expect(SkiaObjects.oneShotCache.debugContains(object1), isFalse);
+      expect(SkiaObjects.oneShotCache.debugContains(object2), isFalse);
     });
   });
 }
@@ -108,6 +136,10 @@ class TestSkiaObject extends ResurrectableSkiaObject {
   int createDefaultCount = 0;
   int resurrectCount = 0;
   int deleteCount = 0;
+
+  final bool isExpensive;
+
+  TestSkiaObject({this.isExpensive = false});
 
   JsObject _makeJsObject() {
     return JsObject.jsify({
@@ -128,6 +160,9 @@ class TestSkiaObject extends ResurrectableSkiaObject {
     resurrectCount++;
     return _makeJsObject();
   }
+
+  @override
+  bool get isResurrectionExpensive => isExpensive;
 }
 
 class MockRasterizer extends Mock implements Rasterizer {}
