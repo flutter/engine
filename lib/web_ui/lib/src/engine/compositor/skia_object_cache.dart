@@ -21,17 +21,30 @@ part of engine;
 class SkiaObjectCache {
   final int maximumSize;
 
+  /// A doubly linked list of the objects in the cache.
+  ///
+  /// This makes it fast to move a recently used object to the front.
   final DoubleLinkedQueue<SkiaObject> _itemQueue;
+
+  /// A map of objects to their associated node in the [_itemQueue].
+  ///
+  /// This makes it fast to find the node in the queue when we need to
+  /// move the object to the front of the queue.
   final Map<SkiaObject, DoubleLinkedQueueEntry<SkiaObject>> _itemMap;
 
   SkiaObjectCache(this.maximumSize)
       : _itemQueue = DoubleLinkedQueue<SkiaObject>(),
         _itemMap = <SkiaObject, DoubleLinkedQueueEntry<SkiaObject>>{};
 
+  /// The number of objects in the cache.
   int get length => _itemQueue.length;
 
-  bool contains(SkiaObject object) {
-    return _itemQueue.contains(object);
+  /// Whether or not [object] is in the cache.
+  ///
+  /// This is only for testing.
+  @visibleForTesting
+  bool debugContains(SkiaObject object) {
+    return _itemMap.containsKey(object);
   }
 
   /// Adds [object] to the cache.
@@ -41,8 +54,7 @@ class SkiaObjectCache {
   /// will be deleted.
   void add(SkiaObject object) {
     _itemQueue.addFirst(object);
-    DoubleLinkedQueueEntry<SkiaObject> item = _itemQueue.firstEntry()!;
-    _itemMap[object] = item;
+    _itemMap[object] = _itemQueue.firstEntry()!;
 
     if (_itemQueue.length > maximumSize) {
       SkiaObjects.markCacheForResize(this);
@@ -54,8 +66,7 @@ class SkiaObjectCache {
     DoubleLinkedQueueEntry<SkiaObject> item = _itemMap[object]!;
     item.remove();
     _itemQueue.addFirst(object);
-    DoubleLinkedQueueEntry<SkiaObject> newItem = _itemQueue.firstEntry()!;
-    _itemMap[object] = newItem;
+    _itemMap[object] = _itemQueue.firstEntry()!;
   }
 
   /// Deletes the least recently used half of this cache.
@@ -139,6 +150,10 @@ abstract class ResurrectableSkiaObject extends SkiaObject {
   }
 }
 
+// TODO(hterkelsen): [OneShotSkiaObject] is dangerous because it might delete
+//     the underlying Skia object while the associated Dart object is still in
+//     use. This issue discusses ways to address this:
+//     https://github.com/flutter/flutter/issues/60401
 /// A [SkiaObject] which is deleted once and cannot be used again.
 class OneShotSkiaObject extends SkiaObject {
   js.JsObject? _skiaObject;
