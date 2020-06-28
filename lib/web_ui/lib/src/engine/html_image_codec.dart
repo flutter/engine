@@ -133,6 +133,9 @@ class HtmlImage implements ui.Image {
   final int height;
 
   @override
+  int get approximateBytesUsed => 0;
+
+  @override
   Future<ByteData> toByteData(
       {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
     return futurize((Callback<ByteData> callback) {

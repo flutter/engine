@@ -49,6 +49,9 @@ class SkAnimatedImage implements ui.Image {
   int get height => _skAnimatedImage.callMethod('height');
 
   @override
+  int get approximateBytesUsed => 0;
+
+  @override
   Future<ByteData> toByteData(
       {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
     throw 'unimplemented';
@@ -72,6 +75,9 @@ class SkImage implements ui.Image {
 
   @override
   int get height => skImage.callMethod('height');
+
+  @override
+  int get approximateBytesUsed => 0;
 
   @override
   Future<ByteData> toByteData(

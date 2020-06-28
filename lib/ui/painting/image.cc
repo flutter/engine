@@ -16,10 +16,11 @@ typedef CanvasImage Image;
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Image);
 
-#define FOR_EACH_BINDING(V) \
-  V(Image, width)           \
-  V(Image, height)          \
-  V(Image, toByteData)      \
+#define FOR_EACH_BINDING(V)   \
+  V(Image, width)             \
+  V(Image, height)            \
+  V(Image, GetAllocationSize) \
+  V(Image, toByteData)        \
   V(Image, dispose)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)

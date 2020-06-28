@@ -1600,6 +1600,8 @@ class Image extends NativeFieldWrapperClass2 {
   /// The number of image pixels along the image's vertical axis.
   int get height native 'Image_height';
 
+  int get approximateBytesUsed native 'Image_GetAllocationSize';
+
   /// Converts the [Image] object into a byte array.
   ///
   /// The [format] argument specifies the format in which the bytes will be

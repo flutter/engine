@@ -1205,6 +1205,9 @@ abstract class Image {
   /// The number of image pixels along the image's vertical axis.
   int get height;
 
+  /// Returns the approximate number of bytes allocated for this object.
+  int get approximateBytesUsed;
+
   /// Converts the [Image] object into a byte array.
   ///
   /// The [format] argument specifies the format in which the bytes will be
