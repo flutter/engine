@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_IMAGE_DECODER_H_
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_DECODER_H_
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 
@@ -25,6 +26,16 @@ namespace flutter {
 
 // Whether to allow for image upscaling when resizing an image.
 enum class ImageUpscalingMode { kAllowed, kNotAllowed };
+
+// How to maintain the aspect ratio when resizing an image. Keep in sync with
+// order in painting.dart.
+enum class ImageAspectRatioConstraint : uint32_t {
+  kNone,
+  kMaintainWidth,
+  kMaintainHeight,
+  kMaintainLargest,
+  kMaintainSmallest
+};
 
 // An object that coordinates image decompression and texture upload across
 // multiple threads/components in the shell. This object must be created,
@@ -51,6 +62,7 @@ class ImageDecoder {
     std::optional<uint32_t> target_width;
     std::optional<uint32_t> target_height;
     ImageUpscalingMode image_upscaling = ImageUpscalingMode::kNotAllowed;
+    std::optional<ImageAspectRatioConstraint> aspect_ratio_constraint;
   };
 
   using ImageResult = std::function<void(SkiaGPUObject<SkImage>)>;
@@ -77,6 +89,7 @@ sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
                                        std::optional<uint32_t> target_width,
                                        std::optional<uint32_t> target_height,
                                        ImageUpscalingMode image_upscaling,
+                                       std::optional<ImageAspectRatioConstraint> aspect_ratio_constraint,
                                        const fml::tracing::TraceFlow& flow);
 
 }  // namespace flutter

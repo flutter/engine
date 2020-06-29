@@ -1568,6 +1568,31 @@ class Codec {
   void dispose() {}
 }
 
+/// The constraint by which to maintain aspect ratio for a decoded image.
+///
+/// This enum is used in conjunction with the `targetWidth` and `targetHeight`
+/// parameters to [instantiateImageCodec].
+// Keep in sync with AspectRatioConstraint in image_decoder.h
+enum AspectRatioConstraint {
+  /// Do not maintain aspect ratio. This will cause the image to skew or stretch
+  /// if the target dimensions to not match its intrinsic dimensions.
+  none,
+
+  /// Maintain aspect ratio by keeping the target height of the image in tact.
+  maintainHeight,
+
+  /// Maintain aspect ratio by keeping the target width of the image in tact.
+  maintainWidth,
+
+  /// Maintain aspect ratio by keeping the larger of `targetWidth` and
+  /// `targetHeight`.
+  maintainLargest,
+
+  /// Maintain aspect ratio by keeping the smaller of `targetWidth` and
+  /// `targetHeight`.
+  maintainSmallest,
+}
+
 /// Instantiates an image codec [Codec] object.
 ///
 /// [list] is the binary image data (e.g a PNG or GIF binary data).
@@ -1582,6 +1607,7 @@ Future<Codec> instantiateImageCodec(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
+  AspectRatioConstraint? targetAspectRatioConstraint,
 }) {
   return _futurize<Codec>((engine.Callback<Codec> callback) =>
       // TODO: Implement targetWidth and targetHeight support.

@@ -533,7 +533,7 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
   ASSERT_EQ(ImageFromCompressedData(data, 6, 2, ImageUpscalingMode::kNotAllowed,
-                                    fml::tracing::TraceFlow(""))
+                                    {}, fml::tracing::TraceFlow(""))
                 ->dimensions(),
             SkISize::Make(6, 2));
 }
@@ -546,7 +546,7 @@ TEST(ImageDecoderTest, VerifySimpleDecodingNoUpscaling) {
 
   ASSERT_EQ(
       ImageFromCompressedData(data, 900, 300, ImageUpscalingMode::kNotAllowed,
-                              fml::tracing::TraceFlow(""))
+                              {}, fml::tracing::TraceFlow(""))
           ->dimensions(),
       SkISize::Make(600, 200));
 }
@@ -559,7 +559,7 @@ TEST(ImageDecoderTest, VerifySimpleDecodingNoUpscalingOneDimension) {
 
   ASSERT_EQ(
       ImageFromCompressedData(data, 1200, 200, ImageUpscalingMode::kNotAllowed,
-                              fml::tracing::TraceFlow(""))
+                              {}, fml::tracing::TraceFlow(""))
           ->dimensions(),
       SkISize::Make(600, 200));
 }
@@ -571,10 +571,75 @@ TEST(ImageDecoderTest, VerifySimpleDecodingWithUpscaling) {
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
   ASSERT_EQ(
-      ImageFromCompressedData(data, 900, 300, ImageUpscalingMode::kAllowed,
+      ImageFromCompressedData(data, 900, 300, ImageUpscalingMode::kAllowed, {},
                               fml::tracing::TraceFlow(""))
           ->dimensions(),
       SkISize::Make(900, 300));
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecodingAspectRatioNone) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(ImageFromCompressedData(data, 6, 1, ImageUpscalingMode::kNotAllowed,
+                                    ImageAspectRatioConstraint::kNone,
+                                    fml::tracing::TraceFlow(""))
+                ->dimensions(),
+            SkISize::Make(6, 1));
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecodingAspectRatioWidth) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(ImageFromCompressedData(data, 6, 1, ImageUpscalingMode::kNotAllowed,
+                                    ImageAspectRatioConstraint::kMaintainWidth,
+                                    fml::tracing::TraceFlow(""))
+                ->dimensions(),
+            SkISize::Make(6, 2));
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecodingAspectRatioHeight) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(ImageFromCompressedData(data, 6, 1, ImageUpscalingMode::kNotAllowed,
+                                    ImageAspectRatioConstraint::kMaintainHeight,
+                                    fml::tracing::TraceFlow(""))
+                ->dimensions(),
+            SkISize::Make(3, 1));
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecodingAspectRatioLargest) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(ImageFromCompressedData(data, 6, 1, ImageUpscalingMode::kNotAllowed,
+                                    ImageAspectRatioConstraint::kMaintainLargest,
+                                    fml::tracing::TraceFlow(""))
+                ->dimensions(),
+            SkISize::Make(6, 2));
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecodingAspectRatioSmallest) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(ImageFromCompressedData(data, 6, 1, ImageUpscalingMode::kNotAllowed,
+                                    ImageAspectRatioConstraint::kMaintainSmallest,
+                                    fml::tracing::TraceFlow(""))
+                ->dimensions(),
+            SkISize::Make(3, 1));
 }
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
@@ -586,7 +651,7 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   auto decode = [data](std::optional<uint32_t> target_width,
                        std::optional<uint32_t> target_height) {
     return ImageFromCompressedData(data, target_width, target_height,
-                                   ImageUpscalingMode::kNotAllowed,
+                                   ImageUpscalingMode::kNotAllowed, {},
                                    fml::tracing::TraceFlow(""));
   };
 

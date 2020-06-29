@@ -1695,6 +1695,31 @@ class Codec extends NativeFieldWrapperClass2 {
   void dispose() native 'Codec_dispose';
 }
 
+/// The constraint by which to maintain aspect ratio for a decoded image.
+///
+/// This enum is used in conjunction with the `targetWidth` and `targetHeight`
+/// parameters to [instantiateImageCodec].
+// Keep in sync with AspectRatioConstraint in image_decoder.h
+enum AspectRatioConstraint {
+  /// Do not maintain aspect ratio. This will cause the image to skew or stretch
+  /// if the target dimensions to not match its intrinsic dimensions.
+  none,
+
+  /// Maintain aspect ratio by keeping the target width of the image in tact.
+  maintainWidth,
+
+  /// Maintain aspect ratio by keeping the target height of the image in tact.
+  maintainHeight,
+
+  /// Maintain aspect ratio by keeping the larger of `targetWidth` and
+  /// `targetHeight`.
+  maintainLargest,
+
+  /// Maintain aspect ratio by keeping the smaller of `targetWidth` and
+  /// `targetHeight`.
+  maintainSmallest,
+}
+
 /// Instantiates an image [Codec].
 ///
 /// The `list` parameter is the binary image data (e.g a PNG or GIF binary data).
@@ -1703,7 +1728,13 @@ class Codec extends NativeFieldWrapperClass2 {
 ///
 /// The `targetWidth` and `targetHeight` arguments specify the size of the
 /// output image, in image pixels. If they are not equal to the intrinsic
-/// dimensions of the image, then the image will be scaled after being decoded.
+/// dimensions of the image, they will be determined based on the
+/// `targetAspectRatioConstraint`. In the case of [AspectRatioConstraint.none],
+/// the image will be skewed or stretched if the target aspect ratio does not
+/// match the source aspect ratio. Otherwise, the image will be resized to
+/// maintain the specified dimension, i.e. its width, height, the larger, or
+/// the smaller of the two.
+///
 /// If the `allowUpscaling` parameter is not set to true, both dimensions will
 /// be capped at the intrinsic dimensions of the image, even if only one of
 /// them would have exceeded those intrinsic dimensions. If exactly one of these
@@ -1723,6 +1754,9 @@ Future<Codec> instantiateImageCodec(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
+  // TODO(dnfield): Default this to maintainLargest once upstream tests have
+  // been updated, https://github.com/flutter/flutter/issues/59578
+  AspectRatioConstraint? targetAspectRatioConstraint,
 }) {
   return _futurize((_Callback<Codec> callback) {
     return _instantiateImageCodec(
@@ -1732,6 +1766,8 @@ Future<Codec> instantiateImageCodec(
       targetWidth ?? _kDoNotResizeDimension,
       targetHeight ?? _kDoNotResizeDimension,
       allowUpscaling,
+      // TODO(dnfield): remove the ?? after default is set.
+      targetAspectRatioConstraint?.index ?? -1,
     );
   });
 }
@@ -1754,6 +1790,7 @@ String? _instantiateImageCodec(
   int targetWidth,
   int targetHeight,
   bool allowUpscaling,
+  int targetAspectRatioConstraint,
 ) native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1783,7 +1820,13 @@ Future<void> _decodeImageFromListAsync(Uint8List list,
 ///
 /// The `targetWidth` and `targetHeight` arguments specify the size of the
 /// output image, in image pixels. If they are not equal to the intrinsic
-/// dimensions of the image, then the image will be scaled after being decoded.
+/// dimensions of the image, they will be determined based on the
+/// `targetAspectRatioConstraint`. In the case of [AspectRatioConstraint.none],
+/// the image will be skewed or stretched if the target aspect ratio does not
+/// match the source aspect ratio. Otherwise, the image will be resized to
+/// maintain the specified dimension, i.e. its width, height, the larger, or
+/// the smaller of the two.
+///
 /// If the `allowUpscaling` parameter is not set to true, both dimensions will
 /// be capped at the intrinsic dimensions of the image, even if only one of
 /// them would have exceeded those intrinsic dimensions. If exactly one of these
@@ -1805,6 +1848,7 @@ void decodeImageFromPixels(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
+  AspectRatioConstraint? targetAspectRatioConstraint,
 }) {
   if (targetWidth != null) {
     assert(allowUpscaling || targetWidth <= width);
@@ -1822,6 +1866,7 @@ void decodeImageFromPixels(
       targetWidth ?? _kDoNotResizeDimension,
       targetHeight ?? _kDoNotResizeDimension,
       allowUpscaling,
+      targetAspectRatioConstraint?.index ?? -1,
     );
   });
   codecFuture.then((Codec codec) => codec.getNextFrame())

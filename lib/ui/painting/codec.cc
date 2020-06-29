@@ -197,6 +197,8 @@ static void InstantiateImageCodec(Dart_NativeArguments args) {
       tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 4));
   const bool allow_upscaling =
       tonic::DartConverter<bool>::FromDart(Dart_GetNativeArgument(args, 5));
+  const int aspect_ratio_constraint =
+      tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 6));
 
   std::unique_ptr<SkCodec> codec;
   bool single_frame;
@@ -226,6 +228,10 @@ static void InstantiateImageCodec(Dart_NativeArguments args) {
     descriptor.image_upscaling = allow_upscaling
                                      ? ImageUpscalingMode::kAllowed
                                      : ImageUpscalingMode::kNotAllowed;
+    if (aspect_ratio_constraint >= 0) {
+      descriptor.aspect_ratio_constraint =
+          static_cast<ImageAspectRatioConstraint>(aspect_ratio_constraint);
+    }
     descriptor.data = std::move(buffer);
 
     ui_codec = fml::MakeRefCounted<SingleFrameCodec>(std::move(descriptor));
@@ -252,7 +258,7 @@ void Codec::dispose() {
 
 void Codec::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
-      {"instantiateImageCodec", InstantiateImageCodec, 6, true},
+      {"instantiateImageCodec", InstantiateImageCodec, 7, true},
   });
   natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }

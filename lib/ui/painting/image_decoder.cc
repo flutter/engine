@@ -11,11 +11,6 @@
 #include "third_party/skia/src/codec/SkCodecImageGenerator.h"
 
 namespace flutter {
-namespace {
-
-constexpr double kAspectRatioChangedThreshold = 0.01;
-
-}  // namespace
 
 ImageDecoder::ImageDecoder(
     TaskRunners runners,
@@ -40,12 +35,20 @@ static double AspectRatio(const SkISize& size) {
 // use them. If one of them is specified, respect the one that is and use the
 // aspect ratio to calculate the other. If neither dimension is specified, use
 // intrinsic dimensions of the image.
-static SkISize GetResizedDimensions(SkISize current_size,
-                                    std::optional<uint32_t> target_width,
-                                    std::optional<uint32_t> target_height,
-                                    ImageUpscalingMode image_upscaling) {
+static SkISize GetResizedDimensions(
+    SkISize current_size,
+    std::optional<uint32_t> target_width,
+    std::optional<uint32_t> target_height,
+    ImageUpscalingMode image_upscaling,
+    std::optional<ImageAspectRatioConstraint> aspect_ratio_constraint) {
+  // Fast exit for empty size.
   if (current_size.isEmpty()) {
     return SkISize::MakeEmpty();
+  }
+
+  // Fast exit when the target dimensions are not specified.
+  if (!target_width && !target_height) {
+    return current_size;
   }
 
   if (image_upscaling == ImageUpscalingMode::kNotAllowed) {
@@ -56,6 +59,33 @@ static SkISize GetResizedDimensions(SkISize current_size,
     if (target_height) {
       target_height = std::min(current_size.height(),
                                static_cast<int32_t>(target_height.value()));
+    }
+  }
+
+  if (aspect_ratio_constraint) {
+    switch (aspect_ratio_constraint.value()) {
+      case ImageAspectRatioConstraint::kNone:
+        break;
+      case ImageAspectRatioConstraint::kMaintainWidth:
+        target_height = std::nullopt;
+        break;
+      case ImageAspectRatioConstraint::kMaintainHeight:
+        target_width = std::nullopt;
+        break;
+      case ImageAspectRatioConstraint::kMaintainLargest:
+        if (target_height.value_or(0) > target_width.value_or(0)) {
+          target_width = std::nullopt;
+        } else {
+          target_height = std::nullopt;
+        }
+        break;
+      case ImageAspectRatioConstraint::kMaintainSmallest:
+        if (target_height.value_or(0) > target_width.value_or(0)) {
+          target_height = std::nullopt;
+        } else {
+          target_width = std::nullopt;
+        }
+        break;
     }
   }
 
@@ -74,7 +104,7 @@ static SkISize GetResizedDimensions(SkISize current_size,
     return SkISize::Make(target_height.value() * aspect_ratio,
                          target_height.value());
   }
-
+  FML_DCHECK(false);  // unreachable
   return current_size;
 }
 
@@ -93,19 +123,6 @@ static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
 
   if (image->dimensions() == resized_dimensions) {
     return image->makeRasterImage();
-  }
-
-  // TODO(dnfield): remove this in favor of clearer constraints.
-  // https://github.com/flutter/flutter/issues/59578
-  const bool aspect_ratio_changed =
-      std::abs(AspectRatio(resized_dimensions) -
-               AspectRatio(image->dimensions())) > kAspectRatioChangedThreshold;
-  if (aspect_ratio_changed) {
-    // This is probably a bug. If a user passes dimensions that change the
-    // aspect ratio in a "caching" context that's probably not working as
-    // intended and rather a signal that the API is hard to use.
-    FML_LOG(WARNING)
-        << "Aspect ratio changes. Are cache(Height|Width) used correctly?";
   }
 
   const auto scaled_image_info =
@@ -143,6 +160,7 @@ static sk_sp<SkImage> ImageFromDecompressedData(
     std::optional<uint32_t> target_width,
     std::optional<uint32_t> target_height,
     ImageUpscalingMode image_upscaling,
+    std::optional<ImageAspectRatioConstraint> aspect_ratio_constraint,
     const fml::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
@@ -158,17 +176,20 @@ static sk_sp<SkImage> ImageFromDecompressedData(
     return image->makeRasterImage();
   }
 
-  auto resized_dimensions = GetResizedDimensions(
-      image->dimensions(), target_width, target_height, image_upscaling);
+  auto resized_dimensions =
+      GetResizedDimensions(image->dimensions(), target_width, target_height,
+                           image_upscaling, aspect_ratio_constraint);
 
   return ResizeRasterImage(std::move(image), resized_dimensions, flow);
 }
 
-sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
-                                       std::optional<uint32_t> target_width,
-                                       std::optional<uint32_t> target_height,
-                                       ImageUpscalingMode image_upscaling,
-                                       const fml::tracing::TraceFlow& flow) {
+sk_sp<SkImage> ImageFromCompressedData(
+    sk_sp<SkData> data,
+    std::optional<uint32_t> target_width,
+    std::optional<uint32_t> target_height,
+    ImageUpscalingMode image_upscaling,
+    std::optional<ImageAspectRatioConstraint> aspect_ratio_constraint,
+    const fml::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
 
@@ -189,8 +210,9 @@ sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
   auto image_generator = SkCodecImageGenerator::MakeFromCodec(std::move(codec));
   const auto& source_dimensions = image_generator->getInfo().dimensions();
 
-  auto resized_dimensions = GetResizedDimensions(
-      source_dimensions, target_width, target_height, image_upscaling);
+  auto resized_dimensions =
+      GetResizedDimensions(source_dimensions, target_width, target_height,
+                           image_upscaling, aspect_ratio_constraint);
 
   // No resize needed.
   if (resized_dimensions == source_dimensions) {
@@ -349,13 +371,17 @@ void ImageDecoder::Decode(ImageDescriptor descriptor,
                       descriptor.target_width,                     //
                       descriptor.target_height,                    //
                       descriptor.image_upscaling,                  //
+                      descriptor.aspect_ratio_constraint,          //
                       flow                                         //
                       )
-                : ImageFromCompressedData(std::move(descriptor.data),  //
-                                          descriptor.target_width,     //
-                                          descriptor.target_height,    //
-                                          descriptor.image_upscaling,  //
-                                          flow);
+                : ImageFromCompressedData(
+                      std::move(descriptor.data),          //
+                      descriptor.target_width,             //
+                      descriptor.target_height,            //
+                      descriptor.image_upscaling,          //
+                      descriptor.aspect_ratio_constraint,  //
+                      flow                                 //
+                  );
 
         if (!decompressed) {
           FML_LOG(ERROR) << "Could not decompress image.";
