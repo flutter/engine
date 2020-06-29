@@ -6,6 +6,7 @@ package io.flutter.embedding.engine.mutatorsstack;
 
 import android.view.Surface;
 import android.graphics.Matrix;
+import android.graphics.Path;
 import android.graphics.Rect;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -16,12 +17,19 @@ public class FlutterMutator {
 
   @Nullable private Matrix matrix;
   @Nullable private Rect rect;
+  @Nullable private Path path;
   private FlutterMutatorType type;
 
   public FlutterMutator(Rect rect) {
     this.type = FlutterMutatorType.CLIP_RECT;
     this.rect = rect;
   }
+
+  public FlutterMutator(Path path) {
+    this.type = FlutterMutatorType.CLIP_PATH;
+    this.path = path;
+  }
+
 
   public FlutterMutator(Matrix matrix) {
     this.type = FlutterMutatorType.TRANSFORM;
@@ -34,6 +42,10 @@ public class FlutterMutator {
 
   public Rect getRect() {
     return rect;
+  }
+
+  public Path getPath() {
+    return path;
   }
 
   public Matrix getMatrix() {

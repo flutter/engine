@@ -5,7 +5,9 @@
 package io.flutter.embedding.engine.mutatorsstack;
 
 import android.graphics.Matrix;
+import android.graphics.Path;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.view.Surface;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -18,8 +20,13 @@ public class FlutterMutatorsStack {
 
   private @NonNull List<FlutterMutator> mutators;
 
+  private List<Path> finalClippingPaths;
+  private Matrix finalMatrix;
+
   public FlutterMutatorsStack() {
     this.mutators = new ArrayList<FlutterMutator>();
+    finalMatrix = new Matrix();
+    finalClippingPaths = new ArrayList<Path>();
   }
 
   public void pushTransform(float[] values) {
@@ -27,29 +34,57 @@ public class FlutterMutatorsStack {
     matrix.setValues(values);
     float[] matrixValues = new float[9];
     matrix.getValues(matrixValues);
-    io.flutter.Log.e("matrix ", "----------------- Java matrix -----------------");
-    io.flutter.Log.e("matrix ", "MTRANS_X " + matrixValues[2]);
-    io.flutter.Log.e("matrix ", "MTRANS_Y " + matrixValues[5]);
-    io.flutter.Log.e("matrix ", "MSKEW_X " + matrixValues[1]);
-    io.flutter.Log.e("matrix ", "MSKEW_Y " + matrixValues[3]);
-    io.flutter.Log.e("matrix ", "MSCALE_X " + matrixValues[0]);
-    io.flutter.Log.e("matrix ", "MSCALE_Y " + matrixValues[4]);
-    io.flutter.Log.e("matrix ", "MPERSP_X " + matrixValues[7]);
-    io.flutter.Log.e("matrix ", "MPERSP_Y " + matrixValues[8]);
-    io.flutter.Log.e("matrix ", "MPERSP_Z " + matrixValues[6]);
     FlutterMutator mutator = new FlutterMutator(matrix);
     mutators.add(mutator);
+    finalMatrix.preConcat(mutator.getMatrix());
   }
 
   public void pushClipRect(int left, int top, int right, int bottom) {
     Rect rect = new Rect(left, top, right, bottom);
-    io.flutter.Log.e("rect ", "----------------- Java rect -----------------");
-    io.flutter.Log.e("rect ", "rect " + rect);
     FlutterMutator mutator = new FlutterMutator(rect);
     mutators.add(mutator);
+    Path path = new Path();
+    path.addRect(new RectF(rect), Path.Direction.CCW);
+    path.transform(finalMatrix);
+    finalClippingPaths.add(path);
+  }
+
+  // Apply transform matrices to the clipping mutators
+  public void transformClippings() {
+    Matrix currentMatrix = new Matrix();
+    currentMatrix.reset();
+    for (int i = 0; i < this.mutators.size(); i ++) {
+      FlutterMutator mutator = mutators.get(i);
+      switch(mutator.getType()) {
+          case TRANSFORM: {
+              currentMatrix.preConcat(mutator.getMatrix());
+              break;
+          }
+          case CLIP_RECT: {
+              Rect rect = mutator.getRect();
+              Path path = new Path();
+              path.addRect(new RectF(rect), Path.Direction.CCW);
+              path.transform(currentMatrix);
+              mutators.set(i, new FlutterMutator(path));
+              break;
+          }
+          case CLIP_PATH:
+          case CLIP_RRECT:
+          case OPACITY:
+              break;
+      }
+  }
   }
 
   public List<FlutterMutator> getMutators() {
     return mutators;
+  }
+
+  public List<Path> getFinalClippingPaths() {
+    return finalClippingPaths;
+  }
+
+  public Matrix getFinalMatrix() {
+    return finalMatrix;
   }
 }

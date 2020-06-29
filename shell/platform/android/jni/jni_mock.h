@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "gmock/gmock.h"
 

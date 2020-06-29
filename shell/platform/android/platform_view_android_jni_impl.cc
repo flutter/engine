@@ -12,6 +12,7 @@
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/settings.h"
+#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
@@ -1114,9 +1115,8 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
 
   jobject mutatorsStack = env->NewObject(g_mutators_stack_class->obj(), g_mutators_stack_init_method);
 
-  std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
-  int i = 0;
-  while (iter != mutators_stack.Top()) {
+  std::vector<std::shared_ptr<Mutator>>::const_iterator iter = mutators_stack.Begin();
+  while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
       case transform: {
         const SkMatrix& matrix = (*iter)->GetMatrix();
@@ -1126,26 +1126,11 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
           env, env->NewFloatArray(9));
 
         env->SetFloatArrayRegion(transformMatrix.obj(), 0, 9, matrix_array);
-        FML_DLOG(ERROR) << "================ mutatorsStack try push transform ==================";
-        FML_DLOG(ERROR) << "getTranslateX " << matrix.getTranslateX();
-        FML_DLOG(ERROR) << "getTranslateY " << matrix.getTranslateY();
-        FML_DLOG(ERROR) << "getSkewX " << matrix.getSkewX();
-        FML_DLOG(ERROR) << "getSkewY " << matrix.getSkewY();
-        FML_DLOG(ERROR) << "getScaleX " << matrix.getScaleX();
-        FML_DLOG(ERROR) << "getScaleY " << matrix.getScaleY();
-        FML_DLOG(ERROR) << "getPerspX " << matrix.getPerspX();
-        FML_DLOG(ERROR) << "getPerspY " << matrix.getPerspY();
-
         env->CallVoidMethod(mutatorsStack, g_mutators_stack_push_transform_method, transformMatrix.obj());
         break;
       }
       case clip_rect: {
         const SkRect& rect = (*iter)->GetRect();
-                FML_DLOG(ERROR) << "================ mutatorsStack try push rect ==================";
-        FML_DLOG(ERROR) << "left " << rect.left();
-        FML_DLOG(ERROR) << "top " << rect.top();
-        FML_DLOG(ERROR) << "right " << rect.right();
-        FML_DLOG(ERROR) << "bottom " << rect.bottom();
         env->CallVoidMethod(mutatorsStack, g_mutators_stack_push_cliprect_method, (int)rect.left(), (int)rect.top(), (int)rect.right(), (int)rect.bottom());
         break;
       }
@@ -1154,10 +1139,8 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
       case opacity:
         break;
     }
-    ++ i;
-    ++iter;
+    ++ iter;
   }
-  FML_DLOG(ERROR) << "size " << i;
 
   env->CallVoidMethod(java_object.obj(), g_on_display_platform_view_method,
                       view_id, x, y, width, height, mutatorsStack);
@@ -1166,23 +1149,6 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
 
   FML_CHECK(CheckException(env));
 }
-
-// void PlatformViewAndroidJNIImpl::FlutterViewOnCompositePlatformView(int view_id,
-//                                                         int width,
-//                                                         int height,
-//                                                         MutatorsStack mutators_stack) {
-//   JNIEnv* env = fml::jni::AttachCurrentThread();
-
-//   auto java_object = java_object_.get(env);
-//   if (java_object.is_null()) {
-//     return;
-//   }
-
-//   env->CallVoidMethod(java_object.obj(), g_on_composite_platform_view_method,
-//                       view_id, width, height, mutators_stack);
-
-//   FML_CHECK(CheckException(env));
-// }
 
 void PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(
     int surface_id,

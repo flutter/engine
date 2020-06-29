@@ -18,6 +18,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
@@ -562,11 +563,23 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   public void onDisplayPlatformView(int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
     io.flutter.Log.e("onDisplayPlatformView ", "mutators stack " + mutatorsStack.getMutators().size());
-    View aView = new View(context);
-    aView.setLayoutParams(new LayoutParams(width, height));
-    aView.setBackgroundColor(150);
-    flutterView.addView(aView);
-    
+    FlutterView flutterView = (FlutterView) this.flutterView;
+    float density = context.getResources().getDisplayMetrics().density;
+    FlutterMutatorView mutatorView = new FlutterMutatorView(mutatorsStack, context, density);
+    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams((int) width, (int) height);
+    layoutParams.leftMargin = (int) x;
+    layoutParams.topMargin = (int) y;
+    mutatorView.setLayoutParams(layoutParams);
+    flutterView.addView(mutatorView);
+    mutatorView.setBackgroundColor(0x00000000);
+
+    TextView aView = new TextView(context);
+    aView.setBackgroundColor(0xFF3CCFCC);
+    aView.setText("a Text View");
+    aView.setTextColor(0xFFFFFFFF);
+    aView.setVisibility(View.VISIBLE);
+    aView.bringToFront();
+    mutatorView.addView(aView);
     // TODO: Implement this method. https://github.com/flutter/flutter/issues/58288
   }
 

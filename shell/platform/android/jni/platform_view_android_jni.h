@@ -5,7 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_JNI_PLATFORM_VIEW_ANDROID_JNI_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_JNI_PLATFORM_VIEW_ANDROID_JNI_H_
 
-#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 
@@ -17,7 +16,10 @@
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 
+
 namespace flutter {
+
+class MutatorsStack;
 
 #if OS_ANDROID
 using JavaWeakGlobalRef = fml::jni::JavaObjectWeakGlobalRef;
