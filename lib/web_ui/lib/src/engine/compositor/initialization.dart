@@ -32,6 +32,8 @@ Future<void> initializeSkia() {
     canvasKitInitPromise.callMethod('then', <dynamic>[
       (js.JsObject ck) {
         canvasKit = ck;
+        js_util.setProperty(html.window, 'flutter_canvas_kit', ck);
+        print('>>> ${canvasKit2.blendMode.clear}');
         canvasKitCompleter.complete();
       },
     ]);
