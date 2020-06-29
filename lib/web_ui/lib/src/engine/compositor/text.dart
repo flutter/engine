@@ -493,8 +493,8 @@ class SkParagraph extends ResurrectableSkiaObject implements ui.Paragraph {
 
 class SkParagraphBuilder implements ui.ParagraphBuilder {
   js.JsObject? _paragraphBuilder;
-  SkParagraphStyle _style;
-  List<_ParagraphCommand> _commands;
+  final SkParagraphStyle _style;
+  final List<_ParagraphCommand> _commands;
 
   SkParagraphBuilder(ui.ParagraphStyle style)
       : _commands = <_ParagraphCommand>[],
