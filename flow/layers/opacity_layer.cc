@@ -10,20 +10,7 @@
 namespace flutter {
 
 OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
-    : alpha_(alpha), offset_(offset) {
-  // Ensure OpacityLayer has only one direct child.
-  //
-  // This is needed to ensure that retained rendering can always be applied to
-  // save the costly saveLayer.
-  //
-  // Any children will be actually added as children of this empty
-  // ContainerLayer.
-  ContainerLayer::Add(std::make_shared<ContainerLayer>());
-}
-
-void OpacityLayer::Add(std::shared_ptr<Layer> layer) {
-  GetChildContainer()->Add(std::move(layer));
-}
+    : alpha_(alpha), offset_(offset) {}
 
 void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "OpacityLayer::Preroll");
@@ -101,7 +88,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
 
 void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
   float saved_alpha = context.alphaf();
@@ -110,21 +97,6 @@ void OpacityLayer::UpdateScene(SceneUpdateContext& context) {
   context.set_alphaf(saved_alpha);
 }
 
-#endif  // defined(OS_FUCHSIA)
-
-ContainerLayer* OpacityLayer::GetChildContainer() const {
-  FML_DCHECK(layers().size() == 1);
-
-  return static_cast<ContainerLayer*>(layers()[0].get());
-}
-
-Layer* OpacityLayer::GetCacheableChild() const {
-  ContainerLayer* child_container = GetChildContainer();
-  if (child_container->layers().size() == 1) {
-    return child_container->layers()[0].get();
-  }
-
-  return child_container;
-}
+#endif
 
 }  // namespace flutter

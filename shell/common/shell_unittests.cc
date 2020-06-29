@@ -32,6 +32,7 @@
 #include "flutter/shell/version/version.h"
 #include "flutter/testing/testing.h"
 #include "rapidjson/writer.h"
+#include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -469,6 +470,9 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   DestroyShell(std::move(shell));
 }
 
+#if !defined(OS_FUCHSIA)
+// TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
+// support for raster thread merger for Fuchsia.
 TEST_F(ShellTest,
        ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit) {
   auto settings = CreateSettingsForFixture();
@@ -514,6 +518,7 @@ TEST_F(ShellTest,
 
   DestroyShell(std::move(shell));
 }
+#endif
 
 TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   // Ensure that all phases are in kPhases.

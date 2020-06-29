@@ -41,6 +41,9 @@ class PlatformViewAndroid final : public PlatformView {
 
   void NotifyCreated(fml::RefPtr<AndroidNativeWindow> native_window);
 
+  void NotifySurfaceWindowChanged(
+      fml::RefPtr<AndroidNativeWindow> native_window);
+
   void NotifyChanged(const SkISize& size);
 
   // |PlatformView|
@@ -117,7 +120,6 @@ class PlatformViewAndroid final : public PlatformView {
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroid);
 };
-
 }  // namespace flutter
 
 #endif  // SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_H_

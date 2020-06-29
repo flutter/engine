@@ -6,14 +6,16 @@
 
 #include <fcntl.h>
 #include <lib/fdio/watcher.h>
+#include <lib/zx/time.h>
 #include <unistd.h>
 
 #include "flutter/fml/unique_fd.h"
 
 namespace flutter_runner {
 
-Surface::Surface(std::string debug_label)
-    : debug_label_(std::move(debug_label)) {}
+Surface::Surface(std::string debug_label,
+                 flutter::ExternalViewEmbedder* view_embedder)
+    : debug_label_(std::move(debug_label)), view_embedder_(view_embedder) {}
 
 Surface::~Surface() = default;
 
@@ -56,7 +58,8 @@ bool Surface::CanConnectToDisplay() {
   }
 
   zx_status_t status = fdio_watch_directory(
-      fd.get(), DriverWatcher, zx_deadline_after(ZX_SEC(5)), nullptr);
+      fd.get(), DriverWatcher,
+      zx::deadline_after(zx::duration(ZX_SEC(5))).get(), nullptr);
   return status == ZX_ERR_STOP;
 }
 
@@ -67,6 +70,11 @@ SkMatrix Surface::GetRootTransformation() const {
   SkMatrix matrix;
   matrix.reset();
   return matrix;
+}
+
+// |flutter::GetViewEmbedder|
+flutter::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
+  return view_embedder_;
 }
 
 }  // namespace flutter_runner

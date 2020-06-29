@@ -140,6 +140,20 @@ static void SurfaceCreated(JNIEnv* env,
   ANDROID_SHELL_HOLDER->GetPlatformView()->NotifyCreated(std::move(window));
 }
 
+static void SurfaceWindowChanged(JNIEnv* env,
+                                 jobject jcaller,
+                                 jlong shell_holder,
+                                 jobject jsurface) {
+  // Note: This frame ensures that any local references used by
+  // ANativeWindow_fromSurface are released immediately. This is needed as a
+  // workaround for https://code.google.com/p/android/issues/detail?id=68174
+  fml::jni::ScopedJavaLocalFrame scoped_local_reference_frame(env);
+  auto window = fml::MakeRefCounted<AndroidNativeWindow>(
+      ANativeWindow_fromSurface(env, jsurface));
+  ANDROID_SHELL_HOLDER->GetPlatformView()->NotifySurfaceWindowChanged(
+      std::move(window));
+}
+
 static void SurfaceChanged(JNIEnv* env,
                            jobject jcaller,
                            jlong shell_holder,
@@ -542,6 +556,11 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&SurfaceCreated),
       },
       {
+          .name = "nativeSurfaceWindowChanged",
+          .signature = "(JLandroid/view/Surface;)V",
+          .fnPtr = reinterpret_cast<void*>(&SurfaceWindowChanged),
+      },
+      {
           .name = "nativeSurfaceChanged",
           .signature = "(JII)V",
           .fnPtr = reinterpret_cast<void*>(&SurfaceChanged),
@@ -709,7 +728,7 @@ bool RegisterApi(JNIEnv* env) {
     return false;
   }
   g_overlay_surface_id_method =
-      env->GetMethodID(overlay_surface_class.obj(), "getId", "()J");
+      env->GetMethodID(overlay_surface_class.obj(), "getId", "()I");
   if (g_overlay_surface_id_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate FlutterOverlaySurface#getId() method";
     return false;
@@ -1147,8 +1166,8 @@ PlatformViewAndroidJNIImpl::FlutterViewCreateOverlaySurface() {
                                                                      nullptr);
   }
 
-  jlong overlay_id =
-      env->CallLongMethod(overlay.obj(), g_overlay_surface_id_method);
+  jint overlay_id =
+      env->CallIntMethod(overlay.obj(), g_overlay_surface_id_method);
 
   jobject overlay_surface =
       env->CallObjectMethod(overlay.obj(), g_overlay_surface_surface_method);
