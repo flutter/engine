@@ -531,14 +531,6 @@ class SkParagraphBuilder implements ui.ParagraphBuilder {
   ui.Paragraph build() {
     final builtParagraph = _buildSkParagraph();
     return SkParagraph(builtParagraph, _style, _commands);
-    final SkParagraph paragraph = SkParagraph(
-      _paragraphBuilder!.callMethod('build'),
-      _style,
-      _commands,
-    );
-    _paragraphBuilder!.callMethod('delete');
-    _paragraphBuilder = null;
-    return paragraph;
   }
 
   /// Builds the SkParagraph with the builder and deletes the builder.

@@ -78,9 +78,10 @@ void main() {
       expect(SkiaObjects.expensiveCache.debugContains(object1), isTrue);
       expect(SkiaObjects.expensiveCache.debugContains(object2), isTrue);
 
-      TestSkiaObject object3 = TestSkiaObject(isExpensive: true);
-      TestSkiaObject object4 = TestSkiaObject(isExpensive: true);
-      TestSkiaObject object5 = TestSkiaObject(isExpensive: true);
+      /// Add 3 more objects to the cache to overflow it.
+      TestSkiaObject(isExpensive: true);
+      TestSkiaObject(isExpensive: true);
+      TestSkiaObject(isExpensive: true);
       expect(SkiaObjects.expensiveCache.length, 5);
       expect(SkiaObjects.cachesToResize.length, 1);
 
@@ -117,9 +118,10 @@ void main() {
       expect(SkiaObjects.oneShotCache.debugContains(object1), isTrue);
       expect(SkiaObjects.oneShotCache.debugContains(object2), isTrue);
 
-      OneShotSkiaObject object3 = OneShotSkiaObject(_makeJsObject());
-      OneShotSkiaObject object4 = OneShotSkiaObject(_makeJsObject());
-      OneShotSkiaObject object5 = OneShotSkiaObject(_makeJsObject());
+      // Add 3 more objects to the cache to overflow it.
+      OneShotSkiaObject(_makeJsObject());
+      OneShotSkiaObject(_makeJsObject());
+      OneShotSkiaObject(_makeJsObject());
       expect(SkiaObjects.oneShotCache.length, 5);
       expect(SkiaObjects.cachesToResize.length, 1);
 
