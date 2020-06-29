@@ -36,6 +36,13 @@ EGLSurface eglCreateWindowSurface(EGLDisplay dpy,
   return nullptr;
 }
 
+EGLBoolean eglGetConfigAttrib(EGLDisplay display,
+                              EGLConfig config,
+                              EGLint attribute,
+                              EGLint* value) {
+  return EGL_FALSE;
+}
+
 EGLDisplay eglGetDisplay(EGLNativeDisplayType display_id) {
   return nullptr;
 }
