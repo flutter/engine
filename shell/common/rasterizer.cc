@@ -76,6 +76,9 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
                              user_override_resource_cache_bytes_);
   }
   compositor_context_->OnGrContextCreated();
+#if !defined(OS_FUCHSIA)
+  // TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
+  // support for raster thread merger for Fuchsia.
   if (surface_->GetExternalViewEmbedder()) {
     const auto platform_id =
         task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
@@ -83,6 +86,7 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
     raster_thread_merger_ =
         fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
   }
+#endif
 }
 
 void Rasterizer::Teardown() {
@@ -119,7 +123,7 @@ void Rasterizer::DrawLastLayerTree() {
   DrawToSurface(*last_layer_tree_);
 }
 
-void Rasterizer::Draw(std::shared_ptr<LayerTreeHolder> layer_tree_holder) {
+void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -128,30 +132,48 @@ void Rasterizer::Draw(std::shared_ptr<LayerTreeHolder> layer_tree_holder) {
   }
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
-  std::unique_ptr<LayerTree> layer_tree = layer_tree_holder->Pop();
-  RasterStatus raster_status =
-      layer_tree ? DoDraw(std::move(layer_tree)) : RasterStatus::kFailed;
+  RasterStatus raster_status = RasterStatus::kFailed;
+  Pipeline<flutter::LayerTree>::Consumer consumer =
+      [&](std::unique_ptr<LayerTree> layer_tree) {
+        raster_status = DoDraw(std::move(layer_tree));
+      };
+
+  PipelineConsumeResult consume_result = pipeline->Consume(consumer);
+  // if the raster status is to resubmit the frame, we push the frame to the
+  // front of the queue and also change the consume status to more available.
+  if (raster_status == RasterStatus::kResubmit) {
+    auto front_continuation = pipeline->ProduceIfEmpty();
+    bool result =
+        front_continuation.Complete(std::move(resubmitted_layer_tree_));
+    if (result) {
+      consume_result = PipelineConsumeResult::MoreAvailable;
+    }
+  } else if (raster_status == RasterStatus::kEnqueuePipeline) {
+    consume_result = PipelineConsumeResult::MoreAvailable;
+  }
 
   // Merging the thread as we know the next `Draw` should be run on the platform
   // thread.
-  if (raster_status == RasterStatus::kResubmit) {
-    layer_tree_holder->PushIfNewer(std::move(resubmitted_layer_tree_));
-    auto* external_view_embedder = surface_->GetExternalViewEmbedder();
-    FML_DCHECK(external_view_embedder != nullptr)
-        << "kResubmit is an invalid raster status without external view "
-           "embedder.";
-    external_view_embedder->EndFrame(raster_thread_merger_);
+  if (surface_ != nullptr && surface_->GetExternalViewEmbedder() != nullptr) {
+    auto should_resubmit_frame = raster_status == RasterStatus::kResubmit;
+    surface_->GetExternalViewEmbedder()->EndFrame(should_resubmit_frame,
+                                                  raster_thread_merger_);
   }
 
-  // Note: This behaviour is left as-is to be inline with the pipeline
-  // semantics. TODO(kaushikiska): explore removing this block.
-  if (!layer_tree_holder->IsEmpty()) {
-    task_runners_.GetRasterTaskRunner()->PostTask(
-        [weak_this = weak_factory_.GetWeakPtr(), layer_tree_holder]() {
-          if (weak_this) {
-            weak_this->Draw(layer_tree_holder);
-          }
-        });
+  // Consume as many pipeline items as possible. But yield the event loop
+  // between successive tries.
+  switch (consume_result) {
+    case PipelineConsumeResult::MoreAvailable: {
+      task_runners_.GetRasterTaskRunner()->PostTask(
+          [weak_this = weak_factory_.GetWeakPtr(), pipeline]() {
+            if (weak_this) {
+              weak_this->Draw(pipeline);
+            }
+          });
+      break;
+    }
+    default:
+      break;
   }
 }
 
@@ -370,9 +392,9 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
 
   SkCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder != nullptr) {
-    external_view_embedder->BeginFrame(layer_tree.frame_size(),
-                                       surface_->GetContext(),
-                                       layer_tree.device_pixel_ratio());
+    external_view_embedder->BeginFrame(
+        layer_tree.frame_size(), surface_->GetContext(),
+        layer_tree.device_pixel_ratio(), raster_thread_merger_);
     embedder_root_canvas = external_view_embedder->GetRootCanvas();
   }
 

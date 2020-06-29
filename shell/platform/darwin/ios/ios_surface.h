@@ -62,7 +62,11 @@ class IOSSurface : public ExternalViewEmbedder {
   void CancelFrame() override;
 
   // |ExternalViewEmbedder|
-  void BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) override;
+  void BeginFrame(SkISize frame_size,
+                  GrContext* context,
+                  double device_pixel_ratio,
+                  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(int view_id,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params) override;
@@ -81,7 +85,8 @@ class IOSSurface : public ExternalViewEmbedder {
   void SubmitFrame(GrContext* context, std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
-  void EndFrame(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+  void EndFrame(bool should_resubmit_frame,
+                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
  public:
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurface);

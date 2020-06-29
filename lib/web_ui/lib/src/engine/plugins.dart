@@ -2,11 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+
 part of engine;
 
-Future<void> Function(String, ByteData, ui.PlatformMessageResponseCallback) pluginMessageCallHandler;
-
-void webOnlySetPluginHandler(Future<void> Function(String, ByteData, ui.PlatformMessageResponseCallback) handler) {
-  pluginMessageCallHandler = handler;
-}
+Future<void> Function(String, ByteData?, ui.PlatformMessageResponseCallback?)? pluginMessageCallHandler;

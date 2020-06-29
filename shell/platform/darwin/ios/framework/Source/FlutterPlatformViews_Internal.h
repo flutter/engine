@@ -14,6 +14,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
 #include "flutter/shell/platform/darwin/ios/ios_context.h"
+#include "third_party/skia/include/core/SkPictureRecorder.h"
 
 // A UIView that is used as the parent for embedded UIViews.
 //
@@ -168,7 +169,8 @@ class FlutterPlatformViewsController {
   // Invoked at the very end of a frame.
   // After invoking this method, nothing should happen on the current TaskRunner during the same
   // frame.
-  void EndFrame(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+  void EndFrame(bool should_resubmit_frame,
+                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 

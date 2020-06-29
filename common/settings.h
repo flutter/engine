@@ -92,7 +92,7 @@ struct Settings {
   bool enable_checked_mode = false;
   bool start_paused = false;
   bool trace_skia = false;
-  std::string trace_whitelist;
+  std::string trace_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
   bool dump_skp_on_shader_compilation = false;
@@ -212,6 +212,15 @@ struct Settings {
   /// on the clock used by the Dart timeline APIs. This timestamp is used
   /// to log a timeline event that tracks the latency of engine startup.
   std::chrono::microseconds engine_start_timestamp = {};
+
+  /// Whether the application claims that it uses the android embedded view for
+  /// platform views.
+  ///
+  /// A `true` value will result the raster task runner always run on the
+  /// platform thread.
+  // TODO(cyanlaz): Remove this when dynamic thread merging is done.
+  // https://github.com/flutter/flutter/issues/59930
+  bool use_embedded_view = false;
 
   std::string ToString() const;
 };

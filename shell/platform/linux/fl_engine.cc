@@ -6,7 +6,10 @@
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
+#include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
+#include "flutter/shell/platform/linux/fl_renderer_headless.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
 
 #include <gmodule.h>
 
@@ -35,7 +38,15 @@ struct _FlEngine {
 
 G_DEFINE_QUARK(fl_engine_error_quark, fl_engine_error)
 
-G_DEFINE_TYPE(FlEngine, fl_engine, G_TYPE_OBJECT)
+static void fl_engine_plugin_registry_iface_init(
+    FlPluginRegistryInterface* iface);
+
+G_DEFINE_TYPE_WITH_CODE(
+    FlEngine,
+    fl_engine,
+    G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
+                          fl_engine_plugin_registry_iface_init))
 
 // Subclass of GSource that integrates Flutter tasks into the GLib main loop.
 typedef struct {
@@ -108,6 +119,15 @@ static bool fl_engine_gl_present(void* user_data) {
   return result;
 }
 
+static bool fl_engine_gl_make_resource_current(void* user_data) {
+  FlEngine* self = static_cast<FlEngine*>(user_data);
+  g_autoptr(GError) error = nullptr;
+  gboolean result = fl_renderer_make_resource_current(self->renderer, &error);
+  if (!result)
+    g_warning("%s", error->message);
+  return result;
+}
+
 // Called by the engine to determine if it is on the GTK thread.
 static bool fl_engine_runs_task_on_current_thread(void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
@@ -160,6 +180,20 @@ static void fl_engine_platform_message_response_cb(const uint8_t* data,
                         (GDestroyNotify)g_bytes_unref);
 }
 
+// Implements FlPluginRegistry::get_registrar_for_plugin.
+static FlPluginRegistrar* fl_engine_get_registrar_for_plugin(
+    FlPluginRegistry* registry,
+    const gchar* name) {
+  FlEngine* self = FL_ENGINE(registry);
+
+  return fl_plugin_registrar_new(nullptr, self->binary_messenger);
+}
+
+static void fl_engine_plugin_registry_iface_init(
+    FlPluginRegistryInterface* iface) {
+  iface->get_registrar_for_plugin = fl_engine_get_registrar_for_plugin;
+}
+
 static void fl_engine_dispose(GObject* object) {
   FlEngine* self = FL_ENGINE(object);
 
@@ -201,11 +235,15 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer) {
   g_return_val_if_fail(FL_IS_DART_PROJECT(project), nullptr);
   g_return_val_if_fail(FL_IS_RENDERER(renderer), nullptr);
 
-  FlEngine* self =
-      static_cast<FlEngine*>(g_object_new(fl_engine_get_type(), nullptr));
-  self->project = static_cast<FlDartProject*>(g_object_ref(project));
-  self->renderer = static_cast<FlRenderer*>(g_object_ref(renderer));
+  FlEngine* self = FL_ENGINE(g_object_new(fl_engine_get_type(), nullptr));
+  self->project = FL_DART_PROJECT(g_object_ref(project));
+  self->renderer = FL_RENDERER(g_object_ref(renderer));
   return self;
+}
+
+G_MODULE_EXPORT FlEngine* fl_engine_new_headless(FlDartProject* project) {
+  g_autoptr(FlRendererHeadless) renderer = fl_renderer_headless_new();
+  return fl_engine_new(project, FL_RENDERER(renderer));
 }
 
 gboolean fl_engine_start(FlEngine* self, GError** error) {
@@ -222,6 +260,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   config.open_gl.clear_current = fl_engine_gl_clear_current;
   config.open_gl.fbo_callback = fl_engine_gl_get_fbo;
   config.open_gl.present = fl_engine_gl_present;
+  config.open_gl.make_resource_current = fl_engine_gl_make_resource_current;
 
   FlutterTaskRunnerDescription platform_task_runner = {};
   platform_task_runner.struct_size = sizeof(FlutterTaskRunnerDescription);
@@ -235,10 +274,24 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   custom_task_runners.struct_size = sizeof(FlutterCustomTaskRunners);
   custom_task_runners.platform_task_runner = &platform_task_runner;
 
+  g_autoptr(GPtrArray) command_line_args =
+      g_ptr_array_new_with_free_func(g_free);
+  g_ptr_array_add(command_line_args, g_strdup("flutter"));
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  gboolean enable_mirrors = fl_dart_project_get_enable_mirrors(self->project);
+  G_GNUC_END_IGNORE_DEPRECATIONS
+  if (enable_mirrors) {
+    g_ptr_array_add(command_line_args,
+                    g_strdup("--dart-flags=--enable_mirrors=true"));
+  }
+
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
   args.assets_path = fl_dart_project_get_assets_path(self->project);
   args.icu_data_path = fl_dart_project_get_icu_data_path(self->project);
+  args.command_line_argc = command_line_args->len;
+  args.command_line_argv =
+      reinterpret_cast<const char* const*>(command_line_args->pdata);
   args.platform_message_callback = fl_engine_platform_message_cb;
   args.custom_task_runners = &custom_task_runners;
   args.shutdown_dart_vm_when_done = true;

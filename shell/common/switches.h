@@ -129,11 +129,14 @@ DEF_SWITCH(TraceSkia,
            "Trace Skia calls. This is useful when debugging the GPU threed."
            "By default, Skia tracing is not enabled to reduce the number of "
            "traced events")
+DEF_SWITCH(TraceWhitelist,
+           "trace-whitelist",
+           "(deprecated) Use --trace-allowlist instead.")
 DEF_SWITCH(
-    TraceWhitelist,
-    "trace-whitelist",
+    TraceAllowlist,
+    "trace-allowlist",
     "Filters out all trace events except those that are specified in this "
-    "comma separated list of whitelisted prefixes.")
+    "comma separated list of allowed prefixes.")
 DEF_SWITCH(DumpSkpOnShaderCompilation,
            "dump-skp-on-shader-compilation",
            "Automatically dump the skp that triggers new shader compilations. "
@@ -186,6 +189,15 @@ DEF_SWITCH(
     "Uses separate threads for the platform, UI, GPU and IO task runners. "
     "By default, a single thread is used for all task runners. Only available "
     "in the flutter_tester.")
+// TODO(cyanlaz): Remove this when dynamic thread merging is done.
+// https://github.com/flutter/flutter/issues/59930
+DEF_SWITCH(UseEmbeddedView,
+           "use-embedded-view",
+           "Whether an android application uses embedded views."
+           "This is a temporary flag to make the raster task runner runs on "
+           "the platform thread."
+           "This flag should be removed once the dynamic thread merging is "
+           "enabled on android.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

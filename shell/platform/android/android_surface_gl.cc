@@ -8,22 +8,28 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/shell/platform/android/android_shell_holder.h"
 
 namespace flutter {
 
 AndroidSurfaceGL::AndroidSurfaceGL(
-    std::shared_ptr<AndroidContext> android_context)
-    : native_window_(nullptr),
+    std::shared_ptr<AndroidContext> android_context,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    const AndroidSurface::Factory& surface_factory)
+    : external_view_embedder_(
+          std::make_unique<AndroidExternalViewEmbedder>(android_context,
+                                                        jni_facade,
+                                                        surface_factory)),
+      android_context_(
+          std::static_pointer_cast<AndroidContextGL>(android_context)),
+      native_window_(nullptr),
       onscreen_surface_(nullptr),
       offscreen_surface_(nullptr) {
-  android_context_ =
-      std::static_pointer_cast<AndroidContextGL>(android_context);
   // Acquire the offscreen surface.
   offscreen_surface_ = android_context_->CreateOffscreenSurface();
   if (!offscreen_surface_->IsValid()) {
     offscreen_surface_ = nullptr;
   }
-  external_view_embedder_ = std::make_unique<AndroidExternalViewEmbedder>();
 }
 
 AndroidSurfaceGL::~AndroidSurfaceGL() = default;
@@ -55,8 +61,11 @@ bool AndroidSurfaceGL::OnScreenSurfaceResize(const SkISize& size) {
 
   android_context_->ClearCurrent();
 
+  // Ensure the destructor is called since it destroys the `EGLSurface` before
+  // creating a new onscreen surface.
+  onscreen_surface_ = nullptr;
   onscreen_surface_ = android_context_->CreateOnscreenSurface(native_window_);
-  if (onscreen_surface_->IsValid()) {
+  if (!onscreen_surface_->IsValid()) {
     FML_LOG(ERROR) << "Unable to create EGL window surface on resize.";
     return false;
   }
@@ -114,6 +123,9 @@ intptr_t AndroidSurfaceGL::GLContextFBO() const {
 
 // |GPUSurfaceGLDelegate|
 ExternalViewEmbedder* AndroidSurfaceGL::GetExternalViewEmbedder() {
+  if (!AndroidShellHolder::use_embedded_view) {
+    return nullptr;
+  }
   return external_view_embedder_.get();
 }
 

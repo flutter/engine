@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 library engine;
 
 import 'dart:async';
@@ -152,7 +151,7 @@ void registerHotRestartListener(ui.VoidCallback listener) {
 /// environment in the native embedder.
 // TODO(yjbanov): we should refactor the code such that the framework does not
 //                call this method directly.
-void webOnlyInitializeEngine() {
+void initializeEngine() {
   if (_engineInitialized) {
     return;
   }
