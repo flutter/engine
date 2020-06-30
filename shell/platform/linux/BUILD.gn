@@ -139,6 +139,7 @@ executable("flutter_linux_unittests") {
   testonly = true
 
   sources = [
+    "egl_utils_test.cc",
     "fl_basic_message_channel_test.cc",
     "fl_binary_codec_test.cc",
     "fl_binary_messenger_test.cc",

@@ -31,14 +31,16 @@ static void create_resource_surface(FlRenderer* self, EGLConfig config) {
   priv->resource_surface = eglCreatePbufferSurface(priv->egl_display, config,
                                                    resource_context_attribs);
   if (priv->resource_surface == nullptr) {
-    g_warning("Failed to create EGL resource surface: %s", egl_error_to_string(eglGetError()));
+    g_warning("Failed to create EGL resource surface: %s",
+              egl_error_to_string(eglGetError()));
     return;
   }
 
   priv->resource_context = eglCreateContext(
       priv->egl_display, config, priv->egl_context, context_attributes);
   if (priv->resource_context == nullptr)
-    g_warning("Failed to create EGL resource context: %s", egl_error_to_string(eglGetError()));
+    g_warning("Failed to create EGL resource context: %s",
+              egl_error_to_string(eglGetError()));
 }
 
 // Default implementation for the start virtual method.
@@ -76,12 +78,14 @@ static gboolean fl_renderer_real_start(FlRenderer* self, GError** error) {
   if (!eglChooseConfig(priv->egl_display, attributes, &egl_config, 1,
                        &n_config)) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to choose EGL config: %s", egl_error_to_string(eglGetError()));
+                "Failed to choose EGL config: %s",
+                egl_error_to_string(eglGetError()));
     return FALSE;
   }
   if (n_config == 0) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to find appropriate EGL config: %s", egl_error_to_string(eglGetError()));
+                "Failed to find appropriate EGL config: %s",
+                egl_error_to_string(eglGetError()));
     return FALSE;
   }
   if (!eglBindAPI(EGL_OPENGL_ES_API)) {
@@ -145,7 +149,8 @@ gboolean fl_renderer_make_current(FlRenderer* self, GError** error) {
   if (!eglMakeCurrent(priv->egl_display, priv->egl_surface, priv->egl_surface,
                       priv->egl_context)) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to make EGL context current: %s", egl_error_to_string(eglGetError()));
+                "Failed to make EGL context current: %s",
+                egl_error_to_string(eglGetError()));
     return FALSE;
   }
 
@@ -162,7 +167,8 @@ gboolean fl_renderer_make_resource_current(FlRenderer* self, GError** error) {
   if (!eglMakeCurrent(priv->egl_display, priv->resource_surface,
                       priv->resource_surface, priv->resource_context)) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to make EGL context current: %s", egl_error_to_string(eglGetError()));
+                "Failed to make EGL context current: %s",
+                egl_error_to_string(eglGetError()));
     return FALSE;
   }
 
@@ -176,7 +182,8 @@ gboolean fl_renderer_clear_current(FlRenderer* self, GError** error) {
   if (!eglMakeCurrent(priv->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE,
                       EGL_NO_CONTEXT)) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to clear EGL context: %s", egl_error_to_string(eglGetError()));
+                "Failed to clear EGL context: %s",
+                egl_error_to_string(eglGetError()));
     return FALSE;
   }
 
@@ -194,7 +201,8 @@ gboolean fl_renderer_present(FlRenderer* self, GError** error) {
 
   if (!eglSwapBuffers(priv->egl_display, priv->egl_surface)) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to swap EGL buffers: %s", egl_error_to_string(eglGetError()));
+                "Failed to swap EGL buffers: %s",
+                egl_error_to_string(eglGetError()));
     return FALSE;
   }
 

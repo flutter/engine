@@ -26,7 +26,8 @@ const gchar* egl_error_to_string(EGLint error);
  * @display: an EGL display.
  * @config: an EGL configuration.
  *
- * Converts an EGL configuration to a human readable string. e.g. "EGL_CONFIG_ID=1 EGL_RED_SIZE=8...".
+ * Converts an EGL configuration to a human readable string. e.g.
+ * "EGL_CONFIG_ID=1 EGL_RED_SIZE=8...".
  *
  * Returns: a configuration description.
  */
