@@ -123,7 +123,6 @@ const gchar* egl_error_to_string(EGLint error) {
   }
 }
 
-// Generates a string containing information about the given EGL configuration.
 gchar* egl_config_to_string(EGLDisplay display, EGLConfig config) {
   struct {
     EGLint attribute;
