@@ -25,8 +25,6 @@ void main(List<String> args) async {
     throw ArgumentError('Unable to read file at `$packagesUri`');
   }
   var packageMap = parse(await packagesFile.readAsBytes(), packagesFile.uri);
-  print('Successfully read $packagesUri, now generating package config');
-
   var packages = <Package>[];
   for (var packageEntry in packageMap.entries) {
     var name = packageEntry.key;
@@ -46,19 +44,21 @@ void main(List<String> args) async {
       pubspec = packageRoot.resolve('pubspec.yaml');
       languageVersion = await languageVersionFromPubspec(pubspec, name);
     }
-    print(packageRoot);
-    print(uri);
+    if (languageVersion == null) {
+      continue;
+    }
     packages.add(Package(name, packageRoot,
         languageVersion: languageVersion, packageUriRoot: uri));
   }
   var outputFile =
       File.fromUri(packagesFile.uri.resolve('.dart_tool/package_config.json'));
-  print('Writing output to ${outputFile.uri}');
+  if (!outputFile.parent.existsSync()) {
+    outputFile.parent.createSync();
+  }
   var baseUri = outputFile.uri;
   var sink = outputFile.openWrite(encoding: utf8);
   writePackageConfigJsonUtf8(PackageConfig(packages), baseUri, sink);
   await sink.close();
-  print('Done!');
 }
 
 const usage = 'Usage: pub run package_config:generate_from_legacy <input-file>';
@@ -67,9 +67,7 @@ Future<LanguageVersion> languageVersionFromPubspec(
     Uri pubspec, String packageName) async {
   var pubspecFile = File.fromUri(pubspec);
   if (!await pubspecFile.exists()) {
-    throw ArgumentError(
-        'Cannot read a pubspec.yaml for package $packageName at '
-        '${pubspecFile.path}');
+    return null;
   }
   var pubspecYaml =
       loadYaml(await pubspecFile.readAsString(), sourceUrl: pubspec) as YamlMap;

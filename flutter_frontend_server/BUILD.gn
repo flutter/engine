@@ -69,7 +69,7 @@ application_snapshot("frontend_server") {
   deps = [
     "//flutter/lib/snapshot:kernel_platform_files",
   ]
-  dot_packages = rebase_path("package_config.json")
+  dot_packages = rebase_path(".dart_tool/package_config.json")
   flutter_patched_sdk = rebase_path("$root_out_dir/flutter_patched_sdk")
   training_args = [
     "--train",
