@@ -218,8 +218,6 @@ if (enable_unittests) {
     public_deps = [
       "//flutter/fml/dart",
       "//flutter/testing",
-      "//flutter/testing:dart",
-      "//flutter/testing:fixture_test",
     ]
 
     deps = [
@@ -269,6 +267,7 @@ if (enable_unittests) {
       ":shell_unittests_gpu_configuration",
       "//flutter/lib/ui:ui",
       "//flutter/testing:dart",
+      "//flutter/testing:fixture_test",
     ]
   }
 

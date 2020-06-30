@@ -126,8 +126,6 @@ source_set_maybe_fuchsia_legacy("runtime_unittests_common") {
     "//flutter/fml",
     "//flutter/lib/snapshot",
     "//flutter/testing",
-    "//flutter/testing:dart",
-    "//flutter/testing:fixture_test",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:elf_loader",
     "//third_party/skia",
@@ -136,6 +134,7 @@ source_set_maybe_fuchsia_legacy("runtime_unittests_common") {
   deps_legacy_and_next = [
     ":runtime",
     "//flutter/testing:dart",
+    "//flutter/testing:fixture_test",
   ]
 }
 
