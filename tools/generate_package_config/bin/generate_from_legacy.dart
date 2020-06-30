@@ -42,13 +42,13 @@ void main(List<String> args) async {
     if (uri.path.endsWith('lib/')) {
       packageRoot = uri.resolve('../');
       pubspec = packageRoot.resolve('pubspec.yaml');
+      if (!File.fromUri(pubspec).existsSync()) {
+        continue;
+      }
       languageVersion = await languageVersionFromPubspec(pubspec, name);
+      packages.add(Package(name, packageRoot,
+          languageVersion: languageVersion, packageUriRoot: uri));
     }
-    if (languageVersion == null) {
-      continue;
-    }
-    packages.add(Package(name, packageRoot,
-        languageVersion: languageVersion, packageUriRoot: uri));
   }
   var outputFile =
       File.fromUri(packagesFile.uri.resolve('.dart_tool/package_config.json'));
