@@ -45,7 +45,9 @@ void main(List<String> args) async {
       if (!File.fromUri(pubspec).existsSync()) {
         continue;
       }
-      languageVersion = await languageVersionFromPubspec(pubspec, name);
+      // Default to 2.8 if not found to prevent all packages from accidentally
+      // opting into NNBD.
+      languageVersion = await languageVersionFromPubspec(pubspec, name) ?? LanguageVersion(2, 8);
       packages.add(Package(name, packageRoot,
           languageVersion: languageVersion, packageUriRoot: uri));
     }

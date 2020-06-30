@@ -638,14 +638,14 @@ hooks = [
       'global',
       'activate',
       '-spath',
-      'src/flutter/tools/generate_package_config',
+      './src/flutter/tools/generate_package_config',
     ]
   },
   {
     'name': 'dart package config',
     'pattern': '.',
     'action': [
-      'src/third_party/dart/tools/sdks/dart-sdk/bin/dart',
+      './src/third_party/dart/tools/sdks/dart-sdk/bin/dart',
       'pub',
       'global',
       'run',
