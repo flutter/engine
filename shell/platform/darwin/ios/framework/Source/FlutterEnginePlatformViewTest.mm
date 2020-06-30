@@ -9,7 +9,7 @@
 
 #import "flutter/fml/message_loop.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 FLUTTER_ASSERT_NOT_ARC
@@ -43,11 +43,6 @@ class MockDelegate : public PlatformView::Delegate {
 
 }  // namespace
 }  // namespace flutter
-
-@interface FlutterEngine (TestLowMemory)
-- (void)notifyLowMemory;
-- (flutter::PlatformViewIOS*)iosPlatformView;
-@end
 
 @interface FlutterEnginePlatformViewTest : XCTestCase
 @end
