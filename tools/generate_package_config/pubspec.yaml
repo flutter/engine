@@ -1,0 +1,6 @@
+name: generate_package_config
+
+dependencies:
+  yaml: any
+  pub_semver: any
+  package_config: any

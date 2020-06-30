@@ -629,4 +629,28 @@ hooks = [
       'src/build/linux/sysroot_scripts/install-sysroot.py',
       '--arch=x64'],
   },
+  {
+    'name': 'activate dart package config',
+    'pattern': '.',
+    'action': [
+      'src/third_party/dart/tools/sdks/dart-sdk/bin/dart',
+      'pub',
+      'global',
+      'activate',
+      '-spath',
+      'src/flutter/tools/generate_package_config',
+    ]
+  },
+  {
+    'name': 'dart package config',
+    'pattern': '.',
+    'action': [
+      'src/third_party/dart/tools/sdks/dart-sdk/bin/dart',
+      'pub',
+      'global',
+      'run',
+      'generate_package_config:generate_from_legacy',
+      'src/flutter/flutter_frontend_server/.packages',
+    ]
+  }
 ]
