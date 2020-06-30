@@ -15,6 +15,7 @@ source_set("jni") {
 
   deps = [
     "//flutter/fml",
+    "//flutter/flow/",
     "//flutter/lib/ui",
     "//flutter/shell/platform/android/surface:native_window",
     "//third_party/skia",

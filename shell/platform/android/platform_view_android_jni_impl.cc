@@ -12,7 +12,6 @@
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/settings.h"
-#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
@@ -27,7 +26,6 @@
 #include "flutter/shell/platform/android/flutter_main.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
-
 
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
@@ -148,6 +146,20 @@ static void SurfaceCreated(JNIEnv* env,
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(
       ANativeWindow_fromSurface(env, jsurface));
   ANDROID_SHELL_HOLDER->GetPlatformView()->NotifyCreated(std::move(window));
+}
+
+static void SurfaceWindowChanged(JNIEnv* env,
+                                 jobject jcaller,
+                                 jlong shell_holder,
+                                 jobject jsurface) {
+  // Note: This frame ensures that any local references used by
+  // ANativeWindow_fromSurface are released immediately. This is needed as a
+  // workaround for https://code.google.com/p/android/issues/detail?id=68174
+  fml::jni::ScopedJavaLocalFrame scoped_local_reference_frame(env);
+  auto window = fml::MakeRefCounted<AndroidNativeWindow>(
+      ANativeWindow_fromSurface(env, jsurface));
+  ANDROID_SHELL_HOLDER->GetPlatformView()->NotifySurfaceWindowChanged(
+      std::move(window));
 }
 
 static void SurfaceChanged(JNIEnv* env,
@@ -552,6 +564,11 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&SurfaceCreated),
       },
       {
+          .name = "nativeSurfaceWindowChanged",
+          .signature = "(JLandroid/view/Surface;)V",
+          .fnPtr = reinterpret_cast<void*>(&SurfaceWindowChanged),
+      },
+      {
           .name = "nativeSurfaceChanged",
           .signature = "(JII)V",
           .fnPtr = reinterpret_cast<void*>(&SurfaceChanged),
@@ -763,32 +780,42 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_mutators_stack_class = new fml::jni::ScopedJavaGlobalRef<jclass>(env, env->FindClass("io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack"));
+  g_mutators_stack_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env,
+      env->FindClass(
+          "io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack"));
   if (g_mutators_stack_class == nullptr) {
     FML_LOG(ERROR) << "Could not locate FlutterMutatorsStack";
     return false;
   }
 
-  g_mutators_stack_init_method = env->GetMethodID(g_mutators_stack_class->obj(), "<init>", "()V");
+  g_mutators_stack_init_method =
+      env->GetMethodID(g_mutators_stack_class->obj(), "<init>", "()V");
   if (g_mutators_stack_init_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate FlutterMutatorsStack.init method";
     return false;
   }
 
-  g_mutators_stack_push_transform_method = env->GetMethodID(g_mutators_stack_class->obj(), "pushTransform", "([F)V");
+  g_mutators_stack_push_transform_method =
+      env->GetMethodID(g_mutators_stack_class->obj(), "pushTransform", "([F)V");
   if (g_mutators_stack_push_transform_method == nullptr) {
-    FML_LOG(ERROR) << "Could not locate FlutterMutatorsStack.pushTransform method";
+    FML_LOG(ERROR)
+        << "Could not locate FlutterMutatorsStack.pushTransform method";
     return false;
   }
 
-  g_mutators_stack_push_cliprect_method = env->GetMethodID(g_mutators_stack_class->obj(), "pushClipRect", "(IIII)V");
+  g_mutators_stack_push_cliprect_method = env->GetMethodID(
+      g_mutators_stack_class->obj(), "pushClipRect", "(IIII)V");
   if (g_mutators_stack_push_cliprect_method == nullptr) {
-    FML_LOG(ERROR) << "Could not locate FlutterMutatorsStack.pushCilpRect method";
+    FML_LOG(ERROR)
+        << "Could not locate FlutterMutatorsStack.pushCilpRect method";
     return false;
   }
 
-  g_on_display_platform_view_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "onDisplayPlatformView", "(IIIIILio/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack;)V");
+  g_on_display_platform_view_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "onDisplayPlatformView",
+                       "(IIIIILio/flutter/embedding/engine/mutatorsstack/"
+                       "FlutterMutatorsStack;)V");
 
   if (g_on_display_platform_view_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onDisplayPlatformView method";
@@ -1100,12 +1127,13 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureDetachFromGLContext(
   FML_CHECK(CheckException(env));
 }
 
-void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
-                                                                  int x,
-                                                                  int y,
-                                                                  int width,
-                                                                  int height,
-                                                                  MutatorsStack mutators_stack) {
+void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
+    int view_id,
+    int x,
+    int y,
+    int width,
+    int height,
+    MutatorsStack mutators_stack) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   FML_DLOG(ERROR) << "FlutterViewOnDisplayPlatformView start";
   auto java_object = java_object_.get(env);
@@ -1113,9 +1141,11 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
     return;
   }
 
-  jobject mutatorsStack = env->NewObject(g_mutators_stack_class->obj(), g_mutators_stack_init_method);
+  jobject mutatorsStack = env->NewObject(g_mutators_stack_class->obj(),
+                                         g_mutators_stack_init_method);
 
-  std::vector<std::shared_ptr<Mutator>>::const_iterator iter = mutators_stack.Begin();
+  std::vector<std::shared_ptr<Mutator>>::const_iterator iter =
+      mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
       case transform: {
@@ -1123,15 +1153,20 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
         SkScalar matrix_array[9];
         matrix.get9(matrix_array);
         fml::jni::ScopedJavaLocalRef<jfloatArray> transformMatrix(
-          env, env->NewFloatArray(9));
+            env, env->NewFloatArray(9));
 
         env->SetFloatArrayRegion(transformMatrix.obj(), 0, 9, matrix_array);
-        env->CallVoidMethod(mutatorsStack, g_mutators_stack_push_transform_method, transformMatrix.obj());
+        env->CallVoidMethod(mutatorsStack,
+                            g_mutators_stack_push_transform_method,
+                            transformMatrix.obj());
         break;
       }
       case clip_rect: {
         const SkRect& rect = (*iter)->GetRect();
-        env->CallVoidMethod(mutatorsStack, g_mutators_stack_push_cliprect_method, (int)rect.left(), (int)rect.top(), (int)rect.right(), (int)rect.bottom());
+        env->CallVoidMethod(mutatorsStack,
+                            g_mutators_stack_push_cliprect_method,
+                            (int)rect.left(), (int)rect.top(),
+                            (int)rect.right(), (int)rect.bottom());
         break;
       }
       case clip_rrect:
@@ -1139,7 +1174,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(int view_id,
       case opacity:
         break;
     }
-    ++ iter;
+    ++iter;
   }
 
   env->CallVoidMethod(java_object.obj(), g_on_display_platform_view_method,

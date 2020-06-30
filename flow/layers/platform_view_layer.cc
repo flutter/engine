@@ -13,7 +13,7 @@ PlatformViewLayer::PlatformViewLayer(const SkPoint& offset,
 
 void PlatformViewLayer::Preroll(PrerollContext* context,
                                 const SkMatrix& matrix) {
-#if defined(OS_FUCHSIA)
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
   CheckForChildLayerBelow(context);
 #endif
 
@@ -31,15 +31,28 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
                                            context->mutators_stack);
   context->view_embedder->PrerollCompositeEmbeddedView(view_id_,
                                                        std::move(params));
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+  // Set needs_system_composite flag so that rasterizer can call UpdateScene.
+  set_needs_system_composite(true);
+#endif
 }
 
 void PlatformViewLayer::Paint(PaintContext& context) const {
   if (context.view_embedder == nullptr) {
+#if !defined(LEGACY_FUCHSIA_EMBEDDER)
     FML_LOG(ERROR) << "Trying to embed a platform view but the PaintContext "
                       "does not support embedding";
+#endif
     return;
   }
   SkCanvas* canvas = context.view_embedder->CompositeEmbeddedView(view_id_);
   context.leaf_nodes_canvas = canvas;
 }
+
+#if defined(LEGACY_FUCHSIA_EMBEDDER)
+void PlatformViewLayer::UpdateScene(SceneUpdateContext& context) {
+  context.UpdateScene(view_id_, offset_, size_);
+}
+#endif
+
 }  // namespace flutter

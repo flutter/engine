@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/raster_thread_merger.h"
@@ -321,8 +320,8 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__RecycleSurfaces) {
                 0, window))));
     // The JNI call to display the Android view.
     MutatorsStack mutators_stack;
-    EXPECT_CALL(*jni_mock,
-                FlutterViewOnDisplayPlatformView(0, 100, 100, 300, 300, mutators_stack));
+    EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(
+                               0, 100, 100, 300, 300, mutators_stack));
     // The JNI call to display the overlay surface.
     EXPECT_CALL(*jni_mock,
                 FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));
@@ -371,8 +370,8 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__RecycleSurfaces) {
     EXPECT_CALL(*jni_mock, FlutterViewCreateOverlaySurface()).Times(0);
     // The JNI call to display the Android view.
     MutatorsStack mutators_stack;
-    EXPECT_CALL(*jni_mock,
-                FlutterViewOnDisplayPlatformView(0, 100, 100, 300, 300, mutators_stack));
+    EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(
+                               0, 100, 100, 300, 300, mutators_stack));
     // The JNI call to display the overlay surface.
     EXPECT_CALL(*jni_mock,
                 FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));

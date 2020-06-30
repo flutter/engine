@@ -55,8 +55,8 @@ MutatorsStack::Begin() const {
   return vector_.begin();
 };
 
-const std::vector<std::shared_ptr<Mutator>>::const_iterator
-MutatorsStack::End() const {
+const std::vector<std::shared_ptr<Mutator>>::const_iterator MutatorsStack::End()
+    const {
   return vector_.end();
 };
 

@@ -4,12 +4,10 @@
 
 package io.flutter.embedding.engine.mutatorsstack;
 
-import android.view.Surface;
 import android.graphics.Matrix;
 import android.graphics.Path;
 import android.graphics.Rect;
 import androidx.annotation.Keep;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 @Keep
@@ -30,14 +28,13 @@ public class FlutterMutator {
     this.path = path;
   }
 
-
   public FlutterMutator(Matrix matrix) {
     this.type = FlutterMutatorType.TRANSFORM;
     this.matrix = matrix;
   }
 
   public FlutterMutatorType getType() {
-      return type;
+    return type;
   }
 
   public Rect getRect() {

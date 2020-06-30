@@ -5,7 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
 
-#include "flutter/flow/embedded_views.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "gmock/gmock.h"
 
@@ -64,7 +63,12 @@ class JNIMock final : public PlatformViewAndroidJNI {
 
   MOCK_METHOD(void,
               FlutterViewOnDisplayPlatformView,
-              (int view_id, int x, int y, int width, int height, MutatorsStack mutators_stack),
+              (int view_id,
+               int x,
+               int y,
+               int width,
+               int height,
+               MutatorsStack mutators_stack),
               (override));
 
   MOCK_METHOD(void,

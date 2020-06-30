@@ -8,10 +8,8 @@ import android.graphics.Matrix;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.view.Surface;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,8 +30,6 @@ public class FlutterMutatorsStack {
   public void pushTransform(float[] values) {
     Matrix matrix = new Matrix();
     matrix.setValues(values);
-    float[] matrixValues = new float[9];
-    matrix.getValues(matrixValues);
     FlutterMutator mutator = new FlutterMutator(matrix);
     mutators.add(mutator);
     finalMatrix.preConcat(mutator.getMatrix());
@@ -53,27 +49,29 @@ public class FlutterMutatorsStack {
   public void transformClippings() {
     Matrix currentMatrix = new Matrix();
     currentMatrix.reset();
-    for (int i = 0; i < this.mutators.size(); i ++) {
+    for (int i = 0; i < this.mutators.size(); i++) {
       FlutterMutator mutator = mutators.get(i);
-      switch(mutator.getType()) {
-          case TRANSFORM: {
-              currentMatrix.preConcat(mutator.getMatrix());
-              break;
+      switch (mutator.getType()) {
+        case TRANSFORM:
+          {
+            currentMatrix.preConcat(mutator.getMatrix());
+            break;
           }
-          case CLIP_RECT: {
-              Rect rect = mutator.getRect();
-              Path path = new Path();
-              path.addRect(new RectF(rect), Path.Direction.CCW);
-              path.transform(currentMatrix);
-              mutators.set(i, new FlutterMutator(path));
-              break;
+        case CLIP_RECT:
+          {
+            Rect rect = mutator.getRect();
+            Path path = new Path();
+            path.addRect(new RectF(rect), Path.Direction.CCW);
+            path.transform(currentMatrix);
+            mutators.set(i, new FlutterMutator(path));
+            break;
           }
-          case CLIP_PATH:
-          case CLIP_RRECT:
-          case OPACITY:
-              break;
+        case CLIP_PATH:
+        case CLIP_RRECT:
+        case OPACITY:
+          break;
       }
-  }
+    }
   }
 
   public List<FlutterMutator> getMutators() {

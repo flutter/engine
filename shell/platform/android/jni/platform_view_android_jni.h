@@ -12,14 +12,12 @@
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #endif
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 
-
 namespace flutter {
-
-class MutatorsStack;
 
 #if OS_ANDROID
 using JavaWeakGlobalRef = fml::jni::JavaObjectWeakGlobalRef;
@@ -118,12 +116,13 @@ class PlatformViewAndroidJNI {
   ///
   /// @note       Must be called from the platform thread.
   ///
-  virtual void FlutterViewOnDisplayPlatformView(int view_id,
-                                                int x,
-                                                int y,
-                                                int width,
-                                                int height,
-                                                MutatorsStack mutators_stack) = 0;
+  virtual void FlutterViewOnDisplayPlatformView(
+      int view_id,
+      int x,
+      int y,
+      int width,
+      int height,
+      MutatorsStack mutators_stack) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Positions and sizes an overlay surface in hybrid composition.

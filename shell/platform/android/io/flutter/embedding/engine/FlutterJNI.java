@@ -22,7 +22,6 @@ import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
-import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -314,6 +313,23 @@ public class FlutterJNI {
   }
 
   private native void nativeSurfaceCreated(long nativePlatformViewId, @NonNull Surface surface);
+
+  /**
+   * In hybrid composition, call this method when the {@link Surface} has changed.
+   *
+   * <p>In hybrid composition, the root surfaces changes from {@link
+   * android.view.SurfaceHolder#getSurface()} to {@link android.media.ImageReader#getSurface()} when
+   * a platform view is in the current frame.
+   */
+  @UiThread
+  public void onSurfaceWindowChanged(@NonNull Surface surface) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeSurfaceWindowChanged(nativePlatformViewId, surface);
+  }
+
+  private native void nativeSurfaceWindowChanged(
+      long nativePlatformViewId, @NonNull Surface surface);
 
   /**
    * Call this method when the {@link Surface} changes that was previously registered with {@link
@@ -903,7 +919,8 @@ public class FlutterJNI {
 
   // @SuppressWarnings("unused")
   @UiThread
-  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
+  public void onDisplayPlatformView(
+      int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
     ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(

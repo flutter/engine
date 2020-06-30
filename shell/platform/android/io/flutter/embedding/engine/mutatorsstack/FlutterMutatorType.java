@@ -5,10 +5,9 @@
 package io.flutter.embedding.engine.mutatorsstack;
 
 public enum FlutterMutatorType {
-    CLIP_RECT,
-    CLIP_RRECT,
-    CLIP_PATH,
-    TRANSFORM,
-    OPACITY
+  CLIP_RECT,
+  CLIP_RRECT,
+  CLIP_PATH,
+  TRANSFORM,
+  OPACITY
 }
-
