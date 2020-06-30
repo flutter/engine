@@ -10,14 +10,7 @@ struct _FlMockRenderer {
 
 G_DEFINE_TYPE(FlMockRenderer, fl_mock_renderer, fl_renderer_get_type())
 
-// Implements FlRenderer::start
-static gboolean fl_mock_renderer_start(FlRenderer* renderer, GError** error) {
-  return TRUE;
-}
-
-static void fl_mock_renderer_class_init(FlMockRendererClass* klass) {
-  FL_RENDERER_CLASS(klass)->start = fl_mock_renderer_start;
-}
+static void fl_mock_renderer_class_init(FlMockRendererClass* klass) {}
 
 static void fl_mock_renderer_init(FlMockRenderer* self) {}
 
