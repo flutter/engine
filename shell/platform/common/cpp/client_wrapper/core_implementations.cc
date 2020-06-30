@@ -18,6 +18,7 @@
 
 #include "binary_messenger_impl.h"
 #include "include/flutter/engine_method_result.h"
+#include "texture_registrar_impl.h"
 
 namespace flutter {
 
@@ -145,5 +146,34 @@ void ReplyManager::SendResponseData(const std::vector<uint8_t>* data) {
 }
 
 }  // namespace internal
+
+// ========== texture_registrar_impl.h ==========
+
+TextureRegistrarImpl::TextureRegistrarImpl(
+    FlutterDesktopTextureRegistrarRef texture_registrar_ref)
+    : texture_registrar_ref_(texture_registrar_ref) {}
+
+TextureRegistrarImpl::~TextureRegistrarImpl() = default;
+
+int64_t TextureRegistrarImpl::RegisterTexture(Texture* texture) {
+  FlutterDesktopTextureCallback callback =
+      [](size_t width, size_t height,
+         void* user_data) -> const FlutterDesktopPixelBuffer* {
+    return static_cast<Texture*>(user_data)->CopyPixelBuffer(width, height);
+  };
+  int64_t texture_id = FlutterDesktopTextureRegistrarRegisterExternalTexture(
+      texture_registrar_ref_, callback, texture);
+  return texture_id;
+}
+
+bool TextureRegistrarImpl::MarkTextureFrameAvailable(int64_t texture_id) {
+  return FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
+      texture_registrar_ref_, texture_id);
+}
+
+bool TextureRegistrarImpl::UnregisterTexture(int64_t texture_id) {
+  return FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+      texture_registrar_ref_, texture_id);
+}
 
 }  // namespace flutter

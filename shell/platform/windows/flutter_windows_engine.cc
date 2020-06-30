@@ -62,6 +62,16 @@ FlutterRendererConfig GetRendererConfig() {
     }
     return host->view()->MakeResourceCurrent();
   };
+  config.open_gl.gl_external_texture_frame_callback =
+      [](void* user_data, int64_t texture_id, size_t width, size_t height,
+         FlutterOpenGLTexture* texture) -> bool {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (!host->texture_registrar()) {
+      return false;
+    }
+    return host->texture_registrar()->PopulateTexture(texture_id, width, height,
+                                                      texture);
+  };
   return config;
 }
 
@@ -122,6 +132,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   messenger_wrapper_ = std::make_unique<BinaryMessengerImpl>(messenger_.get());
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_.get());
+  texture_registrar_ = std::make_unique<FlutterWindowsTextureRegistrar>(this);
 #ifndef WINUWP
   window_proc_delegate_manager_ =
       std::make_unique<Win32WindowProcDelegateManager>();
