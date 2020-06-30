@@ -119,7 +119,7 @@ class PlatformViewTwoIntersectingOverlaysScenario extends Scenario with _BasePla
     createPlatformView(window, text, id);
   }
 
-  /// The platform view identifier .
+  /// The platform view identifier.
   final int id;
 
   @override
@@ -440,11 +440,8 @@ class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenar
 /// Platform view with clip rrect.
 class PlatformViewClipRRectScenario extends PlatformViewScenario {
   /// Constructs a platform view with clip rrect scenario.
-  PlatformViewClipRRectScenario(Window window, String text, { this.id })
+  PlatformViewClipRRectScenario(Window window, String text, { int id = 0 })
       : super(window, text, id: id);
-
-  /// The platform view identifier.
-  final int id;
 
   @override
   void onBeginFrame(Duration duration) {
@@ -469,11 +466,8 @@ class PlatformViewClipRRectScenario extends PlatformViewScenario {
 /// Platform view with clip path.
 class PlatformViewClipPathScenario extends PlatformViewScenario {
   /// Constructs a platform view with clip rrect scenario.
-  PlatformViewClipPathScenario(Window window, String text, { this.id })
+  PlatformViewClipPathScenario(Window window, String text, { int id = 0 })
       : super(window, text, id: id);
-
-  /// The platform view identifier.
-  final int id;
 
   @override
   void onBeginFrame(Duration duration) {
@@ -496,11 +490,8 @@ class PlatformViewClipPathScenario extends PlatformViewScenario {
 /// Platform view with transform.
 class PlatformViewTransformScenario extends PlatformViewScenario {
   /// Constructs a platform view with transform scenario.
-  PlatformViewTransformScenario(Window window, String text, { this.id })
+  PlatformViewTransformScenario(Window window, String text, { int id = 0 })
       : super(window, text, id: id);
-
-  /// The platform view identifier.
-  final int id;
 
   @override
   void onBeginFrame(Duration duration) {
@@ -521,7 +512,7 @@ class PlatformViewTransformScenario extends PlatformViewScenario {
 /// Platform view with opacity.
 class PlatformViewOpacityScenario extends PlatformViewScenario {
   /// Constructs a platform view with transform scenario.
-  PlatformViewOpacityScenario(Window window, String text, { int id })
+  PlatformViewOpacityScenario(Window window, String text, { int id = 0 })
       : super(window, text, id: id);
 
   @override
