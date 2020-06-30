@@ -92,6 +92,5 @@ Future<LanguageVersion> languageVersionFromPubspec(
           ? parsedConstraint.min
           : throw 'Unsupported version constraint type $parsedConstraint';
 
-  print(min);
   return LanguageVersion(min.major, min.minor);
 }
