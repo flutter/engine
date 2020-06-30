@@ -90,8 +90,9 @@ static gchar* egl_enum_to_string(EGLint value) {
     return nullptr;
 }
 
-// Removes the bit from the bitfield if it was there.
-static gboolean has_bit(EGLint* field, EGLint bit) {
+// Ensures the given bit is not set in a bitfield. Returns TRUE if that bit was
+// cleared.
+static gboolean clear_bit(EGLint* field, EGLint bit) {
   if ((*field & bit) == 0)
     return FALSE;
 
@@ -103,15 +104,15 @@ static gboolean has_bit(EGLint* field, EGLint bit) {
 static gchar* egl_renderable_type_to_string(EGLint value) {
   EGLint v = value;
   g_autoptr(GPtrArray) strings = g_ptr_array_new_with_free_func(g_free);
-  if (has_bit(&v, EGL_OPENGL_ES_BIT))
+  if (clear_bit(&v, EGL_OPENGL_ES_BIT))
     g_ptr_array_add(strings, g_strdup("EGL_OPENGL_ES_BIT"));
-  if (has_bit(&v, EGL_OPENVG_BIT))
+  if (clear_bit(&v, EGL_OPENVG_BIT))
     g_ptr_array_add(strings, g_strdup("EGL_OPENVG_BIT"));
-  if (has_bit(&v, EGL_OPENGL_ES2_BIT))
+  if (clear_bit(&v, EGL_OPENGL_ES2_BIT))
     g_ptr_array_add(strings, g_strdup("EGL_OPENGL_ES2_BIT"));
-  if (has_bit(&v, EGL_OPENGL_BIT))
+  if (clear_bit(&v, EGL_OPENGL_BIT))
     g_ptr_array_add(strings, g_strdup("EGL_OPENGL_BIT"));
-  if (has_bit(&v, EGL_OPENGL_ES3_BIT))
+  if (clear_bit(&v, EGL_OPENGL_ES3_BIT))
     g_ptr_array_add(strings, g_strdup("EGL_OPENGL_ES3_BIT"));
   if (v != 0)
     g_ptr_array_add(strings, egl_hexadecimal_to_string(v));
@@ -124,11 +125,11 @@ static gchar* egl_renderable_type_to_string(EGLint value) {
 static gchar* egl_surface_type_to_string(EGLint value) {
   EGLint v = value;
   g_autoptr(GPtrArray) strings = g_ptr_array_new_with_free_func(g_free);
-  if (has_bit(&v, EGL_PBUFFER_BIT))
+  if (clear_bit(&v, EGL_PBUFFER_BIT))
     g_ptr_array_add(strings, g_strdup("EGL_PBUFFER_BIT"));
-  if (has_bit(&v, EGL_PIXMAP_BIT))
+  if (clear_bit(&v, EGL_PIXMAP_BIT))
     g_ptr_array_add(strings, g_strdup("EGL_PIXMAP_BIT"));
-  if (has_bit(&v, EGL_WINDOW_BIT))
+  if (clear_bit(&v, EGL_WINDOW_BIT))
     g_ptr_array_add(strings, g_strdup("EGL_WINDOW_BIT"));
   if (v != 0)
     g_ptr_array_add(strings, egl_hexadecimal_to_string(v));
