@@ -47,7 +47,8 @@ void main(List<String> args) async {
       }
       // Default to 2.8 if not found to prevent all packages from accidentally
       // opting into NNBD.
-      languageVersion = await languageVersionFromPubspec(pubspec, name) ?? LanguageVersion(2, 8);
+      languageVersion = await languageVersionFromPubspec(pubspec, name) ??
+          LanguageVersion(2, 8);
       packages.add(Package(name, packageRoot,
           languageVersion: languageVersion, packageUriRoot: uri));
     }
@@ -76,9 +77,13 @@ Future<LanguageVersion> languageVersionFromPubspec(
 
   // Find the sdk constraint, or return null if none is present
   var environment = pubspecYaml['environment'] as YamlMap;
-  if (environment == null) return null;
-  var sdkConstraint = environment['version'] as String;
-  if (sdkConstraint == null) return null;
+  if (environment == null) {
+    return null;
+  }
+  var sdkConstraint = environment['sdk'] as String;
+  if (sdkConstraint == null) {
+    return null;
+  }
 
   var parsedConstraint = VersionConstraint.parse(sdkConstraint);
   var min = parsedConstraint is Version
@@ -86,5 +91,7 @@ Future<LanguageVersion> languageVersionFromPubspec(
       : parsedConstraint is VersionRange
           ? parsedConstraint.min
           : throw 'Unsupported version constraint type $parsedConstraint';
+
+  print(min);
   return LanguageVersion(min.major, min.minor);
 }
