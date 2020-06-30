@@ -821,7 +821,6 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     FML_LOG(ERROR) << "Could not locate onDisplayPlatformView method";
     return false;
   }
-  FML_LOG(ERROR) << "found onDisplayPlatformView";
 
   g_on_begin_frame_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "onBeginFrame", "()V");
@@ -1135,7 +1134,6 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
     int height,
     MutatorsStack mutators_stack) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
-  FML_DLOG(ERROR) << "FlutterViewOnDisplayPlatformView start";
   auto java_object = java_object_.get(env);
   if (java_object.is_null()) {
     return;
@@ -1179,8 +1177,6 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
 
   env->CallVoidMethod(java_object.obj(), g_on_display_platform_view_method,
                       view_id, x, y, width, height, mutatorsStack);
-
-  FML_DLOG(ERROR) << "FlutterViewOnDisplayPlatformView end";
 
   FML_CHECK(CheckException(env));
 }

@@ -45,35 +45,6 @@ public class FlutterMutatorsStack {
     finalClippingPaths.add(path);
   }
 
-  // Apply transform matrices to the clipping mutators
-  public void transformClippings() {
-    Matrix currentMatrix = new Matrix();
-    currentMatrix.reset();
-    for (int i = 0; i < this.mutators.size(); i++) {
-      FlutterMutator mutator = mutators.get(i);
-      switch (mutator.getType()) {
-        case TRANSFORM:
-          {
-            currentMatrix.preConcat(mutator.getMatrix());
-            break;
-          }
-        case CLIP_RECT:
-          {
-            Rect rect = mutator.getRect();
-            Path path = new Path();
-            path.addRect(new RectF(rect), Path.Direction.CCW);
-            path.transform(currentMatrix);
-            mutators.set(i, new FlutterMutator(path));
-            break;
-          }
-        case CLIP_PATH:
-        case CLIP_RRECT:
-        case OPACITY:
-          break;
-      }
-    }
-  }
-
   public List<FlutterMutator> getMutators() {
     return mutators;
   }
