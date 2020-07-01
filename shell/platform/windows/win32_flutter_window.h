@@ -14,6 +14,7 @@
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
+#include "flutter/shell/platform/windows/cursor_handler.h"
 #include "flutter/shell/platform/windows/key_event_handler.h"
 #include "flutter/shell/platform/windows/keyboard_hook_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
@@ -57,6 +58,9 @@ class Win32FlutterWindow : public Win32Window {
   void OnPointerLeave() override;
 
   // |Win32Window|
+  void OnSetCursor() override;
+
+  // |Win32Window|
   void OnText(const std::u16string& text) override;
 
   // |Win32Window|
@@ -91,6 +95,10 @@ class Win32FlutterWindow : public Win32Window {
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
   void SendWindowMetrics();
+
+  // Sets the cursor that is set when the mouse is in the client area of the
+  // window. If nullptr, the cursor will be hidden.
+  void UpdateFlutterCursor(HCURSOR cursor);
 
  private:
   // Destroy current rendering surface if one has been allocated.
@@ -150,6 +158,9 @@ class Win32FlutterWindow : public Win32Window {
   // been added since it was last removed).
   bool pointer_currently_added_ = false;
 
+  // The last cursor set by Flutter. Defaults to the arrow cursor.
+  HCURSOR current_cursor_;
+
   // The window handle given to API clients.
   std::unique_ptr<FlutterDesktopView> window_wrapper_;
 
@@ -168,6 +179,9 @@ class Win32FlutterWindow : public Win32Window {
 
   // Handler for the flutter/platform channel.
   std::unique_ptr<flutter::PlatformHandler> platform_handler_;
+
+  // Handler for cursor events.
+  std::unique_ptr<flutter::CursorHandler> cursor_handler_;
 
   // should we forword input messages or not
   bool process_events_ = false;

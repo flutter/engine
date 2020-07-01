@@ -11,6 +11,7 @@ constexpr int base_dpi = 96;
 Win32FlutterWindow::Win32FlutterWindow(int width, int height) {
   surface_manager = std::make_unique<AngleSurfaceManager>();
   Win32Window::InitializeChild("FLUTTERVIEW", width, height);
+  current_cursor_ = ::LoadCursor(nullptr, IDC_ARROW);
 }
 
 Win32FlutterWindow::~Win32FlutterWindow() {
@@ -60,6 +61,8 @@ void Win32FlutterWindow::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
       std::make_unique<flutter::TextInputPlugin>(internal_plugin_messenger));
   platform_handler_ = std::make_unique<flutter::PlatformHandler>(
       internal_plugin_messenger, this);
+  cursor_handler_ =
+      std::make_unique<flutter::CursorHandler>(internal_plugin_messenger, this);
 
   process_events_ = true;
 }
@@ -189,6 +192,10 @@ void Win32FlutterWindow::OnFontChange() {
   FlutterEngineReloadSystemFonts(engine_);
 }
 
+void Win32FlutterWindow::UpdateFlutterCursor(HCURSOR cursor) {
+  current_cursor_ = cursor;
+}
+
 // Sends new size information to FlutterEngine.
 void Win32FlutterWindow::SendWindowMetrics() {
   if (engine_ == nullptr) {
@@ -262,6 +269,10 @@ void Win32FlutterWindow::SendPointerLeave() {
   FlutterPointerEvent event = {};
   event.phase = FlutterPointerPhase::kRemove;
   SendPointerEventWithData(event);
+}
+
+void Win32FlutterWindow::OnSetCursor() {
+  ::SetCursor(current_cursor_);
 }
 
 void Win32FlutterWindow::SendText(const std::u16string& text) {
@@ -362,4 +373,5 @@ void Win32FlutterWindow::DestroyRenderSurface() {
   }
   render_surface = EGL_NO_SURFACE;
 }
+
 }  // namespace flutter
