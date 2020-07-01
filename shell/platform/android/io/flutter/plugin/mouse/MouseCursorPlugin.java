@@ -47,17 +47,35 @@ public class MouseCursorPlugin {
             private static final long serialVersionUID = 1L;
 
             {
-              put("none", Integer.valueOf(PointerIcon.TYPE_NULL));
-              //  "basic": default
+              put("alias", Integer.valueOf(PointerIcon.TYPE_ALIAS));
+              put("allScroll", Integer.valueOf(PointerIcon.TYPE_ALL_SCROLL));
+              put("cell", Integer.valueOf(PointerIcon.TYPE_CELL));
               put("click", Integer.valueOf(PointerIcon.TYPE_HAND));
-              put("text", Integer.valueOf(PointerIcon.TYPE_TEXT));
-              //  "forbidden": default
+              put("contextMenu", Integer.valueOf(PointerIcon.TYPE_CONTEXT_MENU));
+              put("copy", Integer.valueOf(PointerIcon.TYPE_COPY));
+              put("forbidden", Integer.valueOf(PointerIcon.TYPE_NO_DROP));
               put("grab", Integer.valueOf(PointerIcon.TYPE_GRAB));
               put("grabbing", Integer.valueOf(PointerIcon.TYPE_GRABBING));
+              put("help", Integer.valueOf(PointerIcon.TYPE_HELP));
               put(
                   "horizontalDoubleArrow",
                   Integer.valueOf(PointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW));
+              put("move", Integer.valueOf(PointerIcon.TYPE_ALL_SCROLL));
+              put("none", Integer.valueOf(PointerIcon.TYPE_NULL));
+              put("noDrop", Integer.valueOf(PointerIcon.TYPE_NO_DROP));
+              put("precise", Integer.valueOf(PointerIcon.TYPE_CROSSHAIR));
+              put("text", Integer.valueOf(PointerIcon.TYPE_TEXT));
+              put(
+                  "upLeftDoubleArrow",
+                  Integer.valueOf(PointerIcon.TYPE_TOP_LEFT_DIAGONAL_DOUBLE_ARROW));
+              put(
+                  "upRightDoubleArrow",
+                  Integer.valueOf(PointerIcon.TYPE_TOP_RIGHT_DIAGONAL_DOUBLE_ARROW));
               put("verticalDoubleArrow", Integer.valueOf(PointerIcon.TYPE_VERTICAL_DOUBLE_ARROW));
+              put("verticalText", Integer.valueOf(PointerIcon.TYPE_VERTICAL_TEXT));
+              put("wait", Integer.valueOf(PointerIcon.TYPE_WAIT));
+              put("zoomIn", Integer.valueOf(PointerIcon.TYPE_ZOOM_IN));
+              put("zoomOut", Integer.valueOf(PointerIcon.TYPE_ZOOM_OUT));
             }
           };
     }

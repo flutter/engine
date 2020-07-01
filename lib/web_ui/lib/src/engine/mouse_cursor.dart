@@ -20,18 +20,35 @@ class MouseCursor {
 
   MouseCursor._() {}
 
-  // The kind values must be kept in sync with flutter's
-  // rendering/mouse_cursor.dart
+  // Map from Flutter's kind values to CSS's cursor values.
+  //
+  // This map must be kept in sync with flutter's rendering/mouse_cursor.dart.
   static const Map<String, String> _kindToCssValueMap = <String, String>{
-    'none': 'none',
+    'alias': 'alias',
+    'allScroll': 'all-scroll',
     'basic': 'default',
+    'cell': 'cell',
     'click': 'pointer',
-    'text': 'text',
+    'contextMenu': 'context-menu',
+    'copy': 'copy',
     'forbidden': 'not-allowed',
     'grab': 'grab',
     'grabbing': 'grabbing',
+    'help': 'help',
     'horizontalDoubleArrow': 'ew-resize',
+    'move': 'move',
+    'none': 'none',
+    'noDrop': 'no-drop',
+    'precise': 'crosshair',
+    'progress': 'progress',
+    'text': 'text',
+    'upLeftDoubleArrow': 'nwse-resize',
+    'upRightDoubleArrow': 'nesw-resize',
     'verticalDoubleArrow': 'ns-resize',
+    'verticalText': 'vertical-text',
+    'wait': 'wait',
+    'zoomIn': 'zoom-in',
+    'zoomOut': 'zoom-out',
   };
   static String _mapKindToCssValue(String? kind) {
     return _kindToCssValueMap[kind] ?? 'default';
