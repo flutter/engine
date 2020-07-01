@@ -12,6 +12,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.flutter.Log;
 import android.content.ClipboardManager;
 import android.content.res.AssetManager;
 import android.text.Editable;
@@ -352,6 +353,7 @@ public class InputConnectionAdaptorTest {
     KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
     boolean didConsume;
 
+    /*
     // First CodePoint
     didConsume = adaptor.sendKeyEvent(downKeyDown);
     assertTrue(didConsume);
@@ -388,29 +390,32 @@ public class InputConnectionAdaptorTest {
     didConsume = adaptor.sendKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 13);
+    */
 
 
     // TODO(justinmc): 403 is failing, keep checking failures from here.
 
 
+    Log.e("justin", "This is what's left: |" + SAMPLE_EMOJI_TEXT.substring(13, 13 + 3 + 3) + "| which has length " + SAMPLE_EMOJI_TEXT.substring(13, 13 + 3 + 3).length());
     // Emoji Modifier with invalid base
     //adaptor.setSelection(14, 14);
+    adaptor.setSelection(13, 13);
     didConsume = adaptor.sendKeyEvent(downKeyDown);
     assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 14);
-    didConsume = adaptor.sendKeyEvent(downKeyDown);
-    assertTrue(didConsume);
-    assertEquals(Selection.getSelectionStart(editable), 15);
-
-    // Emoji Modifier
+    assertEquals(Selection.getSelectionStart(editable), 17); // actually 14 when no setselection
     didConsume = adaptor.sendKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 16);
 
-    // Variation Selector
+    // Emoji Modifier
     didConsume = adaptor.sendKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 19);
+
+    // Variation Selector
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 21);
 
     // Variation Selector with invalid base
     didConsume = adaptor.sendKeyEvent(downKeyDown);

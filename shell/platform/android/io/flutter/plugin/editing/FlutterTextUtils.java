@@ -203,6 +203,7 @@ class FlutterTextUtils {
     int codePoint = Character.codePointAt(text, offset);
     int nextCharCount = Character.charCount(codePoint);
     int nextOffset = offset + nextCharCount;
+    Log.e("justin", "nextCharCount at " + offset + " is " + nextCharCount + " so nextOffset is " + nextOffset);
 
     if (nextOffset == 0) {
       return 0;
@@ -249,9 +250,11 @@ class FlutterTextUtils {
     }
 
     if (isEmoji(codePoint)) {
+      Log.e("justin", "Is emoji " + offset + ", " + nextOffset);
       boolean isZwj = false;
       int lastSeenVariantSelectorCharCount = 0;
       do {
+        Log.e("justin", "do it " + nextOffset);
         if (isZwj) {
           nextCharCount += Character.charCount(codePoint) + lastSeenVariantSelectorCharCount + 1;
           isZwj = false;
@@ -260,6 +263,7 @@ class FlutterTextUtils {
         if (isEmojiModifier(codePoint)) {
           codePoint = Character.codePointAt(text, nextOffset);
           nextOffset += Character.charCount(codePoint);
+          Log.e("justin", "Is emoji modifier " + offset + ", " + nextOffset);
           if (nextOffset < len && isVariationSelector(codePoint)) {
             codePoint = Character.codePointAt(text, nextOffset);
             if (!isEmoji(codePoint)) {
@@ -275,8 +279,10 @@ class FlutterTextUtils {
         }
 
         if (nextOffset < len) {
+          Log.e("justin", "about to move forward from nextOffset " + nextOffset);
           codePoint = Character.codePointAt(text, nextOffset);
           nextOffset += Character.charCount(codePoint);
+          Log.e("justin", "moved to next, is it an emoji? " + isEmoji(codePoint) + " for " + nextOffset);
           if (codePoint == ZERO_WIDTH_JOINER) {
             isZwj = true;
             codePoint = Character.codePointAt(text, nextOffset);
@@ -295,6 +301,7 @@ class FlutterTextUtils {
       } while (isZwj && isEmoji(codePoint));
     }
 
+    Log.e("justin", "return " + offset + " + " + nextCharCount + " = " + (offset + nextCharCount));
     return offset + nextCharCount;
   }
 }
