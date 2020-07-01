@@ -46,11 +46,6 @@ SkCanvas* AndroidExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   if (picture_recorders_.count(view_id) == 1) {
     return picture_recorders_.at(view_id)->getRecordingCanvas();
   }
-  // const EmbeddedViewParams& params = view_params_.at(view_id);
-  // jni_facade_->FlutterViewOnCompositePlatformView(view_id, //
-  //                                     params.sizePoints().width(),  //
-  //                                     params.sizePoints().height(),  //
-  //                                     params.mutatorsStack());
   return nullptr;
 }
 

@@ -48,8 +48,9 @@ public class FlutterMutatorView extends FrameLayout {
       // We need to apply all the mutators to the view, which includes the mutation that leads to
       // the final offset. We should reverse this final offset, both as a translate mutation and to
       // all the clipping paths
-      path.offset(-left, -top);
-      canvas.clipPath(path);
+      Path pathCopy = new Path(path);
+      pathCopy.offset(-left, -top);
+      canvas.clipPath(pathCopy);
     }
     super.draw(canvas);
     canvas.restore();
@@ -78,7 +79,7 @@ public class FlutterMutatorView extends FrameLayout {
     Matrix reverseScaleMatrix = new Matrix();
     reverseScaleMatrix.preScale(1 / screenDensity, 1 / screenDensity);
 
-    Matrix finalMatrix = mutatorsStack.getFinalMatrix();
+    Matrix finalMatrix = new Matrix(mutatorsStack.getFinalMatrix());
     finalMatrix.postConcat(reverseTranslateMatrix);
     finalMatrix.preConcat(reverseScaleMatrix);
     canvas.concat(finalMatrix);
