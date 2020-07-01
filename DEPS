@@ -187,7 +187,7 @@ deps = {
    Var('dart_git') + '/cli_util.git@0.1.4',
 
   'src/third_party/dart/third_party/pkg/collection':
-   Var('dart_git') + '@' + Var('dart_collection_rev'),
+   Var('dart_git') + '/collection.git' + '@' + Var('dart_collection_rev'),
 
   'src/third_party/dart/third_party/pkg/convert':
    Var('dart_git') + '/convert.git@49bde5b371eb5c2c8e721557cf762f17c75e49fc',
