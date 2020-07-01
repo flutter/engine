@@ -52,7 +52,7 @@ struct _FlRendererClass {
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
  *
- * Setup the renderer.
+ * Set up the renderer.
  *
  * Returns: %TRUE if successfully setup.
  */
