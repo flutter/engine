@@ -31,6 +31,8 @@ void main() {
     _shaderTests();
     _paintTests();
     _maskFilterTests();
+    _colorFilterTests();
+    _imageFilterTests();
   },
       // This test failed on iOS Safari.
       // TODO: https://github.com/flutter/flutter/issues/60040
@@ -271,6 +273,61 @@ void _maskFilterTests() {
       5.0,
       false,
     ), isNotNull);
+  });
+}
+
+void _colorFilterTests() {
+  test('MakeBlend', () {
+    expect(
+      canvasKitJs.SkColorFilter.MakeBlend(
+        Float32List.fromList([0, 0, 0, 1]),
+        canvasKitJs.BlendMode.SrcATop,
+      ),
+      isNotNull,
+    );
+  });
+
+  test('MakeMatrix', () {
+    expect(
+      canvasKitJs.SkColorFilter.MakeMatrix(
+        Float32List(20),
+      ),
+      isNotNull,
+    );
+  });
+
+  test('MakeSRGBToLinearGamma', () {
+    expect(
+      canvasKitJs.SkColorFilter.MakeSRGBToLinearGamma(),
+      isNotNull,
+    );
+  });
+
+  test('MakeLinearToSRGBGamma', () {
+    expect(
+      canvasKitJs.SkColorFilter.MakeLinearToSRGBGamma(),
+      isNotNull,
+    );
+  });
+}
+
+void _imageFilterTests() {
+  test('MakeBlur', () {
+    expect(
+      canvasKitJs.SkImageFilter.MakeBlur(1, 2, canvasKitJs.TileMode.Repeat, null),
+      isNotNull,
+    );
+  });
+
+  test('MakeMatrixTransform', () {
+    expect(
+      canvasKitJs.SkImageFilter.MakeMatrixTransform(
+        toSkMatrixFromFloat32(Matrix4.identity().storage),
+        canvasKitJs.FilterQuality.Medium,
+        null,
+      ),
+      isNotNull,
+    );
   });
 }
 

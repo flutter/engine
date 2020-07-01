@@ -9,7 +9,6 @@ void initializeCanvasKitBindings(js.JsObject canvasKit) {
   // Because JsObject cannot be cast to a @JS type, we stash CanvasKit into
   // a global and use the [canvasKitJs] getter to access it.
   js.JsObject.fromBrowserObject(html.window)['flutter_canvas_kit'] = canvasKit;
-  SkPaint().setStrokeWidth(3.0);
 }
 
 @JS('window.flutter_canvas_kit')
@@ -27,6 +26,8 @@ class CanvasKit {
   external SkAnimatedImage MakeAnimatedImageFromEncoded(Uint8List imageData);
   external SkShaderNamespace get SkShader;
   external SkMaskFilter MakeBlurMaskFilter(SkBlurStyle blurStyle, double sigma, bool respectCTM);
+  external SkColorFilterNamespace get SkColorFilter;
+  external SkImageFilterNamespace get SkImageFilter;
 }
 
 @JS()
@@ -279,7 +280,7 @@ class SkShaderNamespace {
     List<Float32List> colors,
     Float32List colorStops,
     SkTileMode tileMode,
-    Float32List? matrix4, // 9-element array
+    Float32List? matrix, // 3x3 matrix
     int flags,
   );
 
@@ -291,7 +292,7 @@ class SkShaderNamespace {
     List<Float32List> colors,
     Float32List colorStops,
     SkTileMode tileMode,
-    Float32List? matrix4,
+    Float32List? matrix, // 3x3 matrix
     int flags,
   );
 }
@@ -328,14 +329,36 @@ class SkPaint {
 class SkMaskFilter {}
 
 @JS()
-class SkColorFilter {
-  // TODO(yjbanov): implement
+class SkColorFilterNamespace {
+  external SkColorFilter MakeBlend(Float32List color, SkBlendMode blendMode);
+  external SkColorFilter MakeMatrix(
+    Float32List matrix, // 20-element matrix
+  );
+  external SkColorFilter MakeLinearToSRGBGamma();
+  external SkColorFilter MakeSRGBToLinearGamma();
 }
 
 @JS()
-class SkImageFilter {
-  // TODO(yjbanov): implement
+class SkColorFilter {}
+
+@JS()
+class SkImageFilterNamespace {
+  external SkImageFilter MakeBlur(
+    double sigmaX,
+    double sigmaY,
+    SkTileMode tileMode,
+    Null input, // we don't use this yet
+  );
+
+  external SkImageFilter MakeMatrixTransform(
+    Float32List matrix, // 3x3 matrix
+    SkFilterQuality filterQuality,
+    Null input, // we don't use this yet
+  );
 }
+
+@JS()
+class SkImageFilter {}
 
 /// Converts a 4x4 Flutter matrix (represented as a [Float32List]) to an
 /// SkMatrix, which is a 3x3 transform matrix.
