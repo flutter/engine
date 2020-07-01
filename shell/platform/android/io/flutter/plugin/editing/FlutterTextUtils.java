@@ -5,7 +5,6 @@
 package io.flutter.plugin.editing;
 
 import android.graphics.Paint;
-import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 
 class FlutterTextUtils {
@@ -220,32 +219,45 @@ class FlutterTextUtils {
 
     // Flags
     if (isRegionalIndicatorSymbol(codePoint)) {
+      Log.e("justin", "flag length " + Character.charCount(codePoint));
       codePoint = Character.codePointAt(text, nextOffset);
       nextOffset += Character.charCount(codePoint);
-      int regionalIndicatorSymbolCount = 1;
+      int regionalIndicatorSymbolCount = 0;
       while (nextOffset < len && isRegionalIndicatorSymbol(codePoint)) {
+        Log.e("justin", "while " + nextOffset + " and next addition " + Character.charCount(codePoint));
         codePoint = Character.codePointAt(text, nextOffset);
         nextOffset += Character.charCount(codePoint);
         regionalIndicatorSymbolCount++;
       }
-      if (regionalIndicatorSymbolCount % 2 == 0) {
+      if (regionalIndicatorSymbolCount > 0 && regionalIndicatorSymbolCount % 2 == 0) {
+        Log.e("justin", "even for " + regionalIndicatorSymbolCount);
         nextCharCount += 2;
       }
+      Log.e("justin", "return flag " + offset + " + " + nextCharCount);
       return offset + nextCharCount;
     }
 
     // Keycaps
+    if (isKeycapBase(codePoint)) {
+      Log.e("justin", "isKeycapBase");
+      nextCharCount += Character.charCount(codePoint);
+    }
     if (codePoint == COMBINING_ENCLOSING_KEYCAP) {
+      Log.e("justin", "keycap!");
       codePoint = Character.codePointBefore(text, nextOffset);
       nextOffset += Character.charCount(codePoint);
       if (nextOffset < len && isVariationSelector(codePoint)) {
+        Log.e("justin", "keycap variation selector");
         int tmpCodePoint = Character.codePointAt(text, nextOffset);
         if (isKeycapBase(tmpCodePoint)) {
+          Log.e("justin", "keycap variation selector base");
           nextCharCount += Character.charCount(codePoint) + Character.charCount(tmpCodePoint);
         }
       } else if (isKeycapBase(codePoint)) {
+        Log.e("justin", "keycap base");
         nextCharCount += Character.charCount(codePoint);
       }
+      Log.e("justin", "keycap return " + offset + " + " + nextCharCount);
       return offset + nextCharCount;
     }
 
@@ -261,29 +273,47 @@ class FlutterTextUtils {
         }
         lastSeenVariantSelectorCharCount = 0;
         if (isEmojiModifier(codePoint)) {
-          codePoint = Character.codePointAt(text, nextOffset);
-          nextOffset += Character.charCount(codePoint);
-          Log.e("justin", "Is emoji modifier " + offset + ", " + nextOffset);
-          if (nextOffset < len && isVariationSelector(codePoint)) {
-            codePoint = Character.codePointAt(text, nextOffset);
-            if (!isEmoji(codePoint)) {
-              return offset + nextCharCount;
-            }
-            lastSeenVariantSelectorCharCount = Character.charCount(codePoint);
-            nextOffset += Character.charCount(codePoint);
-          }
-          if (isEmojiModifierBase(codePoint)) {
-            nextCharCount += lastSeenVariantSelectorCharCount + Character.charCount(codePoint);
-          }
+          Log.e("justin", "first isEmojiModifier");
           break;
+        }
+        if (isVariationSelector(codePoint)) {
+          Log.e("justin", "isVariationSelector");
         }
 
         if (nextOffset < len) {
-          Log.e("justin", "about to move forward from nextOffset " + nextOffset);
           codePoint = Character.codePointAt(text, nextOffset);
           nextOffset += Character.charCount(codePoint);
-          Log.e("justin", "moved to next, is it an emoji? " + isEmoji(codePoint) + " for " + nextOffset);
+          if (codePoint == COMBINING_ENCLOSING_KEYCAP) {
+            Log.e("justin", "keycap inside of emoji block");
+            codePoint = Character.codePointBefore(text, nextOffset);
+            nextOffset += Character.charCount(codePoint);
+            Log.e("justin", "next is " + nextOffset);
+            if (nextOffset < len && isVariationSelector(codePoint)) {
+              Log.e("justin", "keycap variation selector");
+              int tmpCodePoint = Character.codePointAt(text, nextOffset);
+              if (isKeycapBase(tmpCodePoint)) {
+                Log.e("justin", "keycap variation selector base");
+                nextCharCount += Character.charCount(codePoint) + Character.charCount(tmpCodePoint);
+              }
+            } else if (isKeycapBase(codePoint)) {
+              Log.e("justin", "keycap base");
+              nextCharCount += Character.charCount(codePoint);
+            }
+            Log.e("justin", "keycap return " + offset + " + " + nextCharCount);
+            return offset + nextCharCount;
+          }
+          if (isEmojiModifier(codePoint)) {
+            Log.e("justin", "second isEmojiModifier");
+            nextCharCount += lastSeenVariantSelectorCharCount + Character.charCount(codePoint);
+            break;
+          }
+          if (isVariationSelector(codePoint)) {
+            Log.e("justin", "second isVariationSelector");
+            nextCharCount += lastSeenVariantSelectorCharCount + Character.charCount(codePoint);
+            break;
+          }
           if (codePoint == ZERO_WIDTH_JOINER) {
+            Log.e("justin", "is zwj");
             isZwj = true;
             codePoint = Character.codePointAt(text, nextOffset);
             nextOffset += Character.charCount(codePoint);
