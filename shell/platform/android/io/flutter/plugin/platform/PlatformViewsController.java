@@ -9,9 +9,6 @@ import static android.view.MotionEvent.PointerProperties;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.PixelFormat;
-import android.hardware.HardwareBuffer;
-import android.media.ImageReader;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -247,12 +244,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void onTouch(@NonNull PlatformViewsChannel.PlatformViewTouch touch) {
-          float density = context.getResources().getDisplayMetrics().density;
           PointerProperties[] pointerProperties =
               parsePointerPropertiesList(touch.rawPointerPropertiesList)
                   .toArray(new PointerProperties[touch.pointerCount]);
           PointerCoords[] pointerCoords =
-              parsePointerCoordsList(touch.rawPointerCoords, density)
+              parsePointerCoordsList(touch.rawPointerCoords, getDisplayDensity())
                   .toArray(new PointerCoords[touch.pointerCount]);
 
           if (!vdControllers.containsKey(touch.viewId)) {
@@ -572,9 +568,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
   }
 
+  private float getDisplayDensity() {
+    return context.getResources().getDisplayMetrics().density;
+  }
+
   private int toPhysicalPixels(double logicalPixels) {
-    float density = context.getResources().getDisplayMetrics().density;
-    return (int) Math.round(logicalPixels * density);
+    return (int) Math.round(logicalPixels * getDisplayDensity());
   }
 
   private void flushAllViews() {
@@ -624,8 +623,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     PlatformView platformView = factory.create(context, viewId, createParams);
     View view = platformView.getView();
-    platformViews.put(viewId, view);
 
+    // Reverse scale the view based on the screen density.
+    //
+    // Flow pixels are based on the physical resolution. For example, 1000 pixels in flow equals
+    // 500 points in Android if the display density is 2.0.
+    float density = getDisplayDensity();
+    view.setPivotX(0);
+    view.setPivotY(0);
+    view.setScaleX(1 / density);
+    view.setScaleY(1 / density);
+
+    platformViews.put(viewId, view);
     ((FlutterView) flutterView).addView(view);
   }
 
@@ -694,28 +703,20 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   @TargetApi(19)
-  public static ImageReader createImageReader(int width, int height) {
-    if (android.os.Build.VERSION.SDK_INT >= 29) {
-      return ImageReader.newInstance(
-          width,
-          height,
-          PixelFormat.RGBA_8888,
-          3,
-          HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE | HardwareBuffer.USAGE_GPU_COLOR_OUTPUT);
-    } else {
-      return ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 3);
-    }
-  }
-
-  @TargetApi(19)
   public FlutterOverlaySurface createOverlaySurface() {
-    ImageReader imageReader = createImageReader(flutterView.getWidth(), flutterView.getHeight());
     FlutterImageView imageView =
         new FlutterImageView(
-            flutterView.getContext(), imageReader, FlutterImageView.SurfaceKind.overlay);
+            flutterView.getContext(),
+            flutterView.getWidth(),
+            flutterView.getHeight(),
+            FlutterImageView.SurfaceKind.overlay);
     int id = nextOverlayLayerId++;
     overlayLayerViews.put(id, imageView);
 
-    return new FlutterOverlaySurface(id, imageReader.getSurface());
+    return new FlutterOverlaySurface(id, imageView.getSurface());
+  }
+
+  public void destroyOverlaySurfaces() {
+    overlayLayerViews.clear();
   }
 }
