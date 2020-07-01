@@ -356,13 +356,13 @@ class InputConnectionAdaptor extends BaseInputConnection {
         if (selStart == selEnd && !event.isShiftPressed()) {
           int newSel =
               Math.min(
-                  flutterTextUtils.getOffsetAfter(mEditable, selStart, new TextPaint()),
+                  flutterTextUtils.getOffsetAfter(mEditable, selStart),
                   mEditable.length());
           setSelection(newSel, newSel);
         } else {
           int newSelEnd =
               Math.min(
-                  flutterTextUtils.getOffsetAfter(mEditable, selEnd, new TextPaint()),
+                  flutterTextUtils.getOffsetAfter(mEditable, selEnd),
                   mEditable.length());
           setSelection(selStart, newSelEnd);
         }

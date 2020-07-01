@@ -38,7 +38,6 @@ import org.robolectric.shadows.ShadowClipboardManager;
 @Config(manifest = Config.NONE, shadows = ShadowClipboardManager.class)
 @RunWith(RobolectricTestRunner.class)
 public class InputConnectionAdaptorTest {
-  /*
   @Test
   public void inputConnectionAdaptor_ReceivesEnter() throws NullPointerException {
     View testView = new View(RuntimeEnvironment.application);
@@ -342,7 +341,6 @@ public class InputConnectionAdaptorTest {
     assertEquals(selStart + 1, Selection.getSelectionStart(editable));
     assertEquals(selStart + 1, Selection.getSelectionEnd(editable));
   }
-  */
 
   @Test
   public void testSendKeyEvent_rightKeyMovesCaretRightComplexEmoji() {
@@ -479,7 +477,6 @@ public class InputConnectionAdaptorTest {
     assertEquals(Selection.getSelectionStart(editable), 75);
   }
 
-  /*
   @Test
   public void testSendKeyEvent_rightKeyExtendsSelectionRight() {
     int selStart = 5;
@@ -759,7 +756,6 @@ public class InputConnectionAdaptorTest {
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 0);
   }
-  */
 
   private static final String SAMPLE_TEXT =
       "Lorem ipsum dolor sit amet," + "\nconsectetur adipiscing elit.";
