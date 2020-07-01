@@ -22,9 +22,35 @@ class CanvasKit {
   external SkStrokeCapEnum get StrokeCap;
   external SkStrokeJoinEnum get StrokeJoin;
   external SkFilterQualityEnum get FilterQuality;
+  external SkBlurStyleEnum get BlurStyle;
   external SkTileModeEnum get TileMode;
   external SkAnimatedImage MakeAnimatedImageFromEncoded(Uint8List imageData);
   external SkShaderNamespace get SkShader;
+  external SkMaskFilter MakeBlurMaskFilter(SkBlurStyle blurStyle, double sigma, bool respectCTM);
+}
+
+@JS()
+class SkBlurStyleEnum {
+  external SkBlurStyle get Normal;
+  external SkBlurStyle get Solid;
+  external SkBlurStyle get Outer;
+  external SkBlurStyle get Inner;
+}
+
+@JS()
+class SkBlurStyle {
+  external int get value;
+}
+
+final List<SkBlurStyle> _skBlurStyles = <SkBlurStyle>[
+  canvasKitJs.BlurStyle.Normal,
+  canvasKitJs.BlurStyle.Solid,
+  canvasKitJs.BlurStyle.Outer,
+  canvasKitJs.BlurStyle.Inner,
+];
+
+SkBlurStyle toSkBlurStyle(ui.BlurStyle strokeCap) {
+  return _skBlurStyles[strokeCap.index];
 }
 
 @JS()
@@ -239,13 +265,34 @@ class SkImage {
 
 @JS()
 class SkShaderNamespace {
-  // TODO(yjbanov): implement other shader types.
   external SkShader MakeLinearGradient(
-    List<double> from,
-    List<double> to,
+    Float32List from, // 2-element array
+    Float32List to, // 2-element array
     List<Float32List> colors,
-    List<double> colorStops,
+    Float32List colorStops,
     SkTileMode tileMode,
+  );
+
+  external SkShader MakeRadialGradient(
+    Float32List center, // 2-element array
+    double radius,
+    List<Float32List> colors,
+    Float32List colorStops,
+    SkTileMode tileMode,
+    Float32List? matrix4, // 9-element array
+    int flags,
+  );
+
+  external SkShader MakeTwoPointConicalGradient(
+    Float32List focal,
+    double focalRadius,
+    Float32List center,
+    double radius,
+    List<Float32List> colors,
+    Float32List colorStops,
+    SkTileMode tileMode,
+    Float32List? matrix4,
+    int flags,
   );
 }
 
@@ -278,9 +325,7 @@ class SkPaint {
 }
 
 @JS()
-class SkMaskFilter {
-  // TODO(yjbanov): implement
-}
+class SkMaskFilter {}
 
 @JS()
 class SkColorFilter {
@@ -290,4 +335,18 @@ class SkColorFilter {
 @JS()
 class SkImageFilter {
   // TODO(yjbanov): implement
+}
+
+/// Converts a 4x4 Flutter matrix (represented as a [Float32List]) to an
+/// SkMatrix, which is a 3x3 transform matrix.
+Float32List toSkMatrixFromFloat32(Float32List matrix4) {
+  final Float32List skMatrix = Float32List(9);
+  for (int i = 0; i < 9; ++i) {
+    final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
+    if (matrix4Index < matrix4.length)
+      skMatrix[i] = matrix4[matrix4Index];
+    else
+      skMatrix[i] = 0.0;
+  }
+  return skMatrix;
 }

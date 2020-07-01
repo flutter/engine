@@ -25,10 +25,12 @@ void main() {
     _strokeCapTests();
     _strokeJoinTests();
     _filterQualityTests();
+    _blurStyleTests();
     _tileModeTests();
     _imageTests();
     _shaderTests();
     _paintTests();
+    _maskFilterTests();
   },
       // This test failed on iOS Safari.
       // TODO: https://github.com/flutter/flutter/issues/60040
@@ -132,6 +134,21 @@ void _filterQualityTests() {
   });
 }
 
+void _blurStyleTests() {
+  test('blur style mapping is correct', () {
+    expect(canvasKitJs.BlurStyle.Normal.value, ui.BlurStyle.normal.index);
+    expect(canvasKitJs.BlurStyle.Solid.value, ui.BlurStyle.solid.index);
+    expect(canvasKitJs.BlurStyle.Outer.value, ui.BlurStyle.outer.index);
+    expect(canvasKitJs.BlurStyle.Inner.value, ui.BlurStyle.inner.index);
+  });
+
+  test('ui.BlurStyle converts to SkBlurStyle', () {
+    for (ui.BlurStyle style in ui.BlurStyle.values) {
+      expect(toSkBlurStyle(style).value, style.index);
+    }
+  });
+}
+
 void _tileModeTests() {
   test('tile mode mapping is correct', () {
     expect(canvasKitJs.TileMode.Clamp.value, ui.TileMode.clamp.index);
@@ -181,17 +198,49 @@ void _shaderTests() {
   test('MakeLinearGradient', () {
     expect(_makeTestShader(), isNotNull);
   });
+
+  test('MakeRadialGradient', () {
+    expect(canvasKitJs.SkShader.MakeRadialGradient(
+      Float32List.fromList([1, 1]),
+      10.0,
+      <Float32List>[
+        Float32List.fromList([0, 0, 0, 1]),
+        Float32List.fromList([1, 1, 1, 1]),
+      ],
+      Float32List.fromList([0, 1]),
+      canvasKitJs.TileMode.Repeat,
+      toSkMatrixFromFloat32(Matrix4.identity().storage),
+      0,
+    ), isNotNull);
+  });
+
+  test('MakeTwoPointConicalGradient', () {
+    expect(canvasKitJs.SkShader.MakeTwoPointConicalGradient(
+      Float32List.fromList([1, 1]),
+      10.0,
+      Float32List.fromList([1, 1]),
+      10.0,
+      <Float32List>[
+        Float32List.fromList([0, 0, 0, 1]),
+        Float32List.fromList([1, 1, 1, 1]),
+      ],
+      Float32List.fromList([0, 1]),
+      canvasKitJs.TileMode.Repeat,
+      toSkMatrixFromFloat32(Matrix4.identity().storage),
+      0,
+    ), isNotNull);
+  });
 }
 
 SkShader _makeTestShader() {
   return canvasKitJs.SkShader.MakeLinearGradient(
-    <double>[0.0, 0.0],
-    <double>[1.0, 1.0],
+    Float32List.fromList([0, 0]),
+    Float32List.fromList([1, 1]),
     <Float32List>[
       Float32List.fromList([0, 0, 0, 1]),
       Float32List.fromList([1, 1, 1, 1]),
     ],
-    <double>[0, 1],
+    Float32List.fromList([0, 1]),
     canvasKitJs.TileMode.Repeat,
   );
 }
@@ -212,6 +261,16 @@ void _paintTests() {
     // TODO(yjbanov): paint.setColorFilter
     paint.setStrokeMiter(1.4);
     // TODO(yjbanov): paint.setImageFilter
+  });
+}
+
+void _maskFilterTests() {
+  test('MakeBlurMaskFilter', () {
+    expect(canvasKitJs.MakeBlurMaskFilter(
+      canvasKitJs.BlurStyle.Outer,
+      5.0,
+      false,
+    ), isNotNull);
   });
 }
 
