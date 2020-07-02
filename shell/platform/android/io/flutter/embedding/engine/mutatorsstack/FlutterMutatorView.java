@@ -33,7 +33,6 @@ public class FlutterMutatorView extends FrameLayout {
     layoutParams.leftMargin = left;
     layoutParams.topMargin = top;
     setLayoutParams(layoutParams);
-    setClipChildren(false);
     setWillNotDraw(false);
   }
 

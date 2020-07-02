@@ -122,6 +122,8 @@ class PlatformViewAndroidJNI {
       int y,
       int width,
       int height,
+      int viewWidth,
+      int viewHeight,
       MutatorsStack mutators_stack) = 0;
 
   //----------------------------------------------------------------------------

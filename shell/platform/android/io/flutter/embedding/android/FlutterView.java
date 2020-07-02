@@ -309,7 +309,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   private void init() {
-    setClipChildren(false);
     Log.v(TAG, "Initializing FlutterView");
 
     if (flutterSurfaceView != null) {

@@ -824,7 +824,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   g_on_display_platform_view_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "onDisplayPlatformView",
-                       "(IIIIILio/flutter/embedding/engine/mutatorsstack/"
+                       "(IIIIIIILio/flutter/embedding/engine/mutatorsstack/"
                        "FlutterMutatorsStack;)V");
 
   if (g_on_display_platform_view_method == nullptr) {
@@ -1142,6 +1142,8 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
     int y,
     int width,
     int height,
+    int viewWidth,
+    int viewHeight,
     MutatorsStack mutators_stack) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   auto java_object = java_object_.get(env);
@@ -1186,7 +1188,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
   }
 
   env->CallVoidMethod(java_object.obj(), g_on_display_platform_view_method,
-                      view_id, x, y, width, height, mutatorsStack);
+                      view_id, x, y, width, height, viewWidth, viewHeight, mutatorsStack);
 
   FML_CHECK(CheckException(env));
 }

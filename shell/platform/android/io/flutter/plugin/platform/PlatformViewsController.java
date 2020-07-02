@@ -636,7 +636,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   public void onDisplayPlatformView(
-      int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
+      int viewId, int x, int y, int width, int height, int viewWidth, int ViewHeight, FlutterMutatorsStack mutatorsStack) {
     initializeRootImageViewIfNeeded();
     initializePlatformViewIfNeeded(viewId);
 
@@ -645,7 +645,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     mutatorView.readyToDisplay(mutatorsStack, density, x, y, width, height);
     mutatorView.bringToFront();
 
+        
+    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(viewWidth, ViewHeight);
     View platformView = platformViews.get(viewId);
+    platformView.setLayoutParams(layoutParams);
     platformView.setVisibility(View.VISIBLE);
     platformView.bringToFront();
     currentFrameUsedPlatformViewIds.add(viewId);

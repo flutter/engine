@@ -147,12 +147,20 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
   for (int64_t view_id : composition_order_) {
     SkRect view_rect = GetViewRect(view_id);
     const EmbeddedViewParams& params = view_params_.at(view_id);
+    FML_DLOG(ERROR) << "bounding box width " << params.finalBoundingRect().width();
+    FML_DLOG(ERROR) << "bounding box height " << params.finalBoundingRect().height();
+   FML_DLOG(ERROR) << "size width " << view_rect.width();
+    FML_DLOG(ERROR) << "size height " << view_rect.height();
+
+
     // Display the platform view. If it's already displayed, then it's
     // just positioned and sized.
     jni_facade_->FlutterViewOnDisplayPlatformView(view_id,            //
-                                                  view_rect.x(),      //
-                                                  view_rect.y(),      //
-                                                  view_rect.width(),  //
+                                                  params.finalBoundingRect().x(),      //
+                                                  params.finalBoundingRect().y(),      //
+                                                  params.finalBoundingRect().width(),  //
+                                                  params.finalBoundingRect().height(), //
+                                                  view_rect.width(),
                                                   view_rect.height(),
                                                   params.mutatorsStack()  //
     );

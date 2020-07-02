@@ -931,13 +931,13 @@ public class FlutterJNI {
   // @SuppressWarnings("unused")
   @UiThread
   public void onDisplayPlatformView(
-      int viewId, int x, int y, int width, int height, FlutterMutatorsStack mutatorsStack) {
+      int viewId, int x, int y, int width, int height, int viewWidth, int viewHeight, FlutterMutatorsStack mutatorsStack) {
     ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position a platform view");
     }
-    platformViewsController.onDisplayPlatformView(viewId, x, y, width, height, mutatorsStack);
+    platformViewsController.onDisplayPlatformView(viewId, x, y, width, height,viewWidth, viewHeight, mutatorsStack);
   }
 
   // TODO(mattcarroll): determine if this is nonull or nullable

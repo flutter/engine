@@ -321,7 +321,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__RecycleSurfaces) {
     // The JNI call to display the Android view.
     MutatorsStack mutators_stack;
     EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(
-                               0, 100, 100, 300, 300, mutators_stack));
+                               0, 100, 100, 300, 300, 200, 200 mutators_stack));
     // The JNI call to display the overlay surface.
     EXPECT_CALL(*jni_mock,
                 FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));
@@ -371,7 +371,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame__RecycleSurfaces) {
     // The JNI call to display the Android view.
     MutatorsStack mutators_stack;
     EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(
-                               0, 100, 100, 300, 300, mutators_stack));
+                               0, 100, 100, 300, 300, 200, 200, mutators_stack));
     // The JNI call to display the overlay surface.
     EXPECT_CALL(*jni_mock,
                 FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));

@@ -44,7 +44,8 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
 };
 
 Map<String, dynamic> _currentScenarioParams = <String, dynamic>{
-  'name': 'animated_color_square',
+  'name': 'platform_view_transform',
+  'use_android_view': true,
 };
 
 Scenario _currentScenarioInstance = _scenarios[_currentScenarioParams['name']]();
