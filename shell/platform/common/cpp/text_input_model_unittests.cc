@@ -593,4 +593,13 @@ TEST(TextInputModel, GetCursorOffsetReverseSelection) {
   EXPECT_EQ(model->GetCursorOffset(), 1);
 }
 
+TEST(TextInputModel, Clear) {
+  auto model = std::make_unique<TextInputModel>();
+  model->AddText("abc");
+
+  EXPECT_TRUE(model->SetEditingState(-1, -1, ""));
+  EXPECT_EQ(model->selection_base(), 0);
+  EXPECT_EQ(model->selection_extent(), 0);
+  EXPECT_STREQ(model->GetText().c_str(), "");
+}
 }  // namespace flutter

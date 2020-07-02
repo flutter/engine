@@ -19,10 +19,10 @@ class TextInputModel {
 
   // Attempts to set the text state.
   //
-  // Returns false if the state is not valid (base or extent are out of
-  // bounds, or base is less than extent).
-  bool SetEditingState(size_t selection_base,
-                       size_t selection_extent,
+  // Returns false if the state is not valid (base or extent are larger than
+  // current text length).
+  bool SetEditingState(int64_t selection_base,
+                       int64_t selection_extent,
                        const std::string& text);
 
   // Adds a Unicode code point.

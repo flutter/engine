@@ -34,17 +34,27 @@ TextInputModel::TextInputModel()
 
 TextInputModel::~TextInputModel() = default;
 
-bool TextInputModel::SetEditingState(size_t selection_base,
-                                     size_t selection_extent,
+bool TextInputModel::SetEditingState(int64_t selection_base,
+                                     int64_t selection_extent,
                                      const std::string& text) {
-  if (selection_base > text.size() || selection_extent > text.size()) {
+  if ((selection_base >= 0 &&
+       static_cast<size_t>(selection_base) > text.size()) ||
+      (selection_extent >= 0 &&
+       static_cast<size_t>(selection_extent) > text.size())) {
     return false;
   }
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
-      utf16_converter;
-  text_ = utf16_converter.from_bytes(text);
-  selection_base_ = text_.begin() + selection_base;
-  selection_extent_ = text_.begin() + selection_extent;
+  if (selection_base == -1 && selection_extent == -1 && text.empty()) {
+    // Action on TextEditingValue.empty
+    text_.clear();
+    selection_base_ = text_.begin();
+    selection_extent_ = text_.begin();
+  } else {
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+        utf16_converter;
+    text_ = utf16_converter.from_bytes(text);
+    selection_base_ = text_.begin() + selection_base;
+    selection_extent_ = text_.begin() + selection_extent;
+  }
   return true;
 }
 
@@ -151,8 +161,9 @@ bool TextInputModel::DeleteSurrounding(int offset_from_cursor, int count) {
 }
 
 bool TextInputModel::MoveCursorToBeginning() {
-  if (selection_base_ == text_.begin() && selection_extent_ == text_.begin())
+  if (selection_base_ == text_.begin() && selection_extent_ == text_.begin()) {
     return false;
+  }
 
   selection_base_ = text_.begin();
   selection_extent_ = text_.begin();
@@ -161,8 +172,9 @@ bool TextInputModel::MoveCursorToBeginning() {
 }
 
 bool TextInputModel::MoveCursorToEnd() {
-  if (selection_base_ == text_.end() && selection_extent_ == text_.end())
+  if (selection_base_ == text_.end() && selection_extent_ == text_.end()) {
     return false;
+  }
 
   selection_base_ = text_.end();
   selection_extent_ = text_.end();
