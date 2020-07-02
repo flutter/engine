@@ -645,7 +645,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     mutatorView.readyToDisplay(mutatorsStack, density, x, y, width, height);
     mutatorView.bringToFront();
 
-        
     FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(viewWidth, ViewHeight);
     View platformView = platformViews.get(viewId);
     platformView.setLayoutParams(layoutParams);

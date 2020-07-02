@@ -206,31 +206,8 @@ class EmbeddedViewParams {
     SkPath path;
     SkRect starting_rect = SkRect::MakeSize(size_points);
     path.addRect(starting_rect);
-    for (int i = 0; i < path.countPoints(); i ++) {
-      SkPoint point = path.getPoint(i);
-      FML_DLOG(ERROR) << "EmbeddedViewParams path point before " << i << " x " << point.x() << " y " << point.y();
-    }
     path.transform(matrix);
-
-    FML_DLOG(ERROR) << "EmbeddedViewParams matrix  getTranslateX " << matrix.getTranslateX();;
-    FML_DLOG(ERROR) << "EmbeddedViewParams matrix  getTranslateY " << matrix.getTranslateY();;
-    FML_DLOG(ERROR) << "EmbeddedViewParams matrix  getScaleX " << matrix.getScaleX();;
-    FML_DLOG(ERROR) << "EmbeddedViewParams matrix  getScaleY " << matrix.getScaleY();;
-    FML_DLOG(ERROR) << "EmbeddedViewParams matrix  getSkewX " << matrix.getSkewX();;
-    FML_DLOG(ERROR) << "EmbeddedViewParams matrix  getSkewY " << matrix.getSkewY();;
-    FML_DLOG(ERROR) << "EmbeddedViewParams matrix  getPerspX " << matrix.getPerspX();;
-    FML_DLOG(ERROR) << "EmbeddedViewParams matrix  getPerspY " << matrix.getPerspY();;
-
-
     final_bounding_rect_ = path.getBounds();
-    FML_DLOG(ERROR) << "EmbeddedViewParams bounding box width " << final_bounding_rect_.width();
-    FML_DLOG(ERROR) << "EmbeddedViewParams bounding box height " << final_bounding_rect_.height();
-   FML_DLOG(ERROR) << "EmbeddedViewParams size width " << size_points.width();
-    FML_DLOG(ERROR) << "EmbeddedViewParams size height " << size_points.height();
-    for (int i = 0; i < path.countPoints(); i ++) {
-      SkPoint point = path.getPoint(i);
-      FML_DLOG(ERROR) << "EmbeddedViewParams path point " << i << " x " << point.x() << " y " << point.y();
-    }
   }
 
   EmbeddedViewParams(const EmbeddedViewParams& other) {
