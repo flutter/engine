@@ -14,8 +14,8 @@ source_set("jni") {
   public_configs = [ "//flutter:config" ]
 
   deps = [
-    "//flutter/fml",
     "//flutter/flow/",
+    "//flutter/fml",
     "//flutter/lib/ui",
     "//flutter/shell/platform/android/surface:native_window",
     "//third_party/skia",
