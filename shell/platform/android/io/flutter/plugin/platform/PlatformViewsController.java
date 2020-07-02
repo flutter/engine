@@ -629,20 +629,28 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     View view = platformView.getView();
     platformViews.put(viewId, view);
 
-    FlutterMutatorView mutatorView = new FlutterMutatorView(context);
+    FlutterMutatorView mutatorView =
+        new FlutterMutatorView(context, context.getResources().getDisplayMetrics().density);
     mutatorViews.put(viewId, mutatorView);
     mutatorView.addView(platformView.getView());
     ((FlutterView) flutterView).addView(mutatorView);
   }
 
   public void onDisplayPlatformView(
-      int viewId, int x, int y, int width, int height, int viewWidth, int ViewHeight, FlutterMutatorsStack mutatorsStack) {
+      int viewId,
+      int x,
+      int y,
+      int width,
+      int height,
+      int viewWidth,
+      int ViewHeight,
+      FlutterMutatorsStack mutatorsStack) {
     initializeRootImageViewIfNeeded();
     initializePlatformViewIfNeeded(viewId);
 
-    float density = context.getResources().getDisplayMetrics().density;
     FlutterMutatorView mutatorView = mutatorViews.get(viewId);
-    mutatorView.readyToDisplay(mutatorsStack, density, x, y, width, height);
+    mutatorView.readyToDisplay(mutatorsStack, x, y, width, height);
+    mutatorView.setVisibility(View.VISIBLE);
     mutatorView.bringToFront();
 
     FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(viewWidth, ViewHeight);
@@ -695,6 +703,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       int viewId = platformViews.keyAt(i);
       if (!currentFrameUsedPlatformViewIds.contains(viewId)) {
         platformViews.get(viewId).setVisibility(View.GONE);
+        mutatorViews.get(viewId).setVisibility(View.GONE);
       }
     }
     // If the background surface is still an image, then acquire the latest image.

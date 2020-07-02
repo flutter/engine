@@ -7,26 +7,28 @@ import android.graphics.Path;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 
+/**
+ * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.MutatorsStack} to its
+ * children.
+ */
 public class FlutterMutatorView extends FrameLayout {
-
   private FlutterMutatorsStack mutatorsStack;
   private float screenDensity;
   private int left;
   private int top;
 
-  public FlutterMutatorView(@NonNull Context context) {
+  /** Initialize the FlutterMutatorView. */
+  public FlutterMutatorView(@NonNull Context context, float screenDensity) {
     super(context, null);
+    this.screenDensity = screenDensity;
   }
 
+  /**
+   * Pass the necessary parameters to the view so it can apply correct mutations to its children.
+   */
   public void readyToDisplay(
-      @NonNull FlutterMutatorsStack mutatorsStack,
-      float screenDensity,
-      int left,
-      int top,
-      int width,
-      int height) {
+      @NonNull FlutterMutatorsStack mutatorsStack, int left, int top, int width, int height) {
     this.mutatorsStack = mutatorsStack;
-    this.screenDensity = screenDensity;
     this.left = left;
     this.top = top;
     FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(width, height);

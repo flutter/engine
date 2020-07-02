@@ -63,8 +63,8 @@ SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
   const EmbeddedViewParams& params = view_params_.at(view_id);
   // TODO(egarciad): The rect should be computed from the mutator stack.
   // https://github.com/flutter/flutter/issues/59821
-  return SkRect::MakeXYWH(params.finalBoundingRect().x(),                     //
-                          params.finalBoundingRect().y(),                     //
+  return SkRect::MakeXYWH(params.finalBoundingRect().x(),      //
+                          params.finalBoundingRect().y(),      //
                           params.finalBoundingRect().width(),  //
                           params.finalBoundingRect().height()  //
   );
@@ -149,14 +149,15 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
     const EmbeddedViewParams& params = view_params_.at(view_id);
     // Display the platform view. If it's already displayed, then it's
     // just positioned and sized.
-    jni_facade_->FlutterViewOnDisplayPlatformView(view_id,            //
-                                                  view_rect.x(),      //
-                                                  view_rect.y(),      //
-                                                  view_rect.width(),  //
-                                                  view_rect.height(), //
-                                                  params.sizePoints().width() * device_pixel_ratio_,
-                                                  params.sizePoints().height() * device_pixel_ratio_,
-                                                  params.mutatorsStack()  //
+    jni_facade_->FlutterViewOnDisplayPlatformView(
+        view_id,             //
+        view_rect.x(),       //
+        view_rect.y(),       //
+        view_rect.width(),   //
+        view_rect.height(),  //
+        params.sizePoints().width() * device_pixel_ratio_,
+        params.sizePoints().height() * device_pixel_ratio_,
+        params.mutatorsStack()  //
     );
     for (const SkRect& overlay_rect : overlay_layers.at(view_id)) {
       CreateSurfaceIfNeeded(context,               //

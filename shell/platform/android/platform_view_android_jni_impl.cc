@@ -1179,6 +1179,8 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
                             (int)rect.right(), (int)rect.bottom());
         break;
       }
+      // TODO(cyanglaz): Implement other mutators.
+      // https://github.com/flutter/flutter/issues/58426
       case clip_rrect:
       case clip_path:
       case opacity:
@@ -1188,7 +1190,8 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
   }
 
   env->CallVoidMethod(java_object.obj(), g_on_display_platform_view_method,
-                      view_id, x, y, width, height, viewWidth, viewHeight, mutatorsStack);
+                      view_id, x, y, width, height, viewWidth, viewHeight,
+                      mutatorsStack);
 
   FML_CHECK(CheckException(env));
 }
