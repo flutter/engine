@@ -31,7 +31,7 @@ static void create_resource_surface(FlRenderer* self, EGLConfig config) {
                                              EGL_NONE};
   priv->resource_surface = eglCreatePbufferSurface(priv->egl_display, config,
                                                    resource_context_attribs);
-  if (priv->resource_surface == nullptr) {
+  if (priv->resource_surface == EGL_NO_SURFACE) {
     g_warning("Failed to create EGL resource surface: %s",
               egl_error_to_string(eglGetError()));
     return;
@@ -39,7 +39,7 @@ static void create_resource_surface(FlRenderer* self, EGLConfig config) {
 
   priv->resource_context = eglCreateContext(
       priv->egl_display, config, priv->egl_context, context_attributes);
-  if (priv->resource_context == nullptr)
+  if (priv->resource_context == EGL_NO_CONTEXT)
     g_warning("Failed to create EGL resource context: %s",
               egl_error_to_string(eglGetError()));
 }
@@ -135,7 +135,7 @@ gboolean fl_renderer_start(FlRenderer* self, GError** error) {
 
   priv->egl_surface = FL_RENDERER_GET_CLASS(self)->create_surface(
       self, priv->egl_display, priv->egl_config);
-  if (priv->egl_surface == nullptr) {
+  if (priv->egl_surface == EGL_NO_SURFACE) {
     g_autofree gchar* config_string =
         egl_config_to_string(priv->egl_display, priv->egl_config);
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
@@ -147,7 +147,7 @@ gboolean fl_renderer_start(FlRenderer* self, GError** error) {
   EGLint context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
   priv->egl_context = eglCreateContext(priv->egl_display, priv->egl_config,
                                        EGL_NO_CONTEXT, context_attributes);
-  if (priv->egl_context == nullptr) {
+  if (priv->egl_context == EGL_NO_CONTEXT) {
     g_autofree gchar* config_string =
         egl_config_to_string(priv->egl_display, priv->egl_config);
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
@@ -157,10 +157,6 @@ gboolean fl_renderer_start(FlRenderer* self, GError** error) {
   }
 
   create_resource_surface(self, priv->egl_config);
-
-  EGLint value;
-  eglQueryContext(priv->egl_display, priv->egl_context,
-                  EGL_CONTEXT_CLIENT_VERSION, &value);
 
   return TRUE;
 }
@@ -188,7 +184,8 @@ gboolean fl_renderer_make_resource_current(FlRenderer* self, GError** error) {
   FlRendererPrivate* priv =
       static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
 
-  if (priv->resource_surface == nullptr || priv->resource_context == nullptr)
+  if (priv->resource_surface == EGL_NO_SURFACE ||
+      priv->resource_context == EGL_NO_CONTEXT)
     return FALSE;
 
   if (!eglMakeCurrent(priv->egl_display, priv->resource_surface,
