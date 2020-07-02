@@ -155,12 +155,12 @@ public class FlutterJNITest {
 
     // --- Execute Test ---
     flutterJNI.onDisplayPlatformView(
-        /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+        /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200, /*viewWidth=*/ 100, /*viewHeight=*/ 200);
 
     // --- Verify Results ---
     verify(platformViewsController, times(1))
         .onDisplayPlatformView(
-            /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200);
+            /*viewId=*/ 1, /*x=*/ 10, /*y=*/ 20, /*width=*/ 100, /*height=*/ 200, /*viewWidth=*/ 100, /*viewHeight=*/ 200);
   }
 
   @Test
