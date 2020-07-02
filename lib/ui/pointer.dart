@@ -72,6 +72,7 @@ enum PointerSignalKind {
 class PointerData {
   /// Creates an object that represents the state of a pointer.
   const PointerData({
+    this.motionEventId = 0,
     this.timeStamp = Duration.zero,
     this.change = PointerChange.cancel,
     this.kind = PointerDeviceKind.touch,
@@ -101,6 +102,9 @@ class PointerData {
     this.scrollDeltaX = 0.0,
     this.scrollDeltaY = 0.0,
   });
+
+  /// Unique identifier for the motion event corresponding to the pointer event.
+  final int motionEventId;
 
   /// Time of event dispatch, relative to an arbitrary timeline.
   final Duration timeStamp;
@@ -263,6 +267,7 @@ class PointerData {
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
     return '$runtimeType('
+             'motionEventId: $motionEventId, '
              'timeStamp: $timeStamp, '
              'change: $change, '
              'kind: $kind, '
