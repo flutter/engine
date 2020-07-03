@@ -70,15 +70,8 @@ public class FlutterMutatorView extends FrameLayout {
   public void dispatchDraw(Canvas canvas) {
     // Apply all the transforms on the child canvas.
     canvas.save();
-    // Reverse the current offset.
-    //
-    // The frame of this view includes the final offset of the bounding rect.
-    // We need to apply all the mutators to the view, which includes the mutation that leads to
-    // the final offset. We should reverse this final offset, both as a translate mutation and to
-    // all the clipping paths
-    Matrix reverseTranslateMatrix = new Matrix();
-    reverseTranslateMatrix.preTranslate(-left, -top);
 
+    Matrix finalMatrix = new Matrix(mutatorsStack.getFinalMatrix());
     // Reverse scale based on screen scale.
     //
     // The Android frame is set based on the logical resolution instead of physical.
@@ -86,12 +79,15 @@ public class FlutterMutatorView extends FrameLayout {
     // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
     // 500 points in Android. And until this point, we did all the calculation based on the flow
     // resolution. So we need to scale down to match Android's logical resolution.
-    Matrix reverseScaleMatrix = new Matrix();
-    reverseScaleMatrix.preScale(1 / screenDensity, 1 / screenDensity);
+    finalMatrix.preScale(1 / screenDensity, 1 / screenDensity);
+    // Reverse the current offset.
+    //
+    // The frame of this view includes the final offset of the bounding rect.
+    // We need to apply all the mutators to the view, which includes the mutation that leads to
+    // the final offset. We should reverse this final offset, both as a translate mutation and to
+    // all the clipping paths
+    finalMatrix.postTranslate(-left, -top);
 
-    Matrix finalMatrix = new Matrix(mutatorsStack.getFinalMatrix());
-    finalMatrix.postConcat(reverseTranslateMatrix);
-    finalMatrix.preConcat(reverseScaleMatrix);
     canvas.concat(finalMatrix);
     super.dispatchDraw(canvas);
     canvas.restore();
