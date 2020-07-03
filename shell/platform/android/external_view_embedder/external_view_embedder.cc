@@ -84,12 +84,13 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
   std::unordered_map<int64_t, std::list<SkRect>> overlay_layers;
   std::unordered_map<int64_t, sk_sp<SkPicture>> pictures;
   SkCanvas* background_canvas = frame->SkiaCanvas();
+  auto current_frame_view_count = composition_order_.size();
 
   // Restore the clip context after exiting this method since it's changed
   // below.
   SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
 
-  for (size_t i = 0; i < composition_order_.size(); i++) {
+  for (size_t i = 0; i < current_frame_view_count; i++) {
     int64_t view_id = composition_order_[i];
 
     sk_sp<SkPicture> picture =
@@ -142,8 +143,11 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
   }
   // Submit the background canvas frame before switching the GL context to
   // the surfaces above.
-  frame->Submit();
-
+  auto should_submit_current_frame =
+      previous_frame_view_count_ > 0 || current_frame_view_count == 0;
+  if (should_submit_current_frame) {
+    frame->Submit();
+  }
   for (int64_t view_id : composition_order_) {
     SkRect view_rect = GetViewRect(view_id);
     // Display the platform view. If it's already displayed, then it's
@@ -227,6 +231,8 @@ SkCanvas* AndroidExternalViewEmbedder::GetRootCanvas() {
 }
 
 void AndroidExternalViewEmbedder::Reset() {
+  previous_frame_view_count_ = composition_order_.size();
+
   composition_order_.clear();
   picture_recorders_.clear();
 }
