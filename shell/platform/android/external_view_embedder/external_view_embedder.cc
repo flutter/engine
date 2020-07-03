@@ -150,7 +150,6 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
     const EmbeddedViewParams& params = view_params_.at(view_id);
     // Display the platform view. If it's already displayed, then it's
     // just positioned and sized.
-    FML_DLOG(ERROR) << "x " << view_rect.x();
     jni_facade_->FlutterViewOnDisplayPlatformView(
         view_id,             //
         view_rect.x(),       //
