@@ -128,7 +128,7 @@ public class FlutterImageView extends View implements RenderSurface {
         flutterRenderer.swapSurface(imageReader.getSurface());
         break;
       case overlay:
-        // Don't nothing as this is done by the handler of
+        // Do nothing since the attachment is done by the handler of
         // `FlutterJNI#createOverlaySurface()` in the native side.
         break;
     }
@@ -146,7 +146,7 @@ public class FlutterImageView extends View implements RenderSurface {
       return;
     }
     setAlpha(0.0f);
-    // Drop the lastest image as it shouldn't rendered if this view is
+    // Drop the lastest image as it shouldn't render this image if this view is
     // attached to the renderer again.
     acquireLatestImage();
     // Clear drawings.
