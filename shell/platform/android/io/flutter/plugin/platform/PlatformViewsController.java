@@ -681,15 +681,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   public void onEndFrame() {
-    // Whether the current frame was rendered using the ImageReader.
+    // Whether the current frame was rendered using ImageReaders.
     //
-    // Since the image reader may not have images available at this point,
-    // this becomes true if all the required surfaces have image available.
+    // Since the image readers may not have images available at this point,
+    // this becomes true if all the required surfaces have images available.
     //
-    // This is used to decide if the platform views can be rendered. If one
-    // of the surfaces don't have an image, the frame may be missing overlay surfaces.
+    // This is used to decide if the platform views can be rendered in the current frame.
+    // If one of the surfaces don't have an image, the frame may be incomplete and must be dropped.
     // For example, a toolbar widget painted by Flutter may not be rendered.
-    boolean isFrameRenderedUsingImageView = false;
+    boolean isFrameRenderedUsingImageReaders = false;
 
     if (flutterViewConvertedToImageView) {
       FlutterView view = (FlutterView) flutterView;
@@ -701,7 +701,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         view.revertImageView();
         flutterViewConvertedToImageView = false;
       } else {
-        isFrameRenderedUsingImageView = view.acquireLatestImageViewFrame();
+        isFrameRenderedUsingImageReaders = view.acquireLatestImageViewFrame();
       }
     }
 
@@ -711,7 +711,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
       if (currentFrameUsedOverlayLayerIds.contains(overlayId)) {
         boolean didAcquireOverlaySurfaceImage = overlayView.acquireLatestImage();
-        isFrameRenderedUsingImageView &= didAcquireOverlaySurfaceImage;
+        isFrameRenderedUsingImageReaders &= didAcquireOverlaySurfaceImage;
         ((FlutterView) flutterView).attachOverlaySurfaceToRender(overlayView);
       } else {
         // If the background surface isn't rendered by the image view, then the
@@ -733,7 +733,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       //
       // Otherwise, hide the platform view, but don't remove it from view hierarchy yet as
       // they are removed when the framework diposes the platform view widget.
-      if (isFrameRenderedUsingImageView && currentFrameUsedPlatformViewIds.contains(viewId)) {
+      if (isFrameRenderedUsingImageReaders && currentFrameUsedPlatformViewIds.contains(viewId)) {
         platformView.setVisibility(View.VISIBLE);
       } else {
         platformView.setVisibility(View.GONE);
