@@ -18,17 +18,15 @@ public class FlutterMutatorView extends FrameLayout {
   private int top;
 
   /**
-   * Initialize the FlutterMutatorView.
-   * Use this to set the screenDensity, which will be used to correct the final transform matrix.
+   * Initialize the FlutterMutatorView. Use this to set the screenDensity, which will be used to
+   * correct the final transform matrix.
    */
   public FlutterMutatorView(@NonNull Context context, float screenDensity) {
     super(context, null);
     this.screenDensity = screenDensity;
   }
 
-  /**
-   * Initialize the FlutterMutatorView.
-   */
+  /** Initialize the FlutterMutatorView. */
   public FlutterMutatorView(@NonNull Context context) {
     super(context, null);
     this.screenDensity = 1;

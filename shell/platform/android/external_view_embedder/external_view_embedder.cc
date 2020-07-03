@@ -62,6 +62,7 @@ std::vector<SkCanvas*> AndroidExternalViewEmbedder::GetCurrentCanvases() {
 SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
   const EmbeddedViewParams& params = view_params_.at(view_id);
   // TODO(egarciad): The rect should be computed from the mutator stack.
+  // (Clipping is missing)
   // https://github.com/flutter/flutter/issues/59821
   return SkRect::MakeXYWH(params.finalBoundingRect().x(),      //
                           params.finalBoundingRect().y(),      //
@@ -149,6 +150,7 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
     const EmbeddedViewParams& params = view_params_.at(view_id);
     // Display the platform view. If it's already displayed, then it's
     // just positioned and sized.
+    FML_DLOG(ERROR) << "x " << view_rect.x();
     jni_facade_->FlutterViewOnDisplayPlatformView(
         view_id,             //
         view_rect.x(),       //
