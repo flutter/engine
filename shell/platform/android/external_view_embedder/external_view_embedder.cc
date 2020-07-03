@@ -142,12 +142,15 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
     background_canvas->drawPicture(pictures.at(view_id));
   }
   // Submit the background canvas frame before switching the GL context to
-  // the surfaces above.
+  // the overlay surfaces.
+  //
+  // Skip a frame if the embedding is switching surfaces.
   auto should_submit_current_frame =
       previous_frame_view_count_ > 0 || current_frame_view_count == 0;
   if (should_submit_current_frame) {
     frame->Submit();
   }
+
   for (int64_t view_id : composition_order_) {
     SkRect view_rect = GetViewRect(view_id);
     // Display the platform view. If it's already displayed, then it's
@@ -159,12 +162,14 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
                                                   view_rect.height()  //
     );
     for (const SkRect& overlay_rect : overlay_layers.at(view_id)) {
-      CreateSurfaceIfNeeded(context,               //
-                            view_id,               //
-                            pictures.at(view_id),  //
-                            overlay_rect           //
-                            )
-          ->Submit();
+      auto frame = CreateSurfaceIfNeeded(context,               //
+                                         view_id,               //
+                                         pictures.at(view_id),  //
+                                         overlay_rect           //
+      );
+      if (should_submit_current_frame) {
+        frame->Submit();
+      }
     }
   }
   return true;
@@ -244,6 +249,9 @@ void AndroidExternalViewEmbedder::BeginFrame(
     double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   Reset();
+
+  // The surface size changed. Therefore, destroy existing surfaces as
+  // the existing surfaces in the pool can't be recycled.
   if (frame_size_ != frame_size) {
     surface_pool_->DestroyLayers(jni_facade_);
   }

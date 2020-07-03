@@ -710,9 +710,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       FlutterImageView overlayView = overlayLayerViews.valueAt(i);
 
       if (currentFrameUsedOverlayLayerIds.contains(overlayId)) {
+        ((FlutterView) flutterView).attachOverlaySurfaceToRender(overlayView);
         boolean didAcquireOverlaySurfaceImage = overlayView.acquireLatestImage();
         isFrameRenderedUsingImageReaders &= didAcquireOverlaySurfaceImage;
-        ((FlutterView) flutterView).attachOverlaySurfaceToRender(overlayView);
       } else {
         // If the background surface isn't rendered by the image view, then the
         // overlay surfaces can be detached from the rendered.
@@ -763,6 +763,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   public void destroyOverlaySurfaces() {
+    for (int i = 0; i < overlayLayerViews.size(); i++) {
+      int overlayId = overlayLayerViews.keyAt(i);
+      FlutterImageView overlayView = overlayLayerViews.valueAt(i);
+      overlayView.detachFromRenderer();
+      ((FlutterView) flutterView).removeView(overlayView);
+    }
     overlayLayerViews.clear();
   }
 }

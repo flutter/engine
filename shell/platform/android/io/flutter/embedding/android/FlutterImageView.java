@@ -194,14 +194,25 @@ public class FlutterImageView extends View implements RenderSurface {
 
   /** Creates a new image reader with the provided size. */
   public void resizeIfNeeded(int width, int height) {
+    if (flutterRenderer == null) {
+      return;
+    }
     if (width == imageReader.getWidth() && height == imageReader.getHeight()) {
       return;
     }
-    if (kind == SurfaceKind.background && flutterRenderer != null) {
-      imageReader.close();
-      imageReader = createImageReader(width, height);
-      flutterRenderer.swapSurface(imageReader.getSurface());
+    // Close resources.
+    if (nextImage != null) {
+      nextImage.close();
+      nextImage = null;
     }
+    if (currentImage != null) {
+      currentImage.close();
+      currentImage = null;
+    }
+    imageReader.close();
+    // Image readers cannot be resized once created.
+    imageReader = createImageReader(width, height);
+    pendingImages = 0;
   }
 
   @Override
@@ -251,6 +262,17 @@ public class FlutterImageView extends View implements RenderSurface {
 
   @Override
   protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
-    resizeIfNeeded(width, height);
+    if (width == imageReader.getWidth() && height == imageReader.getHeight()) {
+      return;
+    }
+    // `SurfaceKind.overlay` isn't resized. Instead, the `FlutterImageView` instance
+    // is destroyed. As a result, an instance with the new size is created by the surface
+    // pool in the native side.
+    if (kind == SurfaceKind.background && isAttachedToFlutterRenderer) {
+      resizeIfNeeded(width, height);
+      // Bind native window to the new surface, and create a new onscreen surface
+      // with the new size in the native side.
+      flutterRenderer.swapSurface(imageReader.getSurface());
+    }
   }
 }
