@@ -28,7 +28,7 @@ class Win32Window {
                        unsigned int width,
                        unsigned int height);
 
-  ::HWND GetWindowHandle();
+  HWND GetWindowHandle();
 
  protected:
   // Converts a c string to a wide unicode string.

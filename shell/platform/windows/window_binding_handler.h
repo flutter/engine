@@ -32,13 +32,12 @@ class WindowBindingHandler {
  public:
   virtual ~WindowBindingHandler() = default;
 
-  // Sets the view used to communicate state changes from Window to view such
+  // Sets the delegate used to communicate state changes from window to view such
   // as key presses, mouse position updates etc.
   virtual void SetView(WindowBindingHandlerDelegate* view) = 0;
 
   // Returns a valid WindowsRenderTarget representing the backing
   // window.
-
   virtual WindowsRenderTarget GetRenderTarget() = 0;
 
   // Returns the scale factor for the backing window.

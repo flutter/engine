@@ -25,22 +25,6 @@
 
 namespace flutter {
 
-// Struct holding the mouse state. The engine doesn't keep track of which mouse
-// buttons have been pressed, so it's the embedding's responsibility.
-struct MouseState {
-  // True if the last event sent to Flutter had at least one mouse button.
-  // pressed.
-  bool flutter_state_is_down = false;
-
-  // True if kAdd has been sent to Flutter. Used to determine whether
-  // to send a kAdd event before sending an incoming mouse event, since Flutter
-  // expects pointers to be added before events are sent for them.
-  bool flutter_state_is_added = false;
-
-  // The currently pressed buttons, as represented in FlutterPointerEvent.
-  uint64_t buttons = 0;
-};
-
 // An OS-windowing neutral abstration for flutter
 // view that works with win32 hwnds and Windows::UI::Composition visuals.
 class FlutterWindowsView : public WindowBindingHandlerDelegate {
@@ -117,6 +101,22 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   void OnFontChange() override;
 
  private:
+  // Struct holding the mouse state. The engine doesn't keep track of which
+  // mouse buttons have been pressed, so it's the embedding's responsibility.
+  struct MouseState {
+    // True if the last event sent to Flutter had at least one mouse button.
+    // pressed.
+    bool flutter_state_is_down = false;
+
+    // True if kAdd has been sent to Flutter. Used to determine whether
+    // to send a kAdd event before sending an incoming mouse event, since
+    // Flutter expects pointers to be added before events are sent for them.
+    bool flutter_state_is_added = false;
+
+    // The currently pressed buttons, as represented in FlutterPointerEvent.
+    uint64_t buttons = 0;
+  };
+
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
   void SendWindowMetrics(size_t width, size_t height, double dpiscale) const;
@@ -185,7 +185,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
 
   // An object used for intializing Angle and creating / destroying render
   // surfaces. Surface creation functionality requires a valid render_target.
-  std::unique_ptr<AngleSurfaceManager> surface_manager_ = nullptr;
+  std::unique_ptr<AngleSurfaceManager> surface_manager_;
 
   // The handle to the Flutter engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
