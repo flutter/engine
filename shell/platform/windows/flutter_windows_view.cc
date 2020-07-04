@@ -66,8 +66,6 @@ void FlutterWindowsView::SetState(FLUTTER_API_SYMBOL(FlutterEngine) eng) {
   platform_handler_ = std::make_unique<flutter::PlatformHandler>(
       internal_plugin_messenger, this);
 
-  process_events_ = true;
-
   PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
 
   SendWindowMetrics(bounds.width, bounds.height,
@@ -104,68 +102,54 @@ void FlutterWindowsView::HandlePlatformMessage(
   auto message = ConvertToDesktopMessage(*engine_message);
 
   message_dispatcher_->HandleMessage(
-      message, [this] { this->process_events_ = false; },
-      [this] { this->process_events_ = true; });
+      message, [this] {  },
+      [this] {  });
 }
 
 void FlutterWindowsView::OnWindowSizeChanged(size_t width,
                                              size_t height) const {
-  if (process_events_) {
     SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
-  }
 }
 
 void FlutterWindowsView::OnPointerMove(double x, double y) {
-  if (process_events_) {
     SendPointerMove(x, y);
-  }
 }
 
 void FlutterWindowsView::OnPointerDown(
     double x,
     double y,
     FlutterPointerMouseButtons flutter_button) {
-  if (process_events_) {
     if (flutter_button != 0) {
       uint64_t mouse_buttons = mouse_state_.buttons | flutter_button;
       SetMouseButtons(mouse_buttons);
       SendPointerDown(x, y);
     }
-  }
 }
 
 void FlutterWindowsView::OnPointerUp(
     double x,
     double y,
     FlutterPointerMouseButtons flutter_button) {
-  if (process_events_) {
     if (flutter_button != 0) {
       uint64_t mouse_buttons = mouse_state_.buttons & ~flutter_button;
       SetMouseButtons(mouse_buttons);
       SendPointerUp(x, y);
     }
-  }
 }
 
 void FlutterWindowsView::OnPointerLeave() {
-  if (process_events_) {
     SendPointerLeave();
-  }
 }
 
 void FlutterWindowsView::OnText(const std::u16string& text) {
-  if (process_events_) {
     SendText(text);
-  }
 }
 
 void FlutterWindowsView::OnKey(int key,
                                int scancode,
                                int action,
                                char32_t character) {
-  if (process_events_) {
     SendKey(key, scancode, action, character);
-  }
 }
 
 void FlutterWindowsView::OnScroll(double x,
@@ -173,9 +157,7 @@ void FlutterWindowsView::OnScroll(double x,
                                   double delta_x,
                                   double delta_y,
                                   int scroll_offset_multiplier) {
-  if (process_events_) {
     SendScroll(x, y, delta_x, delta_y, scroll_offset_multiplier);
-  }
 }
 
 void FlutterWindowsView::OnFontChange() {

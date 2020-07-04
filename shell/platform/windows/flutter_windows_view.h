@@ -34,7 +34,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   ~FlutterWindowsView();
 
   // Factory for creating FlutterWindowsView requiring an implementator of
-  // WindowBindingHandler.
+  // WindowBindingHandler.  In order for object to render Flutter content
+  // the SetState method must be called with a valid FlutterEngine instance.
   static FlutterDesktopViewControllerRef CreateFlutterWindowsView(
       std::unique_ptr<WindowBindingHandler> window_binding);
 
@@ -211,9 +212,6 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
 
   // Handler for the flutter/platform channel.
   std::unique_ptr<flutter::PlatformHandler> platform_handler_;
-
-  // should we forword input messages or not
-  bool process_events_ = false;
 
   // Currently configured WindowBindingHandler for view.
   std::unique_ptr<flutter::WindowBindingHandler> binding_handler_;
