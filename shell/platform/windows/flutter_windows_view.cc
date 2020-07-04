@@ -102,54 +102,53 @@ void FlutterWindowsView::HandlePlatformMessage(
   auto message = ConvertToDesktopMessage(*engine_message);
 
   message_dispatcher_->HandleMessage(
-      message, [this] {  },
-      [this] {  });
+      message, [this] {}, [this] {});
 }
 
 void FlutterWindowsView::OnWindowSizeChanged(size_t width,
                                              size_t height) const {
-    SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+  SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
 }
 
 void FlutterWindowsView::OnPointerMove(double x, double y) {
-    SendPointerMove(x, y);
+  SendPointerMove(x, y);
 }
 
 void FlutterWindowsView::OnPointerDown(
     double x,
     double y,
     FlutterPointerMouseButtons flutter_button) {
-    if (flutter_button != 0) {
-      uint64_t mouse_buttons = mouse_state_.buttons | flutter_button;
-      SetMouseButtons(mouse_buttons);
-      SendPointerDown(x, y);
-    }
+  if (flutter_button != 0) {
+    uint64_t mouse_buttons = mouse_state_.buttons | flutter_button;
+    SetMouseButtons(mouse_buttons);
+    SendPointerDown(x, y);
+  }
 }
 
 void FlutterWindowsView::OnPointerUp(
     double x,
     double y,
     FlutterPointerMouseButtons flutter_button) {
-    if (flutter_button != 0) {
-      uint64_t mouse_buttons = mouse_state_.buttons & ~flutter_button;
-      SetMouseButtons(mouse_buttons);
-      SendPointerUp(x, y);
-    }
+  if (flutter_button != 0) {
+    uint64_t mouse_buttons = mouse_state_.buttons & ~flutter_button;
+    SetMouseButtons(mouse_buttons);
+    SendPointerUp(x, y);
+  }
 }
 
 void FlutterWindowsView::OnPointerLeave() {
-    SendPointerLeave();
+  SendPointerLeave();
 }
 
 void FlutterWindowsView::OnText(const std::u16string& text) {
-    SendText(text);
+  SendText(text);
 }
 
 void FlutterWindowsView::OnKey(int key,
                                int scancode,
                                int action,
                                char32_t character) {
-    SendKey(key, scancode, action, character);
+  SendKey(key, scancode, action, character);
 }
 
 void FlutterWindowsView::OnScroll(double x,
@@ -157,7 +156,7 @@ void FlutterWindowsView::OnScroll(double x,
                                   double delta_x,
                                   double delta_y,
                                   int scroll_offset_multiplier) {
-    SendScroll(x, y, delta_x, delta_y, scroll_offset_multiplier);
+  SendScroll(x, y, delta_x, delta_y, scroll_offset_multiplier);
 }
 
 void FlutterWindowsView::OnFontChange() {
