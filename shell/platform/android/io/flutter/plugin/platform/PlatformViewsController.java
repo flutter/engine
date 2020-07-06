@@ -696,7 +696,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // this becomes true if all the required surfaces have images available.
     //
     // This is used to decide if the platform views can be rendered in the current frame.
-    // If one of the surfaces don't have an image, the frame may be incomplete and must be dropped.
+    // If one of the surfaces doesn't have an image, the frame may be incomplete and must be
+    // dropped.
     // For example, a toolbar widget painted by Flutter may not be rendered.
     boolean isFrameRenderedUsingImageReaders = false;
 
@@ -742,7 +743,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       // Show platform views only if the surfaces have images available in this frame,
       // and if the platform view is rendered in this frame.
       //
-      // Otherwise, hide the platform view, but don't remove it from view hierarchy yet as
+      // Otherwise, hide the platform view, but don't remove it from the view hierarchy yet as
       // they are removed when the framework diposes the platform view widget.
       if (isFrameRenderedUsingImageReaders && currentFrameUsedPlatformViewIds.contains(viewId)) {
         platformView.setVisibility(View.VISIBLE);
