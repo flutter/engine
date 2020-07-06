@@ -296,11 +296,13 @@ class PointerData {
 
   /// serialize the PointerData to a JSON object.
   Map<String, dynamic> toJson() {
+    // to perform null check on a variable rather than a getter
+    final PointerSignalKind? signalKindLocal = signalKind;
     return <String, dynamic>{
       if(timeStamp != Duration.zero) 'timeStamp': timeStamp.inMicroseconds,
       if(change != PointerChange.cancel) 'change': change.index,
       if(kind != PointerDeviceKind.touch) 'kind': kind.index,
-      if(signalKind != null) 'signalKind': signalKind.index,
+      if(signalKindLocal != null) 'signalKind': signalKindLocal.index,
       if(device != 0) 'device': device,
       if(pointerIdentifier != 0) 'pointerIdentifier': pointerIdentifier,
       if(physicalX != 0.0) 'physicalX': physicalX,
@@ -328,38 +330,47 @@ class PointerData {
     };
   }
 
+  /// Deserialize the PointerData from a JSON String or object.
+  factory PointerData.fromJson(dynamic value) {
+    assert(value is Map<String, dynamic> || value is String);
+    final Map<String, dynamic> jsonObject = value is String
+      ? json.decode(value) as Map<String, dynamic>
+      : value as Map<String, dynamic>;
+    return PointerData.fromJsonObject(jsonObject);
+  }
+
   /// Deserialize the PointerData from a JSON object.
-  PointerData.fromJson(Map<String, dynamic> jsonObject):
-    timeStamp = Duration(microseconds: jsonObject['timeStamp'] as int ?? 0),
-    change = PointerChange.values[jsonObject['change'] as int ?? 0],
-    kind = PointerDeviceKind.values[jsonObject['kind'] as int ?? 0],
+  PointerData.fromJsonObject(Map<String, dynamic?> jsonObject):
+    timeStamp = Duration(microseconds: jsonObject['timeStamp'] as int? ?? 0),
+    change = PointerChange.values[jsonObject['change'] as int? ?? 0],
+    kind = PointerDeviceKind.values[jsonObject['kind'] as int? ?? 0],
     signalKind = jsonObject.containsKey('signalKind')
       ? PointerSignalKind.values[jsonObject['signalKind'] as int]
       : null,
-    device = jsonObject['device'] as int ?? 0,
-    pointerIdentifier = jsonObject['pointerIdentifier'] as int ?? 0,
-    physicalX = jsonObject['physicalX'] as double ?? 0.0,
-    physicalY = jsonObject['physicalY'] as double ?? 0.0,
-    physicalDeltaX = jsonObject['physicalDeltaX'] as double ?? 0.0,
-    physicalDeltaY = jsonObject['physicalDeltaY'] as double ?? 0.0,
-    buttons = jsonObject['buttons'] as int ?? 0,
-    obscured = jsonObject['obscured'] as bool ?? false,
-    synthesized = jsonObject['synthesized'] as bool ?? false,
-    pressure = jsonObject['pressure'] as double ?? 0.0,
-    pressureMin = jsonObject['pressureMin'] as double ?? 0.0,
-    pressureMax = jsonObject['pressureMax'] as double ?? 0.0,
-    distance = jsonObject['distance'] as double ?? 0.0,
-    distanceMax = jsonObject['distanceMax'] as double ?? 0.0,
-    size = jsonObject['size'] as double ?? 0.0,
-    radiusMajor = jsonObject['radiusMajor'] as double ?? 0.0,
-    radiusMinor = jsonObject['radiusMinor'] as double ?? 0.0,
-    radiusMin = jsonObject['radiusMin'] as double ?? 0.0,
-    radiusMax = jsonObject['radiusMax'] as double ?? 0.0,
-    orientation = jsonObject['orientation'] as double ?? 0.0,
-    tilt = jsonObject['tilt'] as double ?? 0.0,
-    platformData = jsonObject['platformData'] as int ?? 0,
-    scrollDeltaX = jsonObject['scrollDeltaX'] as double ?? 0.0,
-    scrollDeltaY = jsonObject['scrollDeltaY'] as double ?? 0.0;
+    device = jsonObject['device'] as int? ?? 0,
+    pointerIdentifier = jsonObject['pointerIdentifier'] as int? ?? 0,
+    physicalX = jsonObject['physicalX'] as double? ?? 0.0,
+    physicalY = jsonObject['physicalY'] as double? ?? 0.0,
+    physicalDeltaX = jsonObject['physicalDeltaX'] as double? ?? 0.0,
+    physicalDeltaY = jsonObject['physicalDeltaY'] as double? ?? 0.0,
+    buttons = jsonObject['buttons'] as int? ?? 0,
+    obscured = jsonObject['obscured'] as bool? ?? false,
+    synthesized = jsonObject['synthesized'] as bool? ?? false,
+    pressure = jsonObject['pressure'] as double? ?? 0.0,
+    pressureMin = jsonObject['pressureMin'] as double? ?? 0.0,
+    pressureMax = jsonObject['pressureMax'] as double? ?? 0.0,
+    distance = jsonObject['distance'] as double? ?? 0.0,
+    distanceMax = jsonObject['distanceMax'] as double? ?? 0.0,
+    size = jsonObject['size'] as double? ?? 0.0,
+    radiusMajor = jsonObject['radiusMajor'] as double? ?? 0.0,
+    radiusMinor = jsonObject['radiusMinor'] as double? ?? 0.0,
+    radiusMin = jsonObject['radiusMin'] as double? ?? 0.0,
+    radiusMax = jsonObject['radiusMax'] as double? ?? 0.0,
+    orientation = jsonObject['orientation'] as double? ?? 0.0,
+    tilt = jsonObject['tilt'] as double? ?? 0.0,
+    platformData = jsonObject['platformData'] as int? ?? 0,
+    scrollDeltaX = jsonObject['scrollDeltaX'] as double? ?? 0.0,
+    scrollDeltaY = jsonObject['scrollDeltaY'] as double? ?? 0.0;
 }
 
 /// A sequence of reports about the state of pointers.
