@@ -2,28 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 part of engine;
 
-class SkPathMetrics extends IterableBase<ui.PathMetric>
+class CkPathMetrics extends IterableBase<ui.PathMetric>
     implements ui.PathMetrics {
-  SkPathMetrics(this._path, this._forceClosed);
+  CkPathMetrics(this._path, this._forceClosed);
 
-  final SkPath _path;
+  final CkPath _path;
   final bool _forceClosed;
 
-  /// The [SkPath.isEmpty] case is special-cased to avoid booting the WASM machinery just to find out there are no contours.
+  /// The [CkPath.isEmpty] case is special-cased to avoid booting the WASM machinery just to find out there are no contours.
   @override
-  Iterator<ui.PathMetric> get iterator => _path.isEmpty ? const SkPathMetricIteratorEmpty._() : SkContourMeasureIter(_path, _forceClosed);
+  Iterator<ui.PathMetric> get iterator => _path.isEmpty! ? const CkPathMetricIteratorEmpty._() : CkContourMeasureIter(_path, _forceClosed);
 }
 
-class SkContourMeasureIter implements Iterator<ui.PathMetric> {
+class CkContourMeasureIter implements Iterator<ui.PathMetric> {
   /// Cached constructor function for `SkContourMeasureIter`, so we don't have to look it
   /// up every time we're constructing a new instance.
-  static final js.JsFunction _skContourMeasureIterConstructor = canvasKit['SkContourMeasureIter'];
+  static final js.JsFunction? _skContourMeasureIterConstructor = canvasKit['SkContourMeasureIter'];
 
-  SkContourMeasureIter(SkPath path, bool forceClosed)
-    : _skObject = js.JsObject(_skContourMeasureIterConstructor, <dynamic>[
+  CkContourMeasureIter(CkPath path, bool forceClosed)
+    : _skObject = js.JsObject(_skContourMeasureIterConstructor!, <dynamic>[
         path._skPath,
         forceClosed,
         1,
@@ -38,25 +37,35 @@ class SkContourMeasureIter implements Iterator<ui.PathMetric> {
   int _contourIndexCounter = 0;
 
   @override
-  ui.PathMetric get current => _current;
-  SkContourMeasure _current;
+  ui.PathMetric get current {
+    final ui.PathMetric? currentMetric = _current;
+    if (currentMetric == null) {
+      throw RangeError(
+        'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
+        '- The iteration has not started yet. If so, call "moveNext" to start iteration.'
+        '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".'
+      );
+    }
+    return currentMetric;
+  }
+  CkContourMeasure? _current;
 
   @override
   bool moveNext() {
-    final js.JsObject skContourMeasure = _skObject.callMethod('next');
+    final js.JsObject? skContourMeasure = _skObject.callMethod('next');
     if (skContourMeasure == null) {
       _current = null;
       return false;
     }
 
-    _current = SkContourMeasure(_contourIndexCounter, skContourMeasure);
+    _current = CkContourMeasure(_contourIndexCounter, skContourMeasure);
     _contourIndexCounter += 1;
     return true;
   }
 }
 
-class SkContourMeasure implements ui.PathMetric {
-  SkContourMeasure(this.contourIndex, this._skObject);
+class CkContourMeasure implements ui.PathMetric {
+  CkContourMeasure(this.contourIndex, this._skObject);
 
   final js.JsObject _skObject;
 
@@ -65,9 +74,9 @@ class SkContourMeasure implements ui.PathMetric {
 
   @override
   ui.Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
-    final js.JsObject skPath = _skObject
+    final js.JsObject? skPath = _skObject
         .callMethod('getSegment', <dynamic>[start, end, startWithMoveTo]);
-    return SkPath._fromSkPath(skPath);
+    return CkPath._fromSkPath(skPath);
   }
 
   @override
@@ -90,11 +99,13 @@ class SkContourMeasure implements ui.PathMetric {
   }
 }
 
-class SkPathMetricIteratorEmpty implements Iterator<ui.PathMetric> {
-  const SkPathMetricIteratorEmpty._();
+class CkPathMetricIteratorEmpty implements Iterator<ui.PathMetric> {
+  const CkPathMetricIteratorEmpty._();
 
   @override
-  ui.PathMetric get current => null;
+  ui.PathMetric get current {
+    throw RangeError('PathMetric iterator is empty.');
+  }
 
   @override
   bool moveNext() {

@@ -1,4 +1,4 @@
-Signature: 3637c18d3514d58e473ae445b357e505
+Signature: a3b9613009e4991d410d8fb741407ed0
 
 UNUSED LICENSES:
 
@@ -2826,11 +2826,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/component/component_contex
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/config/config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/intent/intent.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/lifecycle/lifecycle.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module/link_path.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module/module_data.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module/module_state.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/create_link.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/create_module_parameter_map.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/story_shell.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/story_state.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/surface/surface.fidl
@@ -3136,10 +3133,8 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/view_provid
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/module_interceptor.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/module_with_view_provider_impl.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/component.dart
-FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/component_search.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/device.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/diagnostics.dart
-FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/launch.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/power.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/repository_manager.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/tiles.dart

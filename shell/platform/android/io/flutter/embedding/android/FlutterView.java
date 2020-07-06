@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.graphics.Rect;
-import android.media.ImageReader;
 import android.os.Build;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
@@ -782,6 +781,11 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
   }
 
+  @Override
+  public boolean onInterceptTouchEvent(MotionEvent ev) {
+    return true;
+  }
+
   // TODO(mattcarroll): Confer with Ian as to why we need this method. Delete if possible, otherwise
   // add comments.
   private void resetWillNotDraw(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
@@ -943,16 +947,15 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   public void convertToImageView() {
-    renderSurface.detachFromRenderer();
+    renderSurface.pause();
 
-    ImageReader imageReader = PlatformViewsController.createImageReader(getWidth(), getHeight());
-    flutterImageView = new FlutterImageView(getContext(), imageReader);
+    flutterImageView =
+        new FlutterImageView(
+            getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
     renderSurface = flutterImageView;
     if (flutterEngine != null) {
       renderSurface.attachToRenderer(flutterEngine.getRenderer());
     }
-
-    removeAllViews();
     addView(flutterImageView);
   }
 

@@ -239,15 +239,15 @@ class Color {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    final Color typedOther = other;
-    return value == typedOther.value;
+    return other is Color
+        && other.value == value;
   }
 
   @override
@@ -903,7 +903,7 @@ abstract class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
   factory Paint() =>
-      engine.experimentalUseSkia ? engine.SkPaint() : engine.SurfacePaint();
+      engine.experimentalUseSkia ? engine.CkPaint() : engine.SurfacePaint();
 
   /// Whether to dither the output when drawing images.
   ///
@@ -1382,12 +1382,10 @@ class MaskFilter {
   BlurStyle get webOnlyBlurStyle => _style;
 
   @override
-  bool operator ==(dynamic other) {
-    if (other is! MaskFilter) {
-      return false;
-    }
-    final MaskFilter typedOther = other;
-    return _style == typedOther._style && _sigma == typedOther._sigma;
+  bool operator ==(Object other) {
+    return other is MaskFilter
+        && other._style == _style
+        && other._sigma == _sigma;
   }
 
   @override
@@ -1441,7 +1439,7 @@ class ImageFilter {
   /// Creates an image filter that applies a Gaussian blur.
   factory ImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0}) {
     if (engine.experimentalUseSkia) {
-      return engine.SkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
+      return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
     }
     return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
   }
@@ -1810,17 +1808,14 @@ class Shadow {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
-    if (other is! Shadow) {
-      return false;
-    }
-    final Shadow typedOther = other;
-    return color == typedOther.color &&
-        offset == typedOther.offset &&
-        blurRadius == typedOther.blurRadius;
+    return other is Shadow
+        && other.color == color
+        && other.offset == offset
+        && other.blurRadius == blurRadius;
   }
 
   @override

@@ -18,9 +18,9 @@ void main() {
       expect(experimentalUseSkia, true);
     });
 
-    test(SkPathMetrics, () {
+    test(CkPathMetrics, () {
       final ui.Path path = ui.Path();
-      expect(path, isA<SkPath>());
+      expect(path, isA<CkPath>());
       expect(path.computeMetrics().length, 0);
 
       path.addRect(ui.Rect.fromLTRB(0, 0, 10, 10));
@@ -62,8 +62,8 @@ void main() {
       expect(iter2.current, isNotNull);
       expect(iter1.moveNext(), false);
       expect(iter2.moveNext(), false);
-      expect(iter1.current, isNull);
-      expect(iter2.current, isNull);
+      expect(() => iter1.current, throwsRangeError);
+      expect(() => iter2.current, throwsRangeError);
     });
   },
       // This test failed on iOS Safari.
