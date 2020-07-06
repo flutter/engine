@@ -273,6 +273,7 @@ class PointerData {
         'physicalDeltaX: $physicalDeltaX, '
         'physicalDeltaY: $physicalDeltaY, '
         'buttons: $buttons, '
+        'obscured: $obscured, '
         'synthesized: $synthesized, '
         'pressure: $pressure, '
         'pressureMin: $pressureMin, '
@@ -291,6 +292,73 @@ class PointerData {
         'scrollDeltaY: $scrollDeltaY'
         ')';
   }
+
+  /// serialize the PointerData to a JSON object.
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if(timeStamp != Duration.zero) 'timeStamp': timeStamp.inMicroseconds,
+      if(change != PointerChange.cancel) 'change': change.index,
+      if(kind != PointerDeviceKind.touch) 'kind': kind.index,
+      if(signalKind != null) 'signalKind': signalKind.index,
+      if(device != 0) 'device': device,
+      if(pointerIdentifier != 0) 'pointerIdentifier': pointerIdentifier,
+      if(physicalX != 0.0) 'physicalX': physicalX,
+      if(physicalY != 0.0) 'physicalY': physicalY,
+      if(physicalDeltaX != 0.0) 'physicalDeltaX': physicalDeltaX,
+      if(physicalDeltaY != 0.0) 'physicalDeltaY': physicalDeltaY,
+      if(buttons != 0) 'buttons': buttons,
+      if(obscured != false) 'obscured': obscured,
+      if(synthesized != false) 'synthesized': synthesized,
+      if(pressure != 0.0) 'pressure': pressure,
+      if(pressureMin != 0.0) 'pressureMin': pressureMin,
+      if(pressureMax != 0.0) 'pressureMax': pressureMax,
+      if(distance != 0.0) 'distance': distance,
+      if(distanceMax != 0.0) 'distanceMax': distanceMax,
+      if(size != 0.0) 'size': size,
+      if(radiusMajor != 0.0) 'radiusMajor': radiusMajor,
+      if(radiusMinor != 0.0) 'radiusMinor': radiusMinor,
+      if(radiusMin != 0.0) 'radiusMin': radiusMin,
+      if(radiusMax != 0.0) 'radiusMax': radiusMax,
+      if(orientation != 0.0) 'orientation': orientation,
+      if(tilt != 0.0) 'tilt': tilt,
+      if(platformData != 0) 'platformData': platformData,
+      if(scrollDeltaX != 0.0) 'scrollDeltaX': scrollDeltaX,
+      if(scrollDeltaY != 0.0) 'scrollDeltaY': scrollDeltaY,
+    };
+  }
+
+  /// Deserialize the PointerData from a JSON object.
+  PointerData.fromJson(Map<String, dynamic> jsonObject):
+    timeStamp = Duration(microseconds: jsonObject['timeStamp'] as int ?? 0),
+    change = PointerChange.values[jsonObject['change'] as int ?? 0],
+    kind = PointerDeviceKind.values[jsonObject['kind'] as int ?? 0],
+    signalKind = jsonObject.containsKey('signalKind')
+      ? PointerSignalKind.values[jsonObject['signalKind'] as int]
+      : null,
+    device = jsonObject['device'] as int ?? 0,
+    pointerIdentifier = jsonObject['pointerIdentifier'] as int ?? 0,
+    physicalX = jsonObject['physicalX'] as double ?? 0.0,
+    physicalY = jsonObject['physicalY'] as double ?? 0.0,
+    physicalDeltaX = jsonObject['physicalDeltaX'] as double ?? 0.0,
+    physicalDeltaY = jsonObject['physicalDeltaY'] as double ?? 0.0,
+    buttons = jsonObject['buttons'] as int ?? 0,
+    obscured = jsonObject['obscured'] as bool ?? false,
+    synthesized = jsonObject['synthesized'] as bool ?? false,
+    pressure = jsonObject['pressure'] as double ?? 0.0,
+    pressureMin = jsonObject['pressureMin'] as double ?? 0.0,
+    pressureMax = jsonObject['pressureMax'] as double ?? 0.0,
+    distance = jsonObject['distance'] as double ?? 0.0,
+    distanceMax = jsonObject['distanceMax'] as double ?? 0.0,
+    size = jsonObject['size'] as double ?? 0.0,
+    radiusMajor = jsonObject['radiusMajor'] as double ?? 0.0,
+    radiusMinor = jsonObject['radiusMinor'] as double ?? 0.0,
+    radiusMin = jsonObject['radiusMin'] as double ?? 0.0,
+    radiusMax = jsonObject['radiusMax'] as double ?? 0.0,
+    orientation = jsonObject['orientation'] as double ?? 0.0,
+    tilt = jsonObject['tilt'] as double ?? 0.0,
+    platformData = jsonObject['platformData'] as int ?? 0,
+    scrollDeltaX = jsonObject['scrollDeltaX'] as double ?? 0.0,
+    scrollDeltaY = jsonObject['scrollDeltaY'] as double ?? 0.0;
 }
 
 /// A sequence of reports about the state of pointers.
