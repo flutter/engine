@@ -98,6 +98,7 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
         picture_recorders_.at(view_id)->finishRecordingAsPicture();
     FML_CHECK(picture);
     pictures.insert({view_id, picture});
+
     overlay_layers.insert({view_id, {}});
 
     sk_sp<RTree> rtree = view_rtrees_.at(view_id);
@@ -168,11 +169,12 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
         params.mutatorsStack()  //
     );
     for (const SkRect& overlay_rect : overlay_layers.at(view_id)) {
-      auto frame = CreateSurfaceIfNeeded(context,               //
-                                         view_id,               //
-                                         pictures.at(view_id),  //
-                                         overlay_rect           //
-      );
+      std::unique_ptr<SurfaceFrame> frame =
+          CreateSurfaceIfNeeded(context,               //
+                                view_id,               //
+                                pictures.at(view_id),  //
+                                overlay_rect           //
+          );
       if (should_submit_current_frame) {
         frame->Submit();
       }
