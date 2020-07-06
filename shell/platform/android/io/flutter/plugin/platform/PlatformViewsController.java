@@ -9,9 +9,6 @@ import static android.view.MotionEvent.PointerProperties;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.PixelFormat;
-import android.hardware.HardwareBuffer;
-import android.media.ImageReader;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -26,6 +23,7 @@ import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.engine.FlutterOverlaySurface;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.mutatorsstack.*;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.view.AccessibilityBridge;
@@ -78,6 +76,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private final SparseArray<PlatformViewsChannel.PlatformViewCreationRequest> platformViewRequests;
   private final SparseArray<View> platformViews;
+  private final SparseArray<FlutterMutatorView> mutatorViews;
 
   // Map of unique IDs to views that render overlay layers.
   private final SparseArray<FlutterImageView> overlayLayerViews;
@@ -112,8 +111,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             platformViewRequests.remove(viewId);
           }
           if (platformViews.get(viewId) != null) {
-            ((FlutterView) flutterView).removeView(platformViews.get(viewId));
+            ((FlutterView) flutterView).removeView(mutatorViews.get(viewId));
             platformViews.remove(viewId);
+            mutatorViews.remove(viewId);
           }
         }
 
@@ -247,38 +247,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void onTouch(@NonNull PlatformViewsChannel.PlatformViewTouch touch) {
+          final int viewId = touch.viewId;
           float density = context.getResources().getDisplayMetrics().density;
-          PointerProperties[] pointerProperties =
-              parsePointerPropertiesList(touch.rawPointerPropertiesList)
-                  .toArray(new PointerProperties[touch.pointerCount]);
-          PointerCoords[] pointerCoords =
-              parsePointerCoordsList(touch.rawPointerCoords, density)
-                  .toArray(new PointerCoords[touch.pointerCount]);
-
-          if (!vdControllers.containsKey(touch.viewId)) {
-            throw new IllegalStateException(
-                "Sending touch to an unknown view with id: " + touch.viewId);
-          }
-
-          MotionEvent event =
-              MotionEvent.obtain(
-                  touch.downTime.longValue(),
-                  touch.eventTime.longValue(),
-                  touch.action,
-                  touch.pointerCount,
-                  pointerProperties,
-                  pointerCoords,
-                  touch.metaState,
-                  touch.buttonState,
-                  touch.xPrecision,
-                  touch.yPrecision,
-                  touch.deviceId,
-                  touch.edgeFlags,
-                  touch.source,
-                  touch.flags);
-
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
-          vdControllers.get(touch.viewId).dispatchTouchEvent(event);
+          final MotionEvent event = toMotionEvent(density, touch);
+          if (vdControllers.containsKey(viewId)) {
+            vdControllers.get(touch.viewId).dispatchTouchEvent(event);
+          } else if (platformViews.get(viewId) != null) {
+            View view = platformViews.get(touch.viewId);
+            view.dispatchTouchEvent(event);
+          } else {
+            throw new IllegalStateException("Sending touch to an unknown view with id: " + viewId);
+          }
         }
 
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -321,6 +301,32 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
       };
 
+  private static MotionEvent toMotionEvent(
+      float density, PlatformViewsChannel.PlatformViewTouch touch) {
+    PointerProperties[] pointerProperties =
+        parsePointerPropertiesList(touch.rawPointerPropertiesList)
+            .toArray(new PointerProperties[touch.pointerCount]);
+    PointerCoords[] pointerCoords =
+        parsePointerCoordsList(touch.rawPointerCoords, density)
+            .toArray(new PointerCoords[touch.pointerCount]);
+
+    return MotionEvent.obtain(
+        touch.downTime.longValue(),
+        touch.eventTime.longValue(),
+        touch.action,
+        touch.pointerCount,
+        pointerProperties,
+        pointerCoords,
+        touch.metaState,
+        touch.buttonState,
+        touch.xPrecision,
+        touch.yPrecision,
+        touch.deviceId,
+        touch.edgeFlags,
+        touch.source,
+        touch.flags);
+  }
+
   public PlatformViewsController() {
     registry = new PlatformViewRegistryImpl();
     vdControllers = new HashMap<>();
@@ -332,6 +338,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     platformViewRequests = new SparseArray<>();
     platformViews = new SparseArray<>();
+    mutatorViews = new SparseArray<>();
   }
 
   /**
@@ -572,9 +579,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
   }
 
+  private float getDisplayDensity() {
+    return context.getResources().getDisplayMetrics().density;
+  }
+
   private int toPhysicalPixels(double logicalPixels) {
-    float density = context.getResources().getDisplayMetrics().density;
-    return (int) Math.round(logicalPixels * density);
+    return (int) Math.round(logicalPixels * getDisplayDensity());
   }
 
   private void flushAllViews() {
@@ -626,17 +636,32 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     View view = platformView.getView();
     platformViews.put(viewId, view);
 
-    ((FlutterView) flutterView).addView(view);
+    FlutterMutatorView mutatorView =
+        new FlutterMutatorView(context, context.getResources().getDisplayMetrics().density);
+    mutatorViews.put(viewId, mutatorView);
+    mutatorView.addView(platformView.getView());
+    ((FlutterView) flutterView).addView(mutatorView);
   }
 
-  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+  public void onDisplayPlatformView(
+      int viewId,
+      int x,
+      int y,
+      int width,
+      int height,
+      int viewWidth,
+      int ViewHeight,
+      FlutterMutatorsStack mutatorsStack) {
     initializeRootImageViewIfNeeded();
     initializePlatformViewIfNeeded(viewId);
 
+    FlutterMutatorView mutatorView = mutatorViews.get(viewId);
+    mutatorView.readyToDisplay(mutatorsStack, x, y, width, height);
+    mutatorView.setVisibility(View.VISIBLE);
+    mutatorView.bringToFront();
+
+    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(viewWidth, ViewHeight);
     View platformView = platformViews.get(viewId);
-    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams((int) width, (int) height);
-    layoutParams.leftMargin = (int) x;
-    layoutParams.topMargin = (int) y;
     platformView.setLayoutParams(layoutParams);
     platformView.setVisibility(View.VISIBLE);
     platformView.bringToFront();
@@ -685,6 +710,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       int viewId = platformViews.keyAt(i);
       if (!currentFrameUsedPlatformViewIds.contains(viewId)) {
         platformViews.get(viewId).setVisibility(View.GONE);
+        mutatorViews.get(viewId).setVisibility(View.GONE);
       }
     }
     // If the background surface is still an image, then acquire the latest image.
@@ -694,28 +720,20 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   @TargetApi(19)
-  public static ImageReader createImageReader(int width, int height) {
-    if (android.os.Build.VERSION.SDK_INT >= 29) {
-      return ImageReader.newInstance(
-          width,
-          height,
-          PixelFormat.RGBA_8888,
-          3,
-          HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE | HardwareBuffer.USAGE_GPU_COLOR_OUTPUT);
-    } else {
-      return ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 3);
-    }
-  }
-
-  @TargetApi(19)
   public FlutterOverlaySurface createOverlaySurface() {
-    ImageReader imageReader = createImageReader(flutterView.getWidth(), flutterView.getHeight());
     FlutterImageView imageView =
         new FlutterImageView(
-            flutterView.getContext(), imageReader, FlutterImageView.SurfaceKind.overlay);
+            flutterView.getContext(),
+            flutterView.getWidth(),
+            flutterView.getHeight(),
+            FlutterImageView.SurfaceKind.overlay);
     int id = nextOverlayLayerId++;
     overlayLayerViews.put(id, imageView);
 
-    return new FlutterOverlaySurface(id, imageReader.getSurface());
+    return new FlutterOverlaySurface(id, imageView.getSurface());
+  }
+
+  public void destroyOverlaySurfaces() {
+    overlayLayerViews.clear();
   }
 }

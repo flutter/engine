@@ -62,11 +62,12 @@ std::vector<SkCanvas*> AndroidExternalViewEmbedder::GetCurrentCanvases() {
 SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
   const EmbeddedViewParams& params = view_params_.at(view_id);
   // TODO(egarciad): The rect should be computed from the mutator stack.
+  // (Clipping is missing)
   // https://github.com/flutter/flutter/issues/59821
-  return SkRect::MakeXYWH(params.finalBoundingRect().x(),                     //
-                          params.finalBoundingRect().y(),                     //
-                          params.sizePoints().width() * device_pixel_ratio_,  //
-                          params.sizePoints().height() * device_pixel_ratio_  //
+  return SkRect::MakeXYWH(params.finalBoundingRect().x(),      //
+                          params.finalBoundingRect().y(),      //
+                          params.finalBoundingRect().width(),  //
+                          params.finalBoundingRect().height()  //
   );
 }
 
@@ -146,13 +147,18 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
 
   for (int64_t view_id : composition_order_) {
     SkRect view_rect = GetViewRect(view_id);
+    const EmbeddedViewParams& params = view_params_.at(view_id);
     // Display the platform view. If it's already displayed, then it's
     // just positioned and sized.
-    jni_facade_->FlutterViewOnDisplayPlatformView(view_id,            //
-                                                  view_rect.x(),      //
-                                                  view_rect.y(),      //
-                                                  view_rect.width(),  //
-                                                  view_rect.height()  //
+    jni_facade_->FlutterViewOnDisplayPlatformView(
+        view_id,             //
+        view_rect.x(),       //
+        view_rect.y(),       //
+        view_rect.width(),   //
+        view_rect.height(),  //
+        params.sizePoints().width() * device_pixel_ratio_,
+        params.sizePoints().height() * device_pixel_ratio_,
+        params.mutatorsStack()  //
     );
     for (const SkRect& overlay_rect : overlay_layers.at(view_id)) {
       CreateSurfaceIfNeeded(context,               //
@@ -238,6 +244,9 @@ void AndroidExternalViewEmbedder::BeginFrame(
     double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   Reset();
+  if (frame_size_ != frame_size) {
+    surface_pool_->DestroyLayers(jni_facade_);
+  }
   frame_size_ = frame_size;
   device_pixel_ratio_ = device_pixel_ratio;
   // JNI method must be called on the platform thread.

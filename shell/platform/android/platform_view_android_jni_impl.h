@@ -54,7 +54,10 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
                                         int x,
                                         int y,
                                         int width,
-                                        int height) override;
+                                        int height,
+                                        int viewWidth,
+                                        int viewHeight,
+                                        MutatorsStack mutators_stack) override;
 
   void FlutterViewDisplayOverlaySurface(int surface_id,
                                         int x,
@@ -68,6 +71,8 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
 
   std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>
   FlutterViewCreateOverlaySurface() override;
+
+  void FlutterViewDestroyOverlaySurfaces() override;
 
   std::unique_ptr<std::vector<std::string>>
   FlutterViewComputePlatformResolvedLocale(
