@@ -4518,7 +4518,7 @@ class ImageDescriptor extends NativeFieldWrapperClass2 {
 
   /// Creates a [Codec] object which is suitable for decoding the data in the
   /// buffer to an [Image].
-  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight, bool disposeBuffer = true}) {
+  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight) {
     return _futurize((_Callback<Codec> callback) {
       return _instantiateCodec(
         callback,
