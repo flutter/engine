@@ -342,6 +342,33 @@ public class InputConnectionAdaptorTest {
   }
 
   @Test
+  public void testSendKeyEvent_rightKeyMovesCaretRightComplexRegion() {
+    int selStart = 0;
+    // Seven region indicator characters. The first six should be considered as
+    // three region indicators, and the final seventh character should be
+    // considered to be on its own because it has no partner.
+    String SAMPLE_REGION_TEXT = "🇷🇷🇷🇷🇷🇷🇷";
+    Editable editable = sampleEditable(selStart, selStart, SAMPLE_REGION_TEXT);
+    InputConnectionAdaptor adaptor = sampleInputConnectionAdaptor(editable);
+
+    KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
+    boolean didConsume;
+
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 4);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 8);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 12);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 14);
+  }
+
+  @Test
   public void testSendKeyEvent_rightKeyMovesCaretRightComplexEmoji() {
     int selStart = 0;
     Editable editable = sampleEditable(selStart, selStart, SAMPLE_EMOJI_TEXT);

@@ -217,15 +217,22 @@ class FlutterTextUtils {
 
     // Flags
     if (isRegionalIndicatorSymbol(codePoint)) {
-      codePoint = Character.codePointAt(text, nextOffset);
-      nextOffset += Character.charCount(codePoint);
+      if (nextOffset >= len - 1
+            || !isRegionalIndicatorSymbol(Character.codePointAt(text, nextOffset))) {
+        return offset + nextCharCount;
+      }
+      // In this case there are at least two regional indicator symbols ahead of
+      // offset. If those two regional indicator symbols are a pair that
+      // represent a region together, the next offset should be after both of
+      // them.
       int regionalIndicatorSymbolCount = 0;
-      while (nextOffset < len && isRegionalIndicatorSymbol(codePoint)) {
-        codePoint = Character.codePointAt(text, nextOffset);
-        nextOffset += Character.charCount(codePoint);
+      int regionOffset = offset;
+      while (regionOffset > 0
+          && isRegionalIndicatorSymbol(Character.codePointBefore(text, offset))) {
+        regionOffset -= Character.charCount(Character.codePointBefore(text, offset));
         regionalIndicatorSymbolCount++;
       }
-      if (regionalIndicatorSymbolCount > 0 && regionalIndicatorSymbolCount % 2 == 0) {
+      if (regionalIndicatorSymbolCount % 2 == 0) {
         nextCharCount += 2;
       }
       return offset + nextCharCount;
