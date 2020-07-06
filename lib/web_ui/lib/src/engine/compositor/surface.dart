@@ -149,7 +149,7 @@ class Surface {
     }
 
     htmlElement = htmlCanvas;
-    return CkSurface(skSurface, _grContext, glContext);
+    return CkSurface(skSurface, _grContext!, glContext);
   }
 
   bool _presentSurface() {
