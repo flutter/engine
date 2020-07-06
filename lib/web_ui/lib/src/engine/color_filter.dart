@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+
 part of engine;
 
 /// A description of a color filter to apply when drawing a shape or compositing
@@ -109,51 +109,43 @@ class EngineColorFilter implements ui.ColorFilter {
         _matrix = null,
         _type = _TypeSrgbToLinearGamma;
 
-  final ui.Color _color;
-  final ui.BlendMode _blendMode;
-  final List<double> _matrix;
+  final ui.Color? _color;
+  final ui.BlendMode? _blendMode;
+  final List<double>? _matrix;
   final int _type;
 
-  // The type of SkColorFilter class to create for Skia.
+  // The type of CkColorFilter class to create for Skia.
   static const int _TypeMode = 1; // MakeModeFilter
   static const int _TypeMatrix = 2; // MakeMatrixFilterRowMajor255
   static const int _TypeLinearToSrgbGamma = 3; // MakeLinearToSRGBGamma
   static const int _TypeSrgbToLinearGamma = 4; // MakeSRGBToLinearGamma
 
   @override
-  bool operator ==(dynamic other) {
-    if (other is! EngineColorFilter) {
-      return false;
-    }
-    final EngineColorFilter typedOther = other;
-
-    if (_type != typedOther._type) {
-      return false;
-    }
-    if (!_listEquals<double>(_matrix, typedOther._matrix)) {
-      return false;
-    }
-
-    return _color == typedOther._color && _blendMode == typedOther._blendMode;
+  bool operator ==(Object other) {
+    return other is EngineColorFilter
+        && other._type == _type
+        && _listEquals<double>(other._matrix, _matrix)
+        && other._color == _color
+        && other._blendMode == _blendMode;
   }
 
-  SkColorFilter _toSkColorFilter() {
+  CkColorFilter? _toCkColorFilter() {
     switch (_type) {
       case _TypeMode:
         if (_color == null || _blendMode == null) {
           return null;
         }
-        return SkColorFilter.mode(this);
+        return CkColorFilter.mode(this);
       case _TypeMatrix:
         if (_matrix == null) {
           return null;
         }
-        assert(_matrix.length == 20, 'Color Matrix must have 20 entries.');
-        return SkColorFilter.matrix(this);
+        assert(_matrix!.length == 20, 'Color Matrix must have 20 entries.');
+        return CkColorFilter.matrix(this);
       case _TypeLinearToSrgbGamma:
-        return SkColorFilter.linearToSrgbGamma(this);
+        return CkColorFilter.linearToSrgbGamma(this);
       case _TypeSrgbToLinearGamma:
-        return SkColorFilter.srgbToLinearGamma(this);
+        return CkColorFilter.srgbToLinearGamma(this);
       default:
         throw StateError('Unknown mode $_type for ColorFilter.');
     }

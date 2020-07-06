@@ -407,13 +407,14 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
 void FlutterPlatformViewsController::CompositeWithParams(int view_id,
                                                          const EmbeddedViewParams& params) {
-  CGRect frame = CGRectMake(0, 0, params.sizePoints.width(), params.sizePoints.height());
+  CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   UIView* touchInterceptor = touch_interceptors_[view_id].get();
   touchInterceptor.layer.transform = CATransform3DIdentity;
   touchInterceptor.frame = frame;
   touchInterceptor.alpha = 1;
 
-  int currentClippingCount = CountClips(params.mutatorsStack);
+  const MutatorsStack& mutatorStack = params.mutatorsStack();
+  int currentClippingCount = CountClips(mutatorStack);
   int previousClippingCount = clip_count_[view_id];
   if (currentClippingCount != previousClippingCount) {
     clip_count_[view_id] = currentClippingCount;
@@ -424,7 +425,7 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
         ReconstructClipViewsChain(currentClippingCount, touchInterceptor, oldPlatformViewRoot);
     root_views_[view_id] = fml::scoped_nsobject<UIView>([newPlatformViewRoot retain]);
   }
-  ApplyMutators(params.mutatorsStack, touchInterceptor);
+  ApplyMutators(mutatorStack, touchInterceptor);
 }
 
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
@@ -603,8 +604,9 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
 }
 
 void FlutterPlatformViewsController::EndFrame(
+    bool should_resubmit_frame,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  if (merge_threads_) {
+  if (should_resubmit_frame && merge_threads_) {
     raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
     merge_threads_ = false;
   }

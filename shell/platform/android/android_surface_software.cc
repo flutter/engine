@@ -11,6 +11,7 @@
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 
 namespace flutter {
@@ -37,11 +38,15 @@ bool GetSkColorType(int32_t buffer_format,
 }  // anonymous namespace
 
 AndroidSurfaceSoftware::AndroidSurfaceSoftware(
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
+    std::shared_ptr<AndroidContext> android_context,
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    AndroidSurface::Factory surface_factory)
+    : external_view_embedder_(
+          std::make_unique<AndroidExternalViewEmbedder>(android_context,
+                                                        jni_facade,
+                                                        surface_factory)) {
   GetSkColorType(WINDOW_FORMAT_RGBA_8888, &target_color_type_,
                  &target_alpha_type_);
-  external_view_embedder_ =
-      std::make_unique<AndroidExternalViewEmbedder>(jni_facade);
 }
 
 AndroidSurfaceSoftware::~AndroidSurfaceSoftware() = default;
@@ -141,6 +146,9 @@ bool AndroidSurfaceSoftware::PresentBackingStore(
 
 // |GPUSurfaceSoftwareDelegate|
 ExternalViewEmbedder* AndroidSurfaceSoftware::GetExternalViewEmbedder() {
+  if (!AndroidShellHolder::use_embedded_view) {
+    return nullptr;
+  }
   return external_view_embedder_.get();
 }
 

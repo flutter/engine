@@ -375,17 +375,14 @@ class Locale {
   };
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
-    if (other is! Locale) {
-      return false;
-    }
-    final Locale typedOther = other;
-    return languageCode == typedOther.languageCode &&
-        scriptCode == typedOther.scriptCode &&
-        countryCode == typedOther.countryCode;
+    return other is Locale
+        && other.languageCode == languageCode
+        && other.scriptCode == scriptCode
+        && other.countryCode == countryCode;
   }
 
   @override
@@ -603,18 +600,6 @@ abstract class Window {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   List<Locale>? get locales;
-
-  /// The locale that the platform's native locale resolution system resolves to.
-  ///
-  /// This value may differ between platforms and is meant to allow flutter locale
-  /// resolution algorithms to into resolving consistently with other apps on the
-  /// device.
-  ///
-  /// This value may be used in a custom [localeListResolutionCallback] or used directly
-  /// in order to arrive at the most appropriate locale for the app.
-  ///
-  /// See [locales], which is the list of locales the user/device prefers.
-  Locale? get platformResolvedLocale;
 
   /// Performs the platform-native locale resolution.
   ///
@@ -938,12 +923,12 @@ class AccessibilityFeatures {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    final AccessibilityFeatures typedOther = other;
-    return _index == typedOther._index;
+    return other is AccessibilityFeatures
+        && other._index == _index;
   }
 
   @override
