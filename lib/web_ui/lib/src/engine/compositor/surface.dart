@@ -131,7 +131,7 @@ class Surface {
     if (_grContext == null) {
       throw CanvasKitError('Could not create a graphics context.');
     }
-    
+
     // Set the cache byte limit for this grContext, if not specified it will use
     // CanvasKit's default.
     _syncCacheBytes();

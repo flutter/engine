@@ -13,7 +13,7 @@ class Rasterizer {
 
   Rasterizer(this.surface);
 
-  void setSkiaResourceCacheMaxBytes(int bytes) => 
+  void setSkiaResourceCacheMaxBytes(int bytes) =>
     surface.setSkiaResourceCacheMaxBytes(bytes);
 
   /// Creates a new frame from this rasterizer's surface, draws the given
