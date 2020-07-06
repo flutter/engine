@@ -190,6 +190,9 @@ class FlutterTextUtils {
   /**
    * Gets the offset of the next character following the given offset, with consideration for
    * multi-byte characters.
+   *
+   * @see <a target="_new"
+   *     href="https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android10-s3-release/core/java/android/text/method/BaseKeyListener.java#111">https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android10-s3-release/core/java/android/text/method/BaseKeyListener.java#111</a>
    */
   public int getOffsetAfter(CharSequence text, int offset) {
     final int len = text.length();
@@ -218,7 +221,7 @@ class FlutterTextUtils {
     // Flags
     if (isRegionalIndicatorSymbol(codePoint)) {
       if (nextOffset >= len - 1
-            || !isRegionalIndicatorSymbol(Character.codePointAt(text, nextOffset))) {
+          || !isRegionalIndicatorSymbol(Character.codePointAt(text, nextOffset))) {
         return offset + nextCharCount;
       }
       // In this case there are at least two regional indicator symbols ahead of
