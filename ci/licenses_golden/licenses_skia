@@ -1,4 +1,4 @@
-Signature: 059d20138c2c8a1a8c2934ecb90ddaa3
+Signature: e990f3e6ee560925146853672b348188
 
 UNUSED LICENSES:
 
@@ -1064,6 +1064,7 @@ FILE: ../../../third_party/skia/infra/bots/infra_tests.isolate
 FILE: ../../../third_party/skia/infra/bots/infrabots.isolate
 FILE: ../../../third_party/skia/infra/bots/ios_bin.isolate
 FILE: ../../../third_party/skia/infra/bots/jobs.json
+FILE: ../../../third_party/skia/infra/bots/lottie_ci.isolate
 FILE: ../../../third_party/skia/infra/bots/lottie_web.isolate
 FILE: ../../../third_party/skia/infra/bots/pathkit.isolate
 FILE: ../../../third_party/skia/infra/bots/perf_puppeteer.isolate
@@ -5279,6 +5280,7 @@ FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Ellipse.cp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/FillStroke.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Gradient.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/MergePaths.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/OffsetPaths.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Polystar.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Rectangle.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Repeater.cpp
@@ -5289,6 +5291,8 @@ FILE: ../../../third_party/skia/modules/skparagraph/gm/simple_gm.cpp
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGGeometryEffect.h
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGGeometryEffect.cpp
 FILE: ../../../third_party/skia/modules/skshaper/src/SkShaper_coretext.cpp
+FILE: ../../../third_party/skia/modules/skshaper/src/SkUnicode.h
+FILE: ../../../third_party/skia/modules/skshaper/src/SkUnicode_icu.cpp
 FILE: ../../../third_party/skia/samplecode/Sample3D.cpp
 FILE: ../../../third_party/skia/samplecode/SampleFitCubicToCircle.cpp
 FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
@@ -5302,6 +5306,7 @@ FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDynamicAtlas.h
 FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrHashMapWithCache.h
+FILE: ../../../third_party/skia/src/gpu/GrSTArenaList.h
 FILE: ../../../third_party/skia/src/gpu/GrStagingBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/GrStagingBuffer.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrAutoMapVertexBuffer.h
