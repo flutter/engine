@@ -1561,19 +1561,6 @@ enum PixelFormat {
   bgra8888,
 }
 
-class _ImageInfo {
-  _ImageInfo(this.width, this.height, this.format, int? rowBytes) : rowBytes = rowBytes ?? width * 4;
-
-  @pragma('vm:entry-point', 'get')
-  int width;
-  @pragma('vm:entry-point', 'get')
-  int height;
-  @pragma('vm:entry-point', 'get')
-  int format;
-  @pragma('vm:entry-point', 'get')
-  int rowBytes;
-}
-
 /// Opaque handle to raw decoded image data (pixels).
 ///
 /// To obtain an [Image] object, use [instantiateImageCodec].
@@ -1723,38 +1710,22 @@ Future<Codec> instantiateImageCodec(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) {
-  return _futurize((_Callback<Codec> callback) {
-    return _instantiateImageCodec(
-      list,
-      callback,
-      null,
-      targetWidth ?? _kDoNotResizeDimension,
-      targetHeight ?? _kDoNotResizeDimension,
-      allowUpscaling,
-    );
-  });
+}) async {
+  final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(list);
+  final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
+  if (!allowUpscaling) {
+    if (targetWidth != null && targetWidth > descriptor.width) {
+      targetWidth = descriptor.width;
+    }
+    if (targetHeight != null && targetHeight > descriptor.height) {
+      targetHeight = descriptor.height;
+    }
+  }
+  return descriptor.instantiateCodec(
+    targetWidth: targetWidth ?? _kDoNotResizeDimension,
+    targetHeight: targetHeight ?? _kDoNotResizeDimension,
+  );
 }
-
-/// Instantiates a [Codec] object for an image binary data.
-///
-/// The [targetWidth] and [targetHeight] arguments specify the size of the output
-/// image, in image pixels. Image in this context refers to image in every frame of the [Codec].
-/// If [targetWidth] and [targetHeight] are not equal to the intrinsic dimensions of the
-/// image, then the image will be scaled after being decoded. If exactly one of
-/// these two arguments is not equal to [_kDoNotResizeDimension], then the aspect
-/// ratio will be maintained while forcing the image to match the given dimension.
-/// If both are equal to [_kDoNotResizeDimension], then the image maintains its real size.
-///
-/// Returns an error message if the instantiation has failed, null otherwise.
-String? _instantiateImageCodec(
-  Uint8List list,
-  _Callback<Codec> callback,
-  _ImageInfo? imageInfo,
-  int targetWidth,
-  int targetHeight,
-  bool allowUpscaling,
-) native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
 ///
@@ -1813,19 +1784,30 @@ void decodeImageFromPixels(
     assert(allowUpscaling || targetHeight <= height);
   }
 
-  final _ImageInfo imageInfo = _ImageInfo(width, height, format.index, rowBytes);
-  final Future<Codec> codecFuture = _futurize((_Callback<Codec> callback) {
-    return _instantiateImageCodec(
-      pixels,
-      callback,
-      imageInfo,
-      targetWidth ?? _kDoNotResizeDimension,
-      targetHeight ?? _kDoNotResizeDimension,
-      allowUpscaling,
-    );
+  ImmutableBuffer.fromUint8List(pixels)
+    .then((ImmutableBuffer buffer) {
+      final ImageDescriptor descriptor = ImageDescriptor.raw(
+        buffer,
+        width: width,
+        height: height,
+        rowBytes: rowBytes,
+        pixelFormat: format,
+      );
+
+      int newTargetWidth = targetWidth ?? _kDoNotResizeDimension;
+      int newTargetHeight = targetHeight ?? _kDoNotResizeDimension;
+      if (!allowUpscaling) {
+        newTargetWidth = math.min(newTargetWidth, descriptor.width);
+        newTargetHeight = math.min(newTargetHeight, descriptor.height);
+      }
+      descriptor
+        .instantiateCodec(
+          targetWidth: newTargetWidth,
+          targetHeight: newTargetHeight,
+        )
+        .then((Codec codec) => codec.getNextFrame())
+        .then((FrameInfo frameInfo) => callback(frameInfo.image));
   });
-  codecFuture.then((Codec codec) => codec.getNextFrame())
-      .then((FrameInfo frameInfo) => callback(frameInfo.image));
 }
 
 /// Determines the winding rule that decides how the interior of a [Path] is
@@ -4449,6 +4431,103 @@ class Shadow {
 
   @override
   String toString() => 'TextShadow($color, $offset, $blurRadius)';
+}
+
+/// A handle to a read-only byte buffer that is managed by the engine.
+class ImmutableBuffer extends NativeFieldWrapperClass2 {
+  ImmutableBuffer._(this.length);
+
+  /// Creates a copy of the data from a [Uint8List] suitable for internal use
+  /// in the engine.
+  static Future<ImmutableBuffer> fromUint8List(Uint8List list) {
+    final ImmutableBuffer instance = ImmutableBuffer._(list.length);
+    return _futurize((_Callback<void> callback) {
+      instance._init(list, callback);
+    }).then((_) => instance);
+  }
+  void _init(Uint8List list, _Callback<void> callback) native 'ImmutableBuffer_init';
+
+  /// The length, in bytes, of the underlying data.
+  final int length;
+
+  /// Retreives a single byte from the underlying data.
+  int operator [](int index) => elementAt(index);
+
+  /// Retreives a single byte from the underlying data.
+  int elementAt(int index) {
+    if (index >= length || index < 0) {
+      throw RangeError.index(index, this);
+    }
+    return _elementAt(index);
+  }
+  int _elementAt(int index) native 'ImmutableBuffer_elementAt';
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() native 'ImmutableBuffer_dispose';
+}
+
+/// A descriptor of data that can be turned into an [Image] via a [Codec].
+///
+/// Use this class to determine the height, width, and byte size of image data
+/// before decoding it.
+class ImageDescriptor extends NativeFieldWrapperClass2 {
+  ImageDescriptor._();
+
+  /// Creates an image descriptor from encoded data in a supported format.
+  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) {
+    final ImageDescriptor descriptor = ImageDescriptor._();
+    return _futurize((_Callback<void> callback) {
+      descriptor._initEncoded(buffer, callback);
+    }).then((_) => descriptor);
+  }
+  String? _initEncoded(ImmutableBuffer buffer, _Callback<void> callback) native 'ImageDescriptor_initEncoded';
+
+  /// Creates an image descriptor from raw image pixels.
+  ///
+  /// The `pixels` parameter is the pixel data in the encoding described by
+  /// `format`.
+  ///
+  /// The `rowBytes` parameter is the number of bytes consumed by each row of
+  /// pixels in the data buffer. If unspecified, it defaults to `width` multiplied
+  /// by the number of bytes per pixel in the provided `format`.
+  // Not async because there's no expensive work to do here.
+  ImageDescriptor.raw(
+    ImmutableBuffer buffer, {
+    required int width,
+    required int height,
+    int? rowBytes,
+    required PixelFormat pixelFormat,
+  }) {
+    _initRaw(this, buffer, width, height, rowBytes ?? -1, pixelFormat.index);
+  }
+  void _initRaw(ImageDescriptor outDescriptor, ImmutableBuffer buffer, int width, int height, int rowBytes, int pixelFormat) native 'ImageDescriptor_initRaw';
+
+  /// The width, in pixels, of the image.
+  int get width native 'ImageDescriptor_width';
+
+  /// The height, in pixels, of the image.
+  int get height native 'ImageDescriptor_height';
+
+  /// The number of bytes per pixel in the image.
+  int get bytesPerPixel native 'ImageDescriptor_bytesPerPixel';
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() native 'ImageDescriptor_dispose';
+
+  /// Creates a [Codec] object which is suitable for decoding the data in the
+  /// buffer to an [Image].
+  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight, bool disposeBuffer = true}) {
+    return _futurize((_Callback<Codec> callback) {
+      return _instantiateCodec(
+        callback,
+        targetWidth ?? _kDoNotResizeDimension,
+        targetHeight ?? _kDoNotResizeDimension,
+      );
+    });
+  }
+  String? _instantiateCodec(_Callback<Codec> callback, int targetWidth, int targetHeight) native 'ImageDescriptor_instantiateCodec';
 }
 
 /// Generic callback signature, used by [_futurize].

@@ -12,7 +12,7 @@ namespace flutter {
 
 class MultiFrameCodec : public Codec {
  public:
-  MultiFrameCodec(std::unique_ptr<SkCodec> codec);
+  MultiFrameCodec(std::shared_ptr<SkCodec> codec);
 
   ~MultiFrameCodec() override;
 
@@ -36,9 +36,9 @@ class MultiFrameCodec : public Codec {
   // shares it with the IO task runner's decoding work, and sets the live_
   // member to false when it is destructed.
   struct State {
-    State(std::unique_ptr<SkCodec> codec);
+    State(std::shared_ptr<SkCodec> codec);
 
-    const std::unique_ptr<SkCodec> codec_;
+    const std::shared_ptr<SkCodec> codec_;
     const int frameCount_;
     const int repetitionCount_;
 

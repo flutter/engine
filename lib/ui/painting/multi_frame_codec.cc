@@ -11,12 +11,12 @@
 
 namespace flutter {
 
-MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec)
+MultiFrameCodec::MultiFrameCodec(std::shared_ptr<SkCodec> codec)
     : state_(new State(std::move(codec))) {}
 
 MultiFrameCodec::~MultiFrameCodec() = default;
 
-MultiFrameCodec::State::State(std::unique_ptr<SkCodec> codec)
+MultiFrameCodec::State::State(std::shared_ptr<SkCodec> codec)
     : codec_(std::move(codec)),
       frameCount_(codec_->getFrameCount()),
       repetitionCount_(codec_->getRepetitionCount()),
