@@ -142,7 +142,7 @@ source_set_maybe_fuchsia_legacy("ui") {
   deps_legacy_and_next = [ "//flutter/flow:flow" ]
 }
 
-if (current_toolchain == host_toolchain) {
+if (enable_unittests) {
   test_fixtures("ui_unittests_fixtures") {
     dart_main = "fixtures/ui_test.dart"
     fixtures = [
@@ -160,7 +160,6 @@ if (current_toolchain == host_toolchain) {
     configs += [ "//flutter:export_dynamic_symbols" ]
 
     sources = [
-      "painting/image_decoder_unittests.cc",
       "painting/image_encoding_unittests.cc",
       "painting/vertices_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
@@ -174,10 +173,15 @@ if (current_toolchain == host_toolchain) {
       "//flutter/testing",
       "//flutter/testing:dart",
       "//flutter/testing:fixture_test",
-      "//flutter/testing:opengl",
       "//flutter/third_party/tonic",
       "//third_party/dart/runtime/bin:elf_loader",
     ]
+
+    if (!is_fuchsia) {
+      sources += [ "painting/image_decoder_unittests.cc" ]
+
+      deps += [ "//flutter/testing:opengl" ]
+    }
   }
 
   executable("ui_benchmarks") {
