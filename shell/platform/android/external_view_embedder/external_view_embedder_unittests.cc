@@ -43,15 +43,19 @@ class SurfaceMock : public Surface {
               (override));
 };
 
-fml::RefPtr<fml::RasterThreadMerger> GetThreadMergerFromPlatformThread() {
-  auto rasterizer_thread = new fml::Thread("rasterizer");
-  auto rasterizer_queue_id =
-      rasterizer_thread->GetTaskRunner()->GetTaskQueueId();
-
+fml::RefPtr<fml::RasterThreadMerger> GetThreadMergerFromPlatformThread(
+    bool merged = false) {
   // Assume the current thread is the platform thread.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   auto platform_queue_id = fml::MessageLoop::GetCurrentTaskQueueId();
 
+  if (merged) {
+    return fml::MakeRefCounted<fml::RasterThreadMerger>(platform_queue_id,
+                                                        platform_queue_id);
+  }
+  auto rasterizer_thread = new fml::Thread("rasterizer");
+  auto rasterizer_queue_id =
+      rasterizer_thread->GetTaskRunner()->GetTaskQueueId();
   return fml::MakeRefCounted<fml::RasterThreadMerger>(platform_queue_id,
                                                       rasterizer_queue_id);
 }
@@ -292,8 +296,8 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, surface_factory);
 
-  auto raster_thread_merger = GetThreadMergerFromPlatformThread();
-  raster_thread_merger->MergeWithLease(1);
+  auto raster_thread_merger =
+      GetThreadMergerFromPlatformThread(/*merged=*/true);
 
   // ------------------ First frame ------------------ //
   {
