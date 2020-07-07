@@ -236,9 +236,7 @@ static void fl_view_realize(GtkWidget* widget) {
   gtk_widget_register_window(widget, window);
   gtk_widget_set_window(widget, window);
 
-  fl_renderer_x11_set_window(
-      FL_RENDERER_X11(self->renderer),
-      GDK_X11_WINDOW(gtk_widget_get_window(GTK_WIDGET(self))));
+  fl_renderer_set_window(self->renderer, window);
 
   if (!fl_engine_start(self->engine, &error))
     g_warning("Failed to start Flutter engine: %s", error->message);
