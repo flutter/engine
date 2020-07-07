@@ -354,6 +354,7 @@ public class InputConnectionAdaptorTest {
     KeyEvent downKeyDown = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
     boolean didConsume;
 
+    // The cursor moves over two region indicators at a time.
     didConsume = adaptor.sendKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 4);
@@ -363,9 +364,19 @@ public class InputConnectionAdaptorTest {
     didConsume = adaptor.sendKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 12);
+
+    // When there is only one region indicator left with no pair, the cursor
+    // moves over that single region indicator.
     didConsume = adaptor.sendKeyEvent(downKeyDown);
     assertTrue(didConsume);
     assertEquals(Selection.getSelectionStart(editable), 14);
+
+    // If the cursor is placed in the middle of a region indicator pair, it
+    // moves over only the second half of the pair.
+    adaptor.setSelection(6, 6);
+    didConsume = adaptor.sendKeyEvent(downKeyDown);
+    assertTrue(didConsume);
+    assertEquals(Selection.getSelectionStart(editable), 8);
   }
 
   @Test
