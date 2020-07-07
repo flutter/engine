@@ -291,7 +291,9 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
       };
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, surface_factory);
+
   auto raster_thread_merger = GetThreadMergerFromPlatformThread();
+  raster_thread_merger->MergeWithLease(1);
 
   // ------------------ First frame ------------------ //
   {
@@ -309,6 +311,9 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
     embedder->SubmitFrame(gr_context.get(), std::move(surface_frame));
     // Submits frame if no Android view in the current frame.
     EXPECT_TRUE(did_submit_frame);
+    // Doesn't resubmit frame.
+    auto postpreroll_result = embedder->PostPrerollAction(raster_thread_merger);
+    ASSERT_EQ(PostPrerollResult::kSuccess, postpreroll_result);
 
     EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
     embedder->EndFrame(/*should_resubmit_frame=*/false, raster_thread_merger);
@@ -373,6 +378,9 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
     embedder->SubmitFrame(gr_context.get(), std::move(surface_frame));
     // Doesn't submit frame if there aren't Android views in the previous frame.
     EXPECT_FALSE(did_submit_frame);
+    // Resubmits frame.
+    auto postpreroll_result = embedder->PostPrerollAction(raster_thread_merger);
+    ASSERT_EQ(PostPrerollResult::kResubmitFrame, postpreroll_result);
 
     EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
     embedder->EndFrame(/*should_resubmit_frame=*/false, raster_thread_merger);
@@ -434,6 +442,9 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
     embedder->SubmitFrame(gr_context.get(), std::move(surface_frame));
     // Submits frame if there are Android views in the previous frame.
     EXPECT_TRUE(did_submit_frame);
+    // Doesn't resubmit frame.
+    auto postpreroll_result = embedder->PostPrerollAction(raster_thread_merger);
+    ASSERT_EQ(PostPrerollResult::kSuccess, postpreroll_result);
 
     EXPECT_CALL(*jni_mock, FlutterViewEndFrame());
     embedder->EndFrame(/*should_resubmit_frame=*/false, raster_thread_merger);
