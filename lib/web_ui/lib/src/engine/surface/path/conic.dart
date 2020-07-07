@@ -130,7 +130,7 @@ class Conic {
   }
 
   // Splits conic into 2 parts based on weight.
-  void _chop(_ConicPair dst) {
+  void _chop(_ConicPair pair) {
     final double scale = 1.0 / (1.0 + fW);
     final double newW = _subdivideWeightValue(fW);
     final ui.Offset wp1 = ui.Offset(fW * p1x, fW * p1y);
@@ -142,9 +142,9 @@ class Conic {
       m = ui.Offset((p0x + (w2 * p1x) + p2x) * scaleHalf,
           (p0y + (w2 * p1y) + p2y) * scaleHalf);
     }
-    dst.first = Conic(p0x, p0y, (p0x + wp1.dx) * scale, (p0y + wp1.dy) * scale,
+    pair.first = Conic(p0x, p0y, (p0x + wp1.dx) * scale, (p0y + wp1.dy) * scale,
         m.dx, m.dy, newW);
-    dst.second = Conic(m.dx, m.dy, (p2x + wp1.dx) * scale,
+    pair.second = Conic(m.dx, m.dy, (p2x + wp1.dx) * scale,
         (p2y + wp1.dy) * scale, p2x, p2y, newW);
   }
 

@@ -719,18 +719,18 @@ class SurfacePath implements ui.Path {
 
     // Check if the radii are big enough to draw the arc, scale radii if not.
     // http://www.w3.org/TR/SVG/implnote.html#ArcCorrectionOutOfRangeRadii
-    double squareRx = rx * rx;
-    double squareRy = ry * ry;
+    double rxSquare = rx * rx;
+    double rySquare = ry * ry;
     final double xPrimeSquare = xPrime * xPrime;
     final double yPrimeSquare = yPrime * yPrime;
 
-    double radiiScale = (xPrimeSquare / squareRx) + (yPrimeSquare / squareRy);
+    double radiiScale = (xPrimeSquare / rxSquare) + (yPrimeSquare / rySquare);
     if (radiiScale > 1) {
       radiiScale = math.sqrt(radiiScale);
       rx *= radiiScale;
       ry *= radiiScale;
-      squareRx = rx * rx;
-      squareRy = ry * ry;
+      rxSquare = rx * rx;
+      rySquare = ry * ry;
     }
 
     // Switch to unit vectors
