@@ -257,6 +257,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.disable_dart_asserts =
       command_line.HasOption(FlagForSwitch(Switch::DisableDartAsserts));
 
+  settings.leak_vm =
+      !command_line.HasOption(FlagForSwitch(Switch::DisableLeakVM));
+
   settings.start_paused =
       command_line.HasOption(FlagForSwitch(Switch::StartPaused));
 

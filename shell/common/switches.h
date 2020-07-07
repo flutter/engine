@@ -198,6 +198,13 @@ DEF_SWITCH(UseEmbeddedView,
            "the platform thread."
            "This flag should be removed once the dynamic thread merging is "
            "enabled on android.")
+DEF_SWITCH(DisableLeakVM,
+           "disable-leak-vm",
+           "This flag defaults to false. Any shell launched with this flag "
+           "set to false will leak the VM in the process. There is no way to "
+           "shut down the VM once such a shell has been started. Make sure "
+           "this flag is set to true if you want the VM to shutdown and free "
+           "all associate resources.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);
