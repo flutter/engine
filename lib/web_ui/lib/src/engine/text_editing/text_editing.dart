@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 part of engine;
 
 /// Make the content editable span visible to facilitate debugging.
@@ -177,7 +176,8 @@ class EngineAutofillForm {
   }
 
   void _handleChange(html.Element domElement, String? tag) {
-    EditingState newEditingState = EditingState.fromDomElement(domElement as html.HtmlElement?);
+    EditingState newEditingState =
+        EditingState.fromDomElement(domElement as html.HtmlElement?);
 
     _sendAutofillEditingState(tag, newEditingState);
   }
@@ -207,7 +207,10 @@ class EngineAutofillForm {
 /// These values are to be used when a text field have autofill enabled.
 @visibleForTesting
 class AutofillInfo {
-  AutofillInfo({required this.editingState, required this.uniqueIdentifier, required this.hint});
+  AutofillInfo(
+      {required this.editingState,
+      required this.uniqueIdentifier,
+      required this.hint});
 
   /// The current text and selection state of a text field.
   final EditingState editingState;
@@ -352,10 +355,10 @@ class EditingState {
     if (runtimeType != other.runtimeType) {
       return false;
     }
-    return other is EditingState
-        && other.text == text
-        && other.baseOffset == baseOffset
-        && other.extentOffset == extentOffset;
+    return other is EditingState &&
+        other.text == text &&
+        other.baseOffset == baseOffset &&
+        other.extentOffset == extentOffset;
   }
 
   @override
@@ -396,6 +399,7 @@ class InputConfiguration {
     required this.inputAction,
     required this.obscureText,
     required this.autocorrect,
+    required this.textCapitalization,
     this.autofill,
     this.autofillGroup,
   });
@@ -407,9 +411,12 @@ class InputConfiguration {
         inputAction = flutterInputConfiguration['inputAction'],
         obscureText = flutterInputConfiguration['obscureText'],
         autocorrect = flutterInputConfiguration['autocorrect'],
+        textCapitalization = TextCapitalizationUtil.fromInputConfiguration(
+            flutterInputConfiguration['textCapitalization']),
         autofill = flutterInputConfiguration.containsKey('autofill')
-          ? AutofillInfo.fromFrameworkMessage(flutterInputConfiguration['autofill'])
-          : null,
+            ? AutofillInfo.fromFrameworkMessage(
+                flutterInputConfiguration['autofill'])
+            : null,
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
             flutterInputConfiguration['autofill'],
             flutterInputConfiguration['fields']);
@@ -435,6 +442,8 @@ class InputConfiguration {
   final AutofillInfo? autofill;
 
   final EngineAutofillForm? autofillGroup;
+
+  final TextCapitalizationUtil textCapitalization;
 }
 
 typedef _OnChangeCallback = void Function(EditingState? editingState);
@@ -500,18 +509,18 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
   void placeElement() {
     super.placeElement();
     if (hasAutofillGroup) {
-       _geometry?.applyToDomElement(focusedFormElement!);
-       placeForm();
-       // On Chrome, when a form is focused, it opens an autofill menu
-       // immeddiately.
-       // Flutter framework sends `setEditableSizeAndTransform` for informing
-       // the engine about the location of the text field. This call will
-       // arrive after `show` call.
-       // Therefore on Chrome we place the element when
-       //  `setEditableSizeAndTransform` method is called and focus on the form
-       // only after placing it to the correct position. Hence autofill menu
-       // does not appear on top-left of the page.
-       focusedFormElement!.focus();
+      _geometry?.applyToDomElement(focusedFormElement!);
+      placeForm();
+      // On Chrome, when a form is focused, it opens an autofill menu
+      // immeddiately.
+      // Flutter framework sends `setEditableSizeAndTransform` for informing
+      // the engine about the location of the text field. This call will
+      // arrive after `show` call.
+      // Therefore on Chrome we place the element when
+      //  `setEditableSizeAndTransform` method is called and focus on the form
+      // only after placing it to the correct position. Hence autofill menu
+      // does not appear on top-left of the page.
+      focusedFormElement!.focus();
     } else {
       _geometry?.applyToDomElement(domElement);
     }
@@ -551,6 +560,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   set domElement(html.HtmlElement element) {
     _domElement = element;
   }
+
   html.HtmlElement? _domElement;
 
   late InputConfiguration _inputConfiguration;
@@ -587,6 +597,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     if (inputConfig.obscureText!) {
       domElement.setAttribute('type', 'password');
     }
+
+    inputConfig.textCapitalization.setStyleAttribute(domElement);
 
     inputConfig.autofill?.applyToDomElement(domElement, focusedElement: true);
 
@@ -1444,5 +1456,61 @@ class EditableTextGeometry {
       ..width = '${width}px'
       ..height = '${height}px'
       ..transform = cssTransform;
+  }
+}
+
+/// Controls the capitalization of the text.
+///
+/// This corresponds to Flutter's [TextCapitalization].
+///
+/// Uses `text-transform` css property.
+/// See: https://developer.mozilla.org/en-US/docs/Web/CSS/text-transform
+enum TextCapitalization {
+  /// Uppercase for the first letter of each word.
+  words,
+
+  /// Currently not implemented on Flutter Web. Uppercase for the first letter
+  /// of each sentence.
+  sentences,
+
+  /// Uppercase for each letter.
+  characters,
+
+  /// Lowercase for each letter.
+  none,
+}
+
+/// Helper class for text capitalization.
+///
+/// Uses `text-transform` css property.
+/// See: https://developer.mozilla.org/en-US/docs/Web/CSS/text-transform
+class TextCapitalizationUtil {
+  final TextCapitalization textCapitalization;
+
+  // TODO: support sentence level text capitalization.
+  TextCapitalizationUtil.fromInputConfiguration(String inputConfiguration)
+      : this.textCapitalization =
+            inputConfiguration == 'TextCapitalization.words'
+                ? TextCapitalization.words
+                : (inputConfiguration == 'TextCapitalization.characters')
+                    ? TextCapitalization.characters
+                    : TextCapitalization.none;
+
+  void setStyleAttribute(html.HtmlElement domElement) {
+    final html.CssStyleDeclaration elementStyle = domElement.style;
+
+    switch (textCapitalization) {
+      case TextCapitalization.words:
+        elementStyle.textTransform = 'capitalize';
+        break;
+      case TextCapitalization.characters:
+        elementStyle.textTransform = 'uppercase';
+        break;
+      case TextCapitalization.sentences:
+      case TextCapitalization.none:
+      default:
+        elementStyle.textTransform = 'lowercase';
+        break;
+    }
   }
 }

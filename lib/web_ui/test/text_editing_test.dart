@@ -31,6 +31,8 @@ final InputConfiguration singlelineConfig = InputConfiguration(
   obscureText: false,
   inputAction: 'TextInputAction.done',
   autocorrect: true,
+  textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+      'TextCapitalization.none'),
 );
 final Map<String, dynamic> flutterSinglelineConfig =
     createFlutterConfig('text');
@@ -40,6 +42,8 @@ final InputConfiguration multilineConfig = InputConfiguration(
   obscureText: false,
   inputAction: 'TextInputAction.newline',
   autocorrect: true,
+  textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+      'TextCapitalization.none')
 );
 final Map<String, dynamic> flutterMultilineConfig =
     createFlutterConfig('multiline');
@@ -112,6 +116,8 @@ void main() {
         inputAction: 'TextInputAction.done',
         obscureText: true,
         autocorrect: true,
+        textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+            'TextCapitalization.none')
       );
       editingElement.enable(
         config,
@@ -132,6 +138,8 @@ void main() {
         inputAction: 'TextInputAction.done',
         obscureText: false,
         autocorrect: false,
+        textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+            'TextCapitalization.none')
       );
       editingElement.enable(
         config,
@@ -152,6 +160,8 @@ void main() {
         inputAction: 'TextInputAction.done',
         obscureText: false,
         autocorrect: true,
+        textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+            'TextCapitalization.none')
       );
       editingElement.enable(
         config,
@@ -291,6 +301,8 @@ void main() {
         obscureText: false,
         inputAction: 'TextInputAction.done',
         autocorrect: true,
+        textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+            'TextCapitalization.none')
       );
       editingElement.enable(
         config,
@@ -317,6 +329,8 @@ void main() {
         obscureText: false,
         inputAction: 'TextInputAction.done',
         autocorrect: true,
+        textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+            'TextCapitalization.none')
       );
       editingElement.enable(
         config,
@@ -857,6 +871,36 @@ void main() {
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
       expect(document.getElementsByTagName('form'), isEmpty);
+    });
+
+    test(
+        'Word capitilization: setClient, setEditingState, show, '
+        'setEditingState, clearClient', () {
+      // Create a configuration with an AutofillGroup of four text fields.
+      final Map<String, dynamic> capitilizeWordsConfig =
+          createFlutterConfig('text',
+           textCapitalization: 'TextCapitalization.words'
+          );
+      final MethodCall setClient = MethodCall('TextInput.setClient',
+          <dynamic>[123, capitilizeWordsConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState1 =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': '',
+        'selectionBase': 0,
+        'selectionExtent': 0,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      expect(textEditing.editingElement.domElement.style.textTransform,
+          'capitalize');
+
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
     });
 
     test(
@@ -1710,6 +1754,7 @@ Map<String, dynamic> createFlutterConfig(
   String inputType, {
   bool obscureText = false,
   bool autocorrect = true,
+  String textCapitalization = 'TextCapitalization.none',
   String inputAction,
   String autofillHint,
   List<String> autofillHintsForFields,
@@ -1721,6 +1766,7 @@ Map<String, dynamic> createFlutterConfig(
     'obscureText': obscureText,
     'autocorrect': autocorrect,
     'inputAction': inputAction ?? 'TextInputAction.done',
+    'textCapitalization': textCapitalization,
     if (autofillHint != null)
       'autofill': createAutofillInfo(autofillHint, autofillHint),
     if (autofillHintsForFields != null)
@@ -1763,5 +1809,6 @@ Map<String, dynamic> createOneFieldValue(String hint, String uniqueId) =>
         'signed': null,
         'decimal': null
       },
+      'textCapitalization': 'TextCapitalization.none',
       'autofill': createAutofillInfo(hint, uniqueId)
     };
