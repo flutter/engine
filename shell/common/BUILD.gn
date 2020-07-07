@@ -2,27 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/testing/testing.gni")
-import("//flutter/vulkan/config.gni")
-
-if (is_fuchsia) {
-  import("//build/fuchsia/sdk.gni")
-  import("//flutter/tools/fuchsia/fuchsia_archive.gni")
-}
-
-config("vulkan_config") {
-  if (is_fuchsia) {
-    include_dirs = [ "$fuchsia_sdk_root/vulkan/include" ]
-  } else {
-    include_dirs = [ "//third_party/vulkan/src" ]
-  }
-
-  if (is_fuchsia) {
-    defines = [ "VK_USE_PLATFORM_FUCHSIA=1" ]
-  }
-}
 
 # Template to generate a dart embedder resource.cc file.
 # Required invoker inputs:
