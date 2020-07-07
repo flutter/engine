@@ -300,7 +300,7 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   for (int i = 0; i < length; ++i) {
     int offset = i * _kPointerDataFieldCount;
     data.add(PointerData(
-      motionEventId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
       change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],

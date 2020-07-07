@@ -58,7 +58,7 @@ struct alignas(8) PointerData {
     kScroll,
   };
 
-  int64_t motion_event_id;
+  int64_t embedder_id;
   int64_t time_stamp;
   Change change;
   DeviceKind kind;
