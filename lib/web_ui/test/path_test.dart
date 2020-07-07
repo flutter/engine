@@ -24,30 +24,18 @@ void main() {
       path.lineTo(20.0, 40.0);
       path.lineTo(30.0, 50.0);
       expect(path.pathRef.countPoints(), 3);
-      expect(path.pathRef
-          .atPoint(2)
-          .dx, 30.0);
-      expect(path.pathRef
-          .atPoint(2)
-          .dy, 50.0);
+      expect(path.pathRef.atPoint(2).dx, 30.0);
+      expect(path.pathRef.atPoint(2).dy, 50.0);
     });
 
     test('LineTo should add moveTo 0,0 when first call to Path API', () {
       final SurfacePath path = SurfacePath();
       path.lineTo(20.0, 40.0);
       expect(path.pathRef.countPoints(), 2);
-      expect(path.pathRef
-          .atPoint(0)
-          .dx, 0);
-      expect(path.pathRef
-          .atPoint(0)
-          .dy, 0);
-      expect(path.pathRef
-          .atPoint(1)
-          .dx, 20.0);
-      expect(path.pathRef
-          .atPoint(1)
-          .dy, 40.0);
+      expect(path.pathRef.atPoint(0).dx, 0);
+      expect(path.pathRef.atPoint(0).dy, 0);
+      expect(path.pathRef.atPoint(1).dx, 20.0);
+      expect(path.pathRef.atPoint(1).dy, 40.0);
     });
 
     test('relativeLineTo should increments currentX', () {
@@ -56,12 +44,8 @@ void main() {
       path.lineTo(20.0, 40.0);
       path.relativeLineTo(5.0, 5.0);
       expect(path.pathRef.countPoints(), 3);
-      expect(path.pathRef
-          .atPoint(2)
-          .dx, 25.0);
-      expect(path.pathRef
-          .atPoint(2)
-          .dy, 45.0);
+      expect(path.pathRef.atPoint(2).dx, 25.0);
+      expect(path.pathRef.atPoint(2).dy, 45.0);
     });
 
     test('Should allow calling relativeLineTo before moveTo', () {
@@ -69,18 +53,10 @@ void main() {
       path.relativeLineTo(5.0, 5.0);
       path.moveTo(5.0, 10.0);
       expect(path.pathRef.countPoints(), 3);
-      expect(path.pathRef
-          .atPoint(1)
-          .dx, 5.0);
-      expect(path.pathRef
-          .atPoint(1)
-          .dy, 5.0);
-      expect(path.pathRef
-          .atPoint(2)
-          .dx, 5.0);
-      expect(path.pathRef
-          .atPoint(2)
-          .dy, 10.0);
+      expect(path.pathRef.atPoint(1).dx, 5.0);
+      expect(path.pathRef.atPoint(1).dy, 5.0);
+      expect(path.pathRef.atPoint(2).dx, 5.0);
+      expect(path.pathRef.atPoint(2).dy, 10.0);
     });
 
     test('Should allow relativeLineTo after reset', () {
@@ -92,15 +68,9 @@ void main() {
       path.reset();
       path.relativeLineTo(5.0, 5.0);
       expect(path.pathRef.countPoints(), 2);
-      expect(path.pathRef
-          .atPoint(0)
-          .dx, 0);
-      expect(path.pathRef
-          .atPoint(0)
-          .dy, 0);
-      expect(path.pathRef
-          .atPoint(1)
-          .dx, 5.0);
+      expect(path.pathRef.atPoint(0).dx, 0);
+      expect(path.pathRef.atPoint(0).dy, 0);
+      expect(path.pathRef.atPoint(1).dx, 5.0);
     });
 
     test('Should detect rectangular path', () {
@@ -114,8 +84,8 @@ void main() {
       expect(path.webOnlyPathAsRect, null);
     });
 
-    test(
-        'Should detect non rectangular path if there are multiple subpaths', () {
+    test('Should detect non rectangular path if there are multiple subpaths',
+        () {
       final SurfacePath path = SurfacePath();
       path.addRect(const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0));
       path.addRect(const Rect.fromLTWH(5.0, 6.0, 7.0, 8.0));
@@ -146,7 +116,7 @@ void main() {
 
     test(
         'Should detect non rounded  rectangular path if there are '
-            'multiple subpaths', () {
+        'multiple subpaths', () {
       final SurfacePath path = SurfacePath();
       path.addRRect(RRect.fromRectAndRadius(
           const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0), const Radius.circular(2.0)));
@@ -246,8 +216,13 @@ void main() {
 
     test('Should compute bounds for polygon', () {
       final SurfacePath path = SurfacePath();
-      path.addPolygon(<Offset>[Offset(50, 100), Offset(250, 100),
-        Offset(152, 180), Offset(159, 200), Offset(151, 190)], true);
+      path.addPolygon(<Offset>[
+        Offset(50, 100),
+        Offset(250, 100),
+        Offset(152, 180),
+        Offset(159, 200),
+        Offset(151, 190)
+      ], true);
       expect(path.getBounds(), const Rect.fromLTRB(50, 100, 250, 200));
     });
 
@@ -373,7 +348,9 @@ void main() {
       window.debugOverrideDevicePixelRatio(4.0);
       final path = Path()
         ..moveTo(50, 0)
-        ..lineTo(100, 100)..lineTo(0, 100)..lineTo(50, 0)
+        ..lineTo(100, 100)
+        ..lineTo(0, 100)
+        ..lineTo(50, 0)
         ..close();
       expect(path.contains(Offset(50, 50)), isTrue);
       js_util.setProperty(html.window, 'devicePixelRatio', 1.0);
@@ -423,17 +400,9 @@ void main() {
     });
 
     test('Should convert conic to quad when approximation error is small', () {
-      Conic conic = Conic(
-          120.0,
-          20.0,
-          160.99470420829266,
-          20.0,
-          190.19301120261332,
-          34.38770865870253,
-          0.9252691032413082);
-      expect(conic
-          .toQuads()
-          .length, 3);
+      Conic conic = Conic(120.0, 20.0, 160.99470420829266, 20.0,
+          190.19301120261332, 34.38770865870253, 0.9252691032413082);
+      expect(conic.toQuads().length, 3);
     });
 
     test('Should be able to construct from empty path', () {
