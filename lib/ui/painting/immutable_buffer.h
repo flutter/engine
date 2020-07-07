@@ -15,33 +15,50 @@
 #include "third_party/tonic/typed_data/typed_list.h"
 
 namespace flutter {
+
+//------------------------------------------------------------------------------
+/// A simple opaque handle to an immutable byte buffer suitable for use
+/// internally by the engine.
+///
+/// This data is not known by the Dart VM.
+///
+/// It is expected that C++ users of this object will not modify the data
+/// argument. No Dart side calls are provided to do so.
 class ImmutableBuffer : public RefCountedDartWrappable<ImmutableBuffer> {
  public:
-  ~ImmutableBuffer() override = default;
+  ~ImmutableBuffer() override;
 
+  /// Initializes a new ImmutableData from a Dart Uint8List.
+  ///
+  /// The zero indexed argument is the the caller that will be registered as the
+  /// Dart peer of the native ImmutableBuffer object.
+  ///
+  /// The first indexed argumented is a tonic::Uint8List of bytes to copy.
+  ///
+  /// The second indexed argument is expected to be a void callback to signal
+  /// when the copy has completed.
   static void init(Dart_NativeArguments args);
 
-  int length() const {
+  /// The length of the data in bytes.
+  size_t length() const {
     FML_DCHECK(data_);
     return data_->size();
   }
 
-  int elementAt(size_t index) const {
-    FML_DCHECK(data_);
-    FML_DCHECK(index < data_->size());
-    return data_->bytes()[index];
-  }
-
+  /// Callers should not modify the returned data. This is not exposed to Dart.
   sk_sp<SkData> data() const { return data_; }
 
+  /// Clears the Dart native fields and removes the reference to the underlying
+  /// byte buffer.
+  ///
+  /// The byte buffer will continue to live if other objects hold a reference to
+  /// it.
   void dispose() {
     ClearDartWrapper();
     data_.reset();
   }
 
-  size_t GetAllocationSize() const override {
-    return sizeof(ImmutableBuffer) + (data_->size() * 4);
-  }
+  size_t GetAllocationSize() const override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

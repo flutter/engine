@@ -36,48 +36,6 @@ static double AspectRatio(const SkISize& size) {
   return static_cast<double>(size.width()) / size.height();
 }
 
-// Get the updated dimensions of the image. If both dimensions are specified,
-// use them. If one of them is specified, respect the one that is and use the
-// aspect ratio to calculate the other. If neither dimension is specified, use
-// intrinsic dimensions of the image.
-static SkISize GetResizedDimensions(SkISize current_size,
-                                    std::optional<uint32_t> target_width,
-                                    std::optional<uint32_t> target_height,
-                                    ImageUpscalingMode image_upscaling) {
-  if (current_size.isEmpty()) {
-    return SkISize::MakeEmpty();
-  }
-
-  if (image_upscaling == ImageUpscalingMode::kNotAllowed) {
-    if (target_width) {
-      target_width = std::min(current_size.width(),
-                              static_cast<int32_t>(target_width.value()));
-    }
-    if (target_height) {
-      target_height = std::min(current_size.height(),
-                               static_cast<int32_t>(target_height.value()));
-    }
-  }
-
-  if (target_width && target_height) {
-    return SkISize::Make(target_width.value(), target_height.value());
-  }
-
-  const auto aspect_ratio = AspectRatio(current_size);
-
-  if (target_width) {
-    return SkISize::Make(target_width.value(),
-                         target_width.value() / aspect_ratio);
-  }
-
-  if (target_height) {
-    return SkISize::Make(target_height.value() * aspect_ratio,
-                         target_height.value());
-  }
-
-  return current_size;
-}
-
 static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
                                         const SkISize& resized_dimensions,
                                         const fml::tracing::TraceFlow& flow) {
@@ -142,7 +100,6 @@ static sk_sp<SkImage> ImageFromDecompressedData(
     ImageDecoder::ImageInfo info,
     std::optional<uint32_t> target_width,
     std::optional<uint32_t> target_height,
-    ImageUpscalingMode image_upscaling,
     const fml::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
@@ -158,16 +115,12 @@ static sk_sp<SkImage> ImageFromDecompressedData(
     return image->makeRasterImage();
   }
 
-  auto resized_dimensions = GetResizedDimensions(
-      image->dimensions(), target_width, target_height, image_upscaling);
-
-  return ResizeRasterImage(std::move(image), resized_dimensions, flow);
+  return ResizeRasterImage(std::move(image), SkISize::Make(target_width, target_height), flow);
 }
 
 sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
-                                       std::optional<uint32_t> target_width,
-                                       std::optional<uint32_t> target_height,
-                                       ImageUpscalingMode image_upscaling,
+                                       uint32_t target_width,
+                                       uint32_t target_height,
                                        const fml::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
@@ -189,8 +142,8 @@ sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
   auto image_generator = SkCodecImageGenerator::MakeFromCodec(std::move(codec));
   const auto& source_dimensions = image_generator->getInfo().dimensions();
 
-  auto resized_dimensions = GetResizedDimensions(
-      source_dimensions, target_width, target_height, image_upscaling);
+  auto resized_dimensions =
+      GetResizedDimensions(source_dimensions, target_width, target_height);
 
   // No resize needed.
   if (resized_dimensions == source_dimensions) {
@@ -348,13 +301,11 @@ void ImageDecoder::Decode(ImageDescriptor descriptor,
                       descriptor.decompressed_image_info.value(),  //
                       descriptor.target_width,                     //
                       descriptor.target_height,                    //
-                      descriptor.image_upscaling,                  //
                       flow                                         //
                       )
                 : ImageFromCompressedData(std::move(descriptor.data),  //
                                           descriptor.target_width,     //
                                           descriptor.target_height,    //
-                                          descriptor.image_upscaling,  //
                                           flow);
 
         if (!decompressed) {

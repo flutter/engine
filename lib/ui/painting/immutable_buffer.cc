@@ -24,6 +24,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, ImmutableBuffer);
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
+void ImmutableBuffer::~ImmutableBuffer() {}
+
 void ImmutableBuffer::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({{"ImmutableBuffer_init", ImmutableBuffer::init, 3, true},
                      FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
@@ -44,6 +46,10 @@ void ImmutableBuffer::init(Dart_NativeArguments args) {
   auto buffer = fml::MakeRefCounted<ImmutableBuffer>(sk_data);
   buffer->AssociateWithDartWrapper(buffer_handle);
   tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
+}
+
+size_t ImmutableBuffer::GetAllocationSize() const {
+  return sizeof(ImmutableBuffer) + data_->size();
 }
 
 #if OS_ANDROID

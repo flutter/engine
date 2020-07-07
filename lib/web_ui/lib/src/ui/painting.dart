@@ -1868,12 +1868,6 @@ class ImmutableBuffer {
   /// The length, in bytes, of the underlying data.
   final int length;
 
-  /// Retreives a single byte from the underlying data.
-  int operator [](int index) => _list[index];
-
-  /// Retreives a single byte from the underlying data.
-  int elementAt(int index) => _list.elementAt(index);
-
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose() => _list = null;

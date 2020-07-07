@@ -41,18 +41,24 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
   }
 
   Dart_Handle descriptor_handle = Dart_GetNativeArgument(args, 0);
-  ImmutableBuffer* data = tonic::DartConverter<ImmutableBuffer*>::FromDart(
-      Dart_GetNativeArgument(args, 1));
-  FML_DCHECK(data);
+  ImmutableBuffer* immutable_buffer =
+      tonic::DartConverter<ImmutableBuffer*>::FromDart(
+          Dart_GetNativeArgument(args, 1));
 
-  auto codec = SkCodec::MakeFromData(data->data());
+  if (!immutable_buffer) {
+    Dart_SetReturnValue(args,
+                        tonic::ToDart("Buffer parameter must not be null"));
+    return;
+  }
+
+  auto codec = SkCodec::MakeFromData(immutable_buffer->data());
   if (!codec) {
     Dart_SetReturnValue(args, tonic::ToDart("Invalid image data"));
     return;
   }
   auto image_info = codec->getInfo();
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
-      data->data(), std::move(codec), std::move(image_info));
+      immutable_buffer->data(), std::move(codec), std::move(image_info));
   descriptor->AssociateWithDartWrapper(descriptor_handle);
   tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
 }

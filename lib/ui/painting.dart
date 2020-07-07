@@ -1035,12 +1035,6 @@ enum Clip {
   antiAliasWithSaveLayer,
 }
 
-/// Indicates that the image should not be resized in this dimension.
-///
-/// Used by [instantiateImageCodec] as a magical value to disable resizing
-/// in the given dimension.
-const int _kDoNotResizeDimension = -1;
-
 /// A description of the style to use when drawing on a [Canvas].
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
@@ -1722,8 +1716,8 @@ Future<Codec> instantiateImageCodec(
     }
   }
   return descriptor.instantiateCodec(
-    targetWidth: targetWidth ?? _kDoNotResizeDimension,
-    targetHeight: targetHeight ?? _kDoNotResizeDimension,
+    targetWidth: targetWidth,
+    targetHeight: targetHeight,
   );
 }
 
@@ -1794,8 +1788,8 @@ void decodeImageFromPixels(
         pixelFormat: format,
       );
 
-      int newTargetWidth = targetWidth ?? _kDoNotResizeDimension;
-      int newTargetHeight = targetHeight ?? _kDoNotResizeDimension;
+      int newTargetWidth = targetWidth ?? width;
+      int newTargetHeight = targetHeight ?? height;
       if (!allowUpscaling) {
         newTargetWidth = math.min(newTargetWidth, descriptor.width);
         newTargetHeight = math.min(newTargetHeight, descriptor.height);
@@ -4450,18 +4444,6 @@ class ImmutableBuffer extends NativeFieldWrapperClass2 {
   /// The length, in bytes, of the underlying data.
   final int length;
 
-  /// Retreives a single byte from the underlying data.
-  int operator [](int index) => elementAt(index);
-
-  /// Retreives a single byte from the underlying data.
-  int elementAt(int index) {
-    if (index >= length || index < 0) {
-      throw RangeError.index(index, this);
-    }
-    return _elementAt(index);
-  }
-  int _elementAt(int index) native 'ImmutableBuffer_elementAt';
-
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose() native 'ImmutableBuffer_dispose';
@@ -4518,12 +4500,13 @@ class ImageDescriptor extends NativeFieldWrapperClass2 {
 
   /// Creates a [Codec] object which is suitable for decoding the data in the
   /// buffer to an [Image].
-  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight) {
+  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) {
+
     return _futurize((_Callback<Codec> callback) {
       return _instantiateCodec(
         callback,
-        targetWidth ?? _kDoNotResizeDimension,
-        targetHeight ?? _kDoNotResizeDimension,
+        targetWidth ?? width,
+        targetHeight ?? height,
       );
     });
   }
