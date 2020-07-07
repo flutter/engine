@@ -466,7 +466,7 @@ class RecordingCanvas {
       }
     }
     SurfacePath sPath = path as SurfacePath;
-    if (sPath.subpaths.isNotEmpty) {
+    if (!sPath.pathRef.isEmpty) {
       _hasArbitraryPaint = true;
       _didDraw = true;
       ui.Rect pathBounds = sPath.getBounds();
@@ -1570,7 +1570,7 @@ class Ellipse extends PathCommand {
         anticlockwise ? startAngle - endAngle : endAngle - startAngle,
         matrix4,
         bezierPath);
-    targetPath._addPathWithMatrix(bezierPath as SurfacePath, 0, 0, matrix4);
+    targetPath._addPath(bezierPath, 0, 0, matrix4, SPathAddPathMode.kAppend);
   }
 
   void _drawArcWithBezier(
@@ -1848,7 +1848,7 @@ class RRectCommand extends PathCommand {
   void transform(Float32List matrix4, SurfacePath targetPath) {
     final ui.Path roundRectPath = ui.Path();
     _RRectToPathRenderer(roundRectPath).render(rrect);
-    targetPath._addPathWithMatrix(roundRectPath as SurfacePath, 0, 0, matrix4);
+    targetPath._addPath(roundRectPath, 0, 0, matrix4, SPathAddPathMode.kAppend);
   }
 
   @override
