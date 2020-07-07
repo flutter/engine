@@ -1,4 +1,4 @@
-Signature: 84c5b63109cf1af2b7648c9773cf0562
+Signature: fef7661dce783f0ba5f8150973be1492
 
 UNUSED LICENSES:
 
@@ -1485,7 +1485,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/fd.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl-async/meta.json
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl/meta.json
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/envelope_frames.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/internal_callable_traits.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/txn_header.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/visitor.h
@@ -2827,11 +2826,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/component/component_contex
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/config/config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/intent/intent.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/lifecycle/lifecycle.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module/link_path.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module/module_data.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module/module_state.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/create_link.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/create_module_parameter_map.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/story_shell.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/story/story_state.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/surface/surface.fidl
@@ -3136,10 +3132,9 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/noop_view_p
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular/lib/src/module/view_provider.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/module_interceptor.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_modular_testing/lib/src/module_with_view_provider_impl.dart
-FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/component_search.dart
+FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/component.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/device.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/diagnostics.dart
-FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/launch.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/power.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/repository_manager.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/tiles.dart
@@ -3158,6 +3153,8 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.castwindow/window.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/constants.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/error.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/types.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/interest.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/severity.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.factory.wlan/iovar.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/crash_register.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_register.fidl

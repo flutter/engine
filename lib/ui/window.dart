@@ -470,7 +470,7 @@ class Locale {
   };
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (other is! Locale) {
@@ -795,19 +795,6 @@ class Window {
   ///    observe when this value changes.
   List<Locale>? get locales => _locales;
   List<Locale>? _locales;
-
-  /// The locale that the platform's native locale resolution system resolves to.
-  ///
-  /// This value may differ between platforms and is meant to allow Flutter's locale
-  /// resolution algorithms access to a locale that is consistent with other apps
-  /// on the device. Using this property is optional.
-  ///
-  /// This value may be used in a custom [localeListResolutionCallback] or used directly
-  /// in order to arrive at the most appropriate locale for the app.
-  ///
-  /// See [locales], which is the list of locales the user/device prefers.
-  Locale? get platformResolvedLocale => _platformResolvedLocale;
-  Locale? _platformResolvedLocale;
 
   /// Performs the platform-native locale resolution.
   ///
@@ -1313,7 +1300,7 @@ class AccessibilityFeatures {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (other.runtimeType != runtimeType)
       return false;
     return other is AccessibilityFeatures

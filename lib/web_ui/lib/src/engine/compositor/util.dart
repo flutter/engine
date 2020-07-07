@@ -2,98 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 part of engine;
 
-/// An object backed by a [js.JsObject] mapped onto a Skia C++ object in the
-/// WebAssembly heap.
-///
-/// These objects are automatically deleted when no longer used.
-///
-/// Because there is no feedback from JavaScript's GC (no destructors or
-/// finalizers), we pessimistically delete the underlying C++ object before
-/// the Dart object is garbage-collected. The current algorithm deletes objects
-/// at the end of every frame. This allows reusing the C++ objects within the
-/// frame. In the future we may add smarter strategies that will allow us to
-/// reuse C++ objects across frames.
-///
-/// The lifecycle of a C++ object is as follows:
-///
-/// - Create default: when instantiating a C++ object for a Dart object for the
-///   first time, the C++ object is populated with default data (the defaults are
-///   defined by Flutter; Skia defaults are corrected if necessary). The
-///   default object is created by [createDefault].
-/// - Zero or more cycles of delete + resurrect: when a Dart object is reused
-///   after its C++ object is deleted we create a new C++ object populated with
-///   data from the current state of the Dart object. This is done using the
-///   [resurrect] method.
-/// - Final delete: if a Dart object is never reused, it is GC'd after its
-///   underlying C++ object is deleted. This is implemented by [SkiaObjects].
-abstract class SkiaObject {
-  SkiaObject() {
-    _skiaObject = createDefault();
-    SkiaObjects.manage(this);
-  }
+/// An error related to the CanvasKit rendering backend.
+class CanvasKitError extends Error {
+  CanvasKitError(this.message);
 
-  /// The JavaScript object that's mapped onto a Skia C++ object in the WebAssembly heap.
-  js.JsObject get skiaObject {
-    if (_skiaObject == null) {
-      _skiaObject = resurrect();
-      SkiaObjects.manage(this);
-    }
-    return _skiaObject;
-  }
+  /// Describes this error.
+  final String message;
 
-  /// Do not use this field outside this class. Use [skiaObject] instead.
-  js.JsObject _skiaObject;
-
-  /// Instantiates a new Skia-backed JavaScript object containing default
-  /// values.
-  ///
-  /// The object is expected to represent Flutter's defaults. If Skia uses
-  /// different defaults from those used by Flutter, this method is expected
-  /// initialize the object to Flutter's defaults.
-  js.JsObject createDefault();
-
-  /// Creates a new Skia-backed JavaScript object containing data representing
-  /// the current state of the Dart object.
-  js.JsObject resurrect();
-}
-
-/// Singleton that manages the lifecycles of [SkiaObject] instances.
-class SkiaObjects {
-  // TODO(yjbanov): some sort of LRU strategy would allow us to reuse objects
-  //                beyond a single frame.
-  @visibleForTesting
-  static final List<SkiaObject> managedObjects = () {
-    window.rasterizer.addPostFrameCallback(postFrameCleanUp);
-    return <SkiaObject>[];
-  }();
-
-  /// Starts managing the lifecycle of [object].
-  ///
-  /// The object's underlying WASM object is deleted by calling the
-  /// "delete" method when it goes out of scope.
-  ///
-  /// The current implementation deletes objects at the end of every frame.
-  static void manage(SkiaObject object) {
-    managedObjects.add(object);
-  }
-
-  /// Deletes all C++ objects created this frame.
-  static void postFrameCleanUp() {
-    if (managedObjects.isEmpty) {
-      return;
-    }
-
-    for (int i = 0; i < managedObjects.length; i++) {
-      final SkiaObject object = managedObjects[i];
-      object._skiaObject.callMethod('delete');
-      object._skiaObject = null;
-    }
-
-    managedObjects.clear();
-  }
+  @override
+  String toString() => 'CanvasKitError: $message';
 }
 
 /// Converts a list of [ui.Color] into the 2d array expected by CanvasKit.
@@ -117,9 +36,9 @@ js.JsObject _mallocColorArray() {
       .callMethod('Malloc', <dynamic>[js.context['Float32Array'], 4]);
 }
 
-js.JsObject sharedSkColor1;
-js.JsObject sharedSkColor2;
-js.JsObject sharedSkColor3;
+js.JsObject? sharedSkColor1;
+js.JsObject? sharedSkColor2;
+js.JsObject? sharedSkColor3;
 
 void _setSharedColor(js.JsObject sharedColor, ui.Color color) {
   Float32List array = sharedColor.callMethod('toTypedArray');
@@ -133,21 +52,21 @@ void setSharedSkColor1(ui.Color color) {
   if (sharedSkColor1 == null) {
     sharedSkColor1 = _mallocColorArray();
   }
-  _setSharedColor(sharedSkColor1, color);
+  _setSharedColor(sharedSkColor1!, color);
 }
 
 void setSharedSkColor2(ui.Color color) {
   if (sharedSkColor2 == null) {
     sharedSkColor2 = _mallocColorArray();
   }
-  _setSharedColor(sharedSkColor2, color);
+  _setSharedColor(sharedSkColor2!, color);
 }
 
 void setSharedSkColor3(ui.Color color) {
   if (sharedSkColor3 == null) {
     sharedSkColor3 = _mallocColorArray();
   }
-  _setSharedColor(sharedSkColor3, color);
+  _setSharedColor(sharedSkColor3!, color);
 }
 
 /// Creates a new color array.
@@ -214,7 +133,7 @@ js.JsArray<double> makeSkPoint(ui.Offset point) {
 
 // TODO(hterkelsen): https://github.com/flutter/flutter/issues/58824
 /// Creates a point list using a 2D JS array.
-js.JsArray<js.JsArray<double>> encodePointList(List<ui.Offset> points) {
+js.JsArray<js.JsArray<double>>? encodePointList(List<ui.Offset>? points) {
   if (points == null) {
     return null;
   }
@@ -236,7 +155,7 @@ js.JsArray<js.JsArray<double>> encodePointList(List<ui.Offset> points) {
 
 // TODO(hterkelsen): https://github.com/flutter/flutter/issues/58824
 /// Creates a point list using a 2D JS array.
-List<List<double>> encodeRawPointList(Float32List points) {
+List<List<double>>? encodeRawPointList(Float32List? points) {
   if (points == null) {
     return null;
   }
@@ -257,7 +176,7 @@ List<List<double>> encodeRawPointList(Float32List points) {
   return result;
 }
 
-js.JsObject makeSkPointMode(ui.PointMode pointMode) {
+js.JsObject? makeSkPointMode(ui.PointMode pointMode) {
   switch (pointMode) {
     case ui.PointMode.points:
       return canvasKit['PointMode']['Points'];
@@ -270,7 +189,7 @@ js.JsObject makeSkPointMode(ui.PointMode pointMode) {
   }
 }
 
-js.JsObject makeSkBlendMode(ui.BlendMode blendMode) {
+js.JsObject? makeSkBlendMode(ui.BlendMode? blendMode) {
   switch (blendMode) {
     case ui.BlendMode.clear:
       return canvasKit['BlendMode']['Clear'];
@@ -344,12 +263,12 @@ const List<int> _skMatrixIndexToMatrix4Index = <int>[
 
 /// Converts a 4x4 Flutter matrix (represented as a [Float32List]) to an
 /// SkMatrix, which is a 3x3 transform matrix.
-js.JsArray<double> makeSkMatrixFromFloat32(Float32List matrix4) {
+js.JsArray<double> makeSkMatrixFromFloat32(Float32List? matrix4) {
   final js.JsArray<double> skMatrix = js.JsArray<double>();
   skMatrix.length = 9;
   for (int i = 0; i < 9; ++i) {
     final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
-    if (matrix4Index < matrix4.length)
+    if (matrix4Index < matrix4!.length)
       skMatrix[i] = matrix4[matrix4Index];
     else
       skMatrix[i] = 0.0;
@@ -382,7 +301,7 @@ final js.JsArray<double> _kDefaultColorStops = () {
 /// Converts a list of color stops into a Skia-compatible JS array or color stops.
 ///
 /// In Flutter `null` means two color stops `[0, 1]` that in Skia must be specified explicitly.
-js.JsArray<double> makeSkiaColorStops(List<double> colorStops) {
+js.JsArray<double> makeSkiaColorStops(List<double>? colorStops) {
   if (colorStops == null) {
     return _kDefaultColorStops;
   }
@@ -394,7 +313,7 @@ js.JsArray<double> makeSkiaColorStops(List<double> colorStops) {
 
 void drawSkShadow(
   js.JsObject skCanvas,
-  SkPath path,
+  CkPath path,
   ui.Color color,
   double elevation,
   bool transparentOccluder,

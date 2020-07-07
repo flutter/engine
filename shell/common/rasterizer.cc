@@ -4,12 +4,11 @@
 
 #include "flutter/shell/common/rasterizer.h"
 
-#include "flutter/shell/common/persistent_cache.h"
-
 #include <utility>
 
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
+#include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -77,6 +76,9 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
                              user_override_resource_cache_bytes_);
   }
   compositor_context_->OnGrContextCreated();
+#if !defined(OS_FUCHSIA)
+  // TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
+  // support for raster thread merger for Fuchsia.
   if (surface_->GetExternalViewEmbedder()) {
     const auto platform_id =
         task_runners_.GetPlatformTaskRunner()->GetTaskQueueId();
@@ -84,6 +86,7 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
     raster_thread_merger_ =
         fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
   }
+#endif
 }
 
 void Rasterizer::Teardown() {
@@ -151,12 +154,10 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline) {
 
   // Merging the thread as we know the next `Draw` should be run on the platform
   // thread.
-  if (raster_status == RasterStatus::kResubmit) {
-    auto* external_view_embedder = surface_->GetExternalViewEmbedder();
-    // We know only the `external_view_embedder` can
-    // causes|RasterStatus::kResubmit|. Check to make sure.
-    FML_DCHECK(external_view_embedder != nullptr);
-    external_view_embedder->EndFrame(raster_thread_merger_);
+  if (surface_ != nullptr && surface_->GetExternalViewEmbedder() != nullptr) {
+    auto should_resubmit_frame = raster_status == RasterStatus::kResubmit;
+    surface_->GetExternalViewEmbedder()->EndFrame(should_resubmit_frame,
+                                                  raster_thread_merger_);
   }
 
   // Consume as many pipeline items as possible. But yield the event loop
@@ -376,12 +377,6 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
-  auto frame = surface_->AcquireFrame(layer_tree.frame_size());
-
-  if (frame == nullptr) {
-    return RasterStatus::kFailed;
-  }
-
   // There is no way for the compositor to know how long the layer tree
   // construction took. Fortunately, the layer tree does. Grab that time
   // for instrumentation.
@@ -391,10 +386,20 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
 
   SkCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder != nullptr) {
-    external_view_embedder->BeginFrame(layer_tree.frame_size(),
-                                       surface_->GetContext(),
-                                       layer_tree.device_pixel_ratio());
+    external_view_embedder->BeginFrame(
+        layer_tree.frame_size(), surface_->GetContext(),
+        layer_tree.device_pixel_ratio(), raster_thread_merger_);
     embedder_root_canvas = external_view_embedder->GetRootCanvas();
+  }
+
+  // On Android, the external view embedder deletes surfaces in `BeginFrame`.
+  //
+  // Deleting a surface also clears the GL context. Therefore, acquire the
+  // frame after calling `BeginFrame` as this operation resets the GL context.
+  auto frame = surface_->AcquireFrame(layer_tree.frame_size());
+
+  if (frame == nullptr) {
+    return RasterStatus::kFailed;
   }
 
   // If the external view embedder has specified an optional root surface, the

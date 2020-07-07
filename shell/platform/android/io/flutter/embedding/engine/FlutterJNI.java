@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
+import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.plugin.common.StandardMessageCodec;
@@ -312,6 +313,23 @@ public class FlutterJNI {
   }
 
   private native void nativeSurfaceCreated(long nativePlatformViewId, @NonNull Surface surface);
+
+  /**
+   * In hybrid composition, call this method when the {@link Surface} has changed.
+   *
+   * <p>In hybrid composition, the root surfaces changes from {@link
+   * android.view.SurfaceHolder#getSurface()} to {@link android.media.ImageReader#getSurface()} when
+   * a platform view is in the current frame.
+   */
+  @UiThread
+  public void onSurfaceWindowChanged(@NonNull Surface surface) {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeSurfaceWindowChanged(nativePlatformViewId, surface);
+  }
+
+  private native void nativeSurfaceWindowChanged(
+      long nativePlatformViewId, @NonNull Surface surface);
 
   /**
    * Call this method when the {@link Surface} changes that was previously registered with {@link
@@ -838,6 +856,17 @@ public class FlutterJNI {
     }
     return platformViewsController.createOverlaySurface();
   }
+
+  @SuppressWarnings("unused")
+  @UiThread
+  public void destroyOverlaySurfaces() {
+    ensureRunningOnMainThread();
+    if (platformViewsController == null) {
+      throw new RuntimeException(
+          "platformViewsController must be set before attempting to destroy an overlay surface");
+    }
+    platformViewsController.destroyOverlaySurfaces();
+  }
   // ----- End Engine Lifecycle Support ----
 
   // ----- Start Localization Support ----
@@ -901,13 +930,22 @@ public class FlutterJNI {
 
   // @SuppressWarnings("unused")
   @UiThread
-  public void onDisplayPlatformView(int viewId, int x, int y, int width, int height) {
+  public void onDisplayPlatformView(
+      int viewId,
+      int x,
+      int y,
+      int width,
+      int height,
+      int viewWidth,
+      int viewHeight,
+      FlutterMutatorsStack mutatorsStack) {
     ensureRunningOnMainThread();
     if (platformViewsController == null) {
       throw new RuntimeException(
           "platformViewsController must be set before attempting to position a platform view");
     }
-    platformViewsController.onDisplayPlatformView(viewId, x, y, width, height);
+    platformViewsController.onDisplayPlatformView(
+        viewId, x, y, width, height, viewWidth, viewHeight, mutatorsStack);
   }
 
   // TODO(mattcarroll): determine if this is nonull or nullable

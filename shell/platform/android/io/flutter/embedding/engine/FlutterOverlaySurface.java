@@ -8,18 +8,18 @@ import android.view.Surface;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
+@Keep
 public class FlutterOverlaySurface {
   @NonNull private final Surface surface;
 
-  private final long id;
+  private final int id;
 
-  @Keep
-  public FlutterOverlaySurface(long id, @NonNull Surface surface) {
+  public FlutterOverlaySurface(int id, @NonNull Surface surface) {
     this.id = id;
     this.surface = surface;
   }
 
-  public long getId() {
+  public int getId() {
     return id;
   }
 
