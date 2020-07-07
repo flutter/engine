@@ -130,6 +130,12 @@ GdkVisual* fl_renderer_get_visual(FlRenderer* self,
   return visual;
 }
 
+void fl_renderer_set_window(FlRenderer* self, GdkWindow* window) {
+  if (FL_RENDERER_GET_CLASS(self)->set_window) {
+    FL_RENDERER_GET_CLASS(self)->set_window(self, window);
+  }
+}
+
 gboolean fl_renderer_start(FlRenderer* self, GError** error) {
   FlRendererPrivate* priv =
       static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));

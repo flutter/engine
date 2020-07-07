@@ -27,6 +27,14 @@ static GdkVisual* fl_renderer_x11_get_visual(FlRenderer* renderer,
   return gdk_x11_screen_lookup_visual(GDK_X11_SCREEN(screen), visual_id);
 }
 
+// Implements FlRenderer::set_window.
+static void fl_renderer_x11_set_window(FlRenderer* renderer,
+                                       GdkWindow* window) {
+  FlRendererX11* self = FL_RENDERER_X11(renderer);
+  g_return_if_fail(GDK_IS_X11_WINDOW(window));
+  self->window = GDK_X11_WINDOW(g_object_ref(window));
+}
+
 // Implments FlRenderer::create_surface.
 static EGLSurface fl_renderer_x11_create_surface(FlRenderer* renderer,
                                                  EGLDisplay display,
@@ -39,6 +47,7 @@ static EGLSurface fl_renderer_x11_create_surface(FlRenderer* renderer,
 static void fl_renderer_x11_class_init(FlRendererX11Class* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_renderer_x11_dispose;
   FL_RENDERER_CLASS(klass)->get_visual = fl_renderer_x11_get_visual;
+  FL_RENDERER_CLASS(klass)->set_window = fl_renderer_x11_set_window;
   FL_RENDERER_CLASS(klass)->create_surface = fl_renderer_x11_create_surface;
 }
 
@@ -46,9 +55,4 @@ static void fl_renderer_x11_init(FlRendererX11* self) {}
 
 FlRendererX11* fl_renderer_x11_new() {
   return FL_RENDERER_X11(g_object_new(fl_renderer_x11_get_type(), nullptr));
-}
-
-void fl_renderer_x11_set_window(FlRendererX11* self, GdkX11Window* window) {
-  g_return_if_fail(FL_IS_RENDERER_X11(self));
-  self->window = GDK_X11_WINDOW(g_object_ref(window));
 }
