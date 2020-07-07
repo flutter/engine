@@ -5,16 +5,20 @@
   "sandbox": {
     "features": [
       "vulkan",
-      "deprecated-ambient-replace-as-executable"
+      "deprecated-ambient-replace-as-executable",
+      "isolated-cache-storage",
+      "isolated-temp"
     ],
     "services": [
       "fuchsia.accessibility.semantics.SemanticsManager",
       "fuchsia.process.Launcher",
       "fuchsia.deprecatedtimezone.Timezone",
       "fuchsia.netstack.Netstack",
+      "fuchsia.sysmem.Allocator",
       "fuchsia.vulkan.loader.Loader",
       "fuchsia.logger.LogSink",
-      "fuchsia.tracing.provider.Registry"
+      "fuchsia.tracing.provider.Registry",
+      "fuchsia.intl.PropertyProvider"
     ]
   }
 }

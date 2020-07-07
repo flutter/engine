@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
 import("testing.gni")
 
@@ -18,6 +19,7 @@ source_set("testing_lib") {
 
   public_deps = [
     "//flutter/fml",
+    "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
   ]
   public_configs = [ "//flutter:config" ]
@@ -39,7 +41,7 @@ source_set("testing") {
   ]
 }
 
-source_set("dart") {
+source_set_maybe_fuchsia_legacy("dart") {
   testonly = true
 
   sources = [
@@ -54,12 +56,13 @@ source_set("dart") {
   public_deps = [
     ":testing_lib",
     "//flutter/common",
-    "//flutter/runtime",
     "//flutter/runtime:libdart",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:elf_loader",
     "//third_party/skia",
   ]
+
+  public_deps_legacy_and_next = [ "//flutter/runtime:runtime" ]
 }
 
 source_set("skia") {
@@ -79,7 +82,40 @@ source_set("skia") {
   ]
 }
 
+source_set_maybe_fuchsia_legacy("fixture_test") {
+  testonly = true
+
+  sources = [
+    "fixture_test.cc",
+    "fixture_test.h",
+  ]
+
+  public_deps = [
+    "//flutter/common",
+  ]
+
+  public_deps_legacy_and_next = [
+    ":dart",
+    "//flutter/runtime:runtime",
+  ]
+}
+
 if (enable_unittests) {
+  source_set("vulkan") {
+    testonly = true
+
+    deps = [
+      ":skia",
+      "//flutter/fml",
+    ]
+
+    # SwiftShader only supports x86/x64_64
+    if (target_cpu == "x86" || target_cpu == "x64") {
+      configs += [ "//third_party/swiftshader_flutter:swiftshader_config" ]
+      deps += [ "//third_party/swiftshader_flutter:swiftshader_vulkan" ]
+    }
+  }
+
   # SwiftShader only supports x86/x64_64
   if (target_cpu == "x86" || target_cpu == "x64") {
     source_set("opengl") {
@@ -96,18 +132,6 @@ if (enable_unittests) {
         ":skia",
         "//flutter/fml",
         "//third_party/swiftshader_flutter:swiftshader_gl",
-      ]
-    }
-
-    source_set("vulkan") {
-      testonly = true
-
-      configs += [ "//third_party/swiftshader_flutter:swiftshader_config" ]
-
-      deps = [
-        ":skia",
-        "//flutter/fml",
-        "//third_party/swiftshader_flutter:swiftshader_vulkan",
       ]
     }
 

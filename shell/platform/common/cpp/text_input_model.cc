@@ -29,23 +29,15 @@ bool IsTrailingSurrogate(char32_t code_point) {
 
 }  // namespace
 
-TextInputModel::TextInputModel(const std::string& input_type,
-                               const std::string& input_action)
-    : input_type_(input_type),
-      input_action_(input_action),
-      selection_base_(text_.begin()),
-      selection_extent_(text_.begin()) {}
+TextInputModel::TextInputModel()
+    : selection_base_(text_.begin()), selection_extent_(text_.begin()) {}
 
 TextInputModel::~TextInputModel() = default;
 
 bool TextInputModel::SetEditingState(size_t selection_base,
                                      size_t selection_extent,
                                      const std::string& text) {
-  if (selection_base > selection_extent) {
-    return false;
-  }
-  // Only checks extent since it is implicitly greater-than-or-equal-to base.
-  if (selection_extent > text.size()) {
+  if (selection_base > text.size() || selection_extent > text.size()) {
     return false;
   }
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
@@ -57,8 +49,7 @@ bool TextInputModel::SetEditingState(size_t selection_base,
 }
 
 void TextInputModel::DeleteSelected() {
-  selection_base_ = text_.erase(selection_base_, selection_extent_);
-  // Moves extent back to base, so that it is a single cursor placement again.
+  selection_base_ = text_.erase(selection_start(), selection_end());
   selection_extent_ = selection_base_;
 }
 
@@ -83,6 +74,12 @@ void TextInputModel::AddText(const std::u16string& text) {
   selection_extent_ = text_.insert(selection_extent_, text.begin(), text.end());
   selection_extent_ += text.length();
   selection_base_ = selection_extent_;
+}
+
+void TextInputModel::AddText(const std::string& text) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      utf16_converter;
+  AddText(utf16_converter.from_bytes(text));
 }
 
 bool TextInputModel::Backspace() {
@@ -113,6 +110,46 @@ bool TextInputModel::Delete() {
   return false;
 }
 
+bool TextInputModel::DeleteSurrounding(int offset_from_cursor, int count) {
+  auto start = selection_extent_;
+  if (offset_from_cursor < 0) {
+    for (int i = 0; i < -offset_from_cursor; i++) {
+      // If requested start is before the available text then reduce the
+      // number of characters to delete.
+      if (start == text_.begin()) {
+        count = i;
+        break;
+      }
+      start -= IsTrailingSurrogate(*(start - 1)) ? 2 : 1;
+    }
+  } else {
+    for (int i = 0; i < offset_from_cursor && start != text_.end(); i++) {
+      start += IsLeadingSurrogate(*start) ? 2 : 1;
+    }
+  }
+
+  auto end = start;
+  for (int i = 0; i < count && end != text_.end(); i++) {
+    end += IsLeadingSurrogate(*start) ? 2 : 1;
+  }
+
+  if (start == end) {
+    return false;
+  }
+
+  auto new_base = text_.erase(start, end);
+
+  // Cursor moves only if deleted area is before it.
+  if (offset_from_cursor <= 0) {
+    selection_base_ = new_base;
+  }
+
+  // Clear selection.
+  selection_extent_ = selection_base_;
+
+  return true;
+}
+
 bool TextInputModel::MoveCursorToBeginning() {
   if (selection_base_ == text_.begin() && selection_extent_ == text_.begin())
     return false;
@@ -136,7 +173,8 @@ bool TextInputModel::MoveCursorToEnd() {
 bool TextInputModel::MoveCursorForward() {
   // If about to move set to the end of the highlight (when not selecting).
   if (selection_base_ != selection_extent_) {
-    selection_base_ = selection_extent_;
+    selection_base_ = selection_end();
+    selection_extent_ = selection_base_;
     return true;
   }
   // If not at the end, move the extent forward.
@@ -153,6 +191,7 @@ bool TextInputModel::MoveCursorBack() {
   // If about to move set to the beginning of the highlight
   // (when not selecting).
   if (selection_base_ != selection_extent_) {
+    selection_base_ = selection_start();
     selection_extent_ = selection_base_;
     return true;
   }
@@ -170,6 +209,15 @@ std::string TextInputModel::GetText() const {
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
       utf8_converter;
   return utf8_converter.to_bytes(text_);
+}
+
+int TextInputModel::GetCursorOffset() const {
+  // Measure the length of the current text up to the cursor.
+  // There is probably a much more efficient way of doing this.
+  auto leading_text = text_.substr(0, selection_extent_ - text_.begin());
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      utf8_converter;
+  return utf8_converter.to_bytes(leading_text).size();
 }
 
 }  // namespace flutter

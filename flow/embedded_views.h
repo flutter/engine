@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/raster_thread_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -137,12 +138,23 @@ class MutatorsStack {
   // and destroys it.
   void Pop();
 
-  // Returns an iterator pointing to the top of the stack.
+  // Returns a reverse iterator pointing to the top of the stack, which is the
+  // mutator that is furtherest from the leaf node.
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator Top()
       const;
-  // Returns an iterator pointing to the bottom of the stack.
+  // Returns a reverse iterator pointing to the bottom of the stack, which is
+  // the mutator that is closeset from the leaf node.
   const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator Bottom()
       const;
+
+  // Returns an iterator pointing to the begining of the mutator vector, which
+  // is the mutator that is furtherest from the leaf node.
+  const std::vector<std::shared_ptr<Mutator>>::const_iterator Begin() const;
+
+  // Returns an iterator pointing to the end of the mutator vector, which is the
+  // mutator that is closest from the leaf node.
+  const std::vector<std::shared_ptr<Mutator>>::const_iterator End() const;
+
   bool is_empty() const { return vector_.empty(); }
 
   bool operator==(const MutatorsStack& other) const {
@@ -185,21 +197,49 @@ class EmbeddedViewParams {
  public:
   EmbeddedViewParams() = default;
 
+  EmbeddedViewParams(SkMatrix matrix,
+                     SkSize size_points,
+                     MutatorsStack mutators_stack)
+      : matrix_(matrix),
+        size_points_(size_points),
+        mutators_stack_(mutators_stack) {
+    SkPath path;
+    SkRect starting_rect = SkRect::MakeSize(size_points);
+    path.addRect(starting_rect);
+    path.transform(matrix);
+    final_bounding_rect_ = path.getBounds();
+  }
+
   EmbeddedViewParams(const EmbeddedViewParams& other) {
-    offsetPixels = other.offsetPixels;
-    sizePoints = other.sizePoints;
-    mutatorsStack = other.mutatorsStack;
+    size_points_ = other.size_points_;
+    mutators_stack_ = other.mutators_stack_;
+    matrix_ = other.matrix_;
+    final_bounding_rect_ = other.final_bounding_rect_;
   };
 
-  SkPoint offsetPixels;
-  SkSize sizePoints;
-  MutatorsStack mutatorsStack;
+  // The original size of the platform view before any mutation matrix is
+  // applied.
+  const SkSize& sizePoints() const { return size_points_; };
+  // The mutators stack contains the detailed step by step mutations for this
+  // platform view.
+  const MutatorsStack& mutatorsStack() const { return mutators_stack_; };
+  // The bounding rect of the platform view after applying all the mutations.
+  //
+  // Clippings are ignored.
+  const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
   bool operator==(const EmbeddedViewParams& other) const {
-    return offsetPixels == other.offsetPixels &&
-           sizePoints == other.sizePoints &&
-           mutatorsStack == other.mutatorsStack;
+    return size_points_ == other.size_points_ &&
+           mutators_stack_ == other.mutators_stack_ &&
+           final_bounding_rect_ == other.final_bounding_rect_ &&
+           matrix_ == other.matrix_;
   }
+
+ private:
+  SkMatrix matrix_;
+  SkSize size_points_;
+  MutatorsStack mutators_stack_;
+  SkRect final_bounding_rect_;
 };
 
 enum class PostPrerollResult { kResubmitFrame, kSuccess };
@@ -226,9 +266,11 @@ class ExternalViewEmbedder {
   // sets the stage for the next pre-roll.
   virtual void CancelFrame() = 0;
 
-  virtual void BeginFrame(SkISize frame_size,
-                          GrContext* context,
-                          double device_pixel_ratio) = 0;
+  virtual void BeginFrame(
+      SkISize frame_size,
+      GrContext* context,
+      double device_pixel_ratio,
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) = 0;
 
   virtual void PrerollCompositeEmbeddedView(
       int view_id,
@@ -248,21 +290,24 @@ class ExternalViewEmbedder {
   // Must be called on the UI thread.
   virtual SkCanvas* CompositeEmbeddedView(int view_id) = 0;
 
-  virtual bool SubmitFrame(GrContext* context, SkCanvas* background_canvas);
+  // Implementers must submit the frame by calling frame.Submit().
+  //
+  // This method can mutate the root Skia canvas before submitting the frame.
+  //
+  // It can also allocate frames for overlay surfaces to compose hybrid views.
+  virtual bool SubmitFrame(GrContext* context,
+                           std::unique_ptr<SurfaceFrame> frame);
 
-  // This is called after submitting the embedder frame and the surface frame.
-  virtual void FinishFrame();
-
-  // This should only be called after |SubmitFrame|.
   // This method provides the embedder a way to do additional tasks after
-  // |SubmitFrame|. After invoking this method, the current task on the
-  // TaskRunner should end immediately.
+  // |SubmitFrame|. For example, merge task runners if `should_resubmit_frame`
+  // is true.
   //
   // For example on the iOS embedder, threads are merged in this call.
   // A new frame on the platform thread starts immediately. If the GPU thread
   // still has some task running, there could be two frames being rendered
   // concurrently, which causes undefined behaviors.
   virtual void EndFrame(
+      bool should_resubmit_frame,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);

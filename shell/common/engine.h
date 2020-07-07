@@ -227,6 +227,25 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///                              collected and send back to Dart.
     ///
     virtual void SetNeedsReportTimings(bool needs_reporting) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Directly invokes platform-specific APIs to compute the
+    ///             locale the platform would have natively resolved to.
+    ///
+    /// @param[in]  supported_locale_data  The vector of strings that represents
+    ///                                    the locales supported by the app.
+    ///                                    Each locale consists of three
+    ///                                    strings: languageCode, countryCode,
+    ///                                    and scriptCode in that order.
+    ///
+    /// @return     A vector of 3 strings languageCode, countryCode, and
+    ///             scriptCode that represents the locale selected by the
+    ///             platform. Empty strings mean the value was unassigned. Empty
+    ///             vector represents a null locale.
+    ///
+    virtual std::unique_ptr<std::vector<std::string>>
+    ComputePlatformResolvedLocale(
+        const std::vector<std::string>& supported_locale_data) = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -362,6 +381,11 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             shell must be discarded.
   ///
   [[nodiscard]] bool Restart(RunConfiguration configuration);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Setup default font manager according to specific platform.
+  ///
+  void SetupDefaultFontManager();
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the asset manager referenced by the root isolate of a
@@ -766,6 +790,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |RuntimeDelegate|
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
+
+  // |RuntimeDelegate|
+  std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) override;
 
   void SetNeedsReportTimings(bool value) override;
 

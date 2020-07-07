@@ -38,9 +38,10 @@ Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
 
 void CanvasImage::dispose() {
   ClearDartWrapper();
+  image_.reset();
 }
 
-size_t CanvasImage::GetAllocationSize() {
+size_t CanvasImage::GetAllocationSize() const {
   if (auto image = image_.get()) {
     const auto& info = image->imageInfo();
     const auto kMipmapOverhead = 4.0 / 3.0;

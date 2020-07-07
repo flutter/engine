@@ -396,17 +396,22 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)maybeSetupPlatformViewChannels {
   if (_shell && self.shell.IsSetup()) {
+    FlutterPlatformPlugin* platformPlugin = _platformPlugin.get();
     [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [_platformPlugin.get() handleMethodCall:call result:result];
+      [platformPlugin handleMethodCall:call result:result];
     }];
 
+    fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
     [_platformViewsChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-          _platformViewsController->OnMethodCall(call, result);
+          if (weakSelf) {
+            weakSelf.get().platformViewsController->OnMethodCall(call, result);
+          }
         }];
 
+    FlutterTextInputPlugin* textInputPlugin = _textInputPlugin.get();
     [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [_textInputPlugin.get() handleMethodCall:call result:result];
+      [textInputPlugin handleMethodCall:call result:result];
     }];
   }
 }
@@ -475,7 +480,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) {
-        return std::make_unique<flutter::Rasterizer>(shell, shell.GetTaskRunners());
+        return std::make_unique<flutter::Rasterizer>(shell, shell.GetTaskRunners(),
+                                                     shell.GetIsGpuDisabledSyncSwitch());
       };
 
   if (flutter::IsIosEmbeddedViewsPreviewEnabled()) {
@@ -759,43 +765,46 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 #pragma mark - Locale updates
 
 - (void)onLocaleUpdated:(NSNotification*)notification {
-  NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
-  NSMutableArray<NSString*>* data = [[NSMutableArray new] autorelease];
-
-  // Force prepend the [NSLocale currentLocale] to the front of the list
-  // to ensure we are including the full default locale. preferredLocales
-  // is not guaranteed to include anything beyond the languageCode.
-  NSLocale* currentLocale = [NSLocale currentLocale];
-  NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
-  NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
-  NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
-  NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
+  // [NSLocale currentLocale] provides an iOS resolved locale if the
+  // supported locales are exposed to the iOS embedder. Here, we get
+  // currentLocale and pass it to dart:ui
+  NSMutableArray<NSString*>* localeData = [[NSMutableArray new] autorelease];
+  NSLocale* platformResolvedLocale = [NSLocale currentLocale];
+  NSString* languageCode = [platformResolvedLocale objectForKey:NSLocaleLanguageCode];
+  NSString* countryCode = [platformResolvedLocale objectForKey:NSLocaleCountryCode];
+  NSString* scriptCode = [platformResolvedLocale objectForKey:NSLocaleScriptCode];
+  NSString* variantCode = [platformResolvedLocale objectForKey:NSLocaleVariantCode];
   if (languageCode) {
-    [data addObject:languageCode];
-    [data addObject:(countryCode ? countryCode : @"")];
-    [data addObject:(scriptCode ? scriptCode : @"")];
-    [data addObject:(variantCode ? variantCode : @"")];
+    [localeData addObject:languageCode];
+    [localeData addObject:(countryCode ? countryCode : @"")];
+    [localeData addObject:(scriptCode ? scriptCode : @"")];
+    [localeData addObject:(variantCode ? variantCode : @"")];
+  }
+  if (localeData.count != 0) {
+    [self.localizationChannel invokeMethod:@"setPlatformResolvedLocale" arguments:localeData];
   }
 
-  // Add any secondary locales/languages to the list.
+  // Get and pass the user's preferred locale list to dart:ui
+  localeData = [[NSMutableArray new] autorelease];
+  NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
   for (NSString* localeID in preferredLocales) {
-    NSLocale* currentLocale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
-    NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
-    NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
-    NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
-    NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
+    NSLocale* locale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
+    NSString* languageCode = [locale objectForKey:NSLocaleLanguageCode];
+    NSString* countryCode = [locale objectForKey:NSLocaleCountryCode];
+    NSString* scriptCode = [locale objectForKey:NSLocaleScriptCode];
+    NSString* variantCode = [locale objectForKey:NSLocaleVariantCode];
     if (!languageCode) {
       continue;
     }
-    [data addObject:languageCode];
-    [data addObject:(countryCode ? countryCode : @"")];
-    [data addObject:(scriptCode ? scriptCode : @"")];
-    [data addObject:(variantCode ? variantCode : @"")];
+    [localeData addObject:languageCode];
+    [localeData addObject:(countryCode ? countryCode : @"")];
+    [localeData addObject:(scriptCode ? scriptCode : @"")];
+    [localeData addObject:(variantCode ? variantCode : @"")];
   }
-  if (data.count == 0) {
+  if (localeData.count == 0) {
     return;
   }
-  [self.localizationChannel invokeMethod:@"setLocale" arguments:data];
+  [self.localizationChannel invokeMethod:@"setLocale" arguments:localeData];
 }
 
 @end

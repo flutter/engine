@@ -62,19 +62,13 @@ task:
         ./txt_benchmarks --benchmark_format=json > txt_benchmarks.json
         ./fml_benchmarks --benchmark_format=json > fml_benchmarks.json
         ./shell_benchmarks --benchmark_format=json > shell_benchmarks.json
+        ./ui_benchmarks --benchmark_format=json > ui_benchmarks.json
         cd $ENGINE_PATH/src/flutter/testing/benchmark
         pub get
         dart bin/parse_and_send.dart ../../../out/host_release/txt_benchmarks.json
         dart bin/parse_and_send.dart ../../../out/host_release/fml_benchmarks.json
         dart bin/parse_and_send.dart ../../../out/host_release/shell_benchmarks.json
-    - name: build_and_test_linux_release
-      compile_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/tools/gn --runtime-mode=release
-        ninja -C out/host_release
-      test_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/testing/run_tests.sh host_release
+        dart bin/parse_and_send.dart ../../../out/host_release/ui_benchmarks.json
 
     # The following test depends on Flutter framework repo. It may fail if the
     # framework repo is currently broken.
@@ -125,20 +119,8 @@ task:
       script:
         - cd $ENGINE_PATH/src/flutter/lib/web_ui
         - $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        - $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dartanalyzer --fatal-warnings --fatal-hints dev/ lib/ test/ tool/
+        - $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dartanalyzer --enable-experiment=non-nullable --fatal-warnings --fatal-hints dev/ lib/ test/ tool/
 
-    - name: build_and_test_web_linux_firefox
-      compile_host_script: |
-        cd $ENGINE_PATH/src
-        ./flutter/tools/gn --unoptimized --full-dart-sdk
-        ninja -C out/host_debug_unopt
-      test_web_engine_firefox_script: |
-        cd $ENGINE_PATH/src/flutter/web_sdk/web_engine_tester
-        $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        cd $ENGINE_PATH/src/flutter/lib/web_ui
-        $ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/pub get
-        export FELT="$ENGINE_PATH/src/out/host_debug_unopt/dart-sdk/bin/dart dev/felt.dart"
-        $FELT test --browser=firefox
     - name: format_and_dart_test
       format_script: |
         cd $ENGINE_PATH/src/flutter
@@ -146,3 +128,7 @@ task:
       build_script: |
         cd $ENGINE_PATH/src/flutter
         ./ci/build.sh
+    - name: lint_test
+      lint_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/ci/lint.sh

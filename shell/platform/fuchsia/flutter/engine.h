@@ -11,8 +11,10 @@
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/sys/cpp/service_directory.h>
+#include <lib/ui/scenic/cpp/view_ref_pair.h>
 #include <lib/zx/event.h>
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter_runner_product_configuration.h"
@@ -37,6 +39,7 @@ class Engine final {
          flutter::Settings settings,
          fml::RefPtr<const flutter::DartSnapshot> isolate_snapshot,
          fuchsia::ui::views::ViewToken view_token,
+         scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
          FlutterRunnerProductConfiguration product_config);
@@ -73,6 +76,12 @@ class Engine final {
                                float height_change_factor);
 
   void OnDebugWireframeSettingsChanged(bool enabled);
+
+  void OnCreateView(int64_t view_id, bool hit_testable, bool focusable);
+
+  void OnDestroyView(int64_t view_id);
+
+  flutter::ExternalViewEmbedder* GetViewEmbedder();
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };

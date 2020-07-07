@@ -180,6 +180,25 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
          [self node].scrollPosition != node->scrollPosition;
 }
 
+/**
+ * Whether calling `setSemanticsNode:` with `node` should trigger an
+ * announcement.
+ */
+- (BOOL)nodeShouldTriggerAnnouncement:(const flutter::SemanticsNode*)node {
+  // The node dropped the live region flag, if it ever had one.
+  if (!node || !node->HasFlag(flutter::SemanticsFlags::kIsLiveRegion)) {
+    return NO;
+  }
+
+  // The node has gained a new live region flag, always announce.
+  if (![self node].HasFlag(flutter::SemanticsFlags::kIsLiveRegion)) {
+    return YES;
+  }
+
+  // The label has updated, and the new node has a live region flag.
+  return [self node].label != node->label;
+}
+
 - (BOOL)hasChildren {
   if (_node.IsPlatformViewNode()) {
     return YES;
@@ -359,6 +378,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 #pragma mark - UIAccessibilityElement protocol
 
+- (void)setAccessibilityContainer:(id)container {
+  // Explicit noop.  The containers are calculated lazily in `accessibilityContainer`.
+  // See also: https://github.com/flutter/flutter/issues/54366
+}
+
 - (id)accessibilityContainer {
   if ([self hasChildren] || [self uid] == kRootNodeId) {
     if (_container == nil)
@@ -508,10 +532,12 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 @end
 
-@implementation FlutterPlatformViewSemanticsContainer {
-  SemanticsObject* _semanticsObject;
-  UIView* _platformView;
-}
+@interface FlutterPlatformViewSemanticsContainer ()
+@property(nonatomic, assign) SemanticsObject* semanticsObject;
+@property(nonatomic, strong) UIView* platformView;
+@end
+
+@implementation FlutterPlatformViewSemanticsContainer
 
 // Method declared as unavailable in the interface
 - (instancetype)init {
@@ -531,11 +557,20 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     flutter::FlutterPlatformViewsController* controller =
         object.bridge->GetPlatformViewsController();
     if (controller) {
-      _platformView = [controller->GetPlatformViewByID(object.node.platformViewId) view];
+      _platformView = [[controller->GetPlatformViewByID(object.node.platformViewId) view] retain];
     }
-    self.accessibilityElements = @[ _semanticsObject, _platformView ];
   }
   return self;
+}
+
+- (void)dealloc {
+  [_platformView release];
+  _platformView = nil;
+  [super dealloc];
+}
+
+- (NSArray*)accessibilityElements {
+  return @[ _semanticsObject, _platformView ];
 }
 
 - (CGRect)accessibilityFrame {

@@ -5,7 +5,6 @@
 assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
-import("//flutter/build/darwin/ios_app.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
@@ -99,6 +98,8 @@ source_set("flutter_framework_source") {
     "ios_surface_gl.mm",
     "ios_surface_software.h",
     "ios_surface_software.mm",
+    "ios_switchable_gl_context.h",
+    "ios_switchable_gl_context.mm",
     "platform_view_ios.h",
     "platform_view_ios.mm",
     "rendering_api_selection.h",
@@ -140,13 +141,18 @@ source_set("flutter_framework_source") {
   public_configs = [ "//flutter:config" ]
 
   libs = [
+    "AudioToolbox.framework",
     "CoreMedia.framework",
     "CoreVideo.framework",
-    "UIKit.framework",
     "OpenGLES.framework",
-    "AudioToolbox.framework",
     "QuartzCore.framework",
+    "UIKit.framework",
   ]
+  if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "debug") {
+    # This is required by the profiler_metrics_ios.mm to get GPU statistics.
+    # Usage in release builds will cause rejection from the App Store.
+    libs += [ "IOKit.framework" ]
+  }
 }
 
 ios_test_flutter_path = rebase_path("$root_out_dir/libios_test_flutter.dylib")
@@ -328,29 +334,6 @@ shared_library("copy_and_verify_framework_headers") {
   ]
   deps = [
     ":copy_framework_headers",
-  ]
-}
-
-test_fixtures("flutter_tests_fixtures") {
-  fixtures = []
-}
-
-# Note: This currently isn't used, it might be removed.
-ios_app("FlutterTests") {
-  testonly = true
-
-  info_plist = "FlutterTestsInfo.plist"
-
-  sources = [
-    "flutter_unittests.mm",
-  ]
-
-  libs = [ "Foundation.framework" ]
-
-  deps = [
-    ":flutter_tests_fixtures",
-    "//flutter/runtime:libdart",
-    "//flutter/testing",
   ]
 }
 

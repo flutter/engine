@@ -29,6 +29,7 @@ FLUTTER_ASSERT_ARC
   id engine;
   FlutterTextInputPlugin* textInputPlugin;
 }
+
 - (void)setUp {
   [super setUp];
 
@@ -372,5 +373,49 @@ FLUTTER_ASSERT_ARC
 
   // Verify behavior.
   OCMVerify([engine showAutocorrectionPromptRectForStart:0 end:1 withClient:0]);
+}
+
+- (void)testTextRangeFromPositionMatchesUITextViewBehavior {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
+  FlutterTextPosition* fromPosition = [[FlutterTextPosition alloc] initWithIndex:2];
+  FlutterTextPosition* toPosition = [[FlutterTextPosition alloc] initWithIndex:0];
+
+  FlutterTextRange* flutterRange = (FlutterTextRange*)[inputView textRangeFromPosition:fromPosition
+                                                                            toPosition:toPosition];
+  NSRange range = flutterRange.range;
+
+  XCTAssertEqual(range.location, 0);
+  XCTAssertEqual(range.length, 2);
+}
+
+- (void)testUITextInputCallsUpdateEditingStateOnce {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  inputView.textInputDelegate = engine;
+
+  __block int updateCount = 0;
+  OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+
+  [inputView insertText:@"text to insert"];
+  // Update the framework exactly once.
+  XCTAssertEqual(updateCount, 1);
+
+  [inputView deleteBackward];
+  XCTAssertEqual(updateCount, 2);
+
+  inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
+  XCTAssertEqual(updateCount, 3);
+
+  [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
+                 withText:@"replace text"];
+  XCTAssertEqual(updateCount, 4);
+
+  [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+  XCTAssertEqual(updateCount, 5);
+
+  [inputView unmarkText];
+  XCTAssertEqual(updateCount, 6);
 }
 @end

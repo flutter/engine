@@ -94,7 +94,10 @@ void IOSSurface::CancelFrame() {
 }
 
 // |ExternalViewEmbedder|
-void IOSSurface::BeginFrame(SkISize frame_size, GrContext* context, double device_pixel_ratio) {
+void IOSSurface::BeginFrame(SkISize frame_size,
+                            GrContext* context,
+                            double device_pixel_ratio,
+                            fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::BeginFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   platform_views_controller_->SetFrameSize(frame_size);
@@ -132,24 +135,25 @@ SkCanvas* IOSSurface::CompositeEmbeddedView(int view_id) {
 }
 
 // |ExternalViewEmbedder|
-bool IOSSurface::SubmitFrame(GrContext* context, SkCanvas* background_canvas) {
+bool IOSSurface::SubmitFrame(GrContext* context, std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "IOSSurface::SubmitFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
   bool submitted =
-      platform_views_controller_->SubmitFrame(std::move(context), ios_context_, background_canvas);
+      platform_views_controller_->SubmitFrame(std::move(context), ios_context_, std::move(frame));
+
+  if (submitted) {
+    TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
+    [CATransaction commit];
+  }
   return submitted;
 }
 
 // |ExternalViewEmbedder|
-void IOSSurface::EndFrame(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+void IOSSurface::EndFrame(bool should_resubmit_frame,
+                          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSSurface::EndFrame");
   FML_CHECK(platform_views_controller_ != nullptr);
-  return platform_views_controller_->EndFrame(raster_thread_merger);
+  return platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger);
 }
 
-// |ExternalViewEmbedder|
-void IOSSurface::FinishFrame() {
-  TRACE_EVENT0("flutter", "IOSSurface::DidSubmitFrame");
-  [CATransaction commit];
-}
 }  // namespace flutter

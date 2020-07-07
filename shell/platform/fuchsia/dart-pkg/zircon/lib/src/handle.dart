@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.6
 part of zircon;
 
 // ignore_for_file: native_function_body_in_non_sdk_code
@@ -19,17 +20,19 @@ class Handle extends NativeFieldWrapperClass2 {
   }
   static Handle _createInvalid() native 'Handle_CreateInvalid';
 
-  int get _handle native 'Handle_handle';
+  int get handle native 'Handle_handle';
 
   @override
-  String toString() => 'Handle($_handle)';
+  String toString() => 'Handle($handle)';
 
   @override
-  bool operator ==(Object other) =>
-      (other is Handle) && (_handle == other._handle);
+  bool operator ==(Object other) {
+    return other is Handle
+        && other.handle == handle;
+  }
 
   @override
-  int get hashCode => _handle.hashCode;
+  int get hashCode => handle.hashCode;
 
   // Common handle operations.
   bool get isValid native 'Handle_is_valid';

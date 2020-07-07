@@ -212,10 +212,10 @@ static void PerformInitializationTasks(Settings& settings) {
       InitSkiaEventTracer(settings.trace_skia);
     }
 
-    if (!settings.trace_whitelist.empty()) {
+    if (!settings.trace_allowlist.empty()) {
       std::vector<std::string> prefixes;
-      Tokenize(settings.trace_whitelist, &prefixes, ',');
-      fml::tracing::TraceSetWhitelist(prefixes);
+      Tokenize(settings.trace_allowlist, &prefixes, ',');
+      fml::tracing::TraceSetAllowlist(prefixes);
     }
 
     if (!settings.skia_deterministic_rendering_on_cpu) {
@@ -431,6 +431,9 @@ Shell::~Shell() {
 }
 
 void Shell::NotifyLowMemoryWarning() const {
+  auto trace_id = fml::tracing::TraceNonce();
+  TRACE_EVENT_ASYNC_BEGIN0("flutter", "Shell::NotifyLowMemoryWarning",
+                           trace_id);
   // This does not require a current isolate but does require a running VM.
   // Since a valid shell will not be returned to the embedder without a valid
   // DartVMRef, we can be certain that this is a safe spot to assume a VM is
@@ -438,10 +441,12 @@ void Shell::NotifyLowMemoryWarning() const {
   ::Dart_NotifyLowMemory();
 
   task_runners_.GetRasterTaskRunner()->PostTask(
-      [rasterizer = rasterizer_->GetWeakPtr()]() {
+      [rasterizer = rasterizer_->GetWeakPtr(), trace_id = trace_id]() {
         if (rasterizer) {
           rasterizer->NotifyLowMemoryWarning();
         }
+        TRACE_EVENT_ASYNC_END0("flutter", "Shell::NotifyLowMemoryWarning",
+                               trace_id);
       });
   // The IO Manager uses resource cache limits of 0, so it is not necessary
   // to purge them.
@@ -541,6 +546,14 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   weak_engine_ = engine_->GetWeakPtr();
   weak_rasterizer_ = rasterizer_->GetWeakPtr();
   weak_platform_view_ = platform_view_->GetWeakPtr();
+
+  // Setup the time-consuming default font manager right after engine created.
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
+                                    [engine = weak_engine_] {
+                                      if (engine) {
+                                        engine->SetupDefaultFontManager();
+                                      }
+                                    });
 
   is_setup_ = true;
 
@@ -1088,6 +1101,19 @@ void Shell::UpdateIsolateDescription(const std::string isolate_name,
 
 void Shell::SetNeedsReportTimings(bool value) {
   needs_report_timings_ = value;
+}
+
+// |Engine::Delegate|
+std::unique_ptr<std::vector<std::string>> Shell::ComputePlatformResolvedLocale(
+    const std::vector<std::string>& supported_locale_data) {
+  return ComputePlatformViewResolvedLocale(supported_locale_data);
+}
+
+// |PlatformView::Delegate|
+std::unique_ptr<std::vector<std::string>>
+Shell::ComputePlatformViewResolvedLocale(
+    const std::vector<std::string>& supported_locale_data) {
+  return platform_view_->ComputePlatformResolvedLocales(supported_locale_data);
 }
 
 void Shell::ReportTimings() {

@@ -6,16 +6,15 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
-#include "flutter/lib/ui/painting/image_decoder_test.h"
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/testing/dart_isolate_runner.h"
 #include "flutter/testing/elf_loader.h"
+#include "flutter/testing/fixture_test.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
-#include "flutter/testing/thread_test.h"
 #include "third_party/skia/include/codec/SkCodec.h"
 
 namespace flutter {
@@ -119,6 +118,8 @@ static sk_sp<SkData> OpenFixtureAsSkData(const char* name) {
   fixture_mapping.release();
   return data;
 }
+
+class ImageDecoderFixtureTest : public FixtureTest {};
 
 TEST_F(ImageDecoderFixtureTest, CanCreateImageDecoder) {
   auto loop = fml::ConcurrentMessageLoop::Create();
@@ -364,6 +365,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
       ImageDecoder::ImageDescriptor image_descriptor;
       image_descriptor.target_width = target_width;
       image_descriptor.target_height = target_height;
+      image_descriptor.image_upscaling = ImageUpscalingMode::kNotAllowed;
       image_descriptor.data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
       ASSERT_TRUE(image_descriptor.data);
@@ -463,6 +465,7 @@ TEST_F(ImageDecoderFixtureTest, CanResizeWithoutDecode) {
       ImageDecoder::ImageDescriptor image_descriptor;
       image_descriptor.target_width = target_width;
       image_descriptor.target_height = target_height;
+      image_descriptor.image_upscaling = ImageUpscalingMode::kNotAllowed;
       image_descriptor.data = decompressed_data;
       image_descriptor.decompressed_image_info = info;
 
@@ -530,9 +533,49 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
-  ASSERT_EQ(ImageFromCompressedData(data, 6, 2, fml::tracing::TraceFlow(""))
+  ASSERT_EQ(ImageFromCompressedData(data, 6, 2, ImageUpscalingMode::kNotAllowed,
+                                    fml::tracing::TraceFlow(""))
                 ->dimensions(),
             SkISize::Make(6, 2));
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecodingNoUpscaling) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(
+      ImageFromCompressedData(data, 900, 300, ImageUpscalingMode::kNotAllowed,
+                              fml::tracing::TraceFlow(""))
+          ->dimensions(),
+      SkISize::Make(600, 200));
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecodingNoUpscalingOneDimension) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(
+      ImageFromCompressedData(data, 1200, 200, ImageUpscalingMode::kNotAllowed,
+                              fml::tracing::TraceFlow(""))
+          ->dimensions(),
+      SkISize::Make(600, 200));
+}
+
+TEST(ImageDecoderTest, VerifySimpleDecodingWithUpscaling) {
+  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto image = SkImage::MakeFromEncoded(data);
+  ASSERT_TRUE(image != nullptr);
+  ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
+
+  ASSERT_EQ(
+      ImageFromCompressedData(data, 900, 300, ImageUpscalingMode::kAllowed,
+                              fml::tracing::TraceFlow(""))
+          ->dimensions(),
+      SkISize::Make(900, 300));
 }
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
@@ -544,6 +587,7 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   auto decode = [data](std::optional<uint32_t> target_width,
                        std::optional<uint32_t> target_height) {
     return ImageFromCompressedData(data, target_width, target_height,
+                                   ImageUpscalingMode::kNotAllowed,
                                    fml::tracing::TraceFlow(""));
   };
 

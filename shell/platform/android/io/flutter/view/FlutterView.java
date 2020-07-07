@@ -17,13 +17,13 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
-import android.os.LocaleList;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.PointerIcon;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -49,6 +49,7 @@ import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
@@ -57,13 +58,13 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.localization.LocalizationPlugin;
+import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -72,7 +73,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>Deprecation: {@link io.flutter.embedding.android.FlutterView} is the new API that now replaces
  * this class. See https://flutter.dev/go/android-project-migration for more migration details.
  */
-public class FlutterView extends SurfaceView implements BinaryMessenger, TextureRegistry {
+public class FlutterView extends SurfaceView
+    implements BinaryMessenger, TextureRegistry, MouseCursorPlugin.MouseCursorViewDelegate {
   /**
    * Interface for those objects that maintain and expose a reference to a {@code FlutterView} (such
    * as a full-screen Flutter activity).
@@ -120,6 +122,8 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
   private final SystemChannel systemChannel;
   private final InputMethodManager mImm;
   private final TextInputPlugin mTextInputPlugin;
+  private final LocalizationPlugin mLocalizationPlugin;
+  private final MouseCursorPlugin mMouseCursorPlugin;
   private final AndroidKeyProcessor androidKeyProcessor;
   private final AndroidTouchProcessor androidTouchProcessor;
   private AccessibilityBridge mAccessibilityNodeProvider;
@@ -221,15 +225,22 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         mNativeView.getPluginRegistry().getPlatformViewsController();
     mTextInputPlugin =
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      mMouseCursorPlugin = new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
+    } else {
+      mMouseCursorPlugin = null;
+    }
+    mLocalizationPlugin = new LocalizationPlugin(context, localizationChannel);
     androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
     androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer);
     mNativeView
         .getPluginRegistry()
         .getPlatformViewsController()
         .attachTextInputPlugin(mTextInputPlugin);
+    mNativeView.getFlutterJNI().setLocalizationPlugin(mLocalizationPlugin);
 
     // Send initial platform information to Dart
-    sendLocalesToDart(getResources().getConfiguration());
+    mLocalizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendUserPlatformSettingsToDart();
   }
 
@@ -310,6 +321,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
   }
 
   public void onMemoryPressure() {
+    mNativeView.getFlutterJNI().notifyLowMemoryWarning();
     systemChannel.sendMemoryPressureWarning();
   }
 
@@ -393,41 +405,10 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
         .send();
   }
 
-  @SuppressWarnings("deprecation")
-  private void sendLocalesToDart(Configuration config) {
-    List<Locale> locales = new ArrayList<>();
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        locales.add(locale);
-      }
-    } else {
-      locales.add(config.locale);
-    }
-
-    Locale platformResolvedLocale = null;
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-      List<Locale.LanguageRange> languageRanges = new ArrayList<>();
-      LocaleList localeList = config.getLocales();
-      int localeCount = localeList.size();
-      for (int index = 0; index < localeCount; ++index) {
-        Locale locale = localeList.get(index);
-        languageRanges.add(new Locale.LanguageRange(locale.toLanguageTag()));
-      }
-      // TODO(garyq) implement a real locale resolution.
-      platformResolvedLocale =
-          Locale.lookup(languageRanges, Arrays.asList(Locale.getAvailableLocales()));
-    }
-
-    localizationChannel.sendLocales(locales, platformResolvedLocale);
-  }
-
   @Override
   protected void onConfigurationChanged(Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
-    sendLocalesToDart(newConfig);
+    mLocalizationPlugin.sendLocalesToFlutter(newConfig);
     sendUserPlatformSettingsToDart();
   }
 
@@ -791,6 +772,14 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
       // tree.
       return null;
     }
+  }
+
+  @Override
+  @TargetApi(Build.VERSION_CODES.N)
+  @RequiresApi(Build.VERSION_CODES.N)
+  @NonNull
+  public PointerIcon getSystemPointerIcon(int type) {
+    return PointerIcon.getSystemIcon(getContext(), type);
   }
 
   @Override

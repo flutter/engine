@@ -4,6 +4,7 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#include <time.h>
 #include <algorithm>
 #include <functional>
 #include <future>
@@ -31,6 +32,7 @@
 #include "flutter/shell/version/version.h"
 #include "flutter/testing/testing.h"
 #include "rapidjson/writer.h"
+#include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -143,7 +145,8 @@ TEST_F(ShellTest,
             ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
       },
       [](Shell& shell) {
-        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners());
+        return std::make_unique<Rasterizer>(shell, shell.GetTaskRunners(),
+                                            shell.GetIsGpuDisabledSyncSwitch());
       });
   ASSERT_TRUE(ValidateShell(shell.get()));
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
@@ -244,7 +247,7 @@ TEST_F(ShellTest, LastEntrypoint) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
-TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
+TEST(ShellTestNoFixture, EnableMirrorsIsAllowed) {
   if (DartVM::IsRunningPrecompiledCode()) {
     // This covers profile and release modes which use AOT (where this flag does
     // not make sense anyway).
@@ -263,7 +266,7 @@ TEST(ShellTestNoFixture, EnableMirrorsIsWhitelisted) {
   EXPECT_EQ(settings.dart_flags.size(), 1u);
 }
 
-TEST_F(ShellTest, BlacklistedDartVMFlag) {
+TEST_F(ShellTest, DisallowedDartVMFlag) {
   // Run this test in a thread-safe manner, otherwise gtest will complain.
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
@@ -271,13 +274,13 @@ TEST_F(ShellTest, BlacklistedDartVMFlag) {
       fml::CommandLine::Option("dart-flags", "--verify_after_gc")};
   fml::CommandLine command_line("", options, std::vector<std::string>());
 
-  // Upon encountering a non-whitelisted Dart flag the process terminates.
+  // Upon encountering a disallowed Dart flag the process terminates.
   const char* expected =
-      "Encountered blacklisted Dart VM flag: --verify_after_gc";
+      "Encountered disallowed Dart VM flag: --verify_after_gc";
   ASSERT_DEATH(flutter::SettingsFromCommandLine(command_line), expected);
 }
 
-TEST_F(ShellTest, WhitelistedDartVMFlag) {
+TEST_F(ShellTest, AllowedDartVMFlag) {
   const std::vector<fml::CommandLine::Option> options = {
 #if !FLUTTER_RELEASE
     fml::CommandLine::Option("dart-flags",
@@ -467,12 +470,16 @@ TEST_F(ShellTest, FrameRasterizedCallbackIsCalled) {
   DestroyShell(std::move(shell));
 }
 
+#if !defined(OS_FUCHSIA)
+// TODO(sanjayc77): https://github.com/flutter/flutter/issues/53179. Add
+// support for raster thread merger for Fuchsia.
 TEST_F(ShellTest,
        ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit) {
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent endFrameLatch;
   bool end_frame_called = false;
-  auto end_frame_callback = [&] {
+  auto end_frame_callback = [&](bool should_resubmit_frame) {
+    ASSERT_TRUE(should_resubmit_frame);
     end_frame_called = true;
     endFrameLatch.Signal();
   };
@@ -511,6 +518,7 @@ TEST_F(ShellTest,
 
   DestroyShell(std::move(shell));
 }
+#endif
 
 TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   // Ensure that all phases are in kPhases.
@@ -936,7 +944,8 @@ class MockTexture : public Texture {
   void Paint(SkCanvas& canvas,
              const SkRect& bounds,
              bool freeze,
-             GrContext* context) override {}
+             GrContext* context,
+             SkFilterQuality filter_quality) override {}
 
   void OnGrContextCreated() override {}
 
@@ -1147,6 +1156,54 @@ TEST_F(ShellTest, CanConvertToAndFromMappings) {
   DestroyShell(std::move(shell));
 }
 
+// Compares local times as seen by the dart isolate and as seen by this test
+// fixture, to a resolution of 1 hour.
+//
+// This verifies that (1) the isolate is able to get a timezone (doesn't lock
+// up for example), and (2) that the host and the isolate agree on what the
+// timezone is.
+TEST_F(ShellTest, LocaltimesMatch) {
+  fml::AutoResetWaitableEvent latch;
+  std::string dart_isolate_time_str;
+
+  // See fixtures/shell_test.dart, the callback NotifyLocalTime is declared
+  // there.
+  AddNativeCallback("NotifyLocalTime", CREATE_NATIVE_ENTRY([&](auto args) {
+                      dart_isolate_time_str =
+                          tonic::DartConverter<std::string>::FromDart(
+                              Dart_GetNativeArgument(args, 0));
+                      latch.Signal();
+                    }));
+
+  auto settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("localtimesMatch");
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  ASSERT_NE(shell.get(), nullptr);
+  RunEngine(shell.get(), std::move(configuration));
+  latch.Wait();
+
+  char timestr[200];
+  const time_t timestamp = time(nullptr);
+  const struct tm* local_time = localtime(&timestamp);
+  ASSERT_NE(local_time, nullptr)
+      << "Could not get local time: errno=" << errno << ": " << strerror(errno);
+  // Example: "2020-02-26 14" for 2pm on February 26, 2020.
+  const size_t format_size =
+      strftime(timestr, sizeof(timestr), "%Y-%m-%d %H", local_time);
+  ASSERT_NE(format_size, 0UL)
+      << "strftime failed: host time: " << std::string(timestr)
+      << " dart isolate time: " << dart_isolate_time_str;
+
+  const std::string host_local_time_str = timestr;
+
+  ASSERT_EQ(dart_isolate_time_str, host_local_time_str)
+      << "Local times in the dart isolate and the local time seen by the test "
+      << "differ by more than 1 hour, but are expected to be about equal";
+
+  DestroyShell(std::move(shell));
+}
+
 TEST_F(ShellTest, CanDecompressImageFromAsset) {
   fml::AutoResetWaitableEvent latch;
   AddNativeCallback("NotifyWidthHeight", CREATE_NATIVE_ENTRY([&](auto args) {
@@ -1219,6 +1276,69 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
 
   // Cleanup files
   fml::RemoveFilesInDirectory(temp_dir.fd());
+}
+
+TEST_F(ShellTest, RasterizerScreenshot) {
+  Settings settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(ValidateShell(shell.get()));
+  PlatformViewNotifyCreated(shell.get());
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
+
+  PumpOneFrame(shell.get());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetRasterTaskRunner(), [&shell, &latch]() {
+        Rasterizer::Screenshot screenshot =
+            shell->GetRasterizer()->ScreenshotLastLayerTree(
+                Rasterizer::ScreenshotType::CompressedImage, true);
+        EXPECT_NE(screenshot.data, nullptr);
+
+        latch->Signal();
+      });
+  latch->Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
+  Settings settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(ValidateShell(shell.get()));
+  PlatformViewNotifyCreated(shell.get());
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  auto latch = std::make_shared<fml::AutoResetWaitableEvent>();
+
+  PumpOneFrame(shell.get());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetRasterTaskRunner(), [&shell, &latch]() {
+        SnapshotDelegate* delegate =
+            reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
+        sk_sp<SkImage> image = delegate->MakeRasterSnapshot(
+            SkPicture::MakePlaceholder({0, 0, 50, 50}), SkISize::Make(50, 50));
+        EXPECT_NE(image, nullptr);
+
+        latch->Signal();
+      });
+  latch->Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 }  // namespace testing

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.9
+
 part of dart.ui;
 
 /// Whether to slant the glyphs in the font
@@ -80,11 +81,11 @@ class FontWeight {
   ///
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
-  static FontWeight lerp(FontWeight a, FontWeight b, double t) {
-    assert(t != null);
+  static FontWeight? lerp(FontWeight? a, FontWeight? b, double t) {
+    assert(t != null); // ignore: unnecessary_null_comparison
     if (a == null && b == null)
       return null;
-    return values[lerpDouble(a?.index ?? normal.index, b?.index ?? normal.index, t).round().clamp(0, 8) as int];
+    return values[_lerpInt((a ?? normal).index, (b ?? normal).index, t).round().clamp(0, 8) as int];
   }
 
   @override
@@ -99,7 +100,7 @@ class FontWeight {
       6: 'FontWeight.w700',
       7: 'FontWeight.w800',
       8: 'FontWeight.w900',
-    }[index];
+    }[index]!;
   }
 }
 
@@ -187,6 +188,7 @@ class FontFeature {
   /// flags whose value can be 1 (when enabled) or 0 (when disabled).
   ///
   /// See <https://docs.microsoft.com/en-us/typography/opentype/spec/featuretags>
+  // ignore: unnecessary_null_comparison
   const FontFeature(this.feature, [ this.value = 1 ]) : assert(feature != null), assert(feature.length == 4), assert(value != null), assert(value >= 0);
 
   /// Create a [FontFeature] object that enables the feature with the given tag.
@@ -296,7 +298,7 @@ class FontFeature {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (other.runtimeType != runtimeType)
@@ -387,7 +389,7 @@ class TextDecoration {
   static const TextDecoration lineThrough = TextDecoration._(0x4);
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return other is TextDecoration
         && other._mask == _mask;
   }
@@ -459,8 +461,9 @@ class TextHeightBehavior {
   /// Creates a new TextHeightBehavior object from an encoded form.
   ///
   /// See [encode] for the creation of the encoded form.
-  const TextHeightBehavior.fromEncoded(int encoded) : applyHeightToFirstAscent = (encoded & 0x1) == 0,
-                                                      applyHeightToLastDescent = (encoded & 0x2) == 0;
+  const TextHeightBehavior.fromEncoded(int encoded)
+    : applyHeightToFirstAscent = (encoded & 0x1) == 0,
+      applyHeightToLastDescent = (encoded & 0x2) == 0;
 
 
   /// Whether to apply the [TextStyle.height] modifier to the ascent of the first
@@ -493,7 +496,7 @@ class TextHeightBehavior {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (other.runtimeType != runtimeType)
       return false;
     return other is TextHeightBehavior
@@ -523,7 +526,7 @@ class TextHeightBehavior {
 /// Returns true if the lists are both null, or if they are both non-null, have
 /// the same length, and contain the same elements in the same order. Returns
 /// false otherwise.
-bool _listEquals<T>(List<T> a, List<T> b) {
+bool _listEquals<T>(List<T>? a, List<T>? b) {
   if (a == null)
     return b == null;
   if (b == null || a.length != b.length)
@@ -561,25 +564,25 @@ bool _listEquals<T>(List<T> a, List<T> b) {
 //  - Element 7: The enum index of the |textBaseline|.
 //
 Int32List _encodeTextStyle(
-  Color color,
-  TextDecoration decoration,
-  Color decorationColor,
-  TextDecorationStyle decorationStyle,
-  double decorationThickness,
-  FontWeight fontWeight,
-  FontStyle fontStyle,
-  TextBaseline textBaseline,
-  String fontFamily,
-  List<String> fontFamilyFallback,
-  double fontSize,
-  double letterSpacing,
-  double wordSpacing,
-  double height,
-  Locale locale,
-  Paint background,
-  Paint foreground,
-  List<Shadow> shadows,
-  List<FontFeature> fontFeatures,
+  Color? color,
+  TextDecoration? decoration,
+  Color? decorationColor,
+  TextDecorationStyle? decorationStyle,
+  double? decorationThickness,
+  FontWeight? fontWeight,
+  FontStyle? fontStyle,
+  TextBaseline? textBaseline,
+  String? fontFamily,
+  List<String>? fontFamilyFallback,
+  double? fontSize,
+  double? letterSpacing,
+  double? wordSpacing,
+  double? height,
+  Locale? locale,
+  Paint? background,
+  Paint? foreground,
+  List<Shadow>? shadows,
+  List<FontFeature>? fontFeatures,
 ) {
   final Int32List result = Int32List(8);
   if (color != null) {
@@ -692,25 +695,25 @@ class TextStyle {
   /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
   /// * `fontFeatures`: The font features that should be applied to the text.
   TextStyle({
-    Color color,
-    TextDecoration decoration,
-    Color decorationColor,
-    TextDecorationStyle decorationStyle,
-    double decorationThickness,
-    FontWeight fontWeight,
-    FontStyle fontStyle,
-    TextBaseline textBaseline,
-    String fontFamily,
-    List<String> fontFamilyFallback,
-    double fontSize,
-    double letterSpacing,
-    double wordSpacing,
-    double height,
-    Locale locale,
-    Paint background,
-    Paint foreground,
-    List<Shadow> shadows,
-    List<FontFeature> fontFeatures,
+    Color? color,
+    TextDecoration? decoration,
+    Color? decorationColor,
+    TextDecorationStyle? decorationStyle,
+    double? decorationThickness,
+    FontWeight? fontWeight,
+    FontStyle? fontStyle,
+    TextBaseline? textBaseline,
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? letterSpacing,
+    double? wordSpacing,
+    double? height,
+    Locale? locale,
+    Paint? background,
+    Paint? foreground,
+    List<Shadow>? shadows,
+    List<FontFeature>? fontFeatures,
   }) : assert(color == null || foreground == null,
          'Cannot provide both a color and a foreground\n'
          'The color argument is just a shorthand for "foreground: Paint()..color = color".'
@@ -751,20 +754,20 @@ class TextStyle {
 
   final Int32List _encoded;
   final String _fontFamily;
-  final List<String> _fontFamilyFallback;
-  final double _fontSize;
-  final double _letterSpacing;
-  final double _wordSpacing;
-  final double _height;
-  final double _decorationThickness;
-  final Locale _locale;
-  final Paint _background;
-  final Paint _foreground;
-  final List<Shadow> _shadows;
-  final List<FontFeature> _fontFeatures;
+  final List<String>? _fontFamilyFallback;
+  final double? _fontSize;
+  final double? _letterSpacing;
+  final double? _wordSpacing;
+  final double? _height;
+  final double? _decorationThickness;
+  final Locale? _locale;
+  final Paint? _background;
+  final Paint? _foreground;
+  final List<Shadow>? _shadows;
+  final List<FontFeature>? _fontFeatures;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     return other is TextStyle
@@ -799,10 +802,10 @@ class TextStyle {
              'fontStyle: ${          _encoded[0] & 0x00040 == 0x00040  ? FontStyle.values[_encoded[6]]           : "unspecified"}, '
              'textBaseline: ${       _encoded[0] & 0x00080 == 0x00080  ? TextBaseline.values[_encoded[7]]        : "unspecified"}, '
              'fontFamily: ${         _encoded[0] & 0x00200 == 0x00200
-                                     && _fontFamily != null            ? _fontFamily                             : "unspecified"}, '
+                                     && _fontFamily != ''              ? _fontFamily                             : "unspecified"}, '
              'fontFamilyFallback: ${ _encoded[0] & 0x00200 == 0x00200
                                      && _fontFamilyFallback != null
-                                     && _fontFamilyFallback.isNotEmpty ? _fontFamilyFallback                     : "unspecified"}, '
+                                     && _fontFamilyFallback!.isNotEmpty ? _fontFamilyFallback                     : "unspecified"}, '
              'fontSize: ${           _encoded[0] & 0x00400 == 0x00400  ? _fontSize                               : "unspecified"}, '
              'letterSpacing: ${      _encoded[0] & 0x00800 == 0x00800  ? "${_letterSpacing}x"                    : "unspecified"}, '
              'wordSpacing: ${        _encoded[0] & 0x01000 == 0x01000  ? "${_wordSpacing}x"                      : "unspecified"}, '
@@ -838,18 +841,18 @@ class TextStyle {
 //  - Element 6: The encoded value of |textHeightBehavior|.
 //
 Int32List _encodeParagraphStyle(
-  TextAlign textAlign,
-  TextDirection textDirection,
-  int maxLines,
-  String fontFamily,
-  double fontSize,
-  double height,
-  TextHeightBehavior textHeightBehavior,
-  FontWeight fontWeight,
-  FontStyle fontStyle,
-  StrutStyle strutStyle,
-  String ellipsis,
-  Locale locale,
+  TextAlign? textAlign,
+  TextDirection? textDirection,
+  int? maxLines,
+  String? fontFamily,
+  double? fontSize,
+  double? height,
+  TextHeightBehavior? textHeightBehavior,
+  FontWeight? fontWeight,
+  FontStyle? fontStyle,
+  StrutStyle? strutStyle,
+  String? ellipsis,
+  Locale? locale,
 ) {
   final Int32List result = Int32List(7); // also update paragraph_builder.cc
   if (textAlign != null) {
@@ -962,18 +965,18 @@ class ParagraphStyle {
   ///
   /// * `locale`: The locale used to select region-specific glyphs.
   ParagraphStyle({
-    TextAlign textAlign,
-    TextDirection textDirection,
-    int maxLines,
-    String fontFamily,
-    double fontSize,
-    double height,
-    TextHeightBehavior textHeightBehavior,
-    FontWeight fontWeight,
-    FontStyle fontStyle,
-    StrutStyle strutStyle,
-    String ellipsis,
-    Locale locale,
+    TextAlign? textAlign,
+    TextDirection? textDirection,
+    int? maxLines,
+    String? fontFamily,
+    double? fontSize,
+    double? height,
+    TextHeightBehavior? textHeightBehavior,
+    FontWeight? fontWeight,
+    FontStyle? fontStyle,
+    StrutStyle? strutStyle,
+    String? ellipsis,
+    Locale? locale,
   }) : _encoded = _encodeParagraphStyle(
          textAlign,
          textDirection,
@@ -996,15 +999,15 @@ class ParagraphStyle {
        _locale = locale;
 
   final Int32List _encoded;
-  final String _fontFamily;
-  final double _fontSize;
-  final double _height;
-  final StrutStyle _strutStyle;
-  final String _ellipsis;
-  final Locale _locale;
+  final String? _fontFamily;
+  final double? _fontSize;
+  final double? _height;
+  final StrutStyle? _strutStyle;
+  final String? _ellipsis;
+  final Locale? _locale;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (other.runtimeType != runtimeType)
@@ -1052,14 +1055,14 @@ class ParagraphStyle {
 // much more likely that the strut is empty/null and we wish to add
 // minimal overhead for non-strut cases.
 ByteData _encodeStrut(
-  String fontFamily,
-  List<String> fontFamilyFallback,
-  double fontSize,
-  double height,
-  double leading,
-  FontWeight fontWeight,
-  FontStyle fontStyle,
-  bool forceStrutHeight) {
+  String? fontFamily,
+  List<String>? fontFamilyFallback,
+  double? fontSize,
+  double? height,
+  double? leading,
+  FontWeight? fontWeight,
+  FontStyle? fontStyle,
+  bool? forceStrutHeight) {
   if (fontFamily == null &&
     fontSize == null &&
     height == null &&
@@ -1156,14 +1159,14 @@ class StrutStyle {
   ///   of the `fontFamily` and `(height + leading) * fontSize`. Otherwise, it
   ///   will be determined by the Ascent + half-leading of the first text.
   StrutStyle({
-    String fontFamily,
-    List<String> fontFamilyFallback,
-    double fontSize,
-    double height,
-    double leading,
-    FontWeight fontWeight,
-    FontStyle fontStyle,
-    bool forceStrutHeight,
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? height,
+    double? leading,
+    FontWeight? fontWeight,
+    FontStyle? fontStyle,
+    bool? forceStrutHeight,
   }) : _encoded = _encodeStrut(
          fontFamily,
          fontFamilyFallback,
@@ -1178,12 +1181,12 @@ class StrutStyle {
        _fontFamilyFallback = fontFamilyFallback;
 
   final ByteData _encoded; // Most of the data for strut is encoded.
-  final String _fontFamily;
-  final List<String> _fontFamilyFallback;
+  final String? _fontFamily;
+  final List<String>? _fontFamilyFallback;
 
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (other.runtimeType != runtimeType)
@@ -1347,7 +1350,7 @@ class TextBox {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (other.runtimeType != runtimeType)
@@ -1436,10 +1439,10 @@ class TextPosition {
   ///
   /// The arguments must not be null (so the [offset] argument is required).
   const TextPosition({
-    this.offset,
+    required this.offset,
     this.affinity = TextAffinity.downstream,
-  }) : assert(offset != null),
-       assert(affinity != null);
+  }) : assert(offset != null), // ignore: unnecessary_null_comparison
+       assert(affinity != null); // ignore: unnecessary_null_comparison
 
   /// The index of the character that immediately follows the position in the
   /// string representation of the text.
@@ -1459,7 +1462,7 @@ class TextPosition {
   final TextAffinity affinity;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (other.runtimeType != runtimeType)
       return false;
     return other is TextPosition
@@ -1489,16 +1492,16 @@ class TextRange {
   /// Instead of creating an empty text range, consider using the [empty]
   /// constant.
   const TextRange({
-    this.start,
-    this.end,
-  }) : assert(start != null && start >= -1),
-        assert(end != null && end >= -1);
+    required this.start,
+    required this.end,
+  }) : assert(start != null && start >= -1), // ignore: unnecessary_null_comparison
+        assert(end != null && end >= -1); // ignore: unnecessary_null_comparison
 
   /// A text range that starts and ends at offset.
   ///
   /// The [offset] argument must be non-null and greater than or equal to -1.
   const TextRange.collapsed(int offset)
-      : assert(offset != null && offset >= -1),
+      : assert(offset != null && offset >= -1), // ignore: unnecessary_null_comparison
         start = offset,
         end = offset;
 
@@ -1543,7 +1546,7 @@ class TextRange {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     return other is TextRange
@@ -1572,8 +1575,8 @@ class ParagraphConstraints {
   ///
   /// The [width] argument must not be null.
   const ParagraphConstraints({
-    this.width,
-  }) : assert(width != null);
+    required this.width,
+  }) : assert(width != null); // ignore: unnecessary_null_comparison
 
   /// The width the paragraph should use whey computing the positions of glyphs.
   ///
@@ -1595,7 +1598,7 @@ class ParagraphConstraints {
   final double width;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (other.runtimeType != runtimeType)
       return false;
     return other is ParagraphConstraints
@@ -1743,15 +1746,15 @@ class LineMetrics {
   /// Omitted values will remain null. [Paragraph.computeLineMetrics] produces
   /// fully defined [LineMetrics] with no null values.
   LineMetrics({
-    this.hardBreak,
-    this.ascent,
-    this.descent,
-    this.unscaledAscent,
-    this.height,
-    this.width,
-    this.left,
-    this.baseline,
-    this.lineNumber,
+    required this.hardBreak,
+    required this.ascent,
+    required this.descent,
+    required this.unscaledAscent,
+    required this.height,
+    required this.width,
+    required this.left,
+    required this.baseline,
+    required this.lineNumber,
   });
 
   /// True if this line ends with an explicit line break (e.g. '\n') or is the end
@@ -1925,19 +1928,20 @@ class Paragraph extends NativeFieldWrapperClass2 {
 
   List<TextBox> _decodeTextBoxes(Float32List encoded) {
     final int count = encoded.length ~/ 5;
-    final List<TextBox> boxes = List<TextBox>(count);
+    final List<TextBox> boxes = <TextBox>[];
     int position = 0;
     for (int index = 0; index < count; index += 1) {
-      boxes[index] = TextBox.fromLTRBD(
+      boxes.add(TextBox.fromLTRBD(
         encoded[position++],
         encoded[position++],
         encoded[position++],
         encoded[position++],
         TextDirection.values[encoded[position++].toInt()],
-      );
+      ));
     }
     return boxes;
   }
+
   /// Returns a list of text boxes that enclose the given text range.
   ///
   /// The [boxHeightStyle] and [boxWidthStyle] parameters allow customization
@@ -1952,8 +1956,8 @@ class Paragraph extends NativeFieldWrapperClass2 {
   ///
   /// See [BoxHeightStyle] and [BoxWidthStyle] for full descriptions of each option.
   List<TextBox> getBoxesForRange(int start, int end, {BoxHeightStyle boxHeightStyle = BoxHeightStyle.tight, BoxWidthStyle boxWidthStyle = BoxWidthStyle.tight}) {
-    assert(boxHeightStyle != null);
-    assert(boxWidthStyle != null);
+    assert(boxHeightStyle != null); // ignore: unnecessary_null_comparison
+    assert(boxWidthStyle != null); // ignore: unnecessary_null_comparison
     return _decodeTextBoxes(_getBoxesForRange(start, end, boxHeightStyle.index, boxWidthStyle.index));
   }
   // See paragraph.cc for the layout of this return value.
@@ -2019,20 +2023,20 @@ class Paragraph extends NativeFieldWrapperClass2 {
     final Float64List encoded = _computeLineMetrics();
     final int count = encoded.length ~/ 9;
     int position = 0;
-    final List<LineMetrics> metrics = List<LineMetrics>(count);
-    for (int index = 0; index < metrics.length; index += 1) {
-      metrics[index] = LineMetrics(
-        hardBreak:      encoded[position++] != 0,
-        ascent:         encoded[position++],
-        descent:        encoded[position++],
-        unscaledAscent: encoded[position++],
-        height:         encoded[position++],
-        width:          encoded[position++],
-        left:           encoded[position++],
-        baseline:       encoded[position++],
-        lineNumber:     encoded[position++].toInt(),
-      );
-    }
+    final List<LineMetrics> metrics = <LineMetrics>[
+      for (int index = 0; index < count; index += 1)
+        LineMetrics(
+          hardBreak:      encoded[position++] != 0,
+          ascent:         encoded[position++],
+          descent:        encoded[position++],
+          unscaledAscent: encoded[position++],
+          height:         encoded[position++],
+          width:          encoded[position++],
+          left:           encoded[position++],
+          baseline:       encoded[position++],
+          lineNumber:     encoded[position++].toInt(),
+        )
+    ];
     return metrics;
   }
   Float64List _computeLineMetrics() native 'Paragraph_computeLineMetrics';
@@ -2058,18 +2062,19 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// [Paragraph].
   @pragma('vm:entry-point')
   ParagraphBuilder(ParagraphStyle style) {
-    _placeholderCount = 0;
-    List<String> strutFontFamilies;
-    if (style._strutStyle != null) {
+    List<String>? strutFontFamilies;
+    final StrutStyle? strutStyle = style._strutStyle;
+    if (strutStyle != null) {
       strutFontFamilies = <String>[];
-      if (style._strutStyle._fontFamily != null)
-        strutFontFamilies.add(style._strutStyle._fontFamily);
-      if (style._strutStyle._fontFamilyFallback != null)
-        strutFontFamilies.addAll(style._strutStyle._fontFamilyFallback);
+      final String? fontFamily = strutStyle._fontFamily;
+      if (fontFamily != null)
+        strutFontFamilies.add(fontFamily);
+      if (strutStyle._fontFamilyFallback != null)
+        strutFontFamilies.addAll(strutStyle._fontFamilyFallback!);
     }
     _constructor(
       style._encoded,
-      style._strutStyle?._encoded,
+      strutStyle?._encoded,
       style._fontFamily,
       strutFontFamilies,
       style._fontSize,
@@ -2081,18 +2086,18 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
 
   void _constructor(
     Int32List encoded,
-    ByteData strutData,
-    String fontFamily,
-    List<dynamic> strutFontFamily,
-    double fontSize,
-    double height,
-    String ellipsis,
+    ByteData? strutData,
+    String? fontFamily,
+    List<dynamic>? strutFontFamily,
+    double? fontSize,
+    double? height,
+    String? ellipsis,
     String locale
   ) native 'ParagraphBuilder_constructor';
 
   /// The number of placeholders currently in the paragraph.
   int get placeholderCount => _placeholderCount;
-  int _placeholderCount;
+  int _placeholderCount = 0;
 
   /// The scales of the placeholders in the paragraph.
   List<double> get placeholderScales => _placeholderScales;
@@ -2103,16 +2108,16 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// See [pop] for details.
   void pushStyle(TextStyle style) {
     final List<String> fullFontFamilies = <String>[];
-    if (style._fontFamily != null)
-      fullFontFamilies.add(style._fontFamily);
+    fullFontFamilies.add(style._fontFamily);
     if (style._fontFamilyFallback != null)
-    fullFontFamilies.addAll(style._fontFamilyFallback);
+    fullFontFamilies.addAll(style._fontFamilyFallback!);
 
-    ByteData encodedFontFeatures;
-    if (style._fontFeatures != null) {
-      encodedFontFeatures = ByteData(style._fontFeatures.length * FontFeature._kEncodedSize);
+    ByteData? encodedFontFeatures;
+    final List<FontFeature>? fontFeatures = style._fontFeatures;
+    if (fontFeatures != null) {
+      encodedFontFeatures = ByteData(fontFeatures.length * FontFeature._kEncodedSize);
       int byteOffset = 0;
-      for (FontFeature feature in style._fontFeatures) {
+      for (FontFeature feature in fontFeatures) {
         feature._encode(ByteData.view(encodedFontFeatures.buffer, byteOffset, FontFeature._kEncodedSize));
         byteOffset += FontFeature._kEncodedSize;
       }
@@ -2139,21 +2144,21 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   void _pushStyle(
     Int32List encoded,
     List<dynamic> fontFamilies,
-    double fontSize,
-    double letterSpacing,
-    double wordSpacing,
-    double height,
-    double decorationThickness,
+    double? fontSize,
+    double? letterSpacing,
+    double? wordSpacing,
+    double? height,
+    double? decorationThickness,
     String locale,
-    List<dynamic> backgroundObjects,
-    ByteData backgroundData,
-    List<dynamic> foregroundObjects,
-    ByteData foregroundData,
+    List<dynamic>? backgroundObjects,
+    ByteData? backgroundData,
+    List<dynamic>? foregroundObjects,
+    ByteData? foregroundData,
     ByteData shadowsData,
-    ByteData fontFeaturesData,
+    ByteData? fontFeaturesData,
   ) native 'ParagraphBuilder_pushStyle';
 
-  static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
+  static String _encodeLocale(Locale? locale) => locale?.toString() ?? '';
 
   /// Ends the effect of the most recent call to [pushStyle].
   ///
@@ -2167,11 +2172,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The text will be styled according to the current stack of text styles.
   void addText(String text) {
-    final String error = _addText(text);
+    final String? error = _addText(text);
     if (error != null)
       throw ArgumentError(error);
   }
-  String _addText(String text) native 'ParagraphBuilder_addText';
+  String? _addText(String text) native 'ParagraphBuilder_addText';
 
   /// Adds an inline placeholder space to the paragraph.
   ///
@@ -2222,8 +2227,8 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// through [placeholderScales]. This is primarily used for acessibility scaling.
   void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
     double scale = 1.0,
-    double baselineOffset,
-    TextBaseline baseline,
+    double? baselineOffset,
+    TextBaseline? baseline,
   }) {
     // Require a baseline to be specified if using a baseline-based alignment.
     assert((alignment == PlaceholderAlignment.aboveBaseline ||
@@ -2232,11 +2237,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     // Default the baselineOffset to height if null. This will place the placeholder
     // fully above the baseline, similar to [PlaceholderAlignment.aboveBaseline].
     baselineOffset = baselineOffset ?? height;
-    _addPlaceholder(width * scale, height * scale, alignment.index, (baselineOffset == null ? height : baselineOffset) * scale, baseline == null ? null : baseline.index);
+    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset * scale, baseline == null ? null : baseline.index);
     _placeholderCount++;
     _placeholderScales.add(scale);
   }
-  String _addPlaceholder(double width, double height, int alignment, double baselineOffset, int baseline) native 'ParagraphBuilder_addPlaceholder';
+  String _addPlaceholder(double width, double height, int alignment, double baselineOffset, int? baseline) native 'ParagraphBuilder_addPlaceholder';
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
@@ -2256,7 +2261,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
 /// * `list`: A list of bytes containing the font file.
 /// * `fontFamily`: The family name used to identify the font in text styles.
 ///  If this is not provided, then the family name will be extracted from the font file.
-Future<void> loadFontFromList(Uint8List list, {String fontFamily}) {
+Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
   return _futurize(
     (_Callback<void> callback) => _loadFontFromList(list, callback, fontFamily)
   ).then((_) => _sendFontChangeMessage());
@@ -2267,12 +2272,11 @@ final ByteData _fontChangeMessage = utf8.encoder.convert(
 ).buffer.asByteData();
 
 FutureOr<void> _sendFontChangeMessage() async {
-  if (window.onPlatformMessage != null)
-    window.onPlatformMessage(
-      'flutter/system',
-      _fontChangeMessage,
-      (_) {},
-    );
+  window.onPlatformMessage?.call(
+    'flutter/system',
+    _fontChangeMessage,
+    (_) {},
+  );
 }
 
-String _loadFontFromList(Uint8List list, _Callback<void> callback, String fontFamily) native 'loadFontFromList';
+String _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';

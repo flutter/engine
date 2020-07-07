@@ -60,6 +60,8 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer);
  * @engine: an #FlEngine.
  * @handler: function to call when a platform message is received.
  * @user_data: (closure): user data to pass to @handler.
+ * @destroy_notify: (allow-none): a function which gets called to free
+ * @user_data, or %NULL.
  *
  * Registers the function called when a platform message is reveived. Call
  * fl_engine_send_platform_message_response() with the response to this message.
@@ -70,7 +72,8 @@ FlEngine* fl_engine_new(FlDartProject* project, FlRenderer* renderer);
 void fl_engine_set_platform_message_handler(
     FlEngine* engine,
     FlEnginePlatformMessageHandler handler,
-    gpointer user_data);
+    gpointer user_data,
+    GDestroyNotify destroy_notify);
 
 /**
  * fl_engine_start:
@@ -105,6 +108,8 @@ void fl_engine_send_window_metrics_event(FlEngine* engine,
  * @timestamp: time when event occurred in microseconds.
  * @x: x location of mouse cursor.
  * @y: y location of mouse cursor.
+ * @scroll_delta_x: x offset of scroll.
+ * @scroll_delta_y: y offset of scroll.
  * @buttons: buttons that are pressed.
  *
  * Sends a mouse pointer event to the engine.
@@ -114,6 +119,8 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         size_t timestamp,
                                         double x,
                                         double y,
+                                        double scroll_delta_x,
+                                        double scroll_delta_y,
                                         int64_t buttons);
 
 /**

@@ -477,7 +477,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   _textInputClient = client;
 }
 
-- (void)setTextInputState:(NSDictionary*)state {
+// Return true if the new input state needs to be synced back to the framework.
+- (BOOL)setTextInputState:(NSDictionary*)state {
   NSString* newText = state[@"text"];
   BOOL textChanged = ![self.text isEqualToString:newText];
   if (textChanged) {
@@ -508,8 +509,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       selectedRange.length != oldSelectedRange.length) {
     needsEditingStateUpdate = YES;
     [self.inputDelegate selectionWillChange:self];
-    [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
-            updateEditingState:NO];
+    [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:selectedRange]];
     _selectionAffinity = _kTextAffinityDownstream;
     if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)])
       _selectionAffinity = _kTextAffinityUpstream;
@@ -519,10 +519,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (textChanged) {
     [self.inputDelegate textDidChange:self];
   }
-  if (needsEditingStateUpdate) {
-    // For consistency with Android behavior, send an update to the framework.
-    [self updateEditingState];
-  }
+
+  // For consistency with Android behavior, send an update to the framework if anything changed.
+  return needsEditingStateUpdate;
 }
 
 - (NSRange)clampSelection:(NSRange)range forText:(NSString*)text {
@@ -554,11 +553,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return [[_selectedTextRange copy] autorelease];
 }
 
-- (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
-  [self setSelectedTextRange:selectedTextRange updateEditingState:YES];
-}
-
-- (void)setSelectedTextRange:(UITextRange*)selectedTextRange updateEditingState:(BOOL)update {
+// Change the range of selected text, without notifying the framework.
+- (void)setSelectedTextRangeLocal:(UITextRange*)selectedTextRange {
   if (_selectedTextRange != selectedTextRange) {
     UITextRange* oldSelectedRange = _selectedTextRange;
     if (self.hasText) {
@@ -569,10 +565,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       _selectedTextRange = [selectedTextRange copy];
     }
     [oldSelectedRange release];
-
-    if (update)
-      [self updateEditingState];
   }
+}
+
+- (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
+  [self setSelectedTextRangeLocal:selectedTextRange];
+  [self updateEditingState];
 }
 
 - (id)insertDictationResultPlaceholder {
@@ -593,26 +591,32 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return [self.text substringWithRange:textRange];
 }
 
-- (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
-  NSRange replaceRange = ((FlutterTextRange*)range).range;
+// Replace the text within the specified range with the given text,
+// without notifying the framework.
+- (void)replaceRangeLocal:(NSRange)range withText:(NSString*)text {
   NSRange selectedRange = _selectedTextRange.range;
+
   // Adjust the text selection:
   // * reduce the length by the intersection length
   // * adjust the location by newLength - oldLength + intersectionLength
-  NSRange intersectionRange = NSIntersectionRange(replaceRange, selectedRange);
-  if (replaceRange.location <= selectedRange.location)
-    selectedRange.location += text.length - replaceRange.length;
+  NSRange intersectionRange = NSIntersectionRange(range, selectedRange);
+  if (range.location <= selectedRange.location)
+    selectedRange.location += text.length - range.length;
   if (intersectionRange.location != NSNotFound) {
     selectedRange.location += intersectionRange.length;
     selectedRange.length -= intersectionRange.length;
   }
 
-  [self.text replaceCharactersInRange:[self clampSelection:replaceRange forText:self.text]
+  [self.text replaceCharactersInRange:[self clampSelection:range forText:self.text]
                            withString:text];
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:[self clampSelection:selectedRange
-                                                                             forText:self.text]]
-          updateEditingState:NO];
+  [self setSelectedTextRangeLocal:[FlutterTextRange
+                                      rangeWithNSRange:[self clampSelection:selectedRange
+                                                                    forText:self.text]]];
+}
 
+- (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
+  NSRange replaceRange = ((FlutterTextRange*)range).range;
+  [self replaceRangeLocal:replaceRange withText:text];
   [self updateEditingState];
 }
 
@@ -675,11 +679,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
   if (markedTextRange.length > 0) {
     // Replace text in the marked range with the new text.
-    [self replaceRange:self.markedTextRange withText:markedText];
+    [self replaceRangeLocal:markedTextRange withText:markedText];
     markedTextRange.length = markedText.length;
   } else {
     // Replace text in the selected range with the new text.
-    [self replaceRange:_selectedTextRange withText:markedText];
+    [self replaceRangeLocal:selectedRange withText:markedText];
     markedTextRange = NSMakeRange(selectedRange.location, markedText.length);
   }
 
@@ -688,9 +692,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
   NSUInteger selectionLocation = markedSelectedRange.location + markedTextRange.location;
   selectedRange = NSMakeRange(selectionLocation, markedSelectedRange.length);
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:[self clampSelection:selectedRange
-                                                                             forText:self.text]]
-          updateEditingState:YES];
+  [self setSelectedTextRangeLocal:[FlutterTextRange
+                                      rangeWithNSRange:[self clampSelection:selectedRange
+                                                                    forText:self.text]]];
+  [self updateEditingState];
 }
 
 - (void)unmarkText {
@@ -702,7 +707,17 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                            toPosition:(UITextPosition*)toPosition {
   NSUInteger fromIndex = ((FlutterTextPosition*)fromPosition).index;
   NSUInteger toIndex = ((FlutterTextPosition*)toPosition).index;
-  return [FlutterTextRange rangeWithNSRange:NSMakeRange(fromIndex, toIndex - fromIndex)];
+  if (toIndex >= fromIndex) {
+    return [FlutterTextRange rangeWithNSRange:NSMakeRange(fromIndex, toIndex - fromIndex)];
+  } else {
+    // toIndex may be less than fromIndex, because
+    // UITextInputStringTokenizer does not handle CJK characters
+    // well in some cases. See:
+    // https://github.com/flutter/flutter/issues/58750#issuecomment-644469521
+    // Swap fromPosition and toPosition to match the behavior of native
+    // UITextViews.
+    return [FlutterTextRange rangeWithNSRange:NSMakeRange(toIndex, fromIndex - toIndex)];
+  }
 }
 
 - (NSUInteger)decrementOffsetPosition:(NSUInteger)position {
@@ -1166,7 +1181,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)setTextInputEditingState:(NSDictionary*)state {
-  [_activeView setTextInputState:state];
+  if ([_activeView setTextInputState:state]) {
+    [_activeView updateEditingState];
+  }
 }
 
 - (void)clearTextInputClient {

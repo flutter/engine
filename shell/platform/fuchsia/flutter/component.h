@@ -70,6 +70,11 @@ class Application final : public Engine::Delegate,
   // may be collected after.
   ~Application();
 
+  static void ParseProgramMetadata(
+      const fidl::VectorPtr<fuchsia::sys::ProgramMetadata>& program_metadata,
+      std::string* data_path,
+      std::string* assets_path);
+
   const std::string& GetDebugLabel() const;
 
 #if !defined(DART_PRODUCT)
@@ -82,7 +87,7 @@ class Application final : public Engine::Delegate,
   TerminationCallback termination_callback_;
   const std::string debug_label_;
   UniqueFDIONS fdio_ns_ = UniqueFDIONSCreate();
-  fml::UniqueFD application_directory_;
+  fml::UniqueFD application_data_directory_;
   fml::UniqueFD application_assets_directory_;
 
   fidl::Binding<fuchsia::sys::ComponentController> application_controller_;
@@ -114,10 +119,15 @@ class Application final : public Engine::Delegate,
 
   // |fuchsia::ui::app::ViewProvider|
   void CreateView(
-      zx::eventpair view_token,
+      zx::eventpair token,
       fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> incoming_services,
       fidl::InterfaceHandle<fuchsia::sys::ServiceProvider> outgoing_services)
       override;
+
+  // |fuchsia::ui::app::ViewProvider|
+  void CreateViewWithViewRef(zx::eventpair view_token,
+                             fuchsia::ui::views::ViewRefControl control_ref,
+                             fuchsia::ui::views::ViewRef view_ref) override;
 
   // |flutter::Engine::Delegate|
   void OnEngineTerminate(const Engine* holder) override;

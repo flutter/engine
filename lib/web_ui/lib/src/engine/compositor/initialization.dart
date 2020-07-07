@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+
 part of engine;
 
 /// EXPERIMENTAL: Enable the Skia-based rendering backend.
@@ -14,25 +14,25 @@ const bool experimentalUseSkia =
 /// When CanvasKit pushes a new release to NPM, update this URL to reflect the
 /// most recent version. For example, if CanvasKit releases version 0.34.0 to
 /// NPM, update this URL to `https://unpkg.com/canvaskit-wasm@0.34.0/bin/`.
-const String canvasKitBaseUrl = 'https://unpkg.com/canvaskit-wasm@0.14.0/bin/';
+const String canvasKitBaseUrl = 'https://unpkg.com/canvaskit-wasm@0.16.2/bin/';
 
 /// Initialize the Skia backend.
 ///
 /// This calls `CanvasKitInit` and assigns the global [canvasKit] object.
 Future<void> initializeSkia() {
   final Completer<void> canvasKitCompleter = Completer<void>();
-  StreamSubscription<html.Event> loadSubscription;
-  loadSubscription = domRenderer.canvasKitScript.onLoad.listen((_) {
+  late StreamSubscription<html.Event> loadSubscription;
+  loadSubscription = domRenderer.canvasKitScript!.onLoad.listen((_) {
     loadSubscription.cancel();
     final js.JsObject canvasKitInitArgs = js.JsObject.jsify(<String, dynamic>{
       'locateFile': (String file, String unusedBase) => canvasKitBaseUrl + file,
     });
-    final js.JsObject canvasKitInit =
+    final js.JsObject canvasKitInitPromise =
         js.JsObject(js.context['CanvasKitInit'], <dynamic>[canvasKitInitArgs]);
-    final js.JsObject canvasKitInitPromise = canvasKitInit.callMethod('ready');
     canvasKitInitPromise.callMethod('then', <dynamic>[
       (js.JsObject ck) {
         canvasKit = ck;
+        initializeCanvasKitBindings(canvasKit);
         canvasKitCompleter.complete();
       },
     ]);
@@ -47,10 +47,16 @@ Future<void> initializeSkia() {
 /// The entrypoint into all CanvasKit functions and classes.
 ///
 /// This is created by [initializeSkia].
-js.JsObject canvasKit;
+late js.JsObject canvasKit;
 
 /// The Skia font collection.
-SkiaFontCollection skiaFontCollection;
+SkiaFontCollection get skiaFontCollection => _skiaFontCollection!;
+SkiaFontCollection? _skiaFontCollection;
+
+/// Initializes [skiaFontCollection].
+void ensureSkiaFontCollectionInitialized() {
+  _skiaFontCollection ??= SkiaFontCollection();
+}
 
 /// The scene host, where the root canvas and overlay canvases are added to.
-html.Element skiaSceneHost;
+html.Element? skiaSceneHost;

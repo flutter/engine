@@ -23,6 +23,12 @@ G_DECLARE_FINAL_TYPE(FlBasicMessageChannel,
                      BASIC_MESSAGE_CHANNEL,
                      GObject)
 
+G_DECLARE_FINAL_TYPE(FlBasicMessageChannelResponseHandle,
+                     fl_basic_message_channel_response_handle,
+                     FL,
+                     BASIC_MESSAGE_CHANNEL_RESPONSE_HANDLE,
+                     GObject)
+
 /**
  * FlBasicMessageChannel:
  *
@@ -64,7 +70,8 @@ G_DECLARE_FINAL_TYPE(FlBasicMessageChannel,
  *   g_autoptr(FlStandardMessageCodec) codec = fl_standard_message_codec_new ();
  *   channel = fl_basic_message_channel_new (messenger, "flutter/foo",
  *                                           FL_MESSAGE_CODEC (codec));
- *   fl_basic_message_channel_set_message_handler (channel, message_cb, NULL);
+ *   fl_basic_message_channel_set_message_handler (channel, message_cb, NULL,
+ * NULL);
  *
  *   g_autoptr(FlValue) message = fl_value_new_string ("Hello World");
  *   fl_basic_message_channel_send (channel, message, NULL,
@@ -79,19 +86,23 @@ G_DECLARE_FINAL_TYPE(FlBasicMessageChannel,
 /**
  * FlBasicMessageChannelResponseHandle:
  *
- * A handle used to respond to messages.
+ * #FlBasicMessageChannelResponseHandle is an object used to send responses
+ * with.
  */
-typedef struct _FlBasicMessageChannelResponseHandle
-    FlBasicMessageChannelResponseHandle;
 
 /**
  * FlBasicMessageChannelMessageHandler:
  * @channel: an #FlBasicMessageChannel.
  * @message: message received.
- * @response_handle: (transfer full): a handle to respond to the message with.
+ * @response_handle: a handle to respond to the message with.
  * @user_data: (closure): data provided when registering this handler.
  *
- * Function called when a message is received.
+ * Function called when a message is received. Call
+ * fl_basic_message_channel_respond() to respond to this message. If the
+ * response is not occurring in this callback take a reference to
+ * @response_handle and release that once it has been responded to. Failing to
+ * respond before the last reference to @response_handle is dropped is a
+ * programming error.
  */
 typedef void (*FlBasicMessageChannelMessageHandler)(
     FlBasicMessageChannel* channel,
@@ -121,18 +132,26 @@ FlBasicMessageChannel* fl_basic_message_channel_new(
  * @handler: (allow-none): function to call when a message is received on this
  * channel or %NULL to disable the handler.
  * @user_data: (closure): user data to pass to @handler.
+ * @destroy_notify: (allow-none): a function which gets called to free
+ * @user_data, or %NULL.
  *
- * Sets the function called when a message is received.
+ * Sets the function called when a message is received from the Dart side of the
+ * channel. See #FlBasicMessageChannelMessageHandler for details on how to
+ * respond to messages.
+ *
+ * The handler is removed if the channel is closed or is replaced by another
+ * handler, set @destroy_notify if you want to detect this.
  */
 void fl_basic_message_channel_set_message_handler(
     FlBasicMessageChannel* channel,
     FlBasicMessageChannelMessageHandler handler,
-    gpointer user_data);
+    gpointer user_data,
+    GDestroyNotify destroy_notify);
 
 /**
  * fl_basic_message_channel_respond:
  * @channel: an #FlBasicMessageChannel.
- * @response_handle: (transfer full): handle that was provided in a
+ * @response_handle: handle that was provided in a
  * #FlBasicMessageChannelMessageHandler.
  * @message: (allow-none): message response to send or %NULL for an empty
  * response.
@@ -177,10 +196,9 @@ void fl_basic_message_channel_send(FlBasicMessageChannel* channel,
  *
  * Returns: message response on success or %NULL on error.
  */
-FlValue* fl_basic_message_channel_send_on_channel_finish(
-    FlBasicMessageChannel* channel,
-    GAsyncResult* result,
-    GError** error);
+FlValue* fl_basic_message_channel_send_finish(FlBasicMessageChannel* channel,
+                                              GAsyncResult* result,
+                                              GError** error);
 
 G_END_DECLS
 

@@ -8,21 +8,29 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
-#include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/runtime/window_data.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
+#include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 
 namespace flutter {
 
 class AndroidShellHolder {
  public:
+  // Whether the application sets to use embedded_view view
+  // `io.flutter.embedded_views_preview` flag. This can be static because it is
+  // determined by the application and it is safe when there are multiple
+  // `AndroidSurface`s.
+  // TODO(cyanglaz): remove this when dynamic thread merging is enabled on
+  // android. https://github.com/flutter/flutter/issues/59930
+  static bool use_embedded_view;
+
   AndroidShellHolder(flutter::Settings settings,
-                     fml::jni::JavaObjectWeakGlobalRef java_object,
+                     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
                      bool is_background_view);
 
   ~AndroidShellHolder();
@@ -40,9 +48,11 @@ class AndroidShellHolder {
 
   void UpdateAssetManager(fml::RefPtr<flutter::AssetManager> asset_manager);
 
+  void NotifyLowMemoryWarning();
+
  private:
   const flutter::Settings settings_;
-  const fml::jni::JavaObjectWeakGlobalRef java_object_;
+  const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
   fml::WeakPtr<PlatformViewAndroid> platform_view_;
   ThreadHost thread_host_;
   std::unique_ptr<Shell> shell_;
