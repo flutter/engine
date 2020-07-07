@@ -277,6 +277,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
+  CGRect _markedRect;
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -323,6 +324,10 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 - (void)setTextInputClient:(int)client {
   _textInputClient = client;
+}
+
+- (void)setMarkedRect: (CGRect) rect {
+  _markedRect = rect;
 }
 
 // Return true if the new input state needs to be synced back to the framework.
@@ -687,13 +692,16 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 // physical keyboard.
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
-  // multi-stage text is handled somewhere else.
-  if (_markedTextRange != nil) {
-    return CGRectZero;
-  }
-
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
+  // multi-stage text is handled somewhere else.
+  if (_markedTextRange != nil) {
+    NSLog(@"firstRectForRange: %lu, %lu, markedText:%@, reported rect: %@", start, end, NSStringFromRange(((FlutterTextRange*)_markedTextRange).range), NSStringFromCGRect(_markedRect));
+    return _markedRect;
+  }
+
+//  NSUInteger start = ((FlutterTextPosition*)range.start).index;
+//  NSUInteger end = ((FlutterTextPosition*)range.end).index;
   [_textInputDelegate showAutocorrectionPromptRectForStart:start
                                                        end:end
                                                 withClient:_textInputClient];
@@ -888,9 +896,25 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   } else if ([method isEqualToString:@"TextInput.clearClient"]) {
     [self clearTextInputClient];
     result(nil);
+  } else if ([method isEqualToString:@"TextInput.setEditableSizeAndTransform"]) {
+    [self setEditableSizeAndTransform:args];
   } else {
     result(FlutterMethodNotImplemented);
   }
+}
+
+-(void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
+  NSArray* matrix = dictionary[@"transform"];
+  CGPoint offset = CGPointMake([matrix[12] doubleValue], [matrix[13] doubleValue]);
+  double width = [dictionary[@"markedWidth"] doubleValue];
+  width = width == 0.0 ? 17 : width;
+  CGRect markedRect = CGRectMake(
+                                 [dictionary[@"markedOriginX"] doubleValue],
+                                 [dictionary[@"markedOriginY"] doubleValue], width,
+                                 [dictionary[@"markedHeight"] doubleValue]);
+  
+  _activeView.markedRect = CGRectOffset(markedRect, offset.x, offset.y);
+
 }
 
 - (void)showTextInput {
