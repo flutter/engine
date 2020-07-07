@@ -14,6 +14,9 @@
 
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/fuchsia_archive.gni")
+}
 
 declare_args() {
   flutter_use_fontconfig = false
@@ -337,5 +340,22 @@ executable("txt_benchmarks") {
     sources += [ "benchmarks/skparagraph_benchmarks.cc" ]
 
     deps += [ "//third_party/skia/modules/skparagraph" ]
+  }
+}
+
+if (is_fuchsia) {
+  fuchsia_archive("txt_tests") {
+    testonly = true
+
+    deps = [
+      ":txt_unittests",
+    ]
+
+    binary = "txt_unittests"
+
+    libraries = common_libs
+
+    meta_dir = "//flutter/testing/fuchsia/meta"
+    cmx_file = "$meta_dir/fuchsia_test.cmx"
   }
 }
