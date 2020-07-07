@@ -14,6 +14,8 @@ static constexpr char kBadArgumentsError[] = "Bad Arguments";
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
 
+static GHashTable* systemCursorTable = nullptr;
+
 struct _FlMouseCursorPlugin {
   GObject parent_instance;
 
@@ -37,26 +39,22 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
   if (fl_value_get_type(kind_value) == FL_VALUE_TYPE_STRING)
     kind = fl_value_get_string(kind_value);
 
-  const gchar* cursor_name = nullptr;
-  if (g_strcmp0(kind, "none") == 0)
-    cursor_name = "none";
-  else if (g_strcmp0(kind, "basic") == 0)
-    cursor_name = "default";
-  else if (g_strcmp0(kind, "click") == 0)
-    cursor_name = "pointer";
-  else if (g_strcmp0(kind, "text") == 0)
-    cursor_name = "text";
-  else if (g_strcmp0(kind, "forbidden") == 0)
-    cursor_name = "not-allowed";
-  else if (g_strcmp0(kind, "grab") == 0)
-    cursor_name = "grab";
-  else if (g_strcmp0(kind, "grabbing") == 0)
-    cursor_name = "grabbing";
-  else if (g_strcmp0(kind, "resizeLeftRight") == 0)
-    cursor_name = "ew-resize";
-  else if (g_strcmp0(kind, "resizeUpDown") == 0)
-    cursor_name = "ns-resize";
-  else
+  if (systemCursorTable == nullptr) {
+    systemCursorTable = g_hash_table_new(g_str_hash, g_str_equal);
+
+    // The following mapping must be kept in sync with Flutter framework's
+    // mouse_cursor.dart
+    g_hash_table_insert("none", "none");
+    g_hash_table_insert("click", "pointer");
+    g_hash_table_insert("text", "text");
+    g_hash_table_insert("forbidden", "not-allowed");
+    g_hash_table_insert("grab", "grabbing");
+    g_hash_table_insert("resizeLeftRight", "ew-resize");
+    g_hash_table_insert("resizeUpDown", "ns-resize");
+  }
+
+  const gchar* cursor_name = g_hash_table_lookup(systemCursorTable, kind);
+  if (cursor_name == nullptr) // Including "basic" kind
     cursor_name = "default";
 
   GdkWindow* window =
