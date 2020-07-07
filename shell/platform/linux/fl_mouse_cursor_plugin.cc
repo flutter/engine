@@ -44,13 +44,13 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
 
     // The following mapping must be kept in sync with Flutter framework's
     // mouse_cursor.dart
-    g_hash_table_insert("none", "none");
-    g_hash_table_insert("click", "pointer");
-    g_hash_table_insert("text", "text");
-    g_hash_table_insert("forbidden", "not-allowed");
-    g_hash_table_insert("grab", "grabbing");
-    g_hash_table_insert("resizeLeftRight", "ew-resize");
-    g_hash_table_insert("resizeUpDown", "ns-resize");
+    g_hash_table_insert(systemCursorTable, "none", "none");
+    g_hash_table_insert(systemCursorTable, "click", "pointer");
+    g_hash_table_insert(systemCursorTable, "text", "text");
+    g_hash_table_insert(systemCursorTable, "forbidden", "not-allowed");
+    g_hash_table_insert(systemCursorTable, "grab", "grabbing");
+    g_hash_table_insert(systemCursorTable, "resizeLeftRight", "ew-resize");
+    g_hash_table_insert(systemCursorTable, "resizeUpDown", "ns-resize");
   }
 
   const gchar* cursor_name = g_hash_table_lookup(systemCursorTable, kind);
