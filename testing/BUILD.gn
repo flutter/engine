@@ -5,6 +5,9 @@
 import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
 import("testing.gni")
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/fuchsia_archive.gni")
+}
 
 source_set("testing_lib") {
   testonly = true
@@ -178,6 +181,23 @@ if (enable_unittests) {
         ":testing",
         "//flutter/runtime:libdart",
       ]
+    }
+
+    if (is_fuchsia) {
+      fuchsia_archive("testing_tests") {
+        testonly = true
+
+        deps = [
+          ":testing_unittests",
+        ]
+
+        binary = "testing_unittests"
+
+        libraries = common_libs
+
+        meta_dir = "//flutter/testing/fuchsia/meta"
+        cmx_file = "$meta_dir/fuchsia_test.cmx"
+      }
     }
   }
 }
