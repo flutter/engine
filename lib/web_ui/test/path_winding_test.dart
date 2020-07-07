@@ -47,7 +47,7 @@ void main() {
     });
 
     test('moveto/lineto convexity', () {
-      List<LineTestCase> testCases = <LineTestCase>[
+      final List<LineTestCase> testCases = <LineTestCase>[
         LineTestCase('', SPathConvexityType.kConvex, SPathDirection.kUnknown),
         LineTestCase(
             '0 0', SPathConvexityType.kConvex, SPathDirection.kUnknown),
@@ -65,14 +65,14 @@ void main() {
       ];
 
       for (LineTestCase testCase in testCases) {
-        SurfacePath path = SurfacePath();
+        final SurfacePath path = SurfacePath();
         setFromString(path, testCase.pathContent);
         expect(path.convexityType, testCase.convexity);
       }
     });
 
     test('Convexity of path with infinite points should return unknown', () {
-      List<Offset> nonFinitePts = <Offset>[
+      final List<Offset> nonFinitePts = <Offset>[
         Offset(double.infinity, 0),
         Offset(0, double.infinity),
         Offset(double.infinity, double.infinity),
@@ -85,9 +85,9 @@ void main() {
         Offset(0, double.nan),
         Offset(double.nan, double.nan)
       ];
-      int nonFinitePointsCount = nonFinitePts.length;
+      final int nonFinitePointsCount = nonFinitePts.length;
 
-      List<Offset> axisAlignedPts = <Offset>[
+      final List<Offset> axisAlignedPts = <Offset>[
         Offset(kScalarMax, 0),
         Offset(0, kScalarMax),
         Offset(kScalarMin, 0),
@@ -100,9 +100,9 @@ void main() {
       for (int index = 0;
           index < (13 * nonFinitePointsCount * axisAlignedPointsCount);
           index++) {
-        int i = index % nonFinitePointsCount;
-        int f = index % axisAlignedPointsCount;
-        int g = (f + 1) % axisAlignedPointsCount;
+        final int i = index % nonFinitePointsCount;
+        final int f = index % axisAlignedPointsCount;
+        final int g = (f + 1) % axisAlignedPointsCount;
         path.reset();
         switch (index % 13) {
           case 0:

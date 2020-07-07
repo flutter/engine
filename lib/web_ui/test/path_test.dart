@@ -146,7 +146,7 @@ void main() {
 
     test('Should compute bounds for addRRect', () {
       SurfacePath path = SurfacePath();
-      Rect bounds = Rect.fromLTRB(30, 40, 400, 300);
+      final Rect bounds = Rect.fromLTRB(30, 40, 400, 300);
       RRect rrect = RRect.fromRectAndCorners(bounds,
           topLeft: Radius.elliptical(1, 2),
           topRight: Radius.elliptical(3, 4),
@@ -346,7 +346,7 @@ void main() {
     test('Should handle contains for devicepixelratio != 1.0', () {
       js_util.setProperty(html.window, 'devicePixelRatio', 4.0);
       window.debugOverrideDevicePixelRatio(4.0);
-      final path = Path()
+      final Path path = Path()
         ..moveTo(50, 0)
         ..lineTo(100, 100)
         ..lineTo(0, 100)
@@ -367,7 +367,7 @@ void main() {
     // Regression test for https://github.com/flutter/flutter/issues/48887
     test('Should hit test correctly for malformed rrect', () {
       // Correctly formed rrect.
-      final path1 = Path()
+      final Path path1 = Path()
         ..addRRect(RRect.fromLTRBR(50, 50, 100, 100, Radius.circular(20)));
       expect(path1.contains(Offset(75, 75)), isTrue);
       expect(path1.contains(Offset(52, 75)), isTrue);
@@ -376,7 +376,7 @@ void main() {
       expect(path1.contains(Offset(100, 100)), isFalse);
       expect(path1.contains(Offset(50, 100)), isFalse);
 
-      final path2 = Path()
+      final Path path2 = Path()
         ..addRRect(RRect.fromLTRBR(50, 50, 100, 100, Radius.circular(100)));
       expect(path2.contains(Offset(75, 75)), isTrue);
       expect(path2.contains(Offset(52, 75)), isTrue);
@@ -387,7 +387,7 @@ void main() {
     });
 
     test('Should set segment masks', () {
-      SurfacePath path = new SurfacePath();
+      final SurfacePath path = SurfacePath();
       path.pathRef.computeSegmentMask();
       expect(path.pathRef.segmentMasks, 0);
       path.moveTo(20, 40);
@@ -400,26 +400,26 @@ void main() {
     });
 
     test('Should convert conic to quad when approximation error is small', () {
-      Conic conic = Conic(120.0, 20.0, 160.99470420829266, 20.0,
+      final Conic conic = Conic(120.0, 20.0, 160.99470420829266, 20.0,
           190.19301120261332, 34.38770865870253, 0.9252691032413082);
       expect(conic.toQuads().length, 3);
     });
 
     test('Should be able to construct from empty path', () {
-      SurfacePath path = SurfacePath();
-      SurfacePath? path2 = SurfacePath.from(path);
+      final SurfacePath path = SurfacePath();
+      final SurfacePath? path2 = SurfacePath.from(path);
       assert(path2 != null, true);
     });
   });
 
   group('PathRef', () {
     test('Should return empty when created', () {
-      PathRef pathRef = PathRef();
+      final PathRef pathRef = PathRef();
       expect(pathRef.isEmpty, true);
     });
 
     test('Should return non-empty when mutated', () {
-      PathRef pathRef = PathRef();
+      final PathRef pathRef = PathRef();
       pathRef.growForVerb(SPath.kMoveVerb, 0);
       expect(pathRef.isEmpty, false);
     });
@@ -427,21 +427,21 @@ void main() {
   group('PathRefIterator', () {
     test('Should iterate through empty path', () {
       final Float32List points = Float32List(20);
-      PathRef pathRef = PathRef();
-      PathRefIterator iter = PathRefIterator(pathRef);
+      final PathRef pathRef = PathRef();
+      final PathRefIterator iter = PathRefIterator(pathRef);
       expect(iter.next(points), SPath.kDoneVerb);
     });
 
     test('Should iterate through verbs', () {
       final Float32List points = Float32List(20);
-      PathRef pathRef = PathRef();
+      final PathRef pathRef = PathRef();
       pathRef.growForVerb(SPath.kMoveVerb, 0);
       pathRef.growForVerb(SPath.kLineVerb, 0);
       pathRef.growForVerb(SPath.kQuadVerb, 0);
       pathRef.growForVerb(SPath.kCubicVerb, 0);
       pathRef.growForVerb(SPath.kConicVerb, 0.8);
       pathRef.growForVerb(SPath.kLineVerb, 0.8);
-      PathRefIterator iter = PathRefIterator(pathRef);
+      final PathRefIterator iter = PathRefIterator(pathRef);
       expect(iter.next(points), SPath.kMoveVerb);
       expect(iter.next(points), SPath.kLineVerb);
       expect(iter.next(points), SPath.kQuadVerb);
@@ -452,13 +452,13 @@ void main() {
     });
 
     test('Should iterate by index through empty path', () {
-      PathRef pathRef = PathRef();
-      PathRefIterator iter = PathRefIterator(pathRef);
+      final PathRef pathRef = PathRef();
+      final PathRefIterator iter = PathRefIterator(pathRef);
       expect(iter.nextIndex(), SPath.kDoneVerb);
     });
 
     test('Should iterate through contours', () {
-      PathRef pathRef = PathRef();
+      final PathRef pathRef = PathRef();
       pathRef.growForVerb(SPath.kMoveVerb, 0);
       pathRef.growForVerb(SPath.kLineVerb, 0);
       pathRef.growForVerb(SPath.kQuadVerb, 0);
@@ -470,7 +470,7 @@ void main() {
       pathRef.growForVerb(SPath.kMoveVerb, 0);
       pathRef.growForVerb(SPath.kLineVerb, 0);
       pathRef.growForVerb(SPath.kLineVerb, 0);
-      PathRefIterator iter = PathRefIterator(pathRef);
+      final PathRefIterator iter = PathRefIterator(pathRef);
       int start = iter.pointIndex;
       int end = iter.skipToNextContour();
       expect(end - start, 7);
