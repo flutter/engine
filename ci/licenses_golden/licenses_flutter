@@ -423,6 +423,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/canvas_kit_canvas.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/canvaskit_api.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/embedded_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/fonts.dart
@@ -448,7 +449,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/compositor/viewport_metrics.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/conic.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
@@ -459,7 +459,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/html_image_codec.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/mouse_cursor.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/path_to_svg.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
@@ -492,8 +491,10 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/image_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/offset.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/opacity.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/painting.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path_metrics.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/conic.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_metrics.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_to_svg.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/platform_view.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/recording_canvas.dart
@@ -711,6 +712,8 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/D
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/FlutterLoader.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/ResourceExtractor.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/mutatorsstack/FlutterMutatorView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/FlutterPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/PluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/activity/ActivityAware.java
