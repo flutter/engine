@@ -16,6 +16,10 @@ static constexpr char kKindKey[] = "kind";
 
 static GHashTable* systemCursorTable = nullptr;
 
+bool define_system_cursor(const gchar *key, const gchar *value) {
+  return g_hash_table_insert(systemCursorTable, (gpointer)key, (gpointer)value);
+}
+
 struct _FlMouseCursorPlugin {
   GObject parent_instance;
 
@@ -44,16 +48,16 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
 
     // The following mapping must be kept in sync with Flutter framework's
     // mouse_cursor.dart
-    g_hash_table_insert(systemCursorTable, "none", "none");
-    g_hash_table_insert(systemCursorTable, "click", "pointer");
-    g_hash_table_insert(systemCursorTable, "text", "text");
-    g_hash_table_insert(systemCursorTable, "forbidden", "not-allowed");
-    g_hash_table_insert(systemCursorTable, "grab", "grabbing");
-    g_hash_table_insert(systemCursorTable, "resizeLeftRight", "ew-resize");
-    g_hash_table_insert(systemCursorTable, "resizeUpDown", "ns-resize");
+    define_system_cursor("none", "none");
+    define_system_cursor("click", "pointer");
+    define_system_cursor("text", "text");
+    define_system_cursor("forbidden", "not-allowed");
+    define_system_cursor("grab", "grabbing");
+    define_system_cursor("resizeLeftRight", "ew-resize");
+    define_system_cursor("resizeUpDown", "ns-resize");
   }
 
-  const gchar* cursor_name = g_hash_table_lookup(systemCursorTable, kind);
+  const gchar* cursor_name = (const gchar*)g_hash_table_lookup(systemCursorTable, kind);
   if (cursor_name == nullptr) // Including "basic" kind
     cursor_name = "default";
 
