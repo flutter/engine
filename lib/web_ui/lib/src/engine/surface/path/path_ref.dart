@@ -422,6 +422,7 @@ class PathRef {
     final int pointCount = source.countPoints();
     final int curLength = _fPointsLength;
     final int newPointCount = curLength + pointCount;
+    startEdit();
     _resizePoints(newPointCount);
     final Float32List sourcePoints = source.points;
     for (int source = pointCount * 2 - 1, dst = newPointCount * 2 - 1;

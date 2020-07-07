@@ -1013,14 +1013,14 @@ class SurfacePath implements ui.Path {
       // of a side and the radii on that side (for all four sides) and use
       // that to scale down _all_ the radii. This algorithm is from the
       // W3 spec (http://www.w3.org/TR/css3-background/) section 5.5
-      final double tlRadiusX = rrect.tlRadiusX;
-      final double trRadiusX = rrect.trRadiusX;
-      final double blRadiusX = rrect.blRadiusX;
-      final double brRadiusX = rrect.brRadiusX;
-      final double tlRadiusY = rrect.tlRadiusY;
-      final double trRadiusY = rrect.trRadiusY;
-      final double blRadiusY = rrect.blRadiusY;
-      final double brRadiusY = rrect.brRadiusY;
+      final double tlRadiusX = math.max(0, rrect.tlRadiusX);
+      final double trRadiusX = math.max(0, rrect.trRadiusX);
+      final double blRadiusX = math.max(0, rrect.blRadiusX);
+      final double brRadiusX = math.max(0, rrect.brRadiusX);
+      final double tlRadiusY = math.max(0, rrect.tlRadiusY);
+      final double trRadiusY = math.max(0, rrect.trRadiusY);
+      final double blRadiusY = math.max(0, rrect.blRadiusY);
+      final double brRadiusY = math.max(0, rrect.brRadiusY);
       double scale = _computeMinScale(tlRadiusX, trRadiusX, width, 1.0);
       scale = _computeMinScale(blRadiusX, brRadiusX, width, scale);
       scale = _computeMinScale(tlRadiusY, trRadiusY, height, scale);

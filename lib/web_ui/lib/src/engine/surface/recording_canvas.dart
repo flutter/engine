@@ -1099,12 +1099,18 @@ class PaintDrawDRRect extends DrawCommand {
   final ui.RRect outer;
   final ui.RRect inner;
   final SurfacePaintData paint;
-
-  PaintDrawDRRect(this.outer, this.inner, this.paint);
+  ui.Path? path;
+  PaintDrawDRRect(this.outer, this.inner, this.paint) {
+    path = ui.Path()
+      ..fillType = ui.PathFillType.evenOdd
+      ..addRRect(outer)
+      ..addRRect(inner)
+      ..close();
+  }
 
   @override
   void apply(EngineCanvas? canvas) {
-    canvas!.drawDRRect(outer, inner, paint);
+    canvas!.drawPath(path!, paint);
   }
 
   @override
