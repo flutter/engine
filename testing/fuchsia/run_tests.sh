@@ -76,31 +76,31 @@ echo "$(date) END:EXTRACT_PACKAGES  ---------------------------------"
 
 
 # TODO(gw280): Enable tests using JIT runner
-echo "$(date) START:flutter_runner_tests ----------------------------"
-./fuchsia_ctl -d $device_name test \
-    -f flutter_aot_runner-0.far    \
-    -f flutter_runner_tests-0.far  \
-    -t flutter_runner_tests        \
-    --identity-file $pkey \
-    --timeout-seconds $test_timeout_seconds \
-    --packages-directory packages
+# echo "$(date) START:flutter_runner_tests ----------------------------"
+# ./fuchsia_ctl -d $device_name test \
+#     -f flutter_aot_runner-0.far    \
+#     -f flutter_runner_tests-0.far  \
+#     -t flutter_runner_tests        \
+#     --identity-file $pkey \
+#     --timeout-seconds $test_timeout_seconds \
+#     --packages-directory packages
 
-./fuchsia_ctl -d $device_name test \
-    -f flutter_aot_runner-0.far    \
-    -f flutter_runner_scenic_tests-0.far  \
-    -t flutter_runner_scenic_tests \
-    --identity-file $pkey \
-    --timeout-seconds $test_timeout_seconds \
-    --packages-directory packages
+# ./fuchsia_ctl -d $device_name test \
+#     -f flutter_aot_runner-0.far    \
+#     -f flutter_runner_scenic_tests-0.far  \
+#     -t flutter_runner_scenic_tests \
+#     --identity-file $pkey \
+#     --timeout-seconds $test_timeout_seconds \
+#     --packages-directory packages
 
-./fuchsia_ctl -d $device_name test \
-    -f flutter_aot_runner-0.far    \
-    -f flutter_runner_tzdata_tests-0.far  \
-    -t flutter_runner_tzdata_tests \
-    --identity-file $pkey \
-    --timeout-seconds $test_timeout_seconds \
-    --packages-directory packages
-echo "$(date) DONE:flutter_runner_tests -----------------------------"
+# ./fuchsia_ctl -d $device_name test \
+#     -f flutter_aot_runner-0.far    \
+#     -f flutter_runner_tzdata_tests-0.far  \
+#     -t flutter_runner_tzdata_tests \
+#     --identity-file $pkey \
+#     --timeout-seconds $test_timeout_seconds \
+#     --packages-directory packages
+# echo "$(date) DONE:flutter_runner_tests -----------------------------"
 
 echo "$(date) START:testing_tests -----------------------------------"
 ./fuchsia_ctl -d $device_name test \
