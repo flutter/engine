@@ -6,24 +6,25 @@
 /// - https://www.unicode.org/Public/13.0.0/ucd/auxiliary/LineBreakTest.txt
 final List<TestCase> data = _rawData.map(_parse).toList();
 
-final RegExp sp = RegExp(r'\s+');
-final RegExp sign = RegExp(r'([×÷])\s+\[(\d+\.\d+)\]\s*');
-final RegExp char = RegExp(
+final RegExp spaceRegex = RegExp(r'\s+');
+final RegExp signRegex = RegExp(r'([×÷])\s+\[(\d+\.\d+)\]\s*');
+final RegExp charRegex = RegExp(
   r'([A-Z0-9-]+(?:\s+[A-Z0-9-]+)*)\s+\(([A-Z0-9_]+)\)\s*',
   caseSensitive: false,
 );
-final RegExp charWithBrackets = RegExp(
+final RegExp charWithBracketsRegex = RegExp(
   r'(\<[A-Z0-9()-]+(?:\s+[A-Z0-9()-]+)*\>)\s+\(([A-Z0-9_]+)\)\s*',
   caseSensitive: false,
 );
 
 TestCase _parse(String line) {
   final int hashIndex = line.indexOf('#');
-  final List<String> sequence = line.substring(0, hashIndex).trim().split(sp);
+  final List<String> sequence =
+      line.substring(0, hashIndex).trim().split(spaceRegex);
   final String explanation = line.substring(hashIndex + 1).trim();
 
   final List<Sign> signs = <Sign>[];
-  final Match signMatch = sign.matchAsPrefix(explanation)!;
+  final Match signMatch = signRegex.matchAsPrefix(explanation)!;
   signs.add(Sign._(code: signMatch.group(1)!, rule: signMatch.group(2)!));
 
   final List<Char> chars = <Char>[];
@@ -31,8 +32,8 @@ TestCase _parse(String line) {
   int i = signMatch.group(0)!.length;
   while (i < explanation.length) {
     final Match charMatch = explanation[i] == '<'
-        ? charWithBrackets.matchAsPrefix(explanation, i)!
-        : char.matchAsPrefix(explanation, i)!;
+        ? charWithBracketsRegex.matchAsPrefix(explanation, i)!
+        : charRegex.matchAsPrefix(explanation, i)!;
     final int charCode = int.parse(sequence[2 * chars.length + 1], radix: 16);
     chars.add(Char._(
       code: charCode,
@@ -41,7 +42,7 @@ TestCase _parse(String line) {
     ));
     i += charMatch.group(0)!.length;
 
-    final Match signMatch = sign.matchAsPrefix(explanation, i)!;
+    final Match signMatch = signRegex.matchAsPrefix(explanation, i)!;
     signs.add(Sign._(code: signMatch.group(1)!, rule: signMatch.group(2)!));
     i += signMatch.group(0)!.length;
   }
