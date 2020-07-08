@@ -861,6 +861,10 @@ typedef struct {
   const char* variant_code;
 } FlutterLocale;
 
+typedef std::unique_ptr<std::vector<std::string>> (
+    *FlutterComputePlatformResolvedLocaleCallback)(
+    const std::vector<std::string>& /* supported_locales_data*/);
+
 typedef int64_t FlutterEngineDartPort;
 
 typedef enum {
@@ -1205,6 +1209,9 @@ typedef struct {
   ///
   /// Embedders can provide either snapshot buffers or aot_data, but not both.
   FlutterEngineAOTData aot_data;
+
+  FlutterComputePlatformResolvedLocaleCallback
+      compute_platform_resolved_locale_callback;
 } FlutterProjectArgs;
 
 //------------------------------------------------------------------------------
