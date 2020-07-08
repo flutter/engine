@@ -305,17 +305,19 @@ class EditingState {
   ///
   /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
   /// the [InputType] of the text field.
-  factory EditingState.fromDomElement(html.HtmlElement? domElement) {
+  factory EditingState.fromDomElement(html.HtmlElement? domElement,
+      {TextCapitalizationUtil textCapitalization =
+          const TextCapitalizationUtil.defaultCapitalization()}) {
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
       return EditingState(
-          text: element.value,
+          text: textCapitalization.capitializeTextValue(element.value),
           baseOffset: element.selectionStart,
           extentOffset: element.selectionEnd);
     } else if (domElement is html.TextAreaElement) {
       html.TextAreaElement element = domElement;
       return EditingState(
-          text: element.value,
+          text: textCapitalization.capitializeTextValue(element.value),
           baseOffset: element.selectionStart,
           extentOffset: element.selectionEnd);
     } else {
@@ -706,7 +708,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   void _handleChange(html.Event event) {
     assert(isEnabled);
 
-    EditingState newEditingState = EditingState.fromDomElement(domElement);
+    EditingState newEditingState = EditingState.fromDomElement(domElement,
+        textCapitalization: _inputConfiguration.textCapitalization);
 
     if (newEditingState != _lastEditingState) {
       _lastEditingState = newEditingState;
@@ -1487,6 +1490,12 @@ enum TextCapitalization {
 class TextCapitalizationUtil {
   final TextCapitalization textCapitalization;
 
+  static final RegExp wordExp = new RegExp(r"(\w+)");
+  static final RegExp whiteSpaceExp = new RegExp(r"(\s+)");
+
+  const TextCapitalizationUtil.defaultCapitalization()
+      : textCapitalization = TextCapitalization.none;
+
   // TODO: support sentence level text capitalization.
   TextCapitalizationUtil.fromInputConfiguration(String inputConfiguration)
       : this.textCapitalization =
@@ -1511,6 +1520,52 @@ class TextCapitalizationUtil {
       default:
         elementStyle.textTransform = 'lowercase';
         break;
+    }
+  }
+
+  /// Change the capitalization of the focused text field's value depending on
+  /// the [TextCapitalization].
+  ///
+  /// For [TextCapitalization.words], this method makes all first letter of each
+  /// word uppercase.
+  ///
+  /// For [TextCapitalization.characters], this method makes all letters of each
+  /// word uppercase.
+  ///
+  /// For [TextCapitalization.sentence] is not supported for now.
+  String capitializeTextValue(String value) {
+    if (value.isEmpty) {
+      return value;
+    }
+    switch (textCapitalization) {
+      case TextCapitalization.words:
+        final Iterable<RegExpMatch> wordMatches = wordExp.allMatches(value);
+        final List<String> words = wordMatches.map((RegExpMatch match) {
+          final String? word = match.group(0);
+          return (word == null) ? '' : word;
+        }).toList();
+        final Iterable<RegExpMatch> whiteSpaceMatches =
+            whiteSpaceExp.allMatches(value);
+        final List<String> whiteSpaces =
+            whiteSpaceMatches.map((RegExpMatch match) {
+          final String? word = match.group(0);
+          return (word == null) ? '' : word;
+        }).toList();
+        final StringBuffer textValueBuffer = new StringBuffer();
+        for (int i = 0; i < words.length && !words[i].isEmpty; i++) {
+          final String word = words[i];
+          textValueBuffer.write('${word[0].toUpperCase()}${word.substring(1)}');
+          if (whiteSpaces.length > i) {
+            textValueBuffer.write(whiteSpaces[i]);
+          }
+        }
+        return textValueBuffer.toString();
+      case TextCapitalization.characters:
+        return value.toUpperCase();
+      case TextCapitalization.sentences:
+      case TextCapitalization.none:
+      default:
+        return value;
     }
   }
 }

@@ -875,7 +875,7 @@ void main() {
 
     test(
         'Word capitilization: setClient, setEditingState, show, '
-        'setEditingState, clearClient', () {
+        'updateEditingState', () {
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> capitilizeWordsConfig =
           createFlutterConfig('text',
@@ -895,12 +895,32 @@ void main() {
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
+      spy.messages.clear();
 
       expect(textEditing.editingElement.domElement.style.textTransform,
           'capitalize');
 
-      const MethodCall clearClient = MethodCall('TextInput.clearClient');
-      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+      final InputElement element = textEditing.editingElement.domElement;
+      element.value = 'something some test';
+      element.dispatchEvent(Event.eventType('Event', 'input'));
+
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName, 'TextInputClient.updateEditingState');
+      expect(
+        spy.messages[0].methodArguments,
+        <dynamic>[
+          123, // Client ID
+          <String, dynamic>{
+            'text': 'Something Some Test',
+            'selectionBase': 19,
+            'selectionExtent': 19,
+          },
+        ],
+      );
+
+      spy.messages.clear();
+      hideKeyboard();
     });
 
     test(
