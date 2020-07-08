@@ -76,22 +76,22 @@ echo "$(date) END:EXTRACT_PACKAGES  ---------------------------------"
 
 
 # TODO(gw280): Enable tests using JIT runner
-# echo "$(date) START:flutter_runner_tests ----------------------------"
-# ./fuchsia_ctl -d $device_name test \
-#     -f flutter_aot_runner-0.far    \
-#     -f flutter_runner_tests-0.far  \
-#     -t flutter_runner_tests        \
-#     --identity-file $pkey \
-#     --timeout-seconds $test_timeout_seconds \
-#     --packages-directory packages
+echo "$(date) START:flutter_runner_tests ----------------------------"
+./fuchsia_ctl -d $device_name test \
+    -f flutter_aot_runner-0.far    \
+    -f flutter_runner_tests-0.far  \
+    -t flutter_runner_tests        \
+    --identity-file $pkey \
+    --timeout-seconds $test_timeout_seconds \
+    --packages-directory packages
 
-# ./fuchsia_ctl -d $device_name test \
-#     -f flutter_aot_runner-0.far    \
-#     -f flutter_runner_scenic_tests-0.far  \
-#     -t flutter_runner_scenic_tests \
-#     --identity-file $pkey \
-#     --timeout-seconds $test_timeout_seconds \
-#     --packages-directory packages
+./fuchsia_ctl -d $device_name test \
+    -f flutter_aot_runner-0.far    \
+    -f flutter_runner_scenic_tests-0.far  \
+    -t flutter_runner_scenic_tests \
+    --identity-file $pkey \
+    --timeout-seconds $test_timeout_seconds \
+    --packages-directory packages
 
 # ./fuchsia_ctl -d $device_name test \
 #     -f flutter_aot_runner-0.far    \
@@ -100,7 +100,7 @@ echo "$(date) END:EXTRACT_PACKAGES  ---------------------------------"
 #     --identity-file $pkey \
 #     --timeout-seconds $test_timeout_seconds \
 #     --packages-directory packages
-# echo "$(date) DONE:flutter_runner_tests -----------------------------"
+echo "$(date) DONE:flutter_runner_tests -----------------------------"
 
 echo "$(date) START:testing_tests -----------------------------------"
 ./fuchsia_ctl -d $device_name test \
@@ -111,14 +111,14 @@ echo "$(date) START:testing_tests -----------------------------------"
    --packages-directory packages
 echo "$(date) DONE:testing_tests ------------------------------------"
 
-echo "$(date) START:txt_tests ---------------------------------------"
-./fuchsia_ctl -d $device_name test \
-   -f txt_tests-0.far  \
-   -t txt_tests \
-   --identity-file $pkey \
-   --timeout-seconds $test_timeout_seconds \
-   --packages-directory packages
-echo "$(date) DONE:txt_tests ----------------------------------------"
+# echo "$(date) START:txt_tests ---------------------------------------"
+# ./fuchsia_ctl -d $device_name test \
+#    -f txt_tests-0.far  \
+#    -t txt_tests \
+#    --identity-file $pkey \
+#    --timeout-seconds $test_timeout_seconds \
+#    --packages-directory packages
+# echo "$(date) DONE:txt_tests ----------------------------------------"
 
 # TODO(https://github.com/flutter/flutter/issues/57709): Re-enable FileTest's
 # once they pass on Fuchsia.
