@@ -16,7 +16,7 @@ FLUTTER_ASSERT_ARC
 @end
 
 @interface FlutterTextInputPlugin ()
-@property(nonatomic, retain) FlutterTextInputView* singleInputView;
+@property(nonatomic, retain) FlutterTextInputView* reusableInputView;
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 @end
@@ -238,21 +238,21 @@ FLUTTER_ASSERT_ARC
     XCTAssertEqual(oldContext[key], textInputPlugin.autofillContext[key]);
   }
 
-  // Switch to a password field that has no contentType, nor in an AutofillGroup.
+  // Switch to a password field that has no contentType and is not in an AutofillGroup.
   config = self.mutableTemplateCopy;
   [config setValue:@"YES" forKey:@"obscureText"];
 
   oldContext = textInputPlugin.autofillContext;
   [self setClientId:124 configuration:config];
 
-  XCTAssertEqual(textInputPlugin.autofillContext.count, 4);
+  XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
   XCTAssertEqual(self.installedInputViews.count, 4);
 
   // Old autofill input fields are still installed and reused.
   for (NSString* key in oldContext.allKeys) {
     XCTAssertEqual(oldContext[key], textInputPlugin.autofillContext[key]);
   }
-  // The active view changes.
+  // The active view should change.
   XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
 
   // Switch to a similar password field, the previous field should be reused.
@@ -260,7 +260,7 @@ FLUTTER_ASSERT_ARC
   [self setClientId:200 configuration:config];
 
   // Reuse the input view instance from the last time.
-  XCTAssertEqual(textInputPlugin.autofillContext.count, 4);
+  XCTAssertEqual(textInputPlugin.autofillContext.count, 3);
   XCTAssertEqual(self.installedInputViews.count, 4);
 
   // Old autofill input fields are still installed and reused.
@@ -304,12 +304,12 @@ FLUTTER_ASSERT_ARC
   // Now switch to a regular field (no autofill).
   [self setClientId:125 configuration:self.mutableTemplateCopy];
 
-  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.singleInputView);
+  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   XCTAssertEqual(self.installedInputViews.count, 3);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 2);
 
   [self commitAutofillContext];
-  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.singleInputView);
+  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
   XCTAssertEqual(self.installedInputViews.count, 1);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 0);
 }
