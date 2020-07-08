@@ -85,18 +85,20 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
   std::unordered_map<int64_t, std::list<SkRect>> overlay_layers;
   std::unordered_map<int64_t, sk_sp<SkPicture>> pictures;
   SkCanvas* background_canvas = frame->SkiaCanvas();
+  auto current_frame_view_count = composition_order_.size();
 
   // Restore the clip context after exiting this method since it's changed
   // below.
   SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
 
-  for (size_t i = 0; i < composition_order_.size(); i++) {
+  for (size_t i = 0; i < current_frame_view_count; i++) {
     int64_t view_id = composition_order_[i];
 
     sk_sp<SkPicture> picture =
         picture_recorders_.at(view_id)->finishRecordingAsPicture();
     FML_CHECK(picture);
     pictures.insert({view_id, picture});
+
     overlay_layers.insert({view_id, {}});
 
     sk_sp<RTree> rtree = view_rtrees_.at(view_id);
@@ -142,8 +144,15 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
     background_canvas->drawPicture(pictures.at(view_id));
   }
   // Submit the background canvas frame before switching the GL context to
-  // the surfaces above.
-  frame->Submit();
+  // the overlay surfaces.
+  //
+  // Skip a frame if the embedding is switching surfaces, and indicate in
+  // `PostPrerollAction` that this frame must be resubmitted.
+  auto should_submit_current_frame =
+      previous_frame_view_count_ > 0 || current_frame_view_count == 0;
+  if (should_submit_current_frame) {
+    frame->Submit();
+  }
 
   for (int64_t view_id : composition_order_) {
     SkRect view_rect = GetViewRect(view_id);
@@ -161,12 +170,15 @@ bool AndroidExternalViewEmbedder::SubmitFrame(
         params.mutatorsStack()  //
     );
     for (const SkRect& overlay_rect : overlay_layers.at(view_id)) {
-      CreateSurfaceIfNeeded(context,               //
-                            view_id,               //
-                            pictures.at(view_id),  //
-                            overlay_rect           //
-                            )
-          ->Submit();
+      std::unique_ptr<SurfaceFrame> frame =
+          CreateSurfaceIfNeeded(context,               //
+                                view_id,               //
+                                pictures.at(view_id),  //
+                                overlay_rect           //
+          );
+      if (should_submit_current_frame) {
+        frame->Submit();
+      }
     }
   }
   return true;
@@ -222,6 +234,10 @@ PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
       CancelFrame();
       return PostPrerollResult::kResubmitFrame;
     }
+    // Surface switch requires to resubmit the frame.
+    if (previous_frame_view_count_ == 0) {
+      return PostPrerollResult::kResubmitFrame;
+    }
   }
   return PostPrerollResult::kSuccess;
 }
@@ -233,6 +249,8 @@ SkCanvas* AndroidExternalViewEmbedder::GetRootCanvas() {
 }
 
 void AndroidExternalViewEmbedder::Reset() {
+  previous_frame_view_count_ = composition_order_.size();
+
   composition_order_.clear();
   picture_recorders_.clear();
 }
@@ -244,6 +262,9 @@ void AndroidExternalViewEmbedder::BeginFrame(
     double device_pixel_ratio,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   Reset();
+
+  // The surface size changed. Therefore, destroy existing surfaces as
+  // the existing surfaces in the pool can't be recycled.
   if (frame_size_ != frame_size) {
     surface_pool_->DestroyLayers(jni_facade_);
   }
