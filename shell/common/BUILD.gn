@@ -150,25 +150,6 @@ template("shell_host_executable") {
   }
 }
 
-test_fixtures("shell_unittests_fixtures") {
-  dart_main = "fixtures/shell_test.dart"
-
-  fixtures = [ "fixtures/shelltest_screenshot.png" ]
-}
-
-shell_host_executable("shell_benchmarks") {
-  sources = [
-    "shell_benchmarks.cc",
-  ]
-
-  deps = [
-    ":shell_unittests_fixtures",
-    "//flutter/benchmarking",
-    "//flutter/testing:dart",
-    "//flutter/testing:testing_lib",
-  ]
-}
-
 if (enable_unittests) {
   declare_args() {
     test_enable_vulkan = is_fuchsia
@@ -182,6 +163,25 @@ if (enable_unittests) {
     enable_vulkan = test_enable_vulkan
     enable_gl = test_enable_gl
     enable_metal = test_enable_metal
+  }
+
+  test_fixtures("shell_unittests_fixtures") {
+    dart_main = "fixtures/shell_test.dart"
+
+    fixtures = [ "fixtures/shelltest_screenshot.png" ]
+  }
+
+  shell_host_executable("shell_benchmarks") {
+    sources = [
+      "shell_benchmarks.cc",
+    ]
+
+    deps = [
+      ":shell_unittests_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/testing:dart",
+      "//flutter/testing:testing_lib",
+    ]
   }
 
   source_set_maybe_fuchsia_legacy("shell_test_fixture_sources") {

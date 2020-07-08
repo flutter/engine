@@ -157,6 +157,22 @@ if (enable_unittests) {
     ]
   }
 
+  executable("ui_benchmarks") {
+    testonly = true
+
+    sources = [
+      "ui_benchmarks.cc",
+    ]
+
+    deps = [
+      ":ui",
+      ":ui_unittests_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/shell/common",
+      "//flutter/testing:fixture_test",
+    ]
+  }
+
   source_set_maybe_fuchsia_legacy("ui_unittests_common") {
     testonly = true
 
@@ -185,22 +201,6 @@ if (enable_unittests) {
       ":ui",
       "//flutter/shell/common:shell_test_fixture_sources",
       "//flutter/testing:dart",
-      "//flutter/testing:fixture_test",
-    ]
-  }
-
-  executable("ui_benchmarks") {
-    testonly = true
-
-    sources = [
-      "ui_benchmarks.cc",
-    ]
-
-    deps = [
-      ":ui",
-      ":ui_unittests_fixtures",
-      "//flutter/benchmarking",
-      "//flutter/shell/common",
       "//flutter/testing:fixture_test",
     ]
   }

@@ -230,6 +230,20 @@ if (enable_unittests) {
     fixtures = []
   }
 
+  executable("fml_benchmarks") {
+    testonly = true
+
+    sources = [
+      "message_loop_task_queues_benchmark.cc",
+    ]
+
+    deps = [
+      "//flutter/benchmarking",
+      "//flutter/fml",
+      "//flutter/runtime:libdart",
+    ]
+  }
+
   executable("fml_unittests") {
     testonly = true
 
@@ -289,19 +303,5 @@ if (enable_unittests) {
 
       binary = "fml_unittests"
     }
-  }
-
-  executable("fml_benchmarks") {
-    testonly = true
-
-    sources = [
-      "message_loop_task_queues_benchmark.cc",
-    ]
-
-    deps = [
-      "//flutter/benchmarking",
-      "//flutter/fml",
-      "//flutter/runtime:libdart",
-    ]
   }
 }
