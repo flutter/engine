@@ -69,9 +69,7 @@ gboolean fl_renderer_setup(FlRenderer* self, GError** error);
  *
  * Returns: a #GdkVisual.
  */
-GdkVisual* fl_renderer_get_visual(FlRenderer* self,
-                                  GdkScreen* screen,
-                                  GError** error);
+GdkVisual* fl_renderer_get_visual(FlRenderer* self, GdkScreen* screen);
 
 /**
  * fl_renderer_start:

@@ -105,25 +105,21 @@ gboolean fl_renderer_setup(FlRenderer* self, GError** error) {
   return TRUE;
 }
 
-GdkVisual* fl_renderer_get_visual(FlRenderer* self,
-                                  GdkScreen* screen,
-                                  GError** error) {
+GdkVisual* fl_renderer_get_visual(FlRenderer* self, GdkScreen* screen) {
   FlRendererPrivate* priv =
       static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
 
   EGLint visual_id;
   if (!eglGetConfigAttrib(priv->egl_display, priv->egl_config,
                           EGL_NATIVE_VISUAL_ID, &visual_id)) {
-    g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to determine EGL configuration visual");
+    g_warning("Failed to determine EGL configuration visual");
     return nullptr;
   }
 
   GdkVisual* visual =
       FL_RENDERER_GET_CLASS(self)->get_visual(self, screen, visual_id);
   if (visual == nullptr) {
-    g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to find visual 0x%x", visual_id);
+    g_warning("Failed to find visual 0x%x", visual_id);
     return nullptr;
   }
 
