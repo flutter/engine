@@ -29,12 +29,7 @@ gboolean fl_renderer_setup(FlRenderer* self, GError** error) {
   FlRendererPrivate* priv =
       static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
 
-  // Note the use of EGL_DEFAULT_DISPLAY rather than sharing an existing
-  // display connection (e.g. an X11 connection from GTK). This is because
-  // this EGL display is going to be accessed by a thread from Flutter. In the
-  // case of GTK/X11 the display connection is not thread safe and this would
-  // cause a crash.
-  priv->egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  priv->egl_display = FL_RENDERER_GET_CLASS(self)->create_display(self);
 
   if (!eglInitialize(priv->egl_display, nullptr, nullptr)) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,

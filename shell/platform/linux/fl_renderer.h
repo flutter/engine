@@ -47,6 +47,11 @@ struct _FlRendererClass {
   void (*set_window)(FlRenderer* renderer, GdkWindow* window);
 
   /**
+   * Virtual method to create a new EGL display.
+   */
+  EGLDisplay (*create_display)(FlRenderer* renderer);
+
+  /**
    * Virtual method called when Flutter needs a surface to render to.
    * @visible: (out): the visible surface that is created.
    * @resource: (out): the resource surface that is created.
