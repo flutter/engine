@@ -35,10 +35,11 @@ G_DECLARE_DERIVABLE_TYPE(FlRenderer, fl_renderer, FL, RENDERER, GObject)
 struct _FlRendererClass {
   GObjectClass parent_class;
 
-  // Virtual method called to get the visual that matches the given ID.
+  // Virtual method called to get the required visual
   GdkVisual* (*get_visual)(FlRenderer* renderer,
                            GdkScreen* screen,
-                           EGLint visual_id);
+                           EGLDisplay display,
+                           EGLConfig config);
 
   // Virtual method called when Flutter needs a surface to render to.
   EGLSurface (*create_surface)(FlRenderer* renderer,

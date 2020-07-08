@@ -13,7 +13,8 @@ G_DEFINE_TYPE(FlMockRenderer, fl_mock_renderer, fl_renderer_get_type())
 // Implements FlRenderer::get_visual.
 static GdkVisual* fl_mock_renderer_get_visual(FlRenderer* renderer,
                                               GdkScreen* screen,
-                                              EGLint visual_id) {
+                                              EGLDisplay display,
+                                              EGLConfig config) {
   return static_cast<GdkVisual*>(g_object_new(GDK_TYPE_VISUAL, nullptr));
 }
 

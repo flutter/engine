@@ -23,8 +23,22 @@ static void fl_renderer_x11_dispose(GObject* object) {
 // Implments FlRenderer::get_visual.
 static GdkVisual* fl_renderer_x11_get_visual(FlRenderer* renderer,
                                              GdkScreen* screen,
-                                             EGLint visual_id) {
-  return gdk_x11_screen_lookup_visual(GDK_X11_SCREEN(screen), visual_id);
+                                             EGLDisplay display,
+                                             EGLConfig config) {
+  EGLint visual_id;
+  if (!eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &visual_id)) {
+    g_warning("Failed to determine EGL configuration visual");
+    return nullptr;
+  }
+
+  GdkVisual* visual =
+      gdk_x11_screen_lookup_visual(GDK_X11_SCREEN(screen), visual_id);
+  if (visual == nullptr) {
+    g_warning("Failed to find visual 0x%x", visual_id);
+    return nullptr;
+  }
+
+  return visual;
 }
 
 // Implments FlRenderer::create_surface.
