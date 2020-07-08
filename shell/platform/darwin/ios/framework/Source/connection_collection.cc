@@ -29,4 +29,18 @@ std::string ConnectionCollection::CleanupConnection(
   }
   return "";
 }
+
+bool ConnectionCollection::IsValidConnection(
+    ConnectionCollection::Connection connection) {
+  return connection > 0;
+}
+
+ConnectionCollection::Connection ConnectionCollection::MakeErrorConnection(
+    int errCode) {
+  if (errCode < 0) {
+    return -1 * errCode;
+  }
+  return errCode;
+}
+
 }  // namespace flutter

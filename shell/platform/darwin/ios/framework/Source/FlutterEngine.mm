@@ -706,7 +706,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   } else {
     NSAssert(!handler, @"Setting a message handler before the FlutterEngine has been run.");
     // Setting a handler to nil for a not setup channel is a noop.
-    return -1;
+    return flutter::ConnectionCollection::MakeErrorConnection(-1);
   }
 }
 

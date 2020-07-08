@@ -15,10 +15,16 @@ namespace flutter {
 class ConnectionCollection {
  public:
   typedef int64_t Connection;
+  static const Connection kInvalidConnection = 0;
+
   Connection AquireConnection(const std::string& name);
   ///\returns the name of the channel when cleanup is successful, otherwise
   ///         the empty string.
   std::string CleanupConnection(Connection connection);
+
+  static bool IsValidConnection(Connection connection);
+
+  static Connection MakeErrorConnection(int errCode);
 
  private:
   std::map<std::string, Connection> connections_;
