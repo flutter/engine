@@ -196,7 +196,7 @@ void _expectDrawDRRectCall(
   MockCanvasCall mockCall = mock.methodCallLog[0];
   expect(mockCall.methodName, equals('drawPath'));
   Map<String, dynamic> argMap = mockCall.arguments as Map<String, dynamic>;
-  Map<String, dynamic> argContents = {};
+  Map<String, dynamic> argContents = <String, dynamic>{};
   argMap.forEach((String key, dynamic value) {
     argContents[key] = value is SurfacePath ? value.toString() : value;
   });
