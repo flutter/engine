@@ -21,29 +21,6 @@ typedef struct {
 
 G_DEFINE_TYPE_WITH_PRIVATE(FlRenderer, fl_renderer, G_TYPE_OBJECT)
 
-// Creates a resource surface.
-static void create_resource_surface(FlRenderer* self, EGLConfig config) {
-  FlRendererPrivate* priv =
-      static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
-
-  EGLint context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
-  const EGLint resource_context_attribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1,
-                                             EGL_NONE};
-  priv->resource_surface = eglCreatePbufferSurface(priv->egl_display, config,
-                                                   resource_context_attribs);
-  if (priv->resource_surface == EGL_NO_SURFACE) {
-    g_warning("Failed to create EGL resource surface: %s",
-              egl_error_to_string(eglGetError()));
-    return;
-  }
-
-  priv->resource_context = eglCreateContext(
-      priv->egl_display, config, priv->egl_context, context_attributes);
-  if (priv->resource_context == EGL_NO_CONTEXT)
-    g_warning("Failed to create EGL resource context: %s",
-              egl_error_to_string(eglGetError()));
-}
-
 static void fl_renderer_class_init(FlRendererClass* klass) {}
 
 static void fl_renderer_init(FlRenderer* self) {}
@@ -127,32 +104,39 @@ gboolean fl_renderer_start(FlRenderer* self, GError** error) {
   FlRendererPrivate* priv =
       static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
 
-  priv->egl_surface = FL_RENDERER_GET_CLASS(self)->create_surface(
+  EGLSurfacePair surfaces = FL_RENDERER_GET_CLASS(self)->create_surface(
       self, priv->egl_display, priv->egl_config);
-  if (priv->egl_surface == EGL_NO_SURFACE) {
+  priv->egl_surface = surfaces.visible;
+  priv->resource_surface = surfaces.resource;
+
+  if (priv->egl_surface == EGL_NO_SURFACE ||
+      priv->resource_surface == EGL_NO_SURFACE) {
     EGLint egl_error = eglGetError();  // must be before egl_config_to_string()
     g_autofree gchar* config_string =
         egl_config_to_string(priv->egl_display, priv->egl_config);
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to create EGL surface using configuration (%s): %s",
+                "Failed to create EGL surfaces using configuration (%s): %s",
                 config_string, egl_error_to_string(egl_error));
     return FALSE;
   }
 
   EGLint context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
+
   priv->egl_context = eglCreateContext(priv->egl_display, priv->egl_config,
                                        EGL_NO_CONTEXT, context_attributes);
-  if (priv->egl_context == EGL_NO_CONTEXT) {
+  priv->resource_context =
+      eglCreateContext(priv->egl_display, priv->egl_config, priv->egl_context,
+                       context_attributes);
+  if (priv->egl_context == EGL_NO_CONTEXT ||
+      priv->resource_context == EGL_NO_CONTEXT) {
     EGLint egl_error = eglGetError();  // must be before egl_config_to_string()
     g_autofree gchar* config_string =
         egl_config_to_string(priv->egl_display, priv->egl_config);
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to create EGL context using configuration (%s): %s",
+                "Failed to create EGL contexts using configuration (%s): %s",
                 config_string, egl_error_to_string(egl_error));
     return FALSE;
   }
-
-  create_resource_surface(self, priv->egl_config);
 
   return TRUE;
 }

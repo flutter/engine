@@ -19,10 +19,15 @@ static GdkVisual* fl_mock_renderer_get_visual(FlRenderer* renderer,
 }
 
 // Implements FlRenderer::create_surface.
-static EGLSurface fl_mock_renderer_create_surface(FlRenderer* renderer,
+static EGLSurfacePair fl_mock_renderer_create_surface(FlRenderer* renderer,
                                                   EGLDisplay display,
                                                   EGLConfig config) {
-  return eglCreateWindowSurface(display, config, 0, nullptr);
+  EGLSurface visible = eglCreateWindowSurface(display, config, 0, nullptr);
+  const EGLint attribs[] = {EGL_WIDTH, 1,
+                            EGL_HEIGHT, 1,
+                            EGL_NONE};
+  EGLSurface resource = eglCreatePbufferSurface(display, config, attribs);
+  return EGLSurfacePair{visible, resource};
 }
 
 static void fl_mock_renderer_class_init(FlMockRendererClass* klass) {

@@ -10,10 +10,10 @@ struct _FlRendererHeadless {
 
 G_DEFINE_TYPE(FlRendererHeadless, fl_renderer_headless, fl_renderer_get_type())
 
-static EGLSurface fl_renderer_headless_create_surface(FlRenderer* renderer,
-                                                      EGLDisplay display,
-                                                      EGLConfig config) {
-  return EGL_NO_SURFACE;
+static EGLSurfacePair fl_renderer_headless_create_surface(FlRenderer* renderer,
+                                                          EGLDisplay display,
+                                                          EGLConfig config) {
+  return EGLSurfacePair{EGL_NO_SURFACE, EGL_NO_SURFACE};
 }
 
 static void fl_renderer_headless_class_init(FlRendererHeadlessClass* klass) {

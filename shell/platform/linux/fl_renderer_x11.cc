@@ -50,12 +50,23 @@ static void fl_renderer_x11_set_window(FlRenderer* renderer,
 }
 
 // Implments FlRenderer::create_surface.
-static EGLSurface fl_renderer_x11_create_surface(FlRenderer* renderer,
-                                                 EGLDisplay display,
-                                                 EGLConfig config) {
+static EGLSurfacePair fl_renderer_x11_create_surface(FlRenderer* renderer,
+                                                     EGLDisplay display,
+                                                     EGLConfig config) {
+  static const EGLSurfacePair null_result{EGL_NO_SURFACE, EGL_NO_SURFACE};
+
   FlRendererX11* self = FL_RENDERER_X11(renderer);
-  return eglCreateWindowSurface(display, config,
-                                gdk_x11_window_get_xid(self->window), nullptr);
+  g_return_val_if_fail(self->window, null_result);
+
+  EGLSurface visible = eglCreateWindowSurface(
+      display, config, gdk_x11_window_get_xid(self->window), nullptr);
+  g_return_val_if_fail(visible != EGL_NO_SURFACE, null_result);
+
+  const EGLint attribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
+  EGLSurface resource = eglCreatePbufferSurface(display, config, attribs);
+  g_return_val_if_fail(resource != EGL_NO_SURFACE, null_result);
+
+  return EGLSurfacePair{visible, resource};
 }
 
 static void fl_renderer_x11_class_init(FlRendererX11Class* klass) {

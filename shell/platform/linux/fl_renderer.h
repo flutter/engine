@@ -13,6 +13,11 @@
 
 G_BEGIN_DECLS
 
+struct EGLSurfacePair {
+  EGLSurface visible;
+  EGLSurface resource;
+};
+
 /**
  * FlRendererError:
  * Errors for #FlRenderer objects to set on failures.
@@ -47,9 +52,9 @@ struct _FlRendererClass {
   void (*set_window)(FlRenderer* renderer, GdkWindow* window);
 
   // Virtual method called when Flutter needs a surface to render to.
-  EGLSurface (*create_surface)(FlRenderer* renderer,
-                               EGLDisplay display,
-                               EGLConfig config);
+  EGLSurfacePair (*create_surface)(FlRenderer* renderer,
+                                   EGLDisplay display,
+                                   EGLConfig config);
 };
 
 /**
