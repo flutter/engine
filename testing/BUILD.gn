@@ -162,6 +162,10 @@ if (enable_unittests) {
       ]
     }
 
+    test_fixtures("testing_fixtures") {
+      fixtures = []
+    }
+
     # The //flutter/testing library provides utility methods to other test targets.
     # This test target tests the testing utilities.
     executable("testing_unittests") {
@@ -176,6 +180,7 @@ if (enable_unittests) {
         ":metal",
         ":skia",
         ":testing",
+        ":testing_fixtures",
         "//flutter/runtime:libdart",
       ]
     }
