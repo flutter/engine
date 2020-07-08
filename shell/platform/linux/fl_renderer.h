@@ -46,10 +46,21 @@ struct _FlRendererClass {
    */
   void (*set_window)(FlRenderer* renderer, GdkWindow* window);
 
-  // Virtual method called when Flutter needs a surface to render to.
-  EGLSurface (*create_surface)(FlRenderer* renderer,
-                               EGLDisplay display,
-                               EGLConfig config);
+  /**
+   * Virtual method called when Flutter needs a surface to render to.
+   * @visible: (out): the visible surface that is created.
+   * @resource: (out): the resource surface that is created.
+   * @error: (allow-none): #GError location to store the error occurring, or
+   * %NULL to ignore.
+   *
+   * Returns: true if both surfaces were created, false if there was an error.
+   */
+  gboolean (*create_surfaces)(FlRenderer* renderer,
+                              EGLDisplay display,
+                              EGLConfig config,
+                              EGLSurface* visible,
+                              EGLSurface* resource,
+                              GError** error);
 };
 
 /**
