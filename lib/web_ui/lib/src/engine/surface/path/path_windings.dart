@@ -68,7 +68,7 @@ class PathWinding {
     if (y < y0 || y > y1) {
       return;
     }
-    if (_checkOnCurve(x, y, x0, y0, x1, y1)) {
+    if (_checkOnCurve(x, y, x0, startY, x1, endY)) {
       _onCurveCount++;
       return;
     }

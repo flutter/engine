@@ -343,7 +343,7 @@ void main() {
     });
 
     test('Should handle contains inclusive right,bottom coordinates', () {
-      Path path = Path();
+      final Path path = Path();
       path.moveTo(50, 60);
       path.lineTo(110, 60);
       path.lineTo(110, 190);
@@ -353,6 +353,20 @@ void main() {
       expect(path.contains(Offset(110, 80)), true);
       expect(path.contains(Offset(110, 190)), true);
       expect(path.contains(Offset(110, 191)), false);
+    });
+
+    test('Should not contain top-left of beveled border', () {
+      final Path path = Path();
+      path.moveTo(10, 25);
+      path.lineTo(15, 20);
+      path.lineTo(25, 20);
+      path.lineTo(30, 25);
+      path.lineTo(30, 35);
+      path.lineTo(25, 40);
+      path.lineTo(15, 40);
+      path.lineTo(10, 35);
+      path.close();
+      expect(path.contains(Offset(10, 20)), false);
     });
 
     // Regression test for https://github.com/flutter/flutter/issues/44470

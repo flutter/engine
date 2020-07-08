@@ -1211,7 +1211,7 @@ class SurfacePath implements ui.Path {
     }
     final int onCurveCount = windings.onCurveCount;
     if (onCurveCount <= 1) {
-      return (onCurveCount ^ (isInverse ? 1 : 0)) != 0;
+      return (onCurveCount != 0) ^ isInverse;
     }
     if ((onCurveCount & 1) != 0 || evenOddFill) {
       return (onCurveCount & 1) != 0 ^ (isInverse ? 1 : 0);
