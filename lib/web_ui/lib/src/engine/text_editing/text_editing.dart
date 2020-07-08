@@ -859,6 +859,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     } else {
       domRenderer.glassPaneElement!.append(domElement);
     }
+    inputConfig.textCapitalization.setAutocapitalizeAttribute(domElement);
   }
 
   @override
@@ -989,6 +990,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     } else {
       domRenderer.glassPaneElement!.append(domElement);
     }
+    inputConfig.textCapitalization.setAutocapitalizeAttribute(domElement);
   }
 
   @override
@@ -1592,6 +1594,49 @@ class TextCapitalizationUtil {
       case TextCapitalization.none:
       default:
         return value;
+    }
+  }
+
+  /// Sets `autocapitalize` attribute on input elements.
+  ///
+  /// This attribute is only available for mobile browsers.
+  ///
+  /// Note that in mobile browsers the onscreen keyboards provide sentence
+  /// level capitalization as default as apposed to no capitalization on desktop
+  /// browser.
+  ///
+  /// See: https://developers.google.com/web/updates/2015/04/autocapitalize
+  /// https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize
+  void setAutocapitalizeAttribute(html.HtmlElement domElement) {
+    String autocapitalize = '';
+    switch (textCapitalization) {
+      case TextCapitalization.words:
+        // TODO: There is a bug for `words` level capitalization in IOS now.
+        // For now go back to default. Remove the check after bug is resolved.
+        // https://bugs.webkit.org/show_bug.cgi?id=148504
+        if(browserEngine == BrowserEngine.webkit) {
+           autocapitalize = 'sentences';
+        } else {
+          autocapitalize = 'words';
+        }
+        break;
+      case TextCapitalization.characters:
+        autocapitalize = 'characters';
+        break;
+      case TextCapitalization.sentences:
+        autocapitalize = 'sentences';
+        break;
+      case TextCapitalization.none:
+      default:
+        autocapitalize = 'off';
+        break;
+    }
+    if (domElement is html.InputElement) {
+      html.InputElement element = domElement;
+      element.setAttribute('autocapitalize', autocapitalize);
+    } else if (domElement is html.TextAreaElement) {
+      html.TextAreaElement element = domElement;
+      element.setAttribute('autocapitalize', autocapitalize);
     }
   }
 }
