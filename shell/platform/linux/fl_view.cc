@@ -216,15 +216,19 @@ static void fl_view_realize(GtkWidget* widget) {
   window_attributes.width = allocation.width;
   window_attributes.height = allocation.height;
   window_attributes.wclass = GDK_INPUT_OUTPUT;
-  window_attributes.visual =
-      fl_renderer_get_visual(self->renderer, gtk_widget_get_screen(widget));
   window_attributes.event_mask =
       gtk_widget_get_events(widget) | GDK_EXPOSURE_MASK |
       GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK |
       GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK | GDK_SMOOTH_SCROLL_MASK |
       GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK;
 
-  gint window_attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL;
+  gint window_attributes_mask = GDK_WA_X | GDK_WA_Y;
+
+  window_attributes.visual =
+      fl_renderer_get_visual(self->renderer, gtk_widget_get_screen(widget));
+  if (window_attributes.visual) {
+    window_attributes_mask |= GDK_WA_VISUAL;
+  }
 
   GdkWindow* window =
       gdk_window_new(gtk_widget_get_parent_window(widget), &window_attributes,
