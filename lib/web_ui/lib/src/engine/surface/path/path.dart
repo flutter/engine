@@ -1547,6 +1547,51 @@ class SurfacePath implements ui.Path {
   /// Empty Path may have FillType but has no points, verbs or weights.
   /// Constructor, reset and rewind makes SkPath empty.
   bool get isEmpty => 0 == pathRef.countVerbs();
+
+  @override
+  String toString() {
+    if (assertionsEnabled) {
+      final StringBuffer sb = StringBuffer();
+      sb.write('Path(');
+      final PathRefIterator iter = PathRefIterator(pathRef);
+      final Float32List points = pathRef.points;
+      int verb;
+      while ((verb = iter.nextIndex()) != SPath.kDoneVerb) {
+        final int pIndex = iter.iterIndex;
+        switch (verb) {
+          case SPath.kMoveVerb:
+            sb.write('MoveTo(${points[pIndex]}, ${points[pIndex + 1]})');
+            break;
+          case SPath.kLineVerb:
+            sb.write('LineTo(${points[pIndex + 2]}, ${points[pIndex + 3]})');
+            break;
+          case SPath.kQuadVerb:
+            sb.write('Quad(${points[pIndex + 2]}, ${points[pIndex + 3]},'
+                ' ${points[pIndex + 3]}, ${points[pIndex + 4]})');
+            break;
+          case SPath.kConicVerb:
+            sb.write('Conic(${points[pIndex + 2]}, ${points[pIndex + 3]},'
+                ' ${points[pIndex + 3]}, ${points[pIndex + 4]}, w = ${iter.conicWeight})');
+            break;
+          case SPath.kCubicVerb:
+            sb.write('Cubic(${points[pIndex + 2]}, ${points[pIndex + 3]},'
+                ' ${points[pIndex + 3]}, ${points[pIndex + 4]}, '
+                ' ${points[pIndex + 5]}, ${points[pIndex + 6]})');
+            break;
+          case SPath.kCloseVerb:
+            sb.write('Close()');
+            break;
+        }
+        if (iter.peek() != SPath.kDoneVerb) {
+          sb.write(' ');
+        }
+      }
+      sb.write(')');
+      return sb.toString();
+    } else {
+      return super.toString();
+    }
+  }
 }
 
 // Returns Offset if arc is lone point and should be approximated with
