@@ -49,6 +49,11 @@ static void fl_renderer_x11_set_window(FlRenderer* renderer,
   self->window = GDK_X11_WINDOW(g_object_ref(window));
 }
 
+// Implements FlRenderer::create_display
+static EGLDisplay fl_renderer_x11_create_display(FlRenderer* /*renderer*/) {
+  return eglGetDisplay(EGL_DEFAULT_DISPLAY);
+}
+
 // Implments FlRenderer::create_surface.
 static EGLSurfacePair fl_renderer_x11_create_surface(FlRenderer* renderer,
                                                      EGLDisplay display,
@@ -73,6 +78,7 @@ static void fl_renderer_x11_class_init(FlRendererX11Class* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_renderer_x11_dispose;
   FL_RENDERER_CLASS(klass)->get_visual = fl_renderer_x11_get_visual;
   FL_RENDERER_CLASS(klass)->set_window = fl_renderer_x11_set_window;
+  FL_RENDERER_CLASS(klass)->create_display = fl_renderer_x11_create_display;
   FL_RENDERER_CLASS(klass)->create_surface = fl_renderer_x11_create_surface;
 }
 
