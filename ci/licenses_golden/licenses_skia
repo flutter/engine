@@ -1,4 +1,4 @@
-Signature: 225237a2b2f249907d7eef833d2adcdd
+Signature: f12f0ec082378068113c65d77d1ff11e
 
 UNUSED LICENSES:
 
@@ -2795,7 +2795,6 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkDropShadowImageFilter
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkTileImageFilter.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBlend.h
 FILE: ../../../third_party/skia/src/gpu/GrCaps.h
-FILE: ../../../third_party/skia/src/gpu/GrCoordTransform.h
 FILE: ../../../third_party/skia/src/gpu/GrGeometryProcessor.h
 FILE: ../../../third_party/skia/src/gpu/GrPaint.cpp
 FILE: ../../../third_party/skia/src/gpu/GrPathProcessor.cpp
