@@ -7,7 +7,6 @@
 #include <windows.h>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/standard_method_codec.h"
-#include "flutter/shell/platform/windows/win32_flutter_window.h"
 
 static constexpr char kChannelName[] = "flutter/mousecursor";
 
@@ -17,43 +16,13 @@ static constexpr char kKindKey[] = "kind";
 
 namespace flutter {
 
-namespace {
-
-// Maps a Flutter cursor constant to an HCURSOR.
-//
-// Returns the arrow cursor for unknown constants.
-static HCURSOR GetCursorForKind(const std::string& kind) {
-  // The following mapping must be kept in sync with Flutter framework's
-  // mouse_cursor.dart
-  if (kind.compare("none") == 0) {
-    return nullptr;
-  }
-  const wchar_t* cursor_name = IDC_ARROW;
-  if (kind.compare("basic") == 0) {
-    cursor_name = IDC_ARROW;
-  } else if (kind.compare("click") == 0) {
-    cursor_name = IDC_HAND;
-  } else if (kind.compare("text") == 0) {
-    cursor_name = IDC_IBEAM;
-  } else if (kind.compare("forbidden") == 0) {
-    cursor_name = IDC_NO;
-  } else if (kind.compare("horizontalDoubleArrow") == 0) {
-    cursor_name = IDC_SIZEWE;
-  } else if (kind.compare("verticalDoubleArrow") == 0) {
-    cursor_name = IDC_SIZENS;
-  }
-  return ::LoadCursor(nullptr, cursor_name);
-}
-
-}  // namespace
-
 CursorHandler::CursorHandler(flutter::BinaryMessenger* messenger,
-                             Win32FlutterWindow* window)
+                             WindowBindingHandler* delegate)
     : channel_(std::make_unique<flutter::MethodChannel<EncodableValue>>(
           messenger,
           kChannelName,
           &flutter::StandardMethodCodec::GetInstance())),
-      window_(window) {
+      delegate_(delegate) {
   channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<EncodableValue>> result) {
@@ -74,7 +43,7 @@ void CursorHandler::HandleMethodCall(
                     "Missing argument while trying to activate system cursor");
     }
     const std::string& kind = kind_iter->second.StringValue();
-    window_->UpdateFlutterCursor(GetCursorForKind(kind));
+    delegate_->UpdateFlutterCursor(kind);
     result->Success();
   } else {
     result->NotImplemented();

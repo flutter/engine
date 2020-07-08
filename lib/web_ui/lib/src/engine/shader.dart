@@ -278,12 +278,10 @@ class EngineImageFilter implements ui.ImageFilter {
   final double sigmaY;
 
   @override
-  bool operator ==(dynamic other) {
-    if (other is! EngineImageFilter) {
-      return false;
-    }
-    final EngineImageFilter typedOther = other;
-    return sigmaX == typedOther.sigmaX && sigmaY == typedOther.sigmaY;
+  bool operator ==(Object other) {
+    return other is EngineImageFilter
+        && other.sigmaX == sigmaX
+        && other.sigmaY == sigmaY;
   }
 
   @override
@@ -311,12 +309,12 @@ js.JsObject? _skTileMode(ui.TileMode tileMode) {
 class EngineImageShader implements ui.ImageShader, EngineShader {
   EngineImageShader(
       ui.Image image, this.tileModeX, this.tileModeY, this.matrix4)
-      : _skImage = image as SkImage;
+      : _skImage = image as CkImage;
 
   final ui.TileMode tileModeX;
   final ui.TileMode tileModeY;
   final Float64List matrix4;
-  final SkImage _skImage;
+  final CkImage _skImage;
 
   js.JsObject? createSkiaShader() => _skImage.skImage!.callMethod(
       'makeShader', <dynamic>[_skTileMode(tileModeX), _skTileMode(tileModeY)]);

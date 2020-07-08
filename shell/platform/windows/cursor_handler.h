@@ -9,16 +9,15 @@
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/encodable_value.h"
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/method_channel.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
+#include "flutter/shell/platform/windows/window_binding_handler.h"
 
 namespace flutter {
-
-class Win32FlutterWindow;
 
 // Handler for the cursor system channel.
 class CursorHandler {
  public:
   explicit CursorHandler(flutter::BinaryMessenger* messenger,
-                         Win32FlutterWindow* window);
+                         WindowBindingHandler* delegate);
 
  private:
   // Called when a method is called on |channel_|;
@@ -29,8 +28,8 @@ class CursorHandler {
   // The MethodChannel used for communication with the Flutter engine.
   std::unique_ptr<flutter::MethodChannel<EncodableValue>> channel_;
 
-  // A reference to the win32 window.
-  Win32FlutterWindow* window_;
+  // The delegate for cursor updates.
+  WindowBindingHandler* delegate_;
 };
 
 }  // namespace flutter
