@@ -1192,7 +1192,12 @@ class SurfacePath implements ui.Path {
     if (pathRef.isEmpty) {
       return isInverse;
     }
-    if (!this.getBounds().contains(point)) {
+    // Check bounds including right/bottom.
+    final ui.Rect bounds = getBounds();
+    final double x = point.dx;
+    final double y = point.dy;
+    if (x < bounds.left || y < bounds.top || x > bounds.right ||
+        y > bounds.bottom) {
       return isInverse;
     }
     final PathWinding windings = PathWinding(pathRef, point.dx, point.dy);
@@ -1218,8 +1223,6 @@ class SurfacePath implements ui.Path {
     final Float32List _buffer = Float32List(8 + 10);
     List<ui.Offset> tangents = [];
     bool done = false;
-    final double x = point.dx;
-    final double y = point.dy;
     do {
       int oldCount = tangents.length;
       switch (iter.next(_buffer)) {
