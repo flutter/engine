@@ -114,8 +114,10 @@ class EngineAutofillForm {
     if (fields != null) {
       for (Map<String, dynamic> field in fields.cast<Map<String, dynamic>>()) {
         final Map<String, dynamic> autofillInfo = field['autofill'];
-        final AutofillInfo autofill =
-            AutofillInfo.fromFrameworkMessage(autofillInfo);
+        final AutofillInfo autofill = AutofillInfo.fromFrameworkMessage(
+            autofillInfo,
+            textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+                field['textCapitalization']));
 
         // The focused text editing element will not be created here.
         final AutofillInfo focusedElement =
@@ -169,17 +171,24 @@ class EngineAutofillForm {
     keys.forEach((String key) {
       final html.Element element = elements![key]!;
       subscriptions.add(element.onInput.listen((html.Event e) {
-        _handleChange(element, key);
+        if (items![key] == null) {
+          throw StateError(
+              'Autofill would not work withuot Autofill value set');
+        } else {
+          final AutofillInfo autofillInfo = items![key] as AutofillInfo;
+          _handleChange(element, autofillInfo);
+        }
       }));
     });
     return subscriptions;
   }
 
-  void _handleChange(html.Element domElement, String? tag) {
-    EditingState newEditingState =
-        EditingState.fromDomElement(domElement as html.HtmlElement?);
+  void _handleChange(html.Element domElement, AutofillInfo autofillInfo) {
+    EditingState newEditingState = EditingState.fromDomElement(
+        domElement as html.HtmlElement?,
+        textCapitalization: autofillInfo.textCapitalization);
 
-    _sendAutofillEditingState(tag, newEditingState);
+    _sendAutofillEditingState(autofillInfo.uniqueIdentifier, newEditingState);
   }
 
   /// Sends the 'TextInputClient.updateEditingStateWithTag' message to the framework.
@@ -210,7 +219,8 @@ class AutofillInfo {
   AutofillInfo(
       {required this.editingState,
       required this.uniqueIdentifier,
-      required this.hint});
+      required this.hint,
+      required this.textCapitalization});
 
   /// The current text and selection state of a text field.
   final EditingState editingState;
@@ -220,6 +230,19 @@ class AutofillInfo {
   /// Used as id of the text field.
   final String uniqueIdentifier;
 
+  /// Information on how should autofilled text capitalized.
+  ///
+  /// For example for [TextCapitalization.characters] each letter is converted
+  /// to upper case.
+  ///
+  /// This value is not necessary for autofilling the focused element since
+  /// [DefaultTextEditingStrategy._inputConfiguration] already has this
+  /// information.
+  ///
+  /// On the other hand for the multi element forms, for the input elements
+  /// other the focused field, we need to use this information.
+  final TextCapitalizationUtil textCapitalization;
+
   /// Attribute used for autofill.
   ///
   /// Used as a guidance to the browser as to the type of information expected
@@ -227,7 +250,9 @@ class AutofillInfo {
   /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
   final String hint;
 
-  factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill) {
+  factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill,
+      {TextCapitalizationUtil textCapitalization =
+          const TextCapitalizationUtil.defaultCapitalization()}) {
     assert(autofill != null); // ignore: unnecessary_null_comparison
     final String uniqueIdentifier = autofill['uniqueIdentifier']!;
     final List<dynamic> hintsList = autofill['hints'];
@@ -236,7 +261,8 @@ class AutofillInfo {
     return AutofillInfo(
         uniqueIdentifier: uniqueIdentifier,
         hint: BrowserAutofillHints.instance.flutterToEngine(hintsList[0]),
-        editingState: editingState);
+        editingState: editingState,
+        textCapitalization: textCapitalization);
   }
 
   void applyToDomElement(html.HtmlElement domElement,
