@@ -103,6 +103,10 @@ group("flutter") {
       "//flutter/third_party/txt:txt_unittests",
     ]
 
+    if (is_fuchsia) {
+      public_deps += [ "//flutter/shell/platform/fuchsia:tests" ]
+    }
+
     if (is_mac) {
       public_deps +=
           [ "//flutter/shell/platform/darwin:flutter_channels_unittests" ]
@@ -165,23 +169,12 @@ group("dist") {
   ]
 }
 
-# Fuchsia currently only supports a subset of our unit tests
-# When adding a new dep here, please also ensure the dep is added to
-# testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
 if (is_fuchsia) {
   group("fuchsia_tests") {
     testonly = true
 
     deps = [
-      "//flutter/flow:flow_tests",
-      "//flutter/flow:flow_tests_next",
-      "//flutter/fml:fml_tests",
-      "//flutter/runtime:runtime_tests",
-      "//flutter/runtime:runtime_tests_next",
-      "//flutter/shell/common:shell_tests",
-      "//flutter/shell/common:shell_tests_next",
-      "//flutter/shell/platform/fuchsia/flutter:flutter_runner_scenic_tests",
-      "//flutter/shell/platform/fuchsia/flutter:flutter_runner_tests",
+      "//flutter/shell/platform/fuchsia:tests",
     ]
   }
 }

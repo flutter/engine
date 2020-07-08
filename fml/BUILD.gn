@@ -5,9 +5,6 @@
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
-if (is_fuchsia) {
-  import("//flutter/tools/fuchsia/fuchsia_archive.gni")
-}
 
 source_set("fml") {
   sources = [
@@ -292,16 +289,6 @@ if (enable_unittests) {
     if (is_fuchsia) {
       libs =
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
-    }
-  }
-
-  if (is_fuchsia) {
-    fuchsia_test_archive("fml_tests") {
-      deps = [
-        ":fml_unittests",
-      ]
-
-      binary = "fml_unittests"
     }
   }
 }

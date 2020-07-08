@@ -5,9 +5,6 @@
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
-if (is_fuchsia) {
-  import("//flutter/tools/fuchsia/fuchsia_archive.gni")
-}
 
 source_set_maybe_fuchsia_legacy("ui") {
   sources = [
@@ -233,38 +230,6 @@ if (enable_unittests) {
       deps = [
         ":ui_unittests_common",
       ]
-    }
-  }
-
-  if (is_fuchsia) {
-    fuchsia_archive("ui_tests") {
-      testonly = true
-
-      deps = [
-        ":ui_unittests",
-      ]
-
-      binary = "ui_unittests"
-
-      libraries = common_libs
-
-      meta_dir = "//flutter/testing/fuchsia/meta"
-      cmx_file = "$meta_dir/fuchsia_test.cmx"
-    }
-
-    fuchsia_archive("ui_tests_next") {
-      testonly = true
-
-      deps = [
-        ":ui_unittests_next",
-      ]
-
-      binary = "ui_unittests_next"
-
-      libraries = common_libs
-
-      meta_dir = "//flutter/testing/fuchsia/meta"
-      cmx_file = "$meta_dir/fuchsia_test.cmx"
     }
   }
 }
