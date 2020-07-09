@@ -1,4 +1,4 @@
-Signature: ee2a74fc1bbe8b7b0ba6a4a1a7382d19
+Signature: 99b07c69ea09f1e33d59dbf43638d61b
 
 UNUSED LICENSES:
 
@@ -1927,7 +1927,6 @@ FILE: ../../../third_party/skia/src/gpu/GrRectanizerSkyline.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceCache.cpp
 FILE: ../../../third_party/skia/src/gpu/GrResourceCache.h
 FILE: ../../../third_party/skia/src/gpu/GrSurfacePriv.h
-FILE: ../../../third_party/skia/src/gpu/GrTRecorder.h
 FILE: ../../../third_party/skia/src/gpu/GrTexturePriv.h
 FILE: ../../../third_party/skia/src/gpu/GrTracing.h
 FILE: ../../../third_party/skia/src/gpu/GrXferProcessor.h
