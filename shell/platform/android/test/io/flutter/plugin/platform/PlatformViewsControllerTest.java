@@ -1,12 +1,18 @@
 package io.flutter.plugin.platform;
 
+import static io.flutter.embedding.engine.systemchannels.PlatformViewsChannel.PlatformViewTouch;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import android.view.MotionEvent;
 import android.view.View;
+import io.flutter.embedding.android.MotionEventTracker;
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -78,5 +84,101 @@ public class PlatformViewsControllerTest {
 
     assertEquals(fakeVdController1.presentation != presentation, true);
     assertEquals(presentation.isShowing(), false);
+  }
+
+  @Test
+  public void itUsesActionEventTypeFromFrameworkEventForVirtualDisplays() {
+    MotionEventTracker motionEventTracker = MotionEventTracker.getInstance();
+    PlatformViewsController platformViewsController = new PlatformViewsController();
+
+    MotionEvent original =
+        MotionEvent.obtain(
+            100, // downTime
+            100, // eventTime
+            1, // action
+            0, // x
+            0, // y
+            0 // metaState
+            );
+
+    // track an event that will later get passed to us from framework
+    MotionEventTracker.MotionEventId motionEventId = motionEventTracker.track(original);
+
+    PlatformViewTouch frameWorkTouch =
+        new PlatformViewTouch(
+            0, // viewId
+            original.getDownTime(),
+            original.getEventTime(),
+            2, // action
+            0, // pointerCount
+            Collections.emptyList(),
+            Collections.emptyList(),
+            original.getMetaState(),
+            original.getButtonState(),
+            original.getXPrecision(),
+            original.getYPrecision(),
+            original.getDeviceId(),
+            original.getEdgeFlags(),
+            original.getSource(),
+            original.getFlags(),
+            motionEventId.getId());
+
+    MotionEvent resolvedEvent =
+        platformViewsController.toMotionEvent(
+            1, // density
+            frameWorkTouch,
+            true // usingVirtualDisplays
+            );
+
+    assertEquals(resolvedEvent.getAction(), frameWorkTouch.action);
+    assertNotEquals(resolvedEvent.getAction(), original.getAction());
+  }
+
+  @Test
+  public void itUsesActionEventTypeFromMotionEventForHybridPlatformViews() {
+    MotionEventTracker motionEventTracker = MotionEventTracker.getInstance();
+    PlatformViewsController platformViewsController = new PlatformViewsController();
+
+    MotionEvent original =
+        MotionEvent.obtain(
+            100, // downTime
+            100, // eventTime
+            1, // action
+            0, // x
+            0, // y
+            0 // metaState
+            );
+
+    // track an event that will later get passed to us from framework
+    MotionEventTracker.MotionEventId motionEventId = motionEventTracker.track(original);
+
+    PlatformViewTouch frameWorkTouch =
+        new PlatformViewTouch(
+            0, // viewId
+            original.getDownTime(),
+            original.getEventTime(),
+            2, // action
+            0, // pointerCount
+            Collections.emptyList(),
+            Collections.emptyList(),
+            original.getMetaState(),
+            original.getButtonState(),
+            original.getXPrecision(),
+            original.getYPrecision(),
+            original.getDeviceId(),
+            original.getEdgeFlags(),
+            original.getSource(),
+            original.getFlags(),
+            motionEventId.getId());
+
+    MotionEvent resolvedEvent =
+        platformViewsController.toMotionEvent(
+            1, // density
+            frameWorkTouch,
+            false // usingVirtualDisplays
+            );
+
+    assertNotEquals(resolvedEvent.getAction(), frameWorkTouch.action);
+    assertEquals(resolvedEvent.getAction(), original.getAction());
   }
 }
