@@ -124,6 +124,8 @@ class PathWinding {
   int _computeMonoQuadWinding(
       double x0, double y0, double x1, double y1, double x2, double y2) {
     int dir = 1;
+    final double startY = y0;
+    final double endY = y2;
     if (y0 > y2) {
       final double temp = y0;
       y0 = y2;
@@ -133,7 +135,7 @@ class PathWinding {
     if (y < y0 || y > y2) {
       return 0;
     }
-    if (_checkOnCurve(x, y, x0, y0, x2, y2)) {
+    if (_checkOnCurve(x, y, x0, startY, x2, endY)) {
       _onCurveCount++;
       return 0;
     }
@@ -142,7 +144,7 @@ class PathWinding {
     }
 
     _QuadRoots quadRoots = _QuadRoots();
-    final int n = quadRoots.findRoots(y0 - 2 * y1 + y2, 2 * (y1 - y0), y0 - y);
+    final int n = quadRoots.findRoots(startY - 2 * y1 + endY, 2 * (y1 - startY), endY - y);
     assert(n <= 1);
     double xt;
     if (0 == n) {
@@ -156,7 +158,7 @@ class PathWinding {
       xt = polyEval(A, B, C, t);
     }
     if (_nearlyEqual(xt, x)) {
-      if (x != x2 || y != y2) {
+      if (x != x2 || y != endY) {
         // don't test end points; they're start points
         _onCurveCount += 1;
         return 0;
