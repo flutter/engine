@@ -1063,10 +1063,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     [self clearTextInputClient];
     result(nil);
   } else if ([method isEqualToString:@"TextInput.finishAutofillContext"]) {
-    [self triggerAutofillSave:args];
-    result(nil);
-  } else if ([method isEqualToString:@"TextInput.AutofillContext.clear"]) {
-    [self triggerAutofillSave:NO];
+    [self triggerAutofillSave:[args boolValue]];
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
