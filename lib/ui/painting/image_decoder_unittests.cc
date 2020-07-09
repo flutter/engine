@@ -583,6 +583,9 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
                     << decoded_image->dimensions().height();
 
     ASSERT_EQ(decoded_image->dimensions(), SkISize::Make(300, 100));
+    FML_DLOG(ERROR) <<
+    decoded_image->encodeToData(SkEncodedImageFormat::kPNG, 100)->size();
+    FML_DLOG(ERROR) << expected_data->size();
     ASSERT_TRUE(decoded_image->encodeToData(SkEncodedImageFormat::kPNG, 100)
                     ->equals(expected_data.get()));
   };
@@ -590,100 +593,96 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   assert_image(decode(300, 100));
 }
 
-// TEST_F(ImageDecoderFixtureTest,
-//        MultiFrameCodecCanBeCollectedBeforeIOTasksFinish) {
-//   // This test verifies that the MultiFrameCodec safely shares state between
-//   // tasks on the IO and UI runners, and does not allow unsafe memory access
-//   if
-//     // the UI object is collected while the IO thread still has pending
-//     decode
-//     // work. This could happen in a real application if the engine is
-//     collected
-//     // while a multi-frame image is decoding. To exercise this, the test:
-//     //   - Starts a Dart VM
-//     //   - Latches the IO task runner
-//     //   - Create a MultiFrameCodec for an animated gif pointed to a callback
-//     //     in the Dart fixture
-//     //   - Calls getNextFrame on the UI task runner
-//     //   - Collects the MultiFrameCodec object before unlatching the IO task
-//     //     runner.
-//     //   - Unlatches the IO task runner
-//     auto settings = CreateSettingsForFixture();
-//   auto vm_ref = DartVMRef::Create(settings);
-//   auto vm_data = vm_ref.GetVMData();
+TEST_F(ImageDecoderFixtureTest,
+       MultiFrameCodecCanBeCollectedBeforeIOTasksFinish) {
+  // This test verifies that the MultiFrameCodec safely shares state between
+  // tasks on the IO and UI runners, and does not allow unsafe memory access if
+  // the UI object is collected while the IO thread still has pending decode
+  // work. This could happen in a real application if the engine is collected
+  // while a multi-frame image is decoding. To exercise this, the test:
+  //   - Starts a Dart VM
+  //   - Latches the IO task runner
+  //   - Create a MultiFrameCodec for an animated gif pointed to a callback
+  //     in the Dart fixture
+  //   - Calls getNextFrame on the UI task runner
+  //   - Collects the MultiFrameCodec object before unlatching the IO task
+  //     runner.
+  //   - Unlatches the IO task runner
+  auto settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(settings);
+  auto vm_data = vm_ref.GetVMData();
 
-//   auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
+  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
 
-//   ASSERT_TRUE(gif_mapping);
+  ASSERT_TRUE(gif_mapping);
 
-//   auto gif_codec = SkCodec::MakeFromData(gif_mapping);
-//   ASSERT_TRUE(gif_codec);
+  auto gif_codec = SkCodec::MakeFromData(gif_mapping);
+  ASSERT_TRUE(gif_codec);
 
-//   TaskRunners runners(GetCurrentTestName(),         // label
-//                       CreateNewThread("platform"),  // platform
-//                       CreateNewThread("raster"),    // raster
-//                       CreateNewThread("ui"),        // ui
-//                       CreateNewThread("io")         // io
-//   );
+  TaskRunners runners(GetCurrentTestName(),         // label
+                      CreateNewThread("platform"),  // platform
+                      CreateNewThread("raster"),    // raster
+                      CreateNewThread("ui"),        // ui
+                      CreateNewThread("io")         // io
+  );
 
-//   fml::AutoResetWaitableEvent latch;
-//   fml::AutoResetWaitableEvent io_latch;
-//   std::unique_ptr<TestIOManager> io_manager;
+  fml::AutoResetWaitableEvent latch;
+  fml::AutoResetWaitableEvent io_latch;
+  std::unique_ptr<TestIOManager> io_manager;
 
-//   // Setup the IO manager.
-//   runners.GetIOTaskRunner()->PostTask([&]() {
-//     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
-//     latch.Signal();
-//   });
-//   latch.Wait();
+  // Setup the IO manager.
+  runners.GetIOTaskRunner()->PostTask([&]() {
+    io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
+    latch.Signal();
+  });
+  latch.Wait();
 
-//   auto isolate =
-//       RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
-//                            GetFixturesPath(),
-//                            io_manager->GetWeakIOManager());
+  auto isolate =
+      RunDartCodeInIsolate(vm_ref, settings, runners, "main", {},
+                           GetFixturesPath(), io_manager->GetWeakIOManager());
 
-//   // Latch the IO task runner.
-//   runners.GetIOTaskRunner()->PostTask([&]() { io_latch.Wait(); });
+  // Latch the IO task runner.
+  runners.GetIOTaskRunner()->PostTask([&]() { io_latch.Wait(); });
 
-//   runners.GetUITaskRunner()->PostTask([&]() {
-//     fml::AutoResetWaitableEvent isolate_latch;
-//     fml::RefPtr<MultiFrameCodec> codec;
-//     EXPECT_TRUE(isolate->RunInIsolateScope([&]() -> bool {
-//       Dart_Handle library = Dart_RootLibrary();
-//       if (Dart_IsError(library)) {
-//         isolate_latch.Signal();
-//         return false;
-//       }
-//       Dart_Handle closure =
-//           Dart_GetField(library, Dart_NewStringFromCString("frameCallback"));
-//       if (Dart_IsError(closure) || !Dart_IsClosure(closure)) {
-//         isolate_latch.Signal();
-//         return false;
-//       }
+  runners.GetUITaskRunner()->PostTask([&]() {
+    fml::AutoResetWaitableEvent isolate_latch;
+    fml::RefPtr<MultiFrameCodec> codec;
+    EXPECT_TRUE(isolate->RunInIsolateScope([&]() -> bool {
+      Dart_Handle library = Dart_RootLibrary();
+      if (Dart_IsError(library)) {
+        isolate_latch.Signal();
+        return false;
+      }
+      Dart_Handle closure =
+          Dart_GetField(library, Dart_NewStringFromCString("frameCallback"));
+      if (Dart_IsError(closure) || !Dart_IsClosure(closure)) {
+        isolate_latch.Signal();
+        return false;
+      }
 
-//       codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_codec));
-//       codec->getNextFrame(closure);
-//       codec = nullptr;
-//       isolate_latch.Signal();
-//       return true;
-//     }));
-//     isolate_latch.Wait();
+      codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_codec));
+      codec->getNextFrame(closure);
+      codec = nullptr;
+      isolate_latch.Signal();
+      return true;
+    }));
+    isolate_latch.Wait();
 
-//     EXPECT_FALSE(codec);
+    EXPECT_FALSE(codec);
 
-//     io_latch.Signal();
+    io_latch.Signal();
 
-//     latch.Signal();
-//   });
-//   latch.Wait();
+    latch.Signal();
+  });
+  latch.Wait();
 
-//   // Destroy the IO manager
-//   runners.GetIOTaskRunner()->PostTask([&]() {
-//     io_manager.reset();
-//     latch.Signal();
-//   });
-//   latch.Wait();
-// }
+  // Destroy the IO manager
+  runners.GetIOTaskRunner()->PostTask([&]() {
+    io_manager.reset();
+    latch.Signal();
+  });
+  latch.Wait();
+}
 
 }  // namespace testing
 }  // namespace flutter
