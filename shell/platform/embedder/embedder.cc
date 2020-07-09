@@ -920,15 +920,17 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     compute_platform_resolved_locale_callback =
         [ptr = args->compute_platform_resolved_locale_callback](
             const std::vector<std::string>& supported_locale_data) {
-          const char* supported_locale_data_cstr[supported_locale_data.size()];
-
+          // const char*
+          // supported_locale_data_cstr[supported_locale_data.size()];
+          std::vector<const char*> c_vector;
+          c_vector.reserve(supported_locale_data.size());
           for (size_t i = 0; i < supported_locale_data.size(); ++i) {
-            supported_locale_data_cstr[i] = supported_locale_data[i].c_str();
+            c_vector.push_back(supported_locale_data[i].c_str());
+            // supported_locale_data_cstr[i] = supported_locale_data[i].c_str();
             // std::strcpy(supported_locale_data_cstr[i],
             //             supported_locale_data[i].c_str());
           }
-          char** result =
-              ptr(supported_locale_data_cstr[0], supported_locale_data.size());
+          char** result = ptr(&c_vector[0], supported_locale_data.size());
 
           std::unique_ptr<std::vector<std::string>> out =
               std::make_unique<std::vector<std::string>>();

@@ -862,7 +862,7 @@ typedef struct {
 } FlutterLocale;
 
 typedef char** (*FlutterComputePlatformResolvedLocaleCallback)(
-    char** /* supported_locales_data*/,
+    const char** /* supported_locales_data*/,
     size_t /* length of data*/);
 
 typedef int64_t FlutterEngineDartPort;

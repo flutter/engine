@@ -99,20 +99,12 @@ PlatformViewEmbedder::ComputePlatformResolvedLocales(
     const std::vector<std::string>& supported_locale_data) {
   if (platform_dispatch_table_.compute_platform_resolved_locale_callback ==
       nullptr) {
-    std::unique_ptr<std::vector<std::string>> out =
-        std::make_unique<std::vector<std::string>>();
-    return out;
+    return platform_dispatch_table_.compute_platform_resolved_locale_callback(
+        supported_locale_data);
   }
-
-  char supported_locale_data_cstr[supported_locale_data.size()][5];
-  for (size_t i = 0; i < supported_locale_data.size(); ++i) {
-    supported_locale_data_cstr[i] = supported_locale_data[i].c_str();
-  }
-  supported_locale_data_cstr char** result =
-      platform_dispatch_table_.compute_platform_resolved_locale_callback(
-          supported_locale_data_cstr, supported_locale_data.size());
-
-  return
+  std::unique_ptr<std::vector<std::string>> out =
+      std::make_unique<std::vector<std::string>>();
+  return out;
 }
 
 }  // namespace flutter
