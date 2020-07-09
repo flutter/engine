@@ -33,6 +33,39 @@ void ImageDescriptor::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
+static const SkImageInfo CorrectImageInfo(std::shared_ptr<SkCodec> codec) {
+  if (!codec) {
+    return SkImageInfo::MakeUnknown();
+  }
+  auto info = codec->getInfo();
+  if (kUnpremul_SkAlphaType == info.alphaType()) {
+    info = info.makeAlphaType(kPremul_SkAlphaType);
+  }
+  auto origin = codec->getOrigin();
+  if (origin == kLeftTop_SkEncodedOrigin ||
+      origin == kRightTop_SkEncodedOrigin ||
+      origin == kRightBottom_SkEncodedOrigin ||
+      origin == kLeftBottom_SkEncodedOrigin) {
+    return info.makeWH(info.height(), info.width());
+  }
+  return info;
+}
+
+ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
+                                 const SkImageInfo& image_info,
+                                 std::optional<size_t> row_bytes)
+    : buffer_(std::move(buffer)),
+      codec_(nullptr),
+      image_info_(std::move(image_info)),
+      row_bytes_(row_bytes) {}
+
+ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
+                                 std::shared_ptr<SkCodec> codec)
+    : buffer_(std::move(buffer)),
+      codec_(codec),
+      image_info_(CorrectImageInfo(std::move(codec))),
+      row_bytes_(std::nullopt) {}
+
 void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
   Dart_Handle callback_handle = Dart_GetNativeArgument(args, 2);
   if (!Dart_IsClosure(callback_handle)) {
@@ -51,14 +84,15 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
     return;
   }
 
-  auto codec = SkCodec::MakeFromData(immutable_buffer->data());
+  std::shared_ptr<SkCodec> codec =
+      SkCodec::MakeFromData(immutable_buffer->data());
   if (!codec) {
     Dart_SetReturnValue(args, tonic::ToDart("Invalid image data"));
     return;
   }
-  auto image_info = codec->getInfo();
+
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
-      immutable_buffer->data(), std::move(codec), std::move(image_info));
+      immutable_buffer->data(), std::move(codec));
   descriptor->AssociateWithDartWrapper(descriptor_handle);
   tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
 }
@@ -68,7 +102,7 @@ void ImageDescriptor::initRaw(Dart_Handle descriptor_handle,
                               int width,
                               int height,
                               int row_bytes,
-                              int pixel_format) {
+                              PixelFormat pixel_format) {
   SkColorType color_type = kUnknown_SkColorType;
   switch (pixel_format) {
     case PixelFormat::kRGBA8888:
@@ -92,23 +126,9 @@ void ImageDescriptor::instantiateCodec(Dart_Handle callback_handle,
                                        int target_height) {
   fml::RefPtr<Codec> ui_codec;
   if (!codec_ || codec_->getFrameCount() == 1) {
-    ImageDecoder::ImageDescriptor descriptor;
-    descriptor.decompressed_image_info = {
-        image_info_,
-        row_bytes_.value_or(static_cast<size_t>(image_info_.width() *
-                                                image_info_.bytesPerPixel())),
-    };
-
-    if (target_width > 0) {
-      descriptor.target_width = target_width;
-    }
-    if (target_height > 0) {
-      descriptor.target_height = target_height;
-    }
-    descriptor.image_upscaling = ImageUpscalingMode::kAllowed;
-    descriptor.data = buffer_;
-
-    ui_codec = fml::MakeRefCounted<SingleFrameCodec>(std::move(descriptor));
+    ui_codec = fml::MakeRefCounted<SingleFrameCodec>(
+        static_cast<fml::RefPtr<ImageDescriptor>>(this), target_width,
+        target_height);
   } else {
     ui_codec = fml::MakeRefCounted<MultiFrameCodec>(codec_);
   }

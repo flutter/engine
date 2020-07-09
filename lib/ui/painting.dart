@@ -1788,16 +1788,19 @@ void decodeImageFromPixels(
         pixelFormat: format,
       );
 
-      int newTargetWidth = targetWidth ?? width;
-      int newTargetHeight = targetHeight ?? height;
       if (!allowUpscaling) {
-        newTargetWidth = math.min(newTargetWidth, descriptor.width);
-        newTargetHeight = math.min(newTargetHeight, descriptor.height);
+        if (targetWidth != null && targetWidth! > descriptor.width) {
+          targetWidth = descriptor.width;
+        }
+        if (targetHeight != null && targetHeight! > descriptor.height) {
+          targetHeight = descriptor.height;
+        }
       }
+
       descriptor
         .instantiateCodec(
-          targetWidth: newTargetWidth,
-          targetHeight: newTargetHeight,
+          targetWidth: targetWidth,
+          targetHeight: targetHeight,
         )
         .then((Codec codec) => codec.getNextFrame())
         .then((FrameInfo frameInfo) => callback(frameInfo.image));
@@ -4500,13 +4503,38 @@ class ImageDescriptor extends NativeFieldWrapperClass2 {
 
   /// Creates a [Codec] object which is suitable for decoding the data in the
   /// buffer to an [Image].
+  ///
+  /// If only one of targetWidth or  targetHeight are specified, the other
+  /// dimension will be scaled according to the aspect ratio of the supplied
+  /// dimension.
+  ///
+  /// If either targetWidth or targetHeight is less than or equal to zero, it
+  /// will be treated as if it is null.
   Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) {
+    if (targetWidth != null && targetWidth <= 0) {
+      targetWidth = null;
+    }
+    if (targetHeight != null && targetHeight <= 0) {
+      targetHeight = null;
+    }
 
+    if (targetWidth == null && targetHeight == null) {
+      targetWidth = width;
+      targetHeight = height;
+    } else if (targetWidth == null && targetHeight != null) {
+      targetWidth = (targetHeight * (width / height)).round();
+      targetHeight = targetHeight;
+    } else if (targetHeight == null && targetWidth != null) {
+      targetWidth = targetWidth;
+      targetHeight = targetWidth ~/ (width / height);
+    }
+    assert(targetWidth != null);
+    assert(targetHeight != null);
     return _futurize((_Callback<Codec> callback) {
       return _instantiateCodec(
         callback,
-        targetWidth ?? width,
-        targetHeight ?? height,
+        targetWidth!,
+        targetHeight!,
       );
     });
   }

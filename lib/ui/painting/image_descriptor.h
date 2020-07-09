@@ -21,6 +21,12 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
  public:
   ~ImageDescriptor() override = default;
 
+  // This must be kept in sync with the enum in painting.dart
+  enum PixelFormat {
+    kRGBA8888,
+    kBGRA8888,
+  };
+
   static void initEncoded(Dart_NativeArguments args);
 
   static void initRaw(Dart_Handle descriptor_handle,
@@ -28,7 +34,7 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
                       int width,
                       int height,
                       int row_bytes,
-                      int pixel_format);
+                      PixelFormat pixel_format);
 
   void instantiateCodec(Dart_Handle callback,
                         int target_width,
@@ -40,8 +46,32 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
 
   int bytesPerPixel() const { return image_info_.bytesPerPixel(); }
 
+  int row_bytes() const {
+    return row_bytes_.value_or(
+        static_cast<size_t>(image_info_.width() * image_info_.bytesPerPixel()));
+  }
+
+  bool should_resize(int target_width, int target_height) const {
+    return target_width != width() || target_height != height();
+  }
+
+  sk_sp<SkData> data() const { return buffer_; }
+
+  bool is_compressed() const { return !!codec_; }
+
+  const std::shared_ptr<SkCodec> codec() const { return codec_; }
+
+  const SkImageInfo& image_info() const { return image_info_; }
+
+  bool get_pixels(const SkPixmap& pixmap) const {
+    FML_DCHECK(codec_);
+    return codec_->getPixels(pixmap.info(), pixmap.writable_addr(),
+                             pixmap.rowBytes());
+  }
+
   void dispose() {
     ClearDartWrapper();
+    codec_ = nullptr;
     codec_.reset();
   }
 
@@ -52,36 +82,23 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  // This must be kept in sync with the enum in painting.dart
-  enum PixelFormat {
-    kRGBA8888,
-    kBGRA8888,
-  };
-
   ImageDescriptor(sk_sp<SkData> buffer,
                   const SkImageInfo& image_info,
-                  std::optional<size_t> row_bytes)
-      : buffer_(std::move(buffer)),
-        codec_(nullptr),
-        image_info_(std::move(image_info)),
-        row_bytes_(row_bytes) {}
-
-  ImageDescriptor(sk_sp<SkData> buffer,
-                  std::shared_ptr<SkCodec> codec,
-                  const SkImageInfo& image_info)
-      : buffer_(std::move(buffer)),
-        codec_(std::move(codec)),
-        image_info_(std::move(image_info)),
-        row_bytes_(std::nullopt) {}
+                  std::optional<size_t> row_bytes);
+  ImageDescriptor(sk_sp<SkData> buffer, std::shared_ptr<SkCodec> codec);
 
   sk_sp<SkData> buffer_;
   std::shared_ptr<SkCodec> codec_;
-  const SkImageInfo image_info_;
+  SkImageInfo image_info_;
   std::optional<size_t> row_bytes_;
+
+  // static const SkImageInfo CorrectImageInfo(std::shared_ptr<SkCodec> codec);
 
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(ImageDescriptor);
   FML_DISALLOW_COPY_AND_ASSIGN(ImageDescriptor);
+
+  friend class ImageDecoderFixtureTest;
 };
 
 }  // namespace flutter

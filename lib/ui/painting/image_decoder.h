@@ -15,6 +15,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/io_manager.h"
+#include "flutter/lib/ui/painting/image_descriptor.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
@@ -37,18 +38,6 @@ class ImageDecoder {
 
   ~ImageDecoder();
 
-  struct ImageInfo {
-    SkImageInfo sk_info = {};
-    size_t row_bytes = 0;
-  };
-
-  struct ImageDescriptor {
-    sk_sp<SkData> data;
-    std::optional<ImageInfo> decompressed_image_info;
-    uint32_t target_width;
-    uint32_t target_height;
-  };
-
   using ImageResult = std::function<void(SkiaGPUObject<SkImage>)>;
 
   // Takes an image descriptor and returns a handle to a texture resident on the
@@ -56,7 +45,10 @@ class ImageDecoder {
   // concurrently. Texture upload is done on the IO thread and the result
   // returned back on the UI thread. On error, the texture is null but the
   // callback is guaranteed to return on the UI thread.
-  void Decode(ImageDescriptor descriptor, const ImageResult& result);
+  void Decode(fml::RefPtr<ImageDescriptor> descriptor,
+              uint32_t target_width,
+              uint32_t target_height,
+              const ImageResult& result);
 
   fml::WeakPtr<ImageDecoder> GetWeakPtr() const;
 
@@ -69,7 +61,7 @@ class ImageDecoder {
   FML_DISALLOW_COPY_AND_ASSIGN(ImageDecoder);
 };
 
-sk_sp<SkImage> ImageFromCompressedData(sk_sp<SkData> data,
+sk_sp<SkImage> ImageFromCompressedData(fml::RefPtr<ImageDescriptor> descriptor,
                                        uint32_t target_width,
                                        uint32_t target_height,
                                        const fml::tracing::TraceFlow& flow);

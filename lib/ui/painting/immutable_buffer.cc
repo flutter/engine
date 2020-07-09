@@ -19,12 +19,11 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, ImmutableBuffer);
 
 #define FOR_EACH_BINDING(V)     \
   V(ImmutableBuffer, dispose)   \
-  V(ImmutableBuffer, elementAt) \
   V(ImmutableBuffer, length)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
-void ImmutableBuffer::~ImmutableBuffer() {}
+ImmutableBuffer::~ImmutableBuffer() {}
 
 void ImmutableBuffer::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({{"ImmutableBuffer_init", ImmutableBuffer::init, 3, true},
