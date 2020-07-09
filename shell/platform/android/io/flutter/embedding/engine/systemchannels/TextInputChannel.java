@@ -1,6 +1,7 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.os.Build;
+import android.os.Bundle;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
@@ -13,6 +14,8 @@ import io.flutter.plugin.common.MethodChannel;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.Iterator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -112,6 +115,23 @@ public class TextInputChannel {
               textInputMethodHandler.clearClient();
               result.success(null);
               break;
+            case "TextInput.sendAppPrivateCommnad":
+              try {
+                final JSONObject arguments = (JSONObject) args;
+                final String action = arguments.getString("action");
+                final JSONObject data = arguments.getJSONObject("data");
+                Bundle bundle = new Bundle();
+                Iterator<String> keys = data.keys();
+                for (Iterator<String> it = keys; it.hasNext(); ) {
+                  String key = it.next();
+                  String value = data.getString(key);
+                  bundle.putString(key, value);
+                }
+                textInputMethodHandler.sendAppPrivateCommand(action, bundle);
+                result.success(null);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
             default:
               result.notImplemented();
               break;
@@ -262,6 +282,22 @@ public class TextInputChannel {
         Arrays.asList(inputClientId, "TextInputAction.unspecified"));
   }
 
+  /** Instructs Flutter to execute an "performPrivateCommand" action. */
+  public void performPrivateCommand(int inputClientId, String action, Bundle data) {
+    HashMap<Object, Object> command = new HashMap<>();
+    command.put("action", action);
+    if (data != null) {
+      HashMap<String, Object> dataMap = new HashMap<>();
+      Set<String> keySet = data.keySet();
+      for (String key : keySet) {
+        dataMap.put(key, data.getParcelable(key));
+      }
+      command.put("data", dataMap);
+    }
+    channel.invokeMethod("TextInputClient.performPrivateCommand",
+                         Arrays.asList(inputClientId, command));
+  }
+
   /**
    * Sets the {@link TextInputMethodHandler} which receives all events and requests that are parsed
    * from the underlying platform channel.
@@ -312,6 +348,16 @@ public class TextInputChannel {
 
     // TODO(mattcarroll): javadoc
     void clearClient();
+
+    /**
+     * Sends app private command to the current Input Method.
+     *
+     * @param action Name of the command to be performed. This must be a scoped name. i.e. prefixed
+     *     with a package name you own, so that different developers will not create conflicting
+     *     commands.
+     * @param data Any data to include with the command.
+     */
+    void sendAppPrivateCommand(String action, Bundle data);
   }
 
   /** A text editing configuration. */
