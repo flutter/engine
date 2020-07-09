@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#if OS_ANDROID
-#include <sys/mman.h>
-#endif
-
 #include "flutter/lib/ui/painting/immutable_buffer.h"
 
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
+
+#if OS_ANDROID
+#include <sys/mman.h>
+#endif
 
 namespace flutter {
 

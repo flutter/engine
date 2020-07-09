@@ -10,10 +10,6 @@
 #include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
-#if OS_ANDROID
-#include <sys/mman.h>
-#endif
-
 using tonic::DartInvoke;
 using tonic::DartPersistentValue;
 using tonic::ToDart;

@@ -1594,7 +1594,7 @@ String? _instantiateImageCodec(
     } else {
       assert(height != null);
       assert(format != null);
-      engine.skiaInstantiateImageCodec(list, callback, width, height, format.index, rowBytes);
+      engine.skiaInstantiateImageCodec(list, callback, width, height, format!.index, rowBytes);
     }
     return null;
   }
@@ -1863,7 +1863,7 @@ class ImmutableBuffer {
     return instance;
   }
 
-  Uint8List _list;
+  Uint8List? _list;
 
   /// The length, in bytes, of the underlying data.
   final int length;
@@ -1906,17 +1906,21 @@ class ImageDescriptor {
     _data = buffer._list;
   }
 
-  Uint8List _data;
+  Uint8List? _data;
   final int? _width;
   final int? _height;
   final int? _rowBytes;
   final PixelFormat? _format;
 
+  Never _throw(String parameter) {
+     throw UnsupportedError('ImageDescriptor.$parameter is not supported on web.');
+  }
+
   /// The width, in pixels, of the image.
-  int get width => _width != null ? _width : throw UnsupportedError('ImageDescriptor.width is not supported on web.');
+  int get width => _width ?? _throw('width');
 
   /// The height, in pixels, of the image.
-  int get height => _height != null ? _height : throw UnsupportedError('ImageDescriptor.height is not supported on web.');
+  int get height => _height ?? _throw('height');
 
   /// The number of bytes per pixel in the image.
   int get bytesPerPixel => throw UnsupportedError('ImageDescriptor.bytesPerPixel is not supported on web.');
@@ -1928,9 +1932,12 @@ class ImageDescriptor {
   /// Creates a [Codec] object which is suitable for decoding the data in the
   /// buffer to an [Image].
   Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) {
+    if (_data == null) {
+      throw StateError('Object is disposed');
+    }
     if (_width == null) {
       return instantiateImageCodec(
-        _data,
+        _data!,
         targetWidth: targetWidth,
         targetHeight: targetHeight,
         allowUpscaling: false,
@@ -1939,7 +1946,7 @@ class ImageDescriptor {
     return _futurize(
       (engine.Callback<Codec> callback) {
         return _instantiateImageCodec(
-          _data,
+          _data!,
           callback,
           width: _width,
           height: _height,
