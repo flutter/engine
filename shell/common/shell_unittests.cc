@@ -187,7 +187,7 @@ TEST_F(ShellTest,
           }));
 
   fml::AutoResetWaitableEvent latch;
-  std::async(std::launch::async,
+  auto handle = std::async(std::launch::async,
              fml::MakeCopyable([shell_test_point = this, &latch, task_runners,
                                 shell_holder_future =
                                     std::move(shell_holder_future)]() mutable {
@@ -212,6 +212,7 @@ TEST_F(ShellTest,
              }));
 
   latch.Wait();
+  handle.get();
 }
 
 TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
