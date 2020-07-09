@@ -119,7 +119,7 @@ void ImageDescriptor::initRaw(Dart_Handle descriptor_handle,
   descriptor->AssociateWithDartWrapper(descriptor_handle);
 }
 
-void ImageDescriptor::instantiateCodec(Dart_Handle callback_handle,
+void ImageDescriptor::instantiateCodec(Dart_Handle codec_handle,
                                        int target_width,
                                        int target_height) {
   fml::RefPtr<Codec> ui_codec;
@@ -130,7 +130,6 @@ void ImageDescriptor::instantiateCodec(Dart_Handle callback_handle,
   } else {
     ui_codec = fml::MakeRefCounted<MultiFrameCodec>(codec_);
   }
-
-  tonic::DartInvoke(callback_handle, {ToDart(ui_codec)});
+  ui_codec->AssociateWithDartWrapper(codec_handle);
 }
 }  // namespace flutter

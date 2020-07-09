@@ -18,6 +18,13 @@
 
 namespace flutter {
 
+/// Creates an image descriptor for encoded or decoded image data, describing
+/// the width, height, and bytes per pixel for that image.
+///
+/// This class will hold a reference on the underlying image data, and in the
+/// case of compressed data, an SkCodec and SkImageGenerator for the data.
+/// The Codec initialization actually happens in initEncoded, making
+/// initstantiateCodec a lightweight operation.
 class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
  public:
   ~ImageDescriptor() override = default;
@@ -28,8 +35,15 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
     kBGRA8888,
   };
 
+  /// Asynchronously initlializes an ImageDescriptor for an encoded image, as
+  /// long as the format is supported by Skia.
+  ///
+  /// Calling this method will result in creating an SkCodec and
+  /// SkImageGenerator to read EXIF corrected dimensions from the image data.
   static void initEncoded(Dart_NativeArguments args);
 
+  /// Synchronously initializes an ImageDescriptor for decompressed image data
+  /// as specified by the PixelFormat.
   static void initRaw(Dart_Handle descriptor_handle,
                       fml::RefPtr<ImmutableBuffer> data,
                       int width,
@@ -37,33 +51,50 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
                       int row_bytes,
                       PixelFormat pixel_format);
 
-  void instantiateCodec(Dart_Handle callback,
+  /// Associates a flutter::Codec object with the dart.ui Codec handle.
+  void instantiateCodec(Dart_Handle codec,
                         int target_width,
                         int target_height);
 
+  /// The width of this image, EXIF oriented if applicable.
   int width() const { return image_info_.width(); }
 
+  /// The height of this image. EXIF oriented if applicable.
   int height() const { return image_info_.height(); }
 
+  /// The bytes per pixel of the image.
   int bytesPerPixel() const { return image_info_.bytesPerPixel(); }
 
+  /// The byte length of the first row of the image.
+  ///
+  /// Defaults to width() * 4.
   int row_bytes() const {
     return row_bytes_.value_or(
         static_cast<size_t>(image_info_.width() * image_info_.bytesPerPixel()));
   }
 
+  /// Whether the given target_width or target_height differ from width() and
+  /// height() respectively.
   bool should_resize(int target_width, int target_height) const {
     return target_width != width() || target_height != height();
   }
 
+  /// The underlying buffer for this image.
   sk_sp<SkData> data() const { return buffer_; }
 
+  /// Whether this descriptor represents compressed (encoded) data or not.
   bool is_compressed() const { return !!codec_; }
 
+  /// The SkCodec for this image.
+  ///
+  /// This will _not_ repsect EXIF orientation information.
   const std::shared_ptr<SkCodec> codec() const { return codec_; }
 
+  /// The orientation corrected image info for this image.
   const SkImageInfo& image_info() const { return image_info_; }
 
+  /// Gets pixels for this image transformed based on the EXIF orientation tag,
+  /// if applicable.
   bool get_pixels(const SkPixmap& pixmap) const {
     if (image_generator_) {
       return image_generator_->getPixels(pixmap.info(), pixmap.writable_addr(),
@@ -84,7 +115,7 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   }
 
   size_t GetAllocationSize() const override {
-    return sizeof(ImageDescriptor) + sizeof(SkImageInfo) + sizeof(SkCodec);
+    return sizeof(ImageDescriptor) + sizeof(SkImageInfo) + buffer_->size();
   }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);

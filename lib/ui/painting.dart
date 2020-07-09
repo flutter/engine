@@ -4463,7 +4463,7 @@ class ImageDescriptor extends NativeFieldWrapperClass2 {
   static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) {
     final ImageDescriptor descriptor = ImageDescriptor._();
     return _futurize((_Callback<void> callback) {
-      descriptor._initEncoded(buffer, callback);
+      return descriptor._initEncoded(buffer, callback);
     }).then((_) => descriptor);
   }
   String? _initEncoded(ImmutableBuffer buffer, _Callback<void> callback) native 'ImageDescriptor_initEncoded';
@@ -4488,14 +4488,20 @@ class ImageDescriptor extends NativeFieldWrapperClass2 {
   }
   void _initRaw(ImageDescriptor outDescriptor, ImmutableBuffer buffer, int width, int height, int rowBytes, int pixelFormat) native 'ImageDescriptor_initRaw';
 
+  int? _width;
+  int _getWidth() native 'ImageDescriptor_width';
   /// The width, in pixels, of the image.
-  int get width native 'ImageDescriptor_width';
+  int get width => _width ??= _getWidth();
 
+  int? _height;
+  int _getHeight() native 'ImageDescriptor_height';
   /// The height, in pixels, of the image.
-  int get height native 'ImageDescriptor_height';
+  int get height => _height ??= _getHeight();
 
+  int? _bytesPerPixel;
+  int _getBytesPerPixel() native 'ImageDescriptor_bytesPerPixel';
   /// The number of bytes per pixel in the image.
-  int get bytesPerPixel native 'ImageDescriptor_bytesPerPixel';
+  int get bytesPerPixel => _bytesPerPixel ??= _getBytesPerPixel();
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -4510,7 +4516,7 @@ class ImageDescriptor extends NativeFieldWrapperClass2 {
   ///
   /// If either targetWidth or targetHeight is less than or equal to zero, it
   /// will be treated as if it is null.
-  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) {
+  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) async {
     if (targetWidth != null && targetWidth <= 0) {
       targetWidth = null;
     }
@@ -4530,15 +4536,12 @@ class ImageDescriptor extends NativeFieldWrapperClass2 {
     }
     assert(targetWidth != null);
     assert(targetHeight != null);
-    return _futurize((_Callback<Codec> callback) {
-      return _instantiateCodec(
-        callback,
-        targetWidth!,
-        targetHeight!,
-      );
-    });
+
+    final Codec codec = Codec._();
+    _instantiateCodec(codec, targetWidth!, targetHeight!);
+    return codec;
   }
-  String? _instantiateCodec(_Callback<Codec> callback, int targetWidth, int targetHeight) native 'ImageDescriptor_instantiateCodec';
+  void _instantiateCodec(Codec outCodec, int targetWidth, int targetHeight) native 'ImageDescriptor_instantiateCodec';
 }
 
 /// Generic callback signature, used by [_futurize].
