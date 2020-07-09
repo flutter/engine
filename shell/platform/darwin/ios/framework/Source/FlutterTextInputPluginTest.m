@@ -61,8 +61,8 @@ FLUTTER_ASSERT_ARC
 
 - (void)commitAutofillContextAndVerify {
   FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"TextInput.AutofillContext.commit"
-                                        arguments:nil];
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.finishAutofillContext"
+                                        arguments:@YES];
   [textInputPlugin handleMethodCall:methodCall
                              result:^(id _Nullable result){
                              }];
@@ -353,7 +353,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotEqual(textInputPlugin.textInputView, nil);
 
   [self commitAutofillContextAndVerify];
-  XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
+  XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.reusableInputView);
 
   // Now switch to an input field that does not autofill.
   [self setClientId:125 configuration:self.mutableTemplateCopy];

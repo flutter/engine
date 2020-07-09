@@ -73,8 +73,9 @@ public class TextInputPluginTest {
   private static void sendToBinaryMessageHandler(
       BinaryMessenger.BinaryMessageHandler binaryMessageHandler, String method, Object args) {
     MethodCall methodCall = new MethodCall(method, args);
-    ByteBuffer encodedMethodCall = JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall).flip();
-    binaryMessageHandler.onMessage(encodedMethodCall, mock(BinaryMessenger.BinaryReply.class));
+    ByteBuffer encodedMethodCall = JSONMethodCodec.INSTANCE.encodeMethodCall(methodCall);
+    binaryMessageHandler.onMessage(
+        (ByteBuffer) encodedMethodCall.flip(), mock(BinaryMessenger.BinaryReply.class));
   }
 
   @Test
@@ -558,10 +559,10 @@ public class TextInputPluginTest {
     sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.requestAutofill", null);
     verify(mockHandler, times(1)).requestAutofill();
 
-    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.AutofillContext.commit", null);
+    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.finishAutofillContext", true);
     verify(mockHandler, times(1)).finishAutofillContext(true);
 
-    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.AutofillContext.cancel", null);
+    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.finishAutofillContext", false);
     verify(mockHandler, times(1)).finishAutofillContext(false);
   }
 

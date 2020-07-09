@@ -112,12 +112,8 @@ public class TextInputChannel {
               textInputMethodHandler.clearClient();
               result.success(null);
               break;
-            case "TextInput.AutofillContext.commit":
-              textInputMethodHandler.finishAutofillContext(true);
-              result.success(null);
-              break;
-            case "TextInput.AutofillContext.cancel":
-              textInputMethodHandler.finishAutofillContext(false);
+            case "TextInput.finishAutofillContext":
+              textInputMethodHandler.finishAutofillContext((boolean) args);
               result.success(null);
               break;
             default:
