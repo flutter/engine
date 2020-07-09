@@ -31,8 +31,8 @@ final InputConfiguration singlelineConfig = InputConfiguration(
   obscureText: false,
   inputAction: 'TextInputAction.done',
   autocorrect: true,
-  textCapitalization:
-      TextCapitalizationUtil.fromInputConfiguration('TextCapitalization.none'),
+  textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
+      'TextCapitalization.none'),
 );
 final Map<String, dynamic> flutterSinglelineConfig =
     createFlutterConfig('text');
@@ -42,7 +42,7 @@ final InputConfiguration multilineConfig = InputConfiguration(
     obscureText: false,
     inputAction: 'TextInputAction.newline',
     autocorrect: true,
-    textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+    textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
         'TextCapitalization.none'));
 final Map<String, dynamic> flutterMultilineConfig =
     createFlutterConfig('multiline');
@@ -115,7 +115,7 @@ void main() {
           inputAction: 'TextInputAction.done',
           obscureText: true,
           autocorrect: true,
-          textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
               'TextCapitalization.none'));
       editingElement.enable(
         config,
@@ -136,7 +136,7 @@ void main() {
           inputAction: 'TextInputAction.done',
           obscureText: false,
           autocorrect: false,
-          textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
               'TextCapitalization.none'));
       editingElement.enable(
         config,
@@ -157,7 +157,7 @@ void main() {
           inputAction: 'TextInputAction.done',
           obscureText: false,
           autocorrect: true,
-          textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
               'TextCapitalization.none'));
       editingElement.enable(
         config,
@@ -297,7 +297,7 @@ void main() {
           obscureText: false,
           inputAction: 'TextInputAction.done',
           autocorrect: true,
-          textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
               'TextCapitalization.none'));
       editingElement.enable(
         config,
@@ -324,7 +324,7 @@ void main() {
           obscureText: false,
           inputAction: 'TextInputAction.done',
           autocorrect: true,
-          textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
               'TextCapitalization.none'));
       editingElement.enable(
         config,
@@ -868,12 +868,11 @@ void main() {
     });
 
     test(
-        'Word capitilization: setClient, setEditingState, show, '
-        'updateEditingState', () {
+        'No capitilization: setClient, setEditingState, show', () {
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> capitilizeWordsConfig = createFlutterConfig(
           'text',
-          textCapitalization: 'TextCapitalization.words');
+          textCapitalization: 'TextCapitalization.none');
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, capitilizeWordsConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -890,44 +889,27 @@ void main() {
       sendFrameworkMessage(codec.encodeMethodCall(show));
       spy.messages.clear();
 
-      expect(textEditing.editingElement.domElement.style.textTransform,
-          'capitalize');
-
-      // Test for mobile Safari.
+      // Test for mobile Safari. `sentences` is the default attribute for
+      // mobile browsers. Check if `off` is added to the input element.
       if (browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs) {
         expect(
             textEditing.editingElement.domElement
                 .getAttribute('autocapitalize'),
-            'sentences');
+            'off');
+      } else {
+        expect(
+            textEditing.editingElement.domElement
+                .getAttribute('autocapitalize'),
+            isNull);
       }
-
-      final InputElement element = textEditing.editingElement.domElement;
-      element.value = 'something some test';
-      element.dispatchEvent(Event.eventType('Event', 'input'));
-
-      expect(spy.messages, hasLength(1));
-      expect(spy.messages[0].channel, 'flutter/textinput');
-      expect(spy.messages[0].methodName, 'TextInputClient.updateEditingState');
-      expect(
-        spy.messages[0].methodArguments,
-        <dynamic>[
-          123, // Client ID
-          <String, dynamic>{
-            'text': 'Something Some Test',
-            'selectionBase': 19,
-            'selectionExtent': 19,
-          },
-        ],
-      );
 
       spy.messages.clear();
       hideKeyboard();
     });
 
     test(
-        'All characters capitilization: setClient, setEditingState, show, '
-        'updateEditingState', () {
+        'All characters capitilization: setClient, setEditingState, show', () {
       // Create a configuration with an AutofillGroup of four text fields.
       final Map<String, dynamic> capitilizeWordsConfig = createFlutterConfig(
           'text',
@@ -948,9 +930,6 @@ void main() {
       sendFrameworkMessage(codec.encodeMethodCall(show));
       spy.messages.clear();
 
-      expect(textEditing.editingElement.domElement.style.textTransform,
-          'uppercase');
-
       // Test for mobile Safari.
       if (browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs) {
@@ -959,25 +938,6 @@ void main() {
                 .getAttribute('autocapitalize'),
             'characters');
       }
-
-      final InputElement element = textEditing.editingElement.domElement;
-      element.value = 'something some test';
-      element.dispatchEvent(Event.eventType('Event', 'input'));
-
-      expect(spy.messages, hasLength(1));
-      expect(spy.messages[0].channel, 'flutter/textinput');
-      expect(spy.messages[0].methodName, 'TextInputClient.updateEditingState');
-      expect(
-        spy.messages[0].methodArguments,
-        <dynamic>[
-          123, // Client ID
-          <String, dynamic>{
-            'text': 'SOMETHING SOME TEST',
-            'selectionBase': 19,
-            'selectionExtent': 19,
-          },
-        ],
-      );
 
       spy.messages.clear();
       hideKeyboard();
