@@ -41,7 +41,6 @@ class PathRef {
   static const int kInitialPointsCapacity = 8;
   static const int kInitialVerbsCapacity = 8;
 
-  /// Returns a const pointer to the first point.
   ui.Rect? fBounds;
   ui.Rect? cachedBounds;
   int _fPointsCapacity = 0;
@@ -147,7 +146,7 @@ class PathRef {
   ///
   /// Tracking whether a path is an oval is considered an
   /// optimization for performance and so some paths that are in
-  // fact ovals can report false.
+  /// fact ovals can report false.
   int get isOval => fIsOval ? fRRectOrOvalStartIdx : -1;
   bool get isOvalCCW => fRRectOrOvalIsCCW;
 
@@ -185,7 +184,7 @@ class PathRef {
     // Radii x,y of 4 corners
     final List<ui.Radius> radii = <ui.Radius>[];
     final PathRefIterator iter = PathRefIterator(this);
-    final Float32List pts = Float32List(10);
+    final Float32List pts = Float32List(PathRefIterator.kMaxBufferSize);
     int verb = iter.next(pts);
     assert(SPath.kMoveVerb == verb);
     int cornerIndex = 0;
@@ -316,7 +315,7 @@ class PathRef {
 
   static Uint8List _fVerbsFromSource(PathRef source) {
     Uint8List verbs = Uint8List(source._fVerbsCapacity);
-    js_util.callMethod(verbs, 'set', <dynamic>[source._fVerbs]);
+    verbs.setAll(0, source._fVerbs);
     return verbs;
   }
 
@@ -328,13 +327,10 @@ class PathRef {
     _conicWeightsLength = source._conicWeightsLength;
     if (source._conicWeights != null) {
       _conicWeights = Float32List(_conicWeightsCapacity);
-      js_util
-          .callMethod(_conicWeights!, 'set', <dynamic>[source._conicWeights]);
+      _conicWeights!.setAll(0, source._conicWeights!);
     }
     _fVerbsCapacity = source._fVerbsCapacity;
     _fVerbsLength = source._fVerbsLength;
-    _fVerbs = Uint8List(_fVerbsCapacity);
-    js_util.callMethod(_fVerbs, 'set', <dynamic>[source._fVerbs]);
 
     _fPointsCapacity = source._fPointsCapacity;
     _fPointsLength = source._fPointsLength;
@@ -368,7 +364,7 @@ class PathRef {
     if (ref._conicWeights == null) {
       _conicWeights = null;
     } else {
-      js_util.callMethod(_conicWeights!, 'set', [ref._conicWeights]);
+      _conicWeights!.setAll(0, ref._conicWeights!);
     }
     assert(verbCount == 0 || _fVerbs[0] != 0);
     fBoundsIsDirty = ref.fBoundsIsDirty;
@@ -550,8 +546,8 @@ class PathRef {
     fSegmentMask = 0;
     startEdit();
 
-    _resizePoints(pointCount);
-    _resizeVerbs(verbCount);
+    _resizePoints(pointCount + reservePoints);
+    _resizeVerbs(verbCount + reserveVerbs);
     _resizeConicWeights(conicCount);
     debugValidate();
   }
@@ -700,18 +696,14 @@ class PathRef {
     if (numVerbs != 0) {
       int curLength = countVerbs();
       _resizePoints(curLength + numVerbs);
-      for (int i = 0; i < numVerbs; i++) {
-        _fVerbs[curLength + i] = path._fVerbs[i];
-      }
+      _fVerbs.setAll(curLength, path._fVerbs);
     }
 
     final int numPts = path.countPoints();
     if (numPts != 0) {
       int curLength = countPoints();
       _resizePoints(curLength + numPts);
-      for (int i = 0; i < 2 * numPts; i++) {
-        _fPoints[curLength * 2 + i] = path._fPoints[i];
-      }
+      _fPoints.setAll(curLength * 2, path._fPoints);
     }
 
     final int numConics = path.countWeights();
@@ -890,6 +882,9 @@ class PathRefIterator {
       _verbIndex = pathRef.countVerbs();
     }
   }
+
+  /// Maximum buffer size required for points in [next] calls.
+  static const int kMaxBufferSize = 8;
 
   int iterIndex = 0;
 

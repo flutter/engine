@@ -292,7 +292,7 @@ class _PathContourMeasure {
       }
     };
     int verb = 0;
-    final Float32List points = Float32List(10);
+    final Float32List points = Float32List(PathRefIterator.kMaxBufferSize);
     do {
       if (iter.peek() == SPath.kMoveVerb && haveSeenMoveTo) {
         break;

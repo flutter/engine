@@ -1078,7 +1078,7 @@ class SurfacePath implements ui.Path {
     } else {
       bool firstVerb = true;
       final PathRefIterator iter = PathRefIterator(source.pathRef);
-      final Float32List outPts = Float32List(10);
+      final Float32List outPts = Float32List(PathRefIterator.kMaxBufferSize);
       int verb;
       while ((verb = iter.next(outPts)) != SPath.kDoneVerb) {
         switch (verb) {

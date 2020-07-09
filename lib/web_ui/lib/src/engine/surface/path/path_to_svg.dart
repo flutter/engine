@@ -10,7 +10,7 @@ void pathToSvg(SurfacePath path, StringBuffer sb,
     {double offsetX = 0, double offsetY = 0}) {
   final PathRefIterator iter = PathRefIterator(path.pathRef);
   int verb = 0;
-  final Float32List outPts = Float32List(10);
+  final Float32List outPts = Float32List(PathRefIterator.kMaxBufferSize);
   while ((verb = iter.next(outPts)) != SPath.kDoneVerb) {
     switch (verb) {
       case SPath.kMoveVerb:

@@ -510,7 +510,7 @@ class _CanvasPool extends _SaveStackTracking {
   }
 
   // Float buffer used for path iteration.
-  static Float32List _runBuffer = Float32List(10);
+  static Float32List _runBuffer = Float32List(PathRefIterator.kMaxBufferSize);
 
   /// 'Runs' the given [path] by applying all of its commands to the canvas.
   void _runPath(html.CanvasRenderingContext2D ctx, SurfacePath path) {
