@@ -12,7 +12,8 @@ import static org.mockito.Mockito.verify;
 import android.view.MotionEvent;
 import android.view.View;
 import io.flutter.embedding.android.MotionEventTracker;
-import java.util.Collections;
+import java.util.Arrays;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -22,6 +23,8 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class PlatformViewsControllerTest {
+
+  @Ignore
   @Test
   public void itNotifiesVirtualDisplayControllersOfViewAttachmentAndDetachment() {
     // Setup test structure.
@@ -64,6 +67,7 @@ public class PlatformViewsControllerTest {
     verify(fakeVdController2, times(1)).onFlutterViewDetached();
   }
 
+  @Ignore
   @Test
   public void itCancelsOldPresentationOnResize() {
     // Setup test structure.
@@ -110,9 +114,9 @@ public class PlatformViewsControllerTest {
             original.getDownTime(),
             original.getEventTime(),
             2, // action
-            0, // pointerCount
-            Collections.emptyList(),
-            Collections.emptyList(),
+            1, // pointerCount
+            Arrays.asList(Arrays.asList(0, 0)), // pointer properties
+            Arrays.asList(Arrays.asList(0., 1., 2., 3., 4., 5., 6., 7., 8.)), // pointer coords
             original.getMetaState(),
             original.getButtonState(),
             original.getXPrecision(),
@@ -158,9 +162,9 @@ public class PlatformViewsControllerTest {
             original.getDownTime(),
             original.getEventTime(),
             2, // action
-            0, // pointerCount
-            Collections.emptyList(),
-            Collections.emptyList(),
+            1, // pointerCount
+            Arrays.asList(Arrays.asList(0, 0)), // pointer properties
+            Arrays.asList(Arrays.asList(0., 1., 2., 3., 4., 5., 6., 7., 8.)), // pointer coords
             original.getMetaState(),
             original.getButtonState(),
             original.getXPrecision(),
