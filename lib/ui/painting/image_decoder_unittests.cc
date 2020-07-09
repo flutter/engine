@@ -579,13 +579,7 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   ASSERT_FALSE(expected_data->isEmpty());
 
   auto assert_image = [&](auto decoded_image) {
-    FML_DLOG(ERROR) << decoded_image->dimensions().width() << "x"
-                    << decoded_image->dimensions().height();
-
     ASSERT_EQ(decoded_image->dimensions(), SkISize::Make(300, 100));
-    FML_DLOG(ERROR) <<
-    decoded_image->encodeToData(SkEncodedImageFormat::kPNG, 100)->size();
-    FML_DLOG(ERROR) << expected_data->size();
     ASSERT_TRUE(decoded_image->encodeToData(SkEncodedImageFormat::kPNG, 100)
                     ->equals(expected_data.get()));
   };

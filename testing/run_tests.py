@@ -391,7 +391,7 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   # Now that we have the Sky packages at the hardcoded location, run `pub get`.
   RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'pub'), None, flags=['get'], cwd=dart_tests_dir)
 
-  dart_tests = glob.glob('%s/*image*.dart' % dart_tests_dir)
+  dart_tests = glob.glob('%s/*.dart' % dart_tests_dir)
 
   for dart_test_file in dart_tests:
     if filter is not None and os.path.basename(dart_test_file) not in filter:
@@ -466,8 +466,8 @@ def main():
     assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None
     RunDartTests(build_dir, dart_filter, args.verbose_dart_snapshot)
-    # RunConstFinderTests(build_dir)
-    # RunFrontEndServerTests(build_dir)
+    RunConstFinderTests(build_dir)
+    RunFrontEndServerTests(build_dir)
 
   if 'java' in types:
     assert not IsWindows(), "Android engine files can't be compiled on Windows."

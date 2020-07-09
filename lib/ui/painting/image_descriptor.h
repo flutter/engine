@@ -12,6 +12,7 @@
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/immutable_buffer.h"
 #include "third_party/skia/include/codec/SkCodec.h"
+#include "third_party/skia/include/core/SkImageGenerator.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/tonic/dart_library_natives.h"
 
@@ -64,9 +65,16 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   const SkImageInfo& image_info() const { return image_info_; }
 
   bool get_pixels(const SkPixmap& pixmap) const {
-    FML_DCHECK(codec_);
-    return codec_->getPixels(pixmap.info(), pixmap.writable_addr(),
-                             pixmap.rowBytes());
+    if (image_generator_) {
+      return image_generator_->getPixels(pixmap.info(), pixmap.writable_addr(),
+                                         pixmap.rowBytes());
+    }
+    if (codec_) {
+      return codec_->getPixels(pixmap.info(), pixmap.writable_addr(),
+                               pixmap.rowBytes());
+    }
+    FML_DCHECK(false) << "get_pixels called without a codec or image generator";
+    return false;
   }
 
   void dispose() {
@@ -89,10 +97,14 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
 
   sk_sp<SkData> buffer_;
   std::shared_ptr<SkCodec> codec_;
-  SkImageInfo image_info_;
+  // The SkCodec doesn't know how to handle orientation. The image generator
+  // does. The image generate takes sole ownership over its codec pointer,
+  // but we'll still need access to the codec to ask for scaled dimensions.
+  std::unique_ptr<SkImageGenerator> image_generator_;
+  const SkImageInfo image_info_;
   std::optional<size_t> row_bytes_;
 
-  // static const SkImageInfo CorrectImageInfo(std::shared_ptr<SkCodec> codec);
+  const SkImageInfo CreateImageInfo() const;
 
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(ImageDescriptor);

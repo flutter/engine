@@ -121,15 +121,6 @@ sk_sp<SkImage> ImageFromCompressedData(fml::RefPtr<ImageDescriptor> descriptor,
                static_cast<double>(resized_dimensions.height()) /
                    source_dimensions.height()));
 
-  FML_DLOG(ERROR) << "resize_dimensions: " << resized_dimensions.width() << "x"
-                  << resized_dimensions.height();
-  FML_DLOG(ERROR) << "source_dimensions: " << source_dimensions.width() << "x"
-                  << source_dimensions.height();
-  FML_DLOG(ERROR) << "decode_dimensions: " << decode_dimensions.width() << "x"
-                  << decode_dimensions.height();
-  FML_DLOG(ERROR) << "codec dimensions:  " << codec->dimensions().width() << "x"
-                  << codec->dimensions().height();
-
   // If the codec supports efficient sub-pixel decoding, decoded at a resolution
   // close to the target resolution before resizing.
   if (decode_dimensions != codec->dimensions()) {

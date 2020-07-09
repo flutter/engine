@@ -11,6 +11,7 @@
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 #include "flutter/lib/ui/painting/single_frame_codec.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "third_party/skia/src/codec/SkCodecImageGenerator.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
@@ -33,22 +34,14 @@ void ImageDescriptor::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-static const SkImageInfo CorrectImageInfo(std::shared_ptr<SkCodec> codec) {
-  if (!codec) {
-    return SkImageInfo::MakeUnknown();
+const SkImageInfo ImageDescriptor::CreateImageInfo() const {
+  if (image_generator_) {
+    return image_generator_->getInfo();
   }
-  auto info = codec->getInfo();
-  if (kUnpremul_SkAlphaType == info.alphaType()) {
-    info = info.makeAlphaType(kPremul_SkAlphaType);
+  if (codec_) {
+    return codec_->getInfo();
   }
-  auto origin = codec->getOrigin();
-  if (origin == kLeftTop_SkEncodedOrigin ||
-      origin == kRightTop_SkEncodedOrigin ||
-      origin == kRightBottom_SkEncodedOrigin ||
-      origin == kLeftBottom_SkEncodedOrigin) {
-    return info.makeWH(info.height(), info.width());
-  }
-  return info;
+  return SkImageInfo::MakeUnknown();
 }
 
 ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
@@ -56,14 +49,19 @@ ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
                                  std::optional<size_t> row_bytes)
     : buffer_(std::move(buffer)),
       codec_(nullptr),
+      image_generator_(nullptr),
       image_info_(std::move(image_info)),
       row_bytes_(row_bytes) {}
 
 ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
                                  std::shared_ptr<SkCodec> codec)
     : buffer_(std::move(buffer)),
-      codec_(codec),
-      image_info_(CorrectImageInfo(std::move(codec))),
+      codec_(std::move(codec)),
+      image_generator_(
+          codec_ && codec_->getFrameCount() == 1
+              ? SkCodecImageGenerator::MakeFromEncodedCodec(buffer_)
+              : nullptr),
+      image_info_(CreateImageInfo()),
       row_bytes_(std::nullopt) {}
 
 void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
