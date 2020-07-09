@@ -6,6 +6,9 @@
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/closure.h"
@@ -917,7 +920,25 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     compute_platform_resolved_locale_callback =
         [ptr = args->compute_platform_resolved_locale_callback](
             const std::vector<std::string>& supported_locale_data) {
-          return ptr(supported_locale_data);
+          const char* supported_locale_data_cstr[supported_locale_data.size()];
+
+          for (size_t i = 0; i < supported_locale_data.size(); ++i) {
+            supported_locale_data_cstr[i] = supported_locale_data[i].c_str();
+            // std::strcpy(supported_locale_data_cstr[i],
+            //             supported_locale_data[i].c_str());
+          }
+          char** result =
+              ptr(supported_locale_data_cstr[0], supported_locale_data.size());
+
+          std::unique_ptr<std::vector<std::string>> out =
+              std::make_unique<std::vector<std::string>>();
+          if (result != nullptr) {
+            size_t number_of_strings_per_locale = 4;
+            for (size_t i = 0; i < number_of_strings_per_locale; ++i) {
+              out->push_back(result[i]);
+            }
+          }
+          return out;
         };
   }
 
