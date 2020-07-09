@@ -391,6 +391,8 @@ class Shell final : public PlatformView::Delegate,
                      >
       service_protocol_handlers_;
   bool is_setup_ = false;
+  std::future<bool> async_waiting_subsystems_;
+  std::queue<std::future<void>> pending_tasks_before_setup_;
   uint64_t next_pointer_flow_id_ = 0;
 
   bool first_frame_rasterized_ = false;

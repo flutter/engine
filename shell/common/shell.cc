@@ -61,16 +61,18 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   std::promise<fml::WeakPtr<SnapshotDelegate>> snapshot_delegate_promise;
   auto snapshot_delegate_future = snapshot_delegate_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetRasterTaskRunner(), [&rasterizer_promise,  //
-                                           &snapshot_delegate_promise,
-                                           on_create_rasterizer,  //
-                                           shell = shell.get()    //
-  ]() {
+      task_runners.GetRasterTaskRunner(),
+      fml::MakeCopyable([rasterizer_promise = std::move(rasterizer_promise),
+                         snapshot_delegate_promise =
+                             std::move(snapshot_delegate_promise),
+                         on_create_rasterizer,  //
+                         shell = shell.get()    //
+  ]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupGPUSubsystem");
         std::unique_ptr<Rasterizer> rasterizer(on_create_rasterizer(*shell));
         snapshot_delegate_promise.set_value(rasterizer->GetSnapshotDelegate());
         rasterizer_promise.set_value(std::move(rasterizer));
-      });
+      }));
 
   // Create the platform view on the platform thread (this thread).
   auto platform_view = on_create_platform_view(*shell.get());
@@ -105,21 +107,22 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // https://github.com/flutter/flutter/issues/42948
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
-      [&io_manager_promise,                                               //
-       &weak_io_manager_promise,                                          //
-       &unref_queue_promise,                                              //
-       platform_view = platform_view->GetWeakPtr(),                       //
-       io_task_runner,                                                    //
-       is_backgrounded_sync_switch = shell->GetIsGpuDisabledSyncSwitch()  //
-  ]() {
-        TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
-        auto io_manager = std::make_unique<ShellIOManager>(
-            platform_view.getUnsafe()->CreateResourceContext(),
-            is_backgrounded_sync_switch, io_task_runner);
-        weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
-        unref_queue_promise.set_value(io_manager->GetSkiaUnrefQueue());
-        io_manager_promise.set_value(std::move(io_manager));
-      });
+      fml::MakeCopyable(
+          [io_manager_promise = std::move(io_manager_promise),
+           weak_io_manager_promise = std::move(weak_io_manager_promise),
+           unref_queue_promise = std::move(unref_queue_promise),
+           platform_view = platform_view->GetWeakPtr(),                       //
+           io_task_runner,                                                    //
+           is_backgrounded_sync_switch = shell->GetIsGpuDisabledSyncSwitch()  //
+  ]() mutable {
+            TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
+            auto io_manager = std::make_unique<ShellIOManager>(
+                platform_view.getUnsafe()->CreateResourceContext(),
+                is_backgrounded_sync_switch, io_task_runner);
+            weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
+            unref_queue_promise.set_value(io_manager->GetSkiaUnrefQueue());
+            io_manager_promise.set_value(std::move(io_manager));
+          }));
 
   // Send dispatcher_maker to the engine constructor because shell won't have
   // platform_view set until Shell::Setup is called later.
@@ -130,46 +133,67 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   auto engine_future = engine_promise.get_future();
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&engine_promise,                                 //
-                         shell = shell.get(),                             //
-                         &dispatcher_maker,                               //
-                         &window_data,                                    //
-                         isolate_snapshot = std::move(isolate_snapshot),  //
-                         vsync_waiter = std::move(vsync_waiter),          //
-                         &weak_io_manager_future,                         //
-                         &snapshot_delegate_future,                       //
-                         &unref_queue_future                              //
-  ]() mutable {
-        TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
-        const auto& task_runners = shell->GetTaskRunners();
+      fml::MakeCopyable(
+          [engine_promise = std::move(engine_promise),
+           shell = shell.get(),  //
+           dispatcher_maker = std::move(dispatcher_maker),
+           window_data = std::move(window_data),
+           isolate_snapshot = std::move(isolate_snapshot),  //
+           vsync_waiter = std::move(vsync_waiter),          //
+           weak_io_manager_future = std::move(weak_io_manager_future),
+           snapshot_delegate_future = std::move(snapshot_delegate_future),
+           unref_queue_future = std::move(unref_queue_future)]() mutable {
+            TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
+            const auto& task_runners = shell->GetTaskRunners();
 
-        // The animator is owned by the UI thread but it gets its vsync pulses
-        // from the platform.
-        auto animator = std::make_unique<Animator>(*shell, task_runners,
-                                                   std::move(vsync_waiter));
+            // The animator is owned by the UI thread but it gets its vsync
+            // pulses from the platform.
+            auto animator = std::make_unique<Animator>(*shell, task_runners,
+                                                       std::move(vsync_waiter));
 
-        engine_promise.set_value(std::make_unique<Engine>(
-            *shell,                         //
-            dispatcher_maker,               //
-            *shell->GetDartVM(),            //
-            std::move(isolate_snapshot),    //
-            task_runners,                   //
-            window_data,                    //
-            shell->GetSettings(),           //
-            std::move(animator),            //
-            weak_io_manager_future.get(),   //
-            unref_queue_future.get(),       //
-            snapshot_delegate_future.get()  //
-            ));
-      }));
+            engine_promise.set_value(std::make_unique<Engine>(
+                *shell,                         //
+                dispatcher_maker,               //
+                *shell->GetDartVM(),            //
+                std::move(isolate_snapshot),    //
+                task_runners,                   //
+                window_data,                    //
+                shell->GetSettings(),           //
+                std::move(animator),            //
+                weak_io_manager_future.get(),   //
+                unref_queue_future.get(),       //
+                snapshot_delegate_future.get()  //
+                ));
+          }));
 
-  if (!shell->Setup(std::move(platform_view),  //
-                    engine_future.get(),       //
-                    rasterizer_future.get(),   //
-                    io_manager_future.get())   //
-  ) {
-    return nullptr;
-  }
+  // Creating engine takes noticeable time, get it to background waiting for the
+  // creation and then setup the shell.
+  auto result = std::async(
+      std::launch::async,
+      [shell = shell.get(), platform_view = std::move(platform_view),
+       engine_future = std::move(engine_future),
+       rasterizer_future = std::move(rasterizer_future),
+       io_manager_future = std::move(io_manager_future)]() mutable {
+        TRACE_EVENT0("flutter", "WaitingShellSubsystems");
+
+        auto engine = engine_future.get();
+        auto rasterizer = rasterizer_future.get();
+        auto io_manager = io_manager_future.get();
+
+        fml::TaskRunner::RunNowOrPostTask(
+            shell->GetTaskRunners().GetPlatformTaskRunner(),
+            fml::MakeCopyable([&shell, platform_view = std::move(platform_view),
+                               engine = std::move(engine),
+                               rasterizer = std::move(rasterizer),
+                               io_manager = std::move(io_manager)]() mutable {
+              shell->Setup(std::move(platform_view), std::move(engine),
+                           std::move(rasterizer), std::move(io_manager));
+            }));
+        return true;
+      });
+  // Prevents the destructor of `result` from blocking and making `std::async`
+  // synchronous. For details see https://en.cppreference.com/w/cpp/thread/async
+  shell->async_waiting_subsystems_ = std::move(result);
 
   return shell;
 }
@@ -459,6 +483,22 @@ void Shell::RunEngine(RunConfiguration run_configuration) {
 void Shell::RunEngine(
     RunConfiguration run_configuration,
     const std::function<void(Engine::RunStatus)>& result_callback) {
+  if (!is_setup_) {
+    auto pending_task = std::async(
+        std::launch::deferred,
+        [shell = weak_factory_.GetWeakPtr(),
+         run_configuration = std::move(run_configuration),
+         result_callback = std::move(result_callback)]() mutable {
+          if (shell) {
+            shell->RunEngine(std::move(run_configuration), result_callback);
+          }
+        });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
+  TRACE_EVENT0("flutter", "Shell::RunEngine");
+
   auto result = [platform_runner = task_runners_.GetPlatformTaskRunner(),
                  result_callback](Engine::RunStatus run_result) {
     if (!result_callback) {
@@ -467,7 +507,9 @@ void Shell::RunEngine(
     platform_runner->PostTask(
         [result_callback, run_result]() { result_callback(run_result); });
   };
+
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   fml::TaskRunner::RunNowOrPostTask(
@@ -536,6 +578,9 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
     return false;
   }
 
+  TRACE_EVENT0("flutter", "Shell::Setup");
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
   platform_view_ = std::move(platform_view);
   engine_ = std::move(engine);
   rasterizer_ = std::move(rasterizer);
@@ -573,6 +618,13 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   // https://github.com/flutter/flutter/issues/42947
   display_refresh_rate_ = weak_engine_.getUnsafe()->GetDisplayRefreshRate();
 
+  // Shell is properly setup now, run the pending tasks that were intended to
+  // run while waiting for the subsystems ready.
+  while (!pending_tasks_before_setup_.empty()) {
+    pending_tasks_before_setup_.front().wait();
+    pending_tasks_before_setup_.pop();
+  }
+
   return true;
 }
 
@@ -605,8 +657,21 @@ DartVM* Shell::GetDartVM() {
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
+  if (!is_setup_) {
+    auto pending_task = std::async(
+        std::launch::deferred, [shell = weak_factory_.GetWeakPtr(),
+                                surface = std::move(surface)]() mutable {
+          if (shell) {
+            shell->OnPlatformViewCreated(std::move(surface));
+          }
+        });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   // Note:
@@ -694,8 +759,20 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDestroyed() {
+  if (!is_setup_) {
+    auto pending_task = std::async(
+        std::launch::deferred, [shell = weak_factory_.GetWeakPtr()]() mutable {
+          if (shell) {
+            shell->OnPlatformViewDestroyed();
+          }
+        });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewDestroyed");
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   // Note:
@@ -771,7 +848,20 @@ void Shell::OnPlatformViewDestroyed() {
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
+  if (!is_setup_) {
+    auto pending_task = std::async(
+        std::launch::deferred, [shell = weak_factory_.GetWeakPtr(),
+                                metrics = std::move(metrics)]() mutable {
+          if (shell) {
+            shell->OnPlatformViewSetViewportMetrics(std::move(metrics));
+          }
+        });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   // This is the formula Android uses.
@@ -795,7 +885,20 @@ void Shell::OnPlatformViewSetViewportMetrics(const ViewportMetrics& metrics) {
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchPlatformMessage(
     fml::RefPtr<PlatformMessage> message) {
+  if (!is_setup_) {
+    auto pending_task = std::async(
+        std::launch::deferred, [shell = weak_factory_.GetWeakPtr(),
+                                message = std::move(message)]() mutable {
+          if (shell) {
+            shell->OnPlatformViewDispatchPlatformMessage(std::move(message));
+          }
+        });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
@@ -809,9 +912,22 @@ void Shell::OnPlatformViewDispatchPlatformMessage(
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchPointerDataPacket(
     std::unique_ptr<PointerDataPacket> packet) {
+  if (!is_setup_) {
+    auto pending_task = std::async(
+        std::launch::deferred, [shell = weak_factory_.GetWeakPtr(),
+                                packet = std::move(packet)]() mutable {
+          if (shell) {
+            shell->OnPlatformViewDispatchPointerDataPacket(std::move(packet));
+          }
+        });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewDispatchPointerDataPacket");
   TRACE_FLOW_BEGIN("flutter", "PointerEvent", next_pointer_flow_id_);
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   task_runners_.GetUITaskRunner()->PostTask(
       fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
@@ -827,7 +943,22 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
 void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
                                                   SemanticsAction action,
                                                   std::vector<uint8_t> args) {
+  if (!is_setup_) {
+    auto pending_task =
+        std::async(std::launch::deferred, [shell = weak_factory_.GetWeakPtr(),
+                                           id, action = std::move(action),
+                                           args = std::move(args)]() mutable {
+          if (shell) {
+            shell->OnPlatformViewDispatchSemanticsAction(id, std::move(action),
+                                                         std::move(args));
+          }
+        });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
@@ -840,7 +971,20 @@ void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewSetSemanticsEnabled(bool enabled) {
+  if (!is_setup_) {
+    auto pending_task =
+        std::async(std::launch::deferred,
+                   [shell = weak_factory_.GetWeakPtr(), enabled]() mutable {
+                     if (shell) {
+                       shell->OnPlatformViewSetSemanticsEnabled(enabled);
+                     }
+                   });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
@@ -853,7 +997,20 @@ void Shell::OnPlatformViewSetSemanticsEnabled(bool enabled) {
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewSetAccessibilityFeatures(int32_t flags) {
+  if (!is_setup_) {
+    auto pending_task =
+        std::async(std::launch::deferred,
+                   [shell = weak_factory_.GetWeakPtr(), flags]() mutable {
+                     if (shell) {
+                       shell->OnPlatformViewSetAccessibilityFeatures(flags);
+                     }
+                   });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
@@ -867,7 +1024,20 @@ void Shell::OnPlatformViewSetAccessibilityFeatures(int32_t flags) {
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewRegisterTexture(
     std::shared_ptr<flutter::Texture> texture) {
+  if (!is_setup_) {
+    auto pending_task = std::async(
+        std::launch::deferred, [shell = weak_factory_.GetWeakPtr(),
+                                texture = std::move(texture)]() mutable {
+          if (shell) {
+            shell->OnPlatformViewRegisterTexture(std::move(texture));
+          }
+        });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetRasterTaskRunner()->PostTask(
@@ -882,7 +1052,20 @@ void Shell::OnPlatformViewRegisterTexture(
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewUnregisterTexture(int64_t texture_id) {
+  if (!is_setup_) {
+    auto pending_task =
+        std::async(std::launch::deferred,
+                   [shell = weak_factory_.GetWeakPtr(), texture_id]() mutable {
+                     if (shell) {
+                       shell->OnPlatformViewUnregisterTexture(texture_id);
+                     }
+                   });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetRasterTaskRunner()->PostTask(
@@ -897,7 +1080,20 @@ void Shell::OnPlatformViewUnregisterTexture(int64_t texture_id) {
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {
+  if (!is_setup_) {
+    auto pending_task = std::async(
+        std::launch::deferred,
+        [shell = weak_factory_.GetWeakPtr(), texture_id]() mutable {
+          if (shell) {
+            shell->OnPlatformViewMarkTextureFrameAvailable(texture_id);
+          }
+        });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   // Tell the rasterizer that one of its textures has a new frame available.
@@ -928,7 +1124,20 @@ void Shell::OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {
 
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
+  if (!is_setup_) {
+    auto pending_task = std::async(
+        std::launch::deferred, [shell = weak_factory_.GetWeakPtr(),
+                                closure = std::move(closure)]() mutable {
+          if (shell) {
+            shell->OnPlatformViewSetNextFrameCallback(std::move(closure));
+          }
+        });
+    pending_tasks_before_setup_.push(std::move(pending_task));
+    return;
+  }
+
   FML_DCHECK(is_setup_);
+  FML_DCHECK(pending_tasks_before_setup_.empty());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetRasterTaskRunner()->PostTask(
