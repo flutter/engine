@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/dart_wrapper.h"
