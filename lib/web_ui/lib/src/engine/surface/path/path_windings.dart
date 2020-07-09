@@ -306,7 +306,7 @@ class PathWinding {
 
     int dir = 1;
     if (y0 > y3) {
-      double swap = y0;
+      final double swap = y0;
       y0 = y3;
       y3 = swap;
       dir = -1;

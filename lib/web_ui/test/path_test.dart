@@ -369,6 +369,21 @@ void main() {
       expect(path.contains(Offset(10, 20)), false);
     });
 
+    test('Computes contains for cubic curves', () {
+      final Path path = Path();
+      path.moveTo(10, 25);
+      path.cubicTo(10, 20, 10, 20,  20, 15);
+      path.lineTo(25, 20);
+      path.cubicTo(30, 20, 30, 20,  30, 25);
+      path.lineTo(30, 35);
+      path.cubicTo(30, 40, 30, 40,  25, 40);
+      path.lineTo(15, 40);
+      path.cubicTo(10, 40, 10,  40, 10, 35);
+      path.close();
+      expect(path.contains(Offset(10, 20)), false);
+      expect(path.contains(Offset(30, 40)), false);
+    });
+
     // Regression test for https://github.com/flutter/flutter/issues/44470
     test('Should handle contains for devicepixelratio != 1.0', () {
       js_util.setProperty(html.window, 'devicePixelRatio', 4.0);

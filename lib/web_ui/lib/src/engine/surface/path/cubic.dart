@@ -16,7 +16,7 @@ int _chopCubicAtYExtrema(Float32List points, Float32List dest) {
   final List<double> roots = _quadRoots.roots;
   if (roots.isEmpty) {
     // No roots, just use input cubic.
-    return 1;
+    return 0;
   }
   _chopCubicAt(roots, points, dest);
   final int rootCount = roots.length;
