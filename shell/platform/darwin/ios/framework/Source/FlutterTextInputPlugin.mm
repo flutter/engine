@@ -11,6 +11,26 @@
 static const char _kTextAffinityDownstream[] = "TextAffinity.downstream";
 static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
 
+#pragma mark - TextInputConfiguration Field Names
+static NSString* const _kSecureTextEntry = @"obscureText";
+static NSString* const _kKeyboardType = @"inputType";
+static NSString* const _kKeyboardAppearance = @"keyboardAppearance";
+static NSString* const _kInputAction = @"inputAction";
+
+static NSString* const _kSmartDashesType = @"smartDashesType";
+static NSString* const _kSmartQuotesType = @"smartQuotesType";
+
+static NSString* const _kAssociatedAutofillFields = @"fields";
+
+// TextInputConfiguration.autofill and sub-field names
+static NSString* const _kAutofillProperties = @"autofill";
+static NSString* const _kAutofillId = @"uniqueIdentifier";
+static NSString* const _kAutofillEditingValue = @"editingValue";
+static NSString* const _kAutofillHints = @"hints";
+
+static NSString* const _kAutocorrectionType = @"autocorrect";
+
+#pragma mark - Static Functions
 static UIKeyboardType ToUIKeyboardType(NSDictionary* type) {
   NSString* inputType = type[@"name"];
   if ([inputType isEqualToString:@"TextInputType.address"])
@@ -209,15 +229,17 @@ static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
   return hints[0];
 }
 
+// Retrieves the autofillId from an input field's configuration. Returns
+// nil if the field is nil and the input field is not a password field.
 static NSString* autofillIdFromDictionary(NSDictionary* dictionary) {
-  NSDictionary* autofill = dictionary[@"autofill"];
+  NSDictionary* autofill = dictionary[_kAutofillProperties];
   if (autofill) {
-    return autofill[@"uniqueIdentifier"];
+    return autofill[_kAutofillId];
   }
 
   // When autofill is nil, the field may still need an autofill id
   // if the field is for password.
-  return [dictionary[@"obscureText"] boolValue] ? @"password" : nil;
+  return [dictionary[_kSecureTextEntry] boolValue] ? @"password" : nil;
 }
 
 // There're 2 types of autofills on native iOS:
@@ -243,15 +265,15 @@ typedef NS_ENUM(NSInteger, FlutterAutofillType) {
 
 static BOOL isFieldPasswordRelated(NSDictionary* configuration) {
   if (@available(iOS 10.0, *)) {
-    BOOL isSecureTextEntry = [configuration[@"obscureText"] boolValue];
+    BOOL isSecureTextEntry = [configuration[_kSecureTextEntry] boolValue];
     if (isSecureTextEntry)
       return YES;
 
     if (!autofillIdFromDictionary(configuration)) {
       return NO;
     }
-    NSDictionary* autofill = configuration[@"autofill"];
-    UITextContentType contentType = ToUITextContentType(autofill[@"hints"]);
+    NSDictionary* autofill = configuration[_kAutofillProperties];
+    UITextContentType contentType = ToUITextContentType(autofill[_kAutofillHints]);
 
     if (@available(iOS 11.0, *)) {
       if ([contentType isEqualToString:UITextContentTypePassword] ||
@@ -270,7 +292,7 @@ static BOOL isFieldPasswordRelated(NSDictionary* configuration) {
 }
 
 static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
-  for (NSDictionary* field in configuration[@"fields"]) {
+  for (NSDictionary* field in configuration[_kAssociatedAutofillFields]) {
     if (isFieldPasswordRelated(field)) {
       return FlutterAutofillTypePassword;
     }
@@ -281,8 +303,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   }
 
   if (@available(iOS 10.0, *)) {
-    NSDictionary* autofill = configuration[@"autofill"];
-    UITextContentType contentType = ToUITextContentType(autofill[@"hints"]);
+    NSDictionary* autofill = configuration[_kAutofillProperties];
+    UITextContentType contentType = ToUITextContentType(autofill[_kAutofillHints]);
     return [contentType isEqualToString:@""] ? FlutterAutofillTypeNone : FlutterAutofillTypeRegular;
   }
 
@@ -426,23 +448,23 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)configureWithDictionary:(NSDictionary*)configuration {
-  NSDictionary* inputType = configuration[@"inputType"];
-  NSString* keyboardAppearance = configuration[@"keyboardAppearance"];
-  NSDictionary* autofill = configuration[@"autofill"];
+  NSDictionary* inputType = configuration[_kKeyboardType];
+  NSString* keyboardAppearance = configuration[_kKeyboardAppearance];
+  NSDictionary* autofill = configuration[_kAutofillProperties];
 
-  self.secureTextEntry = [configuration[@"obscureText"] boolValue];
+  self.secureTextEntry = [configuration[_kSecureTextEntry] boolValue];
   self.keyboardType = ToUIKeyboardType(inputType);
   self.keyboardType = UIKeyboardTypeNamePhonePad;
-  self.returnKeyType = ToUIReturnKeyType(configuration[@"inputAction"]);
+  self.returnKeyType = ToUIReturnKeyType(configuration[_kInputAction]);
   self.autocapitalizationType = ToUITextAutoCapitalizationType(configuration);
 
   if (@available(iOS 11.0, *)) {
-    NSString* smartDashesType = configuration[@"smartDashesType"];
+    NSString* smartDashesType = configuration[_kSmartDashesType];
     // This index comes from the SmartDashesType enum in the framework.
     bool smartDashesIsDisabled = smartDashesType && [smartDashesType isEqualToString:@"0"];
     self.smartDashesType =
         smartDashesIsDisabled ? UITextSmartDashesTypeNo : UITextSmartDashesTypeYes;
-    NSString* smartQuotesType = configuration[@"smartQuotesType"];
+    NSString* smartQuotesType = configuration[_kSmartQuotesType];
     // This index comes from the SmartQuotesType enum in the framework.
     bool smartQuotesIsDisabled = smartQuotesType && [smartQuotesType isEqualToString:@"0"];
     self.smartQuotesType =
@@ -455,7 +477,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   } else {
     self.keyboardAppearance = UIKeyboardAppearanceDefault;
   }
-  NSString* autocorrect = configuration[@"autocorrect"];
+  NSString* autocorrect = configuration[_kAutocorrectionType];
   self.autocorrectionType = autocorrect && ![autocorrect boolValue]
                                 ? UITextAutocorrectionTypeNo
                                 : UITextAutocorrectionTypeDefault;
@@ -464,12 +486,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     if (autofill == nil) {
       self.textContentType = @"";
     } else {
-      self.textContentType = ToUITextContentType(autofill[@"hints"]);
-      [self setTextInputState:autofill[@"editingValue"]];
+      self.textContentType = ToUITextContentType(autofill[_kAutofillHints]);
+      [self setTextInputState:autofill[_kAutofillEditingValue]];
       NSAssert(_autofillId, @"The autofill configuration must contain an autofill id");
-      // The input field needs to be visible for the system autofill
-      // to find it.
     }
+    // The input field needs to be visible for the system autofill
+    // to find it.
     self.isVisibleToAutofill = autofill || _secureTextEntry;
   }
 }
@@ -549,6 +571,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return self.frame.size.width > 0 && self.frame.size.height > 0;
 }
 
+// An input view is generally ignored by password autofill attempts, if it's
+// not the first responder and is zero-sized. For input fields that are in the
+// autofill context but do not belong to the current autofill group, setting
+// their frames to CGRectZero prevents ios autofill from taking them into
+// account.
 - (void)setIsVisibleToAutofill:(BOOL)isVisibleToAutofill {
   self.frame = isVisibleToAutofill ? CGRectMake(0, 0, 1, 1) : CGRectZero;
 }
@@ -1007,7 +1034,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 @end
 
 @interface FlutterTextInputPlugin ()
-@property(nonatomic, retain) FlutterTextInputView* reusableInputView;
+@property(nonatomic, strong) FlutterTextInputView* reusableInputView;
 
 // The current password-autofillable input fields that have yet to be saved.
 @property(nonatomic, readonly)
@@ -1106,12 +1133,14 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
       _activeView = [self updateAndShowReusableInputView:configuration];
       break;
     case FlutterAutofillTypeRegular:
+      // If the group does not involve password autofill, only install the
+      // input view that's being focused.
       _activeView = [self updateAndShowAutofillViews:nil
                                         focusedField:configuration
                                    isPasswordRelated:NO];
       break;
     case FlutterAutofillTypePassword:
-      _activeView = [self updateAndShowAutofillViews:configuration[@"fields"]
+      _activeView = [self updateAndShowAutofillViews:configuration[_kAssociatedAutofillFields]
                                         focusedField:configuration
                                    isPasswordRelated:YES];
       break;
@@ -1125,8 +1154,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 // Updates and shows an input field that is not password related and has no autofill
-// hints. This method reconfigure an existing instance of input field instead of
-// creating a new one.
+// hints. This method re-configures and reuses an existing instance of input field
+// instead of creating a new one.
 // Also updates the current autofill context.
 - (FlutterTextInputView*)updateAndShowReusableInputView:(NSDictionary*)configuration {
   // It's possible that the configuration of this non-autofillable input view has
@@ -1140,7 +1169,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self addToKeyWindowIfNeeded:_reusableInputView];
   _reusableInputView.textInputDelegate = _textInputDelegate;
 
-  for (NSDictionary* field in configuration[@"fields"]) {
+  for (NSDictionary* field in configuration[_kAssociatedAutofillFields]) {
     NSString* autofillId = autofillIdFromDictionary(field);
     if (autofillId && autofillTypeOf(field) == FlutterAutofillTypeNone) {
       [_autofillContext removeObjectForKey:autofillId];
@@ -1201,17 +1230,19 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (!inputView) {
     inputView =
         needsPasswordAutofill ? [FlutterSecureTextInputView alloc] : [FlutterTextInputView alloc];
-    inputView = [[inputView init] autorelease];
+    inputView = [inputView init];
     [self addToKeyWindowIfNeeded:inputView];
   }
 
   inputView.textInputDelegate = _textInputDelegate;
   [inputView configureWithDictionary:field];
-  return inputView;
+  return [inputView autorelease];
 }
 
 // Removes every installed input field, unless it's in the current autofill
 // context. May remove the active view too if includeActiveView is YES.
+// When clearText is YES, the text on the input fields will be set to empty before
+// they are removed from the view hierarchy, to avoid autofill save .
 - (void)cleanUpViewHierarchy:(BOOL)includeActiveView clearText:(BOOL)clearText {
   UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
   NSAssert(keyWindow != nullptr,
