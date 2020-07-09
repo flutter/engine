@@ -95,6 +95,7 @@ static void parse_locale(const gchar* locale,
 static void setup_locales(FlEngine* self) {
   const gchar* const* languages = g_get_language_names();
   g_autoptr(GPtrArray) locales = g_ptr_array_new_with_free_func(g_free);
+  // Helper array to take ownership of the strings passed to Flutter.
   g_autoptr(GPtrArray) locale_strings = g_ptr_array_new_with_free_func(g_free);
   for (int i = 0; languages[i] != nullptr; i++) {
     gchar *language, *territory, *codeset, *modifier;
