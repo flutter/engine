@@ -187,29 +187,29 @@ TEST_F(ShellTest,
           }));
 
   fml::AutoResetWaitableEvent latch;
-  auto handle = std::async(std::launch::async,
-             fml::MakeCopyable([shell_test_point = this, &latch, task_runners,
-                                shell_holder_future =
-                                    std::move(shell_holder_future)]() mutable {
-               // wait
-               auto shell_holder = shell_holder_future.get();
-               // check shell_res on platformthread
-               auto lambda_shell_res = fml::MakeCopyable(
-                   [shell_test_point, &latch, task_runners,
-                    shell_holder = std::move(shell_holder)]() mutable {
-                     auto shell_res =
-                         Shell::MakeShellFromHolder(std::move(shell_holder));
-                     ASSERT_TRUE(ValidateShell(shell_res.get()));
-                     ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-                     shell_test_point->DestroyShell(std::move(shell_res),
-                                                    std::move(task_runners));
-                     ASSERT_FALSE(DartVMRef::IsInstanceRunning());
-                     latch.Signal();
-                   });
-               fml::TaskRunner::RunNowOrPostTask(
-                   task_runners.GetPlatformTaskRunner(),
-                   std::move(lambda_shell_res));
-             }));
+  auto handle = std::async(
+      std::launch::async,
+      fml::MakeCopyable([shell_test_point = this, &latch, task_runners,
+                         shell_holder_future =
+                             std::move(shell_holder_future)]() mutable {
+        // wait
+        auto shell_holder = shell_holder_future.get();
+        // check shell_res on platformthread
+        auto lambda_shell_res = fml::MakeCopyable(
+            [shell_test_point, &latch, task_runners,
+             shell_holder = std::move(shell_holder)]() mutable {
+              auto shell_res =
+                  Shell::MakeShellFromHolder(std::move(shell_holder));
+              ASSERT_TRUE(ValidateShell(shell_res.get()));
+              ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+              shell_test_point->DestroyShell(std::move(shell_res),
+                                             std::move(task_runners));
+              ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+              latch.Signal();
+            });
+        fml::TaskRunner::RunNowOrPostTask(task_runners.GetPlatformTaskRunner(),
+                                          std::move(lambda_shell_res));
+      }));
 
   latch.Wait();
   handle.get();
