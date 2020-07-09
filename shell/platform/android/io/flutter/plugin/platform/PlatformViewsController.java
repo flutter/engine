@@ -325,7 +325,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       return MotionEvent.obtain(
           trackedEvent.getDownTime(),
           trackedEvent.getEventTime(),
-          trackedEvent.getAction(),
+          touch.action, // TODO (kaushikiska): https://github.com/flutter/flutter/issues/61169
           touch.pointerCount,
           pointerProperties,
           pointerCoords,
