@@ -116,7 +116,7 @@ class EngineAutofillForm {
         final Map<String, dynamic> autofillInfo = field['autofill'];
         final AutofillInfo autofill = AutofillInfo.fromFrameworkMessage(
             autofillInfo,
-            textCapitalization: TextCapitalizationUtil.fromInputConfiguration(
+            textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
                 field['textCapitalization']));
 
         // The focused text editing element will not be created here.
@@ -241,7 +241,7 @@ class AutofillInfo {
   ///
   /// On the other hand for the multi element forms, for the input elements
   /// other the focused field, we need to use this information.
-  final TextCapitalizationUtil textCapitalization;
+  final TextCapitalizationConfig textCapitalization;
 
   /// Attribute used for autofill.
   ///
@@ -251,8 +251,8 @@ class AutofillInfo {
   final String hint;
 
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill,
-      {TextCapitalizationUtil textCapitalization =
-          const TextCapitalizationUtil.defaultCapitalization()}) {
+      {TextCapitalizationConfig textCapitalization =
+          const TextCapitalizationConfig.defaultCapitalization()}) {
     assert(autofill != null); // ignore: unnecessary_null_comparison
     final String uniqueIdentifier = autofill['uniqueIdentifier']!;
     final List<dynamic> hintsList = autofill['hints'];
@@ -332,18 +332,18 @@ class EditingState {
   /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
   /// the [InputType] of the text field.
   factory EditingState.fromDomElement(html.HtmlElement? domElement,
-      {TextCapitalizationUtil textCapitalization =
-          const TextCapitalizationUtil.defaultCapitalization()}) {
+      {TextCapitalizationConfig textCapitalization =
+          const TextCapitalizationConfig.defaultCapitalization()}) {
     if (domElement is html.InputElement) {
       html.InputElement element = domElement;
       return EditingState(
-          text: textCapitalization.capitializeTextValue(element.value),
+          text: element.value,
           baseOffset: element.selectionStart,
           extentOffset: element.selectionEnd);
     } else if (domElement is html.TextAreaElement) {
       html.TextAreaElement element = domElement;
       return EditingState(
-          text: textCapitalization.capitializeTextValue(element.value),
+          text: element.value,
           baseOffset: element.selectionStart,
           extentOffset: element.selectionEnd);
     } else {
@@ -439,7 +439,7 @@ class InputConfiguration {
         inputAction = flutterInputConfiguration['inputAction'],
         obscureText = flutterInputConfiguration['obscureText'],
         autocorrect = flutterInputConfiguration['autocorrect'],
-        textCapitalization = TextCapitalizationUtil.fromInputConfiguration(
+        textCapitalization = TextCapitalizationConfig.fromInputConfiguration(
             flutterInputConfiguration['textCapitalization']),
         autofill = flutterInputConfiguration.containsKey('autofill')
             ? AutofillInfo.fromFrameworkMessage(
@@ -471,7 +471,7 @@ class InputConfiguration {
 
   final EngineAutofillForm? autofillGroup;
 
-  final TextCapitalizationUtil textCapitalization;
+  final TextCapitalizationConfig textCapitalization;
 }
 
 typedef _OnChangeCallback = void Function(EditingState? editingState);
@@ -625,8 +625,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     if (inputConfig.obscureText!) {
       domElement.setAttribute('type', 'password');
     }
-
-    inputConfig.textCapitalization.setStyleAttribute(domElement);
 
     inputConfig.autofill?.applyToDomElement(domElement, focusedElement: true);
 
@@ -1487,156 +1485,5 @@ class EditableTextGeometry {
       ..width = '${width}px'
       ..height = '${height}px'
       ..transform = cssTransform;
-  }
-}
-
-/// Controls the capitalization of the text.
-///
-/// This corresponds to Flutter's [TextCapitalization].
-///
-/// Uses `text-transform` css property.
-/// See: https://developer.mozilla.org/en-US/docs/Web/CSS/text-transform
-enum TextCapitalization {
-  /// Uppercase for the first letter of each word.
-  words,
-
-  /// Currently not implemented on Flutter Web. Uppercase for the first letter
-  /// of each sentence.
-  sentences,
-
-  /// Uppercase for each letter.
-  characters,
-
-  /// Lowercase for each letter.
-  none,
-}
-
-/// Helper class for text capitalization.
-///
-/// Uses `text-transform` css property.
-/// See: https://developer.mozilla.org/en-US/docs/Web/CSS/text-transform
-class TextCapitalizationUtil {
-  final TextCapitalization textCapitalization;
-
-  static final RegExp wordExp = new RegExp(r"(\w+)");
-  static final RegExp whiteSpaceExp = new RegExp(r"(\s+)");
-
-  const TextCapitalizationUtil.defaultCapitalization()
-      : textCapitalization = TextCapitalization.none;
-
-  // TODO: support sentence level text capitalization.
-  TextCapitalizationUtil.fromInputConfiguration(String inputConfiguration)
-      : this.textCapitalization =
-            inputConfiguration == 'TextCapitalization.words'
-                ? TextCapitalization.words
-                : (inputConfiguration == 'TextCapitalization.characters')
-                    ? TextCapitalization.characters
-                    : TextCapitalization.none;
-
-  void setStyleAttribute(html.HtmlElement domElement) {
-    final html.CssStyleDeclaration elementStyle = domElement.style;
-
-    switch (textCapitalization) {
-      case TextCapitalization.words:
-        elementStyle.textTransform = 'capitalize';
-        break;
-      case TextCapitalization.characters:
-        elementStyle.textTransform = 'uppercase';
-        break;
-      case TextCapitalization.sentences:
-      case TextCapitalization.none:
-      default:
-        elementStyle.textTransform = 'lowercase';
-        break;
-    }
-  }
-
-  /// Change the capitalization of the focused text field's value depending on
-  /// the [TextCapitalization].
-  ///
-  /// For [TextCapitalization.words], this method makes all first letter of each
-  /// word uppercase.
-  ///
-  /// For [TextCapitalization.characters], this method makes all letters of each
-  /// word uppercase.
-  ///
-  /// For [TextCapitalization.sentence] is not supported for now.
-  String capitializeTextValue(String value) {
-    if (value.isEmpty) {
-      return value;
-    }
-    switch (textCapitalization) {
-      case TextCapitalization.words:
-        final Iterable<RegExpMatch> wordMatches = wordExp.allMatches(value);
-        final List<String> words = wordMatches.map((RegExpMatch match) {
-          final String? word = match.group(0);
-          return (word == null) ? '' : word;
-        }).toList();
-        final Iterable<RegExpMatch> whiteSpaceMatches =
-            whiteSpaceExp.allMatches(value);
-        final List<String> whiteSpaces =
-            whiteSpaceMatches.map((RegExpMatch match) {
-          final String? word = match.group(0);
-          return (word == null) ? '' : word;
-        }).toList();
-        final StringBuffer textValueBuffer = new StringBuffer();
-        for (int i = 0; i < words.length && !words[i].isEmpty; i++) {
-          final String word = words[i];
-          textValueBuffer.write('${word[0].toUpperCase()}${word.substring(1)}');
-          if (whiteSpaces.length > i) {
-            textValueBuffer.write(whiteSpaces[i]);
-          }
-        }
-        return textValueBuffer.toString();
-      case TextCapitalization.characters:
-        return value.toUpperCase();
-      case TextCapitalization.sentences:
-      case TextCapitalization.none:
-      default:
-        return value;
-    }
-  }
-
-  /// Sets `autocapitalize` attribute on input elements.
-  ///
-  /// This attribute is only available for mobile browsers.
-  ///
-  /// Note that in mobile browsers the onscreen keyboards provide sentence
-  /// level capitalization as default as apposed to no capitalization on desktop
-  /// browser.
-  ///
-  /// See: https://developers.google.com/web/updates/2015/04/autocapitalize
-  /// https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize
-  void setAutocapitalizeAttribute(html.HtmlElement domElement) {
-    String autocapitalize = '';
-    switch (textCapitalization) {
-      case TextCapitalization.words:
-        // TODO: There is a bug for `words` level capitalization in IOS now.
-        // For now go back to default. Remove the check after bug is resolved.
-        // https://bugs.webkit.org/show_bug.cgi?id=148504
-        if(browserEngine == BrowserEngine.webkit) {
-           autocapitalize = 'sentences';
-        } else {
-          autocapitalize = 'words';
-        }
-        break;
-      case TextCapitalization.characters:
-        autocapitalize = 'characters';
-        break;
-      case TextCapitalization.sentences:
-        autocapitalize = 'sentences';
-        break;
-      case TextCapitalization.none:
-      default:
-        autocapitalize = 'off';
-        break;
-    }
-    if (domElement is html.InputElement) {
-      html.InputElement element = domElement;
-      element.setAttribute('autocapitalize', autocapitalize);
-    } else if (domElement is html.TextAreaElement) {
-      html.TextAreaElement element = domElement;
-      element.setAttribute('autocapitalize', autocapitalize);
-    }
   }
 }
