@@ -24,7 +24,7 @@ class CkPicture implements ui.Picture {
   Future<ui.Image> toImage(int width, int height) {
     final js.JsObject skSurface = canvasKit.callMethod('MakeSurface', <int>[width, height]);
     final js.JsObject skCanvas = skSurface.callMethod('getCanvas');
-    skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture]);
+    skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture.skiaObject]);
     final js.JsObject skImage = skSurface.callMethod('makeImageSnapshot');
     skSurface.callMethod('dispose');
     return CkImage(skImage);
