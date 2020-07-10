@@ -31,8 +31,11 @@ G_DEFINE_TYPE(FlMouseCursorPlugin, fl_mouse_cursor_plugin, G_TYPE_OBJECT)
 // Insert a new entry into a hashtable from strings to strings.
 //
 // Returns whether the newly added value was already in the hash table or not.
-static bool define_system_cursor(GHashTable* table, const gchar *key, const gchar *value) {
-  return g_hash_table_insert(table, (gpointer)key, (gpointer)value);
+static bool define_system_cursor(GHashTable* table,
+                                 const gchar* key,
+                                 const gchar* value) {
+  return g_hash_table_insert(table, static_cast<gpointer>(key),
+                             static_cast<gpointer>(value));
 }
 
 // Populate the hash table so that it maps from Flutter's cursor kinds to GTK's
@@ -69,7 +72,8 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
     populate_system_cursor_table(self->system_cursor_table);
   }
 
-  const gchar* cursor_name = (const gchar*)g_hash_table_lookup(self->system_cursor_table, kind);
+  const gchar* cursor_name = static_cast<const gchar*>(
+      g_hash_table_lookup(self->system_cursor_table, kind));
   if (cursor_name == nullptr)
     cursor_name = kFallbackCursor;
 
@@ -116,8 +120,7 @@ static void fl_mouse_cursor_plugin_dispose(GObject* object) {
     self->view = nullptr;
   }
 
-  if (self->system_cursor_table)
-    g_hash_table_destroy(self->system_cursor_table);
+  g_clear_pointer(&self->system_cursor_table, g_hash_table_unref);
 
   G_OBJECT_CLASS(fl_mouse_cursor_plugin_parent_class)->dispose(object);
 }
