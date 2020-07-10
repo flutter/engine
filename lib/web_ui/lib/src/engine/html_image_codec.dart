@@ -158,7 +158,13 @@ class HtmlImage implements ui.Image {
   // `Picture`s.
   /// Returns an error message on failure, null on success.
   String _toByteData(int format, Callback<Uint8List?> callback) {
-    callback(null);
-    return 'Image.toByteData is not supported in Flutter for Web';
+    if (imgElement.src.startsWith('data:')) {
+      final data = UriData.fromUri(Uri.parse(imgElement.src));
+      callback(data.contentAsBytes());
+      return null;
+    } else {
+      callback(null);
+      return 'Data URI not found';
+    }
   }
 }
