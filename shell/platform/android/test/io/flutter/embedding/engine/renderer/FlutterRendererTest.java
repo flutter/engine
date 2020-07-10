@@ -97,4 +97,18 @@ public class FlutterRendererTest {
     // Verify behavior under test.
     verify(fakeFlutterJNI, times(1)).onSurfaceDestroyed();
   }
+
+  @Test
+  public void itStopsSurfaceTextureCallbackWhenDetached() {
+    // Setup the test.
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+
+    flutterRenderer.startRenderingToSurface(fakeSurface);
+
+    // Execute the behavior under test.
+    flutterRenderer.stopRenderingToSurface();
+
+    // Verify behavior under test.
+    verify(fakeFlutterJNI, times(1)).onSurfaceDestroyed();
+  }
 }
