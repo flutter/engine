@@ -80,7 +80,7 @@ public class MouseCursorPlugin {
               put("verticalText", PointerIcon.TYPE_VERTICAL_TEXT);
               put("wait", PointerIcon.TYPE_WAIT);
               put("zoomIn", PointerIcon.TYPE_ZOOM_IN);
-              put("zoomOut",PointerIcon.TYPE_ZOOM_OUT);
+              put("zoomOut", PointerIcon.TYPE_ZOOM_OUT);
             }
           };
     }
