@@ -34,8 +34,9 @@ G_DEFINE_TYPE(FlMouseCursorPlugin, fl_mouse_cursor_plugin, G_TYPE_OBJECT)
 static bool define_system_cursor(GHashTable* table,
                                  const gchar* key,
                                  const gchar* value) {
-  return g_hash_table_insert(table, static_cast<gpointer>(key),
-                             static_cast<gpointer>(value));
+  return g_hash_table_insert(
+      table, reinterpret_cast<gpointer>(const_cast<gchar*>(key)),
+      reinterpret_cast<gpointer>(const_cast<gchar*>(value)));
 }
 
 // Populate the hash table so that it maps from Flutter's cursor kinds to GTK's
@@ -72,7 +73,7 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
     populate_system_cursor_table(self->system_cursor_table);
   }
 
-  const gchar* cursor_name = static_cast<const gchar*>(
+  const gchar* cursor_name = reinterpret_cast<const gchar*>(
       g_hash_table_lookup(self->system_cursor_table, kind));
   if (cursor_name == nullptr)
     cursor_name = kFallbackCursor;
