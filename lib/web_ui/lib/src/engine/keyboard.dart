@@ -91,9 +91,9 @@ class Keyboard {
 
     final String timerKey = keyboardEvent.code!;
 
-    // Don't synthesize a keyup event for modifier keys because the browser always
-    // sends a keyup event for those.
-    if (!_isModifierKey(event)) {
+    // Don't synthesize a keyup event for modifier keys, or keys not affected by modifiers,
+    // because the browser always sends a keyup event for those.
+    if (!_isModifierKey(event) && _isAffectedByModifiers(event)) {
       // When the user enters a browser/system shortcut (e.g. `cmd+alt+i`) the
       // browser doesn't send a keyup for it. This puts the framework in a
       // corrupt state because it thinks the key was never released.
@@ -183,6 +183,13 @@ int _getMetaState(html.KeyboardEvent event) {
 bool _isModifierKey(html.KeyboardEvent event) {
   final String key = event.key!;
   return key == 'Meta' || key == 'Shift' || key == 'Alt' || key == 'Control';
+}
+
+/// Returns true if the [event] is been affects by any of the modifiers key
+///
+/// This is a strong indication that this key is been used for a shortcut
+bool _isAffectedByModifiers(html.KeyboardEvent event) {
+  return event.ctrlKey || event.shiftKey || event.altKey || event.metaKey;
 }
 
 void _noopCallback(ByteData? data) {}
