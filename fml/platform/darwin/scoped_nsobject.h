@@ -70,6 +70,24 @@ class scoped_nsprotocol {
 
   NST get() const { return object_; }
 
+  void swap(scoped_nsprotocol& that) {
+    NST temp = that.object_;
+    that.object_ = object_;
+    object_ = temp;
+  }
+
+  // scoped_nsprotocol<>::release() is like scoped_ptr<>::release.  It is NOT a
+  // wrapper for [object_ release].  To force a scoped_nsprotocol<> to call
+  // [object_ release], use scoped_nsprotocol<>::reset().
+  [[nodiscard]] NST release() {
+    NST temp = object_;
+    object_ = nil;
+    return temp;
+  }
+
+  // Shift reference to the autorelease pool to be released later.
+  NST autorelease() { return [release() autorelease]; }
+
  private:
   NST object_;
 };
