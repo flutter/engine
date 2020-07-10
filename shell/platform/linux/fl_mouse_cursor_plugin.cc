@@ -116,7 +116,7 @@ static void fl_mouse_cursor_plugin_dispose(GObject* object) {
     self->view = nullptr;
   }
 
-  g_hash_table_destroy(self->system_cursor_table)''
+  g_hash_table_destroy(self->system_cursor_table);
 
   G_OBJECT_CLASS(fl_mouse_cursor_plugin_parent_class)->dispose(object);
 }
