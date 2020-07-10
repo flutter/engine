@@ -84,6 +84,9 @@ echo "$(date) START:flutter_runner_tests ----------------------------"
     --identity-file $pkey \
     --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
+./fuchsia_ctl -d $device_name ssh \
+    --identity-file $pkey \
+    -c "killall a11y_manager.cmx; killall scenic.cmx;"
 
 ./fuchsia_ctl -d $device_name test \
     -f flutter_aot_runner-0.far    \
@@ -92,6 +95,9 @@ echo "$(date) START:flutter_runner_tests ----------------------------"
     --identity-file $pkey \
     --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
+./fuchsia_ctl -d $device_name ssh \
+    --identity-file $pkey \
+    -c "killall a11y_manager.cmx; killall scenic.cmx;"
 
 # ./fuchsia_ctl -d $device_name test \
 #     -f flutter_aot_runner-0.far    \
