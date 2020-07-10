@@ -21,6 +21,7 @@ import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterView;
+import io.flutter.embedding.android.MotionEventTracker;
 import io.flutter.embedding.engine.FlutterOverlaySurface;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.mutatorsstack.*;
@@ -92,6 +93,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   // Platform view IDs that were displayed since the start of the current frame.
   private HashSet<Integer> currentFrameUsedPlatformViewIds;
+
+  // Used to acquire the original motion events using the motionEventIds.
+  private final MotionEventTracker motionEventTracker;
 
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
@@ -301,8 +305,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
       };
 
-  private static MotionEvent toMotionEvent(
-      float density, PlatformViewsChannel.PlatformViewTouch touch) {
+  private MotionEvent toMotionEvent(float density, PlatformViewsChannel.PlatformViewTouch touch) {
+    MotionEventTracker.MotionEventId motionEventId =
+        MotionEventTracker.MotionEventId.from(touch.motionEventId);
+    MotionEvent trackedEvent = motionEventTracker.pop(motionEventId);
+
+    // Pointer coordinates in the tracked events are global to FlutterView
+    // framework converts them to be local to a widget, given that
+    // motion events operate on local coords, we need to replace these in the tracked
+    // event with their local counterparts.
     PointerProperties[] pointerProperties =
         parsePointerPropertiesList(touch.rawPointerPropertiesList)
             .toArray(new PointerProperties[touch.pointerCount]);
@@ -310,6 +321,26 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         parsePointerCoordsList(touch.rawPointerCoords, density)
             .toArray(new PointerCoords[touch.pointerCount]);
 
+    if (trackedEvent != null) {
+      return MotionEvent.obtain(
+          trackedEvent.getDownTime(),
+          trackedEvent.getEventTime(),
+          trackedEvent.getAction(),
+          touch.pointerCount,
+          pointerProperties,
+          pointerCoords,
+          trackedEvent.getMetaState(),
+          trackedEvent.getButtonState(),
+          trackedEvent.getXPrecision(),
+          trackedEvent.getYPrecision(),
+          trackedEvent.getDeviceId(),
+          trackedEvent.getEdgeFlags(),
+          trackedEvent.getSource(),
+          trackedEvent.getFlags());
+    }
+
+    // TODO (kaushikiska) : warn that we are potentially using an untracked
+    // event in the platform views.
     return MotionEvent.obtain(
         touch.downTime.longValue(),
         touch.eventTime.longValue(),
@@ -339,6 +370,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     platformViewRequests = new SparseArray<>();
     platformViews = new SparseArray<>();
     mutatorViews = new SparseArray<>();
+
+    motionEventTracker = MotionEventTracker.getInstance();
   }
 
   /**
