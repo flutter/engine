@@ -4484,6 +4484,10 @@ class ImageDescriptor extends NativeFieldWrapperClass2 {
     int? rowBytes,
     required PixelFormat pixelFormat,
   }) {
+    _width = width;
+    _height = height;
+    // We only support 4 byte pixel formats in the PixelFormat enum.
+    _bytesPerPixel = 4;
     _initRaw(this, buffer, width, height, rowBytes ?? -1, pixelFormat.index);
   }
   void _initRaw(ImageDescriptor outDescriptor, ImmutableBuffer buffer, int width, int height, int rowBytes, int pixelFormat) native 'ImageDescriptor_initRaw';
@@ -4491,16 +4495,22 @@ class ImageDescriptor extends NativeFieldWrapperClass2 {
   int? _width;
   int _getWidth() native 'ImageDescriptor_width';
   /// The width, in pixels, of the image.
+  ///
+  /// On web, this is only supported for [raw] images.
   int get width => _width ??= _getWidth();
 
   int? _height;
   int _getHeight() native 'ImageDescriptor_height';
   /// The height, in pixels, of the image.
+  ///
+  /// On web, this is only supported for [raw] images.
   int get height => _height ??= _getHeight();
 
   int? _bytesPerPixel;
   int _getBytesPerPixel() native 'ImageDescriptor_bytesPerPixel';
   /// The number of bytes per pixel in the image.
+  ///
+  /// On web, this is only supported for [raw] images.
   int get bytesPerPixel => _bytesPerPixel ??= _getBytesPerPixel();
 
   /// Release the resources used by this object. The object is no longer usable
