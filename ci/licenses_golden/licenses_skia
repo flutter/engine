@@ -1,4 +1,4 @@
-Signature: e49c9c554a9e530ceeb05109f84c8c7b
+Signature: 391b39f091958dfaaa8acb07874f10b4
 
 UNUSED LICENSES:
 
@@ -5282,6 +5282,7 @@ FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Gradient.c
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/MergePaths.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/OffsetPaths.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Polystar.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/PuckerBloat.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Rectangle.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/Repeater.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/RoundCorners.cpp
@@ -5310,7 +5311,10 @@ FILE: ../../../third_party/skia/src/gpu/GrStagingBuffer.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrAutoMapVertexBuffer.h
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnStagingBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnStagingBuffer.h
+FILE: ../../../third_party/skia/src/gpu/effects/GrArithmeticProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrDitherEffect.fp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrArithmeticProcessor.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrArithmeticProcessor.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.cpp
@@ -5718,6 +5722,7 @@ ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzAPISVGCanvas.cpp + ../../../
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzAPISVGCanvas.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSVG.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkRuntimeEffect.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google, LLC
 
