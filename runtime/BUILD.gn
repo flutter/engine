@@ -117,6 +117,8 @@ if (enable_unittests) {
       "dart_vm_unittests.cc",
     ]
 
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
     public_deps = [
       ":libdart",
       ":runtime_fixtures",
@@ -140,8 +142,6 @@ if (enable_unittests) {
     executable("runtime_unittests") {
       testonly = true
 
-      configs += [ "//flutter:export_dynamic_symbols" ]
-
       deps = [
         ":runtime_unittests_common_fuchsia_legacy",
       ]
@@ -150,8 +150,6 @@ if (enable_unittests) {
     executable("runtime_unittests_next") {
       testonly = true
 
-      configs += [ "//flutter:export_dynamic_symbols" ]
-
       deps = [
         ":runtime_unittests_common",
       ]
@@ -159,8 +157,6 @@ if (enable_unittests) {
   } else {
     executable("runtime_unittests") {
       testonly = true
-
-      configs += [ "//flutter:export_dynamic_symbols" ]
 
       deps = [
         ":runtime_unittests_common",

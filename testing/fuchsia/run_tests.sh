@@ -74,40 +74,6 @@ mkdir -p packages
 tar -xvzf $2 -C packages 1> /dev/null
 echo "$(date) END:EXTRACT_PACKAGES  ---------------------------------"
 
-
-# TODO(gw280): Enable tests using JIT runner
-echo "$(date) START:flutter_runner_tests ----------------------------"
-./fuchsia_ctl -d $device_name test \
-    -f flutter_aot_runner-0.far    \
-    -f flutter_runner_tests-0.far  \
-    -t flutter_runner_tests        \
-    --identity-file $pkey \
-    --timeout-seconds $test_timeout_seconds \
-    --packages-directory packages
-./fuchsia_ctl -d $device_name ssh \
-    --identity-file $pkey \
-    -c "killall a11y_manager.cmx; killall scenic.cmx;"
-
-./fuchsia_ctl -d $device_name test \
-    -f flutter_aot_runner-0.far    \
-    -f flutter_runner_scenic_tests-0.far  \
-    -t flutter_runner_scenic_tests \
-    --identity-file $pkey \
-    --timeout-seconds $test_timeout_seconds \
-    --packages-directory packages
-./fuchsia_ctl -d $device_name ssh \
-    --identity-file $pkey \
-    -c "killall a11y_manager.cmx; killall scenic.cmx;"
-
-# ./fuchsia_ctl -d $device_name test \
-#     -f flutter_aot_runner-0.far    \
-#     -f flutter_runner_tzdata_tests-0.far  \
-#     -t flutter_runner_tzdata_tests \
-#     --identity-file $pkey \
-#     --timeout-seconds $test_timeout_seconds \
-#     --packages-directory packages
-echo "$(date) DONE:flutter_runner_tests -----------------------------"
-
 echo "$(date) START:testing_tests -----------------------------------"
 ./fuchsia_ctl -d $device_name test \
    -f testing_tests-0.far  \
@@ -117,19 +83,22 @@ echo "$(date) START:testing_tests -----------------------------------"
    --packages-directory packages
 echo "$(date) DONE:testing_tests ------------------------------------"
 
-# echo "$(date) START:txt_tests ---------------------------------------"
-# ./fuchsia_ctl -d $device_name test \
-#    -f txt_tests-0.far  \
-#    -t txt_tests \
-#    --identity-file $pkey \
-#    --timeout-seconds $test_timeout_seconds \
-#    --packages-directory packages
-# echo "$(date) DONE:txt_tests ----------------------------------------"
+# TODO(https://github.com/flutter/flutter/issues/61212): Re-enable ParagraphTest
+# once it passes on Fuchsia.
+echo "$(date) START:txt_tests ---------------------------------------"
+./fuchsia_ctl -d $device_name test \
+   -f txt_tests-0.far  \
+   -t txt_tests \
+   -a "--gtest_filter=-ParagraphTest.*" \
+   --identity-file $pkey \
+   --timeout-seconds $test_timeout_seconds \
+   --packages-directory packages
+echo "$(date) DONE:txt_tests ----------------------------------------"
 
-# TODO(https://github.com/flutter/flutter/issues/57709): Re-enable FileTest's
-# once they pass on Fuchsia.
+# TODO(https://github.com/flutter/flutter/issues/57709): Re-enable FileTest
+# once it passes on Fuchsia.
 # TODO(https://github.com/flutter/flutter/issues/58211): Re-enable MessageLoop
-# tests once they pass on Fuchsia.
+# test once it passes on Fuchsia.
 echo "$(date) START:fml_tests ----------------------------------------"
 ./fuchsia_ctl -d $device_name test \
     -f fml_tests-0.far  \
@@ -172,9 +141,9 @@ echo "$(date) START:runtime_tests -----------------------------------"
     --identity-file $pkey \
     --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
-echo "$(date) DONE:runtime_tests -----------------------------------"
+echo "$(date) DONE:runtime_tests ------------------------------------"
 
-echo "$(date) START:ui_tests --------------------------------------"
+echo "$(date) START:ui_tests ----------------------------------------"
 ./fuchsia_ctl -d $device_name test \
    -f ui_tests-0.far  \
    -t ui_tests \
@@ -188,7 +157,7 @@ echo "$(date) START:ui_tests --------------------------------------"
    --identity-file $pkey \
    --timeout-seconds $test_timeout_seconds \
    --packages-directory packages
-echo "$(date) DONE:flow_tests ---------------------------------------"
+echo "$(date) DONE:ui_tests -----------------------------------------"
 
 # TODO(https://github.com/flutter/flutter/issues/53399): Re-enable
 # OnServiceProtocolGetSkSLsWorks, CanLoadSkSLsFromAsset, and
@@ -209,4 +178,31 @@ echo "$(date) START:shell_tests -------------------------------------"
     --identity-file $pkey \
     --timeout-seconds $test_timeout_seconds \
     --packages-directory packages
-echo "$(date) DONE:shell_tests -----------------------------------"
+echo "$(date) DONE:shell_tests --------------------------------------"
+
+# TODO(gw280): Enable tests using JIT runner
+echo "$(date) START:flutter_runner_tests ----------------------------"
+./fuchsia_ctl -d $device_name test \
+    -f flutter_aot_runner-0.far    \
+    -f flutter_runner_tests-0.far  \
+    -t flutter_runner_tests        \
+    --identity-file $pkey \
+    --timeout-seconds $test_timeout_seconds \
+    --packages-directory packages
+
+./fuchsia_ctl -d $device_name test \
+    -f flutter_aot_runner-0.far    \
+    -f flutter_runner_scenic_tests-0.far  \
+    -t flutter_runner_scenic_tests \
+    --identity-file $pkey \
+    --timeout-seconds $test_timeout_seconds \
+    --packages-directory packages
+
+./fuchsia_ctl -d $device_name test \
+    -f flutter_aot_runner-0.far    \
+    -f flutter_runner_tzdata_tests-0.far  \
+    -t flutter_runner_tzdata_tests \
+    --identity-file $pkey \
+    --timeout-seconds $test_timeout_seconds \
+    --packages-directory packages
+echo "$(date) DONE:flutter_runner_tests -----------------------------"

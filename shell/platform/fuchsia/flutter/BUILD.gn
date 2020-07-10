@@ -716,22 +716,101 @@ fuchsia_test_archive("txt_tests") {
   ]
 
   binary = "txt_unittests"
+
+  resources = [
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl.dat"
+    },
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl2.dat"
+    },
+  ]
 }
 
 fuchsia_test_archive("ui_tests") {
   deps = [
     "//flutter/lib/ui:ui_unittests",
+    "//flutter/lib/ui:ui_unittests_fixtures",
   ]
 
   binary = "ui_unittests"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/DashInNooglerHat.jpg"
+      dest = "assets/DashInNooglerHat.jpg"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/Horizontal.jpg"
+      dest = "assets/Horizontal.jpg"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/Horizontal.png"
+      dest = "assets/Horizontal.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/hello_loop_2.gif"
+      dest = "assets/hello_loop_2.gif"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/hello_loop_2.webp"
+      dest = "assets/hello_loop_2.webp"
+    },
+  ]
+
+  libraries = vulkan_validation_libs
+  resources += vulkan_icds
 }
 
 fuchsia_test_archive("ui_tests_next") {
   deps = [
+    "//flutter/lib/ui:ui_unittests_fixtures",
     "//flutter/lib/ui:ui_unittests_next",
   ]
 
   binary = "ui_unittests_next"
+
+  # TODO(gw280): https://github.com/flutter/flutter/issues/50294
+  # Right now we need to manually specify all the fixtures that are
+  # declared in the test_fixtures() call above.
+  resources = [
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/kernel_blob.bin"
+      dest = "assets/kernel_blob.bin"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/DashInNooglerHat.jpg"
+      dest = "assets/DashInNooglerHat.jpg"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/Horizontal.jpg"
+      dest = "assets/Horizontal.jpg"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/Horizontal.png"
+      dest = "assets/Horizontal.png"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/hello_loop_2.gif"
+      dest = "assets/hello_loop_2.gif"
+    },
+    {
+      path = "$root_gen_dir/flutter/lib/ui/assets/hello_loop_2.webp"
+      dest = "assets/hello_loop_2.webp"
+    },
+  ]
+
+  libraries = vulkan_validation_libs
+  resources += vulkan_icds
 }
 
 group("tests") {

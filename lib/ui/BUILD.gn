@@ -157,6 +157,8 @@ if (enable_unittests) {
   executable("ui_benchmarks") {
     testonly = true
 
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
     sources = [
       "ui_benchmarks.cc",
     ]
@@ -172,6 +174,8 @@ if (enable_unittests) {
 
   source_set_maybe_fuchsia_legacy("ui_unittests_common") {
     testonly = true
+
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
 
     sources = [
       "painting/image_encoding_unittests.cc",
@@ -206,16 +210,12 @@ if (enable_unittests) {
     executable("ui_unittests") {
       testonly = true
 
-      configs += [ "//flutter:export_dynamic_symbols" ]
-
       deps = [
         ":ui_unittests_common_fuchsia_legacy",
       ]
     }
     executable("ui_unittests_next") {
       testonly = true
-
-      configs += [ "//flutter:export_dynamic_symbols" ]
 
       deps = [
         ":ui_unittests_common",
@@ -224,8 +224,6 @@ if (enable_unittests) {
   } else {
     executable("ui_unittests") {
       testonly = true
-
-      configs += [ "//flutter:export_dynamic_symbols" ]
 
       deps = [
         ":ui_unittests_common",
