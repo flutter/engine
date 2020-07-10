@@ -861,7 +861,7 @@ typedef struct {
   const char* variant_code;
 } FlutterLocale;
 
-typedef char** (*FlutterComputePlatformResolvedLocaleCallback)(
+typedef const char** (*FlutterComputePlatformResolvedLocaleCallback)(
     const char** /* supported_locales_data*/,
     size_t /* length of data*/);
 

@@ -925,7 +925,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           for (size_t i = 0; i < supported_locale_data.size(); ++i) {
             c_vector.push_back(supported_locale_data[i].c_str());
           }
-          char** result = ptr(&c_vector[0], supported_locale_data.size());
+          const char** result = ptr(&c_vector[0], supported_locale_data.size());
 
           std::unique_ptr<std::vector<std::string>> out =
               std::make_unique<std::vector<std::string>>();

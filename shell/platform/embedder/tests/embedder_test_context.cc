@@ -160,7 +160,7 @@ EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook() {
   };
 }
 
-static FlutterComputePlatformResolvedLocaleCallback
+FlutterComputePlatformResolvedLocaleCallback
 EmbedderTestContext::GetComputePlatformResolvedLocaleCallbackHook() {
   return [](const char** supported_locales_data, size_t length) {
     return supported_locales_data;
