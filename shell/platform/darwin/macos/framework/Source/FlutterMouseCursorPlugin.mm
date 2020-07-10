@@ -28,6 +28,7 @@ static NSCursor* GetCursorForKind(NSString* kind) {
   if (systemCursors == nil) {
     systemCursors = @{
       @"alias": [NSCursor dragLinkCursor],
+      @"basic": [NSCursor arrowCursor],
       @"click": [NSCursor pointingHandCursor],
       @"contextMenu": [NSCursor contextualMenuCursor],
       @"copy": [NSCursor dragCopyCursor],
@@ -50,7 +51,7 @@ static NSCursor* GetCursorForKind(NSString* kind) {
     };
   }
   NSCursor* result = [systemCursors objectForKey:kind];
-  if (result == nil) // Including @"basic"
+  if (result == nil)
     return [NSCursor arrowCursor];
   return result;
 }

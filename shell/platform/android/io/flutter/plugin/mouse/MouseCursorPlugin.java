@@ -49,6 +49,7 @@ public class MouseCursorPlugin {
             {
               put("alias", PointerIcon.TYPE_ALIAS);
               put("allScroll", PointerIcon.TYPE_ALL_SCROLL);
+              put("basic", PointerIcon.TYPE_ARROW);
               put("cell", PointerIcon.TYPE_CELL);
               put("click", PointerIcon.TYPE_HAND);
               put("contextMenu", PointerIcon.TYPE_CONTEXT_MENU);
