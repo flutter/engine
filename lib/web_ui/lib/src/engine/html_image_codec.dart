@@ -150,14 +150,12 @@ class HtmlImage implements ui.Image {
     }
   }
 
-  // TODO(het): Support this for asset images and images generated from
-  // `Picture`s.
-  /// Returns an error message on failure, null on success.
+  // Returns an error message on failure.
   String _toByteData(int format, Callback<Uint8List?> callback) {
     if (imgElement.src.startsWith('data:')) {
       final data = UriData.fromUri(Uri.parse(imgElement.src));
       callback(data.contentAsBytes());
-      return null;
+      return '';
     } else {
       callback(null);
       return 'Data URI not found';
