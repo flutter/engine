@@ -97,7 +97,7 @@ std::unique_ptr<VsyncWaiter> PlatformViewEmbedder::CreateVSyncWaiter() {
 std::unique_ptr<std::vector<std::string>>
 PlatformViewEmbedder::ComputePlatformResolvedLocales(
     const std::vector<std::string>& supported_locale_data) {
-  if (platform_dispatch_table_.compute_platform_resolved_locale_callback ==
+  if (platform_dispatch_table_.compute_platform_resolved_locale_callback !=
       nullptr) {
     return platform_dispatch_table_.compute_platform_resolved_locale_callback(
         supported_locale_data);

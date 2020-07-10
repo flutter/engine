@@ -930,7 +930,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           std::unique_ptr<std::vector<std::string>> out =
               std::make_unique<std::vector<std::string>>();
           if (result != nullptr) {
-            size_t number_of_strings_per_locale = 4;
+            size_t number_of_strings_per_locale = 3;
             for (size_t i = 0; i < number_of_strings_per_locale; ++i) {
               out->push_back(result[i]);
             }
