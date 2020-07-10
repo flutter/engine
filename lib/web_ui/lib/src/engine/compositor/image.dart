@@ -78,9 +78,9 @@ class CkAnimatedImage implements ui.Image {
         'width': width,
         'height': height,
       });
-      bytes = skImage.callMethod('readPixels', <dynamic>[imageInfo, 0, 0]);
+      bytes = skImage!.callMethod('readPixels', <dynamic>[imageInfo, 0, 0]);
     } else {
-      final js.JsObject skData = skImage.callMethod('encodeToData'); //defaults to PNG 100%
+      final js.JsObject skData = skImage!.callMethod('encodeToData'); //defaults to PNG 100%
       bytes = canvasKit.callMethod('getSkDataBytes', [skData]);
     }
 
