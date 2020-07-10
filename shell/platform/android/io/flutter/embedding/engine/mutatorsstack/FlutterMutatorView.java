@@ -4,8 +4,10 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
+import android.view.MotionEvent;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
+import io.flutter.embedding.android.AndroidTouchProcessor;
 
 /**
  * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.MutatorsStack} to its
@@ -17,19 +19,24 @@ public class FlutterMutatorView extends FrameLayout {
   private int left;
   private int top;
 
+  private final AndroidTouchProcessor androidTouchProcessor;
+
   /**
    * Initialize the FlutterMutatorView. Use this to set the screenDensity, which will be used to
    * correct the final transform matrix.
    */
-  public FlutterMutatorView(@NonNull Context context, float screenDensity) {
+  public FlutterMutatorView(
+      @NonNull Context context, float screenDensity, AndroidTouchProcessor androidTouchProcessor) {
     super(context, null);
     this.screenDensity = screenDensity;
+    this.androidTouchProcessor = androidTouchProcessor;
   }
 
   /** Initialize the FlutterMutatorView. */
-  public FlutterMutatorView(@NonNull Context context) {
+  public FlutterMutatorView(@NonNull Context context, AndroidTouchProcessor androidTouchProcessor) {
     super(context, null);
     this.screenDensity = 1;
+    this.androidTouchProcessor = androidTouchProcessor;
   }
 
   /**
@@ -91,5 +98,16 @@ public class FlutterMutatorView extends FrameLayout {
     canvas.concat(finalMatrix);
     super.dispatchDraw(canvas);
     canvas.restore();
+  }
+
+  @Override
+  // Intercept the events here and do not propagate them to the child platform views.
+  public boolean onInterceptTouchEvent(MotionEvent event) {
+    return true;
+  }
+
+  @Override
+  public boolean onTouchEvent(MotionEvent event) {
+    return androidTouchProcessor.onTouchEvent(event);
   }
 }

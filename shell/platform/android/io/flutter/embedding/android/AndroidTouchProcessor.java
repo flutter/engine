@@ -69,15 +69,18 @@ public class AndroidTouchProcessor {
 
   private static final int _POINTER_BUTTON_PRIMARY = 1;
 
+  private final boolean trackMotionEvents;
+
   /**
    * Constructs an {@code AndroidTouchProcessor} that will send touch event data to the Flutter
    * execution context represented by the given {@link FlutterRenderer}.
    */
   // TODO(mattcarroll): consider moving packet behavior to a FlutterInteractionSurface instead of
   // FlutterRenderer
-  public AndroidTouchProcessor(@NonNull FlutterRenderer renderer) {
+  public AndroidTouchProcessor(@NonNull FlutterRenderer renderer, boolean trackMotionEvents) {
     this.renderer = renderer;
     this.motionEventTracker = MotionEventTracker.getInstance();
+    this.trackMotionEvents = trackMotionEvents;
   }
 
   /** Sends the given {@link MotionEvent} data to Flutter in a format that Flutter understands. */
@@ -176,8 +179,11 @@ public class AndroidTouchProcessor {
       return;
     }
 
-    // TODO (kaushikiska) : pass this in when we have a way to evict framework only events.
-    // MotionEventTracker.MotionEventId motionEventId = motionEventTracker.track(event);
+    long motionEventId = 0;
+    if (trackMotionEvents) {
+      MotionEventTracker.MotionEventId trackedEvent = motionEventTracker.track(event);
+      motionEventId = trackedEvent.getId();
+    }
 
     int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
 
@@ -188,15 +194,15 @@ public class AndroidTouchProcessor {
 
     long timeStamp = event.getEventTime() * 1000; // Convert from milliseconds to microseconds.
 
-    packet.putLong(0); // motionEventId
+    packet.putLong(motionEventId); // motionEventId
     packet.putLong(timeStamp); // time_stamp
     packet.putLong(pointerChange); // change
     packet.putLong(pointerKind); // kind
     packet.putLong(signalKind); // signal_kind
     packet.putLong(event.getPointerId(pointerIndex)); // device
     packet.putLong(0); // pointer_identifier, will be generated in pointer_data_packet_converter.cc.
-    packet.putDouble(event.getX(pointerIndex)); // physical_x
-    packet.putDouble(event.getY(pointerIndex)); // physical_y
+    packet.putDouble(event.getRawX(pointerIndex)); // physical_x
+    packet.putDouble(event.getRawY(pointerIndex)); // physical_y
     packet.putDouble(
         0.0); // physical_delta_x, will be generated in pointer_data_packet_converter.cc.
     packet.putDouble(
