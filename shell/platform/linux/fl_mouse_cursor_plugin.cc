@@ -14,11 +14,7 @@ static constexpr char kBadArgumentsError[] = "Bad Arguments";
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
 
-static GHashTable* systemCursorTable = nullptr;
-
-bool define_system_cursor(const gchar *key, const gchar *value) {
-  return g_hash_table_insert(systemCursorTable, (gpointer)key, (gpointer)value);
-}
+static constexpr char kFallbackCursor[] = "default";
 
 struct _FlMouseCursorPlugin {
   GObject parent_instance;
@@ -26,9 +22,34 @@ struct _FlMouseCursorPlugin {
   FlMethodChannel* channel;
 
   FlView* view;
+
+  GHashTable* system_cursor_table;
 };
 
 G_DEFINE_TYPE(FlMouseCursorPlugin, fl_mouse_cursor_plugin, G_TYPE_OBJECT)
+
+// Insert a new entry into a hashtable from strings to strings.
+//
+// Returns whether the newly added value was already in the hash table or not.
+static bool define_system_cursor(GHashTable* table, const gchar *key, const gchar *value) {
+  return g_hash_table_insert(table, (gpointer)key, (gpointer)value);
+}
+
+// Populate the hash table so that it maps from Flutter's cursor kinds to GTK's
+// cursor values.
+//
+// The table must have been created as a hashtable from strings to strings.
+static void populate_system_cursor_table(GHashTable* table) {
+  // The following mapping must be kept in sync with Flutter framework's
+  // mouse_cursor.dart.
+  define_system_cursor(table, "none", "none");
+  define_system_cursor(table, "click", "pointer");
+  define_system_cursor(table, "text", "text");
+  define_system_cursor(table, "forbidden", "not-allowed");
+  define_system_cursor(table, "grab", "grabbing");
+  define_system_cursor(table, "resizeLeftRight", "ew-resize");
+  define_system_cursor(table, "resizeUpDown", "ns-resize");
+}
 
 // Sets the mouse cursor.
 FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
@@ -43,23 +64,14 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
   if (fl_value_get_type(kind_value) == FL_VALUE_TYPE_STRING)
     kind = fl_value_get_string(kind_value);
 
-  if (systemCursorTable == nullptr) {
-    systemCursorTable = g_hash_table_new(g_str_hash, g_str_equal);
-
-    // The following mapping must be kept in sync with Flutter framework's
-    // mouse_cursor.dart
-    define_system_cursor("none", "none");
-    define_system_cursor("click", "pointer");
-    define_system_cursor("text", "text");
-    define_system_cursor("forbidden", "not-allowed");
-    define_system_cursor("grab", "grabbing");
-    define_system_cursor("resizeLeftRight", "ew-resize");
-    define_system_cursor("resizeUpDown", "ns-resize");
+  if (self->system_cursor_table == nullptr) {
+    self->system_cursor_table = g_hash_table_new(g_str_hash, g_str_equal);
+    populate_system_cursor_table(self->system_cursor_table);
   }
 
-  const gchar* cursor_name = (const gchar*)g_hash_table_lookup(systemCursorTable, kind);
-  if (cursor_name == nullptr) // Including "basic" kind
-    cursor_name = "default";
+  const gchar* cursor_name = (const gchar*)g_hash_table_lookup(self->system_cursor_table, kind);
+  if (cursor_name == nullptr)
+    cursor_name = kFallbackCursor;
 
   GdkWindow* window =
       gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
@@ -103,6 +115,8 @@ static void fl_mouse_cursor_plugin_dispose(GObject* object) {
     g_object_weak_unref(G_OBJECT(self->view), view_weak_notify_cb, self);
     self->view = nullptr;
   }
+
+  g_hash_table_destroy(self->system_cursor_table)''
 
   G_OBJECT_CLASS(fl_mouse_cursor_plugin_parent_class)->dispose(object);
 }
