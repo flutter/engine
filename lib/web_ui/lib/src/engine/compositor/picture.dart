@@ -21,10 +21,10 @@ class CkPicture implements ui.Picture {
   }
 
   @override
-  Future<ui.Image> toImage(int width, int height) {
+  Future<ui.Image> toImage(int width, int height) async {
     final js.JsObject skSurface = canvasKit.callMethod('MakeSurface', <int>[width, height]);
     final js.JsObject skCanvas = skSurface.callMethod('getCanvas');
-    skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture.skiaObject]);
+    skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture.skiaObject!]);
     final js.JsObject skImage = skSurface.callMethod('makeImageSnapshot');
     skSurface.callMethod('dispose');
     return CkImage(skImage);
