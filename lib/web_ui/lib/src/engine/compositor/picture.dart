@@ -27,7 +27,7 @@ class CkPicture implements ui.Picture {
     skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture]);
     final js.JsObject skImage = skSurface.callMethod('makeImageSnapshot');
     skSurface.callMethod('dispose');
-    return SkImage(skImage);
+    return CkImage(skImage);
   }
 }
 
