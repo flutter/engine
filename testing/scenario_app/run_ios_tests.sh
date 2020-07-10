@@ -22,7 +22,7 @@ pushd ios/Scenarios
 
 set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
-  -destination 'platform=iOS Simulator,name=iPhone 8' \
+  -destination 'platform=iOS Simulator,name=iPhone 8,OS=13.0' \
   test \
   FLUTTER_ENGINE=$FLUTTER_ENGINE | $PRETTY
 
