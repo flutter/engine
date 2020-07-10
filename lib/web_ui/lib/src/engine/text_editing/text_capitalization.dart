@@ -27,25 +27,24 @@ enum TextCapitalization {
 
 /// Helper class for text capitalization.
 ///
-/// Uses `text-transform` css property.
-/// See: https://developer.mozilla.org/en-US/docs/Web/CSS/text-transform
+/// Uses `autocapitalize` attribute on input element.
+/// See: https://developers.google.com/web/updates/2015/04/autocapitalize
+/// https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize
 class TextCapitalizationConfig {
   final TextCapitalization textCapitalization;
-
-  static final RegExp wordExp = new RegExp(r"(\w+)");
-  static final RegExp whiteSpaceExp = new RegExp(r"(\s+)");
 
   const TextCapitalizationConfig.defaultCapitalization()
       : textCapitalization = TextCapitalization.none;
 
-  // TODO: support sentence level text capitalization.
   TextCapitalizationConfig.fromInputConfiguration(String inputConfiguration)
       : this.textCapitalization =
             inputConfiguration == 'TextCapitalization.words'
                 ? TextCapitalization.words
-                : (inputConfiguration == 'TextCapitalization.characters')
+                : inputConfiguration == 'TextCapitalization.characters'
                     ? TextCapitalization.characters
-                    : TextCapitalization.none;
+                    : inputConfiguration == 'TextCapitalization.sentences'
+                        ? TextCapitalization.sentences
+                        : TextCapitalization.none;
 
   /// Sets `autocapitalize` attribute on input elements.
   ///
@@ -64,8 +63,8 @@ class TextCapitalizationConfig {
         // TODO: There is a bug for `words` level capitalization in IOS now.
         // For now go back to default. Remove the check after bug is resolved.
         // https://bugs.webkit.org/show_bug.cgi?id=148504
-        if(browserEngine == BrowserEngine.webkit) {
-           autocapitalize = 'sentences';
+        if (browserEngine == BrowserEngine.webkit) {
+          autocapitalize = 'sentences';
         } else {
           autocapitalize = 'words';
         }
