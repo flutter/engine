@@ -34,33 +34,42 @@ void ImageDescriptor::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
+static ImageCodecOrGenerator CreateGenerator(std::unique_ptr<SkCodec> codec) {
+  if (!codec) {
+    return std::nullopt;
+  }
+
+  if (codec->getFrameCount() == 1) {
+    SkCodecImageGenerator* image_generator =
+        static_cast<SkCodecImageGenerator*>(
+            SkCodecImageGenerator::MakeFromCodec(std::move(codec)).release());
+
+    return std::unique_ptr<SkCodecImageGenerator>(image_generator);
+  } else {
+    return std::move(codec);
+  }
+}
+
 const SkImageInfo ImageDescriptor::CreateImageInfo() const {
-  if (image_generator_) {
-    return image_generator_->getInfo();
+  if (!generator_) {
+    return SkImageInfo::MakeUnknown();
   }
-  if (codec_) {
-    return codec_->getInfo();
-  }
-  return SkImageInfo::MakeUnknown();
+  return std::visit([](auto&& arg) -> SkImageInfo { return arg->getInfo(); },
+                    generator_.value());
 }
 
 ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
                                  const SkImageInfo& image_info,
                                  std::optional<size_t> row_bytes)
     : buffer_(std::move(buffer)),
-      codec_(nullptr),
-      image_generator_(nullptr),
+      generator_(std::nullopt),
       image_info_(std::move(image_info)),
       row_bytes_(row_bytes) {}
 
 ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
-                                 std::shared_ptr<SkCodec> codec)
+                                 std::unique_ptr<SkCodec> codec)
     : buffer_(std::move(buffer)),
-      codec_(std::move(codec)),
-      image_generator_(
-          codec_ && codec_->getFrameCount() == 1
-              ? SkCodecImageGenerator::MakeFromEncodedCodec(buffer_)
-              : nullptr),
+      generator_(CreateGenerator(std::move(codec))),
       image_info_(CreateImageInfo()),
       row_bytes_(std::nullopt) {}
 
@@ -82,7 +91,7 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
     return;
   }
 
-  std::shared_ptr<SkCodec> codec =
+  std::unique_ptr<SkCodec> codec =
       SkCodec::MakeFromData(immutable_buffer->data());
   if (!codec) {
     Dart_SetReturnValue(args, tonic::ToDart("Invalid image data"));
@@ -91,6 +100,7 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
 
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
       immutable_buffer->data(), std::move(codec));
+
   descriptor->AssociateWithDartWrapper(descriptor_handle);
   tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
 }
@@ -123,12 +133,16 @@ void ImageDescriptor::instantiateCodec(Dart_Handle codec_handle,
                                        int target_width,
                                        int target_height) {
   fml::RefPtr<Codec> ui_codec;
-  if (!codec_ || codec_->getFrameCount() == 1) {
+  if (!generator_ ||
+      std::holds_alternative<std::unique_ptr<SkCodecImageGenerator>>(
+          generator_.value())) {
     ui_codec = fml::MakeRefCounted<SingleFrameCodec>(
         static_cast<fml::RefPtr<ImageDescriptor>>(this), target_width,
         target_height);
   } else {
-    ui_codec = fml::MakeRefCounted<MultiFrameCodec>(codec_);
+    auto codec = std::get_if<std::shared_ptr<SkCodec>>(&generator_.value());
+    FML_DCHECK(codec);
+    ui_codec = fml::MakeRefCounted<MultiFrameCodec>(*codec);
   }
   ui_codec->AssociateWithDartWrapper(codec_handle);
 }

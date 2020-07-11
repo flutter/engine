@@ -108,14 +108,11 @@ sk_sp<SkImage> ImageFromCompressedData(fml::RefPtr<ImageDescriptor> descriptor,
     return SkImage::MakeFromEncoded(descriptor->data())->makeRasterImage();
   }
 
-  auto codec = descriptor->codec();
-  FML_DCHECK(codec);
-
   const SkISize source_dimensions = descriptor->image_info().dimensions();
   const SkISize resized_dimensions = {static_cast<int32_t>(target_width),
                                       static_cast<int32_t>(target_height)};
 
-  auto decode_dimensions = codec->getScaledDimensions(
+  auto decode_dimensions = descriptor->get_scaled_dimensions(
       std::max(static_cast<double>(resized_dimensions.width()) /
                    source_dimensions.width(),
                static_cast<double>(resized_dimensions.height()) /
@@ -123,13 +120,7 @@ sk_sp<SkImage> ImageFromCompressedData(fml::RefPtr<ImageDescriptor> descriptor,
 
   // If the codec supports efficient sub-pixel decoding, decoded at a resolution
   // close to the target resolution before resizing.
-  if (decode_dimensions != codec->dimensions()) {
-    if (source_dimensions != codec->dimensions()) {
-      // Swap dimensions to preserve orientation.
-      decode_dimensions =
-          SkISize::Make(decode_dimensions.height(), decode_dimensions.width());
-    }
-
+  if (decode_dimensions != source_dimensions) {
     auto scaled_image_info =
         descriptor->image_info().makeDimensions(decode_dimensions);
 

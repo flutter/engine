@@ -8,16 +8,21 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <variant>
 
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/immutable_buffer.h"
 #include "third_party/skia/include/codec/SkCodec.h"
-#include "third_party/skia/include/core/SkImageGenerator.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/src/codec/SkCodecImageGenerator.h"
 #include "third_party/tonic/dart_library_natives.h"
 
 namespace flutter {
+
+using ImageCodecOrGenerator =
+    std::optional<std::variant<std::shared_ptr<SkCodec>,
+                               std::unique_ptr<SkCodecImageGenerator>>>;
 
 /// Creates an image descriptor for encoded or decoded image data, describing
 /// the width, height, and bytes per pixel for that image.
@@ -82,35 +87,37 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   sk_sp<SkData> data() const { return buffer_; }
 
   /// Whether this descriptor represents compressed (encoded) data or not.
-  bool is_compressed() const { return !!codec_; }
-
-  /// The SkCodec for this image.
-  ///
-  /// This will _not_ repsect EXIF orientation information.
-  const std::shared_ptr<SkCodec> codec() const { return codec_; }
+  bool is_compressed() const { return generator_.has_value(); }
 
   /// The orientation corrected image info for this image.
   const SkImageInfo& image_info() const { return image_info_; }
 
+  SkISize get_scaled_dimensions(float scale) {
+    if (!generator_) {
+      FML_DCHECK(false);
+      return image_info_.dimensions();
+    }
+    return std::visit(
+        [scale](auto&& arg) -> SkISize {
+          return arg->getScaledDimensions(scale);
+        },
+        generator_.value());
+  }
   /// Gets pixels for this image transformed based on the EXIF orientation tag,
   /// if applicable.
   bool get_pixels(const SkPixmap& pixmap) const {
-    if (image_generator_) {
-      return image_generator_->getPixels(pixmap.info(), pixmap.writable_addr(),
-                                         pixmap.rowBytes());
-    }
-    if (codec_) {
-      return codec_->getPixels(pixmap.info(), pixmap.writable_addr(),
-                               pixmap.rowBytes());
-    }
-    FML_DCHECK(false) << "get_pixels called without a codec or image generator";
-    return false;
+    FML_DCHECK(generator_);
+    return std::visit(
+        [pixmap](auto&& arg) -> bool {
+          return arg->getPixels(pixmap.info(), pixmap.writable_addr(),
+                                pixmap.rowBytes());
+        },
+        generator_.value());
   }
 
   void dispose() {
     ClearDartWrapper();
-    codec_ = nullptr;
-    codec_.reset();
+    generator_ = std::unique_ptr<SkCodecImageGenerator>(nullptr);
   }
 
   size_t GetAllocationSize() const override {
@@ -123,14 +130,10 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   ImageDescriptor(sk_sp<SkData> buffer,
                   const SkImageInfo& image_info,
                   std::optional<size_t> row_bytes);
-  ImageDescriptor(sk_sp<SkData> buffer, std::shared_ptr<SkCodec> codec);
+  ImageDescriptor(sk_sp<SkData> buffer, std::unique_ptr<SkCodec> codec);
 
   sk_sp<SkData> buffer_;
-  std::shared_ptr<SkCodec> codec_;
-  // The SkCodec doesn't know how to handle orientation. The image generator
-  // does. The image generate takes sole ownership over its codec pointer,
-  // but we'll still need access to the codec to ask for scaled dimensions.
-  std::unique_ptr<SkImageGenerator> image_generator_;
+  ImageCodecOrGenerator generator_;
   const SkImageInfo image_info_;
   std::optional<size_t> row_bytes_;
 

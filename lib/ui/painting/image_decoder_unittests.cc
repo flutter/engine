@@ -201,7 +201,7 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    std::shared_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
+    std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
     ASSERT_TRUE(codec);
 
     auto descriptor =
@@ -256,7 +256,7 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    std::shared_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
+    std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
     ASSERT_TRUE(codec);
 
     auto descriptor =
@@ -313,7 +313,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    std::shared_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
+    std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
     ASSERT_TRUE(codec);
 
     auto descriptor =
@@ -386,7 +386,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
       ASSERT_TRUE(data);
       ASSERT_GE(data->size(), 0u);
 
-      std::shared_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
+      std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
       ASSERT_TRUE(codec);
 
       auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
