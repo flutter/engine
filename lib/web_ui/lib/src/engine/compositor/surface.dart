@@ -161,7 +161,7 @@ class Surface {
         return _makeSoftwareCanvasSurface(htmlCanvas);
       }
 
-      return CkSurface(skSurface!, _grContext, glContext);
+      return CkSurface(skSurface, _grContext, glContext);
     }
   }
 
