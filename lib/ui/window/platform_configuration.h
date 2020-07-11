@@ -100,7 +100,7 @@ class PlatformConfiguration final {
   /// @brief Retrieves the Window.
   ///
   /// @return the Window.
-  const Window& get_window() const { return *window_; }
+  const Window& window() const { return *window_; }
 
   //----------------------------------------------------------------------------
   /// @brief Sets the viewport metrics of the Window.
