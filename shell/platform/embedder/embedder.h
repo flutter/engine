@@ -1219,7 +1219,7 @@ typedef struct {
   /// empty, but the other two may be null.
   ///
   /// One of the input supported locales should be selected to best match with
-  /// the user/device's preferred locale.
+  /// the user/device's preferred locale and returned as an array of 3 strings.
   FlutterComputePlatformResolvedLocaleCallback
       compute_platform_resolved_locale_callback;
 } FlutterProjectArgs;
