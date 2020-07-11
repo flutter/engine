@@ -428,7 +428,7 @@ void Canvas::drawShadow(const CanvasPath* path,
   }
   SkScalar dpr = UIDartState::Current()
                      ->platform_configuration()
-                     ->get_window()
+                     ->window()
                      .viewport_metrics()
                      .device_pixel_ratio;
   external_allocation_size_ += path->path().approximateBytesUsed();

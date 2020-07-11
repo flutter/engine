@@ -51,6 +51,21 @@ class DummyPlatformConfigurationClient : public PlatformConfigurationClient {
 TEST(PlatformConfigurationTest, PlatformConfigurationInitialization) {
   DummyPlatformConfigurationClient client;
   PlatformConfiguration configuration(&client);
+
+  ASSERT_EQ(configuration.client(), &client);
+  ASSERT_EQ(configuration.window().viewport_metrics().device_pixel_ratio, 1.0);
+  ASSERT_EQ(configuration.window().viewport_metrics().physical_width, 0.0);
+  ASSERT_EQ(configuration.window().viewport_metrics().physical_height, 0.0);
+}
+
+TEST(PlatformConfigurationTest, PlatformConfigurationWindowMetricsUpdate) {
+  DummyPlatformConfigurationClient client;
+  PlatformConfiguration configuration(&client);
+
+  configuration.SetWindowMetrics({2.0, 10.0, 20.0});
+  ASSERT_EQ(configuration.window().viewport_metrics().device_pixel_ratio, 2.0);
+  ASSERT_EQ(configuration.window().viewport_metrics().physical_width, 10.0);
+  ASSERT_EQ(configuration.window().viewport_metrics().physical_height, 20.0);
 }
 
 }  // namespace testing
