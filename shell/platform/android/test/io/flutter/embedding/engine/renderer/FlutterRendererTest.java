@@ -104,11 +104,15 @@ public class FlutterRendererTest {
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
     flutterRenderer.startRenderingToSurface(fakeSurface);
+    flutterRenderer.stopRenderingToSurface();
 
+    fakeFlutterJNI.detachFromNativeAndReleaseResources()
+
+    flutterRenderer.startRenderingToSurface(fakeSurface);
     // Execute the behavior under test.
     flutterRenderer.stopRenderingToSurface();
 
     // Verify behavior under test.
-    verify(fakeFlutterJNI, times(1)).onSurfaceDestroyed();
+    verify(fakeFlutterJNI, times(1)).markTextureFrameAvailable();
   }
 }
