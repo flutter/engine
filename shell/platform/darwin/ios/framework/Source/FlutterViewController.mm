@@ -111,26 +111,24 @@ typedef enum UIAccessibilityContrast : NSInteger {
   return self;
 }
 
-- (void)sharedSetupWithProject:(nullable FlutterDartProject*)project {
-  _viewOpaque = YES;
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-  _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
-                                            project:project
-                             allowHeadlessExecution:self.engineAllowHeadlessExecution]);
-  _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
-  [_engine.get() createShell:nil libraryURI:nil];
-  _engineNeedsLaunch = YES;
-  _ongoingTouches = [[NSMutableSet alloc] init];
-  [self loadDefaultSplashScreenView];
-  [self performCommonViewControllerInitialization];
-}
-
-- (instancetype)initWithProject:(nullable FlutterDartProject*)project
-                        nibName:(nullable NSString*)nibName
-                         bundle:(nullable NSBundle*)nibBundle {
+- (instancetype)initWithProject:(FlutterDartProject*)project
+                        nibName:(NSString*)nibName
+                         bundle:(NSBundle*)nibBundle {
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
-    [self sharedSetupWithProject:project];
+    [self sharedSetupWithProject:project withInitialRoute:nil];
+  }
+
+  return self;
+}
+
+- (instancetype)initWithProject:(FlutterDartProject*)project
+               withInitialRoute:(NSString*)initialRoute
+                        nibName:(NSString*)nibName
+                         bundle:(NSBundle*)nibBundle {
+  self = [super initWithNibName:nibName bundle:nibBundle];
+  if (self) {
+    [self sharedSetupWithProject:project withInitialRoute:initialRoute];
   }
 
   return self;
@@ -148,12 +146,27 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)awakeFromNib {
   [super awakeFromNib];
   if (!_engine.get()) {
-    [self sharedSetupWithProject:nil];
+    [self sharedSetupWithProject:nil withInitialRoute:nil];
   }
 }
 
 - (instancetype)init {
   return [self initWithProject:nil nibName:nil bundle:nil];
+}
+
+- (void)sharedSetupWithProject:(nullable FlutterDartProject*)project
+              withInitialRoute:(nullable NSString*)initialRoute {
+  _viewOpaque = YES;
+  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+  _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
+                                            project:project
+                             allowHeadlessExecution:self.engineAllowHeadlessExecution]);
+  _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+  [_engine.get() createShell:nil libraryURI:nil initialRoute:initialRoute];
+  _engineNeedsLaunch = YES;
+  _ongoingTouches = [[NSMutableSet alloc] init];
+  [self loadDefaultSplashScreenView];
+  [self performCommonViewControllerInitialization];
 }
 
 - (BOOL)isViewOpaque {

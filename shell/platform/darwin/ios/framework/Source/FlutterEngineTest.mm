@@ -6,10 +6,16 @@
 #import <XCTest/XCTest.h>
 #include "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
+
 
 FLUTTER_ASSERT_ARC
 
 @interface FlutterEngineTest : XCTestCase
+@end
+
+@interface FlutterEngine (Test)
+- (void)setBinaryMessenger:binaryMessenger;
 @end
 
 @implementation FlutterEngineTest
@@ -77,6 +83,15 @@ FLUTTER_ASSERT_ARC
     engine = nil;
   }
   OCMVerify([plugin detachFromEngineForRegistrar:[OCMArg any]]);
+}
+
+- (void)testRunningWithInitialRouteSendsNavigationMessage {
+  // id binaryMessenger = OCMClassMock([FlutterBinaryMessengerRelay class]);
+
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  // [engine run];
+  [engine setBinaryMessenger:nil];
+  [engine runWithEntrypoint:FlutterDefaultDartEntrypoint withInitialRoute:@"test"];
 }
 
 @end

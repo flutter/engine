@@ -33,6 +33,7 @@
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 NSString* const FlutterDefaultDartEntrypoint = nil;
+NSString* const FlutterDefaultInitialRoute = nil;
 static constexpr int kNumProfilerSamplesPerSec = 5;
 
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
@@ -55,6 +56,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   flutter::ThreadHost _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
   NSString* _labelPrefix;
+  NSString* _initialRoute;
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
 
   fml::WeakPtr<FlutterViewController> _viewController;
@@ -81,6 +83,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   BOOL _allowHeadlessExecution;
   FlutterBinaryMessengerRelay* _binaryMessenger;
   std::unique_ptr<flutter::ConnectionCollection> _connections;
+}
+
+- (instancetype)init {
+  return [self initWithName:@"FlutterEngine" project:nil allowHeadlessExecution:YES];
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix {
@@ -368,6 +374,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
+  if ([_initialRoute length] > 0) {
+    // Flutter isn't ready to receive this method call yet but the channel buffer will cache this.
+    [_navigationChannel invokeMethod:@"setInitialRoute"
+                           arguments:_initialRoute];
+    [_initialRoute release];
+  }
+
   _platformChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/platform"
       binaryMessenger:self.binaryMessenger
@@ -437,13 +450,14 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                                             libraryOrNil:libraryOrNil]);
 }
 
-- (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
+- (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI initialRoute:(NSString*)initialRoute {
   if (_shell != nullptr) {
     FML_LOG(WARNING) << "This FlutterEngine was already invoked.";
     return NO;
   }
 
   static size_t shellCount = 1;
+  _initialRoute = [initialRoute copy];
 
   auto settings = [_dartProject.get() settings];
   auto platformData = [_dartProject.get() defaultPlatformData];
@@ -553,19 +567,27 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (BOOL)run {
-  return [self runWithEntrypoint:FlutterDefaultDartEntrypoint libraryURI:nil];
+  return [self runWithEntrypoint:FlutterDefaultDartEntrypoint libraryURI:nil withInitialRoute:FlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
-  if ([self createShell:entrypoint libraryURI:libraryURI]) {
+  return [self runWithEntrypoint:entrypoint libraryURI:libraryURI withInitialRoute:FlutterDefaultInitialRoute];
+}
+
+- (BOOL)runWithEntrypoint:(NSString*)entrypoint {
+  return [self runWithEntrypoint:entrypoint libraryURI:nil withInitialRoute:FlutterDefaultInitialRoute];
+}
+
+- (BOOL)runWithEntrypoint:(NSString*)entrypoint withInitialRoute:(NSString*)initialRoute {
+  return [self runWithEntrypoint:entrypoint libraryURI:nil withInitialRoute:initialRoute];
+}
+
+- (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI withInitialRoute:(NSString*)initialRoute {
+  if ([self createShell:entrypoint libraryURI:libraryURI initialRoute:initialRoute]) {
     [self launchEngine:entrypoint libraryURI:libraryURI];
   }
 
   return _shell != nullptr;
-}
-
-- (BOOL)runWithEntrypoint:(NSString*)entrypoint {
-  return [self runWithEntrypoint:entrypoint libraryURI:nil];
 }
 
 - (void)notifyLowMemory {
@@ -668,6 +690,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
   return _binaryMessenger;
+}
+
+// For test only.
+- (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger {
+  _binaryMessenger = binaryMessenger;
 }
 
 #pragma mark - FlutterBinaryMessenger
