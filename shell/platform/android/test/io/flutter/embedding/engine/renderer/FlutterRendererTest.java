@@ -103,16 +103,17 @@ public class FlutterRendererTest {
     // Setup the test.
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface);
-    flutterRenderer.stopRenderingToSurface();
+    fakeFlutterJNI.detachFromNativeAndReleaseResources();
 
-    fakeFlutterJNI.detachFromNativeAndReleaseResources()
+    FlutterRenderer.SurfaceTextureRegistryEntry entry =
+        (FlutterRenderer.SurfaceTextureRegistryEntry) flutterRenderer.createSurfaceTexture();
 
     flutterRenderer.startRenderingToSurface(fakeSurface);
+
     // Execute the behavior under test.
     flutterRenderer.stopRenderingToSurface();
 
     // Verify behavior under test.
-    verify(fakeFlutterJNI, times(1)).markTextureFrameAvailable();
+    verify(fakeFlutterJNI, times(0)).markTextureFrameAvailable(eq(entry.id()));
   }
 }
