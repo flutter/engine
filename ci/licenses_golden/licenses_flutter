@@ -339,6 +339,7 @@ FILE: ../../../flutter/lib/ui/painting/image_descriptor.cc
 FILE: ../../../flutter/lib/ui/painting/image_descriptor.h
 FILE: ../../../flutter/lib/ui/painting/image_encoding.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.h
+FILE: ../../../flutter/lib/ui/painting/image_encoding_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.h
 FILE: ../../../flutter/lib/ui/painting/image_shader.cc
@@ -496,9 +497,14 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/offset.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/opacity.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/conic.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/cubic.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_metrics.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_ref.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_to_svg.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_utils.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_windings.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/tangent.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/platform_view.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/recording_canvas.dart
@@ -520,6 +526,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_break_properties.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_breaker.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/autofill_hint.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_type.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_capitalization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_editing.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/validators.dart
@@ -1314,6 +1321,8 @@ FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flu
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_view_controller.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/plugin_registrar_windows.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/plugin_registrar_windows_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/cursor_handler.cc
+FILE: ../../../flutter/shell/platform/windows/cursor_handler.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.h
