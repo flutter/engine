@@ -1,4 +1,4 @@
-Signature: 727113935dfd47f10e763f53962bef24
+Signature: eaf762d66a3a573b9e66d12567037022
 
 UNUSED LICENSES:
 
@@ -8306,6 +8306,8 @@ FILE: ../../../third_party/dart/runtime/bin/dartdev_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/dartdev_utils.h
 FILE: ../../../third_party/dart/runtime/bin/exe_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/exe_utils.h
+FILE: ../../../third_party/dart/runtime/bin/platform_macos.h
+FILE: ../../../third_party/dart/runtime/bin/platform_macos_test.cc
 FILE: ../../../third_party/dart/runtime/include/dart_api_dl.cc
 FILE: ../../../third_party/dart/runtime/include/dart_api_dl.h
 FILE: ../../../third_party/dart/runtime/include/dart_version.h
