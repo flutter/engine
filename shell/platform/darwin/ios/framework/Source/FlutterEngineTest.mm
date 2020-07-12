@@ -8,7 +8,6 @@
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 
-
 FLUTTER_ASSERT_ARC
 
 @interface FlutterEngineTest : XCTestCase
@@ -98,9 +97,10 @@ FLUTTER_ASSERT_ARC
   // initial route to "test".
   FlutterMethodCall* setInitialRouteMethodCall =
       [FlutterMethodCall methodCallWithMethodName:@"setInitialRoute" arguments:@"test"];
-  NSData* encodedSetInitialRouteMethod = [[FlutterJSONMethodCodec sharedInstance]
-      encodeMethodCall:setInitialRouteMethodCall];
-  OCMVerify([mockBinaryMessenger sendOnChannel:@"flutter/navigation" message:encodedSetInitialRouteMethod]);
+  NSData* encodedSetInitialRouteMethod =
+      [[FlutterJSONMethodCodec sharedInstance] encodeMethodCall:setInitialRouteMethodCall];
+  OCMVerify([mockBinaryMessenger sendOnChannel:@"flutter/navigation"
+                                       message:encodedSetInitialRouteMethod]);
 }
 
 @end

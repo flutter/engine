@@ -13,7 +13,9 @@
 FLUTTER_ASSERT_ARC
 
 @interface FlutterEngine ()
-- (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI initialRoute:(NSString*)initialRoute;
+- (BOOL)createShell:(NSString*)entrypoint
+         libraryURI:(NSString*)libraryURI
+       initialRoute:(NSString*)initialRoute;
 @end
 
 @interface FlutterEngine (TestLowMemory)

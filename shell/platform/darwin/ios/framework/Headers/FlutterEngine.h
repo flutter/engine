@@ -183,7 +183,8 @@ FLUTTER_EXPORT
  *   FlutterDefaultInitialRoute (or nil), it will default to the "/" route.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
-- (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint withInitialRoute:(nullable NSString*)initialRoute;
+- (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint
+         withInitialRoute:(nullable NSString*)initialRoute;
 
 /**
  * Runs a Dart program on an Isolate using the specified entrypoint and Dart library,

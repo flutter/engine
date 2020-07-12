@@ -376,8 +376,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   if ([_initialRoute length] > 0) {
     // Flutter isn't ready to receive this method call yet but the channel buffer will cache this.
-    [_navigationChannel invokeMethod:@"setInitialRoute"
-                           arguments:_initialRoute];
+    [_navigationChannel invokeMethod:@"setInitialRoute" arguments:_initialRoute];
     [_initialRoute release];
   }
 
@@ -450,7 +449,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                                             libraryOrNil:libraryOrNil]);
 }
 
-- (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI initialRoute:(NSString*)initialRoute {
+- (BOOL)createShell:(NSString*)entrypoint
+         libraryURI:(NSString*)libraryURI
+       initialRoute:(NSString*)initialRoute {
   if (_shell != nullptr) {
     FML_LOG(WARNING) << "This FlutterEngine was already invoked.";
     return NO;
@@ -567,22 +568,30 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (BOOL)run {
-  return [self runWithEntrypoint:FlutterDefaultDartEntrypoint libraryURI:nil withInitialRoute:FlutterDefaultInitialRoute];
+  return [self runWithEntrypoint:FlutterDefaultDartEntrypoint
+                      libraryURI:nil
+                withInitialRoute:FlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
-  return [self runWithEntrypoint:entrypoint libraryURI:libraryURI withInitialRoute:FlutterDefaultInitialRoute];
+  return [self runWithEntrypoint:entrypoint
+                      libraryURI:libraryURI
+                withInitialRoute:FlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint {
-  return [self runWithEntrypoint:entrypoint libraryURI:nil withInitialRoute:FlutterDefaultInitialRoute];
+  return [self runWithEntrypoint:entrypoint
+                      libraryURI:nil
+                withInitialRoute:FlutterDefaultInitialRoute];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint withInitialRoute:(NSString*)initialRoute {
   return [self runWithEntrypoint:entrypoint libraryURI:nil withInitialRoute:initialRoute];
 }
 
-- (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI withInitialRoute:(NSString*)initialRoute {
+- (BOOL)runWithEntrypoint:(NSString*)entrypoint
+               libraryURI:(NSString*)libraryURI
+         withInitialRoute:(NSString*)initialRoute {
   if ([self createShell:entrypoint libraryURI:libraryURI initialRoute:initialRoute]) {
     [self launchEngine:entrypoint libraryURI:libraryURI];
   }
