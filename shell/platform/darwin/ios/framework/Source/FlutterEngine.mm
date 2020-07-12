@@ -692,9 +692,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return _binaryMessenger;
 }
 
-// For test only.
+// For test only. Ideally we should create a dependency injector for all dependencies and
+// remove this.
 - (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger {
-  _binaryMessenger = binaryMessenger;
+  // Discard the previous messenger and keep the new one.
+  _binaryMessenger.parent = nil;
+  [_binaryMessenger release];
+  _binaryMessenger = [binaryMessenger retain];
 }
 
 #pragma mark - FlutterBinaryMessenger
