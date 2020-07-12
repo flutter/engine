@@ -19,6 +19,9 @@ final js.JsObject _jsObjectWrapperLegacy = js.JsObject(js.context['Object']);
 @JS('window.flutter_js_object_wrapper')
 external JsObjectWrapper get _jsObjectWrapper;
 
+@visibleForTesting
+JsObjectWrapper get debugJsObjectWrapper => _jsObjectWrapper;
+
 void initializeCanvasKitBindings(js.JsObject canvasKit) {
   // Because JsObject cannot be cast to a @JS type, we stash CanvasKit into
   // a global and use the [canvasKitJs] getter to access it.
@@ -67,6 +70,13 @@ extension JsObjectWrappers on JsObjectWrapper {
     _jsObjectWrapper.skImageFilter = filter;
     js.JsObject wrapped = _jsObjectWrapperLegacy['skImageFilter'];
     _jsObjectWrapper.skImageFilter = null;
+    return wrapped;
+  }
+
+  js.JsObject wrapSkPath(SkPath path) {
+    _jsObjectWrapper.skPath = path;
+    js.JsObject wrapped = _jsObjectWrapperLegacy['skPath'];
+    _jsObjectWrapper.skPath = null;
     return wrapped;
   }
 
@@ -625,12 +635,12 @@ class SkPath {
   external SkPath([SkPath? other]);
   external void setFillType(SkFillType fillType);
   external void addArc(
-    SkLTRBRect oval,
+    SkRect oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
   );
   external void addOval(
-    SkLTRBRect oval,
+    SkRect oval,
     bool counterClockWise,
     int startIndex,
   );
@@ -652,15 +662,15 @@ class SkPath {
     bool close,
   );
   external void addRoundRect(
-    SkLTRBRect outerRect,
+    SkRect outerRect,
     Float32List radii,
     bool counterClockWise,
   );
   external void addRect(
-    SkLTRBRect rect,
+    SkRect rect,
   );
   external void arcTo(
-    SkLTRBRect oval,
+    SkRect oval,
     double startAngleDegrees,
     double sweepAngleDegrees,
     bool forceMoveTo,
@@ -685,7 +695,7 @@ class SkPath {
     double x3,
     double y3,
   );
-  external SkLTRBRect getBounds();
+  external SkRect getBounds();
   external void lineTo(double x, double y);
   external void moveTo(double x, double y);
   external void quadTo(
@@ -758,46 +768,61 @@ class SkPathArcToPointOverload {
   );
 }
 
-@JS('window.flutter_canvas_kit.SkLTRBRect')
-class SkLTRBRect {
-  external SkLTRBRect(
-    double left,
-    double top,
-    double right,
-    double bottom,
-  );
-  external double get left;
-  external double get top;
-  external double get right;
-  external double get bottom;
+@JS('window.flutter_canvas_kit.SkContourMeasureIter')
+class SkContourMeasureIter {
+  external SkContourMeasureIter(SkPath path, bool forceClosed, int startIndex);
+  external SkContourMeasure? next();
 }
 
-extension SkLTRBRectExtensions on SkLTRBRect {
+@JS()
+class SkContourMeasure {
+  external SkPath getSegment(double start, double end, bool startWithMoveTo);
+  external Float32List getPosTan(double distance);
+  external bool isClosed();
+  external double length();
+}
+
+@JS()
+@anonymous
+class SkRect {
+  external factory SkRect({
+    required double fLeft,
+    required double fTop,
+    required double fRight,
+    required double fBottom,
+  });
+  external double get fLeft;
+  external double get fTop;
+  external double get fRight;
+  external double get fBottom;
+}
+
+extension SkRectExtensions on SkRect {
   ui.Rect toRect() {
     return ui.Rect.fromLTRB(
-      this.left,
-      this.top,
-      this.right,
-      this.bottom,
+      this.fLeft,
+      this.fTop,
+      this.fRight,
+      this.fBottom,
     );
   }
 }
 
-SkLTRBRect toSkLTRBRect(ui.Rect rect) {
-  return SkLTRBRect(
-    rect.left,
-    rect.top,
-    rect.right,
-    rect.bottom,
+SkRect toSkRect(ui.Rect rect) {
+  return SkRect(
+    fLeft: rect.left,
+    fTop: rect.top,
+    fRight: rect.right,
+    fBottom: rect.bottom,
   );
 }
 
-SkLTRBRect toOuterSkLTRBRect(ui.RRect rrect) {
-  return SkLTRBRect(
-    rrect.left,
-    rrect.top,
-    rrect.right,
-    rrect.bottom,
+SkRect toOuterSkRect(ui.RRect rrect) {
+  return SkRect(
+    fLeft: rrect.left,
+    fTop: rrect.top,
+    fRight: rrect.right,
+    fBottom: rrect.bottom,
   );
 }
 

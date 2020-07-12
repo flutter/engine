@@ -21,7 +21,7 @@ class CkCanvas {
     final CkPath skPath = path as CkPath;
     final js.JsObject? intersectClipOp = canvasKit['ClipOp']['Intersect'];
     skCanvas.callMethod('clipPath', <dynamic>[
-      skPath._skPath,
+      skPath._jsObject,
       intersectClipOp,
       doAntiAlias,
     ]);
@@ -176,7 +176,7 @@ class CkCanvas {
   void drawPath(ui.Path path, CkPaint paint) {
     final js.JsObject? skPaint = paint.skiaObject;
     final CkPath enginePath = path as CkPath;
-    final js.JsObject? skPath = enginePath._skPath;
+    final js.JsObject? skPath = enginePath._jsObject;
     skCanvas.callMethod('drawPath', <js.JsObject?>[skPath, skPaint]);
   }
 
