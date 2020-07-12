@@ -48,7 +48,23 @@ class CkAnimatedImage implements ui.Image {
   @override
   Future<ByteData> toByteData(
       {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    throw 'unimplemented';
+    Uint8List bytes;
+
+    if (format == ui.ImageByteFormat.rawRgba) {
+      final js.JsObject imageInfo = js.JsObject.jsify(<String, dynamic>{
+        'alphaType': canvasKit['AlphaType']['Premul'],
+        'colorType': canvasKit['ColorType']['RGBA_8888'],
+        'width': width,
+        'height': height,
+      });
+      bytes = _skAnimatedImage!.callMethod('readPixels', <dynamic>[imageInfo, 0, 0]);
+    } else {
+      final js.JsObject skData = _skAnimatedImage!.callMethod('encodeToData'); //defaults to PNG 100%
+      bytes = canvasKit.callMethod('getSkDataBytes', <js.JsObject>[skData]);
+    }
+
+    final ByteData data = Uint8List.fromList(bytes).buffer.asByteData(0, bytes.length);
+    return Future<ByteData>.value(data);
   }
 }
 
