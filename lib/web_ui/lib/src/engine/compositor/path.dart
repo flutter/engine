@@ -8,27 +8,21 @@ part of engine;
 ///
 /// The `SkPath` is required for `CkCanvas` methods which take a path.
 class CkPath implements ui.Path {
-  SkPath _skPath;
-  js.JsObject? _jsObject;
+  final SkPath _skPath;
+
+  // TODO(yjbanov): remove this once we're fully @JS-ified.
+  late final js.JsObject _legacyJsObject = _jsObjectWrapper.wrapSkPath(_skPath);
 
   CkPath() : _skPath = SkPath(), _fillType = ui.PathFillType.nonZero {
-    _castToJsObject();
     _skPath.setFillType(toSkFillType(_fillType));
   }
 
   CkPath.from(CkPath other) : _skPath = SkPath(other._skPath), _fillType = other.fillType {
-    _castToJsObject();
     _skPath.setFillType(toSkFillType(_fillType));
   }
 
   CkPath._fromSkPath(SkPath skPath, this._fillType) : _skPath = skPath {
-    _castToJsObject();
     _skPath.setFillType(toSkFillType(_fillType));
-  }
-
-  // TODO(yjbanov): remove this once we're fully @JS-ified.
-  void _castToJsObject() {
-    _jsObject = _jsObjectWrapper.wrapSkPath(_skPath);
   }
 
   ui.PathFillType _fillType;
