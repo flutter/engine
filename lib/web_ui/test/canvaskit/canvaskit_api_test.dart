@@ -38,6 +38,7 @@ void main() {
     _toSkPointTests();
     _toSkColorStopsTests();
     _toSkMatrixFromFloat32Tests();
+    _pathTests();
   },
       // This test failed on iOS Safari.
       // TODO: https://github.com/flutter/flutter/issues/60040
@@ -439,6 +440,18 @@ void _toSkMatrixFromFloat32Tests() {
         0,
         1,
       ])
+    );
+  });
+}
+
+void _pathTests() {
+  test('can make SkPath', () async {
+    final SkPath path = SkPath();
+    path.setFillType(canvasKitJs.FillType.Winding);
+    path.addArc(
+      SkLTRBRect(10, 20, 30, 40),
+      1,
+      5,
     );
   });
 }

@@ -32,7 +32,12 @@ class JsObjectWrapper {
   external set skMaskFilter(SkMaskFilter? filter);
   external set skColorFilter(SkColorFilter? filter);
   external set skImageFilter(SkImageFilter? filter);
+  external set skPath(SkPath? path);
 }
+
+/// Reads [JsObjectWrapper.skPath] as [SkPathArcToPointOverload].
+@JS('window.flutter_js_object_wrapper.skPath')
+external SkPathArcToPointOverload get _skPathArcToPointOverload;
 
 /// Specific methods that wrap `@JS`-backed objects into a [js.JsObject]
 /// for use with legacy `dart:js` API.
@@ -64,6 +69,13 @@ extension JsObjectWrappers on JsObjectWrapper {
     _jsObjectWrapper.skImageFilter = null;
     return wrapped;
   }
+
+  SkPathArcToPointOverload castToSkPathArcToPointOverload(SkPath path) {
+    _jsObjectWrapper.skPath = path;
+    final SkPathArcToPointOverload overload = _skPathArcToPointOverload;
+    _jsObjectWrapper.skPath = null;
+    return overload;
+  }
 }
 
 @JS('window.flutter_canvas_kit')
@@ -78,11 +90,60 @@ class CanvasKit {
   external SkFilterQualityEnum get FilterQuality;
   external SkBlurStyleEnum get BlurStyle;
   external SkTileModeEnum get TileMode;
+  external SkFillTypeEnum get FillType;
+  external SkPathOpEnum get PathOp;
   external SkAnimatedImage MakeAnimatedImageFromEncoded(Uint8List imageData);
   external SkShaderNamespace get SkShader;
   external SkMaskFilter MakeBlurMaskFilter(SkBlurStyle blurStyle, double sigma, bool respectCTM);
   external SkColorFilterNamespace get SkColorFilter;
   external SkImageFilterNamespace get SkImageFilter;
+  external SkPath MakePathFromOp(SkPath path1, SkPath path2, SkPathOp pathOp);
+}
+
+@JS()
+class SkFillTypeEnum {
+  external SkFillType get Winding;
+  external SkFillType get EvenOdd;
+}
+
+@JS()
+class SkFillType {
+  external int get value;
+}
+
+final List<SkFillType> _skFillTypes = <SkFillType>[
+  canvasKitJs.FillType.Winding,
+  canvasKitJs.FillType.EvenOdd,
+];
+
+SkFillType toSkFillType(ui.PathFillType fillType) {
+  return _skFillTypes[fillType.index];
+}
+
+@JS()
+class SkPathOpEnum {
+  external SkPathOp get Difference;
+  external SkPathOp get Intersect;
+  external SkPathOp get Union;
+  external SkPathOp get XOR;
+  external SkPathOp get ReverseDifference;
+}
+
+@JS()
+class SkPathOp {
+  external int get value;
+}
+
+final List<SkPathOp> _skPathOps = <SkPathOp>[
+  canvasKitJs.PathOp.Difference,
+  canvasKitJs.PathOp.Intersect,
+  canvasKitJs.PathOp.Union,
+  canvasKitJs.PathOp.XOR,
+  canvasKitJs.PathOp.ReverseDifference,
+];
+
+SkPathOp toSkPathOp(ui.PathOperation pathOp) {
+  return _skPathOps[pathOp.index];
 }
 
 @JS()
@@ -429,6 +490,20 @@ Float32List toSkMatrixFromFloat32(Float32List matrix4) {
   return skMatrix;
 }
 
+/// Converts a 4x4 Flutter matrix (represented as a [Float32List]) to an
+/// SkMatrix, which is a 3x3 transform matrix.
+Float32List toSkMatrixFromFloat64(Float64List matrix4) {
+  final Float32List skMatrix = Float32List(9);
+  for (int i = 0; i < 9; ++i) {
+    final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
+    if (matrix4Index < matrix4.length)
+      skMatrix[i] = matrix4[matrix4Index];
+    else
+      skMatrix[i] = 0.0;
+  }
+  return skMatrix;
+}
+
 /// Converts an [offset] into an `[x, y]` pair stored in a `Float32List`.
 ///
 /// The returned list can be passed to CanvasKit API that take points.
@@ -474,9 +549,19 @@ external SkFloat32List _mallocFloat32List(
 
 /// Allocates a [Float32List] backed by WASM memory, managed by
 /// a [SkFloat32List].
+///
+/// To free the allocated array use [freeFloat32List].
 SkFloat32List mallocFloat32List(int size) {
   return _mallocFloat32List(_nativeFloat32ArrayType, size);
 }
+
+/// Frees the WASM memory occupied by a [SkFloat32List].
+///
+/// The [list] is no longer usable after calling this function.
+///
+/// Use this function to free lists owned by the engine.
+@JS('window.flutter_canvas_kit.Free')
+external void freeFloat32List(SkFloat32List list);
 
 /// Wraps a [Float32List] backed by WASM memory.
 ///
@@ -534,3 +619,201 @@ Float32List toSharedSkColor3(ui.Color color) {
   return _populateSkColor(_sharedSkColor3, color);
 }
 final SkFloat32List _sharedSkColor3 = mallocFloat32List(4);
+
+@JS('window.flutter_canvas_kit.SkPath')
+class SkPath {
+  external SkPath([SkPath? other]);
+  external void setFillType(SkFillType fillType);
+  external void addArc(
+    SkLTRBRect oval,
+    double startAngleDegrees,
+    double sweepAngleDegrees,
+  );
+  external void addOval(
+    SkLTRBRect oval,
+    bool counterClockWise,
+    int startIndex,
+  );
+  external void addPath(
+    SkPath other,
+    double scaleX,
+    double skewX,
+    double transX,
+    double skewY,
+    double scaleY,
+    double transY,
+    double pers0,
+    double pers1,
+    double pers2,
+    bool extendPath,
+  );
+  external void addPoly(
+    Float32List points,
+    bool close,
+  );
+  external void addRoundRect(
+    SkLTRBRect outerRect,
+    Float32List radii,
+    bool counterClockWise,
+  );
+  external void addRect(
+    SkLTRBRect rect,
+  );
+  external void arcTo(
+    SkLTRBRect oval,
+    double startAngleDegrees,
+    double sweepAngleDegrees,
+    bool forceMoveTo,
+  );
+  external void close();
+  external void conicTo(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double w,
+  );
+  external bool contains(
+    double x,
+    double y,
+  );
+  external void cubicTo(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double x3,
+    double y3,
+  );
+  external SkLTRBRect getBounds();
+  external void lineTo(double x, double y);
+  external void moveTo(double x, double y);
+  external void quadTo(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+  );
+  external void rArcTo(
+    double x,
+    double y,
+    double rotation,
+    bool useSmallArc,
+    bool counterClockWise,
+    double deltaX,
+    double deltaY,
+  );
+  external void rConicTo(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double w,
+  );
+  external void rCubicTo(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double x3,
+    double y3,
+  );
+  external void rLineTo(double x, double y);
+  external void rMoveTo(double x, double y);
+  external void rQuadTo(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+  );
+  external void reset();
+  external String toSVGString();
+  external bool isEmpty();
+  external SkPath copy();
+  external void transform(
+    double scaleX,
+    double skewX,
+    double transX,
+    double skewY,
+    double scaleY,
+    double transY,
+    double pers0,
+    double pers1,
+    double pers2,
+  );
+}
+
+/// A different view on [SkPath] used to overload [SkPath.arcTo].
+// TODO(yjbanov): this is a hack to get around https://github.com/flutter/flutter/issues/61305
+@JS()
+class SkPathArcToPointOverload {
+  external void arcTo(
+    double radiusX,
+    double radiusY,
+    double rotation,
+    bool useSmallArc,
+    bool counterClockWise,
+    double x,
+    double y,
+  );
+}
+
+@JS('window.flutter_canvas_kit.SkLTRBRect')
+class SkLTRBRect {
+  external SkLTRBRect(
+    double left,
+    double top,
+    double right,
+    double bottom,
+  );
+  external double get left;
+  external double get top;
+  external double get right;
+  external double get bottom;
+}
+
+extension SkLTRBRectExtensions on SkLTRBRect {
+  ui.Rect toRect() {
+    return ui.Rect.fromLTRB(
+      this.left,
+      this.top,
+      this.right,
+      this.bottom,
+    );
+  }
+}
+
+SkLTRBRect toSkLTRBRect(ui.Rect rect) {
+  return SkLTRBRect(
+    rect.left,
+    rect.top,
+    rect.right,
+    rect.bottom,
+  );
+}
+
+SkLTRBRect toOuterSkLTRBRect(ui.RRect rrect) {
+  return SkLTRBRect(
+    rrect.left,
+    rrect.top,
+    rrect.right,
+    rrect.bottom,
+  );
+}
+
+/// Encodes a list of offsets to CanvasKit-compatible point array.
+///
+/// Uses `CanvasKit.Malloc` to allocate storage for the points in the WASM
+/// memory to avoid unnecessary copying. Unless CanvasKit takes ownership of
+/// the list the returned list must be explicitly freed using
+/// [freeMallocedFloat32List].
+SkFloat32List toMallocedSkPoints(List<ui.Offset> points) {
+  final int len = points.length;
+  final SkFloat32List skPoints = mallocFloat32List(len * 2);
+  final Float32List list = skPoints.toTypedArray();
+  for (int i = 0; i < len; i++) {
+    list[2 * i] = points[i].dx;
+    list[2 * i + 1] = points[i].dy;
+  }
+  return skPoints;
+}
