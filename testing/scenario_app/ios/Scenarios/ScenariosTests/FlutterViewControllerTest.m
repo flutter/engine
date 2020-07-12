@@ -52,43 +52,4 @@
   [self waitForExpectationsWithTimeout:30.0 handler:nil];
 }
 
-- (void)testSettingInitialRoute {
-  self.flutterViewController = [[FlutterViewController alloc] initWithProject:nil
-                                                            withInitialRoute:@"myCustomInitialRoute"
-                                                                     nibName:nil
-                                                                      bundle:nil];
-
-  FlutterBinaryMessenger* binaryMessenger = self.flutterViewController.binaryMessenger;
-
-  [binaryMessenger setMessageHandlerOnChannel:@"waiting_for_status"
-                              binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
-                                FlutterMethodChannel* channel = [FlutterMethodChannel
-                                    methodChannelWithName:@"driver"
-                                          binaryMessenger:self.binaryMessenger
-                                                    codec:[FlutterJSONMethodCodec sharedInstance]];
-                                [channel invokeMethod:@"set_scenario"
-                                            arguments:@{@"name" : @"initial_route_reply"}];
-
-  XCTestExpectation* customInitialRouteSet = [self expectationWithDescription:@"Custom initial route was set on the Dart side"];
-  [binaryMessenger setMessageHandlerOnChannel:@"initial_route_test_channel"
-                              binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
-                                  [engine.binaryMessenger
-              NSDictionary* dict = [NSJSONSerialization JSONObjectWithData:message
-                                                                   options:0
-                                                                     error:nil];
-              NSString* initialRoute = dict[@"method"];
-              if ([initialRoute isEqualToString:@"myCustomInitialRoute"]) {
-                [customInitialRouteSet fulfill];
-              } else {
-                XCTFail(@"Expected initial route to be set to myCustomInitialRoute. Was set to %@ instead", initialRoute);
-              }
-                              }];
-
-  AppDelegate* appDelegate = (AppDelegate*)UIApplication.sharedApplication.delegate;
-  UIViewController* rootVC = appDelegate.window.rootViewController;
-  [rootVC presentViewController:self.flutterViewController animated:NO completion:nil];
-
-  [self waitForExpectationsWithTimeout:30.0 handler:nil];
-}
-
 @end
