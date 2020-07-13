@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 part of engine;
 
 /// Various types of line breaks as defined by the Unicode spec.
@@ -94,7 +93,7 @@ bool _hasEastAsianWidthFWH(int charCode) {
 LineBreakResult nextLineBreak(String text, int index) {
   LineCharProperty? curr = _normalizeLineProperty(lineLookup.find(text, index));
 
-  LineCharProperty? prev;
+  LineCharProperty? prev1;
 
   // Keeps track of the character two positions behind.
   LineCharProperty? prev2;
@@ -122,13 +121,13 @@ LineBreakResult nextLineBreak(String text, int index) {
   // LB3: ! eot
   while (index < text.length) {
     index++;
-    prev2 = prev;
-    prev = curr;
+    prev2 = prev1;
+    prev1 = curr;
 
     final bool isPrevZWJ = isCurrZWJ;
 
     // Reset the base when we are past the space sequence.
-    if (prev != LineCharProperty.SP) {
+    if (prev1 != LineCharProperty.SP) {
       baseOfSpaceSequence = null;
     }
 
@@ -143,11 +142,11 @@ LineBreakResult nextLineBreak(String text, int index) {
     //      CR !
     //      LF !
     //      NL !
-    if (_isHardBreak(prev)) {
+    if (_isHardBreak(prev1)) {
       return LineBreakResult(index, LineBreakType.mandatory);
     }
 
-    if (prev == LineCharProperty.CR) {
+    if (prev1 == LineCharProperty.CR) {
       if (curr == LineCharProperty.LF) {
         // LB5: CR × LF
         continue;
@@ -174,13 +173,13 @@ LineBreakResult nextLineBreak(String text, int index) {
     if (curr == LineCharProperty.SP) {
       // When we encounter SP, we preserve the property of the previous
       // character so we can later apply the indirect breaking rules.
-      if (prev == LineCharProperty.SP) {
+      if (prev1 == LineCharProperty.SP) {
         // If we are in the middle of a space sequence, a base should've
         // already been set.
         assert(baseOfSpaceSequence != null);
       } else {
         // We are at the beginning of a space sequence, establish the base.
-        baseOfSpaceSequence = prev;
+        baseOfSpaceSequence = prev1;
       }
       continue;
     }
@@ -192,7 +191,7 @@ LineBreakResult nextLineBreak(String text, int index) {
     // Break before any character following a zero-width space, even if one or
     // more spaces intervene.
     // LB8: ZW SP* ÷
-    if (prev == LineCharProperty.ZW ||
+    if (prev1 == LineCharProperty.ZW ||
         baseOfSpaceSequence == LineCharProperty.ZW) {
       return LineBreakResult(index, LineBreakType.opportunity);
     }
@@ -205,13 +204,13 @@ LineBreakResult nextLineBreak(String text, int index) {
     if (curr == LineCharProperty.CM || curr == LineCharProperty.ZWJ) {
       // Other properties: BK, NL, LF, CR, ZW would've already generated a line
       // break, so we won't find them in `prev`.
-      if (prev == LineCharProperty.SP) {
+      if (prev1 == LineCharProperty.SP) {
         // LB10: Treat any remaining combining mark or ZWJ as AL.
         curr = LineCharProperty.AL;
       } else {
         // Preserve the property of the previous character to treat the sequence
         // as if it were X.
-        curr = prev;
+        curr = prev1;
         continue;
       }
     }
@@ -225,22 +224,22 @@ LineBreakResult nextLineBreak(String text, int index) {
     // Do not break before or after Word joiner and related characters.
     // LB11: × WJ
     //       WJ ×
-    if (curr == LineCharProperty.WJ || prev == LineCharProperty.WJ) {
+    if (curr == LineCharProperty.WJ || prev1 == LineCharProperty.WJ) {
       continue;
     }
 
     // Do not break after NBSP and related characters.
     // LB12: GL ×
-    if (prev == LineCharProperty.GL) {
+    if (prev1 == LineCharProperty.GL) {
       continue;
     }
 
     // Do not break before NBSP and related characters, except after spaces and
     // hyphens.
     // LB12a: [^SP BA HY] × GL
-    if (!(prev == LineCharProperty.SP ||
-            prev == LineCharProperty.BA ||
-            prev == LineCharProperty.HY) &&
+    if (!(prev1 == LineCharProperty.SP ||
+            prev1 == LineCharProperty.BA ||
+            prev1 == LineCharProperty.HY) &&
         curr == LineCharProperty.GL) {
       continue;
     }
@@ -261,14 +260,14 @@ LineBreakResult nextLineBreak(String text, int index) {
 
     // Do not break after ‘[’, even after spaces.
     // LB14: OP SP* ×
-    if (prev == LineCharProperty.OP ||
+    if (prev1 == LineCharProperty.OP ||
         baseOfSpaceSequence == LineCharProperty.OP) {
       continue;
     }
 
     // Do not break within ‘”[’, even with intervening spaces.
     // LB15: QU SP* × OP
-    if ((prev == LineCharProperty.QU ||
+    if ((prev1 == LineCharProperty.QU ||
             baseOfSpaceSequence == LineCharProperty.QU) &&
         curr == LineCharProperty.OP) {
       continue;
@@ -277,9 +276,9 @@ LineBreakResult nextLineBreak(String text, int index) {
     // Do not break between closing punctuation and a nonstarter, even with
     // intervening spaces.
     // LB16: (CL | CP) SP* × NS
-    if ((prev == LineCharProperty.CL ||
+    if ((prev1 == LineCharProperty.CL ||
             baseOfSpaceSequence == LineCharProperty.CL ||
-            prev == LineCharProperty.CP ||
+            prev1 == LineCharProperty.CP ||
             baseOfSpaceSequence == LineCharProperty.CP) &&
         curr == LineCharProperty.NS) {
       continue;
@@ -287,7 +286,7 @@ LineBreakResult nextLineBreak(String text, int index) {
 
     // Do not break within ‘——’, even with intervening spaces.
     // LB17: B2 SP* × B2
-    if ((prev == LineCharProperty.B2 ||
+    if ((prev1 == LineCharProperty.B2 ||
             baseOfSpaceSequence == LineCharProperty.B2) &&
         curr == LineCharProperty.B2) {
       continue;
@@ -295,21 +294,21 @@ LineBreakResult nextLineBreak(String text, int index) {
 
     // Break after spaces.
     // LB18: SP ÷
-    if (prev == LineCharProperty.SP) {
+    if (prev1 == LineCharProperty.SP) {
       return LineBreakResult(index, LineBreakType.opportunity);
     }
 
     // Do not break before or after quotation marks, such as ‘”’.
     // LB19: × QU
     //       QU ×
-    if (prev == LineCharProperty.QU || curr == LineCharProperty.QU) {
+    if (prev1 == LineCharProperty.QU || curr == LineCharProperty.QU) {
       continue;
     }
 
     // Break before and after unresolved CB.
     // LB20: ÷ CB
     //       CB ÷
-    if (prev == LineCharProperty.CB || curr == LineCharProperty.CB) {
+    if (prev1 == LineCharProperty.CB || curr == LineCharProperty.CB) {
       return LineBreakResult(index, LineBreakType.opportunity);
     }
 
@@ -322,20 +321,20 @@ LineBreakResult nextLineBreak(String text, int index) {
     if (curr == LineCharProperty.BA ||
         curr == LineCharProperty.HY ||
         curr == LineCharProperty.NS ||
-        prev == LineCharProperty.BB) {
+        prev1 == LineCharProperty.BB) {
       continue;
     }
 
     // Don't break after Hebrew + Hyphen.
     // LB21a: HL (HY | BA) ×
     if (prev2 == LineCharProperty.HL &&
-        (prev == LineCharProperty.HY || prev == LineCharProperty.BA)) {
+        (prev1 == LineCharProperty.HY || prev1 == LineCharProperty.BA)) {
       continue;
     }
 
     // Don’t break between Solidus and Hebrew letters.
     // LB21b: SY × HL
-    if (prev == LineCharProperty.SY && curr == LineCharProperty.HL) {
+    if (prev1 == LineCharProperty.SY && curr == LineCharProperty.HL) {
       continue;
     }
 
@@ -348,24 +347,24 @@ LineBreakResult nextLineBreak(String text, int index) {
     // Do not break between digits and letters.
     // LB23: (AL | HL) × NU
     //       NU × (AL | HL)
-    if ((_isALorHL(prev) && curr == LineCharProperty.NU) ||
-        (prev == LineCharProperty.NU && _isALorHL(curr))) {
+    if ((_isALorHL(prev1) && curr == LineCharProperty.NU) ||
+        (prev1 == LineCharProperty.NU && _isALorHL(curr))) {
       continue;
     }
 
     // Do not break between numeric prefixes and ideographs, or between
     // ideographs and numeric postfixes.
     // LB23a: PR × (ID | EB | EM)
-    if (prev == LineCharProperty.PR &&
+    if (prev1 == LineCharProperty.PR &&
         (curr == LineCharProperty.ID ||
             curr == LineCharProperty.EB ||
             curr == LineCharProperty.EM)) {
       continue;
     }
     // LB23a: (ID | EB | EM) × PO
-    if ((prev == LineCharProperty.ID ||
-            prev == LineCharProperty.EB ||
-            prev == LineCharProperty.EM) &&
+    if ((prev1 == LineCharProperty.ID ||
+            prev1 == LineCharProperty.EB ||
+            prev1 == LineCharProperty.EM) &&
         curr == LineCharProperty.PO) {
       continue;
     }
@@ -373,43 +372,43 @@ LineBreakResult nextLineBreak(String text, int index) {
     // Do not break between numeric prefix/postfix and letters, or between
     // letters and prefix/postfix.
     // LB24: (PR | PO) × (AL | HL)
-    if ((prev == LineCharProperty.PR || prev == LineCharProperty.PO) &&
+    if ((prev1 == LineCharProperty.PR || prev1 == LineCharProperty.PO) &&
         _isALorHL(curr)) {
       continue;
     }
     // LB24: (AL | HL) × (PR | PO)
-    if (_isALorHL(prev) &&
+    if (_isALorHL(prev1) &&
         (curr == LineCharProperty.PR || curr == LineCharProperty.PO)) {
       continue;
     }
 
     // Do not break between the following pairs of classes relevant to numbers.
     // LB25: (CL | CP | NU) × (PO | PR)
-    if ((prev == LineCharProperty.CL ||
-            prev == LineCharProperty.CP ||
-            prev == LineCharProperty.NU) &&
+    if ((prev1 == LineCharProperty.CL ||
+            prev1 == LineCharProperty.CP ||
+            prev1 == LineCharProperty.NU) &&
         (curr == LineCharProperty.PO || curr == LineCharProperty.PR)) {
       continue;
     }
     // LB25: (PO | PR) × OP
-    if ((prev == LineCharProperty.PO || prev == LineCharProperty.PR) &&
+    if ((prev1 == LineCharProperty.PO || prev1 == LineCharProperty.PR) &&
         curr == LineCharProperty.OP) {
       continue;
     }
     // LB25: (PO | PR | HY | IS | NU | SY) × NU
-    if ((prev == LineCharProperty.PO ||
-            prev == LineCharProperty.PR ||
-            prev == LineCharProperty.HY ||
-            prev == LineCharProperty.IS ||
-            prev == LineCharProperty.NU ||
-            prev == LineCharProperty.SY) &&
+    if ((prev1 == LineCharProperty.PO ||
+            prev1 == LineCharProperty.PR ||
+            prev1 == LineCharProperty.HY ||
+            prev1 == LineCharProperty.IS ||
+            prev1 == LineCharProperty.NU ||
+            prev1 == LineCharProperty.SY) &&
         curr == LineCharProperty.NU) {
       continue;
     }
 
     // Do not break a Korean syllable.
     // LB26: JL × (JL | JV | H2 | H3)
-    if (prev == LineCharProperty.JL &&
+    if (prev1 == LineCharProperty.JL &&
         (curr == LineCharProperty.JL ||
             curr == LineCharProperty.JV ||
             curr == LineCharProperty.H2 ||
@@ -417,38 +416,37 @@ LineBreakResult nextLineBreak(String text, int index) {
       continue;
     }
     // LB26: (JV | H2) × (JV | JT)
-    if ((prev == LineCharProperty.JV || prev == LineCharProperty.H2) &&
+    if ((prev1 == LineCharProperty.JV || prev1 == LineCharProperty.H2) &&
         (curr == LineCharProperty.JV || curr == LineCharProperty.JT)) {
       continue;
     }
     // LB26: (JT | H3) × JT
-    if ((prev == LineCharProperty.JT || prev == LineCharProperty.H3) &&
+    if ((prev1 == LineCharProperty.JT || prev1 == LineCharProperty.H3) &&
         curr == LineCharProperty.JT) {
       continue;
     }
 
     // Treat a Korean Syllable Block the same as ID.
     // LB27: (JL | JV | JT | H2 | H3) × PO
-    if (_isKoreanSyllable(prev) && curr == LineCharProperty.PO) {
+    if (_isKoreanSyllable(prev1) && curr == LineCharProperty.PO) {
       continue;
     }
     // LB27: PR × (JL | JV | JT | H2 | H3)
-    if (prev == LineCharProperty.PR && _isKoreanSyllable(curr)) {
+    if (prev1 == LineCharProperty.PR && _isKoreanSyllable(curr)) {
       continue;
     }
 
     // Do not break between alphabetics.
     // LB28: (AL | HL) × (AL | HL)
-    if (_isALorHL(prev) && _isALorHL(curr)) {
+    if (_isALorHL(prev1) && _isALorHL(curr)) {
       continue;
     }
 
     // Do not break between numeric punctuation and alphabetics (“e.g.”).
     // LB29: IS × (AL | HL)
-    if (prev == LineCharProperty.IS && _isALorHL(curr)) {
+    if (prev1 == LineCharProperty.IS && _isALorHL(curr)) {
       continue;
     }
-
 
     // Do not break between letters, numbers, or ordinary symbols and opening or
     // closing parentheses.
@@ -456,13 +454,13 @@ LineBreakResult nextLineBreak(String text, int index) {
     //
     // LB30 requires that we exclude characters that have an Eastern Asian width
     // property of value F, W or H classes.
-    if ((_isALorHL(prev) || prev == LineCharProperty.NU) &&
+    if ((_isALorHL(prev1) || prev1 == LineCharProperty.NU) &&
         curr == LineCharProperty.OP &&
         !_hasEastAsianWidthFWH(text.codeUnitAt(index))) {
       continue;
     }
     // LB30: CP × (AL | HL | NU)
-    if (prev == LineCharProperty.CP &&
+    if (prev1 == LineCharProperty.CP &&
         !_hasEastAsianWidthFWH(text.codeUnitAt(index - 1)) &&
         (_isALorHL(curr) || curr == LineCharProperty.NU)) {
       continue;
