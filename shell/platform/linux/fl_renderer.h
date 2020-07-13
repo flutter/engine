@@ -58,6 +58,10 @@ struct _FlRendererClass {
   EGLSurfacePair (*create_surface)(FlRenderer* renderer,
                                    EGLDisplay display,
                                    EGLConfig config);
+
+  // Virtual method called when the EGL window needs to be resized.
+  // This is implmented by Wayland but not needed for X11
+  void (*set_geometry)(FlRenderer* self, GdkRectangle* geometry, gint scale);
 };
 
 /**
@@ -105,6 +109,15 @@ void fl_renderer_set_window(FlRenderer* self, GdkWindow* window);
  * Returns: %TRUE if successfully started.
  */
 gboolean fl_renderer_start(FlRenderer* self, GError** error);
+
+/**
+ * fl_renderer_set_geometry:
+ * @geometry: New size and position (unscaled) of the EGL window.
+ * @scale: Scale of the window.
+ */
+void fl_renderer_set_geometry(FlRenderer* self,
+                              GdkRectangle* geometry,
+                              gint scale);
 
 /**
  * fl_renderer_get_proc_address:

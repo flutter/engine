@@ -100,13 +100,14 @@ static gboolean fl_view_send_pointer_button_event(FlView* self,
 }
 
 // Updates the engine with the current window metrics.
-static void fl_view_send_window_metrics(FlView* self) {
+static void fl_view_geometry_changed(FlView* self) {
   GtkAllocation allocation;
   gtk_widget_get_allocation(GTK_WIDGET(self), &allocation);
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
   fl_engine_send_window_metrics_event(
       self->engine, allocation.width * scale_factor,
       allocation.height * scale_factor, scale_factor);
+  fl_renderer_set_geometry(self->renderer, &allocation, scale_factor);
 }
 
 // Implements FlPluginRegistry::get_registrar_for_plugin.
@@ -175,7 +176,7 @@ static void fl_view_notify(GObject* object, GParamSpec* pspec) {
   FlView* self = FL_VIEW(object);
 
   if (strcmp(pspec->name, "scale-factor") == 0) {
-    fl_view_send_window_metrics(self);
+    fl_view_geometry_changed(self);
   }
 
   if (G_OBJECT_CLASS(fl_view_parent_class)->notify != nullptr)
@@ -255,7 +256,7 @@ static void fl_view_size_allocate(GtkWidget* widget,
                            allocation->height);
   }
 
-  fl_view_send_window_metrics(self);
+  fl_view_geometry_changed(self);
 }
 
 // Implements GtkWidget::button_press_event.
