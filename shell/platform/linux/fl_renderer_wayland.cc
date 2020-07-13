@@ -55,6 +55,7 @@ struct _FlRendererWayland {
     wl_surface* surface;
     wl_egl_window* egl_window;
     GdkRectangle geometry;
+    gint scale;
   } subsurface;
 
   // The resource surface will not be mapped, but needs to be a wl_surface
@@ -102,6 +103,7 @@ static EGLSurfacePair fl_renderer_wayland_create_surface(FlRenderer* renderer,
   g_return_val_if_fail(self->subsurface.surface, null_result);
   g_return_val_if_fail(self->resource.surface, null_result);
   self->subsurface.geometry = GdkRectangle{0, 0, 1, 1};
+  self->subsurface.scale = 1;
 
   self->subsurface.egl_window =
       wl_egl_window_create(self->subsurface.surface, 1, 1);
@@ -149,6 +151,12 @@ static void fl_renderer_wayland_set_geometry(FlRenderer* renderer,
     return;
   }
 
+  if (scale != self->subsurface.scale) {
+    wl_surface_set_buffer_scale(self->subsurface.surface, scale);
+  }
+
+  // NOTE: position is unscaled but size is scaled
+
   if (geometry->x != self->subsurface.geometry.x ||
       geometry->y != self->subsurface.geometry.y) {
     wl_subsurface_set_position(self->subsurface.subsurface, geometry->x,
@@ -156,12 +164,14 @@ static void fl_renderer_wayland_set_geometry(FlRenderer* renderer,
   }
 
   if (geometry->width != self->subsurface.geometry.width ||
-      geometry->height != self->subsurface.geometry.height) {
-    wl_egl_window_resize(self->subsurface.egl_window, geometry->width,
-                         geometry->height, 0, 0);
+      geometry->height != self->subsurface.geometry.height ||
+      scale != self->subsurface.scale) {
+    wl_egl_window_resize(self->subsurface.egl_window, geometry->width * scale,
+                         geometry->height * scale, 0, 0);
   }
 
   self->subsurface.geometry = *geometry;
+  self->subsurface.scale = scale;
 }
 
 static void fl_renderer_wayland_class_init(FlRendererWaylandClass* klass) {
