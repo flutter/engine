@@ -86,7 +86,6 @@ static const double kRmseThreshold = 0.5;
     }
   }
   double rmse = sqrt(sum / size);
-  NSLog(@"rmse: %f", rmse);
   return rmse <= kRmseThreshold;
 }
 
