@@ -4512,14 +4512,14 @@ class ImageDescriptor extends NativeFieldWrapperClass2 {
   int _getWidth() native 'ImageDescriptor_width';
   /// The width, in pixels, of the image.
   ///
-  /// On web, this is only supported for [raw] images.
+  /// On the Web, this is only supported for [raw] images.
   int get width => _width ??= _getWidth();
 
   int? _height;
   int _getHeight() native 'ImageDescriptor_height';
   /// The height, in pixels, of the image.
   ///
-  /// On web, this is only supported for [raw] images.
+  /// On the Web, this is only supported for [raw] images.
   int get height => _height ??= _getHeight();
 
   int? _bytesPerPixel;
