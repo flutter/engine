@@ -404,7 +404,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/ndk/${{platform}}',
-        'version': 'version:r21.0.6113669'
+        'version': 'version:r21.3.6528147'
        }
      ],
      'condition': 'download_android_deps',
