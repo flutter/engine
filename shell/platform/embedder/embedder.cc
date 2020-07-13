@@ -920,19 +920,43 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     compute_platform_resolved_locale_callback =
         [ptr = args->compute_platform_resolved_locale_callback](
             const std::vector<std::string>& supported_locale_data) {
-          std::vector<const char*> c_vector;
-          c_vector.reserve(supported_locale_data.size());
-          for (size_t i = 0; i < supported_locale_data.size(); ++i) {
-            c_vector.push_back(supported_locale_data[i].c_str());
+          size_t number_of_strings_per_locale = 3;
+          size_t locale_count =
+              supported_locale_data.size() / number_of_strings_per_locale;
+          const FlutterLocale* locales[locale_count];
+          for (size_t i = 0; i < locale_count; ++i) {
+            size_t size = 0;
+            size += supported_locale_data[i * number_of_strings_per_locale + 0]
+                        .size();
+            size += supported_locale_data[i * number_of_strings_per_locale + 1]
+                        .size();
+            size += supported_locale_data[i * number_of_strings_per_locale + 2]
+                        .size();
+            const FlutterLocale locale = {
+                .struct_size = size,
+                .language_code =
+                    supported_locale_data[i * number_of_strings_per_locale + 0]
+                        .c_str(),
+                .country_code =
+                    supported_locale_data[i * number_of_strings_per_locale + 1]
+                        .c_str(),
+                .script_code =
+                    supported_locale_data[i * number_of_strings_per_locale + 2]
+                        .c_str(),
+                .variant_code = nullptr};
+            locales[i] = &locale;
           }
-          const char** result = ptr(&c_vector[0], supported_locale_data.size());
+
+          const FlutterLocale* result = ptr(&locales[0], locale_count);
 
           std::unique_ptr<std::vector<std::string>> out =
               std::make_unique<std::vector<std::string>>();
           if (result != nullptr) {
-            size_t number_of_strings_per_locale = 3;
-            for (size_t i = 0; i < number_of_strings_per_locale; ++i) {
-              out->push_back(result[i]);
+            std::string language_code = SAFE_ACCESS(result, language_code, "");
+            if (language_code != "") {
+              out->push_back(language_code);
+              out->push_back(SAFE_ACCESS(result, country_code, ""));
+              out->push_back(SAFE_ACCESS(result, script_code, ""));
             }
           }
           return out;
@@ -1088,17 +1112,17 @@ FlutterEngineResult FlutterEngineRunInitialized(
 
   auto embedder_engine = reinterpret_cast<flutter::EmbedderEngine*>(engine);
 
-  // The engine must not already be running. Initialize may only be called once
-  // on an engine instance.
+  // The engine must not already be running. Initialize may only be called
+  // once on an engine instance.
   if (embedder_engine->IsValid()) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
 
   // Step 1: Launch the shell.
   if (!embedder_engine->LaunchShell()) {
-    return LOG_EMBEDDER_ERROR(
-        kInvalidArguments,
-        "Could not launch the engine using supplied initialization arguments.");
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Could not launch the engine using supplied "
+                              "initialization arguments.");
   }
 
   // Step 2: Tell the platform view to initialize itself.
@@ -1223,8 +1247,8 @@ inline int64_t PointerDataButtonsForLegacyEvent(
   switch (change) {
     case flutter::PointerData::Change::kDown:
     case flutter::PointerData::Change::kMove:
-      // These kinds of change must have a non-zero `buttons`, otherwise gesture
-      // recognizers will ignore these events.
+      // These kinds of change must have a non-zero `buttons`, otherwise
+      // gesture recognizers will ignore these events.
       return flutter::kPointerButtonMousePrimary;
     case flutter::PointerData::Change::kCancel:
     case flutter::PointerData::Change::kAdd:
@@ -1266,16 +1290,17 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.physical_delta_x = 0.0;
     pointer_data.physical_delta_y = 0.0;
     pointer_data.device = SAFE_ACCESS(current, device, 0);
-    // Pointer identifier will be generated in pointer_data_packet_converter.cc.
+    // Pointer identifier will be generated in
+    // pointer_data_packet_converter.cc.
     pointer_data.pointer_identifier = 0;
     pointer_data.signal_kind = ToPointerDataSignalKind(
         SAFE_ACCESS(current, signal_kind, kFlutterPointerSignalKindNone));
     pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);
     pointer_data.scroll_delta_y = SAFE_ACCESS(current, scroll_delta_y, 0.0);
     FlutterPointerDeviceKind device_kind = SAFE_ACCESS(current, device_kind, 0);
-    // For backwards compatibility with embedders written before the device kind
-    // and buttons were exposed, if the device kind is not set treat it as a
-    // mouse, with a synthesized primary button state based on the phase.
+    // For backwards compatibility with embedders written before the device
+    // kind and buttons were exposed, if the device kind is not set treat it
+    // as a mouse, with a synthesized primary button state based on the phase.
     if (device_kind == 0) {
       pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
       pointer_data.buttons =
@@ -1386,9 +1411,9 @@ FlutterEngineResult FlutterPlatformMessageCreateResponseHandle(
   auto handle = new FlutterPlatformMessageResponseHandle();
 
   handle->message = fml::MakeRefCounted<flutter::PlatformMessage>(
-      "",  // The channel is empty and unused as the response handle is going to
-           // referenced directly in the |FlutterEngineSendPlatformMessage| with
-           // the container message discarded.
+      "",  // The channel is empty and unused as the response handle is going
+           // to referenced directly in the |FlutterEngineSendPlatformMessage|
+           // with the container message discarded.
       fml::MakeRefCounted<flutter::EmbedderPlatformMessageResponse>(
           std::move(platform_task_runner), response_callback));
   *response_out = handle;
@@ -1821,14 +1846,14 @@ FlutterEngineResult FlutterEnginePostDartObject(
         peer->trampoline = callback;
         // This finalizer is set so that in case of failure of the
         // Dart_PostCObject below, we collect the peer. The embedder is still
-        // responsible for collecting the buffer in case of non-kSuccess returns
-        // from this method. This finalizer must be released in case of kSuccess
-        // returns from this method.
+        // responsible for collecting the buffer in case of non-kSuccess
+        // returns from this method. This finalizer must be released in case
+        // of kSuccess returns from this method.
         typed_data_finalizer.SetClosure([peer]() {
-          // This is the tiny object we use as the peer to the Dart call so that
-          // we can attach the a trampoline to the embedder supplied callback.
-          // In case of error, we need to collect this object lest we introduce
-          // a tiny leak.
+          // This is the tiny object we use as the peer to the Dart call so
+          // that we can attach the a trampoline to the embedder supplied
+          // callback. In case of error, we need to collect this object lest
+          // we introduce a tiny leak.
           delete peer;
         });
         dart_object.type = Dart_CObject_kExternalTypedData;
