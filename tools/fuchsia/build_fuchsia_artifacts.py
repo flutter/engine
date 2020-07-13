@@ -206,7 +206,7 @@ def ProcessCIPDPackage(upload, engine_version):
     command = [
         'cipd', 'create', '-pkg-def', 'fuchsia.cipd.yaml', '-ref', 'latest',
         '-tag',
-        'git_revision:%s' % engine_version
+        tag,
     ]
   else:
     command = [
