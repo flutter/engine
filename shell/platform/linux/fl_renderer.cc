@@ -145,6 +145,14 @@ gboolean fl_renderer_start(FlRenderer* self, GError** error) {
   return TRUE;
 }
 
+void fl_renderer_set_geometry(FlRenderer* self,
+                              GdkRectangle* geometry,
+                              gint scale) {
+  if (FL_RENDERER_GET_CLASS(self)->set_geometry) {
+    FL_RENDERER_GET_CLASS(self)->set_geometry(self, geometry, scale);
+  }
+}
+
 void* fl_renderer_get_proc_address(FlRenderer* self, const char* name) {
   return reinterpret_cast<void*>(eglGetProcAddress(name));
 }

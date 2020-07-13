@@ -66,6 +66,12 @@ struct _FlRendererClass {
                               EGLSurface* visible,
                               EGLSurface* resource,
                               GError** error);
+
+  /**
+   * Virtual method called when the EGL window needs to be resized.
+   * Does not need to be implemented.
+   */
+  void (*set_geometry)(FlRenderer* self, GdkRectangle* geometry, gint scale);
 };
 
 /**
@@ -115,6 +121,15 @@ void fl_renderer_set_window(FlRenderer* self, GdkWindow* window);
  * Returns: %TRUE if successfully started.
  */
 gboolean fl_renderer_start(FlRenderer* self, GError** error);
+
+/**
+ * fl_renderer_set_geometry:
+ * @geometry: New size and position (unscaled) of the EGL window.
+ * @scale: Scale of the window.
+ */
+void fl_renderer_set_geometry(FlRenderer* self,
+                              GdkRectangle* geometry,
+                              gint scale);
 
 /**
  * fl_renderer_get_proc_address:
