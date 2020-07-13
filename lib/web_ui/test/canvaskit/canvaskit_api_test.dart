@@ -247,10 +247,7 @@ SkShader _makeTestShader() {
   return canvasKitJs.SkShader.MakeLinearGradient(
     Float32List.fromList([0, 0]),
     Float32List.fromList([1, 1]),
-    <Float32List>[
-      Float32List.fromList([0, 0, 0, 1]),
-      Float32List.fromList([1, 1, 1, 1]),
-    ],
+    Uint32List.fromList(<int>[0x000000FF]),
     Float32List.fromList([0, 1]),
     canvasKitJs.TileMode.Repeat,
   );

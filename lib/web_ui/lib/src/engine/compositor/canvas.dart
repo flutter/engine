@@ -78,7 +78,7 @@ class CkCanvas {
   ) {
     final CkImage skAtlas = atlas as CkImage;
     skCanvas.callMethod('drawAtlas', <dynamic>[
-      skAtlas.skImage,
+      skAtlas.legacyJsObject,
       rects,
       rstTransforms,
       paint.skiaObject,
@@ -114,7 +114,7 @@ class CkCanvas {
   void drawImage(ui.Image image, ui.Offset offset, CkPaint paint) {
     final CkImage skImage = image as CkImage;
     skCanvas.callMethod('drawImage', <dynamic>[
-      skImage.skImage,
+      skImage.legacyJsObject,
       offset.dx,
       offset.dy,
       paint.skiaObject,
@@ -124,7 +124,7 @@ class CkCanvas {
   void drawImageRect(ui.Image image, ui.Rect src, ui.Rect dst, CkPaint paint) {
     final CkImage skImage = image as CkImage;
     skCanvas.callMethod('drawImageRect', <dynamic>[
-      skImage.skImage,
+      skImage.legacyJsObject,
       makeSkRect(src),
       makeSkRect(dst),
       paint.skiaObject,
@@ -136,7 +136,7 @@ class CkCanvas {
       ui.Image image, ui.Rect center, ui.Rect dst, CkPaint paint) {
     final CkImage skImage = image as CkImage;
     skCanvas.callMethod('drawImageNine', <dynamic>[
-      skImage.skImage,
+      skImage.legacyJsObject,
       makeSkRect(center),
       makeSkRect(dst),
       paint.skiaObject,

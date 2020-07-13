@@ -36,6 +36,7 @@ class JsObjectWrapper {
   external set skColorFilter(SkColorFilter? filter);
   external set skImageFilter(SkImageFilter? filter);
   external set skPath(SkPath? path);
+  external set skImage(SkImage? image);
 }
 
 /// Reads [JsObjectWrapper.skPath] as [SkPathArcToPointOverload].
@@ -77,6 +78,13 @@ extension JsObjectWrappers on JsObjectWrapper {
     _jsObjectWrapper.skPath = path;
     js.JsObject wrapped = _jsObjectWrapperLegacy['skPath'];
     _jsObjectWrapper.skPath = null;
+    return wrapped;
+  }
+
+  js.JsObject wrapSkImage(SkImage image) {
+    _jsObjectWrapper.skImage = image;
+    js.JsObject wrapped = _jsObjectWrapperLegacy['skImage'];
+    _jsObjectWrapper.skImage = null;
     return wrapped;
   }
 
@@ -395,7 +403,7 @@ class SkShaderNamespace {
   external SkShader MakeLinearGradient(
     Float32List from, // 2-element array
     Float32List to, // 2-element array
-    List<Float32List> colors,
+    Uint32List colors,
     Float32List colorStops,
     SkTileMode tileMode,
   );
@@ -629,6 +637,15 @@ Float32List toSharedSkColor3(ui.Color color) {
   return _populateSkColor(_sharedSkColor3, color);
 }
 final SkFloat32List _sharedSkColor3 = mallocFloat32List(4);
+
+Uint32List toSkIntColorList(List<ui.Color> colors) {
+  final int len = colors.length;
+  final Uint32List result = Uint32List(len);
+  for (int i = 0; i < len; i++) {
+    result[i] = colors[i].value;
+  }
+  return result;
+}
 
 @JS('window.flutter_canvas_kit.SkPath')
 class SkPath {
