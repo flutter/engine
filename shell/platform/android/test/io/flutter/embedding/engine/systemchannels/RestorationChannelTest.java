@@ -89,7 +89,7 @@ public class RestorationChannelTest {
         ArgumentCaptor.forClass(MethodChannel.Result.class);
     Map<String, Object> expected2 = new HashMap<>();
     expected2.put("enabled", true);
-    expected2.put("data", null);
+    expected2.put("data", data);
     verify(rawChannel).invokeMethod(eq("push"), eq(expected2), resultCapture.capture());
     resultCapture.getValue().success(null);
     assertEquals(restorationChannel.getRestorationData(), data);
