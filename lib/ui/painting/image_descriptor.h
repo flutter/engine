@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <variant>
 
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/dart_wrapper.h"
@@ -19,10 +18,6 @@
 #include "third_party/tonic/dart_library_natives.h"
 
 namespace flutter {
-
-using ImageCodecOrGenerator =
-    std::optional<std::variant<std::shared_ptr<SkCodec>,
-                               std::unique_ptr<SkCodecImageGenerator>>>;
 
 /// Creates an image descriptor for encoded or decoded image data, describing
 /// the width, height, and bytes per pixel for that image.
@@ -87,7 +82,7 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   sk_sp<SkData> data() const { return buffer_; }
 
   /// Whether this descriptor represents compressed (encoded) data or not.
-  bool is_compressed() const { return generator_.has_value(); }
+  bool is_compressed() const { return !!generator_; }
 
   /// The orientation corrected image info for this image.
   const SkImageInfo& image_info() const { return image_info_; }
@@ -97,27 +92,20 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
       FML_DCHECK(false);
       return image_info_.dimensions();
     }
-    return std::visit(
-        [scale](auto&& arg) -> SkISize {
-          return arg->getScaledDimensions(scale);
-        },
-        generator_.value());
+    return generator_->getScaledDimensions(scale);
   }
+
   /// Gets pixels for this image transformed based on the EXIF orientation tag,
   /// if applicable.
   bool get_pixels(const SkPixmap& pixmap) const {
     FML_DCHECK(generator_);
-    return std::visit(
-        [pixmap](auto&& arg) -> bool {
-          return arg->getPixels(pixmap.info(), pixmap.writable_addr(),
-                                pixmap.rowBytes());
-        },
-        generator_.value());
+    return generator_->getPixels(pixmap.info(), pixmap.writable_addr(),
+                                 pixmap.rowBytes());
   }
 
   void dispose() {
     ClearDartWrapper();
-    generator_ = std::unique_ptr<SkCodecImageGenerator>(nullptr);
+    generator_.reset();
   }
 
   size_t GetAllocationSize() const override {
@@ -133,7 +121,7 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   ImageDescriptor(sk_sp<SkData> buffer, std::unique_ptr<SkCodec> codec);
 
   sk_sp<SkData> buffer_;
-  ImageCodecOrGenerator generator_;
+  std::shared_ptr<SkCodecImageGenerator> generator_;
   const SkImageInfo image_info_;
   std::optional<size_t> row_bytes_;
 

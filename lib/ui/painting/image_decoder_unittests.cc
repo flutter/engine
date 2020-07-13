@@ -610,7 +610,9 @@ TEST_F(ImageDecoderFixtureTest,
 
   ASSERT_TRUE(gif_mapping);
 
-  auto gif_codec = SkCodec::MakeFromData(gif_mapping);
+  auto gif_codec = std::shared_ptr<SkCodecImageGenerator>(
+      static_cast<SkCodecImageGenerator*>(
+          SkCodecImageGenerator::MakeFromEncodedCodec(gif_mapping).release()));
   ASSERT_TRUE(gif_codec);
 
   TaskRunners runners(GetCurrentTestName(),         // label
