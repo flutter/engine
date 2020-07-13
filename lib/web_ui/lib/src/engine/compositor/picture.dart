@@ -5,17 +5,20 @@
 part of engine;
 
 class CkPicture implements ui.Picture {
-  final SkiaObject skPicture;
+  final SkPicture _skPicture;
+  final SkiaObject skiaObject;
   final ui.Rect? cullRect;
 
-  CkPicture(this.skPicture, this.cullRect);
+  CkPicture(SkPicture picture, this.cullRect)
+    : _skPicture = picture,
+      skiaObject = OneShotSkiaObject(_jsObjectWrapper.wrapSkPicture(picture));
 
   @override
   int get approximateBytesUsed => 0;
 
   @override
   void dispose() {
-    skPicture.delete();
+    skiaObject.delete();
   }
 
   @override

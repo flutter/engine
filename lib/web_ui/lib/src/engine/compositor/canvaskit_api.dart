@@ -37,11 +37,25 @@ class JsObjectWrapper {
   external set skImageFilter(SkImageFilter? filter);
   external set skPath(SkPath? path);
   external set skImage(SkImage? image);
+  external SkCanvas? get skCanvas;
+  external set skCanvas(SkCanvas? canvas);
+  external SkPicture? get skPicture;
+  external set skPicture(SkPicture? picture);
+  external SkParagraph? get skParagraph;
+  external set skParagraph(SkParagraph? paragraph);
 }
 
 /// Reads [JsObjectWrapper.skPath] as [SkPathArcToPointOverload].
 @JS('window.flutter_js_object_wrapper.skPath')
 external SkPathArcToPointOverload get _skPathArcToPointOverload;
+
+/// Reads [JsObjectWrapper.skCanvas] as [SkCanvasSaveLayerWithoutBoundsOverride].
+@JS('window.flutter_js_object_wrapper.skCanvas')
+external SkCanvasSaveLayerWithoutBoundsOverride get _skCanvasSaveLayerWithoutBoundsOverride;
+
+/// Reads [JsObjectWrapper.skCanvas] as [SkCanvasSaveLayerWithFilterOverride].
+@JS('window.flutter_js_object_wrapper.skCanvas')
+external SkCanvasSaveLayerWithFilterOverride get _skCanvasSaveLayerWithFilterOverride;
 
 /// Specific methods that wrap `@JS`-backed objects into a [js.JsObject]
 /// for use with legacy `dart:js` API.
@@ -88,10 +102,52 @@ extension JsObjectWrappers on JsObjectWrapper {
     return wrapped;
   }
 
+  js.JsObject wrapSkPicture(SkPicture picture) {
+    _jsObjectWrapper.skPicture = picture;
+    js.JsObject wrapped = _jsObjectWrapperLegacy['skPicture'];
+    _jsObjectWrapper.skPicture = null;
+    return wrapped;
+  }
+
+  SkPicture unwrapSkPicture(js.JsObject wrapped) {
+    _jsObjectWrapperLegacy['skPicture'] = wrapped;
+    final SkPicture unwrapped = _jsObjectWrapper.skPicture!;
+    _jsObjectWrapper.skPicture = null;
+    return unwrapped;
+  }
+
+  SkParagraph unwrapSkParagraph(js.JsObject wrapped) {
+    _jsObjectWrapperLegacy['skParagraph'] = wrapped;
+    final SkParagraph unwrapped = _jsObjectWrapper.skParagraph!;
+    _jsObjectWrapper.skParagraph = null;
+    return unwrapped;
+  }
+
+  SkCanvas unwrapSkCanvas(js.JsObject wrapped) {
+    _jsObjectWrapperLegacy['skCanvas'] = wrapped;
+    final SkCanvas unwrapped = _jsObjectWrapper.skCanvas!;
+    _jsObjectWrapper.skCanvas = null;
+    return unwrapped;
+  }
+
   SkPathArcToPointOverload castToSkPathArcToPointOverload(SkPath path) {
     _jsObjectWrapper.skPath = path;
     final SkPathArcToPointOverload overload = _skPathArcToPointOverload;
     _jsObjectWrapper.skPath = null;
+    return overload;
+  }
+
+  SkCanvasSaveLayerWithoutBoundsOverride castToSkCanvasSaveLayerWithoutBoundsOverride(SkCanvas canvas) {
+    _jsObjectWrapper.skCanvas = canvas;
+    final SkCanvasSaveLayerWithoutBoundsOverride overload = _skCanvasSaveLayerWithoutBoundsOverride;
+    _jsObjectWrapper.skCanvas = null;
+    return overload;
+  }
+
+  SkCanvasSaveLayerWithFilterOverride castToSkCanvasSaveLayerWithFilterOverride(SkCanvas canvas) {
+    _jsObjectWrapper.skCanvas = canvas;
+    final SkCanvasSaveLayerWithFilterOverride overload = _skCanvasSaveLayerWithFilterOverride;
+    _jsObjectWrapper.skCanvas = null;
     return overload;
   }
 }
@@ -110,12 +166,89 @@ class CanvasKit {
   external SkTileModeEnum get TileMode;
   external SkFillTypeEnum get FillType;
   external SkPathOpEnum get PathOp;
+  external SkClipOpEnum get ClipOp;
+  external SkPointModeEnum get PointMode;
+  external SkVertexModeEnum get VertexMode;
   external SkAnimatedImage MakeAnimatedImageFromEncoded(Uint8List imageData);
   external SkShaderNamespace get SkShader;
   external SkMaskFilter MakeBlurMaskFilter(SkBlurStyle blurStyle, double sigma, bool respectCTM);
   external SkColorFilterNamespace get SkColorFilter;
   external SkImageFilterNamespace get SkImageFilter;
   external SkPath MakePathFromOp(SkPath path1, SkPath path2, SkPathOp pathOp);
+  external SkTonalColors computeTonalColors(SkTonalColors inTonalColors);
+  external SkVertices MakeSkVertices(
+    SkVertexMode mode,
+    List<Float32List> positions,
+    List<Float32List>? textureCoordinates,
+    // If colors are passed as Uint32Array CanvasKit uses it as is, with no
+    // extra preprocessing.
+    Uint32List? colors,
+    Uint16List? indices,
+  );
+}
+
+@JS()
+class SkVertexModeEnum {
+  external SkVertexMode get Triangles;
+  external SkVertexMode get TrianglesStrip;
+  external SkVertexMode get TriangleFan;
+}
+
+@JS()
+class SkVertexMode {
+  external int get value;
+}
+
+final List<SkVertexMode> _skVertexModes = <SkVertexMode>[
+  canvasKitJs.VertexMode.Triangles,
+  canvasKitJs.VertexMode.TrianglesStrip,
+  canvasKitJs.VertexMode.TriangleFan,
+];
+
+SkVertexMode toSkVertexMode(ui.VertexMode clipOp) {
+  return _skVertexModes[clipOp.index];
+}
+
+@JS()
+class SkPointModeEnum {
+  external SkPointMode get Points;
+  external SkPointMode get Lines;
+  external SkPointMode get Polygon;
+}
+
+@JS()
+class SkPointMode {
+  external int get value;
+}
+
+final List<SkPointMode> _skPointModes = <SkPointMode>[
+  canvasKitJs.PointMode.Points,
+  canvasKitJs.PointMode.Lines,
+  canvasKitJs.PointMode.Polygon,
+];
+
+SkPointMode toSkPointMode(ui.PointMode clipOp) {
+  return _skPointModes[clipOp.index];
+}
+
+@JS()
+class SkClipOpEnum {
+  external SkClipOp get Difference;
+  external SkClipOp get Intersect;
+}
+
+@JS()
+class SkClipOp {
+  external int get value;
+}
+
+final List<SkClipOp> _skClipOps = <SkClipOp>[
+  canvasKitJs.ClipOp.Difference,
+  canvasKitJs.ClipOp.Intersect,
+];
+
+SkClipOp toSkClipOp(ui.ClipOp clipOp) {
+  return _skClipOps[clipOp.index];
 }
 
 @JS()
@@ -834,6 +967,46 @@ SkRect toSkRect(ui.Rect rect) {
   );
 }
 
+@JS()
+@anonymous
+class SkRRect {
+  external factory SkRRect({
+    required SkRect rect,
+    required double rx1,
+    required double ry1,
+    required double rx2,
+    required double ry2,
+    required double rx3,
+    required double ry3,
+    required double rx4,
+    required double ry4,
+  });
+
+  external SkRect get rect;
+  external double get rx1;
+  external double get ry1;
+  external double get rx2;
+  external double get ry2;
+  external double get rx3;
+  external double get ry3;
+  external double get rx4;
+  external double get ry4;
+}
+
+SkRRect toSkRRect(ui.RRect rrect) {
+  return SkRRect(
+    rect: toOuterSkRect(rrect),
+    rx1: rrect.tlRadiusX,
+    ry1: rrect.tlRadiusY,
+    rx2: rrect.trRadiusX,
+    ry2: rrect.trRadiusY,
+    rx3: rrect.brRadiusX,
+    ry3: rrect.brRadiusY,
+    rx4: rrect.blRadiusX,
+    ry4: rrect.blRadiusY,
+  );
+}
+
 SkRect toOuterSkRect(ui.RRect rrect) {
   return SkRect(
     fLeft: rrect.left,
@@ -858,4 +1031,225 @@ SkFloat32List toMallocedSkPoints(List<ui.Offset> points) {
     list[2 * i + 1] = points[i].dy;
   }
   return skPoints;
+}
+
+// TODO(yjbanov): this is inefficient. We should be able to pass points
+//                as Float32List without a conversion.
+List<Float32List> rawPointsToSkPoints2d(Float32List points) {
+  assert(points.length % 2 == 0);
+  var pointLength = points.length ~/ 2;
+  final List<Float32List> result = <Float32List>[];
+  for (var i = 0; i < pointLength; i++) {
+    var x = i * 2;
+    var y = x + 1;
+    final Float32List skPoint = Float32List(2);
+    skPoint[0] = points[x];
+    skPoint[1] = points[y];
+    result.add(skPoint);
+  }
+  return result;
+}
+
+List<Float32List> toSkPoints2d(List<ui.Offset> offsets) {
+  assert(offsets.length % 2 == 0);
+  var len = offsets.length;
+  final List<Float32List> result = <Float32List>[];
+  for (var i = 0; i < len; i++) {
+    final ui.Offset offset = offsets[i];
+    final Float32List skPoint = Float32List(2);
+    skPoint[0] = offset.dx;
+    skPoint[1] = offset.dy;
+    result.add(skPoint);
+  }
+  return result;
+}
+
+Uint16List toUint16List(List<int> ints) {
+  final int len = ints.length;
+  final Uint16List result = Uint16List(len);
+  for (int i = 0; i < len; i++) {
+    result[i] = ints[i];
+  }
+  return result;
+}
+
+@JS('window.flutter_canvas_kit.SkPictureRecorder')
+class SkPictureRecorder {
+  external SkPictureRecorder();
+  external SkCanvas beginRecording(SkRect bounds);
+  external SkPicture finishRecordingAsPicture();
+  external void delete();
+}
+
+@JS()
+class SkCanvas {
+  external void clear(Float32List color);
+  external void clipPath(
+    SkPath path,
+    SkClipOp clipOp,
+    bool doAntiAlias,
+  );
+  external void clipRRect(
+    SkRRect rrect,
+    SkClipOp clipOp,
+    bool doAntiAlias,
+  );
+  external void clipRect(
+    SkRect rrect,
+    SkClipOp clipOp,
+    bool doAntiAlias,
+  );
+  external void drawArc(
+    SkRect oval,
+    double startAngleDegrees,
+    double sweepAngleDegrees,
+    bool useCenter,
+    SkPaint paint,
+  );
+  external void drawAtlas(
+    SkImage image,
+    Float32List rects,
+    Float32List rstTransforms,
+    SkPaint paint,
+    SkBlendMode blendMode,
+    List<Float32List>? colors,
+  );
+  external void drawCircle(
+    double x,
+    double y,
+    double radius,
+    SkPaint paint,
+  );
+  external void drawColorInt(
+    int color,
+    SkBlendMode blendMode,
+  );
+  external void drawDRRect(
+    SkRRect outer,
+    SkRRect inner,
+    SkPaint paint,
+  );
+  external void drawImage(
+    SkImage image,
+    double x,
+    double y,
+    SkPaint paint,
+  );
+  external void drawImageRect(
+    SkImage image,
+    SkRect src,
+    SkRect dst,
+    SkPaint paint,
+    bool fastSample,
+  );
+  external void drawImageNine(
+    SkImage image,
+    SkRect center,
+    SkRect dst,
+    SkPaint paint,
+  );
+  external void drawLine(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    SkPaint paint,
+  );
+  external void drawOval(
+    SkRect rect,
+    SkPaint paint,
+  );
+  external void drawPaint(
+    SkPaint paint,
+  );
+  external void drawPath(
+    SkPath path,
+    SkPaint paint,
+  );
+  external void drawPoints(
+    SkPointMode pointMode,
+    Float32List points,
+    SkPaint paint,
+  );
+  external void drawRRect(
+    SkRRect rrect,
+    SkPaint paint,
+  );
+  external void drawRect(
+    SkRect rrect,
+    SkPaint paint,
+  );
+  external void drawShadow(
+    SkPath path,
+    Float32List zPlaneParams,
+    Float32List lightPos,
+    double lightRadius,
+    Float32List ambientColor,
+    Float32List spotColor,
+    int flags,
+  );
+  external void drawVertices(
+    SkVertices vertices,
+    SkBlendMode blendMode,
+    SkPaint paint,
+  );
+  external int save();
+  external int getSaveCount();
+  external void saveLayer(
+    SkRect bounds,
+    SkPaint paint,
+  );
+  external void restore();
+  external void restoreToCount(int count);
+  external void rotate(
+    double angleDegrees,
+    double px,
+    double py,
+  );
+  external void scale(double x, double y);
+  external void skew(double x, double y);
+  external void concat(Float32List matrix);
+  external void translate(double x, double y);
+  external void flush();
+  external void drawPicture(SkPicture picture);
+  external void drawParagraph(
+    SkParagraph paragraph,
+    double x,
+    double y,
+  );
+}
+
+@JS()
+class SkCanvasSaveLayerWithoutBoundsOverride {
+  external void saveLayer(SkPaint paint);
+}
+
+@JS()
+class SkCanvasSaveLayerWithFilterOverride {
+  external void saveLayer(
+    SkPaint? paint,
+    SkImageFilter? imageFilter,
+    int flags,
+    SkRect rect,
+  );
+}
+
+@JS()
+class SkPicture { }
+
+@JS()
+class SkParagraph { }
+
+@JS()
+class SkVertices { }
+
+@JS()
+@anonymous
+class SkTonalColors {
+  external factory SkTonalColors({
+    required Float32List ambient,
+    required Float32List spot,
+  });
+  external Float32List get ambient;
+  external Float32List get spot;
 }

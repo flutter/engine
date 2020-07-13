@@ -312,7 +312,7 @@ js.JsArray<double> makeSkiaColorStops(List<double>? colorStops) {
 }
 
 void drawSkShadow(
-  js.JsObject skCanvas,
+  SkCanvas skCanvas,
   CkPath path,
   ui.Color color,
   double elevation,
@@ -331,22 +331,25 @@ void drawSkShadow(
   ui.Color inAmbient = color.withAlpha((color.alpha * ambientAlpha).round());
   ui.Color inSpot = color.withAlpha((color.alpha * spotAlpha).round());
 
-  final js.JsObject inTonalColors = js.JsObject.jsify(<String, Float32List>{
-    'ambient': makeFreshSkColor(inAmbient),
-    'spot': makeFreshSkColor(inSpot),
-  });
+  final SkTonalColors inTonalColors = SkTonalColors(
+    ambient: makeFreshSkColor(inAmbient),
+    spot: makeFreshSkColor(inSpot),
+  );
 
-  final js.JsObject tonalColors =
-      canvasKit.callMethod('computeTonalColors', <js.JsObject>[inTonalColors]);
+  final SkTonalColors tonalColors =
+      canvasKitJs.computeTonalColors(inTonalColors);
 
-  skCanvas.callMethod('drawShadow', <dynamic>[
-    path._legacyJsObject,
-    js.JsArray<double>.from(<double>[0, 0, devicePixelRatio * elevation]),
-    js.JsArray<double>.from(
-        <double>[shadowX, shadowY, devicePixelRatio * kLightHeight]),
+  skCanvas.drawShadow(
+    path._skPath,
+    Float32List(3)
+      ..[2] = devicePixelRatio * elevation,
+    Float32List(3)
+      ..[0] = shadowX
+      ..[1] = shadowY
+      ..[2] = devicePixelRatio * kLightHeight,
     devicePixelRatio * kLightRadius,
-    tonalColors['ambient'],
-    tonalColors['spot'],
+    tonalColors.ambient,
+    tonalColors.spot,
     flags,
-  ]);
+  );
 }
