@@ -202,7 +202,7 @@ def ProcessCIPDPackage(upload, engine_version):
   tag = 'git_revision:%s' % engine_version
   already_exists = CheckCIPDPackageExists('flutter/fuchsia', tag)
   if already_exists:
-    print('CIPD package already exists!')
+    print('CIPD package flutter/fuchsia tag %s already exists!' % tag)
 
   if upload and IsLinux() and not already_exists:
     command = [

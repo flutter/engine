@@ -72,11 +72,12 @@ def CheckCIPDPackageExists(package_name, tag):
 def ProcessCIPDPackage(upload, cipd_yaml, engine_version, out_dir, target_arch):
   _packaging_dir = GetPackagingDir(out_dir)
   tag = 'git_revision:%s' % engine_version
+  package_name = 'flutter/fuchsia-debug-symbols-%s' % target_arch
   already_exists = CheckCIPDPackageExists(
-    'flutter/fuchsia-debug-symbols-%s' % target_arch,
+    package_name,
     tag)
   if already_exists:
-    print('CIPD package already exists!')
+    print('CIPD package %s tag %s already exists!' % (package_name, tag))
 
   if upload and IsLinux() and not already_exists:
     command = [
