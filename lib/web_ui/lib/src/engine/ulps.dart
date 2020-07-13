@@ -33,7 +33,8 @@ part of engine;
 /// Converts a sign-bit int (float interpreted as int) into a 2s complement
 /// int. Also converts 0x80000000 to 0. Allows result to be compared using
 /// int comparison.
-int signBitTo2sCompliment(int x) => (x & 0x80000000) != 0 ? (-(x & 0x7fffffff)) : x;
+int signBitTo2sCompliment(int x) =>
+    (x & 0x80000000) != 0 ? (-(x & 0x7fffffff)) : x;
 
 /// Convert a 2s complement int to a sign-bit (i.e. int interpreted as float).
 int twosComplimentToSignBit(int x) {
@@ -52,14 +53,15 @@ class _FloatBitConverter {
 
   factory _FloatBitConverter() {
     Float32List float32List = Float32List(1);
-    return _FloatBitConverter._(float32List,
-        float32List.buffer.asInt32List(0, 1));
+    return _FloatBitConverter._(
+        float32List, float32List.buffer.asInt32List(0, 1));
   }
 
   int toInt(Float32List source, int index) {
     float32List[0] = source[index];
     return int32List[0];
   }
+
   int toBits(double x) {
     float32List[0] = x;
     return int32List[0];
@@ -85,7 +87,7 @@ double bitsToFloat(int bits) {
 }
 
 const int floatBitsExponentMask = 0x7F800000;
-const int floatBitsMatissaMask  = 0x007FFFFF;
+const int floatBitsMatissaMask = 0x007FFFFF;
 
 /// Returns a float as 2s complement int to be able to compare floats to each
 /// other.
@@ -95,8 +97,7 @@ int floatFromListAs2sCompliment(Float32List source, int index) =>
 int floatAs2sCompliment(double x) =>
     signBitTo2sCompliment(_floatBitConverter.toBits(x));
 
-double twosComplimentAsFloat(int x) =>
-    bitsToFloat(twosComplimentToSignBit(x));
+double twosComplimentAsFloat(int x) => bitsToFloat(twosComplimentToSignBit(x));
 
 bool _argumentsDenormalized(double a, double b, int epsilon) {
   double denormalizedCheck = kFltEpsilon * epsilon / 2;
