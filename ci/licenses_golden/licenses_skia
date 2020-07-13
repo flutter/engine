@@ -1,4 +1,4 @@
-Signature: 0aa7cb5daa8f645a0a833f1f1ab94c18
+Signature: 95df28233cb82e48bc0e4597a95ef320
 
 UNUSED LICENSES:
 
@@ -4134,7 +4134,6 @@ FILE: ../../../third_party/skia/docs/examples/Bitmap_installPixels_3.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_isImmutable.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_isNull.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_isOpaque.cpp
-FILE: ../../../third_party/skia/docs/examples/Bitmap_isVolatile.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_move_SkBitmap.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_move_operator.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_notifyPixelsChanged.cpp
@@ -4153,7 +4152,6 @@ FILE: ../../../third_party/skia/docs/examples/Bitmap_rowBytesAsPixels.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_setAlphaType.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_setImmutable.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_setInfo.cpp
-FILE: ../../../third_party/skia/docs/examples/Bitmap_setIsVolatile.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_setPixelRef.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_setPixels.cpp
 FILE: ../../../third_party/skia/docs/examples/Bitmap_shiftPerPixel.cpp
@@ -5314,12 +5312,18 @@ FILE: ../../../third_party/skia/src/gpu/dawn/GrDawnStagingBuffer.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrArithmeticProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrDitherEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrHighContrastFilterEffect.fp
+FILE: ../../../third_party/skia/src/gpu/effects/GrModulateAlphaEffect.fp
+FILE: ../../../third_party/skia/src/gpu/effects/GrModulateRGBAEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrArithmeticProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrArithmeticProcessor.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrDitherEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrHighContrastFilterEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/generated/GrHighContrastFilterEffect.h
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrModulateAlphaEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrModulateAlphaEffect.h
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrModulateRGBAEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/generated/GrModulateRGBAEffect.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrDrawAtlasPathOp.cpp
