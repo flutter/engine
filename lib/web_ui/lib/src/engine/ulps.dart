@@ -180,10 +180,12 @@ bool dEqualUlpsEpsilon(double a, double b, int epsilon) {
 
 // Checks equality for division.
 bool almostDequalUlpsDouble(double a, double b) {
-  if (a.abs() < kScalarMax && b.abs() < kScalarMax) {
+  final double absA = a.abs();
+  final double absB = b.abs();
+  if (absA < kScalarMax && absB < kScalarMax) {
     return almostDequalUlps(a, b);
   }
-  return (a - b).abs() / math.max(a.abs(), b.abs()) < kDblEpsilonSubdivideErr;
+  return (a - b).abs() / math.max(absA, absB) < kDblEpsilonSubdivideErr;
 }
 
 const double kFltEpsilon = 1.19209290E-07; // == 1 / (2 ^ 23)
