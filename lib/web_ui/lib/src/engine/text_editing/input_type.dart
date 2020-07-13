@@ -16,7 +16,7 @@ abstract class EngineInputType {
   static EngineInputType fromName(String name, {bool isDecimal = false}) {
     switch (name) {
       case 'TextInputType.number':
-      return isDecimal ? decimal : number;
+        return isDecimal ? decimal : number;
       case 'TextInputType.phone':
         return phone;
       case 'TextInputType.emailAddress':
