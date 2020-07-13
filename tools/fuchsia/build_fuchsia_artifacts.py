@@ -175,6 +175,7 @@ def BuildBucket(runtime_mode, arch, product):
   CopyVulkanDepsToBucket(out_dir, deps_dir, arch)
   CopyIcuDepsToBucket(out_dir, deps_dir)
 
+
 def CheckCIPDPackageExists(package_name, tag):
   '''Check to see if the current package/tag combo has been published'''
   command = [
@@ -184,7 +185,7 @@ def CheckCIPDPackageExists(package_name, tag):
     '-tag',
     tag,
   ]
-  stdout = subprocess.check_output()
+  stdout = subprocess.check_output(command)
   match = re.search(r'No matching instances\.', stdout)
   if match:
     return False
@@ -202,6 +203,7 @@ def ProcessCIPDPackage(upload, engine_version):
   already_exists = CheckCIPDPackageExists('flutter/fuchsia', tag)
   if already_exists:
     print('CIPD package already exists!')
+
   if upload and IsLinux() and not already_exists:
     command = [
         'cipd', 'create', '-pkg-def', 'fuchsia.cipd.yaml', '-ref', 'latest',
