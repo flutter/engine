@@ -1213,13 +1213,11 @@ typedef struct {
   /// A callback that computes the locale the platform would natively resolve
   /// to.
   ///
-  /// The input parameter is an array of null terminated char* strings. Each
-  /// group of 3 strings represents one locale, with the strings supplying
-  /// language, country, and script code in that order. Language code cannot be
-  /// empty, but the other two may be null.
-  ///
-  /// One of the input supported locales should be selected to best match with
-  /// the user/device's preferred locale and returned as an array of 3 strings.
+  /// The input parameter is an array of FlutterLocales which represent the
+  /// locales supported by the app. One of the input supported locales should
+  /// be selected and returned to best match with the user/device's preferred
+  /// locale. The implementation should produce a result that as closely
+  /// matches what the platform would natively resolve to as possible.
   FlutterComputePlatformResolvedLocaleCallback
       compute_platform_resolved_locale_callback;
 } FlutterProjectArgs;
