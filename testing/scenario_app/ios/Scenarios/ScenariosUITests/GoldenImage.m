@@ -6,7 +6,7 @@
 #import <XCTest/XCTest.h>
 #include <sys/sysctl.h>
 
-static const double kRmseThreshold = 0.5;
+static const double kRmseThreshold = 1.0;
 
 @interface GoldenImage ()
 
@@ -72,13 +72,22 @@ static const double kRmseThreshold = 0.5;
   const char* apos = rawA.mutableBytes;
   const char* bpos = rawB.mutableBytes;
   double sum = 0.0;
+  int64_t opaqueCount = 0;
   for (size_t i = 0; i < size; ++i, ++apos, ++bpos) {
     double aval = *apos;
     double bval = *bpos;
-    double diff = aval - bval;
-    sum += diff * diff;
+    // Skip transparent pixels.
+    if (aval == 0 && bval == 0 && i % 4 == 0) {
+      i += 3;
+      apos += 3;
+      bpos += 3;
+    } else {
+      double diff = aval - bval;
+      sum += diff * diff;
+      opaqueCount += 1;
+    }
   }
-  double rmse = sqrt(sum / size);
+  double rmse = sqrt(sum / opaqueCount);
   return rmse <= kRmseThreshold;
 }
 
