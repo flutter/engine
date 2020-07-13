@@ -1,5 +1,6 @@
 package io.flutter.embedding.android;
 
+import android.graphics.Matrix;
 import android.os.Build;
 import android.view.InputDevice;
 import android.view.MotionEvent;
@@ -69,6 +70,8 @@ public class AndroidTouchProcessor {
 
   private static final int _POINTER_BUTTON_PRIMARY = 1;
 
+  private static final Matrix IDENTITY_TRANSFORM = new Matrix();
+
   private final boolean trackMotionEvents;
 
   /**
@@ -83,8 +86,12 @@ public class AndroidTouchProcessor {
     this.trackMotionEvents = trackMotionEvents;
   }
 
-  /** Sends the given {@link MotionEvent} data to Flutter in a format that Flutter understands. */
   public boolean onTouchEvent(@NonNull MotionEvent event) {
+    return onTouchEvent(event, IDENTITY_TRANSFORM);
+  }
+
+  /** Sends the given {@link MotionEvent} data to Flutter in a format that Flutter understands. */
+  public boolean onTouchEvent(@NonNull MotionEvent event, Matrix transformMatrix) {
     int pointerCount = event.getPointerCount();
 
     // Prepare a data packet of the appropriate size and order.
@@ -102,7 +109,7 @@ public class AndroidTouchProcessor {
                 || maskedAction == MotionEvent.ACTION_POINTER_UP);
     if (updateForSinglePointer) {
       // ACTION_DOWN and ACTION_POINTER_DOWN always apply to a single pointer only.
-      addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, packet);
+      addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
     } else if (updateForMultiplePointers) {
       // ACTION_UP and ACTION_POINTER_UP may contain position updates for other pointers.
       // We are converting these updates to move events here in order to preserve this data.
@@ -110,18 +117,19 @@ public class AndroidTouchProcessor {
       // the original Android event later, should it need to forward it to a PlatformView.
       for (int p = 0; p < pointerCount; p++) {
         if (p != event.getActionIndex() && event.getToolType(p) == MotionEvent.TOOL_TYPE_FINGER) {
-          addPointerForIndex(event, p, PointerChange.MOVE, POINTER_DATA_FLAG_BATCHED, packet);
+          addPointerForIndex(
+              event, p, PointerChange.MOVE, POINTER_DATA_FLAG_BATCHED, transformMatrix, packet);
         }
       }
       // It's important that we're sending the UP event last. This allows PlatformView
       // to correctly batch everything back into the original Android event if needed.
-      addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, packet);
+      addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, transformMatrix, packet);
     } else {
       // ACTION_MOVE may not actually mean all pointers have moved
       // but it's the responsibility of a later part of the system to
       // ignore 0-deltas if desired.
       for (int p = 0; p < pointerCount; p++) {
-        addPointerForIndex(event, p, pointerChange, 0, packet);
+        addPointerForIndex(event, p, pointerChange, 0, transformMatrix, packet);
       }
     }
 
@@ -163,7 +171,7 @@ public class AndroidTouchProcessor {
     packet.order(ByteOrder.LITTLE_ENDIAN);
 
     // ACTION_HOVER_MOVE always applies to a single pointer only.
-    addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, packet);
+    addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, IDENTITY_TRANSFORM, packet);
     if (packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) != 0) {
       throw new AssertionError("Packet position is not on field boundary.");
     }
@@ -174,7 +182,12 @@ public class AndroidTouchProcessor {
   // TODO(mattcarroll): consider creating a PointerPacket class instead of using a procedure that
   // mutates inputs.
   private void addPointerForIndex(
-      MotionEvent event, int pointerIndex, int pointerChange, int pointerData, ByteBuffer packet) {
+      MotionEvent event,
+      int pointerIndex,
+      int pointerChange,
+      int pointerData,
+      Matrix transformMatrix,
+      ByteBuffer packet) {
     if (pointerChange == -1) {
       return;
     }
@@ -201,8 +214,14 @@ public class AndroidTouchProcessor {
     packet.putLong(signalKind); // signal_kind
     packet.putLong(event.getPointerId(pointerIndex)); // device
     packet.putLong(0); // pointer_identifier, will be generated in pointer_data_packet_converter.cc.
-    packet.putDouble(event.getRawX(pointerIndex)); // physical_x
-    packet.putDouble(event.getRawY(pointerIndex)); // physical_y
+
+    // We use this in lieu of using event.getRawX and event.getRawY as we wish to support
+    // earlier versions than API level 29.
+    float viewToScreenCoords[] = {event.getX(pointerIndex), event.getY(pointerIndex)};
+    transformMatrix.mapPoints(viewToScreenCoords);
+    packet.putDouble(viewToScreenCoords[0]); // physical_x
+    packet.putDouble(viewToScreenCoords[1]); // physical_y
+
     packet.putDouble(
         0.0); // physical_delta_x, will be generated in pointer_data_packet_converter.cc.
     packet.putDouble(
