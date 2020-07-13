@@ -107,8 +107,8 @@ sk_sp<SkImage> MultiFrameCodec::State::GetNextFrameImage(
     }
   }
 
-  if (SkCodec::kSuccess != generator_->getPixels(info, bitmap.getPixels(),
-                                                 bitmap.rowBytes(), &options)) {
+  if (!generator_->getPixels(info, bitmap.getPixels(), bitmap.rowBytes(),
+                             &options)) {
     FML_LOG(ERROR) << "Could not getPixels for frame " << nextFrameIndex_;
     return nullptr;
   }
