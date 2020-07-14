@@ -23,32 +23,32 @@ constexpr int kScrollOffsetMultiplier = 20;
 // rendering/mouse_cursor.dart.
 static HCURSOR GetCursorByName(const std::string& cursor_name) {
   static auto* cursors = new std::map<std::string, const wchar_t*>{
-      {"allScroll" : IDC_SIZEALL},
-      {"basic" : IDC_ARROW},
-      {"click" : IDC_HAND},
-      {"forbidden" : IDC_NO},
-      {"help" : IDC_HELP},
-      {"move" : IDC_SIZEALL},
-      {"none" : nullptr},
-      {"noDrop" : IDC_NO},
-      {"precise" : IDC_CROSS},
-      {"progress" : IDC_APPSTARTING},
-      {"text" : IDC_IBEAM},
-      {"resizeColumn" : IDC_SIZEWE},
-      {"resizeDown" : IDC_SIZENS},
-      {"resizeDownLeft" : IDC_SIZENESW},
-      {"resizeDownRight" : IDC_SIZENWSE},
-      {"resizeLeft" : IDC_SIZEWE},
-      {"resizeLeftRight" : IDC_SIZEWE},
-      {"resizeRight" : IDC_SIZEWE},
-      {"resizeRow" : IDC_SIZENS},
-      {"resizeUp" : IDC_SIZENS},
-      {"resizeUpDown" : IDC_SIZENS},
-      {"resizeUpLeft" : IDC_SIZENWSE},
-      {"resizeUpRight" : IDC_SIZENESW},
-      {"resizeUpLeftDownRight" : IDC_SIZENWSE},
-      {"resizeUpRightDownLeft" : IDC_SIZENESW},
-      {"wait" : IDC_WAIT},
+      {"allScroll", IDC_SIZEALL},
+      {"basic", IDC_ARROW},
+      {"click", IDC_HAND},
+      {"forbidden", IDC_NO},
+      {"help", IDC_HELP},
+      {"move", IDC_SIZEALL},
+      {"none", nullptr},
+      {"noDrop", IDC_NO},
+      {"precise", IDC_CROSS},
+      {"progress", IDC_APPSTARTING},
+      {"text", IDC_IBEAM},
+      {"resizeColumn", IDC_SIZEWE},
+      {"resizeDown", IDC_SIZENS},
+      {"resizeDownLeft", IDC_SIZENESW},
+      {"resizeDownRight", IDC_SIZENWSE},
+      {"resizeLeft", IDC_SIZEWE},
+      {"resizeLeftRight", IDC_SIZEWE},
+      {"resizeRight", IDC_SIZEWE},
+      {"resizeRow", IDC_SIZENS},
+      {"resizeUp", IDC_SIZENS},
+      {"resizeUpDown", IDC_SIZENS},
+      {"resizeUpLeft", IDC_SIZENWSE},
+      {"resizeUpRight", IDC_SIZENESW},
+      {"resizeUpLeftDownRight", IDC_SIZENWSE},
+      {"resizeUpRightDownLeft", IDC_SIZENESW},
+      {"wait", IDC_WAIT},
   };
   const wchar_t* idc_name = IDC_ARROW;
   auto it = cursors->find(cursor_name);
@@ -61,7 +61,7 @@ static HCURSOR GetCursorByName(const std::string& cursor_name) {
 }  // namespace
 
 Win32FlutterWindow::Win32FlutterWindow(int width, int height)
-    : binding_handler_delegate_(nullptr) {
+   , binding_handler_delegate_(nullptr) {
   Win32Window::InitializeChild("FLUTTERVIEW", width, height);
   current_cursor_ = ::LoadCursor(nullptr, IDC_ARROW);
 }
