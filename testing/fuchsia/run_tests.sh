@@ -41,10 +41,10 @@ reboot() {
   # https://github.com/flutter/flutter/issues/57273
   # echo "Dumping system logs..."
 
-  # ./fuchsia_ctl -d $device_name ssh \
-  #     -c "log_listener --dump_logs yes" \
-  #     --timeout-seconds $ssh_timeout_seconds \
-  #     --identity-file $pkey
+  ./fuchsia_ctl -d $device_name ssh \
+       -c "log_listener --dump_logs yes" \
+       --timeout-seconds $ssh_timeout_seconds \
+       --identity-file $pkey
 
   echo "$(date) START:REBOOT ------------------------------------------"
   # note: this will set an exit code of 255, which we can ignore.
