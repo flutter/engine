@@ -925,7 +925,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
               supported_locales_data.size() / number_of_strings_per_locale;
           const FlutterLocale* supported_locales[locale_count];
           for (size_t i = 0; i < locale_count; ++i) {
-            const FlutterLocale locale = {
+            supported_locales[i] = new FlutterLocale{
                 .struct_size = sizeof(FlutterLocale),
                 .language_code =
                     supported_locales_data[i * number_of_strings_per_locale + 0]
@@ -937,7 +937,6 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                     supported_locales_data[i * number_of_strings_per_locale + 2]
                         .c_str(),
                 .variant_code = nullptr};
-            supported_locales[i] = &locale;
           }
 
           const FlutterLocale* result =
@@ -952,6 +951,10 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
               out->emplace_back(SAFE_ACCESS(result, country_code, ""));
               out->emplace_back(SAFE_ACCESS(result, script_code, ""));
             }
+          }
+
+          for (size_t i = 0; i < locale_count; ++i) {
+            delete supported_locales[i];
           }
           return out;
         };
