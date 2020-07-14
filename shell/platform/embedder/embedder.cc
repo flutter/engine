@@ -919,32 +919,33 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
       nullptr) {
     compute_platform_resolved_locale_callback =
         [ptr = args->compute_platform_resolved_locale_callback](
-            const std::vector<std::string>& supported_locales) {
+            const std::vector<std::string>& supported_locales_data) {
           size_t number_of_strings_per_locale = 3;
           size_t locale_count =
-              supported_locales.size() / number_of_strings_per_locale;
-          const FlutterLocale* locales[locale_count];
+              supported_locales_data.size() / number_of_strings_per_locale;
+          const FlutterLocale* supported_locales[locale_count];
           for (size_t i = 0; i < locale_count; ++i) {
             const FlutterLocale locale = {
                 .struct_size = sizeof(FlutterLocale),
                 .language_code =
-                    supported_locales[i * number_of_strings_per_locale + 0]
+                    supported_locales_data[i * number_of_strings_per_locale + 0]
                         .c_str(),
                 .country_code =
-                    supported_locales[i * number_of_strings_per_locale + 1]
+                    supported_locales_data[i * number_of_strings_per_locale + 1]
                         .c_str(),
                 .script_code =
-                    supported_locales[i * number_of_strings_per_locale + 2]
+                    supported_locales_data[i * number_of_strings_per_locale + 2]
                         .c_str(),
                 .variant_code = nullptr};
-            locales[i] = &locale;
+            supported_locales[i] = &locale;
           }
 
-          const FlutterLocale* result = ptr(&locales[0], locale_count);
+          const FlutterLocale* result =
+              ptr(&supported_locales[0], locale_count);
 
           std::unique_ptr<std::vector<std::string>> out =
               std::make_unique<std::vector<std::string>>();
-          if (result != nullptr) {
+          if (result) {
             std::string language_code(SAFE_ACCESS(result, language_code, ""));
             if (language_code != "") {
               out->push_back(language_code);
