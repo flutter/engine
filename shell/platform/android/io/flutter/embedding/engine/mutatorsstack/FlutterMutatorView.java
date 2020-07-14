@@ -125,7 +125,7 @@ public class FlutterMutatorView extends FrameLayout {
     // Mutator view itself doesn't rotate, scale, skew, etc.
     // we only need to account for translation.
     Matrix screenMatrix = new Matrix();
-    screenMatrix.postTranslate(getLeft(), getTop());
+    screenMatrix.postTranslate(left, top);
 
     return androidTouchProcessor.onTouchEvent(event, screenMatrix);
   }
