@@ -329,12 +329,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             .toArray(new PointerCoords[touch.pointerCount]);
 
     if (!usingVirtualDiplays && trackedEvent != null) {
-      // TODO (kaushikiska): investigate why we can not use the tracked
-      // event directly.
       return MotionEvent.obtain(
           trackedEvent.getDownTime(),
           trackedEvent.getEventTime(),
-          touch.action,
+          trackedEvent.getAction(),
           touch.pointerCount,
           pointerProperties,
           pointerCoords,
