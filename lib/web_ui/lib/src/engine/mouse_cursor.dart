@@ -22,7 +22,8 @@ class MouseCursor {
 
   // Map from Flutter's kind values to CSS's cursor values.
   //
-  // This map must be kept in sync with flutter's rendering/mouse_cursor.dart.
+  // This map must be kept in sync with Flutter framework's
+  // rendering/mouse_cursor.dart.
   static const Map<String, String> _kindToCssValueMap = <String, String>{
     'alias': 'alias',
     'allScroll': 'all-scroll',
