@@ -920,27 +920,32 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     compute_platform_resolved_locale_callback =
         [ptr = args->compute_platform_resolved_locale_callback](
             const std::vector<std::string>& supported_locales_data) {
-          size_t number_of_strings_per_locale = 3;
+          const size_t number_of_strings_per_locale = 3;
           size_t locale_count =
               supported_locales_data.size() / number_of_strings_per_locale;
-          const FlutterLocale* supported_locales[locale_count];
+          std::vector<FlutterLocale> supported_locales;
+          std::vector<const FlutterLocale*> supported_locales_ptr;
           for (size_t i = 0; i < locale_count; ++i) {
-            supported_locales[i] = new FlutterLocale{
-                .struct_size = sizeof(FlutterLocale),
-                .language_code =
-                    supported_locales_data[i * number_of_strings_per_locale + 0]
-                        .c_str(),
-                .country_code =
-                    supported_locales_data[i * number_of_strings_per_locale + 1]
-                        .c_str(),
-                .script_code =
-                    supported_locales_data[i * number_of_strings_per_locale + 2]
-                        .c_str(),
-                .variant_code = nullptr};
+            supported_locales.push_back(
+                {.struct_size = sizeof(FlutterLocale),
+                 .language_code =
+                     supported_locales_data[i * number_of_strings_per_locale +
+                                            0]
+                         .c_str(),
+                 .country_code =
+                     supported_locales_data[i * number_of_strings_per_locale +
+                                            1]
+                         .c_str(),
+                 .script_code =
+                     supported_locales_data[i * number_of_strings_per_locale +
+                                            2]
+                         .c_str(),
+                 .variant_code = nullptr});
+            supported_locales_ptr.push_back(&supported_locales[i]);
           }
 
           const FlutterLocale* result =
-              ptr(&supported_locales[0], locale_count);
+              ptr(supported_locales_ptr.data(), locale_count);
 
           std::unique_ptr<std::vector<std::string>> out =
               std::make_unique<std::vector<std::string>>();
@@ -951,10 +956,6 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
               out->emplace_back(SAFE_ACCESS(result, country_code, ""));
               out->emplace_back(SAFE_ACCESS(result, script_code, ""));
             }
-          }
-
-          for (size_t i = 0; i < locale_count; ++i) {
-            delete supported_locales[i];
           }
           return out;
         };
