@@ -66,7 +66,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
     [self addAttachment:goldenAttachment];
 
     XCTFail(@"Goldens to not match. Follow the steps in the "
-            @"README update golden named %@ if needed.", golden.goldenName);
+            @"README to update golden named %@ if needed.",
+            golden.goldenName);
   }
 }
 @end
