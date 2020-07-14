@@ -925,15 +925,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
               supported_locale_data.size() / number_of_strings_per_locale;
           const FlutterLocale* locales[locale_count];
           for (size_t i = 0; i < locale_count; ++i) {
-            size_t size = 0;
-            size += supported_locale_data[i * number_of_strings_per_locale + 0]
-                        .size();
-            size += supported_locale_data[i * number_of_strings_per_locale + 1]
-                        .size();
-            size += supported_locale_data[i * number_of_strings_per_locale + 2]
-                        .size();
             const FlutterLocale locale = {
-                .struct_size = size,
+                .struct_size = sizeof(FlutterLocale),
                 .language_code =
                     supported_locale_data[i * number_of_strings_per_locale + 0]
                         .c_str(),
@@ -952,11 +945,11 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
           std::unique_ptr<std::vector<std::string>> out =
               std::make_unique<std::vector<std::string>>();
           if (result != nullptr) {
-            std::string language_code = SAFE_ACCESS(result, language_code, "");
+            std::string language_code(SAFE_ACCESS(result, language_code, ""));
             if (language_code != "") {
               out->push_back(language_code);
-              out->push_back(SAFE_ACCESS(result, country_code, ""));
-              out->push_back(SAFE_ACCESS(result, script_code, ""));
+              out->emplace_back(SAFE_ACCESS(result, country_code, ""));
+              out->emplace_back(SAFE_ACCESS(result, script_code, ""));
             }
           }
           return out;
