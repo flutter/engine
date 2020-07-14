@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:ui/src/engine.dart';
-
 /// The list of test cases parsed from:
 /// - https://www.unicode.org/Public/13.0.0/ucd/auxiliary/LineBreakTest.txt
 final List<TestCase> data = _rawData.map(_parse).toList();
