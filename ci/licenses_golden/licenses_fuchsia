@@ -1,4 +1,4 @@
-Signature: fef7661dce783f0ba5f8150973be1492
+Signature: 4d67b32d4de521a1d1233bf88a5d750e
 
 UNUSED LICENSES:
 
@@ -1395,7 +1395,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/privacy.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/settings.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/setup.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/system.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys.test/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/types.fidl
@@ -2823,7 +2822,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/agent/agent.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/agent/agent_context.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/agent/agent_controller/agent_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/component/component_context.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/config/config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/intent/intent.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/lifecycle/lifecycle.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/module/module_data.fidl

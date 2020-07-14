@@ -1600,17 +1600,20 @@ class Image extends NativeFieldWrapperClass2 {
   /// The number of image pixels along the image's vertical axis.
   int get height native 'Image_height';
 
-  /// Converts the [Image] object into a byte array.
+  /// Converts the [Image] object into a read-only byte array.
   ///
   /// The [format] argument specifies the format in which the bytes will be
   /// returned.
   ///
   /// Returns a future that completes with the binary image data or an error
-  /// if encoding fails.
+  /// if encoding fails. Note that attempting to write to the returned
+  /// [ByteData] will result in an [UnsupportedError] exception.
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
     return _futurize((_Callback<ByteData> callback) {
       return _toByteData(format.index, (Uint8List? encoded) {
-        callback(encoded!.buffer.asByteData());
+        // [encoded] wraps a read-only SkData buffer, so we wrap it here in
+        // an [UnmodifiableByteDataView].
+        callback(UnmodifiableByteDataView(encoded!.buffer.asByteData()));
       });
     });
   }
@@ -3433,6 +3436,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   Canvas(PictureRecorder recorder, [ Rect? cullRect ]) : assert(recorder != null) { // ignore: unnecessary_null_comparison
     if (recorder.isRecording)
       throw ArgumentError('"recorder" must not already be associated with another Canvas.');
+    _recorder = recorder;
+    _recorder!._canvas = this;
     cullRect ??= Rect.largest;
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
   }
@@ -3441,6 +3446,11 @@ class Canvas extends NativeFieldWrapperClass2 {
                     double top,
                     double right,
                     double bottom) native 'Canvas_constructor';
+
+  // The underlying Skia SkCanvas is owned by the PictureRecorder used to create this Canvas.
+  // The Canvas holds a reference to the PictureRecorder to prevent the recorder from being
+  // garbage collected until PictureRecorder.endRecording is called.
+  PictureRecorder? _recorder;
 
   /// Saves a copy of the current transform and clip on the save stack.
   ///
@@ -4232,7 +4242,7 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   /// call to [endRecording], and false if either this
   /// [PictureRecorder] has not yet been associated with a [Canvas],
   /// or the [endRecording] method has already been called.
-  bool get isRecording native 'PictureRecorder_isRecording';
+  bool get isRecording => _canvas != null;
 
   /// Finishes recording graphical operations.
   ///
@@ -4240,12 +4250,18 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   /// recorded thus far. After calling this function, both the picture recorder
   /// and the canvas objects are invalid and cannot be used further.
   Picture endRecording() {
+    if (_canvas == null)
+      throw StateError('PictureRecorder did not start recording.');
     final Picture picture = Picture._();
     _endRecording(picture);
+    _canvas!._recorder = null;
+    _canvas = null;
     return picture;
   }
 
   void _endRecording(Picture outPicture) native 'PictureRecorder_endRecording';
+
+  Canvas? _canvas;
 }
 
 /// A single shadow.
