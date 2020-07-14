@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
+set -x
 
 # web_analysis: a command-line utility for running dart analyzer on Flutter Web
 # Engine. Used/Called by LUCI recipes:
 #
-# See: https://flutter.googlesource.com/recipes/+/refs/heads/master/recipes/web_engine.py#165
+# See: https://flutter.googlesource.com/recipes/+/refs/heads/master/recipes/web_engine.py
 
 echo "Engine path $ENGINE_PATH"
 
