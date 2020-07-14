@@ -862,8 +862,8 @@ typedef struct {
 } FlutterLocale;
 
 typedef const FlutterLocale* (*FlutterComputePlatformResolvedLocaleCallback)(
-    const FlutterLocale** /* supported_locales_data*/,
-    size_t /* length of data*/);
+    const FlutterLocale** /* supported_locales*/,
+    size_t /* Number of locales*/);
 
 typedef int64_t FlutterEngineDartPort;
 

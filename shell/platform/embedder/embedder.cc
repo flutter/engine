@@ -919,22 +919,22 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
       nullptr) {
     compute_platform_resolved_locale_callback =
         [ptr = args->compute_platform_resolved_locale_callback](
-            const std::vector<std::string>& supported_locale_data) {
+            const std::vector<std::string>& supported_locales) {
           size_t number_of_strings_per_locale = 3;
           size_t locale_count =
-              supported_locale_data.size() / number_of_strings_per_locale;
+              supported_locales.size() / number_of_strings_per_locale;
           const FlutterLocale* locales[locale_count];
           for (size_t i = 0; i < locale_count; ++i) {
             const FlutterLocale locale = {
                 .struct_size = sizeof(FlutterLocale),
                 .language_code =
-                    supported_locale_data[i * number_of_strings_per_locale + 0]
+                    supported_locales[i * number_of_strings_per_locale + 0]
                         .c_str(),
                 .country_code =
-                    supported_locale_data[i * number_of_strings_per_locale + 1]
+                    supported_locales[i * number_of_strings_per_locale + 1]
                         .c_str(),
                 .script_code =
-                    supported_locale_data[i * number_of_strings_per_locale + 2]
+                    supported_locales[i * number_of_strings_per_locale + 2]
                         .c_str(),
                 .variant_code = nullptr};
             locales[i] = &locale;
