@@ -98,7 +98,7 @@ bool _hasEastAsianWidthFWH(int charCode) {
 /// * https://www.unicode.org/Public/11.0.0/ucd/LineBreak.txt
 LineBreakResult nextLineBreak(String text, int index) {
   int? codePoint = getCodePoint(text, index);
-  LineCharProperty? curr = _normalizeLineProperty(codePoint);
+  LineCharProperty curr = _normalizeLineProperty(codePoint);
 
   LineCharProperty? prev1;
 
