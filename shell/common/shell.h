@@ -528,6 +528,9 @@ class Shell final : public PlatformView::Delegate,
   void OnFrameRasterized(const FrameTiming&) override;
 
   // |Rasterizer::Delegate|
+  void OnCompositorFrameEnd(size_t freed_hint) override;
+
+  // |Rasterizer::Delegate|
   fml::Milliseconds GetFrameBudget() override;
 
   // |Rasterizer::Delegate|

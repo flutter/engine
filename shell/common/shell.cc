@@ -1195,6 +1195,11 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
   }
 }
 
+void Shell::OnCompositorFrameEnd(size_t freed_hint) {
+  FML_DCHECK(engine_);
+  engine_->HintFreed(freed_hint);
+}
+
 fml::Milliseconds Shell::GetFrameBudget() {
   if (display_refresh_rate_ > 0) {
     return fml::RefreshRateToFrameBudget(display_refresh_rate_.load());

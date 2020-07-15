@@ -41,6 +41,7 @@ Rasterizer::Rasterizer(
     : Rasterizer(delegate,
                  std::move(task_runners),
                  std::make_unique<flutter::CompositorContext>(
+                     *this,
                      delegate.GetFrameBudget()),
                  is_gpu_disabled_sync_switch) {}
 
@@ -274,6 +275,10 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
                               [image = std::move(image)](SkCanvas* canvas) {
                                 canvas->drawImage(image, 0, 0);
                               });
+}
+
+void Rasterizer::OnCompositorEndFrame(size_t freed_hint) {
+  delegate_.OnCompositorFrameEnd(freed_hint);
 }
 
 RasterStatus Rasterizer::DoDraw(
