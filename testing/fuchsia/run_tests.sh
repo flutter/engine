@@ -44,7 +44,7 @@ reboot() {
   ./fuchsia_ctl -d $device_name ssh \
        -c "log_listener --dump_logs yes" \
        --timeout-seconds $ssh_timeout_seconds \
-       --identity-file $pkey --log-file $3/log.txt
+       --identity-file $pkey --log-file ${ISOLATED_OUTDIR}/log.txt
 
   echo "$(date) START:REBOOT ------------------------------------------"
   # note: this will set an exit code of 255, which we can ignore.
