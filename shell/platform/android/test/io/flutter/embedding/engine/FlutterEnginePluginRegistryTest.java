@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -18,12 +17,11 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformViewsController;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 // Run with Robolectric so that Log calls don't crash.
 @Config(manifest = Config.NONE)
@@ -83,14 +81,16 @@ public class FlutterEnginePluginRegistryTest {
 
     // setup the environment to get the required internal data
     FlutterEnginePluginRegistry registry =
-            new FlutterEnginePluginRegistry(context, flutterEngine, flutterLoader);
+        new FlutterEnginePluginRegistry(context, flutterEngine, flutterLoader);
     FakeActivityAwareFlutterPlugin fakePlugin = new FakeActivityAwareFlutterPlugin();
     registry.add(fakePlugin);
     registry.attachToActivity(activity, lifecycle);
 
-    // The binding is now available via `fakePlugin.binding`: Creating now the listeners and add them
-    FakeActivityResultListener listener1 = new FakeActivityResultListener(isFirstCall, fakePlugin.binding);
-    FakeActivityResultListener listener2 = new FakeActivityResultListener(isFirstCall, fakePlugin.binding);
+    // The binding is now available via `fakePlugin.binding`: Creat and add the listeners
+    FakeActivityResultListener listener1 =
+        new FakeActivityResultListener(isFirstCall, fakePlugin.binding);
+    FakeActivityResultListener listener2 =
+        new FakeActivityResultListener(isFirstCall, fakePlugin.binding);
 
     fakePlugin.binding.addActivityResultListener(listener1);
     fakePlugin.binding.addActivityResultListener(listener2);
