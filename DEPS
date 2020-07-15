@@ -107,7 +107,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '4073a7a300d845597b8b2d553e584d3fd97f70df',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'b2cf4c138b51903edcc1683c97bc2ca92e258bcc',
 
    # Fuchsia compatibility
    #
@@ -537,11 +537,22 @@ deps = {
      'condition': 'host_os == "mac"',
      'dep_type': 'cipd',
    },
+   # TODO(fxb/XXXXX): Remove package "fuchsia/sdk/core/linux-amd64" when fully migrated to the Fuchsia GN SDK
    'src/fuchsia/sdk/linux': {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
         'version': 'ROYgzKMaFOVTGl4BQytOzxkIQvBT0L5rJaSIsUACiXEC'
+       }
+     ],
+     'condition': 'host_os == "linux"',
+     'dep_type': 'cipd',
+   },
+   'src/fuchsia/gn-sdk/linux': {
+     'packages': [
+       {
+        'package': 'fuchsia/sdk/gn/linux-amd64',
+        'version': 'hBCchTDrQ7eCbajM2se4hugU1ynpyAI_bTcnz1f9aKYC'
        }
      ],
      'condition': 'host_os == "linux"',

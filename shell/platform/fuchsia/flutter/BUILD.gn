@@ -9,10 +9,12 @@ import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/testing/testing.gni")
 import("//flutter/tools/fuchsia/dart.gni")
-import("//flutter/tools/fuchsia/fuchsia_archive.gni")
+import("//fuchsia/gn-sdk/linux/build/component.gni")
+import("//fuchsia/gn-sdk/linux/build/package.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
 import("//flutter/vulkan/config.gni")
 import("engine_flutter_runner.gni")
+
 
 # Fuchsia uses its own custom Surface implementation.
 shell_gpu_configuration("fuchsia_legacy_gpu_configuration") {
@@ -89,25 +91,30 @@ template("jit_runner") {
     product_suffix = "_product"
   }
 
-  fuchsia_archive(target_name) {
+  component_name = target_name + "_component"
+
+  fuchsia_package(target_name){
+    deps = [ ":$component_name" ]
+  }
+
+  fuchsia_component(component_name) {
+    manifest = rebase_path("meta/flutter_jit${product_suffix}_runner.cmx")
+    manifest_output_name = "flutter_jit${product_suffix}_runner.cmx"
+    
+    
     snapshot_label = "kernel:kernel_core_snapshot${product_suffix}"
     snapshot_gen_dir = get_label_info(snapshot_label, "target_gen_dir")
-
-    deps = [
+    data_deps = [
       ":jit${product_suffix}",
       snapshot_label,
     ]
 
     if (!product) {
-      deps += [
+      data_deps += [
         "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:flutter_jit_runner",
         observatory_target,
       ]
     }
-
-    binary = "flutter_jit${product_suffix}_runner"
-
-    meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
 
     resources = [
       {
@@ -155,24 +162,10 @@ template("jit_runner") {
         dest = "isolate_core_snapshot_instructions.bin"
       },
     ]
-
-    _vulkan_icds = []
-    _libs = common_libs
+    
     if (enable_vulkan_validation_layers) {
-      _libs += vulkan_validation_libs
-      _vulkan_icds += vulkan_icds
+      resources += vulkan_icds
     }
-
-    resources += _vulkan_icds
-
-    libraries = _libs
-
-    meta = [
-      {
-        path = rebase_path("meta/flutter_jit${product_suffix}_runner.cmx")
-        dest = "flutter_jit${product_suffix}_runner.cmx"
-      },
-    ]
   }
 }
 
@@ -183,19 +176,25 @@ template("aot_runner") {
     product_suffix = "_product"
   }
 
-  fuchsia_archive(target_name) {
-    deps = [ ":aot${product_suffix}" ]
+  component_name = target_name + "_component"
+
+  fuchsia_package(target_name) {
+    deps = [ ":$component_name" ]
+  }
+
+  fuchsia_component(component_name) {
+    manifest = rebase_path("meta/flutter_aot${product_suffix}_runner.cmx")
+    manifest_output_name = "flutter_aot${product_suffix}_runner.cmx"
+    data_deps = [
+      ":aot${product_suffix}",
+    ]
 
     if (!product) {
-      deps += [
+      data_deps += [
         "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:flutter_aot_runner",
         observatory_target,
       ]
     }
-
-    meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
-
-    binary = "flutter_aot${product_suffix}_runner"
 
     resources = [
       {
@@ -221,23 +220,9 @@ template("aot_runner") {
       ]
     }
 
-    _vulkan_icds = []
-    _libs = common_libs
     if (enable_vulkan_validation_layers) {
-      _libs += vulkan_validation_libs
-      _vulkan_icds += vulkan_icds
+      resources += vulkan_icds
     }
-
-    resources += _vulkan_icds
-
-    libraries = _libs
-
-    meta = [
-      {
-        path = rebase_path("meta/flutter_aot${product_suffix}_runner.cmx")
-        dest = "flutter_aot${product_suffix}_runner.cmx"
-      },
-    ]
   }
 }
 
@@ -364,6 +349,70 @@ executable("flutter_runner_tzdata_unittests") {
   ]
 }
 
+# When adding a new dep here, please also ensure the dep is added to
+# testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
+fuchsia_package("flutter_runner_tests") {
+  testonly = true
+  deps = [ ":${target_name}_component" ]
+}
+
+fuchsia_component("flutter_runner_tests_component") {
+  testonly = true
+
+  manifest_name = string_replace(target_name, "_component", "")
+  manifest = rebase_path("meta/$manifest_name.cmx")
+  manifest_output_name = "$manifest_name.cmx"
+
+  data_deps = [
+    ":flutter_runner_unittests",
+  ]
+
+  resources = [
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl.dat"
+    },
+    {
+      path = rebase_path(
+              "//flutter/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/metaZones.res")
+      dest = "tzdata/metaZones.res"
+    },
+    {
+      path = rebase_path(
+              "//flutter/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/timezoneTypes.res")
+      dest = "tzdata/timezoneTypes.res"
+    },
+    {
+      path = rebase_path(
+              "//flutter/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/zoneinfo64.res")
+      dest = "tzdata/zoneinfo64.res"
+    },
+  ]
+}
+
+fuchsia_package("flutter_runner_tzdata_tests") {
+  testonly = true
+  deps = [ ":${target_name}_component" ]
+}
+fuchsia_component("flutter_runner_tzdata_tests_component") {
+  testonly = true
+
+  manifest_name = string_replace(target_name, "_component", "")
+  manifest = rebase_path("meta/$manifest_name.cmx")
+  manifest_output_name = "$manifest_name.cmx"
+
+  data_deps = [
+    ":flutter_runner_tzdata_unittests",
+  ]
+
+  resources = [
+    {
+      path = rebase_path("//third_party/icu/common/icudtl.dat")
+      dest = "icudtl.dat"
+    },
+  ]
+}
+
 executable("flutter_runner_scenic_unittests") {
   testonly = true
 
@@ -445,55 +494,21 @@ executable("flutter_runner_scenic_unittests") {
   public_deps = [ "//third_party/googletest:gtest" ]
 }
 
-# When adding a new dep here, please also ensure the dep is added to
-# testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
-fuchsia_archive("flutter_runner_tests") {
+fuchsia_package("flutter_runner_scenic_tests") {
   testonly = true
-
-  deps = [ ":flutter_runner_unittests" ]
-
-  binary = "$target_name"
-
-  resources = [
-    {
-      path = rebase_path("//third_party/icu/common/icudtl.dat")
-      dest = "icudtl.dat"
-    },
-    {
-      path = rebase_path(
-              "//flutter/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/metaZones.res")
-      dest = "tzdata/metaZones.res"
-    },
-    {
-      path = rebase_path(
-              "//flutter/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/timezoneTypes.res")
-      dest = "tzdata/timezoneTypes.res"
-    },
-    {
-      path = rebase_path(
-              "//flutter/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/zoneinfo64.res")
-      dest = "tzdata/zoneinfo64.res"
-    },
-  ]
-
-  meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
-
-  libraries = common_libs
-
-  meta = [
-    {
-      path = rebase_path("meta/$target_name.cmx")
-      dest = "$target_name.cmx"
-    },
-  ]
+  deps = [ ":${target_name}_component" ]
 }
 
-fuchsia_archive("flutter_runner_tzdata_tests") {
+fuchsia_component("flutter_runner_scenic_tests_component") {
   testonly = true
 
-  deps = [ ":flutter_runner_tzdata_unittests" ]
+  manifest_name = string_replace(target_name, "_component", "")
+  manifest = rebase_path("meta/$manifest_name.cmx")
+  manifest_output_name = "$manifest_name.cmx"
 
-  binary = "$target_name"
+  data_deps = [
+    ":flutter_runner_scenic_unittests",
+  ]
 
   resources = [
     {
@@ -501,55 +516,36 @@ fuchsia_archive("flutter_runner_tzdata_tests") {
       dest = "icudtl.dat"
     },
   ]
-
-  meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
-
-  libraries = common_libs
-
-  meta = [
-    {
-      path = rebase_path("meta/$target_name.cmx")
-      dest = "$target_name.cmx"
-    },
-  ]
 }
 
-fuchsia_archive("flutter_runner_scenic_tests") {
+
+fuchsia_package("fml_tests") {
+  testonly = true
+  deps = [":fml_tests_component"]
+}
+
+fuchsia_component("fml_tests_component") {
   testonly = true
 
-  deps = [ ":flutter_runner_scenic_unittests" ]
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
 
-  binary = "$target_name"
-
-  resources = [
-    {
-      path = rebase_path("//third_party/icu/common/icudtl.dat")
-      dest = "icudtl.dat"
-    },
-  ]
-
-  meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
-
-  libraries = common_libs
-
-  meta = [
-    {
-      path = rebase_path("meta/$target_name.cmx")
-      dest = "$target_name.cmx"
-    },
+  data_deps = [
+    "//flutter/fml:fml_unittests",
   ]
 }
 
-fuchsia_test_archive("fml_tests") {
-  deps = [ "//flutter/fml:fml_unittests" ]
-
-  binary = "fml_unittests"
+fuchsia_package("flow_tests") {
+  testonly = true
+  deps = [":flow_tests_component"]
 }
-
-fuchsia_test_archive("flow_tests") {
-  deps = [ "//flutter/flow:flow_unittests" ]
-
-  binary = "flow_unittests"
+fuchsia_component("flow_tests_component") {
+  testonly = true
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
+  data_deps = [
+    "//flutter/flow:flow_unittests",
+  ]
 
   resources = [
     {
@@ -570,10 +566,19 @@ fuchsia_test_archive("flow_tests") {
   ]
 }
 
-fuchsia_test_archive("flow_tests_next") {
-  deps = [ "//flutter/flow:flow_unittests_next" ]
+fuchsia_package("flow_tests_next") {
+  testonly = true
+  deps = [":flow_tests_next_component"]
+}
+fuchsia_component("flow_tests_next_component") {
+  testonly = true
 
-  binary = "flow_unittests_next"
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
+
+  data_deps = [
+    "//flutter/flow:flow_unittests_next",
+  ]
 
   resources = [
     {
@@ -594,14 +599,22 @@ fuchsia_test_archive("flow_tests_next") {
   ]
 }
 
-fuchsia_test_archive("runtime_tests") {
-  deps = [
+fuchsia_package("runtime_tests") {
+  testonly = true
+  deps = [":runtime_tests_component"]
+}
+
+fuchsia_component("runtime_tests_component") {
+  testonly = true
+
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
+
+  data_deps = [
     "//flutter/runtime:runtime_fixtures",
     "//flutter/runtime:runtime_unittests",
   ]
 
-  binary = "runtime_unittests"
-
   # TODO(gw280): https://github.com/flutter/flutter/issues/50294
   # Right now we need to manually specify all the fixtures that are
   # declared in the test_fixtures() call above.
@@ -613,14 +626,22 @@ fuchsia_test_archive("runtime_tests") {
   ]
 }
 
-fuchsia_test_archive("runtime_tests_next") {
-  deps = [
+fuchsia_package("runtime_tests_next") {
+  testonly = true
+  deps = [":runtime_tests_next_component"]
+}
+
+fuchsia_component("runtime_tests_next_component") {
+  testonly = true
+
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
+
+  data_deps = [
     "//flutter/runtime:runtime_fixtures",
     "//flutter/runtime:runtime_unittests_next",
   ]
 
-  binary = "runtime_unittests_next"
-
   # TODO(gw280): https://github.com/flutter/flutter/issues/50294
   # Right now we need to manually specify all the fixtures that are
   # declared in the test_fixtures() call above.
@@ -632,14 +653,22 @@ fuchsia_test_archive("runtime_tests_next") {
   ]
 }
 
-fuchsia_test_archive("shell_tests") {
-  deps = [
+fuchsia_package("shell_tests") {
+  testonly = true
+  deps = [":shell_tests_component"]
+}
+
+fuchsia_component("shell_tests_component") {
+  testonly = true
+
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
+
+  data_deps = [
     "//flutter/shell/common:shell_unittests",
     "//flutter/shell/common:shell_unittests_fixtures",
   ]
 
-  binary = "shell_unittests"
-
   # TODO(gw280): https://github.com/flutter/flutter/issues/50294
   # Right now we need to manually specify all the fixtures that are
   # declared in the test_fixtures() call above.
@@ -655,18 +684,25 @@ fuchsia_test_archive("shell_tests") {
     },
   ]
 
-  libraries = vulkan_validation_libs
   resources += vulkan_icds
 }
 
-fuchsia_test_archive("shell_tests_next") {
-  deps = [
+fuchsia_package("shell_tests_next") {
+  testonly = true
+  deps = [":shell_tests_next_component"]
+}
+
+fuchsia_component("shell_tests_next_component") {
+  testonly = true
+
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
+
+  data_deps = [
     "//flutter/shell/common:shell_unittests_fixtures",
     "//flutter/shell/common:shell_unittests_next",
   ]
 
-  binary = "shell_unittests_next"
-
   # TODO(gw280): https://github.com/flutter/flutter/issues/50294
   # Right now we need to manually specify all the fixtures that are
   # declared in the test_fixtures() call above.
@@ -682,20 +718,39 @@ fuchsia_test_archive("shell_tests_next") {
     },
   ]
 
-  libraries = vulkan_validation_libs
   resources += vulkan_icds
 }
 
-fuchsia_test_archive("testing_tests") {
-  deps = [ "//flutter/testing:testing_unittests" ]
-
-  binary = "testing_unittests"
+fuchsia_package("testing_tests") {
+  testonly = true
+  deps = [":testing_tests_component"]
 }
 
-fuchsia_test_archive("txt_tests") {
-  deps = [ "//flutter/third_party/txt:txt_unittests" ]
+fuchsia_component("testing_tests_component") {
+  testonly = true
 
-  binary = "txt_unittests"
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
+
+  data_deps = [
+    "//flutter/testing:testing_unittests",
+  ]
+}
+
+fuchsia_package("txt_tests") {
+  testonly = true
+  deps = [":txt_tests_component"]
+}
+
+fuchsia_component("txt_tests_component") {
+  testonly = true
+
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
+
+  data_deps = [
+    "//flutter/third_party/txt:txt_unittests",
+  ]
 
   resources = [
     {
@@ -709,14 +764,21 @@ fuchsia_test_archive("txt_tests") {
   ]
 }
 
-fuchsia_test_archive("ui_tests") {
-  deps = [
+fuchsia_package("ui_tests") {
+  testonly = true
+  deps = [":ui_tests_component"]
+}
+fuchsia_component("ui_tests_component") {
+  testonly = true
+
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
+
+  data_deps = [
     "//flutter/lib/ui:ui_unittests",
     "//flutter/lib/ui:ui_unittests_fixtures",
   ]
 
-  binary = "ui_unittests"
-
   # TODO(gw280): https://github.com/flutter/flutter/issues/50294
   # Right now we need to manually specify all the fixtures that are
   # declared in the test_fixtures() call above.
@@ -747,18 +809,25 @@ fuchsia_test_archive("ui_tests") {
     },
   ]
 
-  libraries = vulkan_validation_libs
   resources += vulkan_icds
 }
 
-fuchsia_test_archive("ui_tests_next") {
-  deps = [
+fuchsia_package("ui_tests_next") {
+  testonly = true
+  deps = [":ui_tests_next_component"]
+}
+
+fuchsia_component("ui_tests_next_component") {
+  testonly = true
+
+  meta_dir = "//flutter/testing/fuchsia/meta"
+  manifest = "$meta_dir/fuchsia_test.cmx"
+
+  data_deps = [
     "//flutter/lib/ui:ui_unittests_fixtures",
     "//flutter/lib/ui:ui_unittests_next",
   ]
 
-  binary = "ui_unittests_next"
-
   # TODO(gw280): https://github.com/flutter/flutter/issues/50294
   # Right now we need to manually specify all the fixtures that are
   # declared in the test_fixtures() call above.
@@ -789,7 +858,6 @@ fuchsia_test_archive("ui_tests_next") {
     },
   ]
 
-  libraries = vulkan_validation_libs
   resources += vulkan_icds
 }
 
