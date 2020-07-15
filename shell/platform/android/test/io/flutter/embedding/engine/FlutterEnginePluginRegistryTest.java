@@ -130,7 +130,7 @@ public class FlutterEnginePluginRegistryTest {
 
     @Override
     public void onAttachedToActivity(final ActivityPluginBinding binding) {
-
+      this.binding = binding;
     }
 
     @Override
@@ -140,7 +140,6 @@ public class FlutterEnginePluginRegistryTest {
 
     @Override
     public void onReattachedToActivityForConfigChanges(final ActivityPluginBinding binding) {
-      this.binding = binding;
     }
 
     @Override
