@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 /// Bindings for CanvasKit JavaScript API.
+///
+/// Prefer keeping the originl CanvasKit names so it is easier to locate
+/// the API behind these bindings in the Skia source code.
 part of engine;
 
 final js.JsObject _jsWindow = js.JsObject.fromBrowserObject(html.window);
@@ -116,6 +119,13 @@ extension JsObjectWrappers on JsObjectWrapper {
     return unwrapped;
   }
 
+  js.JsObject wrapSkParagraph(SkParagraph paragraph) {
+    _jsObjectWrapper.skParagraph = paragraph;
+    js.JsObject wrapped = _jsObjectWrapperLegacy['skParagraph'];
+    _jsObjectWrapper.skParagraph = null;
+    return wrapped;
+  }
+
   SkParagraph unwrapSkParagraph(js.JsObject wrapped) {
     _jsObjectWrapperLegacy['skParagraph'] = wrapped;
     final SkParagraph unwrapped = _jsObjectWrapper.skParagraph!;
@@ -169,6 +179,13 @@ class CanvasKit {
   external SkClipOpEnum get ClipOp;
   external SkPointModeEnum get PointMode;
   external SkVertexModeEnum get VertexMode;
+  external SkRectHeightStyleEnum get RectHeightStyle;
+  external SkRectWidthStyleEnum get RectWidthStyle;
+  external SkAffinityEnum get Affinity;
+  external SkTextAlignEnum get TextAlign;
+  external SkTextDirectionEnum get TextDirection;
+  external SkFontWeightEnum get FontWeight;
+  external SkFontSlantEnum get FontSlant;
   external SkAnimatedImage MakeAnimatedImageFromEncoded(Uint8List imageData);
   external SkShaderNamespace get SkShader;
   external SkMaskFilter MakeBlurMaskFilter(SkBlurStyle blurStyle, double sigma, bool respectCTM);
@@ -185,6 +202,185 @@ class CanvasKit {
     Uint32List? colors,
     Uint16List? indices,
   );
+  external SkParagraphBuilderNamespace get ParagraphBuilder;
+  external SkParagraphStyle ParagraphStyle(SkParagraphStyleProperties properties);
+  external SkTextStyle TextStyle(SkTextStyleProperties properties);
+
+  // Text decoration enum is embedded in the CanvasKit object itself.
+  external int get NoDecoration;
+  external int get UnderlineDecoration;
+  external int get OverlineDecoration;
+  external int get LineThroughDecoration;
+  // End of text decoration enum.
+
+  external SkFontMgrNamespace get SkFontMgr;
+}
+
+@JS()
+class SkFontSlantEnum {
+  external SkFontSlant get Upright;
+  external SkFontSlant get Italic;
+}
+
+@JS()
+class SkFontSlant {
+  external int get value;
+}
+
+final List<SkFontSlant> _skFontSlants = <SkFontSlant>[
+  canvasKitJs.FontSlant.Upright,
+  canvasKitJs.FontSlant.Italic,
+];
+
+SkFontSlant toSkFontSlant(ui.FontStyle style) {
+  return _skFontSlants[style.index];
+}
+
+@JS()
+class SkFontWeightEnum {
+  external SkFontWeight get Thin;
+  external SkFontWeight get ExtraLight;
+  external SkFontWeight get Light;
+  external SkFontWeight get Normal;
+  external SkFontWeight get Medium;
+  external SkFontWeight get SemiBold;
+  external SkFontWeight get Bold;
+  external SkFontWeight get ExtraBold;
+  external SkFontWeight get ExtraBlack;
+}
+
+@JS()
+class SkFontWeight {
+  external int get value;
+}
+
+final List<SkFontWeight> _skFontWeights = <SkFontWeight>[
+  canvasKitJs.FontWeight.Thin,
+  canvasKitJs.FontWeight.ExtraLight,
+  canvasKitJs.FontWeight.Light,
+  canvasKitJs.FontWeight.Normal,
+  canvasKitJs.FontWeight.Medium,
+  canvasKitJs.FontWeight.SemiBold,
+  canvasKitJs.FontWeight.Bold,
+  canvasKitJs.FontWeight.ExtraBold,
+  canvasKitJs.FontWeight.ExtraBlack,
+];
+
+SkFontWeight toSkFontWeight(ui.FontWeight weight) {
+  return _skFontWeights[weight.index];
+}
+
+@JS()
+class SkAffinityEnum {
+  external SkAffinity get Upstream;
+  external SkAffinity get Downstream;
+}
+
+@JS()
+class SkAffinity {
+  external int get value;
+}
+
+final List<SkAffinity> _skAffinitys = <SkAffinity>[
+  canvasKitJs.Affinity.Upstream,
+  canvasKitJs.Affinity.Downstream,
+];
+
+SkAffinity toSkAffinity(ui.TextAffinity affinity) {
+  return _skAffinitys[affinity.index];
+}
+
+@JS()
+class SkTextDirectionEnum {
+  external SkTextDirection get RTL;
+  external SkTextDirection get LTR;
+}
+
+@JS()
+class SkTextDirection {
+  external int get value;
+}
+
+// Flutter enumerates text directions as RTL, LTR, while CanvasKit
+// enumerates them LTR, RTL.
+final List<SkTextDirection> _skTextDirections = <SkTextDirection>[
+  canvasKitJs.TextDirection.RTL,
+  canvasKitJs.TextDirection.LTR,
+];
+
+SkTextDirection toSkTextDirection(ui.TextDirection direction) {
+  return _skTextDirections[direction.index];
+}
+
+@JS()
+class SkTextAlignEnum {
+  external SkTextAlign get Left;
+  external SkTextAlign get Right;
+  external SkTextAlign get Center;
+  external SkTextAlign get Justify;
+  external SkTextAlign get Start;
+  external SkTextAlign get End;
+}
+
+@JS()
+class SkTextAlign {
+  external int get value;
+}
+
+final List<SkTextAlign> _skTextAligns = <SkTextAlign>[
+  canvasKitJs.TextAlign.Left,
+  canvasKitJs.TextAlign.Right,
+  canvasKitJs.TextAlign.Center,
+  canvasKitJs.TextAlign.Justify,
+  canvasKitJs.TextAlign.Start,
+  canvasKitJs.TextAlign.End,
+];
+
+SkTextAlign toSkTextAlign(ui.TextAlign align) {
+  return _skTextAligns[align.index];
+}
+
+@JS()
+class SkRectHeightStyleEnum {
+  // TODO(yjbanov): support all styles
+  external SkRectHeightStyle get Tight;
+  external SkRectHeightStyle get Max;
+}
+
+@JS()
+class SkRectHeightStyle {
+  external int get value;
+}
+
+final List<SkRectHeightStyle> _skRectHeightStyles = <SkRectHeightStyle>[
+  canvasKitJs.RectHeightStyle.Tight,
+  canvasKitJs.RectHeightStyle.Max,
+];
+
+SkRectHeightStyle toSkRectHeightStyle(ui.BoxHeightStyle style) {
+  final int index = style.index;
+  return _skRectHeightStyles[index < 2 ? index : 0];
+}
+
+@JS()
+class SkRectWidthStyleEnum {
+  external SkRectWidthStyle get Tight;
+  external SkRectWidthStyle get Max;
+}
+
+@JS()
+class SkRectWidthStyle {
+  external int get value;
+}
+
+final List<SkRectWidthStyle> _skRectWidthStyles = <SkRectWidthStyle>[
+  canvasKitJs.RectWidthStyle.Tight,
+  canvasKitJs.RectWidthStyle.Max,
+];
+
+SkRectWidthStyle toSkRectWidthStyle(ui.BoxWidthStyle style) {
+  final int index = style.index;
+  return _skRectWidthStyles[index < 2 ? index : 0];
 }
 
 @JS()
@@ -590,10 +786,13 @@ class SkPaint {
   external void setColorFilter(SkColorFilter? colorFilter);
   external void setStrokeMiter(double miterLimit);
   external void setImageFilter(SkImageFilter? imageFilter);
+  external void delete();
 }
 
 @JS()
-class SkMaskFilter {}
+class SkMaskFilter {
+  external void delete();
+}
 
 @JS()
 class SkColorFilterNamespace {
@@ -606,7 +805,9 @@ class SkColorFilterNamespace {
 }
 
 @JS()
-class SkColorFilter {}
+class SkColorFilter {
+  external void delete();
+}
 
 @JS()
 class SkImageFilterNamespace {
@@ -625,7 +826,9 @@ class SkImageFilterNamespace {
 }
 
 @JS()
-class SkImageFilter {}
+class SkImageFilter {
+  external void delete();
+}
 
 /// Converts a 4x4 Flutter matrix (represented as a [Float32List]) to an
 /// SkMatrix, which is a 3x3 transform matrix.
@@ -1235,10 +1438,140 @@ class SkCanvasSaveLayerWithFilterOverride {
 }
 
 @JS()
-class SkPicture { }
+class SkPicture {
+  external void delete();
+}
 
 @JS()
-class SkParagraph { }
+class SkParagraphBuilderNamespace {
+  external SkParagraphBuilder Make(
+    SkParagraphStyle paragraphStyle,
+    SkFontMgr fontManager,
+  );
+}
+
+@JS()
+class SkParagraphBuilder {
+  external void addText(String text);
+  external void pushStyle(SkTextStyle textStyle);
+  external void pop();
+  external SkParagraph build();
+  external void delete();
+}
+
+@JS()
+class SkParagraphStyle {
+}
+
+@JS()
+@anonymous
+class SkParagraphStyleProperties {
+  external SkTextAlign? get textAlign;
+  external set textAlign(SkTextAlign? value);
+
+  external SkTextDirection? get textDirection;
+  external set textDirection(SkTextDirection? value);
+
+  external double? get heightMultiplier;
+  external set heightMultiplier(double? value);
+
+  external int? get textHeightBehavior;
+  external set textHeightBehavior(int? value);
+
+  external int? get maxLines;
+  external set maxLines(int? value);
+
+  external String? get ellipsis;
+  external set ellipsis(String? value);
+
+  external SkTextStyleProperties? get textStyle;
+  external set textStyle(SkTextStyleProperties? value);
+}
+
+@JS()
+class SkTextStyle {
+
+}
+
+@JS()
+@anonymous
+class SkTextStyleProperties {
+  external Float32List? get backgroundColor;
+  external set backgroundColor(Float32List? value);
+
+  external Float32List? get color;
+  external set color(Float32List? value);
+
+  external Float32List? get foregroundColor;
+  external set foregroundColor(Float32List? value);
+
+  external int? get decoration;
+  external set decoration(int? value);
+
+  external double? get decorationThickness;
+  external set decorationThickness(double? value);
+
+  external double? get fontSize;
+  external set fontSize(double? value);
+
+  external List<String>? get fontFamilies;
+  external set fontFamilies(List<String>? value);
+
+  external SkFontStyle? get fontStyle;
+  external set fontStyle(SkFontStyle? value);
+}
+
+@JS()
+@anonymous
+class SkFontStyle {
+  external SkFontWeight? get weight;
+  external set weight(SkFontWeight? value);
+
+  external SkFontSlant? get slant;
+  external set slant(SkFontSlant? value);
+}
+
+@JS()
+class SkFontMgr {
+
+}
+
+@JS()
+class SkParagraph {
+  external double getAlphabeticBaseline();
+  external bool didExceedMaxLines();
+  external double getHeight();
+  external double getIdeographicBaseline();
+  external double getLongestLine();
+  external double getMaxIntrinsicWidth();
+  external double getMinIntrinsicWidth();
+  external double getMaxWidth();
+  external List<SkRect> getRectsForRange(
+    int start,
+    int end,
+    SkRectHeightStyle heightStyle,
+    SkRectWidthStyle widthStyle,
+  );
+  external SkTextPosition getGlyphPositionAtCoordinate(
+    double x,
+    double y,
+  );
+  external SkTextRange getWordBoundary(int position);
+  external void layout(double width);
+  external void delete();
+}
+
+@JS()
+class SkTextPosition {
+  external SkAffinity get affinity;
+  external int get pos;
+}
+
+@JS()
+class SkTextRange {
+  external int get start;
+  external int get end;
+}
 
 @JS()
 class SkVertices { }
@@ -1252,4 +1585,9 @@ class SkTonalColors {
   });
   external Float32List get ambient;
   external Float32List get spot;
+}
+
+@JS()
+class SkFontMgrNamespace {
+  external SkFontMgr FromData(List<Uint8List> fonts);
 }

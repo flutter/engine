@@ -76,20 +76,30 @@ class SkiaObjectCache {
       final SkiaObject oldObject = _itemQueue.removeLast();
       _itemMap.remove(oldObject);
       oldObject.delete();
+      oldObject.didDelete();
     }
   }
 }
 
-/// An object backed by a [js.JsObject] mapped onto a Skia C++ object in the
+/// An object backed by a JavaScript object mapped onto a Skia C++ object in the
 /// WebAssembly heap.
 ///
 /// These objects are automatically deleted when no longer used.
-abstract class SkiaObject {
+abstract class SkiaObject<T> {
   /// The JavaScript object that's mapped onto a Skia C++ object in the WebAssembly heap.
-  js.JsObject? get skiaObject;
+  T get skiaObject;
+
+  /// The legacy view on the [skiaObject].
+  // TODO(yjbanov): remove this after completing JS-interop migration.
+  js.JsObject? get legacySkiaObject;
 
   /// Deletes the associated C++ object from the WebAssembly heap.
   void delete();
+
+  /// Lifecycle method called immediately after calling [delete].
+  ///
+  /// This method is used to
+  void didDelete();
 }
 
 /// A [SkiaObject] that can resurrect its C++ counterpart.
@@ -113,7 +123,7 @@ abstract class SkiaObject {
 ///   [resurrect] method.
 /// - Final delete: if a Dart object is never reused, it is GC'd after its
 ///   underlying C++ object is deleted. This is implemented by [SkiaObjects].
-abstract class ResurrectableSkiaObject extends SkiaObject {
+abstract class ResurrectableSkiaObject<T> extends SkiaObject<T> {
   ResurrectableSkiaObject() {
     _skiaObject = createDefault();
     if (isResurrectionExpensive) {
@@ -124,20 +134,26 @@ abstract class ResurrectableSkiaObject extends SkiaObject {
   }
 
   @override
-  js.JsObject get skiaObject {
-    if (_skiaObject == null) {
-      _skiaObject = resurrect();
-      if (isResurrectionExpensive) {
-        SkiaObjects.manageExpensive(this);
-      } else {
-        SkiaObjects.manageResurrectable(this);
-      }
+  T get skiaObject => _skiaObject ?? _doResurrect();
+
+  T _doResurrect() {
+    final T skiaObject = resurrect();
+    _skiaObject = skiaObject;
+    if (isResurrectionExpensive) {
+      SkiaObjects.manageExpensive(this);
+    } else {
+      SkiaObjects.manageResurrectable(this);
     }
-    return _skiaObject!;
+    return skiaObject;
+  }
+
+  @override
+  void didDelete() {
+    _skiaObject = null;
   }
 
   /// Do not use this field outside this class. Use [skiaObject] instead.
-  js.JsObject? _skiaObject;
+  T? _skiaObject;
 
   /// Instantiates a new Skia-backed JavaScript object containing default
   /// values.
@@ -145,22 +161,16 @@ abstract class ResurrectableSkiaObject extends SkiaObject {
   /// The object is expected to represent Flutter's defaults. If Skia uses
   /// different defaults from those used by Flutter, this method is expected
   /// initialize the object to Flutter's defaults.
-  js.JsObject createDefault();
+  T createDefault();
 
   /// Creates a new Skia-backed JavaScript object containing data representing
   /// the current state of the Dart object.
-  js.JsObject resurrect();
+  T resurrect();
 
   /// Whether or not it is expensive to resurrect this object.
   ///
   /// Defaults to false.
   bool get isResurrectionExpensive => false;
-
-  @override
-  void delete() {
-    _skiaObject!.callMethod('delete');
-    _skiaObject = null;
-  }
 }
 
 // TODO(hterkelsen): [OneShotSkiaObject] is dangerous because it might delete
@@ -168,25 +178,24 @@ abstract class ResurrectableSkiaObject extends SkiaObject {
 //     use. This issue discusses ways to address this:
 //     https://github.com/flutter/flutter/issues/60401
 /// A [SkiaObject] which is deleted once and cannot be used again.
-class OneShotSkiaObject extends SkiaObject {
-  js.JsObject? _skiaObject;
+abstract class OneShotSkiaObject<T> extends SkiaObject<T> {
+  T? _skiaObject;
 
   OneShotSkiaObject(this._skiaObject) {
     SkiaObjects.manageOneShot(this);
   }
 
   @override
-  js.JsObject? get skiaObject {
+  T get skiaObject {
     if (_skiaObject == null) {
       throw StateError('Attempting to use a Skia object that has been freed.');
     }
     SkiaObjects.oneShotCache.markUsed(this);
-    return _skiaObject;
+    return _skiaObject!;
   }
 
   @override
-  void delete() {
-    _skiaObject!.callMethod('delete');
+  void didDelete() {
     _skiaObject = null;
   }
 }
@@ -267,6 +276,7 @@ class SkiaObjects {
     for (int i = 0; i < resurrectableObjects.length; i++) {
       final SkiaObject object = resurrectableObjects[i];
       object.delete();
+      object.didDelete();
     }
     resurrectableObjects.clear();
 

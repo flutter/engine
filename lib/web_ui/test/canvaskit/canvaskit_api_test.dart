@@ -1166,7 +1166,7 @@ void _canvasTests() {
     final CkParagraph paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 100));
     canvas.drawParagraph(
-      debugJsObjectWrapper.unwrapSkParagraph(paragraph.skiaObject),
+      debugJsObjectWrapper.unwrapSkParagraph(paragraph.legacySkiaObject),
       10,
       20,
     );

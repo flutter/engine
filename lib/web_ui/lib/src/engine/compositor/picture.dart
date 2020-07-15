@@ -11,7 +11,7 @@ class CkPicture implements ui.Picture {
 
   CkPicture(SkPicture picture, this.cullRect)
     : _skPicture = picture,
-      skiaObject = OneShotSkiaObject(_jsObjectWrapper.wrapSkPicture(picture));
+      skiaObject = SkPictureSkiaObject(picture);
 
   @override
   int get approximateBytesUsed => 0;
@@ -24,5 +24,17 @@ class CkPicture implements ui.Picture {
   @override
   Future<ui.Image> toImage(int width, int height) {
     throw UnsupportedError('Picture.toImage not yet implemented for CanvasKit and HTML');
+  }
+}
+
+class SkPictureSkiaObject extends OneShotSkiaObject<SkPicture> {
+  SkPictureSkiaObject(SkPicture picture) : super(picture);
+
+  @override
+  js.JsObject get legacySkiaObject => _jsObjectWrapper.wrapSkPicture(skiaObject);
+
+  @override
+  void delete() {
+    skiaObject.delete();
   }
 }

@@ -107,20 +107,12 @@ ui.Rect fromSkRect(js.JsObject skRect) {
   );
 }
 
-ui.TextPosition fromPositionWithAffinity(js.JsObject positionWithAffinity) {
-  if (positionWithAffinity['affinity'] == canvasKit['Affinity']['Upstream']) {
-    return ui.TextPosition(
-      offset: positionWithAffinity['pos'],
-      affinity: ui.TextAffinity.upstream,
-    );
-  } else {
-    assert(positionWithAffinity['affinity'] ==
-        canvasKit['Affinity']['Downstream']);
-    return ui.TextPosition(
-      offset: positionWithAffinity['pos'],
-      affinity: ui.TextAffinity.downstream,
-    );
-  }
+ui.TextPosition fromPositionWithAffinity(SkTextPosition positionWithAffinity) {
+  final ui.TextAffinity affinity = ui.TextAffinity.values[positionWithAffinity.affinity.value];
+  return ui.TextPosition(
+    offset: positionWithAffinity.pos,
+    affinity: affinity,
+  );
 }
 
 js.JsArray<double> makeSkPoint(ui.Offset point) {
