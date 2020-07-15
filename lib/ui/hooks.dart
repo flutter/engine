@@ -69,25 +69,33 @@ void _removeWindows(List<Object> removedIds) {
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateScreenMetrics(
-    Object screenId,
-    double left,
-    double top,
-    double width,
-    double height,
-    double devicePixelRatio,
-    double viewPaddingTop,
-    double viewPaddingRight,
-    double viewPaddingBottom,
-    double viewPaddingLeft,
-    double viewInsetTop,
-    double viewInsetRight,
-    double viewInsetBottom,
-    double viewInsetLeft,
-    double systemGestureInsetTop,
-    double systemGestureInsetRight,
-    double systemGestureInsetBottom,
-    double systemGestureInsetLeft,
-    ) {
+  Object screenId,
+  double left,
+  double top,
+  double width,
+  double height,
+  double devicePixelRatio,
+  double viewPaddingTop,
+  double viewPaddingRight,
+  double viewPaddingBottom,
+  double viewPaddingLeft,
+  double viewInsetTop,
+  double viewInsetRight,
+  double viewInsetBottom,
+  double viewInsetLeft,
+  double systemGestureInsetTop,
+  double systemGestureInsetRight,
+  double systemGestureInsetBottom,
+  double systemGestureInsetLeft,
+) {
+  print('''
+  Updating screen metrics for ($screenId):
+    left: $left
+    top: $top
+    width: $width
+    height: $height
+    devicePixelRatio: $devicePixelRatio
+  ''');
   // TODO(gspencergoog): Once dart:ui understands screens, set their metrics
   // here. See https://github.com/flutter/flutter/issues/60131
 }
@@ -136,7 +144,8 @@ void _updateLocales(List<String> locales) {
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateUserSettingsData(String jsonData) {
-  final Map<String, dynamic> data = json.decode(jsonData) as Map<String, dynamic>;
+  final Map<String, dynamic> data =
+      json.decode(jsonData) as Map<String, dynamic>;
   if (data.isEmpty) {
     return;
   }
@@ -154,10 +163,10 @@ void _updateLifecycleState(String state) {
     window._initialLifecycleState = state;
 }
 
-
 void _updateTextScaleFactor(double textScaleFactor) {
   window._textScaleFactor = textScaleFactor;
-  _invoke(window.onTextScaleFactorChanged, window._onTextScaleFactorChangedZone);
+  _invoke(
+      window.onTextScaleFactorChanged, window._onTextScaleFactorChangedZone);
 }
 
 void _updateAlwaysUse24HourFormat(bool alwaysUse24HourFormat) {
@@ -165,25 +174,28 @@ void _updateAlwaysUse24HourFormat(bool alwaysUse24HourFormat) {
 }
 
 void _updatePlatformBrightness(String brightnessName) {
-  window._platformBrightness = brightnessName == 'dark' ? Brightness.dark : Brightness.light;
-  _invoke(window.onPlatformBrightnessChanged, window._onPlatformBrightnessChangedZone);
+  window._platformBrightness =
+      brightnessName == 'dark' ? Brightness.dark : Brightness.light;
+  _invoke(window.onPlatformBrightnessChanged,
+      window._onPlatformBrightnessChangedZone);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateSemanticsEnabled(bool enabled) {
   window._semanticsEnabled = enabled;
-  _invoke(window.onSemanticsEnabledChanged, window._onSemanticsEnabledChangedZone);
+  _invoke(
+      window.onSemanticsEnabledChanged, window._onSemanticsEnabledChangedZone);
 }
 
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateAccessibilityFeatures(int values) {
   final AccessibilityFeatures newFeatures = AccessibilityFeatures._(values);
-  if (newFeatures == window._accessibilityFeatures)
-    return;
+  if (newFeatures == window._accessibilityFeatures) return;
   window._accessibilityFeatures = newFeatures;
-  _invoke(window.onAccessibilityFeaturesChanged, window._onAccessibilityFeaturesChangedZone);
+  _invoke(window.onAccessibilityFeaturesChanged,
+      window._onAccessibilityFeaturesChangedZone);
 }
 
 @pragma('vm:entry-point')
@@ -218,7 +230,8 @@ void _dispatchPlatformMessage(String name, ByteData? data, int responseId) {
 // ignore: unused_element
 void _dispatchPointerDataPacket(ByteData packet) {
   if (window.onPointerDataPacket != null)
-    _invoke1<PointerDataPacket>(window.onPointerDataPacket, window._onPointerDataPacketZone, _unpackPointerDataPacket(packet));
+    _invoke1<PointerDataPacket>(window.onPointerDataPacket,
+        window._onPointerDataPacketZone, _unpackPointerDataPacket(packet));
 }
 
 @pragma('vm:entry-point')
@@ -236,7 +249,8 @@ void _dispatchSemanticsAction(int id, int action, ByteData? args) {
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _beginFrame(int microseconds) {
-  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone, Duration(microseconds: microseconds));
+  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone,
+      Duration(microseconds: microseconds));
 }
 
 @pragma('vm:entry-point')
@@ -245,7 +259,8 @@ void _reportTimings(List<int> timings) {
   assert(timings.length % FramePhase.values.length == 0);
   final List<FrameTiming> frameTimings = <FrameTiming>[];
   for (int i = 0; i < timings.length; i += FramePhase.values.length) {
-    frameTimings.add(FrameTiming(timings.sublist(i, i + FramePhase.values.length)));
+    frameTimings
+        .add(FrameTiming(timings.sublist(i, i + FramePhase.values.length)));
   }
   _invoke1(window.onReportTimings, window._onReportTimingsZone, frameTimings);
 }
@@ -263,10 +278,9 @@ typedef _BinaryFunction(Null args, Null message);
 
 @pragma('vm:entry-point')
 // ignore: unused_element
-void _runMainZoned(Function startMainIsolateFunction,
-                   Function userMainFunction,
-                   List<String> args) {
-  startMainIsolateFunction((){
+void _runMainZoned(Function startMainIsolateFunction, Function userMainFunction,
+    List<String> args) {
+  startMainIsolateFunction(() {
     runZonedGuarded<void>(() {
       if (userMainFunction is _BinaryFunction) {
         // This seems to be undocumented but supported by the command line VM.
@@ -283,12 +297,12 @@ void _runMainZoned(Function startMainIsolateFunction,
   }, null);
 }
 
-void _reportUnhandledException(String error, String stackTrace) native 'PlatformConfiguration_reportUnhandledException';
+void _reportUnhandledException(String error, String stackTrace)
+    native 'PlatformConfiguration_reportUnhandledException';
 
 /// Invokes [callback] inside the given [zone].
 void _invoke(void callback()?, Zone zone) {
-  if (callback == null)
-    return;
+  if (callback == null) return;
 
   assert(zone != null); // ignore: unnecessary_null_comparison
 
@@ -301,8 +315,7 @@ void _invoke(void callback()?, Zone zone) {
 
 /// Invokes [callback] inside the given [zone] passing it [arg].
 void _invoke1<A>(void callback(A a)?, Zone zone, A arg) {
-  if (callback == null)
-    return;
+  if (callback == null) return;
 
   assert(zone != null); // ignore: unnecessary_null_comparison
 
@@ -314,9 +327,9 @@ void _invoke1<A>(void callback(A a)?, Zone zone, A arg) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
-void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3)?, Zone zone, A1 arg1, A2 arg2, A3 arg3) {
-  if (callback == null)
-    return;
+void _invoke3<A1, A2, A3>(
+    void callback(A1 a1, A2 a2, A3 a3)?, Zone zone, A1 arg1, A2 arg2, A3 arg3) {
+  if (callback == null) return;
 
   assert(zone != null); // ignore: unnecessary_null_comparison
 
@@ -345,36 +358,41 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   for (int i = 0; i < length; ++i) {
     int offset = i * _kPointerDataFieldCount;
     data.add(PointerData(
-      embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
-      change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      signalKind: PointerSignalKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      pointerIdentifier: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      physicalDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      physicalDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      buttons: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      obscured: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
-      synthesized: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
-      pressure: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      pressureMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      pressureMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      distance: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      distanceMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      size: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMajor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMinor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      platformData: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
-    ));
+        embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+        timeStamp: Duration(
+            microseconds:
+                packet.getInt64(kStride * offset++, _kFakeHostEndian)),
+        change: PointerChange
+            .values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+        kind: PointerDeviceKind
+            .values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+        signalKind: PointerSignalKind
+            .values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+        device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+        pointerIdentifier:
+            packet.getInt64(kStride * offset++, _kFakeHostEndian),
+        physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        physicalDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        physicalDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        buttons: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+        obscured: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
+        synthesized: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
+        pressure: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        pressureMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        pressureMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        distance: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        distanceMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        size: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        radiusMajor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        radiusMinor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        radiusMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        radiusMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        platformData: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+        scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian)));
     assert(offset == (i + 1) * _kPointerDataFieldCount);
   }
   return PointerDataPacket(data: data);

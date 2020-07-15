@@ -26,8 +26,8 @@
 
 namespace flutter {
 
-// An OS-windowing neutral abstration for flutter
-// view that works with win32 hwnds and Windows::UI::Composition visuals.
+// An OS-windowing neutral abstraction for a Flutter view that works
+// with win32 HWNDs and Windows::UI::Composition visuals.
 class FlutterWindowsView : public WindowBindingHandlerDelegate {
  public:
   FlutterWindowsView();
@@ -102,6 +102,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   // |WindowBindingHandlerDelegate|
   void OnFontChange() override;
 
+  // |WindowBindingHandlerDelegate|
+  void OnDisplayChange() override;
+
  private:
   // Struct holding the mouse state. The engine doesn't keep track of which
   // mouse buttons have been pressed, so it's the embedding's responsibility.
@@ -125,7 +128,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
 
   // Sends a screen metrics update to the Flutter engine using current screen
   // dimensions and location in physical coordinates.
-  void SendScreenMetrics() const;
+  void SendScreenMetrics(int64_t screen_id, PhysicalBounds bounds) const;
 
   // Reports a mouse movement to Flutter engine.
   void SendPointerMove(double x, double y);

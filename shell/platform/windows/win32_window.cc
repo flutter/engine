@@ -4,7 +4,8 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
-#include "shell/platform/windows/window_binding_handler.h"
+#include <assert.h>
+
 #include "win32_dpi_utils.h"
 
 namespace flutter {
@@ -13,6 +14,24 @@ namespace {
 char32_t CodePointFromSurrogatePair(wchar_t high, wchar_t low) {
   return 0x10000 + ((static_cast<char32_t>(high) & 0x000003FF) << 10) +
          (low & 0x3FF);
+}
+
+// Called by Windows when enumerating monitors.
+BOOL MonitorEnumerationCallback(
+  HMONITOR monitor_handle,
+  HDC monitor_hdc,
+  LPRECT monitor_rect,
+  LPARAM user_data
+) {
+  std::vector<PhysicalBounds>* bounds = (std::vector<PhysicalBounds>*)user_data;
+  assert(monitor_rect->right >= monitor_rect->left);
+  assert(monitor_rect->bottom >= monitor_rect->top);
+  bounds->push_back({
+    static_cast<int64_t>(monitor_rect->left),
+    static_cast<int64_t>(monitor_rect->top),
+    static_cast<size_t>(monitor_rect->right - monitor_rect->left),
+    static_cast<size_t>(monitor_rect->bottom - monitor_rect->top)});
+  return TRUE;
 }
 }  // namespace
 
@@ -283,7 +302,7 @@ Win32Window::MessageHandler(HWND hwnd,
   return DefWindowProc(window_handle_, message, wparam, lparam);
 }
 
-UINT GetCurrentDPI() {
+UINT Win32Window::GetCurrentDPI() {
   return current_dpi_;
 }
 
@@ -291,7 +310,7 @@ PhysicalBounds Win32Window::GetCurrentWindowBounds() {
   return window_bounds_;
 }
 
-PhysicalBounds Win32Window::GetCurrentScreenBounds() {
+std::vector<PhysicalBounds> Win32Window::GetCurrentScreenBounds() {
   return screen_bounds_;
 }
 
@@ -320,22 +339,17 @@ void Win32Window::HandleMove(UINT left, UINT top) {
   OnMove(left, top);
 }
 
-void Win32Window::HandleDpiChange(UINT dpi) {
+void Win32Window::HandleDpiChange() {
   current_dpi_ = GetDpiForHWND(window_handle_);
-  window->OnDpiScale(current_dpi_);
+  OnDpiScale(current_dpi_);
 }
 
-void HandleDisplayChange() {
-  HMONITOR monitor =
-      GetMonitorFromWindow(window_handle_, MONITOR_DEFAULTTONEAREST);
-  MONITORINFO info;
-  info.cbSize = sizeof(info);
-  if (GetMonitorInfo(monitor, &info)) {
-    screen_bounds_.left = info.rcMonitor.left;
-    screen_bounds_.top = info.rcMonitor.top;
-    screen_bounds_.width = info.rcMonitor.right - info.rcMonitor.left;
-    screen_bounds_.height = info.rcMonitor.bottom - info.rcMonitor.top;
+void Win32Window::HandleDisplayChange() {
+  std::vector<PhysicalBounds> new_bounds;
+  if (!EnumDisplayMonitors(NULL, NULL, MonitorEnumerationCallback, (LPARAM)&new_bounds)) {
+    return;
   }
+  screen_bounds_.swap(new_bounds);
 }
 
 Win32Window* Win32Window::GetThisFromHandle(HWND const window) noexcept {

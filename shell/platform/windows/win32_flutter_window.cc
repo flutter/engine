@@ -44,6 +44,9 @@ Win32FlutterWindow::Win32FlutterWindow(int left, int top, int width, int height)
   current_cursor_ = ::LoadCursor(nullptr, IDC_ARROW);
 }
 
+Win32FlutterWindow::Win32FlutterWindow(int width, int height)
+    : Win32FlutterWindow(CW_USEDEFAULT, CW_USEDEFAULT, width, height) {}
+
 Win32FlutterWindow::~Win32FlutterWindow() {}
 
 void Win32FlutterWindow::SetView(WindowBindingHandlerDelegate* window) {
@@ -62,7 +65,7 @@ PhysicalBounds Win32FlutterWindow::GetWindowBounds() {
   return GetCurrentWindowBounds();
 }
 
-PhysicalBounds Win32FlutterWindow::GetScreenBounds() {
+std::vector<PhysicalBounds> Win32FlutterWindow::GetScreenBounds() {
   return GetCurrentScreenBounds();
 }
 
@@ -97,7 +100,10 @@ void Win32FlutterWindow::OnDpiScale(unsigned int dpi){};
 // lets FlutterEngine know about the new size.
 void Win32FlutterWindow::OnResize(unsigned int width, unsigned int height) {
   if (binding_handler_delegate_ != nullptr) {
-    binding_handler_delegate_->OnWindowSizeChanged(width, height);
+    PhysicalBounds bounds = GetWindowBounds();
+    bounds.width = width;
+    bounds.height = height;
+    binding_handler_delegate_->OnWindowBoundsChanged(bounds);
   }
 }
 
@@ -105,7 +111,10 @@ void Win32FlutterWindow::OnResize(unsigned int width, unsigned int height) {
 // lets FlutterEngine know about the new location.
 void Win32FlutterWindow::OnMove(unsigned int left, unsigned int top) {
   if (binding_handler_delegate_ != nullptr) {
-    binding_handler_delegate_->OnWindowLocationChanged(left, top);
+    PhysicalBounds bounds = GetWindowBounds();
+    bounds.left = left;
+    bounds.top = top;
+    binding_handler_delegate_->OnWindowBoundsChanged(bounds);
   }
 }
 
@@ -159,6 +168,10 @@ void Win32FlutterWindow::OnScroll(double delta_x, double delta_y) {
 
 void Win32FlutterWindow::OnFontChange() {
   binding_handler_delegate_->OnFontChange();
+}
+
+void Win32FlutterWindow::OnDisplayChange() {
+  binding_handler_delegate_->OnDisplayChange();
 }
 
 }  // namespace flutter

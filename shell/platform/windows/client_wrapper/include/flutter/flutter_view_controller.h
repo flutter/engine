@@ -25,20 +25,20 @@ namespace flutter {
 // methods in the C API directly, as this class will do that internally.
 class FlutterViewController : public PluginRegistry {
  public:
-  // Creates a FlutterView that can be parented into a Windows View hierarchy
-  // either using HWNDs or in the future into a CoreWindow, or using compositor.
-  //
-  // |dart_project| will be used to configure the engine backing this view.
-  explicit FlutterViewController(int width,
-                                 int height,
-                                 const DartProject& project);
+   // Creates a FlutterView that can be parented into a Windows View hierarchy
+   // either using HWNDs or in the future into a CoreWindow, or using compositor.
+   //
+   // |dart_project| will be used to configure the engine backing this view.
+   FlutterViewController(int width,
+                         int height,
+                         const DartProject& project);
 
-  // DEPRECATED. Will be removed soon; use the version above.
-  explicit FlutterViewController(const std::string& icu_data_path,
-                                 int width,
-                                 int height,
-                                 const std::string& assets_path,
-                                 const std::vector<std::string>& arguments);
+   // DEPRECATED. Will be removed soon; use the version above.
+   FlutterViewController(const std::string& icu_data_path,
+                         int width,
+                         int height,
+                         const std::string& assets_path,
+                         const std::vector<std::string>& arguments);
 
   virtual ~FlutterViewController();
 

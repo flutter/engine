@@ -10,7 +10,9 @@
 
 #include <memory>
 #include <string>
-#include "shell/platform/windows/window_binding_handler.h"
+#include <vector>
+
+#include "flutter/shell/platform/windows/window_binding_handler.h"
 
 namespace flutter {
 
@@ -107,15 +109,20 @@ class Win32Window {
   // Called when mouse scrollwheel input occurs.
   virtual void OnScroll(double delta_x, double delta_y) = 0;
 
-  // Called when the system font change.
+  // Called when the system font changes.
   virtual void OnFontChange() = 0;
+
+  // Called when the displays (monitors) on the device change.
+  virtual void OnDisplayChange() = 0;
 
   // Gets the current DPI value for the window.
   UINT GetCurrentDPI();
 
+  // Gets the bounds of the window in physical pixels.
   PhysicalBounds GetCurrentWindowBounds();
 
-  PhysicalBounds GetCurrentScreenBounds();
+  // Gets the bounds of all attached screens in physical pixels.
+  std::vector<PhysicalBounds> GetCurrentScreenBounds();
 
  private:
   // Release OS resources asociated with window.
@@ -138,9 +145,9 @@ class Win32Window {
 
   // Retrieves a class instance pointer for |window|
   static Win32Window* GetThisFromHandle(HWND const window) noexcept;
-
+  UINT current_dpi_ = 0;
   PhysicalBounds window_bounds_;
-  PhysicalBounds screen_bounds_;
+  std::vector<PhysicalBounds> screen_bounds_;
 
   // WM_DPICHANGED_BEFOREPARENT defined in more recent Windows
   // SDK

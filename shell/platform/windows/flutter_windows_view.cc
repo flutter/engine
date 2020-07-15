@@ -1,7 +1,6 @@
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 #include <chrono>
-#include "shell/platform/windows/window_binding_handler.h"
 
 namespace flutter {
 
@@ -165,6 +164,16 @@ void FlutterWindowsView::OnFontChange() {
   FlutterEngineReloadSystemFonts(engine_);
 }
 
+void FlutterWindowsView::OnDisplayChange() {
+  if (engine_ == nullptr) {
+    return;
+  }
+  std::vector<PhysicalBounds> screen_bounds = binding_handler_->GetScreenBounds();
+  for (int64_t i = 0; i < screen_bounds.size() ; ++i) {
+    SendScreenMetrics(i, screen_bounds[i]);
+  }
+}
+
 // Sends new window size information to FlutterEngine.
 void FlutterWindowsView::SendWindowMetrics() const {
   if (engine_ == nullptr) {
@@ -185,16 +194,14 @@ void FlutterWindowsView::SendWindowMetrics() const {
 }
 
 // Sends new screen size information to FlutterEngine.
-void FlutterWindowsView::SendScreenMetrics() const {
+void FlutterWindowsView::SendScreenMetrics(int64_t screen_id, PhysicalBounds bounds) const {
   if (engine_ == nullptr) {
     return;
   }
 
-  PhysicalBounds bounds = binding_handler_->GetScreenBounds();
-
   FlutterScreenMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  event.screen_id = 0;
+  event.screen_id = screen_id;
   event.left = bounds.left;
   event.top = bounds.top;
   event.width = bounds.width;

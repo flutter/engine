@@ -18,14 +18,17 @@
 
 namespace flutter {
 
-// A win32 flutter child window used as implementatin for flutter view.  In the
-// future, there will likely be a CoreWindow-based FlutterWindow as well.  At
-// that point it may make sense to dependency inject the native window rather
-// than inherit.
+// A win32 flutter child window which is used as the implementation for flutter
+// view.  In the future, there will likely be a CoreWindow-based FlutterWindow
+// as well.  At that point it may make sense to dependency inject the native
+// window rather than inherit.
 class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
  public:
-  // Create flutter Window for use as child window
+  // Create a Flutter Window at a specified location.
   Win32FlutterWindow(int left, int top, int width, int height);
+
+  // Create a Flutter Window of a particular size for use as child window.
+  Win32FlutterWindow(int width, int height);
 
   virtual ~Win32FlutterWindow();
 
@@ -65,6 +68,9 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
   // |Win32Window|
   void OnFontChange() override;
 
+  // |Win32Window|
+  void OnDisplayChange() override;
+
   // |FlutterWindowBindingHandler|
   void SetView(WindowBindingHandlerDelegate* view) override;
 
@@ -78,7 +84,7 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
   PhysicalBounds GetWindowBounds() override;
 
   // |FlutterWindowBindingHandler|
-  PhysicalBounds GetScreenBounds() override;
+  std::vector<PhysicalBounds> GetScreenBounds() override;
 
   // |FlutterWindowBindingHandler|
   void UpdateFlutterCursor(const std::string& cursor_name) override;

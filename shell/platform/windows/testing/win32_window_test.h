@@ -58,6 +58,9 @@ class Win32WindowTest : public Win32Window {
 
   // |Win32Window|
   void OnFontChange() override;
+
+  // |Win32Window|
+  void OnDisplayChange() override;
 };
 
 }  // namespace testing
