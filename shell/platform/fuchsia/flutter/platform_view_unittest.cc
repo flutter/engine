@@ -103,18 +103,7 @@ class MockSurfaceProducer
     : public flutter::SceneUpdateContext::SurfaceProducer {
  public:
   std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-  ProduceSurface(const SkISize& size,
-                 const flutter::LayerRasterCacheKey& layer_key,
-                 std::unique_ptr<scenic::EntityNode> entity_node) override {
-    return nullptr;
-  }
-
-  bool HasRetainedNode(const flutter::LayerRasterCacheKey& key) const override {
-    return false;
-  }
-
-  scenic::EntityNode* GetRetainedNode(
-      const flutter::LayerRasterCacheKey& key) override {
+  ProduceSurface(const SkISize& size) override {
     return nullptr;
   }
 

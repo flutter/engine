@@ -260,15 +260,10 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
 }
 
 std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-VulkanSurfaceProducer::ProduceSurface(
-    const SkISize& size,
-    const flutter::LayerRasterCacheKey& layer_key,
-    std::unique_ptr<scenic::EntityNode> entity_node) {
+VulkanSurfaceProducer::ProduceSurface(const SkISize& size) {
   FML_DCHECK(valid_);
   last_produce_time_ = async::Now(async_get_default_dispatcher());
-  auto surface = surface_pool_->AcquireSurface(size);
-  surface->SetRetainedInfo(layer_key, std::move(entity_node));
-  return surface;
+  return surface_pool_->AcquireSurface(size);
 }
 
 void VulkanSurfaceProducer::SubmitSurface(

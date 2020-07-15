@@ -119,41 +119,6 @@ class VulkanSurface final
   // if the swap was not successful.
   bool BindToImage(sk_sp<GrDirectContext> context, VulkanImage vulkan_image);
 
-  // Flutter may retain a |VulkanSurface| for a |flutter::Layer| subtree to
-  // improve the performance. The |retained_key_| identifies which layer subtree
-  // this |VulkanSurface| is retained for. The key has two parts. One is the
-  // pointer to the root of that layer subtree: |retained_key_.id()|. Another is
-  // the transformation matrix: |retained_key_.matrix()|. We need the matrix
-  // part because a different matrix would invalidate the pixels (raster cache)
-  // in this |VulkanSurface|.
-  const flutter::LayerRasterCacheKey& GetRetainedKey() const {
-    return retained_key_;
-  }
-
-  // For better safety in retained rendering, Flutter uses a retained
-  // |EntityNode| associated with the retained surface instead of using the
-  // retained surface directly. Hence Flutter can't modify the surface during
-  // retained rendering. However, the node itself is modifiable to be able
-  // to adjust its position.
-  scenic::EntityNode* GetRetainedNode() {
-    used_in_retained_rendering_ = true;
-    return retained_node_.get();
-  }
-
-  // Check whether the retained surface (and its associated |EntityNode|) is
-  // used in the current frame or not. If unused, the |VulkanSurfacePool| will
-  // try to recycle the surface. This flag is reset after each frame.
-  bool IsUsedInRetainedRendering() const { return used_in_retained_rendering_; }
-  void ResetIsUsedInRetainedRendering() { used_in_retained_rendering_ = false; }
-
-  // Let this surface own the retained EntityNode associated with it (see
-  // |GetRetainedNode|), and set the retained key (see |GetRetainedKey|).
-  void SetRetainedInfo(const flutter::LayerRasterCacheKey& key,
-                       std::unique_ptr<scenic::EntityNode> node) {
-    retained_key_ = key;
-    retained_node_ = std::move(node);
-  }
-
  private:
   static constexpr int kSizeHistorySize = 4;
 
@@ -201,11 +166,6 @@ class VulkanSurface final
   int size_history_index_ = 0;
   size_t age_ = 0;
   bool valid_ = false;
-
-  flutter::LayerRasterCacheKey retained_key_ = {0, SkMatrix::Scale(1, 1)};
-  std::unique_ptr<scenic::EntityNode> retained_node_ = nullptr;
-
-  std::atomic<bool> used_in_retained_rendering_ = {false};
 
   FML_DISALLOW_COPY_AND_ASSIGN(VulkanSurface);
 };

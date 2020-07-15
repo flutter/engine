@@ -12,7 +12,6 @@
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/raster_cache_key.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -59,19 +58,8 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
    public:
     virtual ~SurfaceProducer() = default;
 
-    // The produced surface owns the entity_node and has a layer_key for
-    // retained rendering. The surface will only be retained if the layer_key
-    // has a non-null layer pointer (layer_key.id()).
     virtual std::unique_ptr<SurfaceProducerSurface> ProduceSurface(
-        const SkISize& size,
-        const LayerRasterCacheKey& layer_key,
-        std::unique_ptr<scenic::EntityNode> entity_node) = 0;
-
-    // Query a retained entity node (owned by a retained surface) for retained
-    // rendering.
-    virtual bool HasRetainedNode(const LayerRasterCacheKey& key) const = 0;
-    virtual scenic::EntityNode* GetRetainedNode(
-        const LayerRasterCacheKey& key) = 0;
+        const SkISize& size) = 0;
 
     virtual void SubmitSurface(
         std::unique_ptr<SurfaceProducerSurface> surface) = 0;
@@ -117,8 +105,7 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
           SkColor color,
           SkAlpha opacity,
           std::string label,
-          float z_translation = 0.0f,
-          Layer* layer = nullptr);
+          float z_translation = 0.0f);
     virtual ~Frame();
 
     scenic::ContainerNode& embedder_node() override { return opacity_node_; }
@@ -133,7 +120,6 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     scenic::OpacityNodeHACK opacity_node_;
     std::vector<Layer*> paint_layers_;
     SkRect paint_bounds_;
-    Layer* layer_;
   };
 
   class Clip : public Entity {
@@ -182,13 +168,6 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   // The transformation matrix of the current context. It's used to construct
   // the LayerRasterCacheKey for a given layer.
   SkMatrix Matrix() const { return SkMatrix::MakeScale(ScaleX(), ScaleY()); }
-
-  bool HasRetainedNode(const LayerRasterCacheKey& key) const {
-    return surface_producer_->HasRetainedNode(key);
-  }
-  scenic::EntityNode* GetRetainedNode(const LayerRasterCacheKey& key) {
-    return surface_producer_->GetRetainedNode(key);
-  }
 
   // The cumulative alpha value based on all the parent OpacityLayers.
   void set_alphaf(float alpha) { alpha_ = alpha; }
@@ -261,17 +240,14 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
                    SkColor color,
                    SkAlpha opacity,
                    const SkRect& paint_bounds,
-                   std::vector<Layer*> paint_layers,
-                   Layer* layer);
+                   std::vector<Layer*> paint_layers);
   void SetMaterialTextureAndColor(scenic::Material& material,
                                   SkColor color,
                                   SkAlpha opacity,
                                   SkScalar scale_x,
                                   SkScalar scale_y,
                                   const SkRect& paint_bounds,
-                                  std::vector<Layer*> paint_layers,
-                                  Layer* layer,
-                                  scenic::EntityNode entity_node);
+                                  std::vector<Layer*> paint_layers);
   void SetMaterialColor(scenic::Material& material,
                         SkColor color,
                         SkAlpha opacity);
@@ -279,9 +255,7 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
                                        SkScalar scale_x,
                                        SkScalar scale_y,
                                        const SkRect& paint_bounds,
-                                       std::vector<Layer*> paint_layers,
-                                       Layer* layer,
-                                       scenic::EntityNode entity_node);
+                                       std::vector<Layer*> paint_layers);
 
   Entity* top_entity_ = nullptr;
   float top_scale_x_ = 1.f;

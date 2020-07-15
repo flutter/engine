@@ -75,29 +75,11 @@ void Layer::UpdateScene(SceneUpdateContext& context) {
         global_scenic_elevation - context.scenic_elevation();
     float z_translation = -local_scenic_elevation;
 
-    // Retained rendering: speedup by reusing a retained entity node if
-    // possible. When an entity node is reused, no paint layer is added to the
-    // frame so we won't call PhysicalShapeLayer::Paint.
-    LayerRasterCacheKey key(unique_id(), context.Matrix());
-    if (context.HasRetainedNode(key)) {
-      TRACE_EVENT_INSTANT0("flutter", "retained layer cache hit");
-      scenic::EntityNode* retained_node = context.GetRetainedNode(key);
-      FML_DCHECK(context.top_entity());
-      FML_DCHECK(retained_node->session() == context.session());
-
-      // Re-adjust the elevation.
-      retained_node->SetTranslation(0.f, 0.f, z_translation);
-
-      context.top_entity()->entity_node().AddChild(*retained_node);
-      return;
-    }
-
-    TRACE_EVENT_INSTANT0("flutter", "cache miss, creating");
     // If we can't find an existing retained surface, create one.
     SceneUpdateContext::Frame frame(
         context, SkRRect::MakeRect(paint_bounds()), SK_ColorTRANSPARENT,
         SkScalarRoundToInt(context.alphaf() * 255),
-        "flutter::PhysicalShapeLayer", z_translation, this);
+        "flutter::PhysicalShapeLayer", z_translation);
 
     frame.AddPaintLayer(this);
   }
