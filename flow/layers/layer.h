@@ -63,7 +63,6 @@ struct PrerollContext {
 
   // These allow us to track properties like elevation, opacity, and the
   // prescence of a platform view during Preroll.
-  float total_elevation = 0.0f;
   bool has_platform_view = false;
   bool is_opaque = true;
 #if defined(LEGACY_FUCHSIA_EMBEDDER)

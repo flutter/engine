@@ -50,7 +50,6 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             false,  /* checkerboard_offscreen_layers */
             100.0f, /* frame_physical_depth */
             1.0f,   /* frame_device_pixel_ratio */
-            0.0f,   /* total_elevation */
             false,  /* has_platform_view */
         }),
         paint_context_({
