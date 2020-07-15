@@ -128,7 +128,7 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   SemanticsObject* object = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
 
 
-  // Handle initial setting of node with header
+  // Handle initial setting of node with header.
   flutter::SemanticsNode node;
   node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsHeader);
   node.label = "foo";
@@ -150,7 +150,7 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   SemanticsObject* object = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
 
 
-  // Handle initial setting of node with header
+  // Handle initial setting of node with hidden.
   flutter::SemanticsNode node;
   node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden);
   node.label = "foo";
