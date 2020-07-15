@@ -86,7 +86,7 @@ public class FlutterEnginePluginRegistryTest {
     registry.add(fakePlugin);
     registry.attachToActivity(activity, lifecycle);
 
-    // The binding is now available via `fakePlugin.binding`: Creat and add the listeners
+    // The binding is now available via `fakePlugin.binding`: Create and add the listeners
     FakeActivityResultListener listener1 =
         new FakeActivityResultListener(isFirstCall, fakePlugin.binding);
     FakeActivityResultListener listener2 =
@@ -100,6 +100,12 @@ public class FlutterEnginePluginRegistryTest {
 
     assertEquals(1, listener1.callCount);
     assertEquals(1, listener2.callCount);
+
+    // fire it again to check if the first called listener was removed
+    registry.onActivityResult(0, 0, intent);
+
+    // The order of the listeners in the HashSet is random: So just check the sum of calls
+    assertEquals(3, listener1.callCount + listener2.callCount);
   }
 
   private static class FakeFlutterPlugin implements FlutterPlugin {
