@@ -41,7 +41,7 @@ void main() async {
     builder.addPicture(Offset.zero, circles1);
 
     builder.pushClipRect(
-      const Rect.fromLTRB(60, 10, 300, 300),
+      const Rect.fromLTRB(50, 0, 300, 300),
     );
     builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
       oldLayer: null);
