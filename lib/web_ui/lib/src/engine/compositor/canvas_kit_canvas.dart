@@ -426,7 +426,7 @@ class CanvasKitCanvas implements ui.Canvas {
       throw ArgumentError(
           'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
-    _drawAtlas(paint, atlas, rstTransforms, rects, _encodeRawColorList(colors),
+    _drawAtlas(paint, atlas, rstTransforms, rects, encodeRawColorList(colors),
         blendMode);
   }
 
@@ -436,7 +436,7 @@ class CanvasKitCanvas implements ui.Canvas {
     ui.Image atlas,
     Float32List rstTransforms,
     Float32List rects,
-    js.JsArray<Float32List>? colors,
+    List<Float32List>? colors,
     ui.BlendMode blendMode,
   ) {
     _canvas!.drawAtlasRaw(paint as CkPaint, atlas, rstTransforms, rects, colors, blendMode);

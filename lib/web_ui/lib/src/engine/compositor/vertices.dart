@@ -5,15 +5,6 @@
 
 part of engine;
 
-js.JsArray<Float32List> _encodeRawColorList(Int32List rawColors) {
-  final int colorCount = rawColors.length;
-  final List<ui.Color> colors = <ui.Color>[];
-  for (int i = 0; i < colorCount; ++i) {
-    colors.add(ui.Color(rawColors[i]));
-  }
-  return makeColorList(colors);
-}
-
 class CkVertices implements ui.Vertices {
   late SkVertices skVertices;
 
@@ -40,7 +31,7 @@ class CkVertices implements ui.Vertices {
       toSkVertexMode(mode),
       toSkPoints2d(positions),
       textureCoordinates != null ? toSkPoints2d(textureCoordinates) : null,
-      colors != null ? toSkIntColorList(colors) : null,
+      colors != null ? toSkFloatColorList(colors) : null,
       indices != null ? toUint16List(indices) : null,
     );
   }
@@ -68,7 +59,7 @@ class CkVertices implements ui.Vertices {
       toSkVertexMode(mode),
       rawPointsToSkPoints2d(positions),
       textureCoordinates != null ? rawPointsToSkPoints2d(textureCoordinates) : null,
-      colors != null ? Uint32List.view(colors.buffer) : null,
+      colors != null ? encodeRawColorList(colors) : null,
       indices,
     );
   }

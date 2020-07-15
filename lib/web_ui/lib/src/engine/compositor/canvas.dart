@@ -65,7 +65,7 @@ class CkCanvas {
     ui.Image atlas,
     Float32List rstTransforms,
     Float32List rects,
-    js.JsArray<Float32List>? colors,
+    List<Float32List>? colors,
     ui.BlendMode blendMode,
   ) {
     final CkImage skAtlas = atlas as CkImage;

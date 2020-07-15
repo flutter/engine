@@ -197,9 +197,8 @@ class CanvasKit {
     SkVertexMode mode,
     List<Float32List> positions,
     List<Float32List>? textureCoordinates,
-    // If colors are passed as Uint32Array CanvasKit uses it as is, with no
-    // extra preprocessing.
-    Uint32List? colors,
+    // TODO(yjbanov): make this Uint32Array when CanvasKit supports it.
+    List<Float32List>? colors,
     Uint16List? indices,
   );
   external SkParagraphBuilderNamespace get ParagraphBuilder;
@@ -401,8 +400,8 @@ final List<SkVertexMode> _skVertexModes = <SkVertexMode>[
   canvasKitJs.VertexMode.TriangleFan,
 ];
 
-SkVertexMode toSkVertexMode(ui.VertexMode clipOp) {
-  return _skVertexModes[clipOp.index];
+SkVertexMode toSkVertexMode(ui.VertexMode mode) {
+  return _skVertexModes[mode.index];
 }
 
 @JS()
@@ -423,8 +422,8 @@ final List<SkPointMode> _skPointModes = <SkPointMode>[
   canvasKitJs.PointMode.Polygon,
 ];
 
-SkPointMode toSkPointMode(ui.PointMode clipOp) {
-  return _skPointModes[clipOp.index];
+SkPointMode toSkPointMode(ui.PointMode mode) {
+  return _skPointModes[mode.index];
 }
 
 @JS()
@@ -513,8 +512,8 @@ final List<SkBlurStyle> _skBlurStyles = <SkBlurStyle>[
   canvasKitJs.BlurStyle.Inner,
 ];
 
-SkBlurStyle toSkBlurStyle(ui.BlurStyle strokeCap) {
-  return _skBlurStyles[strokeCap.index];
+SkBlurStyle toSkBlurStyle(ui.BlurStyle style) {
+  return _skBlurStyles[style.index];
 }
 
 @JS()
@@ -699,8 +698,8 @@ final List<SkTileMode> _skTileModes = <SkTileMode>[
   canvasKitJs.TileMode.Mirror,
 ];
 
-SkTileMode toSkTileMode(ui.TileMode filterQuality) {
-  return _skTileModes[filterQuality.index];
+SkTileMode toSkTileMode(ui.TileMode mode) {
+  return _skTileModes[mode.index];
 }
 
 @JS()
@@ -983,6 +982,30 @@ Uint32List toSkIntColorList(List<ui.Color> colors) {
   return result;
 }
 
+List<Float32List> toSkFloatColorList(List<ui.Color> colors) {
+  final int len = colors.length;
+  final List<Float32List> result = <Float32List>[];
+  for (int i = 0; i < len; i++) {
+    final Float32List array = Float32List(4);
+    final ui.Color color = colors[i];
+    array[0] = color.red / 255.0;
+    array[1] = color.green / 255.0;
+    array[2] = color.blue / 255.0;
+    array[3] = color.alpha / 255.0;
+    result.add(array);
+  }
+  return result;
+}
+
+List<Float32List> encodeRawColorList(Int32List rawColors) {
+  final int colorCount = rawColors.length;
+  final List<ui.Color> colors = <ui.Color>[];
+  for (int i = 0; i < colorCount; ++i) {
+    colors.add(ui.Color(rawColors[i]));
+  }
+  return makeColorList(colors);
+}
+
 @JS('window.flutter_canvas_kit.SkPath')
 class SkPath {
   external SkPath([SkPath? other]);
@@ -1240,7 +1263,7 @@ SkFloat32List toMallocedSkPoints(List<ui.Offset> points) {
 //                as Float32List without a conversion.
 List<Float32List> rawPointsToSkPoints2d(Float32List points) {
   assert(points.length % 2 == 0);
-  var pointLength = points.length ~/ 2;
+  final int pointLength = points.length ~/ 2;
   final List<Float32List> result = <Float32List>[];
   for (var i = 0; i < pointLength; i++) {
     var x = i * 2;
@@ -1254,8 +1277,7 @@ List<Float32List> rawPointsToSkPoints2d(Float32List points) {
 }
 
 List<Float32List> toSkPoints2d(List<ui.Offset> offsets) {
-  assert(offsets.length % 2 == 0);
-  var len = offsets.length;
+  final int len = offsets.length;
   final List<Float32List> result = <Float32List>[];
   for (var i = 0; i < len; i++) {
     final ui.Offset offset = offsets[i];
