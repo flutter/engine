@@ -121,12 +121,10 @@ public class FlutterEnginePluginRegistryTest {
     public ActivityPluginBinding binding;
 
     @Override
-    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-    }
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {}
 
     @Override
-    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-    }
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {}
 
     @Override
     public void onAttachedToActivity(final ActivityPluginBinding binding) {
@@ -134,18 +132,13 @@ public class FlutterEnginePluginRegistryTest {
     }
 
     @Override
-    public void onDetachedFromActivityForConfigChanges() {
-
-    }
+    public void onDetachedFromActivityForConfigChanges() {}
 
     @Override
-    public void onReattachedToActivityForConfigChanges(final ActivityPluginBinding binding) {
-    }
+    public void onReattachedToActivityForConfigChanges(final ActivityPluginBinding binding) {}
 
     @Override
-    public void onDetachedFromActivity() {
-
-    }
+    public void onDetachedFromActivity() {}
   }
 
   private static class FakeActivityResultListener implements PluginRegistry.ActivityResultListener {
@@ -159,9 +152,10 @@ public class FlutterEnginePluginRegistryTest {
     }
 
     @Override
-    public boolean onActivityResult(final int requestCode, final int resultCode, final Intent data) {
+    public boolean onActivityResult(
+        final int requestCode, final int resultCode, final Intent data) {
       callCount++;
-      if(isFirstCall.get()) {
+      if (isFirstCall.get()) {
         isFirstCall.set(false);
         binding.removeActivityResultListener(this);
       }
