@@ -268,20 +268,8 @@ class MockSurfaceProducer : public SceneUpdateContext::SurfaceProducer {
  public:
   MockSurfaceProducer(scenic::Session* session) : session_(session) {}
   std::unique_ptr<SceneUpdateContext::SurfaceProducerSurface> ProduceSurface(
-      const SkISize& size,
-      const LayerRasterCacheKey& layer_key,
-      std::unique_ptr<scenic::EntityNode> entity_node) override {
+      const SkISize& size) override {
     return std::make_unique<MockSurfaceProducerSurface>(session_, size);
-  }
-
-  // Query a retained entity node (owned by a retained surface) for retained
-  // rendering.
-  bool HasRetainedNode(const LayerRasterCacheKey& key) const override {
-    return false;
-  }
-
-  scenic::EntityNode* GetRetainedNode(const LayerRasterCacheKey& key) override {
-    return nullptr;
   }
 
   void SubmitSurface(std::unique_ptr<SceneUpdateContext::SurfaceProducerSurface>

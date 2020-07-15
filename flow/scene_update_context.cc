@@ -64,8 +64,7 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
                                      SkColor color,
                                      SkAlpha opacity,
                                      const SkRect& paint_bounds,
-                                     std::vector<Layer*> paint_layers,
-                                     Layer* layer) {
+                                     std::vector<Layer*> paint_layers) {
   FML_DCHECK(!rrect.isEmpty());
 
   // Frames always clip their children.
@@ -102,8 +101,7 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
 
     // Apply a texture to the whole shape.
     SetMaterialTextureAndColor(material, color, opacity, scale_x, scale_y,
-                               shape_bounds, std::move(paint_layers), layer,
-                               std::move(entity_node));
+                               shape_bounds, std::move(paint_layers));
   }
 }
 
@@ -114,12 +112,9 @@ void SceneUpdateContext::SetMaterialTextureAndColor(
     SkScalar scale_x,
     SkScalar scale_y,
     const SkRect& paint_bounds,
-    std::vector<Layer*> paint_layers,
-    Layer* layer,
-    scenic::EntityNode entity_node) {
+    std::vector<Layer*> paint_layers) {
   scenic::Image* image = GenerateImageIfNeeded(
-      color, scale_x, scale_y, paint_bounds, std::move(paint_layers), layer,
-      std::move(entity_node));
+      color, scale_x, scale_y, paint_bounds, std::move(paint_layers));
 
   if (image != nullptr) {
     // The final shape's color is material_color * texture_color.  The passed in
@@ -148,9 +143,7 @@ scenic::Image* SceneUpdateContext::GenerateImageIfNeeded(
     SkScalar scale_x,
     SkScalar scale_y,
     const SkRect& paint_bounds,
-    std::vector<Layer*> paint_layers,
-    Layer* layer,
-    scenic::EntityNode entity_node) {
+    std::vector<Layer*> paint_layers) {
   // Bail if there's nothing to paint.
   if (paint_layers.empty())
     return nullptr;
@@ -163,12 +156,7 @@ scenic::Image* SceneUpdateContext::GenerateImageIfNeeded(
 
   // Acquire a surface from the surface producer and register the paint tasks.
   std::unique_ptr<SurfaceProducerSurface> surface =
-      surface_producer_->ProduceSurface(
-          physical_size,
-          LayerRasterCacheKey(
-              // Root frame has a nullptr layer
-              layer ? layer->unique_id() : 0, Matrix()),
-          std::make_unique<scenic::EntityNode>(std::move(entity_node)));
+      surface_producer_->ProduceSurface(physical_size);
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not acquire a surface from the surface producer "
@@ -330,15 +318,13 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
                                  SkColor color,
                                  SkAlpha opacity,
                                  std::string label,
-                                 float z_translation,
-                                 Layer* layer)
+                                 float z_translation)
     : Entity(context),
       rrect_(rrect),
       color_(color),
       opacity_(opacity),
       opacity_node_(context.session()),
-      paint_bounds_(SkRect::MakeEmpty()),
-      layer_(layer) {
+      paint_bounds_(SkRect::MakeEmpty()) {
   entity_node().SetLabel(label);
   entity_node().SetTranslation(0.f, 0.f, z_translation);
   entity_node().AddChild(opacity_node_);
@@ -363,7 +349,7 @@ SceneUpdateContext::Frame::~Frame() {
 
   // Add a part which represents the frame's geometry for clipping purposes
   context().CreateFrame(std::move(entity_node()), rrect_, color_, opacity_,
-                        paint_bounds_, std::move(paint_layers_), layer_);
+                        paint_bounds_, std::move(paint_layers_));
 }
 
 void SceneUpdateContext::Frame::AddPaintLayer(Layer* layer) {

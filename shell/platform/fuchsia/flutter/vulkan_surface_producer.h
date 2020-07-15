@@ -34,25 +34,12 @@ class VulkanSurfaceProducer final
 
   // |flutter::SceneUpdateContext::SurfaceProducer|
   std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-  ProduceSurface(const SkISize& size,
-                 const flutter::LayerRasterCacheKey& layer_key,
-                 std::unique_ptr<scenic::EntityNode> entity_node) override;
+  ProduceSurface(const SkISize& size) override;
 
   // |flutter::SceneUpdateContext::SurfaceProducer|
   void SubmitSurface(
       std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
           surface) override;
-
-  // |flutter::SceneUpdateContext::HasRetainedNode|
-  bool HasRetainedNode(const flutter::LayerRasterCacheKey& key) const override {
-    return surface_pool_->HasRetainedNode(key);
-  }
-
-  // |flutter::SceneUpdateContext::GetRetainedNode|
-  scenic::EntityNode* GetRetainedNode(
-      const flutter::LayerRasterCacheKey& key) override {
-    return surface_pool_->GetRetainedNode(key);
-  }
 
   void OnSurfacesPresented(
       std::vector<
