@@ -536,11 +536,22 @@ deps = {
      'condition': 'host_os == "mac"',
      'dep_type': 'cipd',
    },
+   # TODO(fxb/XXXXX): Remove package "fuchsia/sdk/core/linux-amd64" when fully migrated to the Fuchsia GN SDK
    'src/fuchsia/sdk/linux': {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
         'version': '7jcmd8Au93f9sibJzedXLf4finUCiWXCaEcGpsx8rLQC'
+       }
+     ],
+     'condition': 'host_os == "linux"',
+     'dep_type': 'cipd',
+   },
+   'src/fuchsia/gn-sdk/linux': {
+     'packages': [
+       {
+        'package': 'fuchsia/sdk/gn/linux-amd64',
+        'version': 'hBCchTDrQ7eCbajM2se4hugU1ynpyAI_bTcnz1f9aKYC'
        }
      ],
      'condition': 'host_os == "linux"',
