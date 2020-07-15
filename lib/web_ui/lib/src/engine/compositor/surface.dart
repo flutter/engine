@@ -125,6 +125,10 @@ class Surface {
       // anti-aliased by setting their `Paint` object's `antialias` property.
       js.JsObject.jsify({'antialias': 0}),
     ]);
+    if (glContext == 0) {
+      throw CanvasKitError('Could not create a WebGL context.');
+    }
+
     _grContext =
         canvasKit.callMethod('MakeGrContext', <dynamic>[glContext]);
 
