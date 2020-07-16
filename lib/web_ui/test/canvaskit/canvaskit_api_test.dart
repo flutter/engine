@@ -10,6 +10,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import 'common.dart';
+
 void main() {
   group('CanvasKit API', () {
     setUpAll(() async {
@@ -51,11 +53,8 @@ void main() {
     group('SkCanvas', () {
       _canvasTests();
     });
-  },
-      // This test failed on iOS Safari.
-      // TODO: https://github.com/flutter/flutter/issues/60040
-      skip: (browserEngine == BrowserEngine.webkit &&
-          operatingSystem == OperatingSystem.iOs));
+  // TODO: https://github.com/flutter/flutter/issues/60040
+  }, skip: isIosSafari);
 }
 
 void _blendModeTests() {

@@ -158,7 +158,7 @@ class CkCanvas {
 
   void drawParagraph(CkParagraph paragraph, ui.Offset offset) {
     skCanvas.drawParagraph(
-      _jsObjectWrapper.unwrapSkParagraph(paragraph.legacySkiaObject!),
+      _jsObjectWrapper.unwrapSkParagraph(paragraph.legacySkiaObject),
       offset.dx,
       offset.dy,
     );
