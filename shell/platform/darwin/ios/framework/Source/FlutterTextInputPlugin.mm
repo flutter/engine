@@ -214,14 +214,6 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   return autofill == nil ? nil : autofill[@"uniqueIdentifier"];
 }
 
-// Read a signed integer from state into an unsigned integer. This is needed for
-// NSRange locations, which are unsigned integers, but are read in from signed
-// integers in state. These are -1 when there is no selection specified, but
-// they should be interpreted as 0 instead of overflowing.
-static NSUInteger readInt(NSInteger value) {
-  return value < 0 ? 0 : value;
-}
-
 #pragma mark - FlutterTextPosition
 
 @implementation FlutterTextPosition
@@ -342,8 +334,8 @@ static NSUInteger readInt(NSInteger value) {
     [self.text setString:newText];
   }
   BOOL needsEditingStateUpdate = textChanged;
-  NSUInteger composingBase = readInt([state[@"composingBase"] intValue]);
-  NSUInteger composingExtent = readInt([state[@"composingExtent"] intValue]);
+  NSInteger composingBase = [state[@"composingBase"] intValue];
+  NSInteger composingExtent = [state[@"composingExtent"] intValue];
   NSRange composingRange = [self clampSelection:NSMakeRange(MIN(composingBase, composingExtent),
                                                             ABS(composingBase - composingExtent))
                                         forText:self.text];
@@ -355,8 +347,8 @@ static NSUInteger readInt(NSInteger value) {
           : [newMarkedRange isEqualTo:(FlutterTextRange*)self.markedTextRange];
   self.markedTextRange = newMarkedRange;
 
-  NSUInteger selectionBase = readInt([state[@"selectionBase"] intValue]);
-  NSUInteger selectionExtent = readInt([state[@"selectionExtent"] intValue]);
+  NSInteger selectionBase = [state[@"selectionBase"] intValue];
+  NSInteger selectionExtent = [state[@"selectionExtent"] intValue];
   NSRange selectedRange = [self clampSelection:NSMakeRange(MIN(selectionBase, selectionExtent),
                                                            ABS(selectionBase - selectionExtent))
                                        forText:self.text];
@@ -435,6 +427,13 @@ static NSUInteger readInt(NSInteger value) {
     }
     [oldSelectedRange release];
   }
+}
+
+// Clear the selected text range, without notifying the framework.
+- (void)removeSelectedTextRangeLocal {
+  UITextRange* oldSelectedRange = _selectedTextRange;
+  _selectedTextRange = nil;
+  [oldSelectedRange release];
 }
 
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
