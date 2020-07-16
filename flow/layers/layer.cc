@@ -58,6 +58,9 @@ Layer::AutoPrerollSaveLayerState::~AutoPrerollSaveLayerState() {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
 
 void Layer::CheckForChildLayerBelow(PrerollContext* context) {
+  // If there is embedded Fuchsia content in the scene (a ChildSceneLayer),
+  // PhysicalShapeLayers that appear above the embedded content will be turned
+  // into their own Scenic layers.
   child_layer_exists_below_ = context->child_scene_layer_exists_below;
   if (child_layer_exists_below_) {
     set_needs_system_composite(true);
@@ -65,24 +68,14 @@ void Layer::CheckForChildLayerBelow(PrerollContext* context) {
 }
 
 void Layer::UpdateScene(SceneUpdateContext& context) {
-  // If there is embedded Fuchsia content in the scene (a ChildSceneLayer),
-  // PhysicalShapeLayers that appear above the embedded content will be turned
-  // into their own Scenic layers.
-  if (child_layer_exists_below_) {
-    float global_scenic_elevation =
-        context.GetGlobalElevationForNextScenicLayer();
-    float local_scenic_elevation =
-        global_scenic_elevation - context.scenic_elevation();
-    float z_translation = -local_scenic_elevation;
+  FML_DCHECK(needs_system_composite());
+  FML_DCHECK(child_layer_exists_below_);
 
-    // If we can't find an existing retained surface, create one.
-    SceneUpdateContext::Frame frame(
-        context, SkRRect::MakeRect(paint_bounds()), SK_ColorTRANSPARENT,
-        SkScalarRoundToInt(context.alphaf() * 255),
-        "flutter::PhysicalShapeLayer", z_translation);
+  SceneUpdateContext::Frame frame(
+      context, SkRRect::MakeRect(paint_bounds()), SK_ColorTRANSPARENT,
+      SkScalarRoundToInt(context.alphaf() * 255), "flutter::Layer");
 
-    frame.AddPaintLayer(this);
-  }
+  frame.AddPaintLayer(this);
 }
 
 #endif

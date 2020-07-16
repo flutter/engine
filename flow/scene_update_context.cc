@@ -208,8 +208,8 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
   }
   paint_tasks_.clear();
   alpha_ = 1.f;
-  topmost_global_scenic_elevation_ = kScenicZElevationBetweenLayers;
-  scenic_elevation_ = 0.f;
+  top_elevation_ = 0.0f;
+  next_elevation_ = 0.0f;
   return surfaces_to_submit;
 }
 
@@ -316,16 +316,20 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
                                  const SkRRect& rrect,
                                  SkColor color,
                                  SkAlpha opacity,
-                                 std::string label,
-                                 float z_translation)
+                                 std::string label)
     : Entity(context),
+      previous_elevation_(context.top_elevation_),
       rrect_(rrect),
       color_(color),
       opacity_(opacity),
       opacity_node_(context.session()),
       paint_bounds_(SkRect::MakeEmpty()) {
   entity_node().SetLabel(label);
-  entity_node().SetTranslation(0.f, 0.f, z_translation);
+  entity_node().SetTranslation(0.f, 0.f,
+                               context.next_elevation_ - previous_elevation_);
+  context.top_elevation_ += kScenicZElevationBetweenLayers;
+  context.next_elevation_ += kScenicZElevationBetweenLayers;
+
   entity_node().AddChild(opacity_node_);
   // Scenic currently lacks an API to enable rendering of alpha channel; alpha
   // channels are only rendered if there is a OpacityNode higher in the tree
@@ -335,6 +339,8 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
 }
 
 SceneUpdateContext::Frame::~Frame() {
+  context().top_elevation_ = previous_elevation_;
+
   // We don't need a shape if the frame is zero size.
   if (rrect_.isEmpty())
     return;

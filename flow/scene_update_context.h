@@ -104,8 +104,7 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
           const SkRRect& rrect,
           SkColor color,
           SkAlpha opacity,
-          std::string label,
-          float z_translation = 0.0f);
+          std::string label);
     virtual ~Frame();
 
     scenic::ContainerNode& embedder_node() override { return opacity_node_; }
@@ -113,6 +112,8 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     void AddPaintLayer(Layer* layer);
 
    private:
+    const float previous_elevation_;
+
     const SkRRect rrect_;
     SkColor const color_;
     SkAlpha const opacity_;
@@ -169,17 +170,6 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   // The cumulative alpha value based on all the parent OpacityLayers.
   void set_alphaf(float alpha) { alpha_ = alpha; }
   float alphaf() { return alpha_; }
-
-  // The global scenic elevation at a given point in the traversal.
-  float scenic_elevation() { return scenic_elevation_; }
-
-  void set_scenic_elevation(float elevation) { scenic_elevation_ = elevation; }
-
-  float GetGlobalElevationForNextScenicLayer() {
-    float elevation = topmost_global_scenic_elevation_;
-    topmost_global_scenic_elevation_ += kScenicZElevationBetweenLayers;
-    return elevation;
-  }
 
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override { return nullptr; }
@@ -257,6 +247,7 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   Entity* top_entity_ = nullptr;
   float top_scale_x_ = 1.f;
   float top_scale_y_ = 1.f;
+  float top_elevation_ = 0.0f;
 
   scenic::Session* const session_;
   SurfaceProducer* const surface_producer_;
@@ -267,8 +258,7 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
       1.0f;  // Ratio between logical and physical pixels.
 
   float alpha_ = 1.0f;
-  float scenic_elevation_ = 0.f;
-  float topmost_global_scenic_elevation_ = kScenicZElevationBetweenLayers;
+  float next_elevation_ = 0.0f;
 
   std::vector<PaintTask> paint_tasks_;
 
