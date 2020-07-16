@@ -32,6 +32,6 @@ class CkMaskFilter extends ResurrectableSkiaObject<SkMaskFilter> {
 
   @override
   void delete() {
-    skiaObject.delete();
+    rawSkiaObject?.delete();
   }
 }

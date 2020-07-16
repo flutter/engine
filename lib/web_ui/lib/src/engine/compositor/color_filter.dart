@@ -64,6 +64,6 @@ class CkColorFilter extends ResurrectableSkiaObject<SkColorFilter> {
 
   @override
   void delete() {
-    skiaObject.delete();
+    rawSkiaObject?.delete();
   }
 }

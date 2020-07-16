@@ -731,7 +731,7 @@ class SkShaderNamespace {
   external SkShader MakeLinearGradient(
     Float32List from, // 2-element array
     Float32List to, // 2-element array
-    Uint32List colors,
+    List<Float32List> colors,
     Float32List colorStops,
     SkTileMode tileMode,
   );
@@ -1003,7 +1003,7 @@ List<Float32List> encodeRawColorList(Int32List rawColors) {
   for (int i = 0; i < colorCount; ++i) {
     colors.add(ui.Color(rawColors[i]));
   }
-  return makeColorList(colors);
+  return toSkFloatColorList(colors);
 }
 
 @JS('window.flutter_canvas_kit.SkPath')
@@ -1468,7 +1468,7 @@ class SkPicture {
 class SkParagraphBuilderNamespace {
   external SkParagraphBuilder Make(
     SkParagraphStyle paragraphStyle,
-    SkFontMgr fontManager,
+    SkFontMgr? fontManager,
   );
 }
 
@@ -1611,5 +1611,6 @@ class SkTonalColors {
 
 @JS()
 class SkFontMgrNamespace {
-  external SkFontMgr FromData(List<Uint8List> fonts);
+  // TODO(yjbanov): can this be made non-null? It returns null in our unit-tests right now.
+  external SkFontMgr? FromData(List<Uint8List> fonts);
 }

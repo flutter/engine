@@ -178,7 +178,7 @@ class SkiaFontCollection {
         .then<ByteBuffer>((dynamic x) => x as ByteBuffer);
   }
 
-  late SkFontMgr skFontMgr;
+  SkFontMgr? skFontMgr;
 }
 
 /// Represents a font that has been registered.

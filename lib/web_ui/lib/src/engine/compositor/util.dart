@@ -15,22 +15,6 @@ class CanvasKitError extends Error {
   String toString() => 'CanvasKitError: $message';
 }
 
-/// Converts a list of [ui.Color] into the 2d array expected by CanvasKit.
-js.JsArray<Float32List> makeColorList(List<ui.Color> colors) {
-  var result = js.JsArray<Float32List>();
-  result.length = colors.length;
-  for (var i = 0; i < colors.length; i++) {
-    var color = colors[i];
-    var jsColor = Float32List(4);
-    jsColor[0] = color.red / 255.0;
-    jsColor[1] = color.green / 255.0;
-    jsColor[2] = color.blue / 255.0;
-    jsColor[3] = color.alpha / 255.0;
-    result[i] = jsColor;
-  }
-  return result;
-}
-
 js.JsObject _mallocColorArray() {
   return canvasKit
       .callMethod('Malloc', <dynamic>[js.context['Float32Array'], 4]);

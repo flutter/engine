@@ -125,7 +125,7 @@ abstract class SkiaObject<T> {
 ///   underlying C++ object is deleted. This is implemented by [SkiaObjects].
 abstract class ResurrectableSkiaObject<T> extends SkiaObject<T> {
   ResurrectableSkiaObject() {
-    _skiaObject = createDefault();
+    rawSkiaObject = createDefault();
     if (isResurrectionExpensive) {
       SkiaObjects.manageExpensive(this);
     } else {
@@ -134,11 +134,11 @@ abstract class ResurrectableSkiaObject<T> extends SkiaObject<T> {
   }
 
   @override
-  T get skiaObject => _skiaObject ?? _doResurrect();
+  T get skiaObject => rawSkiaObject ?? _doResurrect();
 
   T _doResurrect() {
     final T skiaObject = resurrect();
-    _skiaObject = skiaObject;
+    rawSkiaObject = skiaObject;
     if (isResurrectionExpensive) {
       SkiaObjects.manageExpensive(this);
     } else {
@@ -149,11 +149,18 @@ abstract class ResurrectableSkiaObject<T> extends SkiaObject<T> {
 
   @override
   void didDelete() {
-    _skiaObject = null;
+    rawSkiaObject = null;
   }
 
-  /// Do not use this field outside this class. Use [skiaObject] instead.
-  T? _skiaObject;
+  /// Returns the current skia object as is without attempting to
+  /// resurrect it.
+  ///
+  /// If the returned value is `null`, the corresponding C++ object has
+  /// been deleted.
+  ///
+  /// Use this field instead of the [skiaObject] getter when implementing
+  /// the [delete] method.
+  T? rawSkiaObject;
 
   /// Instantiates a new Skia-backed JavaScript object containing default
   /// values.
@@ -179,24 +186,32 @@ abstract class ResurrectableSkiaObject<T> extends SkiaObject<T> {
 //     https://github.com/flutter/flutter/issues/60401
 /// A [SkiaObject] which is deleted once and cannot be used again.
 abstract class OneShotSkiaObject<T> extends SkiaObject<T> {
-  T? _skiaObject;
+  /// Returns the current skia object as is without attempting to
+  /// resurrect it.
+  ///
+  /// If the returned value is `null`, the corresponding C++ object has
+  /// been deleted.
+  ///
+  /// Use this field instead of the [skiaObject] getter when implementing
+  /// the [delete] method.
+  T? rawSkiaObject;
 
-  OneShotSkiaObject(this._skiaObject) {
+  OneShotSkiaObject(this.rawSkiaObject) {
     SkiaObjects.manageOneShot(this);
   }
 
   @override
   T get skiaObject {
-    if (_skiaObject == null) {
+    if (rawSkiaObject == null) {
       throw StateError('Attempting to use a Skia object that has been freed.');
     }
     SkiaObjects.oneShotCache.markUsed(this);
-    return _skiaObject!;
+    return rawSkiaObject!;
   }
 
   @override
   void didDelete() {
-    _skiaObject = null;
+    rawSkiaObject = null;
   }
 }
 

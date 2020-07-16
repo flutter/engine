@@ -269,7 +269,7 @@ class CkParagraph extends ResurrectableSkiaObject<SkParagraph> implements ui.Par
     final SkParagraph result = builder._buildCkParagraph();
     if (_lastLayoutConstraints != null) {
       // We need to set the Skia object early so layout works.
-      _skiaObject = result;
+      rawSkiaObject = result;
       this.layout(_lastLayoutConstraints!);
     }
     return result;
@@ -277,7 +277,7 @@ class CkParagraph extends ResurrectableSkiaObject<SkParagraph> implements ui.Par
 
   @override
   void delete() {
-    skiaObject.delete();
+    rawSkiaObject?.delete();
   }
 
   @override

@@ -23,7 +23,7 @@ class CkImageFilter extends ResurrectableSkiaObject<SkImageFilter> implements ui
 
   @override
   void delete() {
-    skiaObject.delete();
+    rawSkiaObject?.delete();
   }
 
   @override

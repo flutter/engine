@@ -231,7 +231,7 @@ class CkPaint extends ResurrectableSkiaObject<SkPaint> implements ui.Paint {
 
   @override
   void delete() {
-    skiaObject.delete();
+    rawSkiaObject?.delete();
   }
 
   @override

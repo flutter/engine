@@ -392,8 +392,8 @@ class CanvasKitCanvas implements ui.Canvas {
       rectBuffer[index3] = rect.bottom;
     }
 
-    final js.JsArray<Float32List>? colorBuffer =
-        colors.isEmpty ? null : makeColorList(colors);
+    final List<Float32List>? colorBuffer =
+        colors.isEmpty ? null : toSkFloatColorList(colors);
 
     _drawAtlas(
         paint, atlas, rstTransformBuffer, rectBuffer, colorBuffer, blendMode);
