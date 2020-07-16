@@ -143,14 +143,11 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   const fuchsia::ui::gfx::MetricsPtr& metrics() const { return metrics_; }
 
   void set_dimensions(const SkISize& frame_physical_size,
-                      float frame_physical_depth,
                       float frame_device_pixel_ratio) {
     frame_physical_size_ = frame_physical_size;
-    frame_physical_depth_ = frame_physical_depth;
     frame_device_pixel_ratio_ = frame_device_pixel_ratio;
   }
   const SkISize& frame_size() const { return frame_physical_size_; }
-  float frame_physical_depth() const { return frame_physical_depth_; }
   float frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; }
 
   // TODO(chinmaygarde): This method must submit the surfaces as soon as paint
@@ -266,7 +263,6 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
 
   fuchsia::ui::gfx::MetricsPtr metrics_;
   SkISize frame_physical_size_;
-  float frame_physical_depth_ = 0.0f;
   float frame_device_pixel_ratio_ =
       1.0f;  // Ratio between logical and physical pixels.
 
