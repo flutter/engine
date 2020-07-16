@@ -272,7 +272,6 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
-  FML_DCHECK(flutter_view_);
   picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
 
   auto rtree_factory = RTreeFactory();
