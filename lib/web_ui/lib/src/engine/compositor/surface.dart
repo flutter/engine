@@ -127,14 +127,14 @@ class Surface {
       return _makeSoftwareCanvasSurface(htmlCanvas);
     } else {
       // Try WebGL first.
-      final int? glContext = canvasKit.callMethod('GetWebGLContext', <dynamic>[
+      final int glContext = canvasKit.callMethod('GetWebGLContext', <dynamic>[
         htmlCanvas,
         // Default to no anti-aliasing. Paint commands can be explicitly
         // anti-aliased by setting their `Paint` object's `antialias` property.
         js.JsObject.jsify({'antialias': 0}),
       ]);
 
-      if (glContext == null) {
+      if (glContext == 0) {
         return _makeSoftwareCanvasSurface(htmlCanvas);
       }
 
@@ -166,6 +166,7 @@ class Surface {
   }
 
   CkSurface _makeSoftwareCanvasSurface(html.CanvasElement htmlCanvas) {
+    print('WARNING: failed to initialize WebGL. Falling back to CPU-only rendering.');
     return CkSurface(
       canvasKit.callMethod('MakeSWCanvasSurface', <dynamic>[
         htmlCanvas,
