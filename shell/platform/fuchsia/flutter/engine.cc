@@ -97,10 +97,6 @@ Engine::Engine(Delegate& delegate,
   OnMetricsUpdate on_session_metrics_change_callback = std::bind(
       &Engine::OnSessionMetricsDidChange, this, std::placeholders::_1);
 
-  OnSizeChangeHint on_session_size_change_hint_callback =
-      std::bind(&Engine::OnSessionSizeChangeHint, this, std::placeholders::_1,
-                std::placeholders::_2);
-
   OnEnableWireframe on_enable_wireframe_callback = std::bind(
       &Engine::OnDebugWireframeSettingsChanged, this, std::placeholders::_1);
 
@@ -143,8 +139,6 @@ Engine::Engine(Delegate& delegate,
                std::move(on_session_listener_error_callback),
            on_session_metrics_change_callback =
                std::move(on_session_metrics_change_callback),
-           on_session_size_change_hint_callback =
-               std::move(on_session_size_change_hint_callback),
            on_enable_wireframe_callback =
                std::move(on_enable_wireframe_callback),
            on_create_view_callback = std::move(on_create_view_callback),
@@ -163,7 +157,6 @@ Engine::Engine(Delegate& delegate,
                 std::move(session_listener_request),  // session listener
                 std::move(on_session_listener_error_callback),
                 std::move(on_session_metrics_change_callback),
-                std::move(on_session_size_change_hint_callback),
                 std::move(on_enable_wireframe_callback),
                 std::move(on_create_view_callback),
                 std::move(on_destroy_view_callback),
@@ -565,25 +558,6 @@ flutter::ExternalViewEmbedder* Engine::GetViewEmbedder() {
   flutter::ExternalViewEmbedder* view_embedder =
       compositor_context->GetViewEmbedder();
   return view_embedder;
-}
-
-void Engine::OnSessionSizeChangeHint(float width_change_factor,
-                                     float height_change_factor) {
-  if (!shell_) {
-    return;
-  }
-
-  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [rasterizer = shell_->GetRasterizer(), width_change_factor,
-       height_change_factor]() {
-        if (rasterizer) {
-          auto compositor_context = reinterpret_cast<CompositorContext*>(
-              rasterizer->compositor_context());
-
-          compositor_context->OnSessionSizeChangeHint(width_change_factor,
-                                                      height_change_factor);
-        }
-      });
 }
 
 #if !defined(DART_PRODUCT)

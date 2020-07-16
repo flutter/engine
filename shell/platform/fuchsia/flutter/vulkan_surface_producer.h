@@ -59,13 +59,6 @@ class VulkanSurfaceProducer final
           std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>
           surfaces);
 
-  void OnSessionSizeChangeHint(float width_change_factor,
-                               float height_change_factor) {
-    FX_LOGF(INFO, LOG_TAG,
-            "VulkanSurfaceProducer:OnSessionSizeChangeHint %f, %f",
-            width_change_factor, height_change_factor);
-  }
-
   GrDirectContext* gr_context() { return context_.get(); }
 
  private:

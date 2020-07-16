@@ -86,12 +86,6 @@ void CompositorContext::OnSessionMetricsDidChange(
   session_connection_.set_metrics(metrics);
 }
 
-void CompositorContext::OnSessionSizeChangeHint(float width_change_factor,
-                                                float height_change_factor) {
-  session_connection_.OnSessionSizeChangeHint(width_change_factor,
-                                              height_change_factor);
-}
-
 void CompositorContext::OnWireframeEnabled(bool enabled) {
   session_connection_.set_enable_wireframe(enabled);
 }

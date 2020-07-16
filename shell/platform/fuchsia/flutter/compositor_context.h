@@ -31,9 +31,6 @@ class CompositorContext final : public flutter::CompositorContext {
   ~CompositorContext() override;
 
   void OnSessionMetricsDidChange(const fuchsia::ui::gfx::Metrics& metrics);
-  void OnSessionSizeChangeHint(float width_change_factor,
-                               float height_change_factor);
-
   void OnWireframeEnabled(bool enabled);
   void OnCreateView(int64_t view_id, bool hit_testable, bool focusable);
   void OnDestroyView(int64_t view_id);

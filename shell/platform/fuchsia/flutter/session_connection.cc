@@ -125,12 +125,6 @@ void SessionConnection::Present(
   }
 }
 
-void SessionConnection::OnSessionSizeChangeHint(float width_change_factor,
-                                                float height_change_factor) {
-  surface_producer_->OnSessionSizeChangeHint(width_change_factor,
-                                             height_change_factor);
-}
-
 fml::TimePoint SessionConnection::CalculateNextLatchPoint(
     fml::TimePoint present_requested_time,
     fml::TimePoint now,
