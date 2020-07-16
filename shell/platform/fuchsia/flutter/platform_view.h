@@ -25,8 +25,6 @@
 namespace flutter_runner {
 
 using OnMetricsUpdate = fit::function<void(const fuchsia::ui::gfx::Metrics&)>;
-using OnSizeChangeHint =
-    fit::function<void(float width_change_factor, float height_change_factor)>;
 using OnEnableWireframe = fit::function<void(bool)>;
 using OnCreateView = fit::function<void(int64_t, bool, bool)>;
 using OnDestroyView = fit::function<void(int64_t)>;
@@ -56,7 +54,6 @@ class PlatformView final : public flutter::PlatformView,
                fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
                fit::closure on_session_listener_error_callback,
                OnMetricsUpdate session_metrics_did_change_callback,
-               OnSizeChangeHint session_size_change_hint_callback,
                OnEnableWireframe wireframe_enabled_callback,
                OnCreateView on_create_view_callback,
                OnDestroyView on_destroy_view_callback,
@@ -64,12 +61,6 @@ class PlatformView final : public flutter::PlatformView,
                OnGetGrContext on_get_gr_context_callback,
                zx_handle_t vsync_event_handle,
                FlutterRunnerProductConfiguration product_config);
-  PlatformView(flutter::PlatformView::Delegate& delegate,
-               std::string debug_label,
-               flutter::TaskRunners task_runners,
-               fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
-                   parent_environment_service_provider,
-               zx_handle_t vsync_event_handle);
 
   ~PlatformView();
 
@@ -97,7 +88,6 @@ class PlatformView final : public flutter::PlatformView,
   fidl::Binding<fuchsia::ui::scenic::SessionListener> session_listener_binding_;
   fit::closure session_listener_error_callback_;
   OnMetricsUpdate metrics_changed_callback_;
-  OnSizeChangeHint size_change_hint_callback_;
   OnEnableWireframe wireframe_enabled_callback_;
   OnCreateView on_create_view_callback_;
   OnDestroyView on_destroy_view_callback_;

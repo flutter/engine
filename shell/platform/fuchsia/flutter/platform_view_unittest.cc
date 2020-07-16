@@ -164,7 +164,6 @@ TEST_F(PlatformViewTests, ChangesAccessibilitySettings) {
       nullptr,  // focuser,
       nullptr,  // on_session_listener_error_callback
       nullptr,  // session_metrics_did_change_callback
-      nullptr,  // session_size_change_hint_callback
       nullptr,  // on_enable_wireframe_callback,
       nullptr,  // on_create_view_callback,
       nullptr,  // on_destroy_view_callback,
@@ -222,7 +221,6 @@ TEST_F(PlatformViewTests, EnableWireframeTest) {
       nullptr,                  // focuser,
       nullptr,                  // on_session_listener_error_callback
       nullptr,                  // session_metrics_did_change_callback
-      nullptr,                  // session_size_change_hint_callback
       EnableWireframeCallback,  // on_enable_wireframe_callback,
       nullptr,                  // on_create_view_callback,
       nullptr,                  // on_destroy_view_callback,
@@ -291,7 +289,6 @@ TEST_F(PlatformViewTests, CreateViewTest) {
       nullptr,             // focuser,
       nullptr,             // on_session_listener_error_callback
       nullptr,             // session_metrics_did_change_callback
-      nullptr,             // session_size_change_hint_callback
       nullptr,             // on_enable_wireframe_callback,
       CreateViewCallback,  // on_create_view_callback,
       nullptr,             // on_destroy_view_callback,
@@ -362,7 +359,6 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
       nullptr,              // focuser,
       nullptr,              // on_session_listener_error_callback
       nullptr,              // session_metrics_did_change_callback
-      nullptr,              // session_size_change_hint_callback
       nullptr,              // on_enable_wireframe_callback,
       nullptr,              // on_create_view_callback,
       DestroyViewCallback,  // on_destroy_view_callback,
@@ -427,7 +423,6 @@ TEST_F(PlatformViewTests, RequestFocusTest) {
       std::move(focuser_handle),  // focuser,
       nullptr,                    // on_session_listener_error_callback
       nullptr,                    // session_metrics_did_change_callback
-      nullptr,                    // session_size_change_hint_callback
       nullptr,                    // on_enable_wireframe_callback,
       nullptr,                    // on_create_view_callback,
       nullptr,                    // on_destroy_view_callback,
@@ -502,7 +497,6 @@ TEST_F(PlatformViewTests, GetViewEmbedderTest) {
       nullptr,                  // focuser,
       nullptr,                  // on_session_listener_error_callback
       nullptr,                  // session_metrics_did_change_callback
-      nullptr,                  // session_size_change_hint_callback
       nullptr,                  // on_enable_wireframe_callback,
       nullptr,                  // on_create_view_callback,
       nullptr,                  // on_destroy_view_callback,
@@ -558,7 +552,6 @@ TEST_F(PlatformViewTests, GetGrContextTest) {
       nullptr,               // focuser
       nullptr,               // on_session_listener_error_callback
       nullptr,               // session_metrics_did_change_callback
-      nullptr,               // session_size_change_hint_callback
       nullptr,               // on_enable_wireframe_callback,
       nullptr,               // on_create_view_callback,
       nullptr,               // on_destroy_view_callback,

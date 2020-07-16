@@ -65,9 +65,6 @@ class SessionConnection final {
 
   void Present(flutter::CompositorContext::ScopedFrame* frame);
 
-  void OnSessionSizeChangeHint(float width_change_factor,
-                               float height_change_factor);
-
   VulkanSurfaceProducer* vulkan_surface_producer() {
     return surface_producer_.get();
   }
