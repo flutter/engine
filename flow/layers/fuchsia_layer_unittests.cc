@@ -336,7 +336,6 @@ std::unique_ptr<TestContext> InitTest() {
       context->unused_texture_registry,  // texture registry (not
                                          // supported)
       false,                             // checkerboard_offscreen_layers
-      100.f,                             // maximum depth allowed for rendering
       1.f                                // ratio between logical and physical
   });
 

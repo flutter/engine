@@ -160,13 +160,10 @@ void PlatformView::OnPropertiesChanged(
 
   metrics_.size.width = logical_size.x;
   metrics_.size.height = logical_size.y;
-  metrics_.size.depth = logical_size.z;
   metrics_.padding.left = view_properties.inset_from_min.x;
   metrics_.padding.top = view_properties.inset_from_min.y;
-  metrics_.padding.front = view_properties.inset_from_min.z;
   metrics_.padding.right = view_properties.inset_from_max.x;
   metrics_.padding.bottom = view_properties.inset_from_max.y;
-  metrics_.padding.back = view_properties.inset_from_max.z;
 
   FlushViewportMetrics();
 }
@@ -181,30 +178,29 @@ void PlatformView::OnPropertiesChanged(
 void PlatformView::UpdateViewportMetrics(
     const fuchsia::ui::gfx::Metrics& metrics) {
   metrics_.scale = metrics.scale_x;
-  metrics_.scale_z = metrics.scale_z;
 
   FlushViewportMetrics();
 }
 
 void PlatformView::FlushViewportMetrics() {
   const auto scale = metrics_.scale;
-  const auto scale_z = metrics_.scale_z;
 
   SetViewportMetrics({
-      scale,                                // device_pixel_ratio
-      metrics_.size.width * scale,          // physical_width
-      metrics_.size.height * scale,         // physical_height
-      metrics_.size.depth * scale_z,        // physical_depth
-      metrics_.padding.top * scale,         // physical_padding_top
-      metrics_.padding.right * scale,       // physical_padding_right
-      metrics_.padding.bottom * scale,      // physical_padding_bottom
-      metrics_.padding.left * scale,        // physical_padding_left
-      metrics_.view_inset.front * scale_z,  // physical_view_inset_front
-      metrics_.view_inset.back * scale_z,   // physical_view_inset_back
-      metrics_.view_inset.top * scale,      // physical_view_inset_top
-      metrics_.view_inset.right * scale,    // physical_view_inset_right
-      metrics_.view_inset.bottom * scale,   // physical_view_inset_bottom
-      metrics_.view_inset.left * scale      // physical_view_inset_left
+      scale,                               // device_pixel_ratio
+      metrics_.size.width * scale,         // physical_width
+      metrics_.size.height * scale,        // physical_height
+      metrics_.padding.top * scale,        // physical_padding_top
+      metrics_.padding.right * scale,      // physical_padding_right
+      metrics_.padding.bottom * scale,     // physical_padding_bottom
+      metrics_.padding.left * scale,       // physical_padding_left
+      metrics_.view_inset.top * scale,     // physical_view_inset_top
+      metrics_.view_inset.right * scale,   // physical_view_inset_right
+      metrics_.view_inset.bottom * scale,  // physical_view_inset_bottom
+      metrics_.view_inset.left * scale,    // physical_view_inset_left
+      0.0f,  // p_physical_system_gesture_inset_top
+      0.0f,  // p_physical_system_gesture_inset_right
+      0.0f,  // p_physical_system_gesture_inset_bottom
+      0.0f,  // p_physical_system_gesture_inset_left
   });
 }
 

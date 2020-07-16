@@ -195,7 +195,6 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
                                    frame.context().texture_registry(),
                                    &frame.context().raster_cache(),
                                    false,
-                                   frame_physical_depth_,
                                    frame_device_pixel_ratio_};
     canvas->restoreToCount(1);
     canvas->save();
