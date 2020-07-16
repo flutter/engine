@@ -7,12 +7,12 @@
 // @dart = 2.9
 part of ui;
 
-/// Used to track when the platform is initialized. This ensures the test fonts
-/// are available.
+// Used to track when the platform is initialized. This ensures the test fonts
+// are available.
 Future<void>? _testPlatformInitializedFuture;
 
-/// If the platform is already initialized (by a previous test), then run the test
-/// body immediately. Otherwise, initialize the platform then run the test.
+// If the platform is already initialized (by a previous test), then run the test
+// body immediately. Otherwise, initialize the platform then run the test.
 Future<dynamic> ensureTestPlatformInitializedThenRunTest(
     dynamic Function() body) {
   if (_testPlatformInitializedFuture == null) {
@@ -25,12 +25,12 @@ Future<dynamic> ensureTestPlatformInitializedThenRunTest(
   return _testPlatformInitializedFuture!.then<dynamic>((_) => body());
 }
 
-/// Used to track when the platform is initialized. This ensures the test fonts
-/// are available.
+// Used to track when the platform is initialized. This ensures the test fonts
+// are available.
 // TODO(yjbanov): can we make this late non-null? See https://github.com/dart-lang/sdk/issues/42214
 Future<void>? _platformInitializedFuture;
 
-/// Initializes domRenderer with specific devicePixelRatio and physicalSize.
+// Initializes domRenderer with specific devicePixelRatio and physicalSize.
 Future<void> webOnlyInitializeTestDomRenderer({double devicePixelRatio = 3.0}) {
   // Force-initialize DomRenderer so it doesn't overwrite test pixel ratio.
   engine.domRenderer;
