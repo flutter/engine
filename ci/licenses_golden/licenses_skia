@@ -1,4 +1,4 @@
-Signature: c268d8de8a8ec9f95e34da1ab05b7c1e
+Signature: 3986fed9e21c84a9917677046570064a
 
 UNUSED LICENSES:
 
@@ -1054,11 +1054,11 @@ FILE: ../../../third_party/skia/infra/bots/assets/valgrind/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/win_ninja/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/win_toolchain/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/xcode-11.4.1/VERSION
+FILE: ../../../third_party/skia/infra/bots/canary.isolate
 FILE: ../../../third_party/skia/infra/bots/canvaskit.isolate
 FILE: ../../../third_party/skia/infra/bots/cfg.json
 FILE: ../../../third_party/skia/infra/bots/compile.isolate
 FILE: ../../../third_party/skia/infra/bots/compile_android_framework.isolate
-FILE: ../../../third_party/skia/infra/bots/compile_g3_framework.isolate
 FILE: ../../../third_party/skia/infra/bots/empty.isolate
 FILE: ../../../third_party/skia/infra/bots/infra_tests.isolate
 FILE: ../../../third_party/skia/infra/bots/infrabots.isolate
@@ -1197,9 +1197,9 @@ FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Win-Cl
 FILE: ../../../third_party/skia/infra/bots/recipes/compute_buildstats.expected/normal_bot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compute_buildstats.expected/trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compute_test.expected/Test-Debian10-Clang-NUC7i5BNK-GPU-IntelIris640-x86_64-Debug-All-OpenCL.json
-FILE: ../../../third_party/skia/infra/bots/recipes/g3_compile.expected/g3_compile_nontrybot.json
-FILE: ../../../third_party/skia/infra/bots/recipes/g3_compile.expected/g3_compile_trybot.json
-FILE: ../../../third_party/skia/infra/bots/recipes/g3_compile.expected/g3_compile_trybot_failure.json
+FILE: ../../../third_party/skia/infra/bots/recipes/g3_canary.expected/g3_canary_nontrybot.json
+FILE: ../../../third_party/skia/infra/bots/recipes/g3_canary.expected/g3_canary_trybot.json
+FILE: ../../../third_party/skia/infra/bots/recipes/g3_canary.expected/g3_canary_trybot_failure.json
 FILE: ../../../third_party/skia/infra/bots/recipes/housekeeper.expected/Housekeeper-PerCommit-Trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/housekeeper.expected/Housekeeper-PerCommit.json
 FILE: ../../../third_party/skia/infra/bots/recipes/infra.expected/infra_tests.json
@@ -6426,6 +6426,7 @@ FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/job_builder.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/nano_flags.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/schema.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/task_builder.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/canary/canary.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/fm_driver/fm_driver.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_render_skps/perf_puppeteer_render_skps.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_render_skps/perf_puppeteer_render_skps_test.go
