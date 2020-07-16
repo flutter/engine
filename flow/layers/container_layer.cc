@@ -4,6 +4,8 @@
 
 #include "flutter/flow/layers/container_layer.h"
 
+#include <optional>
+
 namespace flutter {
 
 ContainerLayer::ContainerLayer() {}
@@ -30,6 +32,9 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
+  // If there is embedded Fuchsia content in the scene (a ChildSceneLayer),
+  // Layers that appear above the embedded content will be turned into their own
+  // Scenic layers.
   child_layer_exists_below_ = context->child_scene_layer_exists_below;
   context->child_scene_layer_exists_below = false;
 #endif
@@ -98,45 +103,20 @@ void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
 }
 
 void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
-  auto update_scene_layers = [&] {
-    // Paint all of the layers which need to be drawn into the container.
-    // These may be flattened down to a containing Scenic Frame.
-    for (auto& layer : layers_) {
-      if (layer->needs_system_composite()) {
-        layer->UpdateScene(context);
-      }
-    }
-  };
-
   FML_DCHECK(needs_system_composite());
 
-  // If there is embedded Fuchsia content in the scene (a ChildSceneLayer),
-  // PhysicalShapeLayers that appear above the embedded content will be turned
-  // into their own Scenic layers.
+  std::optional<SceneUpdateContext::Frame> frame;
   if (child_layer_exists_below_) {
-    float global_scenic_elevation =
-        context.GetGlobalElevationForNextScenicLayer();
-    float local_scenic_elevation =
-        global_scenic_elevation - context.scenic_elevation();
-    float z_translation = -local_scenic_elevation;
-
-    // If we can't find an existing retained surface, create one.
-    SceneUpdateContext::Frame frame(
+    frame.emplace(
         context, SkRRect::MakeRect(paint_bounds()), SK_ColorTRANSPARENT,
-        SkScalarRoundToInt(context.alphaf() * 255),
-        "flutter::PhysicalShapeLayer", z_translation);
+        SkScalarRoundToInt(context.alphaf() * 255), "flutter::ContainerLayer");
+    frame->AddPaintLayer(this);
+  }
 
-    frame.AddPaintLayer(this);
-
-    // Node: UpdateSceneChildren needs to be called here so that |frame| is
-    // still in scope (and therefore alive) while UpdateSceneChildren is being
-    // called.
-    float scenic_elevation = context.scenic_elevation();
-    context.set_scenic_elevation(scenic_elevation + local_scenic_elevation);
-    update_scene_layers();
-    context.set_scenic_elevation(scenic_elevation);
-  } else {
-    update_scene_layers();
+  for (auto& layer : layers_) {
+    if (layer->needs_system_composite()) {
+      layer->UpdateScene(context);
+    }
   }
 }
 
