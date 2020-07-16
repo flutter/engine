@@ -14,6 +14,13 @@ import 'package:ui/src/engine.dart';
 import 'common.dart';
 
 void main() {
+  group('skia_objects_cache', () {
+    _tests();
+    // TODO: https://github.com/flutter/flutter/issues/60040
+  }, skip: isIosSafari);
+}
+
+void _tests() {
   SkiaObjects.maximumCacheSize = 4;
 
   setUpAll(() async {
@@ -100,8 +107,7 @@ void main() {
       expect(SkiaObjects.expensiveCache.debugContains(object1), isFalse);
       expect(SkiaObjects.expensiveCache.debugContains(object2), isFalse);
     });
-  // TODO: https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 
   group(OneShotSkiaObject, () {
     test('is added to SkiaObjects cache', () {
@@ -132,8 +138,7 @@ void main() {
       expect(SkiaObjects.oneShotCache.debugContains(object1), isFalse);
       expect(SkiaObjects.oneShotCache.debugContains(object2), isFalse);
     });
-  // TODO: https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }
 
 class TestOneShotSkiaObject extends OneShotSkiaObject<SkPaint> {
