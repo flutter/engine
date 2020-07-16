@@ -180,7 +180,7 @@ class Surface {
     if (_surface!.context != null) {
       canvasKit.callMethod('setCurrentContext', <int?>[_surface!.context]);
     }
-    _surface!.getCanvas().flush();
+    _surface!.flush();
     return true;
   }
 }
@@ -198,6 +198,11 @@ class CkSurface {
     return CkCanvas(
       _jsObjectWrapper.unwrapSkCanvas(skCanvas),
     );
+  }
+
+  /// Flushes the graphics to be rendered on screen.
+  void flush() {
+    _surface.callMethod('flush');
   }
 
   int? get context => _glContext;
