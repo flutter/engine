@@ -66,7 +66,9 @@ class Surface {
   SurfaceFrame acquireFrame(ui.Size size) {
     final CkSurface surface = acquireRenderSurface(size);
 
-    canvasKit.callMethod('setCurrentContext', <int?>[surface.context]);
+    if (surface.context != null) {
+      canvasKit.callMethod('setCurrentContext', <int?>[surface.context]);
+    }
     SubmitCallback submitCallback =
         (SurfaceFrame surfaceFrame, CkCanvas canvas) {
       return _presentSurface();
@@ -119,41 +121,64 @@ class Surface {
       ..position = 'absolute'
       ..width = '${logicalSize.width.ceil()}px'
       ..height = '${logicalSize.height.ceil()}px';
-    final int glContext = canvasKit.callMethod('GetWebGLContext', <dynamic>[
-      htmlCanvas,
-      // Default to no anti-aliasing. Paint commands can be explicitly
-      // anti-aliased by setting their `Paint` object's `antialias` property.
-      js.JsObject.jsify({'antialias': 0}),
-    ]);
-    _grContext =
-        canvasKit.callMethod('MakeGrContext', <dynamic>[glContext]);
-
-    if (_grContext == null) {
-      throw CanvasKitError('Could not create a graphics context.');
-    }
-
-    // Set the cache byte limit for this grContext, if not specified it will use
-    // CanvasKit's default.
-    _syncCacheBytes();
-
-    final js.JsObject? skSurface =
-        canvasKit.callMethod('MakeOnScreenGLSurface', <dynamic>[
-      _grContext,
-      size.width,
-      size.height,
-      canvasKit['SkColorSpace']['SRGB'],
-    ]);
-
-    if (skSurface == null) {
-      throw CanvasKitError('Could not create a surface.');
-    }
 
     htmlElement = htmlCanvas;
-    return CkSurface(skSurface, _grContext!, glContext);
+    if (canvasKitForceCpuOnly) {
+      return _makeSoftwareCanvasSurface(htmlCanvas);
+    } else {
+      // Try WebGL first.
+      final int? glContext = canvasKit.callMethod('GetWebGLContext', <dynamic>[
+        htmlCanvas,
+        // Default to no anti-aliasing. Paint commands can be explicitly
+        // anti-aliased by setting their `Paint` object's `antialias` property.
+        js.JsObject.jsify({'antialias': 0}),
+      ]);
+
+      if (glContext == null) {
+        return _makeSoftwareCanvasSurface(htmlCanvas);
+      }
+
+      _grContext =
+          canvasKit.callMethod('MakeGrContext', <dynamic>[glContext]);
+
+      if (_grContext == null) {
+        return _makeSoftwareCanvasSurface(htmlCanvas);
+      }
+
+      // Set the cache byte limit for this grContext, if not specified it will use
+      // CanvasKit's default.
+      _syncCacheBytes();
+
+      js.JsObject? skSurface =
+          canvasKit.callMethod('MakeOnScreenGLSurface', <dynamic>[
+        _grContext,
+        size.width,
+        size.height,
+        canvasKit['SkColorSpace']['SRGB'],
+      ]);
+
+      if (skSurface == null) {
+        return _makeSoftwareCanvasSurface(htmlCanvas);
+      }
+
+      return CkSurface(skSurface!, _grContext, glContext);
+    }
+  }
+
+  CkSurface _makeSoftwareCanvasSurface(html.CanvasElement htmlCanvas) {
+    return CkSurface(
+      canvasKit.callMethod('MakeSWCanvasSurface', <dynamic>[
+        htmlCanvas,
+      ]),
+      null,
+      null,
+    );
   }
 
   bool _presentSurface() {
-    canvasKit.callMethod('setCurrentContext', <int>[_surface!.context]);
+    if (_surface!.context != null) {
+      canvasKit.callMethod('setCurrentContext', <int?>[_surface!.context]);
+    }
     _surface!.getCanvas().flush();
     return true;
   }
@@ -162,8 +187,8 @@ class Surface {
 /// A Dart wrapper around Skia's CkSurface.
 class CkSurface {
   final js.JsObject _surface;
-  final js.JsObject _grContext;
-  final int _glContext;
+  final js.JsObject? _grContext;
+  final int? _glContext;
 
   CkSurface(this._surface, this._grContext, this._glContext);
 
@@ -174,7 +199,7 @@ class CkSurface {
     );
   }
 
-  int get context => _glContext;
+  int? get context => _glContext;
 
   int width() => _surface.callMethod('width');
   int height() => _surface.callMethod('height');
@@ -184,10 +209,16 @@ class CkSurface {
       return;
     }
     // Only resources from the current context can be disposed.
-    canvasKit.callMethod('setCurrentContext', <int>[_glContext]);
+    if (_glContext != null) {
+      canvasKit.callMethod('setCurrentContext', <int?>[_glContext]);
+    }
     _surface.callMethod('dispose');
-    _grContext.callMethod('releaseResourcesAndAbandonContext');
-    _grContext.callMethod('delete');
+
+    // In CPU-only mode there's no graphics context.
+    if (_grContext != null) {
+      _grContext!.callMethod('releaseResourcesAndAbandonContext');
+      _grContext!.callMethod('delete');
+    }
     _isDisposed = true;
   }
 
