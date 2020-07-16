@@ -11,11 +11,8 @@ namespace {
 
 class SemanticsActionObservation {
  public:
-  SemanticsActionObservation(
-    int32_t observed_id,
-    SemanticsAction observed_action
-  ) : id(observed_id),
-      action(observed_action) { }
+  SemanticsActionObservation(int32_t observed_id, SemanticsAction observed_action)
+      : id(observed_id), action(observed_action) {}
 
   int32_t id;
   SemanticsAction action;
@@ -38,6 +35,7 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   }
   FlutterPlatformViewsController* GetPlatformViewsController() const override { return nil; }
   std::vector<SemanticsActionObservation> observations;
+
  private:
   UIView* view_;
 };
@@ -127,7 +125,6 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
   SemanticsObject* object = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
 
-
   // Handle initial setting of node with header.
   flutter::SemanticsNode node;
   node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsHeader);
@@ -148,7 +145,6 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
       new flutter::MockAccessibilityBridge());
   fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
   SemanticsObject* object = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
-
 
   // Handle initial setting of node with hidden.
   flutter::SemanticsNode node;
