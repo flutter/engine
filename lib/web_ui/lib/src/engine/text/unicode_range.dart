@@ -125,8 +125,8 @@ class UnicodePropertyLookup<P> {
   /// The list of unicode ranges and their associated properties.
   final List<UnicodeRange<P>> ranges;
 
-  /// The default property to use when a character doesn't belong any known
-  /// range.
+  /// The default property to use when a character doesn't belong in any
+  /// known range.
   final P defaultProperty;
 
   /// Take a [text] and an [index], and returns the property of the character
