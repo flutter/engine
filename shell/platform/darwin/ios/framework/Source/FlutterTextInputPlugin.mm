@@ -429,13 +429,6 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   }
 }
 
-// Clear the selected text range, without notifying the framework.
-- (void)removeSelectedTextRangeLocal {
-  UITextRange* oldSelectedRange = _selectedTextRange;
-  _selectedTextRange = nil;
-  [oldSelectedRange release];
-}
-
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
   [self setSelectedTextRangeLocal:selectedTextRange];
   [self updateEditingState];
