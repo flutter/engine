@@ -83,7 +83,7 @@ task:
       fetch_framework_script: |
         mkdir -p $FRAMEWORK_PATH
         cd $FRAMEWORK_PATH
-        git clone https://github.com/flutter/flutter.git
+        git clone -b 'flutter-1.20-candidate.7' https://github.com/flutter/flutter.git
       test_web_script: |
         cd $FRAMEWORK_PATH/flutter/dev/integration_tests/web
         ../../../bin/flutter config --local-engine=host_debug_unopt --no-analytics --enable-web
