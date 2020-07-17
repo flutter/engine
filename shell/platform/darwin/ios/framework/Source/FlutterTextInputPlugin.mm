@@ -363,7 +363,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
     if (selectionBaseIsValid && selectionExtentIsValid) {
       [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:selectedRange]];
     } else {
-      [self removeSelectedTextRangeLocal];
+      [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 0)]];
     }
     _selectionAffinity = _kTextAffinityDownstream;
     if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)])
@@ -420,13 +420,6 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
     }
     [oldSelectedRange release];
   }
-}
-
-// Clear the selected text range, without notifying the framework.
-- (void)removeSelectedTextRangeLocal {
-  UITextRange* oldSelectedRange = _selectedTextRange;
-  _selectedTextRange = nil;
-  [oldSelectedRange release];
 }
 
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
