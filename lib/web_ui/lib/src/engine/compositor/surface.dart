@@ -142,7 +142,7 @@ class Surface {
           canvasKit.callMethod('MakeGrContext', <dynamic>[glContext]);
 
       if (_grContext == null) {
-        return _makeSoftwareCanvasSurface(htmlCanvas);
+        throw CanvasKitError('Failed to initialize CanvasKit. CanvasKit.MakeGrContext returned null.');
       }
 
       // Set the cache byte limit for this grContext, if not specified it will use
@@ -165,8 +165,13 @@ class Surface {
     }
   }
 
+  static bool _didWarnAboutWebGlInitializationFailure = false;
+
   CkSurface _makeSoftwareCanvasSurface(html.CanvasElement htmlCanvas) {
-    print('WARNING: failed to initialize WebGL. Falling back to CPU-only rendering.');
+    if (!_didWarnAboutWebGlInitializationFailure) {
+      html.window.console.warn('WARNING: failed to initialize WebGL. Falling back to CPU-only rendering.');
+      _didWarnAboutWebGlInitializationFailure = true;
+    }
     return CkSurface(
       canvasKit.callMethod('MakeSWCanvasSurface', <dynamic>[
         htmlCanvas,
