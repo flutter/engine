@@ -339,6 +339,7 @@ FILE: ../../../flutter/lib/ui/painting/image_encoding.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.h
 FILE: ../../../flutter/lib/ui/painting/image_filter.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.h
+FILE: ../../../flutter/lib/ui/painting/image_release_unittests.cc
 FILE: ../../../flutter/lib/ui/painting/image_shader.cc
 FILE: ../../../flutter/lib/ui/painting/image_shader.h
 FILE: ../../../flutter/lib/ui/painting/matrix.cc

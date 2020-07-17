@@ -1196,8 +1196,9 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
 }
 
 void Shell::OnCompositorFrameEnd(size_t freed_hint) {
-  FML_DCHECK(engine_);
-  engine_->HintFreed(freed_hint);
+  if (engine_) {
+    engine_->HintFreed(freed_hint);
+  }
 }
 
 fml::Milliseconds Shell::GetFrameBudget() {
