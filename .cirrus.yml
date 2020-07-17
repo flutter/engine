@@ -81,9 +81,9 @@ task:
         cd $ENGINE_PATH/src
         ./flutter/testing/run_tests.sh host_debug_unopt
       fetch_framework_script: |
-        mkdir -p $FRAMEWORK_PATH
-        cd $FRAMEWORK_PATH
-        git clone https://github.com/flutter/flutter.git
+        mkdir -p "$FRAMEWORK_PATH"
+        cd $ENGINE_PATH/src/flutter/tools
+        ./clone_flutter.sh
       test_web_script: |
         cd $FRAMEWORK_PATH/flutter/dev/integration_tests/web
         ../../../bin/flutter config --local-engine=host_debug_unopt --no-analytics --enable-web
