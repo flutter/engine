@@ -167,7 +167,6 @@ source_set("ios_test_flutter_mrc") {
     "-mios-simulator-version-min=$ios_testing_deployment_target",
   ]
   sources = [
-    "framework/Source/FlutterEnginePlatformViewTest.mm",
     "framework/Source/FlutterPlatformViewsTest.mm",
     "framework/Source/accessibility_bridge_test.mm",
   ]
