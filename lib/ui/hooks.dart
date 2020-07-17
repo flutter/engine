@@ -235,7 +235,7 @@ void _runMainZoned(Function startMainIsolateFunction,
     }, (Object error, StackTrace stackTrace) {
       _reportUnhandledException(error.toString(), stackTrace.toString());
     });
-  }, null);
+  }, args);
 }
 
 void _reportUnhandledException(String error, String stackTrace) native 'Window_reportUnhandledException';
