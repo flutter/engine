@@ -26,6 +26,7 @@ import android.view.inputmethod.InputMethodSubtype;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.HashMap;
@@ -95,6 +96,11 @@ public class TextInputPlugin {
 
           @Override
           public void setEditingState(TextInputChannel.TextEditState editingState) {
+            // TODO(justinmc): I believe this is where the framework sends a
+            // value to the engine.
+            // Somehow between here and when it sends back to the framework, it
+            // bundles the two updates.
+            Log.e("justin", "Android engine receiving from framework " + editingState.text);
             setTextInputEditingState(mView, editingState);
           }
 
@@ -381,6 +387,7 @@ public class TextInputPlugin {
 
   @VisibleForTesting
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
+    // TODO(justinmc): Step 2.
     // Always replace the contents of mEditable if the text differs
     if (!state.text.equals(mEditable.toString())) {
       mEditable.replace(0, mEditable.length(), state.text);

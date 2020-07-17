@@ -277,6 +277,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
+  NSDictionary* _latestState;
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -783,12 +784,25 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
     @"composingExtent" : @(composingExtent),
     @"text" : [NSString stringWithString:self.text],
   };
+  _latestState = state;
 
-  if (_textInputClient == 0 && _autofillId != nil) {
-    [_textInputDelegate updateEditingClient:_textInputClient withState:state withTag:_autofillId];
-  } else {
-    [_textInputDelegate updateEditingClient:_textInputClient withState:state];
-  }
+  // Debounce calls to updateEditingClient. This makes iOS text editing behave
+  // more similarly to Android's, which has built-in event batching, and avoids
+  // race conditions. The delay value was chosen to be imperceptible by the user
+  // but still long enough to allow the framework to respond with formatting
+  // updates, thereby avoiding common race conditions.
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10000000), dispatch_get_main_queue(), ^(void){
+    if (state != _latestState) {
+      return;
+    }
+    _latestState = nil;
+
+    if (_textInputClient == 0 && _autofillId != nil) {
+      [_textInputDelegate updateEditingClient:_textInputClient withState:state withTag:_autofillId];
+    } else {
+      [_textInputDelegate updateEditingClient:_textInputClient withState:state];
+    }
+  });
 }
 
 - (BOOL)hasText {
