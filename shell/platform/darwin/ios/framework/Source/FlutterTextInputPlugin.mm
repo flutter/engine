@@ -357,6 +357,12 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
       selectedRange.length != oldSelectedRange.length) {
     needsEditingStateUpdate = YES;
     [self.inputDelegate selectionWillChange:self];
+
+    // The state may contain an invalid selection, such as when no selection was
+    // explicitly set in the framework. This is handled here by setting the
+    // selection to (0,0). In contrast, Android handles this situation by
+    // clearing the selection, but the result in both cases is that the cursor
+    // is placed at the beginning of the field.
     bool selectionBaseIsValid = selectionBase > 0 && selectionBase <= ((NSInteger)self.text.length);
     bool selectionExtentIsValid =
         selectionExtent > 0 && selectionExtent <= ((NSInteger)self.text.length);
@@ -365,6 +371,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
     } else {
       [self setSelectedTextRangeLocal:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 0)]];
     }
+
     _selectionAffinity = _kTextAffinityDownstream;
     if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)])
       _selectionAffinity = _kTextAffinityUpstream;
