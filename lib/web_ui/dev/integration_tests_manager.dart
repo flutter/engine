@@ -52,7 +52,10 @@ class IntegrationTestsManager {
   /// TODO(nurhan): Use git pull instead if repo exists.
   Future<void> _cloneFlutterRepo() async {
     // Delete directory if exists.
-    if (environment.engineDartToolDir.existsSync()) {
+    // Do not delete on LUCI since we are using an API from the recipe to clone
+    // Flutter Framework.
+    // See: https://flutter.googlesource.com/recipes/+/refs/heads/master/recipe_modules/repo_util/api.py
+    if (environment.engineDartToolDir.existsSync() && !isLuci) {
       environment.engineDartToolDir.deleteSync(recursive: true);
     }
     environment.engineDartToolDir.createSync();
@@ -292,7 +295,7 @@ class IntegrationTestsManager {
     } else if (_browser == 'firefox' &&
         (io.Platform.isLinux || io.Platform.isMacOS)) {
       return true;
-    } else if (_browser == 'safari' && io.Platform.isMacOS && !isLuci) {
+    } else if (_browser == 'safari' && io.Platform.isMacOS) {
       return true;
     } else {
       io.stderr.writeln(_unsupportedConfigurationWarning);
