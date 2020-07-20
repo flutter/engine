@@ -78,8 +78,10 @@ List<String> getListOfChangedFiles(String repoPath) {
       'git', ['diff', '--cached', '--name-only'],
       workingDirectory: repoPath);
 
-  Process.runSync('git', ['fetch upstream master']);
-  Process.runSync('git', ['fetch origin master']);
+  final ProcessResult fetchResult = Process.runSync('git', ['fetch upstream master']);
+  if (fetchResult.exitCode != 0) {
+    Process.runSync('git', ['fetch origin master']);
+  }
   final ProcessResult mergeBaseResult = Process.runSync(
       'git', ['merge-base', '--fork-point', 'FETCH_HEAD', 'HEAD'],
       workingDirectory: repoPath);
