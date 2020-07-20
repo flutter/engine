@@ -605,6 +605,13 @@ class SemanticsObject {
       !hasAction(ui.SemanticsAction.tap) &&
       !hasFlag(ui.SemanticsFlag.isButton);
 
+  /// Whether this object is enabled.
+  ///
+  /// Relevant for objects such as controllers (ex: buttons, checkboxes)
+  bool get isEnabled =>
+      hasFlag(ui.SemanticsFlag.isEnabled) &&
+      hasFlag(ui.SemanticsFlag.hasEnabledState);
+
   /// Updates this object from data received from a semantics [update].
   ///
   /// This method creates [SemanticsObject]s for the direct children of this
