@@ -271,20 +271,20 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
+@property(nonatomic, assign) CGPoint editableOrigin;
+@property(nonatomic, assign) CGRect markedRect;
 @end
 
 @implementation FlutterTextInputView {
   int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
-  CGRect _markedRect;
 }
 
 @synthesize tokenizer = _tokenizer;
 
 - (instancetype)init {
   self = [super init];
-
   if (self) {
     _textInputClient = 0;
     _selectionAffinity = _kTextAffinityUpstream;
@@ -324,10 +324,6 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 - (void)setTextInputClient:(int)client {
   _textInputClient = client;
-}
-
-- (void)setMarkedRect: (CGRect) rect {
-  _markedRect = rect;
 }
 
 // Return true if the new input state needs to be synced back to the framework.
@@ -694,14 +690,14 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 - (CGRect)firstRectForRange:(UITextRange*)range {
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
-  // multi-stage text is handled somewhere else.
   if (_markedTextRange != nil) {
-    NSLog(@"firstRectForRange: %lu, %lu, markedText:%@, reported rect: %@", start, end, NSStringFromRange(((FlutterTextRange*)_markedTextRange).range), NSStringFromCGRect(_markedRect));
-    return _markedRect;
+    // If the width returned is 
+    double nonZeroWidth = MAX(_markedRect.size.width, 0.1);
+    CGRect rect = _markedRect;
+    rect.size = CGSizeMake(nonZeroWidth, rect.size.height);
+    return CGRectOffset(rect, _editableOrigin.x, _editableOrigin.y);
   }
-
-//  NSUInteger start = ((FlutterTextPosition*)range.start).index;
-//  NSUInteger end = ((FlutterTextPosition*)range.end).index;
+  
   [_textInputDelegate showAutocorrectionPromptRectForStart:start
                                                        end:end
                                                 withClient:_textInputClient];
@@ -898,6 +894,8 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
     result(nil);
   } else if ([method isEqualToString:@"TextInput.setEditableSizeAndTransform"]) {
     [self setEditableSizeAndTransform:args];
+  } else if ([method isEqualToString:@"TextInput.setMarkedTextRect"]) {
+    [self updateMarkedRect:args];
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -905,16 +903,19 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 -(void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
   NSArray* matrix = dictionary[@"transform"];
-  CGPoint offset = CGPointMake([matrix[12] doubleValue], [matrix[13] doubleValue]);
-  double width = [dictionary[@"markedWidth"] doubleValue];
-  width = width == 0.0 ? 17 : width;
-  CGRect markedRect = CGRectMake(
-                                 [dictionary[@"markedOriginX"] doubleValue],
-                                 [dictionary[@"markedOriginY"] doubleValue], width,
-                                 [dictionary[@"markedHeight"] doubleValue]);
-  
-  _activeView.markedRect = CGRectOffset(markedRect, offset.x, offset.y);
+  _activeView.editableOrigin = CGPointMake([matrix[12] doubleValue], [matrix[13] doubleValue]);
+  NSLog(@"%@", @(_activeView.editableOrigin));
+}
 
+-(void)updateMarkedRect:(NSDictionary*)dictionary {
+  NSLog(@"%@", dictionary);
+  CGRect markedRect = CGRectMake(
+                                 [dictionary[@"x"] doubleValue],
+                                 [dictionary[@"y"] doubleValue],
+                                 [dictionary[@"Width"] doubleValue],
+                                 [dictionary[@"height"] doubleValue]);
+  
+  _activeView.markedRect = markedRect;
 }
 
 - (void)showTextInput {
