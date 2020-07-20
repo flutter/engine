@@ -123,7 +123,6 @@ TEST_F(PlatformViewTests, ChangesAccessibilitySettings) {
       nullptr,  // parent_environment_service_provider_handle
       nullptr,  // session_listener_request
       nullptr,  // on_session_listener_error_callback
-      nullptr,  // session_metrics_did_change_callback
       nullptr,  // on_enable_wireframe_callback,
       nullptr,  // on_create_view_callback,
       nullptr,  // on_destroy_view_callback,
@@ -178,7 +177,6 @@ TEST_F(PlatformViewTests, EnableWireframeTest) {
       nullptr,                  // parent_environment_service_provider_handle
       nullptr,                  // session_listener_request
       nullptr,                  // on_session_listener_error_callback
-      nullptr,                  // session_metrics_did_change_callback
       EnableWireframeCallback,  // on_enable_wireframe_callback,
       nullptr,                  // on_create_view_callback,
       nullptr,                  // on_destroy_view_callback,
@@ -244,7 +242,6 @@ TEST_F(PlatformViewTests, CreateViewTest) {
       nullptr,             // parent_environment_service_provider_handle
       nullptr,             // session_listener_request
       nullptr,             // on_session_listener_error_callback
-      nullptr,             // session_metrics_did_change_callback
       nullptr,             // on_enable_wireframe_callback,
       CreateViewCallback,  // on_create_view_callback,
       nullptr,             // on_destroy_view_callback,
@@ -312,7 +309,6 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
       nullptr,              // parent_environment_service_provider_handle
       nullptr,              // session_listener_request
       nullptr,              // on_session_listener_error_callback
-      nullptr,              // session_metrics_did_change_callback
       nullptr,              // on_enable_wireframe_callback,
       nullptr,              // on_create_view_callback,
       DestroyViewCallback,  // on_destroy_view_callback,
@@ -381,7 +377,6 @@ TEST_F(PlatformViewTests, GetViewEmbedderTest) {
       nullptr,                  // parent_environment_service_provider_handle
       nullptr,                  // session_listener_request
       nullptr,                  // on_session_listener_error_callback
-      nullptr,                  // session_metrics_did_change_callback
       nullptr,                  // on_enable_wireframe_callback,
       nullptr,                  // on_create_view_callback,
       nullptr,                  // on_destroy_view_callback,

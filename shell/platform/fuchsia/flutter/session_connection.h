@@ -40,19 +40,6 @@ class SessionConnection final {
 
   ~SessionConnection();
 
-  bool has_metrics() const { return scene_update_context_.has_metrics(); }
-
-  const fuchsia::ui::gfx::MetricsPtr& metrics() const {
-    return scene_update_context_.metrics();
-  }
-
-  void set_metrics(const fuchsia::ui::gfx::Metrics& metrics) {
-    fuchsia::ui::gfx::Metrics metrics_copy;
-    metrics.Clone(&metrics_copy);
-    scene_update_context_.set_metrics(
-        fidl::MakeOptional(std::move(metrics_copy)));
-  }
-
   void set_enable_wireframe(bool enable);
 
   flutter::SceneUpdateContext& scene_update_context() {

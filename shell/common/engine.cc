@@ -461,7 +461,7 @@ void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
 
   // Ensure frame dimensions are sane.
   if (layer_tree->frame_size().isEmpty() ||
-      layer_tree->frame_device_pixel_ratio() <= 0.0f) {
+      layer_tree->device_pixel_ratio() <= 0.0f) {
     return;
   }
 

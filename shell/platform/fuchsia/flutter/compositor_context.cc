@@ -34,10 +34,6 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
 
   flutter::RasterStatus Raster(flutter::LayerTree& layer_tree,
                                bool ignore_raster_cache) override {
-    if (!session_connection_.has_metrics()) {
-      return flutter::RasterStatus::kSuccess;
-    }
-
     std::vector<flutter::SceneUpdateContext::PaintTask> frame_paint_tasks;
     std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
 
@@ -64,9 +60,9 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
       TRACE_EVENT0("flutter", "SessionPresent");
       for (auto& task : frame_paint_tasks) {
         SkISize physical_size =
-            SkISize::Make(layer_tree.frame_device_pixel_ratio() * task.scale_x *
+            SkISize::Make(layer_tree.device_pixel_ratio() * task.scale_x *
                               task.paint_bounds.width(),
-                          layer_tree.frame_device_pixel_ratio() * task.scale_y *
+                          layer_tree.device_pixel_ratio() * task.scale_y *
                               task.paint_bounds.height());
         std::unique_ptr<SurfaceProducerSurface> surface =
             session_connection_.vulkan_surface_producer()->ProduceSurface(
@@ -110,12 +106,12 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
             context().texture_registry(),
             &context().raster_cache(),
             false,
-            layer_tree.frame_device_pixel_ratio()};
+            layer_tree.device_pixel_ratio()};
         canvas->restoreToCount(1);
         canvas->save();
         canvas->clear(task.background_color);
-        canvas->scale(layer_tree.frame_device_pixel_ratio() * task.scale_x,
-                      layer_tree.frame_device_pixel_ratio() * task.scale_y);
+        canvas->scale(layer_tree.device_pixel_ratio() * task.scale_x,
+                      layer_tree.device_pixel_ratio() * task.scale_y);
         canvas->translate(-task.paint_bounds.left(), -task.paint_bounds.top());
         for (flutter::Layer* layer : task.layers) {
           layer->Paint(paint_context);
@@ -150,11 +146,6 @@ CompositorContext::CompositorContext(
           session_error_callback,
           [](auto) {},
           vsync_event_handle) {}
-
-void CompositorContext::OnSessionMetricsDidChange(
-    const fuchsia::ui::gfx::Metrics& metrics) {
-  session_connection_.set_metrics(metrics);
-}
 
 void CompositorContext::OnWireframeEnabled(bool enabled) {
   session_connection_.set_enable_wireframe(enabled);

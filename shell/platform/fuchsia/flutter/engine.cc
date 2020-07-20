@@ -93,10 +93,6 @@ Engine::Engine(Delegate& delegate,
   environment->GetServices(parent_environment_service_provider.NewRequest());
   environment.Unbind();
 
-  // We need to manually schedule a frame when the session metrics change.
-  OnMetricsUpdate on_session_metrics_change_callback = std::bind(
-      &Engine::OnSessionMetricsDidChange, this, std::placeholders::_1);
-
   OnEnableWireframe on_enable_wireframe_callback = std::bind(
       &Engine::OnDebugWireframeSettingsChanged, this, std::placeholders::_1);
 
@@ -137,8 +133,6 @@ Engine::Engine(Delegate& delegate,
            session_listener_request = std::move(session_listener_request),
            on_session_listener_error_callback =
                std::move(on_session_listener_error_callback),
-           on_session_metrics_change_callback =
-               std::move(on_session_metrics_change_callback),
            on_enable_wireframe_callback =
                std::move(on_enable_wireframe_callback),
            on_create_view_callback = std::move(on_create_view_callback),
@@ -156,7 +150,6 @@ Engine::Engine(Delegate& delegate,
                 std::move(parent_environment_service_provider),  // services
                 std::move(session_listener_request),  // session listener
                 std::move(on_session_listener_error_callback),
-                std::move(on_session_metrics_change_callback),
                 std::move(on_enable_wireframe_callback),
                 std::move(on_create_view_callback),
                 std::move(on_destroy_view_callback),
@@ -476,24 +469,6 @@ void Engine::Terminate() {
   delegate_.OnEngineTerminate(this);
   // Warning. Do not do anything after this point as the delegate may have
   // collected this object.
-}
-
-void Engine::OnSessionMetricsDidChange(
-    const fuchsia::ui::gfx::Metrics& metrics) {
-  if (!shell_) {
-    return;
-  }
-
-  shell_->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [rasterizer = shell_->GetRasterizer(), metrics]() {
-        if (rasterizer) {
-          auto compositor_context =
-              reinterpret_cast<flutter_runner::CompositorContext*>(
-                  rasterizer->compositor_context());
-
-          compositor_context->OnSessionMetricsDidChange(metrics);
-        }
-      });
 }
 
 void Engine::OnDebugWireframeSettingsChanged(bool enabled) {

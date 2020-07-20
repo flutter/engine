@@ -110,22 +110,7 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   ~SceneUpdateContext() = default;
 
   scenic::Session* session() { return session_; }
-
   Entity* top_entity() { return top_entity_; }
-
-  bool has_metrics() const { return !!metrics_; }
-  void set_metrics(fuchsia::ui::gfx::MetricsPtr metrics) {
-    metrics_ = std::move(metrics);
-  }
-  const fuchsia::ui::gfx::MetricsPtr& metrics() const { return metrics_; }
-
-  void set_dimensions(const SkISize& frame_physical_size,
-                      float frame_device_pixel_ratio) {
-    frame_physical_size_ = frame_physical_size;
-    frame_device_pixel_ratio_ = frame_device_pixel_ratio;
-  }
-  const SkISize& frame_size() const { return frame_physical_size_; }
-  float frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; }
 
   // The cumulative alpha value based on all the parent OpacityLayers.
   void set_alphaf(float alpha) { alpha_ = alpha; }
@@ -182,11 +167,6 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   float top_elevation_ = 0.0f;
 
   scenic::Session* const session_;
-
-  fuchsia::ui::gfx::MetricsPtr metrics_;
-  SkISize frame_physical_size_;
-  float frame_device_pixel_ratio_ =
-      1.0f;  // Ratio between logical and physical pixels.
 
   float alpha_ = 1.0f;
   float next_elevation_ = 0.0f;
