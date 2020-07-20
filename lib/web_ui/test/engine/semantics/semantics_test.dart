@@ -1118,8 +1118,7 @@ void _testCheckables() {
       actions: 0 | ui.SemanticsAction.tap.index,
       flags: 0 |
           ui.SemanticsFlag.isEnabled.index |
-                    ui.SemanticsFlag.hasEnabledState.index |
-
+          ui.SemanticsFlag.hasEnabledState.index |
           ui.SemanticsFlag.hasCheckedState.index |
           ui.SemanticsFlag.isInMutuallyExclusiveGroup.index,
       transform: Matrix4.identity().toFloat64(),
