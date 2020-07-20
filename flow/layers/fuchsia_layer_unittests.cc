@@ -275,8 +275,6 @@ std::unique_ptr<TestContext> InitTest() {
   // Init SceneUpdateContext.
   context->scene_update_context =
       std::make_unique<SceneUpdateContext>(context->session.get());
-  context->scene_update_context->set_metrics(
-      fidl::MakeOptional(fuchsia::ui::gfx::Metrics{1.f, 1.f, 1.f}));
 
   // Init PrerollContext.
   context->preroll_context = std::unique_ptr<PrerollContext>(new PrerollContext{

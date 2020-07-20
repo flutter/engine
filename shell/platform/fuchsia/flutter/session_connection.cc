@@ -66,8 +66,7 @@ SessionConnection::SessionConnection(
   session_wrapper_.SetDebugName(debug_label_);
 
   root_view_.AddChild(root_node_);
-  root_node_.SetEventMask(fuchsia::ui::gfx::kMetricsEventMask |
-                          fuchsia::ui::gfx::kSizeChangeHintEventMask);
+  root_node_.SetEventMask(fuchsia::ui::gfx::kMetricsEventMask);
 
   // Get information to finish initialization and only then allow Present()s.
   session_wrapper_.RequestPresentationTimes(
