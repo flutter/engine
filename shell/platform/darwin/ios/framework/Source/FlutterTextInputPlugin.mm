@@ -374,14 +374,21 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // currently only support UITextFields, and password saving only supports
 // UITextFields and UITextViews, as of iOS 13.5.
 @interface FlutterSecureTextInputView : FlutterTextInputView
-@property(class, nonatomic, assign, readonly) UITextField* textField;
+@property(nonatomic, strong, readonly) UITextField* textField;
 @end
 
-@implementation FlutterSecureTextInputView
-+ (UITextField*)textField {
-  static UITextField* _textField = nil;
+@implementation FlutterSecureTextInputView {
+  UITextField* _textField;
+}
+
+- (void)dealloc {
+  [_textField release];
+  [super dealloc];
+}
+
+- (UITextField*)textField {
   if (_textField == nil) {
-    _textField = [[UITextField alloc] init];
+    _textField = [[[UITextField alloc] init] autorelease];
   }
   return _textField;
 }
@@ -393,13 +400,13 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (NSMethodSignature*)methodSignatureForSelector:(SEL)aSelector {
   NSMethodSignature* signature = [super methodSignatureForSelector:aSelector];
   if (!signature) {
-    signature = [[FlutterSecureTextInputView textField] methodSignatureForSelector:aSelector];
+    signature = [self.textField methodSignatureForSelector:aSelector];
   }
   return signature;
 }
 
 - (void)forwardInvocation:(NSInvocation*)anInvocation {
-  [anInvocation invokeWithTarget:[FlutterSecureTextInputView textField]];
+  [anInvocation invokeWithTarget:self.textField];
 }
 
 @end
