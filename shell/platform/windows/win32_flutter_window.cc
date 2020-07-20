@@ -1,8 +1,11 @@
 #include "flutter/shell/platform/windows/win32_flutter_window.h"
 
 #include <chrono>
+#include <map>
 
 namespace flutter {
+
+namespace {
 
 // The Windows DPI system is based on this
 // constant for machines running at 100% scaling.
@@ -12,9 +15,55 @@ constexpr int base_dpi = 96;
 // arbitrarily to get something that feels reasonable.
 constexpr int kScrollOffsetMultiplier = 20;
 
+// Maps a Flutter cursor name to an HCURSOR.
+//
+// Returns the arrow cursor for unknown constants.
+//
+// This map must be kept in sync with Flutter framework's
+// rendering/mouse_cursor.dart.
+static HCURSOR GetCursorByName(const std::string& cursor_name) {
+  static auto* cursors = new std::map<std::string, const wchar_t*>{
+      {"allScroll", IDC_SIZEALL},
+      {"basic", IDC_ARROW},
+      {"click", IDC_HAND},
+      {"forbidden", IDC_NO},
+      {"help", IDC_HELP},
+      {"move", IDC_SIZEALL},
+      {"none", nullptr},
+      {"noDrop", IDC_NO},
+      {"precise", IDC_CROSS},
+      {"progress", IDC_APPSTARTING},
+      {"text", IDC_IBEAM},
+      {"resizeColumn", IDC_SIZEWE},
+      {"resizeDown", IDC_SIZENS},
+      {"resizeDownLeft", IDC_SIZENESW},
+      {"resizeDownRight", IDC_SIZENWSE},
+      {"resizeLeft", IDC_SIZEWE},
+      {"resizeLeftRight", IDC_SIZEWE},
+      {"resizeRight", IDC_SIZEWE},
+      {"resizeRow", IDC_SIZENS},
+      {"resizeUp", IDC_SIZENS},
+      {"resizeUpDown", IDC_SIZENS},
+      {"resizeUpLeft", IDC_SIZENWSE},
+      {"resizeUpRight", IDC_SIZENESW},
+      {"resizeUpLeftDownRight", IDC_SIZENWSE},
+      {"resizeUpRightDownLeft", IDC_SIZENESW},
+      {"wait", IDC_WAIT},
+  };
+  const wchar_t* idc_name = IDC_ARROW;
+  auto it = cursors->find(cursor_name);
+  if (it != cursors->end()) {
+    idc_name = it->second;
+  }
+  return ::LoadCursor(nullptr, idc_name);
+}
+
+}  // namespace
+
 Win32FlutterWindow::Win32FlutterWindow(int width, int height)
     : binding_handler_delegate_(nullptr) {
   Win32Window::InitializeChild("FLUTTERVIEW", width, height);
+  current_cursor_ = ::LoadCursor(nullptr, IDC_ARROW);
 }
 
 Win32FlutterWindow::~Win32FlutterWindow() {}
@@ -33,6 +82,10 @@ float Win32FlutterWindow::GetDpiScale() {
 
 PhysicalWindowBounds Win32FlutterWindow::GetPhysicalWindowBounds() {
   return {GetCurrentWidth(), GetCurrentHeight()};
+}
+
+void Win32FlutterWindow::UpdateFlutterCursor(const std::string& cursor_name) {
+  current_cursor_ = GetCursorByName(cursor_name);
 }
 
 // Translates button codes from Win32 API to FlutterPointerMouseButtons.
@@ -88,6 +141,10 @@ void Win32FlutterWindow::OnPointerUp(double x, double y, UINT button) {
 
 void Win32FlutterWindow::OnPointerLeave() {
   binding_handler_delegate_->OnPointerLeave();
+}
+
+void Win32FlutterWindow::OnSetCursor() {
+  ::SetCursor(current_cursor_);
 }
 
 void Win32FlutterWindow::OnText(const std::u16string& text) {

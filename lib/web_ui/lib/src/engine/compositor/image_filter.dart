@@ -7,7 +7,7 @@ part of engine;
 /// The CanvasKit implementation of [ui.ImageFilter].
 ///
 /// Currently only supports `blur`.
-class CkImageFilter extends ResurrectableSkiaObject implements ui.ImageFilter {
+class CkImageFilter extends ResurrectableSkiaObject<SkImageFilter> implements ui.ImageFilter {
   CkImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0})
       : _sigmaX = sigmaX,
         _sigmaY = sigmaY;
@@ -16,20 +16,24 @@ class CkImageFilter extends ResurrectableSkiaObject implements ui.ImageFilter {
   final double _sigmaY;
 
   @override
-  js.JsObject createDefault() => _initSkiaObject();
+  SkImageFilter createDefault() => _initSkiaObject();
 
   @override
-  js.JsObject resurrect() => _initSkiaObject();
+  SkImageFilter resurrect() => _initSkiaObject();
 
-  js.JsObject _initSkiaObject() => canvasKit['SkImageFilter'].callMethod(
-        'MakeBlur',
-        <dynamic>[
-          _sigmaX,
-          _sigmaY,
-          canvasKit['TileMode']['Clamp'],
-          null,
-        ],
-      );
+  @override
+  void delete() {
+    rawSkiaObject?.delete();
+  }
+
+  SkImageFilter _initSkiaObject() {
+    return canvasKit.SkImageFilter.MakeBlur(
+      _sigmaX,
+      _sigmaY,
+      canvasKit.TileMode.Clamp,
+      null,
+    );
+  }
 
   @override
   bool operator ==(Object other) {

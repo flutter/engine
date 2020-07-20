@@ -223,8 +223,29 @@ FLUTTER_ASSERT_ARC
   OCMReject([engine updateEditingClient:0 withState:[OCMArg any]]);
 }
 
+- (void)testUpdateEditingClientNegativeSelection {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  inputView.textInputDelegate = engine;
+  
+  [inputView.text setString:@"SELECTION"];
+  inputView.markedTextRange = nil;
+  inputView.selectedTextRange = nil;
+  
+  [inputView setTextInputState:@{
+    @"text" : @"SELECTION",
+    @"selectionBase" : @-1,
+    @"selectionExtent" : @-1
+  }];
+  OCMVerify([engine updateEditingClient:0
+                              withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+    return ([state[@"selectionBase"] intValue]) == 0 &&
+    ([state[@"selectionExtent"] intValue] == 0);
+  }]]);
+}
+
 - (void)testAutofillContext {
   NSMutableDictionary* field1 = self.mutableTemplateCopy;
+
   [field1 setValue:@{
     @"uniqueIdentifier" : @"field1",
     @"hints" : @[ @"hint1" ],

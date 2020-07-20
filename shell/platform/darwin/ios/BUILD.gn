@@ -5,6 +5,7 @@
 assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
+import("//build/toolchain/clang.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
@@ -74,6 +75,8 @@ source_set("flutter_framework_source") {
     "framework/Source/accessibility_bridge.mm",
     "framework/Source/accessibility_text_entry.h",
     "framework/Source/accessibility_text_entry.mm",
+    "framework/Source/connection_collection.cc",
+    "framework/Source/connection_collection.h",
     "framework/Source/platform_message_response_darwin.h",
     "framework/Source/platform_message_response_darwin.mm",
     "framework/Source/platform_message_router.h",
@@ -167,6 +170,8 @@ source_set("ios_test_flutter_mrc") {
     "-mios-simulator-version-min=$ios_testing_deployment_target",
   ]
   sources = [
+    "framework/Source/FlutterEnginePlatformViewTest.mm",
+    "framework/Source/FlutterPlatformViewsTest.mm",
     "framework/Source/accessibility_bridge_test.mm",
   ]
   deps = [
@@ -207,6 +212,7 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterTextInputPluginTest.m",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
+    "framework/Source/connection_collection_test.mm",
   ]
   deps = [
     ":flutter_framework_source",
@@ -264,7 +270,7 @@ action("copy_framework_info_plist") {
   args = [
     rebase_path(sources[0]),
     rebase_path(outputs[0]),
-    "--bitcode=$flutter_enable_bitcode",
+    "--bitcode=$enable_bitcode",
   ]
 }
 

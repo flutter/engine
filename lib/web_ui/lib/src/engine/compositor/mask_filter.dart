@@ -5,7 +5,7 @@
 part of engine;
 
 /// The CanvasKit implementation of [ui.MaskFilter].
-class CkMaskFilter extends ResurrectableSkiaObject {
+class CkMaskFilter extends ResurrectableSkiaObject<SkMaskFilter> {
   CkMaskFilter.blur(ui.BlurStyle blurStyle, double sigma)
       : _blurStyle = blurStyle,
         _sigma = sigma;
@@ -14,29 +14,21 @@ class CkMaskFilter extends ResurrectableSkiaObject {
   final double _sigma;
 
   @override
-  js.JsObject createDefault() => _initSkiaObject();
+  SkMaskFilter createDefault() => _initSkiaObject();
 
   @override
-  js.JsObject resurrect() => _initSkiaObject();
+  SkMaskFilter resurrect() => _initSkiaObject();
 
-  js.JsObject _initSkiaObject() {
-    js.JsObject skBlurStyle;
-    switch (_blurStyle) {
-      case ui.BlurStyle.normal:
-        skBlurStyle = canvasKit['BlurStyle']['Normal'];
-        break;
-      case ui.BlurStyle.solid:
-        skBlurStyle = canvasKit['BlurStyle']['Solid'];
-        break;
-      case ui.BlurStyle.outer:
-        skBlurStyle = canvasKit['BlurStyle']['Outer'];
-        break;
-      case ui.BlurStyle.inner:
-        skBlurStyle = canvasKit['BlurStyle']['Inner'];
-        break;
-    }
+  SkMaskFilter _initSkiaObject() {
+    return canvasKit.MakeBlurMaskFilter(
+      toSkBlurStyle(_blurStyle),
+      _sigma,
+      true,
+    );
+  }
 
-    return canvasKit
-        .callMethod('MakeBlurMaskFilter', <dynamic>[skBlurStyle, _sigma, true]);
+  @override
+  void delete() {
+    rawSkiaObject?.delete();
   }
 }
