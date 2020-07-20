@@ -17,6 +17,19 @@ import 'dart:io'
 import 'dart:convert' show jsonDecode, utf8;
 import 'dart:async' show Completer;
 
+String _linterOutputHeader = '''┌──────────────────────────┐
+│ Engine Clang Tidy Linter │
+└──────────────────────────┘
+The following errors have been reported by the Engine Clang Tidy Linter.  For
+more information on addressing these issues please see:
+https://github.com/flutter/flutter/wiki/Engine-Clang-Tidy-Linter
+
+Note, you may see issues in files this change touches, in lines that weren't
+edited.  That is intentional, please address the issues or visit the wiki for
+more options.
+''';
+
+
 class Command {
   String directory;
   String command;
@@ -65,8 +78,10 @@ List<String> getListOfChangedFiles(String repoPath) {
       'git', ['diff', '--cached', '--name-only'],
       workingDirectory: repoPath);
 
+  Process.runSync('git', ['fetch upstream master']);
+  Process.runSync('git', ['fetch origin master']);
   final ProcessResult mergeBaseResult = Process.runSync(
-      'git', ['merge-base', 'master', 'HEAD'],
+      'git', ['merge-base', '--fork-point', 'FETCH_HEAD', 'HEAD'],
       workingDirectory: repoPath);
   final String mergeBase = mergeBaseResult.stdout.trim();
   final ProcessResult masterResult = Process.runSync(
@@ -108,13 +123,14 @@ void main(List<String> arguments) async {
   final List<Command> changedFileBuildCommands =
       buildCommands.where((x) => containsAny(x.file, changedFiles)).toList();
 
+  print(_linterOutputHeader);
   int exitCode = 0;
   //TODO(aaclarke): Coalesce this into one call using the `-p` arguement.
   for (Command command in changedFileBuildCommands) {
     final String tidyArgs = calcTidyArgs(command);
     final List<String> args = [command.file, checks, '--'];
     args.addAll(tidyArgs.split(' '));
-    print('# linting ${command.file}');
+    print('🔶 linting ${command.file}');
     final Process process = await Process.start(tidyPath, args,
         workingDirectory: command.directory, runInShell: false);
     process.stdout.transform(utf8.decoder).listen((data) {
