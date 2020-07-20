@@ -226,11 +226,11 @@ FLUTTER_ASSERT_ARC
 - (void)testUpdateEditingClientNegativeSelection {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
-  
+
   [inputView.text setString:@"SELECTION"];
   inputView.markedTextRange = nil;
   inputView.selectedTextRange = nil;
-  
+
   [inputView setTextInputState:@{
     @"text" : @"SELECTION",
     @"selectionBase" : @-1,
@@ -238,9 +238,9 @@ FLUTTER_ASSERT_ARC
   }];
   OCMVerify([engine updateEditingClient:0
                               withState:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-    return ([state[@"selectionBase"] intValue]) == 0 &&
-    ([state[@"selectionExtent"] intValue] == 0);
-  }]]);
+                                return ([state[@"selectionBase"] intValue]) == 0 &&
+                                       ([state[@"selectionExtent"] intValue] == 0);
+                              }]]);
 }
 
 - (void)testAutofillContext {
