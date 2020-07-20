@@ -39,7 +39,8 @@ class SessionConnectionTest : public ::testing::Test {
     FML_CHECK(zx::event::create(0, &vsync_event_) == ZX_OK);
 
     // Ensure Scenic has had time to wake up before the test logic begins.
-    // TODO(61768) Find a better solution than sleeping periodically checking a condition.
+    // TODO(61768) Find a better solution than sleeping periodically checking a
+    // condition.
     int scenic_initialized = false;
     scenic_->GetDisplayInfo(
         [&scenic_initialized](fuchsia::ui::gfx::DisplayInfo display_info) {
