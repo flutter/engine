@@ -154,8 +154,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
         currentValue.composingStart,
         currentValue.composingEnd);
 
-    // TODO(justinmc): This must be where the engine sends a value to the frmwk.
-    Log.e("justin", "Android engine sending to framework " + currentValue.text);
     textInputChannel.updateEditingState(
         mClient,
         currentValue.text,
@@ -190,9 +188,6 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
   @Override
   public boolean endBatchEdit() {
-    // TODO(justinmc): This is how Android is able to batch requests.
-    // Should iOS do the same? Or is there another way to work around this?
-    Log.e("justin", "endBatchEdit");
     boolean result = super.endBatchEdit();
     mBatchCount--;
     updateEditingState();
