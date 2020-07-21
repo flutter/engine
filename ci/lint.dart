@@ -23,10 +23,6 @@ String _linterOutputHeader = '''┌───────────────
 The following errors have been reported by the Engine Clang Tidy Linter.  For
 more information on addressing these issues please see:
 https://github.com/flutter/flutter/wiki/Engine-Clang-Tidy-Linter
-
-Note, you may see issues in files this change touches, in lines that weren't
-edited.  That is intentional, please address the issues or visit the wiki for
-more options.
 ''';
 
 class Command {
