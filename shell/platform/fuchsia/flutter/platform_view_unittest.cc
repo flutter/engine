@@ -100,19 +100,6 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   int32_t semantics_features_ = 0;
 };
 
-class MockSurfaceProducer
-    : public flutter::SceneUpdateContext::SurfaceProducer {
- public:
-  std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-  ProduceSurface(const SkISize& size) override {
-    return nullptr;
-  }
-
-  void SubmitSurface(
-      std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-          surface) override {}
-};
-
 class MockFocuser : public fuchsia::ui::views::Focuser {
  public:
   MockFocuser() = default;
@@ -469,8 +456,7 @@ TEST_F(PlatformViewTests, GetViewEmbedderTest) {
       );
 
   // Test get view embedder callback function.
-  MockSurfaceProducer surfaceProducer;
-  flutter::SceneUpdateContext scene_update_context(nullptr, &surfaceProducer);
+  flutter::SceneUpdateContext scene_update_context(nullptr);
   flutter::ExternalViewEmbedder* view_embedder =
       reinterpret_cast<flutter::ExternalViewEmbedder*>(&scene_update_context);
   auto GetViewEmbedderCallback = [view_embedder]() { return view_embedder; };

@@ -112,8 +112,7 @@ std::unique_ptr<VulkanSurface> VulkanSurfacePool::GetCachedOrCreateSurface(
 }
 
 void VulkanSurfacePool::SubmitSurface(
-    std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-        p_surface) {
+    std::unique_ptr<SurfaceProducerSurface> p_surface) {
   TRACE_EVENT0("flutter", "VulkanSurfacePool::SubmitSurface");
 
   // This cast is safe because |VulkanSurface| is the only implementation of

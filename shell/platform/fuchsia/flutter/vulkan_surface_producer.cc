@@ -155,9 +155,7 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
 }
 
 void VulkanSurfaceProducer::OnSurfacesPresented(
-    std::vector<
-        std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>
-        surfaces) {
+    std::vector<std::unique_ptr<SurfaceProducerSurface>> surfaces) {
   TRACE_EVENT0("flutter", "VulkanSurfaceProducer::OnSurfacesPresented");
 
   // Do a single flush for all canvases derived from the context.
@@ -197,9 +195,7 @@ void VulkanSurfaceProducer::OnSurfacesPresented(
 }
 
 bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
-    const std::vector<
-        std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>&
-        surfaces) {
+    const std::vector<std::unique_ptr<SurfaceProducerSurface>>& surfaces) {
   for (auto& surface : surfaces) {
     auto vk_surface = static_cast<VulkanSurface*>(surface.get());
 
@@ -259,16 +255,15 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
   return true;
 }
 
-std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-VulkanSurfaceProducer::ProduceSurface(const SkISize& size) {
+std::unique_ptr<SurfaceProducerSurface> VulkanSurfaceProducer::ProduceSurface(
+    const SkISize& size) {
   FML_DCHECK(valid_);
   last_produce_time_ = async::Now(async_get_default_dispatcher());
   return surface_pool_->AcquireSurface(size);
 }
 
 void VulkanSurfaceProducer::SubmitSurface(
-    std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-        surface) {
+    std::unique_ptr<SurfaceProducerSurface> surface) {
   FML_DCHECK(valid_ && surface != nullptr);
   surface_pool_->SubmitSurface(std::move(surface));
 }

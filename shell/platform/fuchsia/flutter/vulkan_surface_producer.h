@@ -8,8 +8,8 @@
 #include <lib/async/default.h>
 #include <lib/syslog/global.h>
 
-#include "flutter/flow/scene_update_context.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/vulkan/vulkan_application.h"
 #include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
@@ -22,9 +22,8 @@
 
 namespace flutter_runner {
 
-class VulkanSurfaceProducer final
-    : public flutter::SceneUpdateContext::SurfaceProducer,
-      public vulkan::VulkanProvider {
+class VulkanSurfaceProducer final : public SurfaceProducer,
+                                    public vulkan::VulkanProvider {
  public:
   VulkanSurfaceProducer(scenic::Session* scenic_session);
 
@@ -32,19 +31,15 @@ class VulkanSurfaceProducer final
 
   bool IsValid() const { return valid_; }
 
-  // |flutter::SceneUpdateContext::SurfaceProducer|
-  std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-  ProduceSurface(const SkISize& size) override;
+  // |SurfaceProducer|
+  std::unique_ptr<SurfaceProducerSurface> ProduceSurface(
+      const SkISize& size) override;
 
-  // |flutter::SceneUpdateContext::SurfaceProducer|
-  void SubmitSurface(
-      std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-          surface) override;
+  // |SurfaceProducer|
+  void SubmitSurface(std::unique_ptr<SurfaceProducerSurface> surface) override;
 
   void OnSurfacesPresented(
-      std::vector<
-          std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>
-          surfaces);
+      std::vector<std::unique_ptr<SurfaceProducerSurface>> surfaces);
 
   GrDirectContext* gr_context() { return context_.get(); }
 
@@ -56,9 +51,7 @@ class VulkanSurfaceProducer final
   }
 
   bool TransitionSurfacesToExternal(
-      const std::vector<
-          std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>>&
-          surfaces);
+      const std::vector<std::unique_ptr<SurfaceProducerSurface>>& surfaces);
 
   // Note: the order here is very important. The proctable must be destroyed
   // last because it contains the function pointers for VkDestroyDevice and

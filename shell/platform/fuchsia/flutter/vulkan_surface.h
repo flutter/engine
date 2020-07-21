@@ -5,6 +5,7 @@
 #pragma once
 
 #include <lib/async/cpp/wait.h>
+#include <lib/ui/scenic/cpp/resources.h>
 #include <lib/zx/event.h>
 #include <lib/zx/vmo.h>
 
@@ -12,16 +13,45 @@
 #include <memory>
 
 #include "flutter/flow/raster_cache_key.h"
-#include "flutter/flow/scene_update_context.h"
 #include "flutter/fml/macros.h"
 #include "flutter/vulkan/vulkan_command_buffer.h"
 #include "flutter/vulkan/vulkan_handle.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
 #include "flutter/vulkan/vulkan_provider.h"
-#include "lib/ui/scenic/cpp/resources.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter_runner {
+
+class SurfaceProducerSurface {
+ public:
+  virtual ~SurfaceProducerSurface() = default;
+
+  virtual size_t AdvanceAndGetAge() = 0;
+
+  virtual bool FlushSessionAcquireAndReleaseEvents() = 0;
+
+  virtual bool IsValid() const = 0;
+
+  virtual SkISize GetSize() const = 0;
+
+  virtual void SignalWritesFinished(
+      const std::function<void(void)>& on_writes_committed) = 0;
+
+  virtual scenic::Image* GetImage() = 0;
+
+  virtual sk_sp<SkSurface> GetSkiaSurface() const = 0;
+};
+
+class SurfaceProducer {
+ public:
+  virtual ~SurfaceProducer() = default;
+
+  virtual std::unique_ptr<SurfaceProducerSurface> ProduceSurface(
+      const SkISize& size) = 0;
+
+  virtual void SubmitSurface(
+      std::unique_ptr<SurfaceProducerSurface> surface) = 0;
+};
 
 // A |VkImage| and its relevant metadata.
 struct VulkanImage {
@@ -44,8 +74,7 @@ bool CreateVulkanImage(vulkan::VulkanProvider& vulkan_provider,
                        const SkISize& size,
                        VulkanImage* out_vulkan_image);
 
-class VulkanSurface final
-    : public flutter::SceneUpdateContext::SurfaceProducerSurface {
+class VulkanSurface final : public SurfaceProducerSurface {
  public:
   VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
                 sk_sp<GrDirectContext> context,
@@ -54,16 +83,16 @@ class VulkanSurface final
 
   ~VulkanSurface() override;
 
-  // |flutter::SceneUpdateContext::SurfaceProducerSurface|
+  // |SurfaceProducerSurface|
   size_t AdvanceAndGetAge() override;
 
-  // |flutter::SceneUpdateContext::SurfaceProducerSurface|
+  // |SurfaceProducerSurface|
   bool FlushSessionAcquireAndReleaseEvents() override;
 
-  // |flutter::SceneUpdateContext::SurfaceProducerSurface|
+  // |SurfaceProducerSurface|
   bool IsValid() const override;
 
-  // |flutter::SceneUpdateContext::SurfaceProducerSurface|
+  // |SurfaceProducerSurface|
   SkISize GetSize() const override;
 
   // Note: It is safe for the caller to collect the surface in the
@@ -71,10 +100,10 @@ class VulkanSurface final
   void SignalWritesFinished(
       const std::function<void(void)>& on_writes_committed) override;
 
-  // |flutter::SceneUpdateContext::SurfaceProducerSurface|
+  // |SurfaceProducerSurface|
   scenic::Image* GetImage() override;
 
-  // |flutter::SceneUpdateContext::SurfaceProducerSurface|
+  // |SurfaceProducerSurface|
   sk_sp<SkSurface> GetSkiaSurface() const override;
 
   const vulkan::VulkanHandle<VkImage>& GetVkImage() {

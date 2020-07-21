@@ -81,7 +81,7 @@ TEST_F(SessionConnectionTest, SimplePresentTest) {
       on_frame_presented_callback, vsync_event_.get());
 
   for (int i = 0; i < 200; ++i) {
-    session_connection.Present(nullptr);
+    session_connection.Present();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 
@@ -104,7 +104,7 @@ TEST_F(SessionConnectionTest, BatchedPresentTest) {
       on_frame_presented_callback, vsync_event_.get());
 
   for (int i = 0; i < 200; ++i) {
-    session_connection.Present(nullptr);
+    session_connection.Present();
     if (i % 10 == 9) {
       std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }

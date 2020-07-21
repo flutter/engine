@@ -15,7 +15,6 @@
 #include <lib/ui/scenic/cpp/session.h>
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 
-#include "flutter/flow/compositor_context.h"
 #include "flutter/flow/scene_update_context.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
@@ -63,7 +62,7 @@ class SessionConnection final {
   scenic::ContainerNode& root_node() { return root_node_; }
   scenic::View* root_view() { return &root_view_; }
 
-  void Present(flutter::CompositorContext::ScopedFrame* frame);
+  void Present();
 
   VulkanSurfaceProducer* vulkan_surface_producer() {
     return surface_producer_.get();
