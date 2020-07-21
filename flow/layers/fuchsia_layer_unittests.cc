@@ -238,47 +238,6 @@ class MockSession : public fuchsia::ui::scenic::testing::Session_TestBase {
   fuchsia::ui::scenic::SessionListenerPtr listener_;
 };
 
-class MockSurfaceProducerSurface
-    : public SceneUpdateContext::SurfaceProducerSurface {
- public:
-  MockSurfaceProducerSurface(scenic::Session* session, const SkISize& size)
-      : image_(session, 0, 0, {}), size_(size) {}
-
-  size_t AdvanceAndGetAge() override { return 0; }
-
-  bool FlushSessionAcquireAndReleaseEvents() override { return false; }
-
-  bool IsValid() const override { return false; }
-
-  SkISize GetSize() const override { return size_; }
-
-  void SignalWritesFinished(
-      const std::function<void(void)>& on_writes_committed) override {}
-
-  scenic::Image* GetImage() override { return &image_; };
-
-  sk_sp<SkSurface> GetSkiaSurface() const override { return nullptr; };
-
- private:
-  scenic::Image image_;
-  SkISize size_;
-};
-
-class MockSurfaceProducer : public SceneUpdateContext::SurfaceProducer {
- public:
-  MockSurfaceProducer(scenic::Session* session) : session_(session) {}
-  std::unique_ptr<SceneUpdateContext::SurfaceProducerSurface> ProduceSurface(
-      const SkISize& size) override {
-    return std::make_unique<MockSurfaceProducerSurface>(session_, size);
-  }
-
-  void SubmitSurface(std::unique_ptr<SceneUpdateContext::SurfaceProducerSurface>
-                         surface) override {}
-
- private:
-  scenic::Session* session_;
-};
-
 struct TestContext {
   // Message loop.
   fml::RefPtr<fml::MessageLoopFuchsia> loop;
@@ -290,7 +249,6 @@ struct TestContext {
   std::unique_ptr<scenic::Session> session;
 
   // SceneUpdateContext.
-  std::unique_ptr<MockSurfaceProducer> mock_surface_producer;
   std::unique_ptr<SceneUpdateContext> scene_update_context;
 
   // PrerollContext.
@@ -315,10 +273,8 @@ std::unique_ptr<TestContext> InitTest() {
   context->session = std::make_unique<scenic::Session>(std::move(session_ptr));
 
   // Init SceneUpdateContext.
-  context->mock_surface_producer =
-      std::make_unique<MockSurfaceProducer>(context->session.get());
-  context->scene_update_context = std::make_unique<SceneUpdateContext>(
-      context->session.get(), context->mock_surface_producer.get());
+  context->scene_update_context =
+      std::make_unique<SceneUpdateContext>(context->session.get());
   context->scene_update_context->set_metrics(
       fidl::MakeOptional(fuchsia::ui::gfx::Metrics{1.f, 1.f, 1.f}));
 

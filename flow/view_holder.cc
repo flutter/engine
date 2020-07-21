@@ -4,6 +4,8 @@
 
 #include "flutter/flow/view_holder.h"
 
+#include <unordered_map>
+
 #include "flutter/fml/thread_local.h"
 
 namespace {

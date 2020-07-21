@@ -28,9 +28,7 @@ class VulkanSurfacePool final {
 
   std::unique_ptr<VulkanSurface> AcquireSurface(const SkISize& size);
 
-  void SubmitSurface(
-      std::unique_ptr<flutter::SceneUpdateContext::SurfaceProducerSurface>
-          surface);
+  void SubmitSurface(std::unique_ptr<SurfaceProducerSurface> surface);
 
   void AgeAndCollectOldBuffers();
 

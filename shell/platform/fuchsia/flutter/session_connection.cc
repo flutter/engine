@@ -30,7 +30,7 @@ SessionConnection::SessionConnection(
       root_node_(&session_wrapper_),
       surface_producer_(
           std::make_unique<VulkanSurfaceProducer>(&session_wrapper_)),
-      scene_update_context_(&session_wrapper_, surface_producer_.get()),
+      scene_update_context_(&session_wrapper_),
       on_frame_presented_callback_(std::move(on_frame_presented_callback)),
       vsync_event_handle_(vsync_event_handle) {
   session_wrapper_.set_error_handler(
@@ -91,8 +91,7 @@ SessionConnection::SessionConnection(
 
 SessionConnection::~SessionConnection() = default;
 
-void SessionConnection::Present(
-    flutter::CompositorContext::ScopedFrame* frame) {
+void SessionConnection::Present() {
   TRACE_EVENT0("gfx", "SessionConnection::Present");
 
   TRACE_FLOW_BEGIN("gfx", "SessionConnection::PresentSession",
@@ -113,15 +112,6 @@ void SessionConnection::Present(
 
     present_session_pending_ = true;
     ToggleSignal(vsync_event_handle_, false);
-  }
-
-  if (frame) {
-    // Execute paint tasks and signal fences.
-    auto surfaces_to_submit = scene_update_context_.ExecutePaintTasks(*frame);
-
-    // Tell the surface producer that a present has occurred so it can perform
-    // book-keeping on buffer caches.
-    surface_producer_->OnSurfacesPresented(std::move(surfaces_to_submit));
   }
 }
 

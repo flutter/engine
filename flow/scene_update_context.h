@@ -10,7 +10,6 @@
 #include <set>
 #include <vector>
 
-#include "flutter/flow/compositor_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
@@ -34,37 +33,6 @@ constexpr float kScenicZElevationBetweenLayers = 10.f;
 
 class SceneUpdateContext : public flutter::ExternalViewEmbedder {
  public:
-  class SurfaceProducerSurface {
-   public:
-    virtual ~SurfaceProducerSurface() = default;
-
-    virtual size_t AdvanceAndGetAge() = 0;
-
-    virtual bool FlushSessionAcquireAndReleaseEvents() = 0;
-
-    virtual bool IsValid() const = 0;
-
-    virtual SkISize GetSize() const = 0;
-
-    virtual void SignalWritesFinished(
-        const std::function<void(void)>& on_writes_committed) = 0;
-
-    virtual scenic::Image* GetImage() = 0;
-
-    virtual sk_sp<SkSurface> GetSkiaSurface() const = 0;
-  };
-
-  class SurfaceProducer {
-   public:
-    virtual ~SurfaceProducer() = default;
-
-    virtual std::unique_ptr<SurfaceProducerSurface> ProduceSurface(
-        const SkISize& size) = 0;
-
-    virtual void SubmitSurface(
-        std::unique_ptr<SurfaceProducerSurface> surface) = 0;
-  };
-
   class Entity {
    public:
     Entity(SceneUpdateContext& context);
@@ -129,8 +97,16 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     ~Clip() = default;
   };
 
-  SceneUpdateContext(scenic::Session* session,
-                     SurfaceProducer* surface_producer);
+  struct PaintTask {
+    SkRect paint_bounds;
+    SkScalar scale_x;
+    SkScalar scale_y;
+    SkColor background_color;
+    scenic::Material material;
+    std::vector<Layer*> layers;
+  };
+
+  SceneUpdateContext(scenic::Session* session);
   ~SceneUpdateContext() = default;
 
   scenic::Session* session() { return session_; }
@@ -151,25 +127,12 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   const SkISize& frame_size() const { return frame_physical_size_; }
   float frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; }
 
-  // TODO(chinmaygarde): This method must submit the surfaces as soon as paint
-  // tasks are done. However, given that there is no support currently for
-  // Vulkan semaphores, we need to submit all the surfaces after an explicit
-  // CPU wait. Once Vulkan semaphores are available, this method must return
-  // void and the implementation must submit surfaces on its own as soon as the
-  // specific canvas operations are done.
-  [[nodiscard]] std::vector<std::unique_ptr<SurfaceProducerSurface>>
-  ExecutePaintTasks(CompositorContext::ScopedFrame& frame);
-
-  float ScaleX() const { return metrics_->scale_x * top_scale_x_; }
-  float ScaleY() const { return metrics_->scale_y * top_scale_y_; }
-
-  // The transformation matrix of the current context. It's used to construct
-  // the LayerRasterCacheKey for a given layer.
-  SkMatrix Matrix() const { return SkMatrix::MakeScale(ScaleX(), ScaleY()); }
-
   // The cumulative alpha value based on all the parent OpacityLayers.
   void set_alphaf(float alpha) { alpha_ = alpha; }
   float alphaf() { return alpha_; }
+
+  // Returns all `PaintTask`s generated for the current frame.
+  std::vector<PaintTask> ResetAndGetPaintTasks();
 
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override { return nullptr; }
@@ -206,43 +169,12 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   void UpdateScene(int64_t view_id, const SkPoint& offset, const SkSize& size);
 
  private:
-  struct PaintTask {
-    std::unique_ptr<SurfaceProducerSurface> surface;
-    SkScalar left;
-    SkScalar top;
-    SkScalar scale_x;
-    SkScalar scale_y;
-    SkColor background_color;
-    std::vector<Layer*> layers;
-  };
-
-  // Setup the entity_node as a frame that materialize all the paint_layers. In
-  // most cases, this creates a VulkanSurface (SurfaceProducerSurface) by
-  // calling SetShapeTextureOrColor and GenerageImageIfNeeded. Such surface will
-  // own the associated entity_node. If the layer pointer isn't nullptr, the
-  // surface (and thus the entity_node) will be retained for that layer to
-  // improve the performance.
   void CreateFrame(scenic::EntityNode entity_node,
                    const SkRRect& rrect,
                    SkColor color,
                    SkAlpha opacity,
                    const SkRect& paint_bounds,
                    std::vector<Layer*> paint_layers);
-  void SetMaterialTextureAndColor(scenic::Material& material,
-                                  SkColor color,
-                                  SkAlpha opacity,
-                                  SkScalar scale_x,
-                                  SkScalar scale_y,
-                                  const SkRect& paint_bounds,
-                                  std::vector<Layer*> paint_layers);
-  void SetMaterialColor(scenic::Material& material,
-                        SkColor color,
-                        SkAlpha opacity);
-  scenic::Image* GenerateImageIfNeeded(SkColor color,
-                                       SkScalar scale_x,
-                                       SkScalar scale_y,
-                                       const SkRect& paint_bounds,
-                                       std::vector<Layer*> paint_layers);
 
   Entity* top_entity_ = nullptr;
   float top_scale_x_ = 1.f;
@@ -250,7 +182,6 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   float top_elevation_ = 0.0f;
 
   scenic::Session* const session_;
-  SurfaceProducer* const surface_producer_;
 
   fuchsia::ui::gfx::MetricsPtr metrics_;
   SkISize frame_physical_size_;
