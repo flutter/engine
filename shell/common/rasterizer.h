@@ -430,6 +430,10 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   std::optional<size_t> GetResourceCacheMaxBytes() const;
 
+  bool EnsureThreadsAreMerged();
+
+  void UnMergeNow();
+
  private:
   Delegate& delegate_;
   TaskRunners task_runners_;

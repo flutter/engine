@@ -8,6 +8,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/message_loop_task_queues.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 
 namespace fml {
 
@@ -30,6 +31,8 @@ class RasterThreadMerger
   // unless an |ExtendLeaseTo| gets called.
   void MergeWithLease(size_t lease_term);
 
+  void UnMergeNow();
+
   void ExtendLeaseTo(size_t lease_term);
 
   // Returns |RasterThreadStatus::kUnmergedNow| if this call resulted in
@@ -37,6 +40,8 @@ class RasterThreadMerger
   RasterThreadStatus DecrementLease();
 
   bool IsMerged() const;
+
+  void WaitUntilMerged();
 
   RasterThreadMerger(fml::TaskQueueId platform_queue_id,
                      fml::TaskQueueId gpu_queue_id);
@@ -55,7 +60,7 @@ class RasterThreadMerger
   fml::TaskQueueId gpu_queue_id_;
   fml::RefPtr<fml::MessageLoopTaskQueues> task_queues_;
   std::atomic_int lease_term_;
-  bool is_merged_;
+  std::atomic<bool> is_merged_;
 
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(RasterThreadMerger);
   FML_FRIEND_MAKE_REF_COUNTED(RasterThreadMerger);

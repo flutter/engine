@@ -657,6 +657,31 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
   return std::nullopt;
 }
 
+bool Rasterizer::EnsureThreadsAreMerged() {
+  if (raster_thread_merger_.get() == nullptr) {
+    return false;
+  }
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
+                                    [weak_this = weak_factory_.GetWeakPtr(),
+                                     thread_merger = raster_thread_merger_]() {
+                                      if (weak_this->surface_ == nullptr) {
+                                        FML_DLOG(ERROR) << "--- no surface_";
+                                        return;
+                                      }
+                                      FML_DLOG(ERROR) << "--- merge with lease";
+                                      thread_merger->MergeWithLease(10);
+                                    });
+  raster_thread_merger_->WaitUntilMerged();
+  return true;
+}
+
+void Rasterizer::UnMergeNow() {
+  if (raster_thread_merger_.get() == nullptr) {
+    return;
+  }
+  raster_thread_merger_->UnMergeNow();
+}
+
 Rasterizer::Screenshot::Screenshot() {}
 
 Rasterizer::Screenshot::Screenshot(sk_sp<SkData> p_data, SkISize p_size)
