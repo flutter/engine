@@ -6,7 +6,7 @@
 part of engine;
 
 /// A [ui.ColorFilter] backed by Skia's [CkColorFilter].
-class CkColorFilter extends ResurrectableSkiaObject {
+class CkColorFilter extends ResurrectableSkiaObject<SkColorFilter> {
   final EngineColorFilter _engineFilter;
 
   CkColorFilter.mode(EngineColorFilter filter) : _engineFilter = filter;
@@ -19,13 +19,11 @@ class CkColorFilter extends ResurrectableSkiaObject {
   CkColorFilter.srgbToLinearGamma(EngineColorFilter filter)
       : _engineFilter = filter;
 
-  SkColorFilter? _skColorFilter;
-
-  js.JsObject _createSkiaObjectFromFilter() {
+  SkColorFilter _createSkiaObjectFromFilter() {
     SkColorFilter skColorFilter;
     switch (_engineFilter._type) {
       case EngineColorFilter._TypeMode:
-        skColorFilter = canvasKitJs.SkColorFilter.MakeBlend(
+        skColorFilter = canvasKit.SkColorFilter.MakeBlend(
           toSharedSkColor1(_engineFilter._color!),
           toSkBlendMode(_engineFilter._blendMode!),
         );
@@ -36,29 +34,33 @@ class CkColorFilter extends ResurrectableSkiaObject {
         for (int i = 0; i < 20; i++) {
           colorMatrix[i] = matrix[i];
         }
-        skColorFilter = canvasKitJs.SkColorFilter.MakeMatrix(colorMatrix);
+        skColorFilter = canvasKit.SkColorFilter.MakeMatrix(colorMatrix);
         break;
       case EngineColorFilter._TypeLinearToSrgbGamma:
-        skColorFilter = canvasKitJs.SkColorFilter.MakeLinearToSRGBGamma();
+        skColorFilter = canvasKit.SkColorFilter.MakeLinearToSRGBGamma();
         break;
       case EngineColorFilter._TypeSrgbToLinearGamma:
-        skColorFilter = canvasKitJs.SkColorFilter.MakeSRGBToLinearGamma();
+        skColorFilter = canvasKit.SkColorFilter.MakeSRGBToLinearGamma();
         break;
       default:
         throw StateError(
             'Unknown mode ${_engineFilter._type} for ColorFilter.');
     }
-    _skColorFilter = skColorFilter;
-    return _jsObjectWrapper.wrapSkColorFilter(skColorFilter);
+    return skColorFilter;
   }
 
   @override
-  js.JsObject createDefault() {
+  SkColorFilter createDefault() {
     return _createSkiaObjectFromFilter();
   }
 
   @override
-  js.JsObject resurrect() {
+  SkColorFilter resurrect() {
     return _createSkiaObjectFromFilter();
+  }
+
+  @override
+  void delete() {
+    rawSkiaObject?.delete();
   }
 }

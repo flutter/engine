@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 part of engine;
 
 // TODO(yjbanov): this is a hack we use to compute ideographic baseline; this
@@ -17,17 +16,16 @@ const double _baselineRatioHack = 1.1662499904632568;
 typedef CharPredicate = bool Function(int char);
 
 bool _whitespacePredicate(int char) {
-  final LineCharProperty? prop =
-      _normalizeLineProperty(lineLookup.findForChar(char));
+  final LineCharProperty prop = lineLookup.findForChar(char);
   return prop == LineCharProperty.SP ||
       prop == LineCharProperty.BK ||
+      prop == LineCharProperty.LF ||
       prop == LineCharProperty.CR;
 }
 
 bool _newlinePredicate(int char) {
-  final LineCharProperty? prop =
-      _normalizeLineProperty(lineLookup.findForChar(char));
-  return prop == LineCharProperty.BK || prop == LineCharProperty.CR;
+  final LineCharProperty prop = lineLookup.findForChar(char);
+  return prop == LineCharProperty.BK || prop == LineCharProperty.LF || prop == LineCharProperty.CR;
 }
 
 /// Manages [ParagraphRuler] instances and caches them per unique

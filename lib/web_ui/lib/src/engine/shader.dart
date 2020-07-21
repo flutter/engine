@@ -158,11 +158,10 @@ class GradientLinear extends EngineGradient {
   SkShader createSkiaShader() {
     assert(experimentalUseSkia);
 
-    var jsColors = makeColorList(colors);
-    return canvasKitJs.SkShader.MakeLinearGradient(
+    return canvasKit.SkShader.MakeLinearGradient(
       toSkPoint(from),
       toSkPoint(to),
-      jsColors,
+      toSkFloatColorList(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
     );
@@ -213,12 +212,10 @@ class GradientRadial extends EngineGradient {
   SkShader createSkiaShader() {
     assert(experimentalUseSkia);
 
-    var jsColors = makeColorList(colors);
-
-    return canvasKitJs.SkShader.MakeRadialGradient(
+    return canvasKit.SkShader.MakeRadialGradient(
       toSkPoint(center),
       radius,
-      jsColors,
+      toSkFloatColorList(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
       matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
@@ -249,15 +246,12 @@ class GradientConical extends EngineGradient {
   @override
   SkShader createSkiaShader() {
     assert(experimentalUseSkia);
-
-    var jsColors = makeColorList(colors);
-
-    return canvasKitJs.SkShader.MakeTwoPointConicalGradient(
+    return canvasKit.SkShader.MakeTwoPointConicalGradient(
       toSkPoint(focal),
       focalRadius,
       toSkPoint(center),
       radius,
-      jsColors,
+      toSkFloatColorList(colors),
       toSkColorStops(colorStops),
       toSkTileMode(tileMode),
       matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,

@@ -7,7 +7,7 @@ part of engine;
 /// The CanvasKit implementation of [ui.ImageFilter].
 ///
 /// Currently only supports `blur`.
-class CkImageFilter extends ResurrectableSkiaObject implements ui.ImageFilter {
+class CkImageFilter extends ResurrectableSkiaObject<SkImageFilter> implements ui.ImageFilter {
   CkImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0})
       : _sigmaX = sigmaX,
         _sigmaY = sigmaY;
@@ -15,23 +15,24 @@ class CkImageFilter extends ResurrectableSkiaObject implements ui.ImageFilter {
   final double _sigmaX;
   final double _sigmaY;
 
-  SkImageFilter? _skImageFilter;
+  @override
+  SkImageFilter createDefault() => _initSkiaObject();
 
   @override
-  js.JsObject createDefault() => _initSkiaObject();
+  SkImageFilter resurrect() => _initSkiaObject();
 
   @override
-  js.JsObject resurrect() => _initSkiaObject();
+  void delete() {
+    rawSkiaObject?.delete();
+  }
 
-  js.JsObject _initSkiaObject() {
-    final SkImageFilter skImageFilter = canvasKitJs.SkImageFilter.MakeBlur(
+  SkImageFilter _initSkiaObject() {
+    return canvasKit.SkImageFilter.MakeBlur(
       _sigmaX,
       _sigmaY,
-      canvasKitJs.TileMode.Clamp,
+      canvasKit.TileMode.Clamp,
       null,
     );
-    _skImageFilter = skImageFilter;
-    return _jsObjectWrapper.wrapSkImageFilter(skImageFilter);
   }
 
   @override
