@@ -14,7 +14,7 @@ import 'dart:io'
         Directory,
         FileSystemEntity,
         Platform;
-import 'dart:convert' show jsonDecode, utf8;
+import 'dart:convert' show jsonDecode, utf8, LineSplitter;
 import 'dart:async' show Completer;
 
 String _linterOutputHeader = '''┌──────────────────────────┐
@@ -28,7 +28,6 @@ Note, you may see issues in files this change touches, in lines that weren't
 edited.  That is intentional, please address the issues or visit the wiki for
 more options.
 ''';
-
 
 class Command {
   String directory;
@@ -78,7 +77,8 @@ List<String> getListOfChangedFiles(String repoPath) {
       'git', ['diff', '--cached', '--name-only'],
       workingDirectory: repoPath);
 
-  final ProcessResult fetchResult = Process.runSync('git', ['fetch', 'upstream', 'master']);
+  final ProcessResult fetchResult =
+      Process.runSync('git', ['fetch', 'upstream', 'master']);
   if (fetchResult.exitCode != 0) {
     Process.runSync('git', ['fetch', 'origin', 'master']);
   }
@@ -106,6 +106,25 @@ Future<List<String>> dirContents(String repoPath) {
   return completer.future;
 }
 
+Future<bool> shouldIgnoreFile(String path) async {
+  if (path.contains('/third_party/')) {
+    return true;
+  } else {
+    final RegExp exp = RegExp(r'//.*FLUTTER_NOLINT');
+    await for (String line in File(path.substring(6))
+        .openRead()
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())) {
+      if (exp.hasMatch(line)) {
+        return true;
+      } else if (line[0] != '\n' && line[0] != '/') {
+        return false;
+      }
+    }
+    return false;
+  }
+}
+
 void main(List<String> arguments) async {
   final String buildCommandsPath = arguments[0];
   final String repoPath = arguments[1];
@@ -129,17 +148,21 @@ void main(List<String> arguments) async {
   int exitCode = 0;
   //TODO(aaclarke): Coalesce this into one call using the `-p` arguement.
   for (Command command in changedFileBuildCommands) {
-    final String tidyArgs = calcTidyArgs(command);
-    final List<String> args = [command.file, checks, '--'];
-    args.addAll(tidyArgs.split(' '));
-    print('🔶 linting ${command.file}');
-    final Process process = await Process.start(tidyPath, args,
-        workingDirectory: command.directory, runInShell: false);
-    process.stdout.transform(utf8.decoder).listen((data) {
-      print(data);
-      exitCode = 1;
-    });
-    await process.exitCode;
+    if (!(await shouldIgnoreFile(command.file))) {
+      final String tidyArgs = calcTidyArgs(command);
+      final List<String> args = [command.file, checks, '--'];
+      args.addAll(tidyArgs.split(' '));
+      print('🔶 linting ${command.file}');
+      final Process process = await Process.start(tidyPath, args,
+          workingDirectory: command.directory, runInShell: false);
+      process.stdout.transform(utf8.decoder).listen((data) {
+        print(data);
+        exitCode = 1;
+      });
+      await process.exitCode;
+    } else {
+      print('🔷 ignoring ${command.file}');
+    }
   }
   exit(exitCode);
 }
