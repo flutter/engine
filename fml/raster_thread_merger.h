@@ -8,7 +8,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/message_loop_task_queues.h"
-#include "flutter/fml/synchronization/waitable_event.h"
 
 namespace fml {
 

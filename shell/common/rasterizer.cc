@@ -93,6 +93,9 @@ void Rasterizer::Teardown() {
   compositor_context_->OnGrContextDestroyed();
   surface_.reset();
   last_layer_tree_.reset();
+  if (raster_thread_merger_.get() != nullptr) {
+    raster_thread_merger_->UnMergeNow();
+  }
 }
 
 void Rasterizer::NotifyLowMemoryWarning() const {
@@ -673,13 +676,6 @@ bool Rasterizer::EnsureThreadsAreMerged() {
                                     });
   raster_thread_merger_->WaitUntilMerged();
   return true;
-}
-
-void Rasterizer::UnMergeNow() {
-  if (raster_thread_merger_.get() == nullptr) {
-    return;
-  }
-  raster_thread_merger_->UnMergeNow();
 }
 
 Rasterizer::Screenshot::Screenshot() {}

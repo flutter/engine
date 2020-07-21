@@ -432,8 +432,6 @@ class Rasterizer final : public SnapshotDelegate {
 
   bool EnsureThreadsAreMerged();
 
-  void UnMergeNow();
-
  private:
   Delegate& delegate_;
   TaskRunners task_runners_;

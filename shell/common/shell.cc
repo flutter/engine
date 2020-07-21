@@ -710,13 +710,9 @@ void Shell::OnPlatformViewDestroyed() {
   // surface is about to go away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
   latch.Wait();
-  if (rasterizer_->EnsureThreadsAreMerged()) {
-    raster_task();
-    rasterizer_->UnMergeNow();
-  } else {
-    fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
-                                      raster_task);
-  }
+  rasterizer_->EnsureThreadsAreMerged();
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
+                                    raster_task);
   latch.Wait();
   FML_DLOG(ERROR) << "shell unmerged";
 }
