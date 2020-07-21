@@ -435,7 +435,9 @@ class InputConfiguration {
   InputConfiguration.fromFrameworkMessage(
       Map<String, dynamic> flutterInputConfiguration)
       : inputType = EngineInputType.fromName(
-            flutterInputConfiguration['inputType']['name']),
+            flutterInputConfiguration['inputType']['name'],
+            isDecimal:
+                flutterInputConfiguration['inputType']['decimal'] ?? false),
         inputAction = flutterInputConfiguration['inputAction'],
         obscureText = flutterInputConfiguration['obscureText'],
         autocorrect = flutterInputConfiguration['autocorrect'],
@@ -1150,6 +1152,11 @@ class TextEditingChannel {
       case 'TextInput.requestAutofill':
         // No-op:  This message is sent by the framework to requests the platform autofill UI to appear.
         // Since autofill UI is a part of the browser, web engine does not need to utilize this method.
+        break;
+
+      case 'TextInput.finishAutofillContext':
+        // TODO(nurhan): Handle saving autofill information on web.
+        // https://github.com/flutter/flutter/issues/59378
         break;
 
       default:

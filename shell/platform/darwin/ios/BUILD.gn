@@ -5,6 +5,7 @@
 assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
+import("//build/toolchain/clang.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
@@ -170,6 +171,7 @@ source_set("ios_test_flutter_mrc") {
   ]
   sources = [
     "framework/Source/FlutterEnginePlatformViewTest.mm",
+    "framework/Source/FlutterPlatformViewsTest.mm",
     "framework/Source/accessibility_bridge_test.mm",
   ]
   deps = [
@@ -268,7 +270,7 @@ action("copy_framework_info_plist") {
   args = [
     rebase_path(sources[0]),
     rebase_path(outputs[0]),
-    "--bitcode=$flutter_enable_bitcode",
+    "--bitcode=$enable_bitcode",
   ]
 }
 

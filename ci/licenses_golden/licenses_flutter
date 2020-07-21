@@ -523,6 +523,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/autofill_hint.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_type.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_capitalization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_editing.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/ulps.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/validators.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart
@@ -610,6 +611,8 @@ FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
 FILE: ../../../flutter/shell/common/run_configuration.cc
 FILE: ../../../flutter/shell/common/run_configuration.h
+FILE: ../../../flutter/shell/common/serialization_callbacks.cc
+FILE: ../../../flutter/shell/common/serialization_callbacks.h
 FILE: ../../../flutter/shell/common/shell.cc
 FILE: ../../../flutter/shell/common/shell.h
 FILE: ../../../flutter/shell/common/shell_benchmarks.cc
@@ -628,6 +631,7 @@ FILE: ../../../flutter/shell/common/shell_test_platform_view_vulkan.h
 FILE: ../../../flutter/shell/common/shell_unittests.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
+FILE: ../../../flutter/shell/common/skp_shader_warmup_unittests.cc
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
 FILE: ../../../flutter/shell/common/thread_host.cc
@@ -915,6 +919,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlay
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViewsTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate.mm
