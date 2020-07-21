@@ -145,7 +145,7 @@ bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
   platform_data_.viewport_metrics = metrics;
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->SetWindowMetrics(metrics);
+    platform_configuration->window()->UpdateWindowMetrics(metrics);
     return true;
   }
 
@@ -264,7 +264,7 @@ bool RuntimeController::DispatchPointerDataPacket(
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
                  "mode", "basic");
-    platform_configuration->DispatchPointerDataPacket(packet);
+    platform_configuration->window()->DispatchPointerDataPacket(packet);
     return true;
   }
 
@@ -323,6 +323,7 @@ void RuntimeController::HandlePlatformMessage(
 FontCollection& RuntimeController::GetFontCollection() {
   return client_.GetFontCollection();
 }
+
 
 // |PlatformConfigurationClient|
 void RuntimeController::UpdateIsolateDescription(const std::string isolate_name,

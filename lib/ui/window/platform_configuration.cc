@@ -188,18 +188,14 @@ PlatformConfigurationClient::~PlatformConfigurationClient() {}
 
 PlatformConfiguration::PlatformConfiguration(
     PlatformConfigurationClient* client)
-    : client_(client), window_(new Window({1.0, 0.0, 0.0})) {}
+    : client_(client) {}
 
 PlatformConfiguration::~PlatformConfiguration() {}
 
 void PlatformConfiguration::DidCreateIsolate() {
   library_.Set(tonic::DartState::Current(),
                Dart_LookupLibrary(tonic::ToDart("dart:ui")));
-}
-
-void PlatformConfiguration::SetWindowMetrics(
-    const ViewportMetrics& window_metrics) {
-  window_->UpdateWindowMetrics(library_, window_metrics);
+  window_.reset(new Window({1.0, 0.0, 0.0}));
 }
 
 void PlatformConfiguration::UpdateLocales(
@@ -291,20 +287,6 @@ void PlatformConfiguration::DispatchPlatformMessage(
       tonic::DartInvokeField(library_.value(), "_dispatchPlatformMessage",
                              {tonic::ToDart(message->channel()), data_handle,
                               tonic::ToDart(response_id)}));
-}
-
-void PlatformConfiguration::DispatchPointerDataPacket(
-    const PointerDataPacket& packet) {
-  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
-    return;
-  tonic::DartState::Scope scope(dart_state);
-
-  Dart_Handle data_handle = ToByteData(packet.data());
-  if (Dart_IsError(data_handle))
-    return;
-  tonic::LogIfError(tonic::DartInvokeField(
-      library_.value(), "_dispatchPointerDataPacket", {data_handle}));
 }
 
 void PlatformConfiguration::DispatchSemanticsAction(int32_t id,

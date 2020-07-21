@@ -9,6 +9,39 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// This file defines an Application Binary Interface (ABI), which requires more
+// stability than regular code to remain functional for exchanging messages
+// between different versions of the embedding and the engine, to allow for both
+// forward and backward compatibility.
+//
+// Specifically,
+// - The order, type, and size of the struct members below must remain the same,
+//   and members should not be removed.
+// - New structures that are part of the ABI must be defined with "size_t
+//   struct_size;" as their first member, which should be initialized using
+//   "sizeof(Type)".
+// - Enum values must not change or be removed.
+// - Enum members without explicit values must not be reordered.
+// - Function signatures (names, argument counts, argument order, and argument
+//   type) cannot change.
+// - The core behavior of existing functions cannot change.
+//
+// These changes are allowed:
+// - Adding new struct members at the end of a structure.
+// - Adding new enum members with a new value.
+// - Renaming a struct member as long as its type, size, and intent remain the
+//   same.
+// - Renaming an enum member as long as its value and intent remains the same.
+//
+// It is expected that struct members and implicitly-valued enums will not
+// always be declared in an order that is optimal for the reader, since members
+// will be added over time, and they can't be reordered.
+//
+// Existing functions should continue to appear from the caller's point of view
+// to operate as they did when they were first introduced, so introduce a new
+// function instead of modifying the core behavior of a function (and continue
+// to support the existing function with the previous behavior).
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -273,9 +306,6 @@ typedef bool (*TextureFrameCallback)(void* /* user data */,
                                      FlutterOpenGLTexture* /* texture out */);
 typedef void (*VsyncCallback)(void* /* user data */, intptr_t /* baton */);
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterOpenGLRendererConfig).
   size_t struct_size;
@@ -314,9 +344,6 @@ typedef struct {
   TextureFrameCallback gl_external_texture_frame_callback;
 } FlutterOpenGLRendererConfig;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterSoftwareRendererConfig).
   size_t struct_size;
@@ -335,9 +362,6 @@ typedef struct {
   };
 } FlutterRendererConfig;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterWindowMetricsEvent).
   size_t struct_size;
@@ -409,9 +433,6 @@ typedef enum {
   kFlutterPointerSignalKindScroll,
 } FlutterPointerSignalKind;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterPointerEvent).
   size_t struct_size;
@@ -446,9 +467,6 @@ struct _FlutterPlatformMessageResponseHandle;
 typedef struct _FlutterPlatformMessageResponseHandle
     FlutterPlatformMessageResponseHandle;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterPlatformMessage).
   size_t struct_size;
@@ -513,10 +531,6 @@ extern const int32_t kFlutterSemanticsNodeIdBatchEnd;
 /// (i.e., during PipelineOwner.flushSemantics), which happens after
 /// compositing. Updates are then pushed to embedders via the registered
 /// `FlutterUpdateSemanticsNodeCallback`.
-///
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterSemanticsNode).
   size_t struct_size;
@@ -596,10 +610,6 @@ extern const int32_t kFlutterSemanticsCustomActionIdBatchEnd;
 /// Action overrides are custom actions that the application developer requests
 /// to be used in place of the standard actions in the `FlutterSemanticsAction`
 /// enum.
-///
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of the struct. Must be sizeof(FlutterSemanticsCustomAction).
   size_t struct_size;
@@ -638,10 +648,6 @@ typedef void (*FlutterTaskRunnerPostTaskCallback)(
 /// on a specified thread. There should be a 1-1 relationship between a thread
 /// and a task runner. It is undefined behavior to run a task on a thread that
 /// is not associated with its task runner.
-///
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterTaskRunnerDescription).
   size_t struct_size;
@@ -667,9 +673,6 @@ typedef struct {
   size_t identifier;
 } FlutterTaskRunnerDescription;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterCustomTaskRunners).
   size_t struct_size;
@@ -741,9 +744,6 @@ typedef struct {
   };
 } FlutterPlatformViewMutation;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterPlatformView).
   size_t struct_size;
@@ -777,9 +777,6 @@ typedef enum {
   kFlutterBackingStoreTypeSoftware,
 } FlutterBackingStoreType;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterBackingStore).
   size_t struct_size;
@@ -800,9 +797,6 @@ typedef struct {
   };
 } FlutterBackingStore;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterBackingStoreConfig).
   size_t struct_size;
@@ -818,9 +812,6 @@ typedef enum {
   kFlutterLayerContentTypePlatformView,
 } FlutterLayerContentType;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterLayer).
   size_t struct_size;
@@ -855,9 +846,6 @@ typedef bool (*FlutterLayersPresentCallback)(const FlutterLayer** layers,
                                              size_t layers_count,
                                              void* user_data);
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterCompositor).
   size_t struct_size;
@@ -882,9 +870,6 @@ typedef struct {
   FlutterLayersPresentCallback present_layers_callback;
 } FlutterCompositor;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterLocale).
   size_t struct_size;
@@ -927,9 +912,6 @@ typedef enum {
   kFlutterEngineDartObjectTypeBuffer,
 } FlutterEngineDartObjectType;
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterEngineDartBuffer).
   size_t struct_size;
@@ -1065,9 +1047,6 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data);
 
-/// The order, type, and size of these struct members must remain the same, and
-/// members should not be removed. This is to allow for forward and backward
-/// compatibility between the engine and the embedder.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterProjectArgs).
   size_t struct_size;

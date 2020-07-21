@@ -45,7 +45,7 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
   auto viewport_metrics = UIDartState::Current()
                               ->platform_configuration()
                               ->window()
-                              .viewport_metrics();
+                              ->viewport_metrics();
 
   layer_tree_ = std::make_unique<LayerTree>(
       SkISize::Make(viewport_metrics.physical_width,

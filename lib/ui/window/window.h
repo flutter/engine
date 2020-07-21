@@ -24,10 +24,11 @@ class Window final {
 
   const ViewportMetrics& viewport_metrics() const { return viewport_metrics_; }
 
-  void UpdateWindowMetrics(const tonic::DartPersistentValue& library,
-                           const ViewportMetrics& metrics);
+  void DispatchPointerDataPacket(const PointerDataPacket& packet);
+  void UpdateWindowMetrics(const ViewportMetrics& metrics);
 
  private:
+  tonic::DartPersistentValue library_;
   ViewportMetrics viewport_metrics_;
 };
 

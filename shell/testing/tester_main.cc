@@ -235,16 +235,18 @@ int RunTester(const flutter::Settings& settings,
                      }
                    });
 
-  // 800x600 at 3x resolution.
-  shell->GetPlatformView()->SetViewportMetrics({3.0, 2400, 1800});
+  flutter::ViewportMetrics metrics{};
+  metrics.device_pixel_ratio = 3.0;
+  metrics.physical_width = 2400.0;  // 800 at 3x resolution.
+  metrics.physical_height = 1800.0;  // 600 at 3x resolution.
+  shell->GetPlatformView()->SetViewportMetrics(metrics);
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();
 
   // Cleanup the completion observer synchronously as it is living on the
-  // stack.
-  fml::TaskRunner::RunNowOrPostTask(ui_task_runner, task_observer_remove);
-  latch.Wait();
+  // stack.#include "lib/ui/window/viewport_metrics.h"
+
 
   if (!engine_did_run) {
     // If the engine itself didn't have a chance to run, there is no point in
