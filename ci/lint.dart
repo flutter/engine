@@ -114,6 +114,8 @@ Future<bool> shouldIgnoreFile(String path) async {
       if (exp.hasMatch(line)) {
         return true;
       } else if (line.length > 0 && line[0] != '\n' && line[0] != '/') {
+        // Quick out once we find a line that isn't empty or a comment.  The
+        // FLUTTER_NOLINT must show up before the first real code.
         return false;
       }
     }
@@ -130,6 +132,8 @@ void main(List<String> arguments) async {
       Platform.environment['FLUTTER_LINT_ALL'] != null
           ? await dirContents(repoPath)
           : getListOfChangedFiles(repoPath);
+  /// TODO(gaaclarke): Convert FLUTTER_LINT_ALL to a command-line flag and add
+  /// `--verbose` flag.
 
   final List<dynamic> buildCommandMaps =
       jsonDecode(await new File(buildCommandsPath).readAsString());
