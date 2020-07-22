@@ -47,8 +47,13 @@ extern NSNotificationName const FlutterSemanticsUpdateNotification;
  * Dart-related state and asynchronous tasks when navigating back and forth between a
  * FlutterViewController and other `UIViewController`s.
  */
+#ifdef __IPHONE_13_4
 FLUTTER_EXPORT
+@interface FlutterViewController
+    : UIViewController <FlutterTextureRegistry, FlutterPluginRegistry, UIPointerInteractionDelegate>
+#else
 @interface FlutterViewController : UIViewController <FlutterTextureRegistry, FlutterPluginRegistry>
+#endif
 
 /**
  * Initializes this FlutterViewController with the specified `FlutterEngine`.
