@@ -605,8 +605,8 @@ class SemanticsObject {
       !hasAction(ui.SemanticsAction.tap) &&
       !hasFlag(ui.SemanticsFlag.isButton);
 
-  /// Whether this object carry be enabled/disabled state (and if so whether it
-  /// is enabled).
+  /// Whether this object carry enabled/disabled state (and if so whether it is
+  /// enabled).
   ///
   /// See [EnabledState] for more details.
   EnabledState enabledState() {
