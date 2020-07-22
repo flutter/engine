@@ -1564,19 +1564,19 @@ List<int> longestIncreasingSubsequence(List<int> list) {
 /// SemanticsNodes can be in three distinct states (enabled, disabled,
 /// no opinion).
 enum EnabledState {
-  /// [ui.SemanticsFlag.hasEnabledState] not set.
+  /// Flag [ui.SemanticsFlag.hasEnabledState] not set.
   ///
   /// The node does not have enabled/disabled state.
   noOpinion,
 
-  /// [ui.SemanticsFlag.hasEnabledState] and [ui.SemanticsFlag.isEnabled] are
-  /// set.
+  /// Flag [ui.SemanticsFlag.hasEnabledState] and [ui.SemanticsFlag.isEnabled]
+  /// are set.
   ///
   /// The node is enabled.
   enabled,
 
-  /// [ui.SemanticsFlag.hasEnabledState] is set and [ui.SemanticsFlag.isEnabled]
-  /// is not set.
+  /// Flag [ui.SemanticsFlag.hasEnabledState] is set and
+  /// [ui.SemanticsFlag.isEnabled] is not set.
   ///
   /// The node is disabled.
   disabled,
