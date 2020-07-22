@@ -245,20 +245,40 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testUITextInputCallsUpdateEditingStateOnce {
+  NSLog(@"justin start testUITextInputCallsUpdateEditingStateOnce");
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
 
+  XCTestExpectation* expectation = [self expectationWithDescription:@"called updateEditingClient"];
+  XCTestExpectation* expectation3 = [self expectationWithDescription:@"called four times"];
+  NSString* text;
+  __block bool calledSinceChange = false;
   __block int updateCount = 0;
   OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
       .andDo(^(NSInvocation* invocation) {
+        XCTAssertEqual(calledSinceChange, false);
+        calledSinceChange = true;
         updateCount++;
+        if (updateCount == 1) {
+          [expectation fulfill];
+        } else if (updateCount == 3) {
+          [expectation3 fulfill];
+        }
       });
 
+  text = @"text to insert";
+  NSLog(@"justin testUITextInputCallsUpdateEditingStateOnce insertText 1");
   [inputView insertText:@"text to insert"];
+  NSLog(@"justin testUITextInputCallsUpdateEditingStateOnce insertedText 1");
   // Update the framework exactly once.
   XCTAssertEqual(updateCount, 1);
+  calledSinceChange = false;
 
+  expectation = [self expectationWithDescription:@"called updateEditingClient"];
+  text = @"text to inser";
   [inputView deleteBackward];
+  XCTAssertEqual(updateCount, 1);
+  [self waitForExpectations:@[expectation] timeout:1];
   XCTAssertEqual(updateCount, 2);
 
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
@@ -266,15 +286,21 @@ FLUTTER_ASSERT_ARC
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
+  XCTAssertEqual(updateCount, 3);
+  [self waitForExpectations:@[expectation3] timeout:1];
   XCTAssertEqual(updateCount, 4);
 
+  /*
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+  [self waitForExpectations:@[expectation4] timeout:1];
   XCTAssertEqual(updateCount, 5);
 
   [inputView unmarkText];
   XCTAssertEqual(updateCount, 6);
+  */
 }
 
+/*
 - (void)testBackToBackUITextInputCallsUpdateEditingStateOnce {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
@@ -306,4 +332,5 @@ FLUTTER_ASSERT_ARC
   [inputView unmarkText];
   XCTAssertEqual(updateCount, 6);
 }
+*/
 @end
