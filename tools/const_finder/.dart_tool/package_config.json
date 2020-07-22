@@ -29,7 +29,7 @@
       "name": "path",
       "rootUri": "../../../../third_party/dart/third_party/pkg/path",
       "packageUri": "lib",
-      "languageVersion": "2.0"
+      "languageVersion": "2.10"
     }
   ]
 }
