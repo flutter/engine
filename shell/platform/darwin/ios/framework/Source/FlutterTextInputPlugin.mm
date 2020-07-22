@@ -11,6 +11,10 @@
 static const char _kTextAffinityDownstream[] = "TextAffinity.downstream";
 static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
 
+// An invalid CGRect that if returned in firstRectForRange, the IME candidates view
+// will be hidden. Also used to indicate the first rect cache is now invalid.
+const CGRect kInvalidFirstRect = {{-1, -1}, {9999, 9999}};
+
 static UIKeyboardType ToUIKeyboardType(NSDictionary* type) {
   NSString* inputType = type[@"name"];
   if ([inputType isEqualToString:@"TextInputType.address"])
@@ -271,14 +275,17 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
-@property(nonatomic, assign) CGPoint editableOrigin;
+@property(nonatomic, readonly) CATransform3D editableTransform;
 @property(nonatomic, assign) CGRect markedRect;
+
+- (void)setEditableTransform:(NSArray*)matrix;
 @end
 
 @implementation FlutterTextInputView {
   int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
+  CGRect _cachedFirstRect;
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -293,6 +300,10 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
     _text = [[NSMutableString alloc] init];
     _markedText = [[NSMutableString alloc] init];
     _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
+    _cachedFirstRect = kInvalidFirstRect;
+    // Initialize with the zero matrix which is not
+    // an affine transform.
+    _editableTransform = CATransform3D();
 
     // UITextInputTraits
     _autocapitalizationType = UITextAutocapitalizationTypeSentences;
@@ -682,6 +693,39 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 
 #pragma mark - UITextInput cursor, selection rect handling
 
+- (void)setMarkedRect:(CGRect)markedRect {
+  _markedRect = markedRect;
+  // Invalidate the cache.
+  _cachedFirstRect = kInvalidFirstRect;
+}
+
+- (void)setEditableTransform:(NSArray*)matrix {
+  CATransform3D* transform = &_editableTransform;
+
+  transform->m11 = [matrix[0] doubleValue];
+  transform->m12 = [matrix[1] doubleValue];
+  transform->m13 = [matrix[2] doubleValue];
+  transform->m14 = [matrix[3] doubleValue];
+
+  transform->m21 = [matrix[4] doubleValue];
+  transform->m22 = [matrix[5] doubleValue];
+  transform->m23 = [matrix[6] doubleValue];
+  transform->m24 = [matrix[7] doubleValue];
+
+  transform->m31 = [matrix[8] doubleValue];
+  transform->m32 = [matrix[9] doubleValue];
+  transform->m33 = [matrix[10] doubleValue];
+  transform->m34 = [matrix[11] doubleValue];
+
+  transform->m41 = [matrix[12] doubleValue];
+  transform->m42 = [matrix[13] doubleValue];
+  transform->m43 = [matrix[14] doubleValue];
+  transform->m44 = [matrix[15] doubleValue];
+
+  // Invalidate the cache.
+  _cachedFirstRect = kInvalidFirstRect;
+}
+
 // The following methods are required to support force-touch cursor positioning
 // and to position the
 // candidates view for multi-stage input methods (e.g., Japanese) when using a
@@ -691,13 +735,25 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   if (_markedTextRange != nil) {
-    // If the width returned is 
-    double nonZeroWidth = MAX(_markedRect.size.width, 0.1);
-    CGRect rect = _markedRect;
-    rect.size = CGSizeMake(nonZeroWidth, rect.size.height);
-    return CGRectOffset(rect, _editableOrigin.x, _editableOrigin.y);
+    // The candidates view can't be shown if _editableTransform is not affine,
+    // or markedRect is invalid.
+    if ((_markedRect.size.width < 0 && _markedRect.size.height < 0) ||
+        !CATransform3DIsAffine(_editableTransform))
+      return kInvalidFirstRect;
+
+    if (CGRectEqualToRect(_cachedFirstRect, kInvalidFirstRect)) {
+      // If the width returned is too small, it is probably the caret rect.
+      // expand it to 0.1 so the IME candidates view show up.
+      double nonZeroWidth = MAX(_markedRect.size.width, 0.1);
+      CGRect rect = _markedRect;
+      rect.size = CGSizeMake(nonZeroWidth, rect.size.height);
+      _cachedFirstRect =
+          CGRectApplyAffineTransform(rect, CATransform3DGetAffineTransform(_editableTransform));
+    }
+
+    return _cachedFirstRect;
   }
-  
+
   [_textInputDelegate showAutocorrectionPromptRectForStart:start
                                                        end:end
                                                 withClient:_textInputClient];
@@ -901,21 +957,14 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   }
 }
 
--(void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
-  NSArray* matrix = dictionary[@"transform"];
-  _activeView.editableOrigin = CGPointMake([matrix[12] doubleValue], [matrix[13] doubleValue]);
-  NSLog(@"%@", @(_activeView.editableOrigin));
+- (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
+  [_activeView setEditableTransform:dictionary[@"transform"]];
 }
 
--(void)updateMarkedRect:(NSDictionary*)dictionary {
-  NSLog(@"%@", dictionary);
-  CGRect markedRect = CGRectMake(
-                                 [dictionary[@"x"] doubleValue],
-                                 [dictionary[@"y"] doubleValue],
-                                 [dictionary[@"Width"] doubleValue],
-                                 [dictionary[@"height"] doubleValue]);
-  
-  _activeView.markedRect = markedRect;
+- (void)updateMarkedRect:(NSDictionary*)dictionary {
+  _activeView.markedRect =
+      CGRectMake([dictionary[@"x"] doubleValue], [dictionary[@"y"] doubleValue],
+                 [dictionary[@"Width"] doubleValue], [dictionary[@"height"] doubleValue]);
 }
 
 - (void)showTextInput {
