@@ -664,18 +664,14 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
       });
 
   auto ui_task = [engine = engine_->GetWeakPtr(),                            //
-                  raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
-                  raster_task, should_post_raster_task,
+                  should_post_raster_task,
                   &latch  //
   ] {
     if (engine) {
       engine->OnOutputSurfaceCreated();
     }
-    // Step 2: Next, tell the raster thread that it should create a surface for
-    // its rasterizer.
-    if (should_post_raster_task) {
-      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
-    } else {
+
+    if (!should_post_raster_task) {
       // See comment on should_post_raster_task, in this case we just unblock
       // the platform thread.
       latch.Signal();
@@ -691,7 +687,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   FML_DCHECK(platform_view);
 
   auto io_task = [io_manager = io_manager_->GetWeakPtr(), platform_view,
-                  ui_task_runner = task_runners_.GetUITaskRunner(), ui_task] {
+                  ui_task_runner = task_runners_.GetUITaskRunner(), ui_task,
+                  raster_task_runner = task_runners_.GetRasterTaskRunner(),
+                  raster_task, should_post_raster_task] {
     if (io_manager && !io_manager->GetResourceContext()) {
       io_manager->NotifyResourceContextAvailable(
           platform_view->CreateResourceContext());
@@ -699,6 +697,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     // Step 1: Next, post a task on the UI thread to tell the engine that it has
     // an output surface.
     fml::TaskRunner::RunNowOrPostTask(ui_task_runner, ui_task);
+    // Step 2: Next, tell the raster thread that it should create a surface for
+    // its rasterizer.
+    if (should_post_raster_task) {
+      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
+    }
   };
 
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetIOTaskRunner(), io_task);
