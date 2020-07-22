@@ -11,8 +11,10 @@
 static const char _kTextAffinityDownstream[] = "TextAffinity.downstream";
 static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
 
-// The canonical invalid CGRect that if returned in firstRectForRange, the IME candidates view
-// will be hidden. Also used to indicate the first rect cache is now invalid.
+// The "canonical" invalid CGRect, similar to CGRectNull, used to
+// indicate a CGRect involved in firstRectForRange calculation is
+// invalid. The specific value is chosen so that if firstRectForRange
+// returns kInvalidFirstRect, iOS will not show the IME candidates view.
 const CGRect kInvalidFirstRect = {{-1, -1}, {9999, 9999}};
 
 static UIKeyboardType ToUIKeyboardType(NSDictionary* type) {
@@ -733,18 +735,25 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 // physical keyboard.
 
 - (CGRect)firstRectForRange:(UITextRange*)range {
+  NSAssert([range.start isKindOfClass:[FlutterTextPosition class]],
+           @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
+  NSAssert([range.end isKindOfClass:[FlutterTextPosition class]],
+           @"Expected a FlutterTextPosition for range.end (got %@).", [range.end class]);
+
   NSUInteger start = ((FlutterTextPosition*)range.start).index;
   NSUInteger end = ((FlutterTextPosition*)range.end).index;
   if (_markedTextRange != nil) {
     // The candidates view can't be shown if _editableTransform is not affine,
     // or markedRect is invalid.
     if (CGRectEqualToRect(kInvalidFirstRect, _markedRect) ||
-        !CATransform3DIsAffine(_editableTransform))
+        !CATransform3DIsAffine(_editableTransform)) {
       return kInvalidFirstRect;
+    }
 
     if (CGRectEqualToRect(_cachedFirstRect, kInvalidFirstRect)) {
-      // If the width returned is too small, it is probably the caret rect.
-      // expand it to 0.1 so the IME candidates view show up.
+      // If the width returned is too small, that means the framework sent us
+      // the caret rect instead of the marked text rect. Expand it to 0.1 so
+      // the IME candidates view show up.
       double nonZeroWidth = MAX(_markedRect.size.width, 0.1);
       CGRect rect = _markedRect;
       rect.size = CGSizeMake(nonZeroWidth, rect.size.height);
@@ -963,8 +972,11 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 }
 
 - (void)updateMarkedRect:(NSDictionary*)dictionary {
+  NSAssert(dictionary[@"x"] != nil && dictionary[@"y"] != nil && dictionary[@"width"] != nil &&
+               dictionary[@"height"] != nil,
+           @"Expected a dictionary representing a CGRect, got %@", dictionary);
   CGRect rect = CGRectMake([dictionary[@"x"] doubleValue], [dictionary[@"y"] doubleValue],
-                           [dictionary[@"Width"] doubleValue], [dictionary[@"height"] doubleValue]);
+                           [dictionary[@"width"] doubleValue], [dictionary[@"height"] doubleValue]);
   _activeView.markedRect = rect.size.width < 0 && rect.size.height < 0 ? kInvalidFirstRect : rect;
 }
 
