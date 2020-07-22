@@ -11,7 +11,7 @@
 static const char _kTextAffinityDownstream[] = "TextAffinity.downstream";
 static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
 
-// An invalid CGRect that if returned in firstRectForRange, the IME candidates view
+// The canonical invalid CGRect that if returned in firstRectForRange, the IME candidates view
 // will be hidden. Also used to indicate the first rect cache is now invalid.
 const CGRect kInvalidFirstRect = {{-1, -1}, {9999, 9999}};
 
@@ -300,6 +300,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
     _text = [[NSMutableString alloc] init];
     _markedText = [[NSMutableString alloc] init];
     _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
+    _markedRect = kInvalidFirstRect;
     _cachedFirstRect = kInvalidFirstRect;
     // Initialize with the zero matrix which is not
     // an affine transform.
@@ -737,7 +738,7 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   if (_markedTextRange != nil) {
     // The candidates view can't be shown if _editableTransform is not affine,
     // or markedRect is invalid.
-    if ((_markedRect.size.width < 0 && _markedRect.size.height < 0) ||
+    if (CGRectEqualToRect(kInvalidFirstRect, _markedRect) ||
         !CATransform3DIsAffine(_editableTransform))
       return kInvalidFirstRect;
 
@@ -962,9 +963,9 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
 }
 
 - (void)updateMarkedRect:(NSDictionary*)dictionary {
-  _activeView.markedRect =
-      CGRectMake([dictionary[@"x"] doubleValue], [dictionary[@"y"] doubleValue],
-                 [dictionary[@"Width"] doubleValue], [dictionary[@"height"] doubleValue]);
+  CGRect rect = CGRectMake([dictionary[@"x"] doubleValue], [dictionary[@"y"] doubleValue],
+                           [dictionary[@"Width"] doubleValue], [dictionary[@"height"] doubleValue]);
+  _activeView.markedRect = rect.size.width < 0 && rect.size.height < 0 ? kInvalidFirstRect : rect;
 }
 
 - (void)showTextInput {

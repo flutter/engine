@@ -15,6 +15,8 @@ FLUTTER_ASSERT_ARC
 
 @interface FlutterTextInputView ()
 - (void)setTextInputState:(NSDictionary*)state;
+- (void)setEditableTransform:(NSArray*)matrix;
+- (void)setMarkedRect:(CGRect)markedRect;
 @end
 
 @implementation FlutterTextInputPluginTest {
@@ -253,5 +255,50 @@ FLUTTER_ASSERT_ARC
 
   [inputView unmarkText];
   XCTAssertEqual(updateCount, 6);
+}
+
+- (void)testUpdateFirstRectForRange {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  [inputView
+      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
+
+  CGRect kInvalidFirstRect = CGRectMake(-1, -1, 9999, 9999);
+  FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
+  // yOffset = 200.
+  NSArray* yOffsetMatrix = @[ @1, @0, @0, @0, @0, @1, @0, @0, @0, @0, @1, @0, @0, @200, @0, @1 ];
+  NSArray* zeroMatrix = @[ @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0 ];
+
+  // Invalid since we don't have the transform or the rect.
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+
+  [inputView setEditableTransform:yOffsetMatrix];
+  // Invalid since we don't have the rect.
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+
+  // Valid rect and transform.
+  CGRect testRect = CGRectMake(0, 0, 100, 100);
+  [inputView setMarkedRect:testRect];
+
+  CGRect finalRect = CGRectOffset(testRect, 0, 200);
+  XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
+  // Idempotent.
+  XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
+
+  // Use an invalid matrix:
+  [inputView setEditableTransform:zeroMatrix];
+  // Invalid matrix is invalid.
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+
+  // Revert the invalid matrix change.
+  [inputView setEditableTransform:yOffsetMatrix];
+  [inputView setMarkedRect:testRect];
+  XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
+
+  // Use an invalid rect:
+  [inputView setMarkedRect:kInvalidFirstRect];
+  // Invalid marked rect is invalid.
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+  XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
 }
 @end
