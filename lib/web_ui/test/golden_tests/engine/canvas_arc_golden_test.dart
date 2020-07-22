@@ -63,7 +63,6 @@ void main() async {
   });
 
   test('Should render counter clockwise arcs', () async {
-    final Rect rect = Rect.fromLTWH(20, 20, 200, 200);
     final Path path = Path();
     path.moveTo(149.999999999999997, 50);
     path.lineTo(149.999999999999997, 20);
