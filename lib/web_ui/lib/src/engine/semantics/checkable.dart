@@ -100,7 +100,7 @@ class Checkable extends RoleManager {
   }
 
   void _updateDisabledAttribute() {
-    if (!semanticsObject.isEnabled) {
+    if (semanticsObject.enabledState() == EnabledState.disabled) {
       final html.Element element = semanticsObject.element;
       element
         ..setAttribute('aria-disabled', 'true')

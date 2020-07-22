@@ -921,7 +921,8 @@ void _testCheckables() {
       actions: 0 | ui.SemanticsAction.tap.index,
       flags: 0 |
           ui.SemanticsFlag.hasToggledState.index |
-          ui.SemanticsFlag.isToggled.index,
+          ui.SemanticsFlag.isToggled.index |
+          ui.SemanticsFlag.hasEnabledState.index,
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
@@ -1005,6 +1006,7 @@ void _testCheckables() {
       actions: 0 | ui.SemanticsAction.tap.index,
       flags: 0 |
           ui.SemanticsFlag.hasCheckedState.index |
+          ui.SemanticsFlag.hasEnabledState.index |
           ui.SemanticsFlag.isChecked.index,
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
@@ -1089,6 +1091,7 @@ void _testCheckables() {
       id: 0,
       actions: 0 | ui.SemanticsAction.tap.index,
       flags: 0 |
+          ui.SemanticsFlag.hasEnabledState.index |
           ui.SemanticsFlag.hasCheckedState.index |
           ui.SemanticsFlag.isInMutuallyExclusiveGroup.index |
           ui.SemanticsFlag.isChecked.index,
