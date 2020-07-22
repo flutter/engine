@@ -702,6 +702,8 @@ static NSString* uniqueIdFromDictionary(NSDictionary* dictionary) {
   _cachedFirstRect = kInvalidFirstRect;
 }
 
+// This method expects a 4x4 perspective matrix
+// stored in a NSArray in column-major order.
 - (void)setEditableTransform:(NSArray*)matrix {
   CATransform3D* transform = &_editableTransform;
 
