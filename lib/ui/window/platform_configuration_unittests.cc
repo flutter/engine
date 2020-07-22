@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "dart_api.h"
-#include "runtime/dart_isolate.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <memory>
 
 #include "flutter/lib/ui/window/platform_configuration.h"
 
-#include "flutter/fml/mapping.h"
+#include "flutter/common/task_runners.h"
+#include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/lib/ui/painting/vertices.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/common/shell_test.h"
+#include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/testing.h"
-#include "gtest/gtest.h"
-#include "lib/ui/text/font_collection.h"
 
 namespace flutter {
 namespace testing {
@@ -48,29 +48,91 @@ class DummyPlatformConfigurationClient : public PlatformConfigurationClient {
   std::shared_ptr<const fml::Mapping> isolate_data_;
 };
 
-// TEST(PlatformConfigurationTest, PlatformConfigurationInitialization) {
-//   DummyPlatformConfigurationClient client;
-//   PlatformConfiguration configuration(&client);
+TEST_F(ShellTest, PlatformConfigurationInitialization) {
+  fml::AutoResetWaitableEvent message_latch;
 
-//   ASSERT_EQ(configuration.client(), &client);
-//   ASSERT_EQ(configuration.window()->viewport_metrics().device_pixel_ratio, 1.0);
-//   ASSERT_EQ(configuration.window()->viewport_metrics().physical_width, 0.0);
-//   ASSERT_EQ(configuration.window()->viewport_metrics().physical_height, 0.0);
-// }
+  auto nativeValidateConfiguration = [&](Dart_NativeArguments args) {
+    PlatformConfiguration* configuration =
+        UIDartState::Current()->platform_configuration();
+    ASSERT_NE(configuration->window(), nullptr);
+    ASSERT_EQ(configuration->window()->viewport_metrics().device_pixel_ratio,
+              1.0);
+    ASSERT_EQ(configuration->window()->viewport_metrics().physical_width, 0.0);
+    ASSERT_EQ(configuration->window()->viewport_metrics().physical_height, 0.0);
 
-// This doesn't actually work until I figure out how to instantiate an Isolate
-// and set it up properly.
+    message_latch.Signal();
+  };
 
-// TEST(PlatformConfigurationTest, PlatformConfigurationWindowMetricsUpdate) {
-//   DummyPlatformConfigurationClient client;
-//   PlatformConfiguration configuration(&client);
-//   configuration.DidCreateIsolate();
-//
-//   configuration.window()->UpdateWindowMetrics(ViewportMetrics{2.0, 10.0, 20.0});
-//   ASSERT_EQ(configuration.window()->viewport_metrics().device_pixel_ratio, 2.0);
-//   ASSERT_EQ(configuration.window()->viewport_metrics().physical_width, 10.0);
-//   ASSERT_EQ(configuration.window()->viewport_metrics().physical_height, 20.0);
-// }
+  Settings settings = CreateSettingsForFixture();
+  TaskRunners task_runners("test",                  // label
+                           GetCurrentTaskRunner(),  // platform
+                           CreateNewThread(),       // raster
+                           CreateNewThread(),       // ui
+                           CreateNewThread()        // io
+  );
+
+  AddNativeCallback("ValidateConfiguration",
+                    CREATE_NATIVE_ENTRY(nativeValidateConfiguration));
+
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(shell->IsSetup());
+  auto run_configuration = RunConfiguration::InferFromSettings(settings);
+  run_configuration.SetEntrypoint("validateConfiguration");
+
+  shell->RunEngine(std::move(run_configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
+
+  message_latch.Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
+
+TEST_F(ShellTest, PlatformConfigurationWindowMetricsUpdate) {
+  fml::AutoResetWaitableEvent message_latch;
+
+  auto nativeValidateConfiguration = [&](Dart_NativeArguments args) {
+    PlatformConfiguration* configuration =
+        UIDartState::Current()->platform_configuration();
+
+    ASSERT_NE(configuration->window(), nullptr);
+    configuration->window()->UpdateWindowMetrics(
+        ViewportMetrics{2.0, 10.0, 20.0});
+    ASSERT_EQ(configuration->window()->viewport_metrics().device_pixel_ratio,
+              2.0);
+    ASSERT_EQ(configuration->window()->viewport_metrics().physical_width, 10.0);
+    ASSERT_EQ(configuration->window()->viewport_metrics().physical_height,
+              20.0);
+
+    message_latch.Signal();
+  };
+
+  Settings settings = CreateSettingsForFixture();
+  TaskRunners task_runners("test",                  // label
+                           GetCurrentTaskRunner(),  // platform
+                           CreateNewThread(),       // raster
+                           CreateNewThread(),       // ui
+                           CreateNewThread()        // io
+  );
+
+  AddNativeCallback("ValidateConfiguration",
+                    CREATE_NATIVE_ENTRY(nativeValidateConfiguration));
+
+  std::unique_ptr<Shell> shell =
+      CreateShell(std::move(settings), std::move(task_runners));
+
+  ASSERT_TRUE(shell->IsSetup());
+  auto run_configuration = RunConfiguration::InferFromSettings(settings);
+  run_configuration.SetEntrypoint("validateConfiguration");
+
+  shell->RunEngine(std::move(run_configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
+
+  message_latch.Wait();
+  DestroyShell(std::move(shell), std::move(task_runners));
+}
 
 }  // namespace testing
 }  // namespace flutter

@@ -324,7 +324,6 @@ FontCollection& RuntimeController::GetFontCollection() {
   return client_.GetFontCollection();
 }
 
-
 // |PlatformConfigurationClient|
 void RuntimeController::UpdateIsolateDescription(const std::string isolate_name,
                                                  int64_t isolate_port) {

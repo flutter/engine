@@ -38,7 +38,6 @@ class FontCollection;
 class PlatformMessage;
 class Scene;
 
-
 //--------------------------------------------------------------------------
 /// @brief An enum for defining the different kinds of accessibility features
 ///        that can be enabled by the platform.
@@ -228,14 +227,15 @@ class PlatformConfiguration final {
   /// @brief      Access to the platform configuration client (which typically
   ///             is implemented by the RuntimeController).
   ///
-  /// @return     Returns the client used to construct this PlatformConfiguration.
+  /// @return     Returns the client used to construct this
+  /// PlatformConfiguration.
   ///
   PlatformConfigurationClient* client() const { return client_; }
 
   //----------------------------------------------------------------------------
   /// @brief      Called by the RuntimeController once it has created the root
-  ///             isolate, so that the PlatformController can get a handle to the
-  ///             'dart:ui' library.
+  ///             isolate, so that the PlatformController can get a handle to
+  ///             the 'dart:ui' library.
   ///
   ///             It uses the handle to call the hooks in hooks.dart.
   ///
@@ -274,10 +274,10 @@ class PlatformConfiguration final {
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the PlatformConfiguration that the embedder has
-  ///             expressed an opinion about whether the accessibility tree should
-  ///             be generated or not. This call originates in the platform view
-  ///             and is forwarded to the PlatformConfiguration here by the
-  ///             engine.
+  ///             expressed an opinion about whether the accessibility tree
+  ///             should be generated or not. This call originates in the
+  ///             platform view and is forwarded to the PlatformConfiguration
+  ///             here by the engine.
   ///
   /// @param[in]  enabled  Whether the accessibility tree is enabled or
   ///                      disabled.
@@ -295,8 +295,8 @@ class PlatformConfiguration final {
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the PlatformConfiguration that the client has sent
-  ///             it a message. This call originates in the platform view and has
-  ///             been forwarded through the engine to here.
+  ///             it a message. This call originates in the platform view and
+  ///             has been forwarded through the engine to here.
   ///
   /// @param[in]  message  The message sent from the embedder to the Dart
   ///                      application.
@@ -319,7 +319,8 @@ class PlatformConfiguration final {
                                std::vector<uint8_t> args);
 
   //----------------------------------------------------------------------------
-  /// @brief      Notifies the framework that it is time to begin working on a new
+  /// @brief      Notifies the framework that it is time to begin working on a
+  /// new
   ///             frame previously scheduled via a call to
   ///             `PlatformConfigurationClient::ScheduleFrame`. This call
   ///             originates in the animator.
@@ -413,7 +414,6 @@ class PlatformConfiguration final {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
-
 };
 
 }  // namespace flutter

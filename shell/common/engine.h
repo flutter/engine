@@ -701,9 +701,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder has expressed an opinion
-  ///             about whether the accessibility tree should be generated or not.
-  ///             This call originates in the platform view and is forwarded to
-  ///             the engine here on the UI task runner by the shell.
+  ///             about whether the accessibility tree should be generated or
+  ///             not. This call originates in the platform view and is
+  ///             forwarded to the engine here on the UI task runner by the
+  ///             shell.
   ///
   /// @param[in]  enabled  Whether the accessibility tree is enabled or
   ///                      disabled.
