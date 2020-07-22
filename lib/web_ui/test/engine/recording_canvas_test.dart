@@ -193,7 +193,7 @@ void main() {
     final RecordingCanvas rc = RecordingCanvas(Rect.fromLTRB(0, 0, 200, 400));
     rc.endRecording();
     // Should not throw exception on restore.
-    rc.restore();
+    expect(() => rc.restore(), returnsNormally);
   });
 }
 

@@ -119,9 +119,7 @@ class RecordingCanvas {
   /// directly it is up to you to call this method explicitly.
   void endRecording() {
     _pictureBounds = _paintBounds.computeBounds();
-    if (assertionsEnabled) {
-      _recordingEnded = true;
-    }
+    _recordingEnded = true;
   }
 
   /// Applies the recorded commands onto an [engineCanvas].
