@@ -113,7 +113,7 @@ Future<bool> shouldIgnoreFile(String path) async {
         .transform(const LineSplitter())) {
       if (exp.hasMatch(line)) {
         return true;
-      } else if (line[0] != '\n' && line[0] != '/') {
+      } else if (line.length > 0 && line[0] != '\n' && line[0] != '/') {
         return false;
       }
     }
