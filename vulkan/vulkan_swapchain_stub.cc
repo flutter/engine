@@ -9,7 +9,7 @@ namespace vulkan {
 VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
                                  const VulkanDevice& device,
                                  const VulkanSurface& surface,
-                                 GrContext* skia_context,
+                                 GrDirectContext* skia_context,
                                  std::unique_ptr<VulkanSwapchain> old_swapchain,
                                  uint32_t queue_family_index) {}
 
