@@ -337,7 +337,6 @@ public class PlatformViewsControllerTest {
       PlatformViewsController platformViewsController,
       int platformViewId,
       String viewType) {
-    // Simulate create call from the framework.
     Map<String, Object> platformViewCreateArguments = new HashMap<>();
     platformViewCreateArguments.put("hybrid", true);
     platformViewCreateArguments.put("id", platformViewId);
@@ -351,7 +350,6 @@ public class PlatformViewsControllerTest {
 
   private static void disposePlatformView(
       FlutterJNI jni, PlatformViewsController platformViewsController, int platformViewId) {
-    // Simulate create call from the framework.
     Map<String, Object> platformViewDisposeArguments = new HashMap<>();
     platformViewDisposeArguments.put("hybrid", true);
     platformViewDisposeArguments.put("id", platformViewId);
@@ -362,12 +360,12 @@ public class PlatformViewsControllerTest {
   }
 
   private void attach(FlutterJNI jni, PlatformViewsController platformViewsController) {
-    AssetManager assetManager = mock(AssetManager.class);
-    Context context = RuntimeEnvironment.application.getApplicationContext();
-
-    DartExecutor executor = new DartExecutor(jni, assetManager);
+    DartExecutor executor = new DartExecutor(jni, mock(AssetManager.class));
     executor.onAttachedToJNI();
+
+    Context context = RuntimeEnvironment.application.getApplicationContext();
     platformViewsController.attach(context, null, executor);
+
     platformViewsController.attachToView(mock(FlutterView.class));
   }
 }
