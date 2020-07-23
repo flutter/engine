@@ -15,8 +15,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
-#include <AudioToolbox/AudioToolbox.h>
-
 namespace {
 
 /// Clipboard plain text format.
@@ -507,7 +505,7 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)playSystemSound:(NSString*)soundType {
   if ([soundType isEqualToString:@"SystemSoundType.alert"]) {
-    AudioServicesPlayAlertSound(kSystemSoundID_UserPreferredAlert);
+    NSBeep();
   }
 }
 
