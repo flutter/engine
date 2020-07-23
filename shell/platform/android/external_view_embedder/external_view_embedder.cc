@@ -181,7 +181,6 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       }
     }
   }
-  return true;
 }
 
 // |ExternalViewEmbedder|
