@@ -22,11 +22,11 @@ class CkPicture implements ui.Picture {
 
   @override
   Future<ui.Image> toImage(int width, int height) async {
-    final js.JsObject skSurface = canvasKit.callMethod('MakeSurface', <int>[width, height]);
-    final js.JsObject skCanvas = skSurface.callMethod('getCanvas');
-    skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture.skiaObject!]);
-    final js.JsObject skImage = skSurface.callMethod('makeImageSnapshot');
-    skSurface.callMethod('dispose');
+    final SkSurface skSurface = canvasKit.MakeSurface(width, height);
+    final SkCanvas skCanvas = skSurface.getCanvas();
+    skCanvas.drawPicture(skiaObject.skiaObject);
+    final SkImage skImage = skSurface.makeImageSnapshot();
+    skSurface.dispose();
     return CkImage(skImage);
   }
 }
@@ -36,6 +36,6 @@ class SkPictureSkiaObject extends OneShotSkiaObject<SkPicture> {
 
   @override
   void delete() {
-    rawSkiaObject.delete();
+    rawSkiaObject?.delete();
   }
 }
