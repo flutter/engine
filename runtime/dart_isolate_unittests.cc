@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
@@ -9,17 +10,16 @@
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
-#include "flutter/runtime/runtime_test.h"
 #include "flutter/testing/dart_isolate_runner.h"
+#include "flutter/testing/fixture_test.h"
 #include "flutter/testing/testing.h"
-#include "flutter/testing/thread_test.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
 
 namespace flutter {
 namespace testing {
 
-using DartIsolateTest = RuntimeTest;
+using DartIsolateTest = FixtureTest;
 
 TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());

@@ -13,6 +13,9 @@ class Rasterizer {
 
   Rasterizer(this.surface);
 
+  void setSkiaResourceCacheMaxBytes(int bytes) =>
+    surface.setSkiaResourceCacheMaxBytes(bytes);
+
   /// Creates a new frame from this rasterizer's surface, draws the given
   /// [LayerTree] into it, and then submits the frame.
   void draw(LayerTree layerTree) {
@@ -24,7 +27,7 @@ class Rasterizer {
 
       final SurfaceFrame frame = surface.acquireFrame(layerTree.frameSize);
       surface.viewEmbedder.frameSize = layerTree.frameSize;
-      final SkCanvas canvas = frame.skiaCanvas;
+      final CkCanvas canvas = frame.skiaCanvas;
       final Frame compositorFrame =
           context.acquireFrame(canvas, surface.viewEmbedder);
 

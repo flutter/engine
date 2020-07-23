@@ -6,16 +6,16 @@
 part of engine;
 
 /// A virtual canvas that applies operations to multiple canvases at once.
-class SkNWayCanvas {
-  final List<SkCanvas?> _canvases = <SkCanvas?>[];
+class CkNWayCanvas {
+  final List<CkCanvas?> _canvases = <CkCanvas?>[];
 
-  void addCanvas(SkCanvas? canvas) {
+  void addCanvas(CkCanvas? canvas) {
     _canvases.add(canvas);
   }
 
   /// Calls [save] on all canvases.
-  int? save() {
-    int? saveCount;
+  int save() {
+    int saveCount = 0;
     for (int i = 0; i < _canvases.length; i++) {
       saveCount = _canvases[i]!.save();
     }
@@ -25,7 +25,7 @@ class SkNWayCanvas {
   /// Calls [saveLayer] on all canvases.
   void saveLayer(ui.Rect bounds, ui.Paint? paint) {
     for (int i = 0; i < _canvases.length; i++) {
-      _canvases[i]!.saveLayer(bounds, paint as SkPaint);
+      _canvases[i]!.saveLayer(bounds, paint as CkPaint);
     }
   }
 
@@ -44,7 +44,7 @@ class SkNWayCanvas {
   }
 
   /// Calls [restoreToCount] on all canvases.
-  void restoreToCount(int? count) {
+  void restoreToCount(int count) {
     for (int i = 0; i < _canvases.length; i++) {
       _canvases[i]!.restoreToCount(count);
     }
@@ -58,7 +58,7 @@ class SkNWayCanvas {
   }
 
   /// Calls [transform] on all canvases.
-  void transform(Float32List? matrix) {
+  void transform(Float32List matrix) {
     for (int i = 0; i < _canvases.length; i++) {
       _canvases[i]!.transform(matrix);
     }

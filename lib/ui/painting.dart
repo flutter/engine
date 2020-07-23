@@ -324,7 +324,7 @@ class Color {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     if (other.runtimeType != runtimeType)
@@ -1035,12 +1035,6 @@ enum Clip {
   antiAliasWithSaveLayer,
 }
 
-/// Indicates that the image should not be resized in this dimension.
-///
-/// Used by [instantiateImageCodec] as a magical value to disable resizing
-/// in the given dimension.
-const int _kDoNotResizeDimension = -1;
-
 /// A description of the style to use when drawing on a [Canvas].
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
@@ -1561,19 +1555,6 @@ enum PixelFormat {
   bgra8888,
 }
 
-class _ImageInfo {
-  _ImageInfo(this.width, this.height, this.format, int? rowBytes) : rowBytes = rowBytes ?? width * 4;
-
-  @pragma('vm:entry-point', 'get')
-  int width;
-  @pragma('vm:entry-point', 'get')
-  int height;
-  @pragma('vm:entry-point', 'get')
-  int format;
-  @pragma('vm:entry-point', 'get')
-  int rowBytes;
-}
-
 /// Opaque handle to raw decoded image data (pixels).
 ///
 /// To obtain an [Image] object, use [instantiateImageCodec].
@@ -1723,38 +1704,22 @@ Future<Codec> instantiateImageCodec(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) {
-  return _futurize((_Callback<Codec> callback) {
-    return _instantiateImageCodec(
-      list,
-      callback,
-      null,
-      targetWidth ?? _kDoNotResizeDimension,
-      targetHeight ?? _kDoNotResizeDimension,
-      allowUpscaling,
-    );
-  });
+}) async {
+  final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(list);
+  final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
+  if (!allowUpscaling) {
+    if (targetWidth != null && targetWidth > descriptor.width) {
+      targetWidth = descriptor.width;
+    }
+    if (targetHeight != null && targetHeight > descriptor.height) {
+      targetHeight = descriptor.height;
+    }
+  }
+  return descriptor.instantiateCodec(
+    targetWidth: targetWidth,
+    targetHeight: targetHeight,
+  );
 }
-
-/// Instantiates a [Codec] object for an image binary data.
-///
-/// The [targetWidth] and [targetHeight] arguments specify the size of the output
-/// image, in image pixels. Image in this context refers to image in every frame of the [Codec].
-/// If [targetWidth] and [targetHeight] are not equal to the intrinsic dimensions of the
-/// image, then the image will be scaled after being decoded. If exactly one of
-/// these two arguments is not equal to [_kDoNotResizeDimension], then the aspect
-/// ratio will be maintained while forcing the image to match the given dimension.
-/// If both are equal to [_kDoNotResizeDimension], then the image maintains its real size.
-///
-/// Returns an error message if the instantiation has failed, null otherwise.
-String? _instantiateImageCodec(
-  Uint8List list,
-  _Callback<Codec> callback,
-  _ImageInfo? imageInfo,
-  int targetWidth,
-  int targetHeight,
-  bool allowUpscaling,
-) native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
 ///
@@ -1813,19 +1778,33 @@ void decodeImageFromPixels(
     assert(allowUpscaling || targetHeight <= height);
   }
 
-  final _ImageInfo imageInfo = _ImageInfo(width, height, format.index, rowBytes);
-  final Future<Codec> codecFuture = _futurize((_Callback<Codec> callback) {
-    return _instantiateImageCodec(
-      pixels,
-      callback,
-      imageInfo,
-      targetWidth ?? _kDoNotResizeDimension,
-      targetHeight ?? _kDoNotResizeDimension,
-      allowUpscaling,
-    );
+  ImmutableBuffer.fromUint8List(pixels)
+    .then((ImmutableBuffer buffer) {
+      final ImageDescriptor descriptor = ImageDescriptor.raw(
+        buffer,
+        width: width,
+        height: height,
+        rowBytes: rowBytes,
+        pixelFormat: format,
+      );
+
+      if (!allowUpscaling) {
+        if (targetWidth != null && targetWidth! > descriptor.width) {
+          targetWidth = descriptor.width;
+        }
+        if (targetHeight != null && targetHeight! > descriptor.height) {
+          targetHeight = descriptor.height;
+        }
+      }
+
+      descriptor
+        .instantiateCodec(
+          targetWidth: targetWidth,
+          targetHeight: targetHeight,
+        )
+        .then((Codec codec) => codec.getNextFrame())
+        .then((FrameInfo frameInfo) => callback(frameInfo.image));
   });
-  codecFuture.then((Codec codec) => codec.getNextFrame())
-      .then((FrameInfo frameInfo) => callback(frameInfo.image));
 }
 
 /// Determines the winding rule that decides how the interior of a [Path] is
@@ -2612,7 +2591,7 @@ class MaskFilter {
   static const int _TypeBlur = 1; // SkBlurMaskFilter
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return other is MaskFilter
         && other._style == _style
         && other._sigma == _sigma;
@@ -2741,7 +2720,7 @@ class ColorFilter {
   static const int _TypeSrgbToLinearGamma = 4; // MakeSRGBToLinearGamma
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return other is ColorFilter
         && other._type == _type
         && _listEquals<double>(other._matrix, _matrix)
@@ -2886,7 +2865,7 @@ class ImageFilter {
   static const int _kTypeMatrix = 1; // MakeMatrixFilterRowMajor255
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return other is ImageFilter
         && other._type == _type
         && _listEquals<double>(other._data, _data)
@@ -3433,6 +3412,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   Canvas(PictureRecorder recorder, [ Rect? cullRect ]) : assert(recorder != null) { // ignore: unnecessary_null_comparison
     if (recorder.isRecording)
       throw ArgumentError('"recorder" must not already be associated with another Canvas.');
+    _recorder = recorder;
+    _recorder!._canvas = this;
     cullRect ??= Rect.largest;
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
   }
@@ -3441,6 +3422,11 @@ class Canvas extends NativeFieldWrapperClass2 {
                     double top,
                     double right,
                     double bottom) native 'Canvas_constructor';
+
+  // The underlying Skia SkCanvas is owned by the PictureRecorder used to create this Canvas.
+  // The Canvas holds a reference to the PictureRecorder to prevent the recorder from being
+  // garbage collected until PictureRecorder.endRecording is called.
+  PictureRecorder? _recorder;
 
   /// Saves a copy of the current transform and clip on the save stack.
   ///
@@ -4232,7 +4218,7 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   /// call to [endRecording], and false if either this
   /// [PictureRecorder] has not yet been associated with a [Canvas],
   /// or the [endRecording] method has already been called.
-  bool get isRecording native 'PictureRecorder_isRecording';
+  bool get isRecording => _canvas != null;
 
   /// Finishes recording graphical operations.
   ///
@@ -4240,12 +4226,18 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   /// recorded thus far. After calling this function, both the picture recorder
   /// and the canvas objects are invalid and cannot be used further.
   Picture endRecording() {
+    if (_canvas == null)
+      throw StateError('PictureRecorder did not start recording.');
     final Picture picture = Picture._();
     _endRecording(picture);
+    _canvas!._recorder = null;
+    _canvas = null;
     return picture;
   }
 
   void _endRecording(Picture outPicture) native 'PictureRecorder_endRecording';
+
+  Canvas? _canvas;
 }
 
 /// A single shadow.
@@ -4398,7 +4390,7 @@ class Shadow {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other))
       return true;
     return other is Shadow
@@ -4449,6 +4441,130 @@ class Shadow {
 
   @override
   String toString() => 'TextShadow($color, $offset, $blurRadius)';
+}
+
+/// A handle to a read-only byte buffer that is managed by the engine.
+class ImmutableBuffer extends NativeFieldWrapperClass2 {
+  ImmutableBuffer._(this.length);
+
+  /// Creates a copy of the data from a [Uint8List] suitable for internal use
+  /// in the engine.
+  static Future<ImmutableBuffer> fromUint8List(Uint8List list) {
+    final ImmutableBuffer instance = ImmutableBuffer._(list.length);
+    return _futurize((_Callback<void> callback) {
+      instance._init(list, callback);
+    }).then((_) => instance);
+  }
+  void _init(Uint8List list, _Callback<void> callback) native 'ImmutableBuffer_init';
+
+  /// The length, in bytes, of the underlying data.
+  final int length;
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() native 'ImmutableBuffer_dispose';
+}
+
+/// A descriptor of data that can be turned into an [Image] via a [Codec].
+///
+/// Use this class to determine the height, width, and byte size of image data
+/// before decoding it.
+class ImageDescriptor extends NativeFieldWrapperClass2 {
+  ImageDescriptor._();
+
+  /// Creates an image descriptor from encoded data in a supported format.
+  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) {
+    final ImageDescriptor descriptor = ImageDescriptor._();
+    return _futurize((_Callback<void> callback) {
+      return descriptor._initEncoded(buffer, callback);
+    }).then((_) => descriptor);
+  }
+  String? _initEncoded(ImmutableBuffer buffer, _Callback<void> callback) native 'ImageDescriptor_initEncoded';
+
+  /// Creates an image descriptor from raw image pixels.
+  ///
+  /// The `pixels` parameter is the pixel data in the encoding described by
+  /// `format`.
+  ///
+  /// The `rowBytes` parameter is the number of bytes consumed by each row of
+  /// pixels in the data buffer. If unspecified, it defaults to `width` multiplied
+  /// by the number of bytes per pixel in the provided `format`.
+  // Not async because there's no expensive work to do here.
+  ImageDescriptor.raw(
+    ImmutableBuffer buffer, {
+    required int width,
+    required int height,
+    int? rowBytes,
+    required PixelFormat pixelFormat,
+  }) {
+    _width = width;
+    _height = height;
+    // We only support 4 byte pixel formats in the PixelFormat enum.
+    _bytesPerPixel = 4;
+    _initRaw(this, buffer, width, height, rowBytes ?? -1, pixelFormat.index);
+  }
+  void _initRaw(ImageDescriptor outDescriptor, ImmutableBuffer buffer, int width, int height, int rowBytes, int pixelFormat) native 'ImageDescriptor_initRaw';
+
+  int? _width;
+  int _getWidth() native 'ImageDescriptor_width';
+  /// The width, in pixels, of the image.
+  ///
+  /// On the Web, this is only supported for [raw] images.
+  int get width => _width ??= _getWidth();
+
+  int? _height;
+  int _getHeight() native 'ImageDescriptor_height';
+  /// The height, in pixels, of the image.
+  ///
+  /// On the Web, this is only supported for [raw] images.
+  int get height => _height ??= _getHeight();
+
+  int? _bytesPerPixel;
+  int _getBytesPerPixel() native 'ImageDescriptor_bytesPerPixel';
+  /// The number of bytes per pixel in the image.
+  ///
+  /// On web, this is only supported for [raw] images.
+  int get bytesPerPixel => _bytesPerPixel ??= _getBytesPerPixel();
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() native 'ImageDescriptor_dispose';
+
+  /// Creates a [Codec] object which is suitable for decoding the data in the
+  /// buffer to an [Image].
+  ///
+  /// If only one of targetWidth or  targetHeight are specified, the other
+  /// dimension will be scaled according to the aspect ratio of the supplied
+  /// dimension.
+  ///
+  /// If either targetWidth or targetHeight is less than or equal to zero, it
+  /// will be treated as if it is null.
+  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) async {
+    if (targetWidth != null && targetWidth <= 0) {
+      targetWidth = null;
+    }
+    if (targetHeight != null && targetHeight <= 0) {
+      targetHeight = null;
+    }
+
+    if (targetWidth == null && targetHeight == null) {
+      targetWidth = width;
+      targetHeight = height;
+    } else if (targetWidth == null && targetHeight != null) {
+      targetWidth = (targetHeight * (width / height)).round();
+      targetHeight = targetHeight;
+    } else if (targetHeight == null && targetWidth != null) {
+      targetWidth = targetWidth;
+      targetHeight = targetWidth ~/ (width / height);
+    }
+    assert(targetWidth != null);
+    assert(targetHeight != null);
+
+    final Codec codec = Codec._();
+    _instantiateCodec(codec, targetWidth!, targetHeight!);
+    return codec;
+  }
+  void _instantiateCodec(Codec outCodec, int targetWidth, int targetHeight) native 'ImageDescriptor_instantiateCodec';
 }
 
 /// Generic callback signature, used by [_futurize].

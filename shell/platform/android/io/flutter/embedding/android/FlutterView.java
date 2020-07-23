@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.graphics.Rect;
-import android.media.ImageReader;
 import android.os.Build;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
@@ -82,6 +81,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Nullable private FlutterTextureView flutterTextureView;
   @Nullable private FlutterImageView flutterImageView;
   @Nullable private RenderSurface renderSurface;
+  @Nullable private RenderSurface previousRenderSurface;
   private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners = new HashSet<>();
   private boolean isFlutterUiDisplayed;
 
@@ -852,7 +852,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
     androidKeyProcessor =
         new AndroidKeyProcessor(this.flutterEngine.getKeyEventChannel(), textInputPlugin);
-    androidTouchProcessor = new AndroidTouchProcessor(this.flutterEngine.getRenderer());
+    androidTouchProcessor =
+        new AndroidTouchProcessor(this.flutterEngine.getRenderer(), /*trackMotionEvents=*/ false);
     accessibilityBridge =
         new AccessibilityBridge(
             this,
@@ -868,6 +869,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // Connect AccessibilityBridge to the PlatformViewsController within the FlutterEngine.
     // This allows platform Views to hook into Flutter's overall accessibility system.
     this.flutterEngine.getPlatformViewsController().attachAccessibilityBridge(accessibilityBridge);
+    this.flutterEngine
+        .getPlatformViewsController()
+        .attachToFlutterRenderer(this.flutterEngine.getRenderer());
 
     // Inform the Android framework that it should retrieve a new InputConnection
     // now that an engine is attached.
@@ -939,26 +943,63 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     flutterRenderer.stopRenderingToSurface();
     flutterRenderer.setSemanticsEnabled(false);
     renderSurface.detachFromRenderer();
+
+    flutterImageView = null;
+    previousRenderSurface = null;
     flutterEngine = null;
   }
 
   public void convertToImageView() {
     renderSurface.pause();
 
-    ImageReader imageReader = PlatformViewsController.createImageReader(getWidth(), getHeight());
-    flutterImageView =
-        new FlutterImageView(getContext(), imageReader, FlutterImageView.SurfaceKind.background);
+    if (flutterImageView == null) {
+      flutterImageView =
+          new FlutterImageView(
+              getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
+      addView(flutterImageView);
+    } else {
+      flutterImageView.resizeIfNeeded(getWidth(), getHeight());
+    }
+
+    previousRenderSurface = renderSurface;
     renderSurface = flutterImageView;
     if (flutterEngine != null) {
       renderSurface.attachToRenderer(flutterEngine.getRenderer());
     }
-    addView(flutterImageView);
   }
 
-  public void acquireLatestImageViewFrame() {
-    if (flutterImageView != null) {
-      flutterImageView.acquireLatestImage();
+  /**
+   * If the surface is rendered by a {@code FlutterImageView}. Then, calling this method will stop
+   * rendering to a {@code FlutterImageView}, and use the previous surface instead.
+   */
+  public void revertImageView() {
+    if (flutterImageView == null) {
+      Log.v(TAG, "Tried to revert the image view, but no image view is used.");
+      return;
     }
+    if (previousRenderSurface == null) {
+      Log.v(TAG, "Tried to revert the image view, but no previous surface was used.");
+      return;
+    }
+    flutterImageView.detachFromRenderer();
+    renderSurface = previousRenderSurface;
+    previousRenderSurface = null;
+    if (flutterEngine != null) {
+      renderSurface.attachToRenderer(flutterEngine.getRenderer());
+    }
+  }
+
+  public void attachOverlaySurfaceToRender(FlutterImageView view) {
+    if (flutterEngine != null) {
+      view.attachToRenderer(flutterEngine.getRenderer());
+    }
+  }
+
+  public boolean acquireLatestImageViewFrame() {
+    if (flutterImageView != null) {
+      return flutterImageView.acquireLatestImage();
+    }
+    return false;
   }
 
   /** Returns true if this {@code FlutterView} is currently attached to a {@link FlutterEngine}. */

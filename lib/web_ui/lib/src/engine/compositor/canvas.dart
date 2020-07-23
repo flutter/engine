@@ -2,54 +2,45 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 part of engine;
 
 /// A Dart wrapper around Skia's SKCanvas.
-class SkCanvas {
-  final js.JsObject skCanvas;
+class CkCanvas {
+  final SkCanvas skCanvas;
 
-  SkCanvas(this.skCanvas);
+  CkCanvas(this.skCanvas);
 
-  int? get saveCount => skCanvas.callMethod('getSaveCount');
+  int? get saveCount => skCanvas.getSaveCount();
 
   void clear(ui.Color color) {
-    setSharedSkColor1(color);
-    skCanvas.callMethod('clear', <js.JsObject?>[sharedSkColor1]);
+    skCanvas.clear(toSharedSkColor1(color));
   }
 
+  static final SkClipOp _clipOpIntersect = canvasKit.ClipOp.Intersect;
+
   void clipPath(ui.Path path, bool doAntiAlias) {
-    final SkPath skPath = path as SkPath;
-    final js.JsObject? intersectClipOp = canvasKit['ClipOp']['Intersect'];
-    skCanvas.callMethod('clipPath', <dynamic>[
-      skPath._skPath,
-      intersectClipOp,
+    final CkPath ckPath = path as CkPath;
+    skCanvas.clipPath(
+      ckPath._skPath,
+      _clipOpIntersect,
       doAntiAlias,
-    ]);
+    );
   }
 
   void clipRRect(ui.RRect rrect, bool doAntiAlias) {
-    final js.JsObject? intersectClipOp = canvasKit['ClipOp']['Intersect'];
-    skCanvas.callMethod('clipRRect', <dynamic>[
-      makeSkRRect(rrect),
-      intersectClipOp,
+    skCanvas.clipRRect(
+      toSkRRect(rrect),
+      _clipOpIntersect,
       doAntiAlias,
-    ]);
+    );
   }
 
   void clipRect(ui.Rect rect, ui.ClipOp clipOp, bool doAntiAlias) {
-    js.JsObject? skClipOp;
-    switch (clipOp) {
-      case ui.ClipOp.difference:
-        skClipOp = canvasKit['ClipOp']['Difference'];
-        break;
-      case ui.ClipOp.intersect:
-        skClipOp = canvasKit['ClipOp']['Intersect'];
-        break;
-    }
-
-    skCanvas.callMethod(
-        'clipRect', <dynamic>[makeSkRect(rect), skClipOp, doAntiAlias]);
+    skCanvas.clipRect(
+      toSkRect(rect),
+      toSkClipOp(clipOp),
+      doAntiAlias,
+    );
   }
 
   void drawArc(
@@ -57,234 +48,222 @@ class SkCanvas {
     double startAngle,
     double sweepAngle,
     bool useCenter,
-    SkPaint paint,
+    CkPaint paint,
   ) {
     const double toDegrees = 180 / math.pi;
-    skCanvas.callMethod('drawArc', <dynamic>[
-      makeSkRect(oval),
+    skCanvas.drawArc(
+      toSkRect(oval),
       startAngle * toDegrees,
       sweepAngle * toDegrees,
       useCenter,
       paint.skiaObject,
-    ]);
+    );
   }
 
   void drawAtlasRaw(
-    SkPaint paint,
+    CkPaint paint,
     ui.Image atlas,
     Float32List rstTransforms,
     Float32List rects,
-    js.JsArray<Float32List>? colors,
+    List<Float32List>? colors,
     ui.BlendMode blendMode,
   ) {
-    final SkImage skAtlas = atlas as SkImage;
-    skCanvas.callMethod('drawAtlas', <dynamic>[
+    final CkImage skAtlas = atlas as CkImage;
+    skCanvas.drawAtlas(
       skAtlas.skImage,
       rects,
       rstTransforms,
       paint.skiaObject,
-      makeSkBlendMode(blendMode),
+      toSkBlendMode(blendMode),
       colors,
-    ]);
+    );
   }
 
-  void drawCircle(ui.Offset c, double radius, SkPaint paint) {
-    skCanvas.callMethod('drawCircle', <dynamic>[
+  void drawCircle(ui.Offset c, double radius, CkPaint paint) {
+    skCanvas.drawCircle(
       c.dx,
       c.dy,
       radius,
       paint.skiaObject,
-    ]);
+    );
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    skCanvas.callMethod('drawColorInt', <dynamic>[
+    skCanvas.drawColorInt(
       color.value,
-      makeSkBlendMode(blendMode),
-    ]);
+      toSkBlendMode(blendMode),
+    );
   }
 
-  void drawDRRect(ui.RRect outer, ui.RRect inner, SkPaint paint) {
-    skCanvas.callMethod('drawDRRect', <js.JsObject?>[
-      makeSkRRect(outer),
-      makeSkRRect(inner),
+  void drawDRRect(ui.RRect outer, ui.RRect inner, CkPaint paint) {
+    skCanvas.drawDRRect(
+      toSkRRect(outer),
+      toSkRRect(inner),
       paint.skiaObject,
-    ]);
+    );
   }
 
-  void drawImage(ui.Image image, ui.Offset offset, SkPaint paint) {
-    final SkImage skImage = image as SkImage;
-    skCanvas.callMethod('drawImage', <dynamic>[
+  void drawImage(ui.Image image, ui.Offset offset, CkPaint paint) {
+    final CkImage skImage = image as CkImage;
+    skCanvas.drawImage(
       skImage.skImage,
       offset.dx,
       offset.dy,
       paint.skiaObject,
-    ]);
+    );
   }
 
-  void drawImageRect(ui.Image image, ui.Rect src, ui.Rect dst, SkPaint paint) {
-    final SkImage skImage = image as SkImage;
-    skCanvas.callMethod('drawImageRect', <dynamic>[
+  void drawImageRect(ui.Image image, ui.Rect src, ui.Rect dst, CkPaint paint) {
+    final CkImage skImage = image as CkImage;
+    skCanvas.drawImageRect(
       skImage.skImage,
-      makeSkRect(src),
-      makeSkRect(dst),
+      toSkRect(src),
+      toSkRect(dst),
       paint.skiaObject,
       false,
-    ]);
+    );
   }
 
   void drawImageNine(
-      ui.Image image, ui.Rect center, ui.Rect dst, SkPaint paint) {
-    final SkImage skImage = image as SkImage;
-    skCanvas.callMethod('drawImageNine', <dynamic>[
+      ui.Image image, ui.Rect center, ui.Rect dst, CkPaint paint) {
+    final CkImage skImage = image as CkImage;
+    skCanvas.drawImageNine(
       skImage.skImage,
-      makeSkRect(center),
-      makeSkRect(dst),
+      toSkRect(center),
+      toSkRect(dst),
       paint.skiaObject,
-    ]);
+    );
   }
 
-  void drawLine(ui.Offset p1, ui.Offset p2, SkPaint paint) {
-    skCanvas.callMethod('drawLine', <dynamic>[
+  void drawLine(ui.Offset p1, ui.Offset p2, CkPaint paint) {
+    skCanvas.drawLine(
       p1.dx,
       p1.dy,
       p2.dx,
       p2.dy,
       paint.skiaObject,
-    ]);
+    );
   }
 
-  void drawOval(ui.Rect rect, SkPaint paint) {
-    skCanvas.callMethod('drawOval', <js.JsObject?>[
-      makeSkRect(rect),
+  void drawOval(ui.Rect rect, CkPaint paint) {
+    skCanvas.drawOval(
+      toSkRect(rect),
       paint.skiaObject,
-    ]);
+    );
   }
 
-  void drawPaint(SkPaint paint) {
-    skCanvas.callMethod('drawPaint', <js.JsObject?>[paint.skiaObject]);
+  void drawPaint(CkPaint paint) {
+    skCanvas.drawPaint(paint.skiaObject);
   }
 
-  void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    final SkParagraph skParagraph = paragraph as SkParagraph;
-    skCanvas.callMethod('drawParagraph', <dynamic>[
-      skParagraph.skParagraph,
+  void drawParagraph(CkParagraph paragraph, ui.Offset offset) {
+    skCanvas.drawParagraph(
+      paragraph.skiaObject,
       offset.dx,
       offset.dy,
-    ]);
+    );
   }
 
-  void drawPath(ui.Path path, SkPaint paint) {
-    final js.JsObject? skPaint = paint.skiaObject;
-    final SkPath enginePath = path as SkPath;
-    final js.JsObject? skPath = enginePath._skPath;
-    skCanvas.callMethod('drawPath', <js.JsObject?>[skPath, skPaint]);
+  void drawPath(CkPath path, CkPaint paint) {
+    skCanvas.drawPath(path._skPath, paint.skiaObject);
   }
 
-  void drawPicture(ui.Picture picture) {
-    final SkPicture skPicture = picture as SkPicture;
-    skCanvas.callMethod('drawPicture', <js.JsObject?>[skPicture.skPicture]);
+  void drawPicture(CkPicture picture) {
+    skCanvas.drawPicture(picture.skiaObject.skiaObject);
   }
 
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/58824
-  void drawPoints(SkPaint paint, ui.PointMode pointMode,
-      js.JsArray<js.JsArray<double>>? points) {
-    skCanvas.callMethod('drawPoints', <dynamic>[
-      makeSkPointMode(pointMode),
+  void drawPoints(CkPaint paint, ui.PointMode pointMode,
+      Float32List points) {
+    skCanvas.drawPoints(
+      toSkPointMode(pointMode),
       points,
       paint.skiaObject,
-    ]);
+    );
   }
 
-  void drawRRect(ui.RRect rrect, SkPaint paint) {
-    skCanvas.callMethod('drawRRect', <js.JsObject?>[
-      makeSkRRect(rrect),
+  void drawRRect(ui.RRect rrect, CkPaint paint) {
+    skCanvas.drawRRect(
+      toSkRRect(rrect),
       paint.skiaObject,
-    ]);
+    );
   }
 
-  void drawRect(ui.Rect rect, SkPaint paint) {
-    final js.JsObject skRect = makeSkRect(rect);
-    final js.JsObject? skPaint = paint.skiaObject;
-    skCanvas.callMethod('drawRect', <js.JsObject?>[skRect, skPaint]);
+  void drawRect(ui.Rect rect, CkPaint paint) {
+    skCanvas.drawRect(toSkRect(rect), paint.skiaObject);
   }
 
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
-    drawSkShadow(skCanvas, path as SkPath, color, elevation, transparentOccluder,
-        ui.window.devicePixelRatio);
+    drawSkShadow(skCanvas, path as CkPath, color, elevation,
+        transparentOccluder, ui.window.devicePixelRatio);
   }
 
   void drawVertices(
-      ui.Vertices vertices, ui.BlendMode blendMode, SkPaint paint) {
-    SkVertices skVertices = vertices as SkVertices;
-    skCanvas.callMethod('drawVertices', <js.JsObject?>[
+      ui.Vertices vertices, ui.BlendMode blendMode, CkPaint paint) {
+    CkVertices skVertices = vertices as CkVertices;
+    skCanvas.drawVertices(
       skVertices.skVertices,
-      makeSkBlendMode(blendMode),
-      paint.skiaObject
-    ]);
+      toSkBlendMode(blendMode),
+      paint.skiaObject,
+    );
   }
 
   void restore() {
-    skCanvas.callMethod('restore');
+    skCanvas.restore();
   }
 
-  void restoreToCount(int? count) {
-    skCanvas.callMethod('restoreToCount', <int?>[count]);
+  void restoreToCount(int count) {
+    skCanvas.restoreToCount(count);
   }
 
   void rotate(double radians) {
-    skCanvas
-        .callMethod('rotate', <double>[radians * 180.0 / math.pi, 0.0, 0.0]);
+    skCanvas.rotate(radians * 180.0 / math.pi, 0.0, 0.0);
   }
 
-  int? save() {
-    return skCanvas.callMethod('save');
+  int save() {
+    return skCanvas.save();
   }
 
-  void saveLayer(ui.Rect bounds, SkPaint paint) {
-    assert(bounds != null, 'Use saveLayerWithoutBounds'); // ignore: unnecessary_null_comparison
-    skCanvas.callMethod('saveLayer', <js.JsObject?>[
-      makeSkRect(bounds),
+  void saveLayer(ui.Rect bounds, CkPaint paint) {
+    skCanvas.saveLayer(
+      toSkRect(bounds),
       paint.skiaObject,
-    ]);
+    );
   }
 
-  void saveLayerWithoutBounds(SkPaint paint) {
-    skCanvas.callMethod('saveLayer', <js.JsObject?>[paint.skiaObject]);
+  void saveLayerWithoutBounds(CkPaint paint) {
+    final SkCanvasSaveLayerWithoutBoundsOverload override = skCanvas as SkCanvasSaveLayerWithoutBoundsOverload;
+    override.saveLayer(paint.skiaObject);
   }
 
   void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter) {
-    final SkImageFilter skImageFilter = filter as SkImageFilter;
-    return skCanvas.callMethod(
-      'saveLayer',
-      <dynamic>[
-        null,
-        skImageFilter.skImageFilter,
-        0,
-        makeSkRect(bounds),
-      ],
+    final SkCanvasSaveLayerWithFilterOverload override = skCanvas as SkCanvasSaveLayerWithFilterOverload;
+    final CkImageFilter skImageFilter = filter as CkImageFilter;
+    return override.saveLayer(
+      null,
+      skImageFilter.skiaObject,
+      0,
+      toSkRect(bounds),
     );
   }
 
   void scale(double sx, double sy) {
-    skCanvas.callMethod('scale', <double>[sx, sy]);
+    skCanvas.scale(sx, sy);
   }
 
   void skew(double sx, double sy) {
-    skCanvas.callMethod('skew', <double>[sx, sy]);
+    skCanvas.skew(sx, sy);
   }
 
-  void transform(Float32List? matrix4) {
-    skCanvas.callMethod(
-        'concat', <js.JsArray<double>>[makeSkMatrixFromFloat32(matrix4)]);
+  void transform(Float32List matrix4) {
+    skCanvas.concat(toSkMatrixFromFloat32(matrix4));
   }
 
   void translate(double dx, double dy) {
-    skCanvas.callMethod('translate', <double>[dx, dy]);
+    skCanvas.translate(dx, dy);
   }
 
   void flush() {
-    skCanvas.callMethod('flush');
+    skCanvas.flush();
   }
 }

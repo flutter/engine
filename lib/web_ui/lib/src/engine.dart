@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+@JS()
 library engine;
 
 import 'dart:async';
-import 'dart:collection' show ListBase, IterableBase;
+import 'dart:collection'
+    show ListBase, IterableBase, DoubleLinkedQueue, DoubleLinkedQueueEntry;
 import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
 import 'dart:html' as html;
@@ -14,6 +16,7 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 
 import '../ui.dart' as ui;
@@ -28,6 +31,7 @@ part 'engine/clipboard.dart';
 part 'engine/color_filter.dart';
 part 'engine/compositor/canvas.dart';
 part 'engine/compositor/canvas_kit_canvas.dart';
+part 'engine/compositor/canvaskit_api.dart';
 part 'engine/compositor/color_filter.dart';
 part 'engine/compositor/embedded_views.dart';
 part 'engine/compositor/fonts.dart';
@@ -37,6 +41,7 @@ part 'engine/compositor/initialization.dart';
 part 'engine/compositor/layer.dart';
 part 'engine/compositor/layer_scene_builder.dart';
 part 'engine/compositor/layer_tree.dart';
+part 'engine/compositor/mask_filter.dart';
 part 'engine/compositor/n_way_canvas.dart';
 part 'engine/compositor/path.dart';
 part 'engine/compositor/painting.dart';
@@ -46,12 +51,12 @@ part 'engine/compositor/picture_recorder.dart';
 part 'engine/compositor/platform_message.dart';
 part 'engine/compositor/raster_cache.dart';
 part 'engine/compositor/rasterizer.dart';
+part 'engine/compositor/skia_object_cache.dart';
 part 'engine/compositor/surface.dart';
 part 'engine/compositor/text.dart';
 part 'engine/compositor/util.dart';
 part 'engine/compositor/vertices.dart';
 part 'engine/compositor/viewport_metrics.dart';
-part 'engine/conic.dart';
 part 'engine/dom_canvas.dart';
 part 'engine/dom_renderer.dart';
 part 'engine/engine_canvas.dart';
@@ -62,7 +67,6 @@ part 'engine/html_image_codec.dart';
 part 'engine/keyboard.dart';
 part 'engine/mouse_cursor.dart';
 part 'engine/onscreen_logging.dart';
-part 'engine/path_to_svg.dart';
 part 'engine/picture.dart';
 part 'engine/platform_views.dart';
 part 'engine/plugins.dart';
@@ -95,7 +99,15 @@ part 'engine/surface/image_filter.dart';
 part 'engine/surface/offset.dart';
 part 'engine/surface/opacity.dart';
 part 'engine/surface/painting.dart';
-part 'engine/surface/path_metrics.dart';
+part 'engine/surface/path/conic.dart';
+part 'engine/surface/path/cubic.dart';
+part 'engine/surface/path/path.dart';
+part 'engine/surface/path/path_metrics.dart';
+part 'engine/surface/path/path_ref.dart';
+part 'engine/surface/path/path_to_svg.dart';
+part 'engine/surface/path/path_utils.dart';
+part 'engine/surface/path/path_windings.dart';
+part 'engine/surface/path/tangent.dart';
 part 'engine/surface/picture.dart';
 part 'engine/surface/platform_view.dart';
 part 'engine/surface/recording_canvas.dart';
@@ -103,7 +115,6 @@ part 'engine/surface/render_vertices.dart';
 part 'engine/surface/scene.dart';
 part 'engine/surface/scene_builder.dart';
 part 'engine/surface/surface.dart';
-part 'engine/surface/path.dart';
 part 'engine/surface/surface_stats.dart';
 part 'engine/surface/transform.dart';
 part 'engine/test_embedding.dart';
@@ -118,7 +129,9 @@ part 'engine/text/word_break_properties.dart';
 part 'engine/text/word_breaker.dart';
 part 'engine/text_editing/autofill_hint.dart';
 part 'engine/text_editing/input_type.dart';
+part 'engine/text_editing/text_capitalization.dart';
 part 'engine/text_editing/text_editing.dart';
+part 'engine/ulps.dart';
 part 'engine/util.dart';
 part 'engine/validators.dart';
 part 'engine/vector_math.dart';

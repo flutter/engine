@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 part of engine;
 
 class LayerScene implements ui.Scene {
@@ -49,7 +48,8 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     bool isComplexHint = false,
     bool willChangeHint = false,
   }) {
-    currentLayer!.add(PictureLayer(picture as SkPicture, offset, isComplexHint, willChangeHint));
+    currentLayer!.add(PictureLayer(
+        picture as CkPicture, offset, isComplexHint, willChangeHint));
   }
 
   @override
@@ -185,8 +185,13 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.none,
     ui.EngineLayer? oldLayer,
   }) {
-    final PhysicalShapeLayer layer =
-        PhysicalShapeLayer(elevation, color, shadowColor, path, clipBehavior);
+    final PhysicalShapeLayer layer = PhysicalShapeLayer(
+      elevation,
+      color,
+      shadowColor,
+      path as CkPath,
+      clipBehavior,
+    );
     pushLayer(layer);
     return layer;
   }

@@ -7,7 +7,7 @@ part of engine;
 
 /// An implementation of [ui.Canvas] that is backed by a CanvasKit canvas.
 class CanvasKitCanvas implements ui.Canvas {
-  final SkCanvas? _canvas;
+  final CkCanvas? _canvas;
 
   factory CanvasKitCanvas(ui.PictureRecorder recorder, [ui.Rect? cullRect]) {
     assert(recorder != null); // ignore: unnecessary_null_comparison
@@ -16,7 +16,7 @@ class CanvasKitCanvas implements ui.Canvas {
           '"recorder" must not already be associated with another Canvas.');
     }
     cullRect ??= ui.Rect.largest;
-    final SkPictureRecorder skRecorder = recorder as SkPictureRecorder;
+    final CkPictureRecorder skRecorder = recorder as CkPictureRecorder;
     return CanvasKitCanvas._(skRecorder.beginRecording(cullRect));
   }
 
@@ -39,11 +39,11 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _saveLayerWithoutBounds(ui.Paint paint) {
-    _canvas!.saveLayerWithoutBounds(paint as SkPaint);
+    _canvas!.saveLayerWithoutBounds(paint as CkPaint);
   }
 
   void _saveLayer(ui.Rect bounds, ui.Paint paint) {
-    _canvas!.saveLayer(bounds, paint as SkPaint);
+    _canvas!.saveLayer(bounds, paint as CkPaint);
   }
 
   @override
@@ -147,7 +147,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawLine(ui.Offset p1, ui.Offset p2, ui.Paint paint) {
-    _canvas!.drawLine(p1, p2, paint as SkPaint);
+    _canvas!.drawLine(p1, p2, paint as CkPaint);
   }
 
   @override
@@ -157,7 +157,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawPaint(ui.Paint paint) {
-    _canvas!.drawPaint(paint as SkPaint);
+    _canvas!.drawPaint(paint as CkPaint);
   }
 
   @override
@@ -168,7 +168,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawRect(ui.Rect rect, ui.Paint paint) {
-    _canvas!.drawRect(rect, paint as SkPaint);
+    _canvas!.drawRect(rect, paint as CkPaint);
   }
 
   @override
@@ -179,7 +179,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawRRect(ui.RRect rrect, ui.Paint paint) {
-    _canvas!.drawRRect(rrect, paint as SkPaint);
+    _canvas!.drawRRect(rrect, paint as CkPaint);
   }
 
   @override
@@ -191,7 +191,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawDRRect(ui.RRect outer, ui.RRect inner, ui.Paint paint) {
-    _canvas!.drawDRRect(outer, inner, paint as SkPaint);
+    _canvas!.drawDRRect(outer, inner, paint as CkPaint);
   }
 
   @override
@@ -202,7 +202,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawOval(ui.Rect rect, ui.Paint paint) {
-    _canvas!.drawOval(rect, paint as SkPaint);
+    _canvas!.drawOval(rect, paint as CkPaint);
   }
 
   @override
@@ -213,7 +213,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawCircle(ui.Offset c, double radius, ui.Paint paint) {
-    _canvas!.drawCircle(c, radius, paint as SkPaint);
+    _canvas!.drawCircle(c, radius, paint as CkPaint);
   }
 
   @override
@@ -226,7 +226,7 @@ class CanvasKitCanvas implements ui.Canvas {
 
   void _drawArc(ui.Rect rect, double startAngle, double sweepAngle,
       bool useCenter, ui.Paint paint) {
-    _canvas!.drawArc(rect, startAngle, sweepAngle, useCenter, paint as SkPaint);
+    _canvas!.drawArc(rect, startAngle, sweepAngle, useCenter, paint as CkPaint);
   }
 
   @override
@@ -234,11 +234,7 @@ class CanvasKitCanvas implements ui.Canvas {
     // ignore: unnecessary_null_comparison
     assert(path != null); // path is checked on the engine side
     assert(paint != null); // ignore: unnecessary_null_comparison
-    _drawPath(path, paint);
-  }
-
-  void _drawPath(ui.Path path, ui.Paint paint) {
-    _canvas!.drawPath(path, paint as SkPaint);
+    _canvas!.drawPath(path as CkPath, paint as CkPaint);
   }
 
   @override
@@ -251,7 +247,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawImage(ui.Image image, ui.Offset p, ui.Paint paint) {
-    _canvas!.drawImage(image, p, paint as SkPaint);
+    _canvas!.drawImage(image, p, paint as CkPaint);
   }
 
   @override
@@ -266,7 +262,7 @@ class CanvasKitCanvas implements ui.Canvas {
 
   void _drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, ui.Paint paint) {
-    _canvas!.drawImageRect(image, src, dst, paint as SkPaint);
+    _canvas!.drawImageRect(image, src, dst, paint as CkPaint);
   }
 
   @override
@@ -282,18 +278,14 @@ class CanvasKitCanvas implements ui.Canvas {
 
   void _drawImageNine(
       ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {
-    _canvas!.drawImageNine(image, center, dst, paint as SkPaint);
+    _canvas!.drawImageNine(image, center, dst, paint as CkPaint);
   }
 
   @override
   void drawPicture(ui.Picture picture) {
     // ignore: unnecessary_null_comparison
     assert(picture != null); // picture is checked on the engine side
-    _drawPicture(picture);
-  }
-
-  void _drawPicture(ui.Picture picture) {
-    _canvas!.drawPicture(picture);
+    _canvas!.drawPicture(picture as CkPicture);
   }
 
   @override
@@ -304,7 +296,7 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   void _drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    _canvas!.drawParagraph(paragraph, offset);
+    _canvas!.drawParagraph(paragraph as CkParagraph, offset);
   }
 
   @override
@@ -313,7 +305,13 @@ class CanvasKitCanvas implements ui.Canvas {
     assert(pointMode != null); // ignore: unnecessary_null_comparison
     assert(points != null); // ignore: unnecessary_null_comparison
     assert(paint != null); // ignore: unnecessary_null_comparison
-    _drawPoints(paint, pointMode, encodePointList(points));
+    final SkFloat32List skPoints = toMallocedSkPoints(points);
+    _canvas!.drawPoints(
+      paint as CkPaint,
+      pointMode,
+      skPoints.toTypedArray(),
+    );
+    freeFloat32List(skPoints);
   }
 
   @override
@@ -325,12 +323,11 @@ class CanvasKitCanvas implements ui.Canvas {
     if (points.length % 2 != 0) {
       throw ArgumentError('"points" must have an even number of values.');
     }
-    _drawPoints(paint, pointMode, encodeRawPointList(points));
-  }
-
-  void _drawPoints(
-      ui.Paint paint, ui.PointMode pointMode, List<List<double>>? points) {
-    _canvas!.drawPoints(paint as SkPaint, pointMode, points as js.JsArray<js.JsArray<double>>?);
+    _canvas!.drawPoints(
+      paint as CkPaint,
+      pointMode,
+      points,
+    );
   }
 
   @override
@@ -345,7 +342,7 @@ class CanvasKitCanvas implements ui.Canvas {
 
   void _drawVertices(
       ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
-    _canvas!.drawVertices(vertices, blendMode, paint as SkPaint);
+    _canvas!.drawVertices(vertices, blendMode, paint as CkPaint);
   }
 
   @override
@@ -395,8 +392,8 @@ class CanvasKitCanvas implements ui.Canvas {
       rectBuffer[index3] = rect.bottom;
     }
 
-    final js.JsArray<Float32List>? colorBuffer =
-        colors.isEmpty ? null : makeColorList(colors);
+    final List<Float32List>? colorBuffer =
+        colors.isEmpty ? null : toSkFloatColorList(colors);
 
     _drawAtlas(
         paint, atlas, rstTransformBuffer, rectBuffer, colorBuffer, blendMode);
@@ -429,7 +426,7 @@ class CanvasKitCanvas implements ui.Canvas {
       throw ArgumentError(
           'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
 
-    _drawAtlas(paint, atlas, rstTransforms, rects, _encodeRawColorList(colors),
+    _drawAtlas(paint, atlas, rstTransforms, rects, encodeRawColorList(colors),
         blendMode);
   }
 
@@ -439,10 +436,10 @@ class CanvasKitCanvas implements ui.Canvas {
     ui.Image atlas,
     Float32List rstTransforms,
     Float32List rects,
-    js.JsArray<Float32List>? colors,
+    List<Float32List>? colors,
     ui.BlendMode blendMode,
   ) {
-    _canvas!.drawAtlasRaw(paint as SkPaint, atlas, rstTransforms, rects, colors, blendMode);
+    _canvas!.drawAtlasRaw(paint as CkPaint, atlas, rstTransforms, rects, colors, blendMode);
   }
 
   @override

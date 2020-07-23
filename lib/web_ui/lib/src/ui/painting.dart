@@ -239,15 +239,15 @@ class Color {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    final Color typedOther = other;
-    return value == typedOther.value;
+    return other is Color
+        && other.value == value;
   }
 
   @override
@@ -903,7 +903,7 @@ abstract class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
   factory Paint() =>
-      engine.experimentalUseSkia ? engine.SkPaint() : engine.SurfacePaint();
+      engine.experimentalUseSkia ? engine.CkPaint() : engine.SurfacePaint();
 
   /// Whether to dither the output when drawing images.
   ///
@@ -1382,12 +1382,10 @@ class MaskFilter {
   BlurStyle get webOnlyBlurStyle => _style;
 
   @override
-  bool operator ==(dynamic other) {
-    if (other is! MaskFilter) {
-      return false;
-    }
-    final MaskFilter typedOther = other;
-    return _style == typedOther._style && _sigma == typedOther._sigma;
+  bool operator ==(Object other) {
+    return other is MaskFilter
+        && other._style == _style
+        && other._sigma == _sigma;
   }
 
   @override
@@ -1441,7 +1439,7 @@ class ImageFilter {
   /// Creates an image filter that applies a Gaussian blur.
   factory ImageFilter.blur({double sigmaX = 0.0, double sigmaY = 0.0}) {
     if (engine.experimentalUseSkia) {
-      return engine.SkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
+      return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
     }
     return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
   }
@@ -1499,15 +1497,6 @@ enum PixelFormat {
   /// bits encoding green, the next 8 bits encoding red, and the lowest 8 bits
   /// encoding alpha.
   bgra8888,
-}
-
-class _ImageInfo {
-  _ImageInfo(this.width, this.height, this.format, int? rowBytes) : this.rowBytes = rowBytes ?? width * 4;
-
-  int width;
-  int height;
-  int format;
-  int rowBytes;
 }
 
 /// Callback signature for [decodeImageFromList].
@@ -1585,20 +1574,27 @@ Future<Codec> instantiateImageCodec(
 }) {
   return _futurize<Codec>((engine.Callback<Codec> callback) =>
       // TODO: Implement targetWidth and targetHeight support.
-      _instantiateImageCodec(list, callback, null));
+      _instantiateImageCodec(list, callback));
 }
 
 /// Instantiates a [Codec] object for an image binary data.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
 String? _instantiateImageCodec(
-    Uint8List list, engine.Callback<Codec> callback, _ImageInfo? imageInfo) {
+  Uint8List list,
+  engine.Callback<Codec> callback, {
+  int? width,
+  int? height,
+  int? rowBytes,
+  PixelFormat? format,
+}) {
   if (engine.experimentalUseSkia) {
-    if (imageInfo == null) {
+    if (width == null) {
       engine.skiaInstantiateImageCodec(list, callback);
     } else {
-      engine.skiaInstantiateImageCodec(list, callback, imageInfo.width,
-          imageInfo.height, imageInfo.format, imageInfo.rowBytes);
+      assert(height != null);
+      assert(format != null);
+      engine.skiaInstantiateImageCodec(list, callback, width, height, format!.index, rowBytes);
     }
     return null;
   }
@@ -1654,11 +1650,17 @@ void decodeImageFromPixels(
   int? targetHeight,
   bool allowUpscaling = true,
 }) {
-  final _ImageInfo imageInfo =
-      _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
-      (engine.Callback<Codec> callback) =>
-          _instantiateImageCodec(pixels, callback, imageInfo));
+      (engine.Callback<Codec> callback) {
+        return _instantiateImageCodec(
+          pixels,
+          callback,
+          width: width,
+          height: height,
+          format: format,
+          rowBytes: rowBytes,
+        );
+  });
   codecFuture
       .then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
@@ -1810,17 +1812,14 @@ class Shadow {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
-    if (other is! Shadow) {
-      return false;
-    }
-    final Shadow typedOther = other;
-    return color == typedOther.color &&
-        offset == typedOther.offset &&
-        blurRadius == typedOther.blurRadius;
+    return other is Shadow
+        && other.color == color
+        && other.offset == offset
+        && other.blurRadius == blurRadius;
   }
 
   @override
@@ -1848,5 +1847,112 @@ class ImageShader extends Shader {
     }
     throw UnsupportedError(
         'ImageShader not implemented for web platform.');
+  }
+}
+
+
+/// A handle to a read-only byte buffer that is managed by the engine.
+class ImmutableBuffer {
+  ImmutableBuffer._(this.length);
+
+  /// Creates a copy of the data from a [Uint8List] suitable for internal use
+  /// in the engine.
+  static Future<ImmutableBuffer> fromUint8List(Uint8List list) async {
+    final ImmutableBuffer instance = ImmutableBuffer._(list.length);
+    instance._list = list;
+    return instance;
+  }
+
+  Uint8List? _list;
+
+  /// The length, in bytes, of the underlying data.
+  final int length;
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() => _list = null;
+}
+
+/// A descriptor of data that can be turned into an [Image] via a [Codec].
+///
+/// Use this class to determine the height, width, and byte size of image data
+/// before decoding it.
+class ImageDescriptor {
+  ImageDescriptor._() : _width = null, _height = null, _rowBytes = null, _format = null;
+
+  /// Creates an image descriptor from encoded data in a supported format.
+  static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) async {
+    final ImageDescriptor descriptor = ImageDescriptor._();
+    descriptor._data = buffer._list;
+    return descriptor;
+  }
+
+  /// Creates an image descriptor from raw image pixels.
+  ///
+  /// The `pixels` parameter is the pixel data in the encoding described by
+  /// `format`.
+  ///
+  /// The `rowBytes` parameter is the number of bytes consumed by each row of
+  /// pixels in the data buffer. If unspecified, it defaults to `width` multiplied
+  /// by the number of bytes per pixel in the provided `format`.
+  // Not async because there's no expensive work to do here.
+  ImageDescriptor.raw(
+    ImmutableBuffer buffer, {
+    required int width,
+    required int height,
+    int? rowBytes,
+    required PixelFormat pixelFormat,
+  }) : _width = width, _height = height, _rowBytes = rowBytes, _format = pixelFormat {
+    _data = buffer._list;
+  }
+
+  Uint8List? _data;
+  final int? _width;
+  final int? _height;
+  final int? _rowBytes;
+  final PixelFormat? _format;
+
+  Never _throw(String parameter) {
+     throw UnsupportedError('ImageDescriptor.$parameter is not supported on web.');
+  }
+
+  /// The width, in pixels, of the image.
+  int get width => _width ?? _throw('width');
+
+  /// The height, in pixels, of the image.
+  int get height => _height ?? _throw('height');
+
+  /// The number of bytes per pixel in the image.
+  int get bytesPerPixel => throw UnsupportedError('ImageDescriptor.bytesPerPixel is not supported on web.');
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() => _data = null;
+
+  /// Creates a [Codec] object which is suitable for decoding the data in the
+  /// buffer to an [Image].
+  Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) {
+    if (_data == null) {
+      throw StateError('Object is disposed');
+    }
+    if (_width == null) {
+      return instantiateImageCodec(
+        _data!,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        allowUpscaling: false,
+      );
+    }
+    return _futurize(
+      (engine.Callback<Codec> callback) {
+        return _instantiateImageCodec(
+          _data!,
+          callback,
+          width: _width,
+          height: _height,
+          format: _format,
+          rowBytes: _rowBytes,
+        );
+  });
   }
 }
