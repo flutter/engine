@@ -146,7 +146,7 @@ struct KeyboardState {
 - (void)sendInitialSettings;
 
 /**
- * Responsds to updates in the user settings and passes this data to the engine.
+ * Responds to updates in the user settings and passes this data to the engine.
  */
 - (void)onSettingsChanged:(NSNotification*)notification;
 
@@ -154,6 +154,12 @@ struct KeyboardState {
  * Handles messages received from the Flutter engine on the _*Channel channels.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+
+/**
+ * Plays a system sound. |soundType| specifies which system sound to play. Valid
+ * values can be found in the SystemSoundType enum in the services SDK package.
+ */
+- (void)playSystemSound:(NSString*)soundType;
 
 /**
  * Reads the data from the clipboard. |format| specifies the media type of the
