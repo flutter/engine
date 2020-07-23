@@ -6,15 +6,149 @@
 #define FLUTTER_SHELL_PLATFORM_COMMON_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_ENCODABLE_VALUE_H_
 
 #include <assert.h>
+
 #include <cstdint>
 #include <map>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace flutter {
 
 static_assert(sizeof(double) == 8, "EncodableValue requires a 64-bit double");
+
+// Defining USE_LEGACY_ENCODABLE_VALUE will use the original EncodableValue
+// implementation. This is a temporary measure to minimize the impact of the
+// breaking change; it will be removed in the future. If you set this, you
+// should update your code as soon as possible to use the new std::variant
+// version, or it will break when the legacy version is removed.
+#ifndef USE_LEGACY_ENCODABLE_VALUE
+
+class EncodableValue;
+
+// Convenience type aliases.
+using EncodableList = std::vector<EncodableValue>;
+using EncodableMap = std::map<EncodableValue, EncodableValue>;
+
+// An object that can contain any value or collection type supported by
+// Flutter's standard method codec.
+//
+// For details, see:
+// https://api.flutter.dev/flutter/services/StandardMessageCodec-class.html
+//
+// As an example, the following Dart structure:
+//   {
+//     'flag': true,
+//     'name': 'Thing',
+//     'values': [1, 2.0, 4],
+//   }
+// would correspond to:
+//   EncodableValue(EncodableMap{
+//       {EncodableValue("flag"), EncodableValue(true)},
+//       {EncodableValue("name"), EncodableValue("Thing")},
+//       {EncodableValue("values"), EncodableValue(EncodableList{
+//                                      EncodableValue(1),
+//                                      EncodableValue(2.0),
+//                                      EncodableValue(4),
+//                                  })},
+//   })
+//
+// The primary API surface for this object is std::variant. For instance,
+// getting a string value from an EncodableValue, with type checking:
+//   if (std::get<std::string>(value)) {
+//     std::string some_string = std::get<std::string>(value);
+//   }
+//
+// The order/indexes of the variant types is part of the API surface, and is
+// guaranteed not to change.
+class EncodableValue : public std::variant<std::monostate,
+                                           bool,
+                                           int32_t,
+                                           int64_t,
+                                           double,
+                                           std::string,
+                                           std::vector<uint8_t>,
+                                           std::vector<int32_t>,
+                                           std::vector<int64_t>,
+                                           std::vector<double>,
+                                           EncodableList,
+                                           EncodableMap> {
+ public:
+  // Rely on std::variant for most of the constructors/operators.
+  using super = std::variant<std::monostate,
+                             bool,
+                             int32_t,
+                             int64_t,
+                             double,
+                             std::string,
+                             std::vector<uint8_t>,
+                             std::vector<int32_t>,
+                             std::vector<int64_t>,
+                             std::vector<double>,
+                             EncodableList,
+                             EncodableMap>;
+  using super::super;
+  using super::operator=;
+
+  explicit EncodableValue() : super() {}
+
+  // Avoid the C++17 pitfall of conversion from char* to bool. Should not be
+  // needed for C++20.
+  explicit EncodableValue(const char* string) : super(std::string(string)) {}
+  EncodableValue& operator=(const char* other) {
+    *this = std::string(other);
+    return *this;
+  }
+
+  // Override the conversion constructors from std::variant to make them
+  // explicit, to avoid implicit conversion.
+  //
+  // While implicit conversion can be convenient in some cases, it can have very
+  // surprising effects. E.g., calling a function that takes an EncodableValue
+  // but accidentally passing an EncodableValue* would, instead of failing to
+  // compile, go through a pointer->bool->EncodableValue(bool) chain and
+  // silently call the function with a temp-constructed EncodableValue(true).
+  template <class T>
+  constexpr explicit EncodableValue(T&& t) noexcept : super(t) {}
+
+  // Returns true if the value is null. Convenience wrapper since unlike the
+  // other types, std::monostate uses aren't self-documenting.
+  bool IsNull() const { return index() == 0; }
+
+  // Convience method to simplify handling objects received from Flutter where
+  // the values may be larger than 32-bit, since they have the same type on the
+  // Dart side, but will be either 32-bit or 64-bit here depending on the value.
+  //
+  // It is a programming error to call this method if the value doesn't contain
+  // either an int32_t or an int64_t.
+  int64_t LongValue() {
+    if (std::holds_alternative<int32_t>(*this)) {
+      return std::get<int32_t>(*this);
+    }
+    return std::get<int64_t>(*this);
+  }
+
+  // Convenience wrappers for nested collection types, to allow readable
+  // chaining when not doing type validation, keeping the [] lookup next to the
+  // type extraction. E.g.:
+  //   EncodableValue inner_value =
+  //       value.ListValue()[0].MapValue()[EncodableValue("some_key")];
+  // rather than
+  //   EncodableValue inner_value = std::get<EncodableMap>(
+  //      std::get<EncodableList>(value)[0])[EncodableValue("some_key")];
+  //
+  // It is a programming error to call these method if the value doesn't
+  // contain the correct collection type.
+  const EncodableList& ListValue() const {
+    return std::get<EncodableList>(*this);
+  }
+  EncodableList& ListValue() { return std::get<EncodableList>(*this); }
+  const EncodableMap& MapValue() const { return std::get<EncodableMap>(*this); }
+  EncodableMap& MapValue() { return std::get<EncodableMap>(*this); }
+};
+
+#else
 
 class EncodableValue;
 // Convenience type aliases for list and map EncodableValue types.
@@ -563,6 +697,8 @@ class EncodableValue {
   // The currently active union entry.
   Type type_ = Type::kNull;
 };
+
+#endif
 
 }  // namespace flutter
 

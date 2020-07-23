@@ -7,16 +7,17 @@
 // together to simplify use of the client wrapper, since the common case is
 // that any client that needs one of these files needs all three.
 
-#include "include/flutter/standard_message_codec.h"
-#include "include/flutter/standard_method_codec.h"
-#include "standard_codec_serializer.h"
-
 #include <assert.h>
+
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
+
+#include "include/flutter/standard_message_codec.h"
+#include "include/flutter/standard_method_codec.h"
+#include "standard_codec_serializer.h"
 
 namespace flutter {
 
@@ -44,30 +45,30 @@ enum class EncodedType {
 
 // Returns the encoded type that should be written when serializing |value|.
 EncodedType EncodedTypeForValue(const EncodableValue& value) {
-  switch (value.type()) {
-    case EncodableValue::Type::kNull:
+  switch (value.index()) {
+    case 0:
       return EncodedType::kNull;
-    case EncodableValue::Type::kBool:
-      return value.BoolValue() ? EncodedType::kTrue : EncodedType::kFalse;
-    case EncodableValue::Type::kInt:
+    case 1:
+      return std::get<bool>(value) ? EncodedType::kTrue : EncodedType::kFalse;
+    case 2:
       return EncodedType::kInt32;
-    case EncodableValue::Type::kLong:
+    case 3:
       return EncodedType::kInt64;
-    case EncodableValue::Type::kDouble:
+    case 4:
       return EncodedType::kFloat64;
-    case EncodableValue::Type::kString:
+    case 5:
       return EncodedType::kString;
-    case EncodableValue::Type::kByteList:
+    case 6:
       return EncodedType::kUInt8List;
-    case EncodableValue::Type::kIntList:
+    case 7:
       return EncodedType::kInt32List;
-    case EncodableValue::Type::kLongList:
+    case 8:
       return EncodedType::kInt64List;
-    case EncodableValue::Type::kDoubleList:
+    case 9:
       return EncodedType::kFloat64List;
-    case EncodableValue::Type::kList:
+    case 10:
       return EncodedType::kList;
-    case EncodableValue::Type::kMap:
+    case 11:
       return EncodedType::kMap;
   }
   assert(false);
@@ -150,29 +151,30 @@ EncodableValue StandardCodecSerializer::ReadValue(
 void StandardCodecSerializer::WriteValue(const EncodableValue& value,
                                          ByteBufferStreamWriter* stream) const {
   stream->WriteByte(static_cast<uint8_t>(EncodedTypeForValue(value)));
-  switch (value.type()) {
-    case EncodableValue::Type::kNull:
-    case EncodableValue::Type::kBool:
+  // TODO: Consider replacing this this with a std::visitor.
+  switch (value.index()) {
+    case 0:
+    case 1:
       // Null and bool are encoded directly in the type.
       break;
-    case EncodableValue::Type::kInt: {
-      int32_t int_value = value.IntValue();
+    case 2: {
+      int32_t int_value = std::get<int32_t>(value);
       stream->WriteBytes(reinterpret_cast<const uint8_t*>(&int_value), 4);
       break;
     }
-    case EncodableValue::Type::kLong: {
-      int64_t long_value = value.LongValue();
+    case 3: {
+      int64_t long_value = std::get<int64_t>(value);
       stream->WriteBytes(reinterpret_cast<const uint8_t*>(&long_value), 8);
       break;
     }
-    case EncodableValue::Type::kDouble: {
+    case 4: {
       stream->WriteAlignment(8);
-      double double_value = value.DoubleValue();
+      double double_value = std::get<double>(value);
       stream->WriteBytes(reinterpret_cast<const uint8_t*>(&double_value), 8);
       break;
     }
-    case EncodableValue::Type::kString: {
-      const auto& string_value = value.StringValue();
+    case 5: {
+      const auto& string_value = std::get<std::string>(value);
       size_t size = string_value.size();
       WriteSize(size, stream);
       if (size > 0) {
@@ -181,31 +183,35 @@ void StandardCodecSerializer::WriteValue(const EncodableValue& value,
       }
       break;
     }
-    case EncodableValue::Type::kByteList:
-      WriteVector(value.ByteListValue(), stream);
+    case 6:
+      WriteVector(std::get<std::vector<uint8_t>>(value), stream);
       break;
-    case EncodableValue::Type::kIntList:
-      WriteVector(value.IntListValue(), stream);
+    case 7:
+      WriteVector(std::get<std::vector<int32_t>>(value), stream);
       break;
-    case EncodableValue::Type::kLongList:
-      WriteVector(value.LongListValue(), stream);
+    case 8:
+      WriteVector(std::get<std::vector<int64_t>>(value), stream);
       break;
-    case EncodableValue::Type::kDoubleList:
-      WriteVector(value.DoubleListValue(), stream);
+    case 9:
+      WriteVector(std::get<std::vector<double>>(value), stream);
       break;
-    case EncodableValue::Type::kList:
-      WriteSize(value.ListValue().size(), stream);
-      for (const auto& item : value.ListValue()) {
+    case 10: {
+      const auto& list = std::get<EncodableList>(value);
+      WriteSize(list.size(), stream);
+      for (const auto& item : list) {
         WriteValue(item, stream);
       }
       break;
-    case EncodableValue::Type::kMap:
-      WriteSize(value.MapValue().size(), stream);
-      for (const auto& pair : value.MapValue()) {
+    }
+    case 11: {
+      const auto& map = std::get<EncodableMap>(value);
+      WriteSize(map.size(), stream);
+      for (const auto& pair : map) {
         WriteValue(pair.first, stream);
         WriteValue(pair.second, stream);
       }
       break;
+    }
   }
 }
 
@@ -314,15 +320,16 @@ StandardMethodCodec::DecodeMethodCallInternal(const uint8_t* message,
                                               size_t message_size) const {
   StandardCodecSerializer serializer;
   ByteBufferStreamReader stream(message, message_size);
-  EncodableValue method_name = serializer.ReadValue(&stream);
-  if (!method_name.IsString()) {
+  EncodableValue method_name_value = serializer.ReadValue(&stream);
+  const auto* method_name = std::get_if<std::string>(&method_name_value);
+  if (!method_name) {
     std::cerr << "Invalid method call; method name is not a string."
               << std::endl;
     return nullptr;
   }
   auto arguments =
       std::make_unique<EncodableValue>(serializer.ReadValue(&stream));
-  return std::make_unique<MethodCall<EncodableValue>>(method_name.StringValue(),
+  return std::make_unique<MethodCall<EncodableValue>>(*method_name,
                                                       std::move(arguments));
 }
 
@@ -396,8 +403,8 @@ bool StandardMethodCodec::DecodeAndProcessResponseEnvelopeInternal(
       EncodableValue code = serializer.ReadValue(&stream);
       EncodableValue message = serializer.ReadValue(&stream);
       EncodableValue details = serializer.ReadValue(&stream);
-      result->Error(code.StringValue(),
-                    message.IsNull() ? "" : message.StringValue(),
+      result->Error(std::get<std::string>(code),
+                    message.IsNull() ? "" : std::get<std::string>(message),
                     details.IsNull() ? nullptr : &details);
       return true;
     }
