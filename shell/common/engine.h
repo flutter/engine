@@ -729,9 +729,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |RuntimeDelegate|
   void ScheduleFrame(bool regenerate_layer_tree) override;
 
-  /// Schedule a frame with the default parameter of not regenerating the layer
+  /// Schedule a frame with the default parameter of regenerating the layer
   /// tree.
-  void ScheduleFrame() { ScheduleFrame(false); }
+  void ScheduleFrame() { ScheduleFrame(true); }
 
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
