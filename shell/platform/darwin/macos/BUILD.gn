@@ -80,6 +80,7 @@ source_set("flutter_framework_source") {
   cflags_objcc = [ "-fobjc-arc" ]
 
   libs = [
+    "AudioToolbox.framework",
     "Cocoa.framework",
     "CoreVideo.framework",
   ]

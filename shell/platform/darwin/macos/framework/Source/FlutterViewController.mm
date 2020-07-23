@@ -15,6 +15,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
+#include <AudioToolbox/AudioToolbox.h>
+
 namespace {
 
 /// Clipboard plain text format.
@@ -490,6 +492,9 @@ static void CommonInit(FlutterViewController* controller) {
   if ([call.method isEqualToString:@"SystemNavigator.pop"]) {
     [NSApp terminate:self];
     result(nil);
+  } else if ([call.method isEqualToString:@"SystemSound.play"]) {
+    [self playSystemSound:call.arguments];
+    result(nil);
   } else if ([call.method isEqualToString:@"Clipboard.getData"]) {
     result([self getClipboardData:call.arguments]);
   } else if ([call.method isEqualToString:@"Clipboard.setData"]) {
@@ -497,6 +502,12 @@ static void CommonInit(FlutterViewController* controller) {
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
+  }
+}
+
+- (void)playSystemSound:(NSString*)soundType {
+  if ([soundType isEqualToString:@"SystemSoundType.alert"]) {
+    AudioServicesPlayAlertSound(kSystemSoundID_UserPreferredAlert);
   }
 }
 
