@@ -78,6 +78,13 @@ void PersistentCache::SetCacheDirectoryPath(std::string path) {
   cache_base_path_ = path;
 }
 
+bool PersistentCache::Purge() {
+  if (cache_directory_->is_valid()) {
+    return RemoveFilesInDirectory(*cache_directory_);
+  }
+  return false;
+}
+
 namespace {
 
 constexpr char kEngineComponent[] = "flutter_engine";

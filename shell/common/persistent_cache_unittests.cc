@@ -240,5 +240,32 @@ TEST_F(ShellTest, CanRemoveOldPersistentCache) {
   fml::RemoveFilesInDirectory(base_dir.fd());
 }
 
+TEST_F(ShellTest, CanPurgePersistentCache) {
+  fml::ScopedTemporaryDirectory base_dir;
+  ASSERT_TRUE(base_dir.fd().is_valid());
+
+  auto cache_dir = fml::CreateDirectory(
+      base_dir.fd(),
+      {"flutter_engine", GetFlutterEngineVersion(), "skia", GetSkiaVersion()},
+      fml::FilePermission::kReadWrite);
+
+  PersistentCache::SetCacheDirectoryPath(base_dir.path());
+  PersistentCache::ResetCacheForProcess();
+
+  fml::DataMapping test_data(std::string("test"));
+  ASSERT_TRUE(fml::WriteAtomically(cache_dir, "test", test_data));
+
+  auto file = fml::OpenFileReadOnly(cache_dir, "test");
+  ASSERT_TRUE(file.is_valid());
+
+  ASSERT_TRUE(PersistentCache::GetCacheForProcess()->Purge());
+
+  file = fml::OpenFileReadOnly(cache_dir, "test");
+  ASSERT_FALSE(file.is_valid());
+
+  // Cleanup
+  fml::RemoveFilesInDirectory(base_dir.fd());
+}
+
 }  // namespace testing
 }  // namespace flutter
