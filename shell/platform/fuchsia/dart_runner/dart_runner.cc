@@ -48,10 +48,6 @@ const char* kDartVMArgs[] = {
     "--precompilation",
 #else
     "--enable_mirrors=false",
-
-    // The interpreter is enabled unconditionally. If an app is built for
-    // debugging (that is, with no bytecode), the VM will fall back on ASTs.
-    "--enable_interpreter",
 #endif
 
     // No asserts in debug or release product.
