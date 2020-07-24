@@ -12,9 +12,7 @@ namespace testing {
 
 TEST(PlatformViewShell, UpdateSemanticsDoesFlutterViewUpdateSemantics) {
   auto jni_mock = std::make_shared<JNIMock>();
-
-  PlatformViewAndroidDelegate* platformViewAndroidDelegate =
-      new PlatformViewAndroidDelegate(jni_mock);
+  auto delegate = std::make_unique<PlatformViewAndroidDelegate>(jni_mock);
 
   flutter::SemanticsNodeUpdates update;
   flutter::SemanticsNode node0;
@@ -55,22 +53,18 @@ TEST(PlatformViewShell, UpdateSemanticsDoesFlutterViewUpdateSemantics) {
   position += 16;
   buffer_int32[position++] = 0;  // node0.childrenInTraversalOrder.size();
   buffer_int32[position++] = 0;  // node0.customAccessibilityActions.size();
+
   EXPECT_CALL(*jni_mock,
               FlutterViewUpdateSemantics(expected_buffer, expected_strings));
-
   // Creates empty custom actions.
   flutter::CustomAccessibilityActionUpdates actions;
-  EXPECT_CALL(*jni_mock,
-              FlutterViewUpdateSemantics(expected_buffer, expected_strings));
-  platformViewAndroidDelegate->UpdateSemantics(update, actions);
+  delegate->UpdateSemantics(update, actions);
 }
 
 TEST(PlatformViewShell,
      UpdateSemanticsDoesFlutterViewUpdateCustomAccessibilityActions) {
   auto jni_mock = std::make_shared<JNIMock>();
-
-  PlatformViewAndroidDelegate* platformViewAndroidDelegate =
-      new PlatformViewAndroidDelegate(jni_mock);
+  auto delegate = std::make_unique<PlatformViewAndroidDelegate>(jni_mock);
 
   flutter::CustomAccessibilityActionUpdates actions;
   flutter::CustomAccessibilityAction action0;
@@ -91,11 +85,11 @@ TEST(PlatformViewShell,
   actions_buffer_int32[3] = expected_action_strings.size();
   expected_action_strings.push_back(action0.hint);
 
-  // Creates empty update.
-  flutter::SemanticsNodeUpdates update;
   EXPECT_CALL(*jni_mock, FlutterViewUpdateCustomAccessibilityActions(
                              expected_actions_buffer, expected_action_strings));
-  platformViewAndroidDelegate->UpdateSemantics(update, actions);
+  // Creates empty update.
+  flutter::SemanticsNodeUpdates update;
+  delegate->UpdateSemantics(update, actions);
 }
 
 }  // namespace testing
