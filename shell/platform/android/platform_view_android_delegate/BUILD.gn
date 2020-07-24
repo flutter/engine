@@ -4,8 +4,6 @@
 
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
-import("//flutter/shell/gpu/gpu.gni")
-
 
 source_set("platform_view_android_delegate") {
   sources = [
