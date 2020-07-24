@@ -161,6 +161,13 @@ gboolean fl_renderer_make_current(FlRenderer* self, GError** error) {
   FlRendererPrivate* priv =
       static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
 
+  if (priv->egl_surface == EGL_NO_SURFACE ||
+      priv->egl_context == EGL_NO_CONTEXT) {
+    g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
+                "Failed to make EGL context current: not set up");
+    return FALSE;
+  }
+
   if (!eglMakeCurrent(priv->egl_display, priv->egl_surface, priv->egl_surface,
                       priv->egl_context)) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
@@ -177,13 +184,16 @@ gboolean fl_renderer_make_resource_current(FlRenderer* self, GError** error) {
       static_cast<FlRendererPrivate*>(fl_renderer_get_instance_private(self));
 
   if (priv->resource_surface == EGL_NO_SURFACE ||
-      priv->resource_context == EGL_NO_CONTEXT)
+      priv->resource_context == EGL_NO_CONTEXT) {
+    g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
+                "Failed to make EGL resource context current: not set up");
     return FALSE;
+  }
 
   if (!eglMakeCurrent(priv->egl_display, priv->resource_surface,
                       priv->resource_surface, priv->resource_context)) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to make EGL context current: %s",
+                "Failed to make EGL resource context current: %s",
                 egl_error_to_string(eglGetError()));
     return FALSE;
   }
