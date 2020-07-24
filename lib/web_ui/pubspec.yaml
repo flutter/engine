@@ -4,9 +4,8 @@ publish_to: none
 environment:
   sdk: ">=2.10.0-0 <3.0.0"
 
-
 dev_dependencies:
-  analyzer: 0.39.10
+  analyzer: 0.39.14
   http: 0.12.1
   image: 2.1.13
   js: 0.6.1+1
