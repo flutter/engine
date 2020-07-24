@@ -1279,7 +1279,7 @@ class Paint {
   ///    between segments.
   ///  * [strokeCap] to control what is drawn at the ends of the stroke.
   double get strokeMiterLimit {
-    return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian);
+    return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian) + _kStrokeMiterLimitDefault;
   }
   set strokeMiterLimit(double value) {
     assert(value != null); // ignore: unnecessary_null_comparison
