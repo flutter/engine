@@ -14,6 +14,7 @@
 #include "flutter/lib/ui/painting/immutable_buffer.h"
 #include "third_party/skia/include/codec/SkCodec.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/include/core/SkImageGenerator.h"
 #include "third_party/skia/src/codec/SkCodecImageGenerator.h"
 #include "third_party/tonic/dart_library_natives.h"
 

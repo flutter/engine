@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/painting/image_descriptor.h"
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/painting/codec.h"
@@ -11,7 +12,6 @@
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 #include "flutter/lib/ui/painting/single_frame_codec.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "third_party/skia/src/codec/SkCodecImageGenerator.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 
@@ -103,6 +103,8 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
     return;
   }
 
+  // This call will succeed if Skia has a built-in codec for this.
+  // If it fails, we will check if the platform knows how to decode this image.
   std::unique_ptr<SkCodec> codec =
       SkCodec::MakeFromData(immutable_buffer->data());
   fml::RefPtr<ImageDescriptor> descriptor;
@@ -110,6 +112,8 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
     std::unique_ptr<SkImageGenerator> generator =
         PLATFORM_IMAGE_GENERATOR(immutable_buffer->data());
     if (!generator) {
+      // We don't have a Skia codec for this image, and the platform doesn't
+      // know how to decode it.
       Dart_SetReturnValue(args, tonic::ToDart("Invalid image data"));
       return;
     }
@@ -174,8 +178,7 @@ sk_sp<SkImage> ImageDescriptor::image() const {
     }
 
     const auto& pixmap = bitmap.pixmap();
-    if (!platform_image_generator_->getPixels(
-            image_info_, pixmap.writable_addr(), pixmap.rowBytes())) {
+    if (!platform_image_generator_->getPixels(pixmap)) {
       FML_LOG(ERROR) << "Failed to get pixels for image.";
       return nullptr;
     }
@@ -187,12 +190,11 @@ sk_sp<SkImage> ImageDescriptor::image() const {
 
 bool ImageDescriptor::get_pixels(const SkPixmap& pixmap) const {
   if (generator_) {
-    return generator_->getPixels(pixmap.info(), pixmap.writable_addr(),
+    return generator_->getPixels(image_info_, pixmap.writable_addr(),
                                  pixmap.rowBytes());
   }
   FML_DCHECK(platform_image_generator_);
-  return platform_image_generator_->getPixels(
-      pixmap.info(), pixmap.writable_addr(), pixmap.rowBytes());
+  return platform_image_generator_->getPixels(pixmap);
 }
 
 }  // namespace flutter
