@@ -133,13 +133,13 @@ class HtmlImage implements ui.Image {
   final int height;
 
   @override
-  Future<ByteData?> toByteData(
-      {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    return futurize((Callback<ByteData?> callback) {
-      return _toByteData(format.index, (Uint8List? encoded) {
-        callback(encoded?.buffer.asByteData());
-      });
-    });
+  Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
+    if (imgElement.src.startsWith('data:')) {
+      final data = UriData.fromUri(Uri.parse(imgElement.src));
+      return Future.value(data.contentAsBytes().buffer.asByteData());
+    } else {
+      return Future.value(null);
+    }
   }
 
   // Returns absolutely positioned actual image element on first call and
@@ -151,18 +151,6 @@ class HtmlImage implements ui.Image {
       _requiresClone = true;
       imgElement.style.position = 'absolute';
       return imgElement;
-    }
-  }
-
-  // Returns an error message on failure.
-  String _toByteData(int format, Callback<Uint8List?> callback) {
-    if (imgElement.src.startsWith('data:')) {
-      final data = UriData.fromUri(Uri.parse(imgElement.src));
-      callback(data.contentAsBytes());
-      return '';
-    } else {
-      callback(null);
-      return 'Data URI not found';
     }
   }
 }
