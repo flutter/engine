@@ -1,7 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// FLUTTER_NOLINT
 
 // This file tests both ref_counted.h and ref_ptr.h (which the former includes).
 // TODO(vtl): Possibly we could separate these tests out better, since a lot of
@@ -47,12 +46,14 @@ class MyClass : public RefCountedThreadSafe<MyClass> {
  protected:
   MyClass(MyClass** created, bool* was_destroyed)
       : was_destroyed_(was_destroyed) {
-    if (created)
+    if (created) {
       *created = this;
+    }
   }
   virtual ~MyClass() {
-    if (was_destroyed_)
+    if (was_destroyed_) {
       *was_destroyed_ = true;
+    }
   }
 
  private:
@@ -71,8 +72,9 @@ class MySubclass final : public MyClass {
 
   MySubclass(MySubclass** created, bool* was_destroyed)
       : MyClass(nullptr, was_destroyed) {
-    if (created)
+    if (created) {
       *created = this;
+    }
   }
   ~MySubclass() override {}
 
