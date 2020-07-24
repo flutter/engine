@@ -16,10 +16,11 @@ namespace flutter {
 
 class PlatformViewAndroidDelegate {
  public:
-  PlatformViewAndroidDelegate(std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
-  void UpdateSemantics(
-    flutter::SemanticsNodeUpdates update,
-    flutter::CustomAccessibilityActionUpdates actions);
+  PlatformViewAndroidDelegate(
+      std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+  void UpdateSemantics(flutter::SemanticsNodeUpdates update,
+                       flutter::CustomAccessibilityActionUpdates actions);
+
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
 };

@@ -7,8 +7,8 @@
 namespace flutter {
 
 PlatformViewAndroidDelegate::PlatformViewAndroidDelegate(
-  std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
-  : jni_facade_(jni_facade) {};
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    : jni_facade_(jni_facade){};
 
 void PlatformViewAndroidDelegate::UpdateSemantics(
     flutter::SemanticsNodeUpdates update,
