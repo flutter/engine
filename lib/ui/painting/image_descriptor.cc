@@ -169,28 +169,25 @@ void ImageDescriptor::instantiateCodec(Dart_Handle codec_handle,
 }
 
 sk_sp<SkImage> ImageDescriptor::image() const {
-  if (platform_image_generator_) {
-    SkBitmap bitmap;
-    if (!bitmap.tryAllocPixels(image_info_)) {
-      FML_LOG(ERROR) << "Failed to allocate memory for bitmap of size "
-                     << image_info_.computeMinByteSize() << "B";
-      return nullptr;
-    }
-
-    const auto& pixmap = bitmap.pixmap();
-    if (!platform_image_generator_->getPixels(pixmap)) {
-      FML_LOG(ERROR) << "Failed to get pixels for image.";
-      return nullptr;
-    }
-    bitmap.setImmutable();
-    return SkImage::MakeFromBitmap(bitmap);
+  SkBitmap bitmap;
+  if (!bitmap.tryAllocPixels(image_info_)) {
+    FML_LOG(ERROR) << "Failed to allocate memory for bitmap of size "
+                   << image_info_.computeMinByteSize() << "B";
+    return nullptr;
   }
-  return SkImage::MakeFromEncoded(buffer_);
+
+  const auto& pixmap = bitmap.pixmap();
+  if (!get_pixels(pixmap)) {
+    FML_LOG(ERROR) << "Failed to get pixels for image.";
+    return nullptr;
+  }
+  bitmap.setImmutable();
+  return SkImage::MakeFromBitmap(bitmap);
 }
 
 bool ImageDescriptor::get_pixels(const SkPixmap& pixmap) const {
   if (generator_) {
-    return generator_->getPixels(image_info_, pixmap.writable_addr(),
+    return generator_->getPixels(pixmap.info(), pixmap.writable_addr(),
                                  pixmap.rowBytes());
   }
   FML_DCHECK(platform_image_generator_);
