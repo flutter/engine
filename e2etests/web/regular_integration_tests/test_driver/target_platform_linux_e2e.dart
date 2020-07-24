@@ -11,7 +11,7 @@ import 'package:e2e/e2e.dart';
 void main() {
   E2EWidgetsFlutterBinding.ensureInitialized() as E2EWidgetsFlutterBinding;
 
-  testWidgets('Should detect android platform when running on android device',
+  testWidgets('Should detect linux platform when running on linux machine',
           (WidgetTester tester) async {
         app.main();
         await tester.pumpAndSettle();
@@ -23,9 +23,9 @@ void main() {
         expect(iOSFinder, findsNothing);
 
         final Finder androidFinder = find.byKey(const Key('androidKey'));
-        expect(androidFinder, findsOneWidget);
+        expect(androidFinder, findsNothing);
 
         final Finder linuxFinder = find.byKey(const Key('linuxKey'));
-        expect(linuxFinder, findsNothing);
+        expect(linuxFinder, findsOneWidget);
       });
 }

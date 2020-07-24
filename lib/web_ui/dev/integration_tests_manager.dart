@@ -414,11 +414,13 @@ const Map<String, List<String>> blockedTestsListsMap = <String, List<String>>{
     'target_platform_macos_e2e.dart',
   ],
   'chrome-macos': [
+    'target_platform_linux_e2e.dart',
     'target_platform_ios_e2e.dart',
     'target_platform_android_e2e.dart',
   ],
   'safari-macos': [
     'target_platform_ios_e2e.dart',
+    'target_platform_linux_e2e.dart',
     'target_platform_android_e2e.dart',
     'image_loading_e2e.dart',
   ],
@@ -428,6 +430,7 @@ const Map<String, List<String>> blockedTestsListsMap = <String, List<String>>{
     'target_platform_macos_e2e.dart',
   ],
   'firefox-macos': [
+    'target_platform_linux_e2e.dart',
     'target_platform_android_e2e.dart',
     'target_platform_ios_e2e.dart',
   ],

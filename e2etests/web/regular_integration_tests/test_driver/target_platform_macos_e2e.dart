@@ -24,5 +24,8 @@ void main() {
 
         final Finder androidFinder = find.byKey(const Key('androidKey'));
         expect(androidFinder, findsNothing);
+
+        final Finder linuxFinder = find.byKey(const Key('linuxKey'));
+        expect(linuxFinder, findsNothing);
       });
 }

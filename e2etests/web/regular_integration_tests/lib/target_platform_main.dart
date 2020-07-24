@@ -41,6 +41,11 @@ class MyHomePage extends StatelessWidget {
                 'I am running on Android',
                 key: Key('androidKey'),
               ),
+            if (defaultTargetPlatform == TargetPlatform.linux)
+              const Text(
+                'I am running on Linux',
+                key: Key('linuxKey'),
+              ),
           ],
         ),
       ),
