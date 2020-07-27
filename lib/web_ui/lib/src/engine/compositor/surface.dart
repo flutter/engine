@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
@@ -38,6 +39,20 @@ class Surface {
 
   CkSurface? _surface;
   html.Element? htmlElement;
+  SkGrContext? _grContext;
+  int? _skiaCacheBytes;
+
+  /// Specify the GPU resource cache limits.
+  void setSkiaResourceCacheMaxBytes(int bytes) {
+    _skiaCacheBytes = bytes;
+    _syncCacheBytes();
+  }
+
+  void _syncCacheBytes() {
+    if(_skiaCacheBytes != null) {
+      _grContext?.setResourceCacheLimitBytes(_skiaCacheBytes!);
+    }
+  }
 
   bool _addedToScene = false;
 
@@ -51,7 +66,9 @@ class Surface {
   SurfaceFrame acquireFrame(ui.Size size) {
     final CkSurface surface = acquireRenderSurface(size);
 
-    canvasKit.callMethod('setCurrentContext', <int?>[surface.context]);
+    if (surface.context != null) {
+      canvasKit.setCurrentContext(surface.context!);
+    }
     SubmitCallback submitCallback =
         (SurfaceFrame surfaceFrame, CkCanvas canvas) {
       return _presentSurface();
@@ -104,63 +121,112 @@ class Surface {
       ..position = 'absolute'
       ..width = '${logicalSize.width.ceil()}px'
       ..height = '${logicalSize.height.ceil()}px';
-    final int glContext = canvasKit.callMethod('GetWebGLContext', <dynamic>[
-      htmlCanvas,
-      // Default to no anti-aliasing. Paint commands can be explicitly
-      // anti-aliased by setting their `Paint` object's `antialias` property.
-      js.JsObject.jsify({'antialias': 0}),
-    ]);
-    final js.JsObject? grContext =
-        canvasKit.callMethod('MakeGrContext', <dynamic>[glContext]);
-
-    if (grContext == null) {
-      throw CanvasKitError('Could not create a graphics context.');
-    }
-
-    final js.JsObject? skSurface =
-        canvasKit.callMethod('MakeOnScreenGLSurface', <dynamic>[
-      grContext,
-      size.width,
-      size.height,
-      canvasKit['SkColorSpace']['SRGB'],
-    ]);
-
-    if (skSurface == null) {
-      throw CanvasKitError('Could not create a surface.');
-    }
 
     htmlElement = htmlCanvas;
-    return CkSurface(skSurface, grContext, glContext);
+    if (canvasKitForceCpuOnly) {
+      return _makeSoftwareCanvasSurface(htmlCanvas);
+    } else {
+      // Try WebGL first.
+      final int glContext = canvasKit.GetWebGLContext(
+        htmlCanvas,
+        SkWebGLContextOptions(
+          // Default to no anti-aliasing. Paint commands can be explicitly
+          // anti-aliased by setting their `Paint` object's `antialias` property.
+          anitalias: 0,
+        ),
+      );
+
+      if (glContext == 0) {
+        return _makeSoftwareCanvasSurface(htmlCanvas);
+      }
+
+      _grContext = canvasKit.MakeGrContext(glContext);
+
+      if (_grContext == null) {
+        throw CanvasKitError('Failed to initialize CanvasKit. CanvasKit.MakeGrContext returned null.');
+      }
+
+      // Set the cache byte limit for this grContext, if not specified it will use
+      // CanvasKit's default.
+      _syncCacheBytes();
+
+      SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
+        _grContext!,
+        size.width,
+        size.height,
+        SkColorSpaceSRGB,
+      );
+
+      if (skSurface == null) {
+        return _makeSoftwareCanvasSurface(htmlCanvas);
+      }
+
+      return CkSurface(skSurface, _grContext, glContext);
+    }
+  }
+
+  static bool _didWarnAboutWebGlInitializationFailure = false;
+
+  CkSurface _makeSoftwareCanvasSurface(html.CanvasElement htmlCanvas) {
+    if (!_didWarnAboutWebGlInitializationFailure) {
+      html.window.console.warn('WARNING: failed to initialize WebGL. Falling back to CPU-only rendering.');
+      _didWarnAboutWebGlInitializationFailure = true;
+    }
+    return CkSurface(
+      canvasKit.MakeSWCanvasSurface(htmlCanvas),
+      null,
+      null,
+    );
   }
 
   bool _presentSurface() {
-    canvasKit.callMethod('setCurrentContext', <dynamic>[_surface!.context]);
-    _surface!.getCanvas().flush();
+    if (_surface!.context != null) {
+      canvasKit.setCurrentContext(_surface!.context!);
+    }
+    _surface!.flush();
     return true;
   }
 }
 
 /// A Dart wrapper around Skia's CkSurface.
 class CkSurface {
-  final js.JsObject _surface;
-  final js.JsObject _grContext;
-  final int _glContext;
+  final SkSurface _surface;
+  final SkGrContext? _grContext;
+  final int? _glContext;
 
   CkSurface(this._surface, this._grContext, this._glContext);
 
   CkCanvas getCanvas() {
-    final js.JsObject skCanvas = _surface.callMethod('getCanvas');
-    return CkCanvas(skCanvas);
+    return CkCanvas(_surface.getCanvas());
   }
 
-  int get context => _glContext;
+  /// Flushes the graphics to be rendered on screen.
+  void flush() {
+    _surface.flush();
+  }
 
-  int width() => _surface.callMethod('width');
-  int height() => _surface.callMethod('height');
+  int? get context => _glContext;
+
+  int width() => _surface.width();
+  int height() => _surface.height();
 
   void dispose() {
-    _surface.callMethod('dispose');
-    _grContext.callMethod('releaseResourcesAndAbandonContext');
-    _grContext.callMethod('delete');
+    if (_isDisposed) {
+      return;
+    }
+    // Only resources from the current context can be disposed.
+    if (_glContext != null) {
+      canvasKit.setCurrentContext(_glContext!);
+    }
+    _surface.dispose();
+
+    // In CPU-only mode there's no graphics context.
+    if (_grContext != null) {
+      _grContext!.releaseResourcesAndAbandonContext();
+      _grContext!.delete();
+    }
+    _isDisposed = true;
   }
+
+  bool _isDisposed = false;
 }

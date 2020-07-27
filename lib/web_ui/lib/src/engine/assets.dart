@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// This class downloads assets over the network.
@@ -64,7 +65,7 @@ class AssetManager {
               .warn('Asset manifest does not exist at `$url` – ignoring.');
           return Uint8List.fromList(utf8.encode('{}')).buffer.asByteData();
         }
-        throw AssetManagerException(url, target.status);
+        throw AssetManagerException(url, target.status!);
       }
 
       html.window.console.warn('Caught ProgressEvent with target: $target');

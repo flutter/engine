@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 const int _kChar_0 = 48;
@@ -57,6 +57,44 @@ class UnicodeRange<P> {
   }
 }
 
+/// Checks whether the given char code is a UTF-16 surrogate.
+///
+/// See:
+/// - http://www.unicode.org/faq//utf_bom.html#utf16-2
+bool isUtf16Surrogate(int char) {
+  return char & 0xF800 == 0xD800;
+}
+
+/// Combines a pair of UTF-16 surrogate into a single character code point.
+///
+/// The surrogate pair is expected to start at [index] in the [text].
+///
+/// See:
+/// - http://www.unicode.org/faq//utf_bom.html#utf16-3
+int combineSurrogatePair(String text, int index) {
+  final int hi = text.codeUnitAt(index);
+  final int lo = text.codeUnitAt(index + 1);
+
+  int x = (hi & ((1 << 6) - 1)) << 10 | lo & ((1 << 10) - 1);
+  int w = (hi >> 6) & ((1 << 5) - 1);
+  int u = w + 1;
+  return u << 16 | x;
+}
+
+/// Returns the code point from [text] at [index] and handles surrogate pairs
+/// for cases that involve two UTF-16 codes.
+int? getCodePoint(String text, int index) {
+  if (index < 0 || index >= text.length) {
+    return null;
+  }
+
+  final int char = text.codeUnitAt(index);
+  if (isUtf16Surrogate(char) && index < text.length - 1) {
+    return combineSurrogatePair(text, index);
+  }
+  return char;
+}
+
 /// Given a list of [UnicodeRange]s, this class performs efficient lookup
 /// to find which range a value falls into.
 ///
@@ -69,39 +107,59 @@ class UnicodeRange<P> {
 /// has. The properties are then used to decide word boundaries, line break
 /// opportunities, etc.
 class UnicodePropertyLookup<P> {
-  const UnicodePropertyLookup(this.ranges);
+  UnicodePropertyLookup(this.ranges, this.defaultProperty);
 
   /// Creates a [UnicodePropertyLookup] from packed line break data.
   factory UnicodePropertyLookup.fromPackedData(
     String packedData,
     int singleRangesCount,
     List<P> propertyEnumValues,
+    P defaultProperty,
   ) {
     return UnicodePropertyLookup<P>(
       _unpackProperties<P>(packedData, singleRangesCount, propertyEnumValues),
+      defaultProperty,
     );
   }
 
+  /// The list of unicode ranges and their associated properties.
   final List<UnicodeRange<P>> ranges;
+
+  /// The default property to use when a character doesn't belong in any
+  /// known range.
+  final P defaultProperty;
+
+  /// Cache for lookup results.
+  final Map<int, P> _cache = <int, P>{};
 
   /// Take a [text] and an [index], and returns the property of the character
   /// located at that [index].
   ///
   /// If the [index] is out of range, null will be returned.
-  P? find(String? text, int index) {
-    if (index < 0 || index >= text!.length) {
-      return null;
-    }
-    return findForChar(text.codeUnitAt(index));
+  P find(String text, int index) {
+    final int? codePoint = getCodePoint(text, index);
+    return codePoint == null ? defaultProperty : findForChar(codePoint);
   }
 
   /// Takes one character as an integer code unit and returns its property.
   ///
-  /// If a property can't be found for the given character, null will be
-  /// returned.
-  P? findForChar(int char) {
+  /// If a property can't be found for the given character, then the default
+  /// property will be returned.
+  P findForChar(int? char) {
+    if (char == null) {
+      return defaultProperty;
+    }
+
+    final P? cacheHit = _cache[char];
+    if (cacheHit != null) {
+      return cacheHit;
+    }
+
     final int rangeIndex = _binarySearch(char);
-    return rangeIndex == -1 ? null : ranges[rangeIndex].property;
+    final P result = rangeIndex == -1 ? defaultProperty : ranges[rangeIndex].property;
+    // Cache the result.
+    _cache[char] = result;
+    return result;
   }
 
   int _binarySearch(int value) {

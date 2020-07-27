@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 @JS()
 library engine;
 
@@ -57,7 +58,6 @@ part 'engine/compositor/text.dart';
 part 'engine/compositor/util.dart';
 part 'engine/compositor/vertices.dart';
 part 'engine/compositor/viewport_metrics.dart';
-part 'engine/conic.dart';
 part 'engine/dom_canvas.dart';
 part 'engine/dom_renderer.dart';
 part 'engine/engine_canvas.dart';
@@ -68,7 +68,6 @@ part 'engine/html_image_codec.dart';
 part 'engine/keyboard.dart';
 part 'engine/mouse_cursor.dart';
 part 'engine/onscreen_logging.dart';
-part 'engine/path_to_svg.dart';
 part 'engine/picture.dart';
 part 'engine/platform_views.dart';
 part 'engine/plugins.dart';
@@ -101,7 +100,15 @@ part 'engine/surface/image_filter.dart';
 part 'engine/surface/offset.dart';
 part 'engine/surface/opacity.dart';
 part 'engine/surface/painting.dart';
-part 'engine/surface/path_metrics.dart';
+part 'engine/surface/path/conic.dart';
+part 'engine/surface/path/cubic.dart';
+part 'engine/surface/path/path.dart';
+part 'engine/surface/path/path_metrics.dart';
+part 'engine/surface/path/path_ref.dart';
+part 'engine/surface/path/path_to_svg.dart';
+part 'engine/surface/path/path_utils.dart';
+part 'engine/surface/path/path_windings.dart';
+part 'engine/surface/path/tangent.dart';
 part 'engine/surface/picture.dart';
 part 'engine/surface/platform_view.dart';
 part 'engine/surface/recording_canvas.dart';
@@ -109,7 +116,6 @@ part 'engine/surface/render_vertices.dart';
 part 'engine/surface/scene.dart';
 part 'engine/surface/scene_builder.dart';
 part 'engine/surface/surface.dart';
-part 'engine/surface/path.dart';
 part 'engine/surface/surface_stats.dart';
 part 'engine/surface/transform.dart';
 part 'engine/test_embedding.dart';
@@ -124,7 +130,9 @@ part 'engine/text/word_break_properties.dart';
 part 'engine/text/word_breaker.dart';
 part 'engine/text_editing/autofill_hint.dart';
 part 'engine/text_editing/input_type.dart';
+part 'engine/text_editing/text_capitalization.dart';
 part 'engine/text_editing/text_editing.dart';
+part 'engine/ulps.dart';
 part 'engine/util.dart';
 part 'engine/validators.dart';
 part 'engine/vector_math.dart';

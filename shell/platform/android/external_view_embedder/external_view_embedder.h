@@ -45,7 +45,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override;
 
   // |ExternalViewEmbedder|
-  bool SubmitFrame(GrContext* context,
+  void SubmitFrame(GrContext* context,
                    std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
@@ -123,6 +123,9 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // The r-tree that captures the operations for the picture recorders.
   std::unordered_map<int64_t, sk_sp<RTree>> view_rtrees_;
+
+  // The number of platform views in the previous frame.
+  int64_t previous_frame_view_count_;
 
   // Resets the state.
   void Reset();

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// Handles clipboard related platform messages.
@@ -109,7 +109,7 @@ class ClipboardAPICopyStrategy implements CopyToClipboardStrategy {
   @override
   Future<bool> setData(String? text) async {
     try {
-      await html.window.navigator.clipboard.writeText(text!);
+      await html.window.navigator.clipboard!.writeText(text!);
     } catch (error) {
       print('copy is not successful $error');
       return Future.value(false);
@@ -127,7 +127,7 @@ class ClipboardAPICopyStrategy implements CopyToClipboardStrategy {
 class ClipboardAPIPasteStrategy implements PasteFromClipboardStrategy {
   @override
   Future<String> getData() async {
-    return html.window.navigator.clipboard.readText();
+    return html.window.navigator.clipboard!.readText();
   }
 }
 
