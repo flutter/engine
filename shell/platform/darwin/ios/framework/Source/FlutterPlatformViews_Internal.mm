@@ -75,7 +75,7 @@ void ResetAnchor(CALayer* layer) {
 @end
 
 @implementation FlutterClippingMaskView {
-  std::vector<CGPathRef> paths_;
+  std::vector<fml::CFRef<CGPathRef>> paths_;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -93,8 +93,7 @@ void ResetAnchor(CALayer* layer) {
   CGContextSetAlpha(context, 1);
 
   for (size_t i = 0; i < paths_.size(); i++) {
-    CGPathRef pathRef = paths_.at(i);
-    CGContextAddPath(context, pathRef);
+    CGContextAddPath(context, paths_.at(i));
     CGContextClip(context);
   }
   CGContextFillRect(context, rect);
@@ -104,7 +103,7 @@ void ResetAnchor(CALayer* layer) {
 - (void)clipRect:(const SkRect&)clipSkRect matrix:(const CATransform3D&)matrix {
   CGRect clipRect = [self getCGRectFromSkRect:clipSkRect];
   CGPathRef path = CGPathCreateWithRect(clipRect, nil);
-  paths_.push_back([self getTransformedPath:path matrix:matrix]);
+  paths_.push_back(fml::CFRef<CGPathRef>([self getTransformedPath:path matrix:matrix]));
 }
 
 - (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const CATransform3D&)matrix {
@@ -170,7 +169,7 @@ void ResetAnchor(CALayer* layer) {
   // TODO(cyanglaz): iOS does not seem to support hard edge on CAShapeLayer. It clearly stated that
   // the CAShaperLayer will be drawn antialiased. Need to figure out a way to do the hard edge
   // clipping on iOS.
-  paths_.push_back([self getTransformedPath:pathRef matrix:matrix]);
+  paths_.push_back(fml::CFRef<CGPathRef>([self getTransformedPath:pathRef matrix:matrix]));
 }
 
 - (void)clipPath:(const SkPath&)path matrix:(const CATransform3D&)matrix {
@@ -232,7 +231,7 @@ void ResetAnchor(CALayer* layer) {
     }
     verb = iter.next(pts);
   }
-  paths_.push_back([self getTransformedPath:pathRef matrix:matrix]);
+  paths_.push_back(fml::CFRef<CGPathRef>([self getTransformedPath:pathRef matrix:matrix]));
 }
 
 - (CGPathRef)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix {
@@ -246,14 +245,6 @@ void ResetAnchor(CALayer* layer) {
 - (CGRect)getCGRectFromSkRect:(const SkRect&)clipSkRect {
   return CGRectMake(clipSkRect.fLeft, clipSkRect.fTop, clipSkRect.fRight - clipSkRect.fLeft,
                     clipSkRect.fBottom - clipSkRect.fTop);
-}
-
-- (void)dealloc {
-  for (CGPathRef pathRef : paths_) {
-    CGPathRelease(pathRef);
-  }
-  paths_.clear();
-  [super dealloc];
 }
 
 @end
