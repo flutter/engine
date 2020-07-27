@@ -25,21 +25,20 @@ class DummyPlatformConfigurationClient : public PlatformConfigurationClient {
     std::vector<uint8_t> data;
     isolate_data_.reset(new ::fml::DataMapping(data));
   }
-  virtual std::string DefaultRouteName() { return "TestRoute"; }
-  virtual void ScheduleFrame() {}
-  virtual void Render(Scene* scene) {}
-  virtual void UpdateSemantics(SemanticsUpdate* update) {}
-  virtual void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) {}
-  virtual FontCollection& GetFontCollection() { return font_collection_; }
-  virtual void UpdateIsolateDescription(const std::string isolate_name,
-                                        int64_t isolate_port) {}
-  virtual void SetNeedsReportTimings(bool value) {}
-  virtual std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() {
+  std::string DefaultRouteName() override { return "TestRoute"; }
+  void ScheduleFrame() override {}
+  void Render(Scene* scene) override {}
+  void UpdateSemantics(SemanticsUpdate* update) override {}
+  void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override {}
+  FontCollection& GetFontCollection() override { return font_collection_; }
+  void UpdateIsolateDescription(const std::string isolate_name,
+                                int64_t isolate_port) override {}
+  void SetNeedsReportTimings(bool value) override {}
+  std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() override {
     return isolate_data_;
   }
-  virtual std::unique_ptr<std::vector<std::string>>
-  ComputePlatformResolvedLocale(
-      const std::vector<std::string>& supported_locale_data) {
+  std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
+      const std::vector<std::string>& supported_locale_data) override {
     return nullptr;
   };
 
