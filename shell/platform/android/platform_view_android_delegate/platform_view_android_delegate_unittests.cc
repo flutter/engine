@@ -35,9 +35,9 @@ TEST(PlatformViewShell, UpdateSemanticsDoesFlutterViewUpdateSemantics) {
   buffer_int32[position++] = node0.platformViewId;
   buffer_int32[position++] = node0.scrollChildren;
   buffer_int32[position++] = node0.scrollIndex;
-  buffer_float32[position++] = (float)node0.scrollPosition;
-  buffer_float32[position++] = (float)node0.scrollExtentMax;
-  buffer_float32[position++] = (float)node0.scrollExtentMin;
+  buffer_float32[position++] = static_cast<float>(node0.scrollPosition);
+  buffer_float32[position++] = static_cast<float>(node0.scrollExtentMax);
+  buffer_float32[position++] = static_cast<float>(node0.scrollExtentMin);
   buffer_int32[position++] = expected_strings.size();  // node0.label
   expected_strings.push_back(node0.label);
   buffer_int32[position++] = -1;  // node0.value

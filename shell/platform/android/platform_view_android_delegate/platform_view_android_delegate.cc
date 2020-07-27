@@ -56,9 +56,9 @@ void PlatformViewAndroidDelegate::UpdateSemantics(
       buffer_int32[position++] = node.platformViewId;
       buffer_int32[position++] = node.scrollChildren;
       buffer_int32[position++] = node.scrollIndex;
-      buffer_float32[position++] = (float)node.scrollPosition;
-      buffer_float32[position++] = (float)node.scrollExtentMax;
-      buffer_float32[position++] = (float)node.scrollExtentMin;
+      buffer_float32[position++] = static_cast<float>(node.scrollPosition);
+      buffer_float32[position++] = static_cast<float>(node.scrollExtentMax);
+      buffer_float32[position++] = static_cast<float>(node.scrollExtentMin);
       if (node.label.empty()) {
         buffer_int32[position++] = -1;
       } else {
@@ -98,15 +98,18 @@ void PlatformViewAndroidDelegate::UpdateSemantics(
       position += 16;
 
       buffer_int32[position++] = node.childrenInTraversalOrder.size();
-      for (int32_t child : node.childrenInTraversalOrder)
+      for (int32_t child : node.childrenInTraversalOrder) {
         buffer_int32[position++] = child;
+      }
 
-      for (int32_t child : node.childrenInHitTestOrder)
+      for (int32_t child : node.childrenInHitTestOrder) {
         buffer_int32[position++] = child;
+      }
 
       buffer_int32[position++] = node.customAccessibilityActions.size();
-      for (int32_t child : node.customAccessibilityActions)
+      for (int32_t child : node.customAccessibilityActions) {
         buffer_int32[position++] = child;
+      }
     }
 
     // custom accessibility actions.
