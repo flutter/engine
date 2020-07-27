@@ -87,10 +87,10 @@ void ResetAnchor(CALayer* layer) {
 
 - (void)drawRect:(CGRect)rect {
   CGContextRef context = UIGraphicsGetCurrentContext();
-  // For mask view, only the alpha channel is used, the actual color doesn't matter.
-  // Set to red for easier future debugging.
-  [UIColor.redColor setFill];
   CGContextSaveGState(context);
+
+  // For mask view, only the alpha channel is used.
+  CGContextSetAlpha(context, 1);
 
   for (size_t i = 0; i < paths_.size(); i++) {
     CGPathRef pathRef = paths_.at(i);
