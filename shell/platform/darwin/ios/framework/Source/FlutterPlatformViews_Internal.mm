@@ -69,7 +69,7 @@ void ResetAnchor(CALayer* layer) {
 
 @interface FlutterClippingMaskView ()
 
-- (CGPathRef)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix;
+- (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix;
 - (CGRect)getCGRectFromSkRect:(const SkRect&)clipSkRect;
 
 @end
@@ -103,7 +103,7 @@ void ResetAnchor(CALayer* layer) {
 - (void)clipRect:(const SkRect&)clipSkRect matrix:(const CATransform3D&)matrix {
   CGRect clipRect = [self getCGRectFromSkRect:clipSkRect];
   CGPathRef path = CGPathCreateWithRect(clipRect, nil);
-  paths_.push_back(fml::CFRef<CGPathRef>([self getTransformedPath:path matrix:matrix]));
+  paths_.push_back([self getTransformedPath:path matrix:matrix]);
 }
 
 - (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const CATransform3D&)matrix {
@@ -169,7 +169,7 @@ void ResetAnchor(CALayer* layer) {
   // TODO(cyanglaz): iOS does not seem to support hard edge on CAShapeLayer. It clearly stated that
   // the CAShaperLayer will be drawn antialiased. Need to figure out a way to do the hard edge
   // clipping on iOS.
-  paths_.push_back(fml::CFRef<CGPathRef>([self getTransformedPath:pathRef matrix:matrix]));
+  paths_.push_back([self getTransformedPath:pathRef matrix:matrix]);
 }
 
 - (void)clipPath:(const SkPath&)path matrix:(const CATransform3D&)matrix {
@@ -231,15 +231,15 @@ void ResetAnchor(CALayer* layer) {
     }
     verb = iter.next(pts);
   }
-  paths_.push_back(fml::CFRef<CGPathRef>([self getTransformedPath:pathRef matrix:matrix]));
+  paths_.push_back([self getTransformedPath:pathRef matrix:matrix]);
 }
 
-- (CGPathRef)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix {
+- (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix {
   CGAffineTransform affine =
       CGAffineTransformMake(matrix.m11, matrix.m12, matrix.m21, matrix.m22, matrix.m41, matrix.m42);
   CGPathRef transformedPath = CGPathCreateCopyByTransformingPath(path, &affine);
   CGPathRelease(path);
-  return transformedPath;
+  return fml::CFRef<CGPathRef>(transformedPath);
 }
 
 - (CGRect)getCGRectFromSkRect:(const SkRect&)clipSkRect {
