@@ -121,8 +121,9 @@ gboolean fl_renderer_start(FlRenderer* self, GError** error) {
 
   if (!FL_RENDERER_GET_CLASS(self)->create_surfaces(
           self, priv->egl_display, priv->egl_config, &priv->egl_surface,
-          &priv->resource_surface, error))
+          &priv->resource_surface, error)) {
     return FALSE;
+  }
 
   EGLint context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
 
