@@ -21,6 +21,7 @@ import 'dart:io'
         stdout;
 
 import 'package:args/args.dart';
+import 'package:path/path.dart' as path;
 
 Platform defaultPlatform = Platform();
 
@@ -78,7 +79,7 @@ class ProcessRunner {
   Future<ProcessRunnerResult> runProcess(
     List<String> commandLine, {
     Directory workingDirectory,
-    bool printOutput = true,
+    bool printOutput = false,
     bool failOk = false,
     Stream<List<int>> stdin,
   }) async {
@@ -209,8 +210,7 @@ class ProcessPool {
     final String total = totalJobs.toString().padRight(3);
     final String inProgress = inProgressJobs.length.toString().padLeft(2);
     final String pending = pendingJobs.length.toString().padLeft(3);
-    stdout.write(
-        'Jobs: $percent% done, $completed/$total completed, $inProgress in '
+    stdout.write('Jobs: $percent% done, $completed/$total completed, $inProgress in '
         'progress, $pending pending.  \r');
   }
 
@@ -279,16 +279,17 @@ https://github.com/flutter/flutter/wiki/Engine-Clang-Tidy-Linter
 ''';
 
 class Command {
-  String directory = '';
+  Directory directory = Directory('');
   String command = '';
-  String file = '';
+  File file = File('');
 }
 
 Command parseCommand(Map<String, dynamic> map) {
+  final Directory dir = Directory(map['directory'] as String).absolute;
   return Command()
-    ..directory = map['directory'] as String
+    ..directory = dir
     ..command = map['command'] as String
-    ..file = map['file'] as String;
+    ..file = File(path.normalize(path.join(dir.path, map['file'] as String)));
 }
 
 String calcTidyArgs(Command command) {
@@ -308,61 +309,52 @@ String calcTidyPath(Command command) {
 
 bool isNonEmptyString(String str) => str.isNotEmpty;
 
-bool containsAny(String str, List<String> queries) {
-  for (String query in queries) {
-    if (str.contains(query)) {
-      return true;
-    }
-  }
-  return false;
+bool containsAny(File file, Iterable<File> queries) {
+  return queries.where((File query) => path.equals(query.path, file.path)).isNotEmpty;
 }
 
 /// Returns a list of all files with current changes or differ from `master`.
-List<String> getListOfChangedFiles(String repoPath) {
-  final Set<String> result = <String>{};
-  final ProcessResult diffResult =
-      Process.runSync('git', <String>['diff', '--name-only'], workingDirectory: repoPath);
-  final ProcessResult diffCachedResult = Process.runSync(
-      'git', <String>['diff', '--cached', '--name-only'],
-      workingDirectory: repoPath);
-
+Future<List<File>> getListOfChangedFiles(Directory repoPath) async {
+  final ProcessRunner processRunner = ProcessRunner(defaultWorkingDirectory: repoPath);
+  String branch = 'upstream/master';
   final ProcessResult fetchResult = Process.runSync('git', <String>['fetch', 'upstream', 'master']);
   if (fetchResult.exitCode != 0) {
+    branch = 'origin/master';
     Process.runSync('git', <String>['fetch', 'origin', 'master']);
   }
-  final ProcessResult mergeBaseResult = Process.runSync(
-      'git', <String>['merge-base', '--fork-point', 'FETCH_HEAD', 'HEAD'],
-      workingDirectory: repoPath);
-  final String mergeBase = mergeBaseResult.stdout.trim() as String;
-  final ProcessResult masterResult = Process.runSync(
-      'git', <String>['diff', '--name-only', mergeBase],
-      workingDirectory: repoPath);
-  result.addAll(diffResult.stdout.split('\n').where(isNonEmptyString) as Iterable<String>);
-  result.addAll(diffCachedResult.stdout.split('\n').where(isNonEmptyString) as Iterable<String>);
-  result.addAll(masterResult.stdout.split('\n').where(isNonEmptyString) as Iterable<String>);
-  return result.toList();
+  final Set<String> result = <String>{};
+  final ProcessRunnerResult diffResult = await processRunner.runProcess(
+      <String>['git', 'diff', '--name-only', '--diff-filter=ACMRT', if (branch.isNotEmpty) branch]);
+
+  result.addAll(utf8.decode(diffResult.stdout).split('\n').where(isNonEmptyString));
+  return result.map<File>((String filePath) => File(path.join(repoPath.path, filePath))).toList();
 }
 
-Future<List<String>> dirContents(String repoPath) {
-  final Directory dir = Directory(repoPath);
-  final List<String> files = <String>[];
-  final Completer<List<String>> completer = Completer<List<String>>();
+Future<List<File>> dirContents(Directory dir) {
+  final List<File> files = <File>[];
+  final Completer<List<File>> completer = Completer<List<File>>();
   final Stream<FileSystemEntity> lister = dir.list(recursive: true);
-  lister.listen((FileSystemEntity file) => files.add(file.path),
-      // should also register onError
-      onDone: () => completer.complete(files));
+  lister.listen((FileSystemEntity file) => file is File ? files.add(file) : null,
+      onError: (Object e) => completer.completeError(e), onDone: () => completer.complete(files));
   return completer.future;
 }
 
-Future<bool> shouldIgnoreFile(String path) async {
-  if (path.contains('/third_party/')) {
+File buildFileAsRepoFile(String buildFile, Directory repoPath) {
+  // Removes the "../../flutter" from the build files to make it relative to the flutter
+  // dir.
+  final String relativeBuildFile = path.joinAll(path.split(buildFile).sublist(3));
+  final File result = File(path.join(repoPath.absolute.path, relativeBuildFile));
+  print('Build file: $buildFile => ${result.path}');
+  return result;
+}
+
+Future<bool> shouldIgnoreFile(File file) async {
+  if (path.split(file.path).contains('third_party')) {
     return true;
   } else {
     final RegExp exp = RegExp(r'//.*FLUTTER_NOLINT');
-    await for (String line in File(path.substring(6))
-        .openRead()
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())) {
+    await for (String line
+        in file.openRead().transform(utf8.decoder).transform(const LineSplitter())) {
       if (exp.hasMatch(line)) {
         return true;
       } else if (line.isNotEmpty && line[0] != '\n' && line[0] != '/') {
@@ -376,8 +368,8 @@ Future<bool> shouldIgnoreFile(String path) async {
 }
 
 void _usage(ArgParser parser) {
-  print('lint.dart [--help] [--lint-all] [--verbose] [--diff-branch]');
-  print(parser.usage);
+  stderr.writeln('lint.dart [--help] [--lint-all] [--verbose] [--diff-branch]');
+  stderr.writeln(parser.usage);
   exit(0);
 }
 
@@ -405,14 +397,24 @@ void main(List<String> arguments) async {
     _usage(parser);
   }
 
-  final String buildCommandsPath = options['compile-commands'] as String;
-  final String repoPath = options['repo'] as String;
+  final File buildCommandsPath = File(options['compile-commands'] as String);
+  if (!buildCommandsPath.existsSync()) {
+    stderr.writeln("Build commands path ${buildCommandsPath.absolute.path} doesn't exist.");
+    _usage(parser);
+  }
+
+  final Directory repoPath = Directory(options['repo'] as String);
+  if (!repoPath.existsSync()) {
+    stderr.writeln("Repo path ${repoPath.absolute.path} doesn't exist.");
+    _usage(parser);
+  }
+
   final String checksArg = options.wasParsed('checks') ? options['checks'] as String : '';
   final String checks = checksArg.isNotEmpty ? '--checks=$checksArg' : '--config=';
   final bool lintAll =
       Platform.environment['FLUTTER_LINT_ALL'] != null || options['lint-all'] as bool;
-  final List<String> changedFiles =
-      lintAll ? await dirContents(repoPath) : getListOfChangedFiles(repoPath);
+  final List<File> changedFiles =
+      lintAll ? await dirContents(repoPath) : await getListOfChangedFiles(repoPath);
 
   if (verbose) {
     print('Checking lint in repo at $repoPath.');
@@ -427,7 +429,7 @@ void main(List<String> arguments) async {
   }
 
   final List<dynamic> buildCommandMaps =
-      jsonDecode(await File(buildCommandsPath).readAsString()) as List<dynamic>;
+      jsonDecode(await buildCommandsPath.readAsString()) as List<dynamic>;
   final List<Command> buildCommands = buildCommandMaps
       .map<Command>((dynamic x) => parseCommand(x as Map<String, dynamic>))
       .toList();
@@ -448,11 +450,11 @@ void main(List<String> arguments) async {
   for (Command command in changedFileBuildCommands) {
     if (!(await shouldIgnoreFile(command.file))) {
       final String tidyArgs = calcTidyArgs(command);
-      final List<String> args = <String>[command.file, checks, '--'];
+      final List<String> args = <String>[command.file.path, checks, '--'];
       args.addAll(tidyArgs?.split(' ') ?? <String>[]);
       print('🔶 linting ${command.file}');
-      jobs.add(WorkerJob(command.file, <String>[tidyPath, ...args],
-          workingDirectory: Directory(command.directory)));
+      jobs.add(WorkerJob(command.file.path, <String>[tidyPath, ...args],
+          workingDirectory: command.directory));
     } else {
       print('🔷 ignoring ${command.file}');
     }
@@ -467,6 +469,9 @@ void main(List<String> arguments) async {
     print('❌ Failures for ${job.name}:');
     print(utf8.decode(results[job].stdout));
     exitCode = 1;
+  }
+  if (exitCode == 0) {
+    print('No lint problems found.');
   }
   exit(exitCode);
 }
