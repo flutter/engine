@@ -46,6 +46,6 @@ Picture _drawTestPictureWithCircle(Rect region) {
       region,
       Paint()
         ..style = PaintingStyle.fill
-        ..color = Color(0xFF00FF00);
-  return pictureRecorder.endRecording();
+        ..color = Color(0xFF00FF00));
+  return recorder.endRecording();
 }
