@@ -22,8 +22,12 @@ class CkPicture implements ui.Picture {
 
   @override
   Future<ui.Image> toImage(int width, int height) {
-    throw UnsupportedError(
-        'Picture.toImage not yet implemented for CanvasKit and HTML');
+    final js.JsObject skSurface = canvasKit.callMethod('MakeSurface', <int>[width, height]);
+    final js.JsObject skCanvas = skSurface.callMethod('getCanvas');
+    skCanvas.callMethod('drawPicture', <js.JsObject>[skPicture]);
+    final js.JsObject skImage = skSurface.callMethod('makeImageSnapshot');
+    skSurface.callMethod('dispose');
+    return SkImage(skImage);
   }
 }
 
