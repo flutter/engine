@@ -6,10 +6,11 @@
 part of engine;
 
 class CkPicture implements ui.Picture {
-  final SkiaObject skiaObject;
+  final SkiaObject<SkPicture> skiaObject;
   final ui.Rect? cullRect;
 
-  CkPicture(SkPicture picture, this.cullRect);
+CkPicture(SkPicture picture, this.cullRect)
+      : skiaObject = SkPictureSkiaObject(picture);
 
   @override
   int get approximateBytesUsed => 0;
@@ -27,5 +28,14 @@ class CkPicture implements ui.Picture {
     final js.JsObject skImage = skSurface.callMethod('makeImageSnapshot');
     skSurface.callMethod('dispose');
     return CkImage(skImage);
+  }
+}
+
+class SkPictureSkiaObject extends OneShotSkiaObject<SkPicture> {
+  SkPictureSkiaObject(SkPicture picture) : super(picture);
+
+  @override
+  void delete() {
+    rawSkiaObject?.delete();
   }
 }
