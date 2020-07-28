@@ -327,8 +327,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   ResetAnchor(embedded_view.layer);
   ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
 
-  CGFloat screenScale = [UIScreen mainScreen].scale;
-
   // Reverse the offset of the clipView.
   // The clipView's frame includes the final translate of the final transform matrix.
   // So we need to revese this translate so the platform view can layout at the correct offset.
