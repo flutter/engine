@@ -409,6 +409,7 @@ String getBlockedTestsListMapKey(String browser) =>
 /// Note that integration tests are only running on chrome for now.
 const Map<String, List<String>> blockedTestsListsMap = <String, List<String>>{
   'chrome-linux': [
+    'target_platform_linux_e2e.dart',
     'target_platform_android_e2e.dart',
     'target_platform_ios_e2e.dart',
     'target_platform_macos_e2e.dart',
@@ -426,6 +427,7 @@ const Map<String, List<String>> blockedTestsListsMap = <String, List<String>>{
   ],
   'firefox-linux': [
     'target_platform_android_e2e.dart',
+    'target_platform_linux_e2e.dart',
     'target_platform_ios_e2e.dart',
     'target_platform_macos_e2e.dart',
   ],
