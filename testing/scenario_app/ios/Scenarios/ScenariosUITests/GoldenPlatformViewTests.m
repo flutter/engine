@@ -60,7 +60,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
   if (![golden compareGoldenToImage:screenshot.image]) {
     XCTAttachment* goldenAttachment;
-    goldenAttachment = [XCTAttachment attachmentWithImage:screenshot.image];
+    goldenAttachment = [XCTAttachment attachmentWithImage:golden.image];
     goldenAttachment.name = @"current_golden";
     goldenAttachment.lifetime = XCTAttachmentLifetimeKeepAlways;
     [self addAttachment:goldenAttachment];
