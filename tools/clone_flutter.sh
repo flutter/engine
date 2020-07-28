@@ -19,14 +19,10 @@ cd $ENGINE_PATH/src/flutter
 # Special handling of release branches. We would like to run the tests against
 # the release branch of flutter.
 #
-# On presubmit, we can get the branch name from the `CIRRUS_BASE_BRANCH` flag.
-# During the commit tests the base branch value is empty, instead
-# `CIRRUS_BRANCH` has the correct branch name.
-ENGINE_BRANCH_NAME="$CIRRUS_BASE_BRANCH"
-if [[ -z "$CIRRUS_BASE_BRANCH" ]]; then
-  echo "Running post commit tests use CIRRUS_BRANCH instead."
-  ENGINE_BRANCH_NAME="$CIRRUS_BRANCH"
-fi
+# This is a shortcut for the release branch, since we didn't address this part
+# in LUCI yet.
+ENGINE_BRANCH_NAME="flutter-1.20-candidate.7"
+
 versionregex="^v[[:digit:]]+\."
 releasecandidateregex="^flutter-[[:digit:]]+\.[[:digit:]]+-candidate\.[[:digit:]]+$"
 ON_RELEASE_BRANCH=false
