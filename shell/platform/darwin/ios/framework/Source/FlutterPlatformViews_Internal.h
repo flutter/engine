@@ -18,7 +18,7 @@
 
 // A UIView acts as a clipping mask for the |ChildClippingView|.
 //
-// On |DrawRect:|, this view performs a series of clipping operations and sets the alpha channel
+// On the [UIView drawRect:] method, this view performs a series of clipping operations and sets the alpha channel
 // to the final resulting area to be 1; it also sets the "clipped out" area's alpha channel to be 0.
 //
 // When a UIView sets a |FlutterClippingMaskView| as its `maskView`, the alpha channel of the UIView
