@@ -327,21 +327,13 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   ResetAnchor(embedded_view.layer);
   ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
 
-  // Reverse the offset of the clipView.
-  // The clipView's frame includes the final translate of the final transform matrix.
-  // So we need to revese this translate so the platform view can layout at the correct offset.
-  CATransform3D finalTransform =
-      CATransform3DMakeTranslation(-clipView.frame.origin.x, -clipView.frame.origin.y, 0);
-  // Reverse scale based on screen scale.
-  //
   // The UIKit frame is set based on the logical resolution instead of physical.
   // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
   // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
   // 500 points in UIKit. And until this point, we did all the calculation based on the flow
   // resolution. So we need to scale down to match UIKit's logical resolution.
   CGFloat screenScale = [UIScreen mainScreen].scale;
-  finalTransform = CATransform3DConcat(CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1),
-                                       finalTransform);
+  CATransform3D finalTransform = CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1);
 
   // Mask view needs to be full screen because we might draw platform view pixels outside of the
   // `ChildClippingView`. Since the mask view's frame will be based on the `clipView`'s coordinate
@@ -373,7 +365,15 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
     }
     ++iter;
   }
-  embedded_view.layer.transform = finalTransform;
+  // Reverse the offset of the clipView.
+  // The clipView's frame includes the final translate of the final transform matrix.
+  // So we need to revese this translate so the platform view can layout at the correct offset.
+  //
+  // Note that we don't apply this transform matrix the clippings because clippings happen on the
+  // mask view, whose origin is alwasy (0,0) to the flutter_view.
+  CATransform3D reverseTranslate =
+      CATransform3DMakeTranslation(-clipView.frame.origin.x, -clipView.frame.origin.y, 0);
+  embedded_view.layer.transform = CATransform3DConcat(finalTransform, reverseTranslate);
   clipView.maskView = maskView;
 }
 
