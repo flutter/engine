@@ -5,8 +5,6 @@
 ///
 /// User environment variable FLUTTER_LINT_ALL to run on all files.
 
-// @dart = 2.9
-
 import 'dart:async' show Completer;
 import 'dart:convert' show jsonDecode, utf8, LineSplitter;
 import 'dart:io'
@@ -22,6 +20,8 @@ import 'dart:io'
         stderr,
         stdout;
 
+import 'package:args/args.dart';
+
 Platform defaultPlatform = Platform();
 
 /// Exception class for when a process fails to run, so we can catch
@@ -30,7 +30,7 @@ class ProcessRunnerException implements Exception {
   ProcessRunnerException(this.message, {this.result});
 
   final String message;
-  final ProcessResult? result;
+  final ProcessResult result;
 
   int get exitCode => result?.exitCode ?? -1;
 
@@ -47,8 +47,7 @@ class ProcessRunnerException implements Exception {
 }
 
 class ProcessRunnerResult {
-  const ProcessRunnerResult(
-      this.exitCode, this.stdout, this.stderr, this.output);
+  const ProcessRunnerResult(this.exitCode, this.stdout, this.stderr, this.output);
   final int exitCode;
   final List<int> stdout;
   final List<int> stderr;
@@ -65,11 +64,10 @@ class ProcessRunner {
 
   /// Sets the default directory used when `workingDirectory` is not specified
   /// to [runProcess].
-  final Directory? defaultWorkingDirectory;
+  final Directory defaultWorkingDirectory;
 
   /// The environment to run processes with.
-  Map<String, String> environment =
-      Map<String, String>.from(Platform.environment);
+  Map<String, String> environment = Map<String, String>.from(Platform.environment);
 
   /// Run the command and arguments in `commandLine` as a sub-process from
   /// `workingDirectory` if set, or the [defaultWorkingDirectory] if not. Uses
@@ -79,15 +77,14 @@ class ProcessRunner {
   /// command completes with a a non-zero exit code.
   Future<ProcessRunnerResult> runProcess(
     List<String> commandLine, {
-    Directory? workingDirectory,
+    Directory workingDirectory,
     bool printOutput = true,
     bool failOk = false,
-    Stream<List<int>>? stdin,
+    Stream<List<int>> stdin,
   }) async {
     workingDirectory ??= defaultWorkingDirectory ?? Directory.current;
     if (printOutput) {
-      stderr.write(
-          'Running "${commandLine.join(' ')}" in ${workingDirectory.path}.\n');
+      stderr.write('Running "${commandLine.join(' ')}" in ${workingDirectory.path}.\n');
     }
     final List<int> stdoutOutput = <int>[];
     final List<int> stderrOutput = <int>[];
@@ -96,11 +93,11 @@ class ProcessRunner {
     final Completer<void> stderrComplete = Completer<void>();
     final Completer<void> stdinComplete = Completer<void>();
 
-    Process? process;
+    Process process;
     Future<int> allComplete() async {
       if (stdin != null) {
         await stdinComplete.future;
-        await process?.stdin.close();
+        await process?.stdin?.close();
       }
       await stderrComplete.future;
       await stdoutComplete.future;
@@ -117,7 +114,7 @@ class ProcessRunner {
       );
       if (stdin != null) {
         stdin.listen((List<int> data) {
-          process?.stdin.add(data);
+          process?.stdin?.add(data);
         }, onDone: () async => stdinComplete.complete());
       }
       process.stdout.listen(
@@ -141,13 +138,11 @@ class ProcessRunner {
         onDone: () async => stderrComplete.complete(),
       );
     } on ProcessException catch (e) {
-      final String message =
-          'Running "${commandLine.join(' ')}" in ${workingDirectory.path} '
+      final String message = 'Running "${commandLine.join(' ')}" in ${workingDirectory.path} '
           'failed with:\n${e.toString()}';
       throw ProcessRunnerException(message);
     } on ArgumentError catch (e) {
-      final String message =
-          'Running "${commandLine.join(' ')}" in ${workingDirectory.path} '
+      final String message = 'Running "${commandLine.join(' ')}" in ${workingDirectory.path} '
           'failed with:\n${e.toString()}';
       throw ProcessRunnerException(message);
     }
@@ -158,11 +153,11 @@ class ProcessRunner {
           'Running "${commandLine.join(' ')}" in ${workingDirectory.path} failed';
       throw ProcessRunnerException(
         message,
-        result: ProcessResult(0, exitCode, null, 'exited with code $exitCode\n${utf8.decode(combinedOutput)}'),
+        result: ProcessResult(
+            0, exitCode, null, 'exited with code $exitCode\n${utf8.decode(combinedOutput)}'),
       );
     }
-    return ProcessRunnerResult(
-        exitCode, stdoutOutput, stderrOutput, combinedOutput);
+    return ProcessRunnerResult(exitCode, stdoutOutput, stderrOutput, combinedOutput);
   }
 }
 
@@ -181,7 +176,7 @@ class WorkerJob {
   final List<String> args;
 
   /// The working directory that the command should be executed in.
-  final Directory? workingDirectory;
+  final Directory workingDirectory;
 
   /// Whether or not this command should print it's stdout when it runs.
   final bool printOutput;
@@ -195,32 +190,28 @@ class WorkerJob {
 /// A pool of worker processes that will keep [numWorkers] busy until all of the
 /// (presumably single-threaded) processes are finished.
 class ProcessPool {
-  ProcessPool({int? numWorkers})
-      : numWorkers = numWorkers ?? Platform.numberOfProcessors;
+  ProcessPool({int numWorkers}) : numWorkers = numWorkers ?? Platform.numberOfProcessors;
 
   ProcessRunner processRunner = ProcessRunner();
   int numWorkers;
   List<WorkerJob> pendingJobs = <WorkerJob>[];
   List<WorkerJob> failedJobs = <WorkerJob>[];
-  Map<WorkerJob, Future<List<int>>> inProgressJobs =
-      <WorkerJob, Future<List<int>>>{};
-  Map<WorkerJob, ProcessRunnerResult> completedJobs =
-      <WorkerJob, ProcessRunnerResult>{};
+  Map<WorkerJob, Future<List<int>>> inProgressJobs = <WorkerJob, Future<List<int>>>{};
+  Map<WorkerJob, ProcessRunnerResult> completedJobs = <WorkerJob, ProcessRunnerResult>{};
   Completer<Map<WorkerJob, ProcessRunnerResult>> completer =
       Completer<Map<WorkerJob, ProcessRunnerResult>>();
 
   void _printReport() {
-    final int totalJobs =
-        completedJobs.length + inProgressJobs.length + pendingJobs.length;
-    final String percent = totalJobs == 0
-        ? '100'
-        : ((100 * completedJobs.length) ~/ totalJobs).toString().padLeft(3);
+    final int totalJobs = completedJobs.length + inProgressJobs.length + pendingJobs.length;
+    final String percent =
+        totalJobs == 0 ? '100' : ((100 * completedJobs.length) ~/ totalJobs).toString().padLeft(3);
     final String completed = completedJobs.length.toString().padLeft(3);
     final String total = totalJobs.toString().padRight(3);
     final String inProgress = inProgressJobs.length.toString().padLeft(2);
     final String pending = pendingJobs.length.toString().padLeft(3);
     stdout.write(
-        'Jobs: $percent% done, $completed/$total completed, $inProgress in progress, $pending pending.  \r');
+        'Jobs: $percent% done, $completed/$total completed, $inProgress in '
+        'progress, $pending pending.  \r');
   }
 
   Future<List<int>> _scheduleJob(WorkerJob job) async {
@@ -256,8 +247,7 @@ class ProcessPool {
     return jobDone.future;
   }
 
-  Future<Map<WorkerJob, ProcessRunnerResult>> startWorkers(
-      List<WorkerJob> jobs) async {
+  Future<Map<WorkerJob, ProcessRunnerResult>> startWorkers(List<WorkerJob> jobs) async {
     assert(inProgressJobs.isEmpty);
     assert(failedJobs.isEmpty);
     assert(completedJobs.isEmpty);
@@ -279,7 +269,8 @@ class ProcessPool {
   }
 }
 
-String _linterOutputHeader = '''┌──────────────────────────┐
+String _linterOutputHeader = '''
+┌──────────────────────────┐
 │ Engine Clang Tidy Linter │
 └──────────────────────────┘
 The following errors have been reported by the Engine Clang Tidy Linter.  For
@@ -300,7 +291,7 @@ Command parseCommand(Map<String, dynamic> map) {
     ..file = map['file'] as String;
 }
 
-String? calcTidyArgs(Command command) {
+String calcTidyArgs(Command command) {
   String result = command.command;
   result = result.replaceAll(RegExp(r'\S*clang/bin/clang'), '');
   result = result.replaceAll(RegExp(r'-MF \S*'), '');
@@ -329,15 +320,13 @@ bool containsAny(String str, List<String> queries) {
 /// Returns a list of all files with current changes or differ from `master`.
 List<String> getListOfChangedFiles(String repoPath) {
   final Set<String> result = <String>{};
-  final ProcessResult diffResult = Process.runSync(
-      'git', <String>['diff', '--name-only'],
-      workingDirectory: repoPath);
+  final ProcessResult diffResult =
+      Process.runSync('git', <String>['diff', '--name-only'], workingDirectory: repoPath);
   final ProcessResult diffCachedResult = Process.runSync(
       'git', <String>['diff', '--cached', '--name-only'],
       workingDirectory: repoPath);
 
-  final ProcessResult fetchResult =
-      Process.runSync('git', <String>['fetch', 'upstream', 'master']);
+  final ProcessResult fetchResult = Process.runSync('git', <String>['fetch', 'upstream', 'master']);
   if (fetchResult.exitCode != 0) {
     Process.runSync('git', <String>['fetch', 'origin', 'master']);
   }
@@ -348,12 +337,9 @@ List<String> getListOfChangedFiles(String repoPath) {
   final ProcessResult masterResult = Process.runSync(
       'git', <String>['diff', '--name-only', mergeBase],
       workingDirectory: repoPath);
-  result.addAll(diffResult.stdout.split('\n').where(isNonEmptyString)
-      as Iterable<String>);
-  result.addAll(diffCachedResult.stdout.split('\n').where(isNonEmptyString)
-      as Iterable<String>);
-  result.addAll(masterResult.stdout.split('\n').where(isNonEmptyString)
-      as Iterable<String>);
+  result.addAll(diffResult.stdout.split('\n').where(isNonEmptyString) as Iterable<String>);
+  result.addAll(diffCachedResult.stdout.split('\n').where(isNonEmptyString) as Iterable<String>);
+  result.addAll(masterResult.stdout.split('\n').where(isNonEmptyString) as Iterable<String>);
   return result.toList();
 }
 
@@ -389,18 +375,56 @@ Future<bool> shouldIgnoreFile(String path) async {
   }
 }
 
-void main(List<String> arguments) async {
-  final String buildCommandsPath = arguments[0];
-  final String repoPath = arguments[1];
-  final String checks =
-      arguments.length >= 3 ? '--checks=${arguments[2]}' : '--config=';
-  final List<String> changedFiles =
-      Platform.environment['FLUTTER_LINT_ALL'] != null
-          ? await dirContents(repoPath)
-          : getListOfChangedFiles(repoPath);
+void _usage(ArgParser parser) {
+  print('lint.dart [--help] [--lint-all] [--verbose] [--diff-branch]');
+  print(parser.usage);
+  exit(0);
+}
 
-  /// TODO(gaaclarke): Convert FLUTTER_LINT_ALL to a command-line flag and add
-  /// `--verbose` flag.
+bool verbose = false;
+
+void main(List<String> arguments) async {
+  final ArgParser parser = ArgParser();
+  parser.addFlag('help', help: 'Print help.');
+  parser.addFlag('lint-all',
+      help: 'lint all of the sources, regardless of FLUTTER_NOLINT.', defaultsTo: false);
+  parser.addFlag('verbose', help: 'Print verbose output.', defaultsTo: verbose);
+  parser.addOption('repo', help: 'Use the given path as the repo path');
+  parser.addOption('compile-commands',
+      help: 'Use the given path as the source of compile_commands.json. This '
+          'file is created by running tools/gn');
+  parser.addOption('checks',
+      help: 'Perform the given checks on the code. Defaults to the empty '
+          'string, indicating all checks should be performed.',
+      defaultsTo: '');
+  final ArgResults options = parser.parse(arguments);
+
+  verbose = options['verbose'] as bool;
+
+  if (options['help'] as bool) {
+    _usage(parser);
+  }
+
+  final String buildCommandsPath = options['compile-commands'] as String;
+  final String repoPath = options['repo'] as String;
+  final String checksArg = options.wasParsed('checks') ? options['checks'] as String : '';
+  final String checks = checksArg.isNotEmpty ? '--checks=$checksArg' : '--config=';
+  final bool lintAll =
+      Platform.environment['FLUTTER_LINT_ALL'] != null || options['lint-all'] as bool;
+  final List<String> changedFiles =
+      lintAll ? await dirContents(repoPath) : getListOfChangedFiles(repoPath);
+
+  if (verbose) {
+    print('Checking lint in repo at $repoPath.');
+    if (checksArg.isNotEmpty) {
+      print('Checking for specific checks: $checks.');
+    }
+    if (lintAll) {
+      print('Checking all ${changedFiles.length} files the repo dir.');
+    } else {
+      print('Dectected ${changedFiles.length} files that have changed');
+    }
+  }
 
   final List<dynamic> buildCommandMaps =
       jsonDecode(await File(buildCommandsPath).readAsString()) as List<dynamic>;
@@ -410,16 +434,20 @@ void main(List<String> arguments) async {
   final Command firstCommand = buildCommands[0];
   final String tidyPath = calcTidyPath(firstCommand);
   assert(tidyPath.isNotEmpty);
-  final List<Command> changedFileBuildCommands = buildCommands
-      .where((Command x) => containsAny(x.file, changedFiles))
-      .toList();
+  final List<Command> changedFileBuildCommands =
+      buildCommands.where((Command x) => containsAny(x.file, changedFiles)).toList();
+
+  if (verbose) {
+    print('Found ${changedFileBuildCommands.length} files that have build '
+        'commands associated with them and can be lint checked.');
+  }
 
   print(_linterOutputHeader);
   int exitCode = 0;
   final List<WorkerJob> jobs = <WorkerJob>[];
   for (Command command in changedFileBuildCommands) {
     if (!(await shouldIgnoreFile(command.file))) {
-      final String? tidyArgs = calcTidyArgs(command);
+      final String tidyArgs = calcTidyArgs(command);
       final List<String> args = <String>[command.file, checks, '--'];
       args.addAll(tidyArgs?.split(' ') ?? <String>[]);
       print('🔶 linting ${command.file}');
@@ -430,15 +458,14 @@ void main(List<String> arguments) async {
     }
   }
   final ProcessPool pool = ProcessPool();
-  final Map<WorkerJob, ProcessRunnerResult> results =
-      await pool.startWorkers(jobs);
+  final Map<WorkerJob, ProcessRunnerResult> results = await pool.startWorkers(jobs);
   print('\n');
   for (final WorkerJob job in results.keys) {
-    if (results[job]!.stdout.isEmpty) {
+    if (results[job].stdout.isEmpty) {
       continue;
     }
     print('❌ Failures for ${job.name}:');
-    print(utf8.decode(results[job]!.stdout));
+    print(utf8.decode(results[job].stdout));
     exitCode = 1;
   }
   exit(exitCode);
