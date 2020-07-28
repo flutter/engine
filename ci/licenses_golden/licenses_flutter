@@ -24,6 +24,8 @@ FILE: ../../../flutter/common/settings.cc
 FILE: ../../../flutter/common/settings.h
 FILE: ../../../flutter/common/task_runners.cc
 FILE: ../../../flutter/common/task_runners.h
+FILE: ../../../flutter/dev/engine_prod_builders.json
+FILE: ../../../flutter/dev/engine_try_builders.json
 FILE: ../../../flutter/flow/compositor_context.cc
 FILE: ../../../flutter/flow/compositor_context.h
 FILE: ../../../flutter/flow/embedded_view_params_unittests.cc
