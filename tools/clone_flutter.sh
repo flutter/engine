@@ -23,7 +23,7 @@ cd $ENGINE_PATH/src/flutter
 # During the commit tests the base branch value is empty, instead
 # `CIRRUS_BRANCH` has the correct branch name.
 ENGINE_BRANCH_NAME="$CIRRUS_BASE_BRANCH"
-if [[ -z "$CIRRUS_BASE_BRANCH" ]] then
+if [[ -z "$CIRRUS_BASE_BRANCH" ]]; then
   echo "Running post commit tests use CIRRUS_BRANCH instead."
   ENGINE_BRANCH_NAME="$CIRRUS_BRANCH"
 fi
