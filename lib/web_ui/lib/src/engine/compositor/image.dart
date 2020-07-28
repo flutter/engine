@@ -5,34 +5,13 @@
 // @dart = 2.10
 part of engine;
 
-/// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
+/// Instantiates a [ui.Codec] backed by an `SkImage` from Skia.
 void skiaInstantiateImageCodec(Uint8List list, Callback<ui.Codec> callback,
     [int? width, int? height, int? format, int? rowBytes]) {
-  final SkAnimatedImage skAnimatedImage =
-      canvasKit.MakeAnimatedImageFromEncoded(list);
+  final SkAnimatedImage skAnimatedImage = canvasKit.MakeAnimatedImageFromEncoded(list);
   final CkAnimatedImage animatedImage = CkAnimatedImage(skAnimatedImage);
   final CkAnimatedImageCodec codec = CkAnimatedImageCodec(animatedImage);
   callback(codec);
-}
-
-/// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia after requesting from URI.
-void skiaInstantiateWebImageCodec(String src, Callback<ui.Codec> callback,
-    WebOnlyImageCodecChunkCallback? chunkCallback) {
-  chunkCallback?.call(0, 100);
-  //TODO: Switch to using MakeImageFromCanvasImageSource when animated images are supported.
-  html.HttpRequest.request(
-    src,
-    responseType: "arraybuffer",
-  ).then((html.HttpRequest response) {
-    chunkCallback?.call(100, 100);
-    final Uint8List list =
-        new Uint8List.view((response.response as ByteBuffer));
-    final SkAnimatedImage skAnimatedImage =
-        canvasKit.MakeAnimatedImageFromEncoded(list);
-    final CkAnimatedImage animatedImage = CkAnimatedImage(skAnimatedImage);
-    final CkAnimatedImageCodec codec = CkAnimatedImageCodec(animatedImage);
-    callback(codec);
-  });
 }
 
 /// A wrapper for `SkAnimatedImage`.
@@ -72,19 +51,20 @@ class CkAnimatedImage implements ui.Image {
     Uint8List bytes;
 
     if (format == ui.ImageByteFormat.rawRgba) {
-      final js.JsObject imageInfo = js.JsObject.jsify(<String, dynamic>{
-        'alphaType': canvasKit['AlphaType']['Premul'],
-        'colorType': canvasKit['ColorType']['RGBA_8888'],
+      final SkImageInfo imageInfo = js.JsObject.jsify(<String, dynamic>{
+        'alphaType': canvasKit.AlphaType.Premul,
+        'colorType': canvasKit.ColorType.RGBA_8888,
         'width': width,
         'height': height,
       });
-      bytes = skImage!.callMethod('readPixels', <dynamic>[imageInfo, 0, 0]);
+      bytes = _skAnimatedImage.readPixels(imageInfo, 0, 0);
     } else {
-      final js.JsObject skData = skImage!.callMethod('encodeToData'); //defaults to PNG 100%
-      bytes = canvasKit.callMethod('getSkDataBytes', <js.JsObject>[skData]);
+      final SkData skData = _skAnimatedImage.encodeToData(); //defaults to PNG 100%
+      // make a copy that we can return
+      bytes = Uint8List.fromList(canvasKit.getSkDataBytes(skData));
     }
 
-    final ByteData data = Uint8List.fromList(bytes).buffer.asByteData(0, bytes.length);
+    final ByteData data = bytes.buffer.asByteData(0, bytes.length);
     return Future<ByteData>.value(data);
   }
 }
@@ -112,19 +92,20 @@ class CkImage implements ui.Image {
     Uint8List bytes;
 
     if (format == ui.ImageByteFormat.rawRgba) {
-      final js.JsObject imageInfo = js.JsObject.jsify(<String, dynamic>{
-        'alphaType': canvasKit['AlphaType']['Premul'],
-        'colorType': canvasKit['ColorType']['RGBA_8888'],
+      final SkImageInfo imageInfo = js.JsObject.jsify(<String, dynamic>{
+        'alphaType': canvasKit.AlphaType.Premul,
+        'colorType': canvasKit.ColorType.RGBA_8888,
         'width': width,
         'height': height,
       });
-      bytes = _skAnimatedImage!.callMethod('readPixels', <dynamic>[imageInfo, 0, 0]);
+      bytes = skImage.readPixels(imageInfo, 0, 0);
     } else {
-      final js.JsObject skData = _skAnimatedImage!.callMethod('encodeToData'); //defaults to PNG 100%
-      bytes = canvasKit.callMethod('getSkDataBytes', <js.JsObject>[skData]);
+      final SkData skData = skImage.encodeToData(); //defaults to PNG 100%
+      // make a copy that we can return
+      bytes = Uint8List.fromList(canvasKit.getSkDataBytes(skData));
     }
 
-    final ByteData data = Uint8List.fromList(bytes).buffer.asByteData(0, bytes.length);
+    final ByteData data = bytes.buffer.asByteData(0, bytes.length);
     return Future<ByteData>.value(data);
   }
 }

@@ -30,6 +30,8 @@ class CanvasKit {
   external SkBlurStyleEnum get BlurStyle;
   external SkTileModeEnum get TileMode;
   external SkFillTypeEnum get FillType;
+  external SkAlphaTypeEnum get AlphaType;
+  external SkColorTypeEnum get ColorType;
   external SkPathOpEnum get PathOp;
   external SkClipOpEnum get ClipOp;
   external SkPointModeEnum get PointMode;
@@ -61,6 +63,13 @@ class CanvasKit {
   external SkParagraphStyle ParagraphStyle(
       SkParagraphStyleProperties properties);
   external SkTextStyle TextStyle(SkTextStyleProperties properties);
+  external SkSurface MakeSurface(
+    int width,
+    int height,
+  );
+  external Uint8List getSkDataBytes(
+    SkData skData,
+  );
 
   // Text decoration enum is embedded in the CanvasKit object itself.
   external int get NoDecoration;
@@ -127,6 +136,7 @@ class SkSurface {
   external int width();
   external int height();
   external void dispose();
+  external SkImage makeImageSnapshot();
 }
 
 @JS()
@@ -622,6 +632,66 @@ SkTileMode toSkTileMode(ui.TileMode mode) {
 }
 
 @JS()
+class SkAlphaTypeEnum {
+  external SkAlphaType get Opaque;
+  external SkAlphaType get Premul;
+  external SkAlphaType get Unpremul;
+}
+
+@JS()
+class SkAlphaType {
+  external int get value;
+}
+
+final List<SkAlphaType> _skAlphaTypes = <SkAlphaType>[
+  canvasKit.AlphaType.Opaque,
+  canvasKit.AlphaType.Premul,
+  canvasKit.AlphaType.Unpremul,
+];
+
+//SkAlphaType toSkAlphaType(ui.AlphaType alphaType) {
+//  return _skAlphaTypes[alphaType.index];
+//}
+
+@JS()
+class SkColorTypeEnum {
+  external SkColorType get Alpha_8;
+  external SkColorType get RGB_565;
+  external SkColorType get ARGB_4444;
+  external SkColorType get RGBA_8888;
+  external SkColorType get RGB_888x;
+  external SkColorType get BGRA_8888;
+  external SkColorType get RGBA_1010102;
+  external SkColorType get RGB_101010x;
+  external SkColorType get Gray_8;
+  external SkColorType get RGBA_F16;
+  external SkColorType get RGBA_F32;
+}
+
+@JS()
+class SkColorType {
+  external int get value;
+}
+
+final List<SkColorType> _skColorTypes = <SkColorType>[
+  canvasKit.ColorType.Alpha_8,
+  canvasKit.ColorType.RGB_565,
+  canvasKit.ColorType.ARGB_4444,
+  canvasKit.ColorType.RGBA_8888,
+  canvasKit.ColorType.RGB_888x,
+  canvasKit.ColorType.BGRA_8888,
+  canvasKit.ColorType.RGBA_1010102,
+  canvasKit.ColorType.RGB_101010x,
+  canvasKit.ColorType.Gray_8,
+  canvasKit.ColorType.RGBA_F16,
+  canvasKit.ColorType.RGBA_F32,
+];
+
+//SkColorType toSkColorType(ui.ColorType colorType) {
+//  return _skColorTypes[colorType.index];
+//}
+
+@JS()
 class SkAnimatedImage {
   external int getFrameCount();
 
@@ -631,6 +701,8 @@ class SkAnimatedImage {
   external SkImage getCurrentFrame();
   external int width();
   external int height();
+  external Uint8List readPixels(SkImageInfo imageInfo, int srcX, int srcY);
+  external SkData encodeToData();
 
   /// Deletes the C++ object.
   ///
@@ -644,6 +716,8 @@ class SkImage {
   external int width();
   external int height();
   external SkShader makeShader(SkTileMode tileModeX, SkTileMode tileModeY);
+  external Uint8List readPixels(SkImageInfo imageInfo, int srcX, int srcY);
+  external SkData encodeToData();
 }
 
 @JS()
