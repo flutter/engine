@@ -9,7 +9,7 @@ class CkPicture implements ui.Picture {
   final SkiaObject<SkPicture> skiaObject;
   final ui.Rect? cullRect;
 
-CkPicture(SkPicture picture, this.cullRect)
+  CkPicture(SkPicture picture, this.cullRect)
       : skiaObject = SkPictureSkiaObject(picture);
 
   @override
