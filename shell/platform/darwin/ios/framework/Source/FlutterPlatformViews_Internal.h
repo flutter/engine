@@ -16,7 +16,7 @@
 #include "flutter/shell/platform/darwin/ios/ios_context.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
-// A UIView acts as a clipping mask for the |ChildClippingView|.
+// A UIView that acts as a clipping mask for the |ChildClippingView|.
 //
 // On |DrawRect:|, this view performs a series of clipping operations and sets the alpha channel
 // to the final resulting area to be 1; it also sets the "clipped out" area's alpha channel to be 0.
