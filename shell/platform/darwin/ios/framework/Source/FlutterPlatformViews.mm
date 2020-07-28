@@ -339,13 +339,17 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
   // 500 points in UIKit. And until this point, we did all the calculation based on the flow
   // resolution. So we need to scale down to match UIKit's logical resolution.
+  CGFloat screenScale = [UIScreen mainScreen].scale;
   finalTransform = CATransform3DConcat(CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1),
                                        finalTransform);
 
   // Mask view needs to be full screen because we might draw platform view pixels outside of the
-  // `ChildClippingView`. The mask view is not displayed on the screen.
+  // `ChildClippingView`. Since the mask view's frame will be based on the `clipView`'s coordinate
+  // system, we need to convert the flutter_view's frame to the clipView's coordinate system. The
+  // mask view is not displayed on the screen.
+  CGRect maskViewFrame = [flutter_view_ convertRect:flutter_view_.get().frame toView:clipView];
   FlutterClippingMaskView* maskView =
-      [[[FlutterClippingMaskView alloc] initWithFrame:flutter_view_.get().bounds] autorelease];
+      [[[FlutterClippingMaskView alloc] initWithFrame:maskViewFrame] autorelease];
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
