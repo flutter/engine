@@ -51,16 +51,16 @@ class CkAnimatedImage implements ui.Image {
     Uint8List bytes;
 
     if (format == ui.ImageByteFormat.rawRgba) {
-      final js.JsObject imageInfo = js.JsObject.jsify(<String, dynamic>{
-        'alphaType': canvasKit['AlphaType']['Premul'],
-        'colorType': canvasKit['ColorType']['RGBA_8888'],
+      final SkImageInfo imageInfo = js.JsObject.jsify(<String, dynamic>{
+        'alphaType': canvasKit.AlphaType.Premul,
+        'colorType': canvasKit.ColorType.RGBA_8888,
         'width': width,
         'height': height,
       });
-      bytes = _skAnimatedImage!.callMethod('readPixels', <dynamic>[imageInfo, 0, 0]);
+      bytes = _skAnimatedImage.readPixels(imageInfo, 0, 0);
     } else {
-      final js.JsObject skData = _skAnimatedImage!.callMethod('encodeToData'); //defaults to PNG 100%
-      bytes = canvasKit.callMethod('getSkDataBytes', <js.JsObject>[skData]);
+      final SkData skData = _skAnimatedImage.encodeToData(); //defaults to PNG 100%
+      bytes = canvasKit.getSkDataBytes(skData);
     }
 
     final ByteData data = Uint8List.fromList(bytes).buffer.asByteData(0, bytes.length);
@@ -91,16 +91,16 @@ class CkImage implements ui.Image {
     Uint8List bytes;
 
     if (format == ui.ImageByteFormat.rawRgba) {
-      final js.JsObject imageInfo = js.JsObject.jsify(<String, dynamic>{
-        'alphaType': canvasKit['AlphaType']['Premul'],
-        'colorType': canvasKit['ColorType']['RGBA_8888'],
+      final SkImageInfo imageInfo = js.JsObject.jsify(<String, dynamic>{
+        'alphaType': canvasKit.AlphaType.Premul,
+        'colorType': canvasKit.ColorType.RGBA_8888,
         'width': width,
         'height': height,
       });
-      bytes = skImage!.callMethod('readPixels', <dynamic>[imageInfo, 0, 0]);
+      bytes = skImage.readPixels(imageInfo, 0, 0);
     } else {
-      final js.JsObject skData = skImage!.callMethod('encodeToData'); //defaults to PNG 100%
-      bytes = canvasKit.callMethod('getSkDataBytes', <js.JsObject>[skData]);
+      final SkData skData = skImage.encodeToData(); //defaults to PNG 100%
+      bytes = canvasKit.getSkDataBytes(skData);
     }
 
     final ByteData data = Uint8List.fromList(bytes).buffer.asByteData(0, bytes.length);

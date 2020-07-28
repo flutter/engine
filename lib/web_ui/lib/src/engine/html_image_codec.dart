@@ -134,8 +134,8 @@ class HtmlImage implements ui.Image {
 
   @override
   Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    if (imgElement.src.startsWith('data:')) {
-      final data = UriData.fromUri(Uri.parse(imgElement.src));
+    if (imgElement.src?.startsWith('data:') == true) {
+      final data = UriData.fromUri(Uri.parse(imgElement.src!));
       return Future.value(data.contentAsBytes().buffer.asByteData());
     } else {
       return Future.value(null);
