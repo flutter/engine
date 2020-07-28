@@ -51,12 +51,12 @@ class CkAnimatedImage implements ui.Image {
     Uint8List bytes;
 
     if (format == ui.ImageByteFormat.rawRgba) {
-      final SkImageInfo imageInfo = js.JsObject.jsify(<String, dynamic>{
-        'alphaType': canvasKit.AlphaType.Premul,
-        'colorType': canvasKit.ColorType.RGBA_8888,
-        'width': width,
-        'height': height,
-      });
+      final SkImageInfo imageInfo = SkImageInfo(
+        alphaType: canvasKit.AlphaType.Premul,
+        colorType: canvasKit.ColorType.RGBA_8888,
+        width: width,
+        height: height,
+      );
       bytes = _skAnimatedImage.readPixels(imageInfo, 0, 0);
     } else {
       final SkData skData = _skAnimatedImage.encodeToData(); //defaults to PNG 100%
@@ -92,12 +92,12 @@ class CkImage implements ui.Image {
     Uint8List bytes;
 
     if (format == ui.ImageByteFormat.rawRgba) {
-      final SkImageInfo imageInfo = js.JsObject.jsify(<String, dynamic>{
-        'alphaType': canvasKit.AlphaType.Premul,
-        'colorType': canvasKit.ColorType.RGBA_8888,
-        'width': width,
-        'height': height,
-      });
+      final SkImageInfo imageInfo = SkImageInfo(
+        alphaType: canvasKit.AlphaType.Premul,
+        colorType: canvasKit.ColorType.RGBA_8888,
+        width: width,
+        height: height,
+      );
       bytes = skImage.readPixels(imageInfo, 0, 0);
     } else {
       final SkData skData = skImage.encodeToData(); //defaults to PNG 100%
