@@ -227,7 +227,7 @@ TEST(RefCountedTest, NullAssignmentToNull) {
   // No-op null assignment using move constructor.
   r1 = std::move(r2);
   EXPECT_TRUE(r1.get() == nullptr);
-  EXPECT_TRUE(r2.get() == nullptr);
+  EXPECT_TRUE(r2.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move)
   EXPECT_FALSE(r1);
   EXPECT_FALSE(r2);
 
@@ -272,7 +272,7 @@ TEST(RefCountedTest, NonNullAssignmentToNull) {
     RefPtr<MyClass> r2;
     // Move assignment (to null ref pointer).
     r2 = std::move(r1);
-    EXPECT_TRUE(r1.get() == nullptr);
+    EXPECT_TRUE(r1.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move)
     EXPECT_EQ(created, r2.get());
     EXPECT_FALSE(r1);
     EXPECT_TRUE(r2);
@@ -336,7 +336,7 @@ TEST(RefCountedTest, NullAssignmentToNonNull) {
   // Null assignment using move constructor.
   r1 = std::move(r2);
   EXPECT_TRUE(r1.get() == nullptr);
-  EXPECT_TRUE(r2.get() == nullptr);
+  EXPECT_TRUE(r2.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move)
   EXPECT_FALSE(r1);
   EXPECT_FALSE(r2);
   EXPECT_TRUE(was_destroyed);
@@ -389,7 +389,7 @@ TEST(RefCountedTest, NonNullAssignmentToNonNull) {
     RefPtr<MyClass> r2(MakeRefCounted<MyClass>(nullptr, &was_destroyed2));
     // Move assignment (to non-null ref pointer).
     r2 = std::move(r1);
-    EXPECT_TRUE(r1.get() == nullptr);
+    EXPECT_TRUE(r1.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move)
     EXPECT_FALSE(r2.get() == nullptr);
     EXPECT_FALSE(r1);
     EXPECT_TRUE(r2);
@@ -598,13 +598,14 @@ TEST(RefCountedTest, PublicCtorAndDtor) {
 TEST(RefCountedTest, DebugChecks) {
   {
     MyPublicClass* p = new MyPublicClass();
-    EXPECT_DEATH_IF_SUPPORTED(delete p, "!adoption_required_");
+    EXPECT_DEATH_IF_SUPPORTED(  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
+        delete p, "!adoption_required_");
   }
 
   {
     MyPublicClass* p = new MyPublicClass();
-    EXPECT_DEATH_IF_SUPPORTED(RefPtr<MyPublicClass> r(p),
-                              "!adoption_required_");
+    EXPECT_DEATH_IF_SUPPORTED(  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
+        RefPtr<MyPublicClass> r(p), "!adoption_required_");
   }
 
   {
