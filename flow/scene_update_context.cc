@@ -4,6 +4,7 @@
 
 #include "flutter/flow/scene_update_context.h"
 
+#include <lib/ui/scenic/cpp/commands.h>
 #include <lib/ui/scenic/cpp/view_token_pair.h>
 
 #include "flutter/flow/layers/layer.h"
@@ -64,16 +65,58 @@ void SetMaterialColor(scenic::Material& material,
 
 }  // namespace
 
-SceneUpdateContext::SceneUpdateContext(scenic::Session* session)
-    : session_(session) {}
+SceneUpdateContext::SceneUpdateContext(std::string debug_label,
+                                       fuchsia::ui::views::ViewToken view_token,
+                                       scenic::ViewRefPair view_ref_pair,
+                                       SessionWrapper& session)
+    : session_(session),
+      root_view_(session_.get(),
+                 std::move(view_token),
+                 std::move(view_ref_pair.control_ref),
+                 std::move(view_ref_pair.view_ref),
+                 debug_label),
+      root_node_(session_.get()) {
+  root_view_.AddChild(root_node_);
+  root_node_.SetEventMask(fuchsia::ui::gfx::kMetricsEventMask);
 
-void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
+  session_.Present();
+}
+
+std::vector<SceneUpdateContext::PaintTask> SceneUpdateContext::GetPaintTasks() {
+  std::vector<PaintTask> frame_paint_tasks = std::move(paint_tasks_);
+
+  paint_tasks_.clear();
+
+  return frame_paint_tasks;
+}
+
+void SceneUpdateContext::EnableWireframe(bool enable) {
+  session_.get()->Enqueue(
+      scenic::NewSetEnableDebugViewBoundsCmd(root_view_.id(), enable));
+}
+
+void SceneUpdateContext::Reset() {
+  paint_tasks_.clear();
+  top_entity_ = nullptr;
+  top_scale_x_ = 1.f;
+  top_scale_y_ = 1.f;
+  top_elevation_ = 0.f;
+  next_elevation_ = 0.f;
+  alpha_ = 1.f;
+
+  // We are going to be sending down a fresh node hierarchy every frame. So just
+  // enqueue a detach op on the imported root node.
+  session_.get()->Enqueue(scenic::NewDetachChildrenCmd(root_node_.id()));
+}
+
+void SceneUpdateContext::CreateFrame(scenic::EntityNode& entity_node,
                                      const SkRRect& rrect,
                                      SkColor color,
                                      SkAlpha opacity,
                                      const SkRect& paint_bounds,
                                      std::vector<Layer*> paint_layers) {
-  FML_DCHECK(!rrect.isEmpty());
+  if (rrect.isEmpty())
+    return;
 
   // Frames always clip their children.
   SkRect shape_bounds = rrect.getBounds();
@@ -81,11 +124,8 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
 
   // and possibly for its texture.
   // TODO(SCN-137): Need to be able to express the radii as vectors.
-  scenic::ShapeNode shape_node(session());
-  scenic::Rectangle shape(session_,       // session
-                          rrect.width(),  // width
-                          rrect.height()  // height
-  );
+  scenic::ShapeNode shape_node(session_.get());
+  scenic::Rectangle shape(session_.get(), rrect.width(), rrect.height());
   shape_node.SetShape(shape);
   shape_node.SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
                             shape_bounds.height() * 0.5f + shape_bounds.top(),
@@ -95,7 +135,7 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
   if (paint_bounds.isEmpty() || !paint_bounds.intersects(shape_bounds))
     paint_layers.clear();
 
-  scenic::Material material(session());
+  scenic::Material material(session_.get());
   shape_node.SetMaterial(material);
   entity_node.AddChild(shape_node);
 
@@ -120,30 +160,24 @@ void SceneUpdateContext::CreateFrame(scenic::EntityNode entity_node,
   }
 }
 
-std::vector<SceneUpdateContext::PaintTask>
-SceneUpdateContext::ResetAndGetPaintTasks() {
-  std::vector<PaintTask> frame_paint_tasks = std::move(paint_tasks_);
-
-  // Reset all internal state.
-  paint_tasks_.clear();
-  top_elevation_ = 0.0f;
-  next_elevation_ = 0.0f;
-  alpha_ = 1.0f;
-
-  return frame_paint_tasks;
-}
-
-void SceneUpdateContext::UpdateScene(int64_t view_id,
-                                     const SkPoint& offset,
-                                     const SkSize& size) {
+void SceneUpdateContext::UpdateView(int64_t view_id,
+                                    const SkPoint& offset,
+                                    const SkSize& size,
+                                    std::optional<bool> override_hit_testable) {
   auto* view_holder = ViewHolder::FromId(view_id);
   FML_DCHECK(view_holder);
 
-  view_holder->SetProperties(size.width(), size.height(), 0, 0, 0, 0,
-                             view_holder->focusable());
-  view_holder->UpdateScene(*this, offset, size,
-                           SkScalarRoundToInt(alphaf() * 255),
-                           view_holder->hit_testable());
+  if (size.width() > 0.f && size.height() > 0.f) {
+    view_holder->SetProperties(size.width(), size.height(), 0, 0, 0, 0,
+                               view_holder->focusable());
+  }
+
+  bool hit_testable = override_hit_testable.has_value()
+                          ? *override_hit_testable
+                          : view_holder->hit_testable();
+  view_holder->UpdateScene(session_.get(), top_entity_->embedder_node(), offset,
+                           size, SkScalarRoundToInt(alphaf() * 255),
+                           hit_testable);
 }
 
 void SceneUpdateContext::CreateView(int64_t view_id,
@@ -167,13 +201,17 @@ void SceneUpdateContext::DestroyView(int64_t view_id) {
 SceneUpdateContext::Entity::Entity(SceneUpdateContext& context)
     : context_(context),
       previous_entity_(context.top_entity_),
-      entity_node_(context.session()) {
-  if (previous_entity_)
-    previous_entity_->embedder_node().AddChild(entity_node_);
+      entity_node_(context.session_.get()) {
   context.top_entity_ = this;
 }
 
 SceneUpdateContext::Entity::~Entity() {
+  if (previous_entity_) {
+    previous_entity_->embedder_node().AddChild(entity_node_);
+  } else {
+    context_.root_node_.AddChild(entity_node_);
+  }
+
   FML_DCHECK(context_.top_entity_ == this);
   context_.top_entity_ = previous_entity_;
 }
@@ -242,7 +280,7 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
       rrect_(rrect),
       color_(color),
       opacity_(opacity),
-      opacity_node_(context.session()),
+      opacity_node_(context.session_.get()),
       paint_bounds_(SkRect::MakeEmpty()) {
   entity_node().SetLabel(label);
   entity_node().SetTranslation(0.f, 0.f,
@@ -259,15 +297,11 @@ SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
 }
 
 SceneUpdateContext::Frame::~Frame() {
-  context().top_elevation_ = previous_elevation_;
-
-  // We don't need a shape if the frame is zero size.
-  if (rrect_.isEmpty())
-    return;
-
   // Add a part which represents the frame's geometry for clipping purposes
-  context().CreateFrame(std::move(entity_node()), rrect_, color_, opacity_,
-                        paint_bounds_, std::move(paint_layers_));
+  context().CreateFrame(entity_node(), rrect_, color_, opacity_, paint_bounds_,
+                        std::move(paint_layers_));
+
+  context().top_elevation_ = previous_elevation_;
 }
 
 void SceneUpdateContext::Frame::AddPaintLayer(Layer* layer) {

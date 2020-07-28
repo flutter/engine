@@ -238,15 +238,28 @@ class MockSession : public fuchsia::ui::scenic::testing::Session_TestBase {
   fuchsia::ui::scenic::SessionListenerPtr listener_;
 };
 
+class MockSessionWrapper : public flutter::SessionWrapper {
+ public:
+  MockSessionWrapper(fuchsia::ui::scenic::SessionPtr session_ptr)
+      : session_(std::move(session_ptr)) {}
+  ~MockSessionWrapper() override = default;
+
+  scenic::Session* get() override { return &session_; }
+  void Present() override { session_.Flush(); }
+
+ private:
+  scenic::Session session_;
+};
+
 struct TestContext {
   // Message loop.
   fml::RefPtr<fml::MessageLoopFuchsia> loop;
   fml::RefPtr<fml::TaskRunner> task_runner;
 
   // Session.
-  MockSession mock_session;
   fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener> listener_request;
-  std::unique_ptr<scenic::Session> session;
+  MockSession mock_session;
+  std::unique_ptr<MockSessionWrapper> mock_session_wrapper;
 
   // SceneUpdateContext.
   std::unique_ptr<SceneUpdateContext> scene_update_context;
@@ -270,11 +283,13 @@ std::unique_ptr<TestContext> InitTest() {
   fuchsia::ui::scenic::SessionListenerPtr listener;
   context->listener_request = listener.NewRequest();
   context->mock_session.Bind(session_ptr.NewRequest(), std::move(listener));
-  context->session = std::make_unique<scenic::Session>(std::move(session_ptr));
+  context->mock_session_wrapper =
+      std::make_unique<MockSessionWrapper>(std::move(session_ptr));
 
   // Init SceneUpdateContext.
-  context->scene_update_context =
-      std::make_unique<SceneUpdateContext>(context->session.get());
+  context->scene_update_context = std::make_unique<SceneUpdateContext>(
+      "fuchsia_layer_unittest", fuchsia::ui::views::ViewToken(),
+      scenic::ViewRefPair::New(), *(context->mock_session_wrapper));
 
   // Init PrerollContext.
   context->preroll_context = std::unique_ptr<PrerollContext>(new PrerollContext{
@@ -543,7 +558,7 @@ TEST_F(FuchsiaLayerTest, DISABLED_PhysicalShapeLayersAndChildSceneLayers) {
   // against the list above.
   root->UpdateScene(*(test_context->scene_update_context));
 
-  test_context->session->Flush();
+  test_context->mock_session_wrapper->Present();
 
   // Run loop until idle, so that the Session receives and processes
   // its method calls.
@@ -725,7 +740,7 @@ TEST_F(FuchsiaLayerTest, DISABLED_OpacityAndTransformLayer) {
   // commands against the list above.
   root->UpdateScene(*(test_context->scene_update_context));
 
-  test_context->session->Flush();
+  test_context->mock_session_wrapper->Present();
 
   // Run loop until idle, so that the Session receives and processes
   // its method calls.

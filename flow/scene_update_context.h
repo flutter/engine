@@ -5,16 +5,19 @@
 #ifndef FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 #define FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 
+#include <fuchsia/ui/views/cpp/fidl.h>
+#include <lib/ui/scenic/cpp/resources.h>
+#include <lib/ui/scenic/cpp/session.h>
+#include <lib/ui/scenic/cpp/view_ref_pair.h>
+
 #include <cfloat>
 #include <memory>
 #include <set>
 #include <vector>
 
 #include "flutter/flow/embedded_views.h"
-#include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
-#include "lib/ui/scenic/cpp/resources.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -30,6 +33,14 @@ constexpr float kOneMinusEpsilon = 1 - FLT_EPSILON;
 
 // How much layers are separated in Scenic z elevation.
 constexpr float kScenicZElevationBetweenLayers = 10.f;
+
+class SessionWrapper {
+ public:
+  virtual ~SessionWrapper() {}
+
+  virtual scenic::Session* get() = 0;
+  virtual void Present() = 0;
+};
 
 class SceneUpdateContext : public flutter::ExternalViewEmbedder {
  public:
@@ -106,18 +117,26 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
     std::vector<Layer*> layers;
   };
 
-  SceneUpdateContext(scenic::Session* session);
+  SceneUpdateContext(std::string debug_label,
+                     fuchsia::ui::views::ViewToken view_token,
+                     scenic::ViewRefPair view_ref_pair,
+                     SessionWrapper& session);
   ~SceneUpdateContext() = default;
 
-  scenic::Session* session() { return session_; }
-  Entity* top_entity() { return top_entity_; }
+  scenic::ContainerNode& root_node() { return root_node_; }
 
   // The cumulative alpha value based on all the parent OpacityLayers.
   void set_alphaf(float alpha) { alpha_ = alpha; }
   float alphaf() { return alpha_; }
 
   // Returns all `PaintTask`s generated for the current frame.
-  std::vector<PaintTask> ResetAndGetPaintTasks();
+  std::vector<PaintTask> GetPaintTasks();
+
+  // Enable/disable wireframe rendering around the root view bounds.
+  void EnableWireframe(bool enable);
+
+  // Reset state for a new frame.
+  void Reset();
 
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override { return nullptr; }
@@ -148,30 +167,34 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   }
 
   void CreateView(int64_t view_id, bool hit_testable, bool focusable);
-
   void DestroyView(int64_t view_id);
-
-  void UpdateScene(int64_t view_id, const SkPoint& offset, const SkSize& size);
+  void UpdateView(int64_t view_id,
+                  const SkPoint& offset,
+                  const SkSize& size,
+                  std::optional<bool> override_hit_testable = std::nullopt);
 
  private:
-  void CreateFrame(scenic::EntityNode entity_node,
+  void CreateFrame(scenic::EntityNode& entity_node,
                    const SkRRect& rrect,
                    SkColor color,
                    SkAlpha opacity,
                    const SkRect& paint_bounds,
                    std::vector<Layer*> paint_layers);
 
+  SessionWrapper& session_;
+
+  scenic::View root_view_;
+  scenic::EntityNode root_node_;
+
+  std::vector<PaintTask> paint_tasks_;
+
   Entity* top_entity_ = nullptr;
   float top_scale_x_ = 1.f;
   float top_scale_y_ = 1.f;
-  float top_elevation_ = 0.0f;
+  float top_elevation_ = 0.f;
 
-  scenic::Session* const session_;
-
-  float alpha_ = 1.0f;
-  float next_elevation_ = 0.0f;
-
-  std::vector<PaintTask> paint_tasks_;
+  float next_elevation_ = 0.f;
+  float alpha_ = 1.f;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };

@@ -13,24 +13,33 @@ namespace flutter_runner {
 
 class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
  public:
-  ScopedFrame(flutter::CompositorContext& context,
-              const SkMatrix& root_surface_transformation,
+  ScopedFrame(CompositorContext& context,
+              GrContext* gr_context,
+              SkCanvas* canvas,
               flutter::ExternalViewEmbedder* view_embedder,
+              const SkMatrix& root_surface_transformation,
               bool instrumentation_enabled,
-              SessionConnection& session_connection)
-      : flutter::CompositorContext::ScopedFrame(
-            context,
-            session_connection.vulkan_surface_producer()->gr_context(),
-            nullptr,
-            view_embedder,
-            root_surface_transformation,
-            instrumentation_enabled,
-            true,
-            nullptr),
-        session_connection_(session_connection) {}
+              bool surface_supports_readback,
+              fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
+              SessionConnection& session_connection,
+              VulkanSurfaceProducer& surface_producer,
+              flutter::SceneUpdateContext& scene_update_context)
+      : flutter::CompositorContext::ScopedFrame(context,
+                                                surface_producer.gr_context(),
+                                                canvas,
+                                                view_embedder,
+                                                root_surface_transformation,
+                                                instrumentation_enabled,
+                                                surface_supports_readback,
+                                                raster_thread_merger),
+        session_connection_(session_connection),
+        surface_producer_(surface_producer),
+        scene_update_context_(scene_update_context) {}
 
  private:
   SessionConnection& session_connection_;
+  VulkanSurfaceProducer& surface_producer_;
+  flutter::SceneUpdateContext& scene_update_context_;
 
   flutter::RasterStatus Raster(flutter::LayerTree& layer_tree,
                                bool ignore_raster_cache) override {
@@ -48,26 +57,27 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
       // Traverse the Flutter layer tree so that the necessary session ops to
       // represent the frame are enqueued in the underlying session.
       TRACE_EVENT0("flutter", "UpdateScene");
-      layer_tree.UpdateScene(session_connection_.scene_update_context(),
-                             session_connection_.root_node());
-      frame_paint_tasks =
-          session_connection_.scene_update_context().ResetAndGetPaintTasks();
+      layer_tree.UpdateScene(scene_update_context_);
     }
 
     {
       // Flush all pending session ops: create surfaces and enqueue session
       // Image ops for the frame's paint tasks, then Present.
       TRACE_EVENT0("flutter", "SessionPresent");
+      frame_paint_tasks = scene_update_context_.GetPaintTasks();
       for (auto& task : frame_paint_tasks) {
         SkISize physical_size =
             SkISize::Make(layer_tree.device_pixel_ratio() * task.scale_x *
                               task.paint_bounds.width(),
                           layer_tree.device_pixel_ratio() * task.scale_y *
                               task.paint_bounds.height());
-        std::unique_ptr<SurfaceProducerSurface> surface =
-            session_connection_.vulkan_surface_producer()->ProduceSurface(
-                physical_size);
+        if (physical_size.width() == 0 || physical_size.height() == 0) {
+          frame_surfaces.emplace_back(nullptr);
+          continue;
+        }
 
+        std::unique_ptr<SurfaceProducerSurface> surface =
+            surface_producer_.ProduceSurface(physical_size);
         if (!surface) {
           FML_LOG(ERROR)
               << "Could not acquire a surface from the surface producer "
@@ -120,8 +130,7 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
 
       // Tell the surface producer that a present has occurred so it can perform
       // book-keeping on buffer caches.
-      session_connection_.vulkan_surface_producer()->OnSurfacesPresented(
-          std::move(frame_surfaces));
+      surface_producer_.OnSurfacesPresented(std::move(frame_surfaces));
     }
 
     return flutter::RasterStatus::kSuccess;
@@ -131,40 +140,14 @@ class ScopedFrame final : public flutter::CompositorContext::ScopedFrame {
 };
 
 CompositorContext::CompositorContext(
-    std::string debug_label,
-    fuchsia::ui::views::ViewToken view_token,
-    scenic::ViewRefPair view_ref_pair,
-    fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
-    fml::closure session_error_callback,
-    zx_handle_t vsync_event_handle)
-    : debug_label_(std::move(debug_label)),
-      session_connection_(
-          debug_label_,
-          std::move(view_token),
-          std::move(view_ref_pair),
-          std::move(session),
-          session_error_callback,
-          [](auto) {},
-          vsync_event_handle) {}
+    SessionConnection& session_connection,
+    VulkanSurfaceProducer& surface_producer,
+    flutter::SceneUpdateContext& scene_update_context)
+    : session_connection_(session_connection),
+      surface_producer_(surface_producer),
+      scene_update_context_(scene_update_context) {}
 
-void CompositorContext::OnWireframeEnabled(bool enabled) {
-  session_connection_.set_enable_wireframe(enabled);
-}
-
-void CompositorContext::OnCreateView(int64_t view_id,
-                                     bool hit_testable,
-                                     bool focusable) {
-  session_connection_.scene_update_context().CreateView(view_id, hit_testable,
-                                                        focusable);
-}
-
-void CompositorContext::OnDestroyView(int64_t view_id) {
-  session_connection_.scene_update_context().DestroyView(view_id);
-}
-
-CompositorContext::~CompositorContext() {
-  OnGrContextDestroyed();
-}
+CompositorContext::~CompositorContext() = default;
 
 std::unique_ptr<flutter::CompositorContext::ScopedFrame>
 CompositorContext::AcquireFrame(
@@ -175,16 +158,10 @@ CompositorContext::AcquireFrame(
     bool instrumentation_enabled,
     bool surface_supports_readback,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  // TODO: The AcquireFrame interface is too broad and must be refactored to get
-  // rid of the context and canvas arguments as those seem to be only used for
-  // colorspace correctness purposes on the mobile shells.
   return std::make_unique<flutter_runner::ScopedFrame>(
-      *this,                        //
-      root_surface_transformation,  //
-      view_embedder,
-      instrumentation_enabled,  //
-      session_connection_       //
-  );
+      *this, gr_context, canvas, view_embedder, root_surface_transformation,
+      instrumentation_enabled, surface_supports_readback, raster_thread_merger,
+      session_connection_, surface_producer_, scene_update_context_);
 }
 
 }  // namespace flutter_runner
