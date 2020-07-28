@@ -60,9 +60,11 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 }
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
-void LayerTree::UpdateScene(SceneUpdateContext& context,
-                            scenic::ContainerNode& container) {
+void LayerTree::UpdateScene(SceneUpdateContext& context) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
+
+  // Reset for a new Scene.
+  context.Reset();
 
   const float inv_dpr = 1.0f / device_pixel_ratio_;
   SceneUpdateContext::Transform transform(context, inv_dpr, inv_dpr, 1.0f);
@@ -78,7 +80,7 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
   if (root_layer_->needs_painting()) {
     frame.AddPaintLayer(root_layer_.get());
   }
-  container.AddChild(transform.entity_node());
+  context.root_node().AddChild(transform.entity_node());
 }
 #endif
 

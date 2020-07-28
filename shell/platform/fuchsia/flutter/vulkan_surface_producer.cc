@@ -198,6 +198,9 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
     const std::vector<std::unique_ptr<SurfaceProducerSurface>>& surfaces) {
   for (auto& surface : surfaces) {
     auto vk_surface = static_cast<VulkanSurface*>(surface.get());
+    if (!vk_surface) {
+      continue;
+    }
 
     vulkan::VulkanCommandBuffer* command_buffer =
         vk_surface->GetCommandBuffer(logical_device_->GetCommandPool());
