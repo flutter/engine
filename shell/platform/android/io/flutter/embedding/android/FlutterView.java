@@ -45,6 +45,7 @@ import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * Displays a Flutter UI on an Android device.
@@ -970,9 +971,12 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
   /**
    * If the surface is rendered by a {@code FlutterImageView}. Then, calling this method will stop
-   * rendering to a {@code FlutterImageView}, and use the previous surface instead.
+   * rendering to a {@code FlutterImageView}, and render on the previous surface instead.
+   *
+   * @param onDone a callback called when Flutter UI is rendered on the previous surface. Use this
+   *     callback to perform cleanups. For example, destroy overlay surfaces.
    */
-  public void revertImageView() {
+  public void revertImageView(@NonNull Callable<Void> onDone) {
     if (flutterImageView == null) {
       Log.v(TAG, "Tried to revert the image view, but no image view is used.");
       return;
@@ -981,11 +985,49 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       Log.v(TAG, "Tried to revert the image view, but no previous surface was used.");
       return;
     }
-    flutterImageView.detachFromRenderer();
     renderSurface = previousRenderSurface;
     previousRenderSurface = null;
-    if (flutterEngine != null) {
-      renderSurface.attachToRenderer(flutterEngine.getRenderer());
+    if (flutterEngine == null) {
+      flutterImageView.detachFromRenderer();
+      callSafely(onDone);
+      return;
+    }
+    // Start rendering on the previous surface.
+    // This surface is typically `FlutterSurfaceView` or `FlutterTextureView`.
+    renderSurface.attachToRenderer(flutterEngine.getRenderer());
+
+    FlutterRenderer render = renderSurface.getAttachedRenderer();
+    if (render == null) {
+      flutterImageView.detachFromRenderer();
+      callSafely(onDone);
+      return;
+    }
+    // Install a Flutter UI listener to wait until the first frame is rendered
+    // in the new surface to call the `onDone` callback.
+    render.addIsDisplayingFlutterUiListener(
+        new FlutterUiDisplayListener() {
+          @Override
+          public void onFlutterUiDisplayed() {
+            FlutterRenderer render = renderSurface.getAttachedRenderer();
+            if (render != null) {
+              render.removeIsDisplayingFlutterUiListener(this);
+            }
+            callSafely(onDone);
+            flutterImageView.detachFromRenderer();
+          }
+
+          @Override
+          public void onFlutterUiNoLongerDisplayed() {
+            // no-op
+          }
+        });
+  }
+
+  private static void callSafely(@NonNull Callable<Void> onDone) {
+    try {
+      onDone.call();
+    } catch (Exception exception) {
+      Log.e(TAG, "onDone callback threw exception: " + exception.getMessage());
     }
   }
 

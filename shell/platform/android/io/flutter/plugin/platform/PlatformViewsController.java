@@ -753,6 +753,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   public void onEndFrame() {
+    final FlutterView view = (FlutterView) flutterView;
+    // If there are no platform views in the current frame,
+    // then revert the image view surface and use the previous surface.
+    //
+    // Otherwise, acquire the latest image.
+    if (flutterViewConvertedToImageView && currentFrameUsedPlatformViewIds.isEmpty()) {
+      flutterViewConvertedToImageView = false;
+      view.revertImageView(
+          () -> {
+            // Destroy overlay surfaces once the surface reversion is completed.
+            finishFrame(false);
+            return null;
+          });
+      return;
+    }
     // Whether the current frame was rendered using ImageReaders.
     //
     // Since the image readers may not have images available at this point,
@@ -762,22 +777,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // If one of the surfaces doesn't have an image, the frame may be incomplete and must be
     // dropped.
     // For example, a toolbar widget painted by Flutter may not be rendered.
-    boolean isFrameRenderedUsingImageReaders = false;
+    boolean isFrameRenderedUsingImageReaders =
+        flutterViewConvertedToImageView && view.acquireLatestImageViewFrame();
+    finishFrame(isFrameRenderedUsingImageReaders);
+  }
 
-    if (flutterViewConvertedToImageView) {
-      FlutterView view = (FlutterView) flutterView;
-      // If there are no platform views in the current frame,
-      // then revert the image view surface and use the previous surface.
-      //
-      // Otherwise, acquire the latest image.
-      if (currentFrameUsedPlatformViewIds.isEmpty()) {
-        view.revertImageView();
-        flutterViewConvertedToImageView = false;
-      } else {
-        isFrameRenderedUsingImageReaders = view.acquireLatestImageViewFrame();
-      }
-    }
-
+  private void finishFrame(boolean isFrameRenderedUsingImageReaders) {
     for (int i = 0; i < overlayLayerViews.size(); i++) {
       int overlayId = overlayLayerViews.keyAt(i);
       FlutterImageView overlayView = overlayLayerViews.valueAt(i);
