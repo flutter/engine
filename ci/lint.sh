@@ -41,7 +41,7 @@ if [ ! -f "$COMPILE_COMMANDS" ]; then
 fi
 
 cd "$CI_DIR"
-exec dart \
+pub get && dart \
   bin/lint.dart \
   --compile-commands="$COMPILE_COMMANDS" \
   --repo="$SRC_DIR/flutter" \
