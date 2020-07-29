@@ -639,11 +639,11 @@ class SkAlphaType {
   external int get value;
 }
 
-final List<SkAlphaType> _skAlphaTypes = <SkAlphaType>[
-  canvasKit.AlphaType.Opaque,
-  canvasKit.AlphaType.Premul,
-  canvasKit.AlphaType.Unpremul,
-];
+// TODO final List<SkAlphaType> _skAlphaTypes = <SkAlphaType>[
+//  canvasKit.AlphaType.Opaque,
+//  canvasKit.AlphaType.Premul,
+//  canvasKit.AlphaType.Unpremul,
+//];
 
 // TODO SkAlphaType toSkAlphaType(ui.AlphaType alphaType) {
 //  return _skAlphaTypes[alphaType.index];
@@ -669,19 +669,19 @@ class SkColorType {
   external int get value;
 }
 
-final List<SkColorType> _skColorTypes = <SkColorType>[
-  canvasKit.ColorType.Alpha_8,
-  canvasKit.ColorType.RGB_565,
-  canvasKit.ColorType.ARGB_4444,
-  canvasKit.ColorType.RGBA_8888,
-  canvasKit.ColorType.RGB_888x,
-  canvasKit.ColorType.BGRA_8888,
-  canvasKit.ColorType.RGBA_1010102,
-  canvasKit.ColorType.RGB_101010x,
-  canvasKit.ColorType.Gray_8,
-  canvasKit.ColorType.RGBA_F16,
-  canvasKit.ColorType.RGBA_F32,
-];
+// TODO final List<SkColorType> _skColorTypes = <SkColorType>[
+//  canvasKit.ColorType.Alpha_8,
+//  canvasKit.ColorType.RGB_565,
+//  canvasKit.ColorType.ARGB_4444,
+//  canvasKit.ColorType.RGBA_8888,
+//  canvasKit.ColorType.RGB_888x,
+//  canvasKit.ColorType.BGRA_8888,
+//  canvasKit.ColorType.RGBA_1010102,
+//  canvasKit.ColorType.RGB_101010x,
+//  canvasKit.ColorType.Gray_8,
+//  canvasKit.ColorType.RGBA_F16,
+//  canvasKit.ColorType.RGBA_F32,
+//];
 
 // TODO SkColorType toSkColorType(ui.ColorType colorType) {
 //  return _skColorTypes[colorType.index];
