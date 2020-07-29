@@ -26,8 +26,8 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
-static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
-  auto command_line = flutter::CommandLineFromNSProcessInfo();
+static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil, NSArray<NSString*>* dartVmArgs = nil) {
+  auto command_line = flutter::CommandLineFromNSProcessInfo(dartVmArgs);
 
   // Precedence:
   // 1. Settings from the specified NSBundle.
@@ -153,16 +153,24 @@ static flutter::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 #pragma mark - Override base class designated initializers
 
 - (instancetype)init {
-  return [self initWithPrecompiledDartBundle:nil];
+  return [self initWithPrecompiledDartBundle:nil dartVmArgs:nil];
+}
+
+- (instancetype)initWithDartVmArgs:(nullable NSArray<NSString*>*)args {
+  return [self initWithPrecompiledDartBundle:nil dartVmArgs:args];
+}
+
+- (instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle {
+  return [self initWithPrecompiledDartBundle:bundle dartVmArgs:nil];
 }
 
 #pragma mark - Designated initializers
 
-- (instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle {
+- (instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle dartVmArgs:(nullable NSArray<NSString*>*)args {
   self = [super init];
 
   if (self) {
-    _settings = DefaultSettingsForProcess(bundle);
+    _settings = DefaultSettingsForProcess(bundle, args);
   }
 
   return self;

@@ -18,9 +18,19 @@ FLUTTER_EXPORT
 @interface FlutterDartProject : NSObject
 
 /**
+ * Initializes a Flutter Dart project with dart vm args, such as tracing startup args.
+ */
+- (instancetype)initWithDartVmArgs:(nullable NSArray<NSString*>*)args;
+
+/**
  * Initializes a Flutter Dart project from a bundle.
  */
-- (instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle;
+
+/**
+* Initializes a Flutter Dart project from a bundle with dart vm args, such as tracing startup args.
+*/
+- (instancetype)initWithPrecompiledDartBundle:(nullable NSBundle*)bundle dartVmArgs:(nullable NSArray<NSString*>*)args NS_DESIGNATED_INITIALIZER;
 
 /**
  * Unavailable - use `init` instead.

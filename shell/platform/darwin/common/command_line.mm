@@ -8,11 +8,17 @@
 
 namespace flutter {
 
-fml::CommandLine CommandLineFromNSProcessInfo() {
+fml::CommandLine CommandLineFromNSProcessInfo(NSArray<NSString*>* dartVmArgs) {
   std::vector<std::string> args_vector;
 
   for (NSString* arg in [NSProcessInfo processInfo].arguments) {
     args_vector.emplace_back(arg.UTF8String);
+  }
+
+  if (dartVmArgs != nil) {
+    for (NSString* arg in dartVmArgs) {
+      args_vector.emplace_back(arg.UTF8String);
+    }
   }
 
   return fml::CommandLineFromIterators(args_vector.begin(), args_vector.end());

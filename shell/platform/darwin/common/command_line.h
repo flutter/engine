@@ -8,9 +8,11 @@
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/macros.h"
 
+#import <Foundation/Foundation.h>
+
 namespace flutter {
 
-fml::CommandLine CommandLineFromNSProcessInfo();
+fml::CommandLine CommandLineFromNSProcessInfo(NSArray<NSString*>*);
 
 }  // namespace flutter
 
