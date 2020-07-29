@@ -35,7 +35,7 @@ void main() async {
         .build()
         .webOnlyRootElement);
 
-    await matchGoldenFile('canvas_to_picture.png', region: region);
+    await matchGoldenFile('canvas_to_picture.png', region: region, write: true);
   });
 }
 
