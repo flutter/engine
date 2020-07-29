@@ -505,9 +505,11 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.dhcp/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.http/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.oldhttp/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.netstack/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/meta.json
@@ -1385,11 +1387,13 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.dhcp/server.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.http/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.oldhttp/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/namelookup.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.netstack/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/socket.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/countdown.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/meta.json
@@ -2159,9 +2163,11 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.dhcp/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.http/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.mdns/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.oldhttp/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.netstack/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix.socket/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.process/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery.ui/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/meta.json
@@ -3189,7 +3195,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media/profile_provider.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.memorypressure/memorypressure.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular.session/launcher.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.modular/session_restart_controller.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net.routes/routes.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.net/socket.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.posix/error.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/input.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/light.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/night_mode.fidl
