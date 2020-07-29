@@ -353,14 +353,15 @@ executable("flutter_runner_tzdata_unittests") {
 # testing/fuchsia/run_tests.sh and testing/fuchsia/test_fars
 fuchsia_package("flutter_runner_tests") {
   testonly = true
-  deps = [ ":flutter_runner_tests_component" ]
+  deps = [ ":${target_name}_component" ]
 }
 
 fuchsia_component("flutter_runner_tests_component") {
   testonly = true
 
-  manifest = rebase_path("meta/$target_name.cmx")
-  manifest_output_name = "$target_name.cmx"
+  manifest_name = string_replace(target_name, "_component", "")
+  manifest = rebase_path("meta/$manifest_name.cmx")
+  manifest_output_name = "$manifest_name.cmx"
 
   data_deps = [
     ":flutter_runner_unittests",
@@ -391,13 +392,14 @@ fuchsia_component("flutter_runner_tests_component") {
 
 fuchsia_package("flutter_runner_tzdata_tests") {
   testonly = true
-  deps = [ ":flutter_runner_tzdata_tests_component" ]
+  deps = [ ":${target_name}_component" ]
 }
 fuchsia_component("flutter_runner_tzdata_tests_component") {
   testonly = true
 
-  manifest = rebase_path("meta/$target_name.cmx")
-  manifest_output_name = "$target_name.cmx"
+  manifest_name = string_replace(target_name, "_component", "")
+  manifest = rebase_path("meta/$manifest_name.cmx")
+  manifest_output_name = "$manifest_name.cmx"
 
   data_deps = [
     ":flutter_runner_tzdata_unittests",
@@ -489,21 +491,20 @@ executable("flutter_runner_scenic_unittests") {
     "//third_party/skia",
   ]
 
-  public_deps = [
-    "//third_party/googletest:gtest",
-  ]
+  public_deps = [ "//third_party/googletest:gtest" ]
 }
 
 fuchsia_package("flutter_runner_scenic_tests") {
   testonly = true
-  deps = [ ":flutter_runner_scenic_tests_component" ]
+  deps = [ ":${target_name}_component" ]
 }
 
 fuchsia_component("flutter_runner_scenic_tests_component") {
   testonly = true
 
-  manifest = rebase_path("meta/$target_name.cmx")
-  manifest_output_name = "$target_name.cmx"
+  manifest_name = string_replace(target_name, "_component", "")
+  manifest = rebase_path("meta/$manifest_name.cmx")
+  manifest_output_name = "$manifest_name.cmx"
 
   data_deps = [
     ":flutter_runner_scenic_unittests",
@@ -880,23 +881,3 @@ group("tests") {
     ":ui_tests_next",
   ]
 }
-#   binary = "$target_name"
-
-#   resources = [
-#     {
-#       path = rebase_path("//third_party/icu/common/icudtl.dat")
-#       dest = "icudtl.dat"
-#     },
-#   ]
-
-#   meta_dir = "//flutter/shell/platform/fuchsia/flutter/meta"
-
-#   libraries = common_libs
-
-#   meta = [
-#     {
-#       path = rebase_path("meta/$target_name.cmx")
-#       dest = "$target_name.cmx"
-#     },
-#   ]
-# }
