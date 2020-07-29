@@ -996,7 +996,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // This surface is typically `FlutterSurfaceView` or `FlutterTextureView`.
     renderSurface.attachToRenderer(flutterEngine.getRenderer());
 
-    FlutterRenderer render = renderSurface.getAttachedRenderer();
+    final FlutterRenderer render = renderSurface.getAttachedRenderer();
     if (render == null) {
       flutterImageView.detachFromRenderer();
       callSafely(onDone);
