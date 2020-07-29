@@ -649,10 +649,6 @@ final List<SkAlphaType> _skAlphaTypes = <SkAlphaType>[
   canvasKit.AlphaType.Unpremul,
 ];
 
-//SkAlphaType toSkAlphaType(ui.AlphaType alphaType) {
-//  return _skAlphaTypes[alphaType.index];
-//}
-
 @JS()
 class SkColorTypeEnum {
   external SkColorType get Alpha_8;
@@ -686,10 +682,6 @@ final List<SkColorType> _skColorTypes = <SkColorType>[
   canvasKit.ColorType.RGBA_F16,
   canvasKit.ColorType.RGBA_F32,
 ];
-
-//SkColorType toSkColorType(ui.ColorType colorType) {
-//  return _skColorTypes[colorType.index];
-//}
 
 @JS()
 class SkAnimatedImage {
@@ -1629,6 +1621,7 @@ class SkFontMgrNamespace {
 }
 
 @JS()
+<<<<<<< HEAD
 class TypefaceFontProviderNamespace {
   external TypefaceFontProvider Make();
 }
@@ -1703,3 +1696,40 @@ external Object? get _finalizationRegistryConstructor;
 
 /// Whether the current browser supports `FinalizationRegistry`.
 bool browserSupportsFinalizationRegistry = _finalizationRegistryConstructor != null;
+
+class SkData {
+  external int size();
+  external bool isEmpty();
+  external Uint8List bytes();
+}
+
+@JS()
+@anonymous
+class SkImageInfo {
+  external SkAlphaType get AlphaType;
+  external int get BitsPerPixel;
+  external int get BytesPerPixel;
+  external int get BytesSize;
+  external int get BytesSize64;
+  external SkColorSpace get ColorSpace;
+  external SkColorType get ColorType;
+  external int get Height;
+  external bool get IsEmpty;
+  external bool get IsOpaque;
+  external SkRect get Rect;
+  external int get RowBytes;
+  external int get RowBytes64;
+  // TODO external SkSize get Size;
+  external int get Width;
+  external factory SkImageInfo({
+    required int width,
+    required int height,
+    SkAlphaType alphaType,
+    SkColorSpace colorSpace,
+    SkColorType colorType,
+  });
+  external SkImageInfo WithAlphaType(SkAlphaType alphaType);
+  external SkImageInfo WithColorSpace(SkColorSpace colorSpace);
+  external SkImageInfo WithColorType(SkColorType colorType);
+  external SkImageInfo WithSize(int width, int height);
+}
