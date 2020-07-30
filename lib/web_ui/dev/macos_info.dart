@@ -11,7 +11,7 @@ class MacOSInfo {
   /// Built in tools such as `system_profiler` and `defaults` are utilized.
   Future<void> printInformation() async {
     try {
-      await _printSafaridApplications();
+      await _printSafariApplications();
     } catch (error) {
       print('Error thrown while getting Safari Applications: $error');
     }
@@ -31,7 +31,7 @@ class MacOSInfo {
 
   /// Print information on applications in the system that contains string
   /// `Safari`.
-  Future<void> _printSafaridApplications() async {
+  Future<void> _printSafariApplications() async {
     final String systemProfileJson = await evalProcess(
         'system_profiler', ['SPApplicationsDataType', '-json']);
 
