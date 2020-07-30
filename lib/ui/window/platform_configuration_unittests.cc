@@ -48,9 +48,10 @@ class DummyPlatformConfigurationClient : public PlatformConfigurationClient {
 };
 
 TEST_F(ShellTest, PlatformConfigurationInitialization) {
-  fml::AutoResetWaitableEvent message_latch;
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
-  auto nativeValidateConfiguration = [&](Dart_NativeArguments args) {
+  auto nativeValidateConfiguration = [message_latch](
+                                         Dart_NativeArguments args) {
     PlatformConfiguration* configuration =
         UIDartState::Current()->platform_configuration();
     ASSERT_NE(configuration->window(), nullptr);
@@ -59,7 +60,7 @@ TEST_F(ShellTest, PlatformConfigurationInitialization) {
     ASSERT_EQ(configuration->window()->viewport_metrics().physical_width, 0.0);
     ASSERT_EQ(configuration->window()->viewport_metrics().physical_height, 0.0);
 
-    message_latch.Signal();
+    message_latch->Signal();
   };
 
   Settings settings = CreateSettingsForFixture();
@@ -84,14 +85,15 @@ TEST_F(ShellTest, PlatformConfigurationInitialization) {
     ASSERT_EQ(result, Engine::RunStatus::Success);
   });
 
-  message_latch.Wait();
+  message_latch->Wait();
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
 TEST_F(ShellTest, PlatformConfigurationWindowMetricsUpdate) {
-  fml::AutoResetWaitableEvent message_latch;
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
 
-  auto nativeValidateConfiguration = [&](Dart_NativeArguments args) {
+  auto nativeValidateConfiguration = [message_latch](
+                                         Dart_NativeArguments args) {
     PlatformConfiguration* configuration =
         UIDartState::Current()->platform_configuration();
 
@@ -104,7 +106,7 @@ TEST_F(ShellTest, PlatformConfigurationWindowMetricsUpdate) {
     ASSERT_EQ(configuration->window()->viewport_metrics().physical_height,
               20.0);
 
-    message_latch.Signal();
+    message_latch->Signal();
   };
 
   Settings settings = CreateSettingsForFixture();
@@ -129,7 +131,7 @@ TEST_F(ShellTest, PlatformConfigurationWindowMetricsUpdate) {
     ASSERT_EQ(result, Engine::RunStatus::Success);
   });
 
-  message_latch.Wait();
+  message_latch->Wait();
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 

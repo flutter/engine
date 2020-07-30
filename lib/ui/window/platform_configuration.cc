@@ -201,8 +201,9 @@ void PlatformConfiguration::DidCreateIsolate() {
 void PlatformConfiguration::UpdateLocales(
     const std::vector<std::string>& locales) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
   tonic::LogIfError(tonic::DartInvokeField(
       library_.value(), "_updateLocales",
@@ -213,8 +214,9 @@ void PlatformConfiguration::UpdateLocales(
 
 void PlatformConfiguration::UpdateUserSettingsData(const std::string& data) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
 
   tonic::LogIfError(tonic::DartInvokeField(library_.value(),
@@ -226,8 +228,9 @@ void PlatformConfiguration::UpdateUserSettingsData(const std::string& data) {
 
 void PlatformConfiguration::UpdateLifecycleState(const std::string& data) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
   tonic::LogIfError(tonic::DartInvokeField(library_.value(),
                                            "_updateLifecycleState",
@@ -238,8 +241,9 @@ void PlatformConfiguration::UpdateLifecycleState(const std::string& data) {
 
 void PlatformConfiguration::UpdateSemanticsEnabled(bool enabled) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
   UIDartState::ThrowIfUIOperationsProhibited();
 
@@ -249,8 +253,9 @@ void PlatformConfiguration::UpdateSemanticsEnabled(bool enabled) {
 
 void PlatformConfiguration::UpdateAccessibilityFeatures(int32_t values) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
 
   tonic::LogIfError(tonic::DartInvokeField(library_.value(),
@@ -293,14 +298,16 @@ void PlatformConfiguration::DispatchSemanticsAction(int32_t id,
                                                     SemanticsAction action,
                                                     std::vector<uint8_t> args) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
 
   Dart_Handle args_handle = (args.empty()) ? Dart_Null() : ToByteData(args);
 
-  if (Dart_IsError(args_handle))
+  if (Dart_IsError(args_handle)) {
     return;
+  }
 
   tonic::LogIfError(tonic::DartInvokeField(
       library_.value(), "_dispatchSemanticsAction",
@@ -310,8 +317,9 @@ void PlatformConfiguration::DispatchSemanticsAction(int32_t id,
 
 void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
 
   int64_t microseconds = (frameTime - fml::TimePoint()).ToMicroseconds();
@@ -328,8 +336,9 @@ void PlatformConfiguration::BeginFrame(fml::TimePoint frameTime) {
 
 void PlatformConfiguration::ReportTimings(std::vector<int64_t> timings) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
+  if (!dart_state) {
     return;
+  }
   tonic::DartState::Scope scope(dart_state);
 
   Dart_Handle data_handle =
@@ -353,11 +362,13 @@ void PlatformConfiguration::ReportTimings(std::vector<int64_t> timings) {
 
 void PlatformConfiguration::CompletePlatformMessageEmptyResponse(
     int response_id) {
-  if (!response_id)
+  if (!response_id) {
     return;
+  }
   auto it = pending_responses_.find(response_id);
-  if (it == pending_responses_.end())
+  if (it == pending_responses_.end()) {
     return;
+  }
   auto response = std::move(it->second);
   pending_responses_.erase(it);
   response->CompleteEmpty();
@@ -366,11 +377,13 @@ void PlatformConfiguration::CompletePlatformMessageEmptyResponse(
 void PlatformConfiguration::CompletePlatformMessageResponse(
     int response_id,
     std::vector<uint8_t> data) {
-  if (!response_id)
+  if (!response_id) {
     return;
+  }
   auto it = pending_responses_.find(response_id);
-  if (it == pending_responses_.end())
+  if (it == pending_responses_.end()) {
     return;
+  }
   auto response = std::move(it->second);
   pending_responses_.erase(it);
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
