@@ -18,7 +18,7 @@ static GdkVisual* fl_mock_renderer_get_visual(FlRenderer* renderer,
 }
 
 // Implements FlRenderer::create_display.
-static EGLDisplay fl_mock_renderer_create_display(FlRenderer* /*renderer*/) {
+static EGLDisplay fl_mock_renderer_create_display(FlRenderer* renderer) {
   return eglGetDisplay(EGL_DEFAULT_DISPLAY);
 }
 
