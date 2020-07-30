@@ -46,6 +46,34 @@ enum class EncodedType {
 
 // Returns the encoded type that should be written when serializing |value|.
 EncodedType EncodedTypeForValue(const EncodableValue& value) {
+#ifdef USE_LEGACY_ENCODABLE_VALUE
+  switch (value.type()) {
+    case EncodableValue::Type::kNull:
+      return EncodedType::kNull;
+    case EncodableValue::Type::kBool:
+      return value.BoolValue() ? EncodedType::kTrue : EncodedType::kFalse;
+    case EncodableValue::Type::kInt:
+      return EncodedType::kInt32;
+    case EncodableValue::Type::kLong:
+      return EncodedType::kInt64;
+    case EncodableValue::Type::kDouble:
+      return EncodedType::kFloat64;
+    case EncodableValue::Type::kString:
+      return EncodedType::kString;
+    case EncodableValue::Type::kByteList:
+      return EncodedType::kUInt8List;
+    case EncodableValue::Type::kIntList:
+      return EncodedType::kInt32List;
+    case EncodableValue::Type::kLongList:
+      return EncodedType::kInt64List;
+    case EncodableValue::Type::kDoubleList:
+      return EncodedType::kFloat64List;
+    case EncodableValue::Type::kList:
+      return EncodedType::kList;
+    case EncodableValue::Type::kMap:
+      return EncodedType::kMap;
+  }
+#else
   switch (value.index()) {
     case 0:
       return EncodedType::kNull;
@@ -72,6 +100,7 @@ EncodedType EncodedTypeForValue(const EncodableValue& value) {
     case 11:
       return EncodedType::kMap;
   }
+#endif
   assert(false);
   return EncodedType::kNull;
 }
@@ -152,6 +181,65 @@ EncodableValue StandardCodecSerializer::ReadValue(
 void StandardCodecSerializer::WriteValue(const EncodableValue& value,
                                          ByteBufferStreamWriter* stream) const {
   stream->WriteByte(static_cast<uint8_t>(EncodedTypeForValue(value)));
+#ifdef USE_LEGACY_ENCODABLE_VALUE
+  switch (value.type()) {
+    case EncodableValue::Type::kNull:
+    case EncodableValue::Type::kBool:
+      // Null and bool are encoded directly in the type.
+      break;
+    case EncodableValue::Type::kInt: {
+      int32_t int_value = value.IntValue();
+      stream->WriteBytes(reinterpret_cast<const uint8_t*>(&int_value), 4);
+      break;
+    }
+    case EncodableValue::Type::kLong: {
+      int64_t long_value = value.LongValue();
+      stream->WriteBytes(reinterpret_cast<const uint8_t*>(&long_value), 8);
+      break;
+    }
+    case EncodableValue::Type::kDouble: {
+      stream->WriteAlignment(8);
+      double double_value = value.DoubleValue();
+      stream->WriteBytes(reinterpret_cast<const uint8_t*>(&double_value), 8);
+      break;
+    }
+    case EncodableValue::Type::kString: {
+      const auto& string_value = value.StringValue();
+      size_t size = string_value.size();
+      WriteSize(size, stream);
+      if (size > 0) {
+        stream->WriteBytes(
+            reinterpret_cast<const uint8_t*>(string_value.data()), size);
+      }
+      break;
+    }
+    case EncodableValue::Type::kByteList:
+      WriteVector(value.ByteListValue(), stream);
+      break;
+    case EncodableValue::Type::kIntList:
+      WriteVector(value.IntListValue(), stream);
+      break;
+    case EncodableValue::Type::kLongList:
+      WriteVector(value.LongListValue(), stream);
+      break;
+    case EncodableValue::Type::kDoubleList:
+      WriteVector(value.DoubleListValue(), stream);
+      break;
+    case EncodableValue::Type::kList:
+      WriteSize(value.ListValue().size(), stream);
+      for (const auto& item : value.ListValue()) {
+        WriteValue(item, stream);
+      }
+      break;
+    case EncodableValue::Type::kMap:
+      WriteSize(value.MapValue().size(), stream);
+      for (const auto& pair : value.MapValue()) {
+        WriteValue(pair.first, stream);
+        WriteValue(pair.second, stream);
+      }
+      break;
+  }
+#else
   // TODO: Consider replacing this this with a std::visitor.
   switch (value.index()) {
     case 0:
@@ -214,6 +302,7 @@ void StandardCodecSerializer::WriteValue(const EncodableValue& value,
       break;
     }
   }
+#endif
 }
 
 size_t StandardCodecSerializer::ReadSize(ByteBufferStreamReader* stream) const {
@@ -321,6 +410,18 @@ StandardMethodCodec::DecodeMethodCallInternal(const uint8_t* message,
                                               size_t message_size) const {
   StandardCodecSerializer serializer;
   ByteBufferStreamReader stream(message, message_size);
+#ifdef USE_LEGACY_ENCODABLE_VALUE
+  EncodableValue method_name = serializer.ReadValue(&stream);
+  if (!method_name.IsString()) {
+    std::cerr << "Invalid method call; method name is not a string."
+              << std::endl;
+    return nullptr;
+  }
+  auto arguments =
+      std::make_unique<EncodableValue>(serializer.ReadValue(&stream));
+  return std::make_unique<MethodCall<EncodableValue>>(method_name.StringValue(),
+                                                      std::move(arguments));
+#else
   EncodableValue method_name_value = serializer.ReadValue(&stream);
   const auto* method_name = std::get_if<std::string>(&method_name_value);
   if (!method_name) {
@@ -332,6 +433,7 @@ StandardMethodCodec::DecodeMethodCallInternal(const uint8_t* message,
       std::make_unique<EncodableValue>(serializer.ReadValue(&stream));
   return std::make_unique<MethodCall<EncodableValue>>(*method_name,
                                                       std::move(arguments));
+#endif
 }
 
 std::unique_ptr<std::vector<uint8_t>>
@@ -404,9 +506,15 @@ bool StandardMethodCodec::DecodeAndProcessResponseEnvelopeInternal(
       EncodableValue code = serializer.ReadValue(&stream);
       EncodableValue message = serializer.ReadValue(&stream);
       EncodableValue details = serializer.ReadValue(&stream);
+#ifdef USE_LEGACY_ENCODABLE_VALUE
+      result->Error(code.StringValue(),
+                    message.IsNull() ? "" : message.StringValue(),
+                    details.IsNull() ? nullptr : &details);
+#else
       result->Error(std::get<std::string>(code),
                     message.IsNull() ? "" : std::get<std::string>(message),
                     details.IsNull() ? nullptr : &details);
+#endif
       return true;
     }
     default:
