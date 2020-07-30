@@ -118,11 +118,11 @@ public class TextInputChannel {
               try {
                 final JSONObject arguments = (JSONObject) args;
                 final String action = arguments.getString("action");
-                final JSONArray data = arguments.getJSONArray("data");
+                final String data = arguments.getString("data");
                 Bundle bundle = null;
-                if (data != null) {
+                if (data != null && !data.isEmpty()) {
                   bundle = new Bundle();
-                  bundle.putString("data", data.toString());
+                  bundle.putString("data", data);
                 }
                 textInputMethodHandler.sendAppPrivateCommand(action, bundle);
                 result.success(null);
