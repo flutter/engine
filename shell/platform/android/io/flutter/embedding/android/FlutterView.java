@@ -950,13 +950,18 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     flutterEngine = null;
   }
 
+  @VisibleForTesting
+  @NonNull
+  public FlutterImageView createImageView() {
+    return new FlutterImageView(
+        getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
+  }
+
   public void convertToImageView() {
     renderSurface.pause();
 
     if (flutterImageView == null) {
-      flutterImageView =
-          new FlutterImageView(
-              getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
+      flutterImageView = createImageView();
       addView(flutterImageView);
     } else {
       flutterImageView.resizeIfNeeded(getWidth(), getHeight());
@@ -992,26 +997,23 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       callSafely(onDone);
       return;
     }
-    // Start rendering on the previous surface.
-    // This surface is typically `FlutterSurfaceView` or `FlutterTextureView`.
-    renderSurface.attachToRenderer(flutterEngine.getRenderer());
-
-    final FlutterRenderer render = renderSurface.getAttachedRenderer();
+    final FlutterRenderer render = flutterEngine.getRenderer();
     if (render == null) {
       flutterImageView.detachFromRenderer();
       callSafely(onDone);
       return;
     }
+    // Start rendering on the previous surface.
+    // This surface is typically `FlutterSurfaceView` or `FlutterTextureView`.
+    renderSurface.attachToRenderer(render);
+
     // Install a Flutter UI listener to wait until the first frame is rendered
     // in the new surface to call the `onDone` callback.
     render.addIsDisplayingFlutterUiListener(
         new FlutterUiDisplayListener() {
           @Override
           public void onFlutterUiDisplayed() {
-            FlutterRenderer render = renderSurface.getAttachedRenderer();
-            if (render != null) {
-              render.removeIsDisplayingFlutterUiListener(this);
-            }
+            render.removeIsDisplayingFlutterUiListener(this);
             callSafely(onDone);
             flutterImageView.detachFromRenderer();
           }

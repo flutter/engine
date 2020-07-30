@@ -90,7 +90,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *
  * <p>To invoke a native method that is not associated with a platform view, invoke it statically:
  *
- * <p>{@code bool enabled = FlutterJNI.nativeGetIsSoftwareRenderingEnabled(); }
+ * <p>{@code bool enabled = FlutterJNI.getIsSoftwareRenderingEnabled(); }
  */
 @Keep
 public class FlutterJNI {
@@ -120,9 +120,14 @@ public class FlutterJNI {
    */
   public static native void nativePrefetchDefaultFontManager();
 
-  // TODO(mattcarroll): add javadocs
+  private native boolean nativeGetIsSoftwareRenderingEnabled();
+
+  @VisibleForTesting
   @UiThread
-  public native boolean nativeGetIsSoftwareRenderingEnabled();
+  // TODO(mattcarroll): add javadocs
+  public boolean getIsSoftwareRenderingEnabled() {
+    return nativeGetIsSoftwareRenderingEnabled();
+  }
 
   @Nullable
   // TODO(mattcarroll): add javadocs
@@ -212,7 +217,12 @@ public class FlutterJNI {
   public void attachToNative(boolean isBackgroundView) {
     ensureRunningOnMainThread();
     ensureNotAttachedToNative();
-    nativePlatformViewId = nativeAttach(this, isBackgroundView);
+    nativePlatformViewId = performNativeAttach(this, isBackgroundView);
+  }
+
+  @VisibleForTesting
+  public long performNativeAttach(@NonNull FlutterJNI flutterJNI, boolean isBackgroundView) {
+    return nativeAttach(flutterJNI, isBackgroundView);
   }
 
   private native long nativeAttach(@NonNull FlutterJNI flutterJNI, boolean isBackgroundView);
@@ -279,7 +289,7 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @VisibleForTesting
   @UiThread
-  void onFirstFrame() {
+  public void onFirstFrame() {
     ensureRunningOnMainThread();
 
     for (FlutterUiDisplayListener listener : flutterUiDisplayListeners) {
