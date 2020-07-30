@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// A class that can rasterize [LayerTree]s into a given [Surface].
@@ -12,6 +12,9 @@ class Rasterizer {
   final List<ui.VoidCallback> _postFrameCallbacks = <ui.VoidCallback>[];
 
   Rasterizer(this.surface);
+
+  void setSkiaResourceCacheMaxBytes(int bytes) =>
+    surface.setSkiaResourceCacheMaxBytes(bytes);
 
   /// Creates a new frame from this rasterizer's surface, draws the given
   /// [LayerTree] into it, and then submits the frame.

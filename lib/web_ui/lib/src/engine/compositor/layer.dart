@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// A layer to be composed into a scene.
@@ -402,10 +402,10 @@ class PictureLayer extends Layer {
 /// on the given elevation.
 class PhysicalShapeLayer extends ContainerLayer
     implements ui.PhysicalShapeEngineLayer {
-  final double? _elevation;
-  final ui.Color? _color;
+  final double _elevation;
+  final ui.Color _color;
   final ui.Color? _shadowColor;
-  final ui.Path? _path;
+  final CkPath _path;
   final ui.Clip _clipBehavior;
 
   PhysicalShapeLayer(
@@ -420,7 +420,7 @@ class PhysicalShapeLayer extends ContainerLayer
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     prerollChildren(prerollContext, matrix);
 
-    paintBounds = _path!.getBounds();
+    paintBounds = _path.getBounds();
     if (_elevation == 0.0) {
       // No need to extend the paint bounds if there is no shadow.
       return;
@@ -480,16 +480,16 @@ class PhysicalShapeLayer extends ContainerLayer
     assert(needsPainting);
 
     if (_elevation != 0) {
-      drawShadow(paintContext.leafNodesCanvas!, _path!, _shadowColor!, _elevation!,
-          _color!.alpha != 0xff);
+      drawShadow(paintContext.leafNodesCanvas!, _path, _shadowColor!, _elevation,
+          _color.alpha != 0xff);
     }
 
-    final ui.Paint paint = ui.Paint()..color = _color!;
+    final ui.Paint paint = ui.Paint()..color = _color;
     if (_clipBehavior != ui.Clip.antiAliasWithSaveLayer) {
-      paintContext.leafNodesCanvas!.drawPath(_path!, paint as CkPaint);
+      paintContext.leafNodesCanvas!.drawPath(_path, paint as CkPaint);
     }
 
-    final int? saveCount = paintContext.internalNodesCanvas.save();
+    final int saveCount = paintContext.internalNodesCanvas.save();
     switch (_clipBehavior) {
       case ui.Clip.hardEdge:
         paintContext.internalNodesCanvas.clipPath(_path, false);

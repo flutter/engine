@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// After a keydown is received, this is the duration we wait for a repeat event
@@ -89,7 +89,7 @@ class Keyboard {
       event.preventDefault();
     }
 
-    final String timerKey = keyboardEvent.code;
+    final String timerKey = keyboardEvent.code!;
 
     // Don't synthesize a keyup event for modifier keys because the browser always
     // sends a keyup event for those.
@@ -181,7 +181,7 @@ int _getMetaState(html.KeyboardEvent event) {
 /// Modifier keys are shift, alt, ctrl and meta/cmd/win. These are the keys used
 /// to perform keyboard shortcuts (e.g. `cmd+c`, `cmd+l`).
 bool _isModifierKey(html.KeyboardEvent event) {
-  final String key = event.key;
+  final String key = event.key!;
   return key == 'Meta' || key == 'Shift' || key == 'Alt' || key == 'Control';
 }
 

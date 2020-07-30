@@ -2,16 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
+// @dart = 2.10
 
 part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
 /// accessibility APIs to a semantics node.
-//
-// When changes are made to this class, the equivalent APIs in
-// `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
-// updated.
+///
+/// \warning When changes are made to this class, the equivalent APIs in
+///         `lib/ui/semantics/semantics_node.h` and in each of the embedders
+///         *must* be updated.
+/// See also:
+///   - file://./../../lib/ui/semantics/semantics_node.h
 class SemanticsAction {
   const SemanticsAction._(this.index) : assert(index != null); // ignore: unnecessary_null_comparison
 
@@ -167,7 +169,7 @@ class SemanticsAction {
 
   /// A request that the node should be dismissed.
   ///
-  /// A [Snackbar], for example, may have a dismiss action to indicate to the
+  /// A [SnackBar], for example, may have a dismiss action to indicate to the
   /// user that it can be removed after it is no longer relevant. On Android,
   /// (with TalkBack) special hint text is spoken when focusing the node and
   /// a custom action is available in the local context menu. On iOS,

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// A raw HTML canvas that is directly written to.
@@ -364,7 +365,7 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   html.ImageElement _reuseOrCreateImage(HtmlImage htmlImage) {
-    final String cacheKey = htmlImage.imgElement.src;
+    final String cacheKey = htmlImage.imgElement.src!;
     if (_elementCache != null) {
       html.ImageElement? imageElement = _elementCache!.reuse(cacheKey) as html.ImageElement?;
       if (imageElement != null) {
@@ -674,7 +675,7 @@ class BitmapCanvas extends EngineCanvas {
       for (int i = 0; i < len; i++) {
         final String char = line.displayText![i];
         ctx!.fillText(char, x, y);
-        x += letterSpacing + ctx.measureText(char).width;
+        x += letterSpacing + ctx.measureText(char).width!;
       }
     }
   }
@@ -814,7 +815,6 @@ class BitmapCanvas extends EngineCanvas {
 
   @override
   void endOfPaint() {
-    assert(_saveCount == 0);
     _canvasPool.endOfPaint();
     _elementCache?.commitFrame();
   }

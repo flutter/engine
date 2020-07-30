@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// This composites HTML views into the [ui.Scene].
@@ -334,7 +335,9 @@ class HtmlViewEmbedder {
       final SurfaceFrame frame =
           _overlays[viewId]!.surface.acquireFrame(_frameSize);
       final CkCanvas canvas = frame.skiaCanvas;
-      canvas.drawPicture(_pictureRecorders[viewId]!.endRecording());
+      canvas.drawPicture(
+        _pictureRecorders[viewId]!.endRecording() as CkPicture,
+      );
       frame.submit();
     }
     _pictureRecorders.clear();

@@ -19,12 +19,14 @@ import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.android.MotionEventTracker;
 import io.flutter.embedding.engine.FlutterOverlaySurface;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.mutatorsstack.*;
+import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.PlatformViewsChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.view.AccessibilityBridge;
@@ -44,6 +46,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private static final String TAG = "PlatformViewsController";
 
   private final PlatformViewRegistryImpl registry;
+
+  private AndroidTouchProcessor androidTouchProcessor;
 
   // The context of the Activity or Fragment hosting the render target for the Flutter engine.
   private Context context;
@@ -114,8 +118,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           if (platformViewRequests.get(viewId) != null) {
             platformViewRequests.remove(viewId);
           }
-          if (platformViews.get(viewId) != null) {
-            ((FlutterView) flutterView).removeView(mutatorViews.get(viewId));
+
+          final View platformView = platformViews.get(viewId);
+          if (platformView != null) {
+            final FlutterMutatorView mutatorView = mutatorViews.get(viewId);
+            mutatorView.removeView(platformView);
+            ((FlutterView) flutterView).removeView(mutatorView);
             platformViews.remove(viewId);
             mutatorViews.remove(viewId);
           }
@@ -254,10 +262,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final int viewId = touch.viewId;
           float density = context.getResources().getDisplayMetrics().density;
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
-          final MotionEvent event = toMotionEvent(density, touch);
           if (vdControllers.containsKey(viewId)) {
+            final MotionEvent event = toMotionEvent(density, touch, /*usingVirtualDiplays=*/ true);
             vdControllers.get(touch.viewId).dispatchTouchEvent(event);
           } else if (platformViews.get(viewId) != null) {
+            final MotionEvent event = toMotionEvent(density, touch, /*usingVirtualDiplays=*/ false);
             View view = platformViews.get(touch.viewId);
             view.dispatchTouchEvent(event);
           } else {
@@ -305,7 +314,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
       };
 
-  private MotionEvent toMotionEvent(float density, PlatformViewsChannel.PlatformViewTouch touch) {
+  @VisibleForTesting
+  public MotionEvent toMotionEvent(
+      float density, PlatformViewsChannel.PlatformViewTouch touch, boolean usingVirtualDiplays) {
     MotionEventTracker.MotionEventId motionEventId =
         MotionEventTracker.MotionEventId.from(touch.motionEventId);
     MotionEvent trackedEvent = motionEventTracker.pop(motionEventId);
@@ -321,7 +332,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         parsePointerCoordsList(touch.rawPointerCoords, density)
             .toArray(new PointerCoords[touch.pointerCount]);
 
-    if (trackedEvent != null) {
+    if (!usingVirtualDiplays && trackedEvent != null) {
       return MotionEvent.obtain(
           trackedEvent.getDownTime(),
           trackedEvent.getEventTime(),
@@ -517,6 +528,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   @Override
   public View getPlatformViewById(Integer id) {
+    // Hybrid composition.
+    if (platformViews.get(id) != null) {
+      return platformViews.get(id);
+    }
     VirtualDisplayController controller = vdControllers.get(id);
     if (controller == null) {
       return null;
@@ -634,7 +649,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
   }
 
-  private void initializePlatformViewIfNeeded(int viewId) {
+  @VisibleForTesting
+  void initializePlatformViewIfNeeded(int viewId) {
     if (platformViews.get(viewId) != null) {
       return;
     }
@@ -667,13 +683,27 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     PlatformView platformView = factory.create(context, viewId, createParams);
     View view = platformView.getView();
+
+    if (view == null) {
+      throw new IllegalStateException(
+          "PlatformView#getView() returned null, but an Android view reference was expected.");
+    }
+    if (view.getParent() != null) {
+      throw new IllegalStateException(
+          "The Android view returned from PlatformView#getView() was already added to a parent view.");
+    }
     platformViews.put(viewId, view);
 
     FlutterMutatorView mutatorView =
-        new FlutterMutatorView(context, context.getResources().getDisplayMetrics().density);
+        new FlutterMutatorView(
+            context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
     mutatorViews.put(viewId, mutatorView);
-    mutatorView.addView(platformView.getView());
+    mutatorView.addView(view);
     ((FlutterView) flutterView).addView(mutatorView);
+  }
+
+  public void attachToFlutterRenderer(FlutterRenderer flutterRenderer) {
+    androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ true);
   }
 
   public void onDisplayPlatformView(

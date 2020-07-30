@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 bool _offsetIsValid(ui.Offset offset) {
@@ -20,7 +20,7 @@ bool _matrix4IsValid(Float32List matrix4) {
 
 abstract class EngineShader {
   /// Create a shader for use in the Skia backend.
-  js.JsObject? createSkiaShader();
+  SkShader createSkiaShader();
 }
 
 abstract class EngineGradient implements ui.Gradient, EngineShader {
@@ -63,7 +63,7 @@ class GradientSweep extends EngineGradient {
   final Float32List? matrix4;
 
   @override
-  js.JsObject createSkiaShader() {
+  SkShader createSkiaShader() {
     throw UnimplementedError();
   }
 }
@@ -155,18 +155,16 @@ class GradientLinear extends EngineGradient {
   }
 
   @override
-  js.JsObject? createSkiaShader() {
+  SkShader createSkiaShader() {
     assert(experimentalUseSkia);
 
-    var jsColors = makeColorList(colors);
-
-    return canvasKit['SkShader'].callMethod('MakeLinearGradient', <dynamic>[
-      makeSkPoint(from),
-      makeSkPoint(to),
-      jsColors,
-      makeSkiaColorStops(colorStops),
-      tileMode.index,
-    ]);
+    return canvasKit.SkShader.MakeLinearGradient(
+      toSkPoint(from),
+      toSkPoint(to),
+      toSkFloatColorList(colors),
+      toSkColorStops(colorStops),
+      toSkTileMode(tileMode),
+    );
   }
 }
 
@@ -211,20 +209,18 @@ class GradientRadial extends EngineGradient {
   }
 
   @override
-  js.JsObject? createSkiaShader() {
+  SkShader createSkiaShader() {
     assert(experimentalUseSkia);
 
-    var jsColors = makeColorList(colors);
-
-    return canvasKit['SkShader'].callMethod('MakeRadialGradient', <dynamic>[
-      makeSkPoint(center),
+    return canvasKit.SkShader.MakeRadialGradient(
+      toSkPoint(center),
       radius,
-      jsColors,
-      makeSkiaColorStops(colorStops),
-      tileMode.index,
-      matrix4 != null ? makeSkMatrixFromFloat32(matrix4) : null,
+      toSkFloatColorList(colors),
+      toSkColorStops(colorStops),
+      toSkTileMode(tileMode),
+      matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
       0,
-    ]);
+    );
   }
 }
 
@@ -248,23 +244,19 @@ class GradientConical extends EngineGradient {
   }
 
   @override
-  js.JsObject? createSkiaShader() {
+  SkShader createSkiaShader() {
     assert(experimentalUseSkia);
-
-    var jsColors = makeColorList(colors);
-
-    return canvasKit['SkShader']
-        .callMethod('MakeTwoPointConicalGradient', <dynamic>[
-      makeSkPoint(focal),
+    return canvasKit.SkShader.MakeTwoPointConicalGradient(
+      toSkPoint(focal),
       focalRadius,
-      makeSkPoint(center),
+      toSkPoint(center),
       radius,
-      jsColors,
-      makeSkiaColorStops(colorStops),
-      tileMode.index,
-      matrix4 != null ? makeSkMatrixFromFloat32(matrix4) : null,
+      toSkFloatColorList(colors),
+      toSkColorStops(colorStops),
+      toSkTileMode(tileMode),
+      matrix4 != null ? toSkMatrixFromFloat32(matrix4!) : null,
       0,
-    ]);
+    );
   }
 }
 
@@ -293,18 +285,6 @@ class EngineImageFilter implements ui.ImageFilter {
   }
 }
 
-js.JsObject? _skTileMode(ui.TileMode tileMode) {
-  switch (tileMode) {
-    case ui.TileMode.clamp:
-      return canvasKit['TileMode']['Clamp'];
-    case ui.TileMode.repeated:
-      return canvasKit['TileMode']['Repeat'];
-    case ui.TileMode.mirror:
-    default:
-      return canvasKit['TileMode']['Mirror'];
-  }
-}
-
 /// Backend implementation of [ui.ImageShader].
 class EngineImageShader implements ui.ImageShader, EngineShader {
   EngineImageShader(
@@ -316,6 +296,8 @@ class EngineImageShader implements ui.ImageShader, EngineShader {
   final Float64List matrix4;
   final CkImage _skImage;
 
-  js.JsObject? createSkiaShader() => _skImage.skImage!.callMethod(
-      'makeShader', <dynamic>[_skTileMode(tileModeX), _skTileMode(tileModeY)]);
+  SkShader createSkiaShader() => _skImage.skImage.makeShader(
+    toSkTileMode(tileModeX),
+    toSkTileMode(tileModeY),
+  );
 }

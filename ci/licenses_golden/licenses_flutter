@@ -335,12 +335,16 @@ FILE: ../../../flutter/lib/ui/painting/image.h
 FILE: ../../../flutter/lib/ui/painting/image_decoder.cc
 FILE: ../../../flutter/lib/ui/painting/image_decoder.h
 FILE: ../../../flutter/lib/ui/painting/image_decoder_unittests.cc
+FILE: ../../../flutter/lib/ui/painting/image_descriptor.cc
+FILE: ../../../flutter/lib/ui/painting/image_descriptor.h
 FILE: ../../../flutter/lib/ui/painting/image_encoding.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.h
 FILE: ../../../flutter/lib/ui/painting/image_filter.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.h
 FILE: ../../../flutter/lib/ui/painting/image_shader.cc
 FILE: ../../../flutter/lib/ui/painting/image_shader.h
+FILE: ../../../flutter/lib/ui/painting/immutable_buffer.cc
+FILE: ../../../flutter/lib/ui/painting/immutable_buffer.h
 FILE: ../../../flutter/lib/ui/painting/matrix.cc
 FILE: ../../../flutter/lib/ui/painting/matrix.h
 FILE: ../../../flutter/lib/ui/painting/multi_frame_codec.cc
@@ -492,9 +496,14 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/offset.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/opacity.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/conic.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/cubic.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_metrics.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_ref.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_to_svg.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_utils.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/path_windings.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/path/tangent.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/platform_view.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/surface/recording_canvas.dart
@@ -516,7 +525,9 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_break_properties.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text/word_breaker.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/autofill_hint.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_type.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_capitalization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_editing.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/ulps.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/validators.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart
@@ -604,6 +615,8 @@ FILE: ../../../flutter/shell/common/rasterizer.cc
 FILE: ../../../flutter/shell/common/rasterizer.h
 FILE: ../../../flutter/shell/common/run_configuration.cc
 FILE: ../../../flutter/shell/common/run_configuration.h
+FILE: ../../../flutter/shell/common/serialization_callbacks.cc
+FILE: ../../../flutter/shell/common/serialization_callbacks.h
 FILE: ../../../flutter/shell/common/shell.cc
 FILE: ../../../flutter/shell/common/shell.h
 FILE: ../../../flutter/shell/common/shell_benchmarks.cc
@@ -622,6 +635,7 @@ FILE: ../../../flutter/shell/common/shell_test_platform_view_vulkan.h
 FILE: ../../../flutter/shell/common/shell_unittests.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
+FILE: ../../../flutter/shell/common/skp_shader_warmup_unittests.cc
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
 FILE: ../../../flutter/shell/common/thread_host.cc
@@ -801,6 +815,9 @@ FILE: ../../../flutter/shell/platform/android/platform_message_response_android.
 FILE: ../../../flutter/shell/platform/android/platform_message_response_android.h
 FILE: ../../../flutter/shell/platform/android/platform_view_android.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android.h
+FILE: ../../../flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate.cc
+FILE: ../../../flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate.h
+FILE: ../../../flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate_unittests.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android_jni_impl.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android_jni_impl.h
 FILE: ../../../flutter/shell/platform/android/robolectric.properties
@@ -909,6 +926,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlay
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViewsTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate.mm
@@ -1310,6 +1328,8 @@ FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flu
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_view_controller.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/plugin_registrar_windows.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/plugin_registrar_windows_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/cursor_handler.cc
+FILE: ../../../flutter/shell/platform/windows/cursor_handler.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.h

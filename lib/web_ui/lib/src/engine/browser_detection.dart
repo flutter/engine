@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// The HTML engine used by the current browser.
@@ -115,7 +115,7 @@ OperatingSystem get operatingSystem {
 OperatingSystem? debugOperatingSystemOverride;
 
 OperatingSystem _detectOperatingSystem() {
-  final String platform = html.window.navigator.platform;
+  final String platform = html.window.navigator.platform!;
   final String userAgent = html.window.navigator.userAgent;
 
   if (platform.startsWith('Mac')) {

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
+// @dart = 2.10
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
@@ -168,8 +168,16 @@ void main() {
         final String text = testCase.toText();
 
         int lastLineBreak = 0;
-        for (int i = 0; i < testCase.signs.length; i++) {
-          final Sign sign = testCase.signs[i];
+        int surrogateCount = 0;
+        // `s` is the index in the `testCase.signs` list.
+        for (int s = 0; s < testCase.signs.length; s++) {
+          // `i` is the index in the `text`.
+          final int i = s + surrogateCount;
+          if (s < testCase.chars.length && testCase.chars[s].isSurrogatePair) {
+            surrogateCount++;
+          }
+
+          final Sign sign = testCase.signs[s];
           final LineBreakResult result = nextLineBreak(text, lastLineBreak);
           if (sign.isBreakOpportunity) {
             // The line break should've been found at index `i`.
@@ -238,7 +246,7 @@ List<Line> split(String text) {
   final List<Line> lines = <Line>[];
 
   int i = 0;
-  LineBreakType breakType;
+  LineBreakType? breakType;
   while (breakType != LineBreakType.endOfText) {
     final LineBreakResult result = nextLineBreak(text, i);
     lines.add(Line(text.substring(i, result.index), result.type));

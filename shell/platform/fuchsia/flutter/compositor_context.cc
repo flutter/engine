@@ -5,6 +5,7 @@
 #include "compositor_context.h"
 
 #include "flutter/flow/layers/layer_tree.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter_runner {
 
@@ -106,11 +107,13 @@ void CompositorContext::OnDestroyView(int64_t view_id) {
   session_connection_.scene_update_context().DestroyView(view_id);
 }
 
-CompositorContext::~CompositorContext() = default;
+CompositorContext::~CompositorContext() {
+  OnGrContextDestroyed();
+}
 
 std::unique_ptr<flutter::CompositorContext::ScopedFrame>
 CompositorContext::AcquireFrame(
-    GrContext* gr_context,
+    GrDirectContext* gr_context,
     SkCanvas* canvas,
     flutter::ExternalViewEmbedder* view_embedder,
     const SkMatrix& root_surface_transformation,

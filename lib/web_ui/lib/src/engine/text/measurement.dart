@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 // TODO(yjbanov): this is a hack we use to compute ideographic baseline; this
@@ -17,17 +17,16 @@ const double _baselineRatioHack = 1.1662499904632568;
 typedef CharPredicate = bool Function(int char);
 
 bool _whitespacePredicate(int char) {
-  final LineCharProperty? prop =
-      _normalizeLineProperty(lineLookup.findForChar(char));
+  final LineCharProperty prop = lineLookup.findForChar(char);
   return prop == LineCharProperty.SP ||
       prop == LineCharProperty.BK ||
+      prop == LineCharProperty.LF ||
       prop == LineCharProperty.CR;
 }
 
 bool _newlinePredicate(int char) {
-  final LineCharProperty? prop =
-      _normalizeLineProperty(lineLookup.findForChar(char));
-  return prop == LineCharProperty.BK || prop == LineCharProperty.CR;
+  final LineCharProperty prop = lineLookup.findForChar(char);
+  return prop == LineCharProperty.BK || prop == LineCharProperty.LF || prop == LineCharProperty.CR;
 }
 
 /// Manages [ParagraphRuler] instances and caches them per unique
@@ -690,7 +689,7 @@ double _measureSubstring(
   final String sub =
       start == 0 && end == text.length ? text : text.substring(start, end);
   final double width =
-      _canvasContext.measureText(sub).width + letterSpacing * sub.length as double;
+      _canvasContext.measureText(sub).width! + letterSpacing * sub.length as double;
 
   // What we are doing here is we are rounding to the nearest 2nd decimal
   // point. So 39.999423 becomes 40, and 11.243982 becomes 11.24.

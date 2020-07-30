@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 class SurfaceScene implements ui.Scene {
@@ -38,8 +38,8 @@ class PersistedScene extends PersistedContainerSurface {
     // TODO(yjbanov): in the add2app scenario where we might be hosted inside
     //                a custom element, this will be different. We will need to
     //                update this code when we add add2app support.
-    final double screenWidth = html.window.innerWidth.toDouble();
-    final double screenHeight = html.window.innerHeight.toDouble();
+    final double screenWidth = html.window.innerWidth!.toDouble();
+    final double screenHeight = html.window.innerHeight!.toDouble();
     _localClipBounds = ui.Rect.fromLTRB(0, 0, screenWidth, screenHeight);
     _localTransformInverse = Matrix4.identity();
     _projectedClip = null;
