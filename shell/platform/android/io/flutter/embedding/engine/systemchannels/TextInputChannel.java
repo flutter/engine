@@ -129,6 +129,7 @@ public class TextInputChannel {
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
               }
+              break;
             case "TextInput.finishAutofillContext":
               textInputMethodHandler.finishAutofillContext((boolean) args);
               result.success(null);
