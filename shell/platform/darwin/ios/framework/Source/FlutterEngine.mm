@@ -23,6 +23,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/connection_collection.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
@@ -78,6 +79,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   BOOL _allowHeadlessExecution;
   FlutterBinaryMessengerRelay* _binaryMessenger;
+  std::unique_ptr<flutter::ConnectionCollection> _connections;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix {
@@ -110,11 +112,17 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
 
   _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
+  _connections.reset(new flutter::ConnectionCollection());
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   [center addObserver:self
              selector:@selector(onMemoryWarning:)
                  name:UIApplicationDidReceiveMemoryWarningNotification
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(applicationDidEnterBackground:)
+                 name:UIApplicationDidEnterBackgroundNotification
                object:nil];
 
   [center addObserver:self
@@ -232,6 +240,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                                       }];
   } else {
     self.flutterViewControllerWillDeallocObserver = nil;
+    [self notifyLowMemory];
   }
 }
 
@@ -558,6 +567,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return [self runWithEntrypoint:entrypoint libraryURI:nil];
 }
 
+- (void)notifyLowMemory {
+  if (_shell) {
+    _shell->NotifyLowMemoryWarning();
+  }
+  [_systemChannel sendMessage:@{@"type" : @"memoryPressure"}];
+}
+
 #pragma mark - Text input delegate
 
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state {
@@ -680,14 +696,26 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _shell->GetPlatformView()->DispatchPlatformMessage(platformMessage);
 }
 
-- (void)setMessageHandlerOnChannel:(NSString*)channel
-              binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
+- (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(NSString*)channel
+                                          binaryMessageHandler:
+                                              (FlutterBinaryMessageHandler)handler {
   NSParameterAssert(channel);
   if (_shell && _shell->IsSetup()) {
     self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String, handler);
+    return _connections->AquireConnection(channel.UTF8String);
   } else {
     NSAssert(!handler, @"Setting a message handler before the FlutterEngine has been run.");
     // Setting a handler to nil for a not setup channel is a noop.
+    return flutter::ConnectionCollection::MakeErrorConnection(-1);
+  }
+}
+
+- (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
+  if (_shell && _shell->IsSetup()) {
+    std::string channel = _connections->CleanupConnection(connection);
+    if (!channel.empty()) {
+      self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.c_str(), nil);
+    }
   }
 }
 
@@ -748,11 +776,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [self setIsGpuDisabled:YES];
 }
 
+- (void)applicationDidEnterBackground:(NSNotification*)notification {
+  [self notifyLowMemory];
+}
+
 - (void)onMemoryWarning:(NSNotification*)notification {
-  if (_shell) {
-    _shell->NotifyLowMemoryWarning();
-  }
-  [_systemChannel sendMessage:@{@"type" : @"memoryPressure"}];
+  [self notifyLowMemory];
 }
 
 - (void)setIsGpuDisabled:(BOOL)value {

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
+// @dart = 2.10
 part of ui;
 
 /// Initializes the platform.
@@ -31,7 +31,7 @@ Future<void> _initializePlatform({
   // This needs to be after `webOnlyInitializeEngine` because that is where the
   // canvaskit script is added to the page.
   if (engine.experimentalUseSkia) {
-    await engine.initializeSkia();
+    await engine.initializeCanvasKit();
   }
 
   assetManager ??= const engine.AssetManager();

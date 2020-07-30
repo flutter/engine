@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 @JS()
 library engine;
 
@@ -100,9 +101,14 @@ part 'engine/surface/offset.dart';
 part 'engine/surface/opacity.dart';
 part 'engine/surface/painting.dart';
 part 'engine/surface/path/conic.dart';
+part 'engine/surface/path/cubic.dart';
 part 'engine/surface/path/path.dart';
 part 'engine/surface/path/path_metrics.dart';
+part 'engine/surface/path/path_ref.dart';
 part 'engine/surface/path/path_to_svg.dart';
+part 'engine/surface/path/path_utils.dart';
+part 'engine/surface/path/path_windings.dart';
+part 'engine/surface/path/tangent.dart';
 part 'engine/surface/picture.dart';
 part 'engine/surface/platform_view.dart';
 part 'engine/surface/recording_canvas.dart';
@@ -124,7 +130,9 @@ part 'engine/text/word_break_properties.dart';
 part 'engine/text/word_breaker.dart';
 part 'engine/text_editing/autofill_hint.dart';
 part 'engine/text_editing/input_type.dart';
+part 'engine/text_editing/text_capitalization.dart';
 part 'engine/text_editing/text_editing.dart';
+part 'engine/ulps.dart';
 part 'engine/util.dart';
 part 'engine/validators.dart';
 part 'engine/vector_math.dart';

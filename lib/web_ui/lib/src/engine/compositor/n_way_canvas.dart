@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// A virtual canvas that applies operations to multiple canvases at once.
@@ -14,8 +14,8 @@ class CkNWayCanvas {
   }
 
   /// Calls [save] on all canvases.
-  int? save() {
-    int? saveCount;
+  int save() {
+    int saveCount = 0;
     for (int i = 0; i < _canvases.length; i++) {
       saveCount = _canvases[i]!.save();
     }
@@ -44,7 +44,7 @@ class CkNWayCanvas {
   }
 
   /// Calls [restoreToCount] on all canvases.
-  void restoreToCount(int? count) {
+  void restoreToCount(int count) {
     for (int i = 0; i < _canvases.length; i++) {
       _canvases[i]!.restoreToCount(count);
     }
@@ -58,7 +58,7 @@ class CkNWayCanvas {
   }
 
   /// Calls [transform] on all canvases.
-  void transform(Float32List? matrix) {
+  void transform(Float32List matrix) {
     for (int i = 0; i < _canvases.length; i++) {
       _canvases[i]!.transform(matrix);
     }

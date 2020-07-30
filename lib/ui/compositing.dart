@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
+// @dart = 2.10
 
 part of dart.ui;
 
@@ -605,7 +605,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Therefore, when implementing a subclass of the [Layer] concept defined in
   /// the rendering layer of Flutter's framework, once this is called, there's
-  /// no need to call [addToScene] for its children layers.
+  /// no need to call [Layer.addToScene] for its children layers.
   ///
   /// {@macro dart.ui.sceneBuilder.oldLayerVsRetained}
   void addRetained(EngineLayer retainedLayer) {

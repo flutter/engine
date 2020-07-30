@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// When set to true, all platform messages will be printed to the console.
@@ -73,11 +73,11 @@ class EngineWindow extends ui.Window {
       double windowInnerHeight;
       final html.VisualViewport? viewport = html.window.visualViewport;
       if (viewport != null) {
-        windowInnerWidth = viewport.width * devicePixelRatio as double;
-        windowInnerHeight = viewport.height * devicePixelRatio as double;
+        windowInnerWidth = viewport.width! * devicePixelRatio as double;
+        windowInnerHeight = viewport.height! * devicePixelRatio as double;
       } else {
-        windowInnerWidth = html.window.innerWidth * devicePixelRatio;
-        windowInnerHeight = html.window.innerHeight * devicePixelRatio;
+        windowInnerWidth = html.window.innerWidth! * devicePixelRatio;
+        windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
       }
       _physicalSize = ui.Size(
         windowInnerWidth,
@@ -90,9 +90,9 @@ class EngineWindow extends ui.Window {
     double windowInnerHeight;
     final html.VisualViewport? viewport = html.window.visualViewport;
     if (viewport != null) {
-      windowInnerHeight = viewport.height * devicePixelRatio as double;
+      windowInnerHeight = viewport.height! * devicePixelRatio as double;
     } else {
-      windowInnerHeight = html.window.innerHeight * devicePixelRatio;
+      windowInnerHeight = html.window.innerHeight! * devicePixelRatio;
     }
     final double bottomPadding = _physicalSize!.height - windowInnerHeight;
     _viewInsets =
@@ -117,11 +117,11 @@ class EngineWindow extends ui.Window {
     double height = 0;
     double width = 0;
     if (html.window.visualViewport != null) {
-      height = html.window.visualViewport!.height * devicePixelRatio as double;
-      width = html.window.visualViewport!.width * devicePixelRatio as double;
+      height = html.window.visualViewport!.height! * devicePixelRatio as double;
+      width = html.window.visualViewport!.width! * devicePixelRatio as double;
     } else {
-      height = html.window.innerHeight * devicePixelRatio;
-      width = html.window.innerWidth * devicePixelRatio;
+      height = html.window.innerHeight! * devicePixelRatio;
+      width = html.window.innerWidth! * devicePixelRatio;
     }
     // First confirm both heught and width is effected.
     if (_physicalSize!.height != height && _physicalSize!.width != width) {
@@ -280,15 +280,15 @@ class EngineWindow extends ui.Window {
 
   static List<ui.Locale> parseBrowserLanguages() {
     // TODO(yjbanov): find a solution for IE
-    final bool languagesFeatureMissing = !js_util.hasProperty(html.window.navigator, 'languages');
-    if (languagesFeatureMissing || html.window.navigator.languages.isEmpty) {
+    var languages = html.window.navigator.languages;
+    if (languages == null || languages.isEmpty) {
       // To make it easier for the app code, let's not leave the locales list
       // empty. This way there's fewer corner cases for apps to handle.
       return const [_defaultLocale];
     }
 
     final List<ui.Locale> locales = <ui.Locale>[];
-    for (final String language in html.window.navigator.languages) {
+    for (final String language in languages) {
       final List<String> parts = language.split('-');
       if (parts.length > 1) {
         locales.add(ui.Locale(parts.first, parts.last));
@@ -494,6 +494,19 @@ class EngineWindow extends ui.Window {
     }
 
     switch (name) {
+      /// This should be in sync with shell/common/shell.cc
+      case 'flutter/skia':
+        const MethodCodec codec = JSONMethodCodec();
+        final MethodCall decoded = codec.decodeMethodCall(data);
+        switch (decoded.method) {
+          case 'Skia.setResourceCacheMaxBytes':
+            if (decoded.arguments is int) {
+              rasterizer?.setSkiaResourceCacheMaxBytes(decoded.arguments);
+            }
+            break;
+        }
+
+        return;
       case 'flutter/assets':
         assert(ui.webOnlyAssetManager != null); // ignore: unnecessary_null_comparison
         final String url = utf8.decode(data!.buffer.asUint8List());
@@ -690,7 +703,7 @@ class EngineWindow extends ui.Window {
     _brightnessMediaQueryListener = (html.Event event) {
       final html.MediaQueryListEvent mqEvent = event as html.MediaQueryListEvent;
       _updatePlatformBrightness(
-          mqEvent.matches ? ui.Brightness.dark : ui.Brightness.light);
+          mqEvent.matches! ? ui.Brightness.dark : ui.Brightness.light);
     };
     _brightnessMediaQuery.addListener(_brightnessMediaQueryListener);
     registerHotRestartListener(() {

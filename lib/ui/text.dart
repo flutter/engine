@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
+// @dart = 2.10
 
 part of dart.ui;
 
@@ -1965,7 +1965,8 @@ class Paragraph extends NativeFieldWrapperClass2 {
 
   /// Returns a list of text boxes that enclose all placeholders in the paragraph.
   ///
-  /// The order of the boxes are in the same order as passed in through [addPlaceholder].
+  /// The order of the boxes are in the same order as passed in through
+  /// [ParagraphBuilder.addPlaceholder].
   ///
   /// Coordinates of the [TextBox] are relative to the upper-left corner of the paragraph,
   /// where positive y values indicate down.

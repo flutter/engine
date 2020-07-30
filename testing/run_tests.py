@@ -137,6 +137,7 @@ def RunCCTests(build_dir, filter):
     # https://github.com/google/googletest/issues/2490
     RunEngineExecutable(build_dir, 'android_external_view_embedder_unittests', filter, shuffle_flags)
     RunEngineExecutable(build_dir, 'jni_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'platform_view_android_delegate_unittests', filter, shuffle_flags)
 
   RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags)
 
@@ -185,7 +186,7 @@ def SnapshotTest(build_dir, dart_file, kernel_file_output, verbose_dart_snapshot
     dart,
     frontend_server,
     '--enable-experiment=non-nullable',
-    '--no-null-safety',
+    '--no-sound-null-safety',
     '--sdk-root',
     flutter_patched_sdk,
     '--incremental',

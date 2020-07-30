@@ -72,6 +72,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
+  [accessibility_channel_.get() setMessageHandler:nil];
   clearState();
   view_.accessibilityElements = nil;
 }
@@ -198,9 +199,8 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
   if (routeChanged) {
     if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_)) {
-      NSString* routeName = [lastAdded routeName];
       ios_delegate_->PostAccessibilityNotification(UIAccessibilityScreenChangedNotification,
-                                                   routeName);
+                                                   [lastAdded routeFocusObject]);
     }
   } else if (layoutChanged) {
     // TODO(goderbauer): figure out which node to focus next.

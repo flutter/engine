@@ -4,6 +4,7 @@
 
 #include "flutter/shell/common/persistent_cache.h"
 
+#include <future>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -76,6 +77,25 @@ void PersistentCache::ResetCacheForProcess() {
 
 void PersistentCache::SetCacheDirectoryPath(std::string path) {
   cache_base_path_ = path;
+}
+
+bool PersistentCache::Purge() {
+  // Make sure that this is called after the worker task runner setup so all the
+  // file system modifications would happen on that single thread to avoid
+  // racing.
+  FML_CHECK(GetWorkerTaskRunner());
+
+  std::promise<bool> removed;
+  GetWorkerTaskRunner()->PostTask(
+      [&removed, cache_directory = cache_directory_]() {
+        if (cache_directory->is_valid()) {
+          FML_LOG(INFO) << "Purge persistent cache.";
+          removed.set_value(RemoveFilesInDirectory(*cache_directory));
+        } else {
+          removed.set_value(false);
+        }
+      });
+  return removed.get_future().get();
 }
 
 namespace {
@@ -246,8 +266,6 @@ sk_sp<SkData> PersistentCache::load(const SkData& key) {
   auto result = PersistentCache::LoadFile(*cache_directory_, file_name);
   if (result != nullptr) {
     TRACE_EVENT0("flutter", "PersistentCacheLoadHit");
-  } else {
-    FML_LOG(INFO) << "PersistentCache::load failed: " << file_name;
   }
   return result;
 }
