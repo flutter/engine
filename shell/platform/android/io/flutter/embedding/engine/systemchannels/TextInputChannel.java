@@ -347,7 +347,8 @@ public class TextInputChannel {
     void clearClient();
 
     /**
-     * Sends app private command to the current Input Method.
+     * Sends client app private command to the current text input client(input method). The app
+     * private command result will be informed through {@code performPrivateCommand}.
      *
      * @param action Name of the command to be performed. This must be a scoped name. i.e. prefixed
      *     with a package name you own, so that different developers will not create conflicting
