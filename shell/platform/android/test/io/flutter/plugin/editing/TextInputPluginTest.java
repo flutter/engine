@@ -595,7 +595,8 @@ public class TextInputPluginTest {
     BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
         binaryMessageHandlerCaptor.getValue();
     sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.sendAppPrivateCommand", arguments);
-    verify(mockEventHandler, times(1)).sendAppPrivateCommand(any(View.class), eq("actionCommand"), eq(null));
+    verify(mockEventHandler, times(1))
+        .sendAppPrivateCommand(any(View.class), eq("actionCommand"), eq(null));
   }
 
   @Test
@@ -626,8 +627,8 @@ public class TextInputPluginTest {
     BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
         binaryMessageHandlerCaptor.getValue();
     sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.sendAppPrivateCommand", arguments);
-    verify(mockEventHandler, times(1)).sendAppPrivateCommand(
-        any(View.class), eq("actionCommand"), bundleCaptor.capture());
+    verify(mockEventHandler, times(1))
+        .sendAppPrivateCommand(any(View.class), eq("actionCommand"), bundleCaptor.capture());
     assertEquals("actionData", bundleCaptor.getValue().getCharSequence("data"));
   }
 
