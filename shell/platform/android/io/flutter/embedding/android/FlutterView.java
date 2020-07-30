@@ -679,7 +679,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       return super.onKeyUp(keyCode, event);
     }
 
-    return androidKeyProcessor.onKeyUp(event) || super.onKeyUp(keyCode, event);
+    androidKeyProcessor.onKeyUp(event);
+    return super.onKeyUp(keyCode, event);
   }
 
   /**
@@ -699,7 +700,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       return super.onKeyDown(keyCode, event);
     }
 
-    return androidKeyProcessor.onKeyDown(event) || super.onKeyDown(keyCode, event);
+    androidKeyProcessor.onKeyDown(event);
+    return super.onKeyDown(keyCode, event);
   }
 
   /**
@@ -849,7 +851,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             this.flutterEngine.getPlatformViewsController());
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
     androidKeyProcessor =
-        new AndroidKeyProcessor(this, this.flutterEngine.getKeyEventChannel(), textInputPlugin);
+        new AndroidKeyProcessor(this.flutterEngine.getKeyEventChannel(), textInputPlugin);
     androidTouchProcessor =
         new AndroidTouchProcessor(this.flutterEngine.getRenderer(), /*trackMotionEvents=*/ false);
     accessibilityBridge =
@@ -933,6 +935,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     // TODO(mattcarroll): once this is proven to work, move this line ot TextInputPlugin
     textInputPlugin.getInputMethodManager().restartInput(this);
     textInputPlugin.destroy();
+
+    if (mouseCursorPlugin != null) {
+      mouseCursorPlugin.destroy();
+    }
 
     // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
     FlutterRenderer flutterRenderer = flutterEngine.getRenderer();

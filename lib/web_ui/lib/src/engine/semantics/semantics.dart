@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 /// Set this flag to `true` to cause the engine to visualize the semantics tree
@@ -604,6 +604,22 @@ class SemanticsObject {
       hasFlag(ui.SemanticsFlag.isImage) &&
       !hasAction(ui.SemanticsAction.tap) &&
       !hasFlag(ui.SemanticsFlag.isButton);
+
+  /// Whether this object carry enabled/disabled state (and if so whether it is
+  /// enabled).
+  ///
+  /// See [EnabledState] for more details.
+  EnabledState enabledState() {
+    if (hasFlag(ui.SemanticsFlag.hasEnabledState)) {
+      if (hasFlag(ui.SemanticsFlag.isEnabled)) {
+        return EnabledState.enabled;
+      } else {
+        return EnabledState.disabled;
+      }
+    } else {
+      return EnabledState.noOpinion;
+    }
+  }
 
   /// Updates this object from data received from a semantics [update].
   ///
@@ -1541,4 +1557,27 @@ List<int> longestIncreasingSubsequence(List<int> list) {
     k = predecessors[k];
   }
   return seq;
+}
+
+/// States that a [ui.SemanticsNode] can have.
+///
+/// SemanticsNodes can be in three distinct states (enabled, disabled,
+/// no opinion).
+enum EnabledState {
+  /// Flag [ui.SemanticsFlag.hasEnabledState] is not set.
+  ///
+  /// The node does not have enabled/disabled state.
+  noOpinion,
+
+  /// Flag [ui.SemanticsFlag.hasEnabledState] and [ui.SemanticsFlag.isEnabled]
+  /// are set.
+  ///
+  /// The node is enabled.
+  enabled,
+
+  /// Flag [ui.SemanticsFlag.hasEnabledState] is set and
+  /// [ui.SemanticsFlag.isEnabled] is not set.
+  ///
+  /// The node is disabled.
+  disabled,
 }

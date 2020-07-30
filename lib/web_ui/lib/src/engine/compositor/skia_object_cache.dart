@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// A cache of Skia objects whose memory Flutter manages.
@@ -88,10 +89,6 @@ class SkiaObjectCache {
 abstract class SkiaObject<T> {
   /// The JavaScript object that's mapped onto a Skia C++ object in the WebAssembly heap.
   T get skiaObject;
-
-  /// The legacy view on the [skiaObject].
-  // TODO(yjbanov): remove this after completing JS-interop migration.
-  js.JsObject? get legacySkiaObject;
 
   /// Deletes the associated C++ object from the WebAssembly heap.
   void delete();

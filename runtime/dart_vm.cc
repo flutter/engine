@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include "flutter/runtime/dart_vm.h"
 
@@ -59,7 +60,8 @@ static const char* kDartLanguageArgs[] = {
     // clang-format off
     "--enable_mirrors=false",
     "--background_compilation",
-    "--causal_async_stacks",
+    "--no-causal_async_stacks",
+    "--lazy_async_stacks",
     // clang-format on
 };
 

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// The CanvasKit implementation of [ui.MaskFilter].
@@ -20,15 +21,12 @@ class CkMaskFilter extends ResurrectableSkiaObject<SkMaskFilter> {
   SkMaskFilter resurrect() => _initSkiaObject();
 
   SkMaskFilter _initSkiaObject() {
-    return canvasKitJs.MakeBlurMaskFilter(
+    return canvasKit.MakeBlurMaskFilter(
       toSkBlurStyle(_blurStyle),
       _sigma,
       true,
     );
   }
-
-  @override
-  js.JsObject get legacySkiaObject => _jsObjectWrapper.wrapSkMaskFilter(skiaObject);
 
   @override
   void delete() {

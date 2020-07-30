@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
+// @dart = 2.10
 part of engine;
 
 class CkVertices implements ui.Vertices {
@@ -27,7 +27,7 @@ class CkVertices implements ui.Vertices {
       throw ArgumentError(
           '"indices" values must be valid indices in the positions list.');
 
-    skVertices = canvasKitJs.MakeSkVertices(
+    skVertices = canvasKit.MakeSkVertices(
       toSkVertexMode(mode),
       toSkPoints2d(positions),
       textureCoordinates != null ? toSkPoints2d(textureCoordinates) : null,
@@ -55,7 +55,7 @@ class CkVertices implements ui.Vertices {
       throw ArgumentError(
           '"indices" values must be valid indices in the positions list.');
 
-    skVertices = canvasKitJs.MakeSkVertices(
+    skVertices = canvasKit.MakeSkVertices(
       toSkVertexMode(mode),
       rawPointsToSkPoints2d(positions),
       textureCoordinates != null ? rawPointsToSkPoints2d(textureCoordinates) : null,

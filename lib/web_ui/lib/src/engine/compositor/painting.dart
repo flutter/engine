@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// The implementation of [ui.Paint] used by the CanvasKit backend.
@@ -233,7 +234,4 @@ class CkPaint extends ResurrectableSkiaObject<SkPaint> implements ui.Paint {
   void delete() {
     rawSkiaObject?.delete();
   }
-
-  @override
-  js.JsObject get legacySkiaObject => _jsObjectWrapper.wrapSkPaint(skiaObject);
 }
