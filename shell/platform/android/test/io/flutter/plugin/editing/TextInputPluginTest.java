@@ -568,6 +568,7 @@ public class TextInputPluginTest {
     verify(mockHandler, times(1)).finishAutofillContext(false);
   }
 
+  @Test
   public void sendAppPrivateCommand_dataIsEmpty() throws JSONException {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
         ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
