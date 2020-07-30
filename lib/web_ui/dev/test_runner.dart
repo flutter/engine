@@ -131,7 +131,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       final MacOSInfo macOsInfo = new MacOSInfo();
       await macOsInfo.printInformation();
       /// Tests may fail on the CI, therefore exit test_runner.
-      if( isLuci) {
+      if (isLuci) {
         return true;
       }
     }

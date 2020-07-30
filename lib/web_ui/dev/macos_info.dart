@@ -6,13 +6,27 @@ import 'dart:convert';
 import 'utils.dart';
 
 class MacOSInfo {
-
   /// Print information collected from the operating system.
   ///
   /// Built in tools such as `system_profiler` and `defaults` are utilized.
   Future<void> printInformation() async {
-    await _printSafaridApplications();
-    await _printSafariDefaults();
+    try {
+      await _printSafaridApplications();
+    } catch (error) {
+      print('Error thrown while getting Safari Applications: $error');
+    }
+
+    try {
+      await _printSafariDefaults();
+    } catch (error) {
+      print('Error thrown while getting Safari defaults: $error');
+    }
+
+    try {
+      await _printUserLimits();
+    } catch (error) {
+      print('Error thrown while getting user limits defaults: $error');
+    }
   }
 
   /// Print information on applications in the system that contains string
@@ -41,5 +55,16 @@ class MacOSInfo {
         await evalProcess('/usr/bin/defaults', ['find', 'Safari']);
 
     print('Safari related defaults:\n $defaults');
+  }
+
+  /// Print user limits (file and process).
+  Future<void> _printUserLimits() async {
+    final String fileLimit = await evalProcess('ulimit', ['-n']);
+
+    print('MacOS file limit: $fileLimit');
+
+    final String processLimit = await evalProcess('ulimit', ['-u']);
+
+    print('MacOS process limit: $processLimit');
   }
 }
