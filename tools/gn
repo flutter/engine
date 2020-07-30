@@ -38,7 +38,7 @@ def get_out_dir(args):
     if args.linux_cpu is not None:
       target_dir.append(args.linux_cpu)
 
-    if args.windows_cpu is not None:
+    if args.windows_cpu != 'x64':
       target_dir.append(args.windows_cpu)
 
     if args.target_os == 'fuchsia' and args.fuchsia_cpu is not None:
