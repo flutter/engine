@@ -172,13 +172,13 @@ void Animator::BeginFrame(fml::TimePoint frame_start_time,
 }
 
 void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
-  if (dimension_change_pending_ &&
-      layer_tree->frame_size() != last_layer_tree_size_) {
-    dimension_change_pending_ = false;
-  }
-  last_layer_tree_size_ = layer_tree->frame_size();
-
   if (layer_tree) {
+    if (dimension_change_pending_ &&
+        layer_tree->frame_size() != last_layer_tree_size_) {
+      dimension_change_pending_ = false;
+    }
+    last_layer_tree_size_ = layer_tree->frame_size();
+
     // Note the frame time for instrumentation.
     layer_tree->RecordBuildTime(last_frame_begin_time_,
                                 last_frame_target_time_);
