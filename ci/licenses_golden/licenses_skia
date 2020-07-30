@@ -1,4 +1,4 @@
-Signature: c7ee484f0bf49aed48999011c8ec793c
+Signature: fa19f5f7a8bd5b4020c88ca083a08de9
 
 UNUSED LICENSES:
 
@@ -3325,7 +3325,6 @@ FILE: ../../../third_party/skia/src/core/SkCanvasPriv.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpaceXformSteps.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpaceXformSteps.h
 FILE: ../../../third_party/skia/src/core/SkContourMeasure.cpp
-FILE: ../../../third_party/skia/src/core/SkCoverageModePriv.h
 FILE: ../../../third_party/skia/src/core/SkCubicMap.cpp
 FILE: ../../../third_party/skia/src/core/SkCubicSolver.h
 FILE: ../../../third_party/skia/src/core/SkDeferredDisplayList.cpp
