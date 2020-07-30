@@ -6,7 +6,18 @@ import 'dart:convert';
 import 'utils.dart';
 
 class MacOSInfo {
-  Future<void> collectInformation() async {
+
+  /// Print information collected from the operating system.
+  ///
+  /// Built in tools such as `system_profiler` and `defaults` are utilized.
+  Future<void> printInformation() async {
+    await _printSafaridApplications();
+    await _printSafariDefaults();
+  }
+
+  /// Print information on applications in the system that contains string
+  /// `Safari`.
+  Future<void> _printSafaridApplications() async {
     final String systemProfileJson = await evalProcess(
         'system_profiler', ['SPApplicationsDataType', '-json']);
 
@@ -20,8 +31,15 @@ class MacOSInfo {
       if (applicationName.contains('Safari')) {
         print('application: $applicationName '
             'fullInfo: ${application.toString()}');
-        print('version: ${application['version']}');
       }
     }
+  }
+
+  /// Print all the defaults in the system related to Safari.
+  Future<void> _printSafariDefaults() async {
+    final String defaults =
+        await evalProcess('/usr/bin/defaults', ['find', 'Safari']);
+
+    print('Safari related defaults:\n $defaults');
   }
 }

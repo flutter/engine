@@ -16,6 +16,7 @@ import 'package:test_core/src/executable.dart'
     as test; // ignore: implementation_imports
 import 'package:simulators/simulator_manager.dart';
 
+import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 import 'integration_tests_manager.dart';
@@ -128,8 +129,11 @@ class TestCommand extends Command<bool> with ArgUtils {
     if (isSafariOnMacOS) {
       /// Collect information on the bot.
       final MacOSInfo macOsInfo = new MacOSInfo();
-      await macOsInfo.collectInformation();
-      return true;
+      await macOsInfo.printInformation();
+      /// Tests may fail on the CI, therefore exit test_runner.
+      if( isLuci) {
+        return true;
+      }
     }
 
     switch (testTypesRequested) {

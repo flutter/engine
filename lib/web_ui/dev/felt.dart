@@ -49,7 +49,8 @@ void main(List<String> args) async {
     exitCode = 1;
   } on ProcessException catch (e) {
     io.stderr.writeln('description: ${e.description}'
-        'executable: ${e.executable} ${e.arguments} '
+        'executable: ${e.executable} '
+        'arguments: ${e.arguments} '
         'exit code: ${e.exitCode}');
     exitCode = e.exitCode;
   } catch (e) {
