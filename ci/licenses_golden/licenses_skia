@@ -1,4 +1,4 @@
-Signature: 57b47312e2b9edbe85e390c4fd69095c
+Signature: b29c8f3dcd1caf44175fccde57734965
 
 UNUSED LICENSES:
 
@@ -1061,6 +1061,7 @@ FILE: ../../../third_party/skia/infra/bots/assets/valgrind/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/win_ninja/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/win_toolchain/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/xcode-11.4.1/VERSION
+FILE: ../../../third_party/skia/infra/bots/canary.isolate
 FILE: ../../../third_party/skia/infra/bots/canvaskit.isolate
 FILE: ../../../third_party/skia/infra/bots/cfg.json
 FILE: ../../../third_party/skia/infra/bots/compile.isolate
@@ -1204,6 +1205,9 @@ FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Win-Cl
 FILE: ../../../third_party/skia/infra/bots/recipes/compute_buildstats.expected/normal_bot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compute_buildstats.expected/trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compute_test.expected/Test-Debian10-Clang-NUC7i5BNK-GPU-IntelIris640-x86_64-Debug-All-OpenCL.json
+FILE: ../../../third_party/skia/infra/bots/recipes/g3_canary.expected/g3_canary_nontrybot.json
+FILE: ../../../third_party/skia/infra/bots/recipes/g3_canary.expected/g3_canary_trybot.json
+FILE: ../../../third_party/skia/infra/bots/recipes/g3_canary.expected/g3_canary_trybot_failure.json
 FILE: ../../../third_party/skia/infra/bots/recipes/housekeeper.expected/Housekeeper-PerCommit-Trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/housekeeper.expected/Housekeeper-PerCommit.json
 FILE: ../../../third_party/skia/infra/bots/recipes/infra.expected/infra_tests.json
@@ -6425,9 +6429,6 @@ FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/schema.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/task_builder.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/canary/canary.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/fm_driver/fm_driver.go
-FILE: ../../../third_party/skia/infra/bots/task_drivers/g3_canary/g3_canary.go
-FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_canvas/perf_puppeteer_canvas.go
-FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_canvas/perf_puppeteer_canvas_test.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_render_skps/perf_puppeteer_render_skps.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_render_skps/perf_puppeteer_render_skps_test.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_skottie_frames/perf_puppeteer_skottie_frames.go
