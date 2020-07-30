@@ -279,22 +279,6 @@ public class TextInputChannel {
         Arrays.asList(inputClientId, "TextInputAction.unspecified"));
   }
 
-  /** Instructs Flutter to execute an "performPrivateCommand" action. */
-  public void performPrivateCommand(int inputClientId, String action, Bundle data) {
-    HashMap<Object, Object> command = new HashMap<>();
-    command.put("action", action);
-    if (data != null) {
-      HashMap<String, Object> dataMap = new HashMap<>();
-      Set<String> keySet = data.keySet();
-      for (String key : keySet) {
-        dataMap.put(key, data.getByteArray(key));
-      }
-      command.put("data", dataMap);
-    }
-    channel.invokeMethod("TextInputClient.performPrivateCommand",
-                         Arrays.asList(inputClientId, command));
-  }
-
   /**
    * Sets the {@link TextInputMethodHandler} which receives all events and requests that are parsed
    * from the underlying platform channel.
