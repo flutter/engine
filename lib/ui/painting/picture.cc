@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/picture.h"
+
 #include <memory>
 
 #include "flutter/fml/make_copyable.h"
@@ -81,6 +82,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
   }
 
   auto* dart_state = UIDartState::Current();
+  auto image_callback = std::make_shared<tonic::DartPersistentValue>(
+      dart_state, raw_image_callback);
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
   auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
@@ -93,11 +96,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
 
   auto picture_bounds = SkISize::Make(width, height);
 
-  auto ui_task = fml::MakeCopyable([raw_image_callback, dart_state,
-                                    unref_queue](
+  auto ui_task = fml::MakeCopyable([image_callback, unref_queue](
                                        sk_sp<SkImage> raster_image) mutable {
-    auto image_callback = std::make_unique<tonic::DartPersistentValue>(
-        dart_state, raw_image_callback);
     auto dart_state = image_callback->dart_state().lock();
     if (!dart_state) {
       // The root isolate could have died in the meantime.
@@ -118,7 +118,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
     tonic::DartInvoke(image_callback->Get(), {raw_dart_image});
 
     // image_callback is associated with the Dart isolate and must be deleted
-    // on the UI thread. It gets deleted when it goes out of scope here.
+    // on the UI thread.
+    image_callback.reset();
   });
 
   // Kick things off on the raster rask runner.
