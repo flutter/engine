@@ -7,7 +7,6 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "third_party/ocmock/Source/OCMock/OCMock.h"
@@ -142,26 +141,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertNotNil(gMockPlatformView);
 
   flutterPlatformViewsController->Reset();
-}
-
-- (void)testHasStrings {
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
-      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
-  FlutterPlatformPlugin* plugin =
-      [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()];
-  __block bool called = false;
-  __block bool value;
-  FlutterResult result = ^(id result) {
-    called = true;
-    value = result[@"value"];
-  };
-  FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:@{}];
-  [plugin handleMethodCall:methodCall result:result];
-
-  XCTAssertEqual(called, true);
-  XCTAssertEqual(value, true);
 }
 
 @end
