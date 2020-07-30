@@ -568,8 +568,7 @@ public class TextInputPluginTest {
     verify(mockHandler, times(1)).finishAutofillContext(false);
   }
 
-  @Test
-  public void sendAppPrivateCommand() throws JSONException {
+  public void sendAppPrivateCommand_dataIsEmpty() throws JSONException {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
         ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
     DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
@@ -596,6 +595,39 @@ public class TextInputPluginTest {
         binaryMessageHandlerCaptor.getValue();
     sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.sendAppPrivateCommand", arguments);
     verify(mockEventHandler, times(1)).sendAppPrivateCommand(any(View.class), eq("actionCommand"), eq(null));
+  }
+
+  @Test
+  public void sendAppPrivateCommand_hasData() throws JSONException {
+    ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
+        ArgumentCaptor.forClass(BinaryMessenger.BinaryMessageHandler.class);
+    DartExecutor mockBinaryMessenger = mock(DartExecutor.class);
+    TextInputChannel textInputChannel = new TextInputChannel(mockBinaryMessenger);
+
+    EventHandler mockEventHandler = mock(EventHandler.class);
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setEventHandler(mockEventHandler);
+
+    View testView = new View(RuntimeEnvironment.application);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+
+    verify(mockBinaryMessenger, times(1))
+        .setMessageHandler(any(String.class), binaryMessageHandlerCaptor.capture());
+
+    JSONObject arguments = new JSONObject();
+    arguments.put("action", "actionCommand");
+    arguments.put("data", "actionData");
+
+    ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
+    BinaryMessenger.BinaryMessageHandler binaryMessageHandler =
+        binaryMessageHandlerCaptor.getValue();
+    sendToBinaryMessageHandler(binaryMessageHandler, "TextInput.sendAppPrivateCommand", arguments);
+    verify(mockEventHandler, times(1)).sendAppPrivateCommand(
+        any(View.class), eq("actionCommand"), bundleCaptor.capture());
+    assertEquals("actionData", bundleCaptor.getValue().getCharSequence("data"));
   }
 
   interface EventHandler {
