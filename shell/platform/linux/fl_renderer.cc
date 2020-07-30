@@ -165,7 +165,7 @@ gboolean fl_renderer_make_current(FlRenderer* self, GError** error) {
   if (priv->egl_surface == EGL_NO_SURFACE ||
       priv->egl_context == EGL_NO_CONTEXT) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to make EGL context current: not set up");
+                "Failed to make EGL context current: No surface created");
     return FALSE;
   }
 
@@ -187,7 +187,7 @@ gboolean fl_renderer_make_resource_current(FlRenderer* self, GError** error) {
   if (priv->resource_surface == EGL_NO_SURFACE ||
       priv->resource_context == EGL_NO_CONTEXT) {
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to make EGL resource context current: not set up");
+                "Failed to make EGL resource context current: No surface created");
     return FALSE;
   }
 
