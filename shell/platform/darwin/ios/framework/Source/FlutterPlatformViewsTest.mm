@@ -145,8 +145,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 }
 
 - (void)testChildClippingViewHitTests {
-  ChildClippingView *childCilppingView = [[[ChildClippingView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
-  UIView *childView = [[[UIView alloc] initWithFrame:CGRectMake(100, 100, 100, 100)] autorelease];
+  ChildClippingView* childCilppingView =
+      [[[ChildClippingView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* childView = [[[UIView alloc] initWithFrame:CGRectMake(100, 100, 100, 100)] autorelease];
   [childCilppingView addSubview:childView];
 
   XCTAssertFalse([childCilppingView pointInside:CGPointMake(50, 50) withEvent:nil]);
@@ -183,12 +184,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView *mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
   // Layer tree always pushes a screen scale factor to the stack
-  SkMatrix screenScaleMatrix = SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+  SkMatrix screenScaleMatrix =
+      SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
   stack.PushTransform(screenScaleMatrix);
   // Push a translate matrix
   SkMatrix translateMatrix = SkMatrix::MakeTrans(100, 100);
@@ -196,12 +198,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   SkMatrix finalMatrix;
   finalMatrix.setConcat(screenScaleMatrix, translateMatrix);
 
-  auto embeddedViewParams = std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
+  auto embeddedViewParams =
+      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
   CGRect platformViewRectInFlutterView = [gMockPlatformView convertRect:gMockPlatformView.bounds
-                                                    toView:mockFlutterView];
+                                                                 toView:mockFlutterView];
   XCTAssertTrue(CGRectEqualToRect(platformViewRectInFlutterView, CGRectMake(100, 100, 300, 300)));
   flutterPlatformViewsController->Reset();
 }
@@ -236,12 +239,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   XCTAssertNotNil(gMockPlatformView);
 
-  UIView *mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
   // Layer tree always pushes a screen scale factor to the stack
-  SkMatrix screenScaleMatrix = SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+  SkMatrix screenScaleMatrix =
+      SkMatrix::MakeScale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
   stack.PushTransform(screenScaleMatrix);
   // Push a rotate matrix
   SkMatrix rotateMatrix;
@@ -250,20 +254,26 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   SkMatrix finalMatrix;
   finalMatrix.setConcat(screenScaleMatrix, rotateMatrix);
 
-  auto embeddedViewParams = std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
+  auto embeddedViewParams =
+      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
   CGRect platformViewRectInFlutterView = [gMockPlatformView convertRect:gMockPlatformView.bounds
-                                                    toView:mockFlutterView];
-  XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass: ChildClippingView.class]);
-  ChildClippingView *childClippingView = (ChildClippingView *)gMockPlatformView.superview.superview;
-  // The childclippingview's frame is set based on flow, but the platform view's frame is set based on quartz.
-  // Although they should be the same, but we should tolerate small floating point errors.
-  XCTAssertTrue(fabs(platformViewRectInFlutterView.origin.x - childClippingView.frame.origin.x) < kFloatCompareEpsilon);
-  XCTAssertTrue(fabs(platformViewRectInFlutterView.origin.y - childClippingView.frame.origin.y) < kFloatCompareEpsilon);
-  XCTAssertTrue(fabs(platformViewRectInFlutterView.size.width - childClippingView.frame.size.width) < kFloatCompareEpsilon);
-  XCTAssertTrue(fabs(platformViewRectInFlutterView.size.height - childClippingView.frame.size.height) < kFloatCompareEpsilon);
+                                                                 toView:mockFlutterView];
+  XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
+  ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
+  // The childclippingview's frame is set based on flow, but the platform view's frame is set based
+  // on quartz. Although they should be the same, but we should tolerate small floating point
+  // errors.
+  XCTAssertTrue(fabs(platformViewRectInFlutterView.origin.x - childClippingView.frame.origin.x) <
+                kFloatCompareEpsilon);
+  XCTAssertTrue(fabs(platformViewRectInFlutterView.origin.y - childClippingView.frame.origin.y) <
+                kFloatCompareEpsilon);
+  XCTAssertTrue(fabs(platformViewRectInFlutterView.size.width -
+                     childClippingView.frame.size.width) < kFloatCompareEpsilon);
+  XCTAssertTrue(fabs(platformViewRectInFlutterView.size.height -
+                     childClippingView.frame.size.height) < kFloatCompareEpsilon);
 
   flutterPlatformViewsController->Reset();
 }
