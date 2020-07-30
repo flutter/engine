@@ -65,7 +65,7 @@ gboolean fl_renderer_setup(FlRenderer* self, GError** error) {
   }
 
   if (!eglBindAPI(EGL_OPENGL_ES_API)) {
-    EGLint egl_error = eglGetError();  // must be before egl_config_to_string().
+    EGLint egl_error = eglGetError();  // Must be before egl_config_to_string().
     g_autofree gchar* config_string =
         egl_config_to_string(priv->egl_display, priv->egl_config);
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
@@ -137,7 +137,7 @@ gboolean fl_renderer_start(FlRenderer* self, GError** error) {
                        context_attributes);
   if (priv->egl_context == EGL_NO_CONTEXT ||
       priv->resource_context == EGL_NO_CONTEXT) {
-    EGLint egl_error = eglGetError();  // must be before egl_config_to_string().
+    EGLint egl_error = eglGetError();  // Must be before egl_config_to_string().
     g_autofree gchar* config_string =
         egl_config_to_string(priv->egl_display, priv->egl_config);
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
