@@ -327,6 +327,8 @@ void PlatformView::OnScenicEvent(
     const std::pair<float, float> logical_size = *view_logical_size_;
     SetViewportMetrics({
         pixel_ratio,                        // device_pixel_ratio
+        0.0f,                               // physical_left
+        0.0f,                               // physical_top
         logical_size.first * pixel_ratio,   // physical_width
         logical_size.second * pixel_ratio,  // physical_height
         0.0f,                               // physical_padding_top

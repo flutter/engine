@@ -632,6 +632,8 @@ public class PlatformViewsControllerTest {
     @Implementation
     public void setViewportMetrics(
         float devicePixelRatio,
+        int physicalLeft,
+        int physicalRight,
         int physicalWidth,
         int physicalHeight,
         int physicalPaddingTop,

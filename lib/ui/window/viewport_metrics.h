@@ -15,6 +15,8 @@ struct ViewportMetrics {
                   double p_physical_width,
                   double p_physical_height);
   ViewportMetrics(double p_device_pixel_ratio,
+                  double p_physical_left,
+                  double p_physical_top,
                   double p_physical_width,
                   double p_physical_height,
                   double p_physical_padding_top,
@@ -30,7 +32,17 @@ struct ViewportMetrics {
                   double p_physical_system_gesture_inset_bottom,
                   double p_physical_system_gesture_inset_left);
 
+  // Create a ViewportMetrics instance that doesn't include depth, padding, or
+  // insets.
+  ViewportMetrics(double p_device_pixel_ratio,
+                  double p_physical_left,
+                  double p_physical_top,
+                  double p_physical_width,
+                  double p_physical_height);
+
   double device_pixel_ratio = 1.0;
+  double physical_left = 0;
+  double physical_top = 0;
   double physical_width = 0;
   double physical_height = 0;
   double physical_padding_top = 0;

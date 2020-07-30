@@ -1245,7 +1245,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
+  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0, 0.0, 0.0});
   fml::Status result =
       shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
   ASSERT_FALSE(result.ok());
@@ -1327,7 +1327,7 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-static size_t GetRasterizerResourceCacheBytesSync(Shell& shell) {
+static size_t GetRasterizerResourceCacheBytesSync(const Shell& shell) {
   size_t bytes = 0;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
@@ -1370,7 +1370,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 0.0, 0.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -1389,7 +1389,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 0.0, 0.0, 800, 400});
       });
   PumpOneFrame(shell.get());
 
@@ -1407,7 +1407,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 0.0, 0.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -1435,7 +1435,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 0.0, 0.0, 400, 200});
       });
   PumpOneFrame(shell.get());
 
@@ -2037,7 +2037,7 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [&shell, &expected_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
-            {1.0, static_cast<double>(expected_size.width()),
+            {1.0, 0.0, 0.0, static_cast<double>(expected_size.width()),
              static_cast<double>(expected_size.height())});
       });
 
@@ -2107,13 +2107,14 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   RunEngine(shell.get(), std::move(configuration));
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200});
+    shell->GetPlatformView()->SetViewportMetrics({0.0, 0.0, 0.0, 400, 200});
     task_runner->PostTask([&]() {
-      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200});
+      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 0.0, 0.0, 200});
       task_runner->PostTask([&]() {
-        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0});
+        shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 0.0, 400, 0.0});
         task_runner->PostTask([&]() {
-          shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 200.0});
+          shell->GetPlatformView()->SetViewportMetrics(
+              {0.8, 0.0, 0.0, 400, 200.0});
         });
       });
     });
@@ -2125,7 +2126,7 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   latch.Reset();
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300});
+    shell->GetPlatformView()->SetViewportMetrics({1.2, 0.0, 0.0, 600, 300});
   });
   latch.Wait();
   ASSERT_EQ(last_device_pixel_ratio, 1.2);

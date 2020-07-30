@@ -6,7 +6,6 @@
 
 #include <android/native_window_jni.h>
 #include <jni.h>
-
 #include <utility>
 
 #include "unicode/uchar.h"
@@ -36,8 +35,9 @@ namespace flutter {
 namespace {
 
 bool CheckException(JNIEnv* env) {
-  if (env->ExceptionCheck() == JNI_FALSE)
+  if (env->ExceptionCheck() == JNI_FALSE) {
     return true;
+  }
 
   jthrowable exception = env->ExceptionOccurred();
   env->ExceptionClear();
@@ -241,6 +241,8 @@ static void SetViewportMetrics(JNIEnv* env,
                                jobject jcaller,
                                jlong shell_holder,
                                jfloat devicePixelRatio,
+                               jint physicalLeft,
+                               jint physicalTop,
                                jint physicalWidth,
                                jint physicalHeight,
                                jint physicalPaddingTop,
@@ -257,6 +259,8 @@ static void SetViewportMetrics(JNIEnv* env,
                                jint systemGestureInsetLeft) {
   const flutter::ViewportMetrics metrics{
       static_cast<double>(devicePixelRatio),
+      static_cast<double>(physicalLeft),
+      static_cast<double>(physicalTop),
       static_cast<double>(physicalWidth),
       static_cast<double>(physicalHeight),
       static_cast<double>(physicalPaddingTop),
@@ -583,7 +587,7 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeSetViewportMetrics",
-          .signature = "(JFIIIIIIIIIIIIII)V",
+          .signature = "(JFIIIIIIIIIIIIIIII)V",
           .fnPtr = reinterpret_cast<void*>(&SetViewportMetrics),
       },
       {
@@ -1174,10 +1178,10 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
       }
       case clip_rect: {
         const SkRect& rect = (*iter)->GetRect();
-        env->CallVoidMethod(mutatorsStack,
-                            g_mutators_stack_push_cliprect_method,
-                            (int)rect.left(), (int)rect.top(),
-                            (int)rect.right(), (int)rect.bottom());
+        env->CallVoidMethod(
+            mutatorsStack, g_mutators_stack_push_cliprect_method,
+            static_cast<int>(rect.left()), static_cast<int>(rect.top()),
+            static_cast<int>(rect.right()), static_cast<int>(rect.bottom()));
         break;
       }
       // TODO(cyanglaz): Implement other mutators.
@@ -1301,16 +1305,16 @@ PlatformViewAndroidJNIImpl::FlutterViewComputePlatformResolvedLocale(
   }
   fml::jni::ScopedJavaLocalRef<jobjectArray> j_locales_data =
       fml::jni::VectorToStringArray(env, supported_locales_data);
-  jobjectArray result = (jobjectArray)env->CallObjectMethod(
+  jobjectArray result = static_cast<jobjectArray>(env->CallObjectMethod(
       java_object.obj(), g_compute_platform_resolved_locale_method,
-      j_locales_data.obj());
+      j_locales_data.obj()));
 
   FML_CHECK(CheckException(env));
 
   int length = env->GetArrayLength(result);
   for (int i = 0; i < length; i++) {
     out->emplace_back(fml::jni::JavaStringToString(
-        env, (jstring)env->GetObjectArrayElement(result, i)));
+        env, static_cast<jstring>(env->GetObjectArrayElement(result, i))));
   }
   return out;
 }

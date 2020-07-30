@@ -5,7 +5,6 @@
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/shell/common/shell_test.h"
-#include "flutter/shell/common/shell_test_platform_view.h"
 
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/transform_layer.h"
@@ -13,6 +12,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/common/shell_test_platform_view.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "flutter/testing/testing.h"
 
@@ -110,6 +110,8 @@ void ShellTest::VSyncFlush(Shell* shell, bool& will_draw_new_frame) {
 void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
   flutter::ViewportMetrics viewport_metrics = {
       1,       // device pixel ratio
+      0,       // physical left
+      0,       // physical top
       width,   // physical width
       height,  // physical height
       0,       // padding top
@@ -159,7 +161,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
                              LayerTreeBuilder builder) {
-  PumpOneFrame(shell, {1.0, width, height}, std::move(builder));
+  PumpOneFrame(shell, {1.0, 0.0, 0.0, width, height}, std::move(builder));
 }
 
 void ShellTest::PumpOneFrame(Shell* shell,
