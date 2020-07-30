@@ -45,7 +45,6 @@ import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 /**
  * Displays a Flutter UI on an Android device.
@@ -985,7 +984,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * @param onDone a callback called when Flutter UI is rendered on the previous surface. Use this
    *     callback to perform cleanups. For example, destroy overlay surfaces.
    */
-  public void revertImageView(@NonNull Callable<Void> onDone) {
+  public void revertImageView(@NonNull Runnable onDone) {
     if (flutterImageView == null) {
       Log.v(TAG, "Tried to revert the image view, but no image view is used.");
       return;
@@ -998,13 +997,13 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     previousRenderSurface = null;
     if (flutterEngine == null) {
       flutterImageView.detachFromRenderer();
-      callSafely(onDone);
+      onDone.run();
       return;
     }
     final FlutterRenderer renderer = flutterEngine.getRenderer();
     if (renderer == null) {
       flutterImageView.detachFromRenderer();
-      callSafely(onDone);
+      onDone.run();
       return;
     }
     // Start rendering on the previous surface.
@@ -1018,7 +1017,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
           @Override
           public void onFlutterUiDisplayed() {
             renderer.removeIsDisplayingFlutterUiListener(this);
-            callSafely(onDone);
+            onDone.run();
             flutterImageView.detachFromRenderer();
           }
 
@@ -1027,14 +1026,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             // no-op
           }
         });
-  }
-
-  private static void callSafely(@NonNull Callable<Void> onDone) {
-    try {
-      onDone.call();
-    } catch (Exception exception) {
-      Log.e(TAG, "onDone callback threw exception: " + exception.getMessage());
-    }
   }
 
   public void attachOverlaySurfaceToRender(FlutterImageView view) {

@@ -764,7 +764,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           () -> {
             // Destroy overlay surfaces once the surface reversion is completed.
             finishFrame(false);
-            return null;
           });
       return;
     }
