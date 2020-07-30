@@ -31,6 +31,26 @@ class EncodableValue;
 using EncodableList = std::vector<EncodableValue>;
 using EncodableMap = std::map<EncodableValue, EncodableValue>;
 
+namespace internal {
+// The base class for EncodableValue. Do not use this directly; it exists only
+// for EncodableValue to inherit from.
+//
+// Do not change the order or indexes of the items here; see the comment on
+// EncodableValue
+using EncodableValueVariant = std::variant<std::monostate,
+                                           bool,
+                                           int32_t,
+                                           int64_t,
+                                           double,
+                                           std::string,
+                                           std::vector<uint8_t>,
+                                           std::vector<int32_t>,
+                                           std::vector<int64_t>,
+                                           std::vector<double>,
+                                           EncodableList,
+                                           EncodableMap>;
+}  // namespace internal
+
 // An object that can contain any value or collection type supported by
 // Flutter's standard method codec.
 //
@@ -62,36 +82,14 @@ using EncodableMap = std::map<EncodableValue, EncodableValue>;
 //
 // The order/indexes of the variant types is part of the API surface, and is
 // guaranteed not to change.
-class EncodableValue : public std::variant<std::monostate,
-                                           bool,
-                                           int32_t,
-                                           int64_t,
-                                           double,
-                                           std::string,
-                                           std::vector<uint8_t>,
-                                           std::vector<int32_t>,
-                                           std::vector<int64_t>,
-                                           std::vector<double>,
-                                           EncodableList,
-                                           EncodableMap> {
+class EncodableValue : public internal::EncodableValueVariant {
  public:
   // Rely on std::variant for most of the constructors/operators.
-  using super = std::variant<std::monostate,
-                             bool,
-                             int32_t,
-                             int64_t,
-                             double,
-                             std::string,
-                             std::vector<uint8_t>,
-                             std::vector<int32_t>,
-                             std::vector<int64_t>,
-                             std::vector<double>,
-                             EncodableList,
-                             EncodableMap>;
+  using super = internal::EncodableValueVariant;
   using super::super;
   using super::operator=;
 
-  explicit EncodableValue() : super() {}
+  explicit EncodableValue() = default;
 
   // Avoid the C++17 pitfall of conversion from char* to bool. Should not be
   // needed for C++20.
@@ -114,38 +112,20 @@ class EncodableValue : public std::variant<std::monostate,
 
   // Returns true if the value is null. Convenience wrapper since unlike the
   // other types, std::monostate uses aren't self-documenting.
-  bool IsNull() const { return index() == 0; }
+  bool IsNull() const { return std::holds_alternative<std::monostate>(*this); }
 
   // Convience method to simplify handling objects received from Flutter where
   // the values may be larger than 32-bit, since they have the same type on the
   // Dart side, but will be either 32-bit or 64-bit here depending on the value.
   //
-  // It is a programming error to call this method if the value doesn't contain
-  // either an int32_t or an int64_t.
+  // Calling this method if the value doesn't contain either an int32_t or an
+  // int64_t will throw an exception.
   int64_t LongValue() {
     if (std::holds_alternative<int32_t>(*this)) {
       return std::get<int32_t>(*this);
     }
     return std::get<int64_t>(*this);
   }
-
-  // Convenience wrappers for nested collection types, to allow readable
-  // chaining when not doing type validation, keeping the [] lookup next to the
-  // type extraction. E.g.:
-  //   EncodableValue inner_value =
-  //       value.ListValue()[0].MapValue()[EncodableValue("some_key")];
-  // rather than
-  //   EncodableValue inner_value = std::get<EncodableMap>(
-  //      std::get<EncodableList>(value)[0])[EncodableValue("some_key")];
-  //
-  // It is a programming error to call these method if the value doesn't
-  // contain the correct collection type.
-  const EncodableList& ListValue() const {
-    return std::get<EncodableList>(*this);
-  }
-  EncodableList& ListValue() { return std::get<EncodableList>(*this); }
-  const EncodableMap& MapValue() const { return std::get<EncodableMap>(*this); }
-  EncodableMap& MapValue() { return std::get<EncodableMap>(*this); }
 };
 
 #else

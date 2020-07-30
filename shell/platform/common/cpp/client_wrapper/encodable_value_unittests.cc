@@ -138,7 +138,7 @@ TEST(EncodableValueTest, List) {
   };
   EncodableValue value(encodables);
 
-  EncodableList& list_value = value.ListValue();
+  auto& list_value = std::get<EncodableList>(value);
   EXPECT_EQ(std::get<int32_t>(list_value[0]), 1);
   EXPECT_EQ(std::get<double>(list_value[1]), 2.0);
   EXPECT_EQ(std::get<std::string>(list_value[2]), "Three");
@@ -147,7 +147,7 @@ TEST(EncodableValueTest, List) {
   list_value.push_back(EncodableValue(true));
   ASSERT_EQ(list_value.size(), 4u);
   EXPECT_EQ(encodables.size(), 3u);
-  EXPECT_EQ(std::get<bool>(value.ListValue()[3]), true);
+  EXPECT_EQ(std::get<bool>(std::get<EncodableList>(value)[3]), true);
 }
 
 TEST(EncodableValueTest, Map) {
@@ -158,7 +158,7 @@ TEST(EncodableValueTest, Map) {
   };
   EncodableValue value(encodables);
 
-  EncodableMap& map_value = value.MapValue();
+  auto& map_value = std::get<EncodableMap>(value);
   EXPECT_EQ(
       std::holds_alternative<std::vector<int32_t>>(map_value[EncodableValue()]),
       true);
@@ -242,7 +242,7 @@ TEST(EncodableValueTest, Comparison) {
 
 // Tests that structures are deep-copied.
 TEST(EncodableValueTest, DeepCopy) {
-  EncodableList encodables = {
+  EncodableList original = {
       EncodableValue(EncodableMap{
           {EncodableValue(), EncodableValue(std::vector<int32_t>{1, 2, 3})},
           {EncodableValue(1), EncodableValue(INT64_C(0000))},
@@ -256,30 +256,28 @@ TEST(EncodableValueTest, DeepCopy) {
       }),
   };
 
-  EncodableValue value(encodables);
-  ASSERT_TRUE(std::holds_alternative<EncodableList>(value));
+  EncodableValue copy(original);
+  ASSERT_TRUE(std::holds_alternative<EncodableList>(copy));
 
   // Spot-check innermost collection values.
-  EXPECT_EQ(
-      std::get<int32_t>(value.ListValue()[0].MapValue()[EncodableValue("two")]),
-      7);
-  EXPECT_EQ(
-      std::get<std::string>(
-          value.ListValue()[1].ListValue()[2].MapValue()[EncodableValue("a")]),
-      "b");
+  auto& root_list = std::get<EncodableList>(copy);
+  auto& first_child = std::get<EncodableMap>(root_list[0]);
+  EXPECT_EQ(std::get<int32_t>(first_child[EncodableValue("two")]), 7);
+  auto& second_child = std::get<EncodableList>(root_list[1]);
+  auto& innermost_map = std::get<EncodableMap>(second_child[2]);
+  EXPECT_EQ(std::get<std::string>(innermost_map[EncodableValue("a")]), "b");
 
   // Modify those values in the original structure.
-  encodables[0].MapValue()[EncodableValue("two")] = EncodableValue();
-  encodables[1].ListValue()[2].MapValue()[EncodableValue("a")] = 99;
+  first_child[EncodableValue("two")] = EncodableValue();
+  innermost_map[EncodableValue("a")] = 99;
 
-  // Re-check innermost collection values to ensure that they haven't changed.
-  EXPECT_EQ(
-      std::get<int32_t>(value.ListValue()[0].MapValue()[EncodableValue("two")]),
-      7);
-  EXPECT_EQ(
-      std::get<std::string>(
-          value.ListValue()[1].ListValue()[2].MapValue()[EncodableValue("a")]),
-      "b");
+  // Re-check innermost collection values of the original to ensure that they
+  // haven't changed.
+  first_child = std::get<EncodableMap>(original[0]);
+  EXPECT_EQ(std::get<int32_t>(first_child[EncodableValue("two")]), 7);
+  second_child = std::get<EncodableList>(original[1]);
+  innermost_map = std::get<EncodableMap>(second_child[2]);
+  EXPECT_EQ(std::get<std::string>(innermost_map[EncodableValue("a")]), "b");
 }
 
 }  // namespace flutter
