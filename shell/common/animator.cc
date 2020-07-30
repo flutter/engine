@@ -133,7 +133,7 @@ void Animator::BeginFrame(fml::TimePoint frame_start_time,
   // to service potential frame.
   FML_DCHECK(producer_continuation_);
 
-  last_frame_begin_time_ = frame_start_time;
+  last_frame_begin_time_ = fml::TimePoint::Now();
   last_frame_target_time_ = frame_target_time;
   dart_frame_deadline_ = FxlToDartOrEarlier(frame_target_time);
   {
