@@ -42,7 +42,7 @@ struct _FlRendererClass {
 
   /**
    * Virtual method called after a GDK window has been created.
-   * Does not need to be implemented.
+   * This is called once. Does not need to be implemented.
    */
   void (*set_window)(FlRenderer* renderer, GdkWindow* window);
 
@@ -52,13 +52,15 @@ struct _FlRendererClass {
   EGLDisplay (*create_display)(FlRenderer* renderer);
 
   /**
-   * Virtual method called when Flutter needs a surface to render to.
+   * Virtual method called when Flutter needs surfaces to render to.
+   * @renderer: an #FlRenderer.
+   * @display: display to create surfaces on.
    * @visible: (out): the visible surface that is created.
    * @resource: (out): the resource surface that is created.
    * @error: (allow-none): #GError location to store the error occurring, or
    * %NULL to ignore.
    *
-   * Returns: true if both surfaces were created, false if there was an error.
+   * Returns: %TRUE if both surfaces were created, %FALSE if there was an error.
    */
   gboolean (*create_surfaces)(FlRenderer* renderer,
                               EGLDisplay display,
@@ -71,7 +73,9 @@ struct _FlRendererClass {
    * Virtual method called when the EGL window needs to be resized.
    * Does not need to be implemented.
    */
-  void (*set_geometry)(FlRenderer* self, GdkRectangle* geometry, gint scale);
+  void (*set_geometry)(FlRenderer* renderer,
+                       GdkRectangle* geometry,
+                       gint scale);
 };
 
 /**
@@ -108,7 +112,7 @@ GdkVisual* fl_renderer_get_visual(FlRenderer* self,
  *
  * Set the window this renderer will use.
  */
-void fl_renderer_set_window(FlRenderer* self, GdkWindow* window);
+void fl_renderer_set_window(FlRenderer* renderer, GdkWindow* window);
 
 /**
  * fl_renderer_start:
@@ -124,10 +128,11 @@ gboolean fl_renderer_start(FlRenderer* self, GError** error);
 
 /**
  * fl_renderer_set_geometry:
+ * @renderer: an #FlRenderer.
  * @geometry: New size and position (unscaled) of the EGL window.
  * @scale: Scale of the window.
  */
-void fl_renderer_set_geometry(FlRenderer* self,
+void fl_renderer_set_geometry(FlRenderer* renderer,
                               GdkRectangle* geometry,
                               gint scale);
 

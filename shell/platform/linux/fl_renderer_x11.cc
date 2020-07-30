@@ -21,7 +21,7 @@ static void fl_renderer_x11_dispose(GObject* object) {
   G_OBJECT_CLASS(fl_renderer_x11_parent_class)->dispose(object);
 }
 
-// Implments FlRenderer::get_visual.
+// Implements FlRenderer::get_visual.
 static GdkVisual* fl_renderer_x11_get_visual(FlRenderer* renderer,
                                              GdkScreen* screen,
                                              EGLint visual_id) {
@@ -33,11 +33,12 @@ static void fl_renderer_x11_set_window(FlRenderer* renderer,
                                        GdkWindow* window) {
   FlRendererX11* self = FL_RENDERER_X11(renderer);
   g_return_if_fail(GDK_IS_X11_WINDOW(window));
+  g_assert_null(self->window);
   self->window = GDK_X11_WINDOW(g_object_ref(window));
 }
 
 // Implements FlRenderer::create_display.
-static EGLDisplay fl_renderer_x11_create_display(FlRenderer* /*renderer*/) {
+static EGLDisplay fl_renderer_x11_create_display(FlRenderer* renderer) {
   // Note the use of EGL_DEFAULT_DISPLAY rather than sharing the existing
   // display connection from GTK. This is because this EGL display is going to
   // be accessed by a thread from Flutter. The GTK/X11 display connection is not
@@ -45,7 +46,7 @@ static EGLDisplay fl_renderer_x11_create_display(FlRenderer* /*renderer*/) {
   return eglGetDisplay(EGL_DEFAULT_DISPLAY);
 }
 
-// Implments FlRenderer::create_surfaces.
+// Implements FlRenderer::create_surfaces.
 static gboolean fl_renderer_x11_create_surfaces(FlRenderer* renderer,
                                                 EGLDisplay display,
                                                 EGLConfig config,
@@ -63,7 +64,7 @@ static gboolean fl_renderer_x11_create_surfaces(FlRenderer* renderer,
   *visible = eglCreateWindowSurface(
       display, config, gdk_x11_window_get_xid(self->window), nullptr);
   if (*visible == EGL_NO_SURFACE) {
-    EGLint egl_error = eglGetError();  // must be before egl_config_to_string().
+    EGLint egl_error = eglGetError();  // Must be before egl_config_to_string().
     g_autofree gchar* config_string = egl_config_to_string(display, config);
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
                 "Failed to create EGL surface using configuration (%s): %s",
@@ -74,7 +75,7 @@ static gboolean fl_renderer_x11_create_surfaces(FlRenderer* renderer,
   const EGLint attribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
   *resource = eglCreatePbufferSurface(display, config, attribs);
   if (*resource == EGL_NO_SURFACE) {
-    EGLint egl_error = eglGetError();  // must be before egl_config_to_string().
+    EGLint egl_error = eglGetError();  // Must be before egl_config_to_string().
     g_autofree gchar* config_string = egl_config_to_string(display, config);
     g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
                 "Failed to create EGL resource using configuration (%s): %s",

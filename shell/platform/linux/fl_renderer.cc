@@ -103,6 +103,9 @@ GdkVisual* fl_renderer_get_visual(FlRenderer* self,
 }
 
 void fl_renderer_set_window(FlRenderer* self, GdkWindow* window) {
+  g_return_if_fail(FL_IS_RENDERER(self));
+  g_return_if_fail(GDK_IS_WINDOW(window));
+
   if (FL_RENDERER_GET_CLASS(self)->set_window) {
     FL_RENDERER_GET_CLASS(self)->set_window(self, window);
   }
@@ -149,6 +152,8 @@ gboolean fl_renderer_start(FlRenderer* self, GError** error) {
 void fl_renderer_set_geometry(FlRenderer* self,
                               GdkRectangle* geometry,
                               gint scale) {
+  g_return_if_fail(FL_IS_RENDERER(self));
+
   if (FL_RENDERER_GET_CLASS(self)->set_geometry) {
     FL_RENDERER_GET_CLASS(self)->set_geometry(self, geometry, scale);
   }
@@ -186,8 +191,9 @@ gboolean fl_renderer_make_resource_current(FlRenderer* self, GError** error) {
 
   if (priv->resource_surface == EGL_NO_SURFACE ||
       priv->resource_context == EGL_NO_CONTEXT) {
-    g_set_error(error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
-                "Failed to make EGL resource context current: No surface created");
+    g_set_error(
+        error, fl_renderer_error_quark(), FL_RENDERER_ERROR_FAILED,
+        "Failed to make EGL resource context current: No surface created");
     return FALSE;
   }
 
