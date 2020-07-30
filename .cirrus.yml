@@ -8,7 +8,6 @@ web_shard_template: &WEB_SHARD_TEMPLATE
     CPU: 4
     MEMORY: 16G
     CHROME_NO_SANDBOX: true
-    GOLD_SERVICE_ACCOUNT: ENCRYPTED[3afeea5ac7201151c3d0dc9648862f0462b5e4f55dc600ca8b692319622f7c3eda3d577b1b16cc2ef0311b7314c1c095]
   compile_host_script: |
     cd $ENGINE_PATH/src
     ./flutter/tools/gn --unoptimized --full-dart-sdk
