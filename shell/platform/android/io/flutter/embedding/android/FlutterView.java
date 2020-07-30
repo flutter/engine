@@ -975,7 +975,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * If the surface is rendered by a {@code FlutterImageView}. Then, calling this method will stop
+   * If the surface is rendered by a {@code FlutterImageView}, then calling this method will stop
    * rendering to a {@code FlutterImageView}, and render on the previous surface instead.
    *
    * @param onDone a callback called when Flutter UI is rendered on the previous surface. Use this
@@ -997,23 +997,23 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       callSafely(onDone);
       return;
     }
-    final FlutterRenderer render = flutterEngine.getRenderer();
-    if (render == null) {
+    final FlutterRenderer renderer = flutterEngine.getRenderer();
+    if (renderer == null) {
       flutterImageView.detachFromRenderer();
       callSafely(onDone);
       return;
     }
     // Start rendering on the previous surface.
     // This surface is typically `FlutterSurfaceView` or `FlutterTextureView`.
-    renderSurface.attachToRenderer(render);
+    renderSurface.attachToRenderer(renderer);
 
     // Install a Flutter UI listener to wait until the first frame is rendered
     // in the new surface to call the `onDone` callback.
-    render.addIsDisplayingFlutterUiListener(
+    renderer.addIsDisplayingFlutterUiListener(
         new FlutterUiDisplayListener() {
           @Override
           public void onFlutterUiDisplayed() {
-            render.removeIsDisplayingFlutterUiListener(this);
+            renderer.removeIsDisplayingFlutterUiListener(this);
             callSafely(onDone);
             flutterImageView.detachFromRenderer();
           }

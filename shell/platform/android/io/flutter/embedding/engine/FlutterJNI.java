@@ -122,7 +122,6 @@ public class FlutterJNI {
 
   private native boolean nativeGetIsSoftwareRenderingEnabled();
 
-  @VisibleForTesting
   @UiThread
   // TODO(mattcarroll): add javadocs
   public boolean getIsSoftwareRenderingEnabled() {
