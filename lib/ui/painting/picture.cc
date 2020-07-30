@@ -82,7 +82,7 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
   }
 
   auto* dart_state = UIDartState::Current();
-  auto image_callback = std::make_shared<tonic::DartPersistentValue>(
+  auto image_callback = std::make_unique<tonic::DartPersistentValue>(
       dart_state, raw_image_callback);
   auto unref_queue = dart_state->GetSkiaUnrefQueue();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
@@ -96,7 +96,8 @@ Dart_Handle Picture::RasterizeToImage(sk_sp<SkPicture> picture,
 
   auto picture_bounds = SkISize::Make(width, height);
 
-  auto ui_task = fml::MakeCopyable([image_callback, unref_queue](
+  auto ui_task = fml::MakeCopyable([image_callback = std::move(image_callback),
+                                    unref_queue](
                                        sk_sp<SkImage> raster_image) mutable {
     auto dart_state = image_callback->dart_state().lock();
     if (!dart_state) {
