@@ -957,6 +957,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         getContext(), getWidth(), getHeight(), FlutterImageView.SurfaceKind.background);
   }
 
+  /**
+   * Converts the current render surface to a {@link FlutterImageView} if it's not one already.
+   * Otherwise, it resizes the {@link FlutterImageView} based on the current view size.
+   */
   public void convertToImageView() {
     renderSurface.pause();
 
@@ -975,8 +979,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * If the surface is rendered by a {@code FlutterImageView}, then calling this method will stop
-   * rendering to a {@code FlutterImageView}, and render on the previous surface instead.
+   * If the surface is rendered by a {@link FlutterImageView}, then calling this method will stop
+   * rendering to a {@link FlutterImageView}, and render on the previous surface instead.
    *
    * @param onDone a callback called when Flutter UI is rendered on the previous surface. Use this
    *     callback to perform cleanups. For example, destroy overlay surfaces.
