@@ -451,6 +451,20 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotEqual([inputView performSelector:@selector(font)], nil);
 }
 
+- (void)testKeyboardType {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@{@"name" : @"TextInputType.url"} forKey:@"inputType"];
+  [self setClientId:123 configuration:config];
+
+  // Find all the FlutterTextInputViews we created.
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+
+  FlutterTextInputView* inputView = inputFields[0];
+
+  // Verify keyboardType is set to the value specified in config.
+  XCTAssertEqual(inputView.keyboardType, UIKeyboardTypeURL);
+}
+
 - (void)testAutocorrectionPromptRectAppears {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
   inputView.textInputDelegate = engine;
