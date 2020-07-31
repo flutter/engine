@@ -38,12 +38,16 @@ source_set_maybe_fuchsia_legacy("ui") {
     "painting/image.h",
     "painting/image_decoder.cc",
     "painting/image_decoder.h",
+    "painting/image_descriptor.cc",
+    "painting/image_descriptor.h",
     "painting/image_encoding.cc",
     "painting/image_encoding.h",
     "painting/image_filter.cc",
     "painting/image_filter.h",
     "painting/image_shader.cc",
     "painting/image_shader.h",
+    "painting/immutable_buffer.cc",
+    "painting/immutable_buffer.h",
     "painting/matrix.cc",
     "painting/matrix.h",
     "painting/multi_frame_codec.cc",
@@ -109,9 +113,7 @@ source_set_maybe_fuchsia_legacy("ui") {
 
   public_configs = [ "//flutter:config" ]
 
-  public_deps = [
-    "//flutter/third_party/txt",
-  ]
+  public_deps = [ "//flutter/third_party/txt" ]
 
   deps = [
     "//flutter/assets",
@@ -159,9 +161,7 @@ if (enable_unittests) {
 
     public_configs = [ "//flutter:export_dynamic_symbols" ]
 
-    sources = [
-      "ui_benchmarks.cc",
-    ]
+    sources = [ "ui_benchmarks.cc" ]
 
     deps = [
       ":ui",
@@ -209,24 +209,18 @@ if (enable_unittests) {
     executable("ui_unittests") {
       testonly = true
 
-      deps = [
-        ":ui_unittests_common_fuchsia_legacy",
-      ]
+      deps = [ ":ui_unittests_common_fuchsia_legacy" ]
     }
     executable("ui_unittests_next") {
       testonly = true
 
-      deps = [
-        ":ui_unittests_common",
-      ]
+      deps = [ ":ui_unittests_common" ]
     }
   } else {
     executable("ui_unittests") {
       testonly = true
 
-      deps = [
-        ":ui_unittests_common",
-      ]
+      deps = [ ":ui_unittests_common" ]
     }
   }
 }

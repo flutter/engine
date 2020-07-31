@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// @dart = 2.10
 part of engine;
 
 /// EXPERIMENTAL: Enable the Skia-based rendering backend.
@@ -19,7 +20,7 @@ const bool canvasKitForceCpuOnly =
 /// NPM, update this URL to `https://unpkg.com/canvaskit-wasm@0.34.0/bin/`.
 const String canvasKitBaseUrl = String.fromEnvironment(
   'FLUTTER_WEB_CANVASKIT_URL',
-  defaultValue: 'https://unpkg.com/canvaskit-wasm@0.16.2/bin/',
+  defaultValue: 'https://unpkg.com/canvaskit-wasm@0.17.2/bin/',
 );
 
 /// Initialize CanvasKit.

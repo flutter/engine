@@ -27,7 +27,7 @@ namespace flutter {
 
 namespace {
 
-void LoadFontFromList(tonic::Uint8List& font_data,
+void LoadFontFromList(tonic::Uint8List& font_data,  // NOLINT
                       Dart_Handle callback,
                       std::string family_name) {
   FontCollection& font_collection =
@@ -121,7 +121,7 @@ void FontCollection::RegisterFonts(
         continue;
       }
 
-      // TODO: Handle weights and styles.
+      // TODO(chinmaygarde): Handle weights and styles.
       font_provider->RegisterAsset(family_name->value.GetString(),
                                    font_asset->value.GetString());
     }

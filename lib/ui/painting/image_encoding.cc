@@ -53,7 +53,7 @@ void InvokeDataCallback(std::unique_ptr<DartPersistentValue> callback,
 
 sk_sp<SkImage> ConvertToRasterUsingResourceContext(
     sk_sp<SkImage> image,
-    GrContext* resource_context) {
+    GrDirectContext* resource_context) {
   sk_sp<SkSurface> surface;
   SkImageInfo surface_info = SkImageInfo::MakeN32Premul(image->dimensions());
   if (resource_context) {
@@ -85,7 +85,7 @@ void ConvertImageToRaster(sk_sp<SkImage> image,
                           std::function<void(sk_sp<SkImage>)> encode_task,
                           fml::RefPtr<fml::TaskRunner> raster_task_runner,
                           fml::RefPtr<fml::TaskRunner> io_task_runner,
-                          GrContext* resource_context,
+                          GrDirectContext* resource_context,
                           fml::WeakPtr<SnapshotDelegate> snapshot_delegate) {
   // Check validity of the image.
   if (image == nullptr) {
@@ -212,7 +212,7 @@ void EncodeImageAndInvokeDataCallback(
     fml::RefPtr<fml::TaskRunner> ui_task_runner,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<fml::TaskRunner> io_task_runner,
-    GrContext* resource_context,
+    GrDirectContext* resource_context,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate) {
   auto callback_task = fml::MakeCopyable(
       [callback = std::move(callback)](sk_sp<SkData> encoded) mutable {
@@ -236,11 +236,13 @@ void EncodeImageAndInvokeDataCallback(
 Dart_Handle EncodeImage(CanvasImage* canvas_image,
                         int format,
                         Dart_Handle callback_handle) {
-  if (!canvas_image)
+  if (!canvas_image) {
     return ToDart("encode called with non-genuine Image.");
+  }
 
-  if (!Dart_IsClosure(callback_handle))
+  if (!Dart_IsClosure(callback_handle)) {
     return ToDart("Callback must be a function.");
+  }
 
   ImageByteFormat image_format = static_cast<ImageByteFormat>(format);
 

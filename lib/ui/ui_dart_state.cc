@@ -73,8 +73,9 @@ void UIDartState::ThrowIfUIOperationsProhibited() {
 
 void UIDartState::SetDebugName(const std::string debug_name) {
   debug_name_ = debug_name;
-  if (window_)
+  if (window_) {
     window_->client()->UpdateIsolateDescription(debug_name_, main_port_);
+  }
 }
 
 UIDartState* UIDartState::Current() {
@@ -83,8 +84,9 @@ UIDartState* UIDartState::Current() {
 
 void UIDartState::SetWindow(std::unique_ptr<Window> window) {
   window_ = std::move(window);
-  if (window_)
+  if (window_) {
     window_->client()->UpdateIsolateDescription(debug_name_, main_port_);
+  }
 }
 
 const TaskRunners& UIDartState::GetTaskRunners() const {

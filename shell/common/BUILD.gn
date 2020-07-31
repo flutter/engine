@@ -30,9 +30,7 @@ template("dart_embedder_resources") {
     }
 
     output = invoker.output
-    outputs = [
-      output,
-    ]
+    outputs = [ output ]
 
     inputs = [ script ] + invoker.inputs
 
@@ -82,6 +80,8 @@ source_set_maybe_fuchsia_legacy("common") {
     "rasterizer.h",
     "run_configuration.cc",
     "run_configuration.h",
+    "serialization_callbacks.cc",
+    "serialization_callbacks.h",
     "shell.cc",
     "shell.h",
     "shell_io_manager.cc",
@@ -172,9 +172,7 @@ if (enable_unittests) {
   }
 
   shell_host_executable("shell_benchmarks") {
-    sources = [
-      "shell_benchmarks.cc",
-    ]
+    sources = [ "shell_benchmarks.cc" ]
 
     deps = [
       ":shell_unittests_fixtures",
@@ -264,6 +262,7 @@ if (enable_unittests) {
       "persistent_cache_unittests.cc",
       "pipeline_unittests.cc",
       "shell_unittests.cc",
+      "skp_shader_warmup_unittests.cc",
     ]
 
     deps = [

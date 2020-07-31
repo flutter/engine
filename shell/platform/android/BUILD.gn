@@ -64,6 +64,7 @@ shared_library("flutter_shell_native") {
     "//flutter/shell/platform/android/context",
     "//flutter/shell/platform/android/external_view_embedder",
     "//flutter/shell/platform/android/jni",
+    "//flutter/shell/platform/android/platform_view_android_delegate",
     "//flutter/shell/platform/android/surface",
     "//flutter/shell/platform/android/surface:native_window",
     "//third_party/skia",
@@ -98,9 +99,7 @@ action("gen_android_build_config_java") {
 
   build_config_java = "$target_gen_dir/io/flutter/BuildConfig.java"
 
-  outputs = [
-    build_config_java,
-  ]
+  outputs = [ build_config_java ]
 
   args = [
     "--out",
@@ -150,14 +149,14 @@ android_java_sources = [
   "io/flutter/embedding/engine/FlutterEnginePluginRegistry.java",
   "io/flutter/embedding/engine/FlutterJNI.java",
   "io/flutter/embedding/engine/FlutterOverlaySurface.java",
-  "io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack.java",
-  "io/flutter/embedding/engine/mutatorsstack/FlutterMutatorView.java",
   "io/flutter/embedding/engine/FlutterShellArgs.java",
   "io/flutter/embedding/engine/dart/DartExecutor.java",
   "io/flutter/embedding/engine/dart/DartMessenger.java",
   "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
   "io/flutter/embedding/engine/loader/FlutterLoader.java",
   "io/flutter/embedding/engine/loader/ResourceExtractor.java",
+  "io/flutter/embedding/engine/mutatorsstack/FlutterMutatorView.java",
+  "io/flutter/embedding/engine/mutatorsstack/FlutterMutatorsStack.java",
   "io/flutter/embedding/engine/plugins/FlutterPlugin.java",
   "io/flutter/embedding/engine/plugins/PluginRegistry.java",
   "io/flutter/embedding/engine/plugins/activity/ActivityAware.java",
@@ -294,9 +293,7 @@ action("flutter_shell_java") {
 
   args += rebase_path(sources, root_build_dir)
 
-  deps = [
-    ":gen_android_build_config_java",
-  ]
+  deps = [ ":gen_android_build_config_java" ]
 }
 
 action("icudtl_object") {
@@ -305,13 +302,9 @@ action("icudtl_object") {
   icudtl_input = "//third_party/icu/flutter/icudtl.dat"
   icudtl_output = "$root_build_dir/flutter_icu/icudtl.o"
 
-  inputs = [
-    "$icudtl_input",
-  ]
+  inputs = [ "$icudtl_input" ]
 
-  outputs = [
-    "$icudtl_output",
-  ]
+  outputs = [ "$icudtl_output" ]
 
   args = [
     "--objcopy",
@@ -373,16 +366,12 @@ action("android_jar") {
 action("pom_libflutter") {
   script = "//flutter/tools/androidx/generate_pom_file.py"
 
-  inputs = [
-    "//flutter/tools/androidx/files.json",
-  ]
+  inputs = [ "//flutter/tools/androidx/files.json" ]
 
   artifact_id =
       string_replace(android_app_abi, "-", "_") + "_" + flutter_runtime_mode
 
-  outputs = [
-    "$root_build_dir/$artifact_id.pom",
-  ]
+  outputs = [ "$root_build_dir/$artifact_id.pom" ]
 
   args = [
     "--destination",
@@ -397,15 +386,11 @@ action("pom_libflutter") {
 action("pom_embedding") {
   script = "//flutter/tools/androidx/generate_pom_file.py"
 
-  inputs = [
-    "//flutter/tools/androidx/files.json",
-  ]
+  inputs = [ "//flutter/tools/androidx/files.json" ]
 
   artifact_id = "flutter_embedding_$flutter_runtime_mode"
 
-  outputs = [
-    "$root_build_dir/$artifact_id.pom",
-  ]
+  outputs = [ "$root_build_dir/$artifact_id.pom" ]
 
   args = [
     "--destination",
@@ -430,7 +415,6 @@ action("robolectric_tests") {
   sources = [
     "test/io/flutter/FlutterTestSuite.java",
     "test/io/flutter/SmokeTest.java",
-    "test/io/flutter/embedding/android/AndroidKeyProcessorTest.java",
     "test/io/flutter/embedding/android/FlutterActivityAndFragmentDelegateTest.java",
     "test/io/flutter/embedding/android/FlutterActivityTest.java",
     "test/io/flutter/embedding/android/FlutterAndroidComponentTest.java",
@@ -448,7 +432,6 @@ action("robolectric_tests") {
     "test/io/flutter/embedding/engine/dart/DartExecutorTest.java",
     "test/io/flutter/embedding/engine/plugins/shim/ShimPluginRegistryTest.java",
     "test/io/flutter/embedding/engine/renderer/FlutterRendererTest.java",
-    "test/io/flutter/embedding/engine/systemchannels/KeyEventChannelTest.java",
     "test/io/flutter/embedding/engine/systemchannels/RestorationChannelTest.java",
     "test/io/flutter/external/FlutterLaunchTests.java",
     "test/io/flutter/plugin/common/StandardMessageCodecTest.java",
@@ -514,9 +497,7 @@ zip_bundle("android_symbols") {
     },
   ]
 
-  deps = [
-    ":flutter_shell_native",
-  ]
+  deps = [ ":flutter_shell_native" ]
 }
 
 zip_bundle("android") {
@@ -550,9 +531,7 @@ action("gen_android_javadoc") {
   script = "//flutter/tools/gen_javadoc.py"
   sources = android_java_sources + embedding_dependencies_jars
 
-  outputs = [
-    "$target_gen_dir/javadocs",
-  ]
+  outputs = [ "$target_gen_dir/javadocs" ]
   args = [
     "--out-dir",
     rebase_path(outputs[0]),
@@ -575,7 +554,5 @@ zip_bundle("android_javadoc") {
       destination = "/"
     },
   ]
-  deps = [
-    ":gen_android_javadoc",
-  ]
+  deps = [ ":gen_android_javadoc" ]
 }

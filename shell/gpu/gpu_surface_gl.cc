@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// FLUTTER_NOLINT
 
 #include "gpu_surface_gl.h"
 
@@ -65,7 +66,7 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
   // A similar work-around is also used in shell/common/io_manager.cc.
   options.fDisableGpuYUVConversion = true;
 
-  auto context = GrContext::MakeGL(delegate_->GetGLInterface(), options);
+  auto context = GrDirectContext::MakeGL(delegate_->GetGLInterface(), options);
 
   if (context == nullptr) {
     FML_LOG(ERROR) << "Failed to setup Skia Gr context.";
@@ -92,7 +93,7 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
   delegate_->GLContextClearCurrent();
 }
 
-GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrContext> gr_context,
+GPUSurfaceGL::GPUSurfaceGL(sk_sp<GrDirectContext> gr_context,
                            GPUSurfaceGLDelegate* delegate,
                            bool render_to_surface)
     : delegate_(delegate),
@@ -119,7 +120,7 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   auto context_switch = delegate_->GLContextMakeCurrent();
   if (!context_switch->GetResult()) {
     FML_LOG(ERROR) << "Could not make the context current to destroy the "
-                      "GrContext resources.";
+                      "GrDirectContext resources.";
     return;
   }
 
@@ -137,7 +138,7 @@ bool GPUSurfaceGL::IsValid() {
   return valid_;
 }
 
-static SkColorType FirstSupportedColorType(GrContext* context,
+static SkColorType FirstSupportedColorType(GrDirectContext* context,
                                            GrGLenum* format) {
 #define RETURN_IF_RENDERABLE(x, y)                 \
   if (context->colorTypeSupportedAsSurface((x))) { \
@@ -150,7 +151,7 @@ static SkColorType FirstSupportedColorType(GrContext* context,
   return kUnknown_SkColorType;
 }
 
-static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
+static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
                                             const SkISize& size,
                                             intptr_t fbo) {
   GrGLenum format;
@@ -321,7 +322,7 @@ sk_sp<SkSurface> GPUSurfaceGL::AcquireRenderSurface(
 }
 
 // |Surface|
-GrContext* GPUSurfaceGL::GetContext() {
+GrDirectContext* GPUSurfaceGL::GetContext() {
   return context_.get();
 }
 

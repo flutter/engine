@@ -83,6 +83,18 @@ public class TextInputPlugin {
           }
 
           @Override
+          public void finishAutofillContext(boolean shouldSave) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || afm == null) {
+              return;
+            }
+            if (shouldSave) {
+              afm.commit();
+            } else {
+              afm.cancel();
+            }
+          }
+
+          @Override
           public void setClient(
               int textInputClientId, TextInputChannel.Configuration configuration) {
             setTextInputClient(textInputClientId, configuration);
@@ -127,7 +139,7 @@ public class TextInputPlugin {
   }
 
   /**
-   * Use the current platform view input connection until unlockPlatformViewInputConnection is
+   * * Use the current platform view input connection until unlockPlatformViewInputConnection is
    * called.
    *
    * <p>The current input connection instance is cached and any following call to @{link
