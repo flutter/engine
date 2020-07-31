@@ -145,6 +145,9 @@ FLUTTER_ASSERT_ARC
   // Verify secureTextEntry is set to the correct value.
   XCTAssertTrue(inputView.secureTextEntry);
 
+  // Verify keyboardType is set to the default value.
+  XCTAssertEqual(inputView.keyboardType, UIKeyboardTypeDefault);
+
   // We should have only ever created one FlutterTextInputView.
   XCTAssertEqual(inputFields.count, 1);
 
