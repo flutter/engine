@@ -558,8 +558,13 @@ abstract class Canvas {
   ///
   /// An example usage to render many sprites from a single sprite atlas with no
   /// rotations or scales:
+  ///
   /// ```dart
-  /// class Sprite { int index; double centerX; double centerY; }
+  /// class Sprite {
+  ///   int index;
+  ///   double centerX;
+  ///   double centerY;
+  /// }
   ///
   /// class MyPainter extends CustomPainter {
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
@@ -592,8 +597,15 @@ abstract class Canvas {
   /// ```
   ///
   /// Another example usage which renders sprites with an optional opacity and rotation:
+  ///
   /// ```dart
-  /// class Sprite { int index; double centerX; double centerY; int alpha; double rotation; }
+  /// class Sprite {
+  ///   int index;
+  ///   double centerX;
+  ///   double centerY;
+  ///   int alpha;
+  ///   double rotation;
+  /// }
   ///
   /// class MyPainter extends CustomPainter {
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
@@ -628,9 +640,8 @@ abstract class Canvas {
   /// }
   /// ```
   ///
-  /// The [atlas], [transforms], [rects], and [paint] arguments must not be null.
-  /// Additionally, the length of the [transforms] and [rects] lists must be equal
-  /// and if the [colors] argument is not null then it must either be empty or
+  /// The length of the [transforms] and [rects] lists must be equal and
+  /// if the [colors] argument is not null then it must either be empty or
   /// have the same length as the other two lists.
   ///
   /// See also:
@@ -673,8 +684,13 @@ abstract class Canvas {
   ///
   /// An example usage to render many sprites from a single sprite atlas with no rotations
   /// or scales:
+  ///
   /// ```dart
-  /// class Sprite { int index; double centerX; double centerY; }
+  /// class Sprite {
+  ///   int index;
+  ///   double centerX;
+  ///   double centerY;
+  /// }
   ///
   /// class MyPainter extends CustomPainter {
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
@@ -714,8 +730,15 @@ abstract class Canvas {
   /// ```
   ///
   /// Another example usage which renders sprites with an optional opacity and rotation:
+  ///
   /// ```dart
-  /// class Sprite { int index; double centerX; double centerY; int alpha; double rotation; }
+  /// class Sprite {
+  ///   int index;
+  ///   double centerX;
+  ///   double centerY;
+  ///   int alpha;
+  ///   double rotation;
+  /// }
   ///
   /// class MyPainter extends CustomPainter {
   ///   // assume spriteAtlas contains N 10x10 sprites side by side in a (N*10)x10 image
@@ -771,8 +794,6 @@ abstract class Canvas {
   ///   ...
   /// }
   /// ```
-  ///
-  /// The [atlas], [rstTransforms], [rects], and [paint] arguments must not be null.
   ///
   /// See also:
   ///
