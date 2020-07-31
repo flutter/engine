@@ -530,7 +530,7 @@ abstract class Canvas {
   /// blend or modulate those parts with a solid color.
   ///
   /// The method takes a list of [Rect] objects that each define a piece of the
-  /// [atlas] image to be drawn independently. Each [Rect] is associated with a
+  /// [atlas] image to be drawn independently. Each [Rect] is associated with an
   /// [RSTransform] entry in the [transforms] list which defines the location,
   /// rotation, and (uniform) scale with which to draw that portion of the image.
   /// Each [Rect] can also be associated with an optional [Color] which will be
@@ -761,7 +761,7 @@ abstract class Canvas {
   ///       rectList[i * 4 + 2] = rectX + 10.0;
   ///       rectList[i * 4 + 3] = 10.0;
   ///
-  ///       // This example uses a RSTransform object to compute the necessary values for
+  ///       // This example uses an RSTransform object to compute the necessary values for
   ///       // the transform using a factory helper method because the sprites contain
   ///       // rotation values which are not trivial to work with. But if the math for the
   ///       // values falls out from other calculations on the sprites then the values could
