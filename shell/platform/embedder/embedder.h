@@ -430,6 +430,41 @@ typedef struct {
   int64_t buttons;
 } FlutterPointerEvent;
 
+
+typedef enum {
+  kFlutterKeyEventKindUp = 1,
+  kFlutterKeyEventKindDown,
+  kFlutterKeyEventKindSync,
+  kFlutterKeyEventKindCancel,
+} FlutterKeyEventKind;
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterLogicalKeyEvent).
+  size_t struct_size;
+  // Logical event kind.
+  FlutterKeyEventKind kind;
+  // Logical key changed.
+  int32_t key;
+  // Corresponding character. Only available for down/sync event. Not null-ended.
+  size_t character_size;
+} FlutterLogicalKeyEvent;
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterKeyEvent).
+  size_t struct_size;
+  // Corresponding logical events.
+  size_t logical_event_count;
+  const FlutterLogicalKeyEvent* logical_events;
+  const uint8_t* logical_characters_data;
+  // Timestamp. Maybe 0 (sync or cancel).
+  size_t timestamp;
+  // Physical event kind.
+  FlutterKeyEventKind kind;
+  // Physical key changed.
+  int32_t key;
+} FlutterKeyEvent;
+
+
 struct _FlutterPlatformMessageResponseHandle;
 typedef struct _FlutterPlatformMessageResponseHandle
     FlutterPlatformMessageResponseHandle;
@@ -1340,6 +1375,12 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPointerEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPointerEvent* events,
+    size_t events_count);
+
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineSendKeyEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterKeyEvent* events,
     size_t events_count);
 
 FLUTTER_EXPORT

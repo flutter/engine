@@ -23,6 +23,7 @@
 #include "flutter/runtime/runtime_controller.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/key_data_dispatcher.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/rasterizer.h"
@@ -68,7 +69,7 @@ namespace flutter {
 ///           name and it does happen to be one of the older classes in the
 ///           repository.
 ///
-class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
+class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate, KeyDataDispatcher::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Indicates the result of the call to `Engine::Run`.
@@ -292,6 +293,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   Engine(Delegate& delegate,
          const PointerDataDispatcherMaker& dispatcher_maker,
+         const KeyDataDispatcherMaker& key_dispatcher_maker,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
          TaskRunners task_runners,
@@ -685,6 +687,17 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
                                  uint64_t trace_flow_id);
 
   //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that the embedder has sent it a key data
+  ///             packet. A key data packet contains one physical key event and
+  ///             one or multiple logical key events. This call originates in
+  ///             the platform view and the shell has forwarded the same to the
+  ///             engine on the UI task runner here.
+  ///
+  /// @param[in]  packet         The key data packet.
+  ///
+  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet);
+
+  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an
   ///             accessibility related action on the specified node. This call
   ///             originates on the platform view and has been forwarded to the
@@ -739,6 +752,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |PointerDataDispatcher::Delegate|
   void ScheduleSecondaryVsyncCallback(const fml::closure& callback) override;
 
+  // |KeyDataDispatcher::Delegate|
+  void DoDispatchKeyPacket(std::unique_ptr<KeyDataPacket> packet) override;
+
   //----------------------------------------------------------------------------
   /// @brief      Get the last Entrypoint that was used in the RunConfiguration
   ///             when |Engine::Run| was called.
@@ -761,6 +777,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // So it should be defined after them to ensure that pointer_data_dispatcher_
   // is destructed first.
   std::unique_ptr<PointerDataDispatcher> pointer_data_dispatcher_;
+
+  std::unique_ptr<KeyDataDispatcher> key_data_dispatcher_;
 
   std::string last_entry_point_;
   std::string last_entry_point_library_;

@@ -54,6 +54,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterExternalTextureGL.h",
     "framework/Source/FlutterExternalTextureGL.mm",
+    "framework/Source/FlutterKeyboardPlugin.h",
+    "framework/Source/FlutterKeyboardPlugin.mm",
     "framework/Source/FlutterMouseCursorPlugin.h",
     "framework/Source/FlutterMouseCursorPlugin.mm",
     "framework/Source/FlutterTextInputModel.h",
@@ -64,6 +66,7 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
     "framework/Source/FlutterViewController_Internal.h",
+    "framework/Source/KeyCodeMap.mm",
   ]
 
   sources += _flutter_framework_headers

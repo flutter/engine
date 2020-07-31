@@ -1331,6 +1331,82 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
                                   "running Flutter application.");
 }
 
+inline flutter::KeyChange ToKeyChange(
+    FlutterKeyEventKind key_change) {
+  switch (key_change) {
+    case kFlutterKeyEventKindUp:
+      return flutter::KeyChange::kUp;
+    case kFlutterKeyEventKindDown:
+      return flutter::KeyChange::kDown;
+    case kFlutterKeyEventKindSync:
+      return flutter::KeyChange::kSync;
+    case kFlutterKeyEventKindCancel:
+      return flutter::KeyChange::kCancel;
+  }
+  return flutter::KeyChange::kCancel;
+}
+
+FlutterEngineResult FlutterEngineSendKeyEvent(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterKeyEvent* event) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+
+  if (event == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid key event.");
+  }
+
+  const FlutterLogicalKeyEvent* logical_events = SAFE_ACCESS(event, logical_events, nullptr);
+  const uint8_t* logical_characters_data = SAFE_ACCESS(event, logical_characters_data, nullptr);
+  if (logical_events == nullptr || logical_characters_data == nullptr) {
+    return LOG_EMBEDDER_ERROR(
+            kInvalidArguments, "Key event does not contain valid fields.");
+  }
+
+
+  int64_t total_character_size = 0;
+  size_t logical_event_count = SAFE_ACCESS(event, logical_event_count, 0);
+
+  const FlutterLogicalKeyEvent* current = logical_events;
+  for (size_t i = 0; i < logical_event_count; ++i) {
+    total_character_size += SAFE_ACCESS(current, character_size, 0);
+    current = reinterpret_cast<const FlutterLogicalKeyEvent*>(
+        reinterpret_cast<const uint8_t*>(current) + current->struct_size);
+  }
+
+  auto packet = std::make_unique<flutter::KeyDataPacket>(logical_event_count, total_character_size);
+
+  flutter::PhysicalKeyData physical_key;
+  physical_key.Clear();
+  physical_key.timestamp = SAFE_ACCESS(event, timestamp, 0);
+  physical_key.change = ToKeyChange(SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel));
+  physical_key.key = SAFE_ACCESS(event, key, 0);
+  packet->pushPhysicalKey(&physical_key);
+
+  current = logical_events;
+  for (size_t i = 0; i < logical_event_count; ++i) {
+    flutter::LogicalKeyData logical_key;
+
+    logical_key.change = ToKeyChange(SAFE_ACCESS(current, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel));
+    logical_key.key = SAFE_ACCESS(current, key, 0);
+    logical_key.character_size = SAFE_ACCESS(current, character_size, 0);
+
+    packet->pushLogicalKey(&logical_key);
+    current = reinterpret_cast<const FlutterLogicalKeyEvent*>(
+        reinterpret_cast<const uint8_t*>(current) + current->struct_size);
+  }
+
+  packet->pushData(logical_characters_data, total_character_size);
+
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)
+                 ->DispatchKeyDataPacket(std::move(packet))
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(kInternalInconsistency,
+                                  "Could not dispatch the key event to the "
+                                  "running Flutter application.");
+}
+
 FlutterEngineResult FlutterEngineSendPlatformMessage(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterPlatformMessage* flutter_message) {

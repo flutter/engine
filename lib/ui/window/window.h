@@ -12,6 +12,7 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/window/platform_message.h"
+#include "flutter/lib/ui/window/key_data_packet.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "third_party/skia/include/gpu/GrContext.h"
@@ -84,6 +85,7 @@ class Window final {
   void UpdateAccessibilityFeatures(int32_t flags);
   void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
+  void DispatchKeyDataPacket(const KeyDataPacket& packet);
   void DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
                                std::vector<uint8_t> args);

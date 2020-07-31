@@ -365,6 +365,14 @@ class RuntimeController final : public WindowClient {
   bool DispatchPointerDataPacket(const PointerDataPacket& packet);
 
   //----------------------------------------------------------------------------
+  /// @brief      Dispatch the specified pointer data message to the running
+  ///             root isolate.
+  ///
+  /// @param[in]  packet  The key data message to dispatch to the isolate.
+  ///
+  bool DispatchKeyDataPacket(const KeyDataPacket& packet);
+
+  //----------------------------------------------------------------------------
   /// @brief      Dispatch the semantics action to the specified accessibility
   ///             node.
   ///

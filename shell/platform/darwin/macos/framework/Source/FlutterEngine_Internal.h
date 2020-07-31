@@ -31,4 +31,9 @@
  */
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event;
 
+/**
+ * Dispatches the given pointer event data to engine.
+ */
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event;
+
 @end

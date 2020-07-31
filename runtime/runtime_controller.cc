@@ -259,6 +259,17 @@ bool RuntimeController::DispatchPointerDataPacket(
   return false;
 }
 
+bool RuntimeController::DispatchKeyDataPacket(
+    const KeyDataPacket& packet) {
+  if (auto* window = GetWindowIfAvailable()) {
+    TRACE_EVENT1("flutter", "RuntimeController::DispatchKeyDataPacket",
+                 "mode", "basic");
+    window->DispatchKeyDataPacket(packet);
+    return true;
+  }
+  return false;
+}
+
 bool RuntimeController::DispatchSemanticsAction(int32_t id,
                                                 SemanticsAction action,
                                                 std::vector<uint8_t> args) {

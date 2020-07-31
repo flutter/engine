@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
+#import "flutter/shell/platform/embedder/embedder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
 @interface FlutterViewController ()
@@ -21,5 +22,8 @@
  * Removes a responder for keyboard events.
  */
 - (void)removeKeyResponder:(nonnull NSResponder*)responder;
+
+
+- (void)dispatchFlutterKeyEvent:(const FlutterKeyEvent&)event;
 
 @end

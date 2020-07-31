@@ -9,6 +9,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
@@ -177,6 +178,10 @@ struct KeyboardState {
   // The plugin used to handle text input. This is not an FlutterPlugin, so must be owned
   // separately.
   FlutterTextInputPlugin* _textInputPlugin;
+
+  // The plugin used to handle key input. This is not an FlutterPlugin, so must be owned
+  // separately.
+  FlutterKeyboardPlugin* _keyboardPlugin;
 
   // A message channel for passing key events to the Flutter engine. This should be replaced with
   // an embedding API; see Issue #47.
@@ -352,6 +357,7 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)addInternalPlugins {
   [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
+  _keyboardPlugin = [[FlutterKeyboardPlugin alloc] initWithViewController:self];
   _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:self];
   _keyEventChannel =
       [FlutterBasicMessageChannel messageChannelWithName:@"flutter/keyevent"
@@ -448,7 +454,12 @@ static void CommonInit(FlutterViewController* controller) {
   }
 }
 
+- (void)dispatchFlutterKeyEvent:(const FlutterKeyEvent&)event {
+  [_engine sendKeyEvent:event];
+}
+
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
+  // Dispatch using legacy method
   NSMutableDictionary* keyMessage = [@{
     @"keymap" : @"macos",
     @"type" : type,
@@ -461,6 +472,9 @@ static void CommonInit(FlutterViewController* controller) {
     keyMessage[@"charactersIgnoringModifiers"] = event.charactersIgnoringModifiers;
   }
   [_keyEventChannel sendMessage:keyMessage];
+
+  // Dispatch using new method
+  [_keyboardPlugin dispatchEvent:event];
 }
 
 - (void)onSettingsChanged:(NSNotification*)notification {

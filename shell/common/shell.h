@@ -458,6 +458,10 @@ class Shell final : public PlatformView::Delegate,
       std::unique_ptr<PointerDataPacket> packet) override;
 
   // |PlatformView::Delegate|
+  void OnPlatformViewDispatchKeyDataPacket(
+      std::unique_ptr<KeyDataPacket> packet) override;
+
+  // |PlatformView::Delegate|
   void OnPlatformViewDispatchSemanticsAction(
       int32_t id,
       SemanticsAction action,

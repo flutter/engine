@@ -314,6 +314,19 @@ void Window::DispatchPointerDataPacket(const PointerDataPacket& packet) {
       library_.value(), "_dispatchPointerDataPacket", {data_handle}));
 }
 
+void Window::DispatchKeyDataPacket(const KeyDataPacket& packet) {
+  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
+  if (!dart_state)
+    return;
+  tonic::DartState::Scope scope(dart_state);
+
+  Dart_Handle data_handle = ToByteData(packet.data());
+  if (Dart_IsError(data_handle))
+    return;
+  tonic::LogIfError(tonic::DartInvokeField(
+      library_.value(), "_dispatchKeyDataPacket", {data_handle}));
+}
+
 void Window::DispatchSemanticsAction(int32_t id,
                                      SemanticsAction action,
                                      std::vector<uint8_t> args) {

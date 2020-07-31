@@ -37,6 +37,7 @@ static constexpr char kIsolateChannel[] = "flutter/isolate";
 
 Engine::Engine(Delegate& delegate,
                const PointerDataDispatcherMaker& dispatcher_maker,
+               const KeyDataDispatcherMaker& key_dispatcher_maker,
                DartVM& vm,
                fml::RefPtr<const DartSnapshot> isolate_snapshot,
                TaskRunners task_runners,
@@ -78,6 +79,7 @@ Engine::Engine(Delegate& delegate,
   );
 
   pointer_data_dispatcher_ = dispatcher_maker(*this);
+  key_data_dispatcher_ = key_dispatcher_maker(*this);
 }
 
 Engine::~Engine() = default;
@@ -409,6 +411,12 @@ void Engine::DispatchPointerDataPacket(
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
+void Engine::DispatchKeyDataPacket(
+    std::unique_ptr<KeyDataPacket> packet) {
+  TRACE_EVENT0("flutter", "Engine::DispatchKeyDataPacket");
+  key_data_dispatcher_->DispatchKeyPacket(std::move(packet));
+}
+
 void Engine::DispatchSemanticsAction(int id,
                                      SemanticsAction action,
                                      std::vector<uint8_t> args) {
@@ -497,6 +505,12 @@ void Engine::DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
 
 void Engine::ScheduleSecondaryVsyncCallback(const fml::closure& callback) {
   animator_->ScheduleSecondaryVsyncCallback(callback);
+}
+
+void Engine::DoDispatchKeyPacket(std::unique_ptr<KeyDataPacket> packet) {
+  if (runtime_controller_) {
+    runtime_controller_->DispatchKeyDataPacket(*packet);
+  }
 }
 
 void Engine::HandleAssetPlatformMessage(fml::RefPtr<PlatformMessage> message) {

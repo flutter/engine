@@ -14,6 +14,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "flutter/lib/ui/window/key_data_packet.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
@@ -122,6 +123,18 @@ class PlatformView {
     ///
     virtual void OnPlatformViewDispatchPointerDataPacket(
         std::unique_ptr<PointerDataPacket> packet) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Notifies the delegate that the platform view has encountered
+    ///             a key event. This key event needs to be forwarded to
+    ///             the running root isolate hosted by the engine on the UI
+    ///             thread.
+    ///
+    /// @param[in]  packet  The key data packet containing one physical key event
+    ///                     and multiple logical key events.
+    ///
+    virtual void OnPlatformViewDispatchKeyDataPacket(
+        std::unique_ptr<KeyDataPacket> packet) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
@@ -501,6 +514,15 @@ class PlatformView {
   /// @param[in]  packet  The pointer data packet to dispatch to the framework.
   ///
   void DispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Dispatches key events from the embedder to the framework. Each
+  ///             key data packet contains one physical event and multiple logical key
+  ///             events. Each call to this method wakes up the UI thread.
+  ///
+  /// @param[in]  packet  The key data packet to dispatch to the framework.
+  ///
+  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet);
 
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to specify a texture that it wants the

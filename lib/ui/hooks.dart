@@ -334,3 +334,55 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   }
   return PointerDataPacket(data: data);
 }
+
+
+// If this value changes, update the encoding code in the following files:
+//
+//  * pointer_data.cc
+//  * pointer.dart
+const int _kKeyDataFieldCount = 5;
+const int _kLogicalKeyDataFieldCount = 3;
+
+PointerDataPacket _unpackKeyDataPacket(ByteData packet) {
+  const int kStride = Int64List.bytesPerElement;
+  const int kBytesPerPointerData = _kPointerDataFieldCount * kStride;
+  final int length = packet.lengthInBytes ~/ kBytesPerPointerData;
+  assert(length * kBytesPerPointerData == packet.lengthInBytes);
+  final List<PointerData> data = <PointerData>[];
+  for (int i = 0; i < length; ++i) {
+    int offset = i * _kPointerDataFieldCount;
+    data.add(PointerData(
+      embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
+      change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      signalKind: PointerSignalKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      pointerIdentifier: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      physicalDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      physicalDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      buttons: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      obscured: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
+      synthesized: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
+      pressure: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      pressureMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      pressureMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      distance: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      distanceMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      size: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      radiusMajor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      radiusMinor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      radiusMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      radiusMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      platformData: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
+    ));
+    assert(offset == (i + 1) * _kPointerDataFieldCount);
+  }
+  return PointerDataPacket(data: data);
+}
