@@ -4182,13 +4182,12 @@ class Canvas extends NativeFieldWrapperClass2 {
       rectBuffer[index3] = rect.bottom;
     }
 
-    final Int32List? colorBuffer = (colors != null && colors.isNotEmpty) ? _encodeColorList(colors) : null;
+    final Int32List? colorBuffer = (colors == null || colors.isEmpty) ? null : _encodeColorList(colors);
     final Float32List? cullRectBuffer = cullRect?._value32;
-    blendMode ??= BlendMode.src;
 
     _drawAtlas(
       paint._objects, paint._data, atlas, rstTransformBuffer, rectBuffer,
-      colorBuffer, blendMode.index, cullRectBuffer
+      colorBuffer, (blendMode ?? BlendMode.src).index, cullRectBuffer
     );
   }
 
@@ -4198,7 +4197,9 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// image onto the canvas, such as when using sprites or zooming. It is more efficient
   /// than using multiple calls to [drawImageRect] and provides more functionality
   /// to individually transform each image part by a separate rotation or scale and
-  /// blend or modulate those parts with a solid color.
+  /// blend or modulate those parts with a solid color. It is also more efficient
+  /// than [drawAtlas] as the data in the arguments is already packed in a format
+  /// that can be directly used by the rendering code.
   ///
   /// A full description of how this method uses its arguments to draw onto the
   /// canvas can be found in the description of the [drawAtlas] method.
@@ -4342,11 +4343,10 @@ class Canvas extends NativeFieldWrapperClass2 {
       throw ArgumentError('"rstTransforms" and "rects" lengths must be a multiple of four.');
     if (colors != null && colors.length * 4 != rectCount)
       throw ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
-    blendMode ??= BlendMode.src;
 
     _drawAtlas(
       paint._objects, paint._data, atlas, rstTransforms, rects,
-      colors, blendMode.index, cullRect?._value32
+      colors, (blendMode ?? BlendMode.src).index, cullRect?._value32
     );
   }
 
