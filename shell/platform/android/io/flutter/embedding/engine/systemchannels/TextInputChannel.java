@@ -262,6 +262,21 @@ public class TextInputChannel {
         Arrays.asList(inputClientId, "TextInputAction.unspecified"));
   }
 
+  public void performPrivateCommand(int inputClientId, String action, Bundle data) {
+    HashMap<Object, Object> json = new HashMap<>();
+    json.put("action", action);
+    if (data != null) {
+      HashMap<String, Object> dataMap = new HashMap<>();
+      Set<String> keySet = data.keySet();
+      for (String key : keySet) {
+        dataMap.put(key, data.getByteArray(key));
+      }
+      json.put("data", dataMap);
+    }
+    channel.invokeMethod(
+        "TextInputClient.performPrivateCommand", Arrays.asList(inputClientId, json));
+  }
+
   /**
    * Sets the {@link TextInputMethodHandler} which receives all events and requests that are parsed
    * from the underlying platform channel.
