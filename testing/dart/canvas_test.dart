@@ -261,7 +261,6 @@ void main() {
     expectAssertion(() => canvas.drawAtlas(image, <RSTransform>[transform], null, <Color>[color], BlendMode.src, rect, paint));
     expectAssertion(() => canvas.drawAtlas(image, null, <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
     expectAssertion(() => canvas.drawAtlas(null, <RSTransform>[transform], <Rect>[rect], <Color>[color], BlendMode.src, rect, paint));
-    final Picture picture = recorder.endRecording();
   });
 
   test('Data lengths must match for drawAtlas methods', () async {
@@ -289,8 +288,6 @@ void main() {
     expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(0), null, null, rect, paint));
     expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(0), Float32List(4), null, null, rect, paint));
     expectArgumentError(() => canvas.drawRawAtlas(image, Float32List(4), Float32List(4), Int32List(2), BlendMode.src, rect, paint));
-
-    final Picture picture = recorder.endRecording();
   });
 
   test('Image size reflected in picture size for image*, drawAtlas, and drawPicture methods', () async {
