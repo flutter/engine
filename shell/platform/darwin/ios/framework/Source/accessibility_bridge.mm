@@ -195,16 +195,14 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   } else if (layoutChanged) {
     // Tries to refocus the previous focused semantics object to avoid random jumps.
     ios_delegate_->PostAccessibilityNotification(
-      UIAccessibilityLayoutChangedNotification,
-      [objects_.get() objectForKey:@(last_focused_semantics_object_id_)]
-    );
+        UIAccessibilityLayoutChangedNotification,
+        [objects_.get() objectForKey:@(last_focused_semantics_object_id_)]);
   }
   if (scrollOccured) {
     // Tries to refocus the previous focused semantics object to avoid random jumps.
     ios_delegate_->PostAccessibilityNotification(
-      UIAccessibilityPageScrolledNotification,
-      [objects_.get() objectForKey:@(last_focused_semantics_object_id_)]
-    );
+        UIAccessibilityPageScrolledNotification,
+        [objects_.get() objectForKey:@(last_focused_semantics_object_id_)]);
   }
 }
 

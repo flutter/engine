@@ -326,7 +326,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                  UIAccessibilityScreenChangedNotification);
 }
 
-- (void)testAnnouncesLayoutChangeWithNilIfLastFocusIsRemoved{
+- (void)testAnnouncesLayoutChangeWithNilIfLastFocusIsRemoved {
   flutter::MockDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
