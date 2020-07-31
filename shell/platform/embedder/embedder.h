@@ -1380,8 +1380,7 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendKeyEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterKeyEvent* events,
-    size_t events_count);
+    const FlutterKeyEvent* event);
 
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendPlatformMessage(

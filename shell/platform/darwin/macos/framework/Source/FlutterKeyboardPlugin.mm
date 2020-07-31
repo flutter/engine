@@ -4,7 +4,7 @@
 
 #import <objc/message.h>
 
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 #import "FlutterKeyboardPlugin.h"
