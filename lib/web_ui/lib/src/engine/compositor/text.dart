@@ -5,6 +5,34 @@
 // @dart = 2.10
 part of engine;
 
+List<String> _getEffectiveFontFamilies(
+  String? fontFamily,
+  [List<String>? fontFamilyFallback,]
+) {
+  String effectiveFontFamily;
+  if (fontFamily == null ||
+      !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
+    effectiveFontFamily = 'Roboto';
+  } else {
+    effectiveFontFamily = fontFamily;
+  }
+
+  List<String> fontFamilies;
+  if (skiaFontCollection.fontFamilyOverrides.containsKey(effectiveFontFamily)) {
+    fontFamilies = skiaFontCollection.fontFamilyOverrides[effectiveFontFamily]!;
+  } else {
+    fontFamilies = <String>[effectiveFontFamily];
+  }
+
+
+  if (fontFamilyFallback != null &&
+      !fontFamilyFallback.every((font) => effectiveFontFamily == font)) {
+    fontFamilies.addAll(fontFamilyFallback);
+  }
+
+  return fontFamilies;
+}
+
 class CkParagraphStyle implements ui.ParagraphStyle {
   CkParagraphStyle({
     ui.TextAlign? textAlign,
@@ -55,14 +83,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
       skTextStyle.fontSize = fontSize;
     }
 
-    if (fontFamily == null ||
-        !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
-      fontFamily = 'Roboto';
-    }
-    if (skiaFontCollection.fontFamilyOverrides.containsKey(fontFamily)) {
-      fontFamily = skiaFontCollection.fontFamilyOverrides[fontFamily]!;
-    }
-    skTextStyle.fontFamilies = [fontFamily];
+    skTextStyle.fontFamilies = _getEffectiveFontFamilies(fontFamily);
 
     return skTextStyle;
   }
@@ -168,21 +189,7 @@ class CkTextStyle implements ui.TextStyle {
       properties.fontSize = fontSize;
     }
 
-    if (fontFamily == null ||
-        !skiaFontCollection.registeredFamilies.contains(fontFamily)) {
-      fontFamily = 'Roboto';
-    }
-
-    if (skiaFontCollection.fontFamilyOverrides.containsKey(fontFamily)) {
-      fontFamily = skiaFontCollection.fontFamilyOverrides[fontFamily]!;
-    }
-    List<String> fontFamilies = <String>[fontFamily];
-    if (fontFamilyFallback != null &&
-        !fontFamilyFallback.every((font) => fontFamily == font)) {
-      fontFamilies.addAll(fontFamilyFallback);
-    }
-
-    properties.fontFamilies = fontFamilies;
+    properties.fontFamilies = _getEffectiveFontFamilies(fontFamily, fontFamilyFallback);
 
     if (fontWeight != null || fontStyle != null) {
       properties.fontStyle = toSkFontStyle(fontWeight, fontStyle);

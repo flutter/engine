@@ -30,7 +30,7 @@ class SkiaFontCollection {
   /// it is actually "Material Icons". Skia works with the actual names of the
   /// fonts, so when we create a Skia Paragraph with Flutter font families, we
   /// must convert them to their actual family name when we pass them to Skia.
-  final Map<String, String> fontFamilyOverrides = <String, String>{};
+  final Map<String, List<String>> fontFamilyOverrides = <String, List<String>>{};
 
   final Set<String?> registeredFamilies = <String?>{};
 
@@ -60,16 +60,13 @@ class SkiaFontCollection {
     fontFamilyOverrides.clear();
 
     for (_RegisteredFont? font in _registeredFonts) {
-      if (fontFamilyOverrides.containsKey(font!.flutterFamily)) {
-        if (fontFamilyOverrides[font.flutterFamily] != font.actualFamily) {
-          html.window.console.warn('Fonts in family ${font.flutterFamily} '
-              'have different actual family names.');
-          html.window.console.warn(
-              'Current actual family: ${fontFamilyOverrides[font.flutterFamily]}');
-          html.window.console.warn('New actual family: ${font.actualFamily}');
+      final List<String>? overrides = fontFamilyOverrides[font!.flutterFamily];
+      if (overrides != null) {
+        if (!overrides.contains(font!.actualFamily)) {
+          overrides.add(font!.actualFamily);
         }
       } else {
-        fontFamilyOverrides[font.flutterFamily] = font.actualFamily;
+        fontFamilyOverrides[font!.flutterFamily] = <String>[font!.actualFamily];
       }
     }
   }
