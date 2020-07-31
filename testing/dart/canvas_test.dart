@@ -39,14 +39,21 @@ void testCanvas(CanvasCallback callback) {
 }
 
 void expectAssertion(Function callback) {
-  bool threw = false;
-  try {
-    callback();
-  } catch (e) {
-    expect(e is AssertionError, true);
-    threw = true;
+  bool assertsEnabled = false;
+  assert(() {
+    assertsEnabled = true;
+    return true;
+  }());
+  if (assertsEnabled) {
+    bool threw = false;
+    try {
+      callback();
+    } catch (e) {
+      expect(e is AssertionError, true);
+      threw = true;
+    }
+    expect(threw, true);
   }
-  expect(threw, true);
 }
 
 void expectArgumentError(Function callback) {
