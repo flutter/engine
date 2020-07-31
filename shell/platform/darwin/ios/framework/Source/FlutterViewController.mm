@@ -123,7 +123,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 }
 
 - (instancetype)initWithProject:(FlutterDartProject*)project
-               withInitialRoute:(NSString*)initialRoute
+                   initialRoute:(NSString*)initialRoute
                         nibName:(NSString*)nibName
                          bundle:(NSBundle*)nibBundle {
   self = [super initWithNibName:nibName bundle:nibBundle];

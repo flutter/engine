@@ -91,7 +91,7 @@ FLUTTER_EXPORT
  * @param nibBundle The NIB bundle.
  */
 - (instancetype)initWithProject:(nullable FlutterDartProject*)project
-               withInitialRoute:(nullable NSString*)initialRoute
+                   initialRoute:(nullable NSString*)initialRoute
                         nibName:(nullable NSString*)nibName
                          bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
 

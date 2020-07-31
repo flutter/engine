@@ -14,7 +14,7 @@ FLUTTER_ASSERT_ARC
 @end
 
 @interface FlutterEngine (Test) <FlutterBinaryMessenger>
-- (void)setBinaryMessenger:binaryMessenger;
+- (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger;
 @end
 
 @implementation FlutterEngineTest

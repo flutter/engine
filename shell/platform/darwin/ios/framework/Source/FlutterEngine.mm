@@ -378,6 +378,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     // Flutter isn't ready to receive this method call yet but the channel buffer will cache this.
     [_navigationChannel invokeMethod:@"setInitialRoute" arguments:_initialRoute];
     [_initialRoute release];
+    _initialRoute = nil;
   }
 
   _platformChannel.reset([[FlutterMethodChannel alloc]
