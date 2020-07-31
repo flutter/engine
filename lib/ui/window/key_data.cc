@@ -15,7 +15,7 @@ void LogicalKeyData::Clear() {
   memset(this, 0, sizeof(LogicalKeyData));
 }
 
-static_assert(sizeof(PhysicalKeyData) == kBytesPerKeyField * kKeyDataFieldCount,
+static_assert(sizeof(PhysicalKeyData) == kBytesPerKeyField * kPhysicalKeyDataFieldCount,
               "PhysicalKeyData has the wrong size");
 
 void PhysicalKeyData::Clear() {

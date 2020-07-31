@@ -6,11 +6,11 @@
 #define FLUTTER_LIB_UI_WINDOW_KEY_DATA_PACKET_H_
 
 #include <string.h>
-
 #include <vector>
 
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/window/key_data.h"
+
 
 namespace flutter {
 

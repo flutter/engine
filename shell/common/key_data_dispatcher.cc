@@ -11,7 +11,7 @@ DefaultKeyDataDispatcher::~DefaultKeyDataDispatcher() = default;
 
 void DefaultKeyDataDispatcher::DispatchKeyPacket(
     std::unique_ptr<KeyDataPacket> packet) {
-  delegate_.DoKeyDispatchPacket(std::move(packet));
+  delegate_.DoDispatchKeyPacket(std::move(packet));
 }
 
 }  // namespace flutter

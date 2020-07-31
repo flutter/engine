@@ -101,6 +101,12 @@ PointerDataDispatcherMaker PlatformView::GetDispatcherMaker() {
   };
 }
 
+KeyDataDispatcherMaker PlatformView::GetKeyDispatcherMaker() {
+  return [](DefaultKeyDataDispatcher::Delegate& delegate) {
+    return std::make_unique<DefaultKeyDataDispatcher>(delegate);
+  };
+}
+
 fml::WeakPtr<PlatformView> PlatformView::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }

@@ -125,6 +125,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // Send dispatcher_maker to the engine constructor because shell won't have
   // platform_view set until Shell::Setup is called later.
   auto dispatcher_maker = platform_view->GetDispatcherMaker();
+  auto key_dispatcher_maker = platform_view->GetKeyDispatcherMaker();
 
   // Create the engine on the UI thread.
   std::promise<std::unique_ptr<Engine>> engine_promise;
@@ -134,6 +135,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
       fml::MakeCopyable([&engine_promise,                                 //
                          shell = shell.get(),                             //
                          &dispatcher_maker,                               //
+                         &key_dispatcher_maker,                           //
                          &window_data,                                    //
                          isolate_snapshot = std::move(isolate_snapshot),  //
                          vsync_waiter = std::move(vsync_waiter),          //
@@ -152,6 +154,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         engine_promise.set_value(std::make_unique<Engine>(
             *shell,                         //
             dispatcher_maker,               //
+            key_dispatcher_maker,           //
             *shell->GetDartVM(),            //
             std::move(isolate_snapshot),    //
             task_runners,                   //
