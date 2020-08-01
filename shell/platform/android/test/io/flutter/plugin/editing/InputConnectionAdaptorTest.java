@@ -3,9 +3,9 @@ package io.flutter.plugin.editing;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -157,17 +157,22 @@ public class InputConnectionAdaptorTest {
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     Editable editable = sampleEditable(0, 0);
-    InputConnectionAdaptor adaptor = new InputConnectionAdaptor(
-        testView, client, textInputChannel, editable, null, mockFlutterJNI);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
     adaptor.performPrivateCommand("actionCommand", null);
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
     verify(dartExecutor, times(1))
-        .send(channelCaptor.capture(), bufferCaptor.capture(), any(BinaryMessenger.BinaryReply.class));
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
-        bufferCaptor.getValue(), "TextInputClient.performPrivateCommand",
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
         new String[] {"0", "{\"action\":\"actionCommand\"}"});
   }
 
@@ -190,10 +195,14 @@ public class InputConnectionAdaptorTest {
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
     verify(dartExecutor, times(1))
-        .send(channelCaptor.capture(), bufferCaptor.capture(), any(BinaryMessenger.BinaryReply.class));
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(), a
+            ny(BinaryMessenger.BinaryReply.class));
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
-        bufferCaptor.getValue(), "TextInputClient.performPrivateCommand",
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
         new String[] {"0", "{\"data\":{\"keyboard_layout\":[97,98,99,100]},\"action\":\"actionCommand\"}"});
   }
 
