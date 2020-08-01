@@ -178,6 +178,13 @@ void _dispatchPointerDataPacket(ByteData packet) {
 
 @pragma('vm:entry-point')
 // ignore: unused_element
+void _dispatchKeyData(ByteData packet) {
+  if (window.onKeyData != null)
+    _invoke1<KeyData>(window.onKeyData, window._onKeyDataZone, _unpackKeyData(packet));
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
 void _dispatchSemanticsAction(int id, int action, ByteData? args) {
   _invoke3<int, SemanticsAction, ByteData?>(
     window.onSemanticsAction,
@@ -338,51 +345,59 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
 
 // If this value changes, update the encoding code in the following files:
 //
-//  * pointer_data.cc
-//  * pointer.dart
-const int _kKeyDataFieldCount = 5;
+//  * key_data.cc
+//  * key.dart
+const int _kPhysicalKeyDataFieldCount = 3;
 const int _kLogicalKeyDataFieldCount = 3;
 
-PointerDataPacket _unpackKeyDataPacket(ByteData packet) {
+List<int> _getLogicalCharacterLengths(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
-  const int kBytesPerPointerData = _kPointerDataFieldCount * kStride;
-  final int length = packet.lengthInBytes ~/ kBytesPerPointerData;
-  assert(length * kBytesPerPointerData == packet.lengthInBytes);
-  final List<PointerData> data = <PointerData>[];
-  for (int i = 0; i < length; ++i) {
-    int offset = i * _kPointerDataFieldCount;
-    data.add(PointerData(
-      embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
-      change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      signalKind: PointerSignalKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-      device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      pointerIdentifier: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      physicalDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      physicalDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      buttons: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      obscured: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
-      synthesized: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
-      pressure: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      pressureMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      pressureMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      distance: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      distanceMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      size: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMajor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMinor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      radiusMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      platformData: packet.getInt64(kStride * offset++, _kFakeHostEndian),
-      scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
+  const int kBytesPerPhysicalData = _kPhysicalKeyDataFieldCount * kStride;
+  const int kBytesPerLogicalData = _kLogicalKeyDataFieldCount * kStride;
+
+  final List<int> lengths = <int>[];
+  int current = kBytesPerPhysicalData;
+  int sumLengths = 0;
+  while (current + sumLengths < packet.lengthInBytes) {
+    lengths.add(packet.getInt64(current, _kFakeHostEndian));
+    sumLengths += lengths.last;
+    current += kBytesPerLogicalData;
+  }
+  assert(current + sumLengths == packet.lengthInBytes);
+  return lengths;
+}
+
+KeyData _unpackKeyData(ByteData packet) {
+  const int kStride = Int64List.bytesPerElement;
+  const int kBytesPerPhysicalData = _kPhysicalKeyDataFieldCount * kStride;
+  const int kBytesPerLogicalData = _kLogicalKeyDataFieldCount * kStride;
+
+  final List<int> charLengths = _getLogicalCharacterLengths(packet);
+  final int logicalCount = charLengths.length;
+  int currentCharOffset = kBytesPerPhysicalData + kBytesPerLogicalData * logicalCount;
+
+  final List<LogicalKeyData> logicalKeyDataList = <LogicalKeyData>[];
+  for (int i = 0; i < logicalCount; ++i) {
+    int offset = _kPhysicalKeyDataFieldCount + i * _kLogicalKeyDataFieldCount + 1; // Add 1 to skip the first field.
+    final String char = utf8.decoder.convert(
+        ByteData.view(packet.buffer, currentCharOffset, charLengths[i]).buffer.asUint8List());
+    currentCharOffset += charLengths[i];
+    logicalKeyDataList.add(LogicalKeyData(
+      change: KeyChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      key: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      character: char,
     ));
     assert(offset == (i + 1) * _kPointerDataFieldCount);
   }
-  return PointerDataPacket(data: data);
+  assert(currentCharOffset == packet.lengthInBytes);
+
+  int offset = 0;
+  final KeyData keyData = KeyData(
+    timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
+    change: KeyChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+    key: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+    logicalEvents: logicalKeyDataList,
+  );
+
+  return keyData;
 }

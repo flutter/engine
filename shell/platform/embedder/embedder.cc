@@ -1384,7 +1384,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
   physical_key.timestamp = SAFE_ACCESS(event, timestamp, 0);
   physical_key.change = ToKeyChange(SAFE_ACCESS(event, kind, FlutterKeyEventKind::kFlutterKeyEventKindCancel));
   physical_key.key = SAFE_ACCESS(event, key, 0);
-  packet->pushPhysicalKey(&physical_key);
+  packet->SetPhysicalData(physical_key);
 
   current = logical_events;
   for (size_t i = 0; i < logical_event_count; ++i) {
@@ -1394,12 +1394,12 @@ FlutterEngineResult FlutterEngineSendKeyEvent(
     logical_key.key = SAFE_ACCESS(current, key, 0);
     logical_key.character_size = SAFE_ACCESS(current, character_size, 0);
 
-    packet->pushLogicalKey(&logical_key);
+    packet->SetLogicalData(logical_key, i);
     current = reinterpret_cast<const FlutterLogicalKeyEvent*>(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);
   }
 
-  packet->pushData(logical_characters_data, total_character_size);
+  packet->SetCharacters(logical_characters_data);
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)
                  ->DispatchKeyDataPacket(std::move(packet))

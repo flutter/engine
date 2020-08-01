@@ -16,7 +16,7 @@ static constexpr int kBytesPerKeyField = sizeof(int64_t);
 
 // Must match the KeyChange enum in hardware_keyboard.dart.
 enum class KeyChange : int64_t {
-  kUp = 1,
+  kUp = 0,
   kDown,
   kSync,
   kCancel,
@@ -24,9 +24,9 @@ enum class KeyChange : int64_t {
 
 // This structure is unpacked by hooks.dart.
 struct alignas(8) LogicalKeyData {
+  int64_t character_size;
   KeyChange change;
   int64_t key;
-  int64_t character_size;
 
   void Clear();
 };

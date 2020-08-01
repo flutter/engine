@@ -28,6 +28,9 @@ typedef TimingsCallback = void Function(List<FrameTiming> timings);
 /// Signature for [Window.onPointerDataPacket].
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 
+/// Signature for [Window.onKeyDataPacket].
+typedef KeyDataCallback = void Function(KeyData data);
+
 /// Signature for [Window.onSemanticsAction].
 typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
 
@@ -1018,6 +1021,18 @@ class Window {
   set onPointerDataPacket(PointerDataPacketCallback? callback) {
     _onPointerDataPacket = callback;
     _onPointerDataPacketZone = Zone.current;
+  }
+
+  /// A callback that is invoked when key data is available.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  KeyDataCallback? get onKeyData => _onKeyData;
+  KeyDataCallback? _onKeyData;
+  Zone _onKeyDataZone = Zone.root;
+  set onKeyDataPacket(KeyDataCallback? callback) {
+    _onKeyData = callback;
+    _onKeyDataZone = Zone.current;
   }
 
   /// The route or path that the embedder requested when the application was
