@@ -184,8 +184,9 @@ public class InputConnectionAdaptorTest {
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     Editable editable = sampleEditable(0, 0);
-    InputConnectionAdaptor adaptor = new InputConnectionAdaptor(
-        testView, client, textInputChannel, editable, null, mockFlutterJNI);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
 
     Bundle bundle = new Bundle();
     byte[] buffer = new byte[] {'a', 'b', 'c', 'd'};
@@ -203,7 +204,237 @@ public class InputConnectionAdaptorTest {
     verifyMethodCall(
         bufferCaptor.getValue(),
         "TextInputClient.performPrivateCommand",
-        new String[] {"0", "{\"data\":{\"keyboard_layout\":[97,98,99,100]},\"action\":\"actionCommand\"}"});
+        new String[] {
+          "0", "{\"data\":{\"keyboard_layout\":[97,98,99,100]},\"action\":\"actionCommand\"}"
+        });
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsByte() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    byte b = 3;
+    bundle.putByte("keyboard_layout", b);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {"0", "{\"data\":{\"keyboard_layout\":3},\"action\":\"actionCommand\"}"});
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsCharArray() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    char[] buffer = new char[] {'a', 'b', 'c', 'd'};
+    bundle.putCharArray("keyboard_layout", buffer);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {
+          "0",
+          "{\"data\":{\"keyboard_layout\":[\"a\",\"b\",\"c\",\"d\"]},\"action\":\"actionCommand\"}"
+        });
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsChar() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    char b = 'a';
+    bundle.putChar("keyboard_layout", b);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {"0", "{\"data\":{\"keyboard_layout\":\"a\"},\"action\":\"actionCommand\"}"});
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsCharSequenceArray() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    CharSequence charSequence1 = new StringBuffer("abc");
+    CharSequence charSequence2 = new StringBuffer("efg");
+    CharSequence[] value = {charSequence1, charSequence2};
+    bundle.putCharSequenceArray("keyboard_layout", value);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {
+          "0", "{\"data\":{\"keyboard_layout\":[\"abc\",\"efg\"]},\"action\":\"actionCommand\"}"
+        });
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsCharSequence() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    CharSequence charSequence = new StringBuffer("abc");
+    bundle.putCharSequence("keyboard_layout", charSequence);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {
+          "0", "{\"data\":{\"keyboard_layout\":\"abc\"},\"action\":\"actionCommand\"}"
+        });
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsFloat() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    float value = 0.5f;
+    bundle.putFloat("keyboard_layout", value);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {"0", "{\"data\":{\"keyboard_layout\":0.5},\"action\":\"actionCommand\"}"});
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsFloatArray() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+        new InputConnectionAdaptor(
+            testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    float[] value = {0.5f, 0.6f};
+    bundle.putFloatArray("keyboard_layout", value);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(
+            channelCaptor.capture(),
+            bufferCaptor.capture(),
+            any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performPrivateCommand",
+        new String[] {
+          "0", "{\"data\":{\"keyboard_layout\":[0.5,0.6]},\"action\":\"actionCommand\"}"
+        });
   }
 
   @Test

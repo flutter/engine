@@ -271,7 +271,24 @@ public class TextInputChannel {
       HashMap<String, Object> dataMap = new HashMap<>();
       Set<String> keySet = data.keySet();
       for (String key : keySet) {
-        dataMap.put(key, data.getByteArray(key));
+        Object value = data.get(key);
+        if (value instanceof byte[]) {
+          dataMap.put(key, data.getByteArray(key));
+        } else if (value instanceof Byte) {
+          dataMap.put(key, data.getByte(key));
+        } else if (value instanceof char[]) {
+          dataMap.put(key, data.getCharArray(key));
+        } else if (value instanceof Character) {
+          dataMap.put(key, data.getChar(key));
+        } else if (value instanceof CharSequence[]) {
+          dataMap.put(key, data.getCharSequenceArray(key));
+        } else if (value instanceof CharSequence) {
+          dataMap.put(key, data.getCharSequence(key));
+        } else if (value instanceof float[]) {
+          dataMap.put(key, data.getFloatArray(key));
+        } else if (value instanceof Float) {
+          dataMap.put(key, data.getFloat(key));
+        }
       }
       json.put("data", dataMap);
     }
