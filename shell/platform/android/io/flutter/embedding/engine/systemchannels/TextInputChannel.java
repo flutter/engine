@@ -1,6 +1,7 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.os.Build;
+import android.os.Bundle;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
@@ -13,6 +14,7 @@ import io.flutter.plugin.common.MethodChannel;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import android.content.ClipboardManager;
 import android.content.res.AssetManager;
+import android.os.Bundle;
 import android.text.Editable;
 import android.text.Emoji;
 import android.text.InputType;
@@ -26,9 +28,16 @@ import android.view.inputmethod.ExtractedText;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.plugin.common.JSONMethodCodec;
+import io.flutter.plugin.common.MethodCall;
 import io.flutter.util.FakeKeyEvent;
+import java.nio.ByteBuffer;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -37,6 +46,21 @@ import org.robolectric.shadows.ShadowClipboardManager;
 @Config(manifest = Config.NONE, shadows = ShadowClipboardManager.class)
 @RunWith(RobolectricTestRunner.class)
 public class InputConnectionAdaptorTest {
+  // Verifies the method and arguments for a captured method call.
+  private void verifyMethodCall(ByteBuffer buffer, String methodName, String[] expectedArgs)
+      throws JSONException {
+    buffer.rewind();
+    MethodCall methodCall = JSONMethodCodec.INSTANCE.decodeMethodCall(buffer);
+    assertEquals(methodName, methodCall.method);
+    if (expectedArgs != null) {
+      JSONArray args = methodCall.arguments();
+      assertEquals(expectedArgs.length, args.length());
+      for (int i = 0; i < args.length(); i++) {
+        assertEquals(expectedArgs[i], args.get(i).toString());
+      }
+    }
+  }
+
   @Test
   public void inputConnectionAdaptor_ReceivesEnter() throws NullPointerException {
     View testView = new View(RuntimeEnvironment.application);
@@ -123,6 +147,54 @@ public class InputConnectionAdaptorTest {
 
     assertTrue(didConsume);
     assertTrue(editable.toString().startsWith(textToBePasted));
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsNull() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor = new InputConnectionAdaptor(
+        testView, client, textInputChannel, editable, null, mockFlutterJNI);
+    adaptor.performPrivateCommand("actionCommand", null);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(channelCaptor.capture(), bufferCaptor.capture(), any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(), "TextInputClient.performPrivateCommand",
+        new String[] {"0", "{\"action\":\"actionCommand\"}"});
+  }
+
+  @Test
+  public void testPerformPrivateCommand_dataIsByteArray() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    Editable editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor = new InputConnectionAdaptor(
+        testView, client, textInputChannel, editable, null, mockFlutterJNI);
+
+    Bundle bundle = new Bundle();
+    byte[] buffer = new byte[] {'a', 'b', 'c', 'd'};
+    bundle.putByteArray("keyboard_layout", buffer);
+    adaptor.performPrivateCommand("actionCommand", bundle);
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+        .send(channelCaptor.capture(), bufferCaptor.capture(), any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(), "TextInputClient.performPrivateCommand",
+        new String[] {"0", "{\"data\":{\"keyboard_layout\":[97,98,99,100]},\"action\":\"actionCommand\"}"});
   }
 
   @Test
