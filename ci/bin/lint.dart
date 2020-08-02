@@ -5,9 +5,8 @@
 ///
 /// User environment variable FLUTTER_LINT_ALL to run on all files.
 
-import 'dart:async' show Completer;
-import 'dart:convert' show jsonDecode, utf8, LineSplitter;
-import 'dart:io' show File, exit, Directory, FileSystemEntity, Platform, stderr;
+
+/////////osama delete those import
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
