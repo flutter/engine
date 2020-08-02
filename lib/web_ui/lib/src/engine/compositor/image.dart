@@ -8,10 +8,26 @@ part of engine;
 /// Instantiates a [ui.Codec] backed by an `SkImage` from Skia.
 void skiaInstantiateImageCodec(Uint8List list, Callback<ui.Codec> callback,
     [int? width, int? height, int? format, int? rowBytes]) {
-  final SkAnimatedImage skAnimatedImage = canvasKit.MakeAnimatedImageFromEncoded(list);
+  final SkAnimatedImage skAnimatedImage =
+      canvasKit.MakeAnimatedImageFromEncoded(list);
   final CkAnimatedImage animatedImage = CkAnimatedImage(skAnimatedImage);
   final CkAnimatedImageCodec codec = CkAnimatedImageCodec(animatedImage);
   callback(codec);
+}
+
+void skiaInstantiateWebImageCodec(
+    String src, Callback<ui.Codec> callback) async {
+  html.HttpRequest.request(
+    src,
+    responseType: "arraybuffer",
+  ).then((html.HttpRequest response) {
+    Uint8List list = new Uint8List.view((response.response as ByteBuffer));
+    final SkAnimatedImage skAnimatedImage =
+        canvasKit.MakeAnimatedImageFromEncoded(list);
+    final CkAnimatedImage animatedImage = CkAnimatedImage(skAnimatedImage);
+    final CkAnimatedImageCodec codec = CkAnimatedImageCodec(animatedImage);
+    callback(codec);
+  });
 }
 
 /// A wrapper for `SkAnimatedImage`.
